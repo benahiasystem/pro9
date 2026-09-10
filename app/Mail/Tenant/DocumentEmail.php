@@ -36,14 +36,14 @@ class DocumentEmail extends Mailable
         $template_document_mail = config('tenant.template_document_mail');
         if($template_document_mail === 'default') {
             $template_document_mail_view = 'tenant.templates.email.document';
-            $subject = 'Envio de Comprobante de Pago Electrónico';
+            $subject = 'Envío de Factura';
         } else {
             $template_document_mail_view = 'tenant.templates.email.'.$template_document_mail;
             $subject = 'Folio '.$this->document->folio;
         }
 
         $email = $this->subject($subject)
-                    ->from(config('mail.username'), 'Comprobante electrónico')
+                    ->from(config('mail.username'), 'Facturación')
                     ->view($template_document_mail_view)
                     ->attachData($pdf, $this->document->filename.'.pdf');
 

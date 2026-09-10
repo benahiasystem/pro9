@@ -95,8 +95,6 @@ class Purchase extends ModelTenant
         'total_unaffected',
         'total_exonerated',
         'total_igv',
-        'total_base_isc',
-        'total_isc',
         'total_base_other_taxes',
         'total_other_taxes',
         'total_taxes',
@@ -609,7 +607,6 @@ class Purchase extends ModelTenant
             'total_exonerated'               => self::NumberFormat($this->total_exonerated),
             'total_taxed'                    => self::NumberFormat($this->total_taxed),
             'total_igv'                      => self::NumberFormat($this->total_igv),
-            'total_isc'                      => self::NumberFormat($this->total_isc),
             'total_perception'               => self::NumberFormat($this->total_perception),
             'total'                          => self::NumberFormat($total),
             'state_type_id'                  => $this->state_type_id,
@@ -720,17 +717,6 @@ class Purchase extends ModelTenant
     public function getConvertTotalToPen()
     {
         return $this->convertValueToPen($this->total);
-    }
-
-    /**
-     *
-     * Obtener total isc y realizar conversión a bolívares de acuerdo al tipo de cambio
-     *
-     * @return float
-     */
-    public function getConvertTotalIscToPen()
-    {
-        return $this->convertValueToPen($this->total_isc);
     }
 
     /**

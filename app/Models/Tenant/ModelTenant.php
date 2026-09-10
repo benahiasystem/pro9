@@ -69,7 +69,7 @@
 
         public const DOLAR_CURRENCY_ID = 'USD';
 
-        public const INVOICE_DOCUMENTS_IDS = ['01', '03'];
+        public const INVOICE_DOCUMENTS_IDS = ['01'];
 
         /**
          * Devuelve un esqueleto del array de data extra. Previene error de no enconrarse la funcion en otros modelos

@@ -170,7 +170,7 @@ class HeaderNotifications
                 $join->on('documents.id', '=', 'payments.document_id');
             })
             ->whereIn('documents.state_type_id', ['01', '03', '05', '07', '13'])
-            ->whereIn('documents.document_type_id', ['01', '03', '08'])
+            ->whereIn('documents.document_type_id', ['01', '08'])
             ->whereDate('invoices.date_of_due', $today)
             ->whereRaw('documents.total > IFNULL(payments.total_payment, 0)')
             ->select(

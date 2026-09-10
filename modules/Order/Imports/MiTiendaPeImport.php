@@ -306,8 +306,6 @@
                     "total_unaffected" => 0,
                     "total_igv_free" => 0,
                     "total_igv" => 0,
-                    "total_base_isc" => 0,
-                    "total_isc" => 0,
                     "total_base_other_taxes" => 0,
                     "total_other_taxes" => 0,
                     "total_taxes" => 0,
@@ -347,13 +345,9 @@
                         'currency_type_id' => 'VES',
                         'affectation_igv_type_id' => $item->sale_affectation_igv_type_id,
                         'affectation_igv_type' => $item->sale_affectation_igv_type,
-                        'total_base_isc' => 0,
-                        'percentage_isc' => 0,
-                        'total_isc' => 0,
                         'total_base_other_taxes' => 0,
                         'percentage_other_taxes' => 0,
                         'total_other_taxes' => 0,
-                        'total_plastic_bag_taxes' => 0,
                         'attributes' => [],
                         'discounts' => [],
                         'charges' => [],
@@ -689,10 +683,7 @@
 
             $data["order_note_id"] = $orderNote->id;
             $data["document_type_id"] = $documentType->id;
-            if ($data["document_type_id"] == '03') {
-                $data["series_id"] = $this->configuration->series_document_bt_id;
-                $data["series"] = Series::find($data["series_id"])->number;
-            } elseif ($data["document_type_id"] == '01') {
+            if ($data["document_type_id"] == '01') {
                 $data["series_id"] = $this->configuration->series_document_ft_id;
                 $data["series"] = Series::find($data["series_id"])->number;
             } else {

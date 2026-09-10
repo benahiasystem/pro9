@@ -1,23 +1,20 @@
 <?php
-// ######### INICIO CAMBIO NELSON #########
-
-/**
- * Estructura efectiva clonada desde `tenancy_bbc`.
- * Tabla: `delivery_zones`.
- *
- * Inventario de columnas:
- * - `id`: bigint(20) unsigned; NOT NULL; auto_increment — Sin comentario definido en el esquema fuente.
- * - `name`: varchar(150); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
- * - `price`: decimal(12,2); NOT NULL; DEFAULT 0.00 — Sin comentario definido en el esquema fuente.
- * - `specify_zone`: tinyint(1); NOT NULL; DEFAULT 0 — Sin comentario definido en el esquema fuente.
- * - `active`: tinyint(1); NOT NULL; DEFAULT 1 — Sin comentario definido en el esquema fuente.
- * - `created_at`: timestamp; NULL — Sin comentario definido en el esquema fuente.
- * - `updated_at`: timestamp; NULL — Sin comentario definido en el esquema fuente.
- */
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 
+// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
+/**
+ * Estructura inicial de `delivery_zones` para instalaciones nuevas.
+ * Inventario de columnas:
+ * - `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT
+ * - `name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL
+ * - `price` decimal(12,2) NOT NULL DEFAULT '0.00'
+ * - `specify_zone` tinyint(1) NOT NULL DEFAULT '0'
+ * - `active` tinyint(1) NOT NULL DEFAULT '1'
+ * - `created_at` timestamp NULL DEFAULT NULL
+ * - `updated_at` timestamp NULL DEFAULT NULL
+ */
 return new class extends Migration
 {
     public function up(): void
@@ -41,4 +38,4 @@ SQL);
         DB::unprepared('DROP TABLE IF EXISTS `delivery_zones`');
     }
 };
-// ######### FIN CAMBIO NELSON #########
+// ######## FIN ESQUEMA INICIAL VENEZUELA ########

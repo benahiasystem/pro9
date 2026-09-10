@@ -409,12 +409,7 @@
                 <td class="text-right font-bold">{{ number_format($document->total_discount, 2) }}</td>
             </tr>
         @endif
-        @if($document->total_plastic_bag_taxes > 0)
-            <tr>
-                <td colspan="7" class="text-right font-bold">ICBPER: {{ $document->currency_type->symbol }}</td>
-                <td class="text-right font-bold">{{ number_format($document->total_plastic_bag_taxes, 2) }}</td>
-            </tr>
-        @endif
+
         <tr>
             {{-- ########## INICIO CAMBIO IGV A IVA --}}
             <td colspan="7" class="text-right font-bold">IVA: {{ $document->currency_type->symbol }}</td>
@@ -470,20 +465,7 @@
 
             @endforeach
             <br/>
-            @if ($customer->department_id == 16)
-                <br/><br/><br/>
-                <div>
-                    <center>
-                        Representación impresa del Comprobante de Pago Electrónico.
-                        <br/>Esta puede ser consultada en:
-                        <br/><b>{!! url('/buscar') !!}</b>
-                        <br/> "Bienes transferidos en la Amazonía
-                        <br/>para ser consumidos en la misma".
-                    </center>
-                </div>
-                <br/>
-            @endif
-            @foreach($document->additional_information as $information)
+@foreach($document->additional_information as $information)
                 @if ($information)
                     @if ($loop->first)
                         <strong>Información adicional</strong>
@@ -492,7 +474,7 @@
                 @endif
             @endforeach
             <br>
-            @if(in_array($document->document_type->id,['01','03']))
+            @if($document->document_type->id === '01')
                 @foreach($accounts as $account)
                     <p>
                     <span class="font-bold">{{$account->bank->description}}</span> {{$account->currency_type->description}}
@@ -503,10 +485,6 @@
                     </p>
                 @endforeach
             @endif
-        </td>
-        <td width="35%" class="text-right">
-            <img src="data:image/png;base64, {{ $document->qr }}" style="margin-right: -10px;" />
-            <p style="font-size: 9px">Código Hash: {{ $document->hash }}</p>
         </td>
     </tr>
 </table>

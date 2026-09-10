@@ -127,19 +127,6 @@
                                 }"
                                 >{{ row.state_type_description }}</span
                             >
-                            <el-tooltip
-                                v-if="row.sunat_error_response && Object.keys(row.sunat_error_response).length > 0"
-                                class="item"
-                                effect="dark"
-                                placement="top-start"
-                            >
-                                <div slot="content">
-                                    <strong>Código:</strong> {{ row.sunat_error_response.codigo }}<br/>
-                                    <strong>Descripción:</strong> {{ row.sunat_error_response.descripcion }}<br/>
-                                    <strong>Mensaje:</strong> {{ row.sunat_error_response.mensaje }}
-                                </div>
-                                <i class="fas fa-exclamation-triangle text-warning ms-1" style="cursor: pointer;"></i>
-                            </el-tooltip>
                         </td>
                         <td class="text-center">
                             {{ formatDate(row.date_of_shipping) }}
@@ -260,9 +247,6 @@
                             >
                                 Generar comprobante
                             </button>
-                            <!-- ########## INICIO CAMBIO SIN XML CDR SUNAT -->
-                            <!-- Envío y consulta de ticket fiscal no se ofrecen. -->
-                            <!-- ######### FIN CAMBIO SIN XML CDR SUNAT -->
                             <button
                                 type="button"
                                 class="btn waves-effect waves-light btn-xs btn-info me-1"

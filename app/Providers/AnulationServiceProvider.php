@@ -31,7 +31,7 @@ class AnulationServiceProvider extends ServiceProvider
 
         Document::updated(function ($document) {
 
-            if($document['document_type_id'] == '01' || $document['document_type_id'] == '03'){
+            if($document['document_type_id'] == '01'){
 
                 if($document['state_type_id'] == 11){
 

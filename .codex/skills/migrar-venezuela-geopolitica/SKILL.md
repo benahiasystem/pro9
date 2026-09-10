@@ -11,8 +11,8 @@ description: Reemplazar catálogos y referencias geográficas de Perú por Venez
 1. Auditar el esquema y contar referencias existentes antes de modificar catálogos.
 2. Conservar los nombres internos `departments`, `provinces` y `districts`; mostrar Estado, Municipio y Parroquia en interfaz.
 3. Conservar la estructura efectiva en migraciones consolidadas por tabla y restaurar las filas territoriales mediante `TenantMigrationDataSeeder`.
-4. Convertir referencias PE a VE y ubicaciones existentes a la ubicación venezolana inicial antes de borrar catálogos peruanos.
-5. Borrar los registros peruanos de `departments`, `provinces`, `districts` y el país PE; cargar sólo la jerarquía venezolana.
+4. Definir directamente VE y la ubicación inicial venezolana en los datos semilla. No transformar direcciones de instalaciones anteriores.
+5. Cargar sólo la jerarquía venezolana; no crear registros peruanos para borrarlos después.
 6. Codificar los identificadores dentro del ancho heredado: estados con 2 dígitos, municipios con 4 y parroquias con 6.
 7. Mostrar sólo la descripción de la Parroquia; conservar el identificador de seis dígitos únicamente como `value`, sin anteponerlo a la etiqueta.
 8. Aplicar la misma etiqueta limpia en clientes, suscripciones y cualquier cascader duplicado.
@@ -20,7 +20,7 @@ description: Reemplazar catálogos y referencias geográficas de Perú por Venez
 10. Construir el árbol exclusivamente mediante consultas a base de datos y no leer archivos territoriales en runtime.
 11. Resolver descripciones normalizando mayúsculas, espacios y acentos; exigir una coincidencia única dentro del padre y lanzar error ante inexistencia o ambigüedad.
 12. Configurar `America/Caracas` y usar `000619` como ubigeo inicial de importación.
-13. Para tenants con historial anterior a la consolidación, respaldar y ejecutar `tenant:migrate-venezuela {uuid}`; sembrar sólo una instalación limpia no actualiza bases existentes.
+13. No conservar `ExistingTenantMigrator` ni comandos de conversión. Verificar únicamente instalaciones nuevas en bases temporales.
 
 ## Contrato de datos
 
@@ -40,5 +40,5 @@ description: Reemplazar catálogos y referencias geográficas de Perú por Venez
 - Probar resolución jerárquica Estado/Municipio/Parroquia con nombres acentuados y casos ambiguos.
 - Confirmar aislamiento y renovación de caché entre tenants.
 - Ejecutar migraciones y pruebas dentro del contenedor PHP del proyecto.
-- Verificar el tenant servido: 239 países sin PE, 25/335/1138, default `VE` en `origin_addresses` y referencias existentes convertidas a `14/0229/000619`.
+- Verificar el estado inicial: 239 países sin PE, 25/335/1138, default `VE` en `origin_addresses` y referencias iniciales `14/0229/000619`.
 <!-- ######## FIN SKILL GEOPOLITICO VENEZUELA -->

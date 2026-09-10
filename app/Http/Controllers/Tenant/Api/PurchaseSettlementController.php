@@ -7,7 +7,6 @@ use App\Http\Controllers\Controller;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Arr;
 
 class PurchaseSettlementController extends Controller
 {
@@ -27,20 +26,13 @@ class PurchaseSettlementController extends Controller
 
             $facturalo = new Facturalo();
             $facturalo->save($request->all());
-            $facturalo->createXmlUnsigned();
-            $facturalo->signXmlUnsigned();
-            $facturalo->updateHash();
-            // $facturalo->updateQr();
             $facturalo->createPdf();
             $facturalo->sendEmail();
-            $facturalo->senderXmlSignedBill();
 
             return $facturalo;
         });
 
         $document = $fact->getDocument();
-        $response = $fact->getResponse();
-
         return [
             'success' => true,
             'data' => [
@@ -48,14 +40,11 @@ class PurchaseSettlementController extends Controller
                 'filename' => $document->filename,
                 'external_id' => $document->external_id,
                 'number_to_letter' => $document->number_to_letter,
-                'hash' => $document->hash,
             ],
             'links' => [
-                'xml' => $document->download_external_xml,
                 'pdf' => $document->download_external_pdf,
-                'cdr' => ($response['sent'])?$document->download_external_cdr:'',
             ],
-            'response' => ($response['sent'])?Arr::except($response, 'sent'):[]
+            'response' => $fact->getResponse(),
         ];
     }
  

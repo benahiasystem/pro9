@@ -104,7 +104,7 @@ class ReportSaleConsolidatedController extends Controller
             $item_unit_type = explode('-', $key);
             $row_item_id = $item_unit_type[0] ?? $first->item_id;
             $row_unit_type_id = $item_unit_type[1] ?? $first->relation_item->unit_type_id;
-            
+
             return [
                 'item_id' => $row_item_id,
                 // 'item_id' => $key,
@@ -121,9 +121,9 @@ class ReportSaleConsolidatedController extends Controller
 
     }
 
-        
+
     /**
-     * 
+     *
      * Agrupar items por item_id y unit_type_id, para ventas individuales y por presentaciones
      *
      * @param  array $records
@@ -138,10 +138,10 @@ class ReportSaleConsolidatedController extends Controller
 
                     if($item_unit_type_id)
                     {
-                        $group_key .= "-".$item_unit_type_id; 
+                        $group_key .= "-".$item_unit_type_id;
                     }
 
-                    return $group_key; 
+                    return $group_key;
                 });
     }
 
@@ -192,9 +192,6 @@ class ReportSaleConsolidatedController extends Controller
         switch ($document_type_id) {
 
             case '01':
-            case '03':
-                $data = DocumentItem::whereDefaultDocumentType($request)->whereDocumentTypeId($document_type_id);
-                break;
 
             case '80':
                 $data = SaleNoteItem::whereDefaultDocumentType($request);

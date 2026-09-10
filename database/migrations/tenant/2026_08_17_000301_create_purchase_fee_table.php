@@ -1,22 +1,19 @@
 <?php
-// ######### INICIO CAMBIO NELSON #########
-
-/**
- * Estructura efectiva clonada desde `tenancy_bbc`.
- * Tabla: `purchase_fee`.
- *
- * Inventario de columnas:
- * - `id`: int(10) unsigned; NOT NULL; auto_increment — Sin comentario definido en el esquema fuente.
- * - `purchase_id`: int(10) unsigned; NOT NULL — Sin comentario definido en el esquema fuente.
- * - `date`: date; NOT NULL — Sin comentario definido en el esquema fuente.
- * - `currency_type_id`: varchar(255); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
- * - `amount`: decimal(12,2); NOT NULL — Sin comentario definido en el esquema fuente.
- * - `payment_method_type_id`: char(2); NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
- */
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 
+// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
+/**
+ * Estructura inicial de `purchase_fee` para instalaciones nuevas.
+ * Inventario de columnas:
+ * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
+ * - `purchase_id` int(10) unsigned NOT NULL
+ * - `date` date NOT NULL
+ * - `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
+ * - `amount` decimal(12,2) NOT NULL
+ * - `payment_method_type_id` char(2) COLLATE utf8mb4_unicode_ci DEFAULT NULL
+ */
 return new class extends Migration
 {
     public function up(): void
@@ -42,4 +39,4 @@ SQL);
         DB::unprepared('DROP TABLE IF EXISTS `purchase_fee`');
     }
 };
-// ######### FIN CAMBIO NELSON #########
+// ######## FIN ESQUEMA INICIAL VENEZUELA ########

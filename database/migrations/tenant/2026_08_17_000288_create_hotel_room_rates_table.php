@@ -1,22 +1,19 @@
 <?php
-// ######### INICIO CAMBIO NELSON #########
-
-/**
- * Estructura efectiva clonada desde `tenancy_bbc`.
- * Tabla: `hotel_room_rates`.
- *
- * Inventario de columnas:
- * - `id`: int(10) unsigned; NOT NULL; auto_increment — Sin comentario definido en el esquema fuente.
- * - `hotel_room_id`: int(10) unsigned; NOT NULL — Sin comentario definido en el esquema fuente.
- * - `hotel_rate_id`: int(10) unsigned; NOT NULL — Sin comentario definido en el esquema fuente.
- * - `price`: double; NOT NULL; DEFAULT 0 — Sin comentario definido en el esquema fuente.
- * - `created_at`: timestamp; NULL — Sin comentario definido en el esquema fuente.
- * - `updated_at`: timestamp; NULL — Sin comentario definido en el esquema fuente.
- */
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 
+// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
+/**
+ * Estructura inicial de `hotel_room_rates` para instalaciones nuevas.
+ * Inventario de columnas:
+ * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
+ * - `hotel_room_id` int(10) unsigned NOT NULL
+ * - `hotel_rate_id` int(10) unsigned NOT NULL
+ * - `price` double NOT NULL DEFAULT '0'
+ * - `created_at` timestamp NULL DEFAULT NULL
+ * - `updated_at` timestamp NULL DEFAULT NULL
+ */
 return new class extends Migration
 {
     public function up(): void
@@ -41,4 +38,4 @@ SQL);
         DB::unprepared('DROP TABLE IF EXISTS `hotel_room_rates`');
     }
 };
-// ######### FIN CAMBIO NELSON #########
+// ######## FIN ESQUEMA INICIAL VENEZUELA ########

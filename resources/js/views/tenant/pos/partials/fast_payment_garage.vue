@@ -1,237 +1,217 @@
 <template>
-    <div class="row col-lg-12 m-0 p-0">
-        <Keypress :key-code="113"
-                  key-event="keyup"
-                  @success="handleFn113"/>
+<div class="row col-lg-12 m-0 p-0">
+    <Keypress :key-code="113"
+              key-event="keyup"
+              @success="handleFn113"/>
 
-        <table-items
-              ref="table_items"
-              @clickAddItem="clickAddItem"
-              @clickWarehouseDetail="clickWarehouseDetail"
-              @clickHistorySales="clickHistorySales"
-              @clickHistoryPurchases="clickHistoryPurchases"
-              v-if="place == 'cat3'"
-              :records="items"
-              :typeUser="typeUser"
-              :visibleTagsCustomer="focusClienteSelect"
-              :searchFromBarcode="searchFromBarcode"
-        ></table-items>
+    <table-items
+          ref="table_items"
+          @clickAddItem="clickAddItem"
+          @clickWarehouseDetail="clickWarehouseDetail"
+          @clickHistorySales="clickHistorySales"
+          @clickHistoryPurchases="clickHistoryPurchases"
+          v-if="place == 'cat3'"
+          :records="items"
+          :typeUser="typeUser"
+          :visibleTagsCustomer="focusClienteSelect"
+          :searchFromBarcode="searchFromBarcode"
+    ></table-items>
 
-        <div class="col-12 p-0 fp-payment-panel">
+    <div class="col-12 p-0 fp-payment-panel">
 
-            <!-- Botones de acción (arriba del monto) -->
-            <div class="fp-action-row px-3 pt-2 pb-1 d-flex" style="gap:8px">
-                <button
-                    v-if="!disabledDiscountForSeller && enableGlobalDiscount"
-                    class="fp-action-btn flex-grow-1"
-                    :class="{'fp-action-btn--on': enabled_discount}"
-                    @click="userTouchedDiscount = true; toggleDiscount()"
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-tag"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M6.5 7.5a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" /><path d="M3 6v5.172a2 2 0 0 0 .586 1.414l7.71 7.71a2.41 2.41 0 0 0 3.408 0l5.592 -5.592a2.41 2.41 0 0 0 0 -3.408l-7.71 -7.71a2 2 0 0 0 -1.414 -.586h-5.172a3 3 0 0 0 -3 3" /></svg>
-                    {{ enabled_discount ? 'Quitar Dto.' : 'Descuento' }}
-                </button>
-                <button class="fp-action-btn flex-grow-1" @click="clickAddPayment()">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-cash"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M7 15h-3a1 1 0 0 1 -1 -1v-8a1 1 0 0 1 1 -1h12a1 1 0 0 1 1 1v3" /><path d="M7 10a1 1 0 0 1 1 -1h12a1 1 0 0 1 1 1v8a1 1 0 0 1 -1 1h-12a1 1 0 0 1 -1 -1l0 -8" /><path d="M12 14a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /></svg>
-                    Pagos
-                </button>
-                <button v-if="businessTurns.active" class="fp-action-btn" @click="openPlateNumberDialog" title="Agregar Placa">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/><path d="M17 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/><path d="M5 17h-2v-6l2 -5h9l4 5h1a2 2 0 0 1 2 2v4h-2m-4 0h-6m-6 -6h15m-6 0v-5"/></svg>
-                </button>
-            </div>
+        <!-- Botones de acción (arriba del monto) -->
+        <div class="fp-action-row px-3 pt-2 pb-1 d-flex" style="gap:8px">
+            <button
+                v-if="!disabledDiscountForSeller && enableGlobalDiscount"
+                class="fp-action-btn flex-grow-1"
+                :class="{'fp-action-btn--on': enabled_discount}"
+                @click="userTouchedDiscount = true; toggleDiscount()"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-tag"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M6.5 7.5a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" /><path d="M3 6v5.172a2 2 0 0 0 .586 1.414l7.71 7.71a2.41 2.41 0 0 0 3.408 0l5.592 -5.592a2.41 2.41 0 0 0 0 -3.408l-7.71 -7.71a2 2 0 0 0 -1.414 -.586h-5.172a3 3 0 0 0 -3 3" /></svg>
+                {{ enabled_discount ? 'Quitar Dto.' : 'Descuento' }}
+            </button>
+            <button class="fp-action-btn flex-grow-1" @click="clickAddPayment()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-cash"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M7 15h-3a1 1 0 0 1 -1 -1v-8a1 1 0 0 1 1 -1h12a1 1 0 0 1 1 1v3" /><path d="M7 10a1 1 0 0 1 1 -1h12a1 1 0 0 1 1 1v8a1 1 0 0 1 -1 1h-12a1 1 0 0 1 -1 -1l0 -8" /><path d="M12 14a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /></svg>
+                Pagos
+            </button>
+            <button v-if="businessTurns.active" class="fp-action-btn" @click="openPlateNumberDialog" title="Agregar Placa">
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/><path d="M17 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/><path d="M5 17h-2v-6l2 -5h9l4 5h1a2 2 0 0 1 2 2v4h-2m-4 0h-6m-6 -6h15m-6 0v-5"/></svg>
+            </button>
+        </div>
 
-            <!-- Monto + descuento + vuelto -->
-            <div class="fp-amount-row px-1 pt-1 pb-1 d-flex align-items-end" style="gap:8px">
-                <div class="flex-grow-1 fp-field-wrap" v-if="enabled_discount">
-                    <label class="fp-field-label mb-0">
-                        Descuento ({{ discount_type === '01' ? currencyTypeActive.symbol : '%' }})
-                    </label>
-                    <div class="position-relative">
-                        <span class="fp-sym">{{ discount_type === '01' ? currencyTypeActive.symbol : '%' }}</span>
-                        <el-input
-                            v-model="discount_amount"
-                            size="small"
-                            min="0"
-                            @focus="$event.target.select()"
-                            inputmode="decimal"
-                            @input="userTouchedDiscount = true; inputDiscountAmount()"
-                            @blur="normalizeDiscountAmount()"
-                            class="fp-amount-inp"
-                        />
-                    </div>
-                </div>
-                <div class="flex-grow-1 fp-field-wrap">
-                    <label class="fp-field-label mb-0">Ingrese monto</label>
-                    <div class="position-relative">
-                        <span class="fp-sym">{{ currencyTypeActive.symbol }}</span>
-                        <el-input
-                            ref="enter_amount"
-                            v-model="enter_amount"
-                            size="small"
-                            @focus="$event.target.select()"
-                            inputmode="decimal"
-                            @input="userTouchedAmount = true; enterAmount()"
-                            @keyup.enter.native="keyupEnterAmount()"
-                            class="fp-amount-inp"
-                        />
-                    </div>
-                </div>
-                <div class="fp-change-wrap text-center">
-                    <small class="fp-field-label d-block" :class="difference < 0 ? 'text-danger' : 'text-success'">
-                        {{ difference < 0 ? 'Faltante' : 'Vuelto' }}
-                    </small>
-                    <span class="fp-change-val" :class="difference < 0 ? 'text-danger' : 'text-success'">
-                        {{ currencyTypeActive.symbol }} {{ isNaN(parseFloat(difference)) ? difference : Number(difference).toFixed(2) }}
-                    </span>
+        <!-- Monto + descuento + vuelto -->
+        <div class="fp-amount-row px-1 pt-1 pb-1 d-flex align-items-end" style="gap:8px">
+            <div class="flex-grow-1 fp-field-wrap" v-if="enabled_discount">
+                <label class="fp-field-label mb-0">
+                    Descuento ({{ discount_type === '01' ? currencyTypeActive.symbol : '%' }})
+                </label>
+                <div class="position-relative">
+                    <span class="fp-sym">{{ discount_type === '01' ? currencyTypeActive.symbol : '%' }}</span>
+                    <el-input
+                        v-model="discount_amount"
+                        size="small"
+                        min="0"
+                        @focus="$event.target.select()"
+                        inputmode="decimal"
+                        @input="userTouchedDiscount = true; inputDiscountAmount()"
+                        @blur="normalizeDiscountAmount()"
+                        class="fp-amount-inp"
+                    />
                 </div>
             </div>
-
-            <!-- Totales -->
-            <div class="fp-totals px-3 pt-2">
-                <template v-if="form.total_plastic_bag_taxes > 0">
-                    <div class="fp-total-row d-flex justify-content-between py-1">
-                        <span class="fp-total-label">Subtotal</span>
-                        <span class="fp-total-val">{{ currencyTypeActive.symbol }} {{ Number(form.total_taxed).toFixed(2) }}</span>
-                    </div>
-                    <div class="fp-total-row d-flex justify-content-between py-1" v-if="!isNrus">
-                        <!-- ########### INICIO CAMBIO IVA VENEZUELA -->
-                        <!-- ########## INICIO CAMBIO AFECTACIÓN IVA -->
-                        <span class="fp-total-label">IVA ({{ ivaPercentageLabel }}%)</span>
-                        <!-- ######### FIN CAMBIO AFECTACIÓN IVA -->
-                        <span class="fp-total-val">{{ currencyTypeActive.symbol }} {{ Number(form.total_igv).toFixed(2) }}</span>
-                    </div>
-                    <div class="fp-total-row d-flex justify-content-between py-1">
-                        <span class="fp-total-label">Descuento</span>
-                        <span class="fp-total-val text-danger">{{ currencyTypeActive.symbol }} {{ Number(form.total_discount).toFixed(2) }}</span>
-                    </div>
-                    <div class="fp-total-row d-flex justify-content-between py-1">
-                        <span class="fp-total-label">ICBPER</span>
-                        <span class="fp-total-val">{{ currencyTypeActive.symbol }} {{ Number(form.total_plastic_bag_taxes).toFixed(2) }}</span>
-                    </div>
-                </template>
-                <template v-else>
-                    <div class="fp-total-row d-flex justify-content-between py-1">
-                        <span class="fp-total-label">Subtotal</span>
-                        <span class="fp-total-val">{{ currencyTypeActive.symbol }} {{ Number(form.total_taxed).toFixed(2) }}</span>
-                    </div>
-                    <div class="fp-total-row d-flex justify-content-between py-1" v-if="!isNrus">
-                        <!-- ########## INICIO CAMBIO AFECTACIÓN IVA -->
-                        <span class="fp-total-label">IVA ({{ ivaPercentageLabel }}%)</span>
-                        <!-- ######### FIN CAMBIO AFECTACIÓN IVA -->
-                        <!-- ########### FIN CAMBIO IVA VENEZUELA -->
-                        <span class="fp-total-val">{{ currencyTypeActive.symbol }} {{ Number(form.total_igv).toFixed(2) }}</span>
-                    </div>
-                    <div class="fp-total-row d-flex justify-content-between py-1">
-                        <span class="fp-total-label">Descuento</span>
-                        <span class="fp-total-val text-danger">{{ currencyTypeActive.symbol }} {{ Number(form.total_discount).toFixed(2) }}</span>
-                    </div>
-                </template>
-                <!-- Gran total -->
-                <div class="fp-grand d-flex justify-content-between align-items-center pt-2 pb-1">
-                    <span class="fp-grand-label">Total</span>
-                    <span class="fp-grand-amount">{{ currencyTypeActive.symbol }} {{ Number(form.total).toFixed(2) }}</span>
+            <div class="flex-grow-1 fp-field-wrap">
+                <label class="fp-field-label mb-0">Ingrese monto</label>
+                <div class="position-relative">
+                    <span class="fp-sym">{{ currencyTypeActive.symbol }}</span>
+                    <el-input
+                        ref="enter_amount"
+                        v-model="enter_amount"
+                        size="small"
+                        @focus="$event.target.select()"
+                        inputmode="decimal"
+                        @input="userTouchedAmount = true; enterAmount()"
+                        @keyup.enter.native="keyupEnterAmount()"
+                        class="fp-amount-inp"
+                    />
                 </div>
             </div>
-
-            <!-- Botón Pagar -->
-            <div class="px-1 pt-1 pb-1">
-                <el-button
-                    :disabled="button_payment"
-                    :loading="loading_submit"
-                    class="fp-pay-btn w-100"
-                    @click="clickPayment"
-                >
-                    Pagar
-                </el-button>
+            <div class="fp-change-wrap text-center">
+                <small class="fp-field-label d-block" :class="difference < 0 ? 'text-danger' : 'text-success'">
+                    {{ difference < 0 ? 'Faltante' : 'Vuelto' }}
+                </small>
+                <span class="fp-change-val" :class="difference < 0 ? 'text-danger' : 'text-success'">
+                    {{ currencyTypeActive.symbol }} {{ isNaN(parseFloat(difference)) ? difference : Number(difference).toFixed(2) }}
+                </span>
             </div>
+        </div>
 
-            <!-- Cancelar -->
-            <div class="px-1 pb-2">
-                <button class="fp-cancel-btn btn btn-link w-100" @click="clickCancel">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-trash-x"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M4 7h16" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /><path d="M10 12l4 4m0 -4l-4 4" /></svg>
-                    Cancelar Venta
-                </button>
-            </div>
+        <!-- Totales -->
+        <div class="fp-totals px-3 pt-2">
 
-            <!-- Dialog Placa -->
             <template>
-                <el-dialog
-                    title="Agregar Placa"
-                    :visible.sync="showDialogPlateNumber"
-                    width="30%"
-                    :close-on-click-modal="false">
-                    <div class="row">
-                        <div class="col-md-12 col-lg-12">
-                            <div class="form-group">
-                                <label class="control-label mb-0">Número de Placa</label>
-                                <template v-if="config_tap.save_plates_client">
-                                    <a v-if="!btn_save_plates" href="#" @click.prevent="btn_save_plates = true">[+ Nuevo]</a>
-                                    <a v-else href="#" @click.prevent="btn_save_plates = false">[ Cancelar]</a>
-                                </template>
-                                <template v-if="!config_tap.save_plates_client">
-                                    <el-input v-model="form.plate_number" type="text">
-                                        <el-tooltip slot="append" placement="right" v-if="btn_save_plates">
-                                            <div slot="content" v-html="messageBoxPlate"></div>
-                                            <el-button :disabled="!Boolean(form.customer_id)" @click="savePlates" icon="el-icon-folder-add"></el-button>
-                                        </el-tooltip>
-                                    </el-input>
-                                </template>
-                                <template v-else>
-                                    <el-select v-if="!btn_save_plates" v-model="form.plate_number" filterable placeholder="Seleccione Placa">
-                                        <el-option v-for="option in current_plates" :key="option" :label="option.value" :value="option.value"></el-option>
-                                    </el-select>
-                                    <el-input v-else v-model="form.plate_number" type="text">
-                                        <el-tooltip slot="append" placement="right" v-if="btn_save_plates">
-                                            <div slot="content" v-html="messageBoxPlate"></div>
-                                            <el-button :disabled="!Boolean(form.customer_id)" @click="savePlates" icon="el-icon-folder-add"></el-button>
-                                        </el-tooltip>
-                                    </el-input>
-                                </template>
-                            </div>
+                <div class="fp-total-row d-flex justify-content-between py-1">
+                    <span class="fp-total-label">Subtotal</span>
+                    <span class="fp-total-val">{{ currencyTypeActive.symbol }} {{ Number(form.total_taxed).toFixed(2) }}</span>
+                </div>
+                <div class="fp-total-row d-flex justify-content-between py-1" v-if="!isNrus">
+                    <!-- ########## INICIO CAMBIO AFECTACIÓN IVA -->
+                    <span class="fp-total-label">IVA ({{ ivaPercentageLabel }}%)</span>
+                    <!-- ######### FIN CAMBIO AFECTACIÓN IVA -->
+                    <!-- ########### FIN CAMBIO IVA VENEZUELA -->
+                    <span class="fp-total-val">{{ currencyTypeActive.symbol }} {{ Number(form.total_igv).toFixed(2) }}</span>
+                </div>
+                <div class="fp-total-row d-flex justify-content-between py-1">
+                    <span class="fp-total-label">Descuento</span>
+                    <span class="fp-total-val text-danger">{{ currencyTypeActive.symbol }} {{ Number(form.total_discount).toFixed(2) }}</span>
+                </div>
+            </template>
+            <!-- Gran total -->
+            <div class="fp-grand d-flex justify-content-between align-items-center pt-2 pb-1">
+                <span class="fp-grand-label">Total</span>
+                <span class="fp-grand-amount">{{ currencyTypeActive.symbol }} {{ Number(form.total).toFixed(2) }}</span>
+            </div>
+        </div>
+
+        <!-- Botón Pagar -->
+        <div class="px-1 pt-1 pb-1">
+            <el-button
+                :disabled="button_payment"
+                :loading="loading_submit"
+                class="fp-pay-btn w-100"
+                @click="clickPayment"
+            >
+                Pagar
+            </el-button>
+        </div>
+
+        <!-- Cancelar -->
+        <div class="px-1 pb-2">
+            <button class="fp-cancel-btn btn btn-link w-100" @click="clickCancel">
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-trash-x"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M4 7h16" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /><path d="M10 12l4 4m0 -4l-4 4" /></svg>
+                Cancelar Venta
+            </button>
+        </div>
+
+        <!-- Dialog Placa -->
+        <template>
+            <el-dialog
+                title="Agregar Placa"
+                :visible.sync="showDialogPlateNumber"
+                width="30%"
+                :close-on-click-modal="false">
+                <div class="row">
+                    <div class="col-md-12 col-lg-12">
+                        <div class="form-group">
+                            <label class="control-label mb-0">Número de Placa</label>
+                            <template v-if="config_tap.save_plates_client">
+                                <a v-if="!btn_save_plates" href="#" @click.prevent="btn_save_plates = true">[+ Nuevo]</a>
+                                <a v-else href="#" @click.prevent="btn_save_plates = false">[ Cancelar]</a>
+                            </template>
+                            <template v-if="!config_tap.save_plates_client">
+                                <el-input v-model="form.plate_number" type="text">
+                                    <el-tooltip slot="append" placement="right" v-if="btn_save_plates">
+                                        <div slot="content" v-html="messageBoxPlate"></div>
+                                        <el-button :disabled="!Boolean(form.customer_id)" @click="savePlates" icon="el-icon-folder-add"></el-button>
+                                    </el-tooltip>
+                                </el-input>
+                            </template>
+                            <template v-else>
+                                <el-select v-if="!btn_save_plates" v-model="form.plate_number" filterable placeholder="Seleccione Placa">
+                                    <el-option v-for="option in current_plates" :key="option" :label="option.value" :value="option.value"></el-option>
+                                </el-select>
+                                <el-input v-else v-model="form.plate_number" type="text">
+                                    <el-tooltip slot="append" placement="right" v-if="btn_save_plates">
+                                        <div slot="content" v-html="messageBoxPlate"></div>
+                                        <el-button :disabled="!Boolean(form.customer_id)" @click="savePlates" icon="el-icon-folder-add"></el-button>
+                                    </el-tooltip>
+                                </el-input>
+                            </template>
                         </div>
                     </div>
-                    <span slot="footer" class="dialog-footer">
-                        <el-button class="second-buton" @click="showDialogPlateNumber = false">Cancelar</el-button>
-                        <el-button type="primary" @click="closeDialogPlateNumber">Aceptar</el-button>
-                    </span>
-                </el-dialog>
-            </template>
-        </div>
-        <person-form
-                :showDialog.sync="showDialogNewPerson"
-                type="customers"
-                :input_person="input_person"
-                :external="true"
-                :document_type_id="form.document_type_id"
-        ></person-form>
-        <options-form
-            :recordId="documentNewId"
-            :resource="resource_options"
-            :showDialog.sync="showDialogOptions"
-            :statusDocument="statusDocument"
-        ></options-form>
-
-        <multiple-payment-form
-            :payments="payments"
-            :showDialog.sync="showDialogMultiplePayment"
-            :total="form.total"
-            @add="addRow"
-            ref="componentMultiplePaymentGarage"
-        ></multiple-payment-form>
-
-        <history-sales-form
-            :showDialog.sync="showDialogHistorySales"
-            :item_id="history_item_id"
-            :customer_id="form.customer_id"
-        ></history-sales-form>
-
-        <!-- <sale-notes-options :showDialog.sync="showDialogSaleNote"
-                          :recordId="saleNotesNewId"
-                          :showClose="true"></sale-notes-options>  -->
-
-        <card-brands-form :external="true"
-                          :recordId="null"
-                          :showDialog.sync="showDialogNewCardBrand"></card-brands-form>
+                </div>
+                <span slot="footer" class="dialog-footer">
+                    <el-button class="second-buton" @click="showDialogPlateNumber = false">Cancelar</el-button>
+                    <el-button type="primary" @click="closeDialogPlateNumber">Aceptar</el-button>
+                </span>
+            </el-dialog>
+        </template>
     </div>
+    <person-form
+            :showDialog.sync="showDialogNewPerson"
+            type="customers"
+            :input_person="input_person"
+            :external="true"
+            :document_type_id="form.document_type_id"
+    ></person-form>
+    <options-form
+        :recordId="documentNewId"
+        :resource="resource_options"
+        :showDialog.sync="showDialogOptions"
+        :statusDocument="statusDocument"
+    ></options-form>
+
+    <multiple-payment-form
+        :payments="payments"
+        :showDialog.sync="showDialogMultiplePayment"
+        :total="form.total"
+        @add="addRow"
+        ref="componentMultiplePaymentGarage"
+    ></multiple-payment-form>
+
+    <history-sales-form
+        :showDialog.sync="showDialogHistorySales"
+        :item_id="history_item_id"
+        :customer_id="form.customer_id"
+    ></history-sales-form>
+
+    <!-- <sale-notes-options :showDialog.sync="showDialogSaleNote"
+                      :recordId="saleNotesNewId"
+                      :showClose="true"></sale-notes-options>  -->
+
+    <card-brands-form :external="true"
+                      :recordId="null"
+                      :showDialog.sync="showDialogNewCardBrand"></card-brands-form>
+</div>
 </template>
 <style>
 .c-width {
@@ -716,9 +696,9 @@ export default {
             let total_igv = 0
             let total_value = 0
             let total = 0
-            let total_plastic_bag_taxes = 0
-            let total_base_isc = 0
-            let total_isc = 0
+
+
+
 
             this.form.items.forEach((row) => {
                 total_discount += parseFloat(row.total_discount)
@@ -744,17 +724,17 @@ export default {
                     total += parseFloat(row.total)
                 }
                 total_value += parseFloat(row.total_value)
-                total_plastic_bag_taxes += parseFloat(row.total_plastic_bag_taxes)
+
 
                 // isc
-                total_isc += parseFloat(row.total_isc)
-                total_base_isc += parseFloat(row.total_base_isc)
+
+
 
             });
 
             // isc
-            this.form.total_base_isc = _.round(total_base_isc, 2)
-            this.form.total_isc = _.round(total_isc, 2)
+
+
 
             this.form.total_exportation = _.round(total_exportation, 2)
             this.form.total_taxed = _.round(total_taxed, 2)
@@ -766,12 +746,12 @@ export default {
             // this.form.total_taxes = _.round(total_igv, 2)
 
             //impuestos (isc + igv)
-            this.form.total_taxes = _.round(total_igv + total_isc, 2);
+            this.form.total_taxes = _.round(total_igv, 2);
 
-            this.form.total_plastic_bag_taxes = _.round(total_plastic_bag_taxes, 2)
+
             // this.form.total = _.round(total, 2)
-            this.form.subtotal = _.round(total + this.form.total_plastic_bag_taxes, 2)
-            this.form.total = _.round(total + this.form.total_plastic_bag_taxes, 2)
+            this.form.subtotal = _.round(total, 2)
+            this.form.total = _.round(total, 2)
 
             this.discountGlobal()
 

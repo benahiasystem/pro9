@@ -844,7 +844,6 @@ class EcommerceController extends Controller
                     'status' => $dc->state_type->description,
                     'state_type_id' => $dc->state_type_id,
                     'download_pdf' => $dc->download_external_pdf,
-                    'download_xml' =>  $dc->download_external_xml,
                     'total' => $dc->total,
                 ];
             });

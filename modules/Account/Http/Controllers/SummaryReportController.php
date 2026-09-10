@@ -71,19 +71,16 @@ class SummaryReportController extends Controller
 
     private function getTotalsAcceptedDocuments($accepted_documents){
 
-        $general_total_plastic_bag_taxes = 0;
         $general_total_igv = 0;
         $general_total_value = 0;
         $general_total = 0;
 
         $general_total_igv +=  number_format($accepted_documents->sum('total_igv'), 2, ".", "");
-        $general_total_plastic_bag_taxes +=  number_format($accepted_documents->sum('total_plastic_bag_taxes'), 2, ".", "");
         $general_total_value +=  number_format($accepted_documents->sum('total_value'), 2, ".", "");
         $general_total +=  number_format($accepted_documents->sum('total'), 2, ".", "");
 
         return [
             'general_total_igv' => $general_total_igv,
-            'general_total_plastic_bag_taxes' => $general_total_plastic_bag_taxes,
             'general_total_value' => $general_total_value,
             'general_total' => $general_total,
         ];
@@ -103,22 +100,21 @@ class SummaryReportController extends Controller
 
     private function getAcceptedDocuments($request){
 
-        $total_plastic_bag_taxes = 0;
         $total_igv = 0;
         $total_value = 0;
         $total = 0;
 
         $accepted_documents = Series::query()
                     ->select('number', 'document_type_id')
-                    ->whereIn('document_type_id', ['01','03'])
+                    ->whereIn('document_type_id', ['01'])
                     ->whereHas('documents')
                     ->with(['documents' => function($query) use($request) {
                             $query->whereBetween('date_of_issue', [$request->date_start, $request->date_end])
                                   ->where('state_type_id', '05')
-                                  ->select('series', 'number', 'state_type_id', 'total_igv', 'total_plastic_bag_taxes', 'total_value', 'total', 'currency_type_id', 'exchange_rate_sale');
+                                  ->select('series', 'number', 'state_type_id', 'total_igv', 'total_value', 'total', 'currency_type_id', 'exchange_rate_sale');
                     }])
                     ->get()
-                    ->map(function($series) use($total_plastic_bag_taxes, $total_igv, $total_value, $total){
+                    ->map(function($series) use($total_igv, $total_value, $total){
 
                         $quantity = count($series->documents);
                         $start_number = $series->documents->min('number') ?? 0;
@@ -130,8 +126,6 @@ class SummaryReportController extends Controller
                         foreach ($doc_dollar as $doc) {
                             $total_igv +=  $doc->total_igv * $doc->exchange_rate_sale;
                         }
-
-                        $total_plastic_bag_taxes +=  number_format($series->documents->sum('total_plastic_bag_taxes'), 2, ".", "");
 
 
 
@@ -152,7 +146,6 @@ class SummaryReportController extends Controller
                             'start_number' => $start_number,
                             'end_number' => $end_number,
                             'total_igv' => number_format($total_igv, 2, ".", ""),
-                            'total_plastic_bag_taxes' => $total_plastic_bag_taxes,
                             'total_value' => number_format( $total_value, 2, ".", ""),
                             'total' => number_format( $total, 2, ".", ""),
                         ];
@@ -170,7 +163,7 @@ class SummaryReportController extends Controller
 
         $voided_documents = Series::query()
             ->select('number', 'document_type_id')
-            ->whereIn('document_type_id', ['01','03'])
+            ->whereIn('document_type_id', ['01'])
             ->whereHas('documents', function($query) use($request) {
                     $query->whereBetween('date_of_issue', [$request->date_start, $request->date_end])
                             ->where('state_type_id', '11');
@@ -178,7 +171,7 @@ class SummaryReportController extends Controller
             ->with(['documents' => function($query) use($request) {
                     $query->whereBetween('date_of_issue', [$request->date_start, $request->date_end])
                             ->where('state_type_id', '11')
-                            ->select('series', 'number', 'state_type_id', 'total_igv', 'total_plastic_bag_taxes', 'total_value', 'total', 'currency_type_id');
+                            ->select('series', 'number', 'state_type_id', 'total_igv', 'total_value', 'total', 'currency_type_id');
             }])
             ->get()
             ->map(function($series) use($total){

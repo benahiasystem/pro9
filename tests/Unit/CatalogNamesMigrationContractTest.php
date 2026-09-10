@@ -29,12 +29,12 @@ class CatalogNamesMigrationContractTest extends TestCase
             array_map('strval', array_keys($documentTypes))
         );
         self::assertSame(['01', '80'], DocumentType::SALE_DOCUMENT_TYPES);
-        self::assertContains('03', DocumentType::HISTORICAL_SALE_DOCUMENT_TYPES);
+        self::assertFalse(defined(DocumentType::class . '::HISTORICAL_SALE_DOCUMENT_TYPES'));
         self::assertArrayNotHasKey('03', config('tables.tenant.document_types'));
     }
 
     /** @test */
-    public function only_gravado_and_exento_are_selectable_affectations(): void
+    public function gravado_is_the_only_affectation_active_by_default(): void
     {
         $affectations = $this->rowsById('cat_affectation_igv_types');
         $activeIds = array_map('strval', array_keys(array_filter($affectations, static function (array $row): bool {
@@ -43,7 +43,7 @@ class CatalogNamesMigrationContractTest extends TestCase
 
         sort($activeIds);
 
-        self::assertSame(['10', '20'], $activeIds);
+        self::assertSame(['10'], $activeIds);
         self::assertSame('Gravado', $affectations['10']['description']);
         self::assertSame('Exento', $affectations['20']['description']);
         self::assertSame(['10', '20'], config('venezuela.tax.selectable_affectation_ids'));
@@ -90,7 +90,7 @@ class CatalogNamesMigrationContractTest extends TestCase
             self::assertSame([], glob(database_path("migrations/tenant/*_create_{$table}_table.php")) ?: [], $table);
         }
 
-        $foreignKeys = $this->source('database/migrations/tenant/2026_08_17_000328_add_tenant_foreign_keys.php');
+        $foreignKeys = $this->source('database/migrations/tenant/2026_08_17_000999_add_tenant_foreign_keys.php');
         self::assertStringNotContainsString('REFERENCES `cat_system_isc_types`', $foreignKeys);
         self::assertStringNotContainsString('REFERENCES `cat_perception_types`', $foreignKeys);
         self::assertStringNotContainsString('REFERENCES `cat_summary_status_types`', $foreignKeys);
@@ -99,7 +99,7 @@ class CatalogNamesMigrationContractTest extends TestCase
     }
 
     /** @test */
-    public function item_models_do_not_eager_load_the_removed_isc_catalog(): void
+    public function item_models_do_not_expose_the_removed_isc_catalog(): void
     {
         foreach ([
             'app/Models/Tenant/DocumentItem.php',
@@ -114,8 +114,9 @@ class CatalogNamesMigrationContractTest extends TestCase
         ] as $file) {
             $source = $this->source($file);
             self::assertStringNotContainsString('system_isc_type', $this->eagerLoads($source), $file);
-            self::assertStringContainsString('function system_isc_type()', $source, $file);
+            self::assertStringNotContainsString('system_isc_type', $source, $file);
         }
+        self::assertFileDoesNotExist(app_path('Models/Tenant/Catalogs/SystemIscType.php'));
     }
 
     /** @test */

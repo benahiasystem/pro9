@@ -7,16 +7,12 @@ if($current_hostname) {
     Route::domain($current_hostname->fqdn)->group(function () {
         Route::middleware(['auth', 'locked.tenant','check.email.verified'])->group(function () {
 
-            // ########## INICIO CAMBIO SIN XML CDR SUNAT
-            // No existe una bandeja activa de comprobantes pendientes de envío fiscal.
-            // ######### FIN CAMBIO SIN XML CDR SUNAT
 
             /**
             * documents/data-table/customers
             * documents/prepayments/{type}
             * documents/search-items
             * documents/search/item/{item}
-            * documents/consult_cdr/{document}
             * documents/item-lots
             * documents/regularize-lots/{document_item_id}
              */
@@ -28,9 +24,6 @@ if($current_hostname) {
                 Route::get('prepayments/{type}', 'DocumentController@prepayments');
                 Route::get('search-items', 'DocumentController@searchItems');
                 Route::get('search/item/{item}', 'DocumentController@searchItemById');
-                // ########## INICIO CAMBIO SIN XML CDR SUNAT
-                // Consulta CDR y envío forzado no se registran en operación local.
-                // ######### FIN CAMBIO SIN XML CDR SUNAT
 
                 Route::get('item-lots', 'DocumentController@searchLots');
                 Route::get('regularize-lots/{document_item_id}', 'DocumentController@regularizeLots');
@@ -49,9 +42,6 @@ if($current_hostname) {
 
             });
 
-            // ########## INICIO CAMBIO SIN XML CDR SUNAT
-            // Se retiraron validación CPE y regularización de envíos fiscales.
-            // ######### FIN CAMBIO SIN XML CDR SUNAT
         });
     });
 }

@@ -866,8 +866,8 @@ export default {
                 total_unaffected: 0,
                 total_exonerated: 0,
                 total_igv: 0,
-                total_base_isc: 0,
-                total_isc: 0,
+
+
                 total_base_other_taxes: 0,
                 total_other_taxes: 0,
                 total_taxes: 0,
@@ -911,7 +911,7 @@ export default {
             let total_igv = 0;
             let total_value = 0;
             let total = 0;
-            let total_plastic_bag_taxes = 0;
+
             let total_discount = 0;
             let total_charge = 0;
             this.document.items.forEach((row) => {
@@ -938,7 +938,7 @@ export default {
                 }
 
                 total_value += parseFloat(row.total_value);
-                total_plastic_bag_taxes += parseFloat(row.total_plastic_bag_taxes);
+
 
                 if (["13", "14", "15"].includes(row.affectation_igv_type_id)) {
                     let unit_value =
@@ -959,12 +959,9 @@ export default {
             this.document.total_igv = _.round(total_igv, 2);
             this.document.total_value = _.round(total_value, 2);
             this.document.total_taxes = _.round(total_igv, 2);
-            this.document.total_plastic_bag_taxes = _.round(
-                total_plastic_bag_taxes,
-                2
-            );
+
             this.document.total = _.round(
-                total + this.document.total_plastic_bag_taxes,
+                total,
                 2
             );
             this.document.subtotal = _.round(

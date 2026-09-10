@@ -43,11 +43,8 @@ class DocumentWebTransform
                 'total_operaciones_inafectas' => Functions::valueKeyInArray($inputs, 'total_unaffected'),
                 'total_operaciones_exoneradas' => Functions::valueKeyInArray($inputs, 'total_exonerated'),
                 'total_igv' => Functions::valueKeyInArray($inputs, 'total_igv'),
-                'total_base_isc' => Functions::valueKeyInArray($inputs, 'total_base_isc'),
-                'total_isc' => Functions::valueKeyInArray($inputs, 'total_isc'),
                 'total_base_otros_impuestos' => Functions::valueKeyInArray($inputs, 'total_base_other_taxes'),
                 'total_otros_impuestos' => Functions::valueKeyInArray($inputs, 'total_other_taxes'),
-                'total_impuestos_bolsa_plastica' => Functions::valueKeyInArray($inputs, 'total_plastic_bag_taxes'),
                 'total_impuestos' => Functions::valueKeyInArray($inputs, 'total_taxes'),
                 'total_valor' => Functions::valueKeyInArray($inputs, 'total_value'),
                 'total_venta' => Functions::valueKeyInArray($inputs, 'total'),
@@ -132,15 +129,9 @@ class DocumentWebTransform
                     'porcentaje_igv' => Functions::valueKeyInArray($row, 'percentage_igv'),
                     'total_igv' => Functions::valueKeyInArray($row, 'total_igv'),
 
-                    'codigo_tipo_sistema_isc' => Functions::valueKeyInArray($row, 'system_isc_type_id'),
-                    'total_base_isc' => Functions::valueKeyInArray($row, 'total_base_isc'),
-                    'porcentaje_isc' => Functions::valueKeyInArray($row, 'percentage_isc'),
-                    'total_isc' => Functions::valueKeyInArray($row, 'total_isc'),
-
                     'total_base_otros_impuestos' => Functions::valueKeyInArray($row, 'total_base_other_taxes'),
                     'porcentaje_otros_impuestos' => Functions::valueKeyInArray($row, 'percentage_other_taxes'),
                     'total_otros_impuestos' => Functions::valueKeyInArray($row, 'total_other_taxes'),
-                    'total_impuestos_bolsa_plastica' => Functions::valueKeyInArray($row, 'total_plastic_bag_taxes'),
 
                     'total_impuestos' => Functions::valueKeyInArray($row, 'total_taxes'),
                     'total_valor_item' => Functions::valueKeyInArray($row, 'total_value'),
@@ -164,7 +155,7 @@ class DocumentWebTransform
 
     private static function invoice($inputs_transform, $inputs)
     {
-        if(in_array($inputs['document_type_id'], ['01', '03'])) {
+        if(in_array($inputs['document_type_id'], ['01'])) {
             $inputs_transform['codigo_tipo_operacion'] = Functions::valueKeyInArray($inputs, 'operation_type_id');
             $inputs_transform['fecha_de_vencimiento'] = Functions::valueKeyInArray($inputs, 'date_of_due');
         }
@@ -317,7 +308,7 @@ class DocumentWebTransform
 
     private static function payments($inputs)
     {
-        if(in_array($inputs['document_type_id'], ['01', '03'])) {
+        if(in_array($inputs['document_type_id'], ['01'])) {
 
             $payments = [];
 

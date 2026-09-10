@@ -7,11 +7,23 @@ use Modules\WhatsAppBot\Services\Evolution\EvolutionSender;
 
 class SendDocumentPdfTool implements ToolInterface
 {
+    /** @var EvolutionSender */
+    private $sender;
+
+    /** @var string */
+    private $toPhone;
+
+    /** @var int|null */
+    private $sessionId;
+
     public function __construct(
-        private EvolutionSender $sender,
-        private string $toPhone,
-        private ?int $sessionId = null
+        EvolutionSender $sender,
+        string $toPhone,
+        ?int $sessionId = null
     ) {
+        $this->sender = $sender;
+        $this->toPhone = $toPhone;
+        $this->sessionId = $sessionId;
     }
 
     public function name(): string
@@ -25,7 +37,7 @@ class SendDocumentPdfTool implements ToolInterface
             'type' => 'function',
             'function' => [
                 'name' => $this->name(),
-                'description' => 'Envía el PDF de un comprobante emitido al WhatsApp del vendedor. Útil para reenviar boletas/facturas pasadas. Recibe el id del Document (no la serie-número).',
+                'description' => 'Envía el PDF de una Factura o nota de crédito/débito al WhatsApp del vendedor. Recibe el id del Document (no la serie-número).',
                 'parameters' => [
                     'type' => 'object',
                     'properties' => [
@@ -58,7 +70,7 @@ class SendDocumentPdfTool implements ToolInterface
 
         $numberFull = $document->series . '-' . $document->number;
         $displayFilename = $numberFull . '.pdf';
-        $caption = ($document->document_type_id === '01' ? 'Factura ' : 'Boleta ') . $numberFull;
+        $caption = $document->document_type->description . ' ' . $numberFull;
 
         $result = $this->sender->sendDocumentPdf(
             $this->toPhone,

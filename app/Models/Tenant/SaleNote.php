@@ -89,11 +89,8 @@ use Modules\Sale\Models\Agent;
      * @property float                                          $total_unaffected
      * @property float                                          $total_exonerated
      * @property float                                          $total_igv
-     * @property float                                          $total_base_isc
-     * @property float                                          $total_isc
      * @property float                                          $total_base_other_taxes
      * @property float                                          $total_other_taxes
-     * @property float                                          $total_plastic_bag_taxes
      * @property float                                          $total_taxes
      * @property float                                          $total_value
      * @property float                                          $total
@@ -180,8 +177,6 @@ use Modules\Sale\Models\Agent;
             'total_unaffected',
             'total_exonerated',
             'total_igv',
-            'total_base_isc',
-            'total_isc',
             'total_base_other_taxes',
             'total_other_taxes',
             'total_taxes',
@@ -213,7 +208,6 @@ use Modules\Sale\Models\Agent;
             'plate_number',
             'purchase_order',
             'due_date',
-            'total_plastic_bag_taxes',
             'additional_information',
             'document_id',
             'seller_id',
@@ -260,11 +254,8 @@ use Modules\Sale\Models\Agent;
             'total_exonerated' => 'float',
             'total_igv' => 'float',
             'total_igv_free' => 'float',
-            'total_base_isc' => 'float',
-            'total_isc' => 'float',
             'total_base_other_taxes' => 'float',
             'total_other_taxes' => 'float',
-            'total_plastic_bag_taxes' => 'float',
             'total_taxes' => 'float',
             'total_value' => 'float',
             'total' => 'float',
@@ -935,16 +926,6 @@ use Modules\Sale\Models\Agent;
                 $message_text = "Su comprobante de nota de venta {$this->number_full} ha sido generado correctamente, puede revisarlo en el siguiente enlace: " .
                     url('') . "/sale-notes/print/{$this->external_id}/a4" . '';
             }
-            $canSentToOtherServer = false;
-            if ($configuration->isSendDataToOtherServer() == true && auth()->user()->type === 'admin') {
-                $alreadySent = SaleNoteMigration::where([
-                    'sale_notes_id' => $this->id,
-                    'success' => true
-                ])->first();
-                if ($alreadySent == false) {
-                    $canSentToOtherServer = true;
-                }
-            }
             $web_platforms = $this->getPlatformThroughItems();
             $child_name = '';
             $child_number = '';
@@ -1058,7 +1039,6 @@ use Modules\Sale\Models\Agent;
                 // 'number' => $this->number_full,
                 'grade' => $this->getGrade(),
                 'section' => $this->getSection(),
-                'send_other_server' => $canSentToOtherServer,
                 'web_platforms' => $web_platforms,
                 'customer_email' => $customer_email,
                 'customer_telephone' => optional($this->person)->telephone,
@@ -1277,14 +1257,9 @@ use Modules\Sale\Models\Agent;
                 $tem_item['total_base_igv'] = $item->total_base_igv;
                 $tem_item['percentage_igv'] = $item->percentage_igv;
                 $tem_item['total_igv'] = $item->total_igv;
-                $tem_item['system_isc_type_id'] = $item->system_isc_type_id;
-                $tem_item['total_base_isc'] = $item->total_base_isc;
-                $tem_item['percentage_isc'] = $item->percentage_isc;
-                $tem_item['total_isc'] = $item->total_isc;
                 $tem_item['total_base_other_taxes'] = $item->total_base_other_taxes;
                 $tem_item['percentage_other_taxes'] = $item->percentage_other_taxes;
                 $tem_item['total_other_taxes'] = $item->total_other_taxes;
-                $tem_item['total_plastic_bag_taxes'] = $item->total_plastic_bag_taxes;
                 $tem_item['total_taxes'] = $item->total_taxes;
                 $tem_item['price_type_id'] = $item->price_type_id;
                 $tem_item['unit_price'] = $item->unit_price;
@@ -1314,12 +1289,10 @@ use Modules\Sale\Models\Agent;
                     'sale_unit_price',
                     'purchase_has_igv',
                     'has_igv',
-                    'amount_plastic_bag_taxes',
                     'sale_affectation_igv_type_id',
                     'purchase_affectation_igv_type_id',
                     'calculate_quantity',
                     'is_set',
-                    'has_plastic_bag_taxes',
                     'lot_code',
                     'lots_enabled',
                     'series_enabled',
@@ -1411,8 +1384,6 @@ use Modules\Sale\Models\Agent;
                 'total_unaffected' => $this->total_unaffected,
                 'total_exonerated' => $this->total_exonerated,
                 'total_igv' => $this->total_igv,
-                'total_base_isc' => $this->total_base_isc,
-                'total_isc' => $this->total_isc,
                 'total_base_other_taxes' => $this->total_base_other_taxes,
                 'total_other_taxes' => $this->total_other_taxes,
                 'total_taxes' => $this->total_taxes,

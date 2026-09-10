@@ -327,13 +327,6 @@
                                             class="badge bg-secondary text-white">
                                             {{ row.state_type_description }}
                                         </span>
-                                        <template v-if="row.regularize_shipping && row.state_type_id === '01'">
-                                            <el-tooltip :content="row.message_regularize_shipping" class="item"
-                                                effect="dark" placement="top-start">
-                                                <i class="fas fa-exclamation-triangle fa-lg"
-                                                    style="color: #D2322D !important"></i>
-                                            </el-tooltip>
-                                        </template>
                                     </td>
                                     <td class="text-center">{{ row.currency_type_id }}</td>
                                     <td class="text-end">{{ row.total_igv }}</td>
@@ -969,8 +962,8 @@ export default {
             this.form.total_exonerated = 0;
             this.form.total_igv = 0;
             this.form.total_igv_free = 0;
-            this.form.total_base_isc = 0;
-            this.form.total_isc = 0;
+
+
             this.form.total_base_other_taxes = 0;
             this.form.total_other_taxes = 0;
             this.form.total_taxes = 0;
@@ -988,8 +981,8 @@ export default {
                 this.form.total_exonerated = plan.total_exonerated
                 this.form.total_igv = plan.total_igv
                 this.form.total_igv_free = plan.total_igv_free
-                this.form.total_base_isc = plan.total_base_isc
-                this.form.total_isc = plan.total_isc
+
+
                 this.form.total_base_other_taxes = plan.total_base_other_taxes
                 this.form.total_other_taxes = plan.total_other_taxes
                 this.form.total_taxes = plan.total_taxes
@@ -1051,20 +1044,6 @@ export default {
         },
         clickDownload(external_id) {
             window.open(`/sale-notes/downloadExternal/${external_id}`, '_blank');
-        },
-        // periods
-        tooltip(row, message = true) {
-            if (message) {
-                if (row.shipping_status) return row.shipping_status.message;
-
-                if (row.sunat_shipping_status) return row.sunat_shipping_status.message;
-
-                if (row.query_status) return row.query_status.message;
-            }
-
-            if ((row.shipping_status) || (row.sunat_shipping_status) || (row.query_status)) return true;
-
-            return false;
         },
         clickDownloadExtra(download) {
             window.open(download, '_blank');

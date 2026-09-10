@@ -125,7 +125,7 @@
 @endif
 <table class="full-width">
     <tr>
-        <td class="text-center desc">Representación Impresa de {{ isset($document->document_type) ? $document->document_type->description : 'Comprobante Electrónico'  }} {{ isset($document->hash) ? 'Código Hash: '.$document->hash : '' }} <br>Para consultar el comprobante ingresar a {!! url('/buscar') !!}</td>
+        <td class="text-center desc">{{ isset($document->document_type) ? $document->document_type->description : 'Documento' }}<br>Para consultar el documento ingrese a {!! url('/buscar') !!}</td>
     </tr>
 </table>
 </body>

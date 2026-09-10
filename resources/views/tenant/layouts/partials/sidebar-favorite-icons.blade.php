@@ -162,9 +162,6 @@
         ['kind' => 'route', 'target' => 'tenant.transports.index', 'icon' => 'car'], // Vehiculos
         ['kind' => 'route', 'target' => 'tenant.origin_addresses.index', 'icon' => 'map-pin'], // Direcciones de partida
         ['kind' => 'route', 'target' => 'tenant.dispatch-addresses.index', 'icon' => 'route'], // Direcciones de llegada
-        ['kind' => 'route', 'target' => 'tenant.documents.not_sent', 'icon' => 'file-alert'], // Comprobantes no enviados
-        ['kind' => 'route', 'target' => 'tenant.documents.regularize_shipping', 'icon' => 'file-pencil'], // CPE pendientes de rectificacion
-        ['kind' => 'route', 'target' => 'tenant.summaries.index', 'icon' => 'files'], // Resumenes
         ['kind' => 'route', 'target' => 'tenant.voided.index', 'icon' => 'file-x'], // Anulaciones
         ['kind' => 'route', 'target' => 'tenant.retentions.index', 'icon' => 'percentage'], // Retenciones
         // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
@@ -177,8 +174,6 @@
         ['kind' => 'route', 'target' => 'tenant.account.index', 'icon' => 'file-spreadsheet'], // Exportar formatos - Sis. contable
         ['kind' => 'route', 'target' => 'tenant.account_summary_report.index', 'icon' => 'chart-bar'], // Reporte resumido - Ventas
         ['kind' => 'route', 'target' => 'tenant.accounting_ledger.create', 'icon' => 'book'], // Libro mayor
-        ['kind' => 'route', 'target' => 'tenant.sire.sale', 'icon' => 'cloud-upload'], // SIRE ventas
-        ['kind' => 'route', 'target' => 'tenant.sire.purchase', 'icon' => 'cloud-download'], // SIRE compras
         ['kind' => 'route', 'target' => 'tenant_orders_index', 'icon' => 'basket'], // Pedidos ecommerce
         ['kind' => 'route', 'target' => 'tenant.items_ecommerce.index', 'icon' => 'eye'], // Productos visibles
         ['kind' => 'route', 'target' => 'tenant.ecommerce.item_sets.index', 'icon' => 'packages'], // Conjuntos y packs ecommerce

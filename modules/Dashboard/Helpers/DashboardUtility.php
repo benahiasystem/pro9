@@ -125,14 +125,14 @@ class DashboardUtility
 
     private function getDocumentItems($establishment_id, $d_start, $d_end, $item_id)
     {
-        $query = DocumentItem::without(['affectation_igv_type', 'system_isc_type', 'price_type'])
+        $query = DocumentItem::without(['affectation_igv_type', 'price_type'])
             ->with([
                 'document:id,currency_type_id,exchange_rate_sale,document_type_id',
                 'relation_item:id,purchase_unit_price,unit_type_id',
             ])
             ->whereHas('document', function ($query) use ($establishment_id, $d_start, $d_end) {
                 $query->whereIn('state_type_id', ['01', '03', '05', '07', '13'])
-                    ->whereIn('document_type_id', ['01', '03', '07', '08']);
+                    ->whereIn('document_type_id', ['01', '07', '08']);
 
                 if ($establishment_id) {
                     $query->where('establishment_id', $establishment_id);
@@ -152,7 +152,7 @@ class DashboardUtility
 
     private function getSaleNoteItems($establishment_id, $d_start, $d_end, $item_id)
     {
-        $query = SaleNoteItem::without(['affectation_igv_type', 'system_isc_type', 'price_type'])
+        $query = SaleNoteItem::without(['affectation_igv_type', 'price_type'])
             ->with([
                 'sale_note:id,currency_type_id,exchange_rate_sale',
                 'relation_item:id,purchase_unit_price,unit_type_id',
@@ -274,7 +274,7 @@ class DashboardUtility
                 ? (float) $document_item->document->exchange_rate_sale
                 : 1.0;
 
-            $is_sale = in_array($document_item->document->document_type_id, ['01', '03', '08'], true);
+            $is_sale = in_array($document_item->document->document_type_id, ['01', '08'], true);
             $sign = $is_sale ? 1 : -1;
 
             $document_sale_total += (float) $document_item->total * $factor * $sign;

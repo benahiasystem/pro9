@@ -62,11 +62,8 @@ class DocumentTransform
             'total_exonerated' => Functions::valueKeyInArray($totals, 'total_operaciones_exoneradas'),
             'total_igv' => Functions::valueKeyInArray($totals, 'total_igv'),
             'total_igv_free' => Functions::valueKeyInArray($totals, 'total_igv_operaciones_gratuitas'),
-            'total_base_isc' => Functions::valueKeyInArray($totals, 'total_base_isc'),
-            'total_isc' => Functions::valueKeyInArray($totals, 'total_isc'),
             'total_base_other_taxes' => Functions::valueKeyInArray($totals, 'total_base_otros_impuestos'),
             'total_other_taxes' => Functions::valueKeyInArray($totals, 'total_otros_impuestos'),
-            'total_plastic_bag_taxes' => Functions::valueKeyInArray($totals, 'total_impuestos_bolsa_plastica'),
             'total_taxes' => Functions::valueKeyInArray($totals, 'total_impuestos'),
             'total_value' => Functions::valueKeyInArray($totals, 'total_valor'),
             'subtotal' => (Functions::valueKeyInArray($totals, 'subtotal_venta')) ? $totals['subtotal_venta'] : $totals['total_venta'],
@@ -132,15 +129,9 @@ class DocumentTransform
                     'percentage_igv' => Functions::valueKeyInArray($row, 'porcentaje_igv'),
                     'total_igv' => Functions::valueKeyInArray($row, 'total_igv'),
 
-                    'system_isc_type_id' => Functions::valueKeyInArray($row, 'codigo_tipo_sistema_isc'),
-                    'total_base_isc' => Functions::valueKeyInArray($row, 'total_base_isc'),
-                    'percentage_isc' => Functions::valueKeyInArray($row, 'porcentaje_isc'),
-                    'total_isc' => Functions::valueKeyInArray($row, 'total_isc'),
-
                     'total_base_other_taxes' => Functions::valueKeyInArray($row, 'total_base_otros_impuestos'),
                     'percentage_other_taxes' => Functions::valueKeyInArray($row, 'porcentaje_otros_impuestos'),
                     'total_other_taxes' => Functions::valueKeyInArray($row, 'total_otros_impuestos'),
-                    'total_plastic_bag_taxes' => Functions::valueKeyInArray($row, 'total_impuestos_bolsa_plastica'),
 
                     'total_taxes' => Functions::valueKeyInArray($row, 'total_impuestos'),
                     'total_value' => Functions::valueKeyInArray($row, 'total_valor_item'),
@@ -155,7 +146,6 @@ class DocumentTransform
                     'lots' => Functions::valueKeyInArray($row, 'lots', []),
                     'update_description' => Functions::valueKeyInArray($row, 'actualizar_descripcion', true), //variable para determinar si se actualiza la descripcion del item cuando se envia desde api
                     'name_product_pdf' => Functions::valueKeyInArray($row, 'nombre_producto_pdf'),
-                    'name_product_xml' => Functions::valueKeyInArray($row, 'nombre_producto_xml'),
                     'additional_data' => Functions::valueKeyInArray($row, 'dato_adicional'),
                     'esFusionado' => Functions::valueKeyInArray($row, 'esFusionado', false),
                 ];

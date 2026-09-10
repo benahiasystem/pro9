@@ -1,25 +1,22 @@
 <?php
-// ######### INICIO CAMBIO NELSON #########
-
-/**
- * Estructura efectiva clonada desde `tenancy_bbc`.
- * Tabla: `income_payments`.
- *
- * Inventario de columnas:
- * - `id`: int(10) unsigned; NOT NULL; auto_increment — Sin comentario definido en el esquema fuente.
- * - `income_id`: int(10) unsigned; NOT NULL — Sin comentario definido en el esquema fuente.
- * - `date_of_payment`: date; NOT NULL — Sin comentario definido en el esquema fuente.
- * - `payment_method_type_id`: char(2); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
- * - `has_card`: tinyint(1); NOT NULL; DEFAULT 0 — Sin comentario definido en el esquema fuente.
- * - `card_brand_id`: char(2); NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
- * - `reference`: varchar(255); NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
- * - `change`: decimal(12,2); NULL — Sin comentario definido en el esquema fuente.
- * - `payment`: decimal(12,2); NOT NULL — Sin comentario definido en el esquema fuente.
- */
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 
+// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
+/**
+ * Estructura inicial de `income_payments` para instalaciones nuevas.
+ * Inventario de columnas:
+ * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
+ * - `income_id` int(10) unsigned NOT NULL
+ * - `date_of_payment` date NOT NULL
+ * - `payment_method_type_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL
+ * - `has_card` tinyint(1) NOT NULL DEFAULT '0'
+ * - `card_brand_id` char(2) COLLATE utf8mb4_unicode_ci DEFAULT NULL
+ * - `reference` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
+ * - `change` decimal(12,2) DEFAULT NULL
+ * - `payment` decimal(12,2) NOT NULL
+ */
 return new class extends Migration
 {
     public function up(): void
@@ -48,4 +45,4 @@ SQL);
         DB::unprepared('DROP TABLE IF EXISTS `income_payments`');
     }
 };
-// ######### FIN CAMBIO NELSON #########
+// ######## FIN ESQUEMA INICIAL VENEZUELA ########

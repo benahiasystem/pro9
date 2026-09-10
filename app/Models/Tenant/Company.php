@@ -27,7 +27,6 @@ class Company extends ModelTenant
         'private_certificate_qztray',
         'logo',
         'logo_dark',
-        'operation_amazonia',
         'img_firm',
         'cod_digemid',
         'integrated_query_client_id',

@@ -1,619 +1,663 @@
 <template>
-    <div class="pos container-fluid p-0">
-        <span class="module-title-marker" data-page-title="Punto de Venta"></span>
-        <div class="row page-header pos-toolbar pe-0 no-gutters" style="min-height:48px">
-            <Keypress
-                key-event="keyup"
-                :key-code="112"
-                @success="handleFn112"
-            />
-            <div class="pos-toolbar__scanner ps-3 d-flex flex-column align-items-start justify-content-center">
-                <el-switch
-                    class="pos-toolbar__scanner-switch"
-                    v-model="search_item_by_barcode"
-                    active-text="Buscar con escáner de código de barras"
-                    @change="changeSearchItemBarcode"
-                >
-                </el-switch>
-                <div class="bar-code-checkbox pt-1" v-if="search_item_by_barcode">
-                    <div class="pos-toolbar__option">
-                        <el-checkbox
-                            class="font-weight-bold"
-                            v-model="search_item_by_barcode_presentation"
-                            >Por presentación</el-checkbox
-                        >
-                    </div>
-                    <div class="pos-toolbar__option">
-                        <el-checkbox
-                            class="font-weight-bold"
-                            v-model="electronic_scale_barcode"
-                        >
-                            Balanza electrónica
-
-                        <el-tooltip
-                            class="item ms-1"
-                            effect="dark"
-                            placement="top-start"
-                        >
-                            <div slot="content">
-                                <b
-                                    >El código de barras generado por la balanza
-                                    debe tener 16 caracteres:</b
-                                ><br /><br />
-                                - Los 5 primeros caracteres representan el
-                                código de barras del producto.<br />
-                                - Los 5 siguientes caracteres representan el
-                                peso, los 2 primeros son el valor entero y los 3
-                                siguientes son decimales.<br />
-                                - Los 6 siguientes caracteres representan el
-                                total, los 4 primeros son el valor entero y los
-                                2 siguientes son decimales.<br />
-                                <br />
-
-                                <b>Ejemplo: Para el código 1000314964299280</b>
-                                <br /><br />
-                                <b>10003</b> = Código de barras del producto
-                                <br />
-                                <b>14964</b> = Peso = 14.964 <br />
-                                <b>299280</b> = Total = 2992.80
-                            </div>
-                            <i class="fa fa-info-circle"></i>
-                        </el-tooltip>
-                        </el-checkbox>
-                    </div>
-                    <div class="pos-toolbar__option">
-                        <el-checkbox
-                            class="font-weight-bold"
-                            v-model="barcode_stop_presentation"
-                            >Seleccionar listado de precio</el-checkbox
-                        >
-                    </div>
+<div class="pos container-fluid p-0">
+    <span class="module-title-marker" data-page-title="Punto de Venta"></span>
+    <div class="row page-header pos-toolbar pe-0 no-gutters" style="min-height:48px">
+        <Keypress
+            key-event="keyup"
+            :key-code="112"
+            @success="handleFn112"
+        />
+        <div class="pos-toolbar__scanner ps-3 d-flex flex-column align-items-start justify-content-center">
+            <el-switch
+                class="pos-toolbar__scanner-switch"
+                v-model="search_item_by_barcode"
+                active-text="Buscar con escáner de código de barras"
+                @change="changeSearchItemBarcode"
+            >
+            </el-switch>
+            <div class="bar-code-checkbox pt-1" v-if="search_item_by_barcode">
+                <div class="pos-toolbar__option">
+                    <el-checkbox
+                        class="font-weight-bold"
+                        v-model="search_item_by_barcode_presentation"
+                        >Por presentación</el-checkbox
+                    >
                 </div>
-            </div>
-            <div class="pos-toolbar__actions">
-                <div class="pos-toolbar__actions-inner">
-                    <div v-if="!configuration.enable_list_product" class="pos-toolbar__price">
-                        <el-select
-                            v-model="selected_option_price"
-                            @change="onPriceOptionChange"
-                            filterable
-                        >
-                            <el-option
-                                v-for="option in price_options"
-                                :key="option.id"
-                                :label="option.description"
-                                :value="option.id"
-                            ></el-option>
-                        </el-select>
-                    </div>
-                    <div class="pos-toolbar__views">
-                        <el-button-group class="d-flex">
-                            <el-tooltip
-                                class="item"
-                                effect="dark"
-                                content="Todas las categorías"
-                                placement="top-start"
-                            >
-                                <el-button
-                                    type="button"
-                                    @click="back()"
-                                    class="btn btn-custom btn-sm me-2 me-sm-0"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 4m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" /><path d="M14 4m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" /><path d="M4 14m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" /><path d="M14 14m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" /></svg>
-                                </el-button>
-                            </el-tooltip>
-                            <el-tooltip
-                                class="item"
-                                effect="dark"
-                                content="Categorías y productos"
-                                placement="top-start"
-                            >
-                                <el-button
-                                    type="button"
-                                    :disabled="place == 'cat2'"
-                                    @click="setView('cat2')"
-                                    class="btn btn-custom btn-sm me-2 me-sm-0"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 4m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v2a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z" /><path d="M4 14m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v2a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z" /></svg>
-                                </el-button>
-                            </el-tooltip>
-                            <el-tooltip
-                                class="item"
-                                effect="dark"
-                                content="Listado de todos los productos"
-                                placement="top-start"
-                            >
-                                <el-button
-                                    type="button"
-                                    :disabled="place == 'cat3'"
-                                    @click="setView('cat3')"
-                                    class="btn btn-custom btn-sm me-2 me-sm-0"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 5a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-14z" /><path d="M3 10h18" /><path d="M10 3v18" /></svg>
-                                </el-button>
-                            </el-tooltip>
-                            <el-tooltip
-                                class="item"
-                                effect="dark"
-                                content="Regresar"
-                                placement="top-start"
-                            >
-                                <el-button
-                                    type="button"
-                                    :disabled="place == 'cat'"
-                                    @click="back()"
-                                    class="btn btn-custom btn-sm me-2 me-sm-0"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 14l-4 -4l4 -4" /><path d="M5 10h11a4 4 0 1 1 0 8h-1" /></svg>
-                                </el-button>
-                            </el-tooltip>
-                            <el-tooltip
-                                class="item"
-                                effect="dark"
-                                content="Configuración de vista"
-                                placement="top-start"
-                            >
-                                <el-button
-                                    type="button"
-                                    @click="openPosViewSettings"
-                                    class="btn btn-custom btn-sm me-2 me-sm-0"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065z" /><path d="M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" /></svg>
-                                </el-button>
-                            </el-tooltip>
-                        </el-button-group>
-                    </div>
+                <div class="pos-toolbar__option">
+                    <el-checkbox
+                        class="font-weight-bold"
+                        v-model="electronic_scale_barcode"
+                    >
+                        Balanza electrónica
+
+                    <el-tooltip
+                        class="item ms-1"
+                        effect="dark"
+                        placement="top-start"
+                    >
+                        <div slot="content">
+                            <b
+                                >El código de barras generado por la balanza
+                                debe tener 16 caracteres:</b
+                            ><br /><br />
+                            - Los 5 primeros caracteres representan el
+                            código de barras del producto.<br />
+                            - Los 5 siguientes caracteres representan el
+                            peso, los 2 primeros son el valor entero y los 3
+                            siguientes son decimales.<br />
+                            - Los 6 siguientes caracteres representan el
+                            total, los 4 primeros son el valor entero y los
+                            2 siguientes son decimales.<br />
+                            <br />
+
+                            <b>Ejemplo: Para el código 1000314964299280</b>
+                            <br /><br />
+                            <b>10003</b> = Código de barras del producto
+                            <br />
+                            <b>14964</b> = Peso = 14.964 <br />
+                            <b>299280</b> = Total = 2992.80
+                        </div>
+                        <i class="fa fa-info-circle"></i>
+                    </el-tooltip>
+                    </el-checkbox>
                 </div>
-            </div>
-            <div class="pos-toolbar__currency" v-if="currency_types.length > 1">
-                <div class="h-100 d-flex align-items-center">
-                    <p class="exchange-currency m-0">
-                        T.C.
-                        <span>Bs. {{ form.exchange_rate_sale }}</span> Cambiar
-                        Moneda
-                        <a
-                            class="btn btn-sm btn-default"
-                            @click="selectCurrencyType"
-                        >
-                            <template v-if="form.currency_type_id == 'VES'">
-                                <strong>Bs.</strong>
-                            </template>
-                            <template v-else>
-                                <strong>$</strong>
-                            </template>
-                            <!-- <i class="fa fa-usd" aria-hidden="true"></i> -->
-                        </a>
-                    </p>
+                <div class="pos-toolbar__option">
+                    <el-checkbox
+                        class="font-weight-bold"
+                        v-model="barcode_stop_presentation"
+                        >Seleccionar listado de precio</el-checkbox
+                    >
                 </div>
             </div>
         </div>
-
-        <div
-            v-if="!is_payment"
-            class="row col-lg-12 m-0 p-0 pos-container"
-            :class="{'margin-top-switch-active': search_item_by_barcode}"
-            v-loading="loading"
-        >
-            <div class="col-lg-8 col-md-6 px-4 hyo pt-2">
-                <template v-if="!search_item_by_barcode">
-                    <el-input
-                        v-show="
-                            place == 'prod' ||
-                                place == 'cat2' ||
-                                place == 'cat3'
-                        "
-                        placeholder="Buscar productos"
-                        size="medium"
-                        remote-search
-                        v-model="input_item"
-                        @input="searchItems"
-                        @keyup.native="keyupTabCustomer"
-                        @keyup.enter.native="keyupEnterAddItem"
-                        class="m-bottom input-search-pos mt-0 pos-m-search"
-                        ref="ref_search_items"
+        <div class="pos-toolbar__actions">
+            <div class="pos-toolbar__actions-inner">
+                <div v-if="!configuration.enable_list_product" class="pos-toolbar__price">
+                    <el-select
+                        v-model="selected_option_price"
+                        @change="onPriceOptionChange"
+                        filterable
                     >
-                        <template v-if="validteCreateProduct">
-                            <el-button
-                                slot="append"
-                                @click.prevent="showDialogNewItem = true"
-                                class="btn-add-product-pos pos-m-new-item"
-                                >Nuevo Producto</el-button
-                            >
-                        </template>
-                    </el-input>
-                </template>
-
-                <template v-else>
-                    <el-input
-                        v-show="
-                            place == 'prod' ||
-                                place == 'cat2' ||
-                                place == 'cat3'
-                        "
-                        placeholder="Buscar productos"
-                        size="medium"
-                        v-model="input_item"
-                        @change="searchItemsBarcode"
-                        @keyup.native="keyupTabCustomer"
-                        ref="ref_search_items"
-                        class="m-bottom input-search-pos mt-0 pos-m-search"
-                        @focus="searchFromBarcode = true"
-                        @blur="searchFromBarcode = false"
-                    >
-                        <template v-if="validteCreateProduct">
-                            <el-button
-                                slot="append"
-                                @click.prevent="showDialogNewItem = true"
-                                class="pos-m-new-item"
-                                >Nuevo Producto</el-button
-                            >
-                        </template>
-                    </el-input>
-                </template>
-
-                <div v-if="place == 'cat2'" class="container testimonial-group">
-                    <div class="row text-center flex-nowrap">
-                        <div
-                            v-for="(item, index) in categories"
-                            @click="filterCategorie(item.id, true)"
-                            :style="{ backgroundColor: item.color }"
-                            :key="index"
-                            class="col-sm-3 pointer col-sm-3-name"
+                        <el-option
+                            v-for="option in price_options"
+                            :key="option.id"
+                            :label="option.description"
+                            :value="option.id"
+                        ></el-option>
+                    </el-select>
+                </div>
+                <div class="pos-toolbar__views">
+                    <el-button-group class="d-flex">
+                        <el-tooltip
+                            class="item"
+                            effect="dark"
+                            content="Todas las categorías"
+                            placement="top-start"
                         >
-                            {{ item.name }}
-                        </div>
+                            <el-button
+                                type="button"
+                                @click="back()"
+                                class="btn btn-custom btn-sm me-2 me-sm-0"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 4m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" /><path d="M14 4m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" /><path d="M4 14m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" /><path d="M14 14m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" /></svg>
+                            </el-button>
+                        </el-tooltip>
+                        <el-tooltip
+                            class="item"
+                            effect="dark"
+                            content="Categorías y productos"
+                            placement="top-start"
+                        >
+                            <el-button
+                                type="button"
+                                :disabled="place == 'cat2'"
+                                @click="setView('cat2')"
+                                class="btn btn-custom btn-sm me-2 me-sm-0"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 4m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v2a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z" /><path d="M4 14m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v2a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z" /></svg>
+                            </el-button>
+                        </el-tooltip>
+                        <el-tooltip
+                            class="item"
+                            effect="dark"
+                            content="Listado de todos los productos"
+                            placement="top-start"
+                        >
+                            <el-button
+                                type="button"
+                                :disabled="place == 'cat3'"
+                                @click="setView('cat3')"
+                                class="btn btn-custom btn-sm me-2 me-sm-0"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 5a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-14z" /><path d="M3 10h18" /><path d="M10 3v18" /></svg>
+                            </el-button>
+                        </el-tooltip>
+                        <el-tooltip
+                            class="item"
+                            effect="dark"
+                            content="Regresar"
+                            placement="top-start"
+                        >
+                            <el-button
+                                type="button"
+                                :disabled="place == 'cat'"
+                                @click="back()"
+                                class="btn btn-custom btn-sm me-2 me-sm-0"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 14l-4 -4l4 -4" /><path d="M5 10h11a4 4 0 1 1 0 8h-1" /></svg>
+                            </el-button>
+                        </el-tooltip>
+                        <el-tooltip
+                            class="item"
+                            effect="dark"
+                            content="Configuración de vista"
+                            placement="top-start"
+                        >
+                            <el-button
+                                type="button"
+                                @click="openPosViewSettings"
+                                class="btn btn-custom btn-sm me-2 me-sm-0"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065z"/><path d="M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0"/></svg>
+                            </el-button>
+                        </el-tooltip>
+                    </el-button-group>
+                </div>
+            </div>
+        </div>
+        <div class="pos-toolbar__currency" v-if="currency_types.length > 1">
+            <div class="h-100 d-flex align-items-center">
+                <p class="exchange-currency m-0">
+                    T.C.
+                    <span>Bs. {{ form.exchange_rate_sale }}</span> Cambiar
+                    Moneda
+                    <a
+                        class="btn btn-sm btn-default"
+                        @click="selectCurrencyType"
+                    >
+                        <template v-if="form.currency_type_id == 'VES'">
+                            <strong>Bs.</strong>
+                        </template>
+                        <template v-else>
+                            <strong>$</strong>
+                        </template>
+                        <!-- <i class="fa fa-usd" aria-hidden="true"></i> -->
+                    </a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div
+        v-if="!is_payment"
+        class="row col-lg-12 m-0 p-0 pos-container"
+        :class="{'margin-top-switch-active': search_item_by_barcode}"
+        v-loading="loading"
+    >
+        <div class="col-lg-8 col-md-6 px-4 hyo pt-2">
+            <template v-if="!search_item_by_barcode">
+                <el-input
+                    v-show="
+                        place == 'prod' ||
+                            place == 'cat2' ||
+                            place == 'cat3'
+                    "
+                    placeholder="Buscar productos"
+                    size="medium"
+                    remote-search
+                    v-model="input_item"
+                    @input="searchItems"
+                    @keyup.native="keyupTabCustomer"
+                    @keyup.enter.native="keyupEnterAddItem"
+                    class="m-bottom input-search-pos mt-0 pos-m-search"
+                    ref="ref_search_items"
+                >
+                    <template v-if="validteCreateProduct">
+                        <el-button
+                            slot="append"
+                            @click.prevent="showDialogNewItem = true"
+                            class="btn-add-product-pos pos-m-new-item"
+                            >Nuevo Producto</el-button
+                        >
+                    </template>
+                </el-input>
+            </template>
+
+            <template v-else>
+                <el-input
+                    v-show="
+                        place == 'prod' ||
+                            place == 'cat2' ||
+                            place == 'cat3'
+                    "
+                    placeholder="Buscar productos"
+                    size="medium"
+                    v-model="input_item"
+                    @change="searchItemsBarcode"
+                    @keyup.native="keyupTabCustomer"
+                    ref="ref_search_items"
+                    class="m-bottom input-search-pos mt-0 pos-m-search"
+                    @focus="searchFromBarcode = true"
+                    @blur="searchFromBarcode = false"
+                >
+                    <template v-if="validteCreateProduct">
+                        <el-button
+                            slot="append"
+                            @click.prevent="showDialogNewItem = true"
+                            class="pos-m-new-item"
+                            >Nuevo Producto</el-button
+                        >
+                    </template>
+                </el-input>
+            </template>
+
+            <div v-if="place == 'cat2'" class="container testimonial-group">
+                <div class="row text-center flex-nowrap">
+                    <div
+                        v-for="(item, index) in categories"
+                        @click="filterCategorie(item.id, true)"
+                        :style="{ backgroundColor: item.color }"
+                        :key="index"
+                        class="col-sm-3 pointer col-sm-3-name"
+                    >
+                        {{ item.name }}
                     </div>
                 </div>
-                <br />
+            </div>
+            <br />
 
-                <div v-if="place == 'cat'" class="row no-gutters">
-                    <template v-for="(item, index) in categories">
-                        <div class="col" :key="index">
+            <div v-if="place == 'cat'" class="row no-gutters">
+                <template v-for="(item, index) in categories">
+                    <div class="col" :key="index">
+                        <div
+                            @click="filterCategorie(item.id)"
+                            class="card p-0 m-0 mb-1 me-1 text-center"
+                        >
                             <div
-                                @click="filterCategorie(item.id)"
-                                class="card p-0 m-0 mb-1 me-1 text-center"
+                                :style="{ backgroundColor: item.color }"
+                                class="card-body pointer"
+                                style="font-weight: bold;color: white;font-size: 18px;"
                             >
-                                <div
-                                    :style="{ backgroundColor: item.color }"
-                                    class="card-body pointer"
-                                    style="font-weight: bold;color: white;font-size: 18px;"
-                                >
-                                    {{ item.name }}
-                                </div>
+                                {{ item.name }}
                             </div>
                         </div>
-                    </template>
-                </div>
+                    </div>
+                </template>
+            </div>
 
-                <div
-                    v-if="place == 'prod' || place == 'cat2'"
-                    class="product-pos-container"
-                    :class="layout_mode"
-                >
-                    <template v-for="(item, index) in items">
-                        <div :key="index">
-                            <section
-                                class="card product-item"
-                                :class="{ 'pos-m-in-cart': cartQty(item) > 0 }"
+            <div
+                v-if="place == 'prod' || place == 'cat2'"
+                class="product-pos-container"
+                :class="layout_mode"
+            >
+                <template v-for="(item, index) in items">
+                    <div :key="index">
+                        <section
+                            class="card product-item"
+                            :class="{ 'pos-m-in-cart': cartQty(item) > 0 }"
+                        >
+                            <div
+                                v-if="cartQty(item) > 0"
+                                class="pos-m-card-qty"
+                                :class="{
+                                    'is-busy': card_busy_id === item.item_id,
+                                    'is-flash': card_flash_id === item.item_id
+                                }"
                             >
-                                <div
-                                    v-if="cartQty(item) > 0"
-                                    class="pos-m-card-qty"
-                                    :class="{
-                                        'is-busy': card_busy_id === item.item_id,
-                                        'is-flash': card_flash_id === item.item_id
-                                    }"
+                                <button
+                                    type="button"
+                                    class="pos-m-card-qty__btn"
+                                    @click.stop="cardRemoveItem(item)"
+                                >&minus;</button>
+                                <span class="pos-m-card-qty__num">{{ cartQtyLabel(item) }}</span>
+                                <button
+                                    type="button"
+                                    class="pos-m-card-qty__btn"
+                                    @click.stop="cardAddItem(item, index)"
+                                >+</button>
+                            </div>
+                            <div
+                                class="card-body pointer px-2 pt-2"
+                                @click="cardAddItem(item, index)"
+                            >
+                                <!-- <p
+                                    class="font-weight-semibold mb-0"
+                                    v-if="DescriptionLength(item) > 50"
+                                    data-toggle="tooltip"
+                                    data-placement="top"
+                                    :title="item.description"
                                 >
-                                    <button
-                                        type="button"
-                                        class="pos-m-card-qty__btn"
-                                        @click.stop="cardRemoveItem(item)"
-                                    >&minus;</button>
-                                    <span class="pos-m-card-qty__num">{{ cartQtyLabel(item) }}</span>
-                                    <button
-                                        type="button"
-                                        class="pos-m-card-qty__btn"
-                                        @click.stop="cardAddItem(item, index)"
-                                    >+</button>
+                                    {{ item.description.substring(0, 50) }}
+                                </p>
+                                <p
+                                    class="font-weight-semibold mb-0"
+                                    v-if="DescriptionLength(item) <= 50"
+                                >
+                                    {{ item.description }}
+                                </p> -->
+                                <div class="pos-card-media" :class="[posImageAspectClass, posImageFitClass]">
+                                    <img
+                                        :src="item.image_url"
+                                        class="img-thumbail img-custom"
+                                    />
+                                    <el-tooltip
+                                        v-if="item.sets.length > 0"
+                                        class="item"
+                                        effect="dark"
+                                        :content="
+                                            item.sets.flat().join(',\n')
+                                        "
+                                        placement="bottom"
+                                    >
+                                        <span class="pos-card-media__badge"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 16.5l-5 -3l5 -3l5 3v5.5l-5 3z" /><path d="M2 13.5v5.5l5 3" /><path d="M7 16.545l5 -3.03" /><path d="M17 16.5l-5 -3l5 -3l5 3v5.5l-5 3z" /><path d="M12 19l5 3" /><path d="M17 16.5l5 -3" /><path d="M12 13.5v-5.5l-5 -3l5 -3l5 3v5.5" /><path d="M7 5.03v5.455" /><path d="M12 8l5 -3" /></svg></span>
+                                    </el-tooltip>
                                 </div>
-                                <div
-                                    class="card-body pointer px-2 pt-2"
-                                    @click="cardAddItem(item, index)"
+                                <p
+                                    class="text-muted mb-0 py-1"
+                                    style="display: flex; justify-content: space-between; align-items: center;"
                                 >
-                                    <!-- <p
-                                        class="font-weight-semibold mb-0"
-                                        v-if="DescriptionLength(item) > 50"
-                                        data-toggle="tooltip"
-                                        data-placement="top"
-                                        :title="item.description"
+                                    <small class="text-primary">{{
+                                        item.internal_id
+                                    }}</small>
+
+                                    <small
+                                        class="measuring-unit text-end"
+                                        >
+                                        <el-tag v-if="item.variations_count > 0" size="mini" class="me-1">
+                                            {{ item.variations_count }} var.
+                                        </el-tag>
+                                        <el-tag type="primary" size="mini">
+                                            {{ item.unit_type_id }}
+                                        </el-tag>
+                                        </small
                                     >
-                                        {{ item.description.substring(0, 50) }}
-                                    </p>
-                                    <p
-                                        class="font-weight-semibold mb-0"
-                                        v-if="DescriptionLength(item) <= 50"
+
+                                    <!-- <el-popover v-if="item.warehouses" placement="right" width="280"  trigger="hover">
+                  <el-table  :data="item.warehouses">
+                    <el-table-column width="150" property="warehouse_description" label="Ubicación"></el-table-column>
+                    <el-table-column width="100" property="stock" label="Stock"></el-table-column>
+                  </el-table>
+                  <el-button slot="reference"><i class="fa fa-search"></i></el-button>
+                </el-popover> -->
+                                </p>
+                                <span
+                                    v-if="
+                                        configuration.show_complete_name_pos
+                                    "
+                                    class="font-weight-semibold mb-0 d-flex justify-content-center product-name-description "
+                                >
+                                    {{ item.description }}
+                                </span>
+                                <span
+                                    v-else
+                                    class="font-weight-semibold mb-0 d-flex justify-content-center product-name-description "
+                                >
+                                    {{ item.description.substring(0, 50) }}
+                                </span>
+                            </div>
+                            <div class="card-footer pointer text-center">
+                                <!-- <button type="button" class="btn waves-effect waves-light btn-xs btn-danger m-1__2" @click="clickHistorySales(item.item_id)"><i class="fa fa-list"></i></button>
+              <button type="button" class="btn waves-effect waves-light btn-xs btn-success m-1__2" @click="clickHistoryPurchases(item.item_id)"><i class="fas fa-cart-plus"></i></button> -->
+                                <template v-if="!item.edit_unit_price">
+                                    <h5
+                                        class="font-weight-semibold text-center"
                                     >
-                                        {{ item.description }}
-                                    </p> -->
-                                    <div
-                                        class="pos-card-media"
-                                        :class="[
-                                            posImageAspectClass,
-                                            posImageFitClass
-                                        ]"
-                                    >
-                                        <img
-                                            :src="item.image_url"
-                                            class="img-thumbail img-custom"
-                                        />
+                                        {{ item.currency_type_symbol }}
+                                        {{ itemSetSaleUnitPrice(item) }}
+                                        <button
+                                            v-if="
+                                                configuration.options_pos &&
+                                                    edit_unit_price
+                                            "
+                                            type="button"
+                                            class="pos-card-action pos-card-action--edit edit-price"
+                                            @click="
+                                                clickOpenInputEditUP(index)
+                                            "
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" /><path d="M13.5 6.5l4 4" /></svg>
+                                        </button>
+                                    </h5>
+                                </template>
+                                <template v-else>
+                                    <div class="pos-price-edit">
+                                        <el-input
+                                            min="0"
+                                            inputmode="decimal"
+                                            v-model="item.edit_sale_unit_price"
+                                            class="pos-price-edit__input"
+                                            size="mini"
+                                            @focus="valueInputSelect"
+                                            @click.native="valueInputSelect"
+                                        >
+                                        </el-input>
+                                        <button
+                                            type="button"
+                                            class="pos-price-edit__btn is-confirm"
+                                            title="Guardar precio"
+                                            @click="
+                                                clickEditUnitPriceItem(
+                                                    index
+                                                )
+                                            "
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-check"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l5 5l10 -10" /></svg>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            class="pos-price-edit__btn is-cancel"
+                                            title="Cancelar"
+                                            @click="
+                                                clickCancelUnitPriceItem(
+                                                    index
+                                                )
+                                            "
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-x"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M18 6l-12 12" /><path d="M6 6l12 12" /></svg>
+                                        </button>
+                                    </div>
+                                </template>
+                            </div>
+                            <div
+                                v-if="configuration.options_pos"
+                                class=" card-footer btn-group flex-wrap configuration-options"
+                            >
+                                <!-- <el-popover v-if="item.warehouses" placement="right" width="280"  trigger="hover">
+                <el-table  :data="item.warehouses">
+                  <el-table-column width="150" property="warehouse_description" label="Ubicación"></el-table-column>
+                  <el-table-column width="100" property="stock" label="Stock"></el-table-column>
+                </el-table>
+                <button type="button" style="width:100% !important;" slot="reference" class="btn btn-xs btn-default " @click="clickHistorySales(item.item_id)"><i class="fa fa-search"></i></button>
+              </el-popover> -->
+                                <!--<el-tooltip class="item" effect="dark" content="Visualizar stock" placement="bottom-end">
+                <button type="button" style="width:25% !important;"   class="btn btn-xs btn-primary-pos" @click="clickWarehouseDetail(item)">
+                  <i class="fa fa-search"></i>
+                </button>
+              </el-tooltip>
+
+              <el-tooltip class="item" effect="dark" content="Visualizar historial de ventas del producto (precio venta) y cliente" placement="bottom-end">
+                <button type="button" style="width:25% !important;"   class="btn btn-xs btn-primary-pos" @click="clickHistorySales(item.item_id)"><i class="fa fa-list"></i></button>
+              </el-tooltip>
+
+              <el-tooltip class="item" effect="dark" content="Visualizar historial de compras del producto (precio compra)" placement="bottom-end">
+                <button type="button" style="width:25% !important;"  class="btn btn-xs btn-primary-pos" @click="clickHistoryPurchases(item.item_id)"><i class="fas fa-cart-plus"></i></button>
+              </el-tooltip>
+
+              <el-popover
+                placement="top-start"
+                title="Title"
+                width="400"
+                trigger="hover"
+                content="this is content, this is content, this is content">
+                <el-button slot="reference">Hov</el-button>
+            </el-popover>-->
+
+                                <el-row style="width:100%">
+                                    <el-col :span="6">
                                         <el-tooltip
-                                            v-if="item.sets.length > 0"
                                             class="item"
                                             effect="dark"
-                                            :content="
-                                                item.sets.flat().join(',\n')
-                                            "
-                                            placement="bottom"
+                                            content="Ver stock"
+                                            placement="bottom-end"
                                         >
-                                            <span class="pos-card-media__badge"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 16.5l-5 -3l5 -3l5 3v5.5l-5 3z" /><path d="M2 13.5v5.5l5 3" /><path d="M7 16.545l5 -3.03" /><path d="M17 16.5l-5 -3l5 -3l5 3v5.5l-5 3z" /><path d="M12 19l5 3" /><path d="M17 16.5l5 -3" /><path d="M12 13.5v-5.5l-5 -3l5 -3l5 3v5.5" /><path d="M7 5.03v5.455" /><path d="M12 8l5 -3" /></svg></span>
+                                            <button
+                                                style="width:100%"
+                                                type="button"
+                                                class="pos-card-action"
+                                                @click="
+                                                    clickWarehouseDetail(
+                                                        item
+                                                    )
+                                                "
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 3l8 4.5l0 9l-8 4.5l-8 -4.5l0 -9l8 -4.5" /><path d="M12 12l8 -4.5" /><path d="M12 12l0 9" /><path d="M12 12l-8 -4.5" /><path d="M16 5.25l-8 4.5" /></svg>
+                                            </button>
                                         </el-tooltip>
-                                    </div>
-                                    <p
-                                        class="text-muted mb-0 py-1"
-                                        style="display: flex; justify-content: space-between; align-items: center;"
+                                    </el-col>
+                                    <el-col
+                                        :span="6"
+                                        v-if="canSeeHistoryPurchase"
                                     >
-                                        <small class="text-primary">{{
-                                            item.internal_id
-                                        }}</small>
-
-                                        <small
-                                            class="measuring-unit text-end"
-                                            >
-                                            <el-tag v-if="item.variations_count > 0" size="mini" class="me-1">
-                                                {{ item.variations_count }} var.
-                                            </el-tag>
-                                            <el-tag type="primary" size="mini">
-                                                {{ item.unit_type_id }}
-                                            </el-tag>
-                                            </small
+                                        <el-tooltip
+                                            class="item"
+                                            effect="dark"
+                                            content="Ver historial de ventas (precio venta) y cliente"
+                                            placement="bottom-end"
                                         >
-
-                                        <!-- <el-popover v-if="item.warehouses" placement="right" width="280"  trigger="hover">
-                      <el-table  :data="item.warehouses">
-                        <el-table-column width="150" property="warehouse_description" label="Ubicación"></el-table-column>
-                        <el-table-column width="100" property="stock" label="Stock"></el-table-column>
-                      </el-table>
-                      <el-button slot="reference"><i class="fa fa-search"></i></el-button>
-                    </el-popover> -->
-                                    </p>
-                                    <span
-                                        v-if="
-                                            configuration.show_complete_name_pos
-                                        "
-                                        class="font-weight-semibold mb-0 d-flex justify-content-center product-name-description "
-                                    >
-                                        {{ item.description }}
-                                    </span>
-                                    <span
-                                        v-else
-                                        class="font-weight-semibold mb-0 d-flex justify-content-center product-name-description "
-                                    >
-                                        {{ item.description.substring(0, 50) }}
-                                    </span>
-                                </div>
-                                <div class="card-footer pointer text-center">
-                                    <!-- <button type="button" class="btn waves-effect waves-light btn-xs btn-danger m-1__2" @click="clickHistorySales(item.item_id)"><i class="fa fa-list"></i></button>
-                  <button type="button" class="btn waves-effect waves-light btn-xs btn-success m-1__2" @click="clickHistoryPurchases(item.item_id)"><i class="fas fa-cart-plus"></i></button> -->
-                                    <template v-if="!item.edit_unit_price">
-                                        <h5
-                                            class="font-weight-semibold text-center"
-                                        >
-                                            {{ item.currency_type_symbol }}
-                                            {{ itemSetSaleUnitPrice(item) }}
-                                            <button
-                                                v-if="
-                                                    configuration.options_pos &&
-                                                        edit_unit_price
-                                                "
-                                                type="button"
-                                                class="pos-card-action pos-card-action--edit edit-price"
-                                                @click="
-                                                    clickOpenInputEditUP(index)
-                                                "
-                                            >
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" /><path d="M13.5 6.5l4 4" /></svg>
-                                            </button>
-                                        </h5>
-                                    </template>
-                                    <template v-else>
-                                        <div class="pos-price-edit">
-                                            <el-input
-                                                min="0"
-                                                inputmode="decimal"
-                                                v-model="item.edit_sale_unit_price"
-                                                class="pos-price-edit__input"
-                                                size="mini"
-                                                @focus="valueInputSelect"
-                                                @click.native="valueInputSelect"
-                                            >
-                                            </el-input>
                                             <button
                                                 type="button"
-                                                class="pos-price-edit__btn is-confirm"
-                                                title="Guardar precio"
+                                                style="width:100%;"
+                                                class="pos-card-action"
                                                 @click="
-                                                    clickEditUnitPriceItem(
-                                                        index
+                                                    clickHistorySales(
+                                                        item.item_id
                                                     )
                                                 "
                                             >
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-check"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l5 5l10 -10" /></svg>
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 8l0 4l2 2" /><path d="M3.05 11a9 9 0 1 1 .5 4m-.5 5v-5h5" /></svg>
                                             </button>
+                                        </el-tooltip>
+                                    </el-col>
+                                    <el-col
+                                        :span="6"
+                                        v-if="canSeePriceCost"
+                                    >
+                                        <el-tooltip
+                                            class="item"
+                                            effect="dark"
+                                            content="Ver historial de compras (precio compra)"
+                                            placement="bottom-end"
+                                        >
                                             <button
                                                 type="button"
-                                                class="pos-price-edit__btn is-cancel"
-                                                title="Cancelar"
+                                                style="width:100%"
+                                                class="pos-card-action"
                                                 @click="
-                                                    clickCancelUnitPriceItem(
-                                                        index
+                                                    clickHistoryPurchases(
+                                                        item.item_id
                                                     )
                                                 "
                                             >
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-x"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M18 6l-12 12" /><path d="M6 6l12 12" /></svg>
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M6 19m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M17 19m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M17 17h-11v-14h-2" /><path d="M6 5l14 1l-1 7h-13" /></svg>
                                             </button>
-                                        </div>
-                                    </template>
-                                </div>
-                                <div
-                                    v-if="configuration.options_pos"
-                                    class=" card-footer btn-group flex-wrap configuration-options"
-                                >
-                                    <!-- <el-popover v-if="item.warehouses" placement="right" width="280"  trigger="hover">
-                    <el-table  :data="item.warehouses">
-                      <el-table-column width="150" property="warehouse_description" label="Ubicación"></el-table-column>
-                      <el-table-column width="100" property="stock" label="Stock"></el-table-column>
-                    </el-table>
-                    <button type="button" style="width:100% !important;" slot="reference" class="btn btn-xs btn-default " @click="clickHistorySales(item.item_id)"><i class="fa fa-search"></i></button>
-                  </el-popover> -->
-                                    <!--<el-tooltip class="item" effect="dark" content="Visualizar stock" placement="bottom-end">
-                    <button type="button" style="width:25% !important;"   class="btn btn-xs btn-primary-pos" @click="clickWarehouseDetail(item)">
-                      <i class="fa fa-search"></i>
-                    </button>
-                  </el-tooltip>
-
-                  <el-tooltip class="item" effect="dark" content="Visualizar historial de ventas del producto (precio venta) y cliente" placement="bottom-end">
-                    <button type="button" style="width:25% !important;"   class="btn btn-xs btn-primary-pos" @click="clickHistorySales(item.item_id)"><i class="fa fa-list"></i></button>
-                  </el-tooltip>
-
-                  <el-tooltip class="item" effect="dark" content="Visualizar historial de compras del producto (precio compra)" placement="bottom-end">
-                    <button type="button" style="width:25% !important;"  class="btn btn-xs btn-primary-pos" @click="clickHistoryPurchases(item.item_id)"><i class="fas fa-cart-plus"></i></button>
-                  </el-tooltip>
-
-                  <el-popover
-                    placement="top-start"
-                    title="Title"
-                    width="400"
-                    trigger="hover"
-                    content="this is content, this is content, this is content">
-                    <el-button slot="reference">Hov</el-button>
-                </el-popover>-->
-
-                                    <el-row style="width:100%">
-                                        <el-col :span="6">
-                                            <el-tooltip
-                                                class="item"
-                                                effect="dark"
-                                                content="Ver stock"
-                                                placement="bottom-end"
-                                            >
-                                                <button
-                                                    style="width:100%"
-                                                    type="button"
-                                                    class="pos-card-action"
-                                                    @click="
-                                                        clickWarehouseDetail(
-                                                            item
-                                                        )
-                                                    "
-                                                >
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 3l8 4.5l0 9l-8 4.5l-8 -4.5l0 -9l8 -4.5" /><path d="M12 12l8 -4.5" /><path d="M12 12l0 9" /><path d="M12 12l-8 -4.5" /><path d="M16 5.25l-8 4.5" /></svg>
-                                                </button>
-                                            </el-tooltip>
-                                        </el-col>
-                                        <el-col
-                                            :span="6"
-                                            v-if="canSeeHistoryPurchase"
+                                        </el-tooltip>
+                                    </el-col>
+                                    <el-col :span="6">
+                                        <el-tooltip
+                                            v-if="priceOptionsCount(item) > 0"
+                                            class="item"
+                                            effect="dark"
+                                            content="Ver precios disponibles"
+                                            placement="bottom-end"
                                         >
-                                            <el-tooltip
-                                                class="item"
-                                                effect="dark"
-                                                content="Ver historial de ventas (precio venta) y cliente"
-                                                placement="bottom-end"
+                                            <el-popover
+                                                placement="top"
+                                                width="370"
+                                                trigger="click"
                                             >
-                                                <button
-                                                    type="button"
-                                                    style="width:100%;"
-                                                    class="pos-card-action"
-                                                    @click="
-                                                        clickHistorySales(
-                                                            item.item_id
-                                                        )
-                                                    "
-                                                >
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 8l0 4l2 2" /><path d="M3.05 11a9 9 0 1 1 .5 4m-.5 5v-5h5" /></svg>
-                                                </button>
-                                            </el-tooltip>
-                                        </el-col>
-                                        <el-col
-                                            :span="6"
-                                            v-if="canSeePriceCost"
-                                        >
-                                            <el-tooltip
-                                                class="item"
-                                                effect="dark"
-                                                content="Ver historial de compras (precio compra)"
-                                                placement="bottom-end"
-                                            >
-                                                <button
-                                                    type="button"
-                                                    style="width:100%"
-                                                    class="pos-card-action"
-                                                    @click="
-                                                        clickHistoryPurchases(
-                                                            item.item_id
-                                                        )
-                                                    "
-                                                >
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M6 19m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M17 19m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M17 17h-11v-14h-2" /><path d="M6 5l14 1l-1 7h-13" /></svg>
-                                                </button>
-                                            </el-tooltip>
-                                        </el-col>
-                                        <el-col :span="6">
-                                            <el-tooltip
-                                                v-if="priceOptionsCount(item) > 0"
-                                                class="item"
-                                                effect="dark"
-                                                content="Ver precios disponibles"
-                                                placement="bottom-end"
-                                            >
-                                                <el-popover
-                                                    placement="top"
-                                                    width="370"
-                                                    trigger="click"
-                                                >
-                                                    <div class="el-popover__title d-flex justify-content-between">
-                                                        Precios
-                                                        <el-tag v-if="priceOptionsCount(item) > 0">
-                                                            {{ priceOptionsCount(item) }} OPCIONES
-                                                        </el-tag>
-                                                        <el-tag v-else>
-                                                            SIN REGISTROS
-                                                        </el-tag>
-                                                    </div>
-                                                    <table
-                                                        v-if="item.item_unit_types"
-                                                        class="table table-sm mb-0 table-prices-popover">
-                                                        <thead>
+                                                <div class="el-popover__title d-flex justify-content-between">
+                                                    Precios
+                                                    <el-tag v-if="priceOptionsCount(item) > 0">
+                                                        {{ priceOptionsCount(item) }} OPCIONES
+                                                    </el-tag>
+                                                    <el-tag v-else>
+                                                        SIN REGISTROS
+                                                    </el-tag>
+                                                </div>
+                                                <table
+                                                    v-if="item.item_unit_types"
+                                                    class="table table-sm mb-0 table-prices-popover">
+                                                    <thead>
+                                                        <tr>
+                                                            <td class="text-start">Precio</td>
+                                                            <td class="text-start">Unidad</td>
+                                                            <td class="text-start">Descripción</td>
+                                                            <td class="text-end"></td>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <template v-if="item.item_unit_types.length == 1">
+                                                            <template v-for="(price, _index) in item.item_unit_types[0].prices">
+                                                                <tr v-if="Number(price.price) > 0">
+                                                                    <td class="text-start font-weight-semibold">
+                                                                        {{ currency_type.symbol }}
+                                                                        {{ price.price }}
+                                                                    </td>
+                                                                    <td class="text-start">
+                                                                        {{ item.item_unit_types[0].unit_type_id }}
+                                                                    </td>
+                                                                    <td class="text-start">
+                                                                        {{ item.item_unit_types[0].description }}
+                                                                    </td>
+                                                                    <td class="text-end">
+                                                                        <button
+                                                                            @click="
+                                                                                setPriceItem(
+                                                                                    price,
+                                                                                    index
+                                                                                )
+                                                                            "
+                                                                            type="button"
+                                                                            class="btn btn-sm btn-custom"
+                                                                            :class="{'btn-success': price.selected}"
+                                                                        >
+                                                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-check"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l5 5l10 -10" /></svg>
+                                                                        </button>
+                                                                    </td>
+                                                                </tr>
+                                                            </template>
+                                                        </template>
+                                                        <template v-else-if="item.item_unit_types.length == 0">
                                                             <tr>
-                                                                <td class="text-start">Precio</td>
-                                                                <td class="text-start">Unidad</td>
-                                                                <td class="text-start">Descripción</td>
-                                                                <td class="text-end"></td>
+                                                                <td colspan="4" class="text-center">
+                                                                    <div class="d-flex flex-column align-items-center justify-content-center gap-2">
+                                                                        <div class="circle-container p-2">
+                                                                            <div class="circle-child p-2">
+                                                                                <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-credit-card text-muted svg-bounce"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 8a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v8a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3l0 -8" /><path d="M3 10l18 0" /><path d="M7 15l.01 0" /><path d="M11 15l2 0" /></svg>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div>
+                                                                            <span class="small text-muted">
+                                                                                Aún no hay precios disponibles para este artículo.
+                                                                            </span>
+                                                                        </div>
+                                                                    </div>
+                                                                </td>
                                                             </tr>
-                                                        </thead>
-                                                        <tbody>
-                                                            <template v-if="item.item_unit_types.length == 1">
-                                                                <template v-for="(price, _index) in item.item_unit_types[0].prices">
+                                                        </template>
+                                                        <template v-else>
+                                                            <template v-for="(item_unit_type, _index) in item.item_unit_types">
+                                                                <template v-for="(price, _index_price) in item_unit_type.prices">
                                                                     <tr v-if="Number(price.price) > 0">
                                                                         <td class="text-start font-weight-semibold">
                                                                             {{ currency_type.symbol }}
                                                                             {{ price.price }}
                                                                         </td>
                                                                         <td class="text-start">
-                                                                            {{ item.item_unit_types[0].unit_type_id }}
+                                                                            {{ item_unit_type.unit_type_id }}
                                                                         </td>
                                                                         <td class="text-start">
-                                                                            {{ item.item_unit_types[0].description }}
+                                                                            {{ item_unit_type.description }}
                                                                         </td>
                                                                         <td class="text-end">
                                                                             <button
@@ -624,656 +668,526 @@
                                                                                     )
                                                                                 "
                                                                                 type="button"
-                                                                                class="btn btn-sm btn-custom"
+                                                                                class="btn btn-custom btn-sm"
                                                                                 :class="{'btn-success': price.selected}"
                                                                             >
                                                                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-check"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l5 5l10 -10" /></svg>
                                                                             </button>
                                                                         </td>
                                                                     </tr>
+
                                                                 </template>
                                                             </template>
-                                                            <template v-else-if="item.item_unit_types.length == 0">
-                                                                <tr>
-                                                                    <td colspan="4" class="text-center">
-                                                                        <div class="d-flex flex-column align-items-center justify-content-center gap-2">
-                                                                            <div class="circle-container p-2">
-                                                                                <div class="circle-child p-2">
-                                                                                    <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-credit-card text-muted svg-bounce"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 8a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v8a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3l0 -8" /><path d="M3 10l18 0" /><path d="M7 15l.01 0" /><path d="M11 15l2 0" /></svg>
-                                                                                </div>
-                                                                            </div>
-                                                                            <div>
-                                                                                <span class="small text-muted">
-                                                                                    Aún no hay precios disponibles para este artículo.
-                                                                                </span>
-                                                                            </div>
-                                                                        </div>
-                                                                    </td>
-                                                                </tr>
-                                                            </template>
-                                                            <template v-else>
-                                                                <template v-for="(item_unit_type, _index) in item.item_unit_types">
-                                                                    <template v-for="(price, _index_price) in item_unit_type.prices">
-                                                                        <tr v-if="Number(price.price) > 0">
-                                                                            <td class="text-start font-weight-semibold">
-                                                                                {{ currency_type.symbol }}
-                                                                                {{ price.price }}
-                                                                            </td>
-                                                                            <td class="text-start">
-                                                                                {{ item_unit_type.unit_type_id }}
-                                                                            </td>
-                                                                            <td class="text-start">
-                                                                                {{ item_unit_type.description }}
-                                                                            </td>
-                                                                            <td class="text-end">
-                                                                                <button
-                                                                                    @click="
-                                                                                        setPriceItem(
-                                                                                            price,
-                                                                                            index
-                                                                                        )
-                                                                                    "
-                                                                                    type="button"
-                                                                                    class="btn btn-custom btn-sm"
-                                                                                    :class="{'btn-success': price.selected}"
-                                                                                >
-                                                                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-check"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l5 5l10 -10" /></svg>
-                                                                                </button>
-                                                                            </td>
-                                                                        </tr>
-
-                                                                    </template>
-                                                                </template>
 
 
 
-                                                            </template>
+                                                        </template>
 
 
-                                                        </tbody>
-                                                    </table>
-                                                    <!-- <el-table
-                                                        v-if="item.item_unit_types"
-                                                        :data="item.item_unit_types"
+                                                    </tbody>
+                                                </table>
+                                                <!-- <el-table
+                                                    v-if="item.item_unit_types"
+                                                    :data="item.item_unit_types"
+                                                >
+                                                    <el-table-column
+                                                        width="90"
+                                                        label="Precio"
                                                     >
-                                                        <el-table-column
-                                                            width="90"
-                                                            label="Precio"
+                                                        <template
+                                                            slot-scope="{
+                                                                row
+                                                            }"
                                                         >
-                                                            <template
-                                                                slot-scope="{
-                                                                    row
-                                                                }"
-                                                            >
-                                                                <template v-for="p in row">
-                                                                    <span
-                                                                        v-if="Number(p.price) > 0"
-                                                                    >
-                                                                        {{
-                                                                            p.price
-                                                                        }}
-                                                                    </span>
-
-                                                                </template>
-                                                            </template>
-                                                        </el-table-column>
-                                                        <el-table-column
-                                                            width="80"
-                                                            label="Unidad"
-                                                            property="unit_type_id"
-                                                        ></el-table-column>
-                                                        <el-table-column
-                                                            width="120"
-                                                            label="Descripción"
-                                                            property="description"
-                                                        ></el-table-column>
-
-                                                        <el-table-column
-                                                            width="80"
-                                                            label=""
-                                                        >
-                                                            <template
-                                                                slot-scope="{
-                                                                    row
-                                                                }"
-                                                            >
-                                                                <button
-                                                                    @click="
-                                                                        setPriceItem(
-                                                                            row,
-                                                                            index
-                                                                        )
-                                                                    "
-                                                                    type="button"
-                                                                    class="btn btn-custom btn-xs"
+                                                            <template v-for="p in row">
+                                                                <span
+                                                                    v-if="Number(p.price) > 0"
                                                                 >
-                                                                    <i
-                                                                        class="fas fa-check"
-                                                                    ></i>
-                                                                </button>
+                                                                    {{
+                                                                        p.price
+                                                                    }}
+                                                                </span>
+
                                                             </template>
-                                                        </el-table-column>
-                                                    </el-table> -->
-                                                    <button
-                                                        slot="reference"
-                                                        type="button"
-                                                        style="width:100%"
-                                                        class="pos-card-action"
+                                                        </template>
+                                                    </el-table-column>
+                                                    <el-table-column
+                                                        width="80"
+                                                        label="Unidad"
+                                                        property="unit_type_id"
+                                                    ></el-table-column>
+                                                    <el-table-column
+                                                        width="120"
+                                                        label="Descripción"
+                                                        property="description"
+                                                    ></el-table-column>
+
+                                                    <el-table-column
+                                                        width="80"
+                                                        label=""
                                                     >
-                                                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7.5 7.5m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" /><path d="M3 6v5.172a2 2 0 0 0 .586 1.414l7.71 7.71a2.41 2.41 0 0 0 3.408 0l5.592 -5.592a2.41 2.41 0 0 0 0 -3.408l-7.71 -7.71a2 2 0 0 0 -1.414 -.586h-5.172a3 3 0 0 0 -3 3z" /></svg>
-                                                    </button>
-                                                </el-popover>
-                                            </el-tooltip>
-                                            <el-tooltip
-                                                v-else
-                                                class="item"
-                                                effect="dark"
-                                                content="Sin lista de precios"
-                                                placement="bottom-end"
-                                            >
-                                                <span class="pos-card-action is-disabled" style="width:100%">
+                                                        <template
+                                                            slot-scope="{
+                                                                row
+                                                            }"
+                                                        >
+                                                            <button
+                                                                @click="
+                                                                    setPriceItem(
+                                                                        row,
+                                                                        index
+                                                                    )
+                                                                "
+                                                                type="button"
+                                                                class="btn btn-custom btn-xs"
+                                                            >
+                                                                <i
+                                                                    class="fas fa-check"
+                                                                ></i>
+                                                            </button>
+                                                        </template>
+                                                    </el-table-column>
+                                                </el-table> -->
+                                                <button
+                                                    slot="reference"
+                                                    type="button"
+                                                    style="width:100%"
+                                                    class="pos-card-action"
+                                                >
                                                     <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7.5 7.5m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" /><path d="M3 6v5.172a2 2 0 0 0 .586 1.414l7.71 7.71a2.41 2.41 0 0 0 3.408 0l5.592 -5.592a2.41 2.41 0 0 0 0 -3.408l-7.71 -7.71a2 2 0 0 0 -1.414 -.586h-5.172a3 3 0 0 0 -3 3z" /></svg>
-                                                </span>
-                                            </el-tooltip>
-                                        </el-col>
-                                    </el-row>
-                                </div>
-                            </section>
-                        </div>
-                    </template>
-                </div>
-
-                <table-items
-                    ref="table_items"
-                    @clickAddItem="clickAddItem"
-                    @escape="onTableEscape"
-                    @clickWarehouseDetail="clickWarehouseDetail"
-                    @clickHistorySales="clickHistorySales"
-                    @clickHistoryPurchases="clickHistoryPurchases"
-                    v-if="place == 'cat3'"
-                    :records="items"
-                    :typeUser="typeUser"
-                    :visibleTagsCustomer="focusClienteSelect"
-                    :searchFromBarcode.sync="search_item_by_barcode"
-                ></table-items>
-
-                <div v-if="place == 'prod' || place == 'cat2'" class="row">
-                    <div class="col-md-12 text-center">
-                        <el-pagination
-                            @current-change="getRecords"
-                            layout="total, prev, pager, next"
-                            :total="pagination.total"
-                            :current-page.sync="pagination.current_page"
-                            :page-size="pagination.per_page"
-                        >
-                        </el-pagination>
+                                                </button>
+                                            </el-popover>
+                                        </el-tooltip>
+                                        <el-tooltip
+                                            v-else
+                                            class="item"
+                                            effect="dark"
+                                            content="Sin lista de precios"
+                                            placement="bottom-end"
+                                        >
+                                            <span class="pos-card-action is-disabled" style="width:100%">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7.5 7.5m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" /><path d="M3 6v5.172a2 2 0 0 0 .586 1.414l7.71 7.71a2.41 2.41 0 0 0 3.408 0l5.592 -5.592a2.41 2.41 0 0 0 0 -3.408l-7.71 -7.71a2 2 0 0 0 -1.414 -.586h-5.172a3 3 0 0 0 -3 3z" /></svg>
+                                            </span>
+                                        </el-tooltip>
+                                    </el-col>
+                                </el-row>
+                            </div>
+                        </section>
                     </div>
+                </template>
+            </div>
+
+            <table-items
+                ref="table_items"
+                @clickAddItem="clickAddItem"
+                @escape="onTableEscape"
+                @clickWarehouseDetail="clickWarehouseDetail"
+                @clickHistorySales="clickHistorySales"
+                @clickHistoryPurchases="clickHistoryPurchases"
+                v-if="place == 'cat3'"
+                :records="items"
+                :typeUser="typeUser"
+                :visibleTagsCustomer="focusClienteSelect"
+                :searchFromBarcode.sync="search_item_by_barcode"
+            ></table-items>
+
+            <div v-if="place == 'prod' || place == 'cat2'" class="row">
+                <div class="col-md-12 text-center">
+                    <el-pagination
+                        @current-change="getRecords"
+                        layout="total, prev, pager, next"
+                        :total="pagination.total"
+                        :current-page.sync="pagination.current_page"
+                        :page-size="pagination.per_page"
+                    >
+                    </el-pagination>
                 </div>
             </div>
-            <aside
-                class="col-lg-4 col-md-6 pos-cart"
-                :class="{ 'pos-m-cart-open': show_cart_mobile }"
-            >
-                <div class="pos-cart__body">
-                    <div v-if="form.items.length === 0" class="pos-cart__empty">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M6 19m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M17 19m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M17 17h-11v-14h-2" /><path d="M6 5l14 1l-1 7h-13" /></svg>
-                        <p class="pos-cart__empty-title">El carrito está vacío</p>
-                        <p class="pos-cart__empty-text">
-                            Busca o selecciona un producto para agregarlo a la venta.
-                        </p>
-                    </div>
-
-                    <ul v-else class="pos-cart__list">
-                        <li
-                            v-for="(item, index) in form.items"
-                            :key="index"
-                            class="pos-cart-item"
-                        >
-                            <div class="pos-cart-item__top">
-                                <p class="pos-cart-item__name" :title="item.item.description">
-                                    {{ item.item.description }}
-                                    <template v-if="item.presentation &&
-                                        item.presentation.hasOwnProperty(
-                                            'description'
-                                        )
-                                     " >
-                                     {{ item.item.presentation
-                                                  .description
-                                      }}
-                                    </template>
-                                </p>
-                                <button
-                                    type="button"
-                                    class="pos-cart-item__remove"
-                                    title="Quitar producto"
-                                    @click="clickDeleteItem(item, index)"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-trash"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M4 7l16 0" /><path d="M10 11l0 6" /><path d="M14 11l0 6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg>
-                                </button>
-                            </div>
-
-                            <div class="pos-cart-item__meta">
-                                <span class="pos-cart-item__unit">{{ item.unit_type_id }}</span>
-                                <span
-                                    v-if="edit_unit_price && edit_price_index === index"
-                                    class="pos-cart-item__price-edit"
-                                >
-                                    <span class="pos-cart-item__currency">
-                                        {{ currency_type.symbol }}
-                                    </span>
-                                    <el-input
-                                        :ref="'row_unit_price_' + index"
-                                        class="pos-cart-item__price-input"
-                                        size="mini"
-                                        inputmode="decimal"
-                                        v-model="edit_price_value"
-                                        @focus="valueInputSelect"
-                                        @click.native="valueInputSelect"
-                                        @blur="applyRowUnitPrice(index)"
-                                        @keyup.enter.native="applyRowUnitPrice(index)"
-                                        @keyup.esc.native="cancelRowUnitPrice"
-                                    ></el-input>
-                                    <span class="pos-cart-item__price-suffix">c/u</span>
-                                </span>
-                                <button
-                                    v-else-if="edit_unit_price"
-                                    type="button"
-                                    class="pos-cart-item__unit-price is-editable"
-                                    title="Editar precio unitario"
-                                    @click="openRowUnitPrice(item, index)"
-                                >
-                                    {{ currency_type.symbol }} {{ rowUnitPrice(item) }} c/u
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" /><path d="M13.5 6.5l4 4" /></svg>
-                                </button>
-                                <span v-else class="pos-cart-item__unit-price">
-                                    {{ currency_type.symbol }} {{ rowUnitPrice(item) }} c/u
-                                </span>
-                                <small
-                                    class="pos-cart-item__sets"
-                                    v-html="nameSets(item.item_id)"
-                                ></small>
-                            </div>
-
-                            <div class="pos-cart-item__bottom">
-                                <div class="pos-qty">
-                                    <button
-                                        type="button"
-                                        class="pos-qty__btn"
-                                        title="Quitar una unidad"
-                                        @click="changeCartQuantity(item, index, -1)"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l14 0" /></svg>
-                                    </button>
-                                    <el-input
-                                        class="pos-qty__input"
-                                        inputmode="decimal"
-                                        v-model="item.item.aux_quantity"
-                                        @focus="valueInputSelect"
-                                        @click.native="valueInputSelect"
-                                        @input="
-                                                clickAddItem(
-                                                    item,
-                                                    index,
-                                                    true,
-                                                )
-                                        "
-                                        @keyup.enter.native="
-                                            keyupEnterQuantity
-                                        "
-                                    ></el-input>
-                                    <button
-                                        type="button"
-                                        class="pos-qty__btn"
-                                        title="Agregar una unidad"
-                                        @click="changeCartQuantity(item, index, 1)"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 5l0 14" /><path d="M5 12l14 0" /></svg>
-                                    </button>
-                                </div>
-
-                                <div class="pos-cart-item__total">
-                                    <template v-if="edit_unit_price">
-                                        <span class="pos-cart-item__total-edit">
-                                            <span class="pos-cart-item__currency">
-                                                {{ currency_type.symbol }}
-                                            </span>
-                                            <el-input
-                                                v-model="item.total"
-                                                size="mini"
-                                                inputmode="decimal"
-                                                @focus="valueInputSelect"
-                                                @click.native="valueInputSelect"
-                                                @blur="changeRowTotal(index)"
-                                                :readonly="!edit_unit_price && !item.item.calculate_quantity"
-                                            ></el-input>
-                                        </span>
-                                    </template>
-                                    <template v-else>
-                                        <span class="pos-cart-item__total-text">
-                                            {{ currency_type.symbol }} {{ rowTotal(item) }}
-                                        </span>
-                                    </template>
-                                </div>
-                            </div>
-                        </li>
-                    </ul>
+        </div>
+        <aside
+            class="col-lg-4 col-md-6 pos-cart"
+            :class="{ 'pos-m-cart-open': show_cart_mobile }"
+        >
+            <div class="pos-cart__body">
+                <div v-if="form.items.length === 0" class="pos-cart__empty">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M6 19m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M17 19m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M17 17h-11v-14h-2" /><path d="M6 5l14 1l-1 7h-13" /></svg>
+                    <p class="pos-cart__empty-title">El carrito está vacío</p>
+                    <p class="pos-cart__empty-text">
+                        Busca o selecciona un producto para agregarlo a la venta.
+                    </p>
                 </div>
 
-                <footer class="pos-cart__footer" v-if="form.items.length > 0">
-                    <div class="pos-cart__footer-top">
-                        <span class="pos-cart__count">
-                            {{ form.items.length }}
-                            {{ form.items.length === 1 ? 'producto' : 'productos' }}
-                        </span>
-                        <button
-                            type="button"
-                            class="pos-m-cart-toggle"
-                            @click="show_cart_mobile = !show_cart_mobile"
-                        >
-                            {{ show_cart_mobile ? 'Ocultar carrito' : 'Ver carrito' }}
-                            <span class="pos-m-cart-toggle__badge">
-                                {{ form.items.length }}
-                            </span>
-                        </button>
-                        <button
-                            type="button"
-                            class="pos-cart__clear"
-                            @click="clickClearCart"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M4 7l16 0" /><path d="M10 11l0 6" /><path d="M14 11l0 6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg>
-                            Vaciar carrito
-                        </button>
-                    </div>
+                <ul v-else class="pos-cart__list">
+                    <li
+                        v-for="(item, index) in form.items"
+                        :key="index"
+                        class="pos-cart-item"
+                    >
+                        <div class="pos-cart-item__top">
+                            <p class="pos-cart-item__name" :title="item.item.description">
+                                {{ item.item.description }}
+                                <template v-if="item.presentation &&
+                                    item.presentation.hasOwnProperty(
+                                        'description'
+                                    )
+                                 " >
+                                 {{ item.item.presentation
+                                              .description
+                                  }}
+                                </template>
+                            </p>
+                            <button
+                                type="button"
+                                class="pos-cart-item__remove"
+                                title="Quitar producto"
+                                @click="clickDeleteItem(item, index)"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-trash"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M4 7l16 0" /><path d="M10 11l0 6" /><path d="M14 11l0 6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg>
+                            </button>
+                        </div>
 
-                    <div class="pos-cart__customer"
-                         :class="{ 'is-required': !form.customer_id }">
-                        <div class="pos-cart__customer-row">
-                            <el-select
-                                ref="select_person"
-                                v-model="form.customer_id"
-                                filterable
-                                remote
-                                reserve-keyword
-                                :remote-method="searchCustomers"
-                                :loading="loading_customers"
-                                clearable
-                                placeholder="Seleccione un cliente"
-                                loading-text="Buscando..."
-                                no-data-text="Sin coincidencias"
-                                popper-class="pos-customer-dropdown"
-                                @visible-change="visibleChangeCustomer"
-                                @change="changeCustomer"
-                                @keyup.native="keyupCustomer"
-                                @keyup.enter.native="keyupEnterCustomer"
-                                @focus="focusClienteSelect = true"
-                                @blur="focusClienteSelect = false"
-                            >
-                                <el-option
-                                    v-for="option in all_customers"
-                                    :key="option.id"
-                                    :label="option.description"
-                                    :value="option.id"
-                                >
-                                    <span class="pos-customer-option__text">
-                                        <span class="pos-customer-option__track">
-                                            <span class="pos-customer-option__chunk">{{ option.description }}</span><span
-                                                class="pos-customer-option__chunk pos-customer-option__chunk--clone"
-                                                aria-hidden="true"
-                                            >{{ option.description }}</span>
-                                        </span>
-                                    </span>
-                                </el-option>
-                            </el-select>
-                            <el-tooltip
-                                class="item"
-                                effect="dark"
-                                content="Registrar nuevo cliente"
-                                placement="top"
-                            >
+                        <div class="pos-cart-item__meta">
+                            <span class="pos-cart-item__unit">{{ item.unit_type_id }}</span>
+                            <span class="pos-cart-item__unit-price">
+                                {{ currency_type.symbol }} {{ rowUnitPrice(item) }} c/u
+                            </span>
+                            <small
+                                class="pos-cart-item__sets"
+                                v-html="nameSets(item.item_id)"
+                            ></small>
+                        </div>
+
+                        <div class="pos-cart-item__bottom">
+                            <div class="pos-qty">
                                 <button
                                     type="button"
-                                    class="pos-cart__icon-btn"
-                                    @click.prevent="showDialogNewPerson = true"
+                                    class="pos-qty__btn"
+                                    title="Quitar una unidad"
+                                    @click="changeCartQuantity(item, index, -1)"
                                 >
-                                    <i class="fas fa-plus"></i>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l14 0" /></svg>
                                 </button>
-                            </el-tooltip>
-                        </div>
-                    </div>
-
-                    <div class="pos-cart__totals">
-                        <div v-if="form.total_exonerated > 0" class="pos-cart__total-row">
-                            <span>Op. exoneradas</span>
-                            <span>{{ currency_type.symbol }} {{ money(form.total_exonerated) }}</span>
-                        </div>
-                        <div v-if="form.total_free > 0" class="pos-cart__total-row">
-                            <span>Op. gratuitas</span>
-                            <span>{{ currency_type.symbol }} {{ money(form.total_free) }}</span>
-                        </div>
-                        <div v-if="form.total_unaffected > 0" class="pos-cart__total-row">
-                            <span>Op. inafectas</span>
-                            <span>{{ currency_type.symbol }} {{ money(form.total_unaffected) }}</span>
-                        </div>
-                        <div v-if="form.total_taxed > 0 && !isNrus" class="pos-cart__total-row">
-                            <span>Op. gravada</span>
-                            <span>{{ currency_type.symbol }} {{ money(form.total_taxed) }}</span>
-                        </div>
-                        <div v-if="form.total_igv > 0 && !isNrus" class="pos-cart__total-row">
-                            <!-- ########## INICIO CAMBIO IGV A IVA -->
-                            <span>IVA</span>
-                            <!-- ######### FIN CAMBIO IGV A IVA -->
-                            <span>{{ currency_type.symbol }} {{ money(form.total_igv) }}</span>
-                        </div>
-                        <template v-if="form.has_retention && !isNrus">
-                            <div
-                                v-if="form.retention && form.retention.amount > 0"
-                                class="pos-cart__total-row"
-                            >
-                                <span>M. retención ({{ configuration.igv_retention_percentage }}%)</span>
-                                <span>{{ currency_type.symbol }} {{ money(form.retention.amount) }}</span>
+                                <el-input
+                                    class="pos-qty__input"
+                                    inputmode="decimal"
+                                    v-model="item.item.aux_quantity"
+                                    @focus="valueInputSelect"
+                                    @click.native="valueInputSelect"
+                                    @input="
+                                            clickAddItem(
+                                                item,
+                                                index,
+                                                true,
+                                            )
+                                    "
+                                    @keyup.enter.native="
+                                        keyupEnterQuantity
+                                    "
+                                ></el-input>
+                                <button
+                                    type="button"
+                                    class="pos-qty__btn"
+                                    title="Agregar una unidad"
+                                    @click="changeCartQuantity(item, index, 1)"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 5l0 14" /><path d="M5 12l14 0" /></svg>
+                                </button>
                             </div>
-                        </template>
-                        <!-- ########## INICIO SIN DETRACCIONES E ISC -->
-                        <!-- ISC e impuesto a bolsas se conservan en datos históricos, sin presentación activa. -->
-                        <!-- ######### FIN SIN DETRACCIONES E ISC -->
 
-                        <div class="pos-cart__total-row pos-cart__total-row--grand">
-                            <span>TOTAL</span>
-                            <span>{{ currency_type.symbol }} {{ money(form.total) }}</span>
+                            <div class="pos-cart-item__total">
+                                <template v-if="edit_unit_price">
+                                    <span class="pos-cart-item__total-edit">
+                                        <span class="pos-cart-item__currency">
+                                            {{ currency_type.symbol }}
+                                        </span>
+                                        <el-input
+                                            v-model="item.total"
+                                            size="mini"
+                                            inputmode="decimal"
+                                            @focus="valueInputSelect"
+                                            @click.native="valueInputSelect"
+                                            @blur="changeRowTotal(index)"
+                                            :readonly="!edit_unit_price && !item.item.calculate_quantity"
+                                        ></el-input>
+                                    </span>
+                                </template>
+                                <template v-else>
+                                    <span class="pos-cart-item__total-text">
+                                        {{ currency_type.symbol }} {{ rowTotal(item) }}
+                                    </span>
+                                </template>
+                            </div>
                         </div>
+                    </li>
+                </ul>
+            </div>
 
-                    </div>
-
+            <footer class="pos-cart__footer" v-if="form.items.length > 0">
+                <div class="pos-cart__footer-top">
+                    <span class="pos-cart__count">
+                        {{ form.items.length }}
+                        {{ form.items.length === 1 ? 'producto' : 'productos' }}
+                    </span>
                     <button
                         type="button"
-                        class="pos-cart__pay"
-                        :class="{ 'is-disabled': !canPay }"
-                        :disabled="!canPay"
-                        :title="!form.customer_id ? 'Seleccione un cliente para cobrar' : ''"
-                        @click="clickPayment"
+                        class="pos-m-cart-toggle"
+                        @click="show_cart_mobile = !show_cart_mobile"
                     >
-                        <span class="pos-cart__pay-label">PAGAR</span>
-                        <span class="pos-cart__pay-amount">
-                            {{ currency_type.symbol }} {{ money(form.total) }}
+                        {{ show_cart_mobile ? 'Ocultar carrito' : 'Ver carrito' }}
+                        <span class="pos-m-cart-toggle__badge">
+                            {{ form.items.length }}
                         </span>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l14 0" /><path d="M13 18l6 -6" /><path d="M13 6l6 6" /></svg>
                     </button>
-                </footer>
-            </aside>
-
-            <person-form
-                :showDialog.sync="showDialogNewPerson"
-                type="customers"
-                :input_person="input_person"
-                :external="true"
-                :document_type_id="form.document_type_id"
-            ></person-form>
-
-            <item-form
-                :showDialog.sync="showDialogNewItem"
-                :external="true"
-            ></item-form>
-        </div>
-        <template v-else>
-            <payment-form
-                :is_payment.sync="is_payment"
-                :form="form"
-                :currency-type-id-active="form.currency_type_id"
-                :currency-type-active="currency_type"
-                :exchange-rate-sale="form.exchange_rate_sale"
-                :customer="customer"
-                :customer_email="customerEmail"
-                :config="config"
-                :companyEnvironment="companyEnvironment"
-                :businessTurns="businessTurns"
-                :is-print="isPrint"
-                :globalDiscountTypeId="configuration.global_discount_type_id"
-                :enabledTipsPos="configuration.enabled_tips_pos"
-                :hidePdfViewDocuments="configuration.hide_pdf_view_documents"
-                :enabledPointSystem="configuration.enabled_point_system"
-                :affectation-igv-types="affectation_igv_types"
-                :percentage-igv="percentage_igv"
-                :configuration="configuration"
-                :typeUser="typeUser"
-                :authUser="config.user"
-            ></payment-form>
-        </template>
-
-        <history-sales-form
-            :showDialog.sync="showDialogHistorySales"
-            :item_id="history_item_id"
-            :customer_id="form.customer_id"
-            :type="false"
-        ></history-sales-form>
-
-        <history-purchases-form
-            :showDialog.sync="showDialogHistoryPurchases"
-            :item_id="history_item_id"
-        ></history-purchases-form>
-
-        <warehouses-detail
-            :showDialog.sync="showWarehousesDetail"
-            :warehouses="warehousesDetail"
-            :unit_type="unittypeDetail"
-            :item_unit_types="[]"
-            :variations="variationsDetail"
-        >
-        </warehouses-detail>
-
-        <variations-modal
-            :showDialog.sync="showDialogVariations"
-            :parent="selectedVariationParent"
-            @select="selectVariationFromModal"
-        >
-        </variations-modal>
-
-        <item-unit-types
-            :showDialog.sync="showDialogItemUnitTypes"
-            :itemUnitTypes="itemUnitTypes"
-        >
-        </item-unit-types>
-
-        <el-dialog
-            title="Configuración de vista"
-            :visible.sync="showDialogPosView"
-            class="pos-view-dialog"
-            width="440px"
-        >
-            <div class="pos-view-dialog__body">
-                <label class="control-label"
-                    >Relación de aspecto de la imagen</label
-                >
-                <el-radio-group
-                    v-model="pos_view_form.pos_image_aspect_ratio"
-                    class="pos-view-dialog__ratios"
-                >
-                    <div
-                        v-for="ratio in pos_image_aspect_ratios"
-                        :key="ratio.value"
-                        class="pos-view-dialog__ratio"
-                        :class="{
-                            'is-active':
-                                pos_view_form.pos_image_aspect_ratio ===
-                                ratio.value
-                        }"
-                        @click="
-                            pos_view_form.pos_image_aspect_ratio = ratio.value
-                        "
+                    <button
+                        type="button"
+                        class="pos-cart__clear"
+                        @click="clickClearCart"
                     >
-                        <el-radio :label="ratio.value">
-                            <span
-                                class="pos-view-dialog__shape"
-                                :class="
-                                    'pos-view-dialog__shape--' +
-                                        ratio.value.replace(':', '-')
-                                "
-                            ></span>
-                            <span class="pos-view-dialog__ratio-text">{{
-                                ratio.label
-                            }}</span>
-                        </el-radio>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M4 7l16 0" /><path d="M10 11l0 6" /><path d="M14 11l0 6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg>
+                        Vaciar carrito
+                    </button>
+                </div>
+
+                <div class="pos-cart__customer"
+                     :class="{ 'is-required': !form.customer_id }">
+                    <div class="pos-cart__customer-row">
+                        <el-select
+                            ref="select_person"
+                            v-model="form.customer_id"
+                            filterable
+                            remote
+                            reserve-keyword
+                            :remote-method="searchCustomers"
+                            :loading="loading_customers"
+                            clearable
+                            placeholder="Seleccione un cliente"
+                            loading-text="Buscando..."
+                            no-data-text="Sin coincidencias"
+                            popper-class="pos-customer-dropdown"
+                            @visible-change="visibleChangeCustomer"
+                            @change="changeCustomer"
+                            @keyup.native="keyupCustomer"
+                            @keyup.enter.native="keyupEnterCustomer"
+                            @focus="focusClienteSelect = true"
+                            @blur="focusClienteSelect = false"
+                        >
+                            <el-option
+                                v-for="option in all_customers"
+                                :key="option.id"
+                                :label="option.description"
+                                :value="option.id"
+                            >
+                                <span class="pos-customer-option__text">
+                                    <span class="pos-customer-option__track">
+                                        <span class="pos-customer-option__chunk">{{ option.description }}</span><span
+                                            class="pos-customer-option__chunk pos-customer-option__chunk--clone"
+                                            aria-hidden="true"
+                                        >{{ option.description }}</span>
+                                    </span>
+                                </span>
+                            </el-option>
+                        </el-select>
+                        <el-tooltip
+                            class="item"
+                            effect="dark"
+                            content="Registrar nuevo cliente"
+                            placement="top"
+                        >
+                            <button
+                                type="button"
+                                class="pos-cart__icon-btn"
+                                @click.prevent="showDialogNewPerson = true"
+                            >
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </el-tooltip>
                     </div>
-                </el-radio-group>
+                </div>
 
-                <label class="control-label pt-3"
-                    >Cómo se acomoda la foto</label
-                >
-                <el-radio-group
-                    v-model="pos_view_form.pos_image_fit"
-                    class="pos-view-dialog__fits"
-                >
-                    <div
-                        v-for="fit in pos_image_fits"
-                        :key="fit.value"
-                        class="pos-view-dialog__fit"
-                        :class="{
-                            'is-active':
-                                pos_view_form.pos_image_fit === fit.value
-                        }"
-                        @click="pos_view_form.pos_image_fit = fit.value"
-                    >
-                        <el-radio :label="fit.value">
-                            <span class="pos-view-dialog__fit-text">
-                                <span class="pos-view-dialog__fit-title">{{
-                                    fit.label
-                                }}</span>
-                                <small class="pos-view-dialog__fit-hint">{{
-                                    fit.hint
-                                }}</small>
-                            </span>
-                        </el-radio>
+                <div class="pos-cart__totals">
+                    <div v-if="form.total_exonerated > 0" class="pos-cart__total-row">
+                        <span>Op. exoneradas</span>
+                        <span>{{ currency_type.symbol }} {{ money(form.total_exonerated) }}</span>
                     </div>
-                </el-radio-group>
+                    <div v-if="form.total_free > 0" class="pos-cart__total-row">
+                        <span>Op. gratuitas</span>
+                        <span>{{ currency_type.symbol }} {{ money(form.total_free) }}</span>
+                    </div>
+                    <div v-if="form.total_unaffected > 0" class="pos-cart__total-row">
+                        <span>Op. inafectas</span>
+                        <span>{{ currency_type.symbol }} {{ money(form.total_unaffected) }}</span>
+                    </div>
+                    <div v-if="form.total_taxed > 0 && !isNrus" class="pos-cart__total-row">
+                        <span>Op. gravada</span>
+                        <span>{{ currency_type.symbol }} {{ money(form.total_taxed) }}</span>
+                    </div>
+                    <div v-if="form.total_igv > 0 && !isNrus" class="pos-cart__total-row">
+                        <!-- ########## INICIO CAMBIO IGV A IVA -->
+                        <span>IVA</span>
+                        <!-- ######### FIN CAMBIO IGV A IVA -->
+                        <span>{{ currency_type.symbol }} {{ money(form.total_igv) }}</span>
+                    </div>
+                    <template v-if="form.has_retention && !isNrus">
+                        <div
+                            v-if="form.retention && form.retention.amount > 0"
+                            class="pos-cart__total-row"
+                        >
+                            <span>M. retención ({{ configuration.igv_retention_percentage }}%)</span>
+                            <span>{{ currency_type.symbol }} {{ money(form.retention.amount) }}</span>
+                        </div>
+                    </template>
+                    <!-- ########## INICIO SIN DETRACCIONES E ISC -->
+                    <!-- ISC e impuesto a bolsas se conservan en datos históricos, sin presentación activa. -->
+                    <!-- ######### FIN SIN DETRACCIONES E ISC -->
 
-                <label class="control-label pt-3"
-                    >Visualización de productos</label
-                >
-                <el-select
-                    v-model="pos_view_form.colums_grid_item"
-                    class="w-100"
-                >
-                    <el-option
-                        v-for="option in pos_grid_options"
-                        :key="option.value"
-                        :label="option.label"
-                        :value="option.value"
-                    ></el-option>
-                </el-select>
-            </div>
+                    <div class="pos-cart__total-row pos-cart__total-row--grand">
+                        <span>TOTAL</span>
+                        <span>{{ currency_type.symbol }} {{ money(form.total) }}</span>
+                    </div>
 
-            <span slot="footer" class="dialog-footer">
-                <el-button @click="showDialogPosView = false"
-                    >Cancelar</el-button
+                </div>
+
+                <button
+                    type="button"
+                    class="pos-cart__pay"
+                    :class="{ 'is-disabled': !canPay }"
+                    :disabled="!canPay"
+                    :title="!form.customer_id ? 'Seleccione un cliente para cobrar' : ''"
+                    @click="clickPayment"
                 >
-                <el-button
-                    type="primary"
-                    :loading="loading_pos_view"
-                    @click="savePosViewSettings"
-                    >Guardar</el-button
-                >
-            </span>
-        </el-dialog>
+                    <span class="pos-cart__pay-label">PAGAR</span>
+                    <span class="pos-cart__pay-amount">
+                        {{ currency_type.symbol }} {{ money(form.total) }}
+                    </span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l14 0" /><path d="M13 18l6 -6" /><path d="M13 6l6 6" /></svg>
+                </button>
+            </footer>
+        </aside>
+
+        <person-form
+            :showDialog.sync="showDialogNewPerson"
+            type="customers"
+            :input_person="input_person"
+            :external="true"
+            :document_type_id="form.document_type_id"
+        ></person-form>
+
+        <item-form
+            :showDialog.sync="showDialogNewItem"
+            :external="true"
+        ></item-form>
     </div>
+    <template v-else>
+        <payment-form
+            :is_payment.sync="is_payment"
+            :form="form"
+            :currency-type-id-active="form.currency_type_id"
+            :currency-type-active="currency_type"
+            :exchange-rate-sale="form.exchange_rate_sale"
+            :customer="customer"
+            :customer_email="customerEmail"
+            :config="config"
+            :companyEnvironment="companyEnvironment"
+            :businessTurns="businessTurns"
+            :is-print="isPrint"
+            :globalDiscountTypeId="configuration.global_discount_type_id"
+            :enabledTipsPos="configuration.enabled_tips_pos"
+            :hidePdfViewDocuments="configuration.hide_pdf_view_documents"
+            :enabledPointSystem="configuration.enabled_point_system"
+            :affectation-igv-types="affectation_igv_types"
+            :percentage-igv="percentage_igv"
+            :configuration="configuration"
+            :typeUser="typeUser"
+            :authUser="config.user"
+        ></payment-form>
+    </template>
+
+    <history-sales-form
+        :showDialog.sync="showDialogHistorySales"
+        :item_id="history_item_id"
+        :customer_id="form.customer_id"
+        :type="false"
+    ></history-sales-form>
+
+    <history-purchases-form
+        :showDialog.sync="showDialogHistoryPurchases"
+        :item_id="history_item_id"
+    ></history-purchases-form>
+
+    <warehouses-detail
+        :showDialog.sync="showWarehousesDetail"
+        :warehouses="warehousesDetail"
+        :unit_type="unittypeDetail"
+        :item_unit_types="[]"
+        :variations="variationsDetail"
+    >
+    </warehouses-detail>
+
+    <variations-modal
+        :showDialog.sync="showDialogVariations"
+        :parent="selectedVariationParent"
+        @select="selectVariationFromModal"
+    >
+    </variations-modal>
+
+    <item-unit-types
+        :showDialog.sync="showDialogItemUnitTypes"
+        :itemUnitTypes="itemUnitTypes"
+    >
+    </item-unit-types>
+
+    <el-dialog
+        title="Configuración de vista"
+        :visible.sync="showDialogPosView"
+        class="pos-view-dialog"
+        width="440px"
+    >
+        <div class="pos-view-dialog__body">
+            <label class="control-label">Relación de aspecto de la imagen</label>
+            <el-radio-group v-model="pos_view_form.pos_image_aspect_ratio" class="pos-view-dialog__ratios">
+                <div
+                    v-for="ratio in pos_image_aspect_ratios"
+                    :key="ratio.value"
+                    class="pos-view-dialog__ratio"
+                    :class="{ 'is-active': pos_view_form.pos_image_aspect_ratio === ratio.value }"
+                    @click="pos_view_form.pos_image_aspect_ratio = ratio.value"
+                >
+                    <el-radio :label="ratio.value">
+                        <span class="pos-view-dialog__shape" :class="'pos-view-dialog__shape--' + ratio.value.replace(':', '-')"></span>
+                        <span class="pos-view-dialog__ratio-text">{{ ratio.label }}</span>
+                    </el-radio>
+                </div>
+            </el-radio-group>
+
+            <label class="control-label pt-3">Cómo se acomoda la foto</label>
+            <el-radio-group v-model="pos_view_form.pos_image_fit" class="pos-view-dialog__fits">
+                <div
+                    v-for="fit in pos_image_fits"
+                    :key="fit.value"
+                    class="pos-view-dialog__fit"
+                    :class="{ 'is-active': pos_view_form.pos_image_fit === fit.value }"
+                    @click="pos_view_form.pos_image_fit = fit.value"
+                >
+                    <el-radio :label="fit.value">
+                        <span class="pos-view-dialog__fit-text">
+                            <span class="pos-view-dialog__fit-title">{{ fit.label }}</span>
+                            <small class="pos-view-dialog__fit-hint">{{ fit.hint }}</small>
+                        </span>
+                    </el-radio>
+                </div>
+            </el-radio-group>
+
+            <label class="control-label pt-3">Visualización de productos</label>
+            <el-select v-model="pos_view_form.colums_grid_item" class="w-100">
+                <el-option v-for="option in pos_grid_options" :key="option.value" :label="option.label" :value="option.value"></el-option>
+            </el-select>
+        </div>
+        <span slot="footer" class="dialog-footer">
+            <el-button @click="showDialogPosView = false">Cancelar</el-button>
+            <el-button type="primary" :loading="loading_pos_view" @click="savePosViewSettings">Guardar</el-button>
+        </span>
+    </el-dialog>
+</div>
 </template>
 <style>
 .el-select-dropdown__item.hover {
@@ -1657,8 +1571,6 @@ export default {
             // Solo celular: despliega la lista del carrito dentro de la
             // barra fija inferior (en escritorio la lista siempre se ve)
             show_cart_mobile: false,
-            edit_price_index: null,
-            edit_price_value: "",
             // Producto cuya cantidad se está actualizando (la validación de
             // stock es una petición) y el que acaba de cambiar, para avisar
             // al usuario sin que tenga que mirar el número fijamente
@@ -1672,18 +1584,8 @@ export default {
                 { value: "1:1", label: "1:1 Cuadrado" }
             ],
             pos_image_fits: [
-                {
-                    value: "contain",
-                    label: "Mostrar la foto completa",
-                    hint:
-                        "Se ve toda la foto, sin recortes. Puede quedar espacio a los lados."
-                },
-                {
-                    value: "cover",
-                    label: "Llenar el recuadro",
-                    hint:
-                        "La foto cubre todo el espacio. Se recortan los bordes que sobran."
-                }
+                { value: "contain", label: "Mostrar la foto completa", hint: "Se ve toda la foto, sin recortes. Puede quedar espacio a los lados." },
+                { value: "cover", label: "Llenar el recuadro", hint: "La foto cubre todo el espacio. Se recortan los bordes que sobran." }
             ],
             pos_grid_options: [
                 { value: 2, label: "Predeterminado" },
@@ -1691,13 +1593,11 @@ export default {
                 { value: 4, label: "Compacto" },
                 { value: 5, label: "Apilado" }
             ],
-            // Lo que se está mostrando ahora en la grilla
             pos_view_settings: {
                 pos_image_aspect_ratio: "1:1",
                 pos_image_fit: "contain",
                 colums_grid_item: 2
             },
-            // Lo que se está editando en el diálogo, hasta que se guarde
             pos_view_form: {
                 pos_image_aspect_ratio: "1:1",
                 pos_image_fit: "contain",
@@ -1814,15 +1714,11 @@ export default {
     },
     computed: {
         posImageAspectClass() {
-            const ratio =
-                this.pos_view_settings.pos_image_aspect_ratio || "1:1";
+            const ratio = this.pos_view_settings.pos_image_aspect_ratio || "1:1";
             return "pos-card-media--" + ratio.replace(":", "-");
         },
         posImageFitClass() {
-            return (
-                "pos-card-media--fit-" +
-                (this.pos_view_settings.pos_image_fit || "contain")
-            );
+            return "pos-card-media--fit-" + (this.pos_view_settings.pos_image_fit || "contain");
         },
         layout_mode() {
             const cols = parseInt(this.pos_view_settings.colums_grid_item, 10);
@@ -2039,15 +1935,10 @@ export default {
         },
         loadPosViewSettings() {
             const cfg = this.configuration || {};
-            const ratio = this.pos_image_aspect_ratios.some(
-                r => r.value === cfg.pos_image_aspect_ratio
-            )
+            const ratio = this.pos_image_aspect_ratios.some(r => r.value === cfg.pos_image_aspect_ratio)
                 ? cfg.pos_image_aspect_ratio
                 : "1:1";
-
-            const fit = this.pos_image_fits.some(
-                f => f.value === cfg.pos_image_fit
-            )
+            const fit = this.pos_image_fits.some(f => f.value === cfg.pos_image_fit)
                 ? cfg.pos_image_fit
                 : "contain";
 
@@ -2072,8 +1963,7 @@ export default {
                     }
 
                     this.pos_view_settings = {
-                        pos_image_aspect_ratio:
-                            response.data.data.pos_image_aspect_ratio,
+                        pos_image_aspect_ratio: response.data.data.pos_image_aspect_ratio,
                         pos_image_fit: response.data.data.pos_image_fit,
                         colums_grid_item: response.data.data.colums_grid_item
                     };
@@ -2084,16 +1974,10 @@ export default {
                     if (error.response && error.response.status === 422) {
                         const errors = error.response.data.errors || {};
                         const first = Object.keys(errors)[0];
-                        return this.$message.error(
-                            first
-                                ? errors[first][0]
-                                : "No se pudo guardar la configuración de vista"
-                        );
+                        return this.$message.error(first ? errors[first][0] : "No se pudo guardar la configuración de vista");
                     }
 
-                    this.$message.error(
-                        "No se pudo guardar la configuración de vista"
-                    );
+                    this.$message.error("No se pudo guardar la configuración de vista");
                 })
                 .finally(() => {
                     this.loading_pos_view = false;
@@ -2813,11 +2697,11 @@ export default {
                 total_unaffected: 0,
                 total_exonerated: 0,
                 total_igv: 0,
-                total_base_isc: 0,
-                total_isc: 0,
+
+
                 total_base_other_taxes: 0,
                 total_other_taxes: 0,
-                total_plastic_bag_taxes: 0,
+
                 total_taxes: 0,
                 total_value: 0,
                 total: 0,
@@ -2890,10 +2774,10 @@ export default {
                 item: {},
                 affectation_igv_type_id: null,
                 affectation_igv_type: {},
-                has_isc: false,
-                system_isc_type_id: null,
+
+
                 calculate_quantity: false,
-                percentage_isc: 0,
+
                 suggested_price: 0,
                 quantity: 1,
                 aux_quantity: 1,
@@ -2903,7 +2787,7 @@ export default {
                 discounts: [],
                 attributes: [],
                 has_igv: false,
-                has_plastic_bag_taxes: false
+
             };
         },
         async clickPayment() {
@@ -3126,14 +3010,12 @@ export default {
 
                 exist_item.item.unit_price = unit_price;
 
-                exist_item.has_plastic_bag_taxes =
-                    exist_item.item.has_plastic_bag_taxes;
+
 
                 //asignar variables isc
-                exist_item.has_isc = exist_item.item.has_isc;
-                exist_item.percentage_isc = exist_item.item.percentage_isc;
-                exist_item.system_isc_type_id =
-                    exist_item.item.system_isc_type_id;
+
+
+
 
                 this.row = calculateRowItem(
                     exist_item,
@@ -3165,7 +3047,7 @@ export default {
 
                 this.form_item.unit_price_value = this.form_item.item.sale_unit_price;
                 this.form_item.has_igv = this.form_item.item.has_igv;
-                this.form_item.has_plastic_bag_taxes = this.form_item.item.has_plastic_bag_taxes;
+
                 this.form_item.affectation_igv_type_id = this.form_item.item.sale_affectation_igv_type_id;
                 this.form_item.quantity = 1;
                 this.form_item.aux_quantity = 1;
@@ -3198,9 +3080,9 @@ export default {
                 );
 
                 //asignar variables isc
-                this.form_item.has_isc = this.form_item.item.has_isc;
-                this.form_item.percentage_isc = this.form_item.item.percentage_isc;
-                this.form_item.system_isc_type_id = this.form_item.item.system_isc_type_id;
+
+
+
 
                 this.row = calculateRowItem(
                     this.form_item,
@@ -3363,100 +3245,6 @@ export default {
             return this.money(row.total);
         },
         /**
-         * Abre el input para editar el precio unitario de una fila del carrito.
-         */
-        openRowUnitPrice(item, index) {
-            if (!this.edit_unit_price) return;
-
-            this.edit_price_index = index;
-            this.edit_price_value = this.rowUnitPrice(item);
-
-            this.$nextTick(() => {
-                let input = this.$refs["row_unit_price_" + index];
-                if (Array.isArray(input)) input = input[0];
-                if (!input) return;
-
-                if (typeof input.focus === "function") input.focus();
-                if (typeof input.select === "function") input.select();
-            });
-        },
-        /**
-         * Cierra el input del precio unitario sin aplicar el cambio.
-         */
-        cancelRowUnitPrice() {
-            this.edit_price_index = null;
-            this.edit_price_value = "";
-        },
-        /**
-         * Aplica lo tecleado en el precio unitario (Enter o al salir del input).
-         */
-        applyRowUnitPrice(index) {
-            // El blur que llega después de Enter/Escape ya no tiene nada que aplicar
-            if (this.edit_price_index !== index) return;
-
-            const value = this.edit_price_value;
-            this.cancelRowUnitPrice();
-            this.changeRowUnitPrice(index, value);
-        },
-        changeRowUnitPrice(index, value) {
-            const item = this.form.items[index];
-            if (!item) return;
-
-            const unit_price = parseFloat(value);
-            const current_unit_price = parseFloat(item.unit_price);
-
-            if (isNaN(unit_price) || unit_price <= 0) {
-                return this.$message.error(
-                    "El precio unitario debe ser mayor a 0"
-                );
-            }
-
-            if (
-                this.config.condition_sale_purchase_price_to_item &&
-                unit_price < parseFloat(item.purchase_unit_price)
-            ) {
-                return this.$message.error(
-                    "El Precio Unitario debe ser mayor o igual al costo de compra"
-                );
-            }
-
-            if (
-                !isNaN(current_unit_price) &&
-                _.round(current_unit_price, 4) === _.round(unit_price, 4)
-            ) {
-                return;
-            }
-
-            item.item.unit_price = unit_price;
-            item.item.sale_unit_price = item.item.has_igv
-                ? unit_price
-                : unit_price / (1 + this.percentage_igv);
-
-            if (item.item.calculate_quantity) {
-                const total = parseFloat(item.total);
-                const quantity = isNaN(total)
-                    ? 0
-                    : _.round(total / unit_price, 4);
-
-                item.quantity = quantity;
-                item.item.aux_quantity = quantity;
-            }
-
-            this.row = calculateRowItem(
-                item,
-                this.form.currency_type_id,
-                1,
-                this.percentage_igv
-            );
-            this.row["unit_type_id"] = item.unit_type_id;
-            this.row.presentation = item.presentation;
-
-            this.$set(this.form.items, index, this.row);
-
-            this.calculateTotal();
-            this.setFormPosLocalStorage();
-        },
-        /**
          * Aumenta/disminuye en una unidad la cantidad de una fila del carrito.
          */
         changeCartQuantity(item, index, delta) {
@@ -3507,9 +3295,9 @@ export default {
             let total_igv = 0;
             let total_value = 0;
             let total = 0;
-            let total_plastic_bag_taxes = 0;
-            let total_base_isc = 0;
-            let total_isc = 0;
+
+
+
             let total_igv_free = 0;
 
             this.form.items.forEach(row => {
@@ -3570,9 +3358,7 @@ export default {
                         : parseFloat(row.total_value);
                 }
 
-                total_plastic_bag_taxes += parseFloat(
-                    row.total_plastic_bag_taxes
-                );
+
 
                 if (
                     ["11", "12", "13", "14", "15", "16"].includes(
@@ -3584,7 +3370,7 @@ export default {
                     row.total_taxes =
                         row.total_value -
                         total_value_partial +
-                        parseFloat(row.total_plastic_bag_taxes); //sumar icbper al total tributos
+                        parseFloat(0); //sumar icbper al total tributos
 
                     row.total_igv =
                         total_value_partial * (row.percentage_igv / 100);
@@ -3596,13 +3382,13 @@ export default {
                 }
 
                 // isc
-                total_isc += parseFloat(row.total_isc);
-                total_base_isc += parseFloat(row.total_base_isc);
+
+
             });
 
             // isc
-            this.form.total_base_isc = _.round(total_base_isc, 2);
-            this.form.total_isc = _.round(total_isc, 2);
+
+
 
             this.form.total_igv_free = _.round(total_igv_free, 2);
 
@@ -3622,15 +3408,11 @@ export default {
 
             //impuestos (isc + igv + icbper)
             this.form.total_taxes = _.round(
-                total_igv + total_isc + total_plastic_bag_taxes,
+                total_igv,
                 2
             );
-            // this.form.total_taxes = _.round(total_igv + total_isc, 2);
 
-            this.form.total_plastic_bag_taxes = _.round(
-                total_plastic_bag_taxes,
-                2
-            );
+
 
             this.form.total = _.round(total, 2);
 
@@ -3638,7 +3420,6 @@ export default {
                 this.form.total_taxed = this.recalculateDecimalTotalTaxed(this.form.total, this.form.total_igv);
             }
 
-            // this.form.total = _.round(total + this.form.total_plastic_bag_taxes, 2)
 
             this.form.subtotal = this.form.total;
 
@@ -3648,8 +3429,8 @@ export default {
         },
         verifyRecalculateTotalTaxed() {
             const keysToCheck = [
-                'total_isc', 'total_igv_free', 'total_discount', 'total_exportation',
-                'total_exonerated', 'total_unaffected', 'total_free', 'total_plastic_bag_taxes'
+                 'total_igv_free', 'total_discount', 'total_exportation',
+                'total_exonerated', 'total_unaffected', 'total_free',
             ];
             return !keysToCheck.some(key => this.form[key] > 0);
         },

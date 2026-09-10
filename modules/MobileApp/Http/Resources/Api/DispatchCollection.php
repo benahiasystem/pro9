@@ -45,13 +45,8 @@ class DispatchCollection extends ResourceCollection
                 'sender_number'               => $dispatch->sender_data['number'] ?? null,
                 'state_type_id'               => $dispatch->state_type_id,
                 'state_type_description'      => optional($dispatch->state_type)->description,
-                'has_xml'                     => (bool) $dispatch->has_xml,
                 'has_pdf'                     => (bool) $dispatch->has_pdf,
-                'has_cdr'                     => (bool) $dispatch->has_cdr,
                 'download_external_pdf'       => $dispatch->download_external_pdf,
-                'download_external_xml'       => $dispatch->download_external_xml,
-                'download_external_cdr'       => $dispatch->download_external_cdr,
-                'sunat_error_response'        => $dispatch->sunat_error_response,
                 'created_at'                  => optional($dispatch->created_at)->format('Y-m-d H:i:s'),
             ];
         });

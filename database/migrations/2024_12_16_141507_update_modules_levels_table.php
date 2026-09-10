@@ -17,14 +17,12 @@ class UpdateModulesLevelsTable extends Migration
 
         DB::table('module_levels')->insert([
             ['id'=>'90','value' => 'dispatches', 'description' => 'Orden de entrega', 'module_id' => 51],
-            ['id'=>'91','value' => 'dispatch_carrier', 'description' => 'Orden de entrega del transportista', 'module_id' => 51],
             ['id'=>'92','value' => 'dispatchers', 'description' => 'Transportistas', 'module_id' => 51],
             ['id'=>'93','value' => 'drivers', 'description' => 'Conductores', 'module_id' => 51],
             ['id'=>'94','value' => 'transports', 'description' => 'Vehículos', 'module_id' => 51],
         ]);
         DB::table('module_levels')->where('value', 'new_document')->update(['module_id' => 1]);
         DB::table('module_levels')->where('value', 'list_document')->update(['module_id' => 1]);
-        DB::table('module_levels')->where('value', 'document_not_sent')->update(['module_id' => 52]);
         DB::table('module_levels')->where('value', 'document_contingengy')->update(['module_id' => 3]);
         DB::table('module_levels')->where('value', 'catalogs')->update(['module_id' => 1]);
         DB::table('module_levels')->where('value', 'summary_voided')->update(['module_id' => 52]);
@@ -35,7 +33,6 @@ class UpdateModulesLevelsTable extends Migration
         DB::table('module_levels')->where('value', 'contracts')->update(['module_id' => 50]);
         DB::table('module_levels')->where('value', 'order-note')->update(['module_id' => 50]);
         DB::table('module_levels')->where('value', 'technical-service')->update(['module_id' => 50]);
-        DB::table('module_levels')->where('value', 'regularize_shipping')->update(['module_id' => 52]);
         DB::table('module_levels')->where('value', 'pos')->update(['module_id' => 1]);
         DB::table('module_levels')->where('value', 'cash')->update(['module_id' => 12]);
         DB::table('module_levels')->where('value', 'ecommerce')->update(['module_id' => 10]);
@@ -106,7 +103,6 @@ class UpdateModulesLevelsTable extends Migration
         DB::table('module_levels')->where('value', 'suscription_app_plans')->update(['module_id' => 21]);
         DB::table('module_levels')->where('value', 'pos_garage')->update(['module_id' => 1]);
         DB::table('module_levels')->where('value', 'dispatches')->update(['module_id' => 51]);
-        DB::table('module_levels')->where('value', 'dispatch_carrier')->update(['module_id' => 51]);
         DB::table('module_levels')->where('value', 'dispatchers')->update(['module_id' => 51]);
         DB::table('module_levels')->where('value', 'drivers')->update(['module_id' => 51]);
         DB::table('module_levels')->where('value', 'transports')->update(['module_id' => 51]);
@@ -135,7 +131,6 @@ class UpdateModulesLevelsTable extends Migration
 
         DB::table('module_levels')->where('value', 'new_document')->update(['module_id' => 1]);
         DB::table('module_levels')->where('value', 'list_document')->update(['module_id' => 1]);
-        DB::table('module_levels')->where('value', 'document_not_sent')->update(['module_id' => 1]);
         DB::table('module_levels')->where('value', 'document_contingengy')->update(['module_id' => 1]);
         DB::table('module_levels')->where('value', 'catalogs')->update(['module_id' => 1]);
         DB::table('module_levels')->where('value', 'summary_voided')->update(['module_id' => 1]);
@@ -146,7 +141,6 @@ class UpdateModulesLevelsTable extends Migration
         DB::table('module_levels')->where('value', 'contracts')->update(['module_id' => 1]);
         DB::table('module_levels')->where('value', 'order-note')->update(['module_id' => 1]);
         DB::table('module_levels')->where('value', 'technical-service')->update(['module_id' => 1]);
-        DB::table('module_levels')->where('value', 'regularize_shipping')->update(['module_id' => 1]);
         DB::table('module_levels')->where('value', 'pos')->update(['module_id' => 1]);
         DB::table('module_levels')->where('value', 'cash')->update(['module_id' => 12]);
         DB::table('module_levels')->where('value', 'ecommerce')->update(['module_id' => 10]);

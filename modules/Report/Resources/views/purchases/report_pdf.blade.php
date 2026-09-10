@@ -122,9 +122,7 @@
                                 <th class="" >T.Gratuito</th> -->
                                 <th>Moneda</th>
                                 {{-- ########## INICIO SIN DETRACCIONES E ISC --}}
-                                @if(\App\Services\LocalFiscalDocumentPolicy::showIsc())
-                                    <th>Total ISC</th>
-                                @endif
+
                                 {{-- ######### FIN SIN DETRACCIONES E ISC --}}
                                 <th>Total Gravado</th>
                                 {{-- ########## INICIO CAMBIO IGV A IVA --}}
@@ -159,7 +157,6 @@
                                     @if ($apply_conversion_to_pen && $value->isCurrencyTypeUsd())
 
                                         <td class="celda">{{$value->currency_type_id}} (Conv.)</td>
-                                        <td class="celda">{{ $value->state_type_id == '11' ? 0 : $value->getConvertTotalIscToPen() }}</td>
                                         <td class="celda">{{ $value->state_type_id == '11' ? 0 : $value->getConvertTotalTaxedToPen() }}</td>
                                         <td class="celda">{{ $value->state_type_id == '11' ? 0 : $value->getConvertTotalIgvToPen() }}</td>
                                         <td class="celda">{{ $value->state_type_id == '11' ? 0 : $value->getConvertTotalToPen() }}</td>
@@ -167,9 +164,7 @@
                                     @else
 
                                         <td class="celda">{{$value->currency_type_id}}</td>
-                                        @if(\App\Services\LocalFiscalDocumentPolicy::showIsc())
-                                            <td class="celda">{{ $value->state_type_id == '11' ? 0 : $value->total_isc}}</td>
-                                        @endif
+
                                         <td class="celda">{{ $value->state_type_id == '11' ? 0 : $value->total_taxed}}</td>
                                         <td class="celda">{{ $value->state_type_id == '11' ? 0 : $value->total_igv}}</td>
                                         <td class="celda">{{ $value->state_type_id == '11' ? 0 : $value->total}}</td>

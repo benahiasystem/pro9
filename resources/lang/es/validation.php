@@ -290,11 +290,9 @@ return [
 		'dispatches_id'                            => 'órdenes de entrega',
 		'hostname_id'                              => 'cliente',
 		'license_plate'           => 'N° placa',
-		'system_isc_type_id'           => 'tipo de sistema ISC',
 		'has_isc'           => 'incluye ISC',
 		'percentage_isc'           => 'porcentaje ISC',
 
-		'purchase_system_isc_type_id'           => 'tipo de sistema ISC',
 		'purchase_has_isc'           => 'incluye ISC',
 		'purchase_percentage_isc'           => 'porcentaje ISC',
 

@@ -48,7 +48,12 @@ class MassiveInvoiceService
             }
 
             // Procesamiento de datos
-            $tipoComprobante = strtolower($row[3]) === 'boleta' ? '03' : '01';
+            // ######## INICIO FACTURAS SIN CONVERSIÓN DE TIPOS ########
+            if (strtolower(trim((string) $row[3])) !== 'factura') {
+                throw new \Exception('El tipo de comprobante debe ser Factura.');
+            }
+            $tipoComprobante = '01';
+            // ######## FIN FACTURAS SIN CONVERSIÓN DE TIPOS ########
             $tipoAfectacion = $this->getTipoAfectacion($row[19] ?? '10');
             $cantidad = floatval($row[17] ?? 1);
             $precio = floatval($row[20] ?? 0);

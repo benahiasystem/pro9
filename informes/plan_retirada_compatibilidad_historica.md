@@ -1,6 +1,6 @@
 # Plan de retirada de compatibilidad histórica de otros módulos
 
-Fecha: 10 de septiembre de 2026. Estado: propuesta, **no implementada**. Complementa la consolidación fiscal SOAP/PFX documentada en `adaptacion_modalidad_emision_fiscal.md`.
+Fecha: 10 de septiembre de 2026. Estado: **implementación en curso, no aceptada todavía**, en `codex/retirar-compatibilidad-historica`. Complementa la consolidación fiscal SOAP/PFX documentada en `adaptacion_modalidad_emision_fiscal.md`. Consultar los resultados parciales y pendientes en [avance_retirada_compatibilidad_historica.md](avance_retirada_compatibilidad_historica.md).
 
 ## Objetivo y límites
 
@@ -48,4 +48,4 @@ La lista de archivos a borrar se cerrará después de seguir sus consumidores. U
 
 ## Entrega
 
-Entregar cambios revisables sin commits, inventario de piezas retiradas/conservadas, resultados de pruebas y limitaciones. No desarrollar integraciones con proveedores fiscales ni cambiar bases reales. Esta propuesta no autoriza por sí sola la ejecución de la segunda fase.
+Entregar cambios revisables sin commits, inventario de piezas retiradas/conservadas, resultados de pruebas y limitaciones. No desarrollar integraciones con proveedores fiscales ni cambiar bases reales. La ejecución fue autorizada posteriormente por el usuario mediante la petición de crear una rama desde develop e implementar este plan, documentando los cambios en las skills correspondientes.

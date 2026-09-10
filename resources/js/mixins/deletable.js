@@ -196,42 +196,8 @@ export const deletable = {
                 });
             })
         },
-        forceSendBySummary(url, params) 
-        {
-            return new Promise((resolve) => {
-                // ########## INICIO CAMBIO NELSON: RETIRO PALABRA SUNAT
-                this.$confirm('Debe validar que la boleta no se encuentre registrada, ya que pudo enviarse de forma individual previamente.', '¿Desea enviar la boleta por resumen?', {
-                // ######### FIN CAMBIO NELSON: RETIRO PALABRA SUNAT
-                    confirmButtonText: 'Modificar',
-                    cancelButtonText: 'Cancelar',
-                    type: 'warning'
-                }).then(() => {
 
-                    this.$http.post(url, params)
-                        .then(res => {
-                            if (res.data.success) 
-                            {
-                                this.$message.success(res.data.message)
-                                resolve()
-                            }
-                            else
-                            {
-                                this.$message.error(res.data.message)
-                            }
-                        })
-                        .catch(error => {
-                            if (error.response.status === 500) {
-                                this.$message.error('Error desconocido');
-                            } else {
-                                console.log(error.response.data.message)
-                            }
-                        })
-                }).catch(error => {
-                    console.log(error)
-                });
-            })
-        },
-        changeActive(url, params) 
+        changeActive(url, params)
         {
             const title = params.active ? '¿Desea inhabilitar el registro?' : '¿Desea habilitar el registro?'
             const action = params.active ? 'Inhabilitar' : 'Habilitar'

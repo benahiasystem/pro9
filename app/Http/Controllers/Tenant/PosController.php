@@ -109,10 +109,10 @@ class PosController extends Controller
 
             $full_description = ($row->internal_id) ? $row->internal_id . ' - ' . $row->description : $row->description;
 
-            if($row->warehouse_prices->count() > 0) 
+            if($row->warehouse_prices->count() > 0)
             {
                 $sale_unit_price = $row->warehouse_prices->first()->price;
-            } 
+            }
             else
             {
                 $sale_unit_price = $row->sale_unit_price;
@@ -156,12 +156,6 @@ class PosController extends Controller
                 // 'unit_type' => $row->item_unit_types,
                 'category' => ($row->category) ? $row->category->name : null,
                 'brand' => ($row->brand) ? $row->brand->name : null,
-                'has_plastic_bag_taxes' => (bool)$row->has_plastic_bag_taxes,
-                'amount_plastic_bag_taxes' => $row->amount_plastic_bag_taxes,
-
-                'has_isc' => (bool)$row->has_isc,
-                'system_isc_type_id' => $row->system_isc_type_id,
-                'percentage_isc' => $row->percentage_isc,
                 'search_item_by_barcode_presentation' => $search_item_by_barcode_presentation,
 
                 'exchange_points' => $row->exchange_points,
@@ -402,12 +396,6 @@ class PosController extends Controller
                         'unit_type' => $row->item_unit_types,
                         'category' => ($row->category) ? $row->category->name : null,
                         'brand' => ($row->brand) ? $row->brand->name : null,
-                        'has_plastic_bag_taxes' => (bool)$row->has_plastic_bag_taxes,
-                        'amount_plastic_bag_taxes' => $row->amount_plastic_bag_taxes,
-
-                        'has_isc' => (bool)$row->has_isc,
-                        'system_isc_type_id' => $row->system_isc_type_id,
-                        'percentage_isc' => $row->percentage_isc,
 
                         'exchange_points' => $row->exchange_points,
                         'quantity_of_points' => $row->quantity_of_points,
@@ -661,7 +649,7 @@ class PosController extends Controller
                 });
             });
         }
-        
+
         $item->whereIsActive();
     }
 

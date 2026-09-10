@@ -25,7 +25,6 @@ import TenantConfigurationsFormPurchases from './views/tenant/configurations/par
 import TenantConfigurationsVisual from './views/tenant/configurations/visual.vue'
 import TenantConfigurationsPdf from './views/tenant/configurations/pdf_templates.vue'
 import TenantConfigurationsTicketPdf from './views/tenant/configurations/pdf_ticket_templates.vue'
-import TenantConfigurationsSaleNotes from './views/tenant/configurations/sale_notes.vue'
 import TenantConfigurationsPdfGuide from './views/tenant/configurations/pdf_guide_templates.vue'
 import TenantConfigurationsPreprintedPdf from './views/tenant/configurations/pdf_preprinted_templates.vue'
 import TenantDialogHeaderMenu from './views/tenant/configurations/partials/dialog_header_menu.vue'
@@ -46,7 +45,6 @@ import TenantPurchaseSettlementsIndex from './views/tenant/purchase-settlements/
 import TenantPurchaseSettlementsForm from './views/tenant/purchase-settlements/form.vue'
 
 import TenantDocumentsItemsList from './views/tenant/documents/partials/item.vue'
-import TenantSummariesIndex from './views/tenant/summaries/index.vue'
 import TenantVoidedIndex from './views/tenant/voided/index.vue'
 import TenantSearchIndex from './views/tenant/search/index.vue'
 import TenantOptionsForm from './views/tenant/options/form.vue'
@@ -381,7 +379,6 @@ import TenantSystemActivityLogsGeneralsIndex from '@viewsModuleLevelAccess/syste
 import TenantSystemActivityLogsTransactionsIndex from '@viewsModuleLevelAccess/system_activity_logs/transactions/index.vue'
 import TenantRememberChangePassword from './views/tenant/users/partials/remember_change_password.vue'
 
-import TenantSireIndex from './views/tenant/sire/index.vue'
 import TenantQrApi from '@viewsModuleQrApi/ConfigurationQrApi.vue'
 import TenantReportPendingAccountCommissionsIndex from '@viewsModuleReport/pending-account-commissions/index.vue'
 import TenantReportSaleByBrand from '../../modules/Report/Resources/assets/js/views/sales_by_brand/index.vue'
@@ -403,9 +400,6 @@ import TenantClaimsBookForm from '@viewsModuleClaimsBook/views/claim_form.vue'
 
 //componente agregado para issue #93 añadir icono cuando no hay datos
 Vue.component('empty-state', EmptyState);
-// Sire
-Vue.component('tenant-sire-index', TenantSireIndex);
-
 // QR Api
 Vue.component('tenant-qr-api', TenantQrApi);
 
@@ -434,7 +428,6 @@ Vue.component('tenant-configurations-form-purchases', TenantConfigurationsFormPu
 Vue.component('tenant-configurations-visual', TenantConfigurationsVisual)
 Vue.component('tenant-configurations-pdf', TenantConfigurationsPdf)
 Vue.component('tenant-configurations-ticket-pdf', TenantConfigurationsTicketPdf)
-Vue.component('tenant-configurations-sale-notes', TenantConfigurationsSaleNotes)
 Vue.component('tenant-configurations-pdf-guide', TenantConfigurationsPdfGuide)
 Vue.component('tenant-configurations-preprinted-pdf', TenantConfigurationsPreprintedPdf)
 Vue.component('tenant-configurations-custom-fields', TenantcustomFieldsIndex)
@@ -458,7 +451,6 @@ Vue.component('tenant-purchase-settlements-index', TenantPurchaseSettlementsInde
 Vue.component('tenant-purchase-settlements-form', TenantPurchaseSettlementsForm)
 
 Vue.component('tenant-documents-items-list', TenantDocumentsItemsList)
-Vue.component('tenant-summaries-index', TenantSummariesIndex)
 Vue.component('tenant-voided-index', TenantVoidedIndex)
 Vue.component('tenant-search-index', TenantSearchIndex)
 Vue.component('tenant-options-form', TenantOptionsForm)

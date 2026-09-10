@@ -50,8 +50,7 @@ class DefaultWidgetSources
             static::finanzas(),
             static::compras(),
             static::clientes(),
-            static::inventario(),
-            static::sunat()
+            static::inventario()
         );
     }
 
@@ -474,33 +473,5 @@ class DefaultWidgetSources
         ];
     }
 
-    private static function sunat()
-    {
-        $module = ['module' => 'sunat', 'module_label' => 'SUNAT', 'icon' => 'ti-building-bank'];
-
-        return [
-            new CallbackWidgetSource(array_merge($module, [
-                'key' => 'sunat.estado_cpe',
-                'label' => 'Estado SUNAT',
-                'description' => 'Comprobantes por estado',
-                'unit' => WidgetDataset::UNIT_COUNT,
-                'focus' => 'categorias',
-                'default_type' => 'custom',
-                'custom_component' => 'widget-sunat-status',
-            ]), function (WidgetContext $ctx) {
-                $data = $ctx->sunatStatus();
-
-                return WidgetDataset::make(WidgetDataset::UNIT_COUNT)
-                    ->breakdown(
-                        ['Aceptados', 'Pendientes', 'Rechazados'],
-                        [(int) $data['accepted'], (int) $data['pending'], (int) $data['rejected']]
-                    )
-                    ->totals((int) $data['accepted'] + (int) $data['pending'] + (int) $data['rejected'])
-                    ->meta($data);
-            }, function () {
-                return true;
-            }),
-        ];
-    }
 }
 // ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

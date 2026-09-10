@@ -1,22 +1,19 @@
 <?php
-// ######### INICIO CAMBIO NELSON #########
-
-/**
- * Estructura efectiva clonada desde `tenancy_bbc`.
- * Tabla: `person_address`.
- *
- * Inventario de columnas:
- * - `id`: int(10) unsigned; NOT NULL; auto_increment — Sin comentario definido en el esquema fuente.
- * - `person_id`: int(10) unsigned; NOT NULL — Sin comentario definido en el esquema fuente.
- * - `department_id`: char(2); NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
- * - `province_id`: char(4); NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
- * - `district_id`: char(6); NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
- * - `address`: varchar(255); NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
- */
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 
+// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
+/**
+ * Estructura inicial de `person_address` para instalaciones nuevas.
+ * Inventario de columnas:
+ * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
+ * - `person_id` int(10) unsigned NOT NULL
+ * - `department_id` char(2) COLLATE utf8mb4_unicode_ci DEFAULT NULL
+ * - `province_id` char(4) COLLATE utf8mb4_unicode_ci DEFAULT NULL
+ * - `district_id` char(6) COLLATE utf8mb4_unicode_ci DEFAULT NULL
+ * - `address` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
+ */
 return new class extends Migration
 {
     public function up(): void
@@ -43,4 +40,4 @@ SQL);
         DB::unprepared('DROP TABLE IF EXISTS `person_address`');
     }
 };
-// ######### FIN CAMBIO NELSON #########
+// ######## FIN ESQUEMA INICIAL VENEZUELA ########

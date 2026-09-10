@@ -8,7 +8,6 @@
     use App\Models\Tenant\Catalogs\AffectationIgvType;
     use App\Models\Tenant\Catalogs\CurrencyType;
     use App\Models\Tenant\Catalogs\PriceType;
-    use App\Models\Tenant\Catalogs\SystemIscType;
     use App\Models\Tenant\Item;
     use App\Models\Tenant\ModelTenant;
     use Carbon\Carbon;
@@ -31,10 +30,6 @@
      * @property float|null                                              $total_base_igv
      * @property float|null                                              $percentage_igv
      * @property float|null                                              $total_igv
-     * @property string|null                                             $system_isc_type_id
-     * @property float|null                                              $total_base_isc
-     * @property float|null                                              $percentage_isc
-     * @property float|null                                              $total_isc
      * @property float|null                                              $total_base_other_taxes
      * @property float|null                                              $percentage_other_taxes
      * @property float|null                                              $total_other_taxes
@@ -59,7 +54,6 @@
      * @mixin \Eloquent
      * @property-read AffectationIgvType                                 $affectation_igv_type
      * @property-read PriceType                                          $price_type
-     * @property-read SystemIscType                                      $system_isc_type
      */
     class ItemRelSuscriptionPlan extends ModelTenant
     {
@@ -73,9 +67,6 @@
             'total_base_igv' => 'float',
             'percentage_igv' => 'float',
             'total_igv' => 'float',
-            'total_base_isc' => 'float',
-            'percentage_isc' => 'float',
-            'total_isc' => 'float',
             'total_base_other_taxes' => 'float',
             'percentage_other_taxes' => 'float',
             'total_other_taxes' => 'float',
@@ -98,10 +89,6 @@
             'total_base_igv',
             'percentage_igv',
             'total_igv',
-            'system_isc_type_id',
-            'total_base_isc',
-            'percentage_isc',
-            'total_isc',
             'total_base_other_taxes',
             'percentage_other_taxes',
             'total_other_taxes',
@@ -199,14 +186,6 @@
         public function affectation_igv_type()
         {
             return $this->belongsTo(AffectationIgvType::class, 'affectation_igv_type_id');
-        }
-
-        /**
-         * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
-         */
-        public function system_isc_type()
-        {
-            return $this->belongsTo(SystemIscType::class, 'system_isc_type_id');
         }
 
         /**
@@ -336,82 +315,6 @@
         public function setTotalIgv(?float $total_igv): ItemRelSuscriptionPlan
         {
             $this->total_igv = $total_igv;
-            return $this;
-        }
-
-        /**
-         * @return string|null
-         */
-        public function getSystemIscTypeId(): ?string
-        {
-            return $this->system_isc_type_id;
-        }
-
-        /**
-         * @param string|null $system_isc_type_id
-         *
-         * @return ItemRelSuscriptionPlan
-         */
-        public function setSystemIscTypeId(?string $system_isc_type_id): ItemRelSuscriptionPlan
-        {
-            $this->system_isc_type_id = $system_isc_type_id;
-            return $this;
-        }
-
-        /**
-         * @return float|null
-         */
-        public function getTotalBaseIsc(): ?float
-        {
-            return $this->total_base_isc;
-        }
-
-        /**
-         * @param float|null $total_base_isc
-         *
-         * @return ItemRelSuscriptionPlan
-         */
-        public function setTotalBaseIsc(?float $total_base_isc): ItemRelSuscriptionPlan
-        {
-            $this->total_base_isc = $total_base_isc;
-            return $this;
-        }
-
-        /**
-         * @return float|null
-         */
-        public function getPercentageIsc(): ?float
-        {
-            return $this->percentage_isc;
-        }
-
-        /**
-         * @param float|null $percentage_isc
-         *
-         * @return ItemRelSuscriptionPlan
-         */
-        public function setPercentageIsc(?float $percentage_isc): ItemRelSuscriptionPlan
-        {
-            $this->percentage_isc = $percentage_isc;
-            return $this;
-        }
-
-        /**
-         * @return float|null
-         */
-        public function getTotalIsc(): ?float
-        {
-            return $this->total_isc;
-        }
-
-        /**
-         * @param float|null $total_isc
-         *
-         * @return ItemRelSuscriptionPlan
-         */
-        public function setTotalIsc(?float $total_isc): ItemRelSuscriptionPlan
-        {
-            $this->total_isc = $total_isc;
             return $this;
         }
 

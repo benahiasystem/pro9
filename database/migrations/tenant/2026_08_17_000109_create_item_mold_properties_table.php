@@ -1,22 +1,19 @@
 <?php
-// ######### INICIO CAMBIO NELSON #########
-
-/**
- * Estructura efectiva clonada desde `tenancy_bbc`.
- * Tabla: `item_mold_properties`.
- *
- * Inventario de columnas:
- * - `id`: int(10) unsigned; NOT NULL; auto_increment — Sin comentario definido en el esquema fuente.
- * - `item_id`: int(10) unsigned; NOT NULL — Sin comentario definido en el esquema fuente.
- * - `cat_item_mold_properties_id`: int(10) unsigned; NOT NULL — Sin comentario definido en el esquema fuente.
- * - `active`: tinyint(4); NULL; DEFAULT 1 — Define si se encuentra activo
- * - `created_at`: timestamp; NULL — Sin comentario definido en el esquema fuente.
- * - `updated_at`: timestamp; NULL — Sin comentario definido en el esquema fuente.
- */
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 
+// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
+/**
+ * Estructura inicial de `item_mold_properties` para instalaciones nuevas.
+ * Inventario de columnas:
+ * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
+ * - `item_id` int(10) unsigned NOT NULL
+ * - `cat_item_mold_properties_id` int(10) unsigned NOT NULL
+ * - `active` tinyint(4) DEFAULT '1' COMMENT 'Define si se encuentra activo'
+ * - `created_at` timestamp NULL DEFAULT NULL
+ * - `updated_at` timestamp NULL DEFAULT NULL
+ */
 return new class extends Migration
 {
     public function up(): void
@@ -39,4 +36,4 @@ SQL);
         DB::unprepared('DROP TABLE IF EXISTS `item_mold_properties`');
     }
 };
-// ######### FIN CAMBIO NELSON #########
+// ######## FIN ESQUEMA INICIAL VENEZUELA ########

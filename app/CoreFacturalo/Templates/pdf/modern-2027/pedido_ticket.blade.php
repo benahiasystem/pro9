@@ -299,7 +299,7 @@
             </td>
             <td class="text-center desc-9 align-top">NIU</td>
             <td class="text-left desc-9 align-top">
-                ANTICIPO: {{($p->document_type_id == '02')? 'FACTURA':'BOLETA'}} NRO. {{$p->number}}
+                ANTICIPO: FACTURA NRO. {{$p->number}}
             </td>
             <td class="text-right  desc-9 align-top">-{{ number_format($p->total, 2) }}</td>
             <td class="text-right  desc-9 align-top">-{{ number_format($p->total, 2) }}</td>
@@ -346,12 +346,7 @@
                 <td class="text-right font-bold desc">{{ number_format($document->total_discount_with_igv, 2) }}</td>
             </tr>
         @endif
-        @if($document->total_plastic_bag_taxes > 0)
-            <tr>
-                <td colspan="4" class="text-right font-bold desc">ICBPER: {{ $document->currency_type->symbol }}</td>
-                <td class="text-right font-bold desc">{{ number_format($document->total_plastic_bag_taxes, 2) }}</td>
-            </tr>
-        @endif
+
         <tr>
             <td colspan="4" class="text-right font-bold desc">IGV: {{ $document->currency_type->symbol }}</td>
             <td class="text-right font-bold desc">{{ number_format($document->total_igv, 2) }}</td>
@@ -398,7 +393,7 @@
                 @endif
             @endforeach
             <br>
-            @if(in_array($document->document_type->id,['01','03']))
+            @if(((string) $document->document_type->id === '01'))
                 @foreach($accounts as $account)
                     <p>
                     <span class="font-bold">{{$account->bank->description}}</span> {{$account->currency_type->description}}
@@ -413,25 +408,10 @@
         </td>
     </tr>
     <tr>
-        <td class="text-center pt-3"><img class="qr_code" src="data:image/png;base64, {{ $document->qr }}" /></td>
     </tr>
     <tr>
-        <td class="text-center desc">Código Hash: {{ $document->hash }}</td>
     </tr>
-
-    @if ($customer->department_id == 16)
-        <tr>
-            <td class="text-center desc pt-5">
-                Representación impresa del Comprobante de Pago Electrónico.
-                <br/>Esta puede ser consultada en:
-                <br/> <b>{!! url('/buscar') !!}</b>
-                <br/> "Bienes transferidos en la Amazonía
-                <br/>para ser consumidos en la misma
-            </td>
-        </tr>
-    @endif
-
-    @if($payments->count())
+@if($payments->count())
         <tr>
             <td class="desc pt-5">
                 <strong>PAGOS:</strong>

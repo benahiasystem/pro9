@@ -34,7 +34,6 @@ use App\Models\Tenant\Catalogs\CurrencyType;
 use App\Models\Tenant\Catalogs\ChargeDiscountType;
 use App\Models\Tenant\Catalogs\AffectationIgvType;
 use App\Models\Tenant\Catalogs\PriceType;
-use App\Models\Tenant\Catalogs\SystemIscType;
 use App\Models\Tenant\Catalogs\AttributeType;
 use App\Models\Tenant\PaymentMethodType;
 use Carbon\Carbon;
@@ -118,7 +117,6 @@ class PurchaseOrderController extends Controller
 
         $categories = [];
         $affectation_igv_types = AffectationIgvType::whereActive()->get();
-        $system_isc_types = SystemIscType::available();
         $price_types = PriceType::whereActive()->get();
         $discount_types = ChargeDiscountType::whereType('discount')->whereLevel('item')->get();
         $charge_types = ChargeDiscountType::whereType('charge')->whereLevel('item')->get();
@@ -135,7 +133,6 @@ class PurchaseOrderController extends Controller
         'items',
         'categories',
         'affectation_igv_types',
-        'system_isc_types',
         'price_types',
         'discount_types',
         'charge_types',
@@ -183,8 +180,7 @@ class PurchaseOrderController extends Controller
 
             foreach ($data['items'] as $row) {
                 $numeric_fields = [
-                    'unit_value', 'unit_price', 'total_base_igv', 'total_igv',
-                    'total_base_isc', 'total_isc', 'total_base_other_taxes',
+                    'unit_value', 'unit_price', 'total_base_igv', 'total_igv', 'total_base_other_taxes',
                     'total_other_taxes', 'total_taxes', 'total_value', 'total',
                     'total_charge', 'total_discount'
                 ];

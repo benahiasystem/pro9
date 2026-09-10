@@ -23,7 +23,6 @@ use App\Models\Tenant\Catalogs\AffectationIgvType;
 use App\Models\Tenant\Catalogs\DocumentType;
 use Illuminate\Support\Facades\DB;
 use App\Models\Tenant\Catalogs\PriceType;
-use App\Models\Tenant\Catalogs\SystemIscType;
 use App\Models\Tenant\Catalogs\AttributeType;
 use App\Models\Tenant\Company;
 use App\Http\Requests\Tenant\PurchaseRequest;
@@ -160,16 +159,16 @@ class PurchaseController extends Controller
             'data' => [
                 'id'                     => $purchase->id,
                 'state_type_id'          => $purchase->state_type_id,
-                'state_type_description' => $purchase->state_type?->description,
+                'state_type_description' => optional($purchase->state_type)->description,
                 'number_full'            => $purchase->number_full,
                 'external_id'            => $purchase->external_id,
                 'filename'               => $purchase->filename,
                 'supplier' => [
                     'id'     => $purchase->supplier_id,
-                    'name'   => $supplier?->name,
-                    'number' => $supplier?->number,
-                    'email'  => $supplier?->email ?? null,
-                    'phone'  => $supplier?->telephone ?? null,
+                    'name'   => optional($supplier)->name,
+                    'number' => optional($supplier)->number,
+                    'email'  => optional($supplier)->email,
+                    'phone'  => optional($supplier)->telephone,
                 ],
                 'total'        => (float) $purchase->total,
                 'print_a4'     => $purchase->getUrlPrintPdf('a4'),

@@ -25,11 +25,6 @@ class ViewServiceProvider extends ServiceProvider
 
         view()->composer(
             'tenant.layouts.partials.header',
-            'Modules\Document\Http\ViewComposers\DocumentViewComposer'
-        );
-
-        view()->composer(
-            'tenant.layouts.partials.header',
             'App\Http\ViewComposers\Tenant\NotificationViewComposer'
         );
 

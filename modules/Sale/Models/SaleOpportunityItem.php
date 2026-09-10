@@ -4,7 +4,6 @@ namespace Modules\Sale\Models;
 
 use App\Models\Tenant\Catalogs\AffectationIgvType;
 use App\Models\Tenant\Catalogs\PriceType;
-use App\Models\Tenant\Catalogs\SystemIscType;
 use App\Models\Tenant\ModelTenant;
 use App\Traits\AttributePerItems;
 
@@ -82,11 +81,6 @@ class SaleOpportunityItem extends ModelTenant
     public function affectation_igv_type()
     {
         return $this->belongsTo(AffectationIgvType::class, 'affectation_igv_type_id');
-    }
-
-    public function system_isc_type()
-    {
-        return $this->belongsTo(SystemIscType::class, 'system_isc_type_id');
     }
 
     public function price_type()

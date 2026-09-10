@@ -208,6 +208,7 @@
 </template>
 
 <script>
+import {whatsappNumber} from "@helpers/phone";
     export default {
         props: [
             'documentPaymentId',
@@ -345,8 +346,9 @@
                 const text = `Su link de pago ha sido generado correctamente, puede revisarlo en: ${this.form.user_payment_link}`
 
                 // ########### INICIO CAMBIO TELEFONÍA VENEZUELA
-                const phone = String(this.form_utilities.customer_telephone).replace(/\D/g, '').replace(/^(58|51)/, '')
-                window.open(`https://wa.me/58${phone}?text=${encodeURIComponent(text)}`, '_blank');
+                const phone = whatsappNumber(this.form_utilities.customer_telephone)
+            if (!phone) return this.$message.error('Ingrese un teléfono venezolano válido.')
+                window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`, '_blank');
                 // ########### FIN CAMBIO TELEFONÍA VENEZUELA
 
             },

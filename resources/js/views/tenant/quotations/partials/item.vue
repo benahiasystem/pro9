@@ -988,7 +988,7 @@ export default {
             all_affectation_igv_types: [],
             aux_items: [],
             affectation_igv_types: [],
-            system_isc_types: [],
+
             discount_types: [],
             charge_types: [],
             attribute_types: [],
@@ -1174,7 +1174,7 @@ export default {
                     this.operation_types = data.operation_types;
                     this.all_affectation_igv_types = data.affectation_igv_types;
                     this.affectation_igv_types = data.affectation_igv_types;
-                    this.system_isc_types = data.system_isc_types;
+
                     this.discount_types = data.discount_types;
                     this.charge_types = data.charge_types;
                     this.attribute_types = data.attribute_types;
@@ -1350,9 +1350,9 @@ export default {
                 item: {},
                 affectation_igv_type_id: null,
                 affectation_igv_type: {},
-                has_isc: false,
-                system_isc_type_id: null,
-                percentage_isc: 0,
+
+
+
                 suggested_price: 0,
                 quantity: 1,
                 unit_price: 0,
@@ -1365,7 +1365,7 @@ export default {
                 has_igv: null,
                 is_set: false,
                 item_unit_types: [],
-                has_plastic_bag_taxes: false,
+
                 series_enabled: false,
                 warehouse_id: null,
                 lots_group: [],
@@ -1423,8 +1423,7 @@ export default {
                 this.form.input_unit_price_value = editUnitPrice;
 
                 this.setHasIgvUpdate();
-                this.form.has_plastic_bag_taxes =
-                    this.recordItem.total_plastic_bag_taxes > 0 ? true : false;
+
                 this.form.warehouse_id = this.recordItem.warehouse_id;
                 this.form.discounts = (this.recordItem.discounts || []).map(discount => {
                     const row = { ...discount };
@@ -1641,7 +1640,7 @@ export default {
             }
 
             this.form.has_igv = this.form.item.has_igv;
-            this.form.has_plastic_bag_taxes = this.form.item.has_plastic_bag_taxes;
+
             // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
             const selectableAffectation = resolveSelectableAffectationType(
                 this.form.item.sale_affectation_igv_type_id,
@@ -1727,6 +1726,10 @@ export default {
             this.total_item = null;
         },
         async clickAddItem() {
+            if (!resolveSelectableAffectationType(this.form.affectation_igv_type_id, this.affectation_igv_types)) {
+                this.$message.error('Seleccione una afectación de IVA vigente: Gravado o Exento.');
+                return false;
+            }
             if (
                 !this.form.item.description ||
                 !this.form.item.description.trim().length

@@ -18,7 +18,7 @@ class PurchaseSettlementInput
     public static function set($inputs)
     {
 
-        
+
         $document_type_id = $inputs['document_type_id'];
         $series = $inputs['series'];
         $number = $inputs['number'];
@@ -36,7 +36,7 @@ class PurchaseSettlementInput
         // dd($supplier);
 
         $operation_data = OperationDataInput::set($inputs['operation_data']);
- 
+
         $inputs['type'] = 'purchase_settlement';
 
         return [
@@ -94,8 +94,7 @@ class PurchaseSettlementInput
                         'item_type_id' => $item->item_type_id,
                         'internal_id' => $item->internal_id,
                         'item_code' => $item->item_code,
-                        'unit_type_id' => $item->unit_type_id,
-                        'amount_plastic_bag_taxes' => $item->amount_plastic_bag_taxes
+                        'unit_type_id' => $item->unit_type_id
                     ],
                     'quantity' => $row['quantity'],
                     'unit_value' => $row['unit_value'],
@@ -116,7 +115,7 @@ class PurchaseSettlementInput
         }
         return null;
     }
- 
+
     private static function prepayments($inputs)
     {
         if(array_key_exists('prepayments', $inputs)) {
@@ -139,7 +138,7 @@ class PurchaseSettlementInput
         }
         return null;
     }
- 
+
 
     private static function related($inputs)
     {
@@ -162,6 +161,6 @@ class PurchaseSettlementInput
         }
         return null;
     }
- 
+
 }
 // ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

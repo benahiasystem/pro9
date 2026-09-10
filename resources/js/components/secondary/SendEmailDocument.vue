@@ -62,6 +62,7 @@
 </template>
 
 <script>
+import {whatsappNumber} from "@helpers/phone";
 import QrApi from '@viewsModuleQrApi/QrApiTemplate.vue'
 
 export default {
@@ -92,18 +93,19 @@ export default {
         this.initForm()
     },
     methods: {
-        clickSendWhatsapp() 
+        clickSendWhatsapp()
         {
-            if (!this.form.customer_telephone) 
+            if (!this.form.customer_telephone)
             {
                 return this.$message.error('El número es obligatorio')
             }
             // ########### INICIO CAMBIO TELEFONÍA VENEZUELA
-            const phone = String(this.form.customer_telephone).replace(/\D/g, '').replace(/^(58|51)/, '')
-            window.open(`https://wa.me/58${phone}?text=${encodeURIComponent(this.form.message_text)}`, '_blank')
+            const phone = whatsappNumber(this.form.customer_telephone)
+            if (!phone) return this.$message.error('Ingrese un teléfono venezolano válido.')
+            window.open(`https://wa.me/${phone}?text=${encodeURIComponent(this.form.message_text)}`, '_blank')
             // ########### FIN CAMBIO TELEFONÍA VENEZUELA
         },
-        initForm() 
+        initForm()
         {
             this.errors = {}
 
@@ -116,7 +118,7 @@ export default {
                 message_text: null,
             }
         },
-        async create() 
+        async create()
         {
             await this.getRecord()
             await this.getRecordQrApi()
@@ -156,7 +158,7 @@ export default {
 
             this.titleDialog =  `Documento: ` + this.form.number_full
         },
-        clickClose() 
+        clickClose()
         {
             this.$emit("update:showDialog", false)
             this.initForm()
@@ -167,22 +169,22 @@ export default {
 
             await this.$http.post(`/${this.resource}/email`, this.form)
                         .then((response) => {
-                            if (response.data.success) 
+                            if (response.data.success)
                             {
                                 this.$message.success("El correo fue enviado satisfactoriamente")
                             }
-                            else 
+                            else
                             {
                                 this.$message.error("Error al enviar el correo")
                             }
                         })
                         .catch((error) => {
-                            
-                            if (error.response.status === 422) 
+
+                            if (error.response.status === 422)
                             {
                                 this.errors = error.response.data
                             }
-                            else 
+                            else
                             {
                                 this.$message.error("Error al enviar el correo")
                             }

@@ -878,7 +878,7 @@
 
             <items :showWeightInput="config.enable_weight_in_dispatches && true" :dialogVisible.sync="showDialogAddItems" @addItem="addItem"></items>
 
-            <dispatch-finish :recordId="recordId" :showClose="false" :send-sunat="send_sunat"
+            <dispatch-finish :recordId="recordId" :showClose="false"
                 :showDialog.sync="showDialogFinish"></dispatch-finish>
             <item-form :external="true" :showDialog.sync="showDialogNewItem"></item-form>
             <lots-group v-if="item"
@@ -1097,7 +1097,6 @@ export default {
             delivery: null,
             delivery_addresses: [],
             origin_addresses: [],
-            send_sunat: false,
             selectedTransport: null,
             selectedTransports: [],
             selectedDriver: null,
@@ -1959,7 +1958,6 @@ export default {
                 if (response.data.success) {
                     this.initForm();
                     this.recordId = response.data.data.id
-                    this.send_sunat = response.data.data.send_sunat
                     this.showDialogFinish = true
                 } else {
                     this.$message.error(response.data.message);

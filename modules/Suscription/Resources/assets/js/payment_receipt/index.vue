@@ -44,10 +44,6 @@
                 <a class="btn btn-custom btn-sm  mt-2 mr-2"
                    href="#"
                    @click.prevent="onOpenModalGenerateCPE">Generar comprobante desde múltiples Notas</a>
-                <a v-if="config.send_data_to_other_server === true"
-                   class="btn btn-custom btn-sm  mt-2 mr-2"
-                   href="#"
-                   @click.prevent="onOpenModalMigrateNv">Migrar Datos</a>
             </div>
             -->
         </div>
@@ -403,17 +399,6 @@
                                 <i class="fas fa-copy">
                                 </i>
                             </button>
-                            <button
-                                v-if="row.state_type_id != '11' && row.send_other_server=== true"
-                                class="btn waves-effect waves-light btn-xs btn-inverse"
-                                data-placement="top"
-                                data-toggle="tooltip"
-                                title="Enviar a otro servidor"
-                                type="button"
-                                @click.prevent="sendToServer(row.id)">
-                                <i class="fas fa-wifi">
-                                </i>
-                            </button>
                             -->
                         </td>
                     </tr>
@@ -444,18 +429,12 @@
         </sale-note-generate>
         <ModalGenerateCPE :show.sync="showModalGenerateCPE"> </ModalGenerateCPE>
         <!--
-        <UploadToOtherServer
-            :configuration="config"
-            :showMigrate.sync="showMigrateNv"
-        >
-        </UploadToOtherServer>
         -->
     </div>
 </template>
 
 <script>
 // import DataTable from '../../../components/DataTableSaleNote.vue'
-// import UploadToOtherServer from './partials/upload_other_server_group.vue'
 import SaleNotePayments from "./partials/payments.vue";
 import SaleNotesOptions from "./partials/options.vue";
 import SaleNoteGenerate from "./partials/option_documents.vue";
@@ -477,7 +456,6 @@ export default {
         SaleNotesOptions,
         SaleNoteGenerate,
         ModalGenerateCPE
-        // UploadToOtherServer
     },
     computed: {
         ...mapState(["config"])
@@ -485,7 +463,6 @@ export default {
     data() {
         return {
             showModalGenerateCPE: false,
-            showMigrateNv: false,
             resource: "sale-notes",
             showDialogPayments: false,
             showDialogOptions: false,
@@ -619,9 +596,6 @@ export default {
         onOpenModalGenerateCPE() {
             this.showModalGenerateCPE = true;
         },
-        onOpenModalMigrateNv() {
-            this.showMigrateNv = true;
-        },
         clickDownload(external_id) {
             window.open(
                 `/sale-notes/downloadExternal/${external_id}`,
@@ -631,31 +605,6 @@ export default {
         clickOptions(recordId) {
             this.saleNotesNewId = recordId;
             this.showDialogOptions = true;
-        },
-        sendToServer(recordId) {
-            this.$http
-                .post("/sale-notes/UpToOther", { sale_note_id: recordId })
-                .then(response => {
-                    if (response.data.success) {
-                        this.$message.success(response.data.message);
-                        this.$eventHub.$emit("reloadData");
-                    } else {
-                        this.$message.error(response.data.message);
-                    }
-                })
-                .catch(error => {
-                    if (
-                        error.response !== undefined &&
-                        error.response.status !== undefined &&
-                        error.response.status.errors !== undefined &&
-                        error.response.status === 422
-                    ) {
-                        this.errors = error.response.data.errors;
-                    } else {
-                        console.log(error);
-                    }
-                })
-                .then(() => {});
         },
         clickGenerate(recordId) {
             this.recordId = recordId;

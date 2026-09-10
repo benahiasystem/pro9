@@ -1,15 +1,17 @@
 ---
 name: adaptar-sistema-venezuela
-description: Coordinar y documentar una adaptación funcional integral de Pro9 a Venezuela con trazabilidad, compatibilidad histórica, migraciones y pruebas. Usar para cambios que combinen país, geopolítica, RIF/cédula, IVA, moneda, telefonía, POS, caja, documentos, compras, reportes, configuración o bundles generados.
+description: Coordinar y documentar Pro9 para instalaciones nuevas en Venezuela, con esquema consolidado, catálogos vigentes y pruebas. Usar para cambios que combinen país, geopolítica, RIF/cédula, IVA, moneda, telefonía, POS, caja, documentos, compras, reportes o configuración.
 ---
 
 # Adaptar integralmente Pro9 a Venezuela
 
 ## Principios
 
-- Implementar cambios en fuentes de Pro9; no editar bundles compilados manualmente ni respaldos. Regenerar `public/build` con `npm run build` cuando el repositorio versiona los artefactos.
-- Usar migraciones incrementales, transaccionales e idempotentes.
-- Reemplazar los registros PE/PEN/VED por VE/VES cuando la política del proyecto sea una migración total.
+- Implementar cambios en fuentes de Pro9; no editar bundles compilados manualmente ni respaldos. Aplicar `frontend-build`: la compilación queda a cargo del usuario.
+- Este proyecto no tiene tenants ni información histórica que convertir. Modificar directamente las creaciones de tablas y sus datos iniciales; no crear backfills ni comandos para tenants existentes.
+- Retirar herramientas de migración entre servidores, regularización/reenvío fiscal, módulos PSE, el módulo peruano SIRE y estados externos de SUNAT. Conservar únicamente barreras defensivas que rechacen solicitudes XML/CDR antiguas y las funciones comerciales locales vigentes.
+- Mantener la facturación masiva como función comercial: carga, emisión por tenant, listado, filtros, Excel y PDF. Sus estados son locales (`estado_emision`/`mensaje_emision`) y no deben comunicar aceptación SUNAT ni ofrecer XML/CDR.
+- Sembrar directamente VE/VES y validar el contrato vigente, sin convertir entradas PE/PEN/VED.
 - Mantener claves internas heredadas cuando cambiarlas rompa esquema, XML o APIs; adaptar la presentación.
 - Centralizar `VE`, `+58`, `VES`, `Bs.`, `USD` y la ubicación inicial en `config/venezuela.php` y `App\Support\Venezuela\Localization`.
 - Mostrar `IVA` en interfaz sin renombrar columnas, cálculos ni contratos internos `igv`.
@@ -20,41 +22,30 @@ description: Coordinar y documentar una adaptación funcional integral de Pro9 a
 
 - País y territorio: usar VE, zona horaria `America/Caracas`, Estado/Municipio/Parroquia y ubicación inicial `14/0229/000619`.
 - Clientes: normalizar país y nacionalidad, validar RIF/cédula/Extranjero, guardar direcciones venezolanas y conservar Sitio Web/Observaciones.
-- Moneda: usar VES/Bs./Bolívares, conservar USD, migrar PEN y VED sin recalcular importes y revisar documentos, compras, POS, caja, finanzas, ecommerce, restaurante y reportes.
+- Moneda: usar VES/Bs./Bolívares y USD; revisar documentos, compras, POS, caja, finanzas, ecommerce, restaurante y reportes. No interpretar monedas retiradas como VES.
 - Métodos de pago: sembrar exclusivamente desde `database/seeders/data/tenant_initial_data.php` los IDs `01`–`07` y `09`–`13` del contrato venezolano; usar `05` para Crédito a 30 días, no crear `08`, y no crear una migración incremental ni conservar registros históricos para este catálogo.
 - Telefonía: mostrar +58, normalizar teléfonos y construir enlaces `tel:`/`wa.me` y payloads QR sin prefijos duplicados.
-- POS: mantener `PAGAR` visible, permitir seleccionar FACTURA/BOLETA/NOTA DE VENTA y proteger accesos opcionales a QZ y turnos de negocio.
+- POS: mantener `PAGAR` visible, permitir FACTURA/NOTA DE VENTA y proteger accesos opcionales a QZ y turnos de negocio.
 - Importación: validar íntegramente `public/formats/items.xlsx` antes de `ItemsImport` y entregar un XLSX corregible cuando haya errores.
 - Datos de prueba: usar `TenancyMockDataSeeder` sólo para registros identificados con `MOCK-`; no confundirlos con datos productivos.
 - Eliminación de documentos de prueba: limitar la acción a administradores, exigir la confirmación literal `ELIMINAR` en frontend y backend, y borrar relaciones dentro de una transacción tenant antes del registro principal. Nunca incluir documentos históricos ni productivos fuera del alcance marcado como prueba.
 
 ## Migraciones consolidadas
 
-1. Usar `reconstruir-migraciones-tenant` cuando se reemplace el historial completo por la estructura efectiva de un tenant.
+1. Usar `reconstruir-migraciones-tenant` al modificar el esquema inicial; comparar instalaciones temporales completas, sin copiar un tenant real.
 2. Mantener una migración por cada tabla de aplicación y excluir la tabla técnica `migrations`.
 3. Crear todas las tablas sin claves foráneas y agregarlas en una migración final para evitar errores de orden o ciclos.
 4. Conservar comentarios, tipos, defaults, índices, motores y collations mediante el DDL efectivo de MySQL.
-5. Restaurar las filas históricas mediante `TenantMigrationDataSeeder` y ejecutar este seeder antes de `TenancyMockDataSeeder`.
+5. Cargar los catálogos vigentes mediante `TenantMigrationDataSeeder`, antes de `TenancyMockDataSeeder`. No transformar registros existentes ni conservar estados transitorios de módulos.
 6. No conservar referencias a migraciones incrementales retiradas; los contratos deben localizar la migración consolidada por nombre de tabla.
 
-## Tenants históricos existentes
+## Instalación nueva
 
-<!-- ######## INICIO PUENTE DE COMPATIBILIDAD TENANT HISTÓRICO ######## -->
-
-Las migraciones consolidadas no deben ejecutarse directamente sobre un tenant cuyo esquema ya existe con nombres de migración históricos. Antes de afirmar que la adaptación está completa:
-
-1. Crear y comprobar un respaldo SQL recuperable del tenant.
-2. Ejecutar primero `php artisan tenant:migrate-venezuela {uuid} --dry-run`.
-3. Reconciliar únicamente la línea base consolidada `000001` a `000328`; nunca marcar `000329` ni `000330` como ejecutadas por adelantado.
-4. Ejecutar `php artisan tenant:migrate-venezuela {uuid}` para transformar datos monetarios, territoriales y documentales existentes.
-5. Verificar en la base real, no sólo en una base temporal: `VE`, 25/335/1138, RIF/Cédula/Extranjero, VES/Bs./Bolívares, USD activa y ausencia de PE/PEN/VED.
-6. Limpiar cachés y comprobar en navegador el POS y los formularios del hostname del tenant.
-
-<!-- ######## FIN PUENTE DE COMPATIBILIDAD TENANT HISTÓRICO ######## -->
+Crear las tablas una sola vez y agregar sus claves en `000999_add_tenant_foreign_keys`. No ejecutar modificaciones sobre bases reales. Validar en bases temporales creación, datos iniciales, todas las claves foráneas, rollback y repetición idéntica. Las funciones de auditoría futura, aislamiento y bloqueo de ambiente siguen vigentes.
 
 ## Alta y primer acceso de un tenant
 
-Modalidad y ambiente se rigen por [mantener-modalidad-emision-fiscal-pro9](../mantener-modalidad-emision-fiscal-pro9/SKILL.md). Para esta adaptación sólo hay instalaciones nuevas: crear directamente `fiscal_environment` y `fiscal_emission_mode`, ambos obligatorios; no conservar SOAP/PFX ni crear conversiones de tenants anteriores. Esta excepción prevalece sobre las reglas generales de migración incremental y de comprobación en tenants reales de esta skill. La compatibilidad de los demás módulos requiere un plan separado.
+Modalidad y ambiente se rigen por [mantener-modalidad-emision-fiscal-pro9](../mantener-modalidad-emision-fiscal-pro9/SKILL.md). Crear directamente `fiscal_environment` y `fiscal_emission_mode`, ambos obligatorios. La política de instalación nueva aplica a todos los módulos.
 
 <!-- ######## INICIO CONTRATO DE INICIALIZACIÓN TENANT ######## -->
 

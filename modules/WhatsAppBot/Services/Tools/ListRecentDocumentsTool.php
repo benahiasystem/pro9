@@ -19,7 +19,7 @@ class ListRecentDocumentsTool implements ToolInterface
             'type' => 'function',
             'function' => [
                 'name' => $this->name(),
-                'description' => 'Lista los comprobantes emitidos recientemente. Útil cuando el vendedor pregunta por ventas pasadas o quiere reenviar un PDF. Devuelve número, fecha, cliente, total y estado SUNAT. Cuando el vendedor diga "boletas" filtra por document_type="boleta", cuando diga "facturas" filtra por document_type="factura".',
+                'description' => 'Lista las facturas registradas recientemente. Devuelve número, fecha, cliente, total y estado local del documento.',
                 'parameters' => [
                     'type' => 'object',
                     'properties' => [
@@ -29,8 +29,8 @@ class ListRecentDocumentsTool implements ToolInterface
                         ],
                         'document_type' => [
                             'type' => 'string',
-                            'enum' => ['boleta', 'factura'],
-                            'description' => 'Filtrar solo por boletas o solo por facturas. Si se omite, devuelve ambos tipos.',
+                            'enum' => ['factura'],
+                            'description' => 'Tipo de documento: factura.',
                         ],
                         'customer_document' => [
                             'type' => 'string',
@@ -49,14 +49,12 @@ class ListRecentDocumentsTool implements ToolInterface
         $customerDoc = trim((string) ($arguments['customer_document'] ?? ''));
         $docType = $arguments['document_type'] ?? null;
 
-        $typeIds = match ($docType) {
-            'factura' => ['01'],
-            'boleta' => ['03'],
-            default => ['01', '03'],
-        };
+        if ($docType !== null && $docType !== 'factura') {
+            return ['error' => 'El tipo de documento solicitado no está disponible.'];
+        }
 
         $query = Document::query()
-            ->whereIn('document_type_id', $typeIds)
+            ->where('document_type_id', '01')
             ->orderByDesc('id')
             ->limit($limit);
 
@@ -76,8 +74,8 @@ class ListRecentDocumentsTool implements ToolInterface
             'documents' => $documents->map(fn ($d) => [
                 'id' => $d->id,
                 'number_full' => $d->series . '-' . $d->number,
-                'type' => $d->document_type_id === '01' ? 'factura' : 'boleta',
-                'date' => $d->date_of_issue?->format('Y-m-d'),
+                'type' => 'factura',
+                'date' => optional($d->date_of_issue)->format('Y-m-d'),
                 'customer_name' => optional($d->person)->name,
                 'customer_document' => optional($d->person)->number,
                 'total' => (float) $d->total,
@@ -88,13 +86,14 @@ class ListRecentDocumentsTool implements ToolInterface
 
     private function stateDescription(?string $stateId): string
     {
-        return match ($stateId) {
+        $states = [
             '01' => 'registrado',
             '05' => 'aceptado',
             '07' => 'rechazado',
             '11' => 'anulado',
             '13' => 'por anular',
-            default => 'desconocido',
-        };
+        ];
+
+        return $states[$stateId] ?? 'desconocido';
     }
 }

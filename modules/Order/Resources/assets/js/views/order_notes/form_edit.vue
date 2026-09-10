@@ -159,7 +159,7 @@
                                 <div class="form-group">
                                     <label class="control-label">Datos adicionales</label>
                                 </div>
-                                
+
                                 <table class="table table-responsive table-bordered">
                                     <thead>
                                         <tr width="100%">
@@ -176,7 +176,7 @@
                                                 <div class="form-group mb-2 mr-2">
 
                                                     <el-input v-model="row.title"></el-input>
-                                                    
+
                                                     <template v-if="errors[`additional_data.${index}.title`]">
                                                         <div class="form-group" :class="{'has-danger': errors[`additional_data.${index}.title`]}">
                                                             <small class="form-control-feedback" v-text="errors[`additional_data.${index}.title`][0]"></small>
@@ -186,9 +186,9 @@
                                             </td>
                                             <td>
                                                 <div class="form-group mb-2 mr-2">
-                                                    
+
                                                     <el-input v-model="row.description"></el-input>
-                                                    
+
                                                     <template v-if="errors[`additional_data.${index}.description`]">
                                                         <div class="form-group" :class="{'has-danger': errors[`additional_data.${index}.description`]}">
                                                             <small class="form-control-feedback" v-text="errors[`additional_data.${index}.description`][0]"></small>
@@ -207,7 +207,7 @@
                                 </table>
 
                             </div>
-                            
+
                         </div>
 
                         <div class="row mt-2">
@@ -427,7 +427,7 @@
             });
 
         },
-        methods: 
+        methods:
         {
             clickEditItem(row, index) {
                 console.log('Abriendo modal de edición', row);
@@ -623,8 +623,8 @@
                     total_exonerated: 0,
                     total_igv_free: 0,
                     total_igv: 0,
-                    total_base_isc: 0,
-                    total_isc: 0,
+
+
                     total_base_other_taxes: 0,
                     total_other_taxes: 0,
                     total_taxes: 0,

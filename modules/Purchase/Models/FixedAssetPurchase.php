@@ -42,8 +42,6 @@ class FixedAssetPurchase extends ModelTenant
         'total_unaffected',
         'total_exonerated',
         'total_igv',
-        'total_base_isc',
-        'total_isc',
         'total_base_other_taxes',
         'total_other_taxes',
         'total_taxes',
@@ -166,7 +164,7 @@ class FixedAssetPurchase extends ModelTenant
     public function user()
     {
         return $this->belongsTo(User::class);
-    } 
+    }
 
     public function fiscal_environment_type()
     {

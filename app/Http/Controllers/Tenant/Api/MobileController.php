@@ -151,13 +151,7 @@ class MobileController extends Controller
         }
 
         return [
-            // Footer / Pie de pagina
-            // legend_footer alimenta $document->legends (Facturalo::549, 784) que se
-            // imprime en invoice_a4:1078
-            'legend_footer' => (bool) $configuration->legend_footer,
-            // texto libre del pie, se imprime siempre que no este vacio en
-            // partials/footer.blade.php:12. Es independiente de legend_footer,
-            // que solo controla la leyenda de amazonia.
+            // Texto libre vigente del pie de página de ventas.
             'legend_footer_sale' => $configuration->legend_footer_sale,
 
             // Terminos y condiciones
@@ -325,7 +319,7 @@ class MobileController extends Controller
 
         return app(SeriesResolver::class)->applyContext(
                     Series::where('establishment_id', auth()->user()->establishment_id)
-                    ->whereIn('document_type_id', ['01', '03', '09'])
+                    ->whereIn('document_type_id', ['01', '09'])
                 )->get()
                     ->transform(function($row) {
                         return $row->getApiRowResource();
@@ -390,7 +384,6 @@ class MobileController extends Controller
 
             $row = new Item();
             $row->item_type_id = '01';
-            $row->amount_plastic_bag_taxes = Configuration::firstOrFail()->amount_plastic_bag_taxes;
             $row->fill($request->all());
             $temp_path = $request->input('temp_path');
 
@@ -619,9 +612,6 @@ class MobileController extends Controller
                             'image' => $row->image != "imagen-no-disponible.jpg" ? url("/storage/uploads/items/" . $row->image) : url("/logo/" . $row->image),
                             'warehouses' => Item::transformWarehousesForApi($row->warehouses),
                             'item_unit_types' => $this->transformMobileItemUnitTypes($row->item_unit_types),
-                            'has_isc' => (bool)$row->has_isc,
-                            'system_isc_type_id' => $row->system_isc_type_id,
-                            'percentage_isc' => $row->percentage_isc,
                             'favorite' => (bool) $row->favorite,
                         ];
                     });
@@ -807,7 +797,7 @@ class MobileController extends Controller
                     'documento'=>[
                         'id' =>  $document->document_type_id,
                         // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
-                        'descripcion' => ($document->document_type_id=='01') ? 'Factura de venta' : 'Boleta de venta histórica'
+                        'descripcion' => $document->document_type->description
                         // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
                     ],
                     'document_type_id' => $document->document_type_id,
@@ -920,11 +910,10 @@ class MobileController extends Controller
         $documents = $documents
                 ->selectRaw("
                     COUNT(CASE WHEN document_type_id = '01' THEN 1 END) AS facturas,
-                    COUNT(CASE WHEN document_type_id = '03' THEN 1 END) AS boletas,
                     COUNT(CASE WHEN document_type_id = '07' THEN 1 END) AS notasCredito,
                     COUNT(CASE WHEN document_type_id = '08' THEN 1 END) AS notasDebito,
                     COALESCE(SUM(CASE
-                        WHEN document_type_id IN ('01', '03', '08') THEN total
+                        WHEN document_type_id IN ('01', '08') THEN total
                         WHEN document_type_id = '07' THEN -total
                         ELSE 0
                     END), 0) AS total,
@@ -941,7 +930,6 @@ class MobileController extends Controller
             'total' => round((float) $documents->total + (float) $sale_notes->total, 2),
             'count' => (int) $documents->count + (int) $sale_notes->notasVenta,
             'facturas' => (int) $documents->facturas,
-            'boletas' => (int) $documents->boletas,
             'notasCredito' => (int) $documents->notasCredito,
             'notasDebito' => (int) $documents->notasDebito,
             'notasVenta' => (int) $sale_notes->notasVenta,

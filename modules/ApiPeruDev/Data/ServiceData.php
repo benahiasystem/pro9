@@ -153,7 +153,7 @@ class ServiceData
         $meta = $response['data']['meta'] ?? $response['meta'] ?? [];
         $source = $meta['source'] ?? 'unknown';
         $res_data = [];
-        
+
         if ($type === 'dni') {
             $ubigeo = $data['ubigeo'] ?? [];
             $department_id = $ubigeo[0] ?? null;
@@ -445,33 +445,7 @@ class ServiceData
         return $response;
     }
 
-    /**
-     * Consulta los establecimientos anexos de un RIF.
-     * Endpoint: POST /api/ruc-establecimientos-anexos  (body: ruc)
-     *
-     * @param string $number
-     * @return array
-     */
-    public function establishments($number)
-    {
-        $this->parameters['form_params'] = ['ruc' => $number];
-        $res = $this->client->request('POST', '/api/ruc-establecimientos-anexos', $this->parameters);
-        $response = json_decode($res->getBody()->getContents(), true);
 
-        $this->saveService(6, $response);
-
-        return $response;
-    }
-
-    public function massive_validate_cpe($data)
-    {
-        $this->parameters['form_params'] = $data;
-        $res = $this->client->request('POST', '/api/validacion_multiple_cpe', $this->parameters);
-        $this->trackApi->push();
-        $this->saveService(2);
-
-        return json_decode($res->getBody()->getContents(), true);
-    }
     private function getAgentRetention($response, $data)
     {
         $is_agent_retention = false;

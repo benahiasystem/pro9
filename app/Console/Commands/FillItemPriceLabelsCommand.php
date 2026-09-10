@@ -143,7 +143,8 @@ class FillItemPriceLabelsCommand extends Command
     /**
      * Crea la presentación base de un item replicando su unidad.
      * OJO: price_default es un selector pequeño (1/2/3), NO el monto.
-     * El precio real vive en item_unit_type_prices; price1 se llena por compat legacy.
+     * Las listas usan item_unit_type_prices; price1 sigue siendo usado por
+     * los selectores actuales de presentaciones en POS y documentos.
      * Mismo criterio de barcode que ItemController::store.
      */
     private function createBaseUnitType(Item $item, float $basePrice): ItemUnitType
@@ -166,7 +167,7 @@ class FillItemPriceLabelsCommand extends Command
     }
 
     /**
-     * Precio base: price1 legacy de la presentación -> sale_unit_price del item.
+     * Precio base: precio principal de la presentación, o precio de venta del item.
      * (price_default es un flag, no un monto.)
      */
     private function resolveBasePrice(?ItemUnitType $unitType, Item $item): ?float

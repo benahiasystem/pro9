@@ -12,7 +12,6 @@ class ActionTransform
             $actions = $inputs['acciones'];
             return [
                 'send_email' => Functions::valueKeyInArray($actions, 'enviar_email'),
-                'send_xml_signed' => Functions::valueKeyInArray($actions, 'enviar_xml_firmado'),
                 'format_pdf' => Functions::valueKeyInArray($actions, 'formato_pdf'),
                 // Impresión automática server-side (app mozo). El wrapper "acciones"
                 // se mantiene en español; estos campos nuevos van en inglés.

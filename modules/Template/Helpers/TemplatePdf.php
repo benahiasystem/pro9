@@ -84,7 +84,7 @@ class TemplatePdf
         $template = Template::query()->where('is_default', true)->first();
 
         if($model === 'sale') {
-            if(in_array($document->document_type_id, ['01', '03'])) {
+            if(in_array($document->document_type_id, ['01'])) {
                 $template_view = $model.'.'.$size.'.invoice.template';
             } else {
                 $template_view = $model.'.'.$size.'.note.template';
@@ -162,9 +162,9 @@ class TemplatePdf
         ];
     }
 
-    
+
     /**
-     * 
+     *
      * Cuentas bancarias para pdf
      *
      * @param  int $establishment_id
@@ -178,7 +178,7 @@ class TemplatePdf
 
         if($select_establishment_bank_account)
         {
-            $bank_accounts->where('establishment_id', $establishment_id); 
+            $bank_accounts->where('establishment_id', $establishment_id);
         }
 
         // dd($select_establishment_bank_account, $establishment_id);

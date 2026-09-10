@@ -14,6 +14,7 @@ use App\Models\Tenant\Company;
 use App\Models\Tenant\Document;
 use App\Models\Tenant\Item;
 use Illuminate\Support\Str;
+use App\Services\SalesDocumentTypePolicy;
 use Modules\Offline\Models\OfflineConfiguration;
 
 
@@ -23,6 +24,7 @@ class DocumentUpdateInput
     {
         $inputs = \App\Support\Venezuela\RetiredDetractionFields::discard($inputs);
         $document_type_id = $inputs['document_type_id'];
+        SalesDocumentTypePolicy::assertNewFiscalDocumentAllowed($document_type_id);
         $series = $inputs['series'];
         $number = $inputs['number'];
 
@@ -35,7 +37,7 @@ class DocumentUpdateInput
         // $customer = PersonInput::set($inputs['customer_id']);
         $customer = PersonInput::set($inputs['customer_id'], isset($inputs['customer_address_id']) ? $inputs['customer_address_id'] : null);
 
-        if (in_array($document_type_id, ['01', '03'])) {
+        if (in_array($document_type_id, ['01'])) {
             $array_partial = self::invoice($inputs);
             $invoice = $array_partial['invoice'];
             $note = null;
@@ -90,11 +92,8 @@ class DocumentUpdateInput
             'total_exonerated' => $inputs['total_exonerated'],
             'total_igv' => $inputs['total_igv'],
             'total_igv_free' => Functions::valueKeyInArray($inputs, 'total_igv_free', 0),
-            'total_base_isc' => Functions::valueKeyInArray($inputs, 'total_base_isc', 0),
-            'total_isc' => Functions::valueKeyInArray($inputs, 'total_isc', 0),
             'total_base_other_taxes' => Functions::valueKeyInArray($inputs, 'total_base_other_taxes', 0),
             'total_other_taxes' => Functions::valueKeyInArray($inputs, 'total_other_taxes', 0),
-            'total_plastic_bag_taxes' => Functions::valueKeyInArray($inputs, 'total_plastic_bag_taxes', 0),
             'total_taxes' => $inputs['total_taxes'],
             'total_value' => $inputs['total_value'],
             'total_perception' => $inputs['total_perception'] ?? 0,
@@ -118,7 +117,6 @@ class DocumentUpdateInput
             'actions' => ActionInput::set($inputs),
             'data_json' => $data_json,
             'payments' => Functions::valueKeyInArray($inputs, 'payments', []),
-            'send_server' => false,
             'related_documents' => isset($inputs['related_documents']) ? $inputs['related_documents'] : null,
             'date_of_due' => isset($inputs['date_of_due']) ? $inputs['date_of_due'] : null,
             'establishment_customer_id' => isset($inputs['establishment_customer_id']) ? $inputs['establishment_customer_id'] : null,
@@ -159,7 +157,6 @@ class DocumentUpdateInput
                         'item_code_gs1' => $item->item_code_gs1,
                         'unit_type_id' => (key_exists('item', $row)) ? $row['item']['unit_type_id'] : $item->unit_type_id,
                         'presentation' => (key_exists('item', $row)) ? (isset($row['item']['presentation']) ? $row['item']['presentation'] : []) : [],
-                        'amount_plastic_bag_taxes' => $item->amount_plastic_bag_taxes,
                         'is_set' => $item->is_set,
                         'lots' => self::lots($row),
                         'IdLoteSelected' => (isset($row['IdLoteSelected']) ? $row['IdLoteSelected'] : null),
@@ -170,7 +167,7 @@ class DocumentUpdateInput
                         'cod_digemid' => $item->cod_digemid,
                         'unit_price' => $row['unit_price'] ?? 0,
                         'purchase_unit_price' => $row['item']['purchase_unit_price'] ?? 0,
-                        
+
                         'exchanged_for_points' => $row['item']['exchanged_for_points'] ?? false,
                         'used_points_for_exchange' => $row['item']['used_points_for_exchange'] ?? null,
 
@@ -183,14 +180,9 @@ class DocumentUpdateInput
                     'total_base_igv' => $row['total_base_igv'],
                     'percentage_igv' => $row['percentage_igv'],
                     'total_igv' => $row['total_igv'],
-                    'system_isc_type_id' => $row['system_isc_type_id'],
-                    'total_base_isc' => Functions::valueKeyInArray($row, 'total_base_isc', 0),
-                    'percentage_isc' => Functions::valueKeyInArray($row, 'percentage_isc', 0),
-                    'total_isc' => Functions::valueKeyInArray($row, 'total_isc', 0),
                     'total_base_other_taxes' => Functions::valueKeyInArray($row, 'total_base_other_taxes', 0),
                     'percentage_other_taxes' => Functions::valueKeyInArray($row, 'percentage_other_taxes', 0),
                     'total_other_taxes' => Functions::valueKeyInArray($row, 'total_other_taxes', 0),
-                    'total_plastic_bag_taxes' => Functions::valueKeyInArray($row, 'total_plastic_bag_taxes', 0),
                     'total_taxes' => $row['total_taxes'],
                     'total_value' => $row['total_value'],
                     'total_charge' => Functions::valueKeyInArray($row, 'total_charge', 0),
@@ -202,7 +194,6 @@ class DocumentUpdateInput
                     'warehouse_id' => Functions::valueKeyInArray($row, 'warehouse_id'),
                     'additional_information' => Functions::valueKeyInArray($row, 'additional_information'),
                     'name_product_pdf' => Functions::valueKeyInArray($row, 'name_product_pdf'),
-                    'name_product_xml' => Functions::valueKeyInArray($row, 'name_product_pdf') ? DocumentInput::getNameProductXml($row, $inputs) : null,
                     'update_description' => Functions::valueKeyInArray($row, 'update_description', false),
                     'additional_data' => Functions::valueKeyInArray($row, 'additional_data'),
                 ];
@@ -432,7 +423,7 @@ class DocumentUpdateInput
 
         return [
             'type' => 'invoice',
-            'group_id' => ($inputs['document_type_id'] === '01') ? '01' : '02',
+            'group_id' => '01',
             'invoice' => [
                 'operation_type_id' => $operation_type_id,
                 'date_of_due' => $date_of_due,
@@ -452,17 +443,17 @@ class DocumentUpdateInput
         $type = ($document_type_id === '07') ? 'credit' : 'debit';
 
         if (!$data_affected_document) {
-            $affected_document = Document::find($affected_document_id);
-            $group_id = $affected_document->group_id;
-            $$affected_document_id = $affected_document->id;
+            $affected_document = Document::findOrFail($affected_document_id);
+            SalesDocumentTypePolicy::assertAllowedForFlow($affected_document->document_type_id, ['01']);
+            $affected_document_id = $affected_document->id;
         } else {
             $affected_document_id = null;
-            $group_id = ($data_affected_document['document_type_id'] == '01') ? '01' : '02';
+            SalesDocumentTypePolicy::assertAllowedForFlow($data_affected_document['document_type_id'] ?? null, ['01']);
         }
 
         return [
             'type' => $type,
-            'group_id' => $group_id,
+            'group_id' => '01',
             'note' => [
                 'note_type' => $type,
                 'note_credit_type_id' => ($type === 'credit') ? $note_credit_or_debit_type_id : null,

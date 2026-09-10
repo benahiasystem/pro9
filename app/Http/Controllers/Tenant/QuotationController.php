@@ -19,7 +19,6 @@ use App\Models\Tenant\Catalogs\CurrencyType;
 use App\Models\Tenant\Catalogs\DocumentType;
 use App\Models\Tenant\Catalogs\OperationType;
 use App\Models\Tenant\Catalogs\PriceType;
-use App\Models\Tenant\Catalogs\SystemIscType;
 use App\Models\Tenant\Company;
 use App\Models\Tenant\Configuration;
 use App\Models\Tenant\Establishment;
@@ -272,7 +271,6 @@ class QuotationController extends Controller
         $items = SearchItemController::getItemsToQuotation();
         $categories = [];
         $affectation_igv_types = AffectationIgvType::whereActive()->get();
-        $system_isc_types = SystemIscType::available();
         $price_types = PriceType::whereActive()->get();
         $discount_types = ChargeDiscountType::whereType('discount')->whereLevel('item')->get();
         $charge_types = ChargeDiscountType::whereType('charge')->whereLevel('item')->get();
@@ -285,7 +283,6 @@ class QuotationController extends Controller
             'categories',
             'operation_types',
             'affectation_igv_types',
-            'system_isc_types',
             'price_types',
             'discount_types',
             'charge_types',
@@ -860,20 +857,12 @@ class QuotationController extends Controller
             if (config('tenant.pdf_template_footer')) {
 
                 $html_footer = $template->pdfFooter($base_template, $this->quotation);
-                // $html_footer_term_condition = ($document->terms_condition) ? $template->pdfFooterTermCondition($base_template, $document) : "";
-
-                $html_footer_legend = "";
-                if ($configuration->legend_footer) {
-                    $html_footer_legend = $template->pdfFooterLegend($base_template, $this->quotation);
-                }
-
                 $html_footer_images = "";
                 $this->setPdfFooterImages($html_footer_images, $configuration, $format_pdf, $template, $base_template);
 
                 $pdf->setAutoBottomMargin = 'stretch';
 
-                $pdf->SetHTMLFooter($html_footer_images . $html_footer . $html_footer_legend);
-                // $pdf->SetHTMLFooter($html_footer_term_condition . $html_footer . $html_footer_legend);
+                $pdf->SetHTMLFooter($html_footer_images . $html_footer);
 
             }
             //$html_footer = $template->pdfFooter();

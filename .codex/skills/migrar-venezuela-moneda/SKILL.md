@@ -11,14 +11,14 @@ description: Reemplazar PEN o VED por VES y adaptar símbolos, POS, caja, finanz
 - Mantener `USD` como moneda secundaria y eliminar `PEN` y `VED` de los registros y del catálogo.
 - Alternar POS entre `VES` y `USD`.
 - Mantener nombres internos antiguos como `_pen` cuando renombrarlos implique una migración de esquema o API.
-- Tratar el cambio `PEN`/`VED` a `VES` como sustitución de código: no recalcular importes.
+- No aceptar ni convertir códigos monetarios retirados. La instalación nace con VES/USD.
 - Obtener el símbolo desde el catálogo o `Localization::currencySymbol`; no mostrar el código VES como símbolo de importe.
 
 ## Flujo
 
-1. Auditar el catálogo, configuraciones por tenant, claves foráneas y transacciones PEN/VED.
-2. Normalizar el tenant fuente a VES antes de reconstruir su esquema; una clonación estructural no copia ni transforma filas.
-3. En migraciones incrementales de datos, convertir todas las referencias `currency_type_id`, `currency_type_id_source` y `currency_type_id_target` de PEN o VED a VES antes de eliminar los códigos obsoletos.
+1. Auditar el catálogo inicial, defaults y consumidores de `currency_type_id` y sus variantes origen/destino.
+2. Sembrar directamente VES/USD; no existe tenant fuente ni datos anteriores que convertir.
+3. Mantener las referencias e índices desde las migraciones de creación. No restablecer la conversión incremental `000329` ni el comando para tenants existentes.
 4. Obtener símbolos desde la moneda del registro. Mostrar Bs. para VES y $ para USD.
    - En listados de documentos, exponer `currency_type_symbol` desde el resource y renderizarlo directamente.
    - No usar condiciones heredadas que asignen el símbolo monetario según `PEN` o `VED`; convierten VES erróneamente en dólares.
@@ -28,9 +28,9 @@ description: Reemplazar PEN o VED por VES y adaptar símbolos, POS, caja, finanz
 8. Revisar también contabilidad, dashboard, ecommerce, restaurante, inventario, artículos, producción, ventas, suscripciones, enlaces de pago, plantillas PDF/XML y reportes.
 9. Conservar nombres internos como `total_pen` sólo cuando renombrarlos rompa esquemas o APIs; el valor y la etiqueta deben corresponder a VES.
 10. Conservar la estructura final de `cat_currency_types` y todas las columnas monetarias en las migraciones consolidadas; sembrar VES/Bs./Bolívares y USD mediante `TenantMigrationDataSeeder`.
-11. Mantener intacto `CodeErrors.xml` cuando contenga mensajes canónicos de un proveedor externo; no tratar esas descripciones como valores iniciales del sistema.
+11. No restaurar `app/CoreFacturalo/WS/Validator/data/CodeErrors.xml`: se retiró junto con el transporte XML/CDR y no forma parte del contrato monetario actual.
 12. Delimitar toda modificación de código con comentarios válidos que contengan `######## INICIO` y `######## FIN`; no agregar comentarios a JSON ni binarios.
-13. En un tenant histórico, respaldar y ejecutar `tenant:migrate-venezuela {uuid}` para que la migración incremental `000329` convierta el catálogo, configuración y todas las referencias reales; el build frontend por sí solo no cambia PEN/Soles persistidos.
+13. `VendeyaDocumentPayloadNormalizer` valida VES/USD y conserva el cálculo vigente de IVA; no transforma monedas retiradas.
 
 ## Validación
 
@@ -40,5 +40,5 @@ description: Reemplazar PEN o VED por VES y adaptar símbolos, POS, caja, finanz
 - Confirmar que el catálogo de cada tenant contiene `VES / Bs. / Bolívares`, conserva USD y no contiene PEN ni VED.
 - Auditar fuentes activas y bundle generado por separado, excluyendo respaldos, vendor y catálogos canónicos de errores.
 - Verificar que Culqi responda con un error legible antes de intentar un cobro en VES.
-- Confirmar idempotencia y documentar que la decisión de negocio cambia el código monetario sin recalcular importes.
-- Después de limpiar cachés, comprobar visualmente que el POS del hostname real muestra `Bs.`/Bolívares y alterna únicamente entre VES y USD.
+- Confirmar datos iniciales reproducibles y rechazo de monedas retiradas.
+- Comprobar en una instalación temporal que el POS muestra `Bs.`/Bolívares y alterna únicamente entre VES y USD.

@@ -118,16 +118,11 @@
                 @endif
 
                 {{-- ########## INICIO SIN DETRACCIONES E ISC --}}
-                @if(\App\Services\LocalFiscalDocumentPolicy::showIsc() && ($row->total_isc > 0))
-                {{-- ######### FIN SIN DETRACCIONES E ISC --}}
-                    <br/>ISC : {{ $row->total_isc }} ({{ $row->percentage_isc }}%)
-                @endif
+
 
                 @if (!empty($row->item->presentation)) {!!$row->item->presentation->description!!} @endif
 
-                @if($row->total_plastic_bag_taxes > 0)
-                    <br/>ICBPER : {{ $row->total_plastic_bag_taxes }}
-                @endif
+
 
                 @foreach($row->additional_information as $information)
                     @if ($information)
@@ -175,7 +170,7 @@
             <td class="text-left desc align-top">1</td>
             <td class="text-left desc align-top">NIU</td>
             <td class="text-left desc align-top">
-                ANTICIPO: {{($p->document_type_id == '02')? 'FACTURA':'BOLETA'}} NRO. {{$p->number}}
+                ANTICIPO: FACTURA NRO. {{$p->number}}
             </td>
             <td class="text-left desc align-top"></td>
             <td class="text-left desc align-top"></td>
@@ -225,13 +220,7 @@
                 <td colspan="2" class="text-right desc-ticket text-uppercase">{{ number_format($document->total_taxed, 2) }}</td>
             </tr>
         @endif
-        @if($document->total_plastic_bag_taxes > 0)
-            <tr>
-                <td colspan="3" class="desc-ticket text-uppercase">ICBPER:
-                    {{ $document->currency_type->symbol }}</td>
-                <td colspan="2" class="text-right desc-ticket text-uppercase">{{ number_format($document->total_plastic_bag_taxes, 2) }}</td>
-            </tr>
-        @endif
+
         <tr>
             {{-- ########## INICIO CAMBIO IGV A IVA --}}
             <td colspan="3" class="desc-ticket text-uppercase">IVA:
@@ -241,14 +230,7 @@
         </tr>
 
         {{-- ########## INICIO SIN DETRACCIONES E ISC --}}
-        @if(\App\Services\LocalFiscalDocumentPolicy::showIsc() && ($document->total_isc > 0))
-        {{-- ######### FIN SIN DETRACCIONES E ISC --}}
-        <tr>
-            <td colspan="3" class="desc-ticket text-uppercase">ISC:
-                {{ $document->currency_type->symbol }}</td>
-            <td colspan="2" class="text-right desc-ticket text-uppercase">{{ number_format($document->total_isc, 2) }}</td>
-        </tr>
-        @endif
+
 
         @if($document->subtotal > 0)
             @php

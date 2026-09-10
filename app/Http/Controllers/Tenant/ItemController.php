@@ -31,7 +31,6 @@ use App\Models\Tenant\Catalogs\ChargeDiscountType;
 use App\Models\Tenant\Catalogs\CurrencyType;
 use App\Models\Tenant\Catalogs\OperationType;
 use App\Models\Tenant\Catalogs\PriceType;
-use App\Models\Tenant\Catalogs\SystemIscType;
 use App\Models\Tenant\Catalogs\Tag;
 use App\Models\Tenant\Catalogs\UnitType;
 use App\Models\Tenant\CatItemSize;
@@ -379,7 +378,6 @@ class ItemController extends Controller
         $unit_types = UnitType::whereActive()->orderByDescription()->get();
         $currency_types = CurrencyType::whereActive()->orderByDescription()->get();
         $attribute_types = AttributeType::whereActive()->orderByDescription()->get();
-        $system_isc_types = SystemIscType::available();
         $affectation_igv_types = AffectationIgvType::whereActive()->get();
         $warehouses = Warehouse::all();
         $accounts = Account::all();
@@ -429,7 +427,6 @@ class ItemController extends Controller
             'unit_types',
             'currency_types',
             'attribute_types',
-            'system_isc_types',
             'affectation_igv_types',
             'warehouses',
             'accounts',
@@ -483,7 +480,6 @@ class ItemController extends Controller
         }
         $item = Item::firstOrNew(['id' => $id]);
         $item->item_type_id = '01';
-        $item->amount_plastic_bag_taxes = Configuration::firstOrFail()->amount_plastic_bag_taxes;
         if ($request->has('date_of_due')) {
             $time = $request->date_of_due;
             $date = null;
@@ -2066,7 +2062,6 @@ class ItemController extends Controller
         $items = SearchItemController::getItemsToDocuments();
         $categories = [];
         $affectation_igv_types = AffectationIgvType::whereActive()->get();
-        $system_isc_types = SystemIscType::available();
         $price_types = PriceType::whereActive()->get();
         $operation_types = OperationType::whereActive()->get();
         $discount_types = ChargeDiscountType::whereType('discount')->whereLevel('item')->get();
@@ -2107,7 +2102,6 @@ class ItemController extends Controller
             'items',
             'categories',
             'affectation_igv_types',
-            'system_isc_types',
             'price_types',
             'operation_types',
             'discount_types',

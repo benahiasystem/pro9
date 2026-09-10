@@ -44,15 +44,9 @@ class VoidedController extends Controller
         $voided = DB::connection('tenant')
                     ->table('voided')
                     ->where($request->column, 'like', "%{$request->value}%")
-                    ->select(DB::raw("id, external_id, date_of_reference, date_of_issue, ticket, identifier, state_type_id, 'voided' AS 'type'"));
+                    ->select(DB::raw("id, external_id, date_of_reference, date_of_issue, identifier, state_type_id, 'voided' AS 'type'"));
 
-        $summaries = DB::connection('tenant')
-                        ->table('summaries')
-                        ->select(DB::raw("id, external_id, date_of_reference, date_of_issue, ticket, identifier, state_type_id, 'summaries' AS 'type'"))
-                        ->where($request->column, 'like', "%{$request->value}%")
-                        ->where('summary_status_type_id', '3');
-
-        return new VoidedCollection($voided->union($summaries)->orderBy('date_of_issue', 'DESC')->paginate(config('tenant.items_per_page')));
+        return new VoidedCollection($voided->orderBy('date_of_issue', 'DESC')->paginate(config('tenant.items_per_page')));
     }
 
     public function store(VoidedRequest $request)
@@ -63,11 +57,6 @@ class VoidedController extends Controller
         $fact = DB::connection('tenant')->transaction(function () use($request) {
             $facturalo = new Facturalo();
             $facturalo->save($request->all());
-            $facturalo->createXmlUnsigned();
-            $service_pse_xml = $facturalo->servicePseSendXml();
-            $facturalo->signXmlUnsigned($service_pse_xml['xml_signed']);
-            $facturalo->senderXmlSignedSummary();
-
             return $facturalo;
         });
 
@@ -118,48 +107,6 @@ class VoidedController extends Controller
 
     }
 
-
-    public function status($voided_id)
-    {
-        $document = Voided::find($voided_id);
-
-        $fact = DB::connection('tenant')->transaction(function () use($document) {
-            $facturalo = new Facturalo();
-            $facturalo->setDocument($document);
-            $facturalo->setType('voided');
-            $facturalo->statusSummary($document->ticket);
-            return $facturalo;
-        });
-
-        $response = $fact->getResponse();
-
-        return [
-            'success' => true,
-            'message' => $response['description'],
-        ];
-    }
-
-    public function status_masive()
-    {
-
-        $records = Voided::where('state_type_id', '03')->get();
-
-        $fact = DB::connection('tenant')->transaction(function () use($records) {
-
-            foreach ($records as $document) {
-
-                $facturalo = new Facturalo();
-                $facturalo->setDocument($document);
-                $facturalo->setType('voided');
-                $facturalo->statusSummary($document->ticket);
-            }
-        });
-
-        return [
-            'success' => true,
-            'message' => "Consulta masiva ejecutada.",
-        ];
-    }
 
     public function destroy($voided_id)
     {

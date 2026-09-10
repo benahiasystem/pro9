@@ -1,22 +1,19 @@
 <?php
-// ######### INICIO CAMBIO NELSON #########
-
-/**
- * Estructura efectiva clonada desde `tenancy_bbc`.
- * Tabla: `discount_coupon_usages`.
- *
- * Inventario de columnas:
- * - `id`: bigint(20) unsigned; NOT NULL; auto_increment — Sin comentario definido en el esquema fuente.
- * - `discount_coupon_id`: bigint(20) unsigned; NOT NULL — Sin comentario definido en el esquema fuente.
- * - `person_id`: int(10) unsigned; NULL — Sin comentario definido en el esquema fuente.
- * - `order_id`: int(10) unsigned; NULL — Sin comentario definido en el esquema fuente.
- * - `created_at`: timestamp; NULL — Sin comentario definido en el esquema fuente.
- * - `updated_at`: timestamp; NULL — Sin comentario definido en el esquema fuente.
- */
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 
+// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
+/**
+ * Estructura inicial de `discount_coupon_usages` para instalaciones nuevas.
+ * Inventario de columnas:
+ * - `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT
+ * - `discount_coupon_id` bigint(20) unsigned NOT NULL
+ * - `person_id` int(10) unsigned DEFAULT NULL
+ * - `order_id` int(10) unsigned DEFAULT NULL
+ * - `created_at` timestamp NULL DEFAULT NULL
+ * - `updated_at` timestamp NULL DEFAULT NULL
+ */
 return new class extends Migration
 {
     public function up(): void
@@ -42,4 +39,4 @@ SQL);
         DB::unprepared('DROP TABLE IF EXISTS `discount_coupon_usages`');
     }
 };
-// ######### FIN CAMBIO NELSON #########
+// ######## FIN ESQUEMA INICIAL VENEZUELA ########

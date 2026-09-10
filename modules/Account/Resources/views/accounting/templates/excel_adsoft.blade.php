@@ -24,7 +24,7 @@
                 <th style="background-color: #0070c0; font-weight: bold; font-size: 9px; color: #FFFFFF; text-align: center;">DETRAC</th>
                 <th style="background-color: #0070c0; font-weight: bold; font-size: 9px; color: #FFFFFF; text-align: center;">IMP_VTA</th>
                 <th style="background-color: #0070c0; font-weight: bold; font-size: 9px; color: #FFFFFF; text-align: center;">ISC</th>
-                <th style="background-color: #0070c0; font-weight: bold; font-size: 9px; color: #FFFFFF; text-align: center;">ICBPER</th>
+
                 <th style="background-color: #0070c0; font-weight: bold; font-size: 9px; color: #FFFFFF; text-align: center;">IMP_INA</th>
                 <th style="background-color: #0070c0; font-weight: bold; font-size: 9px; color: #FFFFFF; text-align: center;">IMP_EXO</th>
                 <th style="background-color: #0070c0; font-weight: bold; font-size: 9px; color: #FFFFFF; text-align: center;">IMP_EXP</th>

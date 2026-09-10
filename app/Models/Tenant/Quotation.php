@@ -25,11 +25,6 @@ class Quotation extends ModelTenant
     /** Prefijo / serie estándar de 3 caracteres (mismo motor que back-office). */
     public const SERIES_STANDARD = 'COT';
 
-    /**
-     * @deprecated Correlativo COTV descartado en Fase 3. Conservado solo para migraciones legacy.
-     */
-    public const SERIES_ECOMMERCE = 'COTV';
-
     protected $with = ['user', 'fiscal_environment_type', 'state_type', 'currency_type', 'items', 'payments'];
 
     protected $fillable = [
@@ -46,7 +41,6 @@ class Quotation extends ModelTenant
         'document_type_id',
         'series',
         'number',
-        'number_year',
 
         'date_of_issue',
         'time_of_issue',
@@ -65,8 +59,6 @@ class Quotation extends ModelTenant
         'total_unaffected',
         'total_exonerated',
         'total_igv',
-        'total_base_isc',
-        'total_isc',
         'total_base_other_taxes',
         'total_other_taxes',
         'total_taxes',
@@ -393,10 +385,7 @@ class Quotation extends ModelTenant
      */
     public function scopeWhereSourceAdmin($query)
     {
-        return $query->where(function ($q) {
-            $q->where('source', self::SOURCE_ADMIN)
-                ->orWhereNull('source');
-        });
+        return $query->where('source', self::SOURCE_ADMIN);
     }
 
     /**
@@ -404,24 +393,12 @@ class Quotation extends ModelTenant
      */
     public function scopeWhereSourceEcommerce($query)
     {
-        return $query->where(function ($q) {
-            $q->where('source', self::SOURCE_ECOMMERCE)
-                ->orWhere(function ($legacy) {
-                    // Compatibilidad con registros previos al campo source
-                    $legacy->where(function ($inner) {
-                        $inner->whereNull('source')->orWhere('source', '');
-                    })->where('referential_information', 'ecommerce');
-                });
-        });
+        return $query->where('source', self::SOURCE_ECOMMERCE);
     }
 
     public function isFromEcommerce(): bool
     {
-        if ($this->source === self::SOURCE_ECOMMERCE) {
-            return true;
-        }
-
-        return empty($this->source) && $this->referential_information === 'ecommerce';
+        return $this->source === self::SOURCE_ECOMMERCE;
     }
 
     /**

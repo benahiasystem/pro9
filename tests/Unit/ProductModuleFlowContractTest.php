@@ -54,11 +54,12 @@ class ProductModuleFlowContractTest extends TestCase
     }
 
     /** @test */
-    public function new_sales_normalize_hidden_historical_affectations_before_adding_items(): void
+    public function new_sales_resolve_only_the_requested_current_affectation(): void
     {
         $helpers = $this->source('resources/js/helpers/functions.js');
         self::assertStringContainsString('resolveSelectableAffectationType', $helpers);
-        self::assertStringContainsString("const fallbackId = requested === '10' ? '10' : '20'", $helpers);
+        self::assertStringNotContainsString('const fallbackId', $helpers);
+        self::assertStringContainsString("if (!['10', '20'].includes(requested)) return null", $helpers);
 
         foreach ([
             'resources/js/views/tenant/documents/partials/item.vue',

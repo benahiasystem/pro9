@@ -46,12 +46,10 @@ class DocumentResource extends JsonResource
             $balance = number_format($document->total - $total_payment, 2, '.', '');
         }
 
-        $has_cdr = false;
         $btn_voided = false;
 
         if ($document->group_id === '01') {
             if ($document->state_type_id === '05') {
-                $has_cdr = true;
                 $btn_voided = true;
             }
         }
@@ -59,10 +57,6 @@ class DocumentResource extends JsonResource
         if ($document->group_id === '02') {
             if ($document->state_type_id === '05') {
                 $btn_voided = true;
-
-                if ($document->isSingleDocumentShipment()) {
-                    $has_cdr = true;
-                }
             }
         }
 
@@ -75,7 +69,6 @@ class DocumentResource extends JsonResource
             'external_id' => $document->external_id,
             'group_id' => $document->group_id,
             'number' => $document->number_full,
-            'regularize_shipping' => (bool) $document->regularize_shipping,
             'date_of_issue' => $document->date_of_issue->format('Y-m-d'),
             'customer_email' => $customer_email,
             'download_pdf' => $document->download_external_pdf,
@@ -91,7 +84,7 @@ class DocumentResource extends JsonResource
             'response_message' => $response_message,
             'response_type' => $response_type,
             'customer_telephone' => optional($document->person)->telephone,
-            'message_text' => "Su comprobante de pago electrónico {$this->number_full} ha sido generado correctamente, puede revisarlo en el siguiente enlace: ".url('')."/print/document/{$this->external_id}/".(optional(Configuration::first())->qr_api_pdf_format === 'a4' ? 'a4' : 'ticket')."",
+            'message_text' => "Su Factura {$this->number_full} ha sido generada correctamente, puede revisarla en el siguiente enlace: ".url('')."/print/document/{$this->external_id}/".(optional(Configuration::first())->qr_api_pdf_format === 'a4' ? 'a4' : 'ticket')."",
             'sales_note' => $nvs,
 
 
@@ -114,15 +107,8 @@ class DocumentResource extends JsonResource
             'total' => $document->total,
             'total_paid' => $total_payment,
             'balance' => $balance,
-            'has_xml' => true,
             'has_pdf' => true,
-            'has_cdr' => $has_cdr,
-            'download_xml' => $document->download_external_xml,
-            'download_cdr' => $document->download_external_cdr,
             'btn_voided' => $btn_voided,
-            'shipping_status' => json_decode($document->shipping_status),
-            'sunat_shipping_status' => json_decode($document->sunat_shipping_status),
-            'query_status' => json_decode($document->query_status),
             'items' => self::mapDocumentItems($document),
             'payments' => $document->payments->map(function ($row) {
                 return [
@@ -175,8 +161,7 @@ class DocumentResource extends JsonResource
                 $description = data_get($item, 'description')
                     ?: data_get($item, 'name')
                     ?: data_get($item, 'full_description')
-                    ?: ($row['name_product_pdf'] ?? null)
-                    ?: ($row['name_product_xml'] ?? null);
+                    ?: ($row['name_product_pdf'] ?? null);
 
                 if (is_array($description)) {
                     $description = implode(' | ', array_filter($description));

@@ -65,8 +65,8 @@
                                     <small>{{ getTipoDoc(record.tipo_comprobante) }}</small>
                                 </td>
                                 <td>
-                                    <span :class="getStatusClass(record.estado_sunat || record.status)">
-                                        {{ record.estado_sunat || record.status }}
+                                    <span :class="getStatusClass(record.estado_emision || record.status)">
+                                        {{ record.estado_emision || record.status }}
                                     </span>
                                 </td>
                                 <td>Bs. {{ record.total_gravado }}</td>
@@ -78,9 +78,9 @@
                                         title="Descargar PDF">
                                         <i class="fas fa-file-pdf"></i>
                                     </button>
-                                    <!-- ########## INICIO CAMBIO SIN XML CDR SUNAT -->
+                                    <!-- ########## INICIO EMISIÓN MASIVA LOCAL -->
                                     <!-- La facturación masiva conserva únicamente la descarga PDF local. -->
-                                    <!-- ######### FIN CAMBIO SIN XML CDR SUNAT -->
+                                    <!-- ######### FIN EMISIÓN MASIVA LOCAL -->
                                 </td>
                             </tr>
                         </tbody>

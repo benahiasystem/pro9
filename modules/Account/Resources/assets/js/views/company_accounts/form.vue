@@ -110,7 +110,6 @@
                 this.errors = {};
 
                 this.form = {
-                    send_auto: true,
                     stock: true,
                     cron: true,
                     id: null,

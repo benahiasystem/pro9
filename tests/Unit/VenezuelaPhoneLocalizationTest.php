@@ -22,7 +22,7 @@ class VenezuelaPhoneLocalizationTest extends TestCase
     /** @test */
     public function it_returns_a_whatsapp_number_without_the_plus_sign(): void
     {
-        self::assertSame('584121234567', Localization::whatsappNumber('+51 412 1234567'));
+        self::assertSame('584121234567', Localization::whatsappNumber('+58 412 1234567'));
         self::assertNull(Localization::whatsappNumber(''));
     }
 
@@ -31,9 +31,10 @@ class VenezuelaPhoneLocalizationTest extends TestCase
         return [
             'local' => ['0412-123.45.67', '+584121234567'],
             'already venezuelan' => ['+58 412 1234567', '+584121234567'],
-            'historical peru prefix' => ['+51 412 1234567', '+584121234567'],
+            'foreign international prefix is rejected' => ['+51 412 1234567', null],
             'formatted' => ['(0412) 123-45-67', '+584121234567'],
             'empty' => ['   ', null],
+            'zeros are not a phone' => ['000', null],
             'null' => [null, null],
         ];
     }

@@ -51,7 +51,6 @@
                     id: null,
                     number_full: null,
                     date_of_issue: null,
-                    download_cdr: null,
                     response_message:null,
                     response_type:null,
                     state_type_id: '05',

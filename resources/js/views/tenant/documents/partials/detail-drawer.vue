@@ -586,12 +586,8 @@ export default {
                         balance: data.balance ?? snapshot.balance,
                         items,
                         payments: Array.isArray(data.payments) ? data.payments : [],
-                        has_xml: data.has_xml ?? snapshot.has_xml,
                         has_pdf: data.has_pdf ?? snapshot.has_pdf,
-                        has_cdr: data.has_cdr ?? snapshot.has_cdr,
-                        download_xml: data.download_xml || snapshot.download_xml,
                         download_pdf: data.download_pdf || snapshot.download_pdf,
-                        download_cdr: data.download_cdr || snapshot.download_cdr,
                         btn_voided: data.btn_voided ?? snapshot.btn_voided,
                         document_type_id: data.document_type_id || snapshot.document_type_id,
                         document_type_description: data.document_type_description || snapshot.document_type_description

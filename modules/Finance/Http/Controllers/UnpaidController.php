@@ -80,7 +80,7 @@ class UnpaidController extends Controller
 
         $users = User::query()->whereIn('type', ['admin', 'seller'])->get();
 
-        
+
         $payment_method_types = PaymentMethodType::whereIn('id', ['05', '08', '09'])->get();
         $web_platforms = WebPlatform::all();
 
@@ -313,7 +313,7 @@ class UnpaidController extends Controller
             if ($model === 'document') {
                 $comprobantes = $comprobantes
                             ->join('invoices', 'documents.id', '=', 'invoices.document_id')
-                            ->whereIn('documents.document_type_id', ['01','03','08']) // model document
+                            ->whereIn('documents.document_type_id', ['01','08']) // model document
                             ->select(
                                 $model_plural.'.id',
                                 $model_plural.'.total',

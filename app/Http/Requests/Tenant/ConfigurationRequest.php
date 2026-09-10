@@ -15,7 +15,6 @@ class ConfigurationRequest extends FormRequest
         $id = $this->input('id');
 
         return [
-            'send_auto' => ['required', 'boolean'],
             'cron' => ['required', 'boolean'],
             'decimal_quantity' => ['required', 'integer'],
 

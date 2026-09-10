@@ -156,7 +156,7 @@ export default {
                 levels: [],
                 permission_edit_cpe: false,
                 recreate_documents: false,
-                permission_force_send_by_summary: false,
+
                 permission_edit_item_prices: true,
                 restaurant_pin:'',
                 restaurant_role_id: null,
@@ -267,7 +267,7 @@ export default {
                 edit_purchase: true,
                 annular_purchase: true,
                 delete_purchase: true,
-                
+
                 identity_document_type_id: null,
                 number: null,
                 address: null,
@@ -286,7 +286,7 @@ export default {
                 photo_temp_path: null,
                 multiple_default_document_types: false,
                 default_document_types: [],
-                permission_force_send_by_summary: false,
+
                 permission_edit_item_prices: true,
                 restaurant_pin:'',
                 restaurant_role_id: 1 ,
@@ -320,7 +320,7 @@ export default {
             {
                 this.form.document_id = null
                 this.getSeries()
-            } 
+            }
             else
             {
                 this.form.default_document_types = []
@@ -361,13 +361,13 @@ export default {
 
             this.loading = true
 
-            if (this.recordId) 
+            if (this.recordId)
             {
                 await this.$http.get(`/${this.resource}/users/record/${this.recordId}`)
                     .then((response) => {
                         this.form = response.data.data;
                     });
-            } 
+            }
 
             this.loading = false
 

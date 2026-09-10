@@ -63,7 +63,7 @@ class ReportSalesByBrandController extends Controller
                 $date_end = $input['date_end'];
             }
         }
-        
+
         if (!$date_start || !$date_end) {
             $date_start = $input['date_start'] ?? null;
             $date_end = $input['date_end'] ?? null;
@@ -114,7 +114,7 @@ class ReportSalesByBrandController extends Controller
             $date_start = $input['date_start'] ?? null;
             $date_end = $input['date_end'] ?? null;
         }
-        
+
         // ------------------------
 
         $records = $this->getRecordsByBrand($input);
@@ -169,12 +169,12 @@ class ReportSalesByBrandController extends Controller
         if (!$date_start || !$date_end) {
             return collect([]);
         }
-        
+
         $brand_id = $request['brand_id'] ?? null;
         // Documentos
         $document_items = DocumentItem::whereHas('document', function($q) use ($date_start, $date_end) {
                 $q->whereBetween('date_of_issue', [$date_start, $date_end])
-                ->whereIn('document_type_id', ['01','03'])
+                ->whereIn('document_type_id', ['01'])
                 ->whereStateTypeAccepted();
             })
             ->whereHas('relation_item.brand', function($q) use ($brand_id) {

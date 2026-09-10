@@ -395,13 +395,11 @@ class ConfigurationController extends Controller
         DB::connection('tenant')->transaction(function () use ($request) {
             $id = $request->input('id');
             $configuration = Configuration::find($id);
-            $configuration->amount_plastic_bag_taxes = $request->amount_plastic_bag_taxes;
             $configuration->save();
 
-            $items = Item::get(['id', 'amount_plastic_bag_taxes']);
+            $items = Item::get(['id']);
 
             foreach ($items as $item) {
-                $item->amount_plastic_bag_taxes = $configuration->amount_plastic_bag_taxes;
                 $item->update();
             }
         });

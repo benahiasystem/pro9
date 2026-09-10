@@ -33,7 +33,7 @@ class InventoryVoidedServiceProvider extends ServiceProvider
         //Revisar los tipos de documentos, ello varia el control de stock en las anulaciones.
         Document::updated(function ($document) {
             // if($document['document_type_id'] == '01' || $document['document_type_id'] == '03'){
-            if(in_array($document['document_type_id'], ['01', '03', '08'], true))
+            if(in_array($document['document_type_id'], ['01', '08'], true))
             {
                 if (!$document->wasChanged('state_type_id')) return;
 

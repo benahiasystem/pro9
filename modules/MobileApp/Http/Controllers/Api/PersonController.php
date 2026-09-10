@@ -149,7 +149,7 @@ class PersonController extends Controller
         return [
             'data' => PersonCollection::make($records),
             'pagination' => [
-                'next_cursor' => $records->nextCursor()?->encode() ?? null,
+                'next_cursor' => optional($records->nextCursor())->encode(),
                 'has_more' => $records->hasMorePages(),
             ]
         ];
@@ -239,7 +239,7 @@ class PersonController extends Controller
         {
             $customer = Person::findOrFail($establishment->customer_id);
         }
-        elseif(in_array($document_type_id, ['03', '80'], true))
+        elseif(in_array($document_type_id, ['80'], true))
         {
             $customer = Person::whereFilterVariousClients()->first();
         }

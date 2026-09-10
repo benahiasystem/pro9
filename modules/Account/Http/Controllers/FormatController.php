@@ -157,7 +157,6 @@ use App\Models\Tenant\{
                                 $total_exonerated = $row->total_exonerated;
                                 $total_unaffected = $row->total_unaffected;
                                 $total_exportation = $row->total_exportation;
-                                $total_isc = $row->total_isc;
 
                                 $exchange_rate_sale = $row->exchange_rate_sale;
                                 $currency_type_id = $row->currency_type_id;
@@ -172,7 +171,6 @@ use App\Models\Tenant\{
                                     $total_exonerated = round($row->generalConvertValueToPen($total_exonerated, $exchange_rate_sale), 2);
                                     $total_unaffected = round($row->generalConvertValueToPen($total_unaffected, $exchange_rate_sale), 2);
                                     $total_exportation = round($row->generalConvertValueToPen($total_exportation, $exchange_rate_sale), 2);
-                                    $total_isc = round($row->generalConvertValueToPen($total_isc, $exchange_rate_sale), 2);
                                     $symbol = 'Bs.';
                                     $format_currency_type_id = 'VES';
                                 }
@@ -192,8 +190,6 @@ use App\Models\Tenant\{
                                     'total_taxed'                        => $total_taxed,
                                     'total_exonerated'                   => $total_exonerated,
                                     'total_unaffected'                   => $total_unaffected,
-                                    'total_plastic_bag_taxes'            => $row->total_plastic_bag_taxes,
-                                    'total_isc'                          => $total_isc,
                                     'total_igv'                          => $total_igv,
                                     'total'                              => $total,
                                     'observation'=>$row->additional_information,
@@ -274,7 +270,6 @@ use App\Models\Tenant\{
             $row->total_taxed = 0 ;
             $row->total_exonerated = 0 ;
             $row->total_unaffected = 0 ;
-            $row->total_plastic_bag_taxes = 0 ;
             $row->total_igv = 0 ;
             $row->total = 0 ;
         }
@@ -290,7 +285,7 @@ use App\Models\Tenant\{
         private function getPurchaseDocuments($d_start, $d_end) {
             $data = Purchase::query()
             ->whereBetween('date_of_issue', [$d_start, $d_end])
-            ->whereIn('document_type_id', ['01', '03', '14'])
+            ->whereIn('document_type_id', ['01', '14'])
                 // ->whereIn('currency_type_id', ['VES','USD'])
             ->orderBy('series')
             ->orderBy('number')
@@ -309,7 +304,6 @@ use App\Models\Tenant\{
                                 $total_exportation = round($row->total_exportation, 2);
                                 $total_exonerated = round($row->total_exonerated, 2);
                                 $total_unaffected = round($row->total_unaffected, 2);
-                                $total_isc = round($row->total_isc, 2);
 
                 return [
                     'date_of_issue' => $row->date_of_issue->format('d/m/Y'),
@@ -324,7 +318,6 @@ use App\Models\Tenant\{
                                     'total_exportation'                  => $total_exportation,
                                     'total_exonerated'                   => $total_exonerated,
                                     'total_unaffected'                   => $total_unaffected,
-                                    'total_isc'                          => $total_isc,
                                     'total_taxed'                        => $total_taxed,
                                     'total_igv'                          => $total_igv,
                                     'total'                              => $total,

@@ -8,7 +8,7 @@ use Tests\TestCase;
 class TenantMigrationDataSeederTest extends TestCase
 {
     /** @test */
-    public function it_contains_all_consolidated_historical_seed_records(): void
+    public function it_contains_the_current_initial_catalogs(): void
     {
         $tables = $this->tables();
         $totalRows = array_sum(array_map(
@@ -18,7 +18,7 @@ class TenantMigrationDataSeederTest extends TestCase
 
         // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
         self::assertCount(72, $tables);
-        self::assertSame(850, $totalRows);
+        self::assertSame(859, $totalRows);
         // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
 
         foreach ($tables as $table => $definition) {
@@ -37,42 +37,11 @@ class TenantMigrationDataSeederTest extends TestCase
     {
         $createMigrations = glob(database_path('migrations/tenant/*_create_*_table.php')) ?: [];
         $foreignKeyMigrations = glob(database_path('migrations/tenant/*_add_tenant_foreign_keys.php')) ?: [];
-        $currencyMigrations = glob(database_path('migrations/tenant/*_migrate_currency_code_to_ves.php')) ?: [];
-        $existingTenantMigrations = glob(database_path('migrations/tenant/*_migrate_existing_tenant_to_venezuela.php')) ?: [];
-        // ########## INICIO CAMBIO AFECTACIÓN IVA
-        $ivaMigrations = glob(database_path('migrations/tenant/*_configure_venezuela_iva.php')) ?: [];
-        // ######### FIN CAMBIO AFECTACIÓN IVA
-        // ########## INICIO CAMBIO SUNAT A SENIAT
-        $identityDocumentRenameMigrations = glob(database_path('migrations/tenant/*_rename_undomiciled_tax_document_to_doc_sin_rif.php')) ?: [];
-        // ######### FIN CAMBIO SUNAT A SENIAT
-        // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
-        $catalogNameMigrations = glob(database_path('migrations/tenant/*_configure_venezuela_catalog_names.php')) ?: [];
-        // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
-
-        // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
-        self::assertCount(325, $createMigrations);
-        // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
+        self::assertCount(327, $createMigrations);
         self::assertCount(1, $foreignKeyMigrations);
-        self::assertCount(1, $currencyMigrations);
-        self::assertCount(1, $existingTenantMigrations);
-        // ########## INICIO CAMBIO AFECTACIÓN IVA
-        self::assertCount(1, $ivaMigrations);
-        // ######### FIN CAMBIO AFECTACIÓN IVA
-        // ########## INICIO CAMBIO SUNAT A SENIAT
-        self::assertCount(1, $identityDocumentRenameMigrations);
-        // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
-        self::assertCount(1, $catalogNameMigrations);
-        // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
-        // ########### INICIO CONTRATO FLUJO DE PRODUCTOS ###########
-        self::assertCount(
-            1,
-            glob(database_path('migrations/tenant/*_repair_items_parent_item_contract.php')) ?: []
-        );
-        // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
-        self::assertCount(370, glob(database_path('migrations/tenant/*.php')) ?: []);
-        // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
-        // ########### FIN CONTRATO FLUJO DE PRODUCTOS ###########
-        // ######### FIN CAMBIO SUNAT A SENIAT
+        self::assertCount(328, glob(database_path('migrations/tenant/*.php')) ?: []);
+        self::assertSame([], glob(database_path('migrations/tenant/*_migrate_*.php')) ?: []);
+
     }
 
     /** @test */
@@ -90,7 +59,7 @@ class TenantMigrationDataSeederTest extends TestCase
     {
         $payload = require database_path('seeders/data/tenant_initial_data.php');
 
-        self::assertSame('migraciones tenant históricas', $payload['source']);
+        self::assertSame('catálogos iniciales Venezuela', $payload['source']);
         self::assertIsArray($payload['tables']);
 
         return $payload['tables'];

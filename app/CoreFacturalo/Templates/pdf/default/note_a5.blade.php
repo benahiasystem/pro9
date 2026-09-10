@@ -24,7 +24,7 @@
     {{--<link href="{{ $path_style }}" rel="stylesheet" />--}}
 </head>
 <body>
-@if($document->state_type->id == '11') 
+@if($document->state_type->id == '11')
 <div class="company_logo_box" style="position: absolute; text-align: center; top:30%;">
     <img
         src="data:{{mime_content_type(public_path("status_images".DIRECTORY_SEPARATOR."anulado.png"))}};base64, {{base64_encode(file_get_contents(public_path("status_images".DIRECTORY_SEPARATOR."anulado.png")))}}"
@@ -112,7 +112,7 @@
                 <h5 class="text-center">{{ $document->document_type->description }}</h5>
                 <h3 class="text-center">{{ $document_number }}</h3>
             </td>
-        @endif        
+        @endif
     </tr>
 </table>
 <table class="full-width mt-5">
@@ -328,12 +328,7 @@
                 <td class="text-right font-bold">{{ number_format($document->total_discount_with_igv, 2) }}</td>
             </tr>
         @endif
-        @if($document->total_plastic_bag_taxes > 0)
-            <tr>
-                <td colspan="5" class="text-right font-bold">ICBPER: {{ $document->currency_type->symbol }}</td>
-                <td class="text-right font-bold">{{ number_format($document->total_plastic_bag_taxes, 2) }}</td>
-            </tr>
-        @endif
+
         <tr>
             {{-- ########## INICIO CAMBIO IGV A IVA --}}
             <td colspan="5" class="text-right font-bold">IVA: {{ $document->currency_type->symbol }}</td>
@@ -375,7 +370,7 @@
                 @endif
             @endforeach
             <br>
-            @if(in_array($document->document_type->id,['01','03']))
+            @if(((string) $document->document_type->id === '01'))
                 @foreach($accounts as $account)
                     <p>
                     <span class="font-bold">{{$account->bank->description}}</span> {{$account->currency_type->description}}
@@ -388,8 +383,6 @@
             @endif
         </td>
         <td width="35%" class="text-right">
-            <img src="data:image/png;base64, {{ $document->qr }}" style="margin-right: -10px;" width="16%"/>
-            <p style="font-size: 9px">Código Hash: {{ $document->hash }}</p>
         </td>
     </tr>
 </table>

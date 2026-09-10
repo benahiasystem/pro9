@@ -4,7 +4,6 @@ namespace App\Models\Tenant;
 
 use App\Models\Tenant\Catalogs\AffectationIgvType;
 use App\Models\Tenant\Catalogs\CurrencyType;
-use App\Models\Tenant\Catalogs\SystemIscType;
 use App\Models\Tenant\Catalogs\UnitType;
 use Illuminate\Support\Facades\Cache;
 use App\Helpers\CacheHelper;

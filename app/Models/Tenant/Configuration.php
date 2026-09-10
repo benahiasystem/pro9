@@ -7,7 +7,6 @@
 use App\Models\System\Configuration as SystemConfiguration;
 use App\Models\Tenant\Catalogs\CurrencyType;
 use App\Models\Tenant\Catalogs\ChargeDiscountType;
-use App\Services\LocalFiscalDocumentPolicy;
 use Auth;
 use Carbon\Carbon;
 use Illuminate\Config\Repository;
@@ -23,12 +22,10 @@ use Illuminate\Support\Facades\Log;
      * Class App\Models\Tenant\Configuration
      *
      * @property int         $id
-     * @property bool        $send_auto
      * @property string      $formats
      * @property bool        $cron
      * @property bool        $mi_tienda_pe
      * @property bool        $stock
-     * @property bool        $sunat_alternate_server
      * @property int         $limit_documents
      * @property int         $limit_users
      * @property bool        $locked_emission
@@ -45,7 +42,6 @@ use Illuminate\Support\Facades\Log;
      * @property int         $quantity_documents
      * @property bool        $locked_tenant
      * @property bool        $compact_sidebar
-     * @property float       $amount_plastic_bag_taxes
      * @property int|null    $colums_grid_item
      * @property bool        $options_pos
      * @property bool        $edit_name_product
@@ -63,10 +59,8 @@ use Illuminate\Support\Facades\Log;
      * @property bool        $cotizaction_finance
      * @property bool        $quotation_allow_seller_generate_sale
      * @property bool        $allow_edit_unit_price_to_seller
-     * @property bool        $legend_footer
      * @property string|null $header_image
      * @property bool        $destination_sale
-     * @property bool        $default_document_type_03
      * @property bool        $default_document_type_80
      * @property bool        $search_item_by_barcode
      * @property string|null $login
@@ -85,8 +79,6 @@ use Illuminate\Support\Facades\Log;
      * @property bool        $seller_can_generate_sale_opportunities
      * @property bool        $update_document_on_dispaches
      * @property bool        $is_pharmacy
-     * @property int|null    $auto_send_dispatchs_to_sunat
-     * @property bool        $send_data_to_other_server
      * @property bool        $search_item_by_series
      * @property bool        $group_items_generate_document
      * @property bool        $change_free_affectation_igv
@@ -103,7 +95,6 @@ use Illuminate\Support\Facades\Log;
      * @property int|null    $dispatches_address_text
      * @property int|null    $show_items_only_user_stablishment
      * @property int|null    $new_validator_pagination
-     * @property bool        $name_product_pdf_to_xml
      * @property int         $item_name_pdf_description
      * @property bool        $auto_print
      * @property bool        $print_new_line_to_observation
@@ -162,10 +153,8 @@ use Illuminate\Support\Facades\Log;
             'active_warehouse_prices',
             'affectation_igv_type_id',
             'allow_edit_unit_price_to_seller',
-            'amount_plastic_bag_taxes',
             'apk_url',
             'auto_print',
-            'auto_send_dispatchs_to_sunat',
             'change_free_affectation_igv',
             'colums_grid_item',
             'compact_sidebar',
@@ -176,7 +165,6 @@ use Illuminate\Support\Facades\Log;
             'time_format',
             'date_time_start',
             'decimal_quantity',
-            'default_document_type_03',
             'default_document_type_80',
             'destination_sale',
             'dispatches_address_text',
@@ -192,14 +180,12 @@ use Illuminate\Support\Facades\Log;
             'global_igv_handling',
             'is_pharmacy',
             'item_name_pdf_description',
-            'legend_footer',
             'limit_documents',
             'limit_users',
             'locked_emission',
             'locked_tenant',
             'locked_users',
             'login',
-            'name_product_pdf_to_xml',
             'navbar',
             'options_pos',
             'percentage_allowance_charge',
@@ -216,8 +202,6 @@ use Illuminate\Support\Facades\Log;
             'seller_can_create_product',
             'seller_can_generate_sale_opportunities',
             'seller_can_view_balance',
-            'send_auto',
-            'send_data_to_other_server',
             'set_address_by_establishment',
             'show_extra_info_to_item',
             'show_items_only_user_stablishment',
@@ -228,7 +212,6 @@ use Illuminate\Support\Facades\Log;
             'smtp_port',
             'smtp_user',
             'stock',
-            'sunat_alternate_server',
             'terms_condition_sale',
             'terms_condition',
             'ticket_58',
@@ -272,7 +255,6 @@ use Illuminate\Support\Facades\Log;
             'top_menu_extra_two',
             'skin_id',
             'enabled_tips_pos',
-            'legend_forest_to_xml',
             'change_currency_item',
             'enabled_advanced_records_search',
             'change_decimal_quantity_unit_price_pdf',
@@ -281,7 +263,6 @@ use Illuminate\Support\Facades\Log;
             'order_cash_income',
             'generate_order_note_from_quotation',
             'list_items_by_warehouse',
-            'ticket_single_shipment',
             'hide_pdf_view_documents',
             'dashboard_sales',
             'dashboard_general',
@@ -406,8 +387,6 @@ use Illuminate\Support\Facades\Log;
             'update_document_on_dispaches' => 'boolean',
             'show_service_on_pos' => 'boolean',
             'is_pharmacy' => 'boolean',
-            'auto_send_dispatchs_to_sunat' => 'boolean',
-            'send_data_to_other_server' => 'boolean',
             'select_available_price_list' => 'boolean',
             'show_extra_info_to_item' => 'boolean',
             'group_items_generate_document' => 'boolean',
@@ -418,14 +397,11 @@ use Illuminate\Support\Facades\Log;
             'set_address_by_establishment' => 'boolean',
             'show_items_only_user_stablishment' => 'boolean',
             'permission_to_edit_cpe' => 'boolean',
-            'name_product_pdf_to_xml' => 'boolean',
             'item_name_pdf_description' => 'boolean',
             'default_document_type_80' => 'boolean',
             'search_item_by_barcode' => 'boolean',
-            'send_auto' => 'bool',
             'cron' => 'bool',
             'stock' => 'bool',
-            'sunat_alternate_server' => 'bool',
             'limit_documents' => 'int',
             'limit_users' => 'int',
             'locked_emission' => 'bool',
@@ -435,7 +411,6 @@ use Illuminate\Support\Facades\Log;
             'quantity_documents' => 'int',
             'locked_tenant' => 'bool',
             'compact_sidebar' => 'bool',
-            'amount_plastic_bag_taxes' => 'float',
             'colums_grid_item' => 'int',
             'options_pos' => 'bool',
             'edit_name_product' => 'bool',
@@ -448,9 +423,7 @@ use Illuminate\Support\Facades\Log;
             'active_warehouse_prices' => 'bool',
             'product_only_location' => 'bool',
             'cotizaction_finance' => 'bool',
-            'legend_footer' => 'bool',
             'destination_sale' => 'bool',
-            'default_document_type_03' => 'bool',
             'smtp_port' => 'int',
             'ticket_58' => 'bool',
             'search_item_by_series' => 'bool',
@@ -483,7 +456,6 @@ use Illuminate\Support\Facades\Log;
             'top_menu_extra_two' => 'array',
             'skin_id' => 'int',
             'enabled_tips_pos' => 'bool',
-            'legend_forest_to_xml' => 'bool',
             'change_currency_item' => 'bool',
             'enabled_advanced_records_search' => 'bool',
             'change_decimal_quantity_unit_price_pdf' => 'bool',
@@ -492,7 +464,6 @@ use Illuminate\Support\Facades\Log;
             'order_cash_income' => 'bool',
             'generate_order_note_from_quotation' => 'bool',
             'list_items_by_warehouse' => 'bool',
-            'ticket_single_shipment' => 'bool',
             'hide_pdf_view_documents' => 'bool',
             'affect_all_documents'=>'bool',
             'regex_password_user' => 'bool',
@@ -702,11 +673,6 @@ use Illuminate\Support\Facades\Log;
          */
         public function getCollectionData()
         {
-            // ########## INICIO CAMBIO SIN XML CDR SUNAT
-            // El valor histórico se conserva en BD, pero la operación local nunca
-            // debe solicitar las rutas fiscales de envío que están desregistradas.
-            $localDocumentEmission = LocalFiscalDocumentPolicy::enabled();
-            // ######### FIN CAMBIO SIN XML CDR SUNAT
             $company = Company::first();
             /** @var User $user */
             $user = new User();
@@ -742,19 +708,14 @@ use Illuminate\Support\Facades\Log;
                 'establishment' => $establishment,
                 'production_app' => $productionApp,
                 'warehouse_id' => $warehouse->id,
-                // ########## INICIO CAMBIO SIN XML CDR SUNAT
-                'send_auto' => $localDocumentEmission ? false : (bool) $this->send_auto,
-                // ######### FIN CAMBIO SIN XML CDR SUNAT
                 'formats' => $this->formats,
                 'stock' => (bool)$this->stock,
                 'cron' => (bool)$this->cron,
-                'sunat_alternate_server' => (bool)$this->sunat_alternate_server,
                 'compact_sidebar' => (bool)$this->compact_sidebar,
                 'subtotal_account' => $this->subtotal_account,
                 'decimal_quantity' => $this->decimal_quantity,
                 'date_format' => $this->date_format ?: 'DD-MM-YYYY',
                 'time_format' => $this->time_format ?: 'HH:mm:ss',
-                'amount_plastic_bag_taxes' => $this->amount_plastic_bag_taxes,
                 'colums_grid_item' => $this->colums_grid_item,
                 'options_pos' => (bool)$this->options_pos,
                 'edit_name_product' => (bool)($this->edit_name_product ?? false),
@@ -771,9 +732,7 @@ use Illuminate\Support\Facades\Log;
                 'include_igv' => (bool)$this->include_igv,
                 'global_igv_handling' => (bool)$this->global_igv_handling,
                 'product_only_location' => (bool)$this->product_only_location,
-                'legend_footer' => (bool)$this->legend_footer,
                 // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
-                'default_document_type_03' => false,
                 // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
                 'header_image' => $this->header_image,
                 'destination_sale' => (bool)$this->destination_sale,
@@ -786,8 +745,6 @@ use Illuminate\Support\Facades\Log;
                 'seller_can_generate_sale_opportunities' => (bool)$this->seller_can_generate_sale_opportunities,
                 'update_document_on_dispaches' => (bool)$this->update_document_on_dispaches,
                 'is_pharmacy' => (bool)$this->is_pharmacy,
-                'auto_send_dispatchs_to_sunat' => (bool)$this->auto_send_dispatchs_to_sunat,
-                'send_data_to_other_server' => (bool)$this->send_data_to_other_server,
                 'item_per_page' => config('tenant.items_per_page'),
                 'active_warehouse_prices' => (bool)$this->active_warehouse_prices,
                 'active_allowance_charge' => (bool)$this->active_allowance_charge,
@@ -801,7 +758,6 @@ use Illuminate\Support\Facades\Log;
                 'group_items_generate_document' => $this->group_items_generate_document,
                 'set_address_by_establishment' => $this->set_address_by_establishment,
                 'permission_to_edit_cpe' => $this->permission_to_edit_cpe,
-                'name_product_pdf_to_xml' => $this->name_product_pdf_to_xml,
                 'default_document_type_80' => $this->default_document_type_80,
                 'search_item_by_barcode' => $this->search_item_by_barcode,
                 'igv_retention_percentage' => $this->igv_retention_percentage,
@@ -852,7 +808,6 @@ use Illuminate\Support\Facades\Log;
                 'skins' => $skins,
                 'facturalo_server' => true, // $this->getFacturaloConfig(),
                 'enabled_tips_pos' => $this->enabled_tips_pos,
-                'legend_forest_to_xml' => $this->legend_forest_to_xml,
                 'change_currency_item' => $this->change_currency_item,
                 'enabled_advanced_records_search' => $this->enabled_advanced_records_search,
                 'change_decimal_quantity_unit_price_pdf' => $this->change_decimal_quantity_unit_price_pdf,
@@ -861,8 +816,6 @@ use Illuminate\Support\Facades\Log;
                 'order_cash_income' => $this->order_cash_income,
                 'generate_order_note_from_quotation' => $this->generate_order_note_from_quotation,
                 'list_items_by_warehouse' => $this->list_items_by_warehouse,
-                // ########## INICIO CAMBIO SIN XML CDR SUNAT
-                'ticket_single_shipment' => $localDocumentEmission ? false : (bool) $this->ticket_single_shipment,
                 // ######### FIN CAMBIO SIN XML CDR SUNAT
                 'hide_pdf_view_documents' => $this->hide_pdf_view_documents,
                 'regex_password_user' => $this->regex_password_user,
@@ -1060,25 +1013,6 @@ use Illuminate\Support\Facades\Log;
             // $api_service_token = $configuration->token_apiruc === 'false' ? config('configuration.api_service_token') : $configuration->token_apiruc;
 
             return $api_service_token;
-        }
-
-        /**
-         * @return bool
-         */
-        public function isAutoSendDispatchsToSunat(): bool
-        {
-            return (bool)$this->auto_send_dispatchs_to_sunat;
-        }
-
-        /**
-         * @param bool|null $auto_send_dispatchs_to_sunat
-         *
-         * @return Configuration
-         */
-        public function setAutoSendDispatchsToSunat(?bool $auto_send_dispatchs_to_sunat): Configuration
-        {
-            $this->auto_send_dispatchs_to_sunat = (bool)$auto_send_dispatchs_to_sunat;
-            return $this;
         }
 
         /**
@@ -1315,29 +1249,6 @@ use Illuminate\Support\Facades\Log;
         }
 
         /**
-         * Devuelve verdadero o falso si esta habilitado el envio de datos a otro servidor
-         *
-         * @return bool
-         */
-        public function isSendDataToOtherServer(): ?bool
-        {
-            return (bool)$this->send_data_to_other_server;
-        }
-
-        /**
-         * Establece el valor para el envio de datos a otro servidor
-         *
-         * @param bool|null $send_data_to_other_server
-         *
-         * @return Configuration
-         */
-        public function setSendDataToOtherServer(?bool $send_data_to_other_server = false): Configuration
-        {
-            $this->send_data_to_other_server = (bool)$send_data_to_other_server;
-            return $this;
-        }
-
-        /**
          * @param string|null $currency_type_id
          */
         public function setCurrencyTypeId(?string $currency_type_id = 'VES'): Configuration
@@ -1478,25 +1389,6 @@ use Illuminate\Support\Facades\Log;
         }
 
         /**
-         * @return bool
-         */
-        public function isSendAuto(): ?bool
-        {
-            return (bool)$this->send_auto;
-        }
-
-        /**
-         * @param bool|null $send_auto
-         *
-         * @return Configuration
-         */
-        public function setSendAuto(?bool $send_auto): Configuration
-        {
-            $this->send_auto = (bool)$send_auto;
-            return $this;
-        }
-
-        /**
          * @return string
          */
         public function getFormats(): string
@@ -1550,25 +1442,6 @@ use Illuminate\Support\Facades\Log;
         public function setStock(?bool $stock): Configuration
         {
             $this->stock = (bool)$stock;
-            return $this;
-        }
-
-        /**
-         * @return bool
-         */
-        public function isSunatAlternateServer(): ?bool
-        {
-            return (bool)$this->sunat_alternate_server;
-        }
-
-        /**
-         * @param bool|null $sunat_alternate_server
-         *
-         * @return Configuration
-         */
-        public function setSunatAlternateServer(?bool $sunat_alternate_server): Configuration
-        {
-            $this->sunat_alternate_server = (bool)$sunat_alternate_server;
             return $this;
         }
 
@@ -1854,25 +1727,6 @@ use Illuminate\Support\Facades\Log;
         public function setCompactSidebar(?bool $compact_sidebar): Configuration
         {
             $this->compact_sidebar = (bool)$compact_sidebar;
-            return $this;
-        }
-
-        /**
-         * @return float
-         */
-        public function getAmountPlasticBagTaxes(): float
-        {
-            return (bool)$this->amount_plastic_bag_taxes;
-        }
-
-        /**
-         * @param float $amount_plastic_bag_taxes
-         *
-         * @return Configuration
-         */
-        public function setAmountPlasticBagTaxes(float $amount_plastic_bag_taxes): Configuration
-        {
-            $this->amount_plastic_bag_taxes = (bool)$amount_plastic_bag_taxes;
             return $this;
         }
 
@@ -2182,25 +2036,6 @@ use Illuminate\Support\Facades\Log;
         }
 
         /**
-         * @return bool
-         */
-        public function isLegendFooter(): ?bool
-        {
-            return (bool)$this->legend_footer;
-        }
-
-        /**
-         * @param bool|null $legend_footer
-         *
-         * @return Configuration
-         */
-        public function setLegendFooter(?bool $legend_footer): Configuration
-        {
-            $this->legend_footer = (bool)$legend_footer;
-            return $this;
-        }
-
-        /**
          * @return string|null
          */
         public function getHeaderImage(): ?string
@@ -2235,29 +2070,6 @@ use Illuminate\Support\Facades\Log;
         public function setDestinationSale(?bool $destination_sale): Configuration
         {
             $this->destination_sale = (bool)$destination_sale;
-            return $this;
-        }
-
-        /**
-         * @return bool
-         */
-        public function isDefaultDocumentType03(): ?bool
-        {
-            // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
-            return false;
-            // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
-        }
-
-        /**
-         * @param bool|null $default_document_type_03
-         *
-         * @return Configuration
-         */
-        public function setDefaultDocumentType03(?bool $default_document_type_03): Configuration
-        {
-            // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
-            $this->default_document_type_03 = false;
-            // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
             return $this;
         }
 
@@ -2473,25 +2285,6 @@ use Illuminate\Support\Facades\Log;
         /**
          * @return bool|null
          */
-        public function isNameProductPdfToXml(): ?bool
-        {
-            return (bool)$this->name_product_pdf_to_xml;
-        }
-
-        /**
-         * @param bool|null $name_product_pdf_to_xml
-         *
-         * @return Configuration
-         */
-        public function setNameProductPdfToXml(?bool $name_product_pdf_to_xml): Configuration
-        {
-            $this->name_product_pdf_to_xml = (bool)$name_product_pdf_to_xml;
-            return $this;
-        }
-
-        /**
-         * @return bool|null
-         */
         public function isAutoPrint(): ?bool
         {
             return (bool)$this->auto_print;
@@ -2638,17 +2431,6 @@ use Illuminate\Support\Facades\Log;
         public function scopeGetUnitPriceDispatchRelatedRecord($query)
         {
             return $query->select('set_unit_price_dispatch_related_record')->first()->set_unit_price_dispatch_related_record;
-        }
-
-        /**
-         * Usado en:
-         * LegendInput, para facturas y boletas
-         *
-         * @return bool
-         */
-        public static function isEnabledLegendForestToXml()
-        {
-            return Configuration::select('legend_forest_to_xml')->firstOrFail()->legend_forest_to_xml;
         }
 
         public static function isGlobalDiscountEnabled(): bool

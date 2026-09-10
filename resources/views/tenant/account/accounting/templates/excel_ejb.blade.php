@@ -42,9 +42,9 @@
             <td>{{ $row['total_igv'] }}</td>
             <td>{{ $row['total'] }}</td>
             <td>{{ $row['total_unaffected'] }}</td>
-            <td>{{ $row['total_isc'] }}</td>
+
             <td>{{ $row['others'] }}</td>
-            <td>{{ $row['total_plastic_bag_taxes'] }}</td>
+
             <td>{{ $row['income_account'] }}</td>
             <td>{{ $row['ref_date_excel'] }}</td>
             <td>{{ $row['ref_document_type'] }}</td>

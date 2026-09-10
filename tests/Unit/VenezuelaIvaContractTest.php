@@ -38,22 +38,16 @@ class VenezuelaIvaContractTest extends TestCase
     }
 
     /** @test */
-    public function it_configures_new_and_existing_tenants_with_gravado_and_exento(): void
+    public function it_seeds_only_current_tax_affectations(): void
     {
-        $seed = (string) file_get_contents(database_path('seeders/data/tenant_initial_data.php'));
-        $migration = (string) file_get_contents(
-            database_path('migrations/tenant/2026_08_18_000331_configure_venezuela_iva.php')
-        );
-
-        foreach ([$seed, $migration] as $source) {
-            self::assertStringContainsString("'10'", $source);
-            self::assertStringContainsString("'20'", $source);
-            self::assertStringContainsString("'Gravado'", $source);
-            self::assertStringContainsString("'Exento'", $source);
+        $seed = require database_path('seeders/data/tenant_initial_data.php');
+        $affectations = $seed['tables']['cat_affectation_igv_types']['rows'];
+        self::assertSame(['10', '20'], array_column($affectations, 'id'));
+        self::assertSame(['Gravado', 'Exento'], array_column($affectations, 'description'));
+        foreach ($seed['tables']['items']['rows'] as $item) {
+            self::assertContains($item['sale_affectation_igv_type_id'], ['10', '20']);
+            self::assertContains($item['purchase_affectation_igv_type_id'], ['10', '20']);
         }
-
-        self::assertStringContainsString('updateOrInsert', $migration);
-        self::assertStringNotContainsString("->delete()", $migration);
     }
 
     /** @test */
@@ -186,7 +180,6 @@ class VenezuelaIvaContractTest extends TestCase
     public function blade_markers_do_not_break_raw_php_blocks(): void
     {
         foreach ([
-            'app/CoreFacturalo/Templates/xml/invoice.blade.php',
             'modules/Report/Resources/views/documents/report_pdf.blade.php',
             'modules/Report/Resources/views/documents/report_excel.blade.php',
         ] as $path) {
@@ -201,7 +194,7 @@ class VenezuelaIvaContractTest extends TestCase
     }
 
     /** @test */
-    public function ubl_xml_keeps_the_sunat_igv_tax_name(): void
+    public function retired_ubl_templates_are_not_available_for_emission(): void
     {
         foreach ([
             'invoice.blade.php',
@@ -210,12 +203,7 @@ class VenezuelaIvaContractTest extends TestCase
             'summary.blade.php',
             'purchase_settlement.blade.php',
         ] as $template) {
-            $source = (string) file_get_contents(
-                app_path("CoreFacturalo/Templates/xml/{$template}")
-            );
-
-            self::assertStringContainsString('<cbc:Name>IGV</cbc:Name>', $source, $template);
-            self::assertStringNotContainsString('<cbc:Name>IVA</cbc:Name>', $source, $template);
+            self::assertFileDoesNotExist(app_path("CoreFacturalo/Templates/xml/{$template}"));
         }
     }
 
@@ -238,7 +226,9 @@ class VenezuelaIvaContractTest extends TestCase
         $payment = (string) file_get_contents(resource_path('js/views/tenant/pos/partials/fast_payment_garage.vue'));
 
         self::assertStringContainsString(':percentage-igv="percentage_igv"', $garage);
-        self::assertSame(2, substr_count($payment, 'IVA ({{ ivaPercentageLabel }}%)'));
+        self::assertSame(1, substr_count($payment, 'IVA ({{ ivaPercentageLabel }}%)'));
+        self::assertStringContainsString('Number(form.total_igv).toFixed(2)', $payment);
+        self::assertStringNotContainsString('total_plastic_bag_taxes', $payment);
         self::assertStringContainsString('(Number(this.percentageIgv) || 0.16) * 100', $payment);
         self::assertStringNotContainsString('IVA (18%)', $payment);
     }

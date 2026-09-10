@@ -281,16 +281,11 @@
                 @endif
 
                 {{-- ########## INICIO SIN DETRACCIONES E ISC --}}
-                @if(\App\Services\LocalFiscalDocumentPolicy::showIsc() && ($row->total_isc > 0))
-                {{-- ######### FIN SIN DETRACCIONES E ISC --}}
-                    <br/>ISC : {{ $row->total_isc }} ({{ $row->percentage_isc }}%)
-                @endif
+
 
                 @if (!empty($row->item->presentation)) {!!$row->item->presentation->description!!} @endif
 
-                @if($row->total_plastic_bag_taxes > 0)
-                    <br/>ICBPER : {{ $row->total_plastic_bag_taxes }}
-                @endif
+
 
                 @foreach($row->additional_information as $information)
                     @if ($information)
@@ -395,14 +390,7 @@
         </tr>
     @endif
     {{-- OP. GRAVADAS oculto en NRUS --}}
-    @if($document->total_plastic_bag_taxes > 0)
-        <tr>
-            <td colspan="2" class="desc-ticket text-uppercase">ICBPER:
-                {{ $document->currency_type->symbol }}</td>
-            <td colspan="2"
-                class="text-right desc-ticket text-uppercase">{{ number_format($document->total_plastic_bag_taxes, 2) }}</td>
-        </tr>
-    @endif
+
     {{-- IGV oculto en NRUS --}}
 
     {{-- ISC oculto en NRUS --}}
@@ -611,11 +599,9 @@
 
             <tr>
                 <td class="ticket-58 text-center pt-2 border-top">
-                    <img class="qr_code" src="data:image/png;base64, {{ $document->qr }}" style="max-width: 50%"/>
                 </td>
             </tr>
             <tr>
-                <td class="ticket-58 text-center desc text-uppercase border-bottom">Código Hash: {{ $document->hash }}</td>
             </tr>
 
 
@@ -631,7 +617,7 @@
                     @endforeach
                     @if(isset($configurationInPdf) && $configurationInPdf->show_bank_accounts_in_pdf)
                         <br>
-                        @if(in_array($document->document_type->id,['01','03']))
+                        @if(((string) $document->document_type->id === '01'))
                             @foreach($accounts as $account)
                                 <br>{{$account->bank->description}}
                                 <br>{{$account->currency_type->description}} N°: {{$account->number}}

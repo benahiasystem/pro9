@@ -174,9 +174,9 @@ export default {
         date_of_due: null,
         description: "Habitación " + this.form.name,
         has_igv: true,
-        has_isc: false,
+
         has_perception: false,
-        has_plastic_bag_taxes: false,
+
         id: null,
         image: null,
         image_url: null,
@@ -191,7 +191,7 @@ export default {
         lots: [],
         lots_enabled: false,
         name: "Habitación " + this.form.name,
-        percentage_isc: 0,
+
         percentage_of_profit: 0,
         percentage_perception: 0,
         purchase_affectation_igv_type_id: "10",
@@ -204,7 +204,7 @@ export default {
         stock: 0,
         stock_min: 1,
         suggested_price: 0,
-        system_isc_type_id: null,
+
         temp_path: null,
         unit_type_id: "ZZ",
         web_platform_id: null,

@@ -40,7 +40,6 @@ class PurchaseCollection extends ResourceCollection
                 $data['total_exonerated'] = $row->getConvertTotalExoneratedToPen();
                 $data['total_taxed'] = $row->getConvertTotalTaxedToPen();
                 $data['total_igv'] = $row->getConvertTotalIgvToPen();
-                $data['total_isc'] = $row->getConvertTotalIscToPen();
                 $data['total'] = $row->getConvertTotalToPen();
                 $data['description_apply_conversion_to_pen'] = 'Se aplicó conversión a bolívares';
             }

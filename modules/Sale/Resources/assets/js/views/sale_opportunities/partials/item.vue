@@ -82,11 +82,11 @@
                                             <p v-if="loading_search" class="el-select-dropdown__empty">
                                                 Cargando...
                                             </p>
-                                        
+
                                             <p v-else class="el-select-dropdown__empty">
                                                 No se encontraron resultados
                                             </p>
-                                        
+
                                             <div
                                                 v-if="!loading_search"
                                                 class="el-select-dropdown__item new-option"
@@ -379,7 +379,7 @@ export default {
             all_affectation_igv_types: [],
             aux_items: [],
             affectation_igv_types: [],
-            system_isc_types: [],
+
             discount_types: [],
             charge_types: [],
             attribute_types: [],
@@ -551,9 +551,9 @@ export default {
                 item: {},
                 affectation_igv_type_id: null,
                 affectation_igv_type: {},
-                has_isc: false,
-                system_isc_type_id: null,
-                percentage_isc: 0,
+
+
+
                 suggested_price: 0,
                 quantity: 1,
                 unit_price: 0,
@@ -717,8 +717,7 @@ export default {
                 // ######### FIN CAMBIO IGV A IVA
                 this.form.unit_price = this.recordItem.input_unit_price_value;
                 this.form.unit_price_value = this.recordItem.input_unit_price_value;
-                this.form.has_plastic_bag_taxes =
-                    this.recordItem.total_plastic_bag_taxes > 0 ? true : false;
+
                 this.form.warehouse_id = this.recordItem.warehouse_id;
                 if (this.recordItem.item.name_product_pdf) {
                     this.form.name_product_pdf = this.recordItem.item.name_product_pdf;

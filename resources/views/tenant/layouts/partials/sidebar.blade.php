@@ -917,7 +917,6 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
                             class="nav-parent
                                                                                                                                             {{ ($secondLevel === 'not-sent') ? 'nav-active nav-expanded' : '' }}
                                                                                                                                             {{ ($secondLevel === 'regularize-shipping') ? 'nav-active nav-expanded' : '' }}
-                                                                                                                                            {{ ($firstLevel === 'summaries') ? 'nav-active nav-expanded' : '' }}
                                                                                                                                             {{ ($firstLevel === 'voided') ? 'nav-active nav-expanded' : '' }}">
                             <a class="nav-link" href="#">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
@@ -937,12 +936,6 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
                                 {{-- Sin bandejas de envío ni rectificación fiscal en la operación local. --}}
                                 {{-- ######### FIN CAMBIO SIN XML CDR SUNAT --}}
                                 @if(in_array('summary_voided', $vc_module_levels))
-
-                                    <li class="{{ ($firstLevel === 'summaries') ? 'nav-active' : '' }}">
-                                        <a class="nav-link text-danger" href="{{route('tenant.summaries.index')}}">
-                                            Resúmenes
-                                        </a>
-                                    </li>
                                     <li class="{{ ($firstLevel === 'voided') ? 'nav-active' : '' }}">
                                         <a class="nav-link text-danger" href="{{route('tenant.voided.index')}}">
                                             Anulaciones
@@ -1014,7 +1007,7 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
 
                     @if(in_array('accounting', $vc_modules))
                         <li
-                            class="nav-parent {{ ($firstLevel === 'account' || $firstLevel === 'accounting_ledger' || $firstLevel === 'sire') ? 'nav-active nav-expanded' : '' }}">
+                            class="nav-parent {{ ($firstLevel === 'account' || $firstLevel === 'accounting_ledger') ? 'nav-active nav-expanded' : '' }}">
                             <a class="nav-link" href="#">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
                                     fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
@@ -1056,19 +1049,6 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
                                     <a class="nav-link" href="{{ route('tenant.accounting_ledger.create') }}">
                                         Libro Mayor
                                     </a>
-                                </li>
-                                <li class="nav-parent {{ ($firstLevel === 'sire') ? 'nav-active nav-expanded' : '' }}">
-                                    <a class="nav-link" href="#">
-                                        <span>SIRE</span>
-                                    </a>
-                                    <ul class="nav nav-children" style="">
-                                        <li class="{{ ($secondLevel === 'sale') ? 'nav-active' : '' }}">
-                                            <a class="nav-link" href="{{route('tenant.sire.sale')}}">Ventas</a>
-                                        </li>
-                                        <li class="{{ ($secondLevel === 'purchase') ? 'nav-active' : '' }}">
-                                            <a class="nav-link" href="{{route('tenant.sire.purchase')}}">Compras</a>
-                                        </li>
-                                    </ul>
                                 </li>
                             </ul>
                         </li>

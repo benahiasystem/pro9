@@ -12,7 +12,6 @@ use App\Models\Tenant\Catalogs\CatItemProductFamily;
 use App\Models\Tenant\Catalogs\CatItemStatus;
 use App\Models\Tenant\Catalogs\CatItemUnitBusiness;
 use App\Models\Tenant\Catalogs\CurrencyType;
-use App\Models\Tenant\Catalogs\SystemIscType;
 use App\Models\Tenant\Catalogs\UnitType;
 use Carbon\Carbon;
 use Exception;
@@ -99,7 +98,6 @@ use Modules\Purchase\Helpers\WeightedAverageCostHelper;
  * @property int|null $sale_note_items_count
  * @property \Illuminate\Database\Eloquent\Collection|\App\Models\Tenant\ItemSet[] $sets
  * @property int|null $sets_count
- * @property SystemIscType $system_isc_type
  * @property \Illuminate\Database\Eloquent\Collection|\App\Models\Tenant\ItemTag[] $tags
  * @property int|null $tags_count
  * @property \Illuminate\Database\Eloquent\Collection|\App\Models\Tenant\TechnicalServiceItem[] $technical_service_item
@@ -137,9 +135,6 @@ class Item extends ModelTenant
         'currency_type_id',
         'sale_unit_price',
         'purchase_unit_price',
-        'has_isc',
-        'system_isc_type_id',
-        'percentage_isc',
         'suggested_price',
 
         'sale_affectation_igv_type_id',
@@ -159,7 +154,6 @@ class Item extends ModelTenant
         'image_small',
 
         'account_id',
-        'amount_plastic_bag_taxes',
         'date_of_due',
         'is_set',
         'sale_unit_price_set',
@@ -176,15 +170,10 @@ class Item extends ModelTenant
         'series_enabled',
         'purchase_has_igv',
         'web_platform_id',
-        'has_plastic_bag_taxes',
         'barcode',
         'sanitary',
         'cod_digemid',
         'is_for_production',
-
-        'purchase_percentage_isc',
-        'purchase_system_isc_type_id',
-        'purchase_has_isc',
 
         'favorite',
         'restaurant_favorite',
@@ -202,7 +191,6 @@ class Item extends ModelTenant
     protected $casts = [
         'date_of_due' => 'date',
         'is_for_production' => 'boolean',
-        'purchase_has_isc' => 'boolean',
         'has_igv' => 'boolean',
         'purchase_has_igv' => 'boolean',
         'sale_unit_price' => 'float',
@@ -307,21 +295,21 @@ class Item extends ModelTenant
     protected function description(): Attribute
     {
         return Attribute::make(
-            get: fn ($value) => self::clean($value),
+            fn ($value) => self::clean($value)
         );
     }
 
     protected function textFilter(): Attribute
     {
         return Attribute::make(
-            get: fn ($value) => self::clean($value),
+            fn ($value) => self::clean($value)
         );
     }
 
     protected function name() : Attribute
     {
         return Attribute::make(
-            get: fn ($value) => self::clean($value),
+            fn ($value) => self::clean($value)
         );
     }
 
@@ -373,22 +361,6 @@ class Item extends ModelTenant
     public function currency_type()
     {
         return $this->belongsTo(CurrencyType::class, 'currency_type_id');
-    }
-
-    /**
-     * @return BelongsTo
-     */
-    public function system_isc_type()
-    {
-        return $this->belongsTo(SystemIscType::class, 'system_isc_type_id');
-    }
-
-    /**
-     * @return BelongsTo
-     */
-    public function purchase_system_isc_type()
-    {
-        return $this->belongsTo(SystemIscType::class, 'purchase_system_isc_type_id');
     }
 
     /**
@@ -1389,8 +1361,6 @@ class Item extends ModelTenant
             'sale_affectation_igv_type_id'     => $this->sale_affectation_igv_type_id,
             'purchase_affectation_igv_type_id' => $this->purchase_affectation_igv_type_id,
             'calculate_quantity'               => (bool)$this->calculate_quantity,
-            'has_plastic_bag_taxes'            => (bool)$this->has_plastic_bag_taxes,
-            'amount_plastic_bag_taxes'         => $this->amount_plastic_bag_taxes,
             'colors' => $currentColors,
             'CatItemUnitsPerPackage' => $ItemUnitsPerPackage,
             'CatItemMoldProperty' => $ItemMoldProperty,
@@ -1431,10 +1401,6 @@ class Item extends ModelTenant
             'barcode'     => $this->barcode,
             'change_free_affectation_igv'     => false,
             'original_affectation_igv_type_id'     => $this->sale_affectation_igv_type_id,
-
-            'has_isc' => (bool)$this->has_isc,
-            'system_isc_type_id' => $this->system_isc_type_id,
-            'percentage_isc' => $this->percentage_isc,
             'is_for_production'=>$this->isIsForProduction(),
             'exchange_points' => $this->exchange_points,
             'quantity_of_points' => $this->quantity_of_points,
@@ -1948,13 +1914,8 @@ class Item extends ModelTenant
             ->setInArray('has_igv',true)
             ->setInArray('is_set',false)
             ->setInArray('purchase_has_igv',true)
-            ->setInArray('amount_plastic_bag_taxes',0.1)
             ->setInArray('purchase_unit_price',0)
-            ->setInArray('percentage_isc',0)
             ->setInArray('suggested_price',0)
-            ->setInArray('has_plastic_bag_taxes',false)
-            ->setInArray('has_isc',false)
-            ->setInArray('has_plastic_bag_taxes',false)
             ->setInArray('warehouse_id',$warehouse)
             ->setInArray('image','imagen-no-disponible.jpg')
             ->setInArray('image_medium','imagen-no-disponible.jpg')
@@ -1967,7 +1928,6 @@ class Item extends ModelTenant
         /*
         'technical_specifications',
         'item_code_gs1',
-        'system_isc_type_id',
         'sale_affectation_igv_type_id',
         'purchase_affectation_igv_type_id',
         'calculate_quantity',
@@ -3091,9 +3051,6 @@ class Item extends ModelTenant
             'stock' => $this->getWarehouseCurrentStock(),
             'stock_min' => (float)$this->stock_min,
             'favorite' => $this->favorite,
-            'has_isc' => (bool)$this->has_isc,
-            'system_isc_type_id' => $this->system_isc_type_id,
-            'percentage_isc' => $this->percentage_isc,
 
 
             'warehouses' => $this->getApiDataWarehouses(),

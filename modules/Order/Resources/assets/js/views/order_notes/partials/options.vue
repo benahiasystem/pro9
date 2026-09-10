@@ -689,8 +689,8 @@ export default {
                 total_exonerated: 0,
                 total_igv_free: 0,
                 total_igv: 0,
-                total_base_isc: 0,
-                total_isc: 0,
+
+
                 total_base_other_taxes: 0,
                 total_other_taxes: 0,
                 total_taxes: 0,
@@ -863,8 +863,8 @@ export default {
             this.document.total_exonerated = q.total_exonerated;
             this.document.total_igv = q.total_igv;
             this.document.total_igv_free = q.total_igv_free;
-            this.document.total_base_isc = q.total_base_isc;
-            this.document.total_isc = q.total_isc;
+
+
             this.document.total_base_other_taxes = q.total_base_other_taxes;
             this.document.total_other_taxes = q.total_other_taxes;
             this.document.total_taxes = q.total_taxes;

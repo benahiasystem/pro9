@@ -61,7 +61,6 @@
 </template>
 
 <script>
-import helpSummaries from '../helpers/help_summaries.json';
 import tourDefinitions from '../helpers/tours.js';
 import { driver } from 'driver.js';
 import 'driver.js/dist/driver.css';
@@ -77,14 +76,10 @@ export default {
     data() {
         return {
             currentPath: '',
-            summaries: helpSummaries,
             tours: tourDefinitions
         };
     },
     computed: {
-        currentSummary() {
-            return this.summaries[this.currentPath] || null;
-        },
         currentTour() {
             return this.tours[this.currentPath] || null;
         },

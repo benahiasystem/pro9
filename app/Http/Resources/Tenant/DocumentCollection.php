@@ -19,29 +19,18 @@ class DocumentCollection extends ResourceCollection
     public function toArray($request)
     {
         return $this->collection->transform(function ($row, $key) {
-            $has_xml = true;
             $has_pdf = true;
-            $has_cdr = false;
             $btn_note = false;
             $btn_guide = true; // Boton para generar orden de entrega
-            $btn_resend = false;
             $btn_voided = false;
-            $btn_consult_cdr = false;
             $btn_delete_doc_type_03 = false;
 
             $affected_document = null;
 
             if ($row->group_id === '01') {
-                if ($row->state_type_id === '01') {
-                    $btn_resend = true;
-                }
-
                 if ($row->state_type_id === '05') {
-                    $has_cdr = true;
                     $btn_note = true;
-                    $btn_resend = false;
                     $btn_voided = true;
-                    $btn_consult_cdr = true;
                 }
 
                 if (in_array($row->document_type_id, ['07', '08'])) {
@@ -53,31 +42,12 @@ class DocumentCollection extends ResourceCollection
                 if ($row->state_type_id === '05') {
                     $btn_note = true;
                     $btn_voided = true;
-
-                    // envio individual
-                    if ($row->isSingleDocumentShipment())
-                        $has_cdr = true;
                     // envio individual
 
                 }
-
-                // envio individual reenviar
-                if ($row->state_type_id === '01' && $row->isSingleDocumentShipment()) {
-                    $btn_resend = true;
-                }
-                // envio individual reenviar
-
 
                 if (in_array($row->document_type_id, ['07', '08'])) {
                     $btn_note = false;
-                }
-
-                if ($row->document_type_id === '03' && config('tenant.delete_document_type_03')) {
-
-                    if ($row->state_type_id === '01' && $row->doesntHave('summary_document')) {
-                        $btn_delete_doc_type_03 = true;
-                    }
-
                 }
 
             }
@@ -96,7 +66,7 @@ class DocumentCollection extends ResourceCollection
                 });
             }
 
-            if (in_array($row->document_type_id, ['01', '03'])) {
+            if (in_array($row->document_type_id, ['01'])) {
             }
 
             // $btn_recreate_document = config('tenant.recreate_document');
@@ -115,12 +85,6 @@ class DocumentCollection extends ResourceCollection
                 $balance = number_format($row->total - $total_payment, 2, ".", "");
             }
 
-
-            $message_regularize_shipping = null;
-
-            if ($row->regularize_shipping) {
-                $message_regularize_shipping = "Por regularizar: {$row->response_regularize_shipping->code} - {$row->response_regularize_shipping->description}";
-            }
             $nvs = $row->getNvCollection();
 
             $order_note = $row->getOrderNoteCollection();
@@ -158,7 +122,7 @@ class DocumentCollection extends ResourceCollection
                 'fiscal_environment' => $row->fiscal_environment,
                 'fiscal_environment_description' => $row->fiscal_environment_type->description,
                 'date_of_issue' => $row->date_of_issue->format('d-m-Y'),
-                'date_of_due' => (in_array($row->document_type_id, ['01', '03'])) ? $row->invoice->date_of_due->format('d-m-Y') : null,
+                'date_of_due' => (in_array($row->document_type_id, ['01'])) ? $row->invoice->date_of_due->format('d-m-Y') : null,
                 'number' => $row->number_full,
                 'customer_name' => $row->customer->name,
                 'customer_number' => format_person_identity_document($row->customer),
@@ -183,31 +147,17 @@ class DocumentCollection extends ResourceCollection
                 'state_type_description' => $row->state_type->description,
                 'document_type_description' => $row->document_type->description,
                 'document_type_id' => $row->document_type->id,
-                'has_xml' => $has_xml,
                 'has_pdf' => $has_pdf,
-                'has_cdr' => $has_cdr,
-                'download_xml' => $row->download_external_xml,
                 'download_pdf' => $row->download_external_pdf,
-                'download_cdr' => $row->download_external_cdr,
                 'btn_voided' => $btn_voided,
                 'btn_note' => $btn_note,
                 'btn_guide' => $btn_guide,
                 //                'btn_ticket' => $btn_ticket,
-                'btn_resend' => $btn_resend,
-                'btn_consult_cdr' => $btn_consult_cdr,
                 'btn_recreate_document' => $btn_recreate_document,
                 'btn_change_to_registered_status' => $btn_change_to_registered_status,
                 'btn_delete_doc_type_03' => $btn_delete_doc_type_03,
-                'send_server' => (bool) $row->send_server,
                 //                'voided' => $voided,
                 'affected_document' => $affected_document,
-                //                'has_xml_voided' => $has_xml_voided,
-//                'has_cdr_voided' => $has_cdr_voided,
-//                'download_xml_voided' => $download_xml_voided,
-//                'download_cdr_voided' => $download_cdr_voided,
-                'shipping_status' => json_decode($row->shipping_status),
-                'sunat_shipping_status' => json_decode($row->sunat_shipping_status),
-                'query_status' => json_decode($row->query_status),
                 'created_at' => $row->created_at->format('Y-m-d H:i:s'),
                 'updated_at' => $row->updated_at->format('Y-m-d H:i:s'),
                 'user_name' => ($row->user) ? $row->user->name : '',
@@ -219,7 +169,7 @@ class DocumentCollection extends ResourceCollection
                 'email_send_it_array' => $email_send_it_array,
                 'external_id' => $row->external_id,
 
-                'notes' => (in_array($row->document_type_id, ['01', '03'])) ? $row->affected_documents->transform(function ($row) {
+                'notes' => (in_array($row->document_type_id, ['01'])) ? $row->affected_documents->transform(function ($row) {
                     return [
                         'id' => $row->id,
                         'document_id' => $row->document_id,
@@ -232,8 +182,6 @@ class DocumentCollection extends ResourceCollection
                 'order_note' => $order_note,
                 'balance' => $balance,
                 'guides' => !empty($row->guides) ? (array) $row->guides : null,
-                'message_regularize_shipping' => $message_regularize_shipping,
-                'regularize_shipping' => (bool) $row->regularize_shipping,
                 'purchase_order' => $row->purchase_order,
                 'is_editable' => $this->resolveIsEditable($row),
                 'dispatches' => $this->getDispatches($row),
@@ -242,7 +190,6 @@ class DocumentCollection extends ResourceCollection
                 'total_charge' => $row->total_charge,
                 'filename' => $row->filename,
                 'date_of_payment' => $payment,
-                'btn_force_send_by_summary' => $row->isAvailableForceSendBySummary(),
                 'btn_retention' => $btn_retention
             ];
         });
@@ -272,7 +219,7 @@ class DocumentCollection extends ResourceCollection
 
         $dispatches = [];
 
-        if (in_array($row->document_type_id, ['01', '03'])) {
+        if (in_array($row->document_type_id, ['01'])) {
 
             $dispatches = $row->reference_guides->transform(function ($row) {
                 return [

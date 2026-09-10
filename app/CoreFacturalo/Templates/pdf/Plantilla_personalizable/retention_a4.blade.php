@@ -107,11 +107,6 @@
     </tfoot>
 </table>
 <table class="full-width">
-    @if($document->hash)
-    <tr>
-        <td>Código Hash: {{ $document->hash }}</td>
-    </tr>
-    @endif
     @foreach($document->legends as $row)
         <tr>
             <td class="font-bold">{{ $row->value }}</td>

@@ -130,7 +130,6 @@ import RankingRenderer from './renderers/RankingRenderer.vue'
 import TableRenderer from './renderers/TableRenderer.vue'
 import Debtors from '../views/partials/Debtors.vue'
 import MonthGoal from '../views/partials/MonthGoal.vue'
-import SunatStatus from '../views/partials/SunatStatus.vue'
 import LowStock from '../views/partials/LowStock.vue'
 import { GRID_GAP, GRID_ROW_HEIGHT, formatValue, recFor, salesTitleForPeriod, themeColors, themePalette, typeById, typesForSource } from './registry'
 
@@ -139,7 +138,6 @@ import { GRID_GAP, GRID_ROW_HEIGHT, formatValue, recFor, salesTitleForPeriod, th
 const CUSTOM_COMPONENTS = {
   'widget-debtors': Debtors,
   'widget-month-goal': MonthGoal,
-  'widget-sunat-status': SunatStatus,
   'widget-low-stock': LowStock,
 }
 

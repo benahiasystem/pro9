@@ -165,7 +165,7 @@ class OrderDocumentFromStatusService
             }
 
             // Mismo flujo que el panel web (DocumentController::storeWithData):
-            // XML + firma + PDF, sin esperar env├¡o SUNAT ni email (eso demora la UI).
+            // Generar el documento local y su PDF sin demorar la interfaz con el correo.
             $purchase['serie_documento'] = $series->number;
 
             $inputs = DocumentTransform::transform($purchase);

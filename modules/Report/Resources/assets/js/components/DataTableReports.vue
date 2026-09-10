@@ -1,399 +1,399 @@
 <!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
-    <div>
-        <div class="btn-filter-content">
-            <el-button
-                type="secondary"
-                class="btn-show-filter"
-                :class="{ shift: isVisible }"
-                @click="toggleInformation"
-            >
-                {{ isVisible ? "Ocultar filtros" : "Mostrar filtros" }}
-            </el-button>
-        </div>
-        <div class="row">
+<div>
+    <div class="btn-filter-content">
+        <el-button
+            type="secondary"
+            class="btn-show-filter"
+            :class="{ shift: isVisible }"
+            @click="toggleInformation"
+        >
+            {{ isVisible ? "Ocultar filtros" : "Mostrar filtros" }}
+        </el-button>
+    </div>
+    <div class="row">
 
-            <div class="col-md-12 col-lg-12 col-xl-12 " v-if="isVisible">
+        <div class="col-md-12 col-lg-12 col-xl-12 " v-if="isVisible">
 
-                <div class="row mt-2">
+            <div class="row mt-2">
 
+                <div class="col-md-3 form-modern">
+                    <label class="control-label">Periodo</label>
+                    <el-select v-model="form.period"
+                               @change="changePeriod">
+                        <el-option key="month"
+                                   label="Por mes"
+                                   value="month"></el-option>
+                        <el-option key="between_months"
+                                   label="Entre meses"
+                                   value="between_months"></el-option>
+                        <el-option key="date"
+                                   label="Por fecha"
+                                   value="date"></el-option>
+                        <el-option key="between_dates"
+                                   label="Entre fechas"
+                                   value="between_dates"></el-option>
+                    </el-select>
+                </div>
+                <template v-if="form.period === 'month' || form.period === 'between_months'">
                     <div class="col-md-3 form-modern">
-                        <label class="control-label">Periodo</label>
-                        <el-select v-model="form.period"
-                                   @change="changePeriod">
-                            <el-option key="month"
-                                       label="Por mes"
-                                       value="month"></el-option>
-                            <el-option key="between_months"
-                                       label="Entre meses"
-                                       value="between_months"></el-option>
-                            <el-option key="date"
-                                       label="Por fecha"
-                                       value="date"></el-option>
-                            <el-option key="between_dates"
-                                       label="Entre fechas"
-                                       value="between_dates"></el-option>
+                        <label class="control-label">Mes de</label>
+                        <el-date-picker v-model="form.month_start"
+                                        :clearable="false"
+                                        format="MM/yyyy"
+                                        type="month"
+                                        value-format="yyyy-MM"
+                                        @change="changeDisabledMonths"></el-date-picker>
+                    </div>
+                </template>
+                <template v-if="form.period === 'between_months'">
+                    <div class="col-md-3">
+                        <label class="control-label">Mes al</label>
+                        <el-date-picker v-model="form.month_end"
+                                        :clearable="false"
+                                        :picker-options="pickerOptionsMonths"
+                                        format="MM/yyyy"
+                                        type="month"
+                                        value-format="yyyy-MM"></el-date-picker>
+                    </div>
+                </template>
+                <template v-if="form.period === 'date' || form.period === 'between_dates'">
+                    <div class="col-md-3">
+                        <label class="control-label">Fecha del</label>
+                        <el-date-picker v-model="form.date_start"
+                                        :clearable="false"
+                                        format="dd/MM/yyyy"
+                                        type="date"
+                                        value-format="yyyy-MM-dd"
+                                        @change="changeDisabledDates"></el-date-picker>
+                    </div>
+                </template>
+                <template v-if="form.period === 'between_dates'">
+                    <div class="col-md-3">
+                        <label class="control-label">Fecha al</label>
+                        <el-date-picker v-model="form.date_end"
+                                        :clearable="false"
+                                        :picker-options="pickerOptionsDates"
+                                        format="dd/MM/yyyy"
+                                        type="date"
+                                        value-format="yyyy-MM-dd"></el-date-picker>
+                    </div>
+                </template>
+
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label class="control-label">Sucursal</label>
+                        <el-select v-model="form.establishment_id"
+                                   clearable>
+                            <el-option v-for="option in establishments"
+                                       :key="option.id"
+                                       :label="option.name"
+                                       :value="option.id"></el-option>
                         </el-select>
                     </div>
-                    <template v-if="form.period === 'month' || form.period === 'between_months'">
-                        <div class="col-md-3 form-modern">
-                            <label class="control-label">Mes de</label>
-                            <el-date-picker v-model="form.month_start"
-                                            :clearable="false"
-                                            format="MM/yyyy"
-                                            type="month"
-                                            value-format="yyyy-MM"
-                                            @change="changeDisabledMonths"></el-date-picker>
-                        </div>
-                    </template>
-                    <template v-if="form.period === 'between_months'">
-                        <div class="col-md-3">
-                            <label class="control-label">Mes al</label>
-                            <el-date-picker v-model="form.month_end"
-                                            :clearable="false"
-                                            :picker-options="pickerOptionsMonths"
-                                            format="MM/yyyy"
-                                            type="month"
-                                            value-format="yyyy-MM"></el-date-picker>
-                        </div>
-                    </template>
-                    <template v-if="form.period === 'date' || form.period === 'between_dates'">
-                        <div class="col-md-3">
-                            <label class="control-label">Fecha del</label>
-                            <el-date-picker v-model="form.date_start"
-                                            :clearable="false"
-                                            format="dd/MM/yyyy"
-                                            type="date"
-                                            value-format="yyyy-MM-dd"
-                                            @change="changeDisabledDates"></el-date-picker>
-                        </div>
-                    </template>
-                    <template v-if="form.period === 'between_dates'">
-                        <div class="col-md-3">
-                            <label class="control-label">Fecha al</label>
-                            <el-date-picker v-model="form.date_end"
-                                            :clearable="false"
-                                            :picker-options="pickerOptionsDates"
-                                            format="dd/MM/yyyy"
-                                            type="date"
-                                            value-format="yyyy-MM-dd"></el-date-picker>
-                        </div>
-                    </template>
-
-                    <div class="col-md-3">
-                        <div class="form-group">
-                            <label class="control-label">Sucursal</label>
-                            <el-select v-model="form.establishment_id"
-                                       clearable>
-                                <el-option v-for="option in establishments"
-                                           :key="option.id"
-                                           :label="option.name"
-                                           :value="option.id"></el-option>
-                            </el-select>
-                        </div>
+                </div>
+                <div v-show="resource == 'reports/sales' || resource == 'reports/purchases'|| resource == 'reports/fixed-asset-purchases' || resource == 'reports/state-account'"
+                     class="col-md-3">
+                    <div class="form-group">
+                        <label class="control-label">Tipo de documento</label>
+                        <el-select v-model="form.document_type_id"
+                                   clearable>
+                            <el-option v-for="option in document_types"
+                                       :key="option.id"
+                                       :label="option.description"
+                                       :value="option.id"></el-option>
+                        </el-select>
                     </div>
-                    <div v-show="resource == 'reports/sales' || resource == 'reports/purchases'|| resource == 'reports/fixed-asset-purchases' || resource == 'reports/state-account'"
-                         class="col-md-3">
-                        <div class="form-group">
-                            <label class="control-label">Tipo de documento</label>
-                            <el-select v-model="form.document_type_id"
-                                       clearable>
-                                <el-option v-for="option in document_types"
-                                           :key="option.id"
-                                           :label="option.description"
-                                           :value="option.id"></el-option>
-                            </el-select>
-                        </div>
+                </div>
+
+                <div v-if="resource == 'reports/sales' || resource == 'reports/purchases'|| resource == 'reports/fixed-asset-purchases' || resource == 'reports/state-account'"
+                     class="col-lg-5 col-md-5">
+                    <div class="form-group">
+                        <label class="control-label">
+                            {{ (resource == 'reports/sales' || resource == 'reports/state-account') ? 'Clientes' : 'Proveedores' }}
+                        </label>
+
+                        <el-select v-model="form.person_id"
+                                   :loading="loading_search"
+                                   :remote-method="searchRemotePersons"
+                                   clearable
+                                   filterable
+                                   placeholder="Nombre o número de documento"
+                                   popper-class="el-select-customers"
+                                   remote
+                                   @change="changePersons">
+                            <el-option v-for="option in persons"
+                                       :key="option.id"
+                                       :label="option.description"
+                                       :value="option.id"></el-option>
+                        </el-select>
+
                     </div>
-
-                    <div v-if="resource == 'reports/sales' || resource == 'reports/purchases'|| resource == 'reports/fixed-asset-purchases' || resource == 'reports/state-account'"
-                         class="col-lg-5 col-md-5">
-                        <div class="form-group">
-                            <label class="control-label">
-                                {{ (resource == 'reports/sales' || resource == 'reports/state-account') ? 'Clientes' : 'Proveedores' }}
-                            </label>
-
-                            <el-select v-model="form.person_id"
-                                       :loading="loading_search"
-                                       :remote-method="searchRemotePersons"
-                                       clearable
-                                       filterable
-                                       placeholder="Nombre o número de documento"
-                                       popper-class="el-select-customers"
-                                       remote
-                                       @change="changePersons">
-                                <el-option v-for="option in persons"
-                                           :key="option.id"
-                                           :label="option.description"
-                                           :value="option.id"></el-option>
-                            </el-select>
-
-                        </div>
-                    </div>
-                    <template>
-                        <template v-if="users.length  < 1">
-                            <div v-if="applyCustomer"
-                                :class="(
-                                resource == 'reports/commissions' ||
-                                resource == 'reports/sales' ||
-                                resource == 'reports/purchases') ? 'col-lg-4 col-md-4':'col-lg-3 col-md-3'">
-                                <div class="form-group">
-                                    <label class="control-label">
-                                        Usuarios
-                                    </label>
-
-                                    <el-select v-model="form.seller_id"
-                                            clearable
-                                            filterable
-                                            placeholder="Nombre usuario"
-                                            popper-class="el-select-customers">
-                                        <el-option v-for="option in sellers"
-                                                :key="option.id"
-                                                :label="option.name"
-                                                :value="option.id"></el-option>
-                                    </el-select>
-
-                                </div>
-                            </div>
-                        </template>
-                        <template v-else>
-                            <div class="col-md-2 form-group">
-                                <label class="control-label">Tipo de usuario</label>
-                                <el-select v-model="form.user_type"
-                                        clearable
-                                        @change="ChangedSalesnote">
-                                    <el-option key="CREADOR"
-                                            label="Registrado por"
-                                            value="CREADOR"></el-option>
-                                    <el-option v-show="form.document_type_id !== '80'"
-                                            key="VENDEDOR"
-                                            label="Vendedor asignado"
-                                            value="VENDEDOR"></el-option>
-                                </el-select>
-                            </div>
-                            <div class="col-md-2 form-group">
-                                <label class="control-label">{{
-                                        form.user_type === 'CREADOR' ? 'Usuario' : 'Vendedor'
-                                                            }}</label>
-                                <el-select v-model="form.user_id"
-                                        :disabled="cantChoiseUserWithUserType"
-                                        clearable
-                                        filterable
-                                        multiple>
-                                    <el-option v-for="user in users"
-                                            :key="user.id"
-                                            :label="user.name"
-                                            :value="user.id"></el-option>
-                                </el-select>
-                            </div>
-                        </template>
-                    </template>
-
-
-
-                    <div v-if="resource == 'reports/sales' || resource === 'reports/sale-notes' || resource !='reports/state-account'|| resource!=='reports/state-account'"
-                         class="col-lg-3 col-md-3 form-modern">
-                        <label class="control-label" v-if="resource!=='reports/state-account'">Orden de compra</label>
-                        <el-input v-if="resource!=='reports/state-account'" v-model="form.purchase_order"
-                                  clearable></el-input>
-                    </div>
-                    <div class="col-lg-3 col-md-3" v-if="resource !=='reports/state-account'">
-                        <div class="form-group">
-                            <label class="control-label">Número de orden de entrega</label>
-                            <el-input v-model="form.guides"
-                                      clearable></el-input>
-                        </div>
-                    </div>
-                    <div class="col-lg-3 col-md-3" v-if="resource !=='reports/state-account'">
-                        <div class="form-group">
-                            <label class="control-label">Plataforma</label>
-                            <el-select v-model="form.web_platform_id"
-                                       clearable>
-                                <el-option v-for="option in web_platforms"
-                                           :key="option.id"
-                                           :label="option.name"
-                                           :value="option.id"></el-option>
-                            </el-select>
-                        </div>
-                    </div>
-
-                    <div v-if="resource == 'reports/sales' || resource !=='reports/state-account'"
-                         class="col-lg-3 col-md-3 mt-4">
-                        <div class="form-group">
-                            <el-checkbox v-model="form.include_categories">¿Incluir categorías?</el-checkbox>
-                            <br>
-                        </div>
-                    </div>
-
-                    <div v-if="resource == 'reports/quotations' || resource !=='reports/state-account'"
-                         class="col-lg-3 col-md-3">
-                        <div class="form-group">
-                            <label class="control-label">
-                                Estado
-                            </label>
-
-                            <el-select v-model="form.state_type_id"
-                                       clearable
-                                       filterable
-                                       popper-class="el-select-customers"
-                            >
-                                <el-option v-for="option in state_types"
-                                           :key="option.id"
-                                           :label="option.name"
-                                           :value="option.id"></el-option>
-                            </el-select>
-
-                        </div>
-                    </div>
-
-                    <div class="col-lg-4 col-md-6">
+                </div>
+                <template>
+                    <template v-if="users.length  < 1">
+                        <div v-if="applyCustomer"
+                            :class="(
+                            resource == 'reports/commissions' ||
+                            resource == 'reports/sales' ||
+                            resource == 'reports/purchases') ? 'col-lg-4 col-md-4':'col-lg-3 col-md-3'">
                             <div class="form-group">
-                                <label class="control-label">Productos
+                                <label class="control-label">
+                                    Usuarios
                                 </label>
 
-                                <el-select v-model="form.item_id" filterable remote popper-class="el-select-customers"  clearable
-                                    placeholder="Código interno o nombre"
-                                    :remote-method="searchRemoteItems"
-                                    :loading="loading_search_items" >
-                                    <el-option v-for="option in items" :key="option.id" :value="option.id" :label="option.description"></el-option>
+                                <el-select v-model="form.seller_id"
+                                        clearable
+                                        filterable
+                                        placeholder="Nombre usuario"
+                                        popper-class="el-select-customers">
+                                    <el-option v-for="option in sellers"
+                                            :key="option.id"
+                                            :label="option.name"
+                                            :value="option.id"></el-option>
                                 </el-select>
 
                             </div>
+                        </div>
+                    </template>
+                    <template v-else>
+                        <div class="col-md-2 form-group">
+                            <label class="control-label">Tipo de usuario</label>
+                            <el-select v-model="form.user_type"
+                                    clearable
+                                    @change="ChangedSalesnote">
+                                <el-option key="CREADOR"
+                                        label="Registrado por"
+                                        value="CREADOR"></el-option>
+                                <el-option v-show="form.document_type_id !== '80'"
+                                        key="VENDEDOR"
+                                        label="Vendedor asignado"
+                                        value="VENDEDOR"></el-option>
+                            </el-select>
+                        </div>
+                        <div class="col-md-2 form-group">
+                            <label class="control-label">{{
+                                    form.user_type === 'CREADOR' ? 'Usuario' : 'Vendedor'
+                                                        }}</label>
+                            <el-select v-model="form.user_id"
+                                    :disabled="cantChoiseUserWithUserType"
+                                    clearable
+                                    filterable
+                                    multiple>
+                                <el-option v-for="user in users"
+                                        :key="user.id"
+                                        :label="user.name"
+                                        :value="user.id"></el-option>
+                            </el-select>
+                        </div>
+                    </template>
+                </template>
+
+
+
+                <div v-if="resource == 'reports/sales' || resource === 'reports/sale-notes' || resource !='reports/state-account'|| resource!=='reports/state-account'"
+                     class="col-lg-3 col-md-3 form-modern">
+                    <label class="control-label" v-if="resource!=='reports/state-account'">Orden de compra</label>
+                    <el-input v-if="resource!=='reports/state-account'" v-model="form.purchase_order"
+                              clearable></el-input>
+                </div>
+                <div class="col-lg-3 col-md-3" v-if="resource !=='reports/state-account'">
+                    <div class="form-group">
+                        <label class="control-label">Número de orden de entrega</label>
+                        <el-input v-model="form.guides"
+                                  clearable></el-input>
                     </div>
+                </div>
+                <div class="col-lg-3 col-md-3" v-if="resource !=='reports/state-account'">
+                    <div class="form-group">
+                        <label class="control-label">Plataforma</label>
+                        <el-select v-model="form.web_platform_id"
+                                   clearable>
+                            <el-option v-for="option in web_platforms"
+                                       :key="option.id"
+                                       :label="option.name"
+                                       :value="option.id"></el-option>
+                        </el-select>
+                    </div>
+                </div>
+
+                <div v-if="resource == 'reports/sales' || resource !=='reports/state-account'"
+                     class="col-lg-3 col-md-3 mt-4">
+                    <div class="form-group">
+                        <el-checkbox v-model="form.include_categories">¿Incluir categorías?</el-checkbox>
+                        <br>
+                    </div>
+                </div>
+
+                <div v-if="resource == 'reports/quotations' || resource !=='reports/state-account'"
+                     class="col-lg-3 col-md-3">
+                    <div class="form-group">
+                        <label class="control-label">
+                            Estado
+                        </label>
+
+                        <el-select v-model="form.state_type_id"
+                                   clearable
+                                   filterable
+                                   popper-class="el-select-customers"
+                        >
+                            <el-option v-for="option in state_types"
+                                       :key="option.id"
+                                       :label="option.name"
+                                       :value="option.id"></el-option>
+                        </el-select>
+
+                    </div>
+                </div>
+
+                <div class="col-lg-4 col-md-6">
+                        <div class="form-group">
+                            <label class="control-label">Productos
+                            </label>
+
+                            <el-select v-model="form.item_id" filterable remote popper-class="el-select-customers"  clearable
+                                placeholder="Código interno o nombre"
+                                :remote-method="searchRemoteItems"
+                                :loading="loading_search_items" >
+                                <el-option v-for="option in items" :key="option.id" :value="option.id" :label="option.description"></el-option>
+                            </el-select>
+
+                        </div>
+                </div>
 
 
-                    <div class="col-lg-7 col-md-7 col-md-7 col-sm-12"
-                         style="margin-top:29px">
-                        <el-button :loading="loading_submit"
-                                   class="submit me-2"
-                                   icon="el-icon-search"
-                                   type="primary"
-                                   @click.prevent="getRecordsByFilter">Buscar
+                <div class="col-lg-7 col-md-7 col-md-7 col-sm-12"
+                     style="margin-top:29px">
+                    <el-button :loading="loading_submit"
+                               class="submit me-2"
+                               icon="el-icon-search"
+                               type="primary"
+                               @click.prevent="getRecordsByFilter">Buscar
+                    </el-button>
+
+                    <template v-if="records.length>0">
+
+                        <el-button v-if="resource!='reports/state-account'" class="submit me-2"
+                                   icon="el-icon-tickets"
+                                   type="danger"
+                                   @click.prevent="clickDownload('pdf')">Exportar PDF
                         </el-button>
 
-                        <template v-if="records.length>0">
+                        <el-button  v-if="resource == 'reports/sales'" class="submit me-2"
+                                   icon="el-icon-tickets"
+                                   type="danger"
+                                   @click.prevent="clickDownload('pdf-simple')">Exportar PDF Simple
+                        </el-button>
 
-                            <el-button v-if="resource!='reports/state-account'" class="submit me-2"
-                                       icon="el-icon-tickets"
-                                       type="danger"
-                                       @click.prevent="clickDownload('pdf')">Exportar PDF
-                            </el-button>
+                        <el-button class="submit"
+                                   type="success"
+                                   @click.prevent="clickDownload('excel')"><i class="fa fa-file-excel"></i> Exportal
+                                                                                                            Excel
+                        </el-button>
 
-                            <el-button  v-if="resource == 'reports/sales'" class="submit me-2"
-                                       icon="el-icon-tickets"
-                                       type="danger"
-                                       @click.prevent="clickDownload('pdf-simple')">Exportar PDF Simple
-                            </el-button>
-
-                            <el-button class="submit"
-                                       type="success"
-                                       @click.prevent="clickDownload('excel')"><i class="fa fa-file-excel"></i> Exportal
-                                                                                                                Excel
-                            </el-button>
-
-                        </template>
-
-                    </div>
+                    </template>
 
                 </div>
-                <div class="row mt-1 mb-4">
 
-                </div>
             </div>
+            <div class="row mt-1 mb-4">
 
-
-            <div class="col-md-12">
-                <div class="scroll-shadow shadow-left" v-show="showLeftShadow"></div>
-                <div class="scroll-shadow shadow-right" v-show="showRightShadow"></div>
-                <div class="table-responsive" ref="scrollContainer">
-                    <table class="table">
-                        <thead>
-                        <slot name="heading"></slot>
-                        </thead>
-                        <tbody>
-                        <slot v-for="(row, index) in records"
-                              :index="customIndex(index)"
-                              :row="row"></slot>
-                        </tbody>
-                        <tfoot v-if="resource == 'reports/sales' || resource == 'reports/purchases' || resource == 'reports/fixed-asset-purchases'">
-
-                            <template v-if="resource == 'reports/sales'|| this.resource === 'reports/state-account'">
-                                <tr>
-                                    <td :colspan="13"></td>
-                                    <td v-if="visibleColumns.guides.visible"></td>
-                                    <td v-if="visibleColumns.options.visible"></td>
-                                    <td v-if="visibleColumns.web_platforms.visible"></td>
-                                    <td v-if="visibleColumns.total_charge.visible"></td>
-                                    <td><strong>Totales VES</strong></td>
-                                    <td>{{ totals.acum_total_exonerated }}</td>
-                                    <td>{{ totals.acum_total_unaffected }}</td>
-                                    <td>{{ totals.acum_total_free }}</td>
-
-                                    <td>{{ totals.acum_total_taxed }}</td>
-                                    <td>{{ totals.acum_total_igv }}</td>
-                                    <td v-if="visibleColumns.total_isc.visible"></td>
-                                    <td>{{ totals.acum_total }}</td>
-                                </tr>
-                                <tr>
-                                    <td :colspan="13"></td>
-                                    <td v-if="visibleColumns.guides.visible"></td>
-                                    <td v-if="visibleColumns.options.visible"></td>
-                                    <td v-if="visibleColumns.web_platforms.visible"></td>
-                                    <td v-if="visibleColumns.total_charge.visible"></td>
-                                    <td><strong>Totales USD</strong></td>
-                                    <td></td>
-                                    <td></td>
-                                    <td></td>
-                                    <td>{{ totals.acum_total_taxed_usd }}</td>
-                                    <td>{{ totals.acum_total_igv_usd }}</td>
-                                    <td v-if="visibleColumns.total_isc.visible"></td>
-                                    <td>{{ totals.acum_total_usd }}</td>
-                                </tr>
-
-                            </template>
-                            <template v-else>
-                                <!-- mostrar si no se aplica conversion a bolívares -->
-                                <template v-if="!applyConversionToPen">
-                                <tr>
-                                    <td :colspan="colspanFootPurchase"></td>
-                                    <td><strong>Totales VES</strong></td>
-                                    <td>{{ totals.acum_total_exonerated }}</td>
-                                    <td>{{ totals.acum_total_unaffected }}</td>
-                                    <td>{{ totals.acum_total_free }}</td>
-
-                                    <td>{{ totals.acum_total_taxed }}</td>
-                                    <td>{{ totals.acum_total_igv }}</td>
-                                    <td>{{ totals.acum_total }}</td>
-                                </tr>
-                                <tr>
-                                    <td :colspan="colspanFootPurchase"></td>
-                                    <td><strong>Totales USD</strong></td>
-                                    <td></td>
-                                    <td></td>
-                                    <td></td>
-
-                                    <td>{{ totals.acum_total_taxed_usd }}</td>
-                                    <td>{{ totals.acum_total_igv_usd }}</td>
-                                    <td>{{ totals.acum_total_usd }}</td>
-                                </tr>
-                                </template>
-                            </template>
-                        </tfoot>
-                    </table>
-                    <div>
-                        <el-pagination
-                            :current-page.sync="pagination.current_page"
-                            :page-size="pagination.per_page"
-                            :total="pagination.total"
-                            layout="total, prev, pager, next"
-                            @current-change="getRecords">
-                        </el-pagination>
-                    </div>
-                </div>
             </div>
         </div>
 
+
+        <div class="col-md-12">
+            <div class="scroll-shadow shadow-left" v-show="showLeftShadow"></div>
+            <div class="scroll-shadow shadow-right" v-show="showRightShadow"></div>
+            <div class="table-responsive" ref="scrollContainer">
+                <table class="table">
+                    <thead>
+                    <slot name="heading"></slot>
+                    </thead>
+                    <tbody>
+                    <slot v-for="(row, index) in records"
+                          :index="customIndex(index)"
+                          :row="row"></slot>
+                    </tbody>
+                    <tfoot v-if="resource == 'reports/sales' || resource == 'reports/purchases' || resource == 'reports/fixed-asset-purchases'">
+
+                        <template v-if="resource == 'reports/sales'|| this.resource === 'reports/state-account'">
+                            <tr>
+                                <td :colspan="13"></td>
+                                <td v-if="visibleColumns.guides.visible"></td>
+                                <td v-if="visibleColumns.options.visible"></td>
+                                <td v-if="visibleColumns.web_platforms.visible"></td>
+                                <td v-if="visibleColumns.total_charge.visible"></td>
+                                <td><strong>Totales VES</strong></td>
+                                <td>{{ totals.acum_total_exonerated }}</td>
+                                <td>{{ totals.acum_total_unaffected }}</td>
+                                <td>{{ totals.acum_total_free }}</td>
+
+                                <td>{{ totals.acum_total_taxed }}</td>
+                                <td>{{ totals.acum_total_igv }}</td>
+
+                                <td>{{ totals.acum_total }}</td>
+                            </tr>
+                            <tr>
+                                <td :colspan="13"></td>
+                                <td v-if="visibleColumns.guides.visible"></td>
+                                <td v-if="visibleColumns.options.visible"></td>
+                                <td v-if="visibleColumns.web_platforms.visible"></td>
+                                <td v-if="visibleColumns.total_charge.visible"></td>
+                                <td><strong>Totales USD</strong></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td>{{ totals.acum_total_taxed_usd }}</td>
+                                <td>{{ totals.acum_total_igv_usd }}</td>
+
+                                <td>{{ totals.acum_total_usd }}</td>
+                            </tr>
+
+                        </template>
+                        <template v-else>
+                            <!-- mostrar si no se aplica conversion a bolívares -->
+                            <template v-if="!applyConversionToPen">
+                            <tr>
+                                <td :colspan="colspanFootPurchase"></td>
+                                <td><strong>Totales VES</strong></td>
+                                <td>{{ totals.acum_total_exonerated }}</td>
+                                <td>{{ totals.acum_total_unaffected }}</td>
+                                <td>{{ totals.acum_total_free }}</td>
+
+                                <td>{{ totals.acum_total_taxed }}</td>
+                                <td>{{ totals.acum_total_igv }}</td>
+                                <td>{{ totals.acum_total }}</td>
+                            </tr>
+                            <tr>
+                                <td :colspan="colspanFootPurchase"></td>
+                                <td><strong>Totales USD</strong></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+
+                                <td>{{ totals.acum_total_taxed_usd }}</td>
+                                <td>{{ totals.acum_total_igv_usd }}</td>
+                                <td>{{ totals.acum_total_usd }}</td>
+                            </tr>
+                            </template>
+                        </template>
+                    </tfoot>
+                </table>
+                <div>
+                    <el-pagination
+                        :current-page.sync="pagination.current_page"
+                        :page-size="pagination.per_page"
+                        :total="pagination.total"
+                        layout="total, prev, pager, next"
+                        @current-change="getRecords">
+                    </el-pagination>
+                </div>
+            </div>
+        </div>
     </div>
+
+</div>
 </template>
 <style>
 .font-custom {

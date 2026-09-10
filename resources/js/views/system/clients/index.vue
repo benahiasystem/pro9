@@ -68,17 +68,6 @@
                     <div class="shad-kpi-desc">Ciclo actual en curso</div>
                 </div>
             </div>
-            <!-- Alertas -->
-            <div class="col-xl-2 col-md-4 col-6 mb-3">
-                <div class="shad-kpi" :class="kpiAlertas > 0 ? 'shad-kpi-danger' : ''">
-                    <div class="shad-kpi-header">
-                        <span class="shad-kpi-label">Con Alertas</span>
-                        <svg class="shad-kpi-icon" :style="kpiAlertas > 0 ? 'color:#ef4444' : ''" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10 5a2 2 0 1 1 4 0a7 7 0 0 1 4 6v3a4 4 0 0 0 2 3h-16a4 4 0 0 0 2 -3v-3a7 7 0 0 1 4 -6" /><path d="M9 17v1a3 3 0 0 0 6 0v-1" /></svg>
-                    </div>
-                    <div class="shad-kpi-value" :style="kpiAlertas > 0 ? 'color:#ef4444' : ''">{{ kpiAlertas }}</div>
-                    <div class="shad-kpi-desc">{{ kpiAlertas > 0 ? 'Clientes con docs pendientes' : 'Sin alertas activas' }}</div>
-                </div>
-            </div>
         </div>
 
         <!-- ── Main Row ───────────────────────────────────────────── -->
@@ -409,7 +398,6 @@
                             <th v-if="columns.correo.visible">Correo</th>
                             <th v-if="columns.entorno.visible">Entorno</th>
                             <th v-if="columns.total_comprobantes.visible" class="text-center">Total de<br>Comprobantes</th>
-                            <th v-if="columns.notificaciones.visible" class="text-center">Notificaciones</th>
                             <th v-if="columns.inicio_ciclo.visible" class="text-center">Inicio<br>Ciclo Facturación</th>
                             <th v-if="columns.comprobantes_ciclo.visible" class="text-center">Comprobantes<br>Ciclo Facturación</th>
                             <th v-if="columns.usuarios.visible" class="text-center">Usuarios</th>
@@ -470,60 +458,6 @@
                                 <label>
                                     <strong>{{ row.count_doc }}</strong>
                                 </label>
-                            </td>
-
-                            <td v-if="columns.notificaciones.visible" class="d-flex justify-content-center">
-                                <template v-if="row.document_not_sent > 0 || row.document_to_be_regularized > 0 || row.document_to_be_canceled > 0">
-                                    <el-tooltip
-                                        class="item"
-                                        content="Comprobantes enviados / por enviar"
-                                        effect="dark"
-                                        placement="top-start">
-                                        <el-badge
-                                            v-if="row.document_not_sent > 0"
-                                            :value="row.document_not_sent"
-                                            class="item mx-2"
-                                            :type="row.document_not_sent == 0 ? 'primary' : 'danger'">
-                                            <i class="far fa-bell text-secondary"></i>
-                                        </el-badge>
-                                    </el-tooltip>
-
-                                    <el-tooltip
-                                        class="item"
-                                        content="Comprobantes pendientes de rectificación"
-                                        effect="dark"
-                                        placement="top-start">
-                                        <el-badge
-                                            v-if="row.document_to_be_regularized > 0"
-                                            :value="row.document_regularize_shipping"
-                                            class="item mx-2"
-                                            :type="row.document_regularize_shipping == 0 ? 'primary' : 'danger'">
-                                            <i class="fas fa-exclamation-triangle text-secondary"></i>
-                                        </el-badge>
-                                    </el-tooltip>
-
-                                    <el-tooltip
-                                        class="item"
-                                        content="Comprobantes por anular"
-                                        effect="dark"
-                                        placement="top-start">
-                                        <el-badge
-                                            v-if="row.document_to_be_canceled > 0"
-                                            :value="row.document_to_be_canceled"
-                                            class="item mx-2"
-                                            :type="row.document_to_be_canceled == 0 ? 'primary' : 'danger'">
-                                            <i class="fas fa-exclamation-circle text-secondary"></i>
-                                        </el-badge>
-                                    </el-tooltip>
-
-                                </template>
-
-                                <template v-else>
-                                    <span class="text-muted small d-flex align-items-center">
-                                        Todo OK
-                                        <svg  xmlns="http://www.w3.org/2000/svg"  width="18"  height="18"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-circle-check ms-1 text-success"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M9 12l2 2l4 -4" /></svg>
-                                    </span>
-                                </template>
                             </td>
 
                             <td v-if="columns.inicio_ciclo.visible" class="text-center">
@@ -1187,10 +1121,6 @@ export default {
                     title: 'Total de Comprobantes',
                     visible: false
                 },
-                notificaciones: {
-                    title: 'Notificaciones',
-                    visible: true
-                },
                 inicio_ciclo: {
                     title: 'Inicio Ciclo Facturación',
                     visible: false
@@ -1321,9 +1251,6 @@ export default {
         },
         kpiDocsMes() {
             return this.records.reduce((s, r) => s + (r.current_count_doc_month || 0), 0);
-        },
-        kpiAlertas() {
-            return this.records.filter(r => r.document_not_sent > 0 || r.document_to_be_regularized > 0 || r.document_to_be_canceled > 0).length;
         },
         topPlanes() {
             const counts = {};

@@ -18,7 +18,6 @@
     use App\Models\Tenant\Catalogs\DocumentType;
     use App\Models\Tenant\Catalogs\OperationType;
     use App\Models\Tenant\Catalogs\PriceType;
-    use App\Models\Tenant\Catalogs\SystemIscType;
     use App\Models\Tenant\Company;
     use App\Models\Tenant\Configuration;
     use App\Models\Tenant\Establishment;
@@ -262,7 +261,6 @@ use Modules\Purchase\Helpers\WeightedAverageCostHelper;
             $items = SearchItemController::getItemToPurchase();
             $categories = [];
             $affectation_igv_types = AffectationIgvType::whereActive()->get();
-            $system_isc_types = SystemIscType::available();
             $price_types = PriceType::whereActive()->get();
             $discount_types = ChargeDiscountType::whereType('discount')->whereLevel('item')->get();
             $charge_types = ChargeDiscountType::whereType('charge')->whereLevel('item')->get();
@@ -281,7 +279,6 @@ use Modules\Purchase\Helpers\WeightedAverageCostHelper;
                 'items',
                 'categories',
                 'affectation_igv_types',
-                'system_isc_types',
                 'price_types',
                 'discount_types',
                 'charge_types',

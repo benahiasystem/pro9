@@ -79,10 +79,6 @@
             }
 
 
-            $seriesBoleta = app(SeriesResolver::class)->applyContext(Series::where([
-                'establishment_id' => $configurationMiTienda->establishment_id,
-                'document_type_id' => '03',
-            ]))->get();
             $seriesInvoice = app(SeriesResolver::class)->applyContext(Series::where([
                 'establishment_id' => $configurationMiTienda->establishment_id,
                 'document_type_id' => '01',
@@ -102,7 +98,6 @@
 
                 'series_order' => [],
                 'series_document_ft' => $seriesInvoice,
-                'series_document_bt' => $seriesBoleta,
                 'payment_destinations' => $payment_destinations,
                 'currency_types' => $currencys,
 
@@ -113,10 +108,6 @@
         public function tables(Request $request)
         {
 
-            $seriesBoleta = app(SeriesResolver::class)->applyContext(Series::where([
-                'establishment_id' => $request->establishment_id,
-                'document_type_id' => '03',
-            ]))->get();
             $seriesInvoice = app(SeriesResolver::class)->applyContext(Series::where([
                 'establishment_id' => $request->establishment_id,
                 'document_type_id' => '01',
@@ -135,7 +126,6 @@
 
                 'series_order' => [],
                 'series_document_ft' => $seriesInvoice,
-                'series_document_bt' => $seriesBoleta,
                 'payment_destinations' => $payment_destinations,
                 'currency_types' => $currencys,
 

@@ -50,7 +50,7 @@ use Illuminate\Support\Str;
                         $dispatches = $this->getRecordsByModel(Dispatch::class, $params)->get();
                         break;
                     default:
-                        $documents_01 = $this->getRecordsByModel(Document::class, $params)->whereIn('document_type_id', ['01', '03'])->get();
+                        $documents_01 = $this->getRecordsByModel(Document::class, $params)->whereIn('document_type_id', ['01'])->get();
                         $sale_notes = $this->getRecordsByModel(SaleNote::class, $params)->get();
                         $dispatches = $this->getRecordsByModel(Dispatch::class, $params)->get();
                         break;
@@ -120,7 +120,7 @@ use Illuminate\Support\Str;
                         $total_documents += $this->getRecordsByModel(Dispatch::class, $params)->count();
                         break;
                     default:
-                        $total_documents += $this->getRecordsByModel(Document::class, $params)->whereIn('document_type_id', ['01', '03'])->count();
+                        $total_documents += $this->getRecordsByModel(Document::class, $params)->whereIn('document_type_id', ['01'])->count();
                         $total_documents += $this->getRecordsByModel(SaleNote::class, $params)->count();
                         $total_documents += $this->getRecordsByModel(Dispatch::class, $params)->count();
                         break;
@@ -469,13 +469,7 @@ use Illuminate\Support\Str;
                 } else {
                     $html_footer = $template->pdfFooter('default', $this->document);
                 }
-                $html_footer_legend = "";
-                if ($base_template != 'legend_amazonia') {
-                    if ($this->configuration->legend_footer) {
-                        $html_footer_legend = $template->pdfFooterLegend($base_template, $this->document);
-                    }
-                }
-                $pdf->SetHTMLFooter($html_footer . $html_footer_legend);
+                $pdf->SetHTMLFooter($html_footer);
                 // }
             }
 
@@ -879,20 +873,14 @@ use Illuminate\Support\Str;
                 $company,
                 $document,
                 $format_pdf);
-            $html_footer_legend = "";
             if (config('tenant.pdf_template_footer')) {
                 switch ($type) {
                     case 'invoice':
-                        /*$html_footer = $template->pdfFooter($base_pdf_template, $document);
-                        if ($configuration->legend_footer) {
-                            $html_footer_legend = $template->pdfFooterLegend($base_pdf_template, $document);
-                        }
-                        $pdf->SetHTMLFooter($html_footer . $html_footer_legend);*/
                         break;
 
                     case 'dispatch':
                         $html_footer = $template->pdfFooter($base_pdf_template, $document);
-                        $pdf->SetHTMLFooter($html_footer . $html_footer_legend);
+                        $pdf->SetHTMLFooter($html_footer);
                         break;
 
                     case 'sale_note':
@@ -917,23 +905,16 @@ use Illuminate\Support\Str;
             foreach ($documents as $document) {
 
                 $html = $template->pdf($base_pdf_template, $type, $company, $document, $format_pdf);
-                $html_footer_legend = "";
-
                 if (config('tenant.pdf_template_footer')) {
 
                     switch ($type) {
 
                         case 'invoice':
-                            /*$html_footer = $template->pdfFooter($base_pdf_template, $document);
-                            if ($configuration->legend_footer) {
-                                $html_footer_legend = $template->pdfFooterLegend($base_pdf_template, $document);
-                            }
-                            $pdf->SetHTMLFooter($html_footer . $html_footer_legend);*/
                             break;
 
                         case 'dispatch':
                             $html_footer = $template->pdfFooter($base_pdf_template, $document);
-                            $pdf->SetHTMLFooter($html_footer . $html_footer_legend);
+                            $pdf->SetHTMLFooter($html_footer);
                             break;
 
                         case 'sale_note':

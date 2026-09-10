@@ -34,8 +34,6 @@ class QuotationResource2 extends JsonResource
             'total_unaffected' => $this->total_unaffected,
             'total_exonerated' => $this->total_exonerated,
             'total_igv' => $this->total_igv,
-            'total_base_isc' => $this->total_base_isc,
-            'total_isc' => $this->total_isc,
             'total_base_other_taxes' => $this->total_base_other_taxes,
             'total_other_taxes' => $this->total_other_taxes,
             'total_taxes' => $this->total_taxes,

@@ -43,16 +43,18 @@ class SalesWithoutReceiptSourceContractTest extends TestCase
     }
 
     /** @test */
-    public function configuration_rollbacks_do_not_reenable_receipts(): void
+    public function current_configuration_and_fast_pos_do_not_keep_a_receipt_default(): void
     {
-        $migration = $this->source(
-            'database/migrations/tenant/2026_09_10_200000_tenant_rollback_default_usd_exonerado_and_pos_sale_note.php'
-        );
-        $client = $this->source('app/Http/Controllers/System/ClientController.php');
+        $configuration = $this->source('resources/js/views/tenant/configurations/form.vue');
+        $fastPos = $this->source('resources/js/views/tenant/pos/fast_bk.vue');
+        $schema = $this->source('database/migrations/tenant/2026_08_17_000067_create_configurations_table.php');
 
-        self::assertStringNotContainsString("'default_document_type_03' => true", $migration);
-        self::assertStringContainsString("'default_document_type_03' => false", $migration);
-        self::assertStringContainsString("'default_document_type_03' => false", $client);
+        self::assertStringNotContainsString('default_document_type_03', $configuration);
+        self::assertStringNotContainsString('value="03"', $configuration);
+        self::assertStringNotContainsString('default_document_type_03', $fastPos);
+        self::assertStringNotContainsString('"03"', $this->between($fastPos, 'changeCustomer()', 'getLocalStorageIndex', 'changeCustomer'));
+        self::assertStringNotContainsString('default_document_type_03', $schema);
+        self::assertStringContainsString('default_document_type_80', $configuration);
     }
 
     /** @test */

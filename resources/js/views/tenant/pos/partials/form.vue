@@ -345,7 +345,7 @@ import {mapActions, mapState} from "vuex/dist/vuex.mjs";
                 form: {},
                 unit_types: [],
                 currency_types: [],
-                system_isc_types: [],
+
                 categories: [],
                 filteredCategories: [],
                 categorySearchQuery: '',
@@ -374,7 +374,7 @@ import {mapActions, mapState} from "vuex/dist/vuex.mjs";
 
                     this.unit_types = response.data.unit_types
                     this.currency_types = response.data.currency_types
-                    this.system_isc_types = response.data.system_isc_types
+
                     this.affectation_igv_types = response.data.affectation_igv_types
                     this.categories = response.data.categories || []
                     this.filteredCategories = this.categories
@@ -413,9 +413,9 @@ import {mapActions, mapState} from "vuex/dist/vuex.mjs";
                     currency_type_id: 'VES',
                     sale_unit_price: 0,
                     purchase_unit_price: 0,
-                    has_isc: false,
-                    system_isc_type_id: null,
-                    percentage_isc: 0,
+
+
+
                     suggested_price: 0,
                     sale_affectation_igv_type_id: null,
                     purchase_affectation_igv_type_id: null,
@@ -428,7 +428,7 @@ import {mapActions, mapState} from "vuex/dist/vuex.mjs";
                     image: null,
                     image_url: null,
                     temp_path: null,
-                    has_plastic_bag_taxes: false,
+
                 }
                 this.show_has_igv = true
             },
@@ -528,16 +528,8 @@ import {mapActions, mapState} from "vuex/dist/vuex.mjs";
                 this.$emit('update:showDialog', false)
                 this.resetForm()
             },
-            changeHasIsc() {
-                this.form.system_isc_type_id = null
-                this.form.percentage_isc = 0
-                this.form.suggested_price = 0
-            },
-            changeSystemIscType() {
-                if (this.form.system_isc_type_id !== '03') {
-                    this.form.suggested_price = 0
-                }
-            },
+
+
             filterCategories(query) {
                 this.categorySearchQuery = query
 

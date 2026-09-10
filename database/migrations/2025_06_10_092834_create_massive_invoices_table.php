@@ -17,9 +17,10 @@ class CreateMassiveInvoicesTable extends Migration
             $table->increments('id');
             $table->date('fecha_emision');
             $table->date('fecha_vencimiento')->nullable();
+            $table->string('ruc_emisor', 500)->nullable();
             $table->string('tipo_comprobante');
             $table->string('serie_comprobante');
-            $table->string('ruc', 20);
+            $table->string('ruc', 500);
             $table->string('correo')->nullable();
             $table->string('moneda', 3);
             $table->string('forma_pago');
@@ -36,10 +37,8 @@ class CreateMassiveInvoicesTable extends Migration
             $table->text('nota')->nullable();
             $table->string('external_id')->nullable();
             $table->text('pdf_link')->nullable();
-            $table->text('xml_link')->nullable();
-            $table->text('cdr_link')->nullable();
-            $table->string('estado_sunat')->nullable();
-            $table->text('mensaje_sunat')->nullable();
+            $table->string('estado_emision')->nullable();
+            $table->text('mensaje_emision')->nullable();
             $table->decimal('total_gravado', 12, 2)->default(0);
             $table->decimal('total_igv', 12, 2)->default(0);
             $table->decimal('total_venta', 12, 2)->default(0);

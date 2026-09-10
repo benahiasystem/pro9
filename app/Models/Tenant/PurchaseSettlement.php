@@ -62,10 +62,7 @@ class PurchaseSettlement extends ModelTenant
         'observation',
 
         'filename',
-        'hash',
-        'has_xml',
         'has_pdf',
-        'has_cdr',
     ];
 
     protected $casts = [
@@ -239,32 +236,14 @@ class PurchaseSettlement extends ModelTenant
         $legend = collect($legends)->where('code', '1000')->first();
         return $legend->value;
     }
-    
-    public function getDownloadExternalXmlAttribute()
-    {
-        return route('tenant.download.external_id', ['model' => 'purchaseSettlement', 'type' => 'xml', 'external_id' => $this->external_id]);
-    }
-
     public function getDownloadExternalPdfAttribute()
     {
         return route('tenant.download.external_id', ['model' => 'purchaseSettlement', 'type' => 'pdf', 'external_id' => $this->external_id]);
     }
-
-    public function getDownloadExternalCdrAttribute()
-    {
-        return route('tenant.download.external_id', ['model' => 'purchaseSettlement', 'type' => 'cdr', 'external_id' => $this->external_id]);
-    }
-
     public function getRowResource()
     {
         
-        $has_xml = true;
         $has_pdf = true;
-        $has_cdr = false; 
-
-        if ($this->state_type_id === '05') {
-            $has_cdr = true;
-        }
 
         return [
             'id' => $this->id,
@@ -281,12 +260,8 @@ class PurchaseSettlement extends ModelTenant
             'subtotal' => $this->subtotal,
             'state_type_id' => $this->state_type_id,
             'state_type_description' => $this->state_type->description,
-            'has_xml' => $has_xml,
             'has_pdf' => $has_pdf,
-            'has_cdr' => $has_cdr,
-            'download_external_xml' => $this->download_external_xml,
             'download_external_pdf' => $this->download_external_pdf,
-            'download_external_cdr' => $this->download_external_cdr,
             'created_at' => $this->created_at->format('Y-m-d H:i:s'),
             'updated_at' => $this->updated_at->format('Y-m-d H:i:s'),
         ];

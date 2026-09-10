@@ -21,9 +21,9 @@ export const editableRowItems = {
         {
             const has_discounts = row.discounts && Array.isArray(row.discounts) && row.discounts.length > 0
             const has_charges = row.charges && Array.isArray(row.charges) && row.charges.length > 0
-            const has_isc = row.item.has_isc
 
-            return has_discounts || has_charges || has_isc
+
+            return has_discounts || has_charges
         },
         setRowTotalsWithoutRounding(row, totals)
         {
@@ -33,13 +33,13 @@ export const editableRowItems = {
             row.total_taxes_without_rounding = totals.total_taxes
             row.total_without_rounding = totals.total
         },
-        setRowValuesFreeAffectationIgv(row, total_plastic_bag_taxes)
+        setRowValuesFreeAffectationIgv(row, )
         {
             if (row.affectation_igv_type && row.affectation_igv_type.free)
             {
                 row.price_type_id = '02'
                 row.unit_value = 0
-                row.total = 0 + total_plastic_bag_taxes
+                row.total = 0
                 row.total_without_rounding = 0
             }
         },
@@ -107,18 +107,7 @@ export const editableRowItems = {
 
             return unit_price
         },
-        getRowTotalPlasticBagTaxes(row)
-        {
-            let total_plastic_bag_taxes = 0
 
-            if (row.input_has_plastic_bag_taxes)
-            {
-                total_plastic_bag_taxes = _.round(row.quantity * row.item.amount_plastic_bag_taxes, 1)
-                row.total_plastic_bag_taxes = total_plastic_bag_taxes
-            }
-
-            return total_plastic_bag_taxes
-        },
         startRowTotalsVariables(row, input_total_value)
         {
             let total_value_partial = input_total_value
@@ -126,8 +115,8 @@ export const editableRowItems = {
             let total_base_igv = total_value_partial
             let total_igv = this.getRowCalculatedTotalIgv(row.affectation_igv_type_id, total_base_igv)
 
-            let total_plastic_bag_taxes = this.getRowTotalPlasticBagTaxes(row)
-            let total_taxes = total_igv + total_plastic_bag_taxes
+
+            let total_taxes = total_igv
             let total = total_value + total_taxes
 
             return {
@@ -136,7 +125,7 @@ export const editableRowItems = {
                 total_igv,
                 total_taxes,
                 total,
-                total_plastic_bag_taxes
+
             }
         },
         setDifferentUnitPrice(row)
@@ -160,26 +149,26 @@ export const editableRowItems = {
                 row.item.unit_price = this.getFormatUnitPriceRow(row.unit_price, row)
             }
         },
-        endRowCalculateTotal(row, total_value, total_base_igv, total_igv, total_taxes, total, total_plastic_bag_taxes)
+        endRowCalculateTotal(row, total_value, total_base_igv, total_igv, total_taxes, total, )
         {
             row.item.has_editable_row_items = true
             this.setDifferentUnitPrice(row)
             this.setRowTotalsWithoutRounding(row, { total_value, total_base_igv, total_igv, total_taxes, total })
-            this.setRowValuesFreeAffectationIgv(row, total_plastic_bag_taxes)
+            this.setRowValuesFreeAffectationIgv(row, )
             this.calculateTotal()
         },
         recalculateRowTotals(row)
         {
-            const { total_value, total_base_igv, total_igv, total_taxes, total, total_plastic_bag_taxes } = this.startRowTotalsVariables(row, row.unit_value * row.quantity)
+            const { total_value, total_base_igv, total_igv, total_taxes, total,  } = this.startRowTotalsVariables(row, row.unit_value * row.quantity)
 
             this.setRowCalculatedTotals(row, { total_value, total_base_igv, total_igv, total_taxes, total })
 
-            this.endRowCalculateTotal(row, total_value, total_base_igv, total_igv, total_taxes, total, total_plastic_bag_taxes)
+            this.endRowCalculateTotal(row, total_value, total_base_igv, total_igv, total_taxes, total, )
         },
         changeRowTotal(row)
         {
             let input_total = row.total
-            if (row.input_has_plastic_bag_taxes) input_total -= row.total_plastic_bag_taxes
+
 
             row.unit_price = parseFloat(input_total) / parseFloat(row.quantity)
             row.unit_value = this.getFormatUnitPriceRow(this.getRowCalculatedUnitValue(row.affectation_igv_type_id, row.unit_price), row)
@@ -190,11 +179,11 @@ export const editableRowItems = {
                 return this.$message.error('El precio de compra no puede ser superior al precio de venta');
             }
 
-            const { total_value, total_base_igv, total_igv, total_taxes, total, total_plastic_bag_taxes } = this.startRowTotalsVariables(row, row.unit_value * row.quantity)
+            const { total_value, total_base_igv, total_igv, total_taxes, total,  } = this.startRowTotalsVariables(row, row.unit_value * row.quantity)
 
             this.setRowCalculatedTotals(row, { total_value, total_base_igv, total_igv, total_taxes })
 
-            this.endRowCalculateTotal(row, total_value, total_base_igv, total_igv, total_taxes, total, total_plastic_bag_taxes)
+            this.endRowCalculateTotal(row, total_value, total_base_igv, total_igv, total_taxes, total, )
         },
         changeRowTotalValue(row)
         {
@@ -207,11 +196,11 @@ export const editableRowItems = {
                 this.changeRowUnitPrice(row);
                 return this.$message.error('El precio de compra no puede ser superior al precio de venta');
             }
-            const { total_value, total_base_igv, total_igv, total_taxes, total, total_plastic_bag_taxes } = this.startRowTotalsVariables(row, row.total_value)
+            const { total_value, total_base_igv, total_igv, total_taxes, total,  } = this.startRowTotalsVariables(row, row.total_value)
 
             this.setRowCalculatedTotals(row, { total_base_igv, total_igv, total_taxes, total })
 
-            this.endRowCalculateTotal(row, total_value, total_base_igv, total_igv, total_taxes, total, total_plastic_bag_taxes)
+            this.endRowCalculateTotal(row, total_value, total_base_igv, total_igv, total_taxes, total, )
         },
         changeRowUnitValue(row)
         {

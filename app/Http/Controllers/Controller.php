@@ -384,7 +384,7 @@ $string = var_export($header,true);
          */
         public function generalIsInvoiceDocument($document_type_id)
         {
-            return in_array($document_type_id, ['01', '03'], true);
+            return in_array($document_type_id, ['01'], true);
         }
 
 

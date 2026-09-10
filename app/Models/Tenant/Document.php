@@ -4,7 +4,6 @@
 
 namespace App\Models\Tenant;
 
-use App\CoreFacturalo\Helpers\QrCode\QrCodeGenerate;
 use App\Http\Controllers\Tenant\DownloadController;
 use App\Models\Tenant\Catalogs\CurrencyType;
 use App\Models\Tenant\Catalogs\DocumentType;
@@ -53,9 +52,7 @@ use Modules\Sale\Models\Agent;
  * @property mixed $customer
  * @property mixed $data_json
  * @property mixed $discounts
- * @property mixed $download_external_cdr
  * @property mixed $download_external_pdf
- * @property mixed $download_external_xml
  * @property mixed $establishment
  * @property mixed $guides
  * @property mixed $is_editable
@@ -82,7 +79,6 @@ use Modules\Sale\Models\Agent;
  * @property bool $enabled_concurrency
  * @property bool $apply_concurrency
  * @property mixed $related
- * @property mixed $response_regularize_shipping
  * @property DocumentHotel|null $hotel
  * @property EloquentCollection|InventoryKardex[] $inventory_kardex
  * @property int|null $inventory_kardex_count
@@ -146,11 +142,7 @@ class Document extends ModelTenant
     use UsesTenantConnection;
     use SellerIdTrait;
 
-    public const DOCUMENT_TYPE_TICKET = '03';
-
     public const GROUP_INVOICE = '01';
-
-    public const GROUP_TICKET = '02';
 
 
     protected $with = [
@@ -197,8 +189,6 @@ class Document extends ModelTenant
         'total_unaffected',
         'total_exonerated',
         'total_igv',
-        'total_base_isc',
-        'total_isc',
         'total_base_other_taxes',
         'total_other_taxes',
         'total_taxes',
@@ -214,30 +204,16 @@ class Document extends ModelTenant
         'additional_information',
         'additional_data',
         'filename',
-        'hash',
-        'qr',
-        'has_xml',
         'has_pdf',
-        'has_cdr',
         'has_prepayment',
         'affectation_type_prepayment',
         'data_json',
-        'send_server',
-        'shipping_status',
-        'sunat_shipping_status',
-        'query_status',
-        'total_plastic_bag_taxes',
         'sale_note_id',
-        'success_shipping_status',
-        'success_sunat_shipping_status',
-        'success_query_status',
         'plate_number',
         'total_canceled',
         'order_note_id',
         'pending_amount_prepayment',
         'payment_method_type_id',
-        'regularize_shipping',
-        'response_regularize_shipping',
         'seller_id',
         'reference_data',
         'terms_condition',
@@ -258,14 +234,11 @@ class Document extends ModelTenant
 
 
         'sale_notes_relateds', //generar cpe desde multiples notas de venta
-        'unique_filename', //registra nombre de archivo unico (campo validador para evitar duplicidad)
-
-        'ticket_single_shipment',
+        'unique_filename',
         'point_system',
         'point_system_data',
         'folio',
         'agent_id',
-        'force_send_by_summary',
         'dispatch_ticket_pdf',
         'hotel_data_persons',
         'source_module',
@@ -284,9 +257,7 @@ class Document extends ModelTenant
         'enabled_concurrency' => 'bool',
         'apply_concurrency' => 'bool',
         'total' => 'float',
-        'ticket_single_shipment' => 'bool',
         'point_system' => 'bool',
-        'force_send_by_summary' => 'bool',
         'dispatch_ticket_pdf' => 'bool',
         'custom_fields_data' => 'array',
     ];
@@ -423,8 +394,6 @@ class Document extends ModelTenant
             'department_id'          => $person_ubigeo['department_id'],
             'province_id'            => $person_ubigeo['province_id'],
             'district_id'            => $person_ubigeo['district_id'],
-
-            'qr'                     => $this->qr,
 
             // Operaciones segun su afectacion al IGV.
             'total_taxed'            => round((float) $this->total_taxed, 2),
@@ -648,16 +617,6 @@ class Document extends ModelTenant
     }
 
 
-
-    public function getResponseRegularizeShippingAttribute($value)
-    {
-        return (is_null($value)) ? null : (object)json_decode($value);
-    }
-
-    public function setResponseRegularizeShippingAttribute($value)
-    {
-        $this->attributes['response_regularize_shipping'] = (is_null($value)) ? null : json_encode($value);
-    }
 
     public function getRetentionAttribute($value)
     {
@@ -915,11 +874,6 @@ class Document extends ModelTenant
     /**
      * @return string
      */
-    public function getDownloadExternalXmlAttribute()
-    {
-        return route('tenant.download.external_id', ['model' => 'document', 'type' => 'xml', 'external_id' => $this->external_id]);
-    }
-
     /**
      * @return string
      */
@@ -931,11 +885,6 @@ class Document extends ModelTenant
     /**
      * @return string
      */
-    public function getDownloadExternalCdrAttribute()
-    {
-        return route('tenant.download.external_id', ['model' => 'document', 'type' => 'cdr', 'external_id' => $this->external_id]);
-    }
-
     /**
      * @param $query
      *
@@ -965,11 +914,6 @@ class Document extends ModelTenant
      *
      * @return mixed
      */
-    public function scopeWhereNotSent($query)
-    {
-        return $query->whereIn('state_type_id', ['01', '03'])->where('date_of_issue', '<=', date('Y-m-d'));
-    }
-
     /**
      * @return HasMany
      */
@@ -1002,10 +946,7 @@ class Document extends ModelTenant
     /**
      * @return HasOne
      */
-    public function summary_document()
-    {
-        return $this->hasOne(SummaryDocument::class);
-    }
+
 
     /**
      * @param $query
@@ -1041,11 +982,6 @@ class Document extends ModelTenant
      *
      * @return mixed
      */
-    public function scopeWhereRegularizeShipping($query)
-    {
-        return $query->where('state_type_id', '01')->where('regularize_shipping', true);
-    }
-
     /**
      * @return BelongsTo
      */
@@ -1078,28 +1014,6 @@ class Document extends ModelTenant
     public function getIsEditableAttribute($value)
     {
         return $value ? true : false;
-    }
-
-    /**
-     * Evalua si es posible borrarlo basado en las condiciones:
-     * regularize_shipping y response_regularize_shipping no este vacio
-     * El documento este replicado  en series y numero
-     *
-     * @return bool
-     */
-    public function canDelete()
-    {
-        if (!empty($this->regularize_shipping) &&
-            !empty($this->response_regularize_shipping)) {
-            $duplicated = self::where([
-                'series' => $this->series,
-                'number' => $this->number,
-            ])->where('id', '!=', $this->id)->first();
-            if (!empty($duplicated)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     /**
@@ -1362,14 +1276,6 @@ class Document extends ModelTenant
     }
 
     /**
-     * @return bool
-     */
-    public function isHasCdr()
-    {
-        return (bool)$this->has_cdr;
-    }
-
-    /**
      * Retornar placas registradas
      *
      * @return array
@@ -1378,7 +1284,7 @@ class Document extends ModelTenant
     {
         $plate_numbers = collect();
 
-        if (in_array($this->document_type_id, ['01', '03'])) {
+        if (in_array($this->document_type_id, ['01'])) {
 
             if ($this->plate_number) return $plate_numbers->push(['description' => $this->plate_number]);
 
@@ -1511,7 +1417,7 @@ class Document extends ModelTenant
      */
     public function scopeFilterDocumentTypeInvoice($query)
     {
-        return $query->whereIn('document_type_id', ['01', '03']);
+        return $query->whereIn('document_type_id', ['01']);
     }
 
     /**
@@ -1624,154 +1530,8 @@ class Document extends ModelTenant
      * @return Builder
      *
      */
-    public function scopeFilterDocumentsForSummary($query, $date_of_reference, $fiscal_environment)
-    {
-        return $query->whereFilterWithOutRelations()
-            ->with([
-                'document_type' => function ($q) {
-                    $q->select('id', 'description');
-                },
-            ])
-            ->select([
-                'id',
-                'series',
-                'number',
-                'document_type_id',
-                'currency_type_id',
-                'total_exportation',
-                'total_free',
-                'total_unaffected',
-                'total_exonerated',
-                'total_charge',
-                'total_taxed',
-                'total_igv',
-                'total',
-                // columnas usadas solo por los filtros del where
-                'date_of_issue',
-                'fiscal_environment',
-                'group_id',
-                'state_type_id',
-                'ticket_single_shipment',
-            ])
-            ->where('date_of_issue', $date_of_reference)
-            ->where('fiscal_environment', $fiscal_environment)
-            ->where('group_id', '02')
-            ->where('state_type_id', '01')
-            ->where('ticket_single_shipment', false)
-            ->take(500);
-    }
 
 
-    /**
-     *
-     * Validar si la boleta y notas se enviaron de forma individual
-     *
-     * @return bool
-     */
-    public function isSingleDocumentShipment()
-    {
-        return in_array($this->document_type_id, ['03', '07', '08'], true) && $this->ticket_single_shipment;
-        // return $this->document_type_id === self::DOCUMENT_TYPE_TICKET && $this->ticket_single_shipment;
-    }
-
-
-    /**
-     *
-     * Validar si la boleta se envio de forma individual
-     *
-     * @return bool
-     */
-    public function isSingleTicketDocumentShipment()
-    {
-        return $this->isDocumentTypeTicket() && $this->ticket_single_shipment;
-    }
-
-    /**
-     *
-     * Validar si se modifico la boleta enviada de forma individual, a resumen
-     *
-     * @return bool
-     */
-    public function isForceSendBySummary()
-    {
-        return $this->isDocumentTypeTicket() && $this->force_send_by_summary;
-    }
-
-
-    /**
-     *
-     * Validar si se puede modificar el tipo de envio de la boleta, individual a resumen
-     *
-     * @return bool
-     */
-    public function isAvailableForceSendBySummary()
-    {
-        return $this->isSingleDocumentShipment() && !$this->force_send_by_summary && $this->state_type_id === self::STATE_TYPE_REGISTERED && auth()->user()->permission_force_send_by_summary;
-    }
-
-
-    /**
-     *
-     * Verificar si es boleta
-     *
-     * @return bool
-     */
-    public function isDocumentTypeTicket()
-    {
-        return $this->document_type_id === self::DOCUMENT_TYPE_TICKET;
-    }
-
-
-    /**
-     *
-     * Determina si se muestra el boton consultar cdr
-     *
-     * @return bool
-     */
-    public function isAvailableConsultCdr()
-    {
-        $action = false;
-
-        if ($this->state_type_id === self::STATE_TYPE_REGISTERED && $this->fiscal_environment === self::FISCAL_ENVIRONMENT_PRODUCTION)
-        {
-            if($this->group_id === self::GROUP_INVOICE)
-            {
-                $action = true;
-            }
-            else
-            {
-                if($this->isSingleDocumentShipment()) $action = true;
-            }
-        }
-
-        return $action;
-    }
-
-
-    /**
-     *
-     * Determina si se muestra el boton para reenvio
-     *
-     * @return bool
-     */
-    public function isAvailableResend()
-    {
-        $action = false;
-
-        if ($this->state_type_id === self::STATE_TYPE_REGISTERED)
-        {
-            if($this->group_id === self::GROUP_INVOICE)
-            {
-                $action = true;
-            }
-            else
-            {
-                if($this->isSingleDocumentShipment()) $action = true;
-            }
-        }
-
-        return $action;
-    }
 
 
     /**
@@ -1856,7 +1616,7 @@ class Document extends ModelTenant
      */
     public function isDocumentTypeInvoice()
     {
-        return in_array($this->document_type_id, ['01', '03'], true);
+        return in_array($this->document_type_id, ['01'], true);
     }
 
 
@@ -1893,30 +1653,6 @@ class Document extends ModelTenant
         }
 
         return $calculate_quantity_points;
-    }
-
-    public function getQrAttribute($value)
-    {
-        if(!is_null($value)) {
-            return $value;
-        }
-        $company = Company::query()->first();
-        $customer = $this->customer;
-        $text = join('|', [
-            $company->number,
-            $this->document_type_id,
-            $this->series,
-            $this->number,
-            $this->total_igv,
-            $this->total,
-            $this->date_of_issue->format('Y-m-d'),
-            $customer->identity_document_type_id,
-            $customer->number,
-            $this->hash.'|'
-        ]);
-
-        $qrCode = new QrCodeGenerate();
-        return $qrCode->displayPNGBase64($text);
     }
 
 
@@ -1990,26 +1726,6 @@ class Document extends ModelTenant
         }
 
         return false;
-    }
-
-
-    /**
-     *
-     * Documento afectado por la nota
-     *
-     * @param  int $affected_document_id
-     * @return Document
-     *
-     */
-    public static function getAffectedDocumentSingleShipment($affected_document_id)
-    {
-        return self::whereFilterWithOutRelations()
-                    ->select([
-                        'id',
-                        'document_type_id',
-                        'ticket_single_shipment'
-                    ])
-                    ->find($affected_document_id);
     }
 
 

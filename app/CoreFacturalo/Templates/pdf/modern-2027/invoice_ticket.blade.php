@@ -520,14 +520,9 @@
                     @endif
 
                     {{-- ########## INICIO SIN DETRACCIONES E ISC --}}
-                    @if(\App\Services\LocalFiscalDocumentPolicy::showIsc() && ($row->total_isc > 0))
-                    {{-- ######### FIN SIN DETRACCIONES E ISC --}}
-                        <br/>ISC : {{ $row->total_isc }} ({{ $row->percentage_isc }}%)
-                    @endif
 
-                    @if($row->total_plastic_bag_taxes > 0)
-                        <br/>ICBPER : {{ $row->total_plastic_bag_taxes }}
-                    @endif
+
+
 
                     @foreach($row->additional_information as $information)
                         @if ($information)
@@ -539,10 +534,10 @@
                         @foreach($row->attributes as $attr)
                             {{-- Excluir atributos de placa (diferentes variaciones de texto) --}}
                             @if(!in_array(strtoupper(trim($attr->description)), [
-                                'PLACA', 
-                                'NRO PLACA', 
-                                'NUMERO DE PLACA', 
-                                'NÚMERO DE PLACA', 
+                                'PLACA',
+                                'NRO PLACA',
+                                'NUMERO DE PLACA',
+                                'NÚMERO DE PLACA',
                                 'N° PLACA',
                                 'NUMERO PLACA',
                                 'NRO DE PLACA'
@@ -592,14 +587,14 @@
                     @endphp
                     @if($lot)
                         <small style="display:block; font-weight: normal; font-size: 7px;">
-                            Lote: {{ ltrim($lot, '/') }}  
+                            Lote: {{ ltrim($lot, '/') }}
                             <br>
-                            FV: 
+                            FV:
                             @if($date_due != '')
                                 {{ ltrim($date_due, '/') }}
                             @elseif($row->relation_item->date_of_due)
                                 {{ $row->relation_item->date_of_due->format('y-m-d') }}
-                            @endif 
+                            @endif
                             <br>
                         </small>
                     @endif
@@ -636,7 +631,7 @@
         @foreach($document->prepayments as $p)
             <tr>
                 <td class="m27-item">1</td>
-                <td class="m27-item">ANTICIPO: {{($p->document_type_id == '02')? 'FACTURA':'BOLETA'}} NRO. {{$p->number}}</td>
+                <td class="m27-item">ANTICIPO: FACTURA NRO. {{$p->number}}</td>
                 <td class="m27-item text-right font-bold">-{{ number_format($p->total, 2) }}</td>
             </tr>
             <tr>
@@ -735,21 +730,10 @@
         @endif
     @endif
 
-    @if($document->total_plastic_bag_taxes > 0)
-        <tr>
-            <td colspan="2" class="m27-total-label">ICBPER:</td>
-            <td class="m27-total-value">{{ $document->currency_type->symbol }} {{ number_format($document->total_plastic_bag_taxes, 2) }}</td>
-        </tr>
-    @endif
+
 
     {{-- ########## INICIO SIN DETRACCIONES E ISC --}}
-    @if(\App\Services\LocalFiscalDocumentPolicy::showIsc() && ($document->total_isc > 0))
-    {{-- ######### FIN SIN DETRACCIONES E ISC --}}
-        <tr>
-            <td colspan="2" class="m27-total-label">ISC:</td>
-            <td class="m27-total-value">{{ $document->currency_type->symbol }} {{ number_format($document->total_isc, 2) }}</td>
-        </tr>
-    @endif
+
 
     <tr>
         <td colspan="2" class="m27-total-label">IGV{{ $m27_igv_percentage ? ' ('.$m27_igv_percentage.'%)' : '' }}:</td>
@@ -884,7 +868,7 @@
     @endforeach
 
     @if(isset($configurationInPdf) && $configurationInPdf->show_bank_accounts_in_pdf)
-        @if(in_array($document->document_type->id,['01','03']))
+        @if(((string) $document->document_type->id === '01'))
             @foreach($accounts as $account)
                 @if($loop->first)
                     <tr>
@@ -906,31 +890,9 @@
             <td class="m27-value pt-2"><span class="font-bold">VENDEDOR:</span> {{ $document->seller ? $document->seller->name : $document->user->name }}</td>
         </tr>
     @endif
-
-    <tr>
-        <td class="m27-item-note pt-2">CÓDIGO HASH: {{ $document->hash }}</td>
-    </tr>
-    @if($document->qr)
-        <tr>
-            <td class="text-center pt-2">
-                <img class="m27-qr" src="data:image/png;base64, {{ $document->qr }}" />
-            </td>
-        </tr>
-    @endif
 </table>
 <table class="full-width">
-    @if ($customer->department_id == 16)
-        <tr>
-            <td class="m27-note pt-3">
-                Representación impresa del Comprobante de Pago Electrónico.
-                <br/>Esta puede ser consultada en:
-                <br/><span class="font-bold">{!! url('/buscar') !!}</span>
-                <br/>"Bienes transferidos en la Amazonía
-                <br/>para ser consumidos en la misma"
-            </td>
-        </tr>
-    @endif
-    @if ($document->terms_condition)
+@if ($document->terms_condition)
         <tr>
             <td class="m27-item-note pt-2">
                 <span class="font-bold">TÉRMINOS Y CONDICIONES DEL SERVICIO</span>

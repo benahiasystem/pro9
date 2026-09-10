@@ -81,11 +81,6 @@ class DashboardController extends Controller
         return response()->json((new DashboardData())->paymentMethods($request->all()), 200);
     }
 
-    public function sunatStatus(Request $request)
-    {
-        return response()->json((new DashboardData())->sunatStatus($request->all()), 200);
-    }
-
     public function debtors(Request $request)
     {
         return response()->json((new DashboardData())->debtors($request->all()), 200);

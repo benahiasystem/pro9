@@ -53,7 +53,7 @@
 | 18 | `Fec. Vencimiento` |
 | 19 | `Cód barras` |
 
-- Permitir el índice `20` para la URL de imagen compatible con el importador. Su encabezado puede estar vacío por compatibilidad anterior o ser exactamente `URL Imagen`.
+- Permitir el índice `20` para la URL de imagen del importador actual. Si alguna fila contiene datos en esa columna, exigir `URL Imagen` en U1. Si la columna no se utiliza, puede omitirse. No aceptar imágenes sin encabezado por compatibilidad anterior.
 - Rechazar cualquier encabezado o celda de datos poblada después del índice `20`.
 - Rechazar celdas con fórmula aunque su valor calculado parezca válido.
 
@@ -168,6 +168,7 @@ Usar la sintaxis de comentario válida para cada lenguaje. No añadir estos marc
 Mantener cobertura automatizada para:
 
 - encabezados principales y opcionales exactos;
+- imagen con encabezado vacío rechazada en U1 y el mismo libro aceptado al añadir `URL Imagen`;
 - encabezados cambiados o desplazados y columnas adicionales pobladas;
 - longitud, tipo, precisión, escala, nulabilidad y mínimo de cada valor importado conforme a la base de datos;
 - pertenencia a catálogos activos y rechazo de `VED` en favor de `VES`;
@@ -181,5 +182,6 @@ Mantener cobertura automatizada para:
 - URL relativa del reporte y comportamiento autenticado de archivo binario y URL de objeto en el frontend;
 - nombre del adjunto, MIME XLSX, bytes exactos no vacíos, firma ZIP, asociación al usuario y eliminación después de enviar;
 - manifiesto y paquete de Vite de producción con el comportamiento de descarga.
+- ejecutar siempre el contrato de ruta UUID; verificar el bundle por separado cuando haya manifiesto, dejando la omisión explícita si todavía no fue compilado. Aplicar `frontend-build` sin compilar por iniciativa propia.
 
 Ejecutar las pruebas específicas `ItemImport` y toda la suite unitaria. Inspeccionar un XLSX generado tanto estructural como visualmente. Una prueba limitada al código fuente no basta para validar el recorrido por Office ni el comportamiento del recurso de producción.

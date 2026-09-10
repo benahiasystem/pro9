@@ -40,7 +40,7 @@ class ItemCollection extends ResourceCollection
                 'alone_number'              => $document->number,
                 'quantity'                  => number_format($row->quantity, 2),
                 'total'                     => (in_array($document->document_type_id,
-                                                         ['01', '03']) && in_array($document->state_type_id,
+                                                         ['01']) && in_array($document->state_type_id,
                                                                                    ['09', '11'])) ? number_format(0, 2)
                     : number_format($row->total, 2),
                 'document_type_description' => $document->document_type->description,

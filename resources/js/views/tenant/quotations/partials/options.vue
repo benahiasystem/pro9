@@ -94,7 +94,7 @@
                            v-text="errors.customer_telephone[0]"></small>
                 </div>
                 <template v-else>
-                    <QrApi 
+                    <QrApi
                         colClass="col-md-12"
                         :wsPhone="form.customer_telephone"
                         :wsFile="form.print_ticket"
@@ -548,6 +548,7 @@
 </template>
 
 <script>
+import {whatsappNumber} from "@helpers/phone";
 import DocumentOptions from "../../documents/partials/options.vue";
 import SaleNoteOptions from "../../sale_notes/partials/options.vue";
 import SeriesForm from "./series_form.vue";
@@ -626,8 +627,9 @@ export default {
                 return this.$message.error('El número es obligatorio')
             }
             // ########### INICIO CAMBIO TELEFONÍA VENEZUELA
-            const phone = String(this.form.customer_telephone).replace(/\D/g, '').replace(/^(58|51)/, '')
-            window.open(`https://wa.me/58${phone}?text=${encodeURIComponent(this.form.message_text)}`, '_blank');
+            const phone = whatsappNumber(this.form.customer_telephone)
+            if (!phone) return this.$message.error('Ingrese un teléfono venezolano válido.')
+            window.open(`https://wa.me/${phone}?text=${encodeURIComponent(this.form.message_text)}`, '_blank');
             // ########### FIN CAMBIO TELEFONÍA VENEZUELA
         },
 
@@ -865,8 +867,8 @@ export default {
                 total_exonerated: 0,
                 total_igv: 0,
                 total_igv_free: 0,
-                total_base_isc: 0,
-                total_isc: 0,
+
+
                 total_base_other_taxes: 0,
                 total_other_taxes: 0,
                 total_taxes: 0,
@@ -1023,8 +1025,8 @@ export default {
             this.document.total_exonerated = q.total_exonerated;
             this.document.total_igv = q.total_igv;
             this.document.total_igv_free = q.total_igv_free;
-            this.document.total_base_isc = q.total_base_isc;
-            this.document.total_isc = q.total_isc;
+
+
             this.document.total_base_other_taxes = q.total_base_other_taxes;
             this.document.total_other_taxes = q.total_other_taxes;
             this.document.total_taxes = q.total_taxes;
@@ -1077,7 +1079,7 @@ export default {
             await this.$http
                         .get(`/${this.resource}/record2/${this.recordId}`)
                         .then((response) => {
-                            
+
                             this.form = response.data.data;
                             this.form.establishment_id = this.form.quotation.establishment_id
                             this.form.date_of_issue = this.form.quotation.date_of_issue

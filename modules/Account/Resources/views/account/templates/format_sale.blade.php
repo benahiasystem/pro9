@@ -126,11 +126,9 @@
             $total_taxed = 0;
             $total_exonerated = 0;
             $total_unaffected = 0;
-            $total_plastic_bag_taxes = 0;
             $total_igv = 0;
             $total = 0;
             $ok = 0;
-            $total_isc = 0;
 
             $obs=$row['observation'][0];
 
@@ -150,10 +148,8 @@
                 $total_taxed = $row['total_taxed'];
                 $total_exonerated = $row['total_exonerated'];
                 $total_unaffected = $row['total_unaffected'];
-                $total_plastic_bag_taxes = $row['total_plastic_bag_taxes'];
                 $total_igv = $row['total_igv'];
                 $total = $row['total'];
-                $total_isc = $row['total_isc'];
                 $ok = 1;
 
             }
@@ -174,11 +170,10 @@
             <td>{{$total_taxed }}</td>
             <td>{{ $total_exonerated }}</td>
             <td>{{ $total_unaffected  }}</td>
-            {{-- Aqui deberia ir $total_isc --}}
-            <td>{{ $total_isc }} </td>
+
             <td></td>
             <td>{{ $total_igv }}</td>
-            <td>{{ $total_plastic_bag_taxes }}</td>
+
             <td></td>
             <td>{{ $total }}</td>
 

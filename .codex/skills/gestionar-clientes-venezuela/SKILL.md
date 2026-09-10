@@ -23,7 +23,7 @@ description: Mantener el alta, edición, catálogo, persistencia y presentación
 - No agregar, quitar, renombrar, reordenar ni cambiar `active` en estos registros durante otras modificaciones.
 - Mantener la misma lista y orden en `database/seeders/data/tenant_initial_data.php`.
 - Considerar `active` un dato contractual heredado, no una regla de visibilidad: los siete tipos con letra deben estar disponibles para registrar clientes aunque `E`, `C`, `G` y `R` tengan `active = 0`.
-- Toda migración de tenants existentes debe terminar con esos ocho registros exactos, remapear referencias antiguas antes de eliminar filas obsoletas y preservar las claves foráneas.
+- Sembrar directamente estos ocho registros. No usar `IdentityDocumentCatalogMigrator` ni transformar números o tipos de instalaciones anteriores; la validación vigente sigue siendo obligatoria.
 
 ## Selección y persistencia
 
@@ -63,6 +63,6 @@ description: Mantener el alta, edición, catálogo, persistencia y presentación
 - Probar que los siete tipos aparecen en el selector con descripciones limpias, sin concatenar su letra, y que el número formateado conserva el prefijo correspondiente.
 - En Facturación, admitir para Facturas todos los tipos del catálogo venezolano. El filtro y la validación no pueden restringirse a Juridico; el cliente debe seguir visible, seleccionable y facturable con sus datos completos.
 - Probar el formato global en los recursos centrales de clientes y en las plantillas/documentos de presentación; no considerar suficiente una prueba que sólo cubra el formulario.
-- Verificar tenants nuevos y existentes. En un tenant histórico, ejecutar `tenant:migrate-venezuela {uuid}` o la migración tenant correspondiente y consultar directamente `cat_identity_document_types`.
+- Verificar el catálogo y todas sus referencias en una instalación nueva temporal, sin modificar bases reales.
 - Compilar el frontend mediante la skill `frontend-build` antes de validar el flujo en navegador.
 - Al generar una Factura desde una o varias Notas de venta, conservar y resolver el cliente de origen en Facturación aunque su tipo de identidad no sea `Juridico`. El filtro ordinario de Facturas no puede reemplazar ni vaciar ese cliente precargado; debe seguir visible, seleccionable y facturable con sus datos completos.

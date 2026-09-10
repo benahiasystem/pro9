@@ -102,13 +102,6 @@ class WidgetContext
         });
     }
 
-    public function sunatStatus()
-    {
-        return $this->remember('sunat_status', function () {
-            return (new DashboardData())->sunatStatus($this->filters);
-        });
-    }
-
     public function debtors()
     {
         return $this->remember('debtors', function () {

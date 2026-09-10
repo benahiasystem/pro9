@@ -1,26 +1,23 @@
 <?php
-// ######### INICIO CAMBIO NELSON #########
-
-/**
- * Estructura efectiva clonada desde `tenancy_bbc`.
- * Tabla: `tips`.
- *
- * Inventario de columnas:
- * - `id`: int(10) unsigned; NOT NULL; auto_increment — Sin comentario definido en el esquema fuente.
- * - `fiscal_environment`: varchar(16); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
- * - `date`: date; NOT NULL — Fecha de registro
- * - `origin_date_of_issue`: date; NOT NULL — Fecha del documento origen de la propina
- * - `origin_id`: int(11); NOT NULL — Sin comentario definido en el esquema fuente.
- * - `origin_type`: varchar(255); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
- * - `worker_full_name`: varchar(255); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
- * - `total`: decimal(12,2); NOT NULL — Sin comentario definido en el esquema fuente.
- * - `created_at`: timestamp; NULL — Sin comentario definido en el esquema fuente.
- * - `updated_at`: timestamp; NULL — Sin comentario definido en el esquema fuente.
- */
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 
+// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
+/**
+ * Estructura inicial de `tips` para instalaciones nuevas.
+ * Inventario de columnas:
+ * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
+ * - `fiscal_environment` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL
+ * - `date` date NOT NULL COMMENT 'Fecha de registro'
+ * - `origin_date_of_issue` date NOT NULL COMMENT 'Fecha del documento origen de la propina'
+ * - `origin_id` int(11) NOT NULL
+ * - `origin_type` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
+ * - `worker_full_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
+ * - `total` decimal(12,2) NOT NULL
+ * - `created_at` timestamp NULL DEFAULT NULL
+ * - `updated_at` timestamp NULL DEFAULT NULL
+ */
 return new class extends Migration
 {
     public function up(): void
@@ -52,4 +49,4 @@ SQL);
         DB::unprepared('DROP TABLE IF EXISTS `tips`');
     }
 };
-// ######### FIN CAMBIO NELSON #########
+// ######## FIN ESQUEMA INICIAL VENEZUELA ########

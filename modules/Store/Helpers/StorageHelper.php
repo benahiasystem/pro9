@@ -66,38 +66,6 @@ class StorageHelper
         return $content_digital_certificate ? $content_digital_certificate : null;
     }
 
-    public function getCertificateDemo()
-    {
-        return file_get_contents(__DIR__ . '/../../Facturalo/Resources/certificate.pem');
-    }
-
-    public function uploadXmlSigned2($filename, $file_content)
-    {
-        $folder = $this->getFolder('signed', $filename);
-        Storage::disk('tenant')->put($folder, $file_content);
-    }
-
-    /*
-     * Xml Signed
-     */
-    public function uploadXmlSigned($filename, $file_content)
-    {
-        $folder = $this->getFolder('signed', $filename . '.xml');
-        Storage::disk('tenant')->put($folder, $file_content);
-    }
-
-    public function downloadXmlSigned($filename)
-    {
-        $folder = $this->getFolder('signed', $filename . '.xml');
-        return Storage::disk('tenant')->download($folder);
-    }
-
-    public function getXmlSigned($filename)
-    {
-        $folder = $this->getFolder('signed', $filename . '.xml');
-        return Storage::disk('tenant')->get($folder);
-    }
-
     /*
      * Pdf
      */

@@ -60,7 +60,7 @@ class HotelRentProductsTemplateContractTest extends TestCase
             'v-if="showDiscounts && showDiscountsChargesAttributes !== false"',
             $sharedItemForm
         );
-        self::assertStringContainsString('conservar los datos y payloads históricos', $skill);
+        self::assertStringContainsString('Mantener la regla vigente del flujo', $skill);
     }
 
     private function between(string $source, string $start, string $end): string

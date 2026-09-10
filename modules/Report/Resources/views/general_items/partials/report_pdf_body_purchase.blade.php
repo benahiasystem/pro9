@@ -3,7 +3,6 @@
     $apply_conversion_to_pen = $request_apply_conversion_to_pen == 'true';
 
     $unit_price = $value->unit_price;
-    $total_isc = $value->total_isc;
     $total = $value->total;
     $description_apply_conversion_to_pen = null;
 
@@ -12,7 +11,6 @@
     {
         $total = $value->getConvertTotalToPen();
         $unit_price = $value->getConvertUnitPriceToPen();
-        $total_isc = round($value->getConvertTotalIscToPen(), 2);
         $description_apply_conversion_to_pen = '(Conv.)';
     }
     // aplicar conversión si es que esta habilitada la configuracion
@@ -54,14 +52,9 @@
     <td class="celda">{{$value->item->description}}</td>
     <td class="celda">{{$value->relation_item->category->name}}</td>
     <td class="celda">{{number_format($value->quantity, 2)}}</td>
-    
+
     <td class="celda">{{round($unit_price, 6)}}</td>
-    @if(\App\Services\LocalFiscalDocumentPolicy::showIsc())
-        {{-- ########## INICIO SIN DETRACCIONES E ISC --}}
-        <td class="celda">{{optional($value->system_isc_type)->description}}</td>
-        <td class="celda"> {{$total_isc > 0 ? $total_isc : ''}}</td>
-        {{-- ######### FIN SIN DETRACCIONES E ISC --}}
-    @endif
+
 
     <td class="celda">{{round($total, 2)}}</td>
     {{-- <td class="celda"></td> --}}

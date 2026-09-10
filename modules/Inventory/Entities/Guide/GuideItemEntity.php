@@ -24,10 +24,6 @@ class GuideItemEntity
     public $total_base_igv;
     public $percentage_igv;
     public $total_igv;
-    public $system_isc_type_id;
-    public $total_base_isc;
-    public $percentage_isc;
-    public $total_isc;
     public $total_base_other_taxes;
     public $percentage_other_taxes;
     public $total_other_taxes;

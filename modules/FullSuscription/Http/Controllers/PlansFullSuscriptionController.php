@@ -339,7 +339,6 @@ use Modules\Payment\Models\PaymentConfiguration;
                 'total_exonerated' => 0,
                 'total_igv' => $igv,
                 'total_igv_free' => 0,
-                'total_isc' => 0,
                 'total_other_taxes' => 0,
                 'total_prepayment' => 0,
                 'total_taxes' => $igv,
@@ -395,22 +394,21 @@ use Modules\Payment\Models\PaymentConfiguration;
 
         public function returnStatus(string $status)
         {
-            return match($status) {
-                'PAID' => UserRelSuscriptionPlan::STATUS_AUTHORIZED,
-                'venta_exitosa' => UserRelSuscriptionPlan::STATUS_AUTHORIZED,
-                default => UserRelSuscriptionPlan::STATUS_PAUSED,
-            };
+            return in_array($status, ['PAID', 'venta_exitosa'], true)
+                ? UserRelSuscriptionPlan::STATUS_AUTHORIZED
+                : UserRelSuscriptionPlan::STATUS_PAUSED;
         }
 
         public function returnStatusOrder(string $status)
         {
             // Izipay y Culqi
-            return match($status) {
-                'venta_exitosa' => SuscriptionOrder::STATUS_PAID,
-                'operacion_denegada' => SuscriptionOrder::STATUS_REJECTED,
-                'PAID' => SuscriptionOrder::STATUS_PAID,
-                default => SuscriptionOrder::STATUS_PENDING,
-            };
+            if (in_array($status, ['venta_exitosa', 'PAID'], true)) {
+                return SuscriptionOrder::STATUS_PAID;
+            }
+
+            return $status === 'operacion_denegada'
+                ? SuscriptionOrder::STATUS_REJECTED
+                : SuscriptionOrder::STATUS_PENDING;
         }
 
     }

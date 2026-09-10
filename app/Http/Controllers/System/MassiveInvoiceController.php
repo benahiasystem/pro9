@@ -122,34 +122,8 @@ class MassiveInvoiceController extends Controller
                         $numeroCompleto = $document['data']['serie_documento'];
                     }
 
-                    // Verificar respuesta de SUNAT
-                    $estadoSunat = 'Pendiente';
-                    $mensajeSunat = '';
-                    
-                    if (isset($responseBody['data']['state_type_id'])) {
-                        switch($responseBody['data']['state_type_id']) {
-                            case '01':
-                                $estadoSunat = 'Registrado';
-                                break;
-                            case '03':
-                                $estadoSunat = 'Enviado';
-                                break;
-                            case '05':
-                                $estadoSunat = 'Aceptado';
-                                break;
-                            case '09':
-                            case '11':
-                                $estadoSunat = 'Rechazado';
-                                break;
-                            default:
-                                $estadoSunat = 'Pendiente';
-                        }
-                    }
-
-                    // Si la respuesta fue exitosa pero no hay state_type_id, asumimos que está registrado
-                    if ($statusCode === 200 && !isset($responseBody['data']['state_type_id'])) {
-                        $estadoSunat = 'Registrado';
-                    }
+                    $estadoEmision = $statusCode === 200 ? 'Registrado localmente' : 'Error';
+                    $mensajeEmision = (string) ($responseBody['message'] ?? '');
 
                     // Extraer montos del documento
                     $totales = $document['data']['totales'];
@@ -179,10 +153,8 @@ class MassiveInvoiceController extends Controller
                         'nota' => isset($responseBody['message']) ? $responseBody['message'] : '',
                         'external_id' => $responseBody['data']['external_id'] ?? null,
                         'pdf_link' => $responseBody['links']['pdf'] ?? null,
-                        'xml_link' => $responseBody['links']['xml'] ?? null,
-                        'cdr_link' => $responseBody['links']['cdr'] ?? null,
-                        'estado_sunat' => $estadoSunat,
-                        'mensaje_sunat' => $mensajeSunat,
+                        'estado_emision' => $estadoEmision,
+                        'mensaje_emision' => $mensajeEmision,
                         'total_gravado' => $baseImponible,
                         'total_igv' => $igv,
                         'total_venta' => $total
@@ -283,6 +255,10 @@ class MassiveInvoiceController extends Controller
 
     public function downloadFile($id, $type)
     {
+        if ($type !== 'pdf') {
+            abort(404);
+        }
+
         $invoice = \App\Models\System\MassiveInvoice::findOrFail($id);
 
         try {
@@ -292,7 +268,7 @@ class MassiveInvoiceController extends Controller
             ]);
 
             // Usar el link guardado directamente
-            $downloadUrl = $type === 'xml' ? $invoice->xml_link : $invoice->pdf_link;
+            $downloadUrl = $invoice->pdf_link;
 
             if (empty($downloadUrl)) {
                 throw new \Exception("URL de descarga no disponible");
@@ -304,12 +280,10 @@ class MassiveInvoiceController extends Controller
                 throw new \Exception("Error al descargar archivo");
             }
 
-            $contentType = $type === 'xml' ? 'application/xml' : 'application/pdf';
-            $extension = $type === 'xml' ? 'xml' : 'pdf';
-            $filename = "{$invoice->serie_comprobante}.{$extension}";
+            $filename = "{$invoice->serie_comprobante}.pdf";
 
             return response((string) $response->getBody())
-                ->header('Content-Type', $contentType)
+                ->header('Content-Type', 'application/pdf')
                 ->header('Content-Disposition', "attachment; filename={$filename}");
 
         } catch (\Exception $e) {

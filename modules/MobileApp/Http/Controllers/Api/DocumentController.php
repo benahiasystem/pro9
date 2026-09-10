@@ -142,30 +142,6 @@ class DocumentController extends Controller
         return new DocumentCollection($records->latest()->take(config('tenant.items_per_page'))->get());
     }
 
-    /**
-     *
-     * Obtener notificaciones
-     *
-     * Comprobantes enviados/por enviar
-     * Comprobantes pendientes de rectificación
-     *
-     * @return array
-     */
-    public function getNotifications()
-    {
-
-        $documents_not_sent = Document::whereNotSent()->count();
-        $documents_regularize_shipping = Document::whereRegularizeShipping()->count();
-
-        return [
-            'success' => true,
-            'data' => [
-                'documents_not_sent' => $documents_not_sent,
-                'documents_regularize_shipping' => $documents_regularize_shipping,
-            ]
-        ];
-    }
-
 
     /**
      *
@@ -257,7 +233,7 @@ class DocumentController extends Controller
             'success' => true,
             'data' => new DocumentCollection($records),
             'pagination' => [
-                'next_cursor' => $records->nextCursor()?->encode() ?? null,
+                'next_cursor' => optional($records->nextCursor())->encode(),
                 'has_more'    => $records->hasMorePages(),
             ],
         ];

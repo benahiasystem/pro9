@@ -22,7 +22,6 @@
     use App\Models\Tenant\Catalogs\DocumentType;
     use App\Models\Tenant\Catalogs\OperationType;
     use App\Models\Tenant\Catalogs\PriceType;
-    use App\Models\Tenant\Catalogs\SystemIscType;
     use App\Models\Tenant\Company;
     use App\Models\Tenant\Configuration;
     use App\Models\Tenant\Establishment;
@@ -446,7 +445,6 @@
             $items = SearchItemController::getItemsToOrderNote(null, 0, self::ITEMS_INITIAL_LIMIT);
             $categories = [];
             $affectation_igv_types = AffectationIgvType::whereActive()->get();
-            $system_isc_types = SystemIscType::available();
             $price_types = PriceType::whereActive()->get();
             $operation_types = OperationType::whereActive()->get();
             $discount_types = ChargeDiscountType::whereType('discount')->whereLevel('item')->get();
@@ -458,7 +456,6 @@
                 'items',
                 'categories',
                 'affectation_igv_types',
-                'system_isc_types',
                 'price_types',
                 'discount_types',
                 'charge_types',
@@ -788,7 +785,7 @@
                 // Actualiza o crea items
                 foreach ($request['items'] as $row) {
                     $item_id = $this->getRowIdItem($row);
-                    
+
                     if ($item_id) {
                         $order_note_item = OrderNoteItem::find($item_id);
                         if (!$order_note_item) {
@@ -797,7 +794,7 @@
                     } else {
                         $order_note_item = new OrderNoteItem();
                     }
-                    
+
                     $this->generalSetIdLoteSelectedToItem($row);
                     $order_note_item->fill($row);
                     $order_note_item->order_note_id = $this->order_note->id;
@@ -830,11 +827,11 @@
             if (isset($row['id']) && $row['id']) {
                 return $row['id'];
             }
-            
+
             if (isset($row['record_id']) && $row['record_id']) {
                 return $row['record_id'];
             }
-            
+
             return null;
         }
 

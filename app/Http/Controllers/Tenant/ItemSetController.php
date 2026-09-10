@@ -5,7 +5,6 @@ use App\Imports\ItemsImport;
 use App\Models\Tenant\Catalogs\AffectationIgvType;
 use App\Models\Tenant\Catalogs\AttributeType;
 use App\Models\Tenant\Catalogs\CurrencyType;
-use App\Models\Tenant\Catalogs\SystemIscType;
 use App\Models\Tenant\Catalogs\UnitType;
 use App\Models\Tenant\Item;
 use App\Http\Controllers\Controller;
@@ -66,7 +65,6 @@ class ItemSetController extends Controller
         $unit_types = UnitType::whereActive()->orderByDescription()->get();
         $currency_types = CurrencyType::whereActive()->orderByDescription()->get();
         $attribute_types = AttributeType::whereActive()->orderByDescription()->get();
-        $system_isc_types = SystemIscType::available();
         $affectation_igv_types = AffectationIgvType::whereActive()->get();
         $web_platforms = WebPlatform::get();
         $categories = Category::all();
@@ -80,7 +78,6 @@ class ItemSetController extends Controller
             'brands',
             'categories',
             'attribute_types',
-            'system_isc_types',
             'affectation_igv_types',
             'web_platforms');
     }
@@ -113,7 +110,7 @@ class ItemSetController extends Controller
     }
 
     public function store(ItemRequest $request) {
-        
+
         $id = $request->input('id');
 
         $record = DB::connection('tenant')->transaction(function () use ($request, $id) {
@@ -126,7 +123,7 @@ class ItemSetController extends Controller
             if($temp_path) {
 
                 UploadFileHelper::checkIfValidFile($request->input('image'), $temp_path, true);
-        
+
                 $directory = 'public'.DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'items'.DIRECTORY_SEPARATOR;
 
                 $file_name_old = $request->input('image');

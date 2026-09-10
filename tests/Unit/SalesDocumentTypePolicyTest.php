@@ -14,7 +14,9 @@ class SalesDocumentTypePolicyTest extends TestCase
     public function it_allows_the_new_sales_document_types(): void
     {
         SalesDocumentTypePolicy::assertNewFiscalDocumentAllowed('01');
-        SalesDocumentTypePolicy::assertNewFiscalDocumentAllowed('80');
+        SalesDocumentTypePolicy::assertNewFiscalDocumentAllowed('07');
+        SalesDocumentTypePolicy::assertNewFiscalDocumentAllowed('08');
+        SalesDocumentTypePolicy::assertAllowedForFlow('80', SalesDocumentTypePolicy::PRIMARY_DOCUMENT_TYPE_IDS);
 
         self::assertTrue(true);
     }
@@ -25,6 +27,18 @@ class SalesDocumentTypePolicyTest extends TestCase
         $this->expectException(ValidationException::class);
 
         SalesDocumentTypePolicy::assertNewFiscalDocumentAllowed('03');
+    }
+
+    /** @dataProvider nonInvoiceTypes */
+    public function test_invoice_pipeline_rejects_types_handled_by_other_flows(?string $type): void
+    {
+        $this->expectException(ValidationException::class);
+        SalesDocumentTypePolicy::assertNewFiscalDocumentAllowed($type);
+    }
+
+    public static function nonInvoiceTypes(): array
+    {
+        return [['80'], ['09'], ['20'], ['99'], [null]];
     }
 
     /** @test */

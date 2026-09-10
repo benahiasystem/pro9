@@ -40,7 +40,6 @@ class ReportDocumentController extends Controller
 
         $document_types = DocumentType::whereIn('id',[
                 '01',// factura
-                '03',// boleta
                 '07', // nota de credito
                 '08',// nota de debito
                 '80', // nota de venta

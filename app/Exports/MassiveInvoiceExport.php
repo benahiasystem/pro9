@@ -79,7 +79,7 @@ class MassiveInvoiceExport extends DefaultValueBinder implements
             $razonCliente,
             $row->correo ?? '',
             $row->moneda ?? '',
-            $row->estado_sunat ?: ($row->status ?? ''),
+            $row->estado_emision ?: ($row->status ?? ''),
             (float) $row->total_gravado,
             (float) $row->total_igv,
             (float) $row->total_venta,
@@ -142,7 +142,6 @@ class MassiveInvoiceExport extends DefaultValueBinder implements
             // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
             '01' => 'FACTURA DE VENTA',
             // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
-            '03' => 'BOLETA DE VENTA ELECTRÓNICA',
         ];
 
         return $tipos[$tipo] ?? (string) $tipo;

@@ -15,7 +15,7 @@
                 <div class="invoice p-1 p-md-3">
                 <form autocomplete="off" @submit.prevent="submit">
                     <div class="form-body">
-    
+
                         <div class="row mx-0">
                             <div class="col-lg-4 col-6">
                                 <div class="form-group" :class="{'has-danger': errors.document_type_id}">
@@ -32,7 +32,7 @@
                                 <div class="form-group" :class="{'has-danger': errors.series}">
                                     <label class="control-label">Serie <span class="text-danger">*</span></label>
                                     <el-input v-model="form.series" :maxlength="4" @input="inputSeries"></el-input>
-    
+
                                     <small class="form-control-feedback" v-if="errors.series"
                                            v-text="errors.series[0]"></small>
                                 </div>
@@ -41,13 +41,13 @@
                                 <div class="form-group" :class="{'has-danger': errors.number}">
                                     <label class="control-label">Número <span class="text-danger">*</span></label>
                                     <el-input v-model="form.number"></el-input>
-    
+
                                     <small class="form-control-feedback" v-if="errors.number"
                                            v-text="errors.number[0]"></small>
                                 </div>
                             </div>
-    
-    
+
+
                             <div class="col-lg-2 col-6">
                                 <div class="form-group" :class="{'has-danger': errors.date_of_issue}">
                                     <label class="control-label">Fec Emisión</label>
@@ -57,7 +57,7 @@
                                            v-text="errors.date_of_issue[0]"></small>
                                 </div>
                             </div>
-    
+
                             <div class="col-lg-2 col-6">
                                 <div class="form-group" :class="{'has-danger': errors.date_of_due}">
                                     <label class="control-label">Fec. Vencimiento</label>
@@ -86,11 +86,11 @@
                                             <p v-if="loading_search" class="el-select-dropdown__empty">
                                                 Cargando...
                                             </p>
-                                        
+
                                             <p v-else class="el-select-dropdown__empty">
                                                 No se encontraron resultados
                                             </p>
-                                        
+
                                             <div
                                                 v-if="!loading_search"
                                                 class="el-select-dropdown__item new-option"
@@ -138,8 +138,8 @@
                                            v-text="errors.exchange_rate_sale[0]"></small>
                                 </div>
                             </div>
-    
-    
+
+
                             <div class="col-12 d-flex align-items-end mt-4">
                                 <div class="form-group">
                                     <button type="button" class="btn waves-effect waves-light btn-primary"
@@ -212,7 +212,7 @@
                                 <h3 class="text-end" v-if="form.total > 0"><b>TOTAL COMPRAS: </b>{{
                                         currency_type.symbol
                                     }} {{ formatDecimal(form.total) }}</h3>
-    
+
                                 <!-- <template v-if="is_perception_agent">
                                     <hr>
                                     <div class="row mt-1">
@@ -222,12 +222,12 @@
                                         <div class="col-lg-2 float-right">
                                             <div class="form-group" :class="{'has-danger': errors.perception_number}">
                                                 <el-input v-model="form.perception_number"></el-input>
-    
+
                                                 <small class="form-control-feedback" v-if="errors.perception_number" v-text="errors.perception_number[0]"></small>
                                             </div>
                                         </div>
                                     </div>
-    
+
                                     <div class="row mt-1">
                                         <div class="col-lg-10 float-right">
                                             <label class="float-right control-label">FEC EMISIÓN PERCEPCIÓN: </label>
@@ -239,7 +239,7 @@
                                             </div>
                                         </div>
                                     </div>
-    
+
                                     <div class="row mt-1">
                                         <div class="col-lg-10 float-right">
                                             <label class="float-right control-label">IMPORTE PERCEPCIÓN: </label>
@@ -247,14 +247,14 @@
                                         <div class="col-lg-2 float-right">
                                             <div class="form-group" :class="{'has-danger': errors.total_perception}">
                                                 <el-input v-model="form.total_perception" @input="inputTotalPerception" :readonly="true"></el-input>
-    
+
                                                 <small class="form-control-feedback" v-if="errors.total_perception" v-text="errors.total_perception[0]"></small>
                                             </div>
                                         </div>
                                     </div>
                                     <h3 class="text-end" v-if="form.total > 0 && !hide_button"><b>MONTO TOTAL : </b>{{ currency_type.symbol }} {{ total_amount }}</h3>
-    
-    
+
+
                                 </template> -->
                             </div>
                         </div>
@@ -267,19 +267,19 @@
                     </div>
                 </form>
                 </div>
-    
+
             <fa-purchase-form-item :showDialog.sync="showDialogAddItem"
                                    :currency-type-id-active="form.currency_type_id"
                                    :exchange-rate-sale="form.exchange_rate_sale"
                                    :percentage-igv="percentage_igv"
                                    @add="addRow"></fa-purchase-form-item>
-    
+
             <person-form :showDialog.sync="showDialogNewPerson"
                          type="suppliers"
                          :recordId="personRecordId"
                          :input_person="personFormInput"
                          :external="true"></person-form>
-    
+
             <fa-purchase-options :showDialog.sync="showDialogOptions"
                                  :recordId="purchaseNewId"
                                  :type="id ? 'edit':'create'"
@@ -540,8 +540,8 @@ export default {
                 total_unaffected: 0,
                 total_exonerated: 0,
                 total_igv: 0,
-                total_base_isc: 0,
-                total_isc: 0,
+
+
                 total_base_other_taxes: 0,
                 total_other_taxes: 0,
                 total_taxes: 0,
@@ -566,7 +566,7 @@ export default {
         },
         searchRemoteSuppliers(input) {
             this.supplierSearchTerm = input;
-            
+
             if (input.length > 1) {
                 this.loading_search = true
                 let parameters = `input=${input}`

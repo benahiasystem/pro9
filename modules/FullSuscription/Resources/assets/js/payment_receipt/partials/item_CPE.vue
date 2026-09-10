@@ -537,7 +537,7 @@ export default {
             operation_types: [],
             all_affectation_igv_types: [],
             affectation_igv_types: [],
-            system_isc_types: [],
+
             discount_types: [],
             charge_types: [],
             attribute_types: [],
@@ -572,7 +572,7 @@ export default {
             this.all_items = response.data.items
             this.operation_types = response.data.operation_types
             this.all_affectation_igv_types = response.data.affectation_igv_types
-            this.system_isc_types = response.data.system_isc_types
+
             this.discount_types = response.data.discount_types
             this.charge_types = response.data.charge_types
             this.attribute_types = response.data.attribute_types
@@ -760,9 +760,9 @@ export default {
                 item: {},
                 affectation_igv_type_id: null,
                 affectation_igv_type: {},
-                has_isc: false,
-                system_isc_type_id: null,
-                percentage_isc: 0,
+
+
+
                 suggested_price: 0,
                 quantity: 1,
                 unit_price_value: 0,
@@ -773,7 +773,7 @@ export default {
                 attributes: [],
                 has_igv: null,
                 item_unit_types: [],
-                has_plastic_bag_taxes: false,
+
                 warehouse_id: null,
                 lots_group: [],
                 IdLoteSelected: null,
@@ -803,7 +803,7 @@ export default {
                 await this.changeItem()
                 this.form.quantity = this.recordItem.quantity
                 this.form.unit_price_value = this.recordItem.input_unit_price_value
-                this.form.has_plastic_bag_taxes = (this.recordItem.total_plastic_bag_taxes > 0) ? true : false
+
                 this.form.warehouse_id = this.recordItem.warehouse_id
                 this.isUpdateWarehouseId = this.recordItem.warehouse_id
 
@@ -939,7 +939,7 @@ export default {
             this.lots = this.form.item.lots
 
             this.form.has_igv = this.form.item.has_igv;
-            this.form.has_plastic_bag_taxes = this.form.item.has_plastic_bag_taxes;
+
             this.form.affectation_igv_type_id = this.form.item.sale_affectation_igv_type_id;
             this.form.quantity = 1;
             this.cleanTotalItem();

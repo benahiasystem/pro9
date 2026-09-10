@@ -5,7 +5,6 @@ use App\CoreFacturalo\Facturalo;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Arr;
 
 class PerceptionController extends Controller
 {
@@ -21,18 +20,13 @@ class PerceptionController extends Controller
         // $fact = DB::transaction(function () use($request) {
             $facturalo = new Facturalo();
             $facturalo->save($request->all());
-            $facturalo->createXmlUnsigned();
-            $facturalo->signXmlUnsigned();
             $facturalo->createPdf();
             $facturalo->sendEmail();
-            $facturalo->senderXmlSignedBill();
 
             return $facturalo;
         });
 
         $document = $fact->getDocument();
-        $response = $fact->getResponse();
-
         return [
             'success' => true,
             'data' => [
@@ -41,11 +35,9 @@ class PerceptionController extends Controller
                 'external_id' => $document->external_id,
             ],
             'links' => [
-                'xml' => $document->download_external_xml,
                 'pdf' => $document->download_external_pdf,
-                'cdr' => $document->download_external_cdr,
             ],
-            'response' => Arr::except($response, 'sent')
+            'response' => $fact->getResponse(),
         ];
     }
 }

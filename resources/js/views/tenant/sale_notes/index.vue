@@ -43,13 +43,6 @@
                     class="btn btn-custom btn-sm  mt-2 me-2"
                     >Generar comprobante desde múltiples Notas</a
                 >
-                <a
-                    href="#"
-                    v-if="config.send_data_to_other_server === true"
-                    @click.prevent="onOpenModalMigrateNv"
-                    class="btn btn-custom btn-sm  mt-2 me-2"
-                    >Migrar Datos</a
-                >
             </div>
         </div>
         <div class="card tab-content-default row-new mb-0">
@@ -301,14 +294,6 @@
                                     Duplicar nota de venta
                                   </el-dropdown-item>
 
-                                  <el-dropdown-item
-                                    v-if="row.state_type_id != '11' && row.send_other_server === true"
-                                    @click.native="sendToServer(row.id)"
-                                  >
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-server-2 me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 4m0 3a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v2a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3z" /><path d="M3 12m0 3a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v2a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3z" /><path d="M7 8l0 .01" /><path d="M7 16l0 .01" /><path d="M11 8h6" /><path d="M11 16h6" /></svg>
-                                    Enviar a otro servidor
-                                  </el-dropdown-item>
-
                                   <el-dropdown-item divided />
 
                                   <el-dropdown-item
@@ -376,11 +361,6 @@
             :showClose="false"
         ></sale-note-generate>
         <ModalGenerateCPE :show.sync="showModalGenerateCPE"></ModalGenerateCPE>
-        <UploadToOtherServer
-            :configuration="config"
-            :showMigrate.sync="showMigrateNv"
-        ></UploadToOtherServer>
-
         <sale-note-dispatch-status
             :showDialog.sync="showDialogDispatch"
             :documentId="recordId"
@@ -422,7 +402,6 @@
 
 <script>
 import DataTable from "../../../components/DataTableSaleNote.vue";
-import UploadToOtherServer from "./partials/upload_other_server_group.vue";
 import SaleNotePayments from "./partials/payments.vue";
 import SaleNotesOptions from "./partials/options.vue";
 import SaleNoteGenerate from "./partials/option_documents.vue";
@@ -442,7 +421,6 @@ export default {
         SaleNoteGenerate,
         SaleNoteDetailDrawer,
         ModalGenerateCPE,
-        UploadToOtherServer,
         SaleNoteDispatchStatus
     },
     computed: {
@@ -459,7 +437,6 @@ export default {
     data() {
         return {
             showModalGenerateCPE: false,
-            showMigrateNv: false,
             resource: "sale-notes",
             showDialogPayments: false,
             showDialogOptions: false,
@@ -754,9 +731,6 @@ export default {
         onOpenModalGenerateCPE() {
             this.showModalGenerateCPE = true;
         },
-        onOpenModalMigrateNv() {
-            this.showMigrateNv = true;
-        },
         clickDetail(row) {
             this.detailRecordId = row.id;
             this.detailInitialRow = { ...row };
@@ -791,31 +765,6 @@ export default {
         clickOptions(recordId) {
             this.saleNotesNewId = recordId;
             this.showDialogOptions = true;
-        },
-        sendToServer(recordId) {
-            this.$http
-                .post("/sale-notes/UpToOther", { sale_note_id: recordId })
-                .then(response => {
-                    if (response.data.success) {
-                        this.$message.success(response.data.message);
-                        this.$eventHub.$emit("reloadData");
-                    } else {
-                        this.$message.error(response.data.message);
-                    }
-                })
-                .catch(error => {
-                    if (
-                        error.response !== undefined &&
-                        error.response.status !== undefined &&
-                        error.response.status.errors !== undefined &&
-                        error.response.status === 422
-                    ) {
-                        this.errors = error.response.data.errors;
-                    } else {
-                        console.log(error);
-                    }
-                })
-                .then(() => {});
         },
         clickGenerate(recordId) {
             this.recordId = recordId;

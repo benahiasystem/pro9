@@ -74,6 +74,7 @@ class ItemImportWorkbookValidator
         $existingInternalIds = array_map('strval', $catalogs['existing_internal_ids'] ?? []);
         $internalIdRows = [];
         $totalRows = 0;
+        $hasImageData = false;
 
         for ($rowNumber = 2; $rowNumber <= $highestRow; $rowNumber++) {
             $row = [];
@@ -116,6 +117,7 @@ class ItemImportWorkbookValidator
             }
 
             $totalRows++;
+            $hasImageData = $hasImageData || !$this->contract->isEmpty($row[ItemImportContract::OPTIONAL_IMAGE_COLUMN_INDEX] ?? null);
             $internalId = $this->contract->textValue($row[1] ?? null);
             $updatesExistingItem = $internalId !== '' && in_array($internalId, $existingInternalIds, true);
             $errors = array_merge(
@@ -126,6 +128,11 @@ class ItemImportWorkbookValidator
             if ($internalId !== '') {
                 $internalIdRows[$internalId][] = $rowNumber;
             }
+        }
+
+        if ($hasImageData && $this->contract->isEmpty($headers[ItemImportContract::OPTIONAL_IMAGE_COLUMN_INDEX] ?? null)) {
+            $errors[] = $this->error(1, ItemImportContract::OPTIONAL_IMAGE_COLUMN_INDEX + 1,
+                'La columna de imágenes debe tener el encabezado "URL Imagen".');
         }
 
         foreach ($internalIdRows as $internalId => $rows) {

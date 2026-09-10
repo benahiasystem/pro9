@@ -9,19 +9,19 @@ class DeliveryOrderNamingContractTest extends TestCase
     public function test_delivery_order_contract_preserves_codes_and_internal_dispatch_names(): void
     {
         $root = dirname(__DIR__, 2);
-        $migration = file_get_contents($root . '/database/migrations/tenant/2026_09_04_000003_rename_dispatch_document_types_to_delivery_orders.php');
-        $moduleMigration = file_get_contents($root . '/database/migrations/2026_09_04_000003_rename_dispatch_module_to_delivery_orders.php');
+        $seed = require $root . '/database/seeders/data/tenant_initial_data.php';
+        $types = array_column($seed['tables']['cat_document_types']['rows'], 'description', 'id');
         $skill = file_get_contents($root . '/.codex/skills/mantener-ordenes-entrega-pro9/SKILL.md');
 
-        foreach (['09', '31', '71', '72'] as $documentTypeId) {
-            $this->assertStringContainsString("'{$documentTypeId}'", $migration);
+        $this->assertSame('ORDEN DE ENTREGA', $types['09']);
+        foreach (['31', '71', '72'] as $documentTypeId) {
+            $this->assertArrayNotHasKey($documentTypeId, $types);
         }
-
-        $this->assertStringContainsString("whereRaw('BINARY `id` = ?'", $migration);
-        $this->assertStringContainsString("'dispatches'", $moduleMigration);
-        $this->assertStringContainsString("'guia'", $moduleMigration);
+        $modules = array_column($seed['tables']['app_modules']['rows'], 'description', 'value');
+        $this->assertSame('Orden de entrega', $modules['dispatches']);
+        $this->assertContains('guia', array_column($seed['tables']['modules']['rows'], 'value'));
         $this->assertStringContainsString('Orden de entrega', $skill);
-        $this->assertStringContainsString('compatibilidad', mb_strtolower($skill));
+        $this->assertStringContainsString('dispatch', $skill);
     }
 
     public function test_carrier_delivery_orders_are_not_exposed(): void

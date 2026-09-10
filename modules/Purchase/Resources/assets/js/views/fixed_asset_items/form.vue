@@ -100,7 +100,7 @@
                 form: {},
                 unit_types: [],
                 currency_types: [],
-                system_isc_types: [],
+
                 affectation_igv_types: [],
                 decimal_quantity: 2,
             }

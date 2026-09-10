@@ -212,7 +212,6 @@ class User extends Authenticatable
         // informacion personal
 
         'multiple_default_document_types',
-        'permission_force_send_by_summary',
         'is_multi_user',
         'multi_user_id',
         'permission_edit_item_prices',
@@ -249,7 +248,6 @@ class User extends Authenticatable
         'annular_purchase'=>'bool',
         'delete_purchase'=>'bool',
         'multiple_default_document_types'=>'bool',
-        'permission_force_send_by_summary' => 'boolean',
         'is_multi_user' => 'boolean',
         'permission_edit_item_prices' => 'boolean',
         'from_guest_register' => 'boolean',
@@ -869,10 +867,7 @@ $modules_levels = []){
     /**
      * @return HasMany
      */
-    public function summaries()
-    {
-        return $this->hasMany(Summary::class);
-    }
+
 
     /**
      * @return HasMany
@@ -1204,7 +1199,6 @@ $modules_levels = []){
             'photo_filename' => $this->photo_filename,
             'multiple_default_document_types' => $this->multiple_default_document_types,
             'default_document_types' => $this->default_document_types,
-            'permission_force_send_by_summary' => $this->permission_force_send_by_summary,
             'permission_edit_item_prices' => $this->permission_edit_item_prices,
             'restaurant_pin' => $this->restaurant_pin,
         ];

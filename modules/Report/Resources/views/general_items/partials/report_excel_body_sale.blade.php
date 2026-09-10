@@ -32,9 +32,6 @@ $relation_item = $value->relation_item;
 $web_platform = '';
 $purchase_unit_price = '';
 $igv = '';
-$system_isc_type_id = '';
-$total_isc = '';
-$total_plastic_bag_taxes = '';
 $pack_prefix = '';
 $pack_price_prefix = '';
 $apply_conversion_to_pen = $request_apply_conversion_to_pen == 'true';
@@ -50,10 +47,6 @@ if (!isset($qty)) {
     $web_platform = optional($relation_item->web_platform)->name;
     $purchase_unit_price = ($relation_item) ? $relation_item->purchase_unit_price : 0;
     $igv = $value->total_igv;
-    // $igv = $value->system_isc_type_id;
-    $total_isc = $value->total_isc;
-    $system_isc_type_id = $value->system_isc_type_id;
-    $total_plastic_bag_taxes = $value->total_plastic_bag_taxes;
     $category = $relation_item->category->name;
     $brand = $relation_item->brand->name;
 
@@ -67,7 +60,6 @@ if (!isset($qty)) {
         $unit_value = round($value->getConvertUnitValueToPen(), 6);
         $total_value = round($value->getConvertTotalValueToPen(), 2);
         $igv = round($value->getConvertTotalIgvToPen(), 2);
-        $total_isc = round($value->getConvertTotalIscToPen(), 2);
         $description_apply_conversion_to_pen = '(Se aplicó conversión a bolívares)';
     }
     // aplicar conversión si es que esta habilitada la configuracion
@@ -220,13 +212,8 @@ $isSaleNote = ($document_type_id != '80' && $type == 'sale') ? true : false;
     <td class="celda">{{ $total_value }}</td>
     <td class="celda">{{ $value->affectation_igv_type_id }}</td>
     <td class="celda">{{ $igv }}</td>
-    @if(\App\Services\LocalFiscalDocumentPolicy::showIsc())
-        {{-- ########## INICIO SIN DETRACCIONES E ISC --}}
-        <td class="celda">{{ $system_isc_type_id }}</td>
-        <td class="celda">{{ $total_isc }}</td>
-        {{-- ######### FIN SIN DETRACCIONES E ISC --}}
-    @endif
-    <td class="celda">{{ $total_plastic_bag_taxes }}</td>
+
+
     <td class="celda">{{(!empty($total)?$pack_price_prefix:'')}}{{ $total }}</td>
     <td class="celda">{{(!empty($total_item_purchase)?$pack_price_prefix:'')}}{{ $total_item_purchase }}</td>
     <td class="celda">{{ $utility_item }}</td>

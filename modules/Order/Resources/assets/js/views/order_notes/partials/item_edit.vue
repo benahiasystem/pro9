@@ -1,176 +1,176 @@
 <!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
-    <el-dialog
-        :close-on-click-modal="false"
-        title="Editar Producto o Servicio"
-        :visible.sync="showDialog"
-        top="7vh"
-        @close="close"
-    >
-        <form autocomplete="off" @submit.prevent="clickAddItem">
-            <div class="form-body">
-                <div class="row">
-                    <!-- Producto -->
-                    <div class="col-md-7 col-lg-7 col-xl-7">
-                        <div class="form-group">
-                            <label class="control-label">Producto/Servicio</label>
-                            <el-select
-                                v-model="form.item_id"
-                                filterable
-                                :disabled="recordItem !== null"
-                                @change="changeItem"
-                            >
-                                <el-option
-                                    v-for="option in items"
-                                    :key="option.id"
-                                    :value="option.id"
-                                    :label="option.full_description"
-                                ></el-option>
-                            </el-select>
-                        </div>
-                    </div>
-
-                    <!-- ########## INICIO CAMBIO IGV A IVA -->
-                    <!-- Afectación IVA -->
-                    <!-- ######### FIN CAMBIO IGV A IVA -->
-                    <div class="col-md-5">
-                        <div class="form-group">
-                            <!-- ########## INICIO CAMBIO IGV A IVA -->
-                            <!-- ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES -->
-                            <label class="control-label">%IVA</label>
-                            <!-- ######### FIN CAMBIO CATÁLOGOS DE NOMBRES -->
-                            <!-- ######### FIN CAMBIO IGV A IVA -->
-                            <el-select
-                                v-model="form.affectation_igv_type_id"
-                                filterable
-                            >
-                                <el-option
-                                    v-for="option in affectation_igv_types"
-                                    :key="option.id"
-                                    :label="option.description"
-                                    :value="option.id"
-                                ></el-option>
-                            </el-select>
-                        </div>
-                    </div>
-
-                    <!-- Cantidad -->
-                    <div class="col-6 col-lg-3">
-                        <div class="form-group">
-                            <label class="control-label">Cantidad</label>
-                            <el-input-number
-                                v-model="form.quantity"
-                                :min="0.01"
-                            ></el-input-number>
-                        </div>
-                    </div>
-
-                    <!-- Precio -->
-                    <div class="col-6 col-lg-3">
-                        <div class="form-group">
-                            <label class="control-label">Precio Unitario</label>
-                            <el-input
-                                v-model="form.unit_price"
-                                class="currency-container"
-                            >
-                                <template
-                                    v-if="form.item.currency_type_symbol"
-                                    slot="prepend"
-                                >
-                                    {{ form.item.currency_type_symbol }}
-                                </template>
-                            </el-input>
-                        </div>
-                    </div>
-
-                    <div class="col-md-12 mt-2" v-if="config.show_item_discounts_charges_attributes !== false">
-                        <el-collapse v-model="activePanel">
-                            <el-collapse-item
-                                name="1"
-                                title="+ Agregar Descuentos/Cargos/Atributos especiales"
-                            >
-                                <div v-if="discount_types.length > 0">
-                                    <label class="control-label">
-                                        Descuentos
-                                        <a href="#" @click.prevent="clickAddDiscount">[+ Agregar]</a>
-                                    </label>
-                                    <div class="table-overflow-x-auto">
-                                        <table class="table">
-                                            <thead>
-                                                <tr>
-                                                    <th style="min-width: 145px;">Tipo</th>
-                                                    <th style="min-width: 155px;">Descripción</th>
-                                                    <th style="min-width: 75px;">Porcentaje</th>
-                                                    <th style="min-width: 48px;"></th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <tr
-                                                    v-for="(row, index) in form.discounts"
-                                                    :key="index"
-                                                >
-                                                    <td>
-                                                        <el-select
-                                                            v-model="row.discount_type_id"
-                                                            @change="changeDiscountType(index)"
-                                                        >
-                                                            <el-option
-                                                                v-for="option in discount_types"
-                                                                :key="option.id"
-                                                                :label="option.description"
-                                                                :value="option.id"
-                                                            ></el-option>
-                                                        </el-select>
-                                                    </td>
-                                                    <td>
-                                                        <el-input v-model="row.description"></el-input>
-                                                    </td>
-                                                    <td>
-                                                        <template v-if="row.is_amount">
-                                                            <el-input v-model="row.amount"></el-input>
-                                                        </template>
-                                                        <template v-else>
-                                                            <el-input v-model="row.percentage"></el-input>
-                                                        </template>
-                                                        <br />
-                                                        <el-checkbox
-                                                            v-model="row.is_amount"
-                                                            @change="changeIsDiscountAmount(index)"
-                                                            >Ingresar monto fijo
-                                                        </el-checkbox>
-                                                    </td>
-                                                    <td>
-                                                        <button
-                                                            class="btn btn-danger"
-                                                            type="button"
-                                                            @click.prevent="clickRemoveDiscount(index)"
-                                                        >
-                                                            x
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </el-collapse-item>
-                        </el-collapse>
+<el-dialog
+    :close-on-click-modal="false"
+    title="Editar Producto o Servicio"
+    :visible.sync="showDialog"
+    top="7vh"
+    @close="close"
+>
+    <form autocomplete="off" @submit.prevent="clickAddItem">
+        <div class="form-body">
+            <div class="row">
+                <!-- Producto -->
+                <div class="col-md-7 col-lg-7 col-xl-7">
+                    <div class="form-group">
+                        <label class="control-label">Producto/Servicio</label>
+                        <el-select
+                            v-model="form.item_id"
+                            filterable
+                            :disabled="recordItem !== null"
+                            @change="changeItem"
+                        >
+                            <el-option
+                                v-for="option in items"
+                                :key="option.id"
+                                :value="option.id"
+                                :label="option.full_description"
+                            ></el-option>
+                        </el-select>
                     </div>
                 </div>
-            </div>
 
-            <div class="form-actions pt-2 d-flex justify-content-end gap-2">
-                <el-button @click.prevent="close()">Cerrar</el-button>
-                <el-button
-                    v-if="form.item_id"
-                    native-type="submit"
-                    type="primary"
-                >
-                    Actualizar
-                </el-button>
+                <!-- ########## INICIO CAMBIO IGV A IVA -->
+                <!-- Afectación IVA -->
+                <!-- ######### FIN CAMBIO IGV A IVA -->
+                <div class="col-md-5">
+                    <div class="form-group">
+                        <!-- ########## INICIO CAMBIO IGV A IVA -->
+                        <!-- ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES -->
+                        <label class="control-label">%IVA</label>
+                        <!-- ######### FIN CAMBIO CATÁLOGOS DE NOMBRES -->
+                        <!-- ######### FIN CAMBIO IGV A IVA -->
+                        <el-select
+                            v-model="form.affectation_igv_type_id"
+                            filterable
+                        >
+                            <el-option
+                                v-for="option in affectation_igv_types"
+                                :key="option.id"
+                                :label="option.description"
+                                :value="option.id"
+                            ></el-option>
+                        </el-select>
+                    </div>
+                </div>
+
+                <!-- Cantidad -->
+                <div class="col-6 col-lg-3">
+                    <div class="form-group">
+                        <label class="control-label">Cantidad</label>
+                        <el-input-number
+                            v-model="form.quantity"
+                            :min="0.01"
+                        ></el-input-number>
+                    </div>
+                </div>
+
+                <!-- Precio -->
+                <div class="col-6 col-lg-3">
+                    <div class="form-group">
+                        <label class="control-label">Precio Unitario</label>
+                        <el-input
+                            v-model="form.unit_price"
+                            class="currency-container"
+                        >
+                            <template
+                                v-if="form.item.currency_type_symbol"
+                                slot="prepend"
+                            >
+                                {{ form.item.currency_type_symbol }}
+                            </template>
+                        </el-input>
+                    </div>
+                </div>
+
+                <div class="col-md-12 mt-2" v-if="config.show_item_discounts_charges_attributes !== false">
+                    <el-collapse v-model="activePanel">
+                        <el-collapse-item
+                            name="1"
+                            title="+ Agregar Descuentos/Cargos/Atributos especiales"
+                        >
+                            <div v-if="discount_types.length > 0">
+                                <label class="control-label">
+                                    Descuentos
+                                    <a href="#" @click.prevent="clickAddDiscount">[+ Agregar]</a>
+                                </label>
+                                <div class="table-overflow-x-auto">
+                                    <table class="table">
+                                        <thead>
+                                            <tr>
+                                                <th style="min-width: 145px;">Tipo</th>
+                                                <th style="min-width: 155px;">Descripción</th>
+                                                <th style="min-width: 75px;">Porcentaje</th>
+                                                <th style="min-width: 48px;"></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr
+                                                v-for="(row, index) in form.discounts"
+                                                :key="index"
+                                            >
+                                                <td>
+                                                    <el-select
+                                                        v-model="row.discount_type_id"
+                                                        @change="changeDiscountType(index)"
+                                                    >
+                                                        <el-option
+                                                            v-for="option in discount_types"
+                                                            :key="option.id"
+                                                            :label="option.description"
+                                                            :value="option.id"
+                                                        ></el-option>
+                                                    </el-select>
+                                                </td>
+                                                <td>
+                                                    <el-input v-model="row.description"></el-input>
+                                                </td>
+                                                <td>
+                                                    <template v-if="row.is_amount">
+                                                        <el-input v-model="row.amount"></el-input>
+                                                    </template>
+                                                    <template v-else>
+                                                        <el-input v-model="row.percentage"></el-input>
+                                                    </template>
+                                                    <br />
+                                                    <el-checkbox
+                                                        v-model="row.is_amount"
+                                                        @change="changeIsDiscountAmount(index)"
+                                                        >Ingresar monto fijo
+                                                    </el-checkbox>
+                                                </td>
+                                                <td>
+                                                    <button
+                                                        class="btn btn-danger"
+                                                        type="button"
+                                                        @click.prevent="clickRemoveDiscount(index)"
+                                                    >
+                                                        x
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </el-collapse-item>
+                    </el-collapse>
+                </div>
             </div>
-        </form>
-    </el-dialog>
+        </div>
+
+        <div class="form-actions pt-2 d-flex justify-content-end gap-2">
+            <el-button @click.prevent="close()">Cerrar</el-button>
+            <el-button
+                v-if="form.item_id"
+                native-type="submit"
+                type="primary"
+            >
+                Actualizar
+            </el-button>
+        </div>
+    </form>
+</el-dialog>
 </template>
 
 <script>
@@ -231,7 +231,7 @@ export default {
             all_affectation_igv_types: [],
             aux_items: [],
             affectation_igv_types: [],
-            system_isc_types: [],
+
             discount_types: [],
             charge_types: [],
             attribute_types: [],
@@ -360,7 +360,7 @@ export default {
                 this.items = response.data.items;
                 this.affectation_igv_types =
                     response.data.affectation_igv_types;
-                this.system_isc_types = response.data.system_isc_types;
+
                 this.discount_types = response.data.discount_types;
                 this.charge_types = response.data.charge_types;
                 this.attribute_types = response.data.attribute_types;
@@ -524,9 +524,9 @@ export default {
                 item: {},
                 affectation_igv_type_id: null,
                 affectation_igv_type: {},
-                has_isc: false,
-                system_isc_type_id: null,
-                percentage_isc: 0,
+
+
+
                 suggested_price: 0,
                 quantity: 1,
                 unit_price: 0,
@@ -541,7 +541,7 @@ export default {
                 unit_type_id: null,
                 is_set: false,
                 item_unit_types: [],
-                has_plastic_bag_taxes: false,
+
                 series_enabled: false,
                 warehouse_id: null,
                 lots_group: [],
@@ -582,8 +582,6 @@ export default {
                 // ######### FIN CAMBIO IGV A IVA
                 // input_unit_price_value es el valor original ingresado
                 this.setUnitPriceValue();
-                this.form.has_plastic_bag_taxes =
-                    this.recordItem.total_plastic_bag_taxes > 0 ? true : false;
                 this.form.warehouse_id = this.recordItem.warehouse_id;
                 if (this.recordItem.item && this.recordItem.item.name_product_pdf) {
                     this.form.name_product_pdf = this.recordItem.item.name_product_pdf;
@@ -636,7 +634,6 @@ export default {
                 await this.changeItem()
                 this.form.quantity = this.recordItem.quantity
                 this.form.unit_price_value = this.recordItem.input_unit_price_value
-                this.form.has_plastic_bag_taxes = (this.recordItem.total_plastic_bag_taxes > 0) ? true : false
                 this.form.warehouse_id = this.recordItem.warehouse_id
                 this.isUpdateWarehouseId = this.recordItem.warehouse_id
 

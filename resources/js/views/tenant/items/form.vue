@@ -1904,7 +1904,7 @@ export default {
             // configuration: {},
             unit_types: [],
             currency_types: [],
-            system_isc_types: [],
+
             affectation_igv_types: [],
             categories: [],
             brands: [],
@@ -1961,7 +1961,7 @@ export default {
                 this.unit_types = data.unit_types
                 this.accounts = data.accounts
                 this.currency_types = data.currency_types
-                this.system_isc_types = data.system_isc_types
+
                 this.affectation_igv_types = data.affectation_igv_types
                 this.warehouses = data.warehouses
                 this.categories = data.categories
@@ -2140,22 +2140,8 @@ export default {
                 }
             })
         },
-        purchaseChangeIsc() {
 
-            if (!this.form.purchase_has_isc) {
-                this.form.purchase_system_isc_type_id = null
-                this.form.purchase_percentage_isc = 0
-            }
 
-        },
-        changeIsc() {
-
-            if (!this.form.has_isc) {
-                this.form.system_isc_type_id = null
-                this.form.percentage_isc = 0
-            }
-
-        },
         clickAddAttribute() {
             this.form.attributes.push({
                 attribute_type_id: null,
@@ -2172,7 +2158,7 @@ export default {
                     this.unit_types = response.data.unit_types
                     this.accounts = response.data.accounts
                     this.currency_types = response.data.currency_types
-                    this.system_isc_types = response.data.system_isc_types
+
                     this.affectation_igv_types = response.data.affectation_igv_types
                     this.warehouses = response.data.warehouses
                     this.categories = response.data.categories
@@ -2444,9 +2430,9 @@ export default {
                 currency_type_id: 'VES',
                 sale_unit_price: 0,
                 purchase_unit_price: 0,
-                has_isc: false,
-                system_isc_type_id: null,
-                percentage_isc: 0,
+
+
+
                 suggested_price: 0,
                 sale_affectation_igv_type_id: null,
                 purchase_affectation_igv_type_id: null,
@@ -2475,13 +2461,13 @@ export default {
                 series_enabled: false,
                 purchase_has_igv: true,
                 web_platform_id: null,
-                has_plastic_bag_taxes: false,
+
                 item_warehouse_prices: [],
                 item_supplies:[],
 
-                purchase_has_isc: false,
-                purchase_system_isc_type_id: null,
-                purchase_percentage_isc: 0,
+
+
+
 
                 exchange_points: false,
                 quantity_of_points: 0,
@@ -2797,11 +2783,9 @@ this.activeName = null
                     return this.$message.error('La cantidad de series registradas son diferentes al stock');
             }
 
-            if (payload.has_isc && payload.percentage_isc <= 0)
-                return this.$message.error('El porcentaje isc debe ser mayor a 0');
 
-            if (payload.purchase_has_isc && payload.purchase_percentage_isc <= 0)
-                return this.$message.error('El porcentaje isc debe ser mayor a 0 (Compras)');
+
+
 
             this.loading_submit = true;
 
@@ -2859,16 +2843,8 @@ this.activeName = null
             this.$emit('update:showDialog', false)
             this.resetForm()
         },
-        changeHasIsc() {
-            this.form.system_isc_type_id = null
-            this.form.percentage_isc = 0
-            this.form.suggested_price = 0
-        },
-        changeSystemIscType() {
-            if (this.form.system_isc_type_id !== '03') {
-                this.form.suggested_price = 0
-            }
-        },
+
+
         saveCategory() {
             this.form_category.add = false
 

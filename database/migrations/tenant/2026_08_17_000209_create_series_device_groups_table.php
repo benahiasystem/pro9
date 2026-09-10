@@ -1,25 +1,22 @@
 <?php
-// ######### INICIO CAMBIO NELSON #########
-
-/**
- * Estructura efectiva clonada desde `tenancy_bbc`.
- * Tabla: `series_device_groups`.
- *
- * Inventario de columnas:
- * - `id`: int(10) unsigned; NOT NULL; auto_increment — Sin comentario definido en el esquema fuente.
- * - `establishment_id`: int(10) unsigned; NOT NULL — El grupo vive en un establecimiento
- * - `name`: varchar(255); NOT NULL; COLLATE utf8mb4_unicode_ci — Nombre del grupo: ej. Caja 1
- * - `module_value`: varchar(255); NULL; COLLATE utf8mb4_unicode_ci — Modulo asociado (uno solo). Catalogo extensible
- * - `bound_device_name`: varchar(255); NULL; COLLATE utf8mb4_unicode_ci — Nombre del equipo vinculado (clave de vinculo)
- * - `bound_user_id`: int(10) unsigned; NULL — Usuario que vinculo el grupo
- * - `bound_at`: timestamp; NULL — Fecha de vinculo al equipo
- * - `created_at`: timestamp; NULL — Sin comentario definido en el esquema fuente.
- * - `updated_at`: timestamp; NULL — Sin comentario definido en el esquema fuente.
- */
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 
+// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
+/**
+ * Estructura inicial de `series_device_groups` para instalaciones nuevas.
+ * Inventario de columnas:
+ * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
+ * - `establishment_id` int(10) unsigned NOT NULL COMMENT 'El grupo vive en un establecimiento'
+ * - `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Nombre del grupo: ej. Caja 1'
+ * - `module_value` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Modulo asociado (uno solo). Catalogo extensible'
+ * - `bound_device_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Nombre del equipo vinculado (clave de vinculo)'
+ * - `bound_user_id` int(10) unsigned DEFAULT NULL COMMENT 'Usuario que vinculo el grupo'
+ * - `bound_at` timestamp NULL DEFAULT NULL COMMENT 'Fecha de vinculo al equipo'
+ * - `created_at` timestamp NULL DEFAULT NULL
+ * - `updated_at` timestamp NULL DEFAULT NULL
+ */
 return new class extends Migration
 {
     public function up(): void
@@ -47,4 +44,4 @@ SQL);
         DB::unprepared('DROP TABLE IF EXISTS `series_device_groups`');
     }
 };
-// ######### FIN CAMBIO NELSON #########
+// ######## FIN ESQUEMA INICIAL VENEZUELA ########

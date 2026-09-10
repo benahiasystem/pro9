@@ -66,7 +66,6 @@
 
         // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
         public const SALE_DOCUMENT_TYPES = ['01', '80'];
-        public const HISTORICAL_SALE_DOCUMENT_TYPES = ['01', '03', '80'];
         // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
 
         public const DOCUMENT_TYPE_NOTES = ['07', '08'];
@@ -153,7 +152,7 @@
         public function scopeOnlyAvaibleDocuments($query)
         {
             // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
-            return $query->OnlyActive()->wherein('id', ['01', '07', '08', '09', '20', '40', '80', '04', 'U2', 'U3', 'U4']);
+            return $query->OnlyActive()->wherein('id', ['01', '07', '08', '09', '20', '80', 'U2', 'U3', 'U4']);
             // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
         }
 
@@ -164,7 +163,7 @@
          */
         public function scopeDocumentsActiveToPurchase($query)
         {
-            return $query->OnlyActive()->wherein('id', ['01', '02', '03', 'GU75', 'NE76', '14',]);
+            return $query->OnlyActive()->wherein('id', ['01', 'NE76']);
         }
 
         public function scopeDocumentsActiveToSettlement($query)
@@ -266,41 +265,17 @@
          *
          * @return string
          */
-        public function getCurrentRelatiomClass(){
-            //09	1		ORDEN DE ENTREGA
-            //20	1		COMPROBANTE DE RETENCIÓN ELECTRÓNICA
-            //40	1		COMPROBANTE DE PERCEPCIÓN ELECTRÓNICA
-            //71	0		Orden de entrega complementaria
-            //GU75	1		GUÍA
-            //NE76	1		NOTA DE ENTRADA
-            //02	1		RECIBO POR HONORARIOS
-            //14	1		SERVICIOS PÚBLICOS
-            //04	1		LIQUIDACIÓN DE COMPRA
-
-            //01	1	FT	FACTURA ELECTRÓNICA
-            if($this->id == '01'){ return Document::class;}
-            //03	1	BV	BOLETA DE VENTA ELECTRÓNICA
-            elseif($this->id == '03'){ return Document::class;}
-            //07	1	NC	NOTA DE CRÉDITO
-            elseif($this->id == '07'){ return Document::class;}
-            //08	1	ND	NOTA DE DÉBITO
-            elseif($this->id == '08'){ return Document::class;}
-            // elseif($this->id == '09'){ return Document::class;}
-            // elseif($this->id == '20'){ return Document::class;}
-            // elseif($this->id == '31'){ return Document::class;}
-            // elseif($this->id == '40'){ return Document::class;}
-            // elseif($this->id == '71'){ return Document::class;}
-            // elseif($this->id == '72'){ return Document::class;}
-            // elseif($this->id == 'GU75'){ return Document::class;}
-            // elseif($this->id == 'NE76'){ return Document::class;}
-            //80	1		NOTA DE VENTA
-            elseif($this->id == '80'){ return SaleNote::class;}
-            // elseif($this->id == '02'){ return Document::class;}
-            // elseif($this->id == '14'){ return Document::class;}
-            // elseif($this->id == '04'){ return Document::class;}
-            else{ return Document::class;}
-
-
+        public function getCurrentRelatiomClass()
+        {
+            if (in_array($this->id, ['01', '07', '08'], true)) {
+                return Document::class;
+            }
+            if ($this->id === '80') {
+                return SaleNote::class;
+            }
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'document_type_id' => 'Seleccione Factura, Nota de crédito, Nota de débito o Nota de venta.',
+            ]);
         }
 
 
