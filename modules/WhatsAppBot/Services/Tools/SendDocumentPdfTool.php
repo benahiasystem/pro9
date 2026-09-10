@@ -7,23 +7,11 @@ use Modules\WhatsAppBot\Services\Evolution\EvolutionSender;
 
 class SendDocumentPdfTool implements ToolInterface
 {
-    /** @var EvolutionSender */
-    private $sender;
-
-    /** @var string */
-    private $toPhone;
-
-    /** @var int|null */
-    private $sessionId;
-
     public function __construct(
-        EvolutionSender $sender,
-        string $toPhone,
-        ?int $sessionId = null
+        private EvolutionSender $sender,
+        private string $toPhone,
+        private ?int $sessionId = null
     ) {
-        $this->sender = $sender;
-        $this->toPhone = $toPhone;
-        $this->sessionId = $sessionId;
     }
 
     public function name(): string

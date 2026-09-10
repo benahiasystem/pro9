@@ -57,69 +57,49 @@
 
         <div class="card mb-0 mt-1">
             <div class="card-body">
-
                 <div class="mu-table">
                     <data-table :resource="resource" @records-changed="onRecordsChanged">
                         <tr slot="heading">
+                            <th>#</th>
                             <th>Usuario</th>
-                            <th>Empresa principal</th>
-                            <th>Empresas vinculadas</th>
+                            <th>Empresas del usuario</th>
+                            <th class="text-center">Perfil</th>
+                            <th class="text-end">Acciones</th>
                         </tr>
-                        <tr slot-scope="{ row }">
+                        <tr slot-scope="{ index, row }">
+                            <td class="text-muted">{{ index }}</td>
                             <td>
-                                <div class="mu-user">
-                                    <span class="mu-avatar">{{ getInitial(row.user_name) }}</span>
-                                    <div class="mu-user-info">
-                                        <span class="mu-user-name">{{ row.user_name }}</span>
-                                        <span class="mu-user-email">{{ row.user_full_name }}</span>
-                                    </div>
+                                <div class="d-flex flex-column justify-content-start align-items-start">
+                                    <span class="">{{ row.user_name }}</span>
+                                    <span class="mu-user-email text-muted">{{ row.user_full_name }}</span>
                                 </div>
                             </td>
                             <td>
-                                <div class="mu-company" :class="{'mu-company--missing': row.origin_missing}">
-                                    <span class="mu-company-name" :title="row.client_origin_full_name">{{ row.origin_name }}</span>
-                                    <span class="mu-company-meta">
-                                        <span v-if="row.origin_number" class="mu-company-number">{{ row.origin_number }}</span>
-                                        <span v-if="row.origin_number" class="mu-meta-dot">·</span>
+                                <div class="mu-flow">
+                                    <div class="mu-company" :class="{'mu-company--missing': isMissingClient(row.client_origin_full_name)}">
+                                        <span class="mu-company-label">Empresa principal</span>
+                                        <span class="mu-company-name" :title="row.client_origin_full_name">{{ row.client_origin_full_name }}</span>
                                         <span class="mu-company-host">{{ row.origin_hostname }}</span>
+                                    </div>
+                                    <span class="mu-flow-link" title="Vinculadas a la misma cuenta">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 15l6 -6" /><path d="M11 6l.463 -.536a5 5 0 0 1 7.071 7.072l-.534 .464" /><path d="M13 18l-.397 .534a5.068 5.068 0 0 1 -7.127 0a4.972 4.972 0 0 1 0 -7.071l.524 -.463" /></svg>
                                     </span>
-                                    <span v-if="row.description_type" class="mu-role" :class="roleClass(row.type)">{{ row.description_type }}</span>
+                                    <div class="mu-company mu-company--destination" :class="{'mu-company--missing': isMissingClient(row.client_destination_full_name)}">
+                                        <span class="mu-company-label">Empresa vinculada</span>
+                                        <span class="mu-company-name" :title="row.client_destination_full_name">{{ row.client_destination_full_name }}</span>
+                                        <span class="mu-company-host">{{ row.destination_hostname }}</span>
+                                    </div>
                                 </div>
                             </td>
-                            <td>
-                                <div class="mu-links">
-                                    <div v-for="link in visibleLinks(row)"
-                                         :key="link.id"
-                                         class="mu-chip"
-                                         :class="{'mu-chip--missing': link.missing}">
-                                        <div class="mu-chip-body">
-                                            <span class="mu-chip-name" :title="link.full_name">{{ link.name }}</span>
-                                            <span class="mu-chip-meta">
-                                                <span v-if="link.number" class="mu-chip-number">{{ link.number }}</span>
-                                                <span v-if="link.number" class="mu-meta-dot">·</span>
-                                                <span class="mu-chip-host">{{ link.hostname }}</span>
-                                            </span>
-                                        </div>
-                                        <span v-if="link.description_type" class="mu-role" :class="roleClass(link.type)">{{ link.description_type }}</span>
-                                        <el-tooltip content="Desvincular esta empresa de su cuenta" placement="top">
-                                            <button type="button" class="mu-chip-remove" @click.prevent="clickDelete(row, link)">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M18 6l-12 12" /><path d="M6 6l12 12" /></svg>
-                                            </button>
-                                        </el-tooltip>
-                                    </div>
-
-                                    <button v-if="hasHiddenLinks(row)"
-                                            type="button"
-                                            class="mu-links-toggle"
-                                            @click.prevent="toggleRow(row)">
-                                        {{ isExpanded(row) ? 'Ver menos' : '+' + hiddenLinksCount(row) + ' más' }}
-                                    </button>
-
-                                    <button type="button" class="mu-links-add" @click.prevent="clickLink(row)">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 5l0 14" /><path d="M5 12l14 0" /></svg>
-                                        Vincular empresa
-                                    </button>
-                                </div>
+                            <td class="text-center">
+                                <span class="badge badge-primary">{{ row.description_type }}</span>
+                            </td>
+                            <td class="text-end">
+                                <el-tooltip content="Desvincular esta empresa de su cuenta" placement="top">
+                                    <el-button type="danger" plain size="mini" class="mu-btn-icon" @click.prevent="clickDelete(row)">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-trash"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 7l16 0" /><path d="M10 11l0 6" /><path d="M14 11l0 6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg>
+                                    </el-button>
+                                </el-tooltip>
                             </td>
                         </tr>
                     </data-table>
@@ -127,7 +107,6 @@
             </div>
 
             <multi-user-form :recordId="recordId"
-                          :composedId="presetComposedId"
                           :showDialog.sync="showDialog"></multi-user-form>
 
 
@@ -141,7 +120,6 @@ import MultiUserForm from './form.vue'
 import DataTable from '@components/DataTable.vue'
 
 const HELP_STORAGE_KEY = 'multi_users_help_dismissed'
-const COLLAPSED_LINKS = 3
 
 export default {
     components: {
@@ -156,10 +134,6 @@ export default {
             recordId: null,
             total: null,
             showHelp: true,
-            collapsedLinks: COLLAPSED_LINKS,
-            expandedRows: {},
-            presetComposedId: null,
-            checkingLink: false,
         }
     },
     created()
@@ -180,35 +154,9 @@ export default {
         {
             return value ? value.trim().charAt(0).toUpperCase() : '?'
         },
-        linksOf(row)
+        isMissingClient(name)
         {
-            return row.links || []
-        },
-        roleClass(type)
-        {
-            return type === 'seller' ? 'mu-role--seller' : 'mu-role--admin'
-        },
-        visibleLinks(row)
-        {
-            const links = this.linksOf(row)
-
-            return this.isExpanded(row) ? links : links.slice(0, this.collapsedLinks)
-        },
-        hiddenLinksCount(row)
-        {
-            return Math.max(this.linksOf(row).length - this.collapsedLinks, 0)
-        },
-        hasHiddenLinks(row)
-        {
-            return this.hiddenLinksCount(row) > 0
-        },
-        isExpanded(row)
-        {
-            return !!this.expandedRows[row.id]
-        },
-        toggleRow(row)
-        {
-            this.$set(this.expandedRows, row.id, !this.isExpanded(row))
+            return name === 'Cliente eliminado'
         },
         toggleHelp()
         {
@@ -226,47 +174,15 @@ export default {
             this.total = (dataTable && dataTable.pagination && dataTable.pagination.total !== undefined)
                 ? dataTable.pagination.total
                 : null
-            this.expandedRows = {}
         },
         clickCreate(recordId = null)
         {
             this.recordId = recordId
-            this.presetComposedId = null
             this.showDialog = true
         },
-        clickLink(row)
-        {
-            this.recordId = null
-            this.presetComposedId = row.composed_id
-            this.showDialog = true
-        },
-        async clickDelete(row, link) {
-            if (this.checkingLink) return
-
-            this.checkingLink = true
-
-            const check = await this.$http.get(`/${this.resource}/${link.id}/can-delete`)
-                .then(response => response.data)
-                .catch(() => null)
-                .finally(() => {
-                    this.checkingLink = false
-                })
-
-            if (!check) {
-                this.$message.error('No se pudo validar la desvinculación')
-                return
-            }
-
-            if (!check.success) {
-                this.$alert(check.message, 'No se puede desvincular', {
-                    confirmButtonText: 'Entendido',
-                    type: 'warning'
-                }).catch(() => {})
-                return
-            }
-
+        clickDelete(row) {
             this.$confirm(
-                `Se desvinculará la empresa ${link.full_name} de la cuenta de ${row.user_full_name}. Su empresa principal no se verá afectada.`,
+                `Se desvinculará la empresa ${row.client_destination_full_name} de la cuenta de ${row.user_full_name}. Su empresa principal no se verá afectada.`,
                 'Desvincular empresa',
                 {
                     confirmButtonText: 'Desvincular',
@@ -274,7 +190,7 @@ export default {
                     type: 'warning'
                 }
             ).then(() => {
-                this.$http.delete(`/${this.resource}/${link.id}`)
+                this.$http.delete(`/${this.resource}/${row.id}`)
                     .then(response => {
                         if (response.data.success) {
                             this.$message.success(response.data.message)

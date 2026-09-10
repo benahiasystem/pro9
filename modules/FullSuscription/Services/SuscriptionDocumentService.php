@@ -179,7 +179,10 @@ trait SuscriptionDocumentService
 
     public function getDocumentType(string $identity_document_type): string
     {
-        return '01';
+        return match ($identity_document_type) {
+            '6'     => '01',
+            default => '03',
+        };
     }
 
     public function payments(float $total): array

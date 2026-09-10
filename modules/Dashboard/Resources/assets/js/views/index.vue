@@ -319,68 +319,6 @@
                     <div class="col-12 col-xl-8 mb-2">
                         <cash-flow-chart :filters="form"></cash-flow-chart>
                     </div>
-                    <div class="col-12 col-xl-4 mb-2">
-                        <section class="card card-dashboard h-100">
-                            <div class="card-body" v-if="loaders.utility">
-                                <template>
-                                    <loader-graph :rows="4" :columns="1" :radius="50"></loader-graph>
-                                </template>
-                            </div>
-                            <div class="card-body card-body-border-radius" v-if="!loaders.utility">
-                                <div class="widget-summary">
-                                    <div class="widget-summary-col" v-if="utilities">
-                                        <div class="row no-gutters">
-                                            <div class="col-md-12 m-b-10">
-                                                <label>Utilidades/Ganancias</label>
-                                            </div>
-                                        </div>
-                                        <div class="row">
-                                            <div class="col-md-12">
-                                                <x-graph type="doughnut" :all-data="utilities.graph"></x-graph>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="mt-3" v-show="!loaders.utility">
-                                    <table class="table-dashboard mb-0 table-sm">
-                                        <tbody class="card-default">
-                                            <tr>
-                                                <td colspan="2">
-                                                    <el-checkbox v-model="form.enabled_expense" @change="loadDataUtilities">Considerar gastos</el-checkbox><br>
-                                                    <el-checkbox v-model="filter_item" @change="changeFilterItem">Filtrar por producto</el-checkbox>
-                                                </td>
-                                            </tr>
-                                            <tr v-if="filter_item">
-                                                <td colspan="2">
-                                                    <div class="form-group">
-                                                        <el-select v-model="form.item_id" filterable remote popper-class="el-select-customers" clearable
-                                                            placeholder="Buscar producto"
-                                                            :remote-method="searchRemoteItems"
-                                                            :loading="loading_search"
-                                                            @change="loadDataUtilities">
-                                                            <el-option v-for="option in items" :key="option.id" :value="option.id" :label="option.description"></el-option>
-                                                        </el-select>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                            <tr class="text-info text-bold">
-                                                <td>Ingreso</td>
-                                                <td class="text-end font-weight-bold">Bs.&nbsp;{{ utilities.totals.total_income }}</td>
-                                            </tr>
-                                            <tr class="text-danger text-bold">
-                                                <td>Egreso</td>
-                                                <td class="text-end font-weight-bold">Bs.&nbsp;{{ utilities.totals.total_egress }}</td>
-                                            </tr>
-                                            <tr class="text-bold td-total">
-                                                <td class="">Utilidad</td>
-                                                <td class="text-end font-weight-bold">Bs.&nbsp;{{ utilities.totals.utility }}</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </section>
-                    </div>
                     <div class="col-12 col-xl-4 mb-2 d-flex flex-column">
                         <template v-if="configuration.dashboard_products">
                             <low-stock :filters="form"></low-stock>
@@ -449,6 +387,69 @@
                                                         Total pagos
                                                     </td>
                                                     <td class="text-end font-weight-bold">Bs.&nbsp;{{ balance.totals.all_totals_payment }}</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+
+                        <div class="col-12 col-sm-6 col-xl-3">
+                            <section class="card card-dashboard">
+                                <div class="card-body" v-if="loaders.utility">
+                                    <template>
+                                        <loader-graph :rows="4" :columns="1" :radius="50"></loader-graph>
+                                    </template>
+                                </div>
+                                <div class="card-body card-body-border-radius" v-if="!loaders.utility">
+                                    <div class="widget-summary">
+                                        <div class="widget-summary-col" v-if="utilities">
+                                            <div class="row no-gutters">
+                                                <div class="col-md-12 m-b-10">
+                                                    <label>Utilidades/Ganancias</label>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-md-12">
+                                                    <x-graph type="doughnut" :all-data="utilities.graph"></x-graph>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="mt-3" v-show="!loaders.utility">
+                                        <table class="table-dashboard mb-0 table-sm">
+                                            <tbody class="card-default">
+                                                <tr>
+                                                    <td colspan="2">
+                                                        <el-checkbox  v-model="form.enabled_expense" @change="loadDataUtilities">Considerar gastos</el-checkbox><br>
+                                                        <el-checkbox  v-model="filter_item" @change="changeFilterItem">Filtrar por producto</el-checkbox>
+                                                    </td>
+                                                </tr>
+                                                <tr v-if="filter_item">
+                                                    <td colspan="2">
+                                                        <div class="form-group">
+                                                            <el-select v-model="form.item_id" filterable remote  popper-class="el-select-customers"  clearable
+                                                                placeholder="Buscar producto"
+                                                                :remote-method="searchRemoteItems"
+                                                                :loading="loading_search"
+                                                                @change="loadDataUtilities">
+                                                                <el-option v-for="option in items" :key="option.id" :value="option.id" :label="option.description"></el-option>
+                                                            </el-select>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                <tr class="text-info text-bold">
+                                                    <td>Ingreso</td>
+                                                    <td class="text-end font-weight-bold">Bs.&nbsp;{{ utilities.totals.total_income }}</td>
+                                                </tr>
+                                                <tr class="text-danger text-bold">
+                                                    <td>Egreso</td>
+                                                    <td class="text-end font-weight-bold">Bs.&nbsp;{{ utilities.totals.total_egress }}</td>
+                                                </tr>
+                                                <tr class="text-bold td-total">
+                                                    <td class="">Utilidad</td>
+                                                    <td class="text-end font-weight-bold">Bs.&nbsp;{{ utilities.totals.utility }}</td>
                                                 </tr>
                                             </tbody>
                                         </table>
@@ -1618,4 +1619,5 @@ export default {
   },
 };
 </script>
+
 <!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

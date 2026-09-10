@@ -71,7 +71,6 @@ class UserResource extends JsonResource {
             }),
             'permission_edit_item_prices' => $this->permission_edit_item_prices,
             'restaurant_pin' => $this->restaurant_pin,
-            'app_modules' => $this->getDataAppModules(),
             'restaurant_role_id' => $this->restaurant_role_id,
         ];
     }

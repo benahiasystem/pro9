@@ -54,7 +54,6 @@ class InventoryTransfer extends ModelTenant
         'series',
         'number',
         'description',
-        'dispatch_id',
         'warehouse_id',
         'warehouse_destination_id',
         'transfer_collect_id',
@@ -65,7 +64,6 @@ class InventoryTransfer extends ModelTenant
         'warehouse_id' => 'int',
         'warehouse_destination_id' => 'int',
         'transfer_collect_id' => 'int',
-        'dispatch_id' => 'int',
         'user_id' => 'int',
         'quantity' => 'float'
     ];
@@ -122,11 +120,6 @@ class InventoryTransfer extends ModelTenant
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');
-    }
-
-    public function dispatch()
-    {
-        return $this->belongsTo(\App\Models\Tenant\Dispatch::class, 'dispatch_id');
     }
 
     /**

@@ -22,15 +22,6 @@
                             <el-option label="Inactivos" value="0"></el-option>
                         </el-select>
                     </div>
-                    <div class="col-md-9 mt-2 mt-md-0">
-                        <div class="d-flex align-items-center mb-0 h-100">
-                            <i class="fa fa-info-circle me-1"></i>
-                            <span style="line-height: 14px;">
-                                <strong>Antes de crear una unidad, verifica que no exista.</strong>
-                                Usa el filtro de la izquierda y selecciona <strong>«Todos»</strong> para revisar también las unidades inactivas.
-                            </span>
-                        </div>
-                    </div>
                 </div>
 
                 <div class="col-lg-12">

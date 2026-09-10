@@ -204,17 +204,12 @@ class ReportKardexCollection extends ResourceCollection
                 ];
 
             case $models[6]: // Dispatch
-                $dispatch_reason = isset($row->inventory_kardexable->transfer_reason_type->description)
-                    ? $row->inventory_kardexable->transfer_reason_type->description
-                    : 'Guía';
 
                 return [
                     'id' => $row->id,
                     'item_name' => $row->item->description,
                     'date_time' => $row->created_at->format('Y-m-d H:i:s'),
-                    'type_transaction' => ($row->quantity > 0)
-                        ? $dispatch_reason.' (Anulación)'
-                        : $dispatch_reason,
+                    'type_transaction' =>  isset($row->inventory_kardexable->transfer_reason_type->description) ? $row->inventory_kardexable->transfer_reason_type->description : '',
                     // 'type_transaction' => "Guía",
                     'date_of_issue' => isset($row->inventory_kardexable->date_of_issue) ? $row->inventory_kardexable->date_of_issue->format('Y-m-d') : '',
                     'number' => optional($row->inventory_kardexable)->number_full,

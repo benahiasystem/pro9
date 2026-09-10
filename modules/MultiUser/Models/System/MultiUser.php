@@ -30,7 +30,7 @@ class MultiUser extends ModelSystem
     {
         return $this->belongsTo(Client::class, 'destination_client_id');
     }
-
+    
     public function getUserAttribute($value)
     {
         return (is_null($value)) ? null : (object)json_decode($value);
@@ -41,9 +41,9 @@ class MultiUser extends ModelSystem
         $this->attributes['user'] = (is_null($value)) ? null : json_encode($value);
     }
 
-
+    
     /**
-     *
+     * 
      * Filtros listado
      *
      * @param  Builder $query
@@ -52,27 +52,10 @@ class MultiUser extends ModelSystem
      */
     public function scopeFilterRecords($query, $request)
     {
-        $this->scopeWithClientData($query);
-
-        return $this->scopeApplySearch($query, $request);
-    }
-
-
-    /**
-     *
-     * Datos base del vínculo con sus empresas
-     *
-     * @param  Builder $query
-     * @return Builder
-     */
-    public function scopeWithClientData($query)
-    {
-        return $query->select([
+        $query->select([
             'id',
             'destination_client_id',
             'origin_client_id',
-            'origin_user_id',
-            'destination_user_id',
             'email',
             'user',
         ])
@@ -84,35 +67,7 @@ class MultiUser extends ModelSystem
                 $origin_client->filterDataMultiUser();
             }
         ]);
-    }
 
-
-    /**
-     *
-     * @param  Builder $query
-     * @param  Request $request
-     * @return Builder
-     */
-    public function scopeFilterGroupedRecords($query, $request)
-    {
-        $query->selectRaw('MIN(id) as id, MAX(id) as last_id, origin_client_id, origin_user_id')
-                ->groupBy('origin_client_id', 'origin_user_id')
-                ->orderByDesc('last_id');
-
-        return $this->scopeApplySearch($query, $request);
-    }
-
-
-    /**
-     *
-     * Filtro de búsqueda del listado
-     *
-     * @param  Builder $query
-     * @param  Request $request
-     * @return Builder
-     */
-    public function scopeApplySearch($query, $request)
-    {
         if(!empty($request->value))
         {
             $value = $request->value;

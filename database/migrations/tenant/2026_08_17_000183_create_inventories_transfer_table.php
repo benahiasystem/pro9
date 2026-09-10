@@ -15,7 +15,6 @@ use Illuminate\Support\Facades\DB;
  * - `number` int(11) DEFAULT NULL
  * - `filename` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `description` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `dispatch_id` int(10) unsigned DEFAULT NULL
  * - `warehouse_id` int(10) unsigned DEFAULT NULL
  * - `warehouse_destination_id` int(10) unsigned DEFAULT NULL
  * - `transfer_collect_id` int(10) unsigned DEFAULT NULL
@@ -38,7 +37,6 @@ CREATE TABLE `inventories_transfer` (
   `number` int(11) DEFAULT NULL,
   `filename` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `description` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `dispatch_id` int(10) unsigned DEFAULT NULL,
   `warehouse_id` int(10) unsigned DEFAULT NULL,
   `warehouse_destination_id` int(10) unsigned DEFAULT NULL,
   `transfer_collect_id` int(10) unsigned DEFAULT NULL,
@@ -51,8 +49,7 @@ CREATE TABLE `inventories_transfer` (
   KEY `inventories_transfer_warehouse_destination_id_foreign` (`warehouse_destination_id`),
   KEY `inventories_transfer_fiscal_environment_foreign` (`fiscal_environment`),
   KEY `inventories_transfer_document_type_id_foreign` (`document_type_id`),
-  KEY `inventories_transfer_transfer_collect_id_foreign` (`transfer_collect_id`),
-  KEY `inventories_transfer_dispatch_id_foreign` (`dispatch_id`)
+  KEY `inventories_transfer_transfer_collect_id_foreign` (`transfer_collect_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL);
     }

@@ -60,7 +60,7 @@ class QueryDocumentStatusTool implements ToolInterface
         return [
             'number_full' => $document->series . '-' . $document->number,
             'type' => $document->document_type->description,
-            'date' => optional($document->date_of_issue)->format('Y-m-d'),
+            'date' => $document->date_of_issue?->format('Y-m-d'),
             'total' => (float) $document->total,
             'local_state' => $this->stateDescription($document->state_type_id),
             'state_code' => $document->state_type_id,
@@ -70,12 +70,11 @@ class QueryDocumentStatusTool implements ToolInterface
 
     private function stateDescription(?string $stateId): string
     {
-        $states = [
+        return match ($stateId) {
             '01' => 'registrado localmente',
             '11' => 'anulado',
             '13' => 'por anular',
-        ];
-
-        return $states[$stateId] ?? 'estado desconocido';
+            default => 'estado desconocido',
+        };
     }
 }

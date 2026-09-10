@@ -35,7 +35,7 @@ class VenezuelaCurrencyTest extends TestCase
         self::assertSame('Bolívares', $rows['VES']['description']);
         self::assertSame(1, $rows['VES']['active']);
         self::assertSame('$', $rows['USD']['symbol']);
-        self::assertSame(0, $rows['USD']['active']);
+        self::assertSame(1, $rows['USD']['active']);
         self::assertSame([], $rows->keys()->intersect($legacyCurrencyIds)->values()->all());
     }
 

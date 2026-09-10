@@ -149,7 +149,7 @@ class PersonController extends Controller
         return [
             'data' => PersonCollection::make($records),
             'pagination' => [
-                'next_cursor' => optional($records->nextCursor())->encode(),
+                'next_cursor' => $records->nextCursor()?->encode() ?? null,
                 'has_more' => $records->hasMorePages(),
             ]
         ];

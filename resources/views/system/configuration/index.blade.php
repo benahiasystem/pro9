@@ -14,7 +14,6 @@
 
         {{-- General --}}
         <system-login-other-configuration slot="other" :plans='@json($plans)'></system-login-other-configuration>
-        <system-ads-configuration slot="ads"></system-ads-configuration>
         <system-configuration-apk-url slot="apk"></system-configuration-apk-url>
 
         {{-- Apariencia --}}

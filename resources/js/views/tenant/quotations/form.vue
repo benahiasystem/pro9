@@ -41,14 +41,10 @@
                                     {{ establishment.country.description }}
                                 </template>
                                 <br />
-                                <!-- Sin esta guarda el encabezado reventaba en .email cuando
-                                     no habia establecimiento y tumbaba todo el formulario. -->
-                                <template v-if="establishment">
-                                    {{ establishment.email }} -
-                                    <span v-if="establishment.telephone != '-'">{{
-                                        establishment.telephone
-                                    }}</span>
-                                </template>
+                                {{ establishment.email }} -
+                                <span v-if="establishment.telephone != '-'">{{
+                                    establishment.telephone
+                                }}</span>
                             </address>
                         </div>
 
@@ -1753,8 +1749,6 @@ export default {
             company: null,
             establishments: [],
             establishment: null,
-            // Copia del local que guarda la cotizacion, respaldo del encabezado.
-            record_establishment: null,
             currency_type: {},
             quotationNewId: null,
             payment_destinations: [],
@@ -2253,10 +2247,6 @@ export default {
                             this.customers.unshift(payload.customer);
                         }
 
-                        // /tables solo trae el local del usuario; si la cotizacion es de
-                        // otro, changeEstablishment usa esta copia en su lugar.
-                        this.record_establishment = dato.establishment || null;
-
                         if (dato.establishment_id) {
                             this.form.establishment_id = dato.establishment_id;
                             this.changeEstablishment();
@@ -2543,15 +2533,9 @@ export default {
             this.customer_addresses = [];
         },
         changeEstablishment() {
-            // /tables solo devuelve el local del usuario: una cotizacion de otro
-            // local no esta ahi y _.find daba undefined. Se cae a la copia que
-            // guarda la propia cotizacion.
-            this.establishment =
-                _.find(this.establishments, {
-                    id: this.form.establishment_id
-                }) ||
-                this.record_establishment ||
-                null;
+            this.establishment = _.find(this.establishments, {
+                id: this.form.establishment_id
+            });
         },
         cleanCustomer() {
             this.form.customer_id = null;

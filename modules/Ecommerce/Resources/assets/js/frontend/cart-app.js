@@ -270,9 +270,7 @@ var app_cart = new Vue({
             || String(window.location.hostname || '').endsWith('.localhost')
         ),
 
-        // La aceptación de términos ya no se marca con un checkbox: al confirmar
-        // el pedido se acepta, y así se avisa debajo del botón.
-        acceptedTerms: true,
+        acceptedTerms: false,
         processingPayment: false,
         paymentLoadingTitle: 'Estamos generando tu pedido',
         paymentLoadingText: 'Por favor no cierres esta ventana...',
@@ -351,12 +349,6 @@ var app_cart = new Vue({
         },
     },
     computed: {
-        // Unidades totales del carrito. Se muestra en el resumen cuando la
-        // tienda no emite comprobantes, que es cuando no hay desglose de IGV.
-        cartUnits() {
-            return this.records.reduce((total, row) => total + (parseInt(row.quantity, 10) || 1), 0);
-        },
-
         isLoggedIn() {
             return !!(this.user && this.user.id);
         },

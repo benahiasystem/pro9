@@ -36,7 +36,6 @@
                             <th>Email</th>
                             <th>Nombre</th>
                             <th>Perfil</th>
-                            <th>Permisos app</th>
                             <th>Api Token</th>
                             <th>Sucursal</th>
                             <th>Teléfono</th>
@@ -53,23 +52,6 @@
                             </td>
                             <td>{{ row.name }}</td>
                             <td>{{ row.type }}</td>
-                            <td>
-                                <span v-if="row.id == 1" class="text-muted">Todos</span>
-                                <div v-else-if="getVisiblePermissions(row).length" class="permission-chips">
-                                    <span class="permission-chip"
-                                          v-for="(permission, key) in getPermissionsToShow(row)"
-                                          :key="key">{{ permission.description }}</span>
-                                    <button type="button"
-                                            class="permission-chip permission-chip-more"
-                                            v-if="getHiddenPermissionsCount(row) > 0"
-                                            @click.prevent="toggleExpanded(row)">+{{ getHiddenPermissionsCount(row) }} más</button>
-                                    <button type="button"
-                                            class="permission-chip permission-chip-more"
-                                            v-else-if="expanded[row.id]"
-                                            @click.prevent="toggleExpanded(row)">Ver menos</button>
-                                </div>
-                                <span v-else class="text-muted">Sin permisos</span>
-                            </td>
                             <td>
                                 <span>
                                     {{ maskToken(row.api_token) }}
@@ -110,50 +92,32 @@
                                 </button>
                             </td>
                             <td class="text-end">
-                                <el-dropdown
-                                    v-if="hasRowActions(row)"
-                                    trigger="click"
-                                    @command="handleRowCommand"
-                                >
+                                <button
+                                    v-if="typeUser === 'admin' && row.active"
+                                    type="button"
+                                    class="btn waves-effect waves-light btn-xs btn-info me-1"
+                                    @click.prevent="clickCreate(row.id)">
+                                    Editar
+                                </button>
+                                <template v-if="row.id != 1 && typeUser === 'admin'">
                                     <button
-                                        class="btn btn-default btn-sm btn-dropdown-toggle"
+                                        v-show="!row.is_multi_user"
                                         type="button"
-                                    >
-                                        <i class="fas fa-ellipsis-v"></i>
-                                        <i class="fas fa-ellipsis-h" style="display: none;"></i>
+                                        class="btn waves-effect waves-light btn-xs btn-danger me-1"
+                                        @click.prevent="clickDelete(row.id)">
+                                        Eliminar
                                     </button>
-                                    <el-dropdown-menu slot="dropdown" class="actions-dropdown">
-                                        <el-dropdown-item
-                                            v-if="canEdit(row)"
-                                            :command="{ action: 'edit', row }"
-                                        >
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-edit me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" /><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z" /><path d="M16 5l3 3" /></svg>
-                                            Editar
-                                        </el-dropdown-item>
-
-                                        <el-dropdown-item divided v-if="canChangeActive(row) || canDelete(row)"></el-dropdown-item>
-
-                                        <el-dropdown-item
-                                            v-if="canChangeActive(row)"
-                                            :command="{ action: 'changeActive', row }"
-                                            :class="row.active ? 'text-danger option-delete' : ''"
-                                        >
-                                            <template v-if="row.active"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-ban me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M5.7 5.7l12.6 12.6" /></svg>Inhabilitar</template>
-                                            <template v-else><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-circle-check me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M9 12l2 2l4 -4" /></svg>Habilitar</template>
-                                        </el-dropdown-item>
-
-                                        <el-dropdown-item
-                                            v-if="canDelete(row)"
-                                            :command="{ action: 'delete', row }"
-                                            class="text-danger option-delete"
-                                            :divided="!canChangeActive(row) && canEdit(row)"
-                                        >
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-trash me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 7l16 0" /><path d="M10 11l0 6" /><path d="M14 11l0 6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg>
-                                            Eliminar
-                                        </el-dropdown-item>
-                                    </el-dropdown-menu>
-                                </el-dropdown>
-                                <span v-else>—</span>
+                                </template>
+                                <template v-if="!isMainUser(row.id) && isAdminUser">
+                                    <button
+                                        v-show="!row.is_multi_user"
+                                        type="button"
+                                        class="btn waves-effect waves-light btn-xs"
+                                        :class="row.active ? 'btn-warning' : 'btn-success'"
+                                        @click.prevent="clickActive(row.active, row.id)">
+                                        {{ row.active ? 'Inhabilitar' : 'Habilitar'}}
+                                    </button>
+                                </template>
                             </td>
                         </tr>
                         </tbody>
@@ -219,11 +183,6 @@
                 showRightShadow: false,
                 showTokenDialog: false,
                 selectedTokenRow: null,
-                // modulos aun no implementados en la app movil, se ocultan del listado
-                hidden_app_modules: ['order-note', 'report-sales', 'configuration'],
-                // cantidad de permisos visibles antes de agrupar el resto en "+n más"
-                visible_chips: 3,
-                expanded: {},
             }
         },
         created() {
@@ -267,62 +226,17 @@
             {
                 return user_id === 1
             },
-            canEdit(row)
-            {
-                return this.isAdminUser && row.active
-            },
-            canDelete(row)
-            {
-                return this.isAdminUser && row.id != 1 && !row.is_multi_user
-            },
-            canChangeActive(row)
-            {
-                return this.isAdminUser && !this.isMainUser(row.id) && !row.is_multi_user
-            },
-            hasRowActions(row)
-            {
-                return this.canEdit(row) || this.canChangeActive(row) || this.canDelete(row)
-            },
-            handleRowCommand(command)
-            {
-                if (!command || !command.action) return
-
-                const { action, row } = command
-
-                switch (action) {
-                    case 'edit':
-                        this.clickCreate(row.id)
-                        break
-                    case 'changeActive':
-                        this.clickActive(row.active, row.id)
-                        break
-                    case 'delete':
-                        this.clickDelete(row.id)
-                        break
-                    default:
-                        break
-                }
-            },
             clickAccessTokenForDiscount()
             {
                 this.showDialogAuthorizedTokenForDiscount = true
             },
             getData() {
-                Promise.all([
-                    this.$http.get(`/${this.resource}/records`),
-                    // los permisos de la app son opcionales, si falla la consulta el listado se muestra igual
-                    this.$http.get('/app/permissions/records').catch(() => null),
-                ])
-                    .then(([users_response, permissions_response]) => {
-                        const permissions_by_user = permissions_response ? _.keyBy(permissions_response.data.records, 'id') : {}
-
-                        this.records = users_response.data.data.map(r => ({
+                this.$http.get(`/${this.resource}/records`)
+                    .then(response => {
+                        this.records = response.data.data.map(r => ({
                             ...r,
-                            copied: false,
-                            app_modules: permissions_by_user[r.id] ? permissions_by_user[r.id].app_modules : [],
+                            copied: false
                         }))
-
-                        this.expanded = {}
                     })
             },
             clickCreate(recordId = null) {
@@ -354,22 +268,6 @@
                 }
             },
 
-            getVisiblePermissions(row) {
-                return _.filter(row.app_modules, permission => {
-                    return !this.hidden_app_modules.includes(permission.value)
-                })
-            },
-            getPermissionsToShow(row) {
-                const permissions = this.getVisiblePermissions(row)
-
-                return this.expanded[row.id] ? permissions : permissions.slice(0, this.visible_chips)
-            },
-            getHiddenPermissionsCount(row) {
-                return this.getVisiblePermissions(row).length - this.getPermissionsToShow(row).length
-            },
-            toggleExpanded(row) {
-                this.$set(this.expanded, row.id, !this.expanded[row.id])
-            },
             maskToken(token) {
                 if (!token) return ''
                 if (token.length <= 6) return token
@@ -431,36 +329,3 @@
         }
     }
 </script>
-
-<style scoped>
-.permissions-table td {
-    vertical-align: middle;
-}
-.permission-chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    max-width: 420px;
-}
-.permission-chip {
-    display: inline-block;
-    padding: 2px 5px;
-    border: 1px solid var(--primary);
-    border-radius: 6px;
-    background-color: color-mix(in srgb, var(--primary) 10%, #fff);
-    color: var(--primary);
-    font-size: 11px;
-    line-height: 1.4;
-    white-space: nowrap;
-}
-.permission-chip-more {
-    border-color: #e9ecef;
-    background-color: #f1f3f5;
-    color: #6c757d;
-    cursor: pointer;
-}
-.permission-chip-more:hover {
-    background-color: #e9ecef;
-    color: #495057;
-}
-</style>

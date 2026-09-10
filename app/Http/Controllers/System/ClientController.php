@@ -965,9 +965,6 @@ use Illuminate\Support\Facades\Mail;
                 'date_of_due_test_days' => $plan->test_days > 0 ? Carbon::now()->addDays($plan->test_days)->toDateTimeLocalString() :null,
                 'show_item_discounts_charges_attributes' => false,
                 'edit_name_product' => false,
-                // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
-                'default_document_type_80' => false,
-                // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
             ]);
 
 
@@ -1009,8 +1006,9 @@ use Illuminate\Support\Facades\Mail;
             // Se siembran las series comerciales habilitadas y la serie interna U4 requerida
             // por los traslados. Fuente única: SeriesCodeGenerator.
             DB::connection('tenant')->table('series')->insert(
-                \App\Services\SeriesCodeGenerator::defaultTenantSeries($establishment_id, (bool) $is_nrus)
+                \App\Services\SeriesCodeGenerator::defaultTenantSeries($establishment_id)
             );
+
             \Log::info('Series insertadas');
 
             \Log::info('Insertando usuario...');

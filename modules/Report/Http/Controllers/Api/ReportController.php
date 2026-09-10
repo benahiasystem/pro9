@@ -82,13 +82,10 @@ class ReportController extends Controller
 
     private function getCollectionGeneralItems($records, Request $request)
     {
-        // Una sola vez y normalizado: document_type_id puede llegar como array.
-        $is_sale_note_report = \Modules\Report\Http\Controllers\ReportGeneralItemController::isSaleNoteReport($request->input('document_type_id'));
-
-        return $records->transform(function($row) use($request, $is_sale_note_report) {
+        return $records->transform(function($row) use($request) {
             if ($request->input('type') === 'sale') {
                 $data = \Modules\Report\Http\Resources\GeneralItemCollection::getDocument($row);
-                if ($is_sale_note_report) {
+                if ($request->input('document_type_id') == '80') {
                     $observation = $data['observation']?$data['observation']:'';
                 } else {
                     $observation = $data['additional_information']?$data['additional_information'][0]:'';
@@ -101,7 +98,7 @@ class ReportController extends Controller
                 }
                 $total_item_purchase = \Modules\Report\Http\Resources\GeneralItemCollection::getPurchaseUnitPrice($row);
                 $warehouse_description = \App\CoreFacturalo\Helpers\Template\ReportHelper::getWarehouseDescription($row, $document);
-                $isSaleNote = (!$is_sale_note_report && $request->input('type') == 'sale') ? true : false;
+                $isSaleNote = ($request->input('document_type_id') != '80' && $request->input('type') == 'sale') ? true : false;
                 return [
                     'date_of_issue' => $document->date_of_issue->format('Y-m-d'),
                     'user' => $document->seller_id ? $document->user->name : $document->seller->name,

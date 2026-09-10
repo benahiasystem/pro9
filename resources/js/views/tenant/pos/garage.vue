@@ -93,22 +93,6 @@
                         </button>
                     </el-tooltip>
                 </h2>
-                <h2 class="px-0">
-                    <el-tooltip
-                        class="item"
-                        effect="dark"
-                        content="Configuración de vista"
-                        placement="top-start"
-                    >
-                        <button
-                            type="button"
-                            @click="openPosViewSettings"
-                            class="btn btn-custom btn-sm"
-                        >
-                            <i class="fas fa-cog"></i>
-                        </button>
-                    </el-tooltip>
-                </h2>
             </div>
             <div class="col-md-4" v-if="currency_types.length > 1">
                 <div class="pull-right h-100 d-flex align-items-center">
@@ -238,18 +222,10 @@
                                     class="card-body product pointer px-2 pt-2 m-0 pb-0 bg-transparent"
                                     @click="clickAddItem(item, index)"
                                 >
-                                    <div
-                                        class="pos-card-media"
-                                        :class="[
-                                            posImageAspectClass,
-                                            posImageFitClass
-                                        ]"
-                                    >
-                                        <img
-                                            :src="item.image_url"
-                                            class="img-thumbail img-custom"
-                                        />
-                                    </div>
+                                    <img
+                                        :src="item.image_url"
+                                        class="img-thumbail img-custom"
+                                    />
                                     <p
                                         class="text-muted font-weight-lighter mb-0"
                                         style="display: flex; justify-content: space-between; align-items: center;"
@@ -693,40 +669,32 @@
             >
                 <!-- ── TOP: Tipo documento + cliente ── -->
                 <div class="fp-top-header">
-                    <div class="fp-doc-tabs d-flex align-items-stretch px-1 py-1">
+                    <div class="fp-doc-tabs d-flex align-items-start px-1 py-1">
                         <div
                             v-for="tab in docTypeTabsAvailable"
                             :key="tab.id"
                             class="fp-doc-tab-wrap"
                             :class="{'active': form.document_type_id === tab.id}"
                         >
-                            <div
+                            <button
                                 class="fp-doc-tab w-100"
-                                :class="{
-                                    'active': form.document_type_id === tab.id,
-                                    'has-series': form.document_type_id === tab.id && show_fast_payment_garage && current_series_count > 1
-                                }"
-                                role="button"
-                                tabindex="0"
+                                :class="{'active': form.document_type_id === tab.id}"
                                 @click="setDocType(tab.id)"
-                                @keyup.enter.self="setDocType(tab.id)"
+                            >{{ tab.label }}</button>
+                            <el-select
+                                v-if="form.document_type_id === tab.id && show_fast_payment_garage && current_series_count > 1"
+                                v-model="form.series_id"
+                                size="mini"
+                                class="fp-series-inline w-100 mt-1"
+                                @click.native.stop
                             >
-                                <span class="fp-doc-tab-label">{{ tab.label }}</span>
-                                <el-select
-                                    v-if="form.document_type_id === tab.id && show_fast_payment_garage && current_series_count > 1"
-                                    v-model="form.series_id"
-                                    size="mini"
-                                    class="fp-series-inline"
-                                    @click.native.stop
-                                >
-                                    <el-option
-                                        v-for="s in ($refs.componentFastPaymentGarage ? $refs.componentFastPaymentGarage.series : [])"
-                                        :key="s.id"
-                                        :label="s.number"
-                                        :value="s.id"
-                                    ></el-option>
-                                </el-select>
-                            </div>
+                                <el-option
+                                    v-for="s in ($refs.componentFastPaymentGarage ? $refs.componentFastPaymentGarage.series : [])"
+                                    :key="s.id"
+                                    :label="s.number"
+                                    :value="s.id"
+                                ></el-option>
+                            </el-select>
                         </div>
                     </div>
                     <div class="fp-customer-row d-flex align-items-center py-2 px-1">
@@ -735,12 +703,6 @@
                             ref="select_person"
                             v-model="form.customer_id"
                             filterable
-                            remote
-                            reserve-keyword
-                            :remote-method="searchCustomers"
-                            :loading="loading_customers"
-                            loading-text="Buscando..."
-                            no-data-text="Sin coincidencias"
                             placeholder="Seleccionar Cliente"
                             @change="changeCustomer"
                             @keyup.native="keyupCustomer"
@@ -772,7 +734,7 @@
                         <p class="pos-empty-text mt-2 mb-0">Sin productos</p>
                     </div>
                     <!-- Items list -->
-                    <div class="px-0 py-1">
+                    <div class="px-2 py-1">
                         <template v-for="(item, index) in form.items">
                             <div :key="index" class="pos-cart-row d-flex align-items-center py-2">
                                 <!-- Thumbnail -->
@@ -784,58 +746,54 @@
                                 <div v-else class="pos-cart-thumb-ph mr-2">
                                     <i class="fas fa-cube"></i>
                                 </div>
-                                <!-- Info: nombre arriba, controles abajo -->
-                                <div class="pos-cart-info flex-grow-1 min-w-0">
+                                <!-- Info -->
+                                <div class="pos-cart-info flex-grow-1 mr-2 min-w-0">
                                     <p class="pos-cart-name mb-0">
                                         {{ item.item.description }}
                                         <template v-if="item.item.presentation && item.item.presentation.hasOwnProperty('description')">
                                             {{ item.item.presentation.description }}
                                         </template>
                                     </p>
-                                    <!-- Precio + cantidad + eliminar -->
-                                    <div class="pos-cart-controls d-flex align-items-center justify-content-between">
-                                        <template v-if="edit_unit_price">
-                                            <el-input
-                                                v-model="item.total"
-                                                size="mini"
-                                                inputmode="decimal"
-                                                @input="calculateQuantity(index)"
-                                                @blur="blurCalculateQuantity(index)"
-                                                class="pos-total-input"
-                                                @focus="$event.target.select()"
-                                            />
-                                        </template>
-                                        <span v-else class="pos-cart-price">{{ currency_type.symbol }} {{ item.total }}</span>
-                                        <!-- Qty controls + trash (trash visible on row hover, a la izquierda del -) -->
-                                        <div class="pos-qty-wrap d-flex align-items-center">
-                                            <a class="pos-cart-del" @click="clickDeleteItem(index)" title="Eliminar">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                                                    <path d="M4 7l16 0"/>
-                                                    <path d="M10 11l0 6"/>
-                                                    <path d="M14 11l0 6"/>
-                                                    <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12"/>
-                                                    <path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3"/>
-                                                </svg>
-                                            </a>
-                                            <button class="pos-qty-btn" @click="decrementItem(item, index)">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-minus"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M5 12l14 0" /></svg>
-                                            </button>
-                                            <el-input
-                                                v-model="item.item.aux_quantity"
-                                                inputmode="decimal"
-                                                @focus="valueInputSelect"
-                                                @click.native="valueInputSelect"
-                                                @input="clickAddItem(item, index, true)"
-                                                @keyup.enter.native="keyupEnterQuantity"
-                                                class="pos-qty-field"
-                                                :style="{ width: qtyFieldWidth(item) }"
-                                            />
-                                            <button class="pos-qty-btn" @click="clickAddItem(item, index)">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-plus"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M12 5l0 14" /><path d="M5 12l14 0" /></svg>
-                                            </button>
-                                        </div>
-                                    </div>
+                                    <template v-if="edit_unit_price">
+                                        <el-input
+                                            v-model="item.total"
+                                            size="mini"
+                                            inputmode="decimal"
+                                            @input="calculateQuantity(index)"
+                                            @blur="blurCalculateQuantity(index)"
+                                            class="pos-total-input"
+                                            @focus="$event.target.select()"
+                                        />
+                                    </template>
+                                    <span v-else class="pos-cart-price">{{ currency_type.symbol }} {{ item.total }}</span>
+                                </div>
+                                <!-- Qty controls + trash (trash visible on row hover, a la izquierda del -) -->
+                                <div class="pos-qty-wrap d-flex align-items-center">
+                                    <a class="pos-cart-del" @click="clickDeleteItem(index)" title="Eliminar">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                            <path d="M4 7l16 0"/>
+                                            <path d="M10 11l0 6"/>
+                                            <path d="M14 11l0 6"/>
+                                            <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12"/>
+                                            <path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3"/>
+                                        </svg>
+                                    </a>
+                                    <button class="pos-qty-btn" @click="decrementItem(item, index)">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-minus"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M5 12l14 0" /></svg>
+                                    </button>
+                                    <el-input
+                                        v-model="item.item.aux_quantity"
+                                        inputmode="decimal"
+                                        @focus="valueInputSelect"
+                                        @click.native="valueInputSelect"
+                                        @input="clickAddItem(item, index, true)"
+                                        @keyup.enter.native="keyupEnterQuantity"
+                                        class="pos-qty-field"
+                                    />
+                                    <button class="pos-qty-btn" @click="clickAddItem(item, index)">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-plus"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M12 5l0 14" /><path d="M5 12l14 0" /></svg>
+                                    </button>
                                 </div>
                             </div>
                         </template>
@@ -862,7 +820,6 @@
                             :configuration="configuration"
                             :type-user="typeUser"
                             @series-filtered="current_series_count = $event"
-                            @series-doc-types="setSeriesDocTypes($event)"
                             @customer-required="customerError = true"
                         ></fast-payment>
                         <!-- ######### FIN CAMBIO AFECTACIÓN IVA -->
@@ -916,107 +873,6 @@
             :itemUnitTypes="itemUnitTypes"
         >
         </item-unit-types>
-
-        <el-dialog
-            title="Configuración de vista"
-            :visible.sync="showDialogPosView"
-            class="pos-view-dialog"
-            width="440px"
-        >
-            <div class="pos-view-dialog__body">
-                <label class="control-label"
-                    >Relación de aspecto de la imagen</label
-                >
-                <el-radio-group
-                    v-model="pos_view_form.pos_image_aspect_ratio"
-                    class="pos-view-dialog__ratios"
-                >
-                    <div
-                        v-for="ratio in pos_image_aspect_ratios"
-                        :key="ratio.value"
-                        class="pos-view-dialog__ratio"
-                        :class="{
-                            'is-active':
-                                pos_view_form.pos_image_aspect_ratio ===
-                                ratio.value
-                        }"
-                        @click="
-                            pos_view_form.pos_image_aspect_ratio = ratio.value
-                        "
-                    >
-                        <el-radio :label="ratio.value">
-                            <span
-                                class="pos-view-dialog__shape"
-                                :class="
-                                    'pos-view-dialog__shape--' +
-                                        ratio.value.replace(':', '-')
-                                "
-                            ></span>
-                            <span class="pos-view-dialog__ratio-text">{{
-                                ratio.label
-                            }}</span>
-                        </el-radio>
-                    </div>
-                </el-radio-group>
-
-                <label class="control-label pt-3"
-                    >Cómo se acomoda la foto</label
-                >
-                <el-radio-group
-                    v-model="pos_view_form.pos_image_fit"
-                    class="pos-view-dialog__fits"
-                >
-                    <div
-                        v-for="fit in pos_image_fits"
-                        :key="fit.value"
-                        class="pos-view-dialog__fit"
-                        :class="{
-                            'is-active':
-                                pos_view_form.pos_image_fit === fit.value
-                        }"
-                        @click="pos_view_form.pos_image_fit = fit.value"
-                    >
-                        <el-radio :label="fit.value">
-                            <span class="pos-view-dialog__fit-text">
-                                <span class="pos-view-dialog__fit-title">{{
-                                    fit.label
-                                }}</span>
-                                <small class="pos-view-dialog__fit-hint">{{
-                                    fit.hint
-                                }}</small>
-                            </span>
-                        </el-radio>
-                    </div>
-                </el-radio-group>
-
-                <label class="control-label pt-3"
-                    >Visualización de productos</label
-                >
-                <el-select
-                    v-model="pos_view_form.colums_grid_item"
-                    class="w-100"
-                >
-                    <el-option
-                        v-for="option in pos_grid_options"
-                        :key="option.value"
-                        :label="option.label"
-                        :value="option.value"
-                    ></el-option>
-                </el-select>
-            </div>
-
-            <span slot="footer" class="dialog-footer">
-                <el-button @click="showDialogPosView = false"
-                    >Cancelar</el-button
-                >
-                <el-button
-                    type="primary"
-                    :loading="loading_pos_view"
-                    @click="savePosViewSettings"
-                    >Guardar</el-button
-                >
-            </span>
-        </el-dialog>
 
         <!-- Solo celular (mobile.css lo oculta en escritorio): atajo a la
              zona de cobro, que queda al final de un listado largo -->
@@ -1188,45 +1044,6 @@ export default {
     data() {
         return {
             place: "cat",
-            showDialogPosView: false,
-            loading_pos_view: false,
-            pos_image_aspect_ratios: [
-                { value: "4:5", label: "4:5 Vertical" },
-                { value: "5:4", label: "5:4 Horizontal" },
-                { value: "1:1", label: "1:1 Cuadrado" }
-            ],
-            pos_image_fits: [
-                {
-                    value: "contain",
-                    label: "Mostrar la foto completa",
-                    hint:
-                        "Se ve toda la foto, sin recortes. Puede quedar espacio a los lados."
-                },
-                {
-                    value: "cover",
-                    label: "Llenar el recuadro",
-                    hint:
-                        "La foto cubre todo el espacio. Se recortan los bordes que sobran."
-                }
-            ],
-            pos_grid_options: [
-                { value: 2, label: "Predeterminado" },
-                { value: 3, label: "Cómodo" },
-                { value: 4, label: "Compacto" },
-                { value: 5, label: "Apilado" }
-            ],
-            // Lo que se está mostrando ahora en la grilla
-            pos_view_settings: {
-                pos_image_aspect_ratio: "1:1",
-                pos_image_fit: "contain",
-                colums_grid_item: 2
-            },
-            // Lo que se está editando en el diálogo, hasta que se guarde
-            pos_view_form: {
-                pos_image_aspect_ratio: "1:1",
-                pos_image_fit: "contain",
-                colums_grid_item: 2
-            },
             showDialogItemUnitTypes: false,
             history_item_id: null,
             search_item_by_barcode: false,
@@ -1252,13 +1069,6 @@ export default {
             customers: [],
             affectation_igv_types: [],
             all_customers: [],
-            // Primera pantalla del desplegable: es a lo que se vuelve al borrar
-            // la busqueda. all_customers pasa a ser el resultado de turno.
-            customer_seed: [],
-            default_customer: null,
-            loading_customers: false,
-            customer_search_timer: null,
-            customer_search_promise: null,
             establishment: null,
             currency_types: [],
             currency_type: {},
@@ -1278,7 +1088,6 @@ export default {
             searchFromBarcode: false,
             current_series_count: 0,
             // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
-            series_doc_types: [],
             doc_type_tabs: [
                 { id: '01', label: 'Factura' },
                 { id: '80', label: 'N. Venta' },
@@ -1289,7 +1098,6 @@ export default {
     },
     async created() {
         this.loadConfiguration();
-        this.loadPosViewSettings();
 
         this.show_fast_payment_garage = false;
         await this.initForm();
@@ -1311,19 +1119,8 @@ export default {
     },
 
     computed: {
-        posImageAspectClass() {
-            const ratio =
-                this.pos_view_settings.pos_image_aspect_ratio || "1:1";
-            return "pos-card-media--" + ratio.replace(":", "-");
-        },
-        posImageFitClass() {
-            return (
-                "pos-card-media--fit-" +
-                (this.pos_view_settings.pos_image_fit || "contain")
-            );
-        },
         layout_mode() {
-            const cols = parseInt(this.pos_view_settings.colums_grid_item, 10);
+            const cols = parseInt(this.configuration.colums_grid_item, 10);
             switch (cols) {
                 case 2:
                     return "default";
@@ -1349,15 +1146,10 @@ export default {
         },
         docTypeTabsAvailable() {
             // NRUS no emite Factura (01)
-            let tabs = this.isNrus
-                ? this.doc_type_tabs.filter(tab => tab.id !== '01')
-                : this.doc_type_tabs;
-
-            if (this.series_doc_types.length) {
-                tabs = tabs.filter(tab => this.series_doc_types.includes(tab.id));
+            if (this.isNrus) {
+                return this.doc_type_tabs.filter(tab => tab.id !== '01');
             }
-
-            return tabs;
+            return this.doc_type_tabs;
         },
         validteCreateProduct() {
             if (this.config) {
@@ -1372,7 +1164,7 @@ export default {
         },
 
         classObjectCol() {
-            let cols = this.pos_view_settings.colums_grid_item;
+            let cols = this.configuration.colums_grid_item;
 
             let clase = "c3";
             switch (cols) {
@@ -1410,74 +1202,7 @@ export default {
             return customer ? customer.email : null;
         }
     },
-    watch: {
-        "form.document_type_id"() {
-            this.ensureAvailableDocType();
-        },
-    },
     methods: {
-        loadPosViewSettings() {
-            const cfg = this.configuration || {};
-            const ratio = this.pos_image_aspect_ratios.some(
-                r => r.value === cfg.pos_image_aspect_ratio
-            )
-                ? cfg.pos_image_aspect_ratio
-                : "1:1";
-
-            const fit = this.pos_image_fits.some(
-                f => f.value === cfg.pos_image_fit
-            )
-                ? cfg.pos_image_fit
-                : "contain";
-
-            this.pos_view_settings = {
-                pos_image_aspect_ratio: ratio,
-                pos_image_fit: fit,
-                colums_grid_item: parseInt(cfg.colums_grid_item, 10) || 2
-            };
-        },
-        openPosViewSettings() {
-            this.pos_view_form = Object.assign({}, this.pos_view_settings);
-            this.showDialogPosView = true;
-        },
-        savePosViewSettings() {
-            this.loading_pos_view = true;
-
-            this.$http
-                .post(`/${this.resource}/view-settings`, this.pos_view_form)
-                .then(response => {
-                    if (!response.data.success) {
-                        return this.$message.error(response.data.message);
-                    }
-
-                    this.pos_view_settings = {
-                        pos_image_aspect_ratio:
-                            response.data.data.pos_image_aspect_ratio,
-                        pos_image_fit: response.data.data.pos_image_fit,
-                        colums_grid_item: response.data.data.colums_grid_item
-                    };
-                    this.showDialogPosView = false;
-                    this.$message.success(response.data.message);
-                })
-                .catch(error => {
-                    if (error.response && error.response.status === 422) {
-                        const errors = error.response.data.errors || {};
-                        const first = Object.keys(errors)[0];
-                        return this.$message.error(
-                            first
-                                ? errors[first][0]
-                                : "No se pudo guardar la configuración de vista"
-                        );
-                    }
-
-                    this.$message.error(
-                        "No se pudo guardar la configuración de vista"
-                    );
-                })
-                .finally(() => {
-                    this.loading_pos_view = false;
-                });
-        },
         changeRowTotalGarage(index) {
             const item = this.form.items[index];
 
@@ -1583,12 +1308,6 @@ export default {
 
             return count;
         },
-        qtyFieldWidth(item) {
-            const value = item && item.item ? item.item.aux_quantity : '';
-            const length = String(value === null || value === undefined ? '' : value).length;
-            const width = (length * 8) + 14;
-            return `${Math.min(60, Math.max(32, width))}px`;
-        },
         keyupEnterQuantity() {
             this.initFocus();
         },
@@ -1600,18 +1319,6 @@ export default {
                 item.item.aux_quantity = qty - 1;
                 this.clickAddItem(item, index, true);
             }
-        },
-        setSeriesDocTypes(docTypes) {
-            this.series_doc_types = (docTypes || []).map(id => String(id));
-            this.ensureAvailableDocType();
-        },
-        ensureAvailableDocType() {
-            const tabs = this.docTypeTabsAvailable;
-
-            if (!tabs.length) return;
-            if (tabs.some(tab => tab.id === this.form.document_type_id)) return;
-
-            this.setDocType(tabs[0].id);
         },
         setDocType(typeId) {
             this.form.document_type_id = typeId;
@@ -1852,14 +1559,10 @@ export default {
             this.showDialogHistorySales = true;
             // console.log(item)
         },
-        async keyupEnterCustomer() {
+        keyupEnterCustomer() {
             if (this.place == "cat3") {
                 return false;
             }
-
-            // La busqueda es remota y va con debounce: sin esperarla, Enter
-            // podria abrir el modal de cliente nuevo para uno que si existe.
-            await this.flushCustomerSearch();
 
             if (this.form.customer_id) {
                 this.clickPayment();
@@ -2018,15 +1721,6 @@ export default {
             let customer = _.find(this.all_customers, {
                 id: this.form.customer_id
             });
-
-            // Con busqueda remota la lista es el resultado de turno, no la
-            // cartera: si el id no esta ahi no hay nada que aplicar. Antes esto
-            // reventaba mas abajo al leer identity_document_type_id.
-            if (!customer) {
-                this.customer = null;
-                return;
-            }
-
             this.customer = customer;
 
             // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
@@ -2036,8 +1730,6 @@ export default {
                 this.form.document_type_id = "01";
             }
             // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
-
-            this.ensureAvailableDocType();
 
             // console.log(this.customer);
 
@@ -2404,6 +2096,8 @@ export default {
                     exchangeRateSale,
                     this.percentage_igv
                 );
+                console.log(this.row)
+
                 // this.row['unit_type_id'] = item.presentation ? item.presentation.unit_type_id : 'NIU';
 
                 this.row["unit_type_id"] = item.presentation
@@ -2440,9 +2134,6 @@ export default {
             await this.setFormPosLocalStorage();
 
             await this.setDefaultDataPriceSelected(item);
-
-            this.$refs.componentFastPaymentGarage.checkPaymentGarage(this.form.total)
-
         },
         setDefaultDataPriceSelected(item) {
             if (
@@ -2570,13 +2261,6 @@ export default {
                     response.data.affectation_igv_types;
                 this.all_customers = response.data.customers;
                 this.establishment = response.data.establishment;
-                this.default_customer =
-                    this.all_customers.find(
-                        c =>
-                            String(c.id) ===
-                            String(this.establishment.customer_id)
-                    ) || null;
-                this.customer_seed = this.all_customers.slice();
                 this.currency_types = response.data.currency_types;
                 this.user = response.data.user;
                 this.form.establishment_id = this.establishment.id;
@@ -2593,91 +2277,10 @@ export default {
             });
         },
         selectDefaultCustomer() {
-            // Tras una venta la lista puede contener solo el ultimo resultado de
-            // busqueda; se vuelve a la semilla antes de fijar el defecto.
-            this.all_customers = this.withPinnedCustomers(this.customer_seed);
-
             if (this.establishment.customer_id && !this.form.customer_id) {
                 this.form.customer_id = this.establishment.customer_id;
                 this.changeCustomer();
             }
-        },
-        /**
-         * remote-method del selector de clientes. La lista ya no trae la cartera
-         * completa: se consulta al servidor con debounce y por debajo de 2
-         * caracteres se vuelve a la semilla.
-         */
-        searchCustomers(query) {
-            const input = (query || "").trim();
-
-            if (this.customer_search_timer) {
-                clearTimeout(this.customer_search_timer);
-                this.customer_search_timer = null;
-            }
-
-            if (input.length < 2) {
-                this.loading_customers = false;
-                this.customer_search_promise = null;
-                this.all_customers = this.withPinnedCustomers(
-                    this.customer_seed
-                );
-                return;
-            }
-
-            this.loading_customers = true;
-
-            this.customer_search_promise = new Promise(resolve => {
-                this.customer_search_timer = setTimeout(() => {
-                    this.customer_search_timer = null;
-                    this.$http
-                        .get(`/${this.resource}/search_customers`, {
-                            params: { input }
-                        })
-                        .then(response => {
-                            this.all_customers = this.withPinnedCustomers(
-                                response.data.data
-                            );
-                        })
-                        .catch(() => {})
-                        .then(() => {
-                            this.loading_customers = false;
-                            resolve();
-                        });
-                }, 250);
-            });
-        },
-        /**
-         * Espera la busqueda en vuelo para que Enter no decida sobre una lista a
-         * medio actualizar y abra el modal de cliente nuevo por error.
-         */
-        async flushCustomerSearch() {
-            if (this.customer_search_promise) {
-                await this.customer_search_promise;
-            }
-        },
-        /**
-         * Mantiene fijos el cliente seleccionado y el de por defecto: la lista ya
-         * no contiene toda la cartera y changeCustomer() los busca ahi por id.
-         */
-        withPinnedCustomers(list) {
-            const seen = new Set();
-            const rows = [];
-
-            const push = row => {
-                if (!row || !row.id) return;
-                const id = String(row.id);
-                if (seen.has(id)) return;
-                seen.add(id);
-                rows.push(row);
-            };
-
-            // La lista real manda; los fijos van al final y solo si faltan, para
-            // no encimar dos filas que no coinciden sobre una busqueda.
-            (list || []).forEach(push);
-            push(this.customer);
-            push(this.default_customer);
-
-            return rows;
         },
         renderCategories(source) {
             const contex = this;
@@ -2804,18 +2407,10 @@ export default {
             }
         },
         reloadDataCustomers(customer_id) {
-            // customer_id va como parametro para que el backend, que ahora
-            // devuelve una tanda acotada, garantice al cliente recien creado
-            // aunque no entre en el tope alfabetico.
             this.$http
-                .get(`/${this.resource}/table/customers`, {
-                    params: { customer_id }
-                })
+                .get(`/${this.resource}/table/customers`)
                 .then(response => {
-                    this.customer_seed = response.data;
-                    this.all_customers = this.withPinnedCustomers(
-                        this.customer_seed
-                    );
+                    this.all_customers = response.data;
                     this.form.customer_id = customer_id;
                     this.changeCustomer();
                 });

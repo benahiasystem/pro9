@@ -832,7 +832,7 @@ return array (
         1 =>
         array (
           'id' => '20',
-          'active' => 0,
+          'active' => 1,
           'exportation' => 0,
           'free' => 0,
           'description' => 'Exento',
@@ -1093,7 +1093,7 @@ return array (
         1 =>
         array (
           'id' => 'USD',
-          'active' => 0,
+          'active' => 1,
           'symbol' => '$',
           'description' => 'Dólares Americanos',
         ),
@@ -1336,7 +1336,7 @@ return array (
         0 =>
         array (
           'id' => '0101',
-          'active' => 0,
+          'active' => 1,
           'exportation' => 0,
           'description' => 'Venta interna',
         ),
@@ -4723,15 +4723,6 @@ return array (
           'value' => 'webhooks',
           'description' => 'Webhooks',
           'order_menu' => 26,
-          'created_at' => NULL,
-          'updated_at' => NULL,
-        ),
-        28 =>
-        array (
-          'id' => 55,
-          'value' => 'configuration_menu',
-          'description' => 'Configurar menú',
-          'order_menu' => 24,
           'created_at' => NULL,
           'updated_at' => NULL,
         ),

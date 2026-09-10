@@ -233,7 +233,7 @@ class DocumentController extends Controller
             'success' => true,
             'data' => new DocumentCollection($records),
             'pagination' => [
-                'next_cursor' => optional($records->nextCursor())->encode(),
+                'next_cursor' => $records->nextCursor()?->encode() ?? null,
                 'has_more'    => $records->hasMorePages(),
             ],
         ];

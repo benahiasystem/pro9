@@ -109,7 +109,7 @@ class FacturaloDraftMapper
             'number' => $nextNumber,
             'date_of_issue' => $today->format('Y-m-d'),
             'time_of_issue' => $today->format('H:i:s'),
-            'customer_id' => optional($customer)->id,
+            'customer_id' => $customer?->id,
             'customer' => $this->customerSnapshot($customer),
             'currency_type_id' => 'VES',
             'exchange_rate_sale' => 1,

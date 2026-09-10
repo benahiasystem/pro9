@@ -69,15 +69,9 @@ class ProcessReportSalesConsolidated implements ShouldQueue
             $this->login($this->user_id);
 
             $company = Company::first();
-            $user = auth()->user();
             $establishment = (!empty($this->request['establishment_id']))
                 ? Establishment::findOrFail($this->request['establishment_id'])
-                : ($user ? $user->establishment : Establishment::first());
-
-            if (!$establishment) {
-                throw new \RuntimeException('No se encontró establecimiento para generar el reporte consolidado.');
-            }
-
+                : auth()->user()->establishment;
             $params = $this->request;
 
             $tray = $this->findDownloadTray($this->tray_id);
@@ -97,30 +91,12 @@ class ProcessReportSalesConsolidated implements ShouldQueue
 
             $this->finishedDownloadTray($tray, $filename, $path);
         } catch (\Throwable $th) {
-            \Log::error('ProcessReportSalesConsolidated FAILED', [
-                'tray_id' => $this->tray_id,
-                'website_id' => $this->website_id,
-                'user_id' => $this->user_id,
-                'export_mode' => $this->export_mode,
-                'format' => $this->format,
-                'report_source' => $this->report_source,
-                'message' => $th->getMessage(),
-                'file' => $th->getFile().':'.$th->getLine(),
-            ]);
-
-            try {
-                $tray = $this->findDownloadTray($this->tray_id);
-                if ($tray) {
-                    $tray->date_end = date('Y-m-d H:i:s');
-                    $tray->status = 'FAILED';
-                    $tray->save();
-                }
-            } catch (\Throwable $trayError) {
-                \Log::error('ProcessReportSalesConsolidated no pudo marcar FAILED en bandeja', [
-                    'message' => $trayError->getMessage(),
-                ]);
+            $tray = $this->findDownloadTray($this->tray_id);
+            if ($tray) {
+                $tray->date_end = date('Y-m-d H:i:s');
+                $tray->status = 'FAILED';
+                $tray->save();
             }
-
             $this->fail($th);
         }
     }
@@ -160,16 +136,6 @@ class ProcessReportSalesConsolidated implements ShouldQueue
         }
 
         $pdf = PDF::loadView($view, compact('records', 'company', 'establishment', 'params'));
-
-        if ($this->report_source === 'guides') {
-            $pdf->setPaper('a4', 'portrait')
-                ->setOptions([
-                    'isHtml5ParserEnabled' => true,
-                    'isRemoteEnabled' => false,
-                    'defaultFont' => 'DejaVu Sans',
-                    'dpi' => 96,
-                ]);
-        }
 
         if ($this->export_mode === 'ticket') {
             $height = (5.8 / 2.54) * 72;
@@ -233,8 +199,6 @@ class ProcessReportSalesConsolidated implements ShouldQueue
     private function resolveRecords($params)
     {
         $request = Request::create('/', 'GET', $params);
-        // Para que scopes que lean request() (p. ej. filtros de vendedor) vean los mismos params en cola.
-        app()->instance('request', $request);
 
         switch ($this->report_source) {
             case 'order_notes':
@@ -259,17 +223,7 @@ class ProcessReportSalesConsolidated implements ShouldQueue
                     return $controller->totalsByItem($request)->sortBy('item_id');
                 }
 
-                return $controller->getRecordsDispachesItem($params)
-                    ->with([
-                        'dispatch.person.identity_document_type',
-                        'dispatch.user',
-                        'dispatch.state_type',
-                        'dispatch.transfer_reason_type',
-                        'dispatch.order_note',
-                        'dispatch.order_form',
-                        'relation_item',
-                    ])
-                    ->get();
+                return $controller->getRecordsDispachesItem($params)->get();
 
             default:
                 $controller = new ReportSaleConsolidatedController();

@@ -34,8 +34,6 @@ use Illuminate\Support\Facades\DB;
  * - `locked_tenant` tinyint(1) NOT NULL DEFAULT '0'
  * - `compact_sidebar` tinyint(1) NOT NULL DEFAULT '0'
  * - `colums_grid_item` tinyint(4) DEFAULT '4'
- * - `pos_image_aspect_ratio` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '1:1'
- * - `pos_image_fit` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'contain'
  * - `options_pos` tinyint(1) NOT NULL DEFAULT '1'
  * - `edit_name_product` tinyint(1) NOT NULL DEFAULT '0'
  * - `restrict_receipt_date` tinyint(1) NOT NULL DEFAULT '1'
@@ -275,8 +273,6 @@ CREATE TABLE `configurations` (
   `locked_tenant` tinyint(1) NOT NULL DEFAULT '0',
   `compact_sidebar` tinyint(1) NOT NULL DEFAULT '0',
   `colums_grid_item` tinyint(4) DEFAULT '4',
-  `pos_image_aspect_ratio` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '1:1',
-  `pos_image_fit` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'contain',
   `options_pos` tinyint(1) NOT NULL DEFAULT '1',
   `edit_name_product` tinyint(1) NOT NULL DEFAULT '0',
   `restrict_receipt_date` tinyint(1) NOT NULL DEFAULT '1',

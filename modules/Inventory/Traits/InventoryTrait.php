@@ -631,37 +631,8 @@ trait InventoryTrait
             $factor = 1;
             $warehouse = $this->findWarehouse();
             $this->createInventoryKardex($document_item->document, $ind_item->id, ($factor * ($document_item->quantity * $presentationQuantity * $item_set_quantity)), $warehouse->id);
-            if ($this->shouldRestoreStockOnVoidedDocumentItemSet($document)) {
-                $this->updateStock($ind_item->id, ($factor * ($document_item->quantity * $presentationQuantity * $item_set_quantity)), $warehouse->id);
-            }
+            if (!$document_item->document->sale_note_id && !$document_item->document->order_note_id && !$document_item->document->sale_notes_relateds) $this->updateStock($ind_item->id, ($factor * ($document_item->quantity * $presentationQuantity * $item_set_quantity)), $warehouse->id);
         }
-    }
-
-    /**
-     * Misma regla que InventoryVoidedServiceProvider::shouldRestoreStockOnDocumentVoid
-     * para productos compuestos (sets).
-     */
-    private function shouldRestoreStockOnVoidedDocumentItemSet($document): bool
-    {
-        if ($document->sale_note_id || $document->order_note_id || $document->sale_notes_relateds) {
-            return false;
-        }
-
-        if (!$document->dispatch_id) {
-            return true;
-        }
-
-        $dispatch = $document->dispatch;
-        if (!$dispatch) {
-            return true;
-        }
-
-        $transferReason = $dispatch->transfer_reason_type;
-        if (!$transferReason || !$transferReason->discount_stock) {
-            return true;
-        }
-
-        return !in_array($dispatch->state_type_id, ['09', '11'], true);
     }
     /**
      * Verifica si el producto ha tenido series en venta

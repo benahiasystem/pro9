@@ -102,18 +102,12 @@
                         <div class="ifb-add-group-title">{{ group.label }}</div>
                         <div v-for="field in group.fields"
                              :key="field.key"
-                             :class="['ifb-add-row', { 'is-disabled': isFieldPinned(field.key) || isFieldUnavailable(field.key) }]"
-                             :title="fieldUnavailableReason(field.key)"
+                             :class="['ifb-add-row', { 'is-disabled': isFieldPinned(field.key) }]"
                              @click="addPinFromPanel(field.key)">
                             <span class="ifb-add-row-icon">
-                                <i :class="isFieldPinned(field.key) ? 'el-icon-check' : (isFieldUnavailable(field.key) ? 'el-icon-warning-outline' : 'el-icon-plus')"></i>
+                                <i :class="isFieldPinned(field.key) ? 'el-icon-check' : 'el-icon-plus'"></i>
                             </span>
-                            <span class="ifb-add-row-label">
-                                {{ field.label }}
-                                <small v-if="isFieldUnavailable(field.key)" class="d-block text-muted mt-1">
-                                    {{ fieldUnavailableReason(field.key) }}
-                                </small>
-                            </span>
+                            <span class="ifb-add-row-label">{{ field.label }}</span>
                             <span class="ifb-add-row-type">{{ inputLabel(field.type) }}</span>
                         </div>
                     </div>
@@ -135,9 +129,6 @@ import {
     getDefaultLayout,
     getFieldByKey,
     getInputTypeLabel,
-    getUnavailableFields,
-    getTabLabel,
-    isFieldHiddenByGlobalIgv,
 } from './_form_fields_catalog';
 
 const PinnedSlot = {
@@ -167,7 +158,6 @@ export default {
         variant: { type: String, required: true },
         pinnedFields: { type: Array, default: () => [] },
         saving: { type: Boolean, default: false },
-        globalIgvHandling: { type: Boolean, default: true },
     },
     data() {
         return {
@@ -182,63 +172,28 @@ export default {
     },
     computed: {
         catalogByKey() {
-            const available = getAvailableFields(this.variant, {
-                globalIgvHandling: this.globalIgvHandling,
-            });
+            const available = getAvailableFields(this.variant);
             return available.reduce((acc, f) => {
                 acc[f.key] = f;
                 return acc;
             }, {});
         },
-        groupedAvailable() {
-            return getAvailableFieldsGrouped(this.variant, {
-                globalIgvHandling: this.globalIgvHandling,
-            });
+        sortedPins() {
+            return [...this.pinnedFields]
+                .filter(p => this.isSpacer(p) || this.catalogByKey[p.field_key])
+                .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
         },
-        unavailableFieldsByKey() {
-            return getUnavailableFields(this.variant, {
-                globalIgvHandling: this.globalIgvHandling,
-            }).reduce((acc, f) => {
-                acc[f.key] = f;
-                return acc;
-            }, {});
+        groupedAvailable() {
+            return getAvailableFieldsGrouped(this.variant);
         },
         filteredAddGroups() {
             const q = (this.addSearch || '').trim().toLowerCase();
-            const groups = this.groupedAvailable.map(group => ({
-                ...group,
-                fields: [...group.fields],
-            }));
-
-            Object.values(this.unavailableFieldsByKey).forEach(field => {
-                if (q && !field.label.toLowerCase().includes(q)) {
-                    return;
-                }
-
-                let group = groups.find(g => g.tab === field.tab);
-                if (!group) {
-                    group = {
-                        tab: field.tab,
-                        label: getTabLabel(field.tab),
-                        fields: [],
-                    };
-                    groups.push(group);
-                }
-
-                group.fields.push(field);
-            });
-
-            return groups
+            return this.groupedAvailable
                 .map(group => ({
                     ...group,
                     fields: group.fields.filter(f => !q || f.label.toLowerCase().includes(q)),
                 }))
                 .filter(group => group.fields.length > 0);
-        },
-        sortedPins() {
-            return [...this.pinnedFields]
-                .filter(p => this.isSpacer(p) || this.catalogByKey[p.field_key])
-                .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
         },
     },
     watch: {
@@ -298,19 +253,8 @@ export default {
             this.addSearch = '';
         },
         addPinFromPanel(fieldKey) {
-            if (this.isFieldPinned(fieldKey) || this.isFieldUnavailable(fieldKey)) return;
+            if (this.isFieldPinned(fieldKey)) return;
             this.pinField(fieldKey);
-        },
-        isFieldUnavailable(fieldKey) {
-            const field = getFieldByKey(fieldKey);
-            return !!(field && isFieldHiddenByGlobalIgv(field, this.globalIgvHandling));
-        },
-        fieldUnavailableReason(fieldKey) {
-            if (!this.isFieldUnavailable(fieldKey)) return '';
-            const field = getFieldByKey(fieldKey);
-            return (field && field.unavailableReason)
-                ? field.unavailableReason
-                : 'No disponible con la configuración actual.';
         },
         isSpacer(pin) {
             const key = pin && typeof pin === 'object' ? pin.field_key : pin;
@@ -334,7 +278,7 @@ export default {
          */
         pinField(fieldKey) {
             if (!this.editing) this.enterEditMode();
-            if (this.isFieldPinned(fieldKey) || this.isFieldUnavailable(fieldKey)) return;
+            if (this.isFieldPinned(fieldKey)) return;
             const field = getFieldByKey(fieldKey);
             if (!field) return;
             this.draftPins.push({
@@ -351,9 +295,7 @@ export default {
             this.draftPins = getDefaultLayout(this.variant);
         },
         confirmEdit() {
-            const payload = this.draftPins
-                .filter(p => this.isSpacer(p) || !this.isFieldUnavailable(p.field_key))
-                .map((p, idx) => ({
+            const payload = this.draftPins.map((p, idx) => ({
                 field_key: p.field_key,
                 width: parseInt(p.width, 10) || 3,
                 order: idx,

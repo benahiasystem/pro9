@@ -106,18 +106,7 @@
                         @endif
                         <td class="celda">{{$itemKardex['date_time']}}
                         </td>
-                        <td class="celda">
-                            @php
-                                $typeTx = $itemKardex['type_transaction'] ?? '';
-                                $isVoidTx = is_string($typeTx) && str_contains($typeTx, '(Anulación)');
-                                $typeTxBase = $isVoidTx ? trim(preg_replace('/\s*\(Anulación\)\s*$/u', '', $typeTx)) : $typeTx;
-                            @endphp
-                            @if($isVoidTx)
-                                {{ $typeTxBase }} <span style="color:#dc3545;font-weight:bold;">(Anulación)</span>
-                            @else
-                                {{ $typeTx }}
-                            @endif
-                        </td>
+                        <td class="celda">{{$itemKardex['type_transaction']}}</td>
                         <td class="celda">{{$itemKardex['number']}}</td>
                         <td class="celda">
                             {{$itemKardex['sale_note_asoc']}}

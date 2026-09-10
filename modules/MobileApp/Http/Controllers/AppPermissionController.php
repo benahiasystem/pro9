@@ -14,26 +14,6 @@ class AppPermissionController extends Controller
 
 
     /**
-     * Listado de permisos asignados por usuario.
-     *
-     * @return array
-     */
-    public function records()
-    {
-        $records = User::with('app_modules')->get()->map(function ($user) {
-            return [
-                'id' => $user->id,
-                'app_modules' => $user->app_modules->map(function ($app_module) {
-                    return $app_module->getPermissionsApp();
-                })->values(),
-            ];
-        })->values();
-
-        return compact('records');
-    }
-
-
-    /**
      * @return array
      */
     public function record($id)
@@ -65,16 +45,6 @@ class AppPermissionController extends Controller
     {
 
         $user = User::findOrFail($request->id);
-
-        if ($user->locked || !$user->active) {
-            $status = $user->locked ? 'suspendido' : 'inhabilitado';
-
-            return [
-                'success' => false,
-                'message' => "Usuario {$status}: no se pueden modificar sus permisos.",
-            ];
-        }
-
         $app_modules = collect($request->app_modules)->where('checked', true)->pluck('id')->toArray();
         $user->app_modules()->sync($app_modules);
 

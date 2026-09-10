@@ -212,9 +212,7 @@ class InventoryKardex extends ModelTenant
                 if (isset($inventory_kardexable->dispatch)) {
                     if ($inventory_kardexable->dispatch->transfer_reason_type->discount_stock) {
                         $cpe_output = '-';
-                        // La salida del CPE no afecta saldo (ya descontó la guía).
-                        // La anulación del CPE sí, porque ahí se reingresa el stock.
-                        $cpe_discounted_stock = ($qty < 0);
+                        $cpe_discounted_stock = true;
                     }
                     $cpe_doc_asoc = ($cpe_doc_asoc == '-') ? $inventory_kardexable->dispatch->number_full : $cpe_doc_asoc . ' | ' . $inventory_kardexable->dispatch->number_full;
                 }
@@ -360,13 +358,7 @@ class InventoryKardex extends ModelTenant
                 $data['output'] = ($qty < 0) ? (isset($inventory_kardexable->reference_sale_note_id) || isset($inventory_kardexable->reference_order_note_id) || isset($inventory_kardexable->reference_document_id) ? "-" : $qty) : "-";
                 $data['balance'] = (isset($inventory_kardexable->reference_sale_note_id) || isset($inventory_kardexable->reference_order_note_id) || isset($inventory_kardexable->reference_document_id)) ? $balance += 0 : $balance += $qty;
                 $data['number'] = optional($inventory_kardexable)->number_full;
-                $dispatch_reason = isset($inventory_kardexable->transfer_reason_type->description)
-                    ? $inventory_kardexable->transfer_reason_type->description
-                    : 'Guía';
-                // qty > 0 = reingreso por anulación interna de la guía
-                $data['type_transaction'] = ($qty > 0)
-                    ? $dispatch_reason.' (Anulación)'
-                    : $dispatch_reason;
+                $data['type_transaction'] = isset($inventory_kardexable->transfer_reason_type->description) ? $inventory_kardexable->transfer_reason_type->description : '';
                 $data['date_of_issue'] = isset($inventory_kardexable->date_of_issue) ? $inventory_kardexable->date_of_issue->format('Y-m-d') : '';
                 $data['sale_note_asoc'] = isset($inventory_kardexable->reference_sale_note_id) ? optional($inventory_kardexable)->sale_note->number_full : "-";
                 $data['order_note_asoc'] = isset($inventory_kardexable->reference_order_note_id) ? optional($inventory_kardexable)->order_note->number_full : "-";

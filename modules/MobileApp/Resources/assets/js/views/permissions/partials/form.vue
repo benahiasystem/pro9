@@ -60,7 +60,7 @@
                 loading: false,
                 pos_document_types: [],
                 // modulos aun no implementados en la app movil, se ocultan del dialog
-                hidden_app_modules: ['order-note', 'report-sales', 'configuration']
+                hidden_app_modules: ['order-note', 'report-sales', 'configuration', 'dispatches']
             }
         },
         computed: {
@@ -160,7 +160,6 @@
                         if (response.data.success) {
                             this.$message.success(response.data.message)
                             this.close()
-                            this.$eventHub.$emit('reloadData')
                         } else {
                             this.$message.error(response.data.message)
                         }

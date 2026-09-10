@@ -494,7 +494,7 @@ class ItemController extends Controller
         return [
             'data' => ItemSaleCollection::make($records),
             'pagination' => [
-                'next_cursor' => optional($records->nextCursor())->encode(),
+                'next_cursor' => $records->nextCursor()?->encode() ?? null,
                 'has_more' => $records->hasMorePages(),
             ]
         ];

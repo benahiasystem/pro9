@@ -28,27 +28,15 @@ class ClientUsageApidocs extends Model
     }
 
     /**
-     * Scope: solo el consumo del admin / reseller (sin cliente asociado).
-     */
-    public function scopeSystem($query)
-    {
-        return $query->whereNull('client_id');
-    }
-
-    /**
-     * Incrementa el contador de uso para el mes actual.
+     * Incrementa el contador de uso para el mes actual del cliente
      *
-     * @param int|null $clientId  null = consumo del admin / reseller, es decir
-     *                            consultas hechas desde el panel del sistema y
-     *                            no desde un tenant.
+     * @param int $clientId
      * @return self
      */
-    public static function incrementUsage($clientId = null)
+    public static function incrementUsage($clientId)
     {
         $currentMonth = now()->format('Y-m');
 
-        // firstOrCreate con client_id null resuelve a "where client_id is null",
-        // asi que todas las consultas del sistema caen en la misma fila del mes.
         $usage = static::firstOrCreate(
             [
                 'client_id' => $clientId,

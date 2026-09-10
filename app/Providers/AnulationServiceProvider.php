@@ -35,12 +35,6 @@ class AnulationServiceProvider extends ServiceProvider
 
                 if($document['state_type_id'] == 11){
 
-                    // Stock de almacén lo gestiona InventoryVoidedServiceProvider.
-                    // Evitar doble reingreso en items.stock cuando el CPE viene de una guía.
-                    if (!empty($document['dispatch_id'])) {
-                        return;
-                    }
-
                     foreach ($document['items'] as $detail) {
 
                         // $item = Item::find($detail['item_id']);

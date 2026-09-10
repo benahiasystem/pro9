@@ -183,7 +183,7 @@ class DocumentCollection extends ResourceCollection
                 'balance' => $balance,
                 'guides' => !empty($row->guides) ? (array) $row->guides : null,
                 'purchase_order' => $row->purchase_order,
-                'is_editable' => $this->resolveIsEditable($row),
+                'is_editable' => $row->is_editable,
                 'dispatches' => $this->getDispatches($row),
                 'fiscal_environment_type' => $row->fiscal_environment_type,
                 'plate_numbers' => $row->getPlateNumbers(),
@@ -237,23 +237,6 @@ class DocumentCollection extends ResourceCollection
 
         return $dispatches;
 
-    }
-
-    /**
-     * En listado: un CPE en estado Registrado que viene de pedido/cotización
-     * debe poder editarse aunque is_editable haya quedado en 0 por defecto.
-     */
-    private function resolveIsEditable($row): bool
-    {
-        if ($row->is_editable) {
-            return true;
-        }
-
-        if ($row->state_type_id !== '01') {
-            return false;
-        }
-
-        return !is_null($row->order_note_id) || !is_null($row->quotation_id);
     }
 
 }

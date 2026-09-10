@@ -42,7 +42,6 @@
                                   :variant="resolvedVariant"
                                   :pinned-fields="pinned_fields"
                                   :saving="layout_saving"
-                                  :global-igv-handling="globalIgvHandling"
                                   @editing-changed="editingLayout = $event"
                                   @save="onSaveLayout">
                 <template #internal_id>
@@ -89,7 +88,7 @@
                 <template #sale_unit_price>
                     <div :class="{'has-danger': errors.sale_unit_price}" class="form-group">
                         <!-- ########## INICIO CAMBIO IGV A IVA -->
-                        <label class="control-label">Precio Unitario <template v-if="!isNrus"><small v-if="form.has_igv">(con IVA)</small> <small v-else>(SIN IVA)</small></template><span class="text-danger">*</span></label>
+                        <label class="control-label">Precio Unitario <template v-if="!isNrus"><small v-if="form.has_igv">(con IGV)</small> <small v-else>(SIN IVA)</small></template><span class="text-danger">*</span></label>
                         <!-- ######### FIN CAMBIO IGV A IVA -->
                         <el-input v-model="form.sale_unit_price"
                                   class="input-select-all"
@@ -319,7 +318,7 @@
                 <template #purchase_unit_price>
                     <div :class="{'has-danger': errors.purchase_unit_price}" class="form-group">
                         <!-- ########## INICIO CAMBIO IGV A IVA -->
-                        <label class="control-label">Precio Unitario (Compra) <template v-if="!isNrus"><small v-if="form.purchase_has_igv">(con IVA)</small> <small v-else>(SIN IVA)</small></template></label>
+                        <label class="control-label">Precio Unitario (Compra) <template v-if="!isNrus"><small v-if="form.purchase_has_igv">(con IGV)</small> <small v-else>(SIN IVA)</small></template></label>
                         <!-- ######### FIN CAMBIO IGV A IVA -->
                         <el-input v-model="form.purchase_unit_price"
                                   class="input-select-all"
@@ -1287,7 +1286,7 @@
                             <div :class="{'has-danger': errors.purchase_unit_price}"
                                  class="form-group">
                                 <!-- ########## INICIO CAMBIO IGV A IVA -->
-                                <label class="control-label">Precio Unitario <template v-if="!isNrus"><small v-if="form.purchase_has_igv">(con IVA)</small> <small v-else>(SIN IVA)</small></template></label>
+                                <label class="control-label">Precio Unitario <template v-if="!isNrus"><small v-if="form.purchase_has_igv">(con IGV)</small> <small v-else>(SIN IVA)</small></template></label>
                                 <!-- ######### FIN CAMBIO IGV A IVA -->
                                 <el-input v-model="form.purchase_unit_price"
                                           class="input-select-all"
@@ -1984,14 +1983,8 @@ export default {
 
 
                 this.loadConfiguration()
-                // Solo para producto nuevo. created() y create() corren por
-                // separado (el diálogo dispara create con @open), así que al
-                // editar esto puede resolverse DESPUÉS de cargar el registro y
-                // borrar la afectación guardada del ítem.
-                if (!this.recordId) {
-                    this.form.sale_affectation_igv_type_id = this.defaultSaleAffectationIgvTypeId()
-                    this.form.purchase_affectation_igv_type_id = (this.affectation_igv_types.length > 0) ? this.affectation_igv_types[0].id : null
-                }
+                this.form.sale_affectation_igv_type_id = (this.affectation_igv_types.length > 0) ? this.affectation_igv_types[0].id : null
+                this.form.purchase_affectation_igv_type_id = (this.affectation_igv_types.length > 0) ? this.affectation_igv_types[0].id : null
                 if (!this.recordId && this.currency_types.length === 1) {
                     this.form.currency_type_id = this.currency_types[0].id
                 }
@@ -2083,61 +2076,16 @@ export default {
                 !currentValue
             );
         },
-        /**
-         * Valores por defecto de un producto NUEVO.
-         *
-         * Al editar no debe tocar el formulario: el registro ya trae sus propios
-         * valores y este método puede resolverse después de cargarlo (created()
-         * y create() son flujos independientes), pisando la afectación y el IGV
-         * guardados del ítem.
-         *
-         * Devuelve la promesa para que el `await` de created() sirva de algo; sin
-         * el return resolvía al instante y el .then caía más tarde, fuera de orden.
-         *
-         * @param {boolean} force  resetForm() lo llama con true: ahí el formulario
-         *                         se está vaciando y sí queremos los defaults
-         *                         aunque recordId siga apuntando al ítem anterior.
-         */
-        defaultSaleAffectationIgvTypeId() {
-            const configured = this.config?.affectation_igv_type_id
+        setDefaultConfiguration() {
+            this.form.sale_affectation_igv_type_id = (this.config) ? this.config.affectation_igv_type_id : '10'
 
-            // Se exige que siga activo en el catalogo; si no, el select quedaria
-            // sin opcion seleccionada.
-            if (configured && _.find(this.affectation_igv_types, {id: String(configured)})) {
-                return String(configured)
-            }
-
-            return (this.affectation_igv_types.length > 0) ? this.affectation_igv_types[0].id : null
-        },
-        async setDefaultConfiguration(force = false) {
-            const apply_defaults = force || !this.recordId
-
-            if (apply_defaults) {
-                // Valor provisional mientras llega la configuración del servidor.
-                // El store puede venir en null (sin `config` en localStorage) o con
-                // el objeto por defecto, donde affectation_igv_type_id es 0: por eso
-                // el fallback va sobre el valor y no sobre la existencia de config.
-                this.form.sale_affectation_igv_type_id = this.config?.affectation_igv_type_id || '10'
-            }
-
-            return await this.$http.get(`/configurations/record`).then(response => {
-                const configuration = response.data.data || {}
-                const isGlobal = configuration.global_igv_handling !== false
-                if (apply_defaults) {
-                    // La respuesta manda sobre el store: es el dato fresco.
-                    this.form.sale_affectation_igv_type_id = configuration.affectation_igv_type_id
-                        || this.config?.affectation_igv_type_id
-                        || '10'
-                    this.form.has_igv = isGlobal ? true : configuration.include_igv
-                    this.form.purchase_has_igv = isGlobal ? true : configuration.include_igv
-                }
+            this.$http.get(`/configurations/record`).then(response => {
+                const isGlobal = response.data.data.global_igv_handling !== false
+                this.form.has_igv = isGlobal ? true : response.data.data.include_igv
+                this.form.purchase_has_igv = isGlobal ? true : response.data.data.include_igv
                 // this.$setStorage('configuration',response.data.data)
-                // Solo se comitea si hay dato: la mutación asigna tal cual, y un
-                // null quedaría guardado en localStorage arrastrando el problema.
-                if (response.data.data) {
-                    this.$store.commit('setConfiguration', response.data.data);
-                    this.loadConfiguration()
-                }
+                this.$store.commit('setConfiguration', response.data.data);
+                this.loadConfiguration()
             })
         },
 
@@ -2166,13 +2114,8 @@ export default {
                     this.filteredCategories = this.categories
                     this.filteredBrands = this.brands
 
-                    // Sin el guard, recargar tablas en medio de una edición
-                    // (p. ej. al crear una marca desde el sub-diálogo, que emite
-                    // 'reloadTables') reseteaba la afectación del ítem editado.
-                    if (!this.recordId) {
-                        this.form.sale_affectation_igv_type_id = this.defaultSaleAffectationIgvTypeId()
-                        this.form.purchase_affectation_igv_type_id = (this.affectation_igv_types.length > 0) ? this.affectation_igv_types[0].id : null
-                    }
+                    this.form.sale_affectation_igv_type_id = (this.affectation_igv_types.length > 0) ? this.affectation_igv_types[0].id : null
+                    this.form.purchase_affectation_igv_type_id = (this.affectation_igv_types.length > 0) ? this.affectation_igv_types[0].id : null
                     if (!this.recordId && this.currency_types.length === 1) {
                         this.form.currency_type_id = this.currency_types[0].id
                     }
@@ -2553,11 +2496,9 @@ export default {
         },
         resetForm() {
             this.initForm()
-            this.form.sale_affectation_igv_type_id = this.defaultSaleAffectationIgvTypeId()
+            this.form.sale_affectation_igv_type_id = (this.affectation_igv_types.length > 0) ? this.affectation_igv_types[0].id : null
             this.form.purchase_affectation_igv_type_id = (this.affectation_igv_types.length > 0) ? this.affectation_igv_types[0].id : null
-            // force: el formulario se está vaciando, aquí sí toca aplicar los
-            // defaults aunque recordId siga apuntando al ítem que se cerró.
-            this.setDefaultConfiguration(true)
+            this.setDefaultConfiguration()
         },
         setDialogTitle()
         {
@@ -3118,9 +3059,7 @@ this.activeName = null
             this.$http.get(`/item-form-layout/${this.resolvedVariant}`)
                 .then(response => {
                     const data = response.data && response.data.data ? response.data.data : null
-                    const available = getAvailableFields(this.resolvedVariant, {
-                        globalIgvHandling: this.globalIgvHandling,
-                    }).map(f => f.key)
+                    const available = getAvailableFields(this.resolvedVariant).map(f => f.key)
                     const remote = data && Array.isArray(data.pinned_fields) ? data.pinned_fields : []
                     const filtered = remote.filter(p =>
                         (typeof p.field_key === 'string' && p.field_key.indexOf('__spacer__') === 0)
@@ -3134,10 +3073,6 @@ this.activeName = null
                 })
         },
         pinFromForm(fieldKey) {
-            if (fieldKey === 'has_igv' && this.globalIgvHandling) {
-                this.$message.warning('No puede fijar "Incluye IVA" mientras el manejo de IVA global está activado en Configuraciones.');
-                return;
-            }
             if (this.$refs.pinnedBar && typeof this.$refs.pinnedBar.pinField === 'function') {
                 this.$refs.pinnedBar.pinField(fieldKey);
             }

@@ -34,36 +34,6 @@ class ApidocsHelper
     }
 
     /**
-     * Host del panel del sistema (admin / reseller), considerando PREFIX_URL.
-     *
-     * Mismo criterio que usan las rutas del modulo y ApidocsService: si hay
-     * prefijo el panel vive en {prefijo}.{APP_URL_BASE}.
-     *
-     * @return string
-     */
-    public static function getSystemHost(): string
-    {
-        $prefix = env('PREFIX_URL', null);
-        $base = (string) config('tenant.app_url_base');
-
-        return !empty($prefix) ? $prefix . '.' . $base : $base;
-    }
-
-    /**
-     * Indica si la peticion viene del panel del admin / reseller y no de un tenant.
-     *
-     * @return bool
-     */
-    public static function isSystemRequest(): bool
-    {
-        $host = request()->getHost();
-
-        // Se aceptan ambas formas: con prefijo y el dominio base pelado, para
-        // no depender de como este configurado PREFIX_URL en cada instalacion.
-        return $host === self::getSystemHost() || $host === (string) config('tenant.app_url_base');
-    }
-
-    /**
      * Obtiene el cliente actual del tenant
      *
      * @return \App\Models\System\Client|null
@@ -72,9 +42,10 @@ class ApidocsHelper
     {
         try {
             $current_url = request()->getHost();
+            $app_url = config('tenant.app_url_base');
 
             // Si es admin/system, no hay cliente
-            if (self::isSystemRequest()) {
+            if ($current_url === $app_url) {
                 return null;
             }
 
@@ -94,30 +65,9 @@ class ApidocsHelper
     public static function incrementUsage()
     {
         try {
-            // Consulta hecha desde el panel del admin / reseller: no hay cliente,
-            // pero igual consume cuota del reseller, asi que se registra con
-            // client_id null en lugar de descartarse.
-            if (self::isSystemRequest()) {
-                $usage = ClientUsageApidocs::incrementUsage(null);
-
-                \Log::info('Contador apidocs incrementado (sistema)', [
-                    'client_id' => null,
-                    'month' => $usage->month,
-                    'new_quantity' => $usage->quantity
-                ]);
-
-                return;
-            }
-
             $client = self::getCurrentClient();
 
             if (!$client) {
-                // Tenant sin cliente asociado: no se puede atribuir el consumo
-                // a nadie y tampoco es del sistema, asi que no se registra.
-                \Log::warning('Consulta apidocs sin cliente identificable, no se registra', [
-                    'host' => request()->getHost(),
-                ]);
-
                 return;
             }
 

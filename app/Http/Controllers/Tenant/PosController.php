@@ -316,28 +316,9 @@ class PosController extends Controller
     public function table($table)
     {
         if ($table === 'customers') {
-            // Sin tope esto devolvia la cartera completa y pisaba el seed
-            // acotado de tables(); el selector del POS filtra en cliente, asi
-            // que la lista larga solo lo hace pesado. El resto se busca con
-            // search_customers.
-            $customers = Person::whereType('customers')->whereIsEnabled()
-                ->with(['plates', 'identity_document_type'])
-                ->orderBy('name')->take(self::CUSTOMER_SEED_LIMIT)->get();
-
-            // El cliente recien creado puede no entrar en el tope alfabetico, y
-            // quien llama a este endpoint lo selecciona justo despues: sin esto
-            // el selector se quedaria sin la opcion que acaba de elegir.
-            $customer_id = request()->input('customer_id');
-
-            if ($customer_id && !$customers->contains('id', $customer_id)) {
-                $customer = Person::whereType('customers')->whereIsEnabled()
-                    ->with(['plates', 'identity_document_type'])
-                    ->where('id', $customer_id)->first();
-
-                if ($customer) $customers->prepend($customer);
-            }
-
-            return $this->transformCustomers($customers);
+            return $this->transformCustomers(
+                Person::whereType('customers')->whereIsEnabled()->orderBy('name')->get()
+            );
         }
 
         if ($table === 'items') {
@@ -430,31 +411,6 @@ class PosController extends Controller
         $configuration = Configuration::first();
 
         return $configuration;
-    }
-
-    public function save_view_settings(Request $request)
-    {
-        $request->validate([
-            'pos_image_aspect_ratio' => 'required|in:' . implode(',', Configuration::POS_IMAGE_ASPECT_RATIOS),
-            'pos_image_fit' => 'required|in:' . implode(',', Configuration::POS_IMAGE_FITS),
-            'colums_grid_item' => 'required|integer|min:2|max:6',
-        ]);
-
-        $configuration = Configuration::firstOrFail();
-        $configuration->pos_image_aspect_ratio = $request->input('pos_image_aspect_ratio');
-        $configuration->pos_image_fit = $request->input('pos_image_fit');
-        $configuration->colums_grid_item = (int)$request->input('colums_grid_item');
-        $configuration->save();
-
-        return [
-            'success' => true,
-            'message' => 'Configuración de vista actualizada',
-            'data' => [
-                'pos_image_aspect_ratio' => $configuration->getPosImageAspectRatio(),
-                'pos_image_fit' => $configuration->getPosImageFit(),
-                'colums_grid_item' => (int)$configuration->colums_grid_item,
-            ],
-        ];
     }
 
     public function validate_stock($item_id, $quantity)

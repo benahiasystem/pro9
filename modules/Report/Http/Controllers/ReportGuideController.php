@@ -218,17 +218,7 @@
             $company = Company::first();
             $establishment = ($request->establishment_id) ? Establishment::findOrFail($request->establishment_id)
                 : auth()->user()->establishment;
-            $records = $this->getRecordsDispachesItem($request->all())
-                ->with([
-                    'dispatch.person.identity_document_type',
-                    'dispatch.user',
-                    'dispatch.state_type',
-                    'dispatch.transfer_reason_type',
-                    'dispatch.order_note',
-                    'dispatch.order_form',
-                    'relation_item',
-                ])
-                ->get();
+            $records = $this->getRecordsDispachesItem($request->all())->get();
             $params = $request->all();
             self::setParams($params);
             /*
@@ -237,14 +227,7 @@
                     */
 
             $pdf = PDF::loadView('report::guides.report_pdf',
-                                 compact('records', 'company', 'establishment', 'params'))
-                ->setPaper('a4', 'portrait')
-                ->setOptions([
-                    'isHtml5ParserEnabled' => true,
-                    'isRemoteEnabled' => false,
-                    'defaultFont' => 'DejaVu Sans',
-                    'dpi' => 96,
-                ]);
+                                 compact('records', 'company', 'establishment', 'params'));
 
             $filename = 'Reporte_Consolidado_Items_Ordenes_Entrega_'.date('YmdHis');
 
@@ -345,17 +328,7 @@
             $establishment = ($request->establishment_id) ? Establishment::findOrFail($request->establishment_id)
                 : auth()->user()->establishment;
 
-            $records = $this->getRecordsDispachesItem($request->all())
-                ->with([
-                    'dispatch.person.identity_document_type',
-                    'dispatch.user',
-                    'dispatch.state_type',
-                    'dispatch.transfer_reason_type',
-                    'dispatch.order_note',
-                    'dispatch.order_form',
-                    'relation_item',
-                ])
-                ->get();
+            $records = $this->getRecordsDispachesItem($request->all())->get();
             $params = $request->all();
             self::setParams($params);
             $filename = 'Reporte_Consolidado_Items_Ordenes_Entrega_'.date('YmdHis');

@@ -203,47 +203,33 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
         </div>
         <div class="nano-content nano-content-mobile pt-0">
             <nav id="menu" class="nav-main" role="navigation">
-                @if(in_array('configuration_menu', $vc_modules))
-                    <section id="sidebar-favorites" class="sidebar-favorites" aria-label="Accesos favoritos">
-                        <div class="sidebar-favorites-header">
-                            <span class="sidebar-favorites-title text-muted">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-pin"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M15 4.5l-4 4l-4 1.5l-1.5 1.5l7 7l1.5 -1.5l1.5 -4l4 -4" /><path d="M9 15l-4.5 4.5" /><path d="M14.5 4l5.5 5.5" /></svg>
-                                <span class="text-uppercase">Favoritos</span>
-                                <div class="ms-auto">
-                                    <button type="button" class="sidebar-search-trigger text-muted js-sidebar-search-open" title="Buscar opciones (Ctrl + K)" aria-label="Abrir buscador de opciones">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-search"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M3 10a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" /><path d="M21 21l-6 -6" /></svg>
-                                    </button>
-                                    <button id="sidebar-menu-config-quick-trigger" type="button" class="sidebar-menu-config-quick-trigger text-muted" title="Configurar menú" aria-label="Abrir configuración del menú">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-edit"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" /><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415" /><path d="M16 5l3 3" /></svg>
-                                    </button>
-                                </div>
-                            </span>
-                        </div>
-                        <ul id="sidebar-pinned-items" class="nav nav-main sidebar-pinned-items"></ul>
-                        <p class="sidebar-pinned-empty mb-0">
-                            Usa “Configurar menú” para agregar tus accesos favoritos.
-                        </p>
-                        <small id="sidebar-preferences-status" class="sidebar-preferences-status" role="status" aria-live="polite"></small>
-                        <div class="w-100 px-3">
-                            <button id="sidebar-preferences-retry" type="button" class="sidebar-preferences-retry mt-2">
-                                <i class="fas fa-sync-alt" aria-hidden="true"></i>
-                                Reintentar sincronización
-                            </button>
-                        </div>
-                    </section>
-                @else
-                    <section id="sidebar-favorites" class="sidebar-favorites sidebar-favorites--search-only" style="background-color: transparent !important" aria-label="Buscar opciones">
-                        <button type="button" class="sidebar-search-bar text-muted js-sidebar-search-open" title="Buscar opciones (Ctrl + K)" aria-label="Abrir buscador de opciones">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-search" aria-hidden="true"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M3 10a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" /><path d="M21 21l-6 -6" /></svg>
-                            <span class="sidebar-search-bar-label">Buscar</span>
-                            <kbd class="sidebar-search-bar-kbd">Ctrl K</kbd>
+                <section id="sidebar-favorites" class="sidebar-favorites" aria-label="Accesos favoritos">
+                    <div class="sidebar-favorites-header">
+                        <span class="sidebar-favorites-title text-muted">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-pin"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M15 4.5l-4 4l-4 1.5l-1.5 1.5l7 7l1.5 -1.5l1.5 -4l4 -4" /><path d="M9 15l-4.5 4.5" /><path d="M14.5 4l5.5 5.5" /></svg>
+                            <span class="text-uppercase">Favoritos</span>
+                            <div class="ms-auto">
+                                <button id="sidebar-search-trigger" type="button" class="sidebar-search-trigger text-muted" title="Buscar opciones (Ctrl + K)" aria-label="Abrir buscador de opciones">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-search"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M3 10a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" /><path d="M21 21l-6 -6" /></svg>
+                                </button>
+                                <button id="sidebar-menu-config-quick-trigger" type="button" class="sidebar-menu-config-quick-trigger text-muted" title="Configurar menú" aria-label="Abrir configuración del menú">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-edit"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" /><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415" /><path d="M16 5l3 3" /></svg>
+                                </button>
+                            </div>
+                        </span>
+                    </div>
+                    <ul id="sidebar-pinned-items" class="nav nav-main sidebar-pinned-items"></ul>
+                    <p id="sidebar-pinned-empty" class="sidebar-pinned-empty mb-0">
+                        Usa “Configurar menú” para agregar tus accesos favoritos.
+                    </p>
+                    <small id="sidebar-preferences-status" class="sidebar-preferences-status" role="status" aria-live="polite"></small>
+                    <div class="w-100 px-3">
+                        <button id="sidebar-preferences-retry" type="button" class="sidebar-preferences-retry mt-2">
+                            <i class="fas fa-sync-alt" aria-hidden="true"></i>
+                            Reintentar sincronización
                         </button>
-                        <ul id="sidebar-pinned-items" class="nav nav-main sidebar-pinned-items" style="display:none"></ul>
-                        <p id="sidebar-pinned-empty" class="sidebar-pinned-empty mb-0" style="display:none"></p>
-                        <small id="sidebar-preferences-status" class="sidebar-preferences-status" role="status" aria-live="polite" style="display:none"></small>
-                        <button id="sidebar-preferences-retry" type="button" class="sidebar-preferences-retry mt-2" style="display:none"></button>
-                    </section>
-                @endif
+                    </div>
+                </section>
                 <ul class="nav nav-main nav-main-mobile">
                     @if(in_array('dashboard', $vc_modules))
                         <li class="{{ ($firstLevel === 'dashboard') ? 'nav-active' : '' }}">
@@ -1730,7 +1716,6 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
 
             <ul class="nav list-config">
 
-                @if(in_array('configuration_menu', $vc_modules))
                 <li>
                     <a id="sidebar-menu-config-trigger" class="nav-link" href="#">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icon-tabler-adjustments-horizontal">
@@ -1753,7 +1738,6 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
                         Configurar menú
                     </a>
                 </li>
-                @endif
 
                 @if(in_array('users', $vc_module_levels))
                     <li>
@@ -1885,80 +1869,6 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
         box-shadow: none;
         transition: padding .18s ease, border-color .18s ease, background-color .18s ease;
     }
-    .sidebar-favorites--hidden {
-        display: none !important;
-    }
-    .sidebar-favorites--search-only {
-        margin: 0 15px 10px;
-        padding: 0;
-        border: 0;
-        border-radius: 0;
-        background: transparent;
-        box-shadow: none;
-    }
-    .sidebar-search-bar {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        width: 100%;
-        min-height: 34px;
-        padding: 6px 10px;
-        border: 1px solid color-mix(in srgb, var(--primary) 22%, #fff);
-        border-radius: 8px;
-        color: inherit;
-        background: color-mix(in srgb, var(--primary) 6%, transparent);
-        text-align: left;
-        transition: border-color .16s ease, background-color .16s ease, color .16s ease;
-    }
-    .sidebar-search-bar:hover,
-    .sidebar-search-bar:focus {
-        color: var(--primary) !important;
-        border-color: color-mix(in srgb, var(--primary) 45%, #fff);
-        background: color-mix(in srgb, var(--primary) 12%, transparent);
-        outline: none;
-    }
-    .sidebar-search-bar-label {
-        flex: 1;
-        min-width: 0;
-        font-size: 12px;
-        font-weight: 500;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-    .sidebar-search-bar-kbd {
-        flex: 0 0 auto;
-        padding: 1px 5px;
-        border: 1px solid color-mix(in srgb, currentColor 28%, transparent);
-        border-radius: 4px;
-        font-size: 10px;
-        font-weight: 600;
-        line-height: 1.4;
-        opacity: .7;
-    }
-    html.sidebar-left-collapsed .sidebar-favorites--search-only {
-        margin: 6px 8px;
-        padding: 0;
-        border: 0;
-        background: transparent;
-    }
-    html.sidebar-left-collapsed .sidebar-search-bar {
-        justify-content: center;
-        min-height: 32px;
-        padding: 6px;
-    }
-    html.sidebar-left-collapsed .sidebar-search-bar-label,
-    html.sidebar-left-collapsed .sidebar-search-bar-kbd {
-        display: none;
-    }
-    html.sidebar-left-collapsed .sidebar-left .nano.hovered .sidebar-favorites--search-only .sidebar-search-bar {
-        justify-content: flex-start;
-        padding: 6px 10px;
-    }
-    html.sidebar-left-collapsed .sidebar-left .nano.hovered .sidebar-favorites--search-only .sidebar-search-bar-label,
-    html.sidebar-left-collapsed .sidebar-left .nano.hovered .sidebar-favorites--search-only .sidebar-search-bar-kbd {
-        display: inline;
-    }
     html.sidebar-left-collapsed .sidebar-left .nano.hovered .sidebar-favorites-header,
     html.sidebar-left-collapsed .sidebar-left .nano.hovered .sidebar-pinned-empty,
     html.sidebar-left-collapsed .sidebar-left .nano.hovered .sidebar-preferences-status {
@@ -2067,6 +1977,7 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
     .sidebar-preferences-status {
         display: block;
         padding: 6px 5px;
+        color: var(--menu-text-muted);
         line-height: 1.3;
     }
     .sidebar-preferences-status {
@@ -2125,9 +2036,7 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
 {{-- Puntos de montaje de los modales del menu (Vue + el-dialog).
      Ver resources/js/views/tenant/components/sidebar_search.vue y sidebar_menu_config.vue --}}
 <div id="sidebar-search-root"></div>
-@if(in_array('configuration_menu', $vc_modules))
 <div id="sidebar-menu-config-root"></div>
-@endif
 
 @include('tenant.layouts.partials.sidebar-favorite-icons')
 
@@ -2140,7 +2049,7 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
         const emptyState = document.getElementById('sidebar-pinned-empty');
         const status = document.getElementById('sidebar-preferences-status');
         const retryButton = document.getElementById('sidebar-preferences-retry');
-        const searchTriggers = document.querySelectorAll('.js-sidebar-search-open');
+        const searchTrigger = document.getElementById('sidebar-search-trigger');
         const menuConfigQuickTrigger = document.getElementById('sidebar-menu-config-quick-trigger');
         const menuConfigTrigger = document.getElementById('sidebar-menu-config-trigger');
         const endpoint = @json(url('api/user/menu-preferences'));
@@ -2942,33 +2851,24 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
             draggedItem = null;
         });
 
-        if (retryButton) {
-            retryButton.addEventListener('click', function () {
-                showStatus('Sincronizando...');
-                persistPreferences(true);
-            });
-        }
-
-        searchTriggers.forEach(function (searchTrigger) {
-            searchTrigger.addEventListener('click', function (event) {
-                event.preventDefault();
-                emitSidebarSearch('sidebarSearchOpen');
-            });
+        retryButton.addEventListener('click', function () {
+            showStatus('Sincronizando...');
+            persistPreferences(true);
         });
-        if (menuConfigTrigger) {
-            menuConfigTrigger.addEventListener('click', function (event) {
-                event.preventDefault();
-                event.stopPropagation();
-                emitMenuConfigOpen('sidebar-menu-config-trigger');
-            });
-        }
-        if (menuConfigQuickTrigger) {
-            menuConfigQuickTrigger.addEventListener('click', function (event) {
-                event.preventDefault();
-                event.stopPropagation();
-                emitMenuConfigOpen('sidebar-menu-config-quick-trigger');
-            });
-        }
+
+        searchTrigger.addEventListener('click', function () {
+            emitSidebarSearch('sidebarSearchOpen');
+        });
+        menuConfigTrigger.addEventListener('click', function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            emitMenuConfigOpen('sidebar-menu-config-trigger');
+        });
+        menuConfigQuickTrigger.addEventListener('click', function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            emitMenuConfigOpen('sidebar-menu-config-quick-trigger');
+        });
         document.addEventListener('keydown', function (event) {
             if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
                 event.preventDefault();

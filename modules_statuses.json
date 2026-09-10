@@ -45,6 +45,5 @@
     "Webhook": true,
     "ExtraServices": true,
     "Marketplace": true,
-    "CashReport": true,
-    "Sync": true
+    "CashReport": true
 }

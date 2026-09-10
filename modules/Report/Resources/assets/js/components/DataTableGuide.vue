@@ -232,10 +232,8 @@ export default {
             establishment: null,
             establishments: [],
             web_platforms: [],
-            customers: [],
-            all_customers: [],
-            users: [],
-            all_users: [],
+            customers: {},
+            users: {},
             form: {},
             pickerOptionsDates: {
                 disabledDate: (time) => {
@@ -267,10 +265,8 @@ export default {
                 this.all_items = response.data.items
                 this.document_types = response.data.document_types;
                 this.web_platforms = response.data.web_platforms
-                this.customers = response.data.customers || []
-                this.all_customers = this.customers
-                this.users = response.data.users || []
-                this.all_users = this.users
+                this.customers = response.data.customers
+                this.users = response.data.users
             });
 
 
@@ -288,62 +284,55 @@ export default {
         searchRemoteCustomers(input) {
             if (input.length > 0) {
                 this.loading_search = true
-                this.$http.get(`/reports/data-table/persons/customers?input=${encodeURIComponent(input)}`)
+                let parameters = `input=${input}`
+                this.$http.post(`/${this.resource}/customers`, {id: parameters})
                     .then(response => {
-                        this.customers = response.data.persons || []
-                        if (this.customers.length === 0) {
-                            this.filterCustomers()
-                        }
-                    })
-                    .catch(() => {
-                        this.filterCustomers()
-                    })
-                    .finally(() => {
-                        this.loading_search = false
-                    })
-            } else {
-                this.filterCustomers()
-            }
-        },
-        searchRemoteUsers(input) {
-            if (input.length > 0) {
-                const q = input.toLowerCase()
-                this.users = (this.all_users || []).filter(u =>
-                    (u.name || '').toLowerCase().includes(q)
-                )
-                if (this.users.length === 0) {
-                    this.filterUsers()
-                }
-            } else {
-                this.filterUsers()
-            }
-        },
-        searchRemoteItems(input) {
-            if (input.length > 0) {
-                this.loading_search = true
-                let parameters = `input=${encodeURIComponent(input)}`
-                this.$http.get(`/reports/data-table/items/?${parameters}`)
-                    .then(response => {
-                        this.items = response.data.items
-                        if (this.items.length == 0) {
-                            this.filterItems()
-                        }
-                    })
-                    .catch(() => {
-                        this.filterItems()
-                    })
-                    .finally(() => {
-                        this.loading_search = false
+                        console.error(resposne)/*
+                                this.items = response.data.items
+                                this.loading_search = false
+                                if(this.items.length == 0){
+                                    this.filterItems()
+                                }*/
                     })
             } else {
                 this.filterItems()
             }
+
         },
-        filterCustomers() {
-            this.customers = this.all_customers
+        searchRemoteUsers(input) {
+            if (input.length > 0) {
+                this.loading_search = true
+                let parameters = `input=${input}`
+                this.$http.post(`/${this.resource}/users`, {id: parameters})
+                    .then(response => {
+                        console.error(resposne)/*
+                                this.items = response.data.items
+                                this.loading_search = false
+                                if(this.items.length == 0){
+                                    this.filterItems()
+                                }*/
+                    })
+            } else {
+                this.filterItems()
+            }
+
         },
-        filterUsers() {
-            this.users = this.all_users
+        searchRemoteItems(input) {
+            if (input.length > 0) {
+                this.loading_search = true
+                let parameters = `input=${input}`
+                this.$http.get(`/reports/data-table/items/?${parameters}`)
+                    .then(response => {
+                        this.items = response.data.items
+                        this.loading_search = false
+                        if (this.items.length == 0) {
+                            this.filterItems()
+                        }
+                    })
+            } else {
+                this.filterItems()
+            }
+
         },
         filterItems() {
             this.items = this.all_items
@@ -367,26 +356,13 @@ export default {
                     { responseType: 'blob' }
                 );
 
-                const contentType = (response.headers && (response.headers['content-type'] || response.headers['Content-Type'])) || response.data.type || '';
-                const looksLikeJsonHeader = contentType.includes('application/json') || contentType.includes('text/json');
-
-                if (looksLikeJsonHeader || (!contentType.includes('pdf') && !contentType.includes('sheet') && !contentType.includes('octet-stream'))) {
+                if (response.data.type === 'application/json') {
                     const text = await response.data.text();
-                    const trimmed = (text || '').trim();
-                    if (trimmed.startsWith('{')) {
-                        try {
-                            const data = JSON.parse(trimmed);
-                            if (data && (data.success !== undefined || data.message)) {
-                                this.$message.success(
-                                    data.message || 'El reporte se está procesando; revísalo en la bandeja de descargas.'
-                                );
-                                return;
-                            }
-                        } catch (e) {
-                            // no era JSON válido
-                        }
-                    }
-                    response.data = new Blob([text], { type: mimeTypes[type] || contentType || 'application/octet-stream' });
+                    const data = JSON.parse(text);
+                    this.$message.success(
+                        data.message || 'El reporte se está procesando; revísalo en la bandeja de descargas.'
+                    );
+                    return;
                 }
 
                 const blob = new Blob([response.data], { type: mimeTypes[type] || response.data.type });

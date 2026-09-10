@@ -340,12 +340,6 @@ class ConfigurationController extends Controller
             'products_per_page' => in_array((int) $request->input('products_per_page'), [8, 12, 16, 24, 32, 40], true)
                 ? (int) $request->input('products_per_page')
                 : (int) data_get($configuration->preferences, 'products_per_page', 16),
-            'image_aspect_ratio' => in_array($request->input('image_aspect_ratio'), ['4:5', '5:4', '1:1'], true)
-                ? $request->input('image_aspect_ratio')
-                : data_get($configuration->preferences, 'image_aspect_ratio', '1:1'),
-            'image_fit' => in_array($request->input('image_fit'), ['cover', 'contain'], true)
-                ? $request->input('image_fit')
-                : data_get($configuration->preferences, 'image_fit', 'contain'),
         ];
 
         if ($request->has('preferences') && is_array($request->input('preferences'))) {
@@ -354,12 +348,6 @@ class ConfigurationController extends Controller
                 if (array_key_exists($key, $prefs)) {
                     $incomingPreferences[$key] = $prefs[$key];
                 }
-            }
-            if (array_key_exists('image_aspect_ratio', $prefs) && in_array($prefs['image_aspect_ratio'], ['4:5', '5:4', '1:1'], true)) {
-                $incomingPreferences['image_aspect_ratio'] = $prefs['image_aspect_ratio'];
-            }
-            if (array_key_exists('image_fit', $prefs) && in_array($prefs['image_fit'], ['cover', 'contain'], true)) {
-                $incomingPreferences['image_fit'] = $prefs['image_fit'];
             }
             if (array_key_exists('trust_badges_enabled', $prefs)) {
                 $incomingPreferences['trust_badges_enabled'] = (int) ((bool) $prefs['trust_badges_enabled']);

@@ -147,7 +147,7 @@
         <td class="align-top"><p class="desc">Vendedor:</p></td>
         <td>
             <p class="desc">
-                {{ $document->getPdfSellerName() }}
+                {{ $document->user->name }}
 
             </p>
         </td>

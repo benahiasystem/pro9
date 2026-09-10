@@ -320,29 +320,9 @@ class SaleNoteController extends Controller
 
     private function getDataSeries($series_id, $id, $number)
     {
-        $series_row = Series::find($series_id);
-        $series = $series_row->number;
+        $series = Series::find($series_id)->number;
 
-        // Una serie asignada a una máquina VendeYa se numera en la máquina;
-        // el flujo online no puede consumirla.
-        if (
-            !app()->bound('sync.batch.bypass')
-            && $series_row->series_device_group_id
-            && class_exists(\Modules\Sync\Models\OfflineMachine::class)
-            && \Illuminate\Support\Facades\Schema::connection('tenant')->hasTable('offline_machines')
-            && \Modules\Sync\Models\OfflineMachine::where('series_device_group_id', $series_row->series_device_group_id)->exists()
-        ) {
-            throw new \Exception(
-                "La serie {$series} está asignada a una máquina VendeYa (conexión offline): " .
-                'usa otra serie o libérala desde el panel de Conexión Offline.'
-            );
-        }
-
-        // En sincronización offline se respeta el número ya impreso. En línea,
-        // el correlativo sigue separado por el ambiente fiscal venezolano.
-        $forced_offline_number = !$id && $number && app()->bound('sync.batch.bypass');
-
-        if (!$id && !$forced_offline_number) {
+        if (!$id) {
             $sale_note = SaleNote::select('number')->where('fiscal_environment', $this->company->fiscal_environment)
                 ->where('series', $series)
                 ->orderBy('number', 'desc')

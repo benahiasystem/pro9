@@ -3183,22 +3183,15 @@
             <div class="sum-body">
                 <table class="table table-totals" v-if="showCartPrices">
                     <tbody>
-                        {{-- El desglose de operación gravada e IGV solo tiene sentido si la
-                             tienda emite comprobantes electrónicos; si no, se muestra el
-                             recuento de productos para que el resumen no quede vacío. --}}
-                        <tr v-if="!enable_electronic_documents">
-                            <td>Productos</td>
-                            <td>@{{ cartUnits }} @{{ cartUnits === 1 ? 'unidad' : 'unidades' }}</td>
-                        </tr>
-                        <tr v-if="enable_electronic_documents && summary.total_exonerated > 0">
+                        <tr v-if="summary.total_exonerated > 0">
                             <td>Op. exoneradas</td>
                             <td>Bs. @{{ summary.total_exonerated }}</td>
                         </tr>
-                        <tr v-if="enable_electronic_documents && summary.total_taxed > 0">
+                        <tr v-if="summary.total_taxed > 0">
                             <td>Op. gravada</td>
                             <td>Bs. @{{ summary.total_taxed }}</td>
                         </tr>
-                        <tr v-if="enable_electronic_documents && summary.total_igv > 0">
+                        <tr v-if="summary.total_igv > 0">
                             {{-- ########## INICIO CAMBIO IGV A IVA --}}
                             <td>IVA (16%)</td>
                             {{-- ######### FIN CAMBIO IGV A IVA --}}
@@ -3248,6 +3241,11 @@
                     <small>Vigencia automática: <strong>@{{ quotationValidityLabel }}</strong></small>
                 </div>
 
+                <label class="terms" :class="{ 'terms--checked': acceptedTerms }" id="termsLabel">
+                  <input type="checkbox" id="termsCheck" v-model="acceptedTerms">
+                  <span class="box"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
+                  <span class="terms-txt">He leído y acepto los <a href="#" data-modal-open="termsModal" @click.prevent>Términos y Condiciones</a>.</span>
+                </label>
                 <div class="checkout-methods">
                     <template v-if="allowPurchase">
                     <p v-if="!isLoggedIn && guestCheckoutAccepted && isGuestCheckoutComplete" class="checkout-hint">
@@ -3301,11 +3299,13 @@
                     </button>
                 </div><!-- End .checkout-methods -->
 
-                {{-- La aceptación pasa a ser implícita al confirmar el pedido. --}}
-                <p class="terms-note">
-                    Al @{{ isQuotationCheckout ? 'enviar tu cotización' : 'realizar la compra' }} aceptas los
-                    <a href="#" data-modal-open="termsModal" @click.prevent>Términos y Condiciones</a>.
-                </p>
+                <div class="trust" v-if="!isQuotationCheckout">
+                    <trust-badges
+                        :badges="trustBadges"
+                        :enabled="trustBadgesEnabled"
+                        :compact="true"
+                    ></trust-badges>
+                </div>
                 <frequently-bought-together
                     v-if="!isQuotationCheckout && cartFbtItemIds.length"
                     :item-ids="cartFbtItemIds"
@@ -3319,9 +3319,7 @@
                 </div>
             </div>
             {{-- ########## INICIO CAMBIO IGV A IVA --}}
-            <div class="secure-foot">
-                Transacción cifrada<template v-if="enable_electronic_documents"> · IVA incluido según ley venezolana</template>
-            </div>
+            <div class="secure-foot">Transacción cifrada · IVA incluido según ley venezolana</div>
             {{-- ######### FIN CAMBIO IGV A IVA --}}
         </div><!-- End .cart-summary -->
       </div><!-- End .summary-sticky -->

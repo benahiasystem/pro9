@@ -62,31 +62,6 @@
       </div>
 
       <div class="mb-2">
-        <strong>Uso por administrador</strong>
-        <div class="text-muted small">Consultas hechas desde el panel de administración</div>
-      </div>
-
-      <div class="table-responsive mb-4">
-        <el-table
-          :data="systemRows"
-          border
-          stripe
-          style="width: 100%;"
-          empty-text="No hay registros disponibles"
-        >
-          <el-table-column label="Origen" min-width="180">
-            <template slot-scope="scope">Administrador (sistema)</template>
-          </el-table-column>
-          <el-table-column prop="quantity" label="Cantidad" width="120">
-            <template slot-scope="scope">
-              {{ formatNumber(scope.row.quantity) }}
-            </template>
-          </el-table-column>
-          <el-table-column prop="month" label="Mes" width="120" />
-        </el-table>
-      </div>
-
-      <div class="mb-2">
         <strong>Uso por cliente</strong>
       </div>
 
@@ -101,11 +76,7 @@
           <el-table-column prop="client_id" label="ID Cliente" width="110" />
           <el-table-column prop="client_name" label="Cliente" min-width="180" />
           <el-table-column prop="hostname" label="Hostname" min-width="240" />
-          <el-table-column prop="quantity" label="Cantidad" width="120">
-            <template slot-scope="scope">
-              {{ formatNumber(scope.row.quantity) }}
-            </template>
-          </el-table-column>
+          <el-table-column prop="quantity" label="Cantidad" width="120" />
           <el-table-column prop="month" label="Mes" width="120" />
         </el-table>
       </div>
@@ -140,7 +111,6 @@ export default {
       loading: false,
       dataLoaded: false,
       rows: [],
-      systemRows: [],
       quota: null,
       currentUsage: {
         monthly: 0,
@@ -218,7 +188,6 @@ export default {
         const data = response?.data?.data || {};
 
         this.rows = data.clients || [];
-        this.systemRows = data.system_usage || [];
         this.quota = data.quota || null;
         this.currentUsage = {
           monthly: data.current_usage?.monthly ?? 0,
@@ -236,7 +205,6 @@ export default {
       } catch (error) {
         console.error('Error fetching apidocs usage:', error);
         this.rows = [];
-        this.systemRows = [];
         this.quota = null;
         this.currentUsage = {
           monthly: 0,

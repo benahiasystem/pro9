@@ -244,31 +244,6 @@
 
 
                     <div class="row" v-if="typeUser != 'integrator'">
-                        <div class="col-md-12 mt-4">
-                            <div class="form-comtrol">
-                                <label class="control-label">Permisos App
-                                    <el-tooltip class="item"
-                                                content="Opciones disponibles para el usuario en la app móvil"
-                                                effect="dark"
-                                                placement="top">
-                                        <i class="fa fa-info-circle"></i>
-                                    </el-tooltip>
-                                </label>
-                            </div>
-                        </div>
-                        <div class="col-md-12 mt-1" v-if="isMainUserForm">
-                            <span class="text-muted">El usuario principal tiene habilitadas todas las opciones de la app.</span>
-                        </div>
-                        <template v-else>
-                            <div class="col-md-4 mt-1" v-for="(app_module, index) in visible_app_modules" :key="index">
-                                <div class="form-comtrol">
-                                    <el-checkbox v-model="app_module.checked">{{ app_module.description }}</el-checkbox>
-                                </div>
-                            </div>
-                        </template>
-                    </div>
-
-                    <div class="row" v-if="typeUser != 'integrator'">
                         <div  class="col-md-12 mt-4">
                             <div class="form-comtrol">
                                 <label class="control-label">Otros Permisos</label>
@@ -707,7 +682,6 @@ export default {
                 document_id: null,
                 modules: [],
                 levels: [],
-                app_modules: [],
                 permission_edit_cpe: false,
                 recreate_documents: false,
 
@@ -715,9 +689,6 @@ export default {
                 restaurant_pin:''
             },
             modules: [],
-            // Módulos aún no implementados en la aplicación móvil.
-            hidden_app_modules: ['order-note', 'report-sales', 'configuration'],
-            app_modules_default: [],
             selectAllModules: false,
             ignoreSelectAllChange: false,
             datai: [],
@@ -742,12 +713,6 @@ export default {
             // no-op kept intentionally
         },
         computed: {
-            visible_app_modules() {
-                return _.filter(this.form.app_modules, (app_module) => !this.hidden_app_modules.includes(app_module.value));
-            },
-            isMainUserForm() {
-                return this.form.id == 1;
-            },
             splitModules() {
                 const half = Math.ceil(this.modules.length / 2);
                 return {
@@ -767,7 +732,6 @@ export default {
             this.config_regex_password_user = response.data.config_regex_password_user
             this.identity_document_types = response.data.identity_document_types
             this.document_types = this.filterDocumentTypes(response.data.documents)
-            this.app_modules_default = response.data.app_modules || []
 
             this.getSeries();
         });
@@ -925,7 +889,6 @@ export default {
                 document_id: null,
                 modules: [],
                 levels: [],
-                app_modules: [],
                 permission_edit_cpe: false,
                 recreate_documents: false,
                 create_payment: true,
@@ -1055,7 +1018,6 @@ export default {
                         // Normalizar bot_enabled (puede venir 1/0/null del backend
                         // y el-switch necesita boolean estricto para reflejar bien).
                         this.form.bot_enabled = !!response.data.data.bot_enabled;
-                        if (!this.form.app_modules) this.form.app_modules = _.cloneDeep(this.app_modules_default);
 
                         if (this.$refs.treeLeft) this.$refs.treeLeft.setCheckedKeys([]);
                         if (this.$refs.treeRight) this.$refs.treeRight.setCheckedKeys([]);
@@ -1096,8 +1058,6 @@ export default {
                     this.types = response.data.types;
                     this.documents = response.data.documents;
                     this.series = response.data.series;
-                    this.app_modules_default = response.data.app_modules || [];
-                    this.form.app_modules = _.cloneDeep(this.app_modules_default);
                 })
             }
 
@@ -1107,7 +1067,7 @@ export default {
         filterDocumentTypes(data)
         {
             return data.filter(element => {
-                return ['01', '80'].includes(element.id)
+                return ['01', '03', '80', '09'].includes(element.id)
             })
         },
         submit() {

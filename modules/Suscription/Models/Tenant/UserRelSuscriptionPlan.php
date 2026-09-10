@@ -1050,17 +1050,16 @@
     public function orderCreationDate(): Carbon
     {
         $date = $this->getCurrentDateOfDue();
-        switch ($this->cat_period_id) {
-            case 1: return Carbon::parse($date)->addMonth();
-            case 2: return Carbon::parse($date)->addYear();
-            case 3: return Carbon::parse($date)->addDay();
-            case 4: return Carbon::parse($date)->addWeek();
-            case 5: return Carbon::parse($date)->addDays(15);
-            case 6: return Carbon::parse($date)->addMonths(2);
-            case 7: return Carbon::parse($date)->addMonths(3);
-            case 8: return Carbon::parse($date)->addMonths(6);
-            default: return Carbon::parse($date)->addMonth();
-        }
+        return match ($this->cat_period_id) {
+            1 => Carbon::parse($date)->addMonth(),
+            2 => Carbon::parse($date)->addYear(),
+            3 => Carbon::parse($date)->addDay(),
+            4 => Carbon::parse($date)->addWeek(),
+            5 => Carbon::parse($date)->addDays(15),
+            6 => Carbon::parse($date)->addMonths(2),
+            7 => Carbon::parse($date)->addMonths(3),
+            8 => Carbon::parse($date)->addMonths(6),
+        };
     }
 
 

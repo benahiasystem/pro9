@@ -9,7 +9,6 @@ use Illuminate\Support\Facades\DB;
  * Inventario de columnas:
  * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
  * - `user_id` int(10) unsigned NOT NULL
- * - `seller_id` int(10) unsigned DEFAULT NULL
  * - `external_id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `establishment_id` int(10) unsigned NOT NULL
  * - `establishment` json NOT NULL
@@ -70,7 +69,6 @@ return new class extends Migration
 CREATE TABLE `order_notes` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `user_id` int(10) unsigned NOT NULL,
-  `seller_id` int(10) unsigned DEFAULT NULL,
   `external_id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
   `establishment_id` int(10) unsigned NOT NULL,
   `establishment` json NOT NULL,
@@ -129,8 +127,7 @@ CREATE TABLE `order_notes` (
   KEY `order_notes_fiscal_environment_foreign` (`fiscal_environment`),
   KEY `order_notes_state_type_id_foreign` (`state_type_id`),
   KEY `order_notes_currency_type_id_foreign` (`currency_type_id`),
-  KEY `order_notes_payment_method_type_id_foreign` (`payment_method_type_id`),
-  KEY `order_notes_seller_id_foreign` (`seller_id`)
+  KEY `order_notes_payment_method_type_id_foreign` (`payment_method_type_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL);
     }

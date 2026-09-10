@@ -159,17 +159,7 @@ class ReportSaleConsolidatedController extends Controller
     private function dataSalesConsolidated($request)
     {
 
-        $document_types = [];
-        if (isset($request['document_type_id'])) {
-            $raw = $request['document_type_id'];
-            if (is_array($raw)) {
-                $document_types = $raw;
-            } elseif (is_string($raw) && $raw !== '') {
-                $decoded = json_decode($raw, true);
-                $document_types = is_array($decoded) ? $decoded : [];
-            }
-        }
-
+        $document_types = isset($request['document_type_id']) ? json_decode($request['document_type_id']) : [];
         $document_items = DocumentItem::whereDefaultDocumentType($request);
         if (!empty($document_types)) {
             $nota_venta = null;

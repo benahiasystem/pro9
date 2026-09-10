@@ -449,16 +449,16 @@ use App\Http\Controllers\Tenant\SaleNoteController;
          */
         private function addPeriodToDate(Carbon $date, string $period, int $qty): Carbon
         {
-            switch ($period) {
-                case 'Y': return $date->addYears($qty);
-                case 'D': return $date->addDays($qty);
-                case 'W': return $date->addWeeks($qty);
-                case 'Q': return $date->addDays($qty * 15);
-                case 'B': return $date->addMonths($qty * 2);
-                case 'T': return $date->addMonths($qty * 3);
-                case 'S': return $date->addMonths($qty * 6);
-                default: return $date->addMonths($qty);
-            }
+            return match ($period) {
+                'Y' => $date->addYears($qty),
+                'D' => $date->addDays($qty),
+                'W' => $date->addWeeks($qty),
+                'Q' => $date->addDays($qty * 15),   // quincenal: 15 días por cobro
+                'B' => $date->addMonths($qty * 2),  // bimestral
+                'T' => $date->addMonths($qty * 3),  // trimestral
+                'S' => $date->addMonths($qty * 6),  // semestral
+                default => $date->addMonths($qty),  // mensual y fallback
+            };
         }
 
         /**
@@ -1183,17 +1183,16 @@ use App\Http\Controllers\Tenant\SaleNoteController;
         public function orderCreationDate(): Carbon
         {
             $date = $this->getCurrentDateOfDue();
-            switch ($this->cat_period_id) {
-                case 1: return Carbon::parse($date)->addMonth();
-                case 2: return Carbon::parse($date)->addYear();
-                case 3: return Carbon::parse($date)->addDay();
-                case 4: return Carbon::parse($date)->addWeek();
-                case 5: return Carbon::parse($date)->addDays(15);
-                case 6: return Carbon::parse($date)->addMonths(2);
-                case 7: return Carbon::parse($date)->addMonths(3);
-                case 8: return Carbon::parse($date)->addMonths(6);
-                default: return Carbon::parse($date)->addMonth();
-            }
+            return match ($this->cat_period_id) {
+                1 => Carbon::parse($date)->addMonth(),
+                2 => Carbon::parse($date)->addYear(),
+                3 => Carbon::parse($date)->addDay(),
+                4 => Carbon::parse($date)->addWeek(),
+                5 => Carbon::parse($date)->addDays(15),
+                6 => Carbon::parse($date)->addMonths(2),
+                7 => Carbon::parse($date)->addMonths(3),
+                8 => Carbon::parse($date)->addMonths(6),
+            };
         }
     }
 // ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

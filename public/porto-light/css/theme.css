@@ -8678,9 +8678,6 @@ html .card-dark .card-title {
     .el-message-box{
         width: 90% !important;
     }
-    .btn-add-new {
-        display: none;
-    }
 }
 @media (min-width: 576px) {
     .card-group .card + .card {
@@ -24704,8 +24701,7 @@ html.sidebar-left-collapsed .sidebar-left .contain-icon-establishment {
 
 .customer-link {
     cursor: pointer;
-    text-decoration: underline;
-    font-weight: 600;
+    text-decoration: none;
 }
 .customer-link:hover,
 .customer-link:focus {

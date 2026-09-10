@@ -295,21 +295,21 @@ class Item extends ModelTenant
     protected function description(): Attribute
     {
         return Attribute::make(
-            fn ($value) => self::clean($value)
+            get: fn ($value) => self::clean($value),
         );
     }
 
     protected function textFilter(): Attribute
     {
         return Attribute::make(
-            fn ($value) => self::clean($value)
+            get: fn ($value) => self::clean($value),
         );
     }
 
     protected function name() : Attribute
     {
         return Attribute::make(
-            fn ($value) => self::clean($value)
+            get: fn ($value) => self::clean($value),
         );
     }
 

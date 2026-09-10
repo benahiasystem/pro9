@@ -501,20 +501,10 @@ return new class extends Migration
         DB::unprepared("ALTER TABLE `webhook_deliveries` ADD CONSTRAINT `webhook_deliveries_webhook_subscription_id_foreign` FOREIGN KEY (`webhook_subscription_id`) REFERENCES `webhook_subscriptions` (`id`) ON DELETE CASCADE");
         DB::unprepared("ALTER TABLE `weighted_average_costs` ADD CONSTRAINT `weighted_average_costs_item_id_foreign` FOREIGN KEY (`item_id`) REFERENCES `items` (`id`)");
         DB::unprepared("ALTER TABLE `workers` ADD CONSTRAINT `workers_identity_document_type_id_foreign` FOREIGN KEY (`identity_document_type_id`) REFERENCES `cat_identity_document_types` (`id`)");
-        DB::unprepared("ALTER TABLE `offline_machines` ADD CONSTRAINT `offline_machines_establishment_id_foreign` FOREIGN KEY (`establishment_id`) REFERENCES `establishments` (`id`)");
-        DB::unprepared("ALTER TABLE `offline_machines` ADD CONSTRAINT `offline_machines_series_device_group_id_foreign` FOREIGN KEY (`series_device_group_id`) REFERENCES `series_device_groups` (`id`)");
-        DB::unprepared("ALTER TABLE `sync_events` ADD CONSTRAINT `sync_events_machine_id_foreign` FOREIGN KEY (`machine_id`) REFERENCES `offline_machines` (`id`)");
-        DB::unprepared("ALTER TABLE `inventories_transfer` ADD CONSTRAINT `inventories_transfer_dispatch_id_foreign` FOREIGN KEY (`dispatch_id`) REFERENCES `dispatches` (`id`) ON DELETE SET NULL");
-        DB::unprepared("ALTER TABLE `order_notes` ADD CONSTRAINT `order_notes_seller_id_foreign` FOREIGN KEY (`seller_id`) REFERENCES `users` (`id`)");
     }
 
     public function down(): void
     {
-        DB::unprepared("ALTER TABLE `order_notes` DROP FOREIGN KEY `order_notes_seller_id_foreign`");
-        DB::unprepared("ALTER TABLE `inventories_transfer` DROP FOREIGN KEY `inventories_transfer_dispatch_id_foreign`");
-        DB::unprepared("ALTER TABLE `sync_events` DROP FOREIGN KEY `sync_events_machine_id_foreign`");
-        DB::unprepared("ALTER TABLE `offline_machines` DROP FOREIGN KEY `offline_machines_series_device_group_id_foreign`");
-        DB::unprepared("ALTER TABLE `offline_machines` DROP FOREIGN KEY `offline_machines_establishment_id_foreign`");
         DB::unprepared("ALTER TABLE `workers` DROP FOREIGN KEY `workers_identity_document_type_id_foreign`");
         DB::unprepared("ALTER TABLE `weighted_average_costs` DROP FOREIGN KEY `weighted_average_costs_item_id_foreign`");
         DB::unprepared("ALTER TABLE `webhook_deliveries` DROP FOREIGN KEY `webhook_deliveries_webhook_subscription_id_foreign`");

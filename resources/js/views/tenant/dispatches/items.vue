@@ -242,8 +242,14 @@
             },
             formatNameProductPdf(value) {
                 if (!value || !String(value).trim()) return '';
-                // Texto plano: el PDF lo imprime igual y no aparecen etiquetas <p>
-                return String(value).trim();
+
+                return String(value)
+                    .trim()
+                    .split(/\r?\n/)
+                    .map(line => line.trim())
+                    .filter(Boolean)
+                    .map(line => `<p>${line}</p>`)
+                    .join('');
             },
             filterItems() {
                 this.items = this.all_items

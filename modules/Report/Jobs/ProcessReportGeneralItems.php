@@ -64,10 +64,7 @@ class ProcessReportGeneralItems implements ShouldQueue
 
         $controller = new \Modules\Report\Http\Controllers\ReportGeneralItemController();
         $records = $controller->getRecordsItems($this->request)->offset($this->offset)->limit($this->limit)->latest('id')->get() ;
-        // Las vistas solo distinguen si es el reporte de notas de venta. Con la
-        // seleccion multiple llega un array, y comparado contra '80' siempre
-        // daria falso.
-        $document_type_id = \Modules\Report\Http\Controllers\ReportGeneralItemController::isSaleNoteReport($this->request['document_type_id'] ?? null) ? '80' : null;
+        $document_type_id = $this->request['document_type_id'];
         $request_apply_conversion_to_pen = $this->request['apply_conversion_to_pen'];
         $type = $this->request['type'];
         $type_prefix = ($type == 'sale') ? 'ventas_' : 'compras_';

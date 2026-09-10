@@ -481,28 +481,12 @@ class Dispatch extends ModelTenant
      */
     public function getDownloadExternalPdfAttribute()
     {
-        return $this->buildDownloadExternalUrl('pdf');
+        return route('tenant.download.external_id', ['model' => 'dispatch', 'type' => 'pdf', 'external_id' => $this->external_id]);
     }
 
     /**
      * @return string
      */
-    /**
-     * En jobs/cola no hay hostname HTTP: las rutas tenant de web.php no se registran.
-     * Evita "Route [tenant.download.external_id] not defined" al exportar reportes.
-     */
-    protected function buildDownloadExternalUrl(string $type): string
-    {
-        if (!\Illuminate\Support\Facades\Route::has('tenant.download.external_id')) {
-            return '';
-        }
-
-        return route('tenant.download.external_id', [
-            'model' => 'dispatch',
-            'type' => $type,
-            'external_id' => $this->external_id,
-        ]);
-    }
     /**
      * @return BelongsTo
      */

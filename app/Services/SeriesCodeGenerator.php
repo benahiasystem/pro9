@@ -52,28 +52,15 @@ class SeriesCodeGenerator
     ];
 
     /**
-     * Series que se siembran al crear un tenant.
-     * Incluye Factura, notas asociadas, documentos avanzados compatibles,
-     * Nota de venta y movimientos internos, sin crear series de Boleta.
+     * Series que se siembran al crear un tenant: básicas, nota de venta y movimientos internos.
      *
-     * @param  int  $establishment_id
-     * @param  bool $is_nrus
+     * @param  int $establishment_id
      * @return array<int, array<string, mixed>>
      */
-    public static function defaultTenantSeries(int $establishment_id, bool $is_nrus = false): array
+    public static function defaultTenantSeries(int $establishment_id): array
     {
         // ########## INICIO CAMBIO QUITAR BOLETAS A CRÉDITO
-        $keys = [
-            'invoice',
-            'credit_note_invoice',
-            'debit_note_invoice',
-            'retention',
-            'dispatch_sender',
-            'sale_note',
-            'warehouse_entry',
-            'warehouse_exit',
-            'warehouse_transfer',
-        ];
+        $keys = ['invoice', 'credit_note_invoice', 'debit_note_invoice', 'sale_note', 'warehouse_entry', 'warehouse_exit', 'warehouse_transfer'];
         // ######### FIN CAMBIO QUITAR BOLETAS A CRÉDITO
         $rows = [];
 

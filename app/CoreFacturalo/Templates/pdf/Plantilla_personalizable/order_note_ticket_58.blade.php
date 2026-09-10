@@ -12,7 +12,7 @@
         ['codigo' => false]
     ));
 
-    $person_type = optional($document->person)->person_type;
+    $person_type = $document->person?->person_type;
 
 @endphp
 <html>
@@ -154,7 +154,7 @@
         <td class="align-top"><p class="desc">Vendedor:</p></td>
         <td>
             <p class="desc">
-                {{ $document->getPdfSellerName() }}
+                {{ $document->user->name }}
 
             </p>
         </td>

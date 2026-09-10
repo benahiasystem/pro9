@@ -343,13 +343,10 @@ export default {
         // Un solo listener por e.key (keyCode como respaldo): más fiable que
         // depender solo de keyCode, que está deprecado.
         this._onKeyup = (e) => this.handleKeyup(e);
-        this._onKeydown = (e) => this.handleKeydown(e);
         window.addEventListener("keyup", this._onKeyup);
-        window.addEventListener("keydown", this._onKeydown);
     },
     beforeDestroy() {
         window.removeEventListener("keyup", this._onKeyup);
-        window.removeEventListener("keydown", this._onKeydown);
     },
     created() {
         this.loadCols();
@@ -376,16 +373,6 @@ export default {
             const decimals = parseInt(this.config.decimal_quantity, 10);
             return n.toFixed(isNaN(decimals) ? 2 : decimals);
         },
-        handleKeydown(e) {
-            const key = e.key || "";
-
-            // Ctrl+B / Cmd+B en keydown: el modificador se lee bien aquí.
-            // La tecla B sola no debe interferir al escribir (ej. "baby").
-            if ((key === "b" || key === "B") && (e.ctrlKey || e.metaKey)) {
-                e.preventDefault();
-                return this.handleFocusSearch();
-            }
-        },
         handleKeyup(e) {
             const key = e.key || "";
             const code = e.keyCode || 0;
@@ -399,6 +386,11 @@ export default {
                     this.pricePick.visible = false;
                 }
                 return;
+            }
+
+            // Ctrl+B (o Cmd+B): saltar al buscador desde cualquier campo
+            if ((key === "b" || key === "B")) {
+                return this.handleFocusSearch();
             }
 
             if (key === "ArrowDown" || code === 40) return this.handle40();
@@ -694,7 +686,7 @@ export default {
             this.$emit("escape");
         },
         /**
-         * Ctrl+B / Cmd+B: enfocar el buscador de productos (desde cualquier
+         * B: enfocar el buscador de productos (funciona desde cualquier
          * campo; Esc también vuelve al buscador pero además limpia).
          */
         handleFocusSearch() {

@@ -34,7 +34,6 @@
     use App\Models\Tenant\Series;
     use App\Services\SeriesResolver;
     use App\Models\Tenant\Warehouse;
-    use App\Models\Tenant\User;
     use App\Traits\OfflineTrait;
     use Exception;
     use Illuminate\Http\Request;
@@ -68,12 +67,6 @@
         use FinanceTrait;
         use StorageDocument;
         use OfflineTrait;
-
-        /**
-         * Items que devuelve la carga inicial del selector (item/tables). El
-         * resto llega por search-items y los guardados por search/item/{id}.
-         */
-        const ITEMS_INITIAL_LIMIT = 20;
 
         protected $order_note;
         protected $company;
@@ -294,22 +287,8 @@
             $document_type_03_filter = config('tenant.document_type_03_filter');
             $payment_method_types = PaymentMethodType::orderBy('id', 'desc')->get();
             $payment_destinations = $this->getPaymentDestinations();
-            $establishment_id = auth()->user()->establishment_id;
-            $userId = auth()->id();
-            $sellers = User::getSellersToNvCpe($establishment_id, $userId);
 
-            return compact(
-                'customers',
-                'establishments',
-                'currency_types',
-                'discount_types',
-                'charge_types',
-                'company',
-                'document_type_03_filter',
-                'payment_method_types',
-                'payment_destinations',
-                'sellers'
-            );
+            return compact('customers', 'establishments', 'currency_types', 'discount_types', 'charge_types', 'company', 'document_type_03_filter', 'payment_method_types', 'payment_destinations');
         }
 
         public function table($table)
@@ -326,7 +305,6 @@
                             'identity_document_type_id' => $row->identity_document_type_id,
                             'identity_document_type_code' => $row->identity_document_type->code,
                             'address' => $row->address,
-                            'seller_id' => $row->seller_id,
                         ];
                     });
                     return $customers;
@@ -440,9 +418,7 @@
         public function item_tables()
         {
             // $items = $this->table('items');
-            // Solo la primera tanda: el selector es remoto (search-items) y los
-            // items guardados se piden por search/item/{id}.
-            $items = SearchItemController::getItemsToOrderNote(null, 0, self::ITEMS_INITIAL_LIMIT);
+            $items = SearchItemController::getItemsToOrderNote();
             $categories = [];
             $affectation_igv_types = AffectationIgvType::whereActive()->get();
             $price_types = PriceType::whereActive()->get();
@@ -532,8 +508,6 @@
             $data = $request->toArray();
             $values = [
                 'user_id' => ($order_note) ? $order_note->user_id : auth()->id(),
-                'seller_id' => $request->input('seller_id')
-                    ?: (($order_note && $order_note->seller_id) ? $order_note->seller_id : auth()->id()),
                 'external_id' => Str::uuid()->toString(),
                 'customer' => PersonInput::set($request->customer_id),
                 'establishment' => EstablishmentInput::set($request->establishment_id),

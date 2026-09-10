@@ -9,7 +9,6 @@ use Modules\Inventory\Traits\InventoryTrait;
 use App\Models\Tenant\Dispatch;
 use App\Models\Tenant\Note;
 use App\Models\Tenant\VoidedDocument;
-use Modules\Inventory\Models\InventoryTransfer;
 
 class InventoryVoidedServiceProvider extends ServiceProvider
 {
@@ -48,26 +47,29 @@ class InventoryVoidedServiceProvider extends ServiceProvider
                             $warehouse = ($detail->warehouse_id) ? $this->findWarehouse($this->findWarehouseById($detail->warehouse_id)->establishment_id) : $this->findWarehouse($document['establishment_id']);
 
                             $presentationQuantity = (!empty($detail['item']->presentation)) ? $detail['item']->presentation->quantity_unit : 1;
-                            $restoreQty = $detail['quantity'] * $presentationQuantity;
 
-                            // Guía relacionada ya anulada: el stock ya se reingresó al anular la guía
-                            if ($this->documentRelatedDispatchAlreadyRestoredStock($detail->document)) {
-                                continue;
+                            $this->createInventoryKardex($document, $detail['item_id'], $detail['quantity'] * $presentationQuantity, $warehouse->id);
+
+                            if(!$detail->document->sale_note_id && !$detail->document->order_note_id && !$detail->document->dispatch_id && !$detail->document->sale_notes_relateds){
+
+                                $this->updateStock($detail['item_id'], $detail['quantity'] * $presentationQuantity, $warehouse->id);
+
+                            }else{
+
+                                if($detail->document->dispatch){
+
+                                    if(!$detail->document->dispatch->transfer_reason_type->discount_stock){
+                                        // $warehouse = $this->findWarehouse($document['establishment_id']);
+                                        $this->updateStock($detail['item_id'], $detail['quantity'] * $presentationQuantity, $warehouse->id);
+                                    }
+                                }
                             }
 
-                            $this->createInventoryKardex($document, $detail['item_id'], $restoreQty, $warehouse->id);
-
-                            if ($this->shouldRestoreStockOnDocumentVoid($detail->document)) {
-                                $this->updateStock($detail['item_id'], $restoreQty, $warehouse->id);
-                                $this->updateDataLots($detail);
-                            }
+                            $this->updateDataLots($detail);
 
                         }
                         else{
-                            // Guía ya anulada: no reingresar de nuevo vía sets
-                            if ($this->documentRelatedDispatchAlreadyRestoredStock($detail->document)) {
-                                continue;
-                            }
+
                             $this->voidedDocumentItemSet($detail);
 
                         }
@@ -79,55 +81,6 @@ class InventoryVoidedServiceProvider extends ServiceProvider
                 }
             }
         });
-    }
-
-    /**
-     * Indica si al anular el CPE debe reingresar stock físico.
-     * - Sin guía / NV / pedido: sí
-     * - Con guía que NO descontó: sí
-     * - Con guía que SÍ descontó y aún no está anulada: sí (el descuento lo hizo la guía;
-     *   al anular el CPE se devuelve una sola vez; la guía ya no debe volver a devolver)
-     * - Con guía que SÍ descontó y ya está anulada: no (ya reingresó la guía)
-     */
-    private function shouldRestoreStockOnDocumentVoid(Document $document): bool
-    {
-        if ($document->sale_note_id || $document->order_note_id || $document->sale_notes_relateds) {
-            return false;
-        }
-
-        if (!$document->dispatch_id) {
-            return true;
-        }
-
-        $dispatch = $document->dispatch;
-        if (!$dispatch) {
-            return true;
-        }
-
-        $transferReason = $dispatch->transfer_reason_type;
-        if (!$transferReason || !$transferReason->discount_stock) {
-            return true;
-        }
-
-        // Guía descontó: solo reingresar si la guía todavía no fue anulada
-        return !in_array($dispatch->state_type_id, ['09', '11'], true);
-    }
-
-    /**
-     * El CPE no debe tocar inventario si su guía relacionada ya reingresó stock.
-     */
-    private function documentRelatedDispatchAlreadyRestoredStock(Document $document): bool
-    {
-        if (!$document->dispatch_id) {
-            return false;
-        }
-
-        $dispatch = $document->dispatch;
-        if (!$dispatch || !$dispatch->transfer_reason_type || !$dispatch->transfer_reason_type->discount_stock) {
-            return false;
-        }
-
-        return in_array($dispatch->state_type_id, ['09', '11'], true);
     }
 
 
@@ -284,17 +237,6 @@ class InventoryVoidedServiceProvider extends ServiceProvider
             }
             if(isset($dispatch->transfer_reason_type->discount_stock) && $dispatch->transfer_reason_type->discount_stock){
 
-                    // CPE generado desde esta guía ya anulado: el stock ya se reingresó al anular el CPE
-                    if ($this->dispatchRelatedDocumentAlreadyRestoredStock($dispatch)) {
-                        return;
-                    }
-
-                    // Motivo 04: revertir el traslado inventario (destino → origen)
-                    if ($dispatch->transfer_reason_type_id === '04') {
-                        $this->reverseInventoryTransferFromDispatch($dispatch);
-                        return;
-                    }
-
                     $warehouse = $this->findWarehouse($dispatch->establishment_id);
 
                     foreach ($dispatch->items as $detail) {
@@ -309,50 +251,6 @@ class InventoryVoidedServiceProvider extends ServiceProvider
                     }
             }
         });
-    }
-
-    /**
-     * Revierte el InventoryTransfer creado por la guía (motivo 04).
-     */
-    private function reverseInventoryTransferFromDispatch(Dispatch $dispatch): void
-    {
-        $transfer = InventoryTransfer::query()->where('dispatch_id', $dispatch->id)->first();
-        if (!$transfer) {
-            // Fallback: descuento simple sin traslado registrado
-            $warehouse = $this->findWarehouse($dispatch->establishment_id);
-            foreach ($dispatch->items as $detail) {
-                $this->createInventoryKardex($dispatch, $detail->item_id, $detail->quantity, $warehouse->id);
-                if (!$detail->dispatch->reference_sale_note_id && !$detail->dispatch->reference_order_note_id && !$detail->dispatch->reference_document_id) {
-                    $this->updateStock($detail->item_id, $detail->quantity, $warehouse->id);
-                }
-                $this->updateDataLots($detail);
-            }
-            return;
-        }
-
-        foreach ($transfer->inventories as $inventory) {
-            // Quitar del destino
-            $this->createInventoryKardex($dispatch, $inventory->item_id, -1 * $inventory->quantity, $inventory->warehouse_destination_id);
-            $this->updateStock($inventory->item_id, -1 * $inventory->quantity, $inventory->warehouse_destination_id);
-            // Devolver al origen
-            $this->createInventoryKardex($dispatch, $inventory->item_id, $inventory->quantity, $inventory->warehouse_id);
-            $this->updateStock($inventory->item_id, $inventory->quantity, $inventory->warehouse_id);
-        }
-
-        foreach ($dispatch->items as $detail) {
-            $this->updateDataLots($detail);
-        }
-    }
-
-    /**
-     * Evita doble reingreso: si el CPE ligado a la guía (documents.dispatch_id)
-     * ya está anulado/rechazado, el stock ya se devolvió ahí.
-     */
-    private function dispatchRelatedDocumentAlreadyRestoredStock(Dispatch $dispatch): bool
-    {
-        return Document::where('dispatch_id', $dispatch->id)
-            ->whereIn('state_type_id', ['09', '11'])
-            ->exists();
     }
 
 

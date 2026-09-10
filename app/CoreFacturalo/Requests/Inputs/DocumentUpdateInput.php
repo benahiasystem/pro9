@@ -259,12 +259,9 @@ class DocumentUpdateInput
                 foreach ($inputs['charges'] as $row) {
                     $charge_type_id = $row['charge_type_id'];
                     $description = $row['description'];
-                    // Cast defensivo: un factor/base nulo o vacio (fila sin
-                    // montos, cliente de API) se serializa como tag vacio en el
-                    // XML y SUNAT rechaza el comprobante.
-                    $factor = (float) ($row['factor'] ?? 0);
-                    $amount = (float) ($row['amount'] ?? 0);
-                    $base = (float) ($row['base'] ?? 0);
+                    $factor = $row['factor'];
+                    $amount = $row['amount'];
+                    $base = $row['base'];
 
                     $charges[] = [
                         'charge_type_id' => $charge_type_id,
@@ -290,12 +287,9 @@ class DocumentUpdateInput
                 foreach ($inputs['discounts'] as $row) {
                     $discount_type_id = $row['discount_type_id'];
                     $description = $row['description'];
-                    // Cast defensivo: un factor/base nulo o vacio (fila sin
-                    // montos, cliente de API) se serializa como tag vacio en el
-                    // XML y SUNAT rechaza el comprobante.
-                    $factor = (float) ($row['factor'] ?? 0);
-                    $amount = (float) ($row['amount'] ?? 0);
-                    $base = (float) ($row['base'] ?? 0);
+                    $factor = $row['factor'];
+                    $amount = $row['amount'];
+                    $base = $row['base'];
                     $is_amount = $row['is_amount'] ?? null; //registra si el descuento fue por monto o porcentaje
 
                     $discounts[] = [
@@ -323,9 +317,8 @@ class DocumentUpdateInput
                 foreach ($inputs['prepayments'] as $row) {
                     $number = $row['number'];
                     $document_type_id = $row['document_type_id'];
-                    // Mismo motivo: cbc:PaidAmount no puede ir vacio.
-                    $amount = (float) ($row['amount'] ?? 0);
-                    $total = (float) ($row['total'] ?? 0);
+                    $amount = $row['amount'];
+                    $total = $row['total'];
 
                     $prepayments[] = [
                         'number' => $number,

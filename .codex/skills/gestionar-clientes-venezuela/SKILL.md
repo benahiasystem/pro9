@@ -28,13 +28,11 @@ description: Mantener el alta, edición, catálogo, persistencia y presentación
 ## Selección y persistencia
 
 - El tipo de documento debe mostrarse siempre sólo con su descripción: `Venezolano`, `Extranjero`, `Pasaporte`, `Juridico`, `Comuna`, `Gubernamental`, `Firma Personal` o `Doc.sin.rif`.
-- La Cédula de Identidad venezolana corresponde al tipo contractual `Venezolano` (`id = 1`) y se presenta con prefijo `V-`.
 - No concatenar la letra del documento al nombre del tipo en selectores, tablas, formularios, reportes, PDFs ni respuestas de presentación. Son incorrectas etiquetas como `Venezolano V`, `Juridico J` o `Pasaporte P`.
 - Guardar en `persons.identity_document_type_id` el `id` del registro elegido, no la letra visible salvo cuando ambos coinciden. Por tanto: Venezolano=`1`, Extranjero=`E`, Pasaporte=`7`, Juridico=`6`, Comuna=`C`, Gubernamental=`G`, Firma Personal=`R` y Doc.sin.rif=`0`.
 - En el alta y la edición de clientes, aceptar y guardar en `persons.number` únicamente dígitos ASCII (`0-9`). Rechazar letras, espacios, signos, guiones y cualquier otro carácter especial tanto en `PersonRequest` como en el formulario Vue; no eliminar ni normalizar silenciosamente esos caracteres antes de validar.
 - Mantener los prefijos `V-`, `J-`, `P-`, `E-`, `C-`, `G-` y `R-` fuera del campo editable. Añadirlos únicamente al presentar el documento mediante el formateador centralizado.
 - Validar en backend que `identity_document_type_id` pertenezca al catálogo contractual; no confiar sólo en el selector Vue.
-- Aplicar normalización estructural de `addresses` en `PersonRequest::prepareForValidation` antes de ejecutar las reglas de validación.
 
 ## Presentación global
 

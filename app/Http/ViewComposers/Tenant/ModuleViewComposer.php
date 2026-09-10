@@ -37,5 +37,8 @@ class ModuleViewComposer
 
         $view->useLoginGlobal = $systemConfig->use_login_global;
 
+        $view->tenant_show_ads = $systemConfig->tenant_show_ads;
+        $view->url_tenant_image_ads = $systemConfig->getUrlTenantImageAds();
+
     }
 }

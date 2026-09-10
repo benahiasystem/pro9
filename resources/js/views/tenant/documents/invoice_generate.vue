@@ -2806,6 +2806,7 @@ export default {
             preloadedCustomer: null,
             sellers: [],
             company: null,
+            document_type_03_filter: null,
             operation_types: [],
             establishments: [],
             payment_method_types: [],
@@ -2813,10 +2814,6 @@ export default {
             // all_series: [],
             // series: [],
             prepayment_documents: [],
-            // Filas de anticipo que no se pueden usar (comprobante sin cargar o
-            // montos invalidos). Estado interno: no se pinta en el formulario,
-            // se lista en la alerta que bloquea el envio.
-            invalid_prepayments: [],
             currency_type: {},
             documentNewId: null,
             customerCurrent: null,
@@ -2833,6 +2830,7 @@ export default {
             user: null,
             is_receivable: false,
             is_contingency: false,
+            select_first_document_type_03: false,
             customer_addresses: [],
             payment_destinations: [],
             form_cash_document: {},
@@ -3541,10 +3539,6 @@ export default {
                 this.operation_types = this.sortOperationTypes(
                     response.data.operation_types
                 );
-                const excludedOperationTypes = ["0501", "0502", "0503", "1001", "1002", "1003", "1004"];
-                this.operation_types_filter = this.operation_types.filter(
-                    operationType => !excludedOperationTypes.includes(operationType.id)
-                );
                 this.is_restaurant_active = response.data.is_restaurant_active;
                 this.restaurant_tip_factor = response.data.restaurant_tip_factor;
                 this.$store.commit("setAllSeries", response.data.series);
@@ -3558,19 +3552,23 @@ export default {
                     response.data.enabled_discount_global;
                 this.company = response.data.company;
                 this.user = response.data.user;
+                this.document_type_03_filter =
+                    response.data.document_type_03_filter;
+                this.select_first_document_type_03 =
+                    response.data.select_first_document_type_03;
                 // this.form.currency_type_id = (this.currency_types.length > 0)?this.currency_types[0].id:null;
                 this.form.establishment_id =
                     this.establishments.length > 0
                         ? this.establishments[0].id
                         : null;
                 this.form.document_type_id = this.isNrus
-                    ? null
+                    ? "03"
                     : this.document_types.length > 0
                         ? this.document_types[0].id
                         : null;
                 this.form.operation_type_id =
-                    this.operation_types_filter.length > 0
-                        ? this.operation_types_filter[0].id
+                    this.operation_types.length > 0
+                        ? this.operation_types[0].id
                         : null;
                 this.form.seller_id = this.sellers.length > 0 ? this.idUser : null;
                 this.affectation_igv_types = response.data.affectation_igv_types;
@@ -4261,14 +4259,7 @@ export default {
             if (this.isCreditPaymentCondition) {
                 // credito
                 if (this.form.payment_condition_id === "02") {
-                    // Las cuotas ya vienen de la cotizacion (form.fee). Agregar
-                    // otra dejaba una fila de mas, y encima el bloque de abajo
-                    // escribe siempre sobre fee[0]: la fila recien agregada
-                    // quedaba al final, sin tocar y con valores por defecto.
-                    if (this.form.fee.length === 0) {
-                        this.clickAddFeeNew();
-                    }
-
+                    this.clickAddFeeNew();
                     const index = 0;
                     this.readonly_date_of_due = true;
 
@@ -4442,70 +4433,27 @@ export default {
                 id: this.form.prepayments[index].document_id
             });
         },
-        /**
-         * Motivo por el que una fila de anticipo no es utilizable, o null si
-         * esta completa. Se valida sobre number/document_type_id porque son los
-         * campos que viajan al XML; document_id no se persiste, asi que al
-         * recuperar un comprobante guardado las filas llegan sin el y solo se
-         * exige que resuelva cuando el usuario si eligio algo en el selector.
-         */
-        getPrepaymentRowError(row) {
-            if (
-                row.document_id &&
-                !_.find(this.prepayment_documents, { id: row.document_id })
-            ) {
-                return "no se cargó el comprobante seleccionado";
-            }
-
-            if (!row.number || !row.document_type_id) {
-                return "falta seleccionar el comprobante";
-            }
-
-            const amount = parseFloat(row.amount);
-            const total = parseFloat(row.total);
-
-            if (
-                !isFinite(amount) ||
-                amount <= 0 ||
-                !isFinite(total) ||
-                total <= 0
-            ) {
-                return "el monto no es válido";
-            }
-
-            return null;
-        },
-        validatePrepayments() {
-            return {
-                success: this.invalid_prepayments.length === 0,
-                message: this.invalid_prepayments.join(" | ")
-            };
-        },
         inputAmountPrepayment(index) {
-            const row = this.form.prepayments[index];
-            const prepayment = this.getPrepayment(index);
+            let prepayment = this.getPrepayment(index);
 
-            // Sin el documento en la lista (todavia no carga, o ya se consumio)
-            // esto reventaba con TypeError y dejaba la fila a medio calcular.
-            if (!prepayment) return;
-
-            const max_amount = this.toDecimal(prepayment.amount);
-            let amount = this.toDecimal(row.amount);
-
-            // Solo se pisa row.amount si excede el tope: @input dispara en cada
-            // tecla y reescribir el modelo rompe el tipeo de decimales.
-            if (amount > max_amount) {
-                amount = max_amount;
-                row.amount = max_amount;
+            if (
+                parseFloat(this.form.prepayments[index].amount) >
+                parseFloat(prepayment.amount)
+            ) {
+                this.form.prepayments[index].amount = prepayment.amount;
                 this.$message.error(
                     "El monto debe ser menor o igual al del anticipo"
                 );
             }
 
-            row.total =
-                parseInt(this.form.affectation_type_prepayment, 10) === 10
-                    ? this.toDecimal(amount * (1 + this.percentage_igv))
-                    : amount;
+            this.form.prepayments[index].total =
+                this.form.affectation_type_prepayment == 10
+                    ? _.round(
+                          this.form.prepayments[index].amount *
+                              (1 + this.percentage_igv),
+                          2
+                      )
+                    : this.form.prepayments[index].amount;
 
             this.changeTotalPrepayment();
         },
@@ -4646,73 +4594,39 @@ export default {
             return _.round(price, 2);
             // return unit_price.toFixed(6)
         },
-        /**
-         * Normaliza a numero finito redondeado. parseFloat de "", null o
-         * undefined devuelve NaN, y NaN se serializa como null en el JSON: el
-         * XML termina con <cbc:BaseAmount/> y <cbc:MultiplierFactorNumeric/>
-         * vacios y SUNAT rechaza el comprobante.
-         */
-        toDecimal(value, decimals = 2) {
-            const number = parseFloat(value);
-
-            return isFinite(number) ? _.round(number, decimals) : 0;
-        },
         discountGlobalPrepayment() {
             let global_discount = 0;
             let sum_total_prepayment = 0;
 
-            this.invalid_prepayments = [];
-
-            this.form.prepayments.forEach((item, index) => {
-                const error = this.getPrepaymentRowError(item);
-
-                // Una fila incompleta se acumulaba como 0 via toDecimal y el
-                // anticipo se deducia de menos sin avisar. Se excluye, se avisa
-                // en el formulario y validatePrepayments() corta el envio.
-                if (error) {
-                    this.invalid_prepayments.push(
-                        `Anticipo ${index + 1}: ${error}`
-                    );
-                    return;
-                }
-
-                global_discount += this.toDecimal(item.amount);
-                sum_total_prepayment += this.toDecimal(item.total);
+            this.form.prepayments.forEach(item => {
+                global_discount += parseFloat(item.amount);
+                sum_total_prepayment += parseFloat(item.total);
             });
 
             // let base = (this.form.affectation_type_prepayment == 10) ? parseFloat(this.form.total_taxed):parseFloat(this.form.total_exonerated)
             let base = 0;
 
-            // parseInt: el select entrega numero, pero al recuperar un documento
-            // guardado la afectacion puede venir como texto y el switch es
-            // estricto, con lo que base quedaba en 0 y el factor salia NaN.
-            switch (parseInt(this.form.affectation_type_prepayment, 10)) {
+            switch (this.form.affectation_type_prepayment) {
                 case 10:
-                    base = this.toDecimal(this.form.total_taxed) + global_discount;
+                    base = parseFloat(this.form.total_taxed) + global_discount;
                     // base = parseFloat(this.form.total_taxed)
                     break;
                 case 20:
                     base =
-                        this.toDecimal(this.form.total_exonerated) +
+                        parseFloat(this.form.total_exonerated) +
                         global_discount;
                     break;
                 case 30:
                     base =
-                        this.toDecimal(this.form.total_unaffected) +
+                        parseFloat(this.form.total_unaffected) +
                         global_discount;
                     break;
             }
 
-            // Redondear la base: la suma en punto flotante puede dejar cola
-            // (1100.1500000000001) y SUNAT solo admite 2 decimales.
-            base = this.toDecimal(base);
+            let amount = _.round(global_discount, 2);
+            let factor = _.round(amount / base, 5);
 
-            let amount = this.toDecimal(global_discount);
-            // Sin base no hay operaciones de esa afectacion: amount / base seria
-            // NaN o Infinity y el factor viajaria vacio.
-            let factor = base > 0 ? this.toDecimal(amount / base, 5) : 0;
-
-            this.form.total_prepayment = this.toDecimal(sum_total_prepayment);
+            this.form.total_prepayment = _.round(sum_total_prepayment, 2);
             // this.form.total_prepayment = _.round(global_discount, 2)
 
             if (this.form.affectation_type_prepayment == 10) {
@@ -4840,19 +4754,11 @@ export default {
                 id: this.form.prepayments[index].document_id
             });
 
-            // El anticipo pudo consumirse en otra pestania: sin la guarda esto
-            // lanzaba TypeError y cortaba el recalculo de totales.
-            if (!prepayment) return;
-
             this.form.prepayments[index].number = prepayment.description;
             this.form.prepayments[index].document_type_id =
                 prepayment.document_type_id;
-            this.form.prepayments[index].amount = this.toDecimal(
-                prepayment.amount
-            );
-            this.form.prepayments[index].total = this.toDecimal(
-                prepayment.total
-            );
+            this.form.prepayments[index].amount = prepayment.amount;
+            this.form.prepayments[index].total = prepayment.total;
 
             await this.changeTotalPrepayment();
         },
@@ -4876,7 +4782,6 @@ export default {
         async changePrepaymentDeduction() {
             this.form.prepayments = [];
             this.form.total_prepayment = 0;
-            this.invalid_prepayments = [];
             await this.deletePrepaymentDiscount();
 
             if (this.prepayment_deduction) {
@@ -5149,8 +5054,8 @@ export default {
                     ? this.document_types[0].id
                     : null;
             this.form.operation_type_id =
-                this.operation_types_filter.length > 0
-                    ? this.operation_types_filter[0].id
+                this.operation_types.length > 0
+                    ? this.operation_types[0].id
                     : null;
             this.form.seller_id = this.sellers.length > 0 ? this.idUser : null;
             this.selectDocumentType();
@@ -5387,7 +5292,23 @@ export default {
         filterCustomers() {
             const protectCustomer = this.shouldProtectPreloadedCustomer();
 
-            this.customers = this.all_customers;
+            if (
+                this.form.operation_type_id === "0101"
+            ) {
+                if (this.form.document_type_id === "01") {
+                    this.customers = this.all_customers;
+                } else {
+                    if (this.document_type_03_filter) {
+                        this.customers = _.filter(this.all_customers, c => {
+                            return c.identity_document_type_id !== "6";
+                        });
+                    } else {
+                        this.customers = this.all_customers;
+                    }
+                }
+            } else {
+                this.customers = this.all_customers;
+            }
 
             this.ensurePreloadedCustomerInList();
         },
@@ -6441,15 +6362,9 @@ export default {
             }
             // ######### FIN CAMBIO IGV A IVA
 
-            const percentage_base = this.isGlobalDiscountBase
-                ? total_base
-                : parseFloat(ctx.total);
-
-            if (!this.is_amount && percentage_base <= 0) return;
-
             let global_amount = this.is_amount
                 ? parseFloat(amount_discount)
-                : _.round((parseFloat(amount_discount) / 100) * percentage_base, 2);
+                : _.round((parseFloat(amount_discount) / 100) * total_base, 2);
 
             // Suma de los items que reciben descuento (denominador de la formula)
             let sum_items_value = _.sumBy(this.form.items, item => {
@@ -6718,16 +6633,23 @@ export default {
             const total = total_value + total_taxes;
 
             const quantity = parseFloat(item.quantity) || 1;
-            // Precio de venta unitario después de los descuentos de la línea.
+            // 3270: precio unitario de la operación = total de línea con impuestos / cant.
             const unit_price_operation =
-                quantity > 0
-                    ? (total - discount_no_base) / quantity
-                    : orig.unit_price;
+                quantity > 0 ? total / quantity : orig.unit_price;
 
-            // unit_value conserva el valor original; unit_price refleja el descuento.
+            // 3271: unit_value ORIGINAL; 3270: unit_price = precio operación post-dto.
+            //
+            // Si el descuento NO afecta la base imponible (catalogo 53 '01') el
+            // item queda intacto: total_value y total_igv no cambian, asi que el
+            // precio unitario tampoco puede cambiar sin romper 3270
+            // (PriceAmount ≈ (LineExtensionAmount + IGV) / cantidad).
+            // Antes se hacia `orig.unit_price - discount_no_base`, que resta un
+            // importe de linea a un precio unitario: con cantidad > 1 el precio
+            // caia el descuento completo en lugar de la parte proporcional, y ni
+            // siquiera con cantidad 1 cuadraba contra total_value.
             item.unit_value = orig.unit_value;
             item.unit_price =
-                discount_base > 0 || discount_no_base > 0
+                discount_base > 0
                     ? _.round(unit_price_operation, 6)
                     : orig.unit_price;
             item.total_value = _.round(total_value, 2);
@@ -6909,14 +6831,6 @@ export default {
                 let error_prepayment = await this.validateAffectationTypePrepayment();
                 if (!error_prepayment.success)
                     return this.$message.error(error_prepayment.message);
-            }
-
-            // Emitir con una fila de anticipo incompleta deduce menos de lo que
-            // el usuario cree y deja el comprobante de anticipo sin consumir.
-            if (this.prepayment_deduction) {
-                let error_rows = this.validatePrepayments();
-                if (!error_rows.success)
-                    return this.$message.error(error_rows.message);
             }
 
             if (this.is_receivable) {
@@ -7603,14 +7517,6 @@ export default {
                 let error_prepayment = await this.validateAffectationTypePrepayment();
                 if (!error_prepayment.success) {
                     this.$message.error(error_prepayment.message);
-                    return false;
-                }
-            }
-
-            if (this.prepayment_deduction) {
-                let error_rows = this.validatePrepayments();
-                if (!error_rows.success) {
-                    this.$message.error(error_rows.message);
                     return false;
                 }
             }

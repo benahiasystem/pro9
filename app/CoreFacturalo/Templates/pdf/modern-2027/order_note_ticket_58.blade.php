@@ -10,7 +10,7 @@
      ------------------------------------------------------------------ */
     $max_chars_description = 28;
 
-    $m27_seller = strtoupper($document->getPdfSellerName() ?? '');
+    $m27_seller = strtoupper(optional($document->user)->name ?? '');
 
     $m27_igv_percentage = collect($document->items)
         ->map(function ($it) { return (float) ($it->percentage_igv ?? 0); })

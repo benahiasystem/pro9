@@ -21,7 +21,7 @@
                                        @change="ChangedSalesnote">
                                 <el-option :value="null" label="TODOS"></el-option>
                                 <el-option key="CREADOR" value="CREADOR" label="Registrado por"></el-option>
-                                <el-option v-show="!isSaleNoteSelection" key="VENDEDOR" value="VENDEDOR" label="Vendedor asignado"></el-option>
+                                <el-option v-show="form.document_type_id !== '80'" key="VENDEDOR" value="VENDEDOR" label="Vendedor asignado"></el-option>
                             </el-select>
                         </div>
                         <div class="col-md-2 form-group">
@@ -96,10 +96,7 @@
                             <div class="form-group">
                                 <label class="control-label">Tipo de documento</label>
                                 <el-select v-model="form.document_type_id"
-                                           multiple
-                                           collapse-tags
-                                           placeholder="Todos"
-                                           @change="changeDocumentTypes"
+                                           @change="ChangedSalesnote"
                                            clearable>
                                     <el-option v-for="option in document_types" :key="option.id" :value="option.id" :label="option.description"></el-option>
                                 </el-select>
@@ -262,8 +259,6 @@
                 records: [],
                 headers: headers_token,
                 document_types: [],
-                // Seleccion anterior del filtro de tipos, para saber cual se agrego.
-                previous_document_type_ids: [],
                 pagination: {},
                 search: {},
                 totals: {},
@@ -301,13 +296,6 @@
                 showLeftShadow: false,
                 showRightShadow: false,
             }
-        },
-        computed: {
-            // Es el reporte de notas de venta solo si 80 es lo unico elegido.
-            isSaleNoteSelection() {
-                const ids = this.form.document_type_id || []
-                return ids.length === 1 && ids[0] === '80'
-            },
         },
         created() {
 
@@ -379,8 +367,6 @@
             changeDcoumentType() {
                 let not_include_purchase = ['07', '80'];
                 this.document_types = this.document_types.filter( it => !not_include_purchase.includes(it.id));
-                this.form.document_type_id = this.form.document_type_id.filter(id => !not_include_purchase.includes(id));
-                this.previous_document_type_ids = this.form.document_type_id.slice();
                 
 
             },
@@ -456,7 +442,7 @@
                 this.form.format = type
                 let query = queryString.stringify({
                     ...this.form
-                }, { arrayFormat: 'bracket' });
+                });
 
                 this.$http.get(`/${this.resource}/report?${query}`)
                     .then((response) => {
@@ -477,8 +463,7 @@
 
                 this.form = {
                     type: 'sale',
-                    // Vacio = todos los comprobantes; con elegidos, solo esos.
-                    document_type_id: [],
+                    document_type_id:null,
                     item_id: null,
                     period: 'month',
                     user: null,
@@ -495,28 +480,10 @@
                     user_id: null,
                     apply_conversion_to_pen: this.applyConversionToPen
                 }
-                this.previous_document_type_ids = []
 
-            },
-            /**
-             * La nota de venta (80) vive en otra tabla y no se consulta junto con
-             * comprobantes: elegirla deja solo esa, y elegir otro tipo la quita.
-             */
-            changeDocumentTypes(value) {
-                const selected = value || []
-                const added = selected.filter(id => !this.previous_document_type_ids.includes(id))
-
-                if (added.includes('80')) {
-                    this.form.document_type_id = ['80']
-                } else if (added.length && selected.includes('80')) {
-                    this.form.document_type_id = selected.filter(id => id !== '80')
-                }
-
-                this.previous_document_type_ids = this.form.document_type_id.slice()
-                this.ChangedSalesnote()
             },
             ChangedSalesnote(){
-              if(this.isSaleNoteSelection && this.form.user_type != null ){
+              if(this.form.document_type_id == '80' && this.form.user_type != null ){
                   this.form.user_type = 'CREADOR';
               }
             },
@@ -546,13 +513,11 @@
 
             },
             getQueryParameters() {
-                // bracket: sin esto el array sale como claves repetidas y PHP se
-                // queda solo con la ultima.
                 return queryString.stringify({
                     page: this.pagination.current_page,
                     limit: this.limit,
                     ...this.form
-                }, { arrayFormat: 'bracket' })
+                })
             },
 
             changeDisabledDates() {

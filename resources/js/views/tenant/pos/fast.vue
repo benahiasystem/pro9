@@ -1889,13 +1889,8 @@ export default {
             }
         },
         reloadDataCustomers(customer_id) {
-            // customer_id va como parametro para que el backend, que ahora
-            // devuelve una tanda acotada, garantice al cliente recien creado
-            // aunque no entre en el tope alfabetico.
             this.$http
-                .get(`/${this.resource}/table/customers`, {
-                    params: { customer_id }
-                })
+                .get(`/${this.resource}/table/customers`)
                 .then(response => {
                     this.all_customers = response.data;
                     this.form.customer_id = customer_id;

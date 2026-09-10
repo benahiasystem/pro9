@@ -42,7 +42,6 @@ use Modules\Dispatch\Models\DispatchAddress;
 use App\Models\Tenant\PersonAddress;
 use App\Models\Tenant\PriceLabel;
 use App\Models\Tenant\SaleNote;
-use Illuminate\Database\Eloquent\Collection;
 use Modules\QrApi\Http\Controllers\QrApiController;
 use Modules\BusinessTurn\Models\BusinessTurn;
 use Modules\MobileApp\Http\Controllers\Api\BankAccountController;
@@ -63,10 +62,6 @@ class MobileController extends Controller
 
         $company = Company::active();
         $configuration = Configuration::first();
-        /** @var Collection */
-        $business_turn = BusinessTurn::all();
-        $configuration_tap = DB::connection('tenant')->table('configuration_taps')->first();
-
         $business_turn_tap = BusinessTurn::where('value','tap')->first();
 
         $user = $request->user();
@@ -99,16 +94,6 @@ class MobileController extends Controller
                 'qr_api_key_ws' => $configuration->qr_api_apiKey,
                 'url_logo' => ($company->logo)?asset('storage/uploads/logos/'.$company->logo):'',
                 'logo_base64' => $company->logo ? 'data:image/png;base64,' . base64_encode(file_get_contents(public_path('storage/uploads/logos/' . $company->logo))) : '',
-                'business_turn' => [
-                    'tap'  => [
-                        'active' => optional($business_turn->where('value','tap')->first())->active,
-                        'save_plates_client' => optional($configuration_tap)->save_plates_client
-                    ],
-                    'hotel'  => ['active' => optional($business_turn->where('value','hotel')->first())->active],
-                    'transport'  => ['active' => optional($business_turn->where('value','transport')->first())->active],
-                    'pharmarcy'  => ['active' => optional($business_turn->where('value','pharmarcy')->first())->active],
-                    'restaurant'  => ['active' => optional($business_turn->where('value','restaurant')->first())->active],
-                ],
                 'is_business_turn_tap' => ($business_turn_tap)?$business_turn_tap->active:0,
             ],
             'app_configuration' => $this->getAppConfiguration(),
@@ -897,7 +882,7 @@ class MobileController extends Controller
     {
         // Sin orderBy: la consulta solo devuelve agregados y no lleva GROUP BY, asi que
         // ordenar por una columna normal hace que MySQL responda el error 1140.
-        $documents = Document::whereTypeUser()->whereStateTypeAccepted();
+        $documents = Document::whereTypeUser();
         $sale_notes = SaleNote::whereTypeUser();
 
         if ($startDate != null)
@@ -906,17 +891,10 @@ class MobileController extends Controller
             $sale_notes->whereBetween('date_of_issue', [$startDate, $endDate]);
         }
 
-        // Igual que el dashboard: facturas, boletas y notas de debito suman; notas de credito descuentan
         $documents = $documents
                 ->selectRaw("
                     COUNT(CASE WHEN document_type_id = '01' THEN 1 END) AS facturas,
-                    COUNT(CASE WHEN document_type_id = '07' THEN 1 END) AS notasCredito,
-                    COUNT(CASE WHEN document_type_id = '08' THEN 1 END) AS notasDebito,
-                    COALESCE(SUM(CASE
-                        WHEN document_type_id IN ('01', '08') THEN total
-                        WHEN document_type_id = '07' THEN -total
-                        ELSE 0
-                    END), 0) AS total,
+                    COALESCE(SUM(total), 0) AS total,
                     COUNT(*) AS count
                 ")->first();
 
@@ -930,8 +908,6 @@ class MobileController extends Controller
             'total' => round((float) $documents->total + (float) $sale_notes->total, 2),
             'count' => (int) $documents->count + (int) $sale_notes->notasVenta,
             'facturas' => (int) $documents->facturas,
-            'notasCredito' => (int) $documents->notasCredito,
-            'notasDebito' => (int) $documents->notasDebito,
             'notasVenta' => (int) $sale_notes->notasVenta,
         ];
     }

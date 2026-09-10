@@ -11,25 +11,12 @@ use Illuminate\Http\Resources\Json\ResourceCollection;
 class GeneralItemCollection extends ResourceCollection
 {
 
-    /**
-     * Compra ya resuelta por item y fecha de venta. null = memo apagado.
-     *
-     * @var array|null
-     */
-    private static $purchase_price_cache = null;
-
     public function toArray($request)
     {
 
         $apply_conversion_to_pen = $request->apply_conversion_to_pen == 'true';
 
-        // Memo del precio de compra solo mientras se arma esta pagina: filas del
-        // mismo producto y fecha repetian las mismas consultas. Fuera de toArray
-        // (vistas de excel/pdf en jobs) queda apagado, para no arrastrar precios
-        // entre ejecuciones de un worker.
-        self::$purchase_price_cache = [];
-
-        $rows = $this->collection->transform(function ($row, $key) use($apply_conversion_to_pen){
+        return $this->collection->transform(function ($row, $key) use($apply_conversion_to_pen){
 
             /** @var \App\Models\Tenant\DocumentItem|\App\Models\Tenant\PurchaseItem|mixed|\App\Models\Tenant\SaleNoteItem|mixed $row */
             $resource = self::getDocument($row);
@@ -55,12 +42,10 @@ class GeneralItemCollection extends ResourceCollection
 
             $utility_item = $row_total - $total_item_purchase;
             // $utility_item = $row->total - $total_item_purchase;
-            // relation_item y web_platform llegan precargados desde records():
-            // getModelItem() y getWebPlatformModel() hacian un find por fila, y el
-            // Item arrastra 7 relaciones por su $with.
-            $item = $row->relation_item;
+
+            $item = $row->getModelItem();
             $model = $item->model;
-            $platform = $item->web_platform;
+            $platform = $item->getWebPlatformModel();
             if($platform !== null){
                 $platform = $platform->name;
             }
@@ -114,10 +99,6 @@ class GeneralItemCollection extends ResourceCollection
                 'description_apply_conversion_to_pen' => $description_apply_conversion_to_pen,
             ];
         });
-
-        self::$purchase_price_cache = null;
-
-        return $rows;
     }
 
     public static function getPurchaseUnitPrice($record, $resource = null,&$purchase_item = null)
@@ -144,41 +125,24 @@ class GeneralItemCollection extends ResourceCollection
         // Se busca la compra del producto en el dia o antes de su venta,
         // para sacar la ganancia correctamente
 
-        $cache_key = $record->item_id.'|'.$resource['date_of_issue'];
-
-        if (self::$purchase_price_cache !== null && array_key_exists($cache_key, self::$purchase_price_cache)) {
-            [$purchase_item, $purchase] = self::$purchase_price_cache[$cache_key];
-        } else {
-            // Una sola consulta: la ultima compra (por id) del producto en esa
-            // fecha o antes y, dentro de ella, su ultimo renglon. Antes eran
-            // cuatro: la primera traia todo el historial de compras del producto
-            // y dos cargaban la compra completa con items, pagos y relaciones.
-            $purchase_item = PurchaseItem::query()
-                ->setEagerLoads([])
-                ->select(
-                    'purchase_items.*',
-                    'purchases.currency_type_id as purchase_currency_type_id',
-                    'purchases.exchange_rate_sale as purchase_exchange_rate_sale'
-                )
-                ->join('purchases', 'purchases.id', '=', 'purchase_items.purchase_id')
-                ->where('purchase_items.item_id', $record->item_id)
-                ->where('purchases.date_of_issue', '<=', $resource['date_of_issue'])
-                ->orderByDesc('purchases.id')
-                ->orderByDesc('purchase_items.id')
-                ->first();
-
-            $purchase = $purchase_item ? (object) [
-                'currency_type_id' => $purchase_item->purchase_currency_type_id,
-                'exchange_rate_sale' => $purchase_item->purchase_exchange_rate_sale,
-            ] : null;
-
-            if (self::$purchase_price_cache !== null) {
-                self::$purchase_price_cache[$cache_key] = [$purchase_item, $purchase];
-            }
-        }
+        // La tabla purchase items parece eliminar due of date
+        $purchase_item = PurchaseItem::where('item_id', $record->item_id)
+            ->latest('id')->get()->pluck('purchase_id');
+        // para ello se busca las compras
+        $purchase = Purchase::wherein('id',$purchase_item)
+            ->where('date_of_issue', '<=', $resource['date_of_issue'])
+        ->latest('id')->first();
 
         if ($purchase) {
+            $purchase_item = PurchaseItem::where([
+                'purchase_id'=> $purchase->id,
+                'item_id'=> $record->item_id
+            ])
+                ->latest('id')
+                ->first();
+
             $purchase_unit_price = $purchase_item->unit_price;
+            $purchase = Purchase::find($purchase_item->purchase_id);
             $exchange_rate_sale = $purchase->exchange_rate_sale * 1;
             // Si la venta es en bolívares, y la compra del producto es en dolares, se hace la transformcaion
             if ($currency_type_id === 'VES') {

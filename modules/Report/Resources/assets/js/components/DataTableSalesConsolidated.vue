@@ -395,27 +395,13 @@ export default {
                         { responseType: 'blob' }
                     );
 
-                    const contentType = (response.headers && (response.headers['content-type'] || response.headers['Content-Type'])) || response.data.type || '';
-                    const looksLikeJsonHeader = contentType.includes('application/json') || contentType.includes('text/json');
-
-                    if (looksLikeJsonHeader || !contentType.includes('pdf') && !contentType.includes('sheet') && !contentType.includes('octet-stream')) {
+                    if (response.data.type === 'application/json') {
                         const text = await response.data.text();
-                        const trimmed = (text || '').trim();
-                        if (trimmed.startsWith('{')) {
-                            try {
-                                const data = JSON.parse(trimmed);
-                                if (data && (data.success !== undefined || data.message)) {
-                                    this.$message.success(
-                                        data.message || 'El reporte se está procesando; revísalo en la bandeja de descargas.'
-                                    );
-                                    return;
-                                }
-                            } catch (e) {
-                                // no era JSON válido
-                            }
-                        }
-                        // Reconstruir blob si no era mensaje de bandeja
-                        response.data = new Blob([text], { type: mimeTypes[type] || contentType || 'application/octet-stream' });
+                        const data = JSON.parse(text);
+                        this.$message.success(
+                            data.message || 'El reporte se está procesando; revísalo en la bandeja de descargas.'
+                        );
+                        return;
                     }
 
                     const blob = new Blob([response.data], { type: mimeTypes[type] || response.data.type });

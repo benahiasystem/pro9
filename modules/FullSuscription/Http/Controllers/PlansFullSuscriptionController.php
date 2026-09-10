@@ -394,21 +394,22 @@ use Modules\Payment\Models\PaymentConfiguration;
 
         public function returnStatus(string $status)
         {
-            return in_array($status, ['PAID', 'venta_exitosa'], true)
-                ? UserRelSuscriptionPlan::STATUS_AUTHORIZED
-                : UserRelSuscriptionPlan::STATUS_PAUSED;
+            return match($status) {
+                'PAID' => UserRelSuscriptionPlan::STATUS_AUTHORIZED,
+                'venta_exitosa' => UserRelSuscriptionPlan::STATUS_AUTHORIZED,
+                default => UserRelSuscriptionPlan::STATUS_PAUSED,
+            };
         }
 
         public function returnStatusOrder(string $status)
         {
             // Izipay y Culqi
-            if (in_array($status, ['venta_exitosa', 'PAID'], true)) {
-                return SuscriptionOrder::STATUS_PAID;
-            }
-
-            return $status === 'operacion_denegada'
-                ? SuscriptionOrder::STATUS_REJECTED
-                : SuscriptionOrder::STATUS_PENDING;
+            return match($status) {
+                'venta_exitosa' => SuscriptionOrder::STATUS_PAID,
+                'operacion_denegada' => SuscriptionOrder::STATUS_REJECTED,
+                'PAID' => SuscriptionOrder::STATUS_PAID,
+                default => SuscriptionOrder::STATUS_PENDING,
+            };
         }
 
     }

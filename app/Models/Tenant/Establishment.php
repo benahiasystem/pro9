@@ -141,7 +141,7 @@ class Establishment extends ModelTenant
     {
         $templates = func_get_templates();
         return Attribute::make(
-            fn ($value) => in_array($value, $templates) ? $value : 'default'
+            get: fn ($value) => in_array($value, $templates) ? $value : 'default',
         );
     }
 
@@ -154,7 +154,7 @@ class Establishment extends ModelTenant
     {
         $templates = func_get_templates();
         return Attribute::make(
-            fn ($value) => in_array($value, $templates) ? $value : 'default'
+            get: fn ($value) => in_array($value, $templates) ? $value : 'default',
         );
     }
 

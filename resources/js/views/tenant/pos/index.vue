@@ -147,20 +147,6 @@
                                 <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 14l-4 -4l4 -4" /><path d="M5 10h11a4 4 0 1 1 0 8h-1" /></svg>
                             </el-button>
                         </el-tooltip>
-                        <el-tooltip
-                            class="item"
-                            effect="dark"
-                            content="Configuración de vista"
-                            placement="top-start"
-                        >
-                            <el-button
-                                type="button"
-                                @click="openPosViewSettings"
-                                class="btn btn-custom btn-sm me-2 me-sm-0"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065z"/><path d="M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0"/></svg>
-                            </el-button>
-                        </el-tooltip>
                     </el-button-group>
                 </div>
             </div>
@@ -335,7 +321,7 @@
                                 >
                                     {{ item.description }}
                                 </p> -->
-                                <div class="pos-card-media" :class="[posImageAspectClass, posImageFitClass]">
+                                <div class="pos-card-media">
                                     <img
                                         :src="item.image_url"
                                         class="img-thumbail img-custom"
@@ -1135,58 +1121,6 @@
         :itemUnitTypes="itemUnitTypes"
     >
     </item-unit-types>
-
-    <el-dialog
-        title="Configuración de vista"
-        :visible.sync="showDialogPosView"
-        class="pos-view-dialog"
-        width="440px"
-    >
-        <div class="pos-view-dialog__body">
-            <label class="control-label">Relación de aspecto de la imagen</label>
-            <el-radio-group v-model="pos_view_form.pos_image_aspect_ratio" class="pos-view-dialog__ratios">
-                <div
-                    v-for="ratio in pos_image_aspect_ratios"
-                    :key="ratio.value"
-                    class="pos-view-dialog__ratio"
-                    :class="{ 'is-active': pos_view_form.pos_image_aspect_ratio === ratio.value }"
-                    @click="pos_view_form.pos_image_aspect_ratio = ratio.value"
-                >
-                    <el-radio :label="ratio.value">
-                        <span class="pos-view-dialog__shape" :class="'pos-view-dialog__shape--' + ratio.value.replace(':', '-')"></span>
-                        <span class="pos-view-dialog__ratio-text">{{ ratio.label }}</span>
-                    </el-radio>
-                </div>
-            </el-radio-group>
-
-            <label class="control-label pt-3">Cómo se acomoda la foto</label>
-            <el-radio-group v-model="pos_view_form.pos_image_fit" class="pos-view-dialog__fits">
-                <div
-                    v-for="fit in pos_image_fits"
-                    :key="fit.value"
-                    class="pos-view-dialog__fit"
-                    :class="{ 'is-active': pos_view_form.pos_image_fit === fit.value }"
-                    @click="pos_view_form.pos_image_fit = fit.value"
-                >
-                    <el-radio :label="fit.value">
-                        <span class="pos-view-dialog__fit-text">
-                            <span class="pos-view-dialog__fit-title">{{ fit.label }}</span>
-                            <small class="pos-view-dialog__fit-hint">{{ fit.hint }}</small>
-                        </span>
-                    </el-radio>
-                </div>
-            </el-radio-group>
-
-            <label class="control-label pt-3">Visualización de productos</label>
-            <el-select v-model="pos_view_form.colums_grid_item" class="w-100">
-                <el-option v-for="option in pos_grid_options" :key="option.value" :label="option.label" :value="option.value"></el-option>
-            </el-select>
-        </div>
-        <span slot="footer" class="dialog-footer">
-            <el-button @click="showDialogPosView = false">Cancelar</el-button>
-            <el-button type="primary" :loading="loading_pos_view" @click="savePosViewSettings">Guardar</el-button>
-        </span>
-    </el-dialog>
 </div>
 </template>
 <style>
@@ -1576,33 +1510,6 @@ export default {
             // al usuario sin que tenga que mirar el número fijamente
             card_busy_id: null,
             card_flash_id: null,
-            showDialogPosView: false,
-            loading_pos_view: false,
-            pos_image_aspect_ratios: [
-                { value: "4:5", label: "4:5 Vertical" },
-                { value: "5:4", label: "5:4 Horizontal" },
-                { value: "1:1", label: "1:1 Cuadrado" }
-            ],
-            pos_image_fits: [
-                { value: "contain", label: "Mostrar la foto completa", hint: "Se ve toda la foto, sin recortes. Puede quedar espacio a los lados." },
-                { value: "cover", label: "Llenar el recuadro", hint: "La foto cubre todo el espacio. Se recortan los bordes que sobran." }
-            ],
-            pos_grid_options: [
-                { value: 2, label: "Predeterminado" },
-                { value: 3, label: "Cómodo" },
-                { value: 4, label: "Compacto" },
-                { value: 5, label: "Apilado" }
-            ],
-            pos_view_settings: {
-                pos_image_aspect_ratio: "1:1",
-                pos_image_fit: "contain",
-                colums_grid_item: 2
-            },
-            pos_view_form: {
-                pos_image_aspect_ratio: "1:1",
-                pos_image_fit: "contain",
-                colums_grid_item: 2
-            },
             showDialogItemUnitTypes: false,
             history_item_id: null,
             search_item_by_barcode: false,
@@ -1685,7 +1592,6 @@ export default {
     async created() {
         await this.loadPriceOptions();
         this.loadConfiguration();
-        this.loadPosViewSettings();
         this.enabledSearchItemByBarcode();
         this.$store.commit("setConfiguration", this.configuration2);
 
@@ -1713,15 +1619,8 @@ export default {
         await this.restoreViewPreference();
     },
     computed: {
-        posImageAspectClass() {
-            const ratio = this.pos_view_settings.pos_image_aspect_ratio || "1:1";
-            return "pos-card-media--" + ratio.replace(":", "-");
-        },
-        posImageFitClass() {
-            return "pos-card-media--fit-" + (this.pos_view_settings.pos_image_fit || "contain");
-        },
         layout_mode() {
-            const cols = parseInt(this.pos_view_settings.colums_grid_item, 10);
+            const cols = parseInt(this.configuration.colums_grid_item, 10);
             switch (cols) {
                 case 2:
                     return "default";
@@ -1765,7 +1664,7 @@ export default {
             );
         },
         classObjectCol() {
-            let cols = this.pos_view_settings.colums_grid_item;
+            let cols = this.configuration.colums_grid_item;
 
             let clase = "c3";
             switch (cols) {
@@ -1932,56 +1831,6 @@ export default {
             } else if (saved !== "cat") {
                 this.enabledCategoriesProductsView();
             }
-        },
-        loadPosViewSettings() {
-            const cfg = this.configuration || {};
-            const ratio = this.pos_image_aspect_ratios.some(r => r.value === cfg.pos_image_aspect_ratio)
-                ? cfg.pos_image_aspect_ratio
-                : "1:1";
-            const fit = this.pos_image_fits.some(f => f.value === cfg.pos_image_fit)
-                ? cfg.pos_image_fit
-                : "contain";
-
-            this.pos_view_settings = {
-                pos_image_aspect_ratio: ratio,
-                pos_image_fit: fit,
-                colums_grid_item: parseInt(cfg.colums_grid_item, 10) || 2
-            };
-        },
-        openPosViewSettings() {
-            this.pos_view_form = Object.assign({}, this.pos_view_settings);
-            this.showDialogPosView = true;
-        },
-        savePosViewSettings() {
-            this.loading_pos_view = true;
-
-            this.$http
-                .post(`/${this.resource}/view-settings`, this.pos_view_form)
-                .then(response => {
-                    if (!response.data.success) {
-                        return this.$message.error(response.data.message);
-                    }
-
-                    this.pos_view_settings = {
-                        pos_image_aspect_ratio: response.data.data.pos_image_aspect_ratio,
-                        pos_image_fit: response.data.data.pos_image_fit,
-                        colums_grid_item: response.data.data.colums_grid_item
-                    };
-                    this.showDialogPosView = false;
-                    this.$message.success(response.data.message);
-                })
-                .catch(error => {
-                    if (error.response && error.response.status === 422) {
-                        const errors = error.response.data.errors || {};
-                        const first = Object.keys(errors)[0];
-                        return this.$message.error(first ? errors[first][0] : "No se pudo guardar la configuración de vista");
-                    }
-
-                    this.$message.error("No se pudo guardar la configuración de vista");
-                })
-                .finally(() => {
-                    this.loading_pos_view = false;
-                });
         },
         setFocusInInputSearch() {
             this.$nextTick(() => {

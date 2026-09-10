@@ -216,7 +216,7 @@
                                      class="form-group">
                                     <label class="control-label">
                                         Estado / Municipio / Parroquia
-                                        <span v-if="form.country_id === 'VE' && !isPersonWithOptionalAddress()" class="text-danger">*</span>
+                                        <span v-if="form.country_id === 'VE'" class="text-danger">*</span>
                                     </label>
                                     <el-cascader v-model="form.location_id"
                                                  :clearable="true"
@@ -227,13 +227,10 @@
                                     <small v-if="errors.location_id"
                                            class="form-control-feedback"
                                            v-text="errors.location_id[0]"></small>
-                                    <small v-if="form.country_id === 'VE' && !isPersonWithOptionalAddress()" class="text-muted">
+                                    <small v-if="form.country_id === 'VE'" class="text-muted">
                                         Campo obligatorio
                                     </small>
-                                    <small v-else-if="form.country_id === 'VE'" class="text-muted">
-                                        Opcional
-                                    </small>
-                                    <small v-else class="text-muted">
+                                    <small v-if="form.country_id !== 'VE'" class="text-muted">
                                         Estado / Municipio / Parroquia solo disponible para Venezuela
                                     </small>
                                 </div>
@@ -461,7 +458,7 @@
                                      class="form-group">
                                     <label class="control-label">
                                         Estado / Municipio / Parroquia
-                                        <span v-if="row.country_id === 'VE' && !isPersonWithOptionalAddress()" class="text-danger">*</span>
+                                        <span v-if="row.country_id === 'VE'" class="text-danger">*</span>
                                     </label>
                                     <el-cascader v-model="row.location_id"
                                                  :key="`address-ubigeo-${index}-${locations.length}`"
@@ -472,11 +469,8 @@
                                     <small v-if="errors.location_id"
                                            class="form-control-feedback"
                                            v-text="errors.location_id[0]"></small>
-                                    <small v-if="row.country_id === 'VE' && !isPersonWithOptionalAddress()" class="text-muted">
+                                    <small v-if="row.country_id === 'VE'" class="text-muted">
                                         Campo obligatorio
-                                    </small>
-                                    <small v-else-if="row.country_id === 'VE'" class="text-muted">
-                                        Opcional
                                     </small>
                                     <small v-else class="text-muted">
                                         Estado / Municipio / Parroquia solo disponible para Venezuela
@@ -1244,7 +1238,7 @@ export default {
         },
         isPersonWithOptionalAddress() {
             // DNI: persona natural sin RIF.
-            if (String(this.form.identity_document_type_id ?? '') === '1') return true
+            if (this.form.identity_document_type_id === '1') return true
 
             return false
         },

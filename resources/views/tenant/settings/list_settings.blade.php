@@ -239,14 +239,6 @@
                         </a>
                     </li>
                     @endif
-                    @if (Route::has('tenant.sync.index'))
-                    <li>
-                        <a href="{{route('tenant.sync.index')}}">
-                            <i class="ti ti-device-desktop"></i>Vendeya Escritorio (Offline)
-                            <sup style="background: #ffc300;padding: 3px 3px;border-radius: 4px;">Nuevo</sup>
-                        </a>
-                    </li>
-                    @endif
                     @if (Route::has('tenant.product-variables.index'))
                     <li>
                         <a href="{{route('tenant.product-variables.index')}}">

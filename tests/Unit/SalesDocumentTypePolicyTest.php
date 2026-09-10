@@ -77,8 +77,6 @@ class SalesDocumentTypePolicyTest extends TestCase
                 ['establishment_id' => 7, 'document_type_id' => '01', 'number' => 'FF01'],
                 ['establishment_id' => 7, 'document_type_id' => '07', 'number' => 'FC01'],
                 ['establishment_id' => 7, 'document_type_id' => '08', 'number' => 'FD01'],
-                ['establishment_id' => 7, 'document_type_id' => '20', 'number' => 'RR01'],
-                ['establishment_id' => 7, 'document_type_id' => '09', 'number' => 'TT01'],
                 ['establishment_id' => 7, 'document_type_id' => '80', 'number' => 'NV01'],
                 ['establishment_id' => 7, 'document_type_id' => 'U2', 'number' => 'AI01'],
                 ['establishment_id' => 7, 'document_type_id' => 'U3', 'number' => 'AS01'],

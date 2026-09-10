@@ -75,7 +75,7 @@ class ListRecentDocumentsTool implements ToolInterface
                 'id' => $d->id,
                 'number_full' => $d->series . '-' . $d->number,
                 'type' => 'factura',
-                'date' => optional($d->date_of_issue)->format('Y-m-d'),
+                'date' => $d->date_of_issue?->format('Y-m-d'),
                 'customer_name' => optional($d->person)->name,
                 'customer_document' => optional($d->person)->number,
                 'total' => (float) $d->total,
@@ -86,14 +86,13 @@ class ListRecentDocumentsTool implements ToolInterface
 
     private function stateDescription(?string $stateId): string
     {
-        $states = [
+        return match ($stateId) {
             '01' => 'registrado',
             '05' => 'aceptado',
             '07' => 'rechazado',
             '11' => 'anulado',
             '13' => 'por anular',
-        ];
-
-        return $states[$stateId] ?? 'desconocido';
+            default => 'desconocido',
+        };
     }
 }
