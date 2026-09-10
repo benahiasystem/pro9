@@ -33,7 +33,6 @@ class ReportStateAccountController extends Controller
 
         $document_types = DocumentType::whereIn('id',[
                 '01',// factura
-                '03',// boleta
                 //'07', // nota de credito
                 //'08',// nota de debito
                 '80', // nota de venta
@@ -65,7 +64,7 @@ class ReportStateAccountController extends Controller
         if ($request->has('document_type_id')) {
             $documentTypeId = str_replace('"', '', $request->document_type_id);
         };
-        
+
         $documentType = DocumentType::find($documentTypeId);
             /* if (null === $documentType) {
                 $documentType = new DocumentType();
@@ -100,8 +99,7 @@ class ReportStateAccountController extends Controller
                 'total_free',
                 'total_taxed',
                 'total_igv',
-                'total',
-                'total_isc')->with(['person'=> function ($query) {
+                'total')->with(['person'=> function ($query) {
                 $query->select('id','name', 'number');
             }])->with(['fiscal_environment_type'=> function ($q) {
                 $q->select('id','description');
@@ -129,8 +127,7 @@ class ReportStateAccountController extends Controller
                 'total_free',
                 'total_taxed',
                 'total_igv',
-                'total',
-                'total_isc')->with(['customer'=> function ($query) {
+                'total')->with(['customer'=> function ($query) {
                 $query->select('id','name', 'number');
             }])->with(['fiscal_environment_type'=> function ($q) {
                 $q->select('id','description');
@@ -150,14 +147,14 @@ class ReportStateAccountController extends Controller
     }
 
     public function excel(Request $request) {
-        
+
         $company = Company::first();
         $establishment = ($request->establishment_id) ? Establishment::findOrFail($request->establishment_id) : auth()->user()->establishment;
 
         $documentTypeId = null;
         if ($request->has('document_type_id')) {
             $documentTypeId = str_replace('"', '', $request->document_type_id);
-            
+
         }
         $documentType = DocumentType::find($documentTypeId);
         if ($documentType!=null) {
@@ -185,7 +182,6 @@ class ReportStateAccountController extends Controller
                 'total_taxed',
                 'total_igv',
                 'total',
-                'total_isc',
                 'total_charge',
                 'plate_number',
                 'customer_id',
@@ -219,7 +215,6 @@ class ReportStateAccountController extends Controller
                 'total_taxed',
                 'total_igv',
                 'total',
-                'total_isc',
                 'plate_number',
                 'observation',
                 'document_id',
@@ -239,8 +234,8 @@ class ReportStateAccountController extends Controller
             //$records_documents = $records_documents->put('class', 'SaleNote');
             $records = $records_documents->concat($records_sales);
         }
-        
-        
+
+
         $filters = $request->all();
 
         //get categories

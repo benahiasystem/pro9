@@ -123,8 +123,6 @@ class TemplateData
         $model->total_exonerated = $record->document->total_exonerated;
         $model->total_igv = $record->document->total_igv;
         $model->total_igv_free = $record->document->total_igv_free;
-        $model->total_base_isc = $record->document->total_base_isc;
-        $model->total_isc = $record->document->total_isc;
         $model->total_base_other_taxes = $record->document->total_base_other_taxes;
         $model->total_other_taxes = $record->document->total_other_taxes;
         $model->total_icbper = $record->document->total_icbper;
@@ -164,10 +162,6 @@ class TemplateData
             $document_item->total_base_igv = $item->total_base_igv;
             $document_item->percentage_igv = $item->percentage_igv;
             $document_item->total_igv = $item->total_igv;
-            $document_item->system_isc_type_id = $item->system_isc_type_id;
-            $document_item->total_base_isc = $item->total_base_isc;
-            $document_item->percentage_isc = $item->percentage_isc;
-            $document_item->total_isc = $item->total_isc;
             $document_item->total_base_other_taxes = $item->total_base_other_taxes;
             $document_item->percentage_other_taxes = $item->percentage_other_taxes;
             $document_item->total_other_taxes = $item->total_other_taxes;

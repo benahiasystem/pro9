@@ -205,8 +205,8 @@
                 row.total_unaffected = q.total_unaffected
                 row.total_exonerated = q.total_exonerated
                 row.total_igv = q.total_igv
-                row.total_base_isc = q.total_base_isc
-                row.total_isc = q.total_isc
+
+
                 row.total_base_other_taxes = q.total_base_other_taxes
                 row.total_other_taxes = q.total_other_taxes
                 row.total_taxes = q.total_taxes

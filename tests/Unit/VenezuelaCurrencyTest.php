@@ -96,19 +96,15 @@ class VenezuelaCurrencyTest extends TestCase
     }
 
     /** @test */
-    public function currency_migration_converts_every_reference_before_removing_legacy_codes(): void
+    public function currency_is_initialized_without_a_conversion_migration(): void
     {
-        $migration = (string) file_get_contents(
-            database_path('migrations/tenant/2026_08_17_000329_migrate_currency_code_to_ves.php')
-        );
-
-        self::assertStringContainsString("NATIONAL_CURRENCY_ID = 'VES'", $migration);
-        self::assertStringContainsString("SECONDARY_CURRENCY_ID = 'USD'", $migration);
-        self::assertStringContainsString("'symbol' => 'Bs.'", $migration);
-        self::assertStringContainsString("'description' => 'Bolívares'", $migration);
-        self::assertStringContainsString("whereIn('COLUMN_NAME', self::REFERENCE_COLUMNS)", $migration);
-        self::assertStringContainsString("whereIn('id', self::LEGACY_CURRENCY_IDS)", $migration);
-        self::assertStringContainsString('no altera importes', $migration);
+        self::assertSame([], glob(database_path('migrations/tenant/*_migrate_currency_code_to_ves.php')));
+        $payload = require database_path('seeders/data/tenant_initial_data.php');
+        $ids = array_column($payload['tables']['cat_currency_types']['rows'], 'id');
+        self::assertContains('VES', $ids);
+        self::assertContains('USD', $ids);
+        self::assertNotContains('PEN', $ids);
+        self::assertNotContains('VED', $ids);
     }
 
     /** @test */

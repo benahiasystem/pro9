@@ -33,9 +33,6 @@
                 <br>
                 <hr>
                 <p class="mb-2">Para restaurar los archivos descargados debe copiar todas carpetas dentro de la carpeta del cliente.</p>
-                <code>cp [path_del_zip]/signed storage/app/tenancy/tenants/tenancy_[subdominio del cliente]</code> <br>
-                <code>cp [path_del_zip]/unsigned storage/app/tenancy/tenants/tenancy_[subdominio del cliente]</code> <br>
-                <code>cp [path_del_zip]/cdr storage/app/tenancy/tenants/tenancy_[subdominio del cliente]</code> <br>
                 <code>cp [path_del_zip]/pdf storage/app/tenancy/tenants/tenancy_[subdominio del cliente]</code> <br>
                 <p>Repetir para todas las carpetas que estan dentro del .zip</p>
             </div>

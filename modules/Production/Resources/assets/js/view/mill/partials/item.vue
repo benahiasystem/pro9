@@ -215,7 +215,7 @@ export default {
             all_affectation_igv_types: [],
             aux_items: [],
             affectation_igv_types: [],
-            system_isc_types: [],
+
             discount_types: [],
             charge_types: [],
             unit_types: [],
@@ -247,7 +247,7 @@ export default {
         this.$http.get(`/${this.resource}/item/tables`).then(response => {
             this.items = response.data.items
             this.affectation_igv_types = response.data.affectation_igv_types
-            this.system_isc_types = response.data.system_isc_types
+
             this.discount_types = response.data.discount_types
             this.charge_types = response.data.charge_types
             this.attribute_types = response.data.attribute_types

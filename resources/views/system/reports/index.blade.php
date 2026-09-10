@@ -124,16 +124,6 @@
                                             <i class="fa fa-download"></i>
                                             <a href="{{asset($value->download_pdf)}}" class="descarga" target="_blank">PDF</a>
                                         </div>
-                                        <div>
-                                            <i class="fa fa-download"></i>
-                                            <a href="{{asset($value->download_xml)}}" class="descarga" target="_blank">XML</a>
-                                        </div>
-                                            @if($value->state_type_id !== '01')
-                                        <div>
-                                            <i class="fa fa-download"></i>
-                                            <a href="{{asset($value->download_cdr)}}" class="descarga" target="_blank">CDR</a>
-                                        </div>
-                                            @endif
                                         @endif
                                     </td>
                                 </tr>
@@ -198,4 +188,3 @@
 </script>
 
 @endpush
-

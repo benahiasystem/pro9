@@ -42,8 +42,6 @@ class SaleNoteResource2 extends JsonResource
             'total_unaffected' => $this->total_unaffected,
             'total_exonerated' => $this->total_exonerated,
             'total_igv' => $this->total_igv,
-            'total_base_isc' => $this->total_base_isc,
-            'total_isc' => $this->total_isc,
             'total_base_other_taxes' => $this->total_base_other_taxes,
             'total_other_taxes' => $this->total_other_taxes,
             'total_taxes' => $this->total_taxes,
@@ -69,24 +67,24 @@ class SaleNoteResource2 extends JsonResource
         ];
     }
 
-    
+
     public static function getTransformPayments($payments){
-        
-        return $payments->transform(function($row, $key){ 
+
+        return $payments->transform(function($row, $key){
             return [
-                'id' => $row->id, 
-                'sale_note_id' => $row->sale_note_id, 
-                'date_of_payment' => $row->date_of_payment->format('Y-m-d'), 
-                'payment_method_type_id' => $row->payment_method_type_id, 
-                'has_card' => $row->has_card, 
-                'card_brand_id' => $row->card_brand_id, 
-                'reference' => $row->reference, 
-                'payment' => $row->payment, 
-                'payment_method_type' => $row->payment_method_type, 
-                'payment_destination_id' => ($row->global_payment) ? ($row->global_payment->type_record == 'cash' ? 'cash':$row->global_payment->destination_id):null, 
-                'payment_filename' => ($row->payment_file) ? $row->payment_file->filename:null, 
+                'id' => $row->id,
+                'sale_note_id' => $row->sale_note_id,
+                'date_of_payment' => $row->date_of_payment->format('Y-m-d'),
+                'payment_method_type_id' => $row->payment_method_type_id,
+                'has_card' => $row->has_card,
+                'card_brand_id' => $row->card_brand_id,
+                'reference' => $row->reference,
+                'payment' => $row->payment,
+                'payment_method_type' => $row->payment_method_type,
+                'payment_destination_id' => ($row->global_payment) ? ($row->global_payment->type_record == 'cash' ? 'cash':$row->global_payment->destination_id):null,
+                'payment_filename' => ($row->payment_file) ? $row->payment_file->filename:null,
             ];
-        }); 
+        });
 
     }
 

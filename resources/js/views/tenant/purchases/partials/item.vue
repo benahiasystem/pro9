@@ -9,7 +9,7 @@
             key-event="keyup"
             @success="handleFn112"
         />
-        
+
         <div class="row">
             <div class="col-md-12">
                 <h2 class="my-0">
@@ -23,7 +23,7 @@
             <div class="col-md-12" v-if="search_item_by_barcode">
                 <div class="form-group">
                     <label class="control-label">Código de barras</label>
-                    <el-input   
+                    <el-input
                         v-model="input_search_barcode"
                         :loading="loading_search"
                         placeholder="Buscar"
@@ -56,7 +56,7 @@
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-plus"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 5l0 14" /><path d="M5 12l14 0" /></svg>
                             </span>
                         </label>
-                        <el-select 
+                        <el-select
                                    v-model="form.item_id"
                                    :loading="loading_search"
                                    :remote-method="searchRemoteItems"
@@ -84,11 +84,11 @@
                                 <p v-if="loading_search" class="el-select-dropdown__empty">
                                     Cargando...
                                 </p>
-                            
+
                                 <p v-else class="el-select-dropdown__empty">
                                     No se encontraron resultados
                                 </p>
-                            
+
                                 <div
                                     v-if="!loading_search"
                                     class="el-select-dropdown__item new-option"
@@ -258,7 +258,7 @@
                                        v-text="errors.warehouse_id[0]"></small>
                             </div>
                         </div>
-                        
+
                         <div class="col-md-3" v-if="form.item_id && config.show_weighted_cost_purchase">
                             <weighted-average-cost :item-id="form.item_id"></weighted-average-cost>
                         </div>
@@ -315,7 +315,7 @@
                                        v-text="errors.lot_code[0]"></small>
                             </div>
                         </div>
-                        
+
                         <div v-if="config.edit_name_product"
                             class="col-md-12 col-sm-12 mt-2">
                             <div class="form-group">
@@ -426,7 +426,7 @@
                                             </tr>
                                             </tbody>
                                         </table>
-                                    </div>                                    
+                                    </div>
                                 </div>
                                 <div v-if="charge_types.length > 0"
                                      class="col-md-12 px-0">
@@ -471,7 +471,7 @@
                                             </tr>
                                             </tbody>
                                         </table>
-                                    </div>                                    
+                                    </div>
                                 </div>
                                 <div v-if="attribute_types.length > 0"
                                      class="col-md-12 px-0">
@@ -513,7 +513,7 @@
                                             </tr>
                                             </tbody>
                                         </table>
-                                    </div>                                    
+                                    </div>
                                 </div>
                             </div>
                             </el-collapse-item>
@@ -576,8 +576,8 @@ export default {
         percentageIgv: { default: 0 },
     },
     components: {
-        itemForm, 
-        LotsForm, 
+        itemForm,
+        LotsForm,
         Keypress,
         'vue-ckeditor': VueCkeditor.component,
         WeightedAverageCost
@@ -673,7 +673,7 @@ export default {
             warehouses: [],
             lots: [],
             affectation_igv_types: [],
-            system_isc_types: [],
+
             discount_types: [],
             charge_types: [],
             attribute_types: [],
@@ -707,7 +707,7 @@ export default {
         this.$http.get(`/${this.resource}/item/tables`).then(response => {
             this.all_items = response.data.items
             this.affectation_igv_types = response.data.affectation_igv_types
-            this.system_isc_types = response.data.system_isc_types
+
             this.discount_types = response.data.discount_types
             this.charge_types = response.data.charge_types
             this.attribute_types = response.data.attribute_types
@@ -762,10 +762,10 @@ export default {
         handleFn112(response) {
             this.search_item_by_barcode = !this.search_item_by_barcode;
         },
-        async searchBarCode(input) 
+        async searchBarCode(input)
         {
             this.loading_search = true
-            
+
             const search_by_barcode = this.search_item_by_barcode ? 1 : 0
 
             let parameters = `input=${input}&search_by_barcode=${search_by_barcode}`
@@ -776,7 +776,7 @@ export default {
                     this.items = items
                     this.loading_search = false
 
-                    if (items.length == 1) 
+                    if (items.length == 1)
                     {
                         this.form.item_id = items[0].id
 
@@ -851,9 +851,9 @@ export default {
                 item: {},
                 affectation_igv_type_id: null,
                 affectation_igv_type: {},
-                has_isc: false,
-                system_isc_type_id: null,
-                percentage_isc: 0,
+
+
+
                 suggested_price: 0,
                 quantity: 1,
                 unit_price: 0,
@@ -963,9 +963,9 @@ export default {
             this.setGlobalPurchaseCurrencyToItem()
 
             //asignar variables isc
-            this.form.has_isc = this.form.item.purchase_has_isc
-            this.form.percentage_isc = this.form.item.purchase_percentage_isc
-            this.form.system_isc_type_id = this.form.item.purchase_system_isc_type_id
+
+
+
 
         },
         setGlobalPurchaseCurrencyToItem(){
@@ -1102,7 +1102,7 @@ export default {
             if (!this.search_item_by_barcode) {
                 this.initFilterItems()
             }
-            
+
             this.initQuantityForBarcode()
         },
         initQuantityForBarcode()

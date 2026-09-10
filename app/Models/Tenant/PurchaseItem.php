@@ -6,7 +6,6 @@ namespace App\Models\Tenant;
 
 use App\Models\Tenant\Catalogs\AffectationIgvType;
 use App\Models\Tenant\Catalogs\PriceType;
-use App\Models\Tenant\Catalogs\SystemIscType;
 use App\Traits\AttributePerItems;
 use Modules\Inventory\Models\Warehouse;
 use Modules\Item\Models\ItemLot;
@@ -26,7 +25,6 @@ use Modules\Purchase\Models\WeightedAverageCost;
  * @property-read PriceType $price_type
  * @property-read \App\Models\Tenant\Purchase $purchase
  * @property-read \App\Models\Tenant\Item $relation_item
- * @property-read SystemIscType $system_isc_type
  * @property-read Warehouse $warehouse
  * @method static \Illuminate\Database\Eloquent\Builder|PurchaseItem newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder|PurchaseItem newQuery()
@@ -54,11 +52,6 @@ class PurchaseItem extends ModelTenant
         'total_base_igv',
         'percentage_igv',
         'total_igv',
-
-        'system_isc_type_id',
-        'total_base_isc',
-        'percentage_isc',
-        'total_isc',
 
         'total_base_other_taxes',
         'percentage_other_taxes',
@@ -129,14 +122,6 @@ class PurchaseItem extends ModelTenant
     public function affectation_igv_type()
     {
         return $this->belongsTo(AffectationIgvType::class, 'affectation_igv_type_id');
-    }
-
-    /**
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
-     */
-    public function system_isc_type()
-    {
-        return $this->belongsTo(SystemIscType::class, 'system_isc_type_id');
     }
 
     /**
@@ -233,10 +218,6 @@ class PurchaseItem extends ModelTenant
             'total_base_igv'          => $this->total_base_igv,
             'percentage_igv'          => $this->percentage_igv,
             'total_igv'               => $this->total_igv,
-            'system_isc_type_id'      => $this->system_isc_type_id,
-            'total_base_isc'          => $this->total_base_isc,
-            'percentage_isc'          => $this->percentage_isc,
-            'total_isc'               => $this->total_isc,
             'total_base_other_taxes'  => $this->total_base_other_taxes,
             'percentage_other_taxes'  => $this->percentage_other_taxes,
             'total_other_taxes'       => $this->total_other_taxes,
@@ -350,17 +331,6 @@ class PurchaseItem extends ModelTenant
     public function getConvertTotalIgvToPen()
     {
         return $this->generalConvertValueToPen($this->total_igv, $this->purchase->exchange_rate_sale);
-    }
-
-    /**
-     *
-     * Obtener total isc y realizar conversión a bolívares de acuerdo al tipo de cambio
-     *
-     * @return float
-     */
-    public function getConvertTotalIscToPen()
-    {
-        return $this->generalConvertValueToPen($this->total_isc, $this->purchase->exchange_rate_sale);
     }
 
 }

@@ -30,7 +30,6 @@ return [
 
     // ########## INICIO SIN DETRACCIONES E ISC
     'visible_fiscal_features' => [
-        'isc' => false,
         // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
         'ubl_attributes' => false,
         // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES

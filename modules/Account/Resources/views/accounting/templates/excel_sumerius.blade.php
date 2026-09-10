@@ -68,7 +68,7 @@
         <td>NOMBRE</td>
         <td>EXPORTACION</td>
         <td>BASEI</td>
-        <td>ICBPER</td>
+
         <td>EXONERADO</td>
         <td>IGV</td>
         <td>RETENCION</td>
@@ -133,9 +133,9 @@
         <td>{{ $row['total_exonerated'] }}</td>
         <td>{{ $row['total_unaffected'] }}</td>
         <td>{{ $row['total_igv'] }}</td>
-        <td>{{ $row['total_isc'] }}</td>
+
         <td>{{ $row['total'] }}</td>
-        <td>{{ $row['total_plastic_bag_taxes'] }}</td>
+
         <td>{{ $row['col_S'] }}</td>
         <td>{{ $row['col_T'] }}</td>
         <td>{{ $row['col_U'] }}</td>

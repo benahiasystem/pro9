@@ -315,8 +315,8 @@ export default {
                 // Campos en 0 para compatibilidad con calculateTotal
                 total_discount: 0,
                 total_charge: 0,
-                total_isc: 0,
-                total_base_isc: 0,
+
+
                 unit_price: cost, // Alias para compatibilidad
                 warehouse_description: '', // Campo requerido para tabla
                 lot_code: '', // Campo requerido para tabla

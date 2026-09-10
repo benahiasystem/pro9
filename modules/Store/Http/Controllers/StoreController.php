@@ -92,7 +92,6 @@ class StoreController extends Controller
             ->first();
 
         foreach ($rec['items'] as &$item) {
-            $item['total_plastic_bag_taxes'] = 0;
             $item['attributes'] = ($item['attributes']) ? (array)$item['attributes'] : [];
             $item['charges'] = ($item['charges']) ? (array)$item['charges'] : [];
             $item['discounts'] = ($item['discounts']) ? (array)$item['discounts'] : [];

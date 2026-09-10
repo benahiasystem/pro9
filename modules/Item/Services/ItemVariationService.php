@@ -33,12 +33,7 @@ class ItemVariationService
         'line',
         'model',
         'warehouse_id',
-        'amount_plastic_bag_taxes',
-        'has_plastic_bag_taxes',
         'calculate_quantity',
-        'has_isc',
-        'system_isc_type_id',
-        'percentage_isc',
         'apply_store',
     ];
 

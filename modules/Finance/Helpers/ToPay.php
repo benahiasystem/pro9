@@ -77,7 +77,7 @@ class ToPay
         $purchases = DB::connection('tenant')
             ->table('purchases')
             ->whereIn('state_type_id', ['01', '03', '05', '07', '13'])
-            ->whereIn('document_type_id', ['01', '03', 'GU75', 'NE76'])
+            ->whereIn('document_type_id', ['01', 'GU75', 'NE76'])
             ->join('persons', 'persons.id', '=', 'purchases.supplier_id')
             ->leftJoinSub($purchase_payments, 'payments', function ($join) {
                 $join->on('purchases.id', '=', 'payments.purchase_id');
@@ -315,7 +315,7 @@ class ToPay
                            $join->on('purchases.id', '=', 'payments.purchase_id');
                        })
                        ->whereIn('state_type_id', ['01', '03', '05', '07', '13'])
-                       ->whereIn('document_type_id', ['01', '03', 'GU75', 'NE76'])
+                       ->whereIn('document_type_id', ['01', 'GU75', 'NE76'])
                        ->select(DB::raw("purchases.id as id, ".
                                         "DATE_FORMAT(purchases.date_of_issue, '%Y/%m/%d') as date_of_issue, ".
                                         "DATE_FORMAT(purchases.date_of_due, '%Y/%m/%d') as date_of_due, ".

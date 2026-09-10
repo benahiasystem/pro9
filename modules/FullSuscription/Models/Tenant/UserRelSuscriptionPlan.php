@@ -73,8 +73,6 @@ use App\Http\Controllers\Tenant\SaleNoteController;
      * @property float|null           $total_exonerated
      * @property float|null           $total_igv
      * @property float|null           $total_igv_free
-     * @property float|null           $total_base_isc
-     * @property float|null           $total_isc
      * @property float|null           $total_base_other_taxes
      * @property float|null           $total_other_taxes
      * @property float|null           $total_taxes
@@ -132,8 +130,6 @@ use App\Http\Controllers\Tenant\SaleNoteController;
             'total_exonerated' => 'float',
             'total_igv' => 'float',
             'total_igv_free' => 'float',
-            'total_base_isc' => 'float',
-            'total_isc' => 'float',
             'total_base_other_taxes' => 'float',
             'total_other_taxes' => 'float',
             'total_taxes' => 'float',
@@ -184,8 +180,6 @@ use App\Http\Controllers\Tenant\SaleNoteController;
             'total_exonerated',
             'total_igv',
             'total_igv_free',
-            'total_base_isc',
-            'total_isc',
             'total_base_other_taxes',
             'total_other_taxes',
             'total_taxes',
@@ -299,8 +293,6 @@ use App\Http\Controllers\Tenant\SaleNoteController;
 
 
                     "total_igv" => $plan->total_igv ?? 0,
-                    "total_base_isc" => $plan->total_base_isc ?? 0,
-                    "total_isc" => $plan->total_isc ?? 0,
                     "total_base_other_taxes" => $plan->total_base_other_taxes ?? 0,
                     "total_other_taxes" => $plan->total_other_taxes ?? 0,
                     "total_taxes" => $plan->total_taxes ?? 0,
@@ -563,29 +555,21 @@ use App\Http\Controllers\Tenant\SaleNoteController;
          */
         public static function getPartialInvoiceData(Document $document)
         {
-            $has_xml = true;
             $has_pdf = true;
-            $has_cdr = false;
             $btn_note = false;
             $btn_guide = true; // Boton para generar guia
-            $btn_resend = false;
             $btn_voided = false;
-            $btn_consult_cdr = false;
             $btn_delete_doc_type_03 = false;
 
             $affected_document = null;
 
             if ($document->group_id === '01') {
                 if ($document->state_type_id === '01') {
-                    $btn_resend = true;
                 }
 
                 if ($document->state_type_id === '05') {
-                    $has_cdr = true;
                     $btn_note = true;
-                    $btn_resend = false;
                     $btn_voided = true;
-                    $btn_consult_cdr = true;
                 }
 
                 if (in_array($document->document_type_id, ['07', '08'])) {
@@ -602,14 +586,6 @@ use App\Http\Controllers\Tenant\SaleNoteController;
                     $btn_note = false;
                 }
 
-                if ($document->document_type_id === '03' && config('tenant.delete_document_type_03')) {
-
-                    if ($document->state_type_id === '01' && $document->doesntHave('summary_document')) {
-                        $btn_delete_doc_type_03 = true;
-                    }
-
-                }
-
             }
             $btn_guide = $btn_note;
             if ($btn_guide === false && ($document->state_type_id === '01')) {
@@ -617,7 +593,7 @@ use App\Http\Controllers\Tenant\SaleNoteController;
                 $btn_guide = true;
             }
 
-            if (in_array($document->document_type_id, ['01', '03'])) {
+            if (in_array($document->document_type_id, ['01'])) {
             }
 
             $btn_recreate_document = config('tenant.recreate_document');
@@ -629,12 +605,6 @@ use App\Http\Controllers\Tenant\SaleNoteController;
 
             $total_payment = $document->payments->sum('payment');
             $balance = number_format($document->total - $total_payment, 2, ".", "");
-
-            $message_regularize_shipping = null;
-
-            if ($document->regularize_shipping) {
-                $message_regularize_shipping = "Por regularizar: {$document->response_regularize_shipping->code} - {$document->response_regularize_shipping->description}";
-            }
             $nvs = $document->getNvCollection();
 
             $order_note = $document->getOrderNoteCollection();
@@ -650,7 +620,7 @@ use App\Http\Controllers\Tenant\SaleNoteController;
                 'fiscal_environment' => $document->fiscal_environment,
                 'fiscal_environment_description' => $document->fiscal_environment_type->description,
                 'date_of_issue' => $document->date_of_issue->format('Y-m-d'),
-                'date_of_due' => (in_array($document->document_type_id, ['01', '03'])) ? $document->invoice->date_of_due->format('Y-m-d') : null,
+                'date_of_due' => (in_array($document->document_type_id, ['01'])) ? $document->invoice->date_of_due->format('Y-m-d') : null,
                 'number' => $document->number_full,
                 'customer_name' => $document->customer->name,
                 'customer_number' => format_person_identity_document($document->customer),
@@ -667,31 +637,17 @@ use App\Http\Controllers\Tenant\SaleNoteController;
                 'state_type_description' => $document->state_type->description,
                 'document_type_description' => $document->document_type->description,
                 'document_type_id' => $document->document_type->id,
-                'has_xml' => $has_xml,
                 'has_pdf' => $has_pdf,
-                'has_cdr' => $has_cdr,
-                'download_xml' => $document->download_external_xml,
                 'download_pdf' => $document->download_external_pdf,
-                'download_cdr' => $document->download_external_cdr,
                 'btn_voided' => $btn_voided,
                 'btn_note' => $btn_note,
                 'btn_guide' => $btn_guide,
 //                'btn_ticket' => $btn_ticket,
-                'btn_resend' => $btn_resend,
-                'btn_consult_cdr' => $btn_consult_cdr,
                 'btn_recreate_document' => $btn_recreate_document,
                 'btn_change_to_registered_status' => $btn_change_to_registered_status,
                 'btn_delete_doc_type_03' => $btn_delete_doc_type_03,
-                'send_server' => (bool)$document->send_server,
 //                'voided' => $voided,
                 'affected_document' => $affected_document,
-//                'has_xml_voided' => $has_xml_voided,
-//                'has_cdr_voided' => $has_cdr_voided,
-//                'download_xml_voided' => $download_xml_voided,
-//                'download_cdr_voided' => $download_cdr_voided,
-                'shipping_status' => json_decode($document->shipping_status),
-                'sunat_shipping_status' => json_decode($document->sunat_shipping_status),
-                'query_status' => json_decode($document->query_status),
                 'created_at' => $document->created_at->format('Y-m-d H:i:s'),
                 'updated_at' => $document->updated_at->format('Y-m-d H:i:s'),
                 'user_name' => ($document->user) ? $document->user->name : '',
@@ -701,7 +657,7 @@ use App\Http\Controllers\Tenant\SaleNoteController;
                 'email_send_it_array' => $email_send_it_array,
                 'external_id' => $document->external_id,
 
-                'notes' => (in_array($document->document_type_id, ['01', '03'])) ? $document->affected_documents->transform(function ($document) {
+                'notes' => (in_array($document->document_type_id, ['01'])) ? $document->affected_documents->transform(function ($document) {
                     return [
                         'id' => $document->id,
                         'document_id' => $document->document_id,
@@ -713,8 +669,6 @@ use App\Http\Controllers\Tenant\SaleNoteController;
                 'order_note' => $order_note,
                 'balance' => $balance,
                 'guides' => !empty($document->guides) ? (array)$document->guides : null,
-                'message_regularize_shipping' => $message_regularize_shipping,
-                'regularize_shipping' => (bool)$document->regularize_shipping,
                 'purchase_order' => $document->purchase_order,
                 'is_editable' => $document->is_editable,
             ];
@@ -1193,7 +1147,7 @@ use App\Http\Controllers\Tenant\SaleNoteController;
     /**
      * Función para crear unicamente despues de haber creado la primera suscripcion
      */
-        public function createOrder(array $data = []): SuscriptionOrder 
+        public function createOrder(array $data = []): SuscriptionOrder
     {
         $_data = [
             'suscription_id' => $this->id,

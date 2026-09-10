@@ -33,7 +33,6 @@ class CompanyResource extends JsonResource
             'logo' => $this->logo,
             'logo_dark' => $this->logo_dark,
             'logo_store' => $this->logo_store,
-            'operation_amazonia' => (bool) $this->operation_amazonia,
             'img_firm' => $this->img_firm,
             'favicon' => $this->favicon,
             'cod_digemid' => $this->cod_digemid,

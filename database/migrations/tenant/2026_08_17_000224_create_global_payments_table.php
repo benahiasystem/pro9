@@ -1,25 +1,22 @@
 <?php
-// ######### INICIO CAMBIO NELSON #########
-
-/**
- * Estructura efectiva clonada desde `tenancy_bbc`.
- * Tabla: `global_payments`.
- *
- * Inventario de columnas:
- * - `id`: int(10) unsigned; NOT NULL; auto_increment — Sin comentario definido en el esquema fuente.
- * - `fiscal_environment`: varchar(16); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
- * - `destination_id`: int(11); NULL — Sin comentario definido en el esquema fuente.
- * - `destination_type`: varchar(255); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
- * - `payment_id`: int(11); NOT NULL — Sin comentario definido en el esquema fuente.
- * - `payment_type`: varchar(255); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
- * - `user_id`: int(10) unsigned; NULL — Sin comentario definido en el esquema fuente.
- * - `created_at`: timestamp; NULL — Sin comentario definido en el esquema fuente.
- * - `updated_at`: timestamp; NULL — Sin comentario definido en el esquema fuente.
- */
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 
+// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
+/**
+ * Estructura inicial de `global_payments` para instalaciones nuevas.
+ * Inventario de columnas:
+ * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
+ * - `fiscal_environment` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL
+ * - `destination_id` int(11) DEFAULT NULL
+ * - `destination_type` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
+ * - `payment_id` int(11) NOT NULL
+ * - `payment_type` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
+ * - `user_id` int(10) unsigned DEFAULT NULL
+ * - `created_at` timestamp NULL DEFAULT NULL
+ * - `updated_at` timestamp NULL DEFAULT NULL
+ */
 return new class extends Migration
 {
     public function up(): void
@@ -40,7 +37,7 @@ CREATE TABLE `global_payments` (
   KEY `payment_index` (`payment_id`,`payment_type`),
   KEY `global_payments_fiscal_environment_foreign` (`fiscal_environment`),
   KEY `global_payments_user_id_foreign` (`user_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL);
     }
 
@@ -49,4 +46,4 @@ SQL);
         DB::unprepared('DROP TABLE IF EXISTS `global_payments`');
     }
 };
-// ######### FIN CAMBIO NELSON #########
+// ######## FIN ESQUEMA INICIAL VENEZUELA ########

@@ -20,9 +20,7 @@ class SearchResource extends JsonResource
             'customer' => $this->customer->number,
             'number' => $this->series.'-'.$this->number,
             'total' => (float) $this->total,
-            'download_xml' => $this->download_external_xml,
             'download_pdf' => $this->download_external_pdf,
-            'download_cdr' => $this->download_external_cdr
         ];
     }
 }

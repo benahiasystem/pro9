@@ -161,15 +161,6 @@
                         :wsData="form.pdf_a4_data"
                     />
             </div>
-            <div v-if="company.fiscal_environment == 'production' && form.group_id == '01'"
-                 class="row mt-4">
-                <div class="col-md-12 text-center">
-                    <button class="btn waves-effect waves-light btn-outline-primary"
-                            type="button"
-                            @click.prevent="clickConsultCdr(form.id)">Consultar CDR
-                    </button>
-                </div>
-            </div>
         </div>
         <span slot="footer"
               class="dialog-footer">
@@ -201,6 +192,7 @@
 </template>
 
 <script>
+import {whatsappNumber} from "@helpers/phone";
 import {mapState, mapActions} from "vuex/dist/vuex.mjs";
 import Keypress from "vue-keypress";
 import QrApi from '@viewsModuleQrApi/QrApiTemplate.vue'
@@ -288,8 +280,9 @@ export default {
             }
 
             // ########### INICIO CAMBIO TELEFONÍA VENEZUELA
-            const phone = String(this.form.customer_telephone).replace(/\D/g, '').replace(/^(58|51)/, '')
-            window.open(`https://wa.me/58${phone}?text=${encodeURIComponent(this.form.message_text)}`, '_blank');
+            const phone = whatsappNumber(this.form.customer_telephone)
+            if (!phone) return this.$message.error('Ingrese un teléfono venezolano válido.')
+            window.open(`https://wa.me/${phone}?text=${encodeURIComponent(this.form.message_text)}`, '_blank');
             // ########### FIN CAMBIO TELEFONÍA VENEZUELA
 
         },
@@ -376,21 +369,6 @@ export default {
                 })
                 .then(() => {
                     this.loading = false
-                })
-        },
-        clickConsultCdr(document_id) {
-            this.$http.get(`/${this.resource}/consult_cdr/${document_id}`)
-                .then(response => {
-                    if (response.data.success) {
-                        this.$message.success(response.data.message)
-                        this.getRecord()
-                        this.$eventHub.$emit('reloadData')
-                    } else {
-                        this.$message.error(response.data.message)
-                    }
-                })
-                .catch(error => {
-                    this.$message.error(error.response.data.message)
                 })
         },
         clickFinalize() {

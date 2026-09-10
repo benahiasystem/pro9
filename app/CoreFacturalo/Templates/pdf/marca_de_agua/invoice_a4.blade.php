@@ -35,7 +35,7 @@
     $totalFilas += (int)$document->terms_condition;
 
     if (!empty($configurationInPdf->show_bank_accounts_in_pdf) &&
-        in_array($document->document_type->id, ['01', '03'])) {
+        ((string) $document->document_type->id === '01')) {
         $totalFilas += count($accounts);
     }
 
@@ -400,7 +400,6 @@
             </table>
         </td>
         {{-- <td width="5%" class="p-0 m-0">
-            <img src="data:image/png;base64, {{ $document->qr }}" class="p-0 m-0" style="width: 120px;" />
         </td> --}}
     </tr>
 </table>
@@ -693,8 +692,6 @@
                     <br><span class=""> Fondo de garantía: </strong>{{ $document->currency_type->symbol }} {{ number_format($value_ob->guarantee_fund, 2) }}</span>
                 @endif
             <td class="p-1 text-center align-top desc cell-solid " rowspan="6">
-                <img src="data:image/png;base64, {{ $document->qr }}" class="p-0 m-0" style="width: 120px;" /><br>
-                Código Hash: {{ $document->hash }}
             </td>
             <td class="p-1 text-right align-top desc cell-solid font-bold" colspan="{{ $colspan_total }}">
                 OP. INAFECTAS {{$document->currency_type->symbol}}
@@ -755,7 +752,7 @@
     </table>
 @endif
 @if(isset($configurationInPdf) && $configurationInPdf->show_bank_accounts_in_pdf)
-    @if(in_array($document->document_type->id,['01','03']))
+    @if(((string) $document->document_type->id === '01'))
         @foreach($accounts as $account)
             <div>
                 <span

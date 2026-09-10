@@ -98,32 +98,6 @@
                                     ></small>
                                 </div>
                             </div>
-                            <!-- boletas -->
-                            <div class="col-md-6 mt-4">
-                                <div
-                                    :class="{ 'has-danger': errors.series_id }"
-                                    class="form-group"
-                                >
-                                    <label class="control-label">
-                                        Serie para Boleta
-                                    </label>
-                                    <el-select v-model="form.series_document_bt_id"
-                                               clearable
-                                               filterable>
-                                        <el-option
-                                            v-for="option in series_document_bt"
-                                            :key="option.id"
-                                            :label="option.number"
-                                            :value="option.id"
-                                        ></el-option>
-                                    </el-select>
-                                    <small
-                                        v-if="errors.series_id"
-                                        class="form-control-feedback"
-                                        v-text="errors.series_id[0]"
-                                    ></small>
-                                </div>
-                            </div>
                             <!-- Destino de pago-->
                             <div class="col-md-6 mt-4">
                                 <div
@@ -285,7 +259,6 @@ export default {
             // establishments:[],
             series_order: [],
             series_document_ft: [],
-            series_document_bt: [],
             payment_destinations: [],
             currency_types: [],
 
@@ -369,7 +342,6 @@ export default {
                     data = data.data
                     this.series_order = data.series_order
                     this.series_document_ft = data.series_document_ft
-                    this.series_document_bt = data.series_document_bt
                     this.payment_destinations = data.payment_destinations
                     this.currency_types = data.currency_types
                     this.form = this.mi_tienda_pe
@@ -383,7 +355,6 @@ export default {
                     let data = response.data.data
                     this.series_order = data.series_order
                     this.series_document_ft = data.series_document_ft
-                    this.series_document_bt = data.series_document_bt
                     this.payment_destinations = data.payment_destinations
                     this.currency_types = data.currency_types
 

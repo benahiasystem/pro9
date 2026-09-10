@@ -39,13 +39,14 @@ Usar estos archivos como fuente de verdad en `Pro9`:
 6. Crear el reporte a partir del libro cargado, quitar las marcas antiguas del validador, neutralizar fórmulas, aplicar únicamente los errores actuales, almacenarlo de forma privada por usuario autenticado y UUID, y devolver una URL relativa del mismo origen.
 7. Hacer que el cliente Vue solicite inmediatamente esa URL como un archivo binario autenticado no vacío, obtenga el nombre del adjunto, lo descargue mediante una URL de objeto y comunique explícitamente cualquier fallo de descarga.
 8. Cuando la validación sea satisfactoria, invocar el `ItemsImport` intacto dentro de una transacción de la base de datos del tenant y conservar sus datos de respuesta.
-9. Compilar la aplicación Vite cuando el diseño del tenant sirva recursos de producción. Confirmar que `public/build/manifest.json` apunte a un paquete que contenga el comportamiento de descarga. No editar manualmente archivos generados.
+9. Aplicar `frontend-build`: no compilar ni editar archivos generados por iniciativa propia. Si existe `public/build/manifest.json`, verificar el paquete referenciado. Si no existe, dejar explícitamente pendiente la comprobación del bundle hasta que el usuario compile.
 10. Ejecutar pruebas específicas y completas, validar sintaxis PHP, validar este skill, inspeccionar el XLSX generado y ejecutar `git diff --check` antes de entregar.
 
 ## Invariantes
 
 - Mantener `app/Imports/ItemsImport.php` sin cambios salvo que el usuario solicite expresamente cambiar el mapeo de importación.
 - Mantener las columnas `0..19` por posición y permitir la columna `20` solamente como campo opcional `URL Imagen`.
+- La columna de imagen puede omitirse, pero cuando tenga datos debe incluir `URL Imagen` en U1. No aceptar la variante anterior con imágenes bajo un encabezado vacío; señalar U1 en el reporte y no importar filas. No cambiar el mapeo de `ItemsImport`.
 - Usar `VES`, nunca `VED`, como identificador de moneda de Venezuela.
 - Validar identificadores activos de unidad, moneda y afectación de IVA contra los catálogos actuales del tenant.
 - Rechazar fórmulas, archivos XLSX dañados, varias hojas, encabezados desplazados, libros vacíos, identificadores internos duplicados, columnas adicionales pobladas y valores incompatibles con precisión, escala, nulabilidad o longitud de base de datos.
@@ -71,7 +72,6 @@ php -l app/Http/Controllers/Tenant/ItemController.php
 php -l routes/web.php
 docker exec pro9-php vendor/bin/phpunit tests/Unit --filter ItemImport
 docker exec pro9-php vendor/bin/phpunit tests/Unit
-npm run build
 python3 /home/benahia/.codex/skills/.system/skill-creator/scripts/quick_validate.py .codex/skills/migrate-product-import-excel-format
 git diff --check
 ```
@@ -87,4 +87,5 @@ Inspeccionar además un libro en dos pasadas: generar al menos dos errores, guar
 - La descarga automática realiza una segunda petición GET autenticada y recibe un adjunto XLSX no vacío.
 - La corrección parcial funciona aunque Excel o LibreOffice reescriban el autor y los saltos de línea de los comentarios.
 - El paquete activo de producción contiene el comportamiento implementado en el frontend.
+- La prueba de ruta UUID se ejecuta siempre, separada de la prueba del bundle. La comprobación del bundle se marca omitida con motivo explícito si no hay manifiesto; un manifiesto presente pero inválido o un asset ausente debe fallar. Una omisión no acredita funcionamiento del frontend compilado.
 - Pasan las pruebas específicas, la suite unitaria completa, la validación de sintaxis PHP, la inspección del libro, la validación del skill y la comprobación del diff.

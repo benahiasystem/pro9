@@ -68,7 +68,6 @@ class UnpaidCollection extends ResourceCollection
                         'number' => $item->number_full,
                         'date_of_issue' => $item->date_of_issue->format('Y-m-d'),
                         'date_of_shipping' => $item->date_of_shipping->format('Y-m-d'),
-                        'download_external_xml' => $item->download_external_xml,
                         'download_external_pdf' => $item->download_external_pdf,
                     ];
                 });

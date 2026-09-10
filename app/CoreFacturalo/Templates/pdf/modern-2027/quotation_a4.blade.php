@@ -94,7 +94,7 @@
                 <h5 class="text-center">COTIZACIÓN</h5>
                 <h3 class="text-center">{{ $tittle }}</h3>
             </td>
-        @endif        
+        @endif
     </tr>
 </table>
 <table class="full-width mt-5">
@@ -166,7 +166,7 @@
     </tr>
     @endif
         <tr>
-            <td class="align-top">MONEDA: 
+            <td class="align-top">MONEDA:
             </td>
             <td>
                 @if($document->currency_type_id == 'VES')
@@ -307,7 +307,7 @@
 
         @if($show_due)
             <th class="border-top-bottom text-center py-2 px-1">F. VENC.</th>
-        @endif 
+        @endif
         <th class="border-top-bottom text-right py-2 col-total">P.UNIT</th>
         <th class="border-top-bottom text-right py-2" width="8%">DTO.</th>
         <th class="border-top-bottom text-right py-2 col-total">TOTAL</th>
@@ -350,16 +350,11 @@
                 @endif
 
                 {{-- ########## INICIO SIN DETRACCIONES E ISC --}}
-                @if(\App\Services\LocalFiscalDocumentPolicy::showIsc() && ($row->total_isc > 0))
-                {{-- ######### FIN SIN DETRACCIONES E ISC --}}
-                    <br/><span style="font-size: 9px">ISC : {{ $row->total_isc }} ({{ $row->percentage_isc }}%)</span>
-                @endif
+
 
                 @if (!empty($row->item->presentation)) {!!$row->item->presentation->description!!} @endif
 
-                @if($row->total_plastic_bag_taxes > 0)
-                    <br/><span style="font-size: 9px">ICBPER : {{ $row->total_plastic_bag_taxes }}</span>
-                @endif
+
 
                 @if($row->attributes)
                     @foreach($row->attributes as $attr)
@@ -423,7 +418,7 @@
                         -
                     @endif
                 </td>
-            @endif    
+            @endif
             <td class="text-right align-top">{{ number_format($row->unit_price, 2) }}</td>
             <td class="text-right align-top">
                 @if($row->discounts)

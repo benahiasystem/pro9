@@ -9,14 +9,12 @@ use Illuminate\Http\Response;
 use Illuminate\Routing\Controller;
 use App\Models\Tenant\Document;
 use App\Models\Tenant\DocumentItem;
-use Modules\Document\Http\Resources\DocumentNotSentCollection;
 use App\Models\Tenant\Catalogs\DocumentType;
 use App\Models\Tenant\Establishment;
 use App\Models\Tenant\Series;
 use App\Services\SeriesResolver;
 use App\Models\Tenant\Person;
 use App\Models\Tenant\StateType;
-use App\Traits\OfflineTrait;
 use Modules\Inventory\Models\Warehouse as ModuleWarehouse;
 use App\Models\Tenant\Item;
 use Modules\Document\Traits\SearchTrait;
@@ -29,64 +27,7 @@ use Illuminate\Database\Eloquent\Builder;
 
 class DocumentController extends Controller
 {
-    use OfflineTrait, SearchTrait;
-
-    public function index()
-    {
-
-        $is_client = $this->getIsClient();
-
-        return view('document::documents.not_sent', compact('is_client'));
-    }
-
-    public function records(Request $request)
-    {
-        $records = $this->getRecords($request);
-
-        return new DocumentNotSentCollection($records->paginate(config('tenant.items_per_page')));
-    }
-
-    public function getRecords($request)
-    {
-        $user = \Auth::user();
-        $d_end = $request->d_end;
-        $d_start = $request->d_start;
-        $date_of_issue = $request->date_of_issue;
-        $document_type_id = $request->document_type_id;
-        $number = $request->number;
-        $series = $request->series;
-        $state_type_id = $request->state_type_id;
-        $pending_payment = ($request->pending_payment == "true") ? true : false;
-        $customer_id = $request->customer_id;
-        $observations = $request->observations;
-
-        $records = Document::query()
-            ->where('series', 'like', '%' . $series . '%')
-            ->where('number', 'like', '%' . $number . '%')
-            ->where('state_type_id', 'like', '%' . $state_type_id . '%')
-            ->where('document_type_id', 'like', '%' . $document_type_id . '%')
-            ->whereNotSent();
-
-        if ($d_start && $d_end) {
-            $records->whereBetween('date_of_issue', [$d_start, $d_end]);
-        } else {
-            $records->where('date_of_issue', 'like', '%' . $date_of_issue . '%');
-        }
-        $records->latest();
-        if ($pending_payment) {
-            $records = $records->where('total_canceled', false);
-        }
-
-        if ($customer_id) {
-            $records = $records->where('customer_id', $customer_id);
-        }
-
-        if ($observations) {
-            $records = $records->where('additional_information', 'like', '%' . $observations . '%');
-        }
-
-        return $records;
-    }
+    use SearchTrait;
 
     public function data_table()
     {
@@ -303,34 +244,5 @@ class DocumentController extends Controller
         // $items = SearchItemController::searchByIdToModal($id);
         $items = SearchItemController::getItemsToDocuments(null, $id);
         return compact('items');
-    }
-
-
-
-
-    /**
-     *
-     * Forzar el envio por resumen a una boleta enviada de forma individual
-     *
-     * @param Request $request
-     * @return array
-     */
-    public function forceSendBySummary(Request $request)
-    {
-        $document = Document::findOrFail($request->id);
-        $document->force_send_by_summary = true;
-        $document->ticket_single_shipment = false;
-        $document->update();
-
-        return [
-            'success' => true,
-            'message' => 'Se habilitó el comprobante para enviarlo por resumen'
-        ];
-    }
-    public function pointCountNotSent()
-    {
-        return [
-            'total' => Document::whereNotSent()->count()
-        ];
     }
 }

@@ -14,7 +14,6 @@ final class LocalFiscalDocumentPolicy
     {
         return [
             'success' => true,
-            'sent' => false,
             'local' => true,
             'code' => (string) config('venezuela.local_document_emission.status_code', 'LOCAL_REGISTERED'),
             'description' => (string) config(
@@ -22,18 +21,10 @@ final class LocalFiscalDocumentPolicy
                 'Documento registrado localmente sin transmisión fiscal.'
             ),
             'notes' => [],
-            'xml_signed' => null,
-            'hash' => null,
         ];
     }
 
     // ########## INICIO SIN DETRACCIONES E ISC
-    public static function showIsc(): bool
-    {
-        return (bool) config('venezuela.visible_fiscal_features.isc', false);
-    }
-
-
     // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
     public static function showUblAttributes(): bool
     {

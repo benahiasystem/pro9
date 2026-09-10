@@ -59,7 +59,7 @@
                                 El codigo interno debe corresponder
                             </li>
                             <li>
-                                Solo se evaluará Boleta o Factura,
+                                Solo se evaluará Factura,
                             </li>
                             <li>
                                 El proceso puede demorar
@@ -83,9 +83,6 @@
                         <p v-if="  mi_tienda_pe.series_document_ft_id==null">
                             Debes ajustar la serie por defecto para factura
                         </p>
-                        <p v-if="  mi_tienda_pe.series_document_bt_id==null">
-                            Debes ajustar la serie por defecto para Boleta
-                        </p>
                     </div>
                 </div>
             </div>
@@ -99,8 +96,7 @@
                 <el-button
                     v-if="
                     mi_tienda_pe.establishment_id!==null &&
-        mi_tienda_pe.series_document_ft_id!==null &&
-        mi_tienda_pe.series_document_bt_id!==null
+        mi_tienda_pe.series_document_ft_id!==null
 "
                     :loading="loading_submit"
                     native-type="submit"

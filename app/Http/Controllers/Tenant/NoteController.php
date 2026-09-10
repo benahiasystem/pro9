@@ -4,16 +4,9 @@ namespace App\Http\Controllers\Tenant;
 use App\Http\Controllers\Controller;
 use App\Models\Tenant\Document;
 use App\Models\Tenant\Configuration;
-use App\Models\Tenant\Item;
 
 class NoteController extends Controller
 {
-    /**
-     * Código interno del ítem de servicio usado en las notas de débito
-     * por penalidad (motivo 13), creado por migración.
-     */
-    public const PENALTY_ITEM_INTERNAL_ID = 'PENALIDAD';
-
     public function create($document_id)
     {
         $document_affected = Document::find($document_id);
@@ -51,7 +44,7 @@ class NoteController extends Controller
                             ];
                         })
             ];
-            
+
         }
 
         return [
@@ -60,35 +53,5 @@ class NoteController extends Controller
         ];
 
     }
-
-    /**
-     * Devuelve el ítem de penalidad para preseleccionarlo en la nota de débito
-     * con motivo 13, donde solo se debe ingresar el monto.
-     */
-    public function penaltyItem()
-    {
-        $item = Item::where('internal_id', self::PENALTY_ITEM_INTERNAL_ID)
-                    ->where('item_type_id', '02')
-                    ->whereIsActive()
-                    ->first();
-
-        if (!$item) {
-            return [
-                'success' => false,
-                // ########## INICIO CAMBIO IGV A IVA
-                'message' => 'No se encontró el servicio "Penalidad". Regístrelo como servicio inafecto al IVA para emitir notas de débito por penalidad.',
-                // ######### FIN CAMBIO IGV A IVA
-            ];
-        }
-
-        return [
-            'success' => true,
-            'data' => [
-                'id' => $item->id,
-                'description' => $item->description,
-            ],
-        ];
-    }
-
 
 }

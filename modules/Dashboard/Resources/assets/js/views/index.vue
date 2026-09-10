@@ -320,7 +320,6 @@
                         <cash-flow-chart :filters="form"></cash-flow-chart>
                     </div>
                     <div class="col-12 col-xl-4 mb-2 d-flex flex-column">
-                        <sunat-status :filters="form"></sunat-status>
                         <template v-if="configuration.dashboard_products">
                             <low-stock :filters="form"></low-stock>
                         </template>
@@ -803,14 +802,13 @@ import CashFlowChart from "./partials/CashFlowChart.vue";
 import LowStock from "./partials/LowStock.vue";
 import WeeklySalesChart from "./partials/WeeklySalesChart.vue";
 import PaymentMethods from "./partials/PaymentMethods.vue";
-import SunatStatus from "./partials/SunatStatus.vue";
 import Debtors from "./partials/Debtors.vue";
 import MonthGoal from "./partials/MonthGoal.vue";
 import {mapActions, mapState} from "vuex/dist/vuex.mjs";
 
 export default {
   props: ["typeUser", "companyEnvironment",'configuration'],
-  components: { DashboardStock, LoaderGraph, RowTop, DashboardInventory, NewDashboard, WidgetGrid, TopProducts, CashFlowChart, LowStock, WeeklySalesChart, PaymentMethods, SunatStatus, Debtors, MonthGoal },
+  components: { DashboardStock, LoaderGraph, RowTop, DashboardInventory, NewDashboard, WidgetGrid, TopProducts, CashFlowChart, LowStock, WeeklySalesChart, PaymentMethods, Debtors, MonthGoal },
   data() {
     return {
       widgetStore,

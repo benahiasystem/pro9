@@ -117,17 +117,12 @@ class PerceptionController extends Controller
         $fact = DB::connection('tenant')->transaction(function () use($request) {
             $facturalo = new Facturalo();
             $facturalo->save($request->all());
-            $facturalo->createXmlUnsigned();
-            $facturalo->signXmlUnsigned();
             $facturalo->createPdf();
-            $facturalo->senderXmlSignedBill();
 
             return $facturalo;
         });
 
         $document = $fact->getDocument();
-        $response = $fact->getResponse();
-
         return [
             'success' => true,
             'message' => "Se generó la percepción {$document->series}-{$document->number}"

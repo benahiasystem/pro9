@@ -120,12 +120,7 @@
 
             <div class="form-group" :class="{'text-danger': errors.codigo_tipo_documento}">
                 <label>Comprobante:</label>
-                {{-- <select v-model="formIdentity.identity_document_type_id" class="form-control" @change="optionDocument">
-                    <option value="" disabled>Tipo de comprobante</option>
-                    <option value="1">Boleta</option>
-                    <option value="6">Factura</option>
-                    <option value="80">Nota de venta</option>
-                </select> --}}
+
 
                 <select v-model="form_document.codigo_tipo_documento" class="form-control" @change="optionDocument">
                     <option value="" disabled>Tipo de comprobante</option>
@@ -775,7 +770,7 @@
             clickSendWhatsapp(order_id) {
 
                 // ########### INICIO CAMBIO TELEFONÍA VENEZUELA
-                const phone = String(this.phone_whatsapp).replace(/\D/g, '').replace(/^(58|51)/, '').replace(/^0+/, '')
+                const phone = String(this.phone_whatsapp).replace(/\D/g, '').replace(/^58/, '').replace(/^0+/, '')
                 window.open(`https://wa.me/58${phone}?text=${encodeURIComponent(`Se ha generado un nuevo pedido con código nro. ${order_id}`)}`, '_blank');
                 // ########### FIN CAMBIO TELEFONÍA VENEZUELA
 

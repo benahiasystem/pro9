@@ -118,6 +118,10 @@ class FiscalEmissionSchemaTest extends TestCase
             (new \Database\Seeders\TenancyDatabaseSeeder())->setContainer(Container::getInstance())->run();
             $this->assertFiscalSchema($db);
             $current = $this->schemaSnapshot($db);
+            if (getenv('PRO9_EXPORT_CONTRACT') === '1') {
+                file_put_contents('/tmp/pro9-fresh-final-schema.json', json_encode($current, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+            }
+            $this->assertForeignKeyIntegrity($db);
             $currentSeeds = $this->seedSnapshot($db);
             if ($snapshot !== null) {
                 self::assertSame($snapshot, $current, 'El segundo ciclo debe producir el mismo esquema.');
@@ -125,6 +129,7 @@ class FiscalEmissionSchemaTest extends TestCase
             }
             $snapshot = $current;
             $seedSnapshot = $currentSeeds;
+            $this->assertProductAndVariationPersistence($db);
             $db->table('companies')->insert([
                 'id' => 1, 'identity_document_type_id' => '6', 'number' => 'J123456789',
                 'name' => 'Test fiscal', 'trade_name' => 'Test fiscal',
@@ -144,6 +149,63 @@ class FiscalEmissionSchemaTest extends TestCase
         }
     }
 
+    private function assertProductAndVariationPersistence(Connection $db): void
+    {
+        $db->beginTransaction();
+        try {
+            $establishmentId = $db->table('establishments')->insertGetId([
+                'description' => 'Establecimiento de prueba', 'country_id' => 'VE',
+                'department_id' => '14', 'province_id' => '0229', 'district_id' => '000619',
+                'address' => 'Dirección de prueba', 'telephone' => '04121234567', 'code' => '0000',
+            ]);
+            $warehouseId = $db->table('warehouses')->insertGetId([
+                'establishment_id' => $establishmentId, 'description' => 'Almacén de prueba',
+            ]);
+            $service = \App\Models\Tenant\Item::where('internal_id', 'DELIVERY-ECOM')->firstOrFail();
+            $newService = $service->replicate();
+            $newService->internal_id = 'TEST-SERVICE';
+            $newService->description = 'Servicio de prueba';
+            $newService->save();
+            $parent = $service->replicate();
+            $parent->fill([
+                'internal_id' => 'TEST-PARENT', 'description' => 'Producto de prueba',
+                'unit_type_id' => 'NIU', 'sale_unit_price' => 116,
+                'sale_affectation_igv_type_id' => '10', 'purchase_affectation_igv_type_id' => '10',
+            ]);
+            $parent->save();
+            $variation = $parent->replicate();
+            $variation->internal_id = 'TEST-VARIATION';
+            $parent->variations()->save($variation);
+
+            $variable = \Modules\Item\Models\ProductVariable::create([
+                'name' => 'Talla prueba', 'value_type' => 'list', 'active' => true,
+            ]);
+            $value = $variable->values()->create(['value' => 'M', 'position' => 1, 'active' => true]);
+            $assignment = \Modules\Item\Models\ItemVariationValue::create([
+                'item_id' => $variation->id, 'product_variable_id' => $variable->id,
+                'product_variable_value_id' => $value->id,
+            ]);
+
+            $warehouse = \App\Models\Tenant\ItemWarehouse::create([
+                'item_id' => $variation->id, 'warehouse_id' => $warehouseId, 'stock' => 5,
+            ]);
+            $warehouse->addStock(-2)->save();
+            $loaded = \App\Models\Tenant\Item::withCount('variations')->findOrFail($parent->id);
+            self::assertSame(1, $loaded->variations_count);
+            self::assertSame($parent->id, $variation->parent->id);
+            self::assertSame($value->id, $assignment->value->id);
+            self::assertSame($variable->id, $assignment->variable->id);
+            self::assertEquals(3, $variation->fresh()->warehouses->first()->stock);
+            self::assertEquals(116, $loaded->sale_unit_price);
+            self::assertSame('10', $loaded->sale_affectation_igv_type_id);
+            self::assertSame('ZZ', $service->unit_type_id);
+            self::assertSame('ZZ', $newService->fresh()->unit_type_id);
+        } finally {
+            $db->rollBack();
+        }
+        self::assertFalse($db->table('items')->whereIn('internal_id', ['TEST-PARENT', 'TEST-VARIATION', 'TEST-SERVICE'])->exists());
+    }
+
     public function test_fresh_system_migrations_do_not_create_fiscal_transport_configuration(): void
     {
         $this->capsule->getDatabaseManager()->setDefaultConnection('system');
@@ -154,6 +216,14 @@ class FiscalEmissionSchemaTest extends TestCase
         self::assertTrue($db->getSchemaBuilder()->hasTable('configurations'));
         $this->assertNoTransportColumns($db);
         self::assertFalse($db->getSchemaBuilder()->hasColumn('configurations', 'fiscal_environment'));
+        foreach (['xml_link', 'cdr_link', 'estado_sunat', 'mensaje_sunat'] as $column) {
+            self::assertFalse($db->getSchemaBuilder()->hasColumn('massive_invoices', $column), $column);
+        }
+        foreach (['estado_emision', 'mensaje_emision'] as $column) {
+            self::assertTrue($db->getSchemaBuilder()->hasColumn('massive_invoices', $column), $column);
+        }
+        self::assertSame(0, $db->table('module_levels')->whereIn('value', ['dispatch_carrier', 'carrier_dispatches'])->count());
+        self::assertSame(1, $db->table('module_levels')->where('value', 'dispatches')->count());
     }
 
     private function assertFiscalSchema(Connection $db): void
@@ -174,14 +244,58 @@ class FiscalEmissionSchemaTest extends TestCase
         foreach (['digital_certificate_qztray', 'private_certificate_qztray'] as $column) {
             self::assertTrue($db->getSchemaBuilder()->hasColumn('companies', $column));
         }
+        self::assertSame(0, $db->table('format_templates')->where('formats', 'legend_amazonia')->count());
         self::assertSame(0, $db->table('system_activity_log_types')->where('id', 'like', 'companies_soap_%')->count());
     }
 
     private function assertNoTransportColumns(Connection $db): void
     {
         self::assertFalse($db->getSchemaBuilder()->hasTable('soap_types'));
+        foreach (['has_advanced_statuses', 'legend_footer', 'legend_forest_to_xml', 'default_document_type_03', 'name_product_pdf_to_xml', 'send_auto', 'sunat_alternate_server', 'auto_send_dispatchs_to_sunat'] as $column) {
+            self::assertFalse($db->getSchemaBuilder()->hasColumn('configurations', $column), $column);
+        }
+        self::assertFalse($db->getSchemaBuilder()->hasColumn('companies', 'operation_amazonia'));
+        foreach (['sire_client_id', 'sire_client_secret', 'sire_username', 'sire_password'] as $column) {
+            self::assertFalse($db->getSchemaBuilder()->hasColumn('companies', $column), $column);
+        }
+        self::assertFalse($db->getSchemaBuilder()->hasColumn('document_items', 'name_product_xml'));
+        self::assertFalse($db->getSchemaBuilder()->hasColumn('configuration_mi_tienda_pe', 'series_document_bt_id'));
+        foreach ([
+            'documents' => ['hash', 'qr', 'has_xml', 'has_cdr', 'send_server', 'shipping_status', 'sunat_shipping_status', 'query_status', 'success_shipping_status', 'success_sunat_shipping_status', 'success_query_status', 'regularize_shipping', 'response_regularize_shipping'],
+            'dispatches' => ['sunat_error_response', 'has_xml', 'has_cdr', 'ticket', 'reception_date'],
+            'perceptions' => ['hash', 'has_xml', 'has_cdr'],
+            'retentions' => ['hash', 'has_xml', 'has_cdr'],
+            'purchase_settlements' => ['hash', 'has_xml', 'has_cdr'],
+            'voided' => ['ticket', 'has_ticket', 'has_cdr'],
+        ] as $table => $columns) {
+            foreach ($columns as $column) {
+                self::assertFalse($db->getSchemaBuilder()->hasColumn($table, $column), "{$table}.{$column}");
+            }
+        }
+        if ($db->getSchemaBuilder()->hasTable('module_levels')) {
+            self::assertSame(0, $db->table('module_levels')->whereIn('value', ['document_not_sent', 'regularize_shipping'])->count());
+        }
         self::assertSame([], $db->select("SELECT TABLE_NAME, COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = ? AND (COLUMN_NAME LIKE 'soap_%' OR COLUMN_NAME IN ('certificate', 'certificate_due', 'send_to_pse', 'response_signature_pse', 'response_send_cdr_pse', 'config_system_env'))", [$this->database]));
     }
+
+    // ######## INICIO INTEGRIDAD DE INSTALACIÓN NUEVA ########
+    private function assertForeignKeyIntegrity(Connection $db): void
+    {
+        $keys = $db->select('SELECT TABLE_NAME, COLUMN_NAME, CONSTRAINT_NAME, REFERENCED_TABLE_NAME, REFERENCED_COLUMN_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = ? AND REFERENCED_TABLE_NAME IS NOT NULL ORDER BY TABLE_NAME, CONSTRAINT_NAME, ORDINAL_POSITION', [$this->database]);
+        foreach (collect($keys)->groupBy(fn ($key) => $key->TABLE_NAME . '.' . $key->CONSTRAINT_NAME) as $name => $columns) {
+            $first = $columns->first();
+            $query = $db->table($first->TABLE_NAME . ' as child')->leftJoin($first->REFERENCED_TABLE_NAME . ' as parent', function ($join) use ($columns) {
+                foreach ($columns as $column) {
+                    $join->on('child.' . $column->COLUMN_NAME, '=', 'parent.' . $column->REFERENCED_COLUMN_NAME);
+                }
+            });
+            foreach ($columns as $column) {
+                $query->whereNotNull('child.' . $column->COLUMN_NAME);
+            }
+            self::assertSame(0, $query->whereNull('parent.' . $first->REFERENCED_COLUMN_NAME)->count(), $name);
+        }
+    }
+    // ######## FIN INTEGRIDAD DE INSTALACIÓN NUEVA ########
 
     private function schemaSnapshot(Connection $db): array
     {

@@ -27,9 +27,6 @@ class Voided extends ModelTenant
         'date_of_reference',
         'identifier',
         'filename',
-        'ticket',
-        'has_ticket',
-        'has_cdr',
         
     ];
 
@@ -73,11 +70,6 @@ class Voided extends ModelTenant
     /**
      * @return string
      */
-    public function getDownloadExternalXmlAttribute()
-    {
-        return route('tenant.download.external_id', ['model' => 'voided', 'type' => 'xml', 'external_id' => $this->external_id]);
-    }
-
     /**
      * @return string
      */
@@ -89,11 +81,6 @@ class Voided extends ModelTenant
     /**
      * @return string
      */
-    public function getDownloadExternalCdrAttribute()
-    {
-        return route('tenant.download.external_id', ['model' => 'voided', 'type' => 'cdr', 'external_id' => $this->external_id]);
-    }
-
 
 
     /**

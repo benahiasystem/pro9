@@ -1,20 +1,17 @@
 <?php
-// ######### INICIO CAMBIO NELSON #########
-
-/**
- * Estructura efectiva clonada desde `tenancy_bbc`.
- * Tabla: `provinces`.
- *
- * Inventario de columnas:
- * - `id`: char(4); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
- * - `department_id`: char(2); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
- * - `description`: varchar(255); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
- * - `active`: tinyint(1); NOT NULL; DEFAULT 1 — Sin comentario definido en el esquema fuente.
- */
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 
+// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
+/**
+ * Estructura inicial de `provinces` para instalaciones nuevas.
+ * Inventario de columnas:
+ * - `id` char(4) COLLATE utf8mb4_unicode_ci NOT NULL
+ * - `department_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL
+ * - `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
+ * - `active` tinyint(1) NOT NULL DEFAULT '1'
+ */
 return new class extends Migration
 {
     public function up(): void
@@ -36,4 +33,4 @@ SQL);
         DB::unprepared('DROP TABLE IF EXISTS `provinces`');
     }
 };
-// ######### FIN CAMBIO NELSON #########
+// ######## FIN ESQUEMA INICIAL VENEZUELA ########

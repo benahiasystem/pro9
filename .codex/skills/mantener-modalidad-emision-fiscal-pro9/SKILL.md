@@ -36,7 +36,7 @@ description: Mantener la modalidad de emisión fiscal y el ambiente de Pro9, el 
 - Usar `frontend-build` para assets. No generar bundles sin petición explícita del usuario. La validación de sintaxis en memoria no sustituye la comprobación visual del bundle desplegado.
 - Delimitar los cambios propios con comentarios `######## INICIO MODALIDAD DE EMISIÓN FISCAL ########` y `######## FIN MODALIDAD DE EMISIÓN FISCAL ########`.
 
-Esta decisión sustituye las instrucciones de conservar o convertir SOAP/PFX. Las compatibilidades de otros módulos se revisan en un plan separado; no ampliar automáticamente esta retirada a sus contratos ni a certificados de impresión.
+Esta decisión sustituye las instrucciones de conservar o convertir SOAP/PFX. Por decisión explícita del producto, la retirada también alcanza contratos históricos de transporte en documentos, anulaciones, percepciones, retenciones, liquidaciones, órdenes de entrega, tablero, webhooks, PSE y migración de notas a otro servidor. No alcanza certificados QZ de impresión, QR de WhatsApp, seguimiento comercial de órdenes ni XML técnico de formatos ajenos a facturación.
 
 ## Informe y revisión
 

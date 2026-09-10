@@ -239,7 +239,7 @@ class PersonController extends Controller
         {
             $customer = Person::findOrFail($establishment->customer_id);
         }
-        elseif(in_array($document_type_id, ['03', '80'], true))
+        elseif(in_array($document_type_id, ['80'], true))
         {
             $customer = Person::whereFilterVariousClients()->first();
         }

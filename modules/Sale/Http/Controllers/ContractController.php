@@ -36,7 +36,6 @@ use Modules\Sale\Models\ContractStateType;
 use App\Models\Tenant\Catalogs\CurrencyType;
 use App\Models\Tenant\Catalogs\DocumentType;
 use App\Models\Tenant\Catalogs\AttributeType;
-use App\Models\Tenant\Catalogs\SystemIscType;
 use Modules\Sale\Http\Requests\ContractRequest;
 use Modules\Sale\Http\Resources\ContractResource;
 use App\Models\Tenant\Catalogs\AffectationIgvType;
@@ -191,7 +190,6 @@ class ContractController extends Controller
         // $items = SearchItemController::getItemToContract();
         $categories = [];
         $affectation_igv_types = AffectationIgvType::whereActive()->get();
-        $system_isc_types = SystemIscType::available();
         $price_types = PriceType::whereActive()->get();
         $discount_types = ChargeDiscountType::whereType('discount')->whereLevel('item')->get();
         $charge_types = ChargeDiscountType::whereType('charge')->whereLevel('item')->get();
@@ -207,7 +205,6 @@ class ContractController extends Controller
             'items',
             'categories',
             'affectation_igv_types',
-            'system_isc_types',
             'price_types',
             'discount_types',
             'charge_types',

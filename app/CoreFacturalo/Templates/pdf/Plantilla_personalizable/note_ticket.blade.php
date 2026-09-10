@@ -5,18 +5,6 @@
 
     $document_base = $document->note;
     $document_number = $document->series.'-'.str_pad($document->number, 8, '0', STR_PAD_LEFT);
-    $document_type_description_array = [
-        '01' => 'FACTURA',
-        '03' => 'BOLETA DE VENTA',
-        '07' => 'NOTA DE CREDITO',
-        '08' => 'NOTA DE DEBITO',
-    ];
-    $identity_document_type_description_array = [
-        '-' => 'S/D',
-        '0' => 'S/D',
-        '1' => 'DNI',
-        '6' => 'RIF',
-    ];
     $currency_type_description_array = [
         'VES' => 'S/D',
         '0' => 'S/D',
@@ -323,10 +311,8 @@
         </tr>
     @endif
     <tr>
-        <td class="text-center pt-5"><img class="qr_code" src="data:image/png;base64, {{ $document->qr }}" /></td>
     </tr>
     <tr>
-        <td class="text-center desc">Código Hash: {{ $document->hash }}</td>
     </tr>
     <tr>
         <td class="text-center desc pt-5">Para consultar el comprobante ingresar a {!! url('/buscar') !!}</td>

@@ -1,98 +1,60 @@
 ---
 name: reconstruir-migraciones-tenant
-description: Reconstruir la estructura y los datos iniciales de una base tenant de Pro9 como migraciones Laravel y seeders nuevos, ordenados, reversibles y verificables. Usar al consolidar o reemplazar database/migrations/tenant, clonar tablas, columnas, índices, claves foráneas, comentarios y registros insertados por migraciones históricas, o al validar migrate/seed/rollback contra un tenant fuente.
+description: Mantener el esquema inicial consolidado y los datos vigentes de Pro9, ordenados, reversibles y verificables en bases temporales. Usar al modificar database/migrations/tenant, columnas, índices, claves foráneas o seeders.
 ---
 
-# Reconstruir migraciones de un tenant Pro9
+# Esquema inicial tenant de Pro9
 
 ## Contrato
 
-- Para la modalidad fiscal SOAP/PFX de Pro9, la autoridad es el contrato de instalación nueva de [mantener-modalidad-emision-fiscal-pro9](../mantener-modalidad-emision-fiscal-pro9/SKILL.md): no hay tenant fuente ni conversión histórica que reproducir. Modificar el consolidado y comprobar creación/seeding/rollback/segunda creación en bases temporales con `FiscalEmissionSchemaTest`. Las instrucciones de copiar un tenant o reproducir su historial de esta skill no aplican a ese caso.
-- Tomar como autoridad la estructura efectiva de un tenant, no la intención de las migraciones históricas.
-- Crear una migración por tabla y una migración final para claves foráneas.
-- Excluir `migrations`: Laravel debe crear y administrar esa tabla.
-- Conservar exactamente nombres, orden de columnas, tipos, longitudes, unsigned, nullability, defaults, expresiones, índices, claves, motores, charset, collation y `AUTO_INCREMENT`.
-- Conservar todos los `COMMENT` de tablas y columnas presentes en MySQL.
-- Preservar los PHPDoc explicativos de las migraciones anteriores y añadir un inventario generado de columnas. No inventar significados ausentes.
-- Separar las claves foráneas de `CREATE TABLE` y agregarlas al final para evitar dependencias circulares.
-- Reproducir las migraciones históricas en una base temporal para capturar el estado final de todos sus `insert` y `update`.
-- Guardar esos registros en `database/seeders/data/tenant_initial_data.php` y restaurarlos mediante `TenantMigrationDataSeeder`.
-- Mantener Perú en `countries` sólo cuando sea necesario para nacionalidades; nunca como valor predeterminado. Para la política venezolana total, la migración final debe eliminar PE del tenant efectivo.
-- No borrar las migraciones antiguas hasta generar y verificar el reemplazo en un directorio temporal.
-- Delimitar cualquier modificación manual de código con comentarios válidos que contengan `########### INICIO` y `########### FIN`; no alterar el DDL capturado sólo para añadir marcas.
-
-## Flujo
-
-1. Identificar el tenant fuente y comparar su esquema con otros tenants disponibles para detectar divergencias.
-2. Contar tablas, columnas, índices, claves foráneas, vistas, triggers, rutinas y eventos.
-3. Copiar el historial a un directorio temporal dentro de `.codex/`; los respaldos deben contener sólo `*.php` ejecutables.
-4. Ejecutar `scripts/generate_tenant_migrations.php` desde el contenedor PHP, indicando base fuente, directorio histórico y salida temporal.
-5. Confirmar que el generador encontró una migración histórica por cada tabla cuando se deban preservar PHPDoc.
-6. Revisar el reporte: tablas generadas, comentarios conservados, claves foráneas extraídas y ciclos de dependencia.
-7. Reemplazar únicamente `database/migrations/tenant/*.php`; los archivos rastreados siguen siendo recuperables mediante Git.
-8. Ejecutar `scripts/generate_tenant_seed_data.php` usando una copia Git de las migraciones retiradas; ignorar archivos `.php.bak`.
-9. Integrar `TenantMigrationDataSeeder` antes de cualquier seeder de datos mock.
-10. Ejecutar `scripts/validate_tenant_migrations.php` para la estructura y `scripts/validate_tenant_seeders.php` para los registros.
-11. Exigir migración y seeding limpios, comparación exacta, rollback completo y una segunda ejecución idéntica.
-12. Ejecutar las pruebas unitarias de contratos funcionales que dependan de migraciones o catálogos.
-
-## Generación
-
-Ejecutar mediante el contenedor PHP de Pro9:
-
-```bash
-php .codex/skills/reconstruir-migraciones-tenant/scripts/generate_tenant_migrations.php \
-  --source=tenancy_bbc \
-  --legacy=database/migrations/tenant \
-  --output=.codex/tenant-migrations-stage \
-  --date=YYYY_MM_DD
-```
-
-El generador debe fallar si la salida no está vacía, si una tabla o base tiene un nombre inseguro, si no puede interpretar todas las claves foráneas o si el esquema contiene objetos distintos de tablas base que no pueda representar.
+- El proyecto parte de cero, sin tenants ni información histórica. No copiar bases reales, reconciliar tablas de migraciones ni crear comandos de conversión o backfills.
+- Se retiran los scripts `generate_tenant_migrations.php`, `generate_tenant_seed_data.php`, `validate_tenant_migrations.php` y `validate_tenant_seeders.php`: dependían de una base fuente o de reproducir migraciones históricas. La verificación vigente es `FiscalEmissionSchemaTest` sobre bases temporales creadas desde el consolidado.
+- Mantener una migración por tabla. Crear todas las tablas antes de agregar las claves en `2026_08_17_000999_add_tenant_foreign_keys.php`; su `down()` debe retirarlas en orden inverso.
+- Laravel administra `migrations`; no incluirla como tabla de aplicación.
+- Cada tabla debe declarar directamente sus columnas, tipos, nullability, defaults, índices, motor, charset, collation y comentarios vigentes. No crear campos retirados para eliminarlos después.
+- Al consolidar una modificación, capturar primero el esquema producido por la rama en una base temporal y comparar el resultado completo. Toda diferencia debe corresponder a una decisión explícita del cambio.
+- Mantener un inventario de columnas junto al DDL. No usar contadores `AUTO_INCREMENT` extraídos de datos de prueba como estado inicial.
+- Los parámetros de empresa y facturas incluyen modalidad y ambiente obligatorios según `mantener-modalidad-emision-fiscal-pro9`.
+- Conservar estructuras vigentes de ecommerce, variaciones, inventario y preferencias aunque su creación haya estado antes en una migración incremental. `items.parent_item_id` tiene índice y FK autorreferenciada con borrado restringido.
 
 ## Datos iniciales
 
-```bash
-php .codex/skills/reconstruir-migraciones-tenant/scripts/generate_tenant_seed_data.php \
-  --legacy=.codex/tenant-legacy-stage \
-  --target=pro9_tenant_seed_source_test \
-  --output=database/seeders/data/tenant_initial_data.php \
-  --charset-source=tenancy_bbc
-```
+- `database/seeders/data/tenant_initial_data.php` contiene directamente los catálogos actuales. `venezuela_geopolitical_data.php` contiene la jerarquía venezolana.
+- `TenantMigrationDataSeeder` carga ambos archivos, antes de `TenancyMockDataSeeder`. Puede repetirse por identidad; no remapea números de documento, monedas, ubicaciones ni grupos existentes.
+- Los estados de ecommerce se definen una sola vez en los datos iniciales: trece estados con sus acciones y categorías. El alta no borra ni vuelve a crear ese catálogo.
+- No sembrar el servicio de penalidad vinculado al motivo retirado de nota de débito `13`. Conservar el servicio de envío que utiliza ecommerce.
+- No sembrar catálogos retirados ni referencias hacia ellos. Si una tabla tiene filas iniciales, comprobar todas sus claves foráneas después del seeding.
+- Los datos `MOCK-` pertenecen exclusivamente a `TenancyMockDataSeeder`; no incorporarlos al catálogo inicial al capturar una instalación de prueba.
 
-- Reproducir sólo migraciones `*.php`, nunca respaldos `*.php.bak`.
-- Desactivar temporalmente las comprobaciones FK durante la reproducción histórica y comprobar después que no existan registros huérfanos.
-- Ordenar tablas por dependencias y conservar claves de identidad para que el seeder sea repetible.
-- Aplicar únicamente ajustes de política explícitos: actualmente VE/VES, RIF, territorio venezolano y ausencia de PEN/VED/PE en el estado efectivo del tenant.
+## Verificación
 
-## Validación
-
-```bash
-php .codex/skills/reconstruir-migraciones-tenant/scripts/validate_tenant_migrations.php \
-  --source=tenancy_bbc \
-  --target=pro9_tenant_schema_test \
-  --migrations=database/migrations/tenant
-
-php .codex/skills/reconstruir-migraciones-tenant/scripts/validate_tenant_seeders.php \
-  --legacy=.codex/tenant-legacy-stage \
-  --migrations=database/migrations/tenant \
-  --data=database/seeders/data/tenant_initial_data.php
-```
-
-- Permitir como destino sólo nombres que terminen en `_schema_test`; nunca usar un tenant registrado.
-- Comparar cada `SHOW CREATE TABLE`, excepto la tabla `migrations`.
-- Verificar también conteos de tablas, columnas, índices, claves foráneas y comentarios.
-- Después del rollback debe quedar únicamente `migrations`, vacía.
-- Eliminar la base temporal al finalizar, tanto en éxito como en error.
-- No declarar éxito con una comparación parcial ni con un único `migrate`.
-- Comparar fila por fila el seeder con el resultado de las migraciones históricas.
-- Normalizar sólo timestamps generados durante la comparación histórica.
-- Verificar PE/VE, VES/USD, ausencia de PEN/VED, conteos territoriales e integridad de todas las claves foráneas.
-- Ejecutar `migrate`, seeder, rollback, segundo `migrate`, segundo seeder y segunda comparación.
-- Ejecutar también `TenancyDatabaseSeeder` para comprobar la integración real del seeder consolidado.
+1. Usar exclusivamente bases temporales con nombres controlados; eliminarlas tanto en éxito como en error. No operar sobre bases reales.
+2. Ejecutar `FiscalEmissionSchemaTest` con `PRO9_FISCAL_MYSQL_TESTS=1` dentro del contenedor PHP. Comprueba creación completa, `TenancyDatabaseSeeder`, integridad referencial global, rollback y segunda creación con esquema y datos iguales, normalizando sólo timestamps generados.
+3. Mantener `TenantMigrationDataSeederTest`, pruebas de catálogos y de módulos consumidores alineadas con el estado final, sin exigir nombres de migraciones incrementales eliminadas.
+4. Probar las operaciones actuales de los módulos afectados en una instalación temporal. Un esquema correcto no sustituye una prueba de creación, búsqueda o cálculo.
+5. Validar sintaxis PHP y `git diff --check`. Registrar conteos y diferencias intencionales en el informe del cambio.
 
 ## Entrega
 
-- Informar tenant fuente, número de migraciones, tablas, columnas, índices, claves foráneas, comentarios y registros preservados.
-- Informar resultados separados de migración, seeding, comparación de estructura/datos, rollback, segunda ejecución y pruebas unitarias.
-- Documentar cualquier objeto no representado o diferencia; cero diferencias es condición de finalización.
+Documentar las tablas y datos que cambiaron, elementos retirados, funciones conservadas, resultados de pruebas y limitaciones. No afirmar que se verificaron tenants reales. No crear commits ni desplegar sin la instrucción correspondiente.
+
+## Configuración inicial de pedidos
+
+- Retirar `configurations.has_advanced_statuses` del DDL consolidado y del alta en `ClientController`: no tiene consumidores vigentes y sólo distinguía versiones anteriores del catálogo de estados. Los trece estados actuales se inicializan directamente; no añadir una bandera de conversión completada.
+- `FiscalEmissionSchemaTest` verifica la ausencia de esa columna junto a la instalación, seeding, integridad, rollback y repetición.
+
+## Columnas fiscales peruanas retiradas
+
+- La creación inicial no incluye `companies.operation_amazonia`, `configurations.legend_footer`, `configurations.legend_forest_to_xml`, `configurations.default_document_type_03`, `configurations.name_product_pdf_to_xml` ni `document_items.name_product_xml`.
+- `format_templates` no siembra `legend_amazonia`. Mantener los identificadores de los demás formatos; no renumerarlos para cubrir el hueco.
+- Verificar estas ausencias en `FiscalEmissionSchemaTest`, además de buscar consumidores en PHP, Vue y plantillas antes de retirar una columna.
+
+## Transporte fiscal e históricos retirados
+
+- `documents` no crea `hash`, `qr`, `has_xml`, `has_cdr`, `send_server`, estados de envío/consulta, banderas de éxito ni campos de regularización.
+- `dispatches` no crea `sunat_error_response`, `has_xml`, `has_cdr`, `ticket` ni `reception_date`. Conserva `hash` y `qr_url` porque identifican y enlazan la orden de entrega vigente.
+- `perceptions`, `retentions` y `purchase_settlements` no crean `hash`, `has_xml` ni `has_cdr`; `voided` no crea `ticket`, `has_ticket` ni `has_cdr`.
+- `configurations` no crea `send_auto`, `sunat_alternate_server`, `auto_send_dispatchs_to_sunat` ni `send_data_to_other_server`. No crear tablas `pse_providers`, `migration_configurations` ni `sale_note_migrations`.
+- `companies` no crea credenciales SIRE (`sire_client_id`, `sire_client_secret`, `sire_username`, `sire_password`) y el módulo `Sire` no forma parte de la instalación.
+- Los niveles centrales/tenant no incluyen `document_not_sent` ni `regularize_shipping`. `FiscalEmissionSchemaTest` debe verificar columnas y niveles ausentes además de la igualdad de los dos ciclos limpios.
+- La política de instalación nueva también alcanza las migraciones del sistema relacionadas: `massive_invoices` se define completa en su migración creadora, conserva el módulo y usa `estado_emision`/`mensaje_emision`, sin migraciones incrementales ni columnas SUNAT/XML/CDR.

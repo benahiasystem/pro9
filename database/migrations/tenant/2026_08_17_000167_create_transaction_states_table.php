@@ -1,23 +1,20 @@
 <?php
-// ######### INICIO CAMBIO NELSON #########
-
-/**
- * Estructura efectiva clonada desde `tenancy_bbc`.
- * Tabla: `transaction_states`.
- *
- * Inventario de columnas:
- * - `id`: varchar(255); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
- * - `name`: varchar(255); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
- * - `success`: tinyint(1); NOT NULL — Sin comentario definido en el esquema fuente.
- * - `status`: varchar(255); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
- * - `status_detail`: varchar(255); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
- * - `original_message`: varchar(255); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
- * - `user_message`: varchar(255); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
- */
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 
+// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
+/**
+ * Estructura inicial de `transaction_states` para instalaciones nuevas.
+ * Inventario de columnas:
+ * - `id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
+ * - `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
+ * - `success` tinyint(1) NOT NULL
+ * - `status` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
+ * - `status_detail` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
+ * - `original_message` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
+ * - `user_message` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
+ */
 return new class extends Migration
 {
     public function up(): void
@@ -45,4 +42,4 @@ SQL);
         DB::unprepared('DROP TABLE IF EXISTS `transaction_states`');
     }
 };
-// ######### FIN CAMBIO NELSON #########
+// ######## FIN ESQUEMA INICIAL VENEZUELA ########

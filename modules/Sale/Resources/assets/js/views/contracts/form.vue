@@ -18,7 +18,7 @@
                         <div
                             class="col-sm-2 text-center mt-3 mb-0 d-none d-md-block"
                         >
-                            <logo 
+                            <logo
                                 url="/"
                                 :path_logo="getCurrentLogo"
                             ></logo>
@@ -186,11 +186,11 @@
                                             <p v-if="loading_search" class="el-select-dropdown__empty">
                                                 Cargando...
                                             </p>
-                                        
+
                                             <p v-else class="el-select-dropdown__empty">
                                                 No se encontraron resultados
                                             </p>
-                                        
+
                                             <div
                                                 v-if="!loading_search"
                                                 class="el-select-dropdown__item new-option"
@@ -953,7 +953,7 @@ export default {
     computed: {
         getCurrentLogo() {
             const isDarkMode = document.documentElement.classList.contains('dark');
-        
+
             if (isDarkMode && this.company.logo_dark) {
                 return `/storage/uploads/logos/${this.company.logo_dark}`;
             }
@@ -1232,8 +1232,8 @@ export default {
                 total_unaffected: 0,
                 total_exonerated: 0,
                 total_igv: 0,
-                total_base_isc: 0,
-                total_isc: 0,
+
+
                 total_base_other_taxes: 0,
                 total_other_taxes: 0,
                 total_taxes: 0,

@@ -26,10 +26,6 @@ $total_item_purchase = round($total_item_purchase, 2);
 $utility_item = number_format($utility_item, 2);
 $web_platform = '';
 $purchase_unit_price = '';
-$igv = '';
-$system_isc_type_id = '';
-$total_isc = '';
-$total_plastic_bag_taxes = '';
 $pack_prefix = '';
 $unit_type_id = $value->item->unit_type_id;
 $pack_price_prefix = '';
@@ -62,10 +58,6 @@ if (!isset($qty)) {
     $total_value = $value->total_value;
     $web_platform = optional($relation_item->web_platform)->name;
     $purchase_unit_price = ($relation_item) ? $relation_item->purchase_unit_price : 0;
-    $igv = $value->system_isc_type_id;
-    $total_isc = $value->total_isc;
-    $system_isc_type_id = $value->system_isc_type_id;
-    $total_plastic_bag_taxes = $value->total_plastic_bag_taxes;
     $category = $relation_item->category->name;
     $brand = $relation_item->brand->name;
 

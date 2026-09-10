@@ -31,7 +31,7 @@ class TestDocumentsDeletionBehaviorTest extends TestCase
         foreach ([
             'documents', 'document_items', 'document_payments', 'cash_document_payments',
             'global_payments', 'document_fee', 'document_hotels', 'document_transports',
-            'invoices', 'notes', 'summary_documents', 'kardex', 'cash_documents',
+            'invoices', 'notes', 'kardex', 'cash_documents',
             'payment_method_types', 'card_brands', 'inventory_kardex', 'payment_files', 'payment_links',
             'payment_link_payments', 'users', 'fiscal_environments',
             'sale_notes', 'sale_note_items', 'sale_note_payments', 'sale_note_fees',
@@ -113,7 +113,7 @@ class TestDocumentsDeletionBehaviorTest extends TestCase
             'payment_id' => 201,
         ]);
 
-        foreach (['document_fee', 'document_hotels', 'document_transports', 'invoices', 'summary_documents', 'kardex', 'cash_documents'] as $table) {
+        foreach (['document_fee', 'document_hotels', 'document_transports', 'invoices', 'kardex', 'cash_documents'] as $table) {
             $connection->table($table)->insert(['document_id' => 101]);
         }
         $connection->table('notes')->insert(['document_id' => 101]);
@@ -125,11 +125,12 @@ class TestDocumentsDeletionBehaviorTest extends TestCase
         $method = new \ReflectionMethod(OptionController::class, 'deleteDocumentRelations');
         $method->setAccessible(true);
         $method->invoke(new OptionController(), collect([$document]));
+        self::assertFalse(Schema::connection('tenant')->hasTable('summary_documents'));
 
         foreach ([
             'document_items', 'document_payments', 'cash_document_payments', 'global_payments',
             'document_fee', 'document_hotels', 'document_transports', 'invoices', 'notes',
-            'summary_documents', 'kardex', 'cash_documents', 'documents',
+            'kardex', 'cash_documents', 'documents',
             'inventory_kardex',
         ] as $table) {
             self::assertSame(0, $connection->table($table)->count(), $table);

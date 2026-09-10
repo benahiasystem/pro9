@@ -2941,8 +2941,8 @@ export default {
                 total_unaffected: 0,
                 total_exonerated: 0,
                 total_igv: 0,
-                total_base_isc: 0,
-                total_isc: 0,
+
+
                 total_base_other_taxes: 0,
                 total_other_taxes: 0,
                 total_taxes: 0,
@@ -3303,15 +3303,10 @@ export default {
                     );
 
                     //impuestos (isc + igv + icbper)
-                    let total_plastic_bag_taxes = this.form
-                        .total_plastic_bag_taxes
-                        ? this.form.total_plastic_bag_taxes
-                        : 0;
+
 
                     this.form.total_taxes = _.round(
-                        this.form.total_igv +
-                            this.form.total_isc +
-                            total_plastic_bag_taxes,
+                        this.form.total_igv,
                         2
                     );
                     this.form.total = _.round(

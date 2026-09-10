@@ -297,7 +297,7 @@ import ItemSetFormItem from './partials/item.vue'
                 unit_types: [],
                 currency_types: [],
                 individual_items: [],
-                system_isc_types: [],
+
                 affectation_igv_types: [],
                 accounts: [],
                 show_has_igv:true,
@@ -323,7 +323,7 @@ import ItemSetFormItem from './partials/item.vue'
                     this.unit_types = response.data.unit_types
                     this.accounts = response.data.accounts
                     this.currency_types = response.data.currency_types
-                    this.system_isc_types = response.data.system_isc_types
+
                     this.affectation_igv_types = response.data.affectation_igv_types
                     // this.individual_items = response.data.individual_items
                     this.warehouses = response.data.warehouses
@@ -386,9 +386,9 @@ import ItemSetFormItem from './partials/item.vue'
                     currency_type_id: 'VES',
                     sale_unit_price: 0,
                     purchase_unit_price: 0,
-                    has_isc: false,
-                    system_isc_type_id: null,
-                    percentage_isc: 0,
+
+
+
                     suggested_price: 0,
                     sale_affectation_igv_type_id: null,
                     purchase_affectation_igv_type_id: null,
@@ -571,16 +571,8 @@ import ItemSetFormItem from './partials/item.vue'
                 this.$emit('update:showDialog', false)
                 this.resetForm()
             },
-            changeHasIsc() {
-                this.form.system_isc_type_id = null
-                this.form.percentage_isc = 0
-                this.form.suggested_price = 0
-            },
-            changeSystemIscType() {
-                if (this.form.system_isc_type_id !== '03') {
-                    this.form.suggested_price = 0
-                }
-            },
+
+
             saveCategory() {
                 this.form_category.add = false
 

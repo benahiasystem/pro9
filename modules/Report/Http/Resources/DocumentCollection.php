@@ -53,7 +53,7 @@ class DocumentCollection extends ResourceCollection
                 'fiscal_environment' => $row->fiscal_environment,
                 'fiscal_environment_description' => $row->fiscal_environment_type->description,
                 'date_of_issue' => $row->date_of_issue->format('Y-m-d'),
-                'date_of_due' => (in_array($row->document_type_id, ['01', '03'])) ? $row->invoice->date_of_due->format('Y-m-d') : null,
+                'date_of_due' => (in_array($row->document_type_id, ['01'])) ? $row->invoice->date_of_due->format('Y-m-d') : null,
                 'serie' => $row->series,
                 'number' => $row->number,
                 'customer_name' => $row->customer->name,
@@ -74,15 +74,13 @@ class DocumentCollection extends ResourceCollection
                 'purchase_order' => $row->purchase_order,
                 'guides' => !empty($row->guides)?(array)$row->guides:null,
 
-                'total_exportation' => (in_array($row->document_type_id,['01','03', '07']) && in_array($row->state_type_id,['09','11'])) ? number_format(0,2, ".","") : number_format($row->total_exportation,2, ".",""),
-                'total_exonerated' =>  (in_array($row->document_type_id,['01','03', '07']) && in_array($row->state_type_id,['09','11'])) ? number_format(0,2, ".","") : number_format($row->total_exonerated,2, ".",""),
-                'total_unaffected' =>  (in_array($row->document_type_id,['01','03', '07']) && in_array($row->state_type_id,['09','11'])) ? number_format(0,2, ".","") : number_format($row->total_unaffected,2, ".",""),
-                'total_free' =>  (in_array($row->document_type_id,['01','03', '07']) && in_array($row->state_type_id,['09','11'])) ? number_format(0,2, ".","") : number_format($row->total_free,2, ".",""),
-                'total_taxed' => (in_array($row->document_type_id,['01','03', '07']) && in_array($row->state_type_id,['09','11'])) ? number_format(0,2, ".","") : number_format($row->total_taxed,2, ".",""),
-                'total_igv' =>  (in_array($row->document_type_id,['01','03', '07']) && in_array($row->state_type_id,['09','11'])) ? number_format(0,2, ".","") : number_format($row->total_igv,2, ".",""),
-                'total' =>  (in_array($row->document_type_id,['01','03', '07']) && in_array($row->state_type_id,['09','11'])) ? number_format(0,2, ".","") : number_format($row->total,2, ".",""),
-                // 'total' =>  (in_array($row->document_type_id,['01','03']) && in_array($row->state_type_id,['09','11'])) ? number_format(0,2, ".","") : number_format($row->total,2, ".",""),
-                'total_isc' =>  (in_array($row->document_type_id,['01','03', '07']) && in_array($row->state_type_id,['09','11'])) ? number_format(0,2, ".","") : number_format($row->total_isc,2, ".",""),
+                'total_exportation' => (in_array($row->document_type_id,['01', '07']) && in_array($row->state_type_id,['09','11'])) ? number_format(0,2, ".","") : number_format($row->total_exportation,2, ".",""),
+                'total_exonerated' =>  (in_array($row->document_type_id,['01', '07']) && in_array($row->state_type_id,['09','11'])) ? number_format(0,2, ".","") : number_format($row->total_exonerated,2, ".",""),
+                'total_unaffected' =>  (in_array($row->document_type_id,['01', '07']) && in_array($row->state_type_id,['09','11'])) ? number_format(0,2, ".","") : number_format($row->total_unaffected,2, ".",""),
+                'total_free' =>  (in_array($row->document_type_id,['01', '07']) && in_array($row->state_type_id,['09','11'])) ? number_format(0,2, ".","") : number_format($row->total_free,2, ".",""),
+                'total_taxed' => (in_array($row->document_type_id,['01', '07']) && in_array($row->state_type_id,['09','11'])) ? number_format(0,2, ".","") : number_format($row->total_taxed,2, ".",""),
+                'total_igv' =>  (in_array($row->document_type_id,['01', '07']) && in_array($row->state_type_id,['09','11'])) ? number_format(0,2, ".","") : number_format($row->total_igv,2, ".",""),
+                'total' =>  (in_array($row->document_type_id,['01', '07']) && in_array($row->state_type_id,['09','11'])) ? number_format(0,2, ".","") : number_format($row->total,2, ".",""),
                 'total_charge' => $row->total_charge,
 
 
@@ -95,7 +93,7 @@ class DocumentCollection extends ResourceCollection
                 'user_name' => ($seller) ? $seller->name : '',
                 'user_email' => ($seller) ? $seller->email : '',
 
-                'notes' => (in_array($row->document_type_id, ['01', '03'])) ? $row->affected_documents->transform(function($row) {
+                'notes' => (in_array($row->document_type_id, ['01'])) ? $row->affected_documents->transform(function($row) {
                     return [
                         'id' => $row->id,
                         'document_id' => $row->document_id,

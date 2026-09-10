@@ -4,7 +4,6 @@
 
     use App\Models\Tenant\Catalogs\AffectationIgvType;
     use App\Models\Tenant\Catalogs\PriceType;
-    use App\Models\Tenant\Catalogs\SystemIscType;
     use App\Models\Tenant\Item;
     use App\Models\Tenant\ModelTenant;
     use App\Traits\AttributePerItems;
@@ -27,14 +26,9 @@
      * @property float              $total_base_igv
      * @property float              $percentage_igv
      * @property float              $total_igv
-     * @property string|null        $system_isc_type_id
-     * @property float              $total_base_isc
-     * @property float              $percentage_isc
-     * @property float              $total_isc
      * @property float              $total_base_other_taxes
      * @property float              $percentage_other_taxes
      * @property float              $total_other_taxes
-     * @property float|null         $total_plastic_bag_taxes
      * @property float              $total_taxes
      * @property string             $price_type_id
      * @property float              $unit_price
@@ -54,7 +48,6 @@
      * @property mixed              $item
      * @property PriceType          $price_type
      * @property Item               $relation_item
-     * @property SystemIscType      $system_isc_type
      * @method static Builder|OrderNoteItem newModelQuery()
      * @method static Builder|OrderNoteItem newQuery()
      * @method static Builder|OrderNoteItem query()
@@ -88,11 +81,6 @@
             'percentage_igv',
             'total_igv',
 
-            'system_isc_type_id',
-            'total_base_isc',
-            'percentage_isc',
-            'total_isc',
-
             'total_base_other_taxes',
             'percentage_other_taxes',
             'total_other_taxes',
@@ -110,7 +98,6 @@
             'charges',
             'discounts',
             'warehouse_id',
-            'total_plastic_bag_taxes',
             'additional_information',
             'name_product_pdf',
         ];
@@ -122,13 +109,9 @@
             'total_base_igv' => 'float',
             'percentage_igv' => 'float',
             'total_igv' => 'float',
-            'total_base_isc' => 'float',
-            'percentage_isc' => 'float',
-            'total_isc' => 'float',
             'total_base_other_taxes' => 'float',
             'percentage_other_taxes' => 'float',
             'total_other_taxes' => 'float',
-            'total_plastic_bag_taxes' => 'float',
             'total_taxes' => 'float',
             'unit_price' => 'float',
             'total_value' => 'float',
@@ -287,82 +270,6 @@
         public function setTotalIgv(?float $total_igv): OrderNoteItem
         {
             $this->total_igv = (float)$total_igv;
-            return $this;
-        }
-
-        /**
-         * @return string|null
-         */
-        public function getSystemIscTypeId(): ?string
-        {
-            return $this->system_isc_type_id;
-        }
-
-        /**
-         * @param string|null $system_isc_type_id
-         *
-         * @return OrderNoteItem
-         */
-        public function setSystemIscTypeId(?string $system_isc_type_id): OrderNoteItem
-        {
-            $this->system_isc_type_id = $system_isc_type_id;
-            return $this;
-        }
-
-        /**
-         * @return float
-         */
-        public function getTotalBaseIsc(): float
-        {
-            return (float)$this->total_base_isc;
-        }
-
-        /**
-         * @param float $total_base_isc
-         *
-         * @return OrderNoteItem
-         */
-        public function setTotalBaseIsc(?float $total_base_isc): OrderNoteItem
-        {
-            $this->total_base_isc = (float)$total_base_isc;
-            return $this;
-        }
-
-        /**
-         * @return float
-         */
-        public function getPercentageIsc(): float
-        {
-            return (float)$this->percentage_isc;
-        }
-
-        /**
-         * @param float $percentage_isc
-         *
-         * @return OrderNoteItem
-         */
-        public function setPercentageIsc(?float $percentage_isc): OrderNoteItem
-        {
-            $this->percentage_isc = (float)$percentage_isc;
-            return $this;
-        }
-
-        /**
-         * @return float
-         */
-        public function getTotalIsc(): float
-        {
-            return (float)$this->total_isc;
-        }
-
-        /**
-         * @param float $total_isc
-         *
-         * @return OrderNoteItem
-         */
-        public function setTotalIsc(?float $total_isc): OrderNoteItem
-        {
-            $this->total_isc = (float)$total_isc;
             return $this;
         }
 
@@ -746,25 +653,6 @@
             return $this;
         }
 
-        /**
-         * @return SystemIscType
-         */
-        public function getSystemIscType(): SystemIscType
-        {
-            return $this->system_isc_type;
-        }
-
-        /**
-         * @param SystemIscType $system_isc_type
-         *
-         * @return OrderNoteItem
-         */
-        public function setSystemIscType(SystemIscType $system_isc_type): OrderNoteItem
-        {
-            $this->system_isc_type = $system_isc_type;
-            return $this;
-        }
-
         public function getItemAttribute($value)
         {
             return (is_null($value)) ? null : (object)json_decode($value);
@@ -811,14 +699,6 @@
         public function affectation_igv_type()
         {
             return $this->belongsTo(AffectationIgvType::class, 'affectation_igv_type_id');
-        }
-
-        /**
-         * @return BelongsTo
-         */
-        public function system_isc_type()
-        {
-            return $this->belongsTo(SystemIscType::class, 'system_isc_type_id');
         }
 
         /**
@@ -923,25 +803,6 @@
         }
 
         /**
-         * @return float
-         */
-        public function getTotalPlasticBagTaxes(): float
-        {
-            return (float)$this->total_plastic_bag_taxes;
-        }
-
-        /**
-         * @param float $total_plastic_bag_taxes
-         *
-         * @return OrderNoteItem
-         */
-        public function setTotalPlasticBagTaxes(?float $total_plastic_bag_taxes): OrderNoteItem
-        {
-            $this->total_plastic_bag_taxes = (float)$total_plastic_bag_taxes;
-            return $this;
-        }
-
-        /**
          * @return string
          */
         public function getAdditionalInformation(): string
@@ -1031,8 +892,8 @@
         {
             return $this->name_product_pdf;
         }
-        
-        
+
+
         /**
          * Obtener lotes vendidos
          *

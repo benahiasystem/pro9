@@ -197,7 +197,7 @@
                                     {{ currency_type.symbol }} {{ form.total_unaffected }}</p>
                                 <p class="text-right" v-if="form.total_exonerated > 0">OP.EXONERADAS:
                                     {{ currency_type.symbol }} {{ form.total_exonerated }}</p>
-                                <p class="text-right" v-if="form.items.length > 0">OP.GRAVADA: 
+                                <p class="text-right" v-if="form.items.length > 0">OP.GRAVADA:
                                     {{ currency_type.symbol }} {{ form.total_taxed }}</p>
                                 <!-- ########## INICIO CAMBIO IGV A IVA -->
                                 <p class="text-right" v-if="form.items.length > 0">IVA:
@@ -279,7 +279,7 @@ export default {
             series: [],
             currency_type: {},
             affectation_igv_types: [],
-            system_isc_types: [],
+
             charge_types: [],
             attribute_types: [],
             fileList: [],
@@ -309,7 +309,7 @@ export default {
         await this.$http.get(`/${this.resource}/item/tables`).then(response => {
             this.items = response.data.items
             this.affectation_igv_types = response.data.affectation_igv_types
-            this.system_isc_types = response.data.system_isc_types
+
             this.discount_types = response.data.discount_types
             this.charge_types = response.data.charge_types
             this.attribute_types = response.data.attribute_types
@@ -380,8 +380,8 @@ export default {
                         total_base_igv: 0,
                         total_igv: 0,
                         total_value: 0,
-                        total_base_isc: 0,
-                        total_isc: 0,
+
+
                         total_base_other_taxes: 0,
                         total_other_taxes: 0,
                         total_taxes: 0,
@@ -399,7 +399,7 @@ export default {
             if (suppliersArray.length === 1) {
                 const primerProveedor = suppliersArray[0];
                 this.$set(this.form, 'supplier_id', primerProveedor.supplier_id || primerProveedor.id);
-                this.$set(this.form, 'supplier', primerProveedor.name); 
+                this.$set(this.form, 'supplier', primerProveedor.name);
             } else {
                 this.$set(this.form, 'supplier_id', null);
                 this.$set(this.form, 'supplier', null);
@@ -555,8 +555,8 @@ export default {
                 total_unaffected: 0,
                 total_exonerated: 0,
                 total_igv: 0,
-                total_base_isc: 0,
-                total_isc: 0,
+
+
                 total_base_other_taxes: 0,
                 total_other_taxes: 0,
                 total_taxes: 0,
@@ -580,7 +580,7 @@ export default {
 
         },
         sanitizeRow(row) {
-            ['unit_price','unit_value','total_value','total_igv','total_base_igv','total','total_charge','total_discount','total_base_isc','total_isc','total_base_other_taxes','total_other_taxes','total_taxes'].forEach(k => {
+            ['unit_price','unit_value','total_value','total_igv','total_base_igv','total','total_charge','total_discount','total_base_other_taxes','total_other_taxes','total_taxes'].forEach(k => {
                 if (isNaN(parseFloat(row[k]))) row[k] = 0
             })
             return row

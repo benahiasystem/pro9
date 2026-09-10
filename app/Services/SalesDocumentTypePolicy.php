@@ -16,15 +16,11 @@ final class SalesDocumentTypePolicy
     public const TECHNICAL_SERVICE_DOCUMENT_TYPE_IDS = [self::INVOICE, self::SALE_NOTE_ALIAS];
 
     /**
-     * Impide nuevas boletas sin afectar lectura, impresión o auditoría histórica.
+     * Valida los tipos de documento fiscal admitidos por la instalación nueva.
      */
     public static function assertNewFiscalDocumentAllowed(?string $documentTypeId): void
     {
-        if ($documentTypeId === self::RECEIPT) {
-            throw ValidationException::withMessages([
-                'document_type_id' => 'La emisión de Boletas está deshabilitada. Use Factura o Nota de venta.',
-            ]);
-        }
+        self::assertAllowedForFlow($documentTypeId, [self::INVOICE, '07', '08']);
     }
 
     /**
@@ -42,7 +38,7 @@ final class SalesDocumentTypePolicy
     }
 
     /**
-     * Conserva las series históricas, pero evita crear nuevas series de Boleta y sus NC/ND.
+     * Rechaza los códigos de series retirados del catálogo.
      */
     public static function isProhibitedNewSeries(string $documentTypeId, string $number): bool
     {

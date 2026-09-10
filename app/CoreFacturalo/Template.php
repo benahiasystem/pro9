@@ -98,13 +98,6 @@ class Template
     }
 
 
-    public function pdfFooterLegend($base_template, $document)
-    {
-        view()->addLocation(__DIR__.'/Templates');
-
-        return view('pdf.'.$base_template.'.partials.footer_legend', compact('document'))->render();
-    }
-
     public function pdfFooterBlank($base_template, $document)
     {
         view()->addLocation(__DIR__.'/Templates');

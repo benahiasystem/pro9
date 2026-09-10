@@ -25,12 +25,6 @@ class DispatchResource extends JsonResource
         // la propiedad directamente en lugar de chequear el objeto
 
 
-        $has_cdr = false;
-
-        if (in_array($this->state_type_id, ['05', '07'])) {
-            $has_cdr = true;
-        }
-
         return [
             'id' => $this->id,
             'external_id' => $this->external_id,
@@ -41,9 +35,7 @@ class DispatchResource extends JsonResource
             'download_external_pdf' => $this->download_external_pdf,
             'customer_telephone' => optional($this->person)->telephone,
             'response_message' => in_array($this->state_type_id, ['07', '09']) ? ($code ? "{$code} - " : '')."{$response_message}" : $response_message,
-            'has_cdr' => $has_cdr,
             'response_type' => $response_type,
-            'download_cdr' => $this->download_external_cdr,
             'message_text' => "Su orden de entrega {$this->number_full} ha sido generada correctamente, puede revisarla en el siguiente enlace: ".url('')."/downloads/dispatch/pdf/{$this->external_id}"."",
             'pdf_a4_filename' => url('')."/print/dispatch/{$this->external_id}/a4/{$this->filename}.pdf",
             'print_ticket' => url('')."/print/dispatch/{$this->external_id}/ticket",

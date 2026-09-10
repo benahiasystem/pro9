@@ -412,7 +412,7 @@ const MODULES = {
             total:             { title: 'Total',                      visible: false, type: 'price'    },
             balance:           { title: 'Saldo',                      visible: true,  type: 'price'    },
             purchase_order:    { title: 'Orden de Compra',            visible: false, type: 'document' },
-            downloads:         { title: 'Descargas (XML/PDF/CDR)',     visible: true,  type: 'action'   },
+            downloads:         { title: 'Descargas PDF',               visible: true,  type: 'action'   },
             actions:           { title: 'Acciones',                   visible: true,  type: 'action'   },
         },
     },

@@ -17,13 +17,13 @@ class QueryDocumentStatusTool implements ToolInterface
             'type' => 'function',
             'function' => [
                 'name' => $this->name(),
-                'description' => 'Consulta el estado SUNAT de un comprobante específico (aceptado, registrado, rechazado, anulado). Útil cuando el vendedor pregunta si la SUNAT ya aceptó una boleta o factura.',
+                'description' => 'Consulta el estado local de una Factura o nota de crédito/débito. El registro local no implica transmisión ni aceptación por una autoridad fiscal.',
                 'parameters' => [
                     'type' => 'object',
                     'properties' => [
                         'number_full' => [
                             'type' => 'string',
-                            'description' => 'Serie y número del comprobante (ej. B001-9, F001-15).',
+                            'description' => 'Serie y número del comprobante (ej. FF01-15, FC01-9).',
                         ],
                         'document_id' => [
                             'type' => 'integer',
@@ -59,25 +59,19 @@ class QueryDocumentStatusTool implements ToolInterface
 
         return [
             'number_full' => $document->series . '-' . $document->number,
-            'type' => $document->document_type_id === '01' ? 'factura' : 'boleta',
+            'type' => $document->document_type->description,
             'date' => $document->date_of_issue?->format('Y-m-d'),
             'total' => (float) $document->total,
-            'sunat_state' => $this->stateDescription($document->state_type_id),
+            'local_state' => $this->stateDescription($document->state_type_id),
             'state_code' => $document->state_type_id,
             'has_pdf' => (bool) $document->has_pdf,
-            'has_xml' => (bool) $document->has_xml,
-            'has_cdr' => (bool) $document->has_cdr,
         ];
     }
 
     private function stateDescription(?string $stateId): string
     {
         return match ($stateId) {
-            '01' => 'registrado en el sistema (aún no enviado a SUNAT)',
-            '03' => 'enviado a SUNAT, esperando respuesta',
-            '05' => 'aceptado por SUNAT',
-            '07' => 'rechazado por SUNAT',
-            '09' => 'enviado con observaciones',
+            '01' => 'registrado localmente',
             '11' => 'anulado',
             '13' => 'por anular',
             default => 'estado desconocido',

@@ -22,7 +22,7 @@
             <div class="col-lg-12 col-md-12 col-sm-12 text-center font-weight-bold mt-2">
                 <button type="button" class="btn btn-lg btn-info waves-effect waves-light w-100" @click="clickPrint('a4')">
                     Imprimir A4
-                </button>                
+                </button>
             </div>
 
         </div>
@@ -62,6 +62,7 @@
 </template>
 
 <script>
+import {whatsappNumber} from "@helpers/phone";
     export default {
         props: ['showDialog', 'recordId', 'showClose', 'isUpdate'],
         data() {
@@ -89,16 +90,17 @@
         },
         methods: {
             clickSendWhatsapp() {
-                
+
                 if(!this.form.customer_telephone){
                     return this.$message.error('El número es obligatorio')
                 }
 
                 // ########### INICIO CAMBIO TELEFONÍA VENEZUELA
-                const phone = String(this.form.customer_telephone).replace(/\D/g, '').replace(/^(58|51)/, '')
-                window.open(`https://wa.me/58${phone}?text=${encodeURIComponent(this.form.message_text)}`, '_blank');
+                const phone = whatsappNumber(this.form.customer_telephone)
+            if (!phone) return this.$message.error('Ingrese un teléfono venezolano válido.')
+                window.open(`https://wa.me/${phone}?text=${encodeURIComponent(this.form.message_text)}`, '_blank');
                 // ########### FIN CAMBIO TELEFONÍA VENEZUELA
-            
+
             },
             initForm() {
                 this.errors = {};

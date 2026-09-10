@@ -1,33 +1,30 @@
 <?php
-// ######### INICIO CAMBIO NELSON #########
-
-/**
- * Estructura efectiva clonada desde `tenancy_bbc`.
- * Tabla: `guides`.
- *
- * Inventario de columnas:
- * - `id`: int(10) unsigned; NOT NULL; auto_increment — Sin comentario definido en el esquema fuente.
- * - `external_id`: char(36); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
- * - `user_id`: int(10) unsigned; NOT NULL — Sin comentario definido en el esquema fuente.
- * - `warehouse_id`: int(10) unsigned; NOT NULL — Sin comentario definido en el esquema fuente.
- * - `fiscal_environment`: varchar(16); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
- * - `document_type_id`: char(2); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
- * - `series`: varchar(255); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
- * - `number`: int(11); NOT NULL — Sin comentario definido en el esquema fuente.
- * - `date_of_issue`: date; NOT NULL — Sin comentario definido en el esquema fuente.
- * - `time_of_issue`: time; NOT NULL — Sin comentario definido en el esquema fuente.
- * - `inventory_transaction_id`: char(255); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
- * - `guideable_id`: int(10) unsigned; NULL — Sin comentario definido en el esquema fuente.
- * - `guideable_type`: varchar(255); NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
- * - `observations`: longtext; NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
- * - `filename`: varchar(255); NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
- * - `created_at`: timestamp; NULL — Sin comentario definido en el esquema fuente.
- * - `updated_at`: timestamp; NULL — Sin comentario definido en el esquema fuente.
- */
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 
+// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
+/**
+ * Estructura inicial de `guides` para instalaciones nuevas.
+ * Inventario de columnas:
+ * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
+ * - `external_id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL
+ * - `user_id` int(10) unsigned NOT NULL
+ * - `warehouse_id` int(10) unsigned NOT NULL
+ * - `fiscal_environment` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL
+ * - `document_type_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL
+ * - `series` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
+ * - `number` int(11) NOT NULL
+ * - `date_of_issue` date NOT NULL
+ * - `time_of_issue` time NOT NULL
+ * - `inventory_transaction_id` char(255) COLLATE utf8mb4_unicode_ci NOT NULL
+ * - `guideable_id` int(10) unsigned DEFAULT NULL
+ * - `guideable_type` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
+ * - `observations` longtext COLLATE utf8mb4_unicode_ci
+ * - `filename` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
+ * - `created_at` timestamp NULL DEFAULT NULL
+ * - `updated_at` timestamp NULL DEFAULT NULL
+ */
 return new class extends Migration
 {
     public function up(): void
@@ -66,4 +63,4 @@ SQL);
         DB::unprepared('DROP TABLE IF EXISTS `guides`');
     }
 };
-// ######### FIN CAMBIO NELSON #########
+// ######## FIN ESQUEMA INICIAL VENEZUELA ########

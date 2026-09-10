@@ -384,48 +384,7 @@ class InventoryKardexServiceProvider extends ServiceProvider
      */
     private function sale_document_type_03_delete() {
 
-        Document::deleted(function(Document $document) {
-
-            if($document->document_type_id === '03' && $document->state_type_id === '01'){
-
-                foreach ($document->items as $document_item) {
-
-
-                    if(!$document_item->item->is_set){
-
-                        $presentationQuantity = (!empty($document_item->item->presentation)) ? $document_item->item->presentation->quantity_unit : 1;
-
-                        $factor = 1;
-                        $warehouse = $this->findWarehouse();
-
-                        $this->deleteAllInventoryKardexByModel($document);
-
-                        if(!$document->sale_note_id) $this->updateStock($document_item->item_id, ($factor * ($document_item->quantity * $presentationQuantity)), $warehouse->id);
-
-                    }
-                    else{
-
-                        $item = Item::findOrFail($document_item->item_id);
-
-                        foreach ($item->sets as $it) {
-
-                            $ind_item  = $it->individual_item;
-                            $item_set_quantity  = ($it->quantity) ? $it->quantity : 1;
-                            $presentationQuantity = 1;
-                            $factor = 1;
-                            $warehouse = $this->findWarehouse();
-
-                            $this->deleteAllInventoryKardexByModel($document);
-                            if(!$document->sale_note_id) $this->updateStock($ind_item->id, ($factor * ($document_item->quantity * $presentationQuantity * $item_set_quantity)), $warehouse->id);
-
-                        }
-
-                    }
-
-                }
-            }
-
-
+        Document::deleted(function (Document $document) {
         });
     }
 

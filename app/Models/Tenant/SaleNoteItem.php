@@ -6,7 +6,6 @@ namespace App\Models\Tenant;
 
 use App\Models\Tenant\Catalogs\AffectationIgvType;
 use App\Models\Tenant\Catalogs\PriceType;
-use App\Models\Tenant\Catalogs\SystemIscType;
 use App\Traits\AttributePerItems;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
@@ -34,11 +33,6 @@ class SaleNoteItem extends ModelTenant
         'percentage_igv',
         'total_igv',
 
-        'system_isc_type_id',
-        'total_base_isc',
-        'percentage_isc',
-        'total_isc',
-
         'total_base_other_taxes',
         'percentage_other_taxes',
         'total_other_taxes',
@@ -57,7 +51,6 @@ class SaleNoteItem extends ModelTenant
         'discounts',
         'inventory_kardex_id',
         'warehouse_id',
-        'total_plastic_bag_taxes',
         'additional_information',
         'name_product_pdf',
 
@@ -106,11 +99,6 @@ class SaleNoteItem extends ModelTenant
     public function affectation_igv_type()
     {
         return $this->belongsTo(AffectationIgvType::class, 'affectation_igv_type_id');
-    }
-
-    public function system_isc_type()
-    {
-        return $this->belongsTo(SystemIscType::class, 'system_isc_type_id');
     }
 
     public function price_type()
@@ -289,17 +277,6 @@ class SaleNoteItem extends ModelTenant
         return $this->generalConvertValueToPen($this->total_igv, $this->sale_note->exchange_rate_sale);
     }
 
-    /**
-     *
-     * Obtener total isc y realizar conversión a bolívares de acuerdo al tipo de cambio
-     *
-     * @return float
-     */
-    public function getConvertTotalIscToPen()
-    {
-        return $this->generalConvertValueToPen($this->total_isc, $this->sale_note->exchange_rate_sale);
-    }
-
 
     /**
      *
@@ -310,7 +287,7 @@ class SaleNoteItem extends ModelTenant
      */
     public function scopeWhereFilterWithOutRelations($query)
     {
-        return $query->withOut(['affectation_igv_type', 'system_isc_type', 'price_type']);
+        return $query->withOut(['affectation_igv_type', 'price_type']);
     }
 
 

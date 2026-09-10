@@ -1,377 +1,377 @@
 <template>
-    <div v-loading="loading_submit"
-         class="pos-payment pos-checkout row col-lg-12 m-0 p-0">
-        <Keypress :key-code="113"
-                  key-event="keyup"
-                  @success="handleFn113"/>
+<div v-loading="loading_submit"
+     class="pos-payment pos-checkout row col-lg-12 m-0 p-0">
+    <Keypress :key-code="113"
+              key-event="keyup"
+              @success="handleFn113"/>
 
-        <!-- ============ Resumen de la venta ============ -->
-        <aside class="col-lg-4 col-md-6 pos-checkout__summary">
+    <!-- ============ Resumen de la venta ============ -->
+    <aside class="col-lg-4 col-md-6 pos-checkout__summary">
 
-            <header class="pos-checkout__summary-header">
-                <span class="pos-checkout__summary-title">Resumen de la venta</span>
-                <span class="pos-checkout__summary-count">
-                    {{ form.items.length }} {{ form.items.length === 1 ? 'producto' : 'productos' }}
-                </span>
-            </header>
+        <header class="pos-checkout__summary-header">
+            <span class="pos-checkout__summary-title">Resumen de la venta</span>
+            <span class="pos-checkout__summary-count">
+                {{ form.items.length }} {{ form.items.length === 1 ? 'producto' : 'productos' }}
+            </span>
+        </header>
 
-            <div class="pos-checkout__customer">
-                <span class="pos-checkout__label">Cliente</span>
-                <b class="pos-checkout__customer-name">{{ customer.description }}</b>
+        <div class="pos-checkout__customer">
+            <span class="pos-checkout__label">Cliente</span>
+            <b class="pos-checkout__customer-name">{{ customer.description }}</b>
 
-                <!-- sistema por puntos -->
-                <div v-if="enabledPointSystem" class="pos-checkout__points">
-                    <p class="pos-checkout__point-row">
-                        Puntos acumulados: <span>{{ customer_accumulated_points }}</span>
-                        <template v-if="total_exchange_points > 0">
-                            - <b class="text-danger">{{ total_exchange_points }}</b>
-                            = <b>{{ calculate_customer_accumulated_points }}</b>
-                        </template>
-                    </p>
-                    <p class="pos-checkout__point-row pos-checkout__point-row--success">
-                        Puntos por la compra: <span>{{ total_points_by_sale }}</span>
-                    </p>
-                </div>
-                <!-- sistema por puntos -->
-            </div>
-
-            <div class="pos-checkout__items">
-                <div v-for="(item, index) in form.items"
-                     :key="index"
-                     class="pos-checkout__item">
-
-                    <span class="pos-checkout__item-qty">{{ item.quantity }}</span>
-
-                    <div class="pos-checkout__item-body">
-                        <p class="pos-checkout__item-name">{{ item.item.description }}</p>
-
-                        <!-- sistema por puntos -->
-                        <el-checkbox v-if="isAvailablePointSystem(item)"
-                                     v-model="item.item.exchanged_for_points"
-                                     class="pos-checkout__item-flag"
-                                     @change="changeRowExchangePoints(item, index)">
-                            <b>{{ getExchangePointDescription(item) }}</b>
-                        </el-checkbox>
-                        <!-- sistema por puntos -->
-
-                        <!-- restriccion venta productos -->
-                        <span v-if="isRestrictedForSale(item.item)"
-                              class="pos-checkout__item-alert">
-                            Restringido para venta en CPE
-                        </span>
-                        <!-- restriccion venta productos -->
-                    </div>
-
-                    <span class="pos-checkout__item-total">
-                        {{ currencyTypeActive.symbol }} {{ money(item.total) }}
-                    </span>
-                </div>
-            </div>
-
-            <footer class="pos-checkout__summary-footer">
-                <div class="pos-checkout__totals">
-                    <div class="pos-checkout__total-row">
-                        <span>Subtotal</span>
-                        <span>{{ currencyTypeActive.symbol }} {{ money(form.total_taxed) }}</span>
-                    </div>
-                    <div class="pos-checkout__total-row" v-if="!isNrus">
-                        <!-- ########## INICIO CAMBIO IGV A IVA -->
-                        <span>IVA</span>
-                        <!-- ######### FIN CAMBIO IGV A IVA -->
-                        <span>{{ currencyTypeActive.symbol }} {{ money(form.total_igv) }}</span>
-                    </div>
-                    <!-- ########## INICIO SIN DETRACCIONES E ISC -->
-                    <!-- ISC e impuesto a bolsas se conservan en datos históricos, sin presentación activa. -->
-                    <!-- ######### FIN SIN DETRACCIONES E ISC -->
-                    <div class="pos-checkout__total-row" v-if="form.total_discount > 0">
-                        <span>Descuento</span>
-                        <span>- {{ currencyTypeActive.symbol }} {{ money(form.total_discount) }}</span>
-                    </div>
-
-                    <template v-if="showRetentionSummary">
-                        <div class="pos-checkout__total-row">
-                            <span>Importe total</span>
-                            <span>{{ currencyTypeActive.symbol }} {{ money(form.total) }}</span>
-                        </div>
-                        <div class="pos-checkout__total-row">
-                            <span>M. retención</span>
-                            <span>{{ currencyTypeActive.symbol }} {{ money(form.retention.amount) }}</span>
-                        </div>
+            <!-- sistema por puntos -->
+            <div v-if="enabledPointSystem" class="pos-checkout__points">
+                <p class="pos-checkout__point-row">
+                    Puntos acumulados: <span>{{ customer_accumulated_points }}</span>
+                    <template v-if="total_exchange_points > 0">
+                        - <b class="text-danger">{{ total_exchange_points }}</b>
+                        = <b>{{ calculate_customer_accumulated_points }}</b>
                     </template>
-                </div>
-
-                <div class="pos-checkout__grand-total">
-                    <span>{{ showRetentionSummary ? 'TOTAL A PAGAR' : 'TOTAL' }}</span>
-                    <span>{{ currencyTypeActive.symbol }} {{ money(getTotal()) }}</span>
-                </div>
-
-                <button :disabled="button_payment && payment_method_type_id != '09'"
-                        class="pos-checkout__confirm"
-                        type="button"
-                        @click="clickPayment">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M17 8v-3a1 1 0 0 0 -1 -1h-10a2 2 0 0 0 0 4h12a1 1 0 0 1 1 1v3m0 4v3a1 1 0 0 1 -1 1h-12a2 2 0 0 1 -2 -2v-12" /><path d="M20 12v4h-4a2 2 0 0 1 0 -4h4" /></svg>
-                    <span>CONFIRMAR PAGO</span>
-                </button>
-
-                <p v-if="button_payment && payment_method_type_id != '09'"
-                   class="pos-checkout__confirm-hint">
-                    Falta cubrir {{ currencyTypeActive.symbol }} {{ differenceText }} para completar el pago.
                 </p>
+                <p class="pos-checkout__point-row pos-checkout__point-row--success">
+                    Puntos por la compra: <span>{{ total_points_by_sale }}</span>
+                </p>
+            </div>
+            <!-- sistema por puntos -->
+        </div>
 
-                <button class="pos-checkout__cancel"
-                        type="button"
-                        @click="clickCancel">Cancelar compra
-                </button>
-            </footer>
-        </aside>
+        <div class="pos-checkout__items">
+            <div v-for="(item, index) in form.items"
+                 :key="index"
+                 class="pos-checkout__item">
 
-        <!-- ============ Formulario de cobro ============ -->
-        <div class="col-lg-8 col-md-6 pos-checkout__main">
-            <div class="pos-checkout__form">
+                <span class="pos-checkout__item-qty">{{ item.quantity }}</span>
 
-                <!-- Comprobante -->
-                <section class="pos-card pos-card--voucher">
-                    <button class="pos-checkout__back"
-                            type="button"
-                            @click="back">
-                        <i class="fas fa-angle-left"></i> Volver al carrito
-                    </button>
+                <div class="pos-checkout__item-body">
+                    <p class="pos-checkout__item-name">{{ item.item.description }}</p>
 
-                    <div class="pos-card__voucher-fields">
-                        <div class="pos-field">
-                            <el-radio-group v-model="form.document_type_id"
-                                            class="pos-doctype"
-                                            size="small"
-                                            @change="filterSeries">
-                                <el-radio-button v-if="!isNrus" label="01">FACTURA</el-radio-button>
-                                <!-- ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA -->
-                                <el-radio-button label="80">N. VENTA</el-radio-button>
-                                <!-- ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA -->
-                            </el-radio-group>
-                        </div>
+                    <!-- sistema por puntos -->
+                    <el-checkbox v-if="isAvailablePointSystem(item)"
+                                 v-model="item.item.exchanged_for_points"
+                                 class="pos-checkout__item-flag"
+                                 @change="changeRowExchangePoints(item, index)">
+                        <b>{{ getExchangePointDescription(item) }}</b>
+                    </el-checkbox>
+                    <!-- sistema por puntos -->
 
-                        <div class="pos-field pos-field--series">
-                            <el-select v-model="form.series_id" placeholder="Serie">
-                                <el-option v-for="option in series"
-                                           :key="option.id"
-                                           :label="option.number"
-                                           :value="option.id">
-                                </el-option>
-                            </el-select>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Monto a cobrar -->
-                <section class="pos-card pos-card--amount">
-                    <div class="pos-amount">
-                        <span class="pos-amount__label">Monto a cobrar</span>
-                        <span class="pos-amount__value">
-                            {{ currencyTypeActive.symbol }} {{ money(getTotal()) }}
-                        </span>
-                    </div>
-
-                    <div class="pos-amount__grid">
-                        <div class="pos-field">
-                            <label class="pos-field__label">Con cuánto paga el cliente</label>
-                            <div class="pos-money-input">
-                                <span class="pos-money-input__symbol">{{ currencyTypeActive.symbol }}</span>
-                                <el-input ref="enter_amount"
-                                          inputmode="decimal"
-                                          v-model="enter_amount"
-                                          @input="enterAmount()"
-                                          @focus="valueInputSelect"
-                                          @click.native="valueInputSelect"
-                                          @keyup.enter.native="keyupEnterAmount()">
-                                </el-input>
-                            </div>
-
-                            <div v-if="form_payment.payment_method_type_id=='01'"
-                                 class="pos-quick-cash">
-                                <button type="button"
-                                        class="pos-quick-cash__btn pos-quick-cash__btn--exact"
-                                        @click="setExactAmount()">Importe exacto
-                                </button>
-                                <!-- ########## INICIO CAMBIO QUITAR SELECCIÓN DE BILLETES -->
-                                <!-- El importe se captura manualmente; no se muestran denominaciones rápidas. -->
-                                <!-- ######### FIN CAMBIO QUITAR SELECCIÓN DE BILLETES -->
-                            </div>
-                        </div>
-
-                        <div class="pos-change"
-                             :class="isMissingAmount ? 'is-missing' : 'is-change'">
-                            <span class="pos-change__label"
-                                  v-text="isMissingAmount ? 'Faltante' : 'Vuelto'"></span>
-                            <span class="pos-change__value">
-                                {{ currencyTypeActive.symbol }} {{ differenceText }}
-                            </span>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Descuento y propina -->
-                <div class="pos-card-row"
-                     v-if="(!disabledDiscountForSeller && enableGlobalDiscount) || enabledTipsPos">
-
-                    <!-- Descuento -->
-                    <section class="pos-card pos-card--compact" v-if="!disabledDiscountForSeller && enableGlobalDiscount">
-                        <div class="pos-card__head">
-                            <h5 class="pos-card__title">Descuento</h5>
-                            <el-switch v-model="enabled_discount"
-                                       @change="changeEnabledDiscount"></el-switch>
-                        </div>
-
-                        <div v-if="enabled_discount" class="pos-card__body">
-                            <div class="pos-money-input pos-money-input--sm">
-                                <span class="pos-money-input__symbol">
-                                    {{ is_discount_amount ? currencyTypeActive.symbol : '%' }}
-                                </span>
-                                <el-input v-model="discount_amount"
-                                          inputmode="decimal"
-                                          :disabled="!enabled_discount"
-                                          @focus="valueInputSelect"
-                                          @click.native="valueInputSelect"
-                                          @change="inputDiscountAmount()">
-                                </el-input>
-                            </div>
-
-                            <div class="pos-card__foot">
-                                <el-checkbox v-model="is_discount_amount"
-                                             @change="changeTypeDiscount">
-                                    Aplicar como monto
-                                </el-checkbox>
-                                <el-tooltip class="item"
-                                            v-if="global_discount_type && global_discount_type.description"
-                                            :content="global_discount_type.description"
-                                            effect="dark"
-                                            placement="top">
-                                    <i class="fa fa-info-circle"></i>
-                                </el-tooltip>
-                            </div>
-                        </div>
-                        <p v-else class="pos-card__hint">Descuento global sobre el total.</p>
-                    </section>
-
-                    <!-- Propinas -->
-                    <section class="pos-card pos-card--compact" v-if="enabledTipsPos">
-                        <div class="pos-card__head">
-                            <h5 class="pos-card__title">
-                                Propina
-                                <el-tooltip class="item"
-                                            content="No se incluye en el comprobante ni en el importe a cobrar: sólo queda registrada para el reporte de propinas del empleado. Debe indicar el empleado y un monto mayor a 0."
-                                            effect="dark"
-                                            placement="top">
-                                    <i class="fa fa-info-circle"></i>
-                                </el-tooltip>
-                            </h5>
-                        </div>
-
-                        <div class="pos-card__body pos-tip">
-                            <el-input v-model="form.worker_full_name_tips"
-                                      placeholder="Empleado"></el-input>
-                            <div class="pos-money-input pos-money-input--sm pos-tip__amount">
-                                <span class="pos-money-input__symbol">{{ currencyTypeActive.symbol }}</span>
-                                <el-input v-model="form.total_tips"
-                                          inputmode="decimal"
-                                          @focus="valueInputSelect"
-                                          @click.native="valueInputSelect"
-                                          @input="sanitizeTipAmount"></el-input>
-                            </div>
-                        </div>
-                    </section>
+                    <!-- restriccion venta productos -->
+                    <span v-if="isRestrictedForSale(item.item)"
+                          class="pos-checkout__item-alert">
+                        Restringido para venta en CPE
+                    </span>
+                    <!-- restriccion venta productos -->
                 </div>
 
-                <!-- Pagos agregados -->
-                <section class="pos-card">
-                    <div class="pos-card__head">
-                        <div>
-                            <h5 class="pos-card__title">Formas de pago</h5>
-                            <p class="pos-card__hint">Divide el cobro en uno o varios métodos de pago.</p>
-                        </div>
-                        <button type="button"
-                                class="pos-btn-outline"
-                                @click="clickAddPayment()">
-                            <i class="fas fa-plus"></i> Agregar
-                        </button>
-                    </div>
-
-                    <ul class="pos-payments">
-                        <li v-for="(pay, index) in form.payments"
-                            :key="index"
-                            class="pos-payments__row">
-                            <span class="pos-payments__idx">{{ index + 1 }}</span>
-                            <span class="pos-payments__method">
-                                {{ getDescriptionPaymentMethodType(pay.payment_method_type_id) }}
-                            </span>
-                            <span class="pos-payments__amount">
-                                {{ currencyTypeActive.symbol }} {{ money(pay.payment) }}
-                            </span>
-                        </li>
-                        <li v-if="form.payments.length === 0" class="pos-payments__empty">
-                            Aún no se ha registrado ninguna forma de pago.
-                        </li>
-                    </ul>
-                </section>
-
-                <!-- Datos adicionales -->
-                <section class="pos-card">
-                    <div class="pos-card__head">
-                        <div>
-                            <h5 class="pos-card__title">Datos adicionales</h5>
-                            <p class="pos-card__hint">Información opcional que se imprime en el comprobante.</p>
-                        </div>
-                    </div>
-
-                    <div class="pos-card__body">
-                        <div class="pos-field mb-2" v-if="configuration.enabled_sales_agents">
-                            <search-agent @changeAgent="changeAgent"></search-agent>
-                        </div>
-
-                        <div :class="{ 'pos-card__body--grid': businessTurns.active }">
-                            <div class="pos-field">
-                                <label class="pos-field__label">Datos de referencia</label>
-                                <el-input v-model="form.reference_data" type="textarea"></el-input>
-                            </div>
-
-                            <div class="pos-field pos-field--narrow" v-if="businessTurns.active">
-                                <label class="pos-field__label">N° Placa</label>
-                                <el-input v-model="form.plate_number" type="text"></el-input>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
+                <span class="pos-checkout__item-total">
+                    {{ currencyTypeActive.symbol }} {{ money(item.total) }}
+                </span>
             </div>
         </div>
 
-        <options-form
-            :recordId="documentNewId"
-            :resource="resource_options"
-            :showDialog.sync="showDialogOptions"
-            :statusDocument="statusDocument"
-            :fromPos="true"
-            :isPrint="isPrint"
-        ></options-form>
+        <footer class="pos-checkout__summary-footer">
+            <div class="pos-checkout__totals">
+                <div class="pos-checkout__total-row">
+                    <span>Subtotal</span>
+                    <span>{{ currencyTypeActive.symbol }} {{ money(form.total_taxed) }}</span>
+                </div>
+                <div class="pos-checkout__total-row" v-if="!isNrus">
+                    <!-- ########## INICIO CAMBIO IGV A IVA -->
+                    <span>IVA</span>
+                    <!-- ######### FIN CAMBIO IGV A IVA -->
+                    <span>{{ currencyTypeActive.symbol }} {{ money(form.total_igv) }}</span>
+                </div>
+                <!-- ########## INICIO SIN DETRACCIONES E ISC -->
+                <!-- ISC e impuesto a bolsas se conservan en datos históricos, sin presentación activa. -->
+                <!-- ######### FIN SIN DETRACCIONES E ISC -->
+                <div class="pos-checkout__total-row" v-if="form.total_discount > 0">
+                    <span>Descuento</span>
+                    <span>- {{ currencyTypeActive.symbol }} {{ money(form.total_discount) }}</span>
+                </div>
 
-        <multiple-payment-form
-            :payments="payments"
-            :showDialog.sync="showDialogMultiplePayment"
-            :total="getTotal()"
-            @add="addRow"
-            @setPaymentMethod="setPaymentMethod"
+                <template v-if="showRetentionSummary">
+                    <div class="pos-checkout__total-row">
+                        <span>Importe total</span>
+                        <span>{{ currencyTypeActive.symbol }} {{ money(form.total) }}</span>
+                    </div>
+                    <div class="pos-checkout__total-row">
+                        <span>M. retención</span>
+                        <span>{{ currencyTypeActive.symbol }} {{ money(form.retention.amount) }}</span>
+                    </div>
+                </template>
+            </div>
 
-        ></multiple-payment-form>
+            <div class="pos-checkout__grand-total">
+                <span>{{ showRetentionSummary ? 'TOTAL A PAGAR' : 'TOTAL' }}</span>
+                <span>{{ currencyTypeActive.symbol }} {{ money(getTotal()) }}</span>
+            </div>
 
-        <card-brands-form :external="true"
-                          :recordId="null"
-                          :showDialog.sync="showDialogNewCardBrand"></card-brands-form>
+            <button :disabled="button_payment && payment_method_type_id != '09'"
+                    class="pos-checkout__confirm"
+                    type="button"
+                    @click="clickPayment">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M17 8v-3a1 1 0 0 0 -1 -1h-10a2 2 0 0 0 0 4h12a1 1 0 0 1 1 1v3m0 4v3a1 1 0 0 1 -1 1h-12a2 2 0 0 1 -2 -2v-12" /><path d="M20 12v4h-4a2 2 0 0 1 0 -4h4" /></svg>
+                <span>CONFIRMAR PAGO</span>
+            </button>
 
-        <discount-permission-form
-                    :showDialog.sync="showDialogDiscountPermission"
-                    :totalDiscountPercentage ="totalDiscountPercentage"
-                    :sellers-discount-limit="configuration.sellers_discount_limit"
-                    @tokenValidated="tokenValidated"></discount-permission-form>
+            <p v-if="button_payment && payment_method_type_id != '09'"
+               class="pos-checkout__confirm-hint">
+                Falta cubrir {{ currencyTypeActive.symbol }} {{ differenceText }} para completar el pago.
+            </p>
+
+            <button class="pos-checkout__cancel"
+                    type="button"
+                    @click="clickCancel">Cancelar compra
+            </button>
+        </footer>
+    </aside>
+
+    <!-- ============ Formulario de cobro ============ -->
+    <div class="col-lg-8 col-md-6 pos-checkout__main">
+        <div class="pos-checkout__form">
+
+            <!-- Comprobante -->
+            <section class="pos-card pos-card--voucher">
+                <button class="pos-checkout__back"
+                        type="button"
+                        @click="back">
+                    <i class="fas fa-angle-left"></i> Volver al carrito
+                </button>
+
+                <div class="pos-card__voucher-fields">
+                    <div class="pos-field">
+                        <el-radio-group v-model="form.document_type_id"
+                                        class="pos-doctype"
+                                        size="small"
+                                        @change="filterSeries">
+                            <el-radio-button v-if="!isNrus" label="01">FACTURA</el-radio-button>
+                            <!-- ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA -->
+                            <el-radio-button label="80">N. VENTA</el-radio-button>
+                            <!-- ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA -->
+                        </el-radio-group>
+                    </div>
+
+                    <div class="pos-field pos-field--series">
+                        <el-select v-model="form.series_id" placeholder="Serie">
+                            <el-option v-for="option in series"
+                                       :key="option.id"
+                                       :label="option.number"
+                                       :value="option.id">
+                            </el-option>
+                        </el-select>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Monto a cobrar -->
+            <section class="pos-card pos-card--amount">
+                <div class="pos-amount">
+                    <span class="pos-amount__label">Monto a cobrar</span>
+                    <span class="pos-amount__value">
+                        {{ currencyTypeActive.symbol }} {{ money(getTotal()) }}
+                    </span>
+                </div>
+
+                <div class="pos-amount__grid">
+                    <div class="pos-field">
+                        <label class="pos-field__label">Con cuánto paga el cliente</label>
+                        <div class="pos-money-input">
+                            <span class="pos-money-input__symbol">{{ currencyTypeActive.symbol }}</span>
+                            <el-input ref="enter_amount"
+                                      inputmode="decimal"
+                                      v-model="enter_amount"
+                                      @input="enterAmount()"
+                                      @focus="valueInputSelect"
+                                      @click.native="valueInputSelect"
+                                      @keyup.enter.native="keyupEnterAmount()">
+                            </el-input>
+                        </div>
+
+                        <div v-if="form_payment.payment_method_type_id=='01'"
+                             class="pos-quick-cash">
+                            <button type="button"
+                                    class="pos-quick-cash__btn pos-quick-cash__btn--exact"
+                                    @click="setExactAmount()">Importe exacto
+                            </button>
+                            <!-- ########## INICIO CAMBIO QUITAR SELECCIÓN DE BILLETES -->
+                            <!-- El importe se captura manualmente; no se muestran denominaciones rápidas. -->
+                            <!-- ######### FIN CAMBIO QUITAR SELECCIÓN DE BILLETES -->
+                        </div>
+                    </div>
+
+                    <div class="pos-change"
+                         :class="isMissingAmount ? 'is-missing' : 'is-change'">
+                        <span class="pos-change__label"
+                              v-text="isMissingAmount ? 'Faltante' : 'Vuelto'"></span>
+                        <span class="pos-change__value">
+                            {{ currencyTypeActive.symbol }} {{ differenceText }}
+                        </span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Descuento y propina -->
+            <div class="pos-card-row"
+                 v-if="(!disabledDiscountForSeller && enableGlobalDiscount) || enabledTipsPos">
+
+                <!-- Descuento -->
+                <section class="pos-card pos-card--compact" v-if="!disabledDiscountForSeller && enableGlobalDiscount">
+                    <div class="pos-card__head">
+                        <h5 class="pos-card__title">Descuento</h5>
+                        <el-switch v-model="enabled_discount"
+                                   @change="changeEnabledDiscount"></el-switch>
+                    </div>
+
+                    <div v-if="enabled_discount" class="pos-card__body">
+                        <div class="pos-money-input pos-money-input--sm">
+                            <span class="pos-money-input__symbol">
+                                {{ is_discount_amount ? currencyTypeActive.symbol : '%' }}
+                            </span>
+                            <el-input v-model="discount_amount"
+                                      inputmode="decimal"
+                                      :disabled="!enabled_discount"
+                                      @focus="valueInputSelect"
+                                      @click.native="valueInputSelect"
+                                      @change="inputDiscountAmount()">
+                            </el-input>
+                        </div>
+
+                        <div class="pos-card__foot">
+                            <el-checkbox v-model="is_discount_amount"
+                                         @change="changeTypeDiscount">
+                                Aplicar como monto
+                            </el-checkbox>
+                            <el-tooltip class="item"
+                                        v-if="global_discount_type && global_discount_type.description"
+                                        :content="global_discount_type.description"
+                                        effect="dark"
+                                        placement="top">
+                                <i class="fa fa-info-circle"></i>
+                            </el-tooltip>
+                        </div>
+                    </div>
+                    <p v-else class="pos-card__hint">Descuento global sobre el total.</p>
+                </section>
+
+                <!-- Propinas -->
+                <section class="pos-card pos-card--compact" v-if="enabledTipsPos">
+                    <div class="pos-card__head">
+                        <h5 class="pos-card__title">
+                            Propina
+                            <el-tooltip class="item"
+                                        content="No se incluye en el comprobante ni en el importe a cobrar: sólo queda registrada para el reporte de propinas del empleado. Debe indicar el empleado y un monto mayor a 0."
+                                        effect="dark"
+                                        placement="top">
+                                <i class="fa fa-info-circle"></i>
+                            </el-tooltip>
+                        </h5>
+                    </div>
+
+                    <div class="pos-card__body pos-tip">
+                        <el-input v-model="form.worker_full_name_tips"
+                                  placeholder="Empleado"></el-input>
+                        <div class="pos-money-input pos-money-input--sm pos-tip__amount">
+                            <span class="pos-money-input__symbol">{{ currencyTypeActive.symbol }}</span>
+                            <el-input v-model="form.total_tips"
+                                      inputmode="decimal"
+                                      @focus="valueInputSelect"
+                                      @click.native="valueInputSelect"
+                                      @input="sanitizeTipAmount"></el-input>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Pagos agregados -->
+            <section class="pos-card">
+                <div class="pos-card__head">
+                    <div>
+                        <h5 class="pos-card__title">Formas de pago</h5>
+                        <p class="pos-card__hint">Divide el cobro en uno o varios métodos de pago.</p>
+                    </div>
+                    <button type="button"
+                            class="pos-btn-outline"
+                            @click="clickAddPayment()">
+                        <i class="fas fa-plus"></i> Agregar
+                    </button>
+                </div>
+
+                <ul class="pos-payments">
+                    <li v-for="(pay, index) in form.payments"
+                        :key="index"
+                        class="pos-payments__row">
+                        <span class="pos-payments__idx">{{ index + 1 }}</span>
+                        <span class="pos-payments__method">
+                            {{ getDescriptionPaymentMethodType(pay.payment_method_type_id) }}
+                        </span>
+                        <span class="pos-payments__amount">
+                            {{ currencyTypeActive.symbol }} {{ money(pay.payment) }}
+                        </span>
+                    </li>
+                    <li v-if="form.payments.length === 0" class="pos-payments__empty">
+                        Aún no se ha registrado ninguna forma de pago.
+                    </li>
+                </ul>
+            </section>
+
+            <!-- Datos adicionales -->
+            <section class="pos-card">
+                <div class="pos-card__head">
+                    <div>
+                        <h5 class="pos-card__title">Datos adicionales</h5>
+                        <p class="pos-card__hint">Información opcional que se imprime en el comprobante.</p>
+                    </div>
+                </div>
+
+                <div class="pos-card__body">
+                    <div class="pos-field mb-2" v-if="configuration.enabled_sales_agents">
+                        <search-agent @changeAgent="changeAgent"></search-agent>
+                    </div>
+
+                    <div :class="{ 'pos-card__body--grid': businessTurns.active }">
+                        <div class="pos-field">
+                            <label class="pos-field__label">Datos de referencia</label>
+                            <el-input v-model="form.reference_data" type="textarea"></el-input>
+                        </div>
+
+                        <div class="pos-field pos-field--narrow" v-if="businessTurns.active">
+                            <label class="pos-field__label">N° Placa</label>
+                            <el-input v-model="form.plate_number" type="text"></el-input>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </div>
     </div>
+
+    <options-form
+        :recordId="documentNewId"
+        :resource="resource_options"
+        :showDialog.sync="showDialogOptions"
+        :statusDocument="statusDocument"
+        :fromPos="true"
+        :isPrint="isPrint"
+    ></options-form>
+
+    <multiple-payment-form
+        :payments="payments"
+        :showDialog.sync="showDialogMultiplePayment"
+        :total="getTotal()"
+        @add="addRow"
+        @setPaymentMethod="setPaymentMethod"
+
+    ></multiple-payment-form>
+
+    <card-brands-form :external="true"
+                      :recordId="null"
+                      :showDialog.sync="showDialogNewCardBrand"></card-brands-form>
+
+    <discount-permission-form
+                :showDialog.sync="showDialogDiscountPermission"
+                :totalDiscountPercentage ="totalDiscountPercentage"
+                :sellers-discount-limit="configuration.sellers_discount_limit"
+                @tokenValidated="tokenValidated"></discount-permission-form>
+</div>
 </template>
 
 <script>
@@ -803,7 +803,7 @@ export default {
                 {
                     let total_taxed = base - amount;
                     let total_igv = total_taxed * (percentage_igv / 100);
-                    let total_taxes = total_igv + ctx.total_isc + ctx.total_plastic_bag_taxes;
+                    let total_taxes = total_igv;
                     let total = total_taxed + total_taxes;
 
                     this.form.total_taxed = _.round(parseFloat(total_taxed.toFixed(3)), 2)
@@ -855,9 +855,9 @@ export default {
             let total_igv = 0
             let total_value = 0
             let total = 0
-            let total_plastic_bag_taxes = 0
-            let total_base_isc = 0
-            let total_isc = 0
+
+
+
             let total_igv_free = 0
 
 
@@ -897,14 +897,14 @@ export default {
                     total_value += (row.total_value_without_rounding) ? parseFloat(row.total_value_without_rounding) : parseFloat(row.total_value)
                 }
 
-                total_plastic_bag_taxes += parseFloat(row.total_plastic_bag_taxes)
+
 
 
                 if (['11', '12', '13', '14', '15', '16'].includes(row.affectation_igv_type_id)) {
 
                     let unit_value = row.total_value / row.quantity
                     let total_value_partial = unit_value * row.quantity
-                    row.total_taxes = row.total_value - total_value_partial + parseFloat(row.total_plastic_bag_taxes) //sumar icbper al total tributos
+                    row.total_taxes = row.total_value - total_value_partial + parseFloat(0) //sumar icbper al total tributos
 
                     row.total_igv = total_value_partial * (row.percentage_igv / 100)
                     row.total_base_igv = total_value_partial
@@ -916,11 +916,11 @@ export default {
                 }
 
                 // isc
-                total_isc += parseFloat(row.total_isc)
-                total_base_isc += parseFloat(row.total_base_isc)
+
+
 
             });
-            let total_taxes = total_igv + total_isc + total_plastic_bag_taxes;
+            let total_taxes = total_igv;
             let total_all = total - this.total_discount_no_base
 
             let totals_without_rounding = {
@@ -934,17 +934,17 @@ export default {
                 total_igv,
                 total_value,
                  total: total_all,
-                total_plastic_bag_taxes,
+
                  total_igv_free,
-                 total_base_isc,
-                 total_isc,
+
+
                  total_taxes
             }
 
 
             // isc
-            this.form.total_base_isc = _.round(total_base_isc, 2)
-            this.form.total_isc = _.round(total_isc, 2)
+
+
 
             this.form.total_igv_free = _.round(total_igv_free, 2)
 
@@ -958,16 +958,13 @@ export default {
             // this.form.total_taxes = _.round(total_igv, 2)
 
             //impuestos (isc + igv + icbper)
-            this.form.total_taxes = _.round(total_igv + total_isc + total_plastic_bag_taxes, 2);
-            // this.form.total_taxes = _.round(total_igv + total_isc, 2);
+            this.form.total_taxes = _.round(total_igv, 2);
 
-            this.form.total_plastic_bag_taxes = _.round(total_plastic_bag_taxes, 2)
+
 
             this.form.total = _.round(total, 2)
             this.form.subtotal = this.form.total
 
-            // this.form.total = _.round(total + this.form.total_plastic_bag_taxes, 2)
-            // this.form.subtotal = _.round(total + this.form.total_plastic_bag_taxes, 2)
 
             this.discountGlobal(totals_without_rounding)
 

@@ -49,8 +49,6 @@ class Contract extends ModelTenant
         'total_unaffected',
         'total_exonerated',
         'total_igv',
-        'total_base_isc',
-        'total_isc',
         'total_base_other_taxes',
         'total_other_taxes',
         'total_taxes',
@@ -236,7 +234,7 @@ class Contract extends ModelTenant
                 $user = new User();
             }
         }
-        else { 
+        else {
             $user = auth()->user();
         }
         return ($user->type == 'seller') ? $query->where('user_id', $user->id) : null;
@@ -273,15 +271,15 @@ class Contract extends ModelTenant
             'name' => ''
         ]);
     }
-    
+
 
     /**
-     * 
+     *
      * Filtro para no incluir relaciones en consulta
      *
      * @param \Illuminate\Database\Eloquent\Builder $query
      * @return \Illuminate\Database\Eloquent\Builder
-     */  
+     */
     public function scopeWhereFilterWithOutRelations($query)
     {
         return $query->withOut(['user', 'fiscal_environment_type', 'state_type', 'currency_type', 'items', 'payments']);
@@ -289,7 +287,7 @@ class Contract extends ModelTenant
 
 
     /**
-     * 
+     *
      * Obtener relaciones necesarias o aplicar filtros para reporte pagos - finanzas
      *
      * @param  Builder $query
@@ -299,7 +297,7 @@ class Contract extends ModelTenant
     {
         return $query->whereFilterWithOutRelations();
     }
-    
+
 
 }
 // ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

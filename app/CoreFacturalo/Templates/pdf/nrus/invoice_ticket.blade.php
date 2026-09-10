@@ -457,16 +457,11 @@
                     @endif
 
                     {{-- ########## INICIO SIN DETRACCIONES E ISC --}}
-                    @if(\App\Services\LocalFiscalDocumentPolicy::showIsc() && ($row->total_isc > 0))
-                    {{-- ######### FIN SIN DETRACCIONES E ISC --}}
-                        <br/>ISC : {{ $row->total_isc }} ({{ $row->percentage_isc }}%)
-                    @endif
+
 
                     @if (!empty($row->item->presentation)) {!!$row->item->presentation->description!!} @endif
 
-                    @if($row->total_plastic_bag_taxes > 0)
-                        <br/>ICBPER : {{ $row->total_plastic_bag_taxes }}
-                    @endif
+
 
                     @foreach($row->additional_information as $information)
                         @if ($information)
@@ -565,7 +560,7 @@
             <tr>
                 <td class="text-center desc-9 align-top">1</td>
                 <td class="text-left desc-9 align-top">
-                    ANTICIPO: {{($p->document_type_id == '02')? 'FACTURA':'BOLETA'}} NRO. {{$p->number}}
+                    ANTICIPO: FACTURA NRO. {{$p->number}}
                 </td>
                 <td class="text-right  desc-9 align-top">-{{ number_format($p->total, 2) }}</td>
                 <td class="text-right  desc-9 align-top">-{{ number_format($p->total, 2) }}</td>
@@ -599,12 +594,7 @@
 
     {{-- OP. GRAVADAS oculto en NRUS --}}
 
-    @if($document->total_plastic_bag_taxes > 0)
-        <tr>
-            <td colspan="3" class="text-right font-bold desc">ICBPER: {{ $document->currency_type->symbol }}</td>
-            <td class="text-right font-bold desc">{{ number_format($document->total_plastic_bag_taxes, 2) }}</td>
-        </tr>
-    @endif
+
     {{-- IGV oculto en NRUS --}}
 
     {{-- ISC oculto en NRUS --}}
@@ -697,7 +687,6 @@
     @endforeach
     <tr>
         <td class="text-center pt-1">
-            <img class="" style="max-width: 100px" src="data:image/png;base64, {{ $document->qr }}" />
         </td>
         <td>
             @foreach($document->additional_information as $information)
@@ -710,7 +699,7 @@
             @endforeach
 
             @if(isset($configurationInPdf) && $configurationInPdf->show_bank_accounts_in_pdf)
-                @if(in_array($document->document_type->id,['01','03']))
+                @if(((string) $document->document_type->id === '01'))
                     @foreach($accounts as $account)
                         <p class="desc">
                             <small>
@@ -725,7 +714,6 @@
                 @endif
             @endif
 
-            <p class="desc"><strong>CÓDIGO HASH:</strong> {{ $document->hash }}</p>
 
             @php
                 $paymentCondition = \App\CoreFacturalo\Helpers\Template\TemplateHelper::getDocumentPaymentCondition($document);
@@ -798,18 +786,7 @@
     </tr>
 </table>
 <table class="full-width">
-    @if ($customer->department_id == 16)
-        <tr>
-            <td class="text-center desc pt-5">
-                Representación impresa del Comprobante de Pago Electrónico.
-                <br/>Esta puede ser consultada en:
-                <br/> <b>{!! url('/buscar') !!}</b>
-                <br/> "Bienes transferidos en la Amazonía
-                <br/>para ser consumidos en la misma
-            </td>
-        </tr>
-    @endif
-    @if ($document->terms_condition)
+@if ($document->terms_condition)
         <tr>
             <td class="desc">
                 <br>

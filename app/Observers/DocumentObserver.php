@@ -66,7 +66,7 @@ class DocumentObserver
      */
     public function updated(Document $document)
     {
-        // Notifica el ciclo de vida SUNAT (aceptado/observado/rechazado/anulado)
+        // Notifica cambios del ciclo de vida local que tengan un evento registrado.
         if ($document->wasChanged('state_type_id')) {
             if ($event = WebhookEvents::forDocumentState($document->state_type_id)) {
                 app(WebhookDispatcher::class)->dispatch($event, $document);

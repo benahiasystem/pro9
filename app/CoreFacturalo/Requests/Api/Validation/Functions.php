@@ -95,11 +95,10 @@ class Functions
             $item->sale_affectation_igv_type_id = $inputs['affectation_igv_type_id'];
             $item->purchase_affectation_igv_type_id = $inputs['affectation_igv_type_id'];
             $item->stock = 0;
-            $item->amount_plastic_bag_taxes = self::getAmountPlasticBagTaxes();
             $item->save();
 
         }else{
-            
+
             $update_description = isset($inputs['update_description']) ? $inputs['update_description'] : false;
 
             if($update_description)
@@ -108,15 +107,10 @@ class Functions
                     'description' => $inputs['description'],
                 ]);
             }
-            
+
         }
 
         return $item->id;
-    }
-
-    public static function getAmountPlasticBagTaxes()
-    {
-        return Configuration::select('amount_plastic_bag_taxes')->first()->amount_plastic_bag_taxes;
     }
 
     public static function item2($inputs) {
@@ -149,7 +143,7 @@ class Functions
         return $document;
     }
 
-    public static function voidedDocuments($inputs, $type) {
+    public static function voidedDocuments($inputs) {
         if (count($inputs['documents']) === 0) {
             throw new Exception("No se enviaron documentos para la anulación.");
         }
@@ -158,7 +152,7 @@ class Functions
         foreach ($inputs['documents'] as $row) {
             $document = Document::where('external_id', $row['external_id'])
                 ->whereDate('date_of_issue', $inputs['date_of_reference'])
-                ->where('group_id', ($type === 'summary')?'02':'01')
+                ->where('group_id', '01')
                 ->first();
 
             if (!$document) throw new Exception("El código externo {$row['external_id']} no fue encontrado o la fecha indica no corresponde al documento.");
@@ -184,20 +178,12 @@ class Functions
 
         if ((bool) optional(Configuration::first())->isNrus()
             && ! in_array($series->document_type_id, SeriesCodeGenerator::nrusDocumentTypeIds(), true)) {
-            throw new Exception("Para empresas NRUS solo están disponibles las series de Boleta de venta electrónica y Nota de venta.");
+            throw new Exception("Para empresas NRUS solo están disponibles las series de Nota de venta.");
         }
     }
 
-    public static function DNI($inputs){
-        if (($inputs['document_type_id'] == '03') && ($inputs['total']) > 700) {
-            $person = Person::query()
-                ->with('identity_document_type')
-                ->find($inputs['customer_id']);
-
-            if (!in_array((string) $person->identity_document_type_id, IdentityDocument::ids(), true)) {
-                throw new Exception("El tipo doc. identidad {$person->identity_document_type->description} del cliente no es válido.");
-            }
-        }
+    public static function DNI($inputs)
+    {
     }
 
     public static function identityDocumentTypeInvoice($inputs)
@@ -217,7 +203,7 @@ class Functions
 
 
 
-    public static function validateRequiredDistrict($district_id) 
+    public static function validateRequiredDistrict($district_id)
     {
         if (is_null($district_id)) throw new Exception("El campo ubigeo es obligatorio");
 
@@ -227,17 +213,17 @@ class Functions
         if (!$exist_district) throw new Exception("El código ubigeo es incorrecto");
     }
 
-    
+
     /**
-     * 
+     *
      * Validar fecha de emisión en base a los días configurados en el plazo de envío
      *
      * Días contados desde la fecha de emisión
-     * 
+     *
      * @param  array $inputs
      * @return void
      */
-    public static function validateDateOfIssue($inputs) 
+    public static function validateDateOfIssue($inputs)
     {
 
         $configuration = Configuration::select('shipping_time_days', 'restrict_receipt_date')->firstOrFail();
@@ -247,7 +233,7 @@ class Functions
             $today = Carbon::now();
             $date_of_issue = Carbon::parse($inputs['date_of_issue']);
             $difference_days = $configuration->shipping_time_days - $date_of_issue->diffInDays($today);
-    
+
             if($difference_days <= 0) throw new Exception("La fecha de emisión no puede ser menor a {$configuration->shipping_time_days} día(s).");
         }
 

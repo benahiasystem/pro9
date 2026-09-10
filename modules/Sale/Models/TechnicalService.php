@@ -49,11 +49,8 @@
      * @property float|null                           $total_exonerated
      * @property float|null                           $total_igv
      * @property float|null                           $total_igv_free
-     * @property float|null                           $total_base_isc
-     * @property float|null                           $total_isc
      * @property float|null                           $total_base_other_taxes
      * @property float|null                           $total_other_taxes
-     * @property float|null                           $total_plastic_bag_taxes
      * @property float|null                           $total_taxes
      * @property float|null                           $total_value
      * @property float|null                           $subtotal
@@ -117,11 +114,8 @@
             'total_exonerated',
             'total_igv',
             'total_igv_free',
-            'total_base_isc',
-            'total_isc',
             'total_base_other_taxes',
             'total_other_taxes',
-            'total_plastic_bag_taxes',
             'total_taxes',
             'total_value',
             'subtotal',
@@ -163,11 +157,8 @@
             'total_exonerated' => 'float',
             'total_igv' => 'float',
             'total_igv_free' => 'float',
-            'total_base_isc' => 'float',
-            'total_isc' => 'float',
             'total_base_other_taxes' => 'float',
             'total_other_taxes' => 'float',
-            'total_plastic_bag_taxes' => 'float',
             'total_taxes' => 'float',
             'total_value' => 'float',
             'subtotal' => 'float',
@@ -895,44 +886,6 @@
         /**
          * @return float|null
          */
-        public function getTotalBaseIsc(): ?float
-        {
-            return $this->total_base_isc;
-        }
-
-        /**
-         * @param float|null $total_base_isc
-         *
-         * @return TechnicalService
-         */
-        public function setTotalBaseIsc(?float $total_base_isc): TechnicalService
-        {
-            $this->total_base_isc = $total_base_isc;
-            return $this;
-        }
-
-        /**
-         * @return float|null
-         */
-        public function getTotalIsc(): ?float
-        {
-            return $this->total_isc;
-        }
-
-        /**
-         * @param float|null $total_isc
-         *
-         * @return TechnicalService
-         */
-        public function setTotalIsc(?float $total_isc): TechnicalService
-        {
-            $this->total_isc = $total_isc;
-            return $this;
-        }
-
-        /**
-         * @return float|null
-         */
         public function getTotalBaseOtherTaxes(): ?float
         {
             return $this->total_base_other_taxes;
@@ -965,25 +918,6 @@
         public function setTotalOtherTaxes(?float $total_other_taxes): TechnicalService
         {
             $this->total_other_taxes = $total_other_taxes;
-            return $this;
-        }
-
-        /**
-         * @return float|null
-         */
-        public function getTotalPlasticBagTaxes(): ?float
-        {
-            return $this->total_plastic_bag_taxes;
-        }
-
-        /**
-         * @param float|null $total_plastic_bag_taxes
-         *
-         * @return TechnicalService
-         */
-        public function setTotalPlasticBagTaxes(?float $total_plastic_bag_taxes): TechnicalService
-        {
-            $this->total_plastic_bag_taxes = $total_plastic_bag_taxes;
             return $this;
         }
 

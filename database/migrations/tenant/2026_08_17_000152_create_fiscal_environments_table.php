@@ -1,18 +1,15 @@
 <?php
-// ######### INICIO CAMBIO NELSON #########
-
-/**
- * Estructura efectiva clonada desde `tenancy_bbc`.
- * Tabla: `fiscal_environments`.
- *
- * Inventario de columnas:
- * - `id`: varchar(16); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
- * - `description`: varchar(255); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
- */
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 
+// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
+/**
+ * Estructura inicial de `fiscal_environments` para instalaciones nuevas.
+ * Inventario de columnas:
+ * - `id` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL
+ * - `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
+ */
 return new class extends Migration
 {
     public function up(): void
@@ -31,4 +28,4 @@ SQL);
         DB::unprepared('DROP TABLE IF EXISTS `fiscal_environments`');
     }
 };
-// ######### FIN CAMBIO NELSON #########
+// ######## FIN ESQUEMA INICIAL VENEZUELA ########

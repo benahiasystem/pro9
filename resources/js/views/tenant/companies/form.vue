@@ -301,13 +301,6 @@
                             </div> -->
 
 
-                            <div v-show="false"
-                                 class="col-md-6 mt-4">
-                                <div :class="{'has-danger': errors.operation_amazonia}"
-                                     class="form-group">
-                                    <el-checkbox v-model="form.operation_amazonia">¿Emite en la Amazonía?</el-checkbox>
-                                </div>
-                            </div>
                         </div>
                         <div class="row mt-4">
                             <h4 class="col-12 m-0 fw-medium">Campos adicionales</h4>
@@ -423,14 +416,12 @@
             </div>
         </div>
         <TokenRucDni></TokenRucDni>
-        <SireConfiguration></SireConfiguration>
     </div>
 </template>
 
 <script>
 import {mapActions, mapState} from "vuex";
 import TokenRucDni from './token_ruc_dni.vue'
-import SireConfiguration from '../sire/partials/configuration.vue'
 
 const PLACEHOLDER_IMAGE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6c757d" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-polaroid img-default"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 4m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z" /><path /><path d="M4 12l3 -3c.928 -.893 2.072 -.893 3 0l4 4" /><path d="M13 12l2 -2c.928 -.893 2.072 -.893 3 0l2 2" /><path d="M14 7l.01 0" /></svg>`
 const PLACEHOLDER_IMAGE_DATA_URI = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(PLACEHOLDER_IMAGE_SVG)}`
@@ -439,7 +430,6 @@ const PLACEHOLDER_IMAGE_DATA_URI = `data:image/svg+xml;charset=UTF-8,${encodeURI
 export default {
     components: {
         TokenRucDni,
-        SireConfiguration,
     },
     computed: {
         ...mapState([
@@ -646,7 +636,6 @@ export default {
                 logo: null,
                 logo_dark: null,
                 logo_store: null,
-                operation_amazonia: false,
                 toggle: false,
                 img_firm: null,
                 is_pharmacy: false,

@@ -273,13 +273,13 @@ class DispatchController extends Controller
                 'reference_purchase_id' => $document->reference_purchase_id,
                 'document_data' => $document->reference_documents?? [],
                 'reference_documents' => $document->reference_documents?? [],
-                'custom_fields_data' => $document->custom_fields_data 
+                'custom_fields_data' => $document->custom_fields_data
             ];
         } else {
             $observations = '';
             if ($parentTable === 'quotation') {
                 $observations = $document->description;
-            } else if ($parentTable === 'sale_note' ) { 
+            } else if ($parentTable === 'sale_note' ) {
                 $observations = $document->observation;
             }
             $company = Company::first();
@@ -401,7 +401,6 @@ class DispatchController extends Controller
             'message' => $message,
             'data' => [
                 'id' => $document->id,
-                'send_sunat' => $configuration->auto_send_dispatchs_to_sunat
             ],
         ];
     }
@@ -580,23 +579,15 @@ class DispatchController extends Controller
             throw new Exception("El código {$external_id} es inválido, no se encontro documento relacionado");
         }
 
-        switch ($type) {
-            case 'pdf':
-                $folder = 'pdf';
-                // Validar existencia física del PDF. 
-                // Si el archivo fue purgado, invocar al orquestador para reconstruir la orden de entrega en segundo plano.
-                if (!$this->existFileInStorage($retention->filename, $folder)) {
-                    (new \App\CoreFacturalo\Facturalo)->createPdf($retention, 'dispatch', 'a4');
-                }
-                break;
-            case 'xml':
-                $folder = 'signed';
-                break;
-            case 'cdr':
-                $folder = 'cdr';
-                break;
-            default:
-                throw new Exception('Tipo de archivo a descargar es inválido');
+        if ($type !== 'pdf') {
+            throw new Exception('Tipo de archivo a descargar es inválido');
+        }
+
+        $folder = 'pdf';
+        // Validar existencia física del PDF.
+        // Si el archivo fue purgado, reconstruir la orden de entrega.
+        if (!$this->existFileInStorage($retention->filename, $folder)) {
+            (new \App\CoreFacturalo\Facturalo)->createPdf($retention, 'dispatch', 'a4');
         }
 
         return $this->downloadStorage($retention->filename, $folder);
@@ -673,8 +664,6 @@ class DispatchController extends Controller
                 'purchase_affectation_igv_type_id' => $row->purchase_affectation_igv_type_id,
                 'calculate_quantity' => (bool)$row->calculate_quantity,
                 'has_igv' => (bool)$row->has_igv,
-                'has_plastic_bag_taxes' => (bool)$row->has_plastic_bag_taxes,
-                'amount_plastic_bag_taxes' => $row->amount_plastic_bag_taxes,
                 'item_unit_types' => collect($row->item_unit_types)->transform(function ($row) {
                     return [
                         'id' => $row->id,

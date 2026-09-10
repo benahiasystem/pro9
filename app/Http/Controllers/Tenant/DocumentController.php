@@ -5,7 +5,6 @@
 namespace App\Http\Controllers\Tenant;
 
 use App\CoreFacturalo\Facturalo;
-use App\CoreFacturalo\Helpers\Storage\StorageDocument;
 use App\CoreFacturalo\Helpers\Template\ReportHelper;
 use App\Exports\PaymentExport;
 use App\Helpers\CacheHelper;
@@ -37,7 +36,6 @@ use App\Models\Tenant\Catalogs\NoteCreditType;
 use App\Models\Tenant\Catalogs\NoteDebitType;
 use App\Models\Tenant\Catalogs\OperationType;
 use App\Models\Tenant\Catalogs\PriceType;
-use App\Models\Tenant\Catalogs\SystemIscType;
 use App\Models\Tenant\CatItemSize;
 use App\Models\Tenant\Company;
 use App\Models\Tenant\Configuration;
@@ -58,7 +56,6 @@ use App\Models\Tenant\User;
 use App\Traits\OfflineTrait;
 use Carbon\Carbon;
 use Exception;
-use GuzzleHttp\Client;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -84,7 +81,6 @@ class DocumentController extends Controller
 {
     use FinanceTrait;
     use OfflineTrait;
-    use StorageDocument;
     use SystemActivityTrait;
 
     private $route_path;
@@ -105,18 +101,11 @@ class DocumentController extends Controller
         $document_import_excel = config('tenant.document_import_excel');
         $configuration = Configuration::getPublicConfig();
 
-        // apiperu
-        // se valida cual api usar para validacion desde el listado de comprobantes
-        $view_apiperudev_validator_cpe = config('tenant.apiperudev_validator_cpe');
-        $view_validator_cpe = config('tenant.validator_cpe');
-
         return view('tenant.documents.index',
             compact('is_client', 'import_documents',
                 'import_documents_second',
                 'document_import_excel',
-                'configuration',
-                'view_apiperudev_validator_cpe',
-                'view_validator_cpe'));
+                'configuration'));
     }
 
     public function columns()
@@ -242,10 +231,9 @@ class DocumentController extends Controller
         };
 
         $facturas_now = $sumPen('01', $start_current, $end_current);
-        $boletas_now  = $sumPen('03', $start_current, $end_current);
-        $sales_now    = $facturas_now + $boletas_now;
+        $sales_now    = $facturas_now;
 
-        $sales_prev = $sumPen('01', $start_prev, $end_prev) + $sumPen('03', $start_prev, $end_prev);
+        $sales_prev = $sumPen('01', $start_prev, $end_prev);
 
         if ($sales_prev > 0) {
             $variation = (($sales_now - $sales_prev) / $sales_prev) * 100;
@@ -263,7 +251,7 @@ class DocumentController extends Controller
         Document::query()
             ->where(fn ($q) => $q->whereTypeUser())
             ->whereIn('state_type_id', $valid_states)
-            ->whereIn('document_type_id', ['01', '03'])
+            ->whereIn('document_type_id', ['01'])
             ->where('total_canceled', false)
             ->with(['invoice:id,document_id,date_of_due'])
             ->withSum('payments as payments_sum', 'payment')
@@ -294,7 +282,6 @@ class DocumentController extends Controller
             'sales' => [
                 'total'        => 'Bs. ' . number_format($sales_now, 2, '.', ','),
                 'facturas'     => 'Bs. ' . number_format($facturas_now, 2, '.', ','),
-                'boletas'      => 'Bs. ' . number_format($boletas_now, 2, '.', ','),
                 'variation'    => ($variation >= 0 ? '+' : '') . number_format($variation, 1, '.', ',') . '% vs mes anterior',
                 'variation_up' => $variation >= 0,
             ],
@@ -521,7 +508,6 @@ class DocumentController extends Controller
         $items = SearchItemController::getItemsToDocuments();
         $categories = [];
         $affectation_igv_types = AffectationIgvType::whereActive()->get();
-        $system_isc_types = SystemIscType::available();
         $price_types = PriceType::whereActive()->get();
         $operation_types = OperationType::whereActive()->get();
         $discount_types = ChargeDiscountType::whereType('discount')->whereLevel('item')->get();
@@ -562,7 +548,6 @@ class DocumentController extends Controller
             'items',
             'categories',
             'affectation_igv_types',
-            'system_isc_types',
             'price_types',
             'operation_types',
             'discount_types',
@@ -686,8 +671,6 @@ class DocumentController extends Controller
                     'purchase_affectation_igv_type_id' => $row->purchase_affectation_igv_type_id,
                     'calculate_quantity' => (bool)$row->calculate_quantity,
                     'has_igv' => (bool)$row->has_igv,
-                    'has_plastic_bag_taxes' => (bool)$row->has_plastic_bag_taxes,
-                    'amount_plastic_bag_taxes' => $row->amount_plastic_bag_taxes,
                     'item_unit_types' => collect($row->item_unit_types)->transform(function ($row) {
                         return [
                             'id' => $row->id,
@@ -868,20 +851,6 @@ class DocumentController extends Controller
     public function validateDocument($request)
     {
 
-        // validar nombre de producto pdf en xml - items
-        foreach ($request->items as $item) {
-
-            if ($item['name_product_xml']) {
-                // validar error 2027 sunat
-                if (mb_strlen($item['name_product_xml']) > 500) {
-                    return [
-                        'success' => false,
-                        'message' => "El campo Nombre producto en PDF/XML no puede superar los 500 caracteres - Producto/Servicio: {$item['item']['description']}"
-                    ];
-                }
-            }
-        }
-
         return [
             'success' => true,
             'message' => ''
@@ -961,11 +930,6 @@ class DocumentController extends Controller
             $fact = DB::connection('tenant')->transaction(function () use ($data) {
                 $facturalo = new Facturalo();
                 $facturalo->save($data);
-                $facturalo->createXmlUnsigned();
-                $service_pse_xml = $facturalo->servicePseSendXml();
-                $facturalo->signXmlUnsigned($service_pse_xml['xml_signed']);
-                $facturalo->updateHash($service_pse_xml['hash']);
-                $facturalo->updateQr();
                 $facturalo->createPdf();
                 return $facturalo;
             });
@@ -1080,11 +1044,6 @@ class DocumentController extends Controller
         $fact = DB::connection('tenant')->transaction(function () use ($request, $id) {
             $facturalo = new Facturalo();
             $facturalo->update($request->all(), $id);
-            $facturalo->createXmlUnsigned();
-            $service_pse_xml = $facturalo->servicePseSendXml();
-            $facturalo->signXmlUnsigned($service_pse_xml['xml_signed']);
-            $facturalo->updateHash($service_pse_xml['hash']);
-            $facturalo->updateQr();
             $facturalo->createPdf();
 
             return $facturalo;
@@ -1147,14 +1106,8 @@ class DocumentController extends Controller
             $facturalo = new Facturalo();
             $facturalo->setDocument($document);
             $facturalo->setType($type);
-            $facturalo->createXmlUnsigned();
-            $service_pse_xml = $facturalo->servicePseSendXml();
-            $facturalo->signXmlUnsigned($service_pse_xml['xml_signed']);
-            $facturalo->updateHash($service_pse_xml['hash']);
-            $facturalo->updateQr();
             $facturalo->updateState('01');
             $facturalo->createPdf($document, $type, 'ticket');
-//            $facturalo->senderXmlSignedBill();
         });
 
 //        $document = $fact->getDocument();
@@ -1190,122 +1143,6 @@ class DocumentController extends Controller
         return [
             'success' => true
         ];
-    }
-
-    public function send($document_id)
-    {
-
-        try {
-            $document = Document::find($document_id);
-
-            $fact = DB::connection('tenant')->transaction(function () use ($document) {
-                $facturalo = new Facturalo();
-                $facturalo->setDocument($document);
-                $facturalo->loadXmlSigned();
-                $hasSendPse = $facturalo->hasPseSend() ? '200' : null;
-                $facturalo->onlySenderXmlSignedBill($hasSendPse);
-                return $facturalo;
-            });
-
-            $response = $fact->getResponse();
-
-            return [
-                'success' => true,
-                'response' => $response,
-                'message' => $response['description'],
-            ];
-        } catch (\Throwable $th) {
-            return $this->generalResponse(false, "Ya se genero el documento, pero hubo un problema en el envio. En el listado por favor, volver a reenviar.");
-        }
-    }
-
-    public function consultCdr($document_id)
-    {
-        $document = Document::find($document_id);
-
-        $fact = DB::connection('tenant')->transaction(function () use ($document) {
-            $facturalo = new Facturalo();
-            $facturalo->setDocument($document);
-            $facturalo->consultCdr();
-            return $facturalo;
-        });
-
-        $response = $fact->getResponse();
-
-        return [
-            'success' => true,
-            'message' => $response['description'],
-        ];
-    }
-
-    public function sendServer($document_id, $query = false)
-    {
-        $document = Document::find($document_id);
-        // $bearer = config('tenant.token_server');
-        // $api_url = config('tenant.url_server');
-        $bearer = $this->getTokenServer();
-        $api_url = $this->getUrlServer();
-        $client = new Client(['base_uri' => $api_url, 'verify' => false]);
-
-        // $zipFly = new ZipFly();
-        if (!$document->data_json) throw new Exception("Campo data_json nulo o inválido - Comprobante: {$document->fullnumber}");
-
-        $data_json = (array)$document->data_json;
-        $data_json['numero_documento'] = $document->number;
-        $data_json['external_id'] = $document->external_id;
-        $data_json['hash'] = $document->hash;
-        $data_json['qr'] = $document->qr;
-        $data_json['query'] = $query;
-        $data_json['file_xml_signed'] = base64_encode($this->getStorage($document->filename, 'signed'));
-        $data_json['file_pdf'] = base64_encode($this->getStorage($document->filename, 'pdf'));
-        // dd($data_json);
-        $res = $client->post('/api/documents_server', [
-            'http_errors' => false,
-            'headers' => [
-                'Authorization' => 'Bearer ' . $bearer,
-                'Accept' => 'application/json',
-            ],
-            'form_params' => $data_json
-        ]);
-
-        $response = json_decode($res->getBody()->getContents(), true);
-
-        if ($response['success']) {
-            $document->send_server = true;
-            $document->save();
-        }
-
-        return $response;
-    }
-
-    public function checkServer($document_id)
-    {
-        $document = Document::find($document_id);
-        $bearer = $this->getTokenServer();
-        $api_url = $this->getUrlServer();
-
-        $client = new Client(['base_uri' => $api_url, 'verify' => false]);
-
-        $res = $client->get('/api/document_check_server/' . $document->external_id, [
-            'headers' => [
-                'Authorization' => 'Bearer ' . $bearer,
-                'Accept' => 'application/json',
-            ],
-        ]);
-
-        $response = json_decode($res->getBody()->getContents(), true);
-
-        if ($response['success']) {
-            $state_type_id = $response['state_type_id'];
-            $document->state_type_id = $state_type_id;
-            $document->save();
-
-            if ($state_type_id === '05') {
-                $this->uploadStorage($document->filename, base64_decode($response['file_cdr']), 'cdr');
-            }
-        }
-
-        return $response;
     }
 
     public function searchCustomerById($id)

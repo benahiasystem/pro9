@@ -2,6 +2,9 @@
 // ########## INICIO CAMBIO AFECTACIÓN IVA
 function calculateRowItem(row_old, currency_type_id_new, exchange_rate_sale, pigv = 0.16) {
 // ######### FIN CAMBIO AFECTACIÓN IVA
+    if (!['10', '20'].includes(row_old.affectation_igv_type_id)) {
+        throw new Error('Seleccione una afectación de IVA vigente: Gravado o Exento.')
+    }
     // console.log(currency_type_id_new, exchange_rate_sale)
 
     let currency_type_id_old = row_old.item.currency_type_id
@@ -29,7 +32,7 @@ function calculateRowItem(row_old, currency_type_id_new, exchange_rate_sale, pig
     // fixed for update sale_note
     let record_id = (row_old.record_id) ? row_old.record_id : (row_old.id ? row_old.id : null)
 
-    let has_isc = row_old.has_isc
+
 
     // console.log(row_old)
 
@@ -45,16 +48,14 @@ function calculateRowItem(row_old, currency_type_id_new, exchange_rate_sale, pig
         total_base_igv: 0,
         percentage_igv: pigv * 100,
         total_igv: 0,
-        system_isc_type_id: has_isc ? row_old.system_isc_type_id : null,
-        // system_isc_type_id: null,
-        total_base_isc: 0,
-        percentage_isc: has_isc ? parseFloat(row_old.percentage_isc) : 0,
-        // percentage_isc: 0,
-        total_isc: 0,
+
+
+
+
         total_base_other_taxes: 0,
         percentage_other_taxes: 0,
         total_other_taxes: 0,
-        total_plastic_bag_taxes: 0,
+
         total_taxes: 0,
         price_type_id: '01',
         unit_price: unit_price,
@@ -81,7 +82,7 @@ function calculateRowItem(row_old, currency_type_id_new, exchange_rate_sale, pig
         purchase_unit_price: row_old.item.purchase_unit_price,
         purchase_unit_value: row_old.item.purchase_unit_value,
         purchase_has_igv: row_old.item.has_igv,
-        input_has_plastic_bag_taxes: row_old.has_plastic_bag_taxes,
+
 
         data_item_lot_group: getDataItemLotGroup(row_old)
     };
@@ -120,9 +121,6 @@ function calculateRowItem(row_old, currency_type_id_new, exchange_rate_sale, pig
     if (row.discounts.length > 0) {
         row.discounts.forEach((discount, index) => {
 
-            let affectation_igv_type_exonerated = ['20', '21', '30', '31', '32', '33', '34', '35', '36', '37']
-            console.log("discount calcualte total");
-            console.log(discount);
 
 
 
@@ -235,13 +233,13 @@ function calculateRowItem(row_old, currency_type_id_new, exchange_rate_sale, pig
     // console.log('total base charge:'+charge_base)
     // console.log('total no base charge:'+charge_no_base)
 
-    let total_isc = 0
+
     let total_other_taxes = 0
 
     let total_discount = discount_base + discount_no_base
     let total_charge = charge_base + charge_no_base
     let total_value = total_value_partial - total_discount + total_charge
-    let total_base_igv = total_value_partial - discount_base + total_isc
+    let total_base_igv = total_value_partial - discount_base
 
     // console.log(total_base_igv, total_value)
 
@@ -253,27 +251,18 @@ function calculateRowItem(row_old, currency_type_id_new, exchange_rate_sale, pig
     if (row.affectation_igv_type_id === '20') { //Exonerated
         total_igv = 0
     }
-    if (row.affectation_igv_type_id === '30') { //Unaffected
-        total_igv = 0
-    }
 
 
     //impuesto bolsa - icbper
 
-    let total_plastic_bag_taxes = 0
 
-    if (row_old.has_plastic_bag_taxes) {
 
-        total_plastic_bag_taxes = _.round(row.quantity * row.item.amount_plastic_bag_taxes, 1)
-        row.total_plastic_bag_taxes = total_plastic_bag_taxes
 
-    }
 
     // icbper
 
 
-    // let total_taxes = total_igv + total_isc + total_other_taxes
-    let total_taxes = total_igv + total_isc + total_other_taxes + total_plastic_bag_taxes
+    let total_taxes = total_igv + total_other_taxes
 
     let total = total_value + total_taxes
 
@@ -288,48 +277,7 @@ function calculateRowItem(row_old, currency_type_id_new, exchange_rate_sale, pig
 
 
     //procedimiento para agregar isc
-    if (has_isc) {
 
-        row.total_base_isc = _.round(total_value, 6) //total valor antes de aplicar isc
-        row.total_isc = _.round(total_value * (row.percentage_isc / 100), 6)
-        // row.total_isc = _.round(row.total_base_isc * (row.percentage_isc / 100), 2)
-
-        //calcular nueva base incrementando el valor actual + isc
-        total_base_igv += row.total_isc
-        row.total_base_igv = _.round(total_base_igv, 6)
-
-        total_igv = total_base_igv * (percentage_igv / 100)
-        row.total_igv = _.round(total_igv, 6)
-
-        //asignar nuevo total impuestos, si tiene descuentos se usa total_taxes para calcular el precio unitario
-        total_taxes = total_igv + row.total_isc + total_plastic_bag_taxes
-        // total_taxes = total_igv + row.total_isc
-        row.total_taxes = _.round(total_taxes, 6)
-
-        total = total_value + total_taxes
-        row.total = _.round(total, 6)
-
-        //calcular nuevo precio unitario
-        row.unit_price = _.round(total / row.quantity, 6)
-
-
-        // // console.log("apply isc")
-        // row.total_base_isc = total_value //total valor antes de aplicar isc
-        // // row.total_base_isc = total_value_partial //total valor antes de aplicar isc
-        // row.total_isc = _.round(row.total_base_isc * (row.percentage_isc / 100), 2)
-        // row.total_base_igv += row.total_isc  //calcular nueva base incrementando el valor actual + isc
-        // row.total_igv = row.total_base_igv * (percentage_igv / 100)
-
-        // //asignar nuevo total impuestos, si tiene descuentos se usa total_taxes para calcular el precio unitario
-        // total_taxes = row.total_igv + row.total_isc
-        // row.total_taxes = total_taxes
-
-        // row.total = row.total_value + row.total_taxes
-
-        // //calcular nuevo precio unitario
-        // row.unit_price = _.round(row.total / row.quantity, 6)
-
-    }
     //procedimiento para agregar isc
 
 
@@ -371,20 +319,8 @@ function calculateRowItem(row_old, currency_type_id_new, exchange_rate_sale, pig
     row.total_without_rounding = total
 
 
-    if (row.affectation_igv_type && row.affectation_igv_type.free) {
-        row.price_type_id = '02'
-        row.unit_value = 0
-        // row.total_value = 0
-        // row.total = 0
-        row.total = 0 + total_plastic_bag_taxes
-
-        //valor sin redondeo
-        row.total_without_rounding = 0
-    }
 
     //impuesto bolsa
-    // if (row_old.has_plastic_bag_taxes) {
-    //     row.total_plastic_bag_taxes = total_plastic_bag_taxes
     // }
 
     // console.log(row)
@@ -542,21 +478,12 @@ const getQuantityPrecisionByUnitType = (unit_type_id, fallback = 0) => {
 // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
 /**
  * Resuelve la afectación permitida para una línea nueva en Venezuela.
- * Los ítems históricos pueden conservar IDs ocultos (21, 30, 31, etc.),
- * pero una emisión nueva solo debe usar Gravado (10) o Exento (20).
+ * No sustituye un código desconocido por otro tratamiento fiscal.
  */
 const resolveSelectableAffectationType = (requestedId, affectationTypes = []) => {
     const requested = String(requestedId || '')
-    const exact = affectationTypes.find(type => String(type.id) === requested)
-
-    if (exact) return exact
-
-    const fallbackId = requested === '10' ? '10' : '20'
-
-    return affectationTypes.find(type => String(type.id) === fallbackId)
-        || affectationTypes.find(type => String(type.id) === '10')
-        || affectationTypes[0]
-        || null
+    if (!['10', '20'].includes(requested)) return null
+    return affectationTypes.find(type => String(type.id) === requested) || null
 }
 // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
 

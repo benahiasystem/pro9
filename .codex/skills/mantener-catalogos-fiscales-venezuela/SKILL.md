@@ -14,12 +14,13 @@ Antes de cambiar cualquier categoría cubierta por esta skill, leer el inventari
 - Tratar los IDs conservados como contratos estables: no reasignar códigos. Los códigos venezolanos nuevos de traslado son `20` y `21`.
 - Tratar `expense_reasons` como un catálogo inicial nuevo sin históricos: sus IDs contractuales son `1` a `30` y no representan una reclasificación de gastos preexistentes.
 - El estado inicial venezolano es una depuración total de los catálogos enumerados en el inventario. No reintroducir filas retiradas como inactivas.
-- Mantener `03` y sus series para consulta, PDF y auditoría, pero no ofrecer nuevas Boletas; aplicar también `mantener-facturas-notas-venta-sin-boleta` cuando intervenga un flujo de emisión.
-- Mostrar `01 = FACTURA DE VENTA`, `07 = NOTA DE CRÉDITO`, `08 = NOTA DE DÉBITO`, `09 = GUÍA DE DESPACHO REMITENTE`, `20 = COMPROBANTE DE RETENCIÓN`, `31 = GUÍA DE DESPACHO TRANSPORTISTA` y `40 = COMPROBANTE DE PERCEPCIÓN`.
-- Ofrecer únicamente `10 = Gravado` y `20 = Exento` en nuevas selecciones de afectación. Conservar los demás IDs para históricos y aplicar `migrar-iva-venezuela` para tasa, cálculos y nombres internos `igv`.
+- No conservar Boletas, series BB/BC/BD ni resúmenes fiscales de Boletas. Aplicar `mantener-facturas-notas-venta-sin-boleta` a creación, consultas, reportes y PDF.
+- Usar los tipos del inventario vigente: Factura de venta, notas de crédito/débito, Orden de entrega, Retención, Nota de venta y notas de almacén. No reintroducir códigos retirados sólo para resolver datos antiguos.
+- Usar únicamente `10 = Gravado` y `20 = Exento`. No conservar otros IDs para históricos; aplicar `migrar-iva-venezuela` para tasa, cálculos y nombres internos `igv`.
+- Los scopes de tipos documentales excluyen IDs retirados: compras ofrece 01/NE76 y el selector general sólo los códigos vigentes de su flujo. El resolutor de reportes admite 01/07/08/80 y no asigna `Document` a un ID desconocido. Probarlo con `CurrentDocumentResolutionTest`.
 - Mantener activos los descuentos por ítem `00` y `01` con descripciones IVA. No reproducir estados históricos intermedios que los retiraban.
 - Retirar del esquema inicial las nueve tablas declaradas eliminadas en el inventario y adaptar sus consumidores; no basta con dejarlas vacías o inactivas.
-- No incluir relaciones hacia catálogos retirados en el `$with` global de Eloquent: conservar la relación para datos históricos y cargarla sólo cuando la tabla exista. Incluso una clave foránea nula provoca una consulta `where 0 = 1` durante la precarga.
+- Retirar relaciones y modelos exclusivos de catálogos eliminados. No implementar consultas opcionales que comprueben si una tabla antigua existe.
 - Ocultar los paneles de atributos UBL adicionales mediante una capacidad central de Venezuela; no comentar bloques grandes de Vue.
 
 ## Datos
@@ -27,9 +28,9 @@ Antes de cambiar cualquier categoría cubierta por esta skill, leer el inventari
 1. Actualizar `database/seeders/data/tenant_initial_data.php` para tenants nuevos.
 2. Mantener la migración de `expense_reasons` limitada a crear su estructura; todas sus filas iniciales deben existir únicamente en `database/seeders/data/tenant_initial_data.php`. No crear una migración incremental para este catálogo mientras no existan tenants históricos.
 3. Excepción acordada para detracciones: retirar `cat_payment_method_types` y sus consumidores, campos y datos desde el consolidado, sin migración incremental ni conservación histórica; validar en una base temporal. No eliminar `payment_method_types`. La reconstrucción de tenants existentes requiere destinos explícitos.
-4. Para las demás instalaciones existentes, crear una migración tenant incremental e idempotente que aplique el mismo estado sin asumir que todas las tablas aún existen.
-5. Hacer `up()` idempotente por ID y limitar `down()` a valores reconocibles introducidos por la migración.
-6. Antes de eliminar tablas en un tenant histórico, medir referencias y retirar primero sus claves foráneas. Preservar columnas históricas consumidoras cuando borrarlas no haya sido solicitado.
+4. El proyecto sólo admite instalación nueva para esta adaptación. Actualizar directamente creaciones y semillas, sin conversión incremental.
+5. Los `up()` y `down()` crean y eliminan estructura; el seeder carga el estado final una sola vez por identidad.
+6. Comprobar en bases temporales que todos los datos iniciales resuelvan sus claves foráneas. No mantener columnas consumidoras de catálogos retirados por compatibilidad histórica.
 7. Invalidar cachés o adaptar proveedores de opciones cuando los catálogos no se consulten directamente.
 
 ## Presentación
@@ -42,7 +43,7 @@ Antes de cambiar cualquier categoría cubierta por esta skill, leer el inventari
 
 - Delimitar cada hunk con `########## INICIO CAMBIO CATÁLOGOS DE NOMBRES` y `######### FIN CAMBIO CATÁLOGOS DE NOMBRES`, usando comentarios válidos.
 - Ejecutar `scripts/apply_catalog_contract.php` sólo cuando se necesite reaplicar mecánicamente el inventario al consolidado; revisar siempre su diff.
-- Ejecutar `scripts/validate_catalog_contract.php` para comprobar migración limpia, `TenancyDatabaseSeeder`, ausencia de tablas retiradas y conteos venezolanos en una base temporal descartable.
+- Ejecutar `scripts/validate_catalog_contract.php` para comprobar migración limpia, `TenancyDatabaseSeeder`, ausencia de tablas retiradas y conteos venezolanos en una base temporal descartable. La comprobación de `pse_providers` es estructural; no cargar modelos del módulo `PseService`, porque el módulo completo está retirado.
 - Probar el inventario completo, las tablas ausentes, los bancos, los 30 motivos de gasto, métodos de pago, códigos de traslado, afectaciones `10/20` y paneles UBL.
 - Verificar en una base tenant nueva que la migración deje `expense_reasons` vacía antes del seeding y que `TenancyDatabaseSeeder` cargue exactamente los 30 motivos contractuales.
 - Ejecutar las pruebas de contrato de catálogos, IVA, ventas sin Boleta, datos tenant y SUNAT/SENIAT, además de `git diff --check` y lint PHP.

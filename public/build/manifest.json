@@ -38,20 +38,6 @@
       "_vue.esm-340a2d96.js"
     ]
   },
-  "_index-49ee4bbd.js": {
-    "assets": [
-      "assets/element-icons-ab40a589.woff",
-      "assets/element-icons-a30f5b3b.ttf"
-    ],
-    "css": [
-      "assets/index-fd3e0cf7.css"
-    ],
-    "file": "assets/index-49ee4bbd.js",
-    "imports": [
-      "_index-e849b4f5.js",
-      "_vue.esm-340a2d96.js"
-    ]
-  },
   "_index-e849b4f5.js": {
     "file": "assets/index-e849b4f5.js"
   },
@@ -69,59 +55,11 @@
       "_vue.esm-340a2d96.js"
     ]
   },
-  "_vue-clipboard-1c907798.js": {
+  "_vue-clipboard-17bf8442.js": {
     "css": [
       "assets/vue-clipboard-1d317c76.css"
     ],
-    "file": "assets/vue-clipboard-1c907798.js",
-    "imports": [
-      "_vue.esm-340a2d96.js",
-      "_index-49ee4bbd.js",
-      "_index-e849b4f5.js",
-      "__plugin-vue2_normalizer-2bbd088e.js"
-    ]
-  },
-  "_vue-clipboard-1ec89243.js": {
-    "css": [
-      "assets/vue-clipboard-1d317c76.css"
-    ],
-    "file": "assets/vue-clipboard-1ec89243.js",
-    "imports": [
-      "_vue.esm-340a2d96.js",
-      "_index-49ee4bbd.js",
-      "_index-e849b4f5.js",
-      "__plugin-vue2_normalizer-2bbd088e.js"
-    ]
-  },
-  "_vue-clipboard-29169d64.js": {
-    "css": [
-      "assets/vue-clipboard-1d317c76.css"
-    ],
-    "file": "assets/vue-clipboard-29169d64.js",
-    "imports": [
-      "_vue.esm-340a2d96.js",
-      "_index-f428bc3c.js",
-      "_index-e849b4f5.js",
-      "__plugin-vue2_normalizer-2bbd088e.js"
-    ]
-  },
-  "_vue-clipboard-8b05509b.js": {
-    "css": [
-      "assets/vue-clipboard-1d317c76.css"
-    ],
-    "file": "assets/vue-clipboard-8b05509b.js",
-    "imports": [
-      "_vue.esm-340a2d96.js",
-      "_index-f428bc3c.js",
-      "_index-e849b4f5.js",
-      "__plugin-vue2_normalizer-2bbd088e.js"
-    ]
-  },
-  "_vue-clipboard-90feefbf.js": {
-    "css": [
-      "assets/vue-clipboard-1d317c76.css"
-    ],
-    "file": "assets/vue-clipboard-90feefbf.js",
+    "file": "assets/vue-clipboard-17bf8442.js",
     "imports": [
       "_vue.esm-340a2d96.js",
       "_index-3744837a.js",
@@ -129,23 +67,11 @@
       "__plugin-vue2_normalizer-2bbd088e.js"
     ]
   },
-  "_vue-clipboard-dcfb9dd6.js": {
+  "_vue-clipboard-f70b2566.js": {
     "css": [
       "assets/vue-clipboard-1d317c76.css"
     ],
-    "file": "assets/vue-clipboard-dcfb9dd6.js",
-    "imports": [
-      "_vue.esm-340a2d96.js",
-      "_index-49ee4bbd.js",
-      "_index-e849b4f5.js",
-      "__plugin-vue2_normalizer-2bbd088e.js"
-    ]
-  },
-  "_vue-clipboard-efd423f1.js": {
-    "css": [
-      "assets/vue-clipboard-1d317c76.css"
-    ],
-    "file": "assets/vue-clipboard-efd423f1.js",
+    "file": "assets/vue-clipboard-f70b2566.js",
     "imports": [
       "_vue.esm-340a2d96.js",
       "_index-f428bc3c.js",
@@ -302,7 +228,7 @@
     "src": "node_modules/element-ui/lib/theme-chalk/fonts/element-icons.woff"
   },
   "resources/js/app.css": {
-    "file": "assets/app-f7c5929f.css",
+    "file": "assets/app-01163465.css",
     "src": "resources/js/app.css"
   },
   "resources/js/app.js": {
@@ -312,11 +238,11 @@
       "assets/tabler-icons-9920d986.ttf"
     ],
     "css": [
-      "assets/app-f7c5929f.css"
+      "assets/app-01163465.css"
     ],
-    "file": "assets/app-42697f2b.js",
+    "file": "assets/app-221e9051.js",
     "imports": [
-      "_vue-clipboard-efd423f1.js",
+      "_vue-clipboard-f70b2566.js",
       "_vue.esm-340a2d96.js",
       "_index-f428bc3c.js",
       "__plugin-vue2_normalizer-2bbd088e.js",
@@ -327,16 +253,16 @@
     "src": "resources/js/app.js"
   },
   "resources/js/system.css": {
-    "file": "assets/system-b46e2892.css",
+    "file": "assets/system-206f8f18.css",
     "src": "resources/js/system.css"
   },
   "resources/js/system.js": {
     "css": [
-      "assets/system-b46e2892.css"
+      "assets/system-206f8f18.css"
     ],
-    "file": "assets/system-ccc0438d.js",
+    "file": "assets/system-fcdb6fe3.js",
     "imports": [
-      "_vue-clipboard-efd423f1.js",
+      "_vue-clipboard-f70b2566.js",
       "_vue.esm-340a2d96.js",
       "_index-f428bc3c.js",
       "__plugin-vue2_normalizer-2bbd088e.js",

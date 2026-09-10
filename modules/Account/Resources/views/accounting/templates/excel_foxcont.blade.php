@@ -10,7 +10,7 @@
         <td>NOMBRE</td>
         <td>BASEI</td>
         <td>IGV</td>
-        <td>ICBPER</td>
+
         <td>EXONERADO</td>
         <td>RETENCION</td>
         <td>TOTAL</td>
@@ -24,14 +24,14 @@
                 <td>{{ $row['series'] }}</td>
                 <td>{{ $row['number'] }}</td>
                 <td>0</td>
-                <td>0</td> 
+                <td>0</td>
                 <td>ANULADA</td>
-                <td>0</td> 
-                <td>0</td> 
-                <td>0</td> 
-                <td>0</td> 
-                <td>0</td> 
-                <td>0</td> 
+                <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td>0</td>
             </tr>
         @else
             <tr>
@@ -47,8 +47,8 @@
                 <td>{{ $row['total_taxed'] }}</td>
                 <td>{{ $row['total_igv'] }}</td>
                 {{-- <td>{{ $row['total_unaffected'] }}</td> --}}
-                {{-- <td>{{ $row['total_isc'] }}</td> --}}
-                <td>{{ $row['total_plastic_bag_taxes'] }}</td>
+                {{--  --}}
+
                 <td>{{ $row['total_exonerated'] }}</td>
                 <td>{{ $row['total_retention'] }}</td>
                 <td>{{ $row['total'] }}</td>

@@ -195,7 +195,7 @@ trait TotalsTrait
         $document_total_payment_pen = 0;
         $document_total_note_credit_pen = 0;
 
-        $document_total_pen = collect($documents->whereIn('state_type_id', ['01','03','05','07','13'])->whereIn('document_type_id', ['01','03','08']))->where('currency_type_id', 'VES')->sum('total');
+        $document_total_pen = collect($documents->whereIn('state_type_id', ['01','03','05','07','13'])->whereIn('document_type_id', ['01','08']))->where('currency_type_id', 'VES')->sum('total');
 
         //USD
         $document_total_usd = 0;
@@ -203,7 +203,7 @@ trait TotalsTrait
         $document_total_payment_usd = 0;
 
         $documents_usd = $documents->whereIn('state_type_id', ['01','03','05','07','13'])
-                                    ->whereIn('document_type_id', ['01','03','08'])
+                                    ->whereIn('document_type_id', ['01','08'])
                                     ->where('currency_type_id', 'USD');
 
         foreach ($documents_usd as $dusd) {

@@ -870,7 +870,6 @@
                                         <td style="text-align:right">{{ $item['total'] }}</td>
                                         <td>
                                             <div class="download-btns">
-                                                <a href="{{ $item['download_xml'] }}" target="_blank" rel="noopener" class="btn-dl">XML</a>
                                                 <a href="{{ $item['download_pdf'] }}" target="_blank" rel="noopener" class="btn-dl">PDF</a>
                                             </div>
                                         </td>

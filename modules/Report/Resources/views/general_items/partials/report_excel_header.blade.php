@@ -62,10 +62,7 @@
 <th> IVA</th>
 {{-- ######### FIN CAMBIO IGV A IVA --}}
 {{-- ########## INICIO SIN DETRACCIONES E ISC --}}
-@if(\App\Services\LocalFiscalDocumentPolicy::showIsc())
-    <th> TIPO DE ISC</th>
-    <th> ISC</th>
-@endif
+
 {{-- ######### FIN SIN DETRACCIONES E ISC --}}
 <th> IMPUESTO BOLSAS</th>
 <th> TOTAL</th>

@@ -29,7 +29,6 @@ class RetentionResource extends JsonResource
             'supplier_email' => $this->supplier->email,
             'response_message' => in_array($this->state_type_id, ['07', '09']) ? ($code ? "{$code} - " : '')."{$response_message}" : $response_message,
             'response_type' => $response_type,
-            'download_cdr' => $this->download_external_cdr,
         ];
         
     }

@@ -1,598 +1,571 @@
 <!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
-    <div class="documents">
-        <div class="page-header pe-0">
-            <h2>
-                <a href="/documents">
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        style="margin-top: -5px;"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        class="feather feather-file-text"
-                    >
-                        <path
-                            d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
-                        ></path>
-                        <polyline points="14 2 14 8 20 8"></polyline>
-                        <line x1="16" y1="13" x2="8" y2="13"></line>
-                        <line x1="16" y1="17" x2="8" y2="17"></line>
-                        <polyline points="10 9 9 9 8 9"></polyline>
-                    </svg>
-                </a>
-            </h2>
-            <ol class="breadcrumbs">
-                <li class="active"><span>Listado de comprobantes</span></li>
-                <!-- ########## INICIO CAMBIO QUITAR BOLETA -->
-                <!-- <li><span class="text-muted">Facturas - Notas <small>(crédito y débito)</small> - Anulaciones</span></li> -->
-                <!-- ######### FIN CAMBIO QUITAR BOLETA -->
-            </ol>
-            <div
-                class="right-wrapper pull-right"
-                v-if="typeUser != 'integrator'"
-            >
-                <span v-if="import_documents == true">
-                    <button
-                        type="button"
-                        class="btn btn-custom btn-sm  mt-2 me-2"
-                        @click.prevent="clickImport()"
-                    >
-                        <i class="fa fa-upload"></i> Importar Formato 1
-                    </button>
-                </span>
-                <span v-if="import_documents_second == true">
-                    <button
-                        type="button"
-                        class="btn btn-custom btn-sm  mt-2 me-2"
-                        @click.prevent="clickImportSecond()"
-                    >
-                        <i class="fa fa-upload"></i> Importar Formato 2
-                    </button>
-                </span>
-                <span v-if="document_import_excel">
-                    <button
-                        type="button"
-                        class="btn btn-custom btn-sm  mt-2 me-2"
-                        @click.prevent="clickImportExcel"
-                    >
-                        <i class="fa fa-upload"></i> Importar Formato
-                    </button>
-                </span>
-                <a
-                    :href="`/${resource}/create`"
-                    class="btn btn-custom btn-sm  mt-2 me-2"
-                    ><i class="fa fa-plus-circle"></i> Nuevo</a
+<div class="documents">
+    <div class="page-header pe-0">
+        <h2>
+            <a href="/documents">
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    style="margin-top: -5px;"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    class="feather feather-file-text"
                 >
-                <div class="btn-group flex-wrap dropdown">
-                    <button
-                        type="button"
-                        class="btn btn-custom btn-sm  mt-2 me-2 dropdown-toggle"
-                        data-bs-toggle="dropdown"
-                        aria-expanded="false"
-                    >
-                        <i class="fa fa-money-bill-wave-alt"></i> Reporte de
-                        Pagos <span class="caret"></span>
-                    </button>
-                    <!-- ########## INICIO CAMBIO SIN XML CDR SUNAT -->
-                    <!-- La operación local no ofrece validación CPE individual ni masiva. -->
-                    <!-- ######### FIN CAMBIO SIN XML CDR SUNAT -->
+                    <path
+                        d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
+                    ></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+            </a>
+        </h2>
+        <ol class="breadcrumbs">
+            <li class="active"><span>Listado de comprobantes</span></li>
+            <!-- ########## INICIO CAMBIO QUITAR BOLETA -->
+            <!-- <li><span class="text-muted">Facturas - Notas <small>(crédito y débito)</small> - Anulaciones</span></li> -->
+            <!-- ######### FIN CAMBIO QUITAR BOLETA -->
+        </ol>
+        <div
+            class="right-wrapper pull-right"
+            v-if="typeUser != 'integrator'"
+        >
+            <span v-if="import_documents == true">
+                <button
+                    type="button"
+                    class="btn btn-custom btn-sm  mt-2 me-2"
+                    @click.prevent="clickImport()"
+                >
+                    <i class="fa fa-upload"></i> Importar Formato 1
+                </button>
+            </span>
+            <span v-if="import_documents_second == true">
+                <button
+                    type="button"
+                    class="btn btn-custom btn-sm  mt-2 me-2"
+                    @click.prevent="clickImportSecond()"
+                >
+                    <i class="fa fa-upload"></i> Importar Formato 2
+                </button>
+            </span>
+            <span v-if="document_import_excel">
+                <button
+                    type="button"
+                    class="btn btn-custom btn-sm  mt-2 me-2"
+                    @click.prevent="clickImportExcel"
+                >
+                    <i class="fa fa-upload"></i> Importar Formato
+                </button>
+            </span>
+            <a
+                :href="`/${resource}/create`"
+                class="btn btn-custom btn-sm  mt-2 me-2"
+                ><i class="fa fa-plus-circle"></i> Nuevo</a
+            >
+            <div class="btn-group flex-wrap dropdown">
+                <button
+                    type="button"
+                    class="btn btn-custom btn-sm  mt-2 me-2 dropdown-toggle"
+                    data-bs-toggle="dropdown"
+                    aria-expanded="false"
+                >
+                    <i class="fa fa-money-bill-wave-alt"></i> Reporte de
+                    Pagos <span class="caret"></span>
+                </button>
+                <!-- ########## INICIO CAMBIO SIN XML CDR SUNAT -->
+                <!-- La operación local no ofrece validación CPE individual ni masiva. -->
+                <!-- ######### FIN CAMBIO SIN XML CDR SUNAT -->
 
-                    <div
-                        class="dropdown-menu"
-                        role="menu"
-                        x-placement="bottom-start"
-                        style="position: absolute; will-change: transform; top: 0px; left: 0px; transform: translate3d(0px, 42px, 0px);"
+                <div
+                    class="dropdown-menu"
+                    role="menu"
+                    x-placement="bottom-start"
+                    style="position: absolute; will-change: transform; top: 0px; left: 0px; transform: translate3d(0px, 42px, 0px);"
+                >
+                    <a
+                        class="dropdown-item text-1"
+                        href="#"
+                        @click.prevent="clickReportPayments()"
+                        >Generar Reporte</a
                     >
-                        <a
-                            class="dropdown-item text-1"
-                            href="#"
-                            @click.prevent="clickReportPayments()"
-                            >Generar Reporte</a
-                        >
-                        <a
-                            class="dropdown-item text-1"
-                            href="#"
-                            @click.prevent="clickDownloadReportPagos()"
-                            >Descargar Excel</a
-                        >
-                    </div>
+                    <a
+                        class="dropdown-item text-1"
+                        href="#"
+                        @click.prevent="clickDownloadReportPagos()"
+                        >Descargar Excel</a
+                    >
                 </div>
             </div>
         </div>
-        <div class="card tab-content-default row-new mb-0 bg-transparent">
-            <!--
-            <div class="data-table-visible-columns">
+    </div>
+    <div class="card tab-content-default row-new mb-0 bg-transparent">
+        <!--
+        <div class="data-table-visible-columns">
 
-                <el-dropdown :hide-on-click="false">
-                    <el-button type="primary">
-                        Mostrar columnas<i class="el-icon-arrow-down el-icon--right"></i>
-                    </el-button>
-                    <el-dropdown-menu slot="dropdown">
-                        <el-dropdown-item v-for="(column, index) in columns"
-                                          :key="index">
-                            <el-checkbox v-model="column.visible">{{ column.title }}</el-checkbox>
-                        </el-dropdown-item>
-                    </el-dropdown-menu>
-                </el-dropdown>
-            </div>
-            -->
+            <el-dropdown :hide-on-click="false">
+                <el-button type="primary">
+                    Mostrar columnas<i class="el-icon-arrow-down el-icon--right"></i>
+                </el-button>
+                <el-dropdown-menu slot="dropdown">
+                    <el-dropdown-item v-for="(column, index) in columns"
+                                      :key="index">
+                        <el-checkbox v-model="column.visible">{{ column.title }}</el-checkbox>
+                    </el-dropdown-item>
+                </el-dropdown-menu>
+            </el-dropdown>
+        </div>
+        -->
 
-            <div class="card-body card-body-invoice">
-                <data-table :resource="resource">
-                    <div slot="showhide">
-                        <el-dropdown :hide-on-click="false">
-                            <el-button type="secondary">
-                                Mostrar columnas<i
-                                    class="el-icon-arrow-down el-icon--right"
-                                ></i>
-                            </el-button>
-                            <el-dropdown-menu slot="dropdown" style="min-width: 220px;">
-                                <div style="max-height: 520px; overflow-y: auto;">
-                                    <el-dropdown-item divided disabled v-if=" customFieldColumns.length > 0 ">
-                                        <strong>Campos personalizados</strong>
-                                    </el-dropdown-item>
-                                    <el-dropdown-item
-                                        v-for="field in customFieldColumns"
-                                        :key="`custom-field-${field.id}`"
+        <div class="card-body card-body-invoice">
+            <data-table :resource="resource">
+                <div slot="showhide">
+                    <el-dropdown :hide-on-click="false">
+                        <el-button type="secondary">
+                            Mostrar columnas<i
+                                class="el-icon-arrow-down el-icon--right"
+                            ></i>
+                        </el-button>
+                        <el-dropdown-menu slot="dropdown" style="min-width: 220px;">
+                            <div style="max-height: 520px; overflow-y: auto;">
+                                <el-dropdown-item divided disabled v-if=" customFieldColumns.length > 0 ">
+                                    <strong>Campos personalizados</strong>
+                                </el-dropdown-item>
+                                <el-dropdown-item
+                                    v-for="field in customFieldColumns"
+                                    :key="`custom-field-${field.id}`"
 
+                                >
+                                    <el-checkbox
+                                        @change="updateCustomFieldColumns()"
+                                        v-model="field.visible"
+                                        >{{ field.name }}</el-checkbox
                                     >
-                                        <el-checkbox
-                                            @change="updateCustomFieldColumns()"
-                                            v-model="field.visible"
-                                            >{{ field.name }}</el-checkbox
-                                        >
-                                    </el-dropdown-item>
-                                    <el-dropdown-item divided v-if=" customFieldColumns.length > 0 "></el-dropdown-item>
-                                    <el-dropdown-item disabled>
-                                        <strong>Seleccionar columnas</strong>
-                                    </el-dropdown-item>
-                                    <el-dropdown-item v-for="col in tenantSelectableColumns" :key="col.key">
-                                        <el-checkbox @change="getColumnsToShow(1)" v-model="columns[col.key].visible">{{ col.title }}</el-checkbox>
-                                    </el-dropdown-item>
-                                </div>
+                                </el-dropdown-item>
+                                <el-dropdown-item divided v-if=" customFieldColumns.length > 0 "></el-dropdown-item>
+                                <el-dropdown-item disabled>
+                                    <strong>Seleccionar columnas</strong>
+                                </el-dropdown-item>
+                                <el-dropdown-item v-for="col in tenantSelectableColumns" :key="col.key">
+                                    <el-checkbox @change="getColumnsToShow(1)" v-model="columns[col.key].visible">{{ col.title }}</el-checkbox>
+                                </el-dropdown-item>
+                            </div>
+                        </el-dropdown-menu>
+                    </el-dropdown>
+                </div>
+                <tr slot="heading">
+                    <template v-for="col in orderedColumns">
+                        <th v-if="col.visible && col.key === 'fiscal_environment_type'" :key="col.key">Ambiente</th>
+                        <th v-if="col.visible && col.key === 'date_of_issue'" :key="col.key" class="text-start" style="min-width: 95px;">Emisión</th>
+                        <th v-if="col.visible && col.key === 'date_payment'" :key="col.key" class="text-center" style="min-width: 95px;">Fecha de pago</th>
+                        <th v-if="col.visible && col.key === 'date_of_due'" :key="col.key" class="text-center">Fecha Vencimiento</th>
+                        <th v-if="col.visible && col.key === 'customer'" :key="col.key">Cliente</th>
+                        <th v-if="col.visible && col.key === 'number'" :key="col.key">Número</th>
+                        <th v-if="col.visible && col.key === 'notes'" :key="col.key">Notas C/D</th>
+                        <!-- ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES -->
+                        <th v-if="col.visible && col.key === 'dispatch'" :key="col.key">Orden de entrega</th>
+                        <!-- ######### FIN CAMBIO CATÁLOGOS DE NOMBRES -->
+                        <th v-if="col.visible && col.key === 'sales_note'" :key="col.key">Nota de venta</th>
+                        <th v-if="col.visible && col.key === 'order_note'" :key="col.key">Pedidos</th>
+                        <th v-if="col.visible && col.key === 'send_it'" :key="col.key">Email Enviado</th>
+                        <th v-if="col.visible && col.key === 'state_type'" :key="col.key">Estado</th>
+                        <!-- Campos personalizados: posición configurable vía columna virtual `personalized` (visibilidad la dicta cada field) -->
+                        <template v-if="col.key === 'personalized'">
+                            <template v-for="field in customFieldColumns">
+                                <th v-if="field.visible" :key="`cf-head-${field.id}`" class="text-start" style="min-width: 120px;">{{ field.name }}</th>
+                            </template>
+                        </template>
+                        <th v-if="col.visible && col.key === 'user_name'" :key="col.key">Usuario</th>
+                        <th v-if="col.visible && col.key === 'source_module'" :key="col.key" class="text-center">Origen</th>
+                        <th v-if="col.visible && col.key === 'exchange_rate_sale'" :key="col.key" class="text-end">T.C.</th>
+                        <th v-if="col.visible && col.key === 'currency_type_id'" :key="col.key" class="text-center">Moneda</th>
+                        <th v-if="col.visible && col.key === 'guides'" :key="col.key" class="text-end">Orden de entrega</th>
+                        <th v-if="col.visible && col.key === 'plate_numbers'" :key="col.key" class="text-center">Placa</th>
+                        <th v-if="col.visible && col.key === 'total_exportation'" :key="col.key" class="text-end">T.Exportación</th>
+                        <th v-if="col.visible && col.key === 'total_free'" :key="col.key" class="text-end">T.Gratuita</th>
+                        <th v-if="col.visible && col.key === 'total_unaffected'" :key="col.key" class="text-end">T.Inafecta</th>
+                        <th v-if="col.visible && col.key === 'total_exonerated'" :key="col.key" class="text-end">T.Exonerado</th>
+                        <th v-if="col.visible && col.key === 'total_charge'" :key="col.key" class="text-end">{{ columns.total_charge.title }}</th>
+                        <th v-if="col.visible && col.key === 'total_taxed'" :key="col.key" class="text-end">T.Gravado</th>
+                        <!-- ########## INICIO CAMBIO IGV A IVA -->
+                        <!-- <th v-if="col.visible && col.key === 'total_igv'" :key="col.key" class="text-end">T.IVA</th> -->
+                        <!-- ######### FIN CAMBIO IGV A IVA -->
+                        <th v-if="col.visible && col.key === 'total'" :key="col.key" class="text-end">Total</th>
+                        <th v-if="col.visible && col.key === 'balance'" :key="col.key" class="text-end">Saldo</th>
+                        <th v-if="col.visible && col.key === 'purchase_order'" :key="col.key" class="text-center" style="min-width: 95px;">Orden de compra</th>
+                        <th v-if="col.visible && col.key === 'downloads'" :key="col.key" class="text-center col-downloads"></th>
+                        <th v-if="col.visible && col.key === 'actions' && typeUser != 'integrator'" :key="col.key" class="text-end"></th>
+                    </template>
+                </tr>
+                <tr
+                    slot-scope="{ index, row }"
+                    :class="{
+                        'anulate_color': row.state_type_id === '11',
+                        'text-warning': row.state_type_id === '13',
+                        'border-light': row.state_type_id === '01',
+                        'border-left border-info': row.state_type_id === '03',
+                        'border-left border-success': row.state_type_id === '05',
+                        'border-left border-secondary': row.state_type_id === '07',
+                        'border-left border-dark': row.state_type_id === '09',
+                        'border-left border-danger': row.state_type_id === '11',
+                        'border-left border-warning': row.state_type_id === '13'
+                    }"
+                >
+                    <template v-for="col in orderedColumns">
+                        <td v-if="col.visible && col.key === 'fiscal_environment_type'" :key="col.key">{{ row.fiscal_environment_description }}</td>
+                        <td v-if="col.visible && col.key === 'date_of_issue'" :key="col.key" class="text-start">
+                            {{ formatDateLong(row.date_of_issue) }}
+                        </td>
+                        <td v-if="col.visible && col.key === 'date_payment'" :key="col.key" class="text-center">{{ row.date_of_payment | toDate }}</td>
+                        <td v-if="col.visible && col.key === 'date_of_due'" :key="col.key" class="text-center" :class="{ 'text-danger': row.balance > 0 && isDateWarning(row.date_of_due) }">{{ row.date_of_due | toDate }}</td>
+                        <td v-if="col.visible && col.key === 'customer'" :key="col.key">
+                            <feSpecularLighting
+                                role="button"
+                                tabindex="0"
+                                @keyup.enter.prevent="clickDetail(row)"
+                            >{{ row.customer_name }}</feSpecularLighting>
+                            <br /><small class="text-muted"><template v-if="row.customer_identity_document_type_description">{{ row.customer_identity_document_type_description }}: </template>{{ row.customer_number }}</small>
+                        </td>
+                        <td v-if="col.visible && col.key === 'number'" :key="col.key">
+                            <span class="badge" :class="{ 'bg-invoices': row.document_type_id === '01', 'bg-tickets': row.document_type_id === '03', 'bg-credit-notes': row.document_type_id === '07' }" style="font-size: 11px; cursor: pointer;" @click="clickDetail(row)">
+                                <svg data-v-e4dd5c75="" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-list-details" style="margin-top: -4px;"><path data-v-e4dd5c75="" stroke="none" d="M0 0h24v24H0z" fill="none"></path><path data-v-e4dd5c75="" d="M13 5h8"></path><path data-v-e4dd5c75="" d="M13 9h5"></path><path data-v-e4dd5c75="" d="M13 15h8"></path><path data-v-e4dd5c75="" d="M13 19h5"></path><path data-v-e4dd5c75="" d="M3 5a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4"></path><path data-v-e4dd5c75="" d="M3 15a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4"></path></svg>
+                                {{ row.number }}
+                            </span>
+                        </td>
+                        <td v-if="col.visible && col.key === 'notes'" :key="col.key">
+                            <template v-for="(note, i) in row.notes">
+                                <label :key="i" class="d-block">{{ note.note_type_description }}: {{ note.description }}</label>
+                            </template>
+                        </td>
+                        <td v-if="col.visible && col.key === 'dispatch'" :key="col.key">
+                            <template v-for="(dispatch, i) in row.dispatches">
+                                <label :key="i" class="d-block">{{ dispatch.description }}</label>
+                            </template>
+                        </td>
+                        <td v-if="col.visible && col.key === 'sales_note'" :key="col.key">
+                            <template v-for="(salesNote, i) in row.sales_note">
+                                <label :key="i" class="d-block">{{ salesNote.number_full }} ({{ salesNote.state_type_description }})</label>
+                            </template>
+                        </td>
+                        <td v-if="col.visible && col.key === 'order_note'" :key="col.key">
+                            <template v-if="row.order_note && row.order_note.identifier">{{ row.order_note.identifier }}</template>
+                        </td>
+                        <td v-if="col.visible && col.key === 'send_it'" :key="col.key">
+                            <span class="badge" :class="{ 'text-muted': row.email_send_it === false, 'text-success': row.email_send_it === true }">
+                                <i class="fas fa-lg" :class="{ 'fa-minus': row.email_send_it === false, 'fa-check': row.email_send_it === true }"></i>
+                            </span>
+                        </td>
+                        <td v-if="col.visible && col.key === 'state_type'" :key="col.key">
+                            <span class="badge bg-secondary text-white" :class="{ 'bg-danger': row.state_type_id === '11', 'bg-warning': row.state_type_id === '13', 'bg-secondary': row.state_type_id === '01', 'bg-info': row.state_type_id === '03', 'bg-success': row.state_type_id === '05', 'bg-dark': row.state_type_id === '09' }">{{ row.state_type_description }}</span>
+                            <a v-if="row.state_type_id === '13'" href="voided" class="small"><br />Ir a anulaciones</a>
+                        </td>
+                        <!-- Campos personalizados: posición configurable vía columna virtual `personalized` (visibilidad la dicta cada field) -->
+                        <template v-if="col.key === 'personalized'">
+                            <template v-for="field in customFieldColumns">
+                                <td v-if="field.visible" :key="`cf-data-${field.id}`" class="text-start" @click.stop>
+                                    <template v-if="isEditableCustomField(field)">
+                                        <template v-if="field.type === 'text'"><el-input v-model="row.custom_fields_data[field.slug]" @blur="saveCustomFieldValue(row, field)" size="small" :placeholder="field.name"></el-input></template>
+                                        <template v-else-if="field.type === 'number'"><el-input v-model.number="row.custom_fields_data[field.slug]" type="number" @blur="saveCustomFieldValue(row, field)" size="small" :placeholder="field.name"></el-input></template>
+                                        <template v-else-if="field.type === 'textarea'"><el-input v-model="row.custom_fields_data[field.slug]" type="textarea" :rows="2" @blur="saveCustomFieldValue(row, field)" size="small" :placeholder="field.name"></el-input></template>
+                                        <template v-else-if="field.type === 'select'">
+                                            <el-select v-model="row.custom_fields_data[field.slug]" @change="saveCustomFieldValue(row, field)" size="small" clearable :placeholder="field.name">
+                                                <el-option v-for="option in normalizeOptions(field.options)" :key="option" :label="option" :value="option"></el-option>
+                                            </el-select>
+                                        </template>
+                                        <template v-else-if="field.type === 'checkbox'">
+                                            <el-checkbox-group v-model="row.custom_fields_data[field.slug]" @change="saveCustomFieldValue(row, field)">
+                                                <el-checkbox v-for="option in normalizeOptions(field.options)" :key="option" :label="option" :value="option">{{ option }}</el-checkbox>
+                                            </el-checkbox-group>
+                                        </template>
+                                        <template v-else-if="field.type === 'date'"><el-date-picker v-model="row.custom_fields_data[field.slug]" type="date" format="yyyy-MM-dd" value-format="yyyy-MM-dd" @change="saveCustomFieldValue(row, field)" size="small" :placeholder="field.name"></el-date-picker></template>
+                                        <template v-else>{{ formatCustomFieldValue(row.custom_fields_data[field.slug]) }}</template>
+                                    </template>
+                                    <template v-else>{{ formatCustomFieldValue(row.custom_fields_data[field.slug]) }}</template>
+                                </td>
+                            </template>
+                        </template>
+                        <td v-if="col.visible && col.key === 'user_name'" :key="col.key">{{ row.user_name }}<br /><small v-text="row.user_email"></small></td>
+                        <td v-if="col.visible && col.key === 'source_module'" :key="col.key" class="text-center">{{ row.source_module_description }}</td>
+                        <td v-if="col.visible && col.key === 'exchange_rate_sale'" :key="col.key">{{ row.exchange_rate_sale }}</td>
+                        <td v-if="col.visible && col.key === 'currency_type_id'" :key="col.key" class="text-center">{{ row.currency_type_id }}</td>
+                        <td v-if="col.visible && col.key === 'guides'" :key="col.key" class="text-center">
+                            <span v-for="(item, i) in row.guides" :key="i">{{ item.number }} <br /></span>
+                        </td>
+                        <td v-if="col.visible && col.key === 'plate_numbers'" :key="col.key" class="text-center">
+                            <span v-for="(item, i) in row.plate_numbers" :key="i">{{ item.description }} <br /></span>
+                        </td>
+                        <td v-if="col.visible && col.key === 'total_exportation'" :key="col.key" class="text-end">{{ row.currency_type_symbol }} {{ formatDecimal(row.total_exportation) }}</td>
+                        <td v-if="col.visible && col.key === 'total_free'" :key="col.key" class="text-end">{{ row.currency_type_symbol }} {{ formatDecimal(row.total_free) }}</td>
+                        <td v-if="col.visible && col.key === 'total_unaffected'" :key="col.key" class="text-end">{{ row.currency_type_symbol }} {{ formatDecimal(row.total_unaffected) }}</td>
+                        <td v-if="col.visible && col.key === 'total_exonerated'" :key="col.key" class="text-end">{{ row.currency_type_symbol }} {{ formatDecimal(row.total_exonerated) }}</td>
+                        <td v-if="col.visible && col.key === 'total_charge'" :key="col.key" class="text-end">{{ row.currency_type_symbol }} {{ formatDecimal(row.total_charge) }}</td>
+                        <td v-if="col.visible && col.key === 'total_taxed'" :key="col.key" class="text-end">{{ row.currency_type_symbol }} {{ formatDecimal(row.total_taxed) }}</td>
+                        <!-- <td v-if="col.visible && col.key === 'total_igv'" :key="col.key" class="text-end">{{ row.currency_type_symbol }} {{ formatDecimal(row.total_igv) }}</td> -->
+                        <!-- ########## INICIO CAMBIO IGV A IVA -->
+                        <td v-if="col.visible && col.key === 'total'" :key="col.key" class="text-end">{{ row.currency_type_symbol }} {{ formatDecimal(row.total) }} <template v-if="columns.total_igv && columns.total_igv.visible"><br> <small class="text-muted">IVA {{ row.currency_type_symbol }} {{ formatDecimal(row.total_igv) }}</small></template></td>
+                        <!-- ######### FIN CAMBIO IGV A IVA -->
+                        <td v-if="col.visible && col.key === 'balance'" :key="col.key" class="text-end" :class="{ 'text-warning': row.balance > 0, 'text-success': row.balance == 0 }">{{ row.currency_type_symbol }} {{ formatDecimal(row.balance) }}</td>
+                        <td v-if="col.visible && col.key === 'purchase_order'" :key="col.key">{{ row.purchase_order }}</td>
+                        <td v-if="col.visible && col.key === 'downloads'" :key="col.key" class="text-center col-downloads" @click.stop>
+                            <!-- ########## INICIO CAMBIO SIN XML CDR SUNAT -->
+                            <!-- XML y CDR se omiten; PDF permanece disponible. -->
+                            <!-- ######### FIN CAMBIO SIN XML CDR SUNAT -->
+                            <button v-if="row.has_pdf" type="button" style="min-width: 41px" class="btn waves-effect waves-light btn-xs btn-info m-1__2 me-2" @click.prevent="clickDownload(row.download_pdf)">PDF</button>
+                        </td>
+                        <td v-if="col.visible && col.key === 'actions' && typeUser != 'integrator'" :key="col.key" class="text-end" @click.stop>
+                        <el-dropdown trigger="click" size="small">
+                            <el-button class="btn-dropdown">
+                                <i class="fas fa-ellipsis-v"></i>
+                                <i class="fas fa-ellipsis-h" style="display: none;"></i>
+                            </el-button>
+                            <el-dropdown-menu slot="dropdown">
+                              <el-dropdown-item @click.native="clickDetail(row)">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-eye me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /><path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6" /></svg>
+                                Ver detalle
+                              </el-dropdown-item>
+
+                              <el-dropdown-item divided />
+                              <!-- Descargas: en celular la columna XML/PDF/CDR se oculta
+                                   (hacía filas de ~300px) y sus acciones viven aquí -->
+                              <!-- ########## INICIO CAMBIO SIN XML CDR SUNAT -->
+                              <!-- El menú móvil tampoco ofrece XML ni CDR. -->
+                              <!-- ######### FIN CAMBIO SIN XML CDR SUNAT -->
+
+                              <el-dropdown-item
+                                v-if="row.has_pdf"
+                                class="mobile-item-only"
+                                @click.native="clickDownload(row.download_pdf)"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-file-type-pdf me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M5 12v-7a2 2 0 0 1 2 -2h7l5 5v4" /><path d="M5 18h1.5a1.5 1.5 0 0 0 0 -3h-1.5v6" /><path d="M17 18h2" /><path d="M20 15h-3v6" /><path d="M11 15v6h1a2 2 0 0 0 2 -2v-2a2 2 0 0 0 -2 -2h-1z" /></svg>
+                                Descargar PDF
+                              </el-dropdown-item>
+
+
+                              <el-dropdown-item
+                                v-if="configuration.permission_to_edit_cpe && row.state_type_id === '01' && userPermissionEditCpe && row.is_editable"
+                                @click.native="go(`/documents/${row.id}/edit`)"
+                              >
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-edit me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" /><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z" /><path d="M16 5l3 3" /></svg>
+                                  Editar
+                              </el-dropdown-item>
+
+                              <el-dropdown-item
+                                v-else-if="row.state_type_id === '01' && userId == row.user_id && row.is_editable"
+                                @click.native="go(`/documents/${row.id}/edit`)"
+                              >
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-edit me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" /><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z" /><path d="M16 5l3 3" /></svg>
+                                  Editar
+                              </el-dropdown-item>
+
+                              <!-- ########## INICIO CAMBIO SIN XML CDR SUNAT -->
+                              <!-- El reenvío fiscal no se ofrece en operación local. -->
+                              <!-- ######### FIN CAMBIO SIN XML CDR SUNAT -->
+
+                              <el-dropdown-item
+                                v-if="row.btn_recreate_document"
+                                @click.native="clickReStore(row.id)"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-refresh-cw me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4" /><path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4" /></svg>
+                                Volver a recrear
+                              </el-dropdown-item>
+
+                              <el-dropdown-item
+                                v-if="row.btn_change_to_registered_status"
+                                @click.native="clickChangeToRegisteredStatus(row.id)"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-check-circle me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 12l2 2l4 -4" /><circle cx="12" cy="12" r="9" /></svg>
+                                Cambiar a estado registrado
+                              </el-dropdown-item>
+
+                              <el-dropdown-item
+                                  divided
+                                  v-if="
+                                      row.btn_change_to_registered_status ||
+                                      row.btn_recreate_document ||
+                                      (
+                                          configuration.permission_to_edit_cpe &&
+                                          row.state_type_id === '01' &&
+                                          userPermissionEditCpe &&
+                                          row.is_editable
+                                      ) ||
+                                      (
+                                          row.state_type_id === '01' &&
+                                          userId == row.user_id &&
+                                          row.is_editable
+                                      )
+                                  "
+                              ></el-dropdown-item>
+                              <el-dropdown-item
+                                v-if="row.btn_note"
+                                @click.native="go(`/${resource}/note/${row.id}`)"
+                              >
+                                  <svg xmlns="http://www.w3.org/2000/svg" class="me-2" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M5 4v17l2 -2l2 2l2 -2l2 2l2 -2l2 2l2 -2v-17z"></path><path d="M14 8h-4"></path><path d="M14 12h-4"></path><path d="M14 16h-4"></path></svg>
+                                  Nota
+                              </el-dropdown-item>
+                              <el-dropdown-item
+                                v-if="row.btn_guide"
+                                @click.native="go(`/dispatches/create_new/document/${row.id}`)"
+                              >
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-truck me-2">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                    <path d="M7 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"></path>
+                                    <path d="M17 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"></path>
+                                    <path d="M5 17h-2v-11a1 1 0 0 1 1 -1h9v12m-4 0h6m4 0h2v-6h-8m0 -5h5l3 5"></path>
+                                  </svg>
+                                  Orden de entrega
+                              </el-dropdown-item>
+
+                              <!-- ########## INICIO SIN DETRACCIONES E ISC -->
+                              <!-- ######### FIN SIN DETRACCIONES E ISC -->
+
+                              <el-dropdown-item
+                                divided
+                                v-if="row.btn_note || row.btn_guide"
+                              />
+
+                              <el-dropdown-item
+                                @click.native="clickPayment(row.id)"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-cash me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 15h-3a1 1 0 0 1 -1 -1v-8a1 1 0 0 1 1 -1h12a1 1 0 0 1 1 1v3" /><path d="M7 9m0 1a1 1 0 0 1 1 -1h12a1 1 0 0 1 1 1v8a1 1 0 0 1 -1 1h-12a1 1 0 0 1 -1 -1z" /><path d="M12 14a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /></svg>
+                                Pagos
+                              </el-dropdown-item>
+
+                              <el-dropdown-item
+                                v-if="row.btn_retention"
+                                @click.native="clickRetention(row.id)"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-file-text me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M14 3v4a1 1 0 0 0 1 1h4"></path><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"></path><line x1="9" y1="9" x2="10" y2="9"></line><line x1="9" y1="13" x2="15" y2="13"></line><line x1="9" y1="17" x2="15" y2="17"></line></svg>
+                                Retención
+                              </el-dropdown-item>
+
+                              <el-dropdown-item divided />
+
+                              <el-dropdown-item
+                                @click.native="clickOptions(row.id)"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-settings me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065z" /><path d="M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" /></svg>
+                                Opciones
+                              </el-dropdown-item>
+
+                              <el-dropdown-item
+                                @click.native="clickPaymentLink(row.id)"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-link me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 15l6 -6" /><path d="M11 6l.463 -.536a5 5 0 0 1 7.071 7.072l-.534 .464" /><path d="M13 18l-.397 .534a5.068 5.068 0 0 1 -7.127 0a4.972 4.972 0 0 1 0 -7.071l.524 -.463" /></svg>
+                                Link de pago
+                              </el-dropdown-item>
+
+                              <el-dropdown-item
+                                v-if="row.btn_voided"
+                                @click.native="clickVoided(row.id)"
+                                class="text-danger option-delete"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-x-circle me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><circle cx="12" cy="12" r="9" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" /></svg>
+                                Anular
+                              </el-dropdown-item>
+
+                              <el-dropdown-item
+                                v-if="row.btn_delete_doc_type_03"
+                                @click.native="clickDeleteDocument(row.id)"
+                                class="text-danger option-delete"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-trash me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><line x1="4" y1="7" x2="20" y2="7" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg>
+                                Eliminar
+                              </el-dropdown-item>
+
+                              <el-dropdown-item
+                                v-if="row.btn_force_send_by_summary && typeUser === 'admin'"
+                                @click.native="clickForceSendBySummary(row.id)"
+                                class="text-warning"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-send me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><line x1="10" y1="14" x2="21" y2="3" /><path d="M21 3l-6.5 18a0.55 .55 0 0 1 -1 0l-3.5 -7l-7 -3.5a0.55 .55 0 0 1 0 -1l18 -6.5" /></svg>
+                                Enviar por resumen
+                              </el-dropdown-item>
                             </el-dropdown-menu>
                         </el-dropdown>
-                    </div>
-                    <tr slot="heading">
-                        <template v-for="col in orderedColumns">
-                            <th v-if="col.visible && col.key === 'fiscal_environment_type'" :key="col.key">Ambiente</th>
-                            <th v-if="col.visible && col.key === 'date_of_issue'" :key="col.key" class="text-start" style="min-width: 95px;">Emisión</th>
-                            <th v-if="col.visible && col.key === 'date_payment'" :key="col.key" class="text-center" style="min-width: 95px;">Fecha de pago</th>
-                            <th v-if="col.visible && col.key === 'date_of_due'" :key="col.key" class="text-center">Fecha Vencimiento</th>
-                            <th v-if="col.visible && col.key === 'customer'" :key="col.key">Cliente</th>
-                            <th v-if="col.visible && col.key === 'number'" :key="col.key">Número</th>
-                            <th v-if="col.visible && col.key === 'notes'" :key="col.key">Notas C/D</th>
-                            <!-- ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES -->
-                            <th v-if="col.visible && col.key === 'dispatch'" :key="col.key">Orden de entrega</th>
-                            <!-- ######### FIN CAMBIO CATÁLOGOS DE NOMBRES -->
-                            <th v-if="col.visible && col.key === 'sales_note'" :key="col.key">Nota de venta</th>
-                            <th v-if="col.visible && col.key === 'order_note'" :key="col.key">Pedidos</th>
-                            <th v-if="col.visible && col.key === 'send_it'" :key="col.key">Email Enviado</th>
-                            <th v-if="col.visible && col.key === 'state_type'" :key="col.key">Estado</th>
-                            <!-- Campos personalizados: posición configurable vía columna virtual `personalized` (visibilidad la dicta cada field) -->
-                            <template v-if="col.key === 'personalized'">
-                                <template v-for="field in customFieldColumns">
-                                    <th v-if="field.visible" :key="`cf-head-${field.id}`" class="text-start" style="min-width: 120px;">{{ field.name }}</th>
-                                </template>
-                            </template>
-                            <th v-if="col.visible && col.key === 'user_name'" :key="col.key">Usuario</th>
-                            <th v-if="col.visible && col.key === 'source_module'" :key="col.key" class="text-center">Origen</th>
-                            <th v-if="col.visible && col.key === 'exchange_rate_sale'" :key="col.key" class="text-end">T.C.</th>
-                            <th v-if="col.visible && col.key === 'currency_type_id'" :key="col.key" class="text-center">Moneda</th>
-                            <th v-if="col.visible && col.key === 'guides'" :key="col.key" class="text-end">Orden de entrega</th>
-                            <th v-if="col.visible && col.key === 'plate_numbers'" :key="col.key" class="text-center">Placa</th>
-                            <th v-if="col.visible && col.key === 'total_exportation'" :key="col.key" class="text-end">T.Exportación</th>
-                            <th v-if="col.visible && col.key === 'total_free'" :key="col.key" class="text-end">T.Gratuita</th>
-                            <th v-if="col.visible && col.key === 'total_unaffected'" :key="col.key" class="text-end">T.Inafecta</th>
-                            <th v-if="col.visible && col.key === 'total_exonerated'" :key="col.key" class="text-end">T.Exonerado</th>
-                            <th v-if="col.visible && col.key === 'total_charge'" :key="col.key" class="text-end">{{ columns.total_charge.title }}</th>
-                            <th v-if="col.visible && col.key === 'total_taxed'" :key="col.key" class="text-end">T.Gravado</th>
-                            <!-- ########## INICIO CAMBIO IGV A IVA -->
-                            <!-- <th v-if="col.visible && col.key === 'total_igv'" :key="col.key" class="text-end">T.IVA</th> -->
-                            <!-- ######### FIN CAMBIO IGV A IVA -->
-                            <th v-if="col.visible && col.key === 'total'" :key="col.key" class="text-end">Total</th>
-                            <th v-if="col.visible && col.key === 'balance'" :key="col.key" class="text-end">Saldo</th>
-                            <th v-if="col.visible && col.key === 'purchase_order'" :key="col.key" class="text-center" style="min-width: 95px;">Orden de compra</th>
-                            <th v-if="col.visible && col.key === 'downloads'" :key="col.key" class="text-center col-downloads"></th>
-                            <th v-if="col.visible && col.key === 'actions' && typeUser != 'integrator'" :key="col.key" class="text-end"></th>
-                        </template>
-                    </tr>
-                    <tr
-                        slot-scope="{ index, row }"
-                        :class="{
-                            'anulate_color': row.state_type_id === '11',
-                            'text-warning': row.state_type_id === '13',
-                            'border-light': row.state_type_id === '01',
-                            'border-left border-info': row.state_type_id === '03',
-                            'border-left border-success': row.state_type_id === '05',
-                            'border-left border-secondary': row.state_type_id === '07',
-                            'border-left border-dark': row.state_type_id === '09',
-                            'border-left border-danger': row.state_type_id === '11',
-                            'border-left border-warning': row.state_type_id === '13'
-                        }"
-                    >
-                        <template v-for="col in orderedColumns">
-                            <td v-if="col.visible && col.key === 'fiscal_environment_type'" :key="col.key">{{ row.fiscal_environment_description }}</td>
-                            <td v-if="col.visible && col.key === 'date_of_issue'" :key="col.key" class="text-start">
-                                {{ formatDateLong(row.date_of_issue) }}
-                            </td>
-                            <td v-if="col.visible && col.key === 'date_payment'" :key="col.key" class="text-center">{{ row.date_of_payment | toDate }}</td>
-                            <td v-if="col.visible && col.key === 'date_of_due'" :key="col.key" class="text-center" :class="{ 'text-danger': row.balance > 0 && isDateWarning(row.date_of_due) }">{{ row.date_of_due | toDate }}</td>
-                            <td v-if="col.visible && col.key === 'customer'" :key="col.key">
-                                <feSpecularLighting
-                                    role="button"
-                                    tabindex="0"
-                                    @keyup.enter.prevent="clickDetail(row)"
-                                >{{ row.customer_name }}</feSpecularLighting>
-                                <br /><small class="text-muted"><template v-if="row.customer_identity_document_type_description">{{ row.customer_identity_document_type_description }}: </template>{{ row.customer_number }}</small>
-                            </td>
-                            <td v-if="col.visible && col.key === 'number'" :key="col.key">
-                                <span class="badge" :class="{ 'bg-invoices': row.document_type_id === '01', 'bg-tickets': row.document_type_id === '03', 'bg-credit-notes': row.document_type_id === '07' }" style="font-size: 11px; cursor: pointer;" @click="clickDetail(row)">
-                                    <svg data-v-e4dd5c75="" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-list-details" style="margin-top: -4px;"><path data-v-e4dd5c75="" stroke="none" d="M0 0h24v24H0z" fill="none"></path><path data-v-e4dd5c75="" d="M13 5h8"></path><path data-v-e4dd5c75="" d="M13 9h5"></path><path data-v-e4dd5c75="" d="M13 15h8"></path><path data-v-e4dd5c75="" d="M13 19h5"></path><path data-v-e4dd5c75="" d="M3 5a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4"></path><path data-v-e4dd5c75="" d="M3 15a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4"></path></svg>
-                                    {{ row.number }}
-                                </span>
-                            </td>
-                            <td v-if="col.visible && col.key === 'notes'" :key="col.key">
-                                <template v-for="(note, i) in row.notes">
-                                    <label :key="i" class="d-block">{{ note.note_type_description }}: {{ note.description }}</label>
-                                </template>
-                            </td>
-                            <td v-if="col.visible && col.key === 'dispatch'" :key="col.key">
-                                <template v-for="(dispatch, i) in row.dispatches">
-                                    <label :key="i" class="d-block">{{ dispatch.description }}</label>
-                                </template>
-                            </td>
-                            <td v-if="col.visible && col.key === 'sales_note'" :key="col.key">
-                                <template v-for="(salesNote, i) in row.sales_note">
-                                    <label :key="i" class="d-block">{{ salesNote.number_full }} ({{ salesNote.state_type_description }})</label>
-                                </template>
-                            </td>
-                            <td v-if="col.visible && col.key === 'order_note'" :key="col.key">
-                                <template v-if="row.order_note && row.order_note.identifier">{{ row.order_note.identifier }}</template>
-                            </td>
-                            <td v-if="col.visible && col.key === 'send_it'" :key="col.key">
-                                <span class="badge" :class="{ 'text-muted': row.email_send_it === false, 'text-success': row.email_send_it === true }">
-                                    <i class="fas fa-lg" :class="{ 'fa-minus': row.email_send_it === false, 'fa-check': row.email_send_it === true }"></i>
-                                </span>
-                            </td>
-                            <td v-if="col.visible && col.key === 'state_type'" :key="col.key">
-                                <el-tooltip v-if="tooltip(row, false)" class="item" effect="dark" placement="bottom">
-                                    <div slot="content">{{ tooltip(row) }}</div>
-                                    <span class="badge bg-secondary text-white" :class="{ 'bg-danger': row.state_type_id === '11', 'bg-warning': row.state_type_id === '13', 'bg-secondary': row.state_type_id === '01', 'bg-info': row.state_type_id === '03', 'bg-success': row.state_type_id === '05', 'bg-dark': row.state_type_id === '09' }">{{ row.state_type_description }}</span>
-                                </el-tooltip>
-                                <span v-else class="badge bg-secondary text-white" :class="{ 'bg-danger': row.state_type_id === '11', 'bg-warning': row.state_type_id === '13', 'bg-secondary': row.state_type_id === '01', 'bg-info': row.state_type_id === '03', 'bg-success': row.state_type_id === '05', 'bg-dark': row.state_type_id === '09' }">{{ row.state_type_description }}</span>
-                                <a v-if="row.state_type_id === '13'" href="voided" class="small"><br />Ir a anulaciones</a>
-                                <template v-if="row.regularize_shipping && row.state_type_id === '01'">
-                                    <el-tooltip class="item" effect="dark" :content="row.message_regularize_shipping" placement="top-start">
-                                        <i class="fas fa-exclamation-triangle fa-lg" style="color: #D2322D !important"></i>
-                                    </el-tooltip>
-                                </template>
-                            </td>
-                            <!-- Campos personalizados: posición configurable vía columna virtual `personalized` (visibilidad la dicta cada field) -->
-                            <template v-if="col.key === 'personalized'">
-                                <template v-for="field in customFieldColumns">
-                                    <td v-if="field.visible" :key="`cf-data-${field.id}`" class="text-start" @click.stop>
-                                        <template v-if="isEditableCustomField(field)">
-                                            <template v-if="field.type === 'text'"><el-input v-model="row.custom_fields_data[field.slug]" @blur="saveCustomFieldValue(row, field)" size="small" :placeholder="field.name"></el-input></template>
-                                            <template v-else-if="field.type === 'number'"><el-input v-model.number="row.custom_fields_data[field.slug]" type="number" @blur="saveCustomFieldValue(row, field)" size="small" :placeholder="field.name"></el-input></template>
-                                            <template v-else-if="field.type === 'textarea'"><el-input v-model="row.custom_fields_data[field.slug]" type="textarea" :rows="2" @blur="saveCustomFieldValue(row, field)" size="small" :placeholder="field.name"></el-input></template>
-                                            <template v-else-if="field.type === 'select'">
-                                                <el-select v-model="row.custom_fields_data[field.slug]" @change="saveCustomFieldValue(row, field)" size="small" clearable :placeholder="field.name">
-                                                    <el-option v-for="option in normalizeOptions(field.options)" :key="option" :label="option" :value="option"></el-option>
-                                                </el-select>
-                                            </template>
-                                            <template v-else-if="field.type === 'checkbox'">
-                                                <el-checkbox-group v-model="row.custom_fields_data[field.slug]" @change="saveCustomFieldValue(row, field)">
-                                                    <el-checkbox v-for="option in normalizeOptions(field.options)" :key="option" :label="option" :value="option">{{ option }}</el-checkbox>
-                                                </el-checkbox-group>
-                                            </template>
-                                            <template v-else-if="field.type === 'date'"><el-date-picker v-model="row.custom_fields_data[field.slug]" type="date" format="yyyy-MM-dd" value-format="yyyy-MM-dd" @change="saveCustomFieldValue(row, field)" size="small" :placeholder="field.name"></el-date-picker></template>
-                                            <template v-else>{{ formatCustomFieldValue(row.custom_fields_data[field.slug]) }}</template>
-                                        </template>
-                                        <template v-else>{{ formatCustomFieldValue(row.custom_fields_data[field.slug]) }}</template>
-                                    </td>
-                                </template>
-                            </template>
-                            <td v-if="col.visible && col.key === 'user_name'" :key="col.key">{{ row.user_name }}<br /><small v-text="row.user_email"></small></td>
-                            <td v-if="col.visible && col.key === 'source_module'" :key="col.key" class="text-center">{{ row.source_module_description }}</td>
-                            <td v-if="col.visible && col.key === 'exchange_rate_sale'" :key="col.key">{{ row.exchange_rate_sale }}</td>
-                            <td v-if="col.visible && col.key === 'currency_type_id'" :key="col.key" class="text-center">{{ row.currency_type_id }}</td>
-                            <td v-if="col.visible && col.key === 'guides'" :key="col.key" class="text-center">
-                                <span v-for="(item, i) in row.guides" :key="i">{{ item.number }} <br /></span>
-                            </td>
-                            <td v-if="col.visible && col.key === 'plate_numbers'" :key="col.key" class="text-center">
-                                <span v-for="(item, i) in row.plate_numbers" :key="i">{{ item.description }} <br /></span>
-                            </td>
-                            <td v-if="col.visible && col.key === 'total_exportation'" :key="col.key" class="text-end">{{ row.currency_type_symbol }} {{ formatDecimal(row.total_exportation) }}</td>
-                            <td v-if="col.visible && col.key === 'total_free'" :key="col.key" class="text-end">{{ row.currency_type_symbol }} {{ formatDecimal(row.total_free) }}</td>
-                            <td v-if="col.visible && col.key === 'total_unaffected'" :key="col.key" class="text-end">{{ row.currency_type_symbol }} {{ formatDecimal(row.total_unaffected) }}</td>
-                            <td v-if="col.visible && col.key === 'total_exonerated'" :key="col.key" class="text-end">{{ row.currency_type_symbol }} {{ formatDecimal(row.total_exonerated) }}</td>
-                            <td v-if="col.visible && col.key === 'total_charge'" :key="col.key" class="text-end">{{ row.currency_type_symbol }} {{ formatDecimal(row.total_charge) }}</td>
-                            <td v-if="col.visible && col.key === 'total_taxed'" :key="col.key" class="text-end">{{ row.currency_type_symbol }} {{ formatDecimal(row.total_taxed) }}</td>
-                            <!-- <td v-if="col.visible && col.key === 'total_igv'" :key="col.key" class="text-end">{{ row.currency_type_symbol }} {{ formatDecimal(row.total_igv) }}</td> -->
-                            <!-- ########## INICIO CAMBIO IGV A IVA -->
-                            <td v-if="col.visible && col.key === 'total'" :key="col.key" class="text-end">{{ row.currency_type_symbol }} {{ formatDecimal(row.total) }} <template v-if="columns.total_igv && columns.total_igv.visible"><br> <small class="text-muted">IVA {{ row.currency_type_symbol }} {{ formatDecimal(row.total_igv) }}</small></template></td>
-                            <!-- ######### FIN CAMBIO IGV A IVA -->
-                            <td v-if="col.visible && col.key === 'balance'" :key="col.key" class="text-end" :class="{ 'text-warning': row.balance > 0, 'text-success': row.balance == 0 }">{{ row.currency_type_symbol }} {{ formatDecimal(row.balance) }}</td>
-                            <td v-if="col.visible && col.key === 'purchase_order'" :key="col.key">{{ row.purchase_order }}</td>
-                            <td v-if="col.visible && col.key === 'downloads'" :key="col.key" class="text-center col-downloads" @click.stop>
-                                <!-- ########## INICIO CAMBIO SIN XML CDR SUNAT -->
-                                <!-- XML y CDR se omiten; PDF permanece disponible. -->
-                                <!-- ######### FIN CAMBIO SIN XML CDR SUNAT -->
-                                <button v-if="row.has_pdf" type="button" style="min-width: 41px" class="btn waves-effect waves-light btn-xs btn-info m-1__2 me-2" @click.prevent="clickDownload(row.download_pdf)">PDF</button>
-                            </td>
-                            <td v-if="col.visible && col.key === 'actions' && typeUser != 'integrator'" :key="col.key" class="text-end" @click.stop>
-                            <el-dropdown trigger="click" size="small">
-                                <el-button class="btn-dropdown">
-                                    <i class="fas fa-ellipsis-v"></i>
-                                    <i class="fas fa-ellipsis-h" style="display: none;"></i>
-                                </el-button>
-                                <el-dropdown-menu slot="dropdown">
-                                  <el-dropdown-item @click.native="clickDetail(row)">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-eye me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /><path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6" /></svg>
-                                    Ver detalle
-                                  </el-dropdown-item>
+                        <!-- funciona pero con funciones para cada boton, parametro command -->
+                        <!-- <el-dropdown trigger="click" size="small">
+                            <el-button size="mini" type="default" class="el-dropdown-selfdefine">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </el-button>
+                            <el-dropdown-menu slot="dropdown">
+                                <el-dropdown-item v-if="row.btn_recreate_document">Recrear</el-dropdown-item>
+                                <el-dropdown-item>Action 2</el-dropdown-item>
+                                <el-dropdown-item>Action 3</el-dropdown-item>
+                                <el-dropdown-item>Action 4</el-dropdown-item>
+                                <el-dropdown-item>Action 5</el-dropdown-item>
+                            </el-dropdown-menu>
+                        </el-dropdown> -->
 
-                                  <el-dropdown-item divided />
-                                  <!-- Descargas: en celular la columna XML/PDF/CDR se oculta
-                                       (hacía filas de ~300px) y sus acciones viven aquí -->
-                                  <!-- ########## INICIO CAMBIO SIN XML CDR SUNAT -->
-                                  <!-- El menú móvil tampoco ofrece XML ni CDR. -->
-                                  <!-- ######### FIN CAMBIO SIN XML CDR SUNAT -->
-
-                                  <el-dropdown-item
-                                    v-if="row.has_pdf"
-                                    class="mobile-item-only"
-                                    @click.native="clickDownload(row.download_pdf)"
-                                  >
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-file-type-pdf me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M5 12v-7a2 2 0 0 1 2 -2h7l5 5v4" /><path d="M5 18h1.5a1.5 1.5 0 0 0 0 -3h-1.5v6" /><path d="M17 18h2" /><path d="M20 15h-3v6" /><path d="M11 15v6h1a2 2 0 0 0 2 -2v-2a2 2 0 0 0 -2 -2h-1z" /></svg>
-                                    Descargar PDF
-                                  </el-dropdown-item>
-
-
-                                  <el-dropdown-item
-                                    v-if="configuration.permission_to_edit_cpe && row.state_type_id === '01' && userPermissionEditCpe && row.is_editable"
-                                    @click.native="go(`/documents/${row.id}/edit`)"
-                                  >
-                                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-edit me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" /><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z" /><path d="M16 5l3 3" /></svg>
-                                      Editar
-                                  </el-dropdown-item>
-
-                                  <el-dropdown-item
-                                    v-else-if="row.state_type_id === '01' && userId == row.user_id && row.is_editable"
-                                    @click.native="go(`/documents/${row.id}/edit`)"
-                                  >
-                                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-edit me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" /><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z" /><path d="M16 5l3 3" /></svg>
-                                      Editar
-                                  </el-dropdown-item>
-
-                                  <!-- ########## INICIO CAMBIO SIN XML CDR SUNAT -->
-                                  <!-- El reenvío fiscal no se ofrece en operación local. -->
-                                  <!-- ######### FIN CAMBIO SIN XML CDR SUNAT -->
-
-                                  <el-dropdown-item
-                                    v-if="row.btn_recreate_document"
-                                    @click.native="clickReStore(row.id)"
-                                  >
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-refresh-cw me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4" /><path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4" /></svg>
-                                    Volver a recrear
-                                  </el-dropdown-item>
-
-                                  <el-dropdown-item
-                                    v-if="row.btn_change_to_registered_status"
-                                    @click.native="clickChangeToRegisteredStatus(row.id)"
-                                  >
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-check-circle me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 12l2 2l4 -4" /><circle cx="12" cy="12" r="9" /></svg>
-                                    Cambiar a estado registrado
-                                  </el-dropdown-item>
-
-                                  <el-dropdown-item
-                                      divided
-                                      v-if="
-                                          row.btn_change_to_registered_status ||
-                                          row.btn_recreate_document ||
-                                          (row.btn_resend && !isClient) ||
-                                          (
-                                              configuration.permission_to_edit_cpe &&
-                                              row.state_type_id === '01' &&
-                                              userPermissionEditCpe &&
-                                              row.is_editable
-                                          ) ||
-                                          (
-                                              row.state_type_id === '01' &&
-                                              userId == row.user_id &&
-                                              row.is_editable
-                                          )
-                                      "
-                                  ></el-dropdown-item>
-                                  <el-dropdown-item
-                                    v-if="row.btn_note"
-                                    @click.native="go(`/${resource}/note/${row.id}`)"
-                                  >
-                                      <svg xmlns="http://www.w3.org/2000/svg" class="me-2" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M5 4v17l2 -2l2 2l2 -2l2 2l2 -2l2 2l2 -2v-17z"></path><path d="M14 8h-4"></path><path d="M14 12h-4"></path><path d="M14 16h-4"></path></svg>
-                                      Nota
-                                  </el-dropdown-item>
-                                  <el-dropdown-item
-                                    v-if="row.btn_guide"
-                                    @click.native="go(`/dispatches/create_new/document/${row.id}`)"
-                                  >
-                                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-truck me-2">
-                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                        <path d="M7 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"></path>
-                                        <path d="M17 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"></path>
-                                        <path d="M5 17h-2v-11a1 1 0 0 1 1 -1h9v12m-4 0h6m4 0h2v-6h-8m0 -5h5l3 5"></path>
-                                      </svg>
-                                      Orden de entrega
-                                  </el-dropdown-item>
-
-                                  <!-- ########## INICIO SIN DETRACCIONES E ISC -->
-                                  <!-- ######### FIN SIN DETRACCIONES E ISC -->
-
-                                  <el-dropdown-item
-                                    v-if="isClient && !row.send_server"
-                                    @click.native="clickSendOnline(row.id)"
-                                  >
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-server-2 me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 4m0 3a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v2a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3z" /><path d="M3 12m0 3a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v2a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3z" /><path d="M7 8l0 .01" /><path d="M7 16l0 .01" /><path d="M11 8h6" /><path d="M11 16h6" /></svg>
-                                    Enviar Servidor
-                                  </el-dropdown-item>
-
-                                  <el-dropdown-item
-                                    v-if="isClient && row.send_server && (row.state_type_id === '01' || row.state_type_id === '03')"
-                                    @click.native="clickCheckOnline(row.id)"
-                                  >
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-server-cog me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 4m0 3a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v2a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3z" /><path d="M12 20h-6a3 3 0 0 1 -3 -3v-2a3 3 0 0 1 3 -3h10.5" /><path d="M18 18m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M18 14.5v1.5" /><path d="M18 20v1.5" /><path d="M21.032 16.25l-1.299 .75" /><path d="M16.27 19l-1.3 .75" /><path d="M14.97 16.25l1.3 .75" /><path d="M19.733 19l1.3 .75" /><path d="M7 8v.01" /><path d="M7 16v.01" /></svg>
-                                    Consultar Servidor
-                                  </el-dropdown-item>
-
-                                  <el-dropdown-item
-                                    divided
-                                    v-if="row.btn_note || row.btn_guide || (isClient && !row.send_server) ||
-                                      (isClient && row.send_server && (row.state_type_id === '01' || row.state_type_id === '03'))"
-                                  />
-
-                                  <el-dropdown-item
-                                    @click.native="clickPayment(row.id)"
-                                  >
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-cash me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 15h-3a1 1 0 0 1 -1 -1v-8a1 1 0 0 1 1 -1h12a1 1 0 0 1 1 1v3" /><path d="M7 9m0 1a1 1 0 0 1 1 -1h12a1 1 0 0 1 1 1v8a1 1 0 0 1 -1 1h-12a1 1 0 0 1 -1 -1z" /><path d="M12 14a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /></svg>
-                                    Pagos
-                                  </el-dropdown-item>
-
-                                  <el-dropdown-item
-                                    v-if="row.btn_retention"
-                                    @click.native="clickRetention(row.id)"
-                                  >
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-file-text me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M14 3v4a1 1 0 0 0 1 1h4"></path><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"></path><line x1="9" y1="9" x2="10" y2="9"></line><line x1="9" y1="13" x2="15" y2="13"></line><line x1="9" y1="17" x2="15" y2="17"></line></svg>
-                                    Retención
-                                  </el-dropdown-item>
-
-                                  <el-dropdown-item divided />
-
-                                  <el-dropdown-item
-                                    @click.native="clickOptions(row.id)"
-                                  >
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-settings me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065z" /><path d="M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" /></svg>
-                                    Opciones
-                                  </el-dropdown-item>
-
-                                  <el-dropdown-item
-                                    @click.native="clickPaymentLink(row.id)"
-                                  >
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-link me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 15l6 -6" /><path d="M11 6l.463 -.536a5 5 0 0 1 7.071 7.072l-.534 .464" /><path d="M13 18l-.397 .534a5.068 5.068 0 0 1 -7.127 0a4.972 4.972 0 0 1 0 -7.071l.524 -.463" /></svg>
-                                    Link de pago
-                                  </el-dropdown-item>
-
-                                  <el-dropdown-item
-                                    v-if="row.btn_voided"
-                                    @click.native="clickVoided(row.id)"
-                                    class="text-danger option-delete"
-                                  >
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-x-circle me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><circle cx="12" cy="12" r="9" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" /></svg>
-                                    Anular
-                                  </el-dropdown-item>
-
-                                  <el-dropdown-item
-                                    v-if="row.btn_delete_doc_type_03"
-                                    @click.native="clickDeleteDocument(row.id)"
-                                    class="text-danger option-delete"
-                                  >
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-trash me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><line x1="4" y1="7" x2="20" y2="7" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg>
-                                    Eliminar
-                                  </el-dropdown-item>
-
-                                  <el-dropdown-item
-                                    v-if="row.btn_force_send_by_summary && typeUser === 'admin'"
-                                    @click.native="clickForceSendBySummary(row.id)"
-                                    class="text-warning"
-                                  >
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-send me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><line x1="10" y1="14" x2="21" y2="3" /><path d="M21 3l-6.5 18a0.55 .55 0 0 1 -1 0l-3.5 -7l-7 -3.5a0.55 .55 0 0 1 0 -1l18 -6.5" /></svg>
-                                    Enviar por resumen
-                                  </el-dropdown-item>
-                                </el-dropdown-menu>
-                            </el-dropdown>
-                            <!-- funciona pero con funciones para cada boton, parametro command -->
-                            <!-- <el-dropdown trigger="click" size="small">
-                                <el-button size="mini" type="default" class="el-dropdown-selfdefine">
-                                    <i class="fas fa-ellipsis-v"></i>
-                                </el-button>
-                                <el-dropdown-menu slot="dropdown">
-                                    <el-dropdown-item v-if="row.btn_recreate_document">Recrear</el-dropdown-item>
-                                    <el-dropdown-item>Action 2</el-dropdown-item>
-                                    <el-dropdown-item>Action 3</el-dropdown-item>
-                                    <el-dropdown-item>Action 4</el-dropdown-item>
-                                    <el-dropdown-item>Action 5</el-dropdown-item>
-                                </el-dropdown-menu>
-                            </el-dropdown> -->
-
-                        </td>
-                        </template>
-                    </tr>
-                </data-table>
-            </div>
-
-            <documents-voided
-                :showDialog.sync="showDialogVoided"
-                :recordId="recordId"
-            ></documents-voided>
-
-            <items-import :showDialog.sync="showImportDialog"></items-import>
-
-            <document-import-second
-                :showDialog.sync="showImportSecondDialog"
-            ></document-import-second>
-
-            <document-options
-                :showDialog.sync="showDialogOptions"
-                :recordId="recordId"
-                :showClose="true"
-                :configuration="configuration"
-            ></document-options>
-
-            <document-payments
-                :showDialog.sync="showDialogPayments"
-                :documentId="recordId"
-                :configuration="configuration"
-            ></document-payments>
-
-            <!-- ########## INICIO SIN DETRACCIONES E ISC -->
-            <!-- ######### FIN SIN DETRACCIONES E ISC -->
-            <report-payment
-                :showDialog.sync="showDialogReportPayment"
-            ></report-payment>
-
-            <report-payment-complete
-                :showDialog.sync="showDialogReportPaymentComplete"
-            ></report-payment-complete>
-
-            <!-- ########## INICIO CAMBIO SIN XML CDR SUNAT -->
-            <!-- Los validadores CPE no se montan en operación local. -->
-            <!-- ######### FIN CAMBIO SIN XML CDR SUNAT -->
-
-            <document-import-excel
-                :showDialog.sync="showImportExcelDialog"
-            ></document-import-excel>
-
-            <document-retention
-                :showDialog.sync="showDialogRetention"
-                :documentId="recordId"
-            ></document-retention>
-
-            <document-detail-drawer
-                :showDrawer.sync="showDetailDrawer"
-                :recordId="detailRecordId"
-                :initialRow.sync="detailInitialRow"
-                :resource="resource"
-                @voided="openVoidedFromDrawer"
-                @payments="openPaymentsFromDrawer"
-                @options="openOptionsFromDrawer"
-            ></document-detail-drawer>
+                    </td>
+                    </template>
+                </tr>
+            </data-table>
         </div>
+
+        <documents-voided
+            :showDialog.sync="showDialogVoided"
+            :recordId="recordId"
+        ></documents-voided>
+
+        <items-import :showDialog.sync="showImportDialog"></items-import>
+
+        <document-import-second
+            :showDialog.sync="showImportSecondDialog"
+        ></document-import-second>
+
+        <document-options
+            :showDialog.sync="showDialogOptions"
+            :recordId="recordId"
+            :showClose="true"
+            :configuration="configuration"
+        ></document-options>
+
+        <document-payments
+            :showDialog.sync="showDialogPayments"
+            :documentId="recordId"
+            :configuration="configuration"
+        ></document-payments>
+
+        <!-- ########## INICIO SIN DETRACCIONES E ISC -->
+        <!-- ######### FIN SIN DETRACCIONES E ISC -->
+        <report-payment
+            :showDialog.sync="showDialogReportPayment"
+        ></report-payment>
+
+        <report-payment-complete
+            :showDialog.sync="showDialogReportPaymentComplete"
+        ></report-payment-complete>
+
+        <!-- ########## INICIO CAMBIO SIN XML CDR SUNAT -->
+        <!-- Los validadores CPE no se montan en operación local. -->
+        <!-- ######### FIN CAMBIO SIN XML CDR SUNAT -->
+
+        <document-import-excel
+            :showDialog.sync="showImportExcelDialog"
+        ></document-import-excel>
+
+        <document-retention
+            :showDialog.sync="showDialogRetention"
+            :documentId="recordId"
+        ></document-retention>
+
+        <document-detail-drawer
+            :showDrawer.sync="showDetailDrawer"
+            :recordId="detailRecordId"
+            :initialRow.sync="detailInitialRow"
+            :resource="resource"
+            @voided="openVoidedFromDrawer"
+            @payments="openPaymentsFromDrawer"
+            @options="openOptionsFromDrawer"
+        ></document-detail-drawer>
     </div>
+</div>
 </template>
 <style>
 .dropdown-menu.show {
@@ -688,9 +661,7 @@ export default {
         "document_import_excel",
         "userId",
         "configuration",
-        "userPermissionEditCpe",
-        "view_apiperudev_validator_cpe",
-        "view_validator_cpe"
+        "userPermissionEditCpe"
     ],
     computed: {
         ...mapState(["config"]),
@@ -776,7 +747,7 @@ export default {
                 total:              { title: "Total",                          visible: false, order: 26 },
                 balance:            { title: "Saldo",                          visible: true,  order: 27 },
                 purchase_order:     { title: "Orden de Compra",                visible: false, order: 28 },
-                downloads:          { title: "Descargas (XML/PDF/CDR)",        visible: true,  order: 29 },
+                downloads:          { title: "Descargas PDF",                  visible: true,  order: 29 },
                 actions:            { title: "Acciones",                       visible: true,  order: 30 },
             },
             customFieldColumns: [],
@@ -786,7 +757,7 @@ export default {
                 sales: {
                     total: 'Bs. 0.00',
                     facturas: 'Bs. 0.00',
-                    boletas: 'Bs. 0.00',
+
                     variation: '',
                     variation_up: true,
                 },
@@ -908,43 +879,6 @@ export default {
         clickDownload(download) {
             window.open(download, "_blank");
         },
-        // ########## INICIO CAMBIO SIN XML CDR SUNAT
-        // El listado no conserva un método de reenvío fiscal.
-        // ######### FIN CAMBIO SIN XML CDR SUNAT
-        clickSendOnline(document_id) {
-            this.$http
-                .get(`/${this.resource}/send_server/${document_id}/1`)
-                .then(response => {
-                    if (response.data.success) {
-                        this.$message.success(
-                            "Se envio satisfactoriamente el comprobante."
-                        );
-                        this.$eventHub.$emit("reloadData");
-
-                        this.clickCheckOnline(document_id);
-                    } else {
-                        this.$message.error(response.data.message);
-                    }
-                })
-                .catch(error => {
-                    this.$message.error(error.response.data.message);
-                });
-        },
-        clickCheckOnline(document_id) {
-            this.$http
-                .get(`/${this.resource}/check_server/${document_id}`)
-                .then(response => {
-                    if (response.data.success) {
-                        this.$message.success("Consulta satisfactoria.");
-                        this.$eventHub.$emit("reloadData");
-                    } else {
-                        this.$message.error(response.data.message);
-                    }
-                })
-                .catch(error => {
-                    this.$message.error(error.response.data.message);
-                });
-        },
         // ########## INICIO SIN DETRACCIONES E ISC
         // ######### FIN SIN DETRACCIONES E ISC
         clickOptions(recordId = null) {
@@ -1015,25 +949,6 @@ export default {
                     this.$message.error(error.response.data.message);
                 });
         },
-        tooltip(row, message = true) {
-            if (message) {
-                if (row.shipping_status) return row.shipping_status.message;
-
-                if (row.sunat_shipping_status)
-                    return row.sunat_shipping_status.message;
-
-                if (row.query_status) return row.query_status.message;
-            }
-
-            if (
-                row.shipping_status ||
-                row.sunat_shipping_status ||
-                row.query_status
-            )
-                return true;
-
-            return false;
-        },
         clickPayment(recordId) {
             this.recordId = recordId;
             this.showDialogPayments = true;
@@ -1077,11 +992,7 @@ export default {
         clickReportPayments() {
             this.showDialogReportPayment = true;
         },
-        clickForceSendBySummary(id) {
-            this.forceSendBySummary(`/${this.resource}/force-send-by-summary`, {
-                id: id
-            }).then(() => this.$eventHub.$emit("reloadData"));
-        },
+
         clickRetention(recordId) {
             this.recordId = recordId;
             this.showDialogRetention = true;

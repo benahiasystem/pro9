@@ -36,9 +36,7 @@ use App\Models\Tenant\Catalogs\IdentityDocumentType;
  * @property mixed $data_affected_document
  * @property mixed $delivery
  * @property mixed $dispatcher
- * @property string $download_external_cdr
  * @property string $download_external_pdf
- * @property string $download_external_xml
  * @property mixed $driver
  * @property mixed $legends
  * @property string $number_full
@@ -111,9 +109,7 @@ class Dispatch extends ModelTenant
         'legends',
         'filename',
         'hash',
-        'has_xml',
         'has_pdf',
-        'has_cdr',
         'reference_document_id',
         'reference_order_note_id',
         'reference_quotation_id',
@@ -126,8 +122,6 @@ class Dispatch extends ModelTenant
         'order_form_external',
         'terms_condition',
         'additional_data',
-        'ticket',
-        'reception_date',
         'qr_url',
         'origin_address_id',
         'delivery_address_id',
@@ -150,7 +144,6 @@ class Dispatch extends ModelTenant
         'buyer_id',
         'buyer',
         'custom_fields_data',
-        'sunat_error_response'
     ];
 
     protected $casts = [
@@ -168,7 +161,6 @@ class Dispatch extends ModelTenant
         'payer' => 'array',
         'reference_documents' => 'array',
         'custom_fields_data' => 'array',
-        'sunat_error_response' => 'array',
     ];
 
     public function getAdditionalDataAttribute($value)
@@ -484,11 +476,6 @@ class Dispatch extends ModelTenant
     /**
      * @return string
      */
-    public function getDownloadExternalXmlAttribute()
-    {
-        return route('tenant.download.external_id', ['model' => 'dispatch', 'type' => 'xml', 'external_id' => $this->external_id]);
-    }
-
     /**
      * @return string
      */
@@ -500,11 +487,6 @@ class Dispatch extends ModelTenant
     /**
      * @return string
      */
-    public function getDownloadExternalCdrAttribute()
-    {
-        return route('tenant.download.external_id', ['model' => 'dispatch', 'type' => 'cdr', 'external_id' => $this->external_id]);
-    }
-
     /**
      * @return BelongsTo
      */
@@ -629,12 +611,6 @@ class Dispatch extends ModelTenant
     public function getCollectionData()
     {
 
-        $has_cdr = false;
-
-        if (in_array($this->state_type_id, ['05', '07'])) {
-            $has_cdr = true;
-        }
-
         $documents = [];
 
         if ($this->generate_document) $documents [] = ['description' => $this->generate_document->number_full];
@@ -642,18 +618,10 @@ class Dispatch extends ModelTenant
 
 
         $btn_pdf = true;
-        $btn_send = false;
         $btn_options = false;
-        $btn_status_ticket = false;
         $btn_edit = false;
         $btn_generate_document = config('tenant.internal_dispatch') ? config('tenant.internal_dispatch') : false;
 
-        if ($this->state_type_id === '01') {
-            $btn_send = true;
-        }
-        if ($this->state_type_id === '03') {
-            $btn_status_ticket = true;
-        }
         if ($this->state_type_id === '05') {
             //$btn_pdf = true;
             $btn_options = true;
@@ -718,15 +686,10 @@ class Dispatch extends ModelTenant
             'date_of_shipping' => $this->date_of_shipping->format('Y-m-d'),
             'state_type_id' => $this->state_type_id,
             'state_type_description' => $this->state_type->description,
-            'has_xml' => $this->has_xml,
             'has_pdf' => $this->has_pdf,
-            // 'has_cdr' => $this->has_cdr,
             'dispatcher' => $this->dispatcher,
             'type_disparcher' => $this->getTypeDispatcher(),
-            'has_cdr' => $has_cdr,
-            'download_external_xml' => $this->download_external_xml,
             'download_external_pdf' => $this->download_external_pdf,
-            'download_external_cdr' => $this->download_external_cdr,
             'reference_document_id' => $this->reference_document_id,
             'reference_order_note_id' => $this->reference_order_note_id,
             'order_notes' => $this->order_note,
@@ -737,14 +700,11 @@ class Dispatch extends ModelTenant
             'transfer_reason_description' => $this->transfer_reason_description,
             'documents' => $documents,
             'order_form_description' => $this->getOrderFormDescription(),
-            'btn_status_ticket' => $btn_status_ticket,
-            'btn_send' => $btn_send,
             'btn_pdf' => $btn_pdf,
             'btn_options' => $btn_options,
             'btn_edit' => $btn_edit,
             'btn_voided' => $btn_voided,
             'has_transport_driver_01'=> $this->has_transport_driver_01,
-            'sunat_error_response' => $this->sunat_error_response,
         ];
     }
 

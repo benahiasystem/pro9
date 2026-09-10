@@ -182,9 +182,7 @@ class AccountController extends Controller
             $total_taxed = 0;
             $total_unaffected = 0;
             $total_exonerated = 0;
-            $total_isc = 0;
             $total_igv = 0;
-            $total_plastic_bag_taxes = 0;
             $total = 0;
 
             if($row->hasAcceptedState())
@@ -193,9 +191,7 @@ class AccountController extends Controller
                 $total_taxed = $row->generalApplyNumberFormat($row->total_taxed);
                 $total_unaffected = $row->generalApplyNumberFormat($row->total_unaffected);
                 $total_exonerated = $row->generalApplyNumberFormat($row->total_exonerated);
-                $total_isc = $row->generalApplyNumberFormat($row->total_isc);
                 $total_igv = $row->generalApplyNumberFormat($row->total_igv);
-                $total_plastic_bag_taxes = $row->generalApplyNumberFormat($row->total_plastic_bag_taxes);
                 $total = $row->generalApplyNumberFormat($row->total);
             }
 
@@ -211,9 +207,7 @@ class AccountController extends Controller
                 'total_taxed' => $total_taxed,
                 'total_unaffected' => $total_unaffected,
                 'total_exonerated' => $total_exonerated,
-                'total_isc' => $total_isc,
                 'total_igv' => $total_igv,
-                'total_plastic_bag_taxes' => $total_plastic_bag_taxes,
                 'total' => $total,
                 'currency_type_id' => $row->hasNationalCurrency() ? 'S' : 'D',
                 'exchange_rate_sale' => $row->exchange_rate_sale,
@@ -241,12 +235,10 @@ class AccountController extends Controller
                 'customer_identity_document_type_id' => $row->customer->identity_document_type_id,
                 'customer_number' => format_person_identity_document($row->customer),
                 'customer_name' => $row->customer->name,
-                'total_isc' => number_format($row->total_isc, 2, ".", ""),
                 'total_exportation' => number_format($row->total_exportation, 2, ".", ""),
                 'total_unaffected' => number_format($row->total_unaffected, 2, ".", ""),
                 'total_taxed' => number_format($row->total_taxed, 2, ".", ""),
                 'total_igv' => number_format($row->total_igv, 2, ".", ""),
-                'total_plastic_bag_taxes' => number_format($row->total_plastic_bag_taxes, 2, ".", ""),
                 'total' => number_format($row->total, 2, ".", ""),
                 'total_exonerated' => number_format($row->total_exonerated, 2, ".", ""),
                 'total_retention' => number_format(0, 2, ".", ""),
@@ -277,7 +269,7 @@ class AccountController extends Controller
                 'tipdoc' => $row->document_type_id,
                 'tipmon' => strtoupper($row->currency_type->description),
                 'detrac' => '',
-                'isc' => $row->state_type_id == '11' ? 0 : number_format($row->total_isc, 2, '.', ''),
+                'isc' => $row->state_type_id == '11' ? 0 : number_format(0, 2, '.', ''),
                 'icbper' => '',
                 'imp_ina' => 0,
                 'imp_exp' => '',
@@ -321,7 +313,7 @@ class AccountController extends Controller
     {
         return Document::query()
             ->whereBetween('date_of_issue', [$d_start, $d_end])
-            ->whereIn('document_type_id', ['01', '03'])
+            ->whereIn('document_type_id', ['01'])
             ->whereIn('currency_type_id', ['VES', 'USD'])
             ->orderBy('series')
             ->orderBy('number')
@@ -354,12 +346,10 @@ class AccountController extends Controller
                 'customer_identity_document_type_id' => $row->customer->identity_document_type_id,
                 'customer_number' => format_person_identity_document($row->customer),
                 'customer_name' => $row->customer->name,
-                'total_isc' => number_format($row->total_isc, 2, ".", ""),
                 'total_exportation' => number_format($row->total_exportation, 2, ".", ""),
                 'total_unaffected' => number_format($row->total_unaffected, 2, ".", ""),
                 'total_taxed' => number_format($row->total_taxed, 2, ".", ""),
                 'total_igv' => number_format($row->total_igv, 2, ".", ""),
-                'total_plastic_bag_taxes' => number_format($row->total_plastic_bag_taxes, 2, ".", ""),
                 'total_exonerated' => number_format($row->total_exonerated, 2, ".", ""),
                 'total_retention' => number_format(0, 2, ".", ""),
                 'total' => number_format($row->total, 2, ".", ""),
@@ -377,9 +367,6 @@ class AccountController extends Controller
             case '01':
                 $document_type = 'FT';
                 break;
-            case '03':
-                $document_type = 'BV';
-                break;
             case '07':
                 $document_type = 'NA';
                 break;
@@ -396,7 +383,7 @@ class AccountController extends Controller
         return Document::query()
             ->with(['invoice', 'items', 'note.affected_document'])
             ->whereBetween('date_of_issue', [$d_start, $d_end])
-            ->whereIn('document_type_id', ['01', '03', '07', '08'])
+            ->whereIn('document_type_id', ['01', '07', '08'])
             ->whereIn('currency_type_id', ['VES', 'USD'])
             ->orderBy('series')
             ->orderBy('number')
@@ -428,9 +415,7 @@ class AccountController extends Controller
             $total_unaffected = 0;
             $total_exonerated = 0;
             $total_value = 0;
-            $total_isc = 0;
             $total_igv = 0;
-            $total_plastic_bag_taxes = 0;
             $total = 0;
 
             if ($row->hasAcceptedState()) {
@@ -438,9 +423,7 @@ class AccountController extends Controller
                 $total_unaffected = $row->generalApplyNumberFormat($row->total_unaffected);
                 $total_value = $row->generalApplyNumberFormat($row->total_value);
                 $total_exonerated = $row->generalApplyNumberFormat($row->total_exonerated);
-                $total_isc = $row->generalApplyNumberFormat($row->total_isc);
                 $total_igv = $row->generalApplyNumberFormat($row->total_igv);
-                $total_plastic_bag_taxes = $row->generalApplyNumberFormat($row->total_plastic_bag_taxes);
                 $total = $row->generalApplyNumberFormat($row->total);
             }
 
@@ -497,9 +480,7 @@ class AccountController extends Controller
                 'total_igv' => $row->total_igv,
                 'total' => $total_value,
                 'total_unaffected' => $total_unaffected,
-                'total_isc' => $total_isc,
                 'others' => 0,
-                'total_plastic_bag_taxes' => $total_plastic_bag_taxes,
                 'income_account' => $income_account,
                 'ref_date_excel' => $ref_date_excel,
                 'ref_document_type' => $ref_document_type,
@@ -1403,9 +1384,6 @@ class AccountController extends Controller
             case '01':
                 $document_type = 'FT';
                 break;
-            case '03':
-                $document_type = 'BV';
-                break;
             case '07':
                 $document_type = 'NC';
                 break;
@@ -1597,7 +1575,6 @@ class AccountController extends Controller
                 'total_taxed' => number_format($row->total_taxed, 2, ".", ""),
                 'total_exonerated' => number_format($row->total_exonerated, 2, ".", ""),
                 'total_unaffected' => number_format($row->total_unaffected, 2, ".", ""),
-                'total_isc' => number_format($row->total_isc, 2, ".", ""),
                 'total_igv' => number_format($row->total_igv, 2, ".", ""),
                 'total_other_taxes' => number_format($row->total_total_other_taxes, 2, ".", ""),
                 'total' => number_format($row->total, 2, ".", ""),

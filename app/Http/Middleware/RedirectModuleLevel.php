@@ -19,7 +19,7 @@
      */
     class RedirectModuleLevel
     {
-        
+
         use SystemActivityTrait;
 
         private $route_path;
@@ -88,68 +88,31 @@
             $secondLevel = $path[1] ?? null;
 
             if (isset($path[1])) {
-
                 if ($path[0] == "documents" && $path[1] == "create") {
                     $group = "new_document";
-                } else {
-                    if ($path[0] == "documents" && $path[1] == "not-sent") {
-                        $group = "document_not_sent";
-                    }else {
-                        if ($path[0] == "documents" && $path[1] == "regularize_shipping") {
-                            $group = "regularize_shipping";
-                        }else {
-                            if ($path[0] == "persons" && $path[1] == "customers") {
-                                $group = "catalogs";
-                            } else {
-                                if ($path[0] == "quotations" && $path[1] == "create") {
-                                    $group = "quotations";
-                                } else {
-                                    if ($path[0] == "quotations" && $path[1] == "edit") {
-                                        $group = "quotations";
-                                    } else {
-                                        if ($path[0] == "sale-notes" && $path[1] == "create") {
-                                            $group = "sale_notes";
-                                        } else {
-                                            if ($path[0] == "contracts" && $path[1] == "create") {
-                                                $group = "contracts";
-                                            } else {
-                                                if ($path[0] == "sale-opportunities" && $path[1] == "create") {
-                                                    $group = "sale-opportunity";
-                                                } else {
-                                                    if ($path[0] == "order-notes" && $path[1] == "create") {
-                                                        $group = "order-note";
-                                                    } else {
-                                                        if ($path[0] == "sire" && $path[1] == "sale") {
-                                                            $group = "account_summary";
-                                                        } else {
-                                                            if ($path[0] == "sire" && $path[1] == "purchase") {
-                                                                $group = "account_summary";
-                                                            }else{
-                                                                if ($firstLevel == "ecommerce" && $secondLevel == "item-sets") {
-                                                                    $group = "ecommerce_items";
-                                                                }else{
-                                                                    if ($firstLevel == "full_suscription") {
-                                                                        if ($secondLevel == "client") {
-                                                                            $group = "suscription_app_client";
-                                                                        } elseif ($secondLevel == "service") {
-                                                                            $group = "suscription_app_service";
-                                                                        } elseif ($secondLevel == "payment_receipt") {
-                                                                            $group = "suscription_app_payments";
-                                                                        } elseif ($secondLevel == "plans") {
-                                                                            $group = "suscription_app_plans";
-                                                                        }
-                                                                    }
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                } elseif ($path[0] == "persons" && $path[1] == "customers") {
+                    $group = "catalogs";
+                } elseif ($path[0] == "quotations" && in_array($path[1], ["create", "edit"], true)) {
+                    $group = "quotations";
+                } elseif ($path[0] == "sale-notes" && $path[1] == "create") {
+                    $group = "sale_notes";
+                } elseif ($path[0] == "contracts" && $path[1] == "create") {
+                    $group = "contracts";
+                } elseif ($path[0] == "sale-opportunities" && $path[1] == "create") {
+                    $group = "sale-opportunity";
+                } elseif ($path[0] == "order-notes" && $path[1] == "create") {
+                    $group = "order-note";
+                } elseif ($firstLevel == "ecommerce" && $secondLevel == "item-sets") {
+                    $group = "ecommerce_items";
+                } elseif ($firstLevel == "full_suscription") {
+                    $groups = [
+                        "client" => "suscription_app_client",
+                        "service" => "suscription_app_service",
+                        "payment_receipt" => "suscription_app_payments",
+                        "plans" => "suscription_app_plans",
+                    ];
+                    if (isset($groups[$secondLevel])) {
+                        $group = $groups[$secondLevel];
                     }
                 }
                 /** Configuracion avanzada */
@@ -331,11 +294,6 @@
                 case 'list_document':
                     return redirect()->route('tenant.documents.index');
 
-                case 'document_not_sent':
-                    // ########## INICIO CAMBIO SIN XML CDR SUNAT
-                    return redirect()->route('tenant.documents.index');
-                    // ######### FIN CAMBIO SIN XML CDR SUNAT
-
                 case 'document_contingengy':
                     return redirect()->route('tenant.contingencies.index');
 
@@ -343,7 +301,7 @@
                     return redirect()->route('tenant.items.index');
 
                 case 'summary_voided':
-                    return redirect()->route('tenant.summaries.create');
+                    return redirect()->route('tenant.voided.index');
 
                 case 'quotations':
                     return redirect()->route('tenant.quotations.create');
@@ -380,10 +338,6 @@
                     return redirect()->route('tenant.transports.index');
                 case 'bank_loan':
                     return redirect()->route('tenant.bank_loan.index');
-                case 'regularize_shipping':
-                    // ########## INICIO CAMBIO SIN XML CDR SUNAT
-                    return redirect()->route('tenant.documents.index');
-                    // ######### FIN CAMBIO SIN XML CDR SUNAT
                 case 'advanced_purchase_settlements':
                     return redirect()->route('tenant.purchase-settlements.index');
                 case 'advanced_order_forms':
@@ -410,7 +364,7 @@
                     //return redirect()->route('tenant.suscription.plans.index');
                 case 'ecommerce_items':
                     return redirect()->route('tenant.ecommerce.item_sets.index');
-                    
+
                 default;
                     return redirect()->route('tenant.dashboard.index');
 

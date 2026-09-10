@@ -1,21 +1,18 @@
 <?php
-// ######### INICIO CAMBIO NELSON #########
-
-/**
- * Estructura efectiva clonada desde `tenancy_bbc`.
- * Tabla: `documentary_observation`.
- *
- * Inventario de columnas:
- * - `id`: int(10) unsigned; NOT NULL; auto_increment — Sin comentario definido en el esquema fuente.
- * - `doc_file_id`: int(10) unsigned; NULL; DEFAULT 0 — Expediente relacionado
- * - `observation`: longtext; NULL; COLLATE utf8mb4_unicode_ci — Conjunto de etapas.
- * - `created_at`: timestamp; NULL — Sin comentario definido en el esquema fuente.
- * - `updated_at`: timestamp; NULL — Sin comentario definido en el esquema fuente.
- */
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 
+// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
+/**
+ * Estructura inicial de `documentary_observation` para instalaciones nuevas.
+ * Inventario de columnas:
+ * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
+ * - `doc_file_id` int(10) unsigned DEFAULT '0' COMMENT 'Expediente relacionado'
+ * - `observation` longtext COLLATE utf8mb4_unicode_ci COMMENT 'Conjunto de etapas.'
+ * - `created_at` timestamp NULL DEFAULT NULL
+ * - `updated_at` timestamp NULL DEFAULT NULL
+ */
 return new class extends Migration
 {
     public function up(): void
@@ -37,4 +34,4 @@ SQL);
         DB::unprepared('DROP TABLE IF EXISTS `documentary_observation`');
     }
 };
-// ######### FIN CAMBIO NELSON #########
+// ######## FIN ESQUEMA INICIAL VENEZUELA ########

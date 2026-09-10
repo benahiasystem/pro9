@@ -68,7 +68,7 @@ class VenezuelaGeopoliticalContractTest extends TestCase
         self::assertCount(335, $provinces);
         self::assertCount(1138, $districts);
         self::assertStringContainsString('venezuela_geopolitical_data.php', $seeder);
-        self::assertStringContainsString('array_replace($tables, $geopoliticalTables)', $seeder);
+        self::assertStringContainsString('array_replace($payload[\'tables\'], $geography[\'tables\'])', $seeder);
         self::assertTrue($countries->has('VE'));
         self::assertFalse($countries->has('PE'));
         self::assertSame('Miranda', $departments['14']['description']);

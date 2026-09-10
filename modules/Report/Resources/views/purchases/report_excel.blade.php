@@ -99,9 +99,7 @@
                                 <th class="" >T.Inafecta</th>
                                 <th class="" >T.Gratuito</th>
                                 {{-- ########## INICIO SIN DETRACCIONES E ISC --}}
-                                @if(\App\Services\LocalFiscalDocumentPolicy::showIsc())
-                                    <th>Total ISC</th>
-                                @endif
+
                                 {{-- ######### FIN SIN DETRACCIONES E ISC --}}
                                 <th>Total Gravado</th>
                                 {{-- ########## INICIO CAMBIO IGV A IVA --}}
@@ -141,7 +139,6 @@
                                     <td class="celda">{{$value->state_type_id == '11' ? 0 : $value->getConvertTotalExoneratedToPen() }}</td>
                                     <td class="celda">{{ $value->state_type_id == '11' ? 0 : $value->getConvertTotalUnaffectedToPen() }}</td>
                                     <td class="celda">{{ $value->state_type_id == '11' ? 0 : $value->getConvertTotalFreeToPen() }}</td>
-                                    <td class="celda">{{$value->state_type_id == '11' ? 0 : $value->getConvertTotalIscToPen() }}</td>
                                     <td class="celda">{{$value->state_type_id == '11' ? 0 : $value->getConvertTotalTaxedToPen() }}</td>
                                     <td class="celda">{{$value->state_type_id == '11' ? 0 : $value->getConvertTotalIgvToPen() }}</td>
                                     <td class="celda">{{$value->state_type_id == '11' ? 0 : $value->getConvertTotalToPen() + $value->total_perception}}</td>
@@ -156,9 +153,7 @@
                                     <td class="celda">{{ $value->state_type_id == '11' ? 0 : $value->total_unaffected}}</td>
                                     <td class="celda">{{ $value->state_type_id == '11' ? 0 : $value->total_free}}</td>
 
-                                    @if(\App\Services\LocalFiscalDocumentPolicy::showIsc())
-                                        <td class="celda">{{$value->state_type_id == '11' ? 0 : $value->total_isc}}</td>
-                                    @endif
+
                                     <td class="celda">{{$value->state_type_id == '11' ? 0 : $value->total_taxed}}</td>
                                     <td class="celda">{{$value->state_type_id == '11' ? 0 : $value->total_igv}}</td>
                                     <td class="celda">{{$value->state_type_id == '11' ? 0 : $value->total + $value->total_perception}}</td>

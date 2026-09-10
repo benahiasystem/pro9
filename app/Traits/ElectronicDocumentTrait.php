@@ -8,12 +8,12 @@ use Illuminate\Database\Eloquent\Builder;
 
 
 trait ElectronicDocumentTrait
-{ 
+{
 
     /**
-     * 
+     *
      * Filtro para obtener el registro de actividades de los documentos electronicos individuales
-     * 
+     *
      * Usado para:
      * Document
      * Dispatch
@@ -37,8 +37,8 @@ trait ElectronicDocumentTrait
                         "users.name as user_name, ".
                         "{$table}.date_of_issue as date_of_issue, ".
                         "{$table}.time_of_issue as time_of_issue,".
-                        "cat_document_types.id AS 'document_type_id',". 
-                        "cat_document_types.description AS 'document_type_description',". 
+                        "cat_document_types.id AS 'document_type_id',".
+                        "cat_document_types.description AS 'document_type_description',".
                         "{$table}.series as series,".
                         "{$table}.number as number,".
                         "CONCAT({$table}.series, '-', {$table}.number) as number_full,".
@@ -54,11 +54,11 @@ trait ElectronicDocumentTrait
         return $query;
     }
 
-        
+
     /**
-     * 
+     *
      * Filtro para obtener el registro de actividades de resumenes y anulaciones
-     * 
+     *
      * Usado para:
      * Summary
      * Voided
@@ -69,31 +69,15 @@ trait ElectronicDocumentTrait
      * @param  bool $is_voided
      * @return Builder
      */
-    public function getQuerySystemActivityLogTransactionGroup($table, $document_type_id, $request, $is_voided = false)
+    public function getQuerySystemActivityLogTransactionGroup($table, $document_type_id, $request)
     {
-        // resumen diario
-        if($document_type_id === 'RC')
-        {
-            if($is_voided)
-            {
-                $query =  $this->getBaseQuerySummaryVoided($table, $document_type_id, $request, 'RESUMEN DIARIO')->whereIn("{$table}.summary_status_type_id", ['1', '2']);
-            }
-            // resumen de anulacion
-            else
-            {
-                $query = $this->getBaseQuerySummaryVoided('summaries', $document_type_id, $request, 'ANULACIÓN')->where("summaries.summary_status_type_id", '3');
-            }
-
-            return $query;
-        }
-
         // comunicaciones de baja
-        return $this->getBaseQuerySummaryVoided($table, $document_type_id, $request, 'ANULACIÓN');
+        return $this->getBaseQueryVoided($table, $document_type_id, $request, 'ANULACIÓN');
     }
 
-    
+
     /**
-     * 
+     *
      * Consulta base para resumenes y anulaciones
      *
      * @param  string $table
@@ -102,20 +86,13 @@ trait ElectronicDocumentTrait
      * @param  string $document_type_description
      * @return Builder
      */
-    public function getBaseQuerySummaryVoided($table, $document_type_id, $request, $document_type_description)
+    public function getBaseQueryVoided($table, $document_type_id, $request, $document_type_description)
     {
-        // Relacionar RA/RC con los CPE afectados (ej. RA-20260810-2 → FF01-28)
-        if ($table === 'voided') {
-            $relatedCpes = "(SELECT GROUP_CONCAT(CONCAT(d.series, '-', d.number) ORDER BY d.id SEPARATOR ', ') "
+        // Relacionar anulaciones con los documentos afectados.
+        $relatedCpes = "(SELECT GROUP_CONCAT(CONCAT(d.series, '-', d.number) ORDER BY d.id SEPARATOR ', ') "
                 . "FROM voided_documents vd "
                 . "INNER JOIN documents d ON d.id = vd.document_id "
                 . "WHERE vd.voided_id = {$table}.id)";
-        } else {
-            $relatedCpes = "(SELECT GROUP_CONCAT(CONCAT(d.series, '-', d.number) ORDER BY d.id SEPARATOR ', ') "
-                . "FROM summary_documents sd "
-                . "INNER JOIN documents d ON d.id = sd.document_id "
-                . "WHERE sd.summary_id = {$table}.id)";
-        }
 
         $numberFull = "CONCAT({$table}.identifier, IFNULL(CONCAT(' → ', {$relatedCpes}), ''))";
 
@@ -129,8 +106,8 @@ trait ElectronicDocumentTrait
                         "{$table}.date_of_issue as date_of_issue, ".
                         // Las RA/RC no tienen time_of_issue; usar hora de registro
                         "TIME({$table}.created_at) as time_of_issue,".
-                        "'{$document_type_id}' AS 'document_type_id',". 
-                        "'{$document_type_description}' AS 'document_type_description',". 
+                        "'{$document_type_id}' AS 'document_type_id',".
+                        "'{$document_type_description}' AS 'document_type_description',".
                         "null as series,".
                         "null as number,".
                         "{$numberFull} as number_full,".
@@ -148,9 +125,9 @@ trait ElectronicDocumentTrait
 
 
     /**
-     * 
+     *
      * Filtro para obtener el registro de actividades de los documentos electronicos
-     * 
+     *
      * Usado para:
      * Document
      * Dispatch
@@ -160,7 +137,7 @@ trait ElectronicDocumentTrait
      *
      * @param Builder $query
      * @return Builder
-     */  
+     */
     // public function scopeFiltersSystemActivityLogTransactions($query)
     // {
     //     return $query->whereFilterWithOutRelations()
@@ -184,5 +161,5 @@ trait ElectronicDocumentTrait
     //                     },
     //                 ]);
     // }
-    
+
 }

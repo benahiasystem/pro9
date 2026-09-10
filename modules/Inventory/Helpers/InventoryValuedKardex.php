@@ -425,9 +425,9 @@ class InventoryValuedKardex
         ];
     }
 
-    
+
     /**
-     * 
+     *
      * Obtener coleccion con todos los registros
      *
      * @param  Collection $document_items
@@ -443,7 +443,7 @@ class InventoryValuedKardex
         $purchase_items->each(function($purchase) use($all_items){
             $all_items->push($purchase);
         });
-        
+
         $dispatch_items->each(function($dispatch) use($all_items){
             $all_items->push($dispatch);
         });
@@ -453,7 +453,7 @@ class InventoryValuedKardex
                 $all_items->push($sale_note_item);
             });
         }
-        
+
         return $all_items;
     }
 
@@ -517,7 +517,7 @@ class InventoryValuedKardex
             if($temp_data['model_type'] == 'document' && $temp_data['document_type_id'] == '07'){
 
                 $affected_document = collect($data)->first(function($row) use($temp_data){
-                    return $row['model_type'] == 'document' && in_array($row['document_type_id'], ['01', '03']) && $row['id'] === $temp_data['affected_document_id'];
+                    return $row['model_type'] == 'document' && in_array($row['document_type_id'], ['01']) && $row['id'] === $temp_data['affected_document_id'];
                 });
 
                 $temp_data['input_unit_price'] = $affected_document['output_unit_price'];
@@ -559,10 +559,10 @@ class InventoryValuedKardex
         return $data;
 
     }
-    
+
 
     /**
-     * 
+     *
      * Obtener fecha para ordenar documentos
      *
      * @param  $document

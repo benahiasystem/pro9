@@ -187,7 +187,7 @@
                                            v-text="errors.currency_type_id[0]"></small>
                                 </div>
                             </div>
-                            -- >
+                            -->
                             <div class="col-md-3 align-self-end">
                                 <div :class="{'has-danger': errors.exchange_rate_sale}"
                                      class="form-group">
@@ -207,7 +207,7 @@
                                            v-text="errors.exchange_rate_sale[0]"></small>
                                 </div>
                             </div>
-                            <! -- <div class="col-md-6">
+                            <!-- <div class="col-md-6">
                                 <div class="form-group" :class="{'has-danger': errors.prepayment}">
                                     <label class="control-label">Pago adelantado </label>
                                     <el-input v-model="form.prepayment" ></el-input>
@@ -926,7 +926,7 @@ export default {
             let total_igv = igv;
             let total_value = 0;
             let total = 0;
-            let total_plastic_bag_taxes = 0;
+
             this.total_discount_no_base = 0;
 
             let total_igv_free = 0;
@@ -1008,9 +1008,7 @@ export default {
                     total_value += parseFloat(row.total_value);
                 }
 
-                total_plastic_bag_taxes += parseFloat(
-                    row.total_plastic_bag_taxes
-                );
+
 
                 if (
                     ["12", "13", "14", "15", "16"].includes(
@@ -1045,18 +1043,14 @@ export default {
             this.form.total_igv = _.round(total_igv, 2);
             this.form.total_value = _.round(total_value, 2);
             this.form.total_taxes = _.round(total_igv, 2);
-            this.form.total_plastic_bag_taxes = _.round(
-                total_plastic_bag_taxes,
-                2
-            );
+
             // this.form.total = _.round(total, 2)
             this.form.subtotal = _.round(
-                total + this.form.total_plastic_bag_taxes,
+                total,
                 2
             );
             this.form.total = _.round(
-                total +
-                    this.form.total_plastic_bag_taxes -
+                total -
                     this.total_discount_no_base,
                 2
             );
@@ -1494,11 +1488,11 @@ export default {
                 total_unaffected: 0,
                 total_exonerated: 0,
                 total_igv: 0,
-                total_base_isc: 0,
-                total_isc: 0,
+
+
                 total_base_other_taxes: 0,
                 total_other_taxes: 0,
-                total_plastic_bag_taxes: 0,
+
                 total_taxes: 0,
                 total_value: 0,
                 total: 0,
@@ -1802,7 +1796,7 @@ export default {
             item.presentation = {};
             item.unit_price = item.sale_unit_price;
             item.item = {
-                amount_plastic_bag_taxes: item.amount_plastic_bag_taxes,
+
                 attributes: item.attributes,
                 brand: item.brand,
                 calculate_quantity: item.calculate_quantity,
@@ -1812,7 +1806,7 @@ export default {
                 description: item.description,
                 full_description: item.full_description,
                 has_igv: item.has_igv,
-                has_plastic_bag_taxes: item.has_plastic_bag_taxes,
+
                 id: item.id,
                 internal_id: item.internal_id,
                 item_unit_types: item.item_unit_types,
@@ -1882,7 +1876,6 @@ export default {
             this.form.establishment_id = data.establishment_id;
             this.form.document_type_id = data.document_type_id;
             this.form.id = data.id;
-            this.form.hash = data.hash;
             this.form.number = data.number;
             this.form.date_of_issue = moment(data.date_of_issue).format(
                 "YYYY-MM-DD"
@@ -1921,15 +1914,13 @@ export default {
             this.form.total_exportation = parseFloat(data.total_exportation);
             this.form.total_free = parseFloat(data.total_free);
             this.form.total_igv = parseFloat(data.total_igv);
-            this.form.total_isc = parseFloat(data.total_isc);
-            this.form.total_base_isc = parseFloat(data.total_base_isc);
+
+
             this.form.total_base_other_taxes = parseFloat(
                 data.total_base_other_taxes
             );
             this.form.total_other_taxes = parseFloat(data.total_other_taxes);
-            this.form.total_plastic_bag_taxes = parseFloat(
-                data.total_plastic_bag_taxes
-            );
+
             this.form.total_prepayment = parseFloat(data.total_prepayment);
             this.form.total_taxed = parseFloat(data.total_taxed);
             this.form.total_taxes = parseFloat(data.total_taxes);

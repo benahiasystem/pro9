@@ -21,7 +21,7 @@ class Pro8SkillContractParityTest extends TestCase
     }
 
     /** @test */
-    public function pro9_skills_keep_the_mandatory_pro8_contracts(): void
+    public function pro9_skills_document_the_current_venezuela_contracts(): void
     {
         foreach ($this->requiredContracts() as $skill => $requirements) {
             $source = (string) file_get_contents(base_path(".codex/skills/{$skill}/SKILL.md"));
@@ -40,7 +40,10 @@ class Pro8SkillContractParityTest extends TestCase
     /** @test */
     public function skills_with_reusable_pro8_resources_keep_the_required_resources(): void
     {
-        self::assertDirectoryExists(base_path('.codex/skills/reconstruir-migraciones-tenant/scripts'));
+        foreach (['generate_tenant_migrations.php', 'generate_tenant_seed_data.php', 'validate_tenant_migrations.php', 'validate_tenant_seeders.php'] as $script) {
+            self::assertFileDoesNotExist(base_path('.codex/skills/reconstruir-migraciones-tenant/scripts/'.$script));
+        }
+        self::assertFileExists(base_path('tests/Unit/FiscalEmissionSchemaTest.php'));
 
         self::assertFileExists(base_path('.codex/skills/migrate-product-import-excel-format/references/contrato-validacion-previa.md'));
     }
@@ -58,7 +61,7 @@ class Pro8SkillContractParityTest extends TestCase
     {
         return [
             'adaptar-sistema-venezuela' => [
-                'migraciones incrementales, transaccionales e idempotentes',
+                'Migraciones consolidadas',
                 'Estado/Municipio/Parroquia',
                 'PAGAR',
                 'Culqi',
@@ -68,10 +71,10 @@ class Pro8SkillContractParityTest extends TestCase
                 'country_id = VE',
                 'nationality_id = VE',
                 'RIF',
-                'Cédula de Identidad',
+                'Venezolano',
                 'website',
                 'observation',
-                'prepareForValidation',
+                'PersonRequest',
             ],
             'migrar-venezuela-geopolitica' => [
                 '25 estados, 335 municipios y 1138 parroquias',
@@ -107,11 +110,11 @@ class Pro8SkillContractParityTest extends TestCase
                 'quick_validate.py',
             ],
             'reconstruir-migraciones-tenant' => [
-                'SHOW CREATE TABLE',
+                'claves foráneas',
                 'TenantMigrationDataSeeder',
-                'validate_tenant_migrations.php',
-                'validate_tenant_seeders.php',
-                'No declarar éxito con una comparación parcial',
+                'FiscalEmissionSchemaTest',
+                'integridad referencial global',
+                'comparar el resultado completo',
             ],
         ];
     }

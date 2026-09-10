@@ -79,7 +79,7 @@
             R.Doc
         </th>
         <th>
-            R.numero 
+            R.numero
         </th>
         <th>
             R.Fecha
@@ -163,7 +163,7 @@
             Ind.Ret
         </th>
         <th>
-            B.Imp	
+            B.Imp
         </th>
         <th>
             IGV
@@ -183,10 +183,10 @@
             <td>{{ $row['total_taxed'] }}</td>
             <td>{{ $row['total_unaffected'] }}</td>
             <td>{{ $row['total_exonerated'] }}</td>
-            <td>{{ $row['total_isc'] }}</td>
+
             <td>{{ $row['total_igv'] }}</td>
             <td></td>
-            <td>{{ $row['total_plastic_bag_taxes'] }}</td>
+
             <td>{{ $row['currency_type_id'] }}</td>
             <td>{{ $row['exchange_rate_sale'] }}</td>
             <td>VENTA</td>

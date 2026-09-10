@@ -248,9 +248,7 @@
                     percent: 0,
                     total_retention: 0,
                     total: 0,
-                    has_xml: 0,
                     has_pdf: 0,
-                    has_cdr: 0,
                     documents: [],
                 }
             },

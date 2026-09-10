@@ -91,11 +91,13 @@ final class Localization
             return '+' . $digits;
         }
 
-        if (str_starts_with($digits, '51')) {
-            $digits = substr($digits, 2);
+        // ######## INICIO TELÉFONOS VENEZOLANOS ########
+        if (str_starts_with(trim($phone), '+')) {
+            return null;
         }
-
-        return self::dialCode() . ltrim($digits, '0');
+        // ######## FIN TELÉFONOS VENEZOLANOS ########
+        $local = ltrim($digits, '0');
+        return $local === '' ? null : self::dialCode() . $local;
     }
 
     public static function whatsappNumber(?string $phone): ?string
@@ -105,7 +107,7 @@ final class Localization
         return $normalized === null ? null : ltrim($normalized, '+');
     }
 
-    public static function locationId(string $level, int $legacyId): string
+    public static function locationId(string $level, int $id): string
     {
         $lengths = [
             'department' => 2,
@@ -117,7 +119,7 @@ final class Localization
             throw new InvalidArgumentException("Nivel geopolítico no soportado: {$level}");
         }
 
-        return str_pad((string) $legacyId, $lengths[$level], '0', STR_PAD_LEFT);
+        return str_pad((string) $id, $lengths[$level], '0', STR_PAD_LEFT);
     }
 
     public static function normalizeLocationName(?string $name): string

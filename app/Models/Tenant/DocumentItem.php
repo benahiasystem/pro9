@@ -6,7 +6,6 @@
 
     use App\Models\Tenant\Catalogs\AffectationIgvType;
     use App\Models\Tenant\Catalogs\PriceType;
-    use App\Models\Tenant\Catalogs\SystemIscType;
     use App\Traits\AttributePerItems;
     use Carbon\Carbon;
     use Eloquent;
@@ -31,7 +30,6 @@
      * @property Item               $m_item
      * @property PriceType          $price_type
      * @property Item               $relation_item
-     * @property SystemIscType      $system_isc_type
      * @property Warehouse          $warehouse
      * @method static Builder|DocumentItem newModelQuery()
      * @method static Builder|DocumentItem newQuery()
@@ -60,11 +58,6 @@
             'percentage_igv',
             'total_igv',
 
-            'system_isc_type_id',
-            'total_base_isc',
-            'percentage_isc',
-            'total_isc',
-
             'total_base_other_taxes',
             'percentage_other_taxes',
             'total_other_taxes',
@@ -81,11 +74,9 @@
             'attributes',
             'charges',
             'discounts',
-            'total_plastic_bag_taxes',
             'warehouse_id',
             'name_product_pdf',
             'additional_information',
-            'name_product_xml',
             'additional_data'
         ];
 
@@ -262,14 +253,6 @@
         public function affectation_igv_type()
         {
             return $this->belongsTo(AffectationIgvType::class, 'affectation_igv_type_id');
-        }
-
-        /**
-         * @return BelongsTo
-         */
-        public function system_isc_type()
-        {
-            return $this->belongsTo(SystemIscType::class, 'system_isc_type_id');
         }
 
         /**
@@ -512,17 +495,6 @@
         }
 
         /**
-         *
-         * Obtener total isc y realizar conversión a bolívares de acuerdo al tipo de cambio
-         *
-         * @return float
-         */
-        public function getConvertTotalIscToPen()
-        {
-            return $this->generalConvertValueToPen($this->total_isc, $this->document->exchange_rate_sale);
-        }
-
-        /**
          * Validar si es venta en dolares
          *
          * @return bool
@@ -543,7 +515,7 @@
          */
         public function scopeWhereFilterWithOutRelations($query)
         {
-            return $query->withOut(['affectation_igv_type', 'system_isc_type', 'price_type']);
+            return $query->withOut(['affectation_igv_type', 'price_type']);
         }
 
 

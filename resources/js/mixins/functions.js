@@ -465,9 +465,9 @@ export const operationsForDiscounts = {
                     this.form.total_igv = _.round(this.form.total_taxed * (percentage_igv / 100), 2)
 
                     //impuestos (isc + igv + icbper)
-                    let total_plastic_bag_taxes = this.form.total_plastic_bag_taxes ? this.form.total_plastic_bag_taxes : 0
 
-                    this.form.total_taxes = _.round(this.form.total_igv + this.form.total_isc + total_plastic_bag_taxes, 2)
+
+                    this.form.total_taxes = _.round(this.form.total_igv, 2)
                     this.form.total = _.round(this.form.total_taxed + this.form.total_taxes, 2)
                     this.form.subtotal = this.form.total
 

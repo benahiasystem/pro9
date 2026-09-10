@@ -25,6 +25,7 @@
 </template>
 
 <script>
+import {whatsappNumber} from "@helpers/phone";
 import {mapState} from "vuex/dist/vuex.mjs";
 // import * as https from 'https';
 
@@ -36,7 +37,6 @@ export default {
             errors: {},
             button_disable: true,
             loading_submit: false,
-            // text: 'Su comprobante de pago electrónico F001-4 ha sido generado correctamente',
         }
     },
     computed: {
@@ -54,10 +54,10 @@ export default {
             }
         },
         sendQrChat() {
-            this.loading_submit = true
-            if (this.wsPhone == '') {
-                return this.$message.error('El número es obligatorio')
+            if (!whatsappNumber(this.wsPhone)) {
+                return this.$message.error('Ingrese un teléfono venezolano válido.')
             }
+            this.loading_submit = true
             this.convertFileToBase64(this.wsFile)
                 .then(base64File => {
                     this.setForm(base64File);
@@ -106,7 +106,7 @@ export default {
                 // appkey: this.config.qrchat_app_key,
                 // authkey: this.config.qrchat_auth_key,
                 // ########### INICIO CAMBIO TELEFONÍA VENEZUELA
-                number: `58${String(this.wsPhone).replace(/\D/g, '').replace(/^(58|51)/, '')}`,
+                number: whatsappNumber(this.wsPhone),
                 // ########### FIN CAMBIO TELEFONÍA VENEZUELA
                 message: this.wsMessage,
                 file: base64File,

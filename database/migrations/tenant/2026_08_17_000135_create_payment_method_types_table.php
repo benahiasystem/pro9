@@ -1,24 +1,21 @@
 <?php
-// ######### INICIO CAMBIO NELSON #########
-
-/**
- * Estructura efectiva clonada desde `tenancy_bbc`.
- * Tabla: `payment_method_types`.
- *
- * Inventario de columnas:
- * - `id`: char(2); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
- * - `description`: varchar(255); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
- * - `has_card`: tinyint(1); NOT NULL; DEFAULT 0 — Sin comentario definido en el esquema fuente.
- * - `charge`: decimal(12,2); NULL — Sin comentario definido en el esquema fuente.
- * - `number_days`: int(11); NULL — Sin comentario definido en el esquema fuente.
- * - `is_credit`: tinyint(1); NOT NULL; DEFAULT 0 — Define si es tipo credito
- * - `is_cash`: tinyint(1); NOT NULL; DEFAULT 0 — Define si es es efectivo
- * - `is_active`: tinyint(1); NOT NULL; DEFAULT 1 — Sin comentario definido en el esquema fuente.
- */
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 
+// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
+/**
+ * Estructura inicial de `payment_method_types` para instalaciones nuevas.
+ * Inventario de columnas:
+ * - `id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL
+ * - `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
+ * - `has_card` tinyint(1) NOT NULL DEFAULT '0'
+ * - `charge` decimal(12,2) DEFAULT NULL
+ * - `number_days` int(11) DEFAULT NULL
+ * - `is_credit` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'Define si es tipo credito'
+ * - `is_cash` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'Define si es es efectivo'
+ * - `is_active` tinyint(1) NOT NULL DEFAULT '1'
+ */
 return new class extends Migration
 {
     public function up(): void
@@ -44,4 +41,4 @@ SQL);
         DB::unprepared('DROP TABLE IF EXISTS `payment_method_types`');
     }
 };
-// ######### FIN CAMBIO NELSON #########
+// ######## FIN ESQUEMA INICIAL VENEZUELA ########

@@ -37,7 +37,7 @@ class VenezuelaLocalizationTest extends TestCase
         return [
             'local' => ['0412-123.45.67', '+584121234567'],
             'already venezuelan' => ['+58 412 1234567', '+584121234567'],
-            'historical peru prefix' => ['+51 412 1234567', '+584121234567'],
+            'foreign international prefix is rejected' => ['+51 412 1234567', null],
             'empty' => ['   ', null],
             'null' => [null, null],
         ];

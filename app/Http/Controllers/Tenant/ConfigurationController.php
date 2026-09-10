@@ -500,10 +500,6 @@ class ConfigurationController extends Controller
 
     public function store(ConfigurationRequest $request)
     {
-        // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
-        $request->merge(['default_document_type_03' => false]);
-        // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
-
         $cp = Company::query()
             ->select('id', 'number')
             ->first();
@@ -569,13 +565,11 @@ class ConfigurationController extends Controller
         DB::connection('tenant')->transaction(function () use ($request) {
             $id = $request->input('id');
             $configuration = Configuration::find($id);
-            $configuration->amount_plastic_bag_taxes = $request->amount_plastic_bag_taxes;
             $configuration->save();
 
-            $items = Item::get(['id', 'amount_plastic_bag_taxes']);
+            $items = Item::get(['id']);
 
             foreach ($items as $item) {
-                $item->amount_plastic_bag_taxes = $configuration->amount_plastic_bag_taxes;
                 $item->update();
             }
         });

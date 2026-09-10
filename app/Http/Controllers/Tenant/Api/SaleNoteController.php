@@ -179,7 +179,7 @@ class SaleNoteController extends Controller
                 'pdf' => url('')."/downloads/salenote/sale_note/{$this->sale_note->external_id}"
             ],
             'data_ws' => [
-                'message_text' => "Su comprobante de pago electrónico {$this->sale_note->number_full} ha sido generado correctamente, puede revisarlo en el siguiente enlace: ".url('')."/print/document/{$this->sale_note->external_id}/ticket"."",
+                'message_text' => "Su Nota de venta {$this->sale_note->number_full} ha sido generada correctamente, puede revisarla en el siguiente enlace: ".url('')."/print/document/{$this->sale_note->external_id}/ticket"."",
                 "pdf_a4_filename" => url('')."/api/document-file/salenote/{$this->sale_note->external_id}/a4",
                 "pdf_ticket_filename" => url('')."/api/document-file/salenote/{$this->sale_note->external_id}/ticket",
                 "full_filename" => $this->sale_note->filename.".pdf",
@@ -753,11 +753,8 @@ class SaleNoteController extends Controller
             "total_unaffected" => $saleNote['total_unaffected'],
             "total_exonerated" => $saleNote['total_exonerated'],
             "total_igv" => $saleNote['total_igv'],
-            "total_base_isc" => $saleNote['total_base_isc'],
-            "total_isc" => $saleNote['total_isc'],
             "total_base_other_taxes" => $saleNote['total_base_other_taxes'],
             "total_other_taxes" => $saleNote['total_other_taxes'],
-            "total_plastic_bag_taxes" => 0,
             "total_taxes" => $saleNote['total_taxes'],
             "total_value" => $saleNote['total_value'],
             "total" => $saleNote['total'],
@@ -784,11 +781,9 @@ class SaleNoteController extends Controller
             ],
             "actions" => [
                 "send_email" => false,
-                "send_xml_signed" => false,
                 "format_pdf" => "a4",
             ],
             "payments" => [],
-            "send_server" => 0,
             "payment_method_type_id" => $saleNote['payment_method_type_id'],
             "reference_data" => $saleNote['reference_data'],
             "fee" => [],
@@ -802,20 +797,13 @@ class SaleNoteController extends Controller
         $fact = DB::connection('tenant')->transaction(function () use ($dataToRequest) {
             $facturalo = new Facturalo();
             $facturalo->save($dataToRequest->all());
-            $facturalo->createXmlUnsigned();
-            $facturalo->signXmlUnsigned();
-            $facturalo->updateHash();
-            $facturalo->updateQr();
             $facturalo->createPdf();
             $facturalo->sendEmail();
-            $facturalo->senderXmlSignedBill();
 
             return $facturalo;
         });
 
         $document = $fact->getDocument();
-        $response = $fact->getResponse();
-
         return [
             'success' => true,
             'data' => [
@@ -825,15 +813,11 @@ class SaleNoteController extends Controller
                 'state_type_id' => $document->state_type_id,
                 'state_type_description' => $this->getStateTypeDescription($document->state_type_id),
                 'number_to_letter' => $document->number_to_letter,
-                'hash' => $document->hash,
-                'qr' => $document->qr,
             ],
             'links' => [
-                'xml' => $document->download_external_xml,
                 'pdf' => $document->download_external_pdf,
-                'cdr' => ($response['sent']) ? $document->download_external_cdr : '',
             ],
-            'response' => ($response['sent']) ? Arr::except($response, 'sent') : [],
+            'response' => $fact->getResponse(),
         ];
     }
 

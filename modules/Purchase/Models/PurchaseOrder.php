@@ -40,8 +40,6 @@ class PurchaseOrder extends ModelTenant
         'total_unaffected',
         'total_exonerated',
         'total_igv',
-        'total_base_isc',
-        'total_isc',
         'total_base_other_taxes',
         'total_other_taxes',
         'total_taxes',
@@ -139,21 +137,21 @@ class PurchaseOrder extends ModelTenant
         return $this->belongsTo(SaleOpportunity::class);
     }
 
-    
+
     /**
-     * 
+     *
      * Validar si el registro esta rechazado o anulado
-     * 
+     *
      * @return bool
      */
     public function isVoidedOrRejected()
     {
         return in_array($this->state_type_id, self::VOIDED_REJECTED_IDS);
     }
-    
-    
+
+
     /**
-     * 
+     *
      * Mostrar botones de acciones si no esta anulado o no tiene compras aceptadas
      *
      * @return bool

@@ -120,7 +120,7 @@ class UserController extends Controller
         else {
             $response = (new UserControlHelper)->exceedLimitUsers();
         }
-        
+
         if($response['success']) return $this->generalResponse(false, $response['message']);
 
         if (!$id) { //VALIDAR EMAIL DISPONIBLE
@@ -170,8 +170,6 @@ class UserController extends Controller
             $user->edit_purchase = $request->input('edit_purchase');
             $user->annular_purchase = $request->input('annular_purchase');
             $user->delete_purchase = $request->input('delete_purchase');
-
-            $user->permission_force_send_by_summary = $request->input('permission_force_send_by_summary');
             $user->permission_edit_item_prices = $request->permission_edit_item_prices;
 
             if($user->isDirty('password')) $user->last_password_update = date('Y-m-d H:i:s');

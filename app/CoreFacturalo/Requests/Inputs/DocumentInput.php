@@ -12,8 +12,8 @@ use App\Models\Tenant\Company;
 use App\Models\Tenant\Document;
 use App\Models\Tenant\Item;
 use Illuminate\Support\Str;
+use App\Services\SalesDocumentTypePolicy;
 use Modules\Offline\Models\OfflineConfiguration;
-use Html2Text\Html2Text;
 use App\Models\Tenant\Configuration;
 
 
@@ -23,6 +23,7 @@ class DocumentInput
     {
         $inputs = \App\Support\Venezuela\RetiredDetractionFields::discard($inputs);
         $document_type_id = $inputs['document_type_id'];
+        SalesDocumentTypePolicy::assertNewFiscalDocumentAllowed($document_type_id);
         $series = $inputs['series'];
         $number = $inputs['number'];
 
@@ -48,7 +49,7 @@ class DocumentInput
             $validate_itinerant ? $inputs['itinerant']['address'] : null);
 
 
-        if (in_array($document_type_id, ['01', '03'])) {
+        if (in_array($document_type_id, ['01'])) {
             $array_partial = self::invoice($inputs);
             $invoice = $array_partial['invoice'];
             $note = null;
@@ -71,10 +72,6 @@ class DocumentInput
         }
 
         $items = self::items($inputs, $configuration);
-
-        //configuracion para envio individual de boleta y notas asociadas
-        $ticket_single_shipment = self::getTicketSingleShipment($inputs);
-        $inputs['ticket_single_shipment'] = $ticket_single_shipment;
 
         // se registran datos para identificar si el documento fue utilizado para sistema por puntos
         $point_system_data = self::getPointSystemData($inputs, $configuration);
@@ -117,11 +114,8 @@ class DocumentInput
             'total_exonerated' => Functions::valueKeyInArray($inputs, 'total_exonerated', 0),
             'total_igv' => $inputs['total_igv'],
             'total_igv_free' => Functions::valueKeyInArray($inputs, 'total_igv_free', 0),
-            'total_base_isc' => Functions::valueKeyInArray($inputs, 'total_base_isc', 0),
-            'total_isc' => Functions::valueKeyInArray($inputs, 'total_isc', 0),
             'total_base_other_taxes' => Functions::valueKeyInArray($inputs, 'total_base_other_taxes', 0),
             'total_other_taxes' => Functions::valueKeyInArray($inputs, 'total_other_taxes', 0),
-            'total_plastic_bag_taxes' => Functions::valueKeyInArray($inputs, 'total_plastic_bag_taxes', 0),
             'total_taxes' => $inputs['total_taxes'],
             'total_value' => $inputs['total_value'],
             'subtotal' => (Functions::valueKeyInArray($inputs, 'subtotal')) ? $inputs['subtotal'] : $inputs['total'],
@@ -149,7 +143,6 @@ class DocumentInput
             'actions' => ActionInput::set($inputs),
             'data_json' => $data_json,
             'payments' => Functions::valueKeyInArray($inputs, 'payments', []),
-            'send_server' => false,
             'payment_method_type_id' => Functions::valueKeyInArray($inputs, 'payment_method_type_id'),
             'reference_data' => Functions::valueKeyInArray($inputs, 'reference_data'),
             'terms_condition' => self::termsCondition($inputs),
@@ -160,7 +153,6 @@ class DocumentInput
             'is_editable' => true,
             'total_pending_payment' => Functions::valueKeyInArray($inputs, 'total_pending_payment', 0),
             'tip' => self::tip($inputs, $fiscal_environment),
-            'ticket_single_shipment' => $ticket_single_shipment,
             'point_system' => $point_system_data['point_system'],
             'point_system_data' => $point_system_data['point_system_data'],
             'agent_id' => Functions::valueKeyInArray($inputs, 'agent_id'),
@@ -206,15 +198,9 @@ class DocumentInput
                 $item = Item::query()->find($row['item_id']);
                 /** @var Item $item */
 
-                if(key_exists('name_product_xml', $row)) {
-                    $name_product_xml = Functions::valueKeyInArray($row, 'name_product_xml');
-                } else {
-                    $name_product_xml = Functions::valueKeyInArray($row, 'name_product_pdf') ? self::getNameProductXml($row, $inputs) : null;
-                }
-
                 $items_attributes = self::attributes($row);
 
-                if($register_series_invoice_xml && in_array($inputs['document_type_id'], ['01', '03']))
+                if($register_series_invoice_xml && in_array($inputs['document_type_id'], ['01']))
                 {
                     self::registerSeriesInvoiceXml($items_attributes, $row);
                 }
@@ -230,7 +216,6 @@ class DocumentInput
                         'item_code_gs1' => $item->item_code_gs1,
                         'unit_type_id' => (key_exists('item', $row)) ? $row['item']['unit_type_id'] : $item->unit_type_id,
                         'presentation' => (key_exists('item', $row)) ? (isset($row['item']['presentation']) ? $row['item']['presentation'] : []) : [],
-                        'amount_plastic_bag_taxes' => $item->amount_plastic_bag_taxes,
                         'is_set' => $item->is_set,
                         'lots' => self::lots($row),
                         'IdLoteSelected' => (isset($row['IdLoteSelected']) ? $row['IdLoteSelected'] : null),
@@ -253,14 +238,9 @@ class DocumentInput
                     'total_base_igv' => $row['total_base_igv'],
                     'percentage_igv' => $row['percentage_igv'],
                     'total_igv' => $row['total_igv'],
-                    'system_isc_type_id' => Functions::valueKeyInArray($row, 'system_isc_type_id'),
-                    'total_base_isc' => Functions::valueKeyInArray($row, 'total_base_isc', 0),
-                    'percentage_isc' => Functions::valueKeyInArray($row, 'percentage_isc', 0),
-                    'total_isc' => Functions::valueKeyInArray($row, 'total_isc', 0),
                     'total_base_other_taxes' => Functions::valueKeyInArray($row, 'total_base_other_taxes', 0),
                     'percentage_other_taxes' => Functions::valueKeyInArray($row, 'percentage_other_taxes', 0),
                     'total_other_taxes' => Functions::valueKeyInArray($row, 'total_other_taxes', 0),
-                    'total_plastic_bag_taxes' => Functions::valueKeyInArray($row, 'total_plastic_bag_taxes', 0),
                     'total_taxes' => $row['total_taxes'],
                     'total_value' => $row['total_value'],
                     'total_charge' => Functions::valueKeyInArray($row, 'total_charge', 0),
@@ -273,7 +253,6 @@ class DocumentInput
                     'warehouse_id' => Functions::valueKeyInArray($row, 'warehouse_id'),
                     'additional_information' => Functions::valueKeyInArray($row, 'additional_information'),
                     'name_product_pdf' => Functions::valueKeyInArray($row, 'name_product_pdf'),
-                    'name_product_xml' => $name_product_xml,
                     'update_description' => Functions::valueKeyInArray($row, 'update_description', false),
                     'additional_data' => Functions::valueKeyInArray($row, 'additional_data'),
 //                    'additional_data' => key_exists('additional_data', $row)?$row['additional_data']:null,
@@ -284,34 +263,6 @@ class DocumentInput
             }
             return $items;
         }
-        return null;
-    }
-
-    /**
-     * Devuelve el nombre producto pdf en texto plano para ser usado en el xml
-     *
-     * @param  array $row
-     * @return string
-     */
-    public static function getNameProductXml($row, $inputs)
-    {
-
-        if(in_array($inputs['document_type_id'], ['01', '03'])){
-
-            // validar configuracion
-            $configuration = Configuration::select('name_product_pdf_to_xml')->firstOrFail();
-
-            if($configuration->name_product_pdf_to_xml)
-            {
-                $text = trim((new Html2Text($row['name_product_pdf']))->getText());
-
-                return preg_replace('~\R{1,2}~', ' ', $text);
-
-                // return trim((new Html2Text($row['name_product_pdf']))->getText());
-            }
-
-        }
-
         return null;
     }
 
@@ -622,7 +573,7 @@ class DocumentInput
 
         return [
             'type' => 'invoice',
-            'group_id' => ($inputs['document_type_id'] === '01') ? '01' : '02',
+            'group_id' => '01',
             'invoice' => [
                 'operation_type_id' => $operation_type_id,
                 'date_of_due' => $date_of_due,
@@ -643,22 +594,21 @@ class DocumentInput
 
         if (!$data_affected_document) {
 
-            $affected_document = Document::find($affected_document_id);
-            $group_id = $affected_document->group_id;
-            $$affected_document_id = $affected_document->id;
+            $affected_document = Document::findOrFail($affected_document_id);
+            SalesDocumentTypePolicy::assertAllowedForFlow($affected_document->document_type_id, ['01']);
+            $affected_document_id = $affected_document->id;
 
         } else {
 
             $affected_document_id = null;
-            $group_id = ($data_affected_document['document_type_id'] == '01') ? '01' : '02';
+            SalesDocumentTypePolicy::assertAllowedForFlow($data_affected_document['document_type_id'] ?? null, ['01']);
 
         }
 
 
         return [
             'type' => $type,
-            // 'group_id' => $affected_document->group_id,
-            'group_id' => $group_id,
+            'group_id' => '01',
             'note' => [
                 'note_type' => $type,
                 'note_credit_type_id' => ($type === 'credit') ? $note_credit_or_debit_type_id : null,
@@ -702,52 +652,6 @@ class DocumentInput
         return null;
     }
 
-    /**
-     *
-     * Retornar configuracion para envio individual de boletas
-     *
-     * @param  array $inputs
-     * @return bool
-     */
-    public static function getTicketSingleShipment($inputs)
-    {
-        if($inputs['document_type_id'] === Document::DOCUMENT_TYPE_TICKET)
-        {
-            return Configuration::getRecordIndividualColumn('ticket_single_shipment');
-        }
-        else if(in_array($inputs['document_type_id'], DocumentType::DOCUMENT_TYPE_NOTES, true))
-        {
-            $ticket_single_shipment = Configuration::getRecordIndividualColumn('ticket_single_shipment');
-
-            if($ticket_single_shipment)
-            {
-                if(self::isGeneratedFromTicketSingleShipment($inputs)) return $ticket_single_shipment;
-            }
-        }
-
-        return false;
-    }
-
-
-    /**
-     *
-     * Determina si el documento asociado a la nota es boleta y se envio de forma individual
-     *
-     * @param  array $inputs
-     * @return bool
-     */
-    public static function isGeneratedFromTicketSingleShipment($inputs)
-    {
-        if($inputs['affected_document_id'] ?? false)
-        {
-            $document = Document::getAffectedDocumentSingleShipment($inputs['affected_document_id']);
-
-            return $document->isSingleTicketDocumentShipment();
-        }
-
-        return false;
-    }
-
 
     /**
      *
@@ -781,13 +685,13 @@ class DocumentInput
 
 
     /**
-     * Determina si es factura o boleta
+     * Determina si es Factura
      *
      * @param  string $document_type_id
      * @return bool
      */
     public static function isDocumentInvoice($document_type_id)
     {
-        return in_array($document_type_id, ['01', '03'], true);
+        return in_array($document_type_id, ['01'], true);
     }
 }

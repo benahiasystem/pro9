@@ -78,9 +78,9 @@
                     currency_type_id: 'VES',
                     sale_unit_price: 0,
                     purchase_unit_price: 0,
-                    has_isc: false,
-                    system_isc_type_id: null,
-                    percentage_isc: 0,
+
+
+
                     suggested_price: 0,
                     sale_affectation_igv_type_id: null,
                     purchase_affectation_igv_type_id: null,

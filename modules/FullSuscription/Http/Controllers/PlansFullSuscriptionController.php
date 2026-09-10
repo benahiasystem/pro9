@@ -339,7 +339,6 @@ use Modules\Payment\Models\PaymentConfiguration;
                 'total_exonerated' => 0,
                 'total_igv' => $igv,
                 'total_igv_free' => 0,
-                'total_isc' => 0,
                 'total_other_taxes' => 0,
                 'total_prepayment' => 0,
                 'total_taxes' => $igv,

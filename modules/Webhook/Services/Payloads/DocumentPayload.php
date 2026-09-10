@@ -8,8 +8,7 @@ use App\Models\Tenant\StateType;
 use Hyn\Tenancy\Environment;
 
 /**
- * Payload de los eventos document.* — replica el formato del response
- * del API de documentos electrónicos (Api\DocumentController@store).
+ * Payload de los eventos document.* para documentos registrados localmente.
  */
 class DocumentPayload implements PayloadBuilderInterface
 {
@@ -30,8 +29,6 @@ class DocumentPayload implements PayloadBuilderInterface
             'state_type_id' => $model->state_type_id,
             'state_type_description' => optional(StateType::find($model->state_type_id))->description,
             'number_to_letter' => optional(collect($model->legends)->firstWhere('code', '1000'))->value,
-            'hash' => $model->hash,
-            'qr' => $model->qr,
             'date_of_issue' => optional($model->date_of_issue)->format('Y-m-d'),
             'document_type_id' => $model->document_type_id,
             'currency_type_id' => $model->currency_type_id,

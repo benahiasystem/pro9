@@ -18,7 +18,7 @@ class DocumentHelper
 {
 
     use LockedEmissionTrait;
-    
+
     /**
      * Obtener fecha de ciclo de facturacion desde client (system), relacionado al tenant
      */
@@ -31,18 +31,18 @@ class DocumentHelper
         return $client->start_billing_cycle;
     }
 
-            
+
     /**
-     * 
+     *
      * Validar si los documentos emitidos superan el limite permitido por el plan (ciclo facturacion)
      *
-     * Usado en: 
+     * Usado en:
      * App\Providers\LockedEmissionProvider
      * App\Http\Controllers\Tenant\DocumentController
-     * 
+     *
      * @param  string $type
      * @return array
-     */     
+     */
     public function exceedLimitDocuments($type = 'document')
     {
         /*
@@ -62,15 +62,15 @@ class DocumentHelper
         {
             if($type === 'document' || ($type === 'sale-note' && $plan->includeSaleNotesLimitDocuments()))
             {
-                
+
             //fecha de inicio del ciclo de facturacion
             $start_billing_cycle = self::getStartBillingCycleFromSystem();
-            
+
             if($start_billing_cycle){
 
                 //obtener fecha inicio y fin
                 $start_end_date = self::getStartEndDateForFilterDocument($start_billing_cycle);
-    
+
                 //cantidad de documentos emitidos en el rango de fechas obtenido desde el ciclo de facturacion
                 $quantity_documents = Document::whereBetween('date_of_issue', [ $start_end_date['start_date'], $start_end_date['end_date'] ])->count();
 
@@ -78,7 +78,7 @@ class DocumentHelper
                 {
                     $quantity_documents += $this->getQuantitySaleNotesByDates($start_end_date['start_date']->format('Y-m-d'), $start_end_date['end_date']->format('Y-m-d'));
                 }
-    
+
                 if($quantity_documents > $limit_documents)
                 {
                     return [
@@ -106,21 +106,21 @@ class DocumentHelper
             {
                 //fecha de inicio del ciclo de facturacion
                 $start_billing_cycle = self::getStartBillingCycleFromSystem();
-            
+
                 if($start_billing_cycle) {
                     //obtener fecha inicio y fin del ciclo actual
                     $start_end_date = self::getStartEndDateForFilterDocument($start_billing_cycle);
-                
+
                     //cantidad de documentos emitidos en el rango de fechas del ciclo actual
-                    $quantity_documents = Document::whereBetween('date_of_issue', [ 
-                        $start_end_date['start_date'], 
-                        $start_end_date['end_date'] 
+                    $quantity_documents = Document::whereBetween('date_of_issue', [
+                        $start_end_date['start_date'],
+                        $start_end_date['end_date']
                     ])->count();
-                
+
                     if($plan->includeSaleNotesLimitDocuments())
                     {
                         $quantity_documents += $this->getQuantitySaleNotesByDates(
-                            $start_end_date['start_date']->format('Y-m-d'), 
+                            $start_end_date['start_date']->format('Y-m-d'),
                             $start_end_date['end_date']->format('Y-m-d')
                         );
                     }
@@ -128,18 +128,18 @@ class DocumentHelper
                     // Si no hay ciclo configurado, usar el mes calendario actual
                     $start_date = Carbon::now()->startOfMonth();
                     $end_date = Carbon::now()->endOfMonth();
-                
+
                     $quantity_documents = Document::whereBetween('date_of_issue', [$start_date, $end_date])->count();
-                
+
                     if($plan->includeSaleNotesLimitDocuments())
                     {
                         $quantity_documents += $this->getQuantitySaleNotesByDates(
-                            $start_date->format('Y-m-d'), 
+                            $start_date->format('Y-m-d'),
                             $end_date->format('Y-m-d')
                         );
                     }
                 }
-            
+
                 // Verificación del límite de documentos
                 if($quantity_documents > $limit_documents)
                 {
@@ -159,19 +159,19 @@ class DocumentHelper
 
 
     /**
-     * 
-     * Obtener fecha de inicio y fin para filtrar documentos en base 
+     *
+     * Obtener fecha de inicio y fin para filtrar documentos en base
      * a la fecha de inicio del ciclo de facturacion (planes) del cliente
      *
-     * Usado en: 
+     * Usado en:
      * App\Http\Controllers\System\ClientController
-     * 
+     *
      * @param  $start_billing_cycle
      * @return array
      */
     public static function getStartEndDateForFilterDocument($start_billing_cycle)
-    { 
-        
+    {
+
         $day_start_billing = date_format($start_billing_cycle, 'j');
         $day_now = (int) date('j');
         $end = Carbon::parse(date('Y-m-d'));
@@ -185,7 +185,7 @@ class DocumentHelper
         } else {
 
             $init = Carbon::parse(date('Y') . '-' . ((int)date('n')) . '-' . $day_start_billing);
-            
+
         }
 
         return [
@@ -195,7 +195,7 @@ class DocumentHelper
 
     }
 
-        
+
     /**
      * Obtener modelo por tipo de documento
      *
@@ -209,10 +209,7 @@ class DocumentHelper
         switch ($document_type_id)
         {
             case '01':
-            case '03':
-                $model = Document::class;
-                break;
-            
+
             case '80':
                 $model = SaleNote::class;
                 break;
@@ -223,9 +220,9 @@ class DocumentHelper
         return $model;
     }
 
-    
+
     /**
-     * 
+     *
      * Obtener documento para envio de mensaje por ws
      *
      * @param  string $model
@@ -237,7 +234,7 @@ class DocumentHelper
         return $model::filterDataForSendMessage()->findOrFail($id);
     }
 
-    
+
     /**
      *
      *  Obtener parametros para envio de mensaje por ws
@@ -259,5 +256,5 @@ class DocumentHelper
             ]
         ];
     }
- 
+
 }

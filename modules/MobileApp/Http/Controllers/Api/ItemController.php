@@ -149,9 +149,6 @@ class ItemController extends Controller
                 'currency_type_id' => $item->currency_type_id,
                 'sale_unit_price' => $item->sale_unit_price,
                 'purchase_unit_price' => $item->purchase_unit_price,
-                'has_isc' => $item->has_isc,
-                'system_isc_type_id' => $item->system_isc_type_id,
-                'percentage_isc' => $item->percentage_isc,
                 'sale_affectation_igv_type_id' => $item->sale_affectation_igv_type_id,
                 'purchase_affectation_igv_type_id' => $item->purchase_affectation_igv_type_id,
                 'calculate_quantity' => $item->calculate_quantity,
@@ -287,7 +284,6 @@ class ItemController extends Controller
 
             if (!$is_update) {
                 $item->item_type_id = '01';
-                $item->amount_plastic_bag_taxes = Configuration::firstOrFail()->amount_plastic_bag_taxes;
             }
 
             $item->fill($request->except(['id', 'file', 'image', 'image_medium', 'image_small', 'temp_path', 'image_url']));

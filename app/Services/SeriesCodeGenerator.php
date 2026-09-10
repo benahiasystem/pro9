@@ -10,8 +10,7 @@ use App\Models\Tenant\Series;
  * Esquema: prefijo de 2 letras + correlativo. La auto-propuesta (Auto) escanea TODAS las
  * sucursales para el prefijo y propone el siguiente correlativo libre (FF01, FF02, FF03 -> FF04).
  *
- * Compatibilidad: las series antiguas (F001, B001, ...) NO se re-codifican (§9-B); este esquema
- * aplica a tenants nuevos (siembra) y a series nuevas creadas desde la UI.
+ * Se utiliza el mismo catálogo vigente en la siembra y en las nuevas series de la UI.
  */
 class SeriesCodeGenerator
 {
@@ -21,14 +20,10 @@ class SeriesCodeGenerator
         'U4' => 'AT',
     ];
 
-    // ########## INICIO CAMBIO QUITAR BOLETAS A CRÉDITO
-    public const PROHIBITED_NEW_SERIES_KEYS = ['receipt', 'credit_note_receipt', 'debit_note_receipt'];
-    // ######### FIN CAMBIO QUITAR BOLETAS A CRÉDITO
-
     /**
      * Tipos de serie disponibles para empresas NRUS.
      */
-    public const NRUS_SERIES_KEYS = ['receipt', 'sale_note'];
+    public const NRUS_SERIES_KEYS = ['sale_note'];
 
     /**
      * Catálogo canónico de tipos de serie con su prefijo y categoría (tabs de la UI).
@@ -42,11 +37,8 @@ class SeriesCodeGenerator
         // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
         ['key' => 'invoice',             'document_type_id' => '01', 'prefix' => 'FF', 'category' => 'basic',    'label' => 'FACTURA DE VENTA'],
         // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
-        ['key' => 'receipt',             'document_type_id' => '03', 'prefix' => 'BB', 'category' => 'basic',    'label' => 'BOLETA DE VENTA ELECTRÓNICA'],
         ['key' => 'credit_note_invoice', 'document_type_id' => '07', 'prefix' => 'FC', 'category' => 'basic',    'label' => 'NOTA DE CRÉDITO (factura)'],
-        ['key' => 'credit_note_receipt', 'document_type_id' => '07', 'prefix' => 'BC', 'category' => 'basic',    'label' => 'NOTA DE CRÉDITO (boleta)'],
         ['key' => 'debit_note_invoice',  'document_type_id' => '08', 'prefix' => 'FD', 'category' => 'basic',    'label' => 'NOTA DE DÉBITO (factura)'],
-        ['key' => 'debit_note_receipt',  'document_type_id' => '08', 'prefix' => 'BD', 'category' => 'basic',    'label' => 'NOTA DE DÉBITO (boleta)'],
         // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
         ['key' => 'retention',           'document_type_id' => '20', 'prefix' => 'RR', 'category' => 'advanced', 'label' => 'COMPROBANTE DE RETENCIÓN'],
         ['key' => 'perception',          'document_type_id' => '40', 'prefix' => 'PP', 'category' => 'advanced', 'label' => 'COMPROBANTE DE PERCEPCIÓN'],
@@ -56,7 +48,7 @@ class SeriesCodeGenerator
         ['key' => 'sale_note',           'document_type_id' => '80', 'prefix' => 'NV', 'category' => 'internal', 'label' => 'NOTA DE VENTA'],
         ['key' => 'warehouse_entry',     'document_type_id' => 'U2', 'prefix' => 'AI', 'category' => 'internal', 'label' => 'NOTA DE INGRESO ALMACÉN'],
         ['key' => 'warehouse_exit',      'document_type_id' => 'U3', 'prefix' => 'AS', 'category' => 'internal', 'label' => 'NOTA DE SALIDA ALMACÉN'],
-        ['key' => 'warehouse_transfer',  'document_type_id' => 'U4', 'prefix' => 'AT', 'category' => 'internal', 'label' => 'GUÍA DE TRANSFERENCIA ALMACÉN'],
+        ['key' => 'warehouse_transfer',  'document_type_id' => 'U4', 'prefix' => 'AT', 'category' => 'internal', 'label' => 'NOTA DE TRANSFERENCIA ALMACÉN'],
     ];
 
     /**
@@ -166,9 +158,7 @@ class SeriesCodeGenerator
     public static function availableTypes(bool $is_nrus = false): array
     {
         // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
-        $availableTypes = array_values(array_filter(self::SERIES_TYPES, function ($type) {
-            return ! in_array($type['key'], self::PROHIBITED_NEW_SERIES_KEYS, true);
-        }));
+        $availableTypes = self::SERIES_TYPES;
 
         if (! $is_nrus) {
             return $availableTypes;
@@ -194,9 +184,9 @@ class SeriesCodeGenerator
 
     /**
      * Entrada del catálogo que corresponde a una serie, identificada por su prefijo (2 letras).
-     * Permite distinguir NC/ND de factura vs boleta (FC/BC, FD/BD). Fallback por tipo de documento.
+     * El prefijo y el tipo deben pertenecer a la misma entrada del catálogo vigente.
      *
-     * @param  string $number            código de la serie (ej. FF01, BC01).
+     * @param  string $number            código de la serie (ej. FF01, FC01).
      * @param  string $document_type_id
      * @return array<string, string>|null
      */
@@ -205,14 +195,7 @@ class SeriesCodeGenerator
         $prefix = strtoupper(substr($number, 0, 2));
 
         foreach (self::SERIES_TYPES as $type) {
-            if ($type['prefix'] === $prefix) {
-                return $type;
-            }
-        }
-
-        // Fallback: primera entrada con el mismo tipo de documento (series antiguas F001/B001...).
-        foreach (self::SERIES_TYPES as $type) {
-            if ($type['document_type_id'] === $document_type_id) {
+            if ($type['prefix'] === $prefix && $type['document_type_id'] === $document_type_id) {
                 return $type;
             }
         }

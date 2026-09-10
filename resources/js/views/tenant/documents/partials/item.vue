@@ -22,7 +22,7 @@
                         <el-checkbox
                             v-model="various_item"
                             @change="setVariousItem"
-                            :disabled="recordItem != null || hasPresetItem"
+                            :disabled="recordItem != null"
                             >Producto manual
                         </el-checkbox>
                     </div>
@@ -106,7 +106,7 @@
                                             ref="selectSearchNormal"
                                             slot="prepend"
                                             v-model="form.item_id"
-                                            :disabled="recordItem != null || hasPresetItem"
+                                            :disabled="recordItem != null"
                                             :loading="loading_search"
                                             :remote-method="searchRemoteItems"
                                             filterable
@@ -222,7 +222,7 @@
                                             ref="selectBarcode"
                                             slot="prepend"
                                             v-model="form.item_id"
-                                            :disabled="recordItem != null || hasPresetItem"
+                                            :disabled="recordItem != null"
                                             :loading="loading_search"
                                             :remote-method="searchRemoteItems"
                                             filterable
@@ -321,7 +321,7 @@
                             </el-select>
                             <el-checkbox
                                 v-model="change_affectation_igv_type_id"
-                                :disabled="recordItem != null || hasPresetItem"
+                                :disabled="recordItem != null"
                             >
                                 Editar
                             </el-checkbox>
@@ -1118,13 +1118,11 @@ export default {
         "currencyTypes",
         "isFromInvoice",
         "percentageIgv",
-        "isCreditNoteAndType03",
         "isUpdateDocument",
         "permissionEditItemPrices",
         "selectedOptionPrice",
         "documentId",
         'isCreditNote',
-        'presetItemId',
         'showDiscountsChargesAttributes'
     ],
     components: {
@@ -1160,7 +1158,7 @@ export default {
             all_affectation_igv_types: [],
             aux_items: [],
             affectation_igv_types: [],
-            system_isc_types: [],
+
             discount_types: [],
             charge_types: [],
             attribute_types: [],
@@ -1320,18 +1318,6 @@ export default {
                 return this.configuration.search_factory_code_items ? 1 : 0;
             return 0;
         },
-        isNoteErrorDescription() {
-            if (this.isCreditNoteAndType03 !== undefined)
-                return this.isCreditNoteAndType03;
-            return false;
-        },
-        /**
-         * El ítem viene impuesto por el documento (ej. penalidad en la ND motivo 13),
-         * por lo que no se permite cambiarlo ni alterar su afectación.
-         */
-        hasPresetItem() {
-            return !!this.presetItemId;
-        },
         isOpenFromInvoice() {
             if (this.isFromInvoice !== undefined && this.isFromInvoice)
                 return this.isFromInvoice;
@@ -1437,7 +1423,7 @@ export default {
                 this.all_items = data.items;
                 this.operation_types = data.operation_types;
                 this.all_affectation_igv_types = data.affectation_igv_types;
-                this.system_isc_types = data.system_isc_types;
+
                 this.discount_types = data.discount_types;
                 this.charge_types = data.charge_types;
                 this.attribute_types = data.attribute_types;
@@ -1687,9 +1673,9 @@ export default {
                 item: {},
                 affectation_igv_type_id: null,
                 affectation_igv_type: {},
-                has_isc: false,
-                system_isc_type_id: null,
-                percentage_isc: 0,
+
+
+
                 suggested_price: 0,
                 quantity: 1,
                 unit_price: 0,
@@ -1702,7 +1688,7 @@ export default {
                 has_igv: null,
                 is_set: false,
                 item_unit_types: [],
-                has_plastic_bag_taxes: false,
+
                 series_enabled: false,
                 warehouse_id: null,
                 lots_group: [],
@@ -1760,8 +1746,7 @@ export default {
                 }
                 this.form.quantity = this.normalizeDecimal(this.recordItem.quantity);
                 this.form.unit_price_value = this.recordItem.input_unit_price_value;
-                this.form.has_plastic_bag_taxes =
-                    this.recordItem.total_plastic_bag_taxes > 0 ? true : false;
+
                 this.form.warehouse_id = this.recordItem.warehouse_id;
                 this.isUpdateWarehouseId = this.recordItem.warehouse_id;
 
@@ -1818,23 +1803,10 @@ export default {
             } else {
                 this.isUpdateWarehouseId = null;
 
-                if (this.hasPresetItem) {
-                    //el ítem lo impone el documento, se carga y queda bloqueado
-                    this.various_item = false;
-                    await this.reloadDataItems(this.presetItemId);
-                } else if (this.various_item) {
+                if (this.various_item) {
                     await this.setFocusSelectItem();
                 }
             }
-            if (this.hasPresetItem) {
-                //el ítem ya está definido, el foco va directo al monto
-                this.$nextTick(() => {
-                    if (this.$refs.inputUnitPrice) this.$refs.inputUnitPrice.focus();
-                });
-
-                return;
-            }
-
             this.$refs.selectSearchNormal.$el
                 .getElementsByTagName("input")[0]
                 .focus();
@@ -2118,7 +2090,7 @@ export default {
             this.lots = this.form.item.lots;
 
             this.form.has_igv = this.form.item.has_igv;
-            this.form.has_plastic_bag_taxes = this.form.item.has_plastic_bag_taxes;
+
             // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
             const selectableAffectation = resolveSelectableAffectationType(
                 this.form.item.sale_affectation_igv_type_id,
@@ -2134,9 +2106,9 @@ export default {
             this.readonly_total = this.form.unit_price_value;
 
             //asignar variables isc
-            this.form.has_isc = this.form.item.has_isc;
-            this.form.percentage_isc = this.form.item.percentage_isc;
-            this.form.system_isc_type_id = this.form.item.system_isc_type_id;
+
+
+
 
             if (this.hasAttributes()) {
                 const contex = this;
@@ -2241,6 +2213,10 @@ export default {
             );
         },
         async clickAddItem() {
+            if (!resolveSelectableAffectationType(this.form.affectation_igv_type_id, this.affectation_igv_types)) {
+                this.$message.error('Seleccione una afectación de IVA vigente: Gravado o Exento.');
+                return false;
+            }
             if (this.isRestrictedForSale)
                 return this.$message.error(
                     "No puede agregar el producto, está restringido para venta."
@@ -2270,16 +2246,8 @@ export default {
                 return this.$message.error("La descripción es requerida");
             }
 
-            if (this.isNoteErrorDescription) {
-                if (parseFloat(this.form.unit_price_value) < 0)
-                    return this.$message.error(
-                        "El Precio Unitario debe ser mayor o igual 0"
-                    );
-            } else {
-                if (parseFloat(this.form.unit_price_value) <= 0)
-                    return this.$message.error(
-                        "El Precio Unitario debe ser mayor a 0"
-                    );
+            if (parseFloat(this.form.unit_price_value) <= 0) {
+                return this.$message.error("El Precio Unitario debe ser mayor a 0");
             }
 
             // if(this.form.quantity < this.getMinQuantity()){
@@ -2467,8 +2435,7 @@ export default {
                 this.cleanItems();
             }
 
-            //con ítem impuesto no queda nada más que elegir en el modal, se cierra
-            if (this.recordItem || this.hasPresetItem) {
+            if (this.recordItem) {
                 this.close();
             } else {
                 this.setFocusSelectItem();

@@ -5,11 +5,6 @@ declare(strict_types=1);
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
-use App\Models\Tenant\Catalogs\PerceptionType;
-use App\Models\Tenant\Catalogs\RelatedDocumentType;
-use App\Models\Tenant\Catalogs\SummaryStatusType;
-use App\Models\Tenant\Catalogs\SystemIscType;
-use Modules\PseService\Models\PseProvider;
 
 $projectRoot = dirname(__DIR__, 4);
 require $projectRoot.'/vendor/autoload.php';
@@ -131,16 +126,6 @@ try {
         foreach ($columns as $column) {
             assertSame(false, $schema->hasColumn($table, $column), "Columna retirada {$table}.{$column}.");
         }
-    }
-
-    foreach ([
-        SystemIscType::available(),
-        RelatedDocumentType::available(),
-        PerceptionType::available(),
-        SummaryStatusType::available(['1', '2']),
-        PseProvider::available(),
-    ] as $optionalCatalog) {
-        assertSame(0, $optionalCatalog->count(), 'Un consumidor consultó un catálogo retirado.');
     }
 
     echo "Migración y seeding venezolano verificados en {$target}.\n";

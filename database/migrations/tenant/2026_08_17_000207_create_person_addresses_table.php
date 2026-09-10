@@ -1,29 +1,26 @@
 <?php
-// ######### INICIO CAMBIO NELSON #########
-
-/**
- * Estructura efectiva clonada desde `tenancy_bbc`.
- * Tabla: `person_addresses`.
- *
- * Inventario de columnas:
- * - `id`: int(10) unsigned; NOT NULL; auto_increment — Sin comentario definido en el esquema fuente.
- * - `person_id`: int(10) unsigned; NOT NULL — Sin comentario definido en el esquema fuente.
- * - `country_id`: char(2); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
- * - `department_id`: char(2); NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
- * - `province_id`: char(4); NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
- * - `district_id`: char(6); NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
- * - `address`: varchar(255); NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
- * - `phone`: varchar(255); NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
- * - `email`: varchar(255); NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
- * - `main`: tinyint(1); NOT NULL; DEFAULT 0 — Sin comentario definido en el esquema fuente.
- * - `establishment_code`: varchar(4); NOT NULL; DEFAULT 0000; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
- * - `has_consigned`: tinyint(1); NOT NULL; DEFAULT 0 — Sin comentario definido en el esquema fuente.
- * - `consigned_id`: int(10) unsigned; NULL — Sin comentario definido en el esquema fuente.
- */
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 
+// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
+/**
+ * Estructura inicial de `person_addresses` para instalaciones nuevas.
+ * Inventario de columnas:
+ * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
+ * - `person_id` int(10) unsigned NOT NULL
+ * - `country_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL
+ * - `department_id` char(2) COLLATE utf8mb4_unicode_ci DEFAULT NULL
+ * - `province_id` char(4) COLLATE utf8mb4_unicode_ci DEFAULT NULL
+ * - `district_id` char(6) COLLATE utf8mb4_unicode_ci DEFAULT NULL
+ * - `address` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
+ * - `phone` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
+ * - `email` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
+ * - `main` tinyint(1) NOT NULL DEFAULT '0'
+ * - `establishment_code` varchar(4) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '0000'
+ * - `has_consigned` tinyint(1) NOT NULL DEFAULT '0'
+ * - `consigned_id` int(10) unsigned DEFAULT NULL
+ */
 return new class extends Migration
 {
     public function up(): void
@@ -58,4 +55,4 @@ SQL);
         DB::unprepared('DROP TABLE IF EXISTS `person_addresses`');
     }
 };
-// ######### FIN CAMBIO NELSON #########
+// ######## FIN ESQUEMA INICIAL VENEZUELA ########

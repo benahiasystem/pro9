@@ -12,7 +12,6 @@ use Mpdf\HTMLParserMode;
 use App\Traits\KardexTrait;
 use App\Models\Tenant\Voided;
 use App\Models\Tenant\Company;
-use App\Models\Tenant\Summary;
 use App\Models\Tenant\Establishment;
 use Mpdf\Config\FontVariables;
 use App\Models\Tenant\Dispatch;
@@ -23,8 +22,6 @@ use App\Models\Tenant\Perception;
 use App\Mail\Tenant\DocumentEmail;
 use App\Models\Tenant\Configuration;
 use Modules\Finance\Traits\FinanceTrait;
-use App\CoreFacturalo\Helpers\Xml\XmlHash;
-use App\CoreFacturalo\Helpers\Xml\XmlFormat;
 use App\CoreFacturalo\Helpers\QrCode\QrCodeGenerate;
 use App\CoreFacturalo\Helpers\Storage\StorageDocument;
 use Modules\Inventory\Models\Warehouse;
@@ -57,8 +54,6 @@ class Facturalo
     protected $document;
     protected $type;
     protected $actions;
-    protected $xmlUnsigned;
-    protected $xmlSigned;
     protected $response;
     protected $apply_change;
 
@@ -85,16 +80,6 @@ class Facturalo
     public function getActions()
     {
         return $this->actions;
-    }
-
-    public function setXmlUnsigned($xmlUnsigned)
-    {
-        $this->xmlUnsigned = $xmlUnsigned;
-    }
-
-    public function getXmlSigned()
-    {
-        return $this->xmlSigned;
     }
 
     public function setType($type)
@@ -146,13 +131,6 @@ class Facturalo
                 if($inputs['transport']) $document->transport()->create($inputs['transport']);
                 $document->invoice()->create($inputs['invoice']);
                 $this->document = Document::find($document->id);
-                break;
-            case 'summary':
-                $document = Summary::create($inputs);
-                foreach ($inputs['documents'] as $row) {
-                    $document->documents()->create($row);
-                }
-                $this->document = Summary::find($document->id);
                 break;
             case 'voided':
                 $document = Voided::create($inputs);
@@ -227,120 +205,11 @@ class Facturalo
         }
     }
 
-    public function createXmlUnsigned()
-    {
-        // ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
-
-            $this->xmlUnsigned = null;
-            return $this;
-
-        // ######## FIN MODALIDAD DE EMISIÓN FISCAL ########
-    }
-
-
-    /**
-     * Firma digital xml
-     */
-    public function signXmlUnsigned($pse_xml_signed = null)
-    {
-        // ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
-
-            $this->xmlSigned = null;
-            return $this;
-
-        // ######## FIN MODALIDAD DE EMISIÓN FISCAL ########
-    }
-
-    /*
-     * envio de xml a serivicio pse gior
-     */
-    public function servicePseSendXml()
-    {
-        // ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
-
-            return LocalFiscalDocumentPolicy::registeredResponse();
-
-        // ######## FIN MODALIDAD DE EMISIÓN FISCAL ########
-    }
-
-    public function updateHash($pse_hash = null)
-    {
-        // ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
-
-            return;
-
-        // ######## FIN MODALIDAD DE EMISIÓN FISCAL ########
-    }
-
-    public function updateQr()
-    {
-        if(config('tenant.save_qrcode')) {
-            $this->document->update([
-                'qr' => $this->getQr(),
-            ]);
-        }
-    }
-
     public function updateState($state_type_id)
     {
         // ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
         $this->document->update(['state_type_id' => $state_type_id]);
         // ######## FIN MODALIDAD DE EMISIÓN FISCAL ########
-    }
-
-    // ########## INICIO CAMBIO SIN XML CDR SUNAT
-    private function registerLocally(bool $updateRelatedDocuments = false): void
-    {
-        $this->response = LocalFiscalDocumentPolicy::registeredResponse();
-
-        if ($this->document) {
-            $this->document->update([
-                'state_type_id' => self::REGISTERED,
-            ]);
-
-            if ($updateRelatedDocuments) {
-                $this->updateStateDocuments(self::REGISTERED);
-            }
-        }
-    }
-    // ######### FIN CAMBIO SIN XML CDR SUNAT
-
-
-    public function updateStateDocuments($state_type_id)
-    {
-        foreach ($this->document->documents as $doc)
-        {
-            $doc->document->update([
-                'state_type_id' => $state_type_id
-            ]);
-        }
-    }
-
-    private function getHash()
-    {
-        $helper = new XmlHash();
-        return $helper->getHashSign($this->xmlSigned);
-    }
-
-    private function getQr()
-    {
-        $customer = $this->document->customer;
-        $text = join('|', [
-            $this->company->number,
-            $this->document->document_type_id,
-            $this->document->series,
-            $this->document->number,
-            $this->document->total_igv,
-            $this->document->total,
-            $this->document->date_of_issue->format('Y-m-d'),
-            $customer->identity_document_type_id,
-            $customer->number,
-            $this->document->hash.'|'
-        ]);
-
-        $qrCode = new QrCodeGenerate();
-        $qr = $qrCode->displayPNGBase64($text);
-        return $qr;
     }
 
     private function renderMpdfSafely(callable $callback)
@@ -457,8 +326,6 @@ class Facturalo
             $total_exonerated  = $this->document->total_exonerated != '' ? '10' : '0';
             $total_taxed       = $this->document->total_taxed != '' ? '10' : '0';
             $perception       = $this->document->perception != '' ? '10' : '0';
-
-            $total_plastic_bag_taxes       = $this->document->total_plastic_bag_taxes != '' ? '10' : '0';
             $quantity_rows     = count($this->document->items) + $was_deducted_prepayment;
             $document_payments     = count($this->document->payments ?? []);
             $document_transport     = ($this->document->transport) ? 30 : 0;
@@ -499,21 +366,7 @@ class Facturalo
                 }
             }
             $height_terms = $totalLinesTerms * 2;
-            //ajustes para footer amazonia
-
-            if($this->configuration->legend_footer
-                AND $format_pdf === 'ticket'
-                AND !in_array($base_pdf_template, ['ticket_c']))
-            {
-                $height_legend = 15;
-            } elseif($this->configuration->legend_footer
-                AND $format_pdf === 'ticket_58'
-                AND !in_array($base_pdf_template, ['ticket_c']))
-            {
-                $height_legend = 30;
-            } else {
-                $height_legend = 10;
-            }
+            $height_legend = 0;
 
             $append_height = 0;
 
@@ -553,7 +406,6 @@ class Facturalo
                     $total_discount +
                     $was_deducted_prepayment +
                     $customer_department_id+
-                    $total_plastic_bag_taxes+
                     $quotation_id+
                     $extra_by_item_additional_information+
                     $height_legend+
@@ -581,7 +433,6 @@ class Facturalo
             $total_unaffected  = $this->document->total_unaffected != '' ? '10' : '0';
             $total_exonerated  = $this->document->total_exonerated != '' ? '10' : '0';
             $total_taxed       = $this->document->total_taxed != '' ? '10' : '0';
-            $total_plastic_bag_taxes       = $this->document->total_plastic_bag_taxes != '' ? '10' : '0';
             $quantity_rows     = count($this->document->items);
 
             $extra_by_item_description = 0;
@@ -732,17 +583,7 @@ class Facturalo
                 //     }
                 // }
             }
-            // dd($this->configuration->legend_footer && in_array($this->document->document_type_id, ['01', '03']));
-            // se quiere visuzalizar ahora la legenda amazona en todos los formatos
-            $html_footer_legend = '';
-            if($this->configuration->legend_footer
-                && in_array($this->document->document_type_id, ['01', '03'])
-                && !in_array($base_pdf_template, ['ticket_c'])
-            ){
-                $html_footer_legend = $template->pdfFooterLegend($base_pdf_template, $document);
-            }
-
-            $pdf->SetHTMLFooter($html_footer.$html_footer_legend);
+            $pdf->SetHTMLFooter($html_footer);
         }
 //            $html_footer = $template->pdfFooter();
 //            $pdf->SetHTMLFooter($html_footer);
@@ -768,8 +609,8 @@ class Facturalo
             $pdf->SetHTMLFooter($html_footer_blank);
         }
 
-        if ($base_pdf_template === 'default3_929' && in_array($this->document->document_type_id, ['03','01'])) {
-            // Solo boleta o factura #929
+        if ($base_pdf_template === 'default3_929' && in_array($this->document->document_type_id, ['01'])) {
+            // Encabezado específico de Factura para la plantilla #929.
             $html_header = $template->pdfHeader($base_pdf_template, $this->company, $this->document);
             $pdf->SetHTMLHeader($html_header);
             $html_footer = $template->pdfFooter($base_pdf_template, $this->document);
@@ -966,212 +807,6 @@ class Facturalo
     }
 
 
-    public function loadXmlSigned()
-    {
-        // ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
-
-            $this->xmlSigned = null;
-            return $this;
-
-        // ######## FIN MODALIDAD DE EMISIÓN FISCAL ########
-    }
-
-    private function senderXmlSigned()
-    {
-        // ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
-        return null;
-        // ######## FIN MODALIDAD DE EMISIÓN FISCAL ########
-    }
-
-    public function senderXmlSignedBill($service_pse_code = null)
-    {
-        // ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
-
-            $this->registerLocally();
-            return $this;
-
-        // ######## FIN MODALIDAD DE EMISIÓN FISCAL ########
-    }
-
-    public function hasPseSend()
-    {
-        // ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
-
-            return false;
-
-        // ######## FIN MODALIDAD DE EMISIÓN FISCAL ########
-    }
-
-
-    /**
-     * deprecated
-     * Evaluar si se debe firmar el xml y enviar cdr al PSE
-     * ########## INICIO CAMBIO QUITAR BOLETA
-     * Disponible para facturas y anulaciones de facturas
-     * ######### FIN CAMBIO QUITAR BOLETA
-     *
-     * @return bool
-     */
-    public function sendToPse()
-    {
-        // ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
-
-            return false;
-
-        // ######## FIN MODALIDAD DE EMISIÓN FISCAL ########
-    }
-
-
-    public function sendCdrToPse($cdr_zip, $document)
-    {
-        // ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
-
-            return;
-
-        // ######## FIN MODALIDAD DE EMISIÓN FISCAL ########
-    }
-
-    public function onlySenderXmlSignedBill($service_pse_code = null)
-    {
-        // ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
-
-            $this->registerLocally();
-            return $this->response;
-
-        // ######## FIN MODALIDAD DE EMISIÓN FISCAL ########
-    }
-
-
-
-    public function validationCodeResponse($code, $message)
-    {
-        //Errors
-        if(!is_numeric($code)){
-
-            if(in_array($this->type, ['retention', 'dispatch', 'perception', 'purchase_settlement'])){
-                throw new Exception("Code: {$code}; Description: {$message}");
-            }
-
-            $this->updateRegularizeShipping($code, $message);
-            return;
-        }
-        //dd($message);
-        // if($code === 'ERROR_CDR') {
-        //     return;
-        // }
-
-        // if($code === 'HTTP') {
-        //     // $message = 'La SUNAT no responde a su solicitud, vuelva a intentarlo.';
-
-        //     if(in_array($this->type, ['retention', 'dispatch'])){
-        //         throw new Exception("Code: {$code}; Description: {$message}");
-        //     }
-
-        //     $this->updateRegularizeShipping($code, $message);
-        //     return;
-        // }
-
-        if((int)$code === 0) {
-            $this->updateState(self::ACCEPTED);
-            return;
-        }
-        if((int)$code < 2000) {
-            //Excepciones
-
-            if(in_array($this->type, ['retention', 'dispatch', 'perception', 'purchase_settlement'])){
-            // if(in_array($this->type, ['retention', 'dispatch'])){
-                throw new Exception("Code: {$code}; Description: {$message}");
-            }
-
-            $this->updateRegularizeShipping($code, $message);
-            return;
-
-        } elseif ((int)$code < 4000) {
-            //Rechazo
-            $this->updateState(self::REJECTED);
-
-        } else {
-            $this->updateState(self::OBSERVED);
-            //Observaciones
-        }
-        return;
-    }
-
-
-    public function updateRegularizeShipping($code, $description)
-    {
-
-        $this->document->update([
-            'state_type_id' => self::REGISTERED,
-            'regularize_shipping' => true,
-            'response_regularize_shipping' => [
-                'code' => $code,
-                'description' => $description
-            ]
-        ]);
-
-    }
-
-
-    public function senderXmlSignedSummary()
-    {
-        // ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
-
-            $this->registerLocally(true);
-            return $this;
-
-        // ######## FIN MODALIDAD DE EMISIÓN FISCAL ########
-    }
-
-    private function updateTicket($ticket)
-    {
-        $this->document->update([
-            'ticket' => $ticket
-        ]);
-    }
-
-    public function pseQuerySummary()
-    {
-        // ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
-        $this->registerLocally();
-        return $this->response;
-        // ######## FIN MODALIDAD DE EMISIÓN FISCAL ########
-    }
-
-    public function statusSummary($ticket)
-    {
-        // ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
-        $this->registerLocally();
-        return $this->response;
-        // ######## FIN MODALIDAD DE EMISIÓN FISCAL ########
-    }
-
-    public function validationStatusCodeResponse($status_code)
-    {
-
-        switch ($status_code) {
-            case 0:
-                $this->updateState(self::ACCEPTED);
-                break;
-
-            case 99:
-                $this->updateState(self::REJECTED);
-                break;
-
-        }
-
-    }
-
-    public function consultCdr()
-    {
-        // ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
-
-            $this->response = LocalFiscalDocumentPolicy::registeredResponse();
-            return $this;
-
-        // ######## FIN MODALIDAD DE EMISIÓN FISCAL ########
-    }
-
     public function uploadFile($file_content, $file_type)
     {
         $this->uploadStorage($this->document->filename, $file_content, $file_type);
@@ -1209,18 +844,6 @@ class Facturalo
                 }
             }
         }
-    }
-
-    public function updateResponse(){
-
-        // if($this->response['sent']) {
-        //     return
-
-        //     $this->document->update([
-        //     ]);
-
-        // }
-
     }
 
     private function savePayments($document, $payments, $isUpdate = false)
@@ -1381,9 +1004,6 @@ class Facturalo
             case 'invoice':
                 $this->document = Document::find($id);
                 break;
-            case 'summary':
-                $this->document = Summary::find($id);
-                break;
             case 'voided':
                 $this->document = Voided::find($id);
                 break;
@@ -1488,8 +1108,6 @@ class Facturalo
             $total_exonerated  = (object)$this->document->total_exonerated != '' ? '10' : '0';
             $total_taxed       = (object)$this->document->total_taxed != '' ? '10' : '0';
             $perception       = $this->document->perception != '' ? '10' : '0';
-
-            $total_plastic_bag_taxes       = (object)$this->document->total_plastic_bag_taxes != '' ? '10' : '0';
             $quantity_rows     = count($this->document->items) + $was_deducted_prepayment;
             $document_payments     = count($this->document->payments ?? []);
             $document_transport     = ($this->document->transport) ? 30 : 0;
@@ -1531,21 +1149,7 @@ class Facturalo
 
             $quotation_id = ($this->document->quotation_id) ? 15:0;
 
-            //ajustes para footer amazonia
-
-            if($this->configuration->legend_footer
-                AND $format_pdf === 'ticket'
-                AND !in_array($base_pdf_template, ['ticket_c']))
-            {
-                $height_legend = 15;
-            } elseif($this->configuration->legend_footer
-                AND $format_pdf === 'ticket_58'
-                AND !in_array($base_pdf_template, ['ticket_c']))
-            {
-                $height_legend = 30;
-            } else {
-                $height_legend = 10;
-            }
+            $height_legend = 0;
 
             $append_height = 0;
 
@@ -1581,7 +1185,6 @@ class Facturalo
                     $total_discount +
                     $was_deducted_prepayment +
                     $customer_department_id+
-                    $total_plastic_bag_taxes+
                     $quotation_id+
                     $extra_by_item_additional_information+
                     $height_legend+
@@ -1609,7 +1212,6 @@ class Facturalo
             $total_unaffected  = (object)$this->document->total_unaffected != '' ? '10' : '0';
             $total_exonerated  = (object)$this->document->total_exonerated != '' ? '10' : '0';
             $total_taxed       = (object)$this->document->total_taxed != '' ? '10' : '0';
-            $total_plastic_bag_taxes       = (object)$this->document->total_plastic_bag_taxes != '' ? '10' : '0';
             $quantity_rows     = count($this->document->items);
 
             $extra_by_item_description = 0;
@@ -1732,18 +1334,8 @@ class Facturalo
             $html_footer = '';
             if (($format_pdf != 'ticket') AND ($format_pdf != 'ticket_58')) {
                 $html_footer = $template->pdfFooter($base_pdf_template, in_array($this->document->document_type_id, ['09']) ? null : $this->document);
-                $html_footer_legend = "";
             }
-
-            $html_footer_legend = '';
-            if($this->configuration->legend_footer
-                && in_array($this->document->document_type_id, ['01', '03'])
-                && !in_array($base_pdf_template, ['ticket_c'])
-            ){
-                $html_footer_legend = $template->pdfFooterLegend($base_pdf_template, $document);
-            }
-
-            $pdf->SetHTMLFooter($html_footer.$html_footer_legend);
+            $pdf->SetHTMLFooter($html_footer);
         }
 
         if ($base_pdf_template === 'brand') {
@@ -1766,8 +1358,8 @@ class Facturalo
             $pdf->SetHTMLFooter($html_footer_blank);
         }
 
-        if ($base_pdf_template === 'default3_929' && in_array($this->document->document_type_id, ['03','01'])) {
-            // Solo boleta o factura #929
+        if ($base_pdf_template === 'default3_929' && in_array($this->document->document_type_id, ['01'])) {
+            // Encabezado específico de Factura para la plantilla #929.
             $html_header = $template->pdfHeader($base_pdf_template, $this->company, $this->document);
             $pdf->SetHTMLHeader($html_header);
             $html_footer = $template->pdfFooter($base_pdf_template, $this->document);

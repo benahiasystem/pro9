@@ -29,10 +29,8 @@ class MassiveInvoice extends Model
         'nota',
         'external_id',
         'pdf_link',
-        'xml_link',
-        'cdr_link',
-        'estado_sunat',
-        'mensaje_sunat',
+        'estado_emision',
+        'mensaje_emision',
         'total_gravado',
         'total_igv', 
         'total_venta'

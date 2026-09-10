@@ -30,12 +30,8 @@ class PerceptionCollection extends ResourceCollection
                 'total' => $row->total,
                 'state_type_id' => $row->state_type_id,
                 'state_type_description' => $row->state_type->description,
-                'has_xml' => $row->has_xml,
                 'has_pdf' => $row->has_pdf,
-                'has_cdr' => $row->has_cdr,
-                'download_external_xml' => $row->download_external_xml,
                 'download_external_pdf' => $row->download_external_pdf,
-                'download_external_cdr' => $row->download_external_cdr,
                 'created_at' => $row->created_at->format('Y-m-d H:i:s'),
                 'updated_at' => $row->updated_at->format('Y-m-d H:i:s'),
             ];

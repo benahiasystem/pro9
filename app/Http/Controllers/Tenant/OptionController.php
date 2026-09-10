@@ -10,7 +10,6 @@ use App\Models\Tenant\Kardex;
 use App\Models\Tenant\Purchase;
 use App\Models\Tenant\Retention;
 use App\Models\Tenant\Perception;
-use App\Models\Tenant\Summary;
 use App\Models\Tenant\Voided;
 use Illuminate\Http\Request;
 use App\Models\Tenant\Configuration;
@@ -75,7 +74,6 @@ class OptionController extends Controller
         return DB::connection('tenant')->transaction(function () {
             $this->delete_quantity = 0;
 
-        Summary::where('fiscal_environment', 'demo')->delete();
         Voided::where('fiscal_environment', 'demo')->delete();
 
         $dispatches = Dispatch::where('fiscal_environment', 'demo')->get();
@@ -172,7 +170,6 @@ class OptionController extends Controller
             $document->transport()->delete();
             $document->invoice()->delete();
             $document->note()->delete();
-            $document->summary_document()->delete();
             $document->affected_documents()->delete();
             Kardex::where('document_id', $document->id)->delete();
         }
@@ -303,7 +300,7 @@ class OptionController extends Controller
         //             $item->delete();
         //         });
         //     });
-        // } 
+        // }
 
         // La eliminación del registro principal se hace después de sus relaciones.
     }
@@ -343,7 +340,7 @@ class OptionController extends Controller
     }
 
     public function deleteItems(Request $request)
-    {   
+    {
         $id_items_movement = ItemMovement::distinct()->pluck('item_id');
         $id_items_inventory = Inventory::distinct()->where('description','<>','Stock inicial')->pluck('item_id');
         $id_items_devolution_items = DevolutionItem::distinct()->pluck('item_id');
@@ -352,12 +349,12 @@ class OptionController extends Controller
             ->unique();
         $ids_item_merge_array = $ids_item_merge->toArray();
         $deletedItem = 0;
-    
+
         try{
             DB::transaction(function () use ($ids_item_merge_array,&$deletedItem) {
                 $ids_item_delete = Item::whereNotIn('id', $ids_item_merge_array)->pluck('id');
                 $ids_item_delete_array = $ids_item_delete->toArray();
-                
+
                 InventoryKardex::whereIn('item_id', $ids_item_delete_array)->delete();
                 Kardex::whereIn('item_id', $ids_item_delete_array)->delete();
                 WeightedAverageCost::whereIn('item_id', $ids_item_delete_array)->delete();
@@ -365,7 +362,7 @@ class OptionController extends Controller
                 ItemUnitType::whereIn('item_id', $ids_item_delete_array)->delete();
                 ItemLot::whereIn('item_id', $ids_item_delete_array)->delete();
                 ItemLotsGroup::whereIn('item_id', $ids_item_delete_array)->delete();
-                
+
                 $deletedItem = Item::whereIn('id', $ids_item_delete_array)->delete();
             });
 
@@ -382,7 +379,7 @@ class OptionController extends Controller
                 'delete_quantity' => $deletedItem,
             ];
         }
-        
+
     }
 
 }

@@ -171,11 +171,10 @@ trait ReportTrait
             else {
                 $data->where([['establishment_id', $establishment_id], ['document_type_id', $document_type_id]]);
             }
-            
+
         } elseif ($document_type_id) {
             if (in_array($document_type_id, [
                 '01',
-                '03',
                 '07',
                 '08',
             ], true)
@@ -309,10 +308,6 @@ trait ReportTrait
 
             case '02':
                 $documents = Document::whereIn('document_type_id',['01','03'])->latest();
-                break;
-
-            case '03':
-                $sale_notes = SaleNote::latest();
                 break;
         }
 

@@ -276,81 +276,21 @@ class DispatchInput
 
     private static function senderData($inputs)
     {
-        if (false) {
-            if (array_key_exists('sender_data', $inputs)) {
-                $sender = $inputs['sender_data'];
-                $identity_document_type_id = $sender['identity_document_type_id'];
-                $identity_document_type_description = $sender['identity_document_type_description'];
-                $number = $sender['number'];
-                $name = $sender['name'];
-
-                return [
-                    'identity_document_type_id' => $identity_document_type_id,
-                    'identity_document_type_description' => $identity_document_type_description,
-                    'number' => $number,
-                    'name' => $name,
-                ];
-            }
-        }
-
         return null;
     }
 
     private static function receiverData($inputs)
     {
-        if (false) {
-            if (array_key_exists('receiver_data', $inputs)) {
-                $receiver = $inputs['receiver_data'];
-                $identity_document_type_id = $receiver['identity_document_type_id'];
-                $identity_document_type_description = $receiver['identity_document_type_description'];
-                $number = $receiver['number'];
-                $name = $receiver['name'];
-
-                return [
-                    'identity_document_type_id' => $identity_document_type_id,
-                    'identity_document_type_description' => $identity_document_type_description,
-                    'number' => $number,
-                    'name' => $name,
-                ];
-            }
-        }
-
         return null;
     }
 
     private static function receiverAddressData($inputs)
     {
-        if (false) {
-            if (array_key_exists('receiver_address_data', $inputs)) {
-                $address = $inputs['receiver_address_data'];
-                $location_id = $address['location_id'][2];
-                $address = $address['address'];
-
-                return [
-                    'location_id' => $location_id,
-                    'address' => $address
-                ];
-            }
-        }
-
         return null;
     }
 
     private static function senderAddressData($inputs)
     {
-        if (false) {
-            if (array_key_exists('sender_address_data', $inputs)) {
-                $address = $inputs['sender_address_data'];
-                $location_id = $address['location_id'][2];
-                $address = $address['address'];
-
-                return [
-                    'location_id' => $location_id,
-                    'address' => $address
-                ];
-            }
-        }
-
         return null;
     }
 
@@ -519,82 +459,23 @@ class DispatchInput
 
     private static function getSenderId($inputs)
     {
-        if (false) {
-            if (key_exists('sender_id', $inputs)) {
-                return $inputs['sender_id'];
-            }
-//            $sender = $inputs['sender'];
-//            $record = DispatchPerson::query()
-//                ->firstOrCreate([
-//                    'identity_document_type_id' => $sender['identity_document_type_id'],
-//                    'number' => $sender['number'],
-//                ], [
-//                    'name' => $sender['name']
-//                ]);
-//
-//            return $record->id;
-        }
         return null;
     }
 
     private static function getReceiverId($inputs)
     {
-        if (false) {
-            if (key_exists('receiver_id', $inputs)) {
-                return $inputs['receiver_id'];
-            }
-//            $receiver = $inputs['receiver'];
-//            $record = DispatchPerson::query()
-//                ->firstOrCreate([
-//                    'identity_document_type_id' => $receiver['identity_document_type_id'],
-//                    'number' => $receiver['number'],
-//                ], [
-//                    'name' => $receiver['name']
-//                ]);
-//
-//            return $record->id;
-        }
         return null;
     }
 
     private static function getReceiverAddressId($inputs)
     {
         return null;
-        if (false) {
-            return $inputs['receiver_address_id'];
-//            if (key_exists('receiver_address_id', $inputs)) {
-//            }
-//            $address = $inputs['receiver_address'];
-//            $record = DispatchAddress::query()
-//                ->firstOrCreate([
-//                    'person_id' => $inputs['receiver_id'],
-//                    'location_id' => $address['location_id'],
-//                    'address' => $address['address']
-//                ]);
-//
-//            return $record->id;
-        }
         return null;
     }
 
     private static function getSenderAddressId($inputs)
     {
         return null;
-        if (false) {
-            return $inputs['sender_address_id'];
-//            if (key_exists('sender_address_id', $inputs)) {
-//
-//            }
-//            $address = $inputs['sender_address'];
-//            $record = DispatchAddress::query()
-//                ->firstOrCreate([
-//                    'person_id' => $inputs['sender_id'],
-//                    'location_id' => $address['location_id'],
-//                    'address' => $address['address']
-//                ]);
-//
-//            return $record->id;
-        }
         return null;
     }
     private static function secondary_transports($inputs)

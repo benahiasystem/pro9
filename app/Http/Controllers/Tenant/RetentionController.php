@@ -110,10 +110,7 @@ class RetentionController extends Controller
         $fact = DB::connection('tenant')->transaction(function () use($request) {
             $facturalo = new Facturalo();
             $facturalo->save($request->all());
-            $facturalo->createXmlUnsigned();
-            $facturalo->signXmlUnsigned();
             $facturalo->createPdf();
-            $facturalo->senderXmlSignedBill();
 
             return $facturalo;
         });
@@ -132,28 +129,5 @@ class RetentionController extends Controller
         ];
     }
 
-    public function downloadExternal($type, $external_id)
-    {
-        $retention = Retention::where('external_id', $external_id)->first();
-        if(!$retention) {
-            throw new Exception("El código {$external_id} es inválido, no se encontro documento relacionado");
-        }
-
-        switch ($type) {
-            case 'pdf':
-                $folder = 'pdf';
-                break;
-            case 'xml':
-                $folder = 'signed';
-                break;
-            case 'cdr':
-                $folder = 'cdr';
-                break;
-            default:
-                throw new Exception('Tipo de archivo a descargar es inválido');
-        }
-
-        return $this->downloadStorage($retention->filename, $folder);
-    }
 }
 // ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

@@ -1,20 +1,17 @@
 <?php
-// ######### INICIO CAMBIO NELSON #########
-
-/**
- * Estructura efectiva clonada desde `tenancy_bbc`.
- * Tabla: `format_templates`.
- *
- * Inventario de columnas:
- * - `id`: int(10) unsigned; NOT NULL; auto_increment — Sin comentario definido en el esquema fuente.
- * - `formats`: varchar(255); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
- * - `urls`: json; NULL — Sin comentario definido en el esquema fuente.
- * - `is_custom_ticket`: tinyint(1); NOT NULL; DEFAULT 0 — Sin comentario definido en el esquema fuente.
- */
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 
+// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
+/**
+ * Estructura inicial de `format_templates` para instalaciones nuevas.
+ * Inventario de columnas:
+ * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
+ * - `formats` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
+ * - `urls` json DEFAULT NULL
+ * - `is_custom_ticket` tinyint(1) NOT NULL DEFAULT '0'
+ */
 return new class extends Migration
 {
     public function up(): void
@@ -26,7 +23,7 @@ CREATE TABLE `format_templates` (
   `urls` json DEFAULT NULL,
   `is_custom_ticket` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL);
     }
 
@@ -35,4 +32,4 @@ SQL);
         DB::unprepared('DROP TABLE IF EXISTS `format_templates`');
     }
 };
-// ######### FIN CAMBIO NELSON #########
+// ######## FIN ESQUEMA INICIAL VENEZUELA ########

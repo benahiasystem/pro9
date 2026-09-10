@@ -1,418 +1,414 @@
 <template>
-    <div>
-        <div id="styleSwitcher" class="style-switcher" style="z-index: 1040;">
-            <!-- <a id="styleSwitcherOpen" class="style-switcher-open" href="#">
-                <i class="fas fa-paint-brush"></i>
-            </a> -->
+<div>
+    <div id="styleSwitcher" class="style-switcher" style="z-index: 1040;">
+        <!-- <a id="styleSwitcherOpen" class="style-switcher-open" href="#">
+            <i class="fas fa-paint-brush"></i>
+        </a> -->
 
-            <form class="style-switcher-wrap p-0" autocomplete="off">
-            <div class="support-header px-3">
-                <h5 class="m-0 d-flex align-items-center title-visual">
-                    Estilos y Temas
-                </h5>
-                <a class="style-switcher-open close-config" href="#" style="transform: none;">
-                    <svg  xmlns="http://www.w3.org/2000/svg"  width="20"  height="20"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-x"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M18 6l-12 12" /><path d="M6 6l12 12" /></svg>
-                </a>
+        <form class="style-switcher-wrap p-0" autocomplete="off">
+        <div class="support-header px-3">
+            <h5 class="m-0 d-flex align-items-center title-visual">
+                Estilos y Temas
+            </h5>
+            <a class="style-switcher-open close-config" href="#" style="transform: none;">
+                <svg  xmlns="http://www.w3.org/2000/svg"  width="20"  height="20"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-x"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M18 6l-12 12" /><path d="M6 6l12 12" /></svg>
+            </a>
+        </div>
+
+        <div v-if="visual == null">
+            <h5 class="">No posee ajustes actualmente</h5>
+            <a href="" class="text-warning" v-if="typeUser != 'integrator'"
+                >cargar ajustes por defecto</a
+            >
+            <br />
+        </div>
+        <div v-if="typeUser != 'integrator'" class="p-3 body-visual">
+            <div class="mode-switch-wrap">
+                <h5 class="mb-2">Modo de color</h5>
+                <div class="mode-switch" role="group" aria-label="Modo de color">
+                    <a
+                        href="/configurations/change-mode"
+                        class="mode-switch__opt"
+                        :class="{ 'is-active': visuals.bg == 'white' }"
+                        @click.prevent="setMode('white')"
+                        title="Modo claro"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                            <path d="M12 12m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0" />
+                            <path d="M3 12h1m8 -9v1m8 8h1m-9 8v1m-6.4 -15.4l.7 .7m12.1 -.7l-.7 .7m0 11.4l.7 .7m-12.1 -.7l-.7 .7" />
+                        </svg>
+                        <span>Claro</span>
+                    </a>
+                    <a
+                        href="/configurations/change-mode"
+                        class="mode-switch__opt"
+                        :class="{ 'is-active': visuals.bg == 'dark' }"
+                        @click.prevent="setMode('dark')"
+                        title="Modo oscuro"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                            <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+                        </svg>
+                        <span>Oscuro</span>
+                    </a>
+                </div>
             </div>
 
-            <div v-if="visual == null">
-                <h5 class="">No posee ajustes actualmente</h5>
-                <a href="" class="text-warning" v-if="typeUser != 'integrator'"
-                    >cargar ajustes por defecto</a
-                >
-                <br />
-            </div>
-            <div v-if="typeUser != 'integrator'" class="p-3 body-visual">
-                <div class="mode-switch-wrap">
-                    <h5 class="mb-2">Modo de color</h5>
-                    <div class="mode-switch" role="group" aria-label="Modo de color">
-                        <a
-                            href="/configurations/change-mode"
-                            class="mode-switch__opt"
-                            :class="{ 'is-active': visuals.bg == 'white' }"
-                            @click.prevent="setMode('white')"
-                            title="Modo claro"
+            <div class="mt-3 outdoor-wrap">
+                <div class="outdoor-head">
+                    <h5 class="mb-0">
+                        Modo exterior
+                        <el-tooltip
+                            class="item"
+                            content="Sube el contraste y la saturación de la pantalla para que siga siendo legible con luz del sol. Se activa solo en este equipo."
+                            effect="dark"
+                            placement="top-start"
                         >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                                <path d="M12 12m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0" />
-                                <path d="M3 12h1m8 -9v1m8 8h1m-9 8v1m-6.4 -15.4l.7 .7m12.1 -.7l-.7 .7m0 11.4l.7 .7m-12.1 -.7l-.7 .7" />
-                            </svg>
-                            <span>Claro</span>
-                        </a>
-                        <a
-                            href="/configurations/change-mode"
-                            class="mode-switch__opt"
-                            :class="{ 'is-active': visuals.bg == 'dark' }"
-                            @click.prevent="setMode('dark')"
-                            title="Modo oscuro"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                                <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
-                            </svg>
-                            <span>Oscuro</span>
-                        </a>
-                    </div>
-                </div>
-
-                <div class="mt-3 outdoor-wrap">
-                    <div class="outdoor-head">
-                        <h5 class="mb-0">
-                            Modo exterior
-                            <el-tooltip
-                                class="item"
-                                content="Sube el contraste y la saturación de la pantalla para que siga siendo legible con luz del sol. Se activa solo en este equipo."
-                                effect="dark"
-                                placement="top-start"
-                            >
-                                <i class="fas fa-info-circle"></i>
-                            </el-tooltip>
-                        </h5>
-                        <el-switch
-                            v-model="outdoorMode"
-                            @change="onToggleOutdoorMode"
-                        >
-                        </el-switch>
-                    </div>
-                    <div v-if="outdoorMode" class="outdoor-levels">
-                        <button
-                            v-for="level in outdoorLevels"
-                            :key="level.key"
-                            type="button"
-                            class="outdoor-level"
-                            :class="{ 'is-active': outdoorLevel === level.key }"
-                            @click="setOutdoorLevel(level.key)"
-                        >
-                            {{ level.label }}
-                        </button>
-                    </div>
-                </div>
-                <!-- <div class="pt-3">
-                    <h5>Color de fondo del sidebar</h5>
-                    <div class="form-group el-custom-control">
-                        <button :class="{ 'active': visuals.sidebar_theme === 'white' }" type="button" @click="onChangeBgSidebar('white')" class="btn flex-fill" style="background-color: #ffffff;"></button>
-                        <button :class="{ 'active': visuals.sidebar_theme === 'blue' }" type="button" @click="onChangeBgSidebar('blue')" class="btn flex-fill" style="background-color: #7367f0;"></button>
-                        <button :class="{ 'active': visuals.sidebar_theme === 'gray' }" type="button" @click="onChangeBgSidebar('gray')" class="btn" style="background-color: #82868b;"></button>
-                        <button :class="{ 'active': visuals.sidebar_theme === 'green' }" type="button" @click="onChangeBgSidebar('green')" class="btn flex-fill" style="background-color: #28c76f;"></button>
-                        <button :class="{ 'active': visuals.sidebar_theme === 'red' }" type="button" @click="onChangeBgSidebar('red')" class="btn flex-fill" style="background-color: #ea5455;"></button>
-                        <button :class="{ 'active': visuals.sidebar_theme === 'warning' }" type="button" @click="onChangeBgSidebar('warning')" class="btn" style="background-color: #ff9f43;"></button>
-                        <button :class="{ 'active': visuals.sidebar_theme === 'ligth-blue' }" type="button" @click="onChangeBgSidebar('ligth-blue')" class="btn" style="background-color: #00cfe8;"></button>
-                        <button :class="{ 'active': visuals.sidebar_theme === 'dark' }" type="button" @click="onChangeBgSidebar('dark')" class="btn flex-fill" style="background-color: #283046;"></button>
-                    </div>
-                </div> -->
-
-                <div v-if="!isBlackSkinSelected" class="mt-3 theme-color-selector">
-                    <h5>Selecciona un color de tema:</h5>
-                    <div class="theme-select" :class="{ open: themeMenuOpen }">
-                        <button type="button" class="theme-select-trigger" @click="themeMenuOpen = !themeMenuOpen">
-                            <span class="theme-swatch" :style="{ background: activeTheme.bg }">
-                                <i v-for="(c, i) in activeTheme.dots" :key="i" :style="{ background: c }"></i>
-                            </span>
-                            <span class="theme-row-info">
-                                <span class="theme-row-name">{{ activeTheme.label }}</span>
-                                <span class="theme-row-color">{{ activeTheme.color }}</span>
-                            </span>
-                            <i class="fas fa-chevron-down theme-select-caret"></i>
-                        </button>
-                        <div class="theme-select-menu">
-                            <button
-                                v-for="t in themeList"
-                                :key="t.key"
-                                type="button"
-                                class="btn-theme-row"
-                                :class="{ 'theme-selected': visuals.sidebar_theme === t.key }"
-                                @click="selectTheme(t.key)"
-                                :title="t.label"
-                            >
-                                <span class="theme-swatch" :style="{ background: t.bg }">
-                                    <i v-for="(c, i) in t.dots" :key="i" :style="{ background: c }"></i>
-                                </span>
-                                <span class="theme-row-info">
-                                    <span class="theme-row-name">{{ t.label }}</span>
-                                    <span class="theme-row-color">{{ t.color }}</span>
-                                </span>
-                                <i class="fas fa-check theme-row-check"></i>
-                            </button>
-                        </div>
-                        <div v-if="themeMenuOpen" class="theme-select-backdrop" @click="themeMenuOpen = false"></div>
-                    </div>
-                </div>
-
-                <div
-                    v-if="isBlackSkinSelected"
-                    class="mt-3 theme-color-selector-black"
-                >
-                    <h5>Selecciona un color de tema:</h5>
-                    <div class="theme-select" :class="{ open: blackMenuOpen }">
-                        <button type="button" class="theme-select-trigger" @click="blackMenuOpen = !blackMenuOpen">
-                            <span class="theme-swatch theme-swatch-dark" :style="{ background: 'oklch(0.2 0.0417 ' + activeBlackTheme.h + ')' }">
-                                <i v-for="(c, i) in blackDots(activeBlackTheme)" :key="i" :style="{ background: c }"></i>
-                            </span>
-                            <span class="theme-row-info">
-                                <span class="theme-row-name">{{ activeBlackTheme.label }}</span>
-                                <span class="theme-row-color">{{ activeBlackTheme.color }}</span>
-                            </span>
-                            <i class="fas fa-chevron-down theme-select-caret"></i>
-                        </button>
-                        <div class="theme-select-menu">
-                            <button
-                                v-for="t in blackThemeList"
-                                :key="t.key"
-                                type="button"
-                                class="btn-theme-row"
-                                :class="{ 'theme-selected': visuals.black_theme === t.key }"
-                                @click="selectBlackTheme(t.key)"
-                                :title="t.label"
-                            >
-                                <span class="theme-swatch theme-swatch-dark" :style="{ background: 'oklch(0.2 0.0417 ' + t.h + ')' }">
-                                    <i v-for="(c, i) in blackDots(t)" :key="i" :style="{ background: c }"></i>
-                                </span>
-                                <span class="theme-row-info">
-                                    <span class="theme-row-name">{{ t.label }}</span>
-                                    <span class="theme-row-color">{{ t.color }}</span>
-                                </span>
-                                <i class="fas fa-check theme-row-check"></i>
-                            </button>
-                        </div>
-                        <div v-if="blackMenuOpen" class="theme-select-backdrop" @click="blackMenuOpen = false"></div>
-                    </div>
-                </div>
-
-                <div v-if="!isBlackSkinSelected" class="pt-3 sidebar-compact-selector-container d-none d-md-block">
-                    <label class="control-label">Menú lateral contraído</label>
-                    <div :class="{ 'has-danger': errors.compact_sidebar }">
-                        <el-switch
-                            v-model="form.compact_sidebar"
-                            active-text="Si"
-                            inactive-text="No"
-                            @change="submitForm"
-                        >
-                        </el-switch>
-                        <br />
-                        <small
-                            class="form-control-feedback"
-                            v-if="errors.compact_sidebar"
-                            v-text="errors.compact_sidebar[0]"
-                        ></small>
-                    </div>
-                </div>
-
-                <div v-if="isBlackSkinSelected" class="pt-3 sidebar-margin-selector-container d-none d-md-block">
-                    <h5>Estilo de Sidebar</h5>
-                    <div class="d-flex justify-content-between gap-3 sidebar-margin-selector">
-                        <div
-                            class="sidebar-example"
-                            :class="{ 'sidebar-example-selected': form.compact_sidebar === false }"
-                            role="button"
-                            tabindex="0"
-                            @click="form.compact_sidebar = false; submitForm()"
-                        >
-                            <div>
-                                <svg data-name="con-layout-default" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 79.86 51.14" class="fill-primary stroke-primary group-data-[state=unchecked]:fill-muted-foreground group-data-[state=unchecked]:stroke-muted-foreground w-100" aria-hidden="true"><path d="M39.22 15.99h-8.16c-.79 0-1.43-.67-1.43-1.5s.64-1.5 1.43-1.5h8.16c.79 0 1.43.67 1.43 1.5s-.64 1.5-1.43 1.5z" opacity="0.75"></path><rect x="29.63" y="18.39" width="16.72" height="2.73" rx="1.36" ry="1.36" opacity="0.5"></rect><path d="M75.1 6.68v1.45c0 .63-.49 1.14-1.09 1.14H30.72c-.6 0-1.09-.51-1.09-1.14V6.68c0-.62.49-1.14 1.09-1.14h43.29c.6 0 1.09.52 1.09 1.14z" opacity="0.9"></path><rect x="29.63" y="24.22" width="21.8" height="19.95" rx="2.11" ry="2.11" opacity="0.4"></rect><g stroke-linecap="round" stroke-miterlimit="10"><rect x="61.06" y="38.15" width="2.01" height="3.42" rx="0.33" ry="0.33" opacity="0.32"></rect><rect x="56.78" y="34.99" width="2.01" height="6.58" rx="0.33" ry="0.33" opacity="0.44"></rect><rect x="65.17" y="32.86" width="2.01" height="8.7" rx="0.33" ry="0.33" opacity="0.53"></rect><rect x="69.55" y="29.17" width="2.01" height="12.4" rx="0.33" ry="0.33" opacity="0.66"></rect></g><g opacity="0.5"><circle cx="63.17" cy="18.63" r="7.5"></circle><path d="M63.17 11.63c3.86 0 7 3.14 7 7s-3.14 7-7 7-7-3.14-7-7 3.14-7 7-7m0-1c-4.42 0-8 3.58-8 8s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8z"></path></g><g opacity="0.74"><path d="M64.05 18.13l3.38-5.67c.93.64 1.7 1.48 2.26 2.47.56.98.89 2.08.96 3.21h-6.6z"></path><path d="M67.57 13.19a6.977 6.977 0 012.52 4.44h-5.17l2.65-4.44m-.31-1.43l-4.1 6.87h8c0-1.39-.36-2.75-1.04-3.95a8.007 8.007 0 00-2.86-2.92z"></path></g><g stroke-linecap="round" stroke-miterlimit="10"><rect x="5.84" y="5.02" width="19.14" height="40" rx="2" ry="2" opacity="0.8"></rect><g stroke="#fff"><path fill="none" opacity="0.72" stroke-width="2px" d="M9.02 17.39L21.25 17.39"></path><path fill="none" opacity="0.48" stroke-width="2px" d="M9.02 24.6L19.54 24.6"></path><path fill="none" opacity="0.55" stroke-width="2px" d="M9.02 20.88L18.4 20.88"></path><circle cx="10.98" cy="9.91" r="2.54" fill="#fff" opacity="0.8"></circle><path fill="none" opacity="0.8" stroke-width="2px" d="M15.53 8.65L21.25 8.65"></path><path fill="none" opacity="0.6" d="M15.32 11.3L20.38 11.3"></path></g></g></svg>
-                            </div>
-                            <span class="text-center">Defecto</span>
-                        </div>
-                        <div
-                            class="sidebar-example"
-                            :class="{ 'sidebar-example-selected': form.compact_sidebar === true }"
-                            role="button"
-                            tabindex="0"
-                            @click="form.compact_sidebar = true; submitForm()"
-                        >
-                            <div>
-                                <svg data-name="icon-layout-compact" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 79.86 51.14" class="fill-primary stroke-primary group-data-[state=unchecked]:fill-muted-foreground group-data-[state=unchecked]:stroke-muted-foreground w-100" aria-hidden="true"><rect x="5.84" y="5.2" width="4" height="40" rx="2" ry="2" stroke-linecap="round" stroke-miterlimit="10"></rect><g stroke="#fff" stroke-linecap="round" stroke-miterlimit="10"><path fill="none" opacity="0.66" stroke-width="2px" d="M7.26 11.56L8.37 11.56"></path><path fill="none" opacity="0.51" stroke-width="2px" d="M7.26 14.49L8.37 14.49"></path><path fill="none" opacity="0.52" stroke-width="2px" d="M7.26 17.39L8.37 17.39"></path><circle cx="7.81" cy="7.25" r="1.16" fill="#fff" opacity="0.8"></circle></g><path fill="none" opacity="0.75" stroke-linecap="round" stroke-miterlimit="10" stroke-width="3px" d="M15.81 14.49L22.89 14.49"></path><rect x="14.93" y="18.39" width="22.19" height="2.73" rx="0.64" ry="0.64" opacity="0.5" stroke-linecap="round" stroke-miterlimit="10"></rect><rect x="14.93" y="5.89" width="59.16" height="2.73" rx="0.64" ry="0.64" opacity="0.9" stroke-linecap="round" stroke-miterlimit="10"></rect><rect x="14.93" y="24.22" width="32.68" height="19.95" rx="2.11" ry="2.11" opacity="0.4" stroke-linecap="round" stroke-miterlimit="10"></rect><g stroke-linecap="round" stroke-miterlimit="10"><rect x="59.05" y="38.15" width="2.01" height="3.42" rx="0.33" ry="0.33" opacity="0.32"></rect><rect x="54.78" y="34.99" width="2.01" height="6.58" rx="0.33" ry="0.33" opacity="0.44"></rect><rect x="63.17" y="32.86" width="2.01" height="8.7" rx="0.33" ry="0.33" opacity="0.53"></rect><rect x="67.54" y="29.17" width="2.01" height="12.4" rx="0.33" ry="0.33" opacity="0.66"></rect></g><g opacity="0.5"><circle cx="62.16" cy="18.63" r="7.5"></circle><path d="M62.16 11.63c3.86 0 7 3.14 7 7s-3.14 7-7 7-7-3.14-7-7 3.14-7 7-7m0-1c-4.42 0-8 3.58-8 8s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8z"></path></g><g opacity="0.74"><path d="M63.04 18.13l3.38-5.67c.93.64 1.7 1.48 2.26 2.47.56.98.89 2.08.96 3.21h-6.6z"></path><path d="M66.57 13.19a6.977 6.977 0 012.52 4.44h-5.17l2.65-4.44m-.31-1.43l-4.1 6.87h8c0-1.39-.36-2.75-1.04-3.95a8.007 8.007 0 00-2.86-2.92z"></path></g></svg>
-                            </div>
-                            <span class="text-center">Contraido</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div v-if="isBlackSkinSelected" class="pt-3 sidebar-margin-selector-container sidebar-theme-selector-container d-none d-md-block">
-                    <h5>Tema del Sidebar</h5>
-                    <div class="d-flex justify-content-between gap-3 sidebar-margin-selector">
-                        <div
-                            class="sidebar-example"
-                            :class="{ 'sidebar-example-selected': form.sidebar_mode === 'light' }"
-                            role="button"
-                            tabindex="0"
-                            @click="submitSidebarMode('light')"
-                        >
-                            <div>
-                                <svg data-name="icon-sidebar-sidebar" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 79.86 51.14" class="fill-primary stroke-primary group-data-[state=unchecked]:fill-muted-foreground group-data-[state=unchecked]:stroke-muted-foreground w-100" aria-hidden="true"><path d="M23.42.51h51.99c2.21 0 4 1.79 4 4v42.18c0 2.21-1.79 4-4 4H23.42s-.04-.02-.04-.04V.55s.02-.04.04-.04z" opacity="0.2" stroke-linecap="round" stroke-miterlimit="10"></path><path fill="none" opacity="0.72" stroke-linecap="round" stroke-miterlimit="10" stroke-width="2px" d="M5.56 14.88L17.78 14.88"></path><path fill="none" opacity="0.48" stroke-linecap="round" stroke-miterlimit="10" stroke-width="2px" d="M5.56 22.09L16.08 22.09"></path><path fill="none" opacity="0.55" stroke-linecap="round" stroke-miterlimit="10" stroke-width="2px" d="M5.56 18.38L14.93 18.38"></path><g stroke-linecap="round" stroke-miterlimit="10"><circle cx="7.51" cy="7.4" r="2.54" opacity="0.8"></circle><path fill="none" opacity="0.8" stroke-width="2px" d="M12.06 6.14L17.78 6.14"></path><path fill="none" opacity="0.6" d="M11.85 8.79L16.91 8.79"></path></g></svg>
-                            </div>
-                            <span class="text-center">Claro</span>
-                        </div>
-                        <div
-                            class="sidebar-example"
-                            :class="{ 'sidebar-example-selected': form.sidebar_mode === 'dark' }"
-                            role="button"
-                            tabindex="0"
-                            @click="submitSidebarMode('dark')"
-                        >
-                            <div class="svg-dark">
-                                <svg data-name="icon-sidebar-sidebar" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 79.86 51.14" class="fill-primary stroke-primary group-data-[state=unchecked]:fill-muted-foreground group-data-[state=unchecked]:stroke-muted-foreground w-100" aria-hidden="true"><path d="M23.42.51h51.99c2.21 0 4 1.79 4 4v42.18c0 2.21-1.79 4-4 4H23.42s-.04-.02-.04-.04V.55s.02-.04.04-.04z" opacity="0.2" stroke-linecap="round" stroke-miterlimit="10"></path><path fill="none" opacity="0.72" stroke-linecap="round" stroke-miterlimit="10" stroke-width="2px" d="M5.56 14.88L17.78 14.88"></path><path fill="none" opacity="0.48" stroke-linecap="round" stroke-miterlimit="10" stroke-width="2px" d="M5.56 22.09L16.08 22.09"></path><path fill="none" opacity="0.55" stroke-linecap="round" stroke-miterlimit="10" stroke-width="2px" d="M5.56 18.38L14.93 18.38"></path><g stroke-linecap="round" stroke-miterlimit="10"><circle cx="7.51" cy="7.4" r="2.54" opacity="0.8"></circle><path fill="none" opacity="0.8" stroke-width="2px" d="M12.06 6.14L17.78 6.14"></path><path fill="none" opacity="0.6" d="M11.85 8.79L16.91 8.79"></path></g></svg>
-                            </div>
-                            <span class="text-center">Oscuro</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div v-if="isBlackSkinSelected" class="pt-3 sidebar-margin-selector-container d-none d-md-block">
-                    <h5>Sidebar</h5>
-                    <div class="d-flex justify-content-between gap-3 sidebar-margin-selector">
-                        <div
-                            class="sidebar-example"
-                            :class="{ 'sidebar-example-selected': visuals.sidebar_margin === true }"
-                            role="button"
-                            tabindex="0"
-                            @click="onChangeSidebarMargin(true)"
-                        >
-                            <div>
-                                <svg data-name="icon-sidebar-floating" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 79.86 51.14" class="fill-primary stroke-primary group-data-[state=unchecked]:fill-muted-foreground group-data-[state=unchecked]:stroke-muted-foreground w-100" aria-hidden="true"><rect x="5.89" y="5.15" width="19.74" height="40" rx="2" ry="2" opacity="0.8" stroke-linecap="round" stroke-miterlimit="10"></rect><g stroke="#fff" stroke-linecap="round" stroke-miterlimit="10"><path fill="none" opacity="0.72" stroke-width="2px" d="M9.81 18.36L22.04 18.36"></path><path fill="none" opacity="0.48" stroke-width="2px" d="M9.81 25.57L20.33 25.57"></path><path fill="none" opacity="0.55" stroke-width="2px" d="M9.81 21.85L19.18 21.85"></path><circle cx="11.76" cy="10.88" r="2.54" fill="#fff" opacity="0.8"></circle><path fill="none" opacity="0.8" stroke-width="2px" d="M16.31 9.62L22.04 9.62"></path><path fill="none" opacity="0.6" d="M16.1 12.27L21.16 12.27"></path></g><path fill="none" opacity="0.62" stroke-linecap="round" stroke-miterlimit="10" stroke-width="3px" d="M30.59 9.62L35.85 9.62"></path><rect x="29.94" y="13.42" width="26.03" height="2.73" rx="0.64" ry="0.64" opacity="0.44" stroke-linecap="round" stroke-miterlimit="10"></rect><rect x="29.94" y="19.28" width="43.11" height="25.87" rx="2" ry="2" opacity="0.3" stroke-linecap="round" stroke-miterlimit="10"></rect></svg>
-                            </div>
-                            <span class="text-center">Flotando</span>
-                        </div>
-                        <div
-                            class="sidebar-example"
-                            :class="{ 'sidebar-example-selected': visuals.sidebar_margin === false }"
-                            role="button"
-                            tabindex="0"
-                            @click="onChangeSidebarMargin(false)"
-                        >
-                            <div>
-                                <svg data-name="icon-sidebar-sidebar" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 79.86 51.14" class="fill-primary stroke-primary group-data-[state=unchecked]:fill-muted-foreground group-data-[state=unchecked]:stroke-muted-foreground w-100" aria-hidden="true"><path d="M23.42.51h51.99c2.21 0 4 1.79 4 4v42.18c0 2.21-1.79 4-4 4H23.42s-.04-.02-.04-.04V.55s.02-.04.04-.04z" opacity="0.2" stroke-linecap="round" stroke-miterlimit="10"></path><path fill="none" opacity="0.72" stroke-linecap="round" stroke-miterlimit="10" stroke-width="2px" d="M5.56 14.88L17.78 14.88"></path><path fill="none" opacity="0.48" stroke-linecap="round" stroke-miterlimit="10" stroke-width="2px" d="M5.56 22.09L16.08 22.09"></path><path fill="none" opacity="0.55" stroke-linecap="round" stroke-miterlimit="10" stroke-width="2px" d="M5.56 18.38L14.93 18.38"></path><g stroke-linecap="round" stroke-miterlimit="10"><circle cx="7.51" cy="7.4" r="2.54" opacity="0.8"></circle><path fill="none" opacity="0.8" stroke-width="2px" d="M12.06 6.14L17.78 6.14"></path><path fill="none" opacity="0.6" d="M11.85 8.79L16.91 8.79"></path></g></svg>
-                            </div>
-                            <span class="text-center">Fijo</span>
-                        </div>
-                    </div>
-
-                </div>
-
-                <div class="mt-3">
-                    <label class="control-label">Mostrar panel de bienvenida en el dashboard</label>
-                    <div>
-                        <el-switch
-                            v-model="showWelcome"
-                            active-text="Si"
-                            inactive-text="No"
-                            @change="updateConfig"
-                        >
-                        </el-switch>
-                    </div>
-                </div>
-
-                <div class="mt-3">
-                    <label class="control-label">Permitir cambiar de empresa y sucursal desde el sidebar</label>
-                    <div>
-                        <el-switch
-                            v-model="branchSelectorInSidebar"
-                            active-text="Si"
-                            inactive-text="No"
-                            @change="updateBranchSelectorConfig"
-                        >
-                        </el-switch>
-                    </div>
-                </div>
-
-                <div class="pt-3 form-modern">
-                    <label class="control-label"
-                        >Visualización de productos en POS</label
-                    >
-                    <div
-                        :class="{
-                            'has-danger': errors.amount_plastic_bag_taxes
-                        }"
-                    >
-                        <el-select
-                            v-model="form.colums_grid_item"
-                            @change="submitViewPos"
-                        >
-                            <el-option
-                                label="Predeterminado"
-                                :value="2"
-                            ></el-option>
-                            <el-option
-                                label="Cómodo"
-                                :value="3"
-                            ></el-option>
-                            <el-option
-                                label="Compacto"
-                                :value="4"
-                            ></el-option>
-                            <el-option
-                                label="Apilado"
-                                :value="5"
-                            ></el-option>
-                        </el-select>
-                        <small
-                            class="form-control-feedback"
-                            v-if="errors.amount_plastic_bag_taxes"
-                            v-text="errors.amount_plastic_bag_taxes[0]"
-                        ></small>
-                    </div>
-                </div>
-                <div class="pt-3 form-modern">
-                    <label class="control-label">Imagen predeterminada de productos
-                        <el-tooltip class="item" content="Para un mejor resultado visual, sube una imagen cuadrada (ej. 215x215 px). Formatos permitidos: PNG o JPG."
-                            effect="dark" placement="top-start">
                             <i class="fas fa-info-circle"></i>
                         </el-tooltip>
-                    </label>
-                    <el-input v-model="fileName" :readonly="true" placeholder="Ninguna imagen subida">
-                        <el-upload
-                            slot="append"
-                            :on-success="successUploadDefaultImage"
-                            :on-error="errorUpload"
-                            :show-file-list="false"
-                            :action="`/api/configurations/default-image`"
-                            :with-credentials="true"
-                            name="image"
-                        >
-                            <el-button class="p-2" icon="el-icon-upload" type="primary"></el-button>
-                        </el-upload>
-                    </el-input>
+                    </h5>
+                    <el-switch
+                        v-model="outdoorMode"
+                        @change="onToggleOutdoorMode"
+                    >
+                    </el-switch>
                 </div>
-                <div class="pt-3 form-modern">
-                    <label class="control-label">Cambiar tema</label>
-                    <div :class="{ 'has-danger': errors.compact_sidebar }">
-                        <el-select
-                            v-model="form.skin_id"
-                            placeholder="Tema"
-                            @change="submitForm"
-                            class="pb-3"
-                        >
-                            <el-option
-                                v-for="item in skins"
-                                :key="item.id"
-                                :label="item.name"
-                                :value="item.id"
-                            >
-                            </el-option>
-                        </el-select>
-                        <small
-                            class="form-control-feedback"
-                            v-if="errors.compact_sidebar"
-                            v-text="errors.compact_sidebar[0]"
-                        ></small>
-                        <el-button
-                            class="second-buton"
+                <div v-if="outdoorMode" class="outdoor-levels">
+                    <button
+                        v-for="level in outdoorLevels"
+                        :key="level.key"
+                        type="button"
+                        class="outdoor-level"
+                        :class="{ 'is-active': outdoorLevel === level.key }"
+                        @click="setOutdoorLevel(level.key)"
+                    >
+                        {{ level.label }}
+                    </button>
+                </div>
+            </div>
+            <!-- <div class="pt-3">
+                <h5>Color de fondo del sidebar</h5>
+                <div class="form-group el-custom-control">
+                    <button :class="{ 'active': visuals.sidebar_theme === 'white' }" type="button" @click="onChangeBgSidebar('white')" class="btn flex-fill" style="background-color: #ffffff;"></button>
+                    <button :class="{ 'active': visuals.sidebar_theme === 'blue' }" type="button" @click="onChangeBgSidebar('blue')" class="btn flex-fill" style="background-color: #7367f0;"></button>
+                    <button :class="{ 'active': visuals.sidebar_theme === 'gray' }" type="button" @click="onChangeBgSidebar('gray')" class="btn" style="background-color: #82868b;"></button>
+                    <button :class="{ 'active': visuals.sidebar_theme === 'green' }" type="button" @click="onChangeBgSidebar('green')" class="btn flex-fill" style="background-color: #28c76f;"></button>
+                    <button :class="{ 'active': visuals.sidebar_theme === 'red' }" type="button" @click="onChangeBgSidebar('red')" class="btn flex-fill" style="background-color: #ea5455;"></button>
+                    <button :class="{ 'active': visuals.sidebar_theme === 'warning' }" type="button" @click="onChangeBgSidebar('warning')" class="btn" style="background-color: #ff9f43;"></button>
+                    <button :class="{ 'active': visuals.sidebar_theme === 'ligth-blue' }" type="button" @click="onChangeBgSidebar('ligth-blue')" class="btn" style="background-color: #00cfe8;"></button>
+                    <button :class="{ 'active': visuals.sidebar_theme === 'dark' }" type="button" @click="onChangeBgSidebar('dark')" class="btn flex-fill" style="background-color: #283046;"></button>
+                </div>
+            </div> -->
+
+            <div v-if="!isBlackSkinSelected" class="mt-3 theme-color-selector">
+                <h5>Selecciona un color de tema:</h5>
+                <div class="theme-select" :class="{ open: themeMenuOpen }">
+                    <button type="button" class="theme-select-trigger" @click="themeMenuOpen = !themeMenuOpen">
+                        <span class="theme-swatch" :style="{ background: activeTheme.bg }">
+                            <i v-for="(c, i) in activeTheme.dots" :key="i" :style="{ background: c }"></i>
+                        </span>
+                        <span class="theme-row-info">
+                            <span class="theme-row-name">{{ activeTheme.label }}</span>
+                            <span class="theme-row-color">{{ activeTheme.color }}</span>
+                        </span>
+                        <i class="fas fa-chevron-down theme-select-caret"></i>
+                    </button>
+                    <div class="theme-select-menu">
+                        <button
+                            v-for="t in themeList"
+                            :key="t.key"
                             type="button"
-                            @click="dialogSkins()"
-                            color="primary"
-                            >Subir tema</el-button
+                            class="btn-theme-row"
+                            :class="{ 'theme-selected': visuals.sidebar_theme === t.key }"
+                            @click="selectTheme(t.key)"
+                            :title="t.label"
                         >
+                            <span class="theme-swatch" :style="{ background: t.bg }">
+                                <i v-for="(c, i) in t.dots" :key="i" :style="{ background: c }"></i>
+                            </span>
+                            <span class="theme-row-info">
+                                <span class="theme-row-name">{{ t.label }}</span>
+                                <span class="theme-row-color">{{ t.color }}</span>
+                            </span>
+                            <i class="fas fa-check theme-row-check"></i>
+                        </button>
+                    </div>
+                    <div v-if="themeMenuOpen" class="theme-select-backdrop" @click="themeMenuOpen = false"></div>
+                </div>
+            </div>
+
+            <div
+                v-if="isBlackSkinSelected"
+                class="mt-3 theme-color-selector-black"
+            >
+                <h5>Selecciona un color de tema:</h5>
+                <div class="theme-select" :class="{ open: blackMenuOpen }">
+                    <button type="button" class="theme-select-trigger" @click="blackMenuOpen = !blackMenuOpen">
+                        <span class="theme-swatch theme-swatch-dark" :style="{ background: 'oklch(0.2 0.0417 ' + activeBlackTheme.h + ')' }">
+                            <i v-for="(c, i) in blackDots(activeBlackTheme)" :key="i" :style="{ background: c }"></i>
+                        </span>
+                        <span class="theme-row-info">
+                            <span class="theme-row-name">{{ activeBlackTheme.label }}</span>
+                            <span class="theme-row-color">{{ activeBlackTheme.color }}</span>
+                        </span>
+                        <i class="fas fa-chevron-down theme-select-caret"></i>
+                    </button>
+                    <div class="theme-select-menu">
+                        <button
+                            v-for="t in blackThemeList"
+                            :key="t.key"
+                            type="button"
+                            class="btn-theme-row"
+                            :class="{ 'theme-selected': visuals.black_theme === t.key }"
+                            @click="selectBlackTheme(t.key)"
+                            :title="t.label"
+                        >
+                            <span class="theme-swatch theme-swatch-dark" :style="{ background: 'oklch(0.2 0.0417 ' + t.h + ')' }">
+                                <i v-for="(c, i) in blackDots(t)" :key="i" :style="{ background: c }"></i>
+                            </span>
+                            <span class="theme-row-info">
+                                <span class="theme-row-name">{{ t.label }}</span>
+                                <span class="theme-row-color">{{ t.color }}</span>
+                            </span>
+                            <i class="fas fa-check theme-row-check"></i>
+                        </button>
+                    </div>
+                    <div v-if="blackMenuOpen" class="theme-select-backdrop" @click="blackMenuOpen = false"></div>
+                </div>
+            </div>
+
+            <div v-if="!isBlackSkinSelected" class="pt-3 sidebar-compact-selector-container d-none d-md-block">
+                <label class="control-label">Menú lateral contraído</label>
+                <div :class="{ 'has-danger': errors.compact_sidebar }">
+                    <el-switch
+                        v-model="form.compact_sidebar"
+                        active-text="Si"
+                        inactive-text="No"
+                        @change="submitForm"
+                    >
+                    </el-switch>
+                    <br />
+                    <small
+                        class="form-control-feedback"
+                        v-if="errors.compact_sidebar"
+                        v-text="errors.compact_sidebar[0]"
+                    ></small>
+                </div>
+            </div>
+
+            <div v-if="isBlackSkinSelected" class="pt-3 sidebar-margin-selector-container d-none d-md-block">
+                <h5>Estilo de Sidebar</h5>
+                <div class="d-flex justify-content-between gap-3 sidebar-margin-selector">
+                    <div
+                        class="sidebar-example"
+                        :class="{ 'sidebar-example-selected': form.compact_sidebar === false }"
+                        role="button"
+                        tabindex="0"
+                        @click="form.compact_sidebar = false; submitForm()"
+                    >
+                        <div>
+                            <svg data-name="con-layout-default" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 79.86 51.14" class="fill-primary stroke-primary group-data-[state=unchecked]:fill-muted-foreground group-data-[state=unchecked]:stroke-muted-foreground w-100" aria-hidden="true"><path d="M39.22 15.99h-8.16c-.79 0-1.43-.67-1.43-1.5s.64-1.5 1.43-1.5h8.16c.79 0 1.43.67 1.43 1.5s-.64 1.5-1.43 1.5z" opacity="0.75"></path><rect x="29.63" y="18.39" width="16.72" height="2.73" rx="1.36" ry="1.36" opacity="0.5"></rect><path d="M75.1 6.68v1.45c0 .63-.49 1.14-1.09 1.14H30.72c-.6 0-1.09-.51-1.09-1.14V6.68c0-.62.49-1.14 1.09-1.14h43.29c.6 0 1.09.52 1.09 1.14z" opacity="0.9"></path><rect x="29.63" y="24.22" width="21.8" height="19.95" rx="2.11" ry="2.11" opacity="0.4"></rect><g stroke-linecap="round" stroke-miterlimit="10"><rect x="61.06" y="38.15" width="2.01" height="3.42" rx="0.33" ry="0.33" opacity="0.32"></rect><rect x="56.78" y="34.99" width="2.01" height="6.58" rx="0.33" ry="0.33" opacity="0.44"></rect><rect x="65.17" y="32.86" width="2.01" height="8.7" rx="0.33" ry="0.33" opacity="0.53"></rect><rect x="69.55" y="29.17" width="2.01" height="12.4" rx="0.33" ry="0.33" opacity="0.66"></rect></g><g opacity="0.5"><circle cx="63.17" cy="18.63" r="7.5"></circle><path d="M63.17 11.63c3.86 0 7 3.14 7 7s-3.14 7-7 7-7-3.14-7-7 3.14-7 7-7m0-1c-4.42 0-8 3.58-8 8s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8z"></path></g><g opacity="0.74"><path d="M64.05 18.13l3.38-5.67c.93.64 1.7 1.48 2.26 2.47.56.98.89 2.08.96 3.21h-6.6z"></path><path d="M67.57 13.19a6.977 6.977 0 012.52 4.44h-5.17l2.65-4.44m-.31-1.43l-4.1 6.87h8c0-1.39-.36-2.75-1.04-3.95a8.007 8.007 0 00-2.86-2.92z"></path></g><g stroke-linecap="round" stroke-miterlimit="10"><rect x="5.84" y="5.02" width="19.14" height="40" rx="2" ry="2" opacity="0.8"></rect><g stroke="#fff"><path fill="none" opacity="0.72" stroke-width="2px" d="M9.02 17.39L21.25 17.39"></path><path fill="none" opacity="0.48" stroke-width="2px" d="M9.02 24.6L19.54 24.6"></path><path fill="none" opacity="0.55" stroke-width="2px" d="M9.02 20.88L18.4 20.88"></path><circle cx="10.98" cy="9.91" r="2.54" fill="#fff" opacity="0.8"></circle><path fill="none" opacity="0.8" stroke-width="2px" d="M15.53 8.65L21.25 8.65"></path><path fill="none" opacity="0.6" d="M15.32 11.3L20.38 11.3"></path></g></g></svg>
+                        </div>
+                        <span class="text-center">Defecto</span>
+                    </div>
+                    <div
+                        class="sidebar-example"
+                        :class="{ 'sidebar-example-selected': form.compact_sidebar === true }"
+                        role="button"
+                        tabindex="0"
+                        @click="form.compact_sidebar = true; submitForm()"
+                    >
+                        <div>
+                            <svg data-name="icon-layout-compact" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 79.86 51.14" class="fill-primary stroke-primary group-data-[state=unchecked]:fill-muted-foreground group-data-[state=unchecked]:stroke-muted-foreground w-100" aria-hidden="true"><rect x="5.84" y="5.2" width="4" height="40" rx="2" ry="2" stroke-linecap="round" stroke-miterlimit="10"></rect><g stroke="#fff" stroke-linecap="round" stroke-miterlimit="10"><path fill="none" opacity="0.66" stroke-width="2px" d="M7.26 11.56L8.37 11.56"></path><path fill="none" opacity="0.51" stroke-width="2px" d="M7.26 14.49L8.37 14.49"></path><path fill="none" opacity="0.52" stroke-width="2px" d="M7.26 17.39L8.37 17.39"></path><circle cx="7.81" cy="7.25" r="1.16" fill="#fff" opacity="0.8"></circle></g><path fill="none" opacity="0.75" stroke-linecap="round" stroke-miterlimit="10" stroke-width="3px" d="M15.81 14.49L22.89 14.49"></path><rect x="14.93" y="18.39" width="22.19" height="2.73" rx="0.64" ry="0.64" opacity="0.5" stroke-linecap="round" stroke-miterlimit="10"></rect><rect x="14.93" y="5.89" width="59.16" height="2.73" rx="0.64" ry="0.64" opacity="0.9" stroke-linecap="round" stroke-miterlimit="10"></rect><rect x="14.93" y="24.22" width="32.68" height="19.95" rx="2.11" ry="2.11" opacity="0.4" stroke-linecap="round" stroke-miterlimit="10"></rect><g stroke-linecap="round" stroke-miterlimit="10"><rect x="59.05" y="38.15" width="2.01" height="3.42" rx="0.33" ry="0.33" opacity="0.32"></rect><rect x="54.78" y="34.99" width="2.01" height="6.58" rx="0.33" ry="0.33" opacity="0.44"></rect><rect x="63.17" y="32.86" width="2.01" height="8.7" rx="0.33" ry="0.33" opacity="0.53"></rect><rect x="67.54" y="29.17" width="2.01" height="12.4" rx="0.33" ry="0.33" opacity="0.66"></rect></g><g opacity="0.5"><circle cx="62.16" cy="18.63" r="7.5"></circle><path d="M62.16 11.63c3.86 0 7 3.14 7 7s-3.14 7-7 7-7-3.14-7-7 3.14-7 7-7m0-1c-4.42 0-8 3.58-8 8s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8z"></path></g><g opacity="0.74"><path d="M63.04 18.13l3.38-5.67c.93.64 1.7 1.48 2.26 2.47.56.98.89 2.08.96 3.21h-6.6z"></path><path d="M66.57 13.19a6.977 6.977 0 012.52 4.44h-5.17l2.65-4.44m-.31-1.43l-4.1 6.87h8c0-1.39-.36-2.75-1.04-3.95a8.007 8.007 0 00-2.86-2.92z"></path></g></svg>
+                        </div>
+                        <span class="text-center">Contraido</span>
                     </div>
                 </div>
             </div>
-        </form>
-            <dialog-skins
-                :showDialog.sync="dialogSkinsVisible"
-                :skins.sync="skins"
-            />
+
+            <div v-if="isBlackSkinSelected" class="pt-3 sidebar-margin-selector-container sidebar-theme-selector-container d-none d-md-block">
+                <h5>Tema del Sidebar</h5>
+                <div class="d-flex justify-content-between gap-3 sidebar-margin-selector">
+                    <div
+                        class="sidebar-example"
+                        :class="{ 'sidebar-example-selected': form.sidebar_mode === 'light' }"
+                        role="button"
+                        tabindex="0"
+                        @click="submitSidebarMode('light')"
+                    >
+                        <div>
+                            <svg data-name="icon-sidebar-sidebar" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 79.86 51.14" class="fill-primary stroke-primary group-data-[state=unchecked]:fill-muted-foreground group-data-[state=unchecked]:stroke-muted-foreground w-100" aria-hidden="true"><path d="M23.42.51h51.99c2.21 0 4 1.79 4 4v42.18c0 2.21-1.79 4-4 4H23.42s-.04-.02-.04-.04V.55s.02-.04.04-.04z" opacity="0.2" stroke-linecap="round" stroke-miterlimit="10"></path><path fill="none" opacity="0.72" stroke-linecap="round" stroke-miterlimit="10" stroke-width="2px" d="M5.56 14.88L17.78 14.88"></path><path fill="none" opacity="0.48" stroke-linecap="round" stroke-miterlimit="10" stroke-width="2px" d="M5.56 22.09L16.08 22.09"></path><path fill="none" opacity="0.55" stroke-linecap="round" stroke-miterlimit="10" stroke-width="2px" d="M5.56 18.38L14.93 18.38"></path><g stroke-linecap="round" stroke-miterlimit="10"><circle cx="7.51" cy="7.4" r="2.54" opacity="0.8"></circle><path fill="none" opacity="0.8" stroke-width="2px" d="M12.06 6.14L17.78 6.14"></path><path fill="none" opacity="0.6" d="M11.85 8.79L16.91 8.79"></path></g></svg>
+                        </div>
+                        <span class="text-center">Claro</span>
+                    </div>
+                    <div
+                        class="sidebar-example"
+                        :class="{ 'sidebar-example-selected': form.sidebar_mode === 'dark' }"
+                        role="button"
+                        tabindex="0"
+                        @click="submitSidebarMode('dark')"
+                    >
+                        <div class="svg-dark">
+                            <svg data-name="icon-sidebar-sidebar" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 79.86 51.14" class="fill-primary stroke-primary group-data-[state=unchecked]:fill-muted-foreground group-data-[state=unchecked]:stroke-muted-foreground w-100" aria-hidden="true"><path d="M23.42.51h51.99c2.21 0 4 1.79 4 4v42.18c0 2.21-1.79 4-4 4H23.42s-.04-.02-.04-.04V.55s.02-.04.04-.04z" opacity="0.2" stroke-linecap="round" stroke-miterlimit="10"></path><path fill="none" opacity="0.72" stroke-linecap="round" stroke-miterlimit="10" stroke-width="2px" d="M5.56 14.88L17.78 14.88"></path><path fill="none" opacity="0.48" stroke-linecap="round" stroke-miterlimit="10" stroke-width="2px" d="M5.56 22.09L16.08 22.09"></path><path fill="none" opacity="0.55" stroke-linecap="round" stroke-miterlimit="10" stroke-width="2px" d="M5.56 18.38L14.93 18.38"></path><g stroke-linecap="round" stroke-miterlimit="10"><circle cx="7.51" cy="7.4" r="2.54" opacity="0.8"></circle><path fill="none" opacity="0.8" stroke-width="2px" d="M12.06 6.14L17.78 6.14"></path><path fill="none" opacity="0.6" d="M11.85 8.79L16.91 8.79"></path></g></svg>
+                        </div>
+                        <span class="text-center">Oscuro</span>
+                    </div>
+                </div>
+            </div>
+
+            <div v-if="isBlackSkinSelected" class="pt-3 sidebar-margin-selector-container d-none d-md-block">
+                <h5>Sidebar</h5>
+                <div class="d-flex justify-content-between gap-3 sidebar-margin-selector">
+                    <div
+                        class="sidebar-example"
+                        :class="{ 'sidebar-example-selected': visuals.sidebar_margin === true }"
+                        role="button"
+                        tabindex="0"
+                        @click="onChangeSidebarMargin(true)"
+                    >
+                        <div>
+                            <svg data-name="icon-sidebar-floating" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 79.86 51.14" class="fill-primary stroke-primary group-data-[state=unchecked]:fill-muted-foreground group-data-[state=unchecked]:stroke-muted-foreground w-100" aria-hidden="true"><rect x="5.89" y="5.15" width="19.74" height="40" rx="2" ry="2" opacity="0.8" stroke-linecap="round" stroke-miterlimit="10"></rect><g stroke="#fff" stroke-linecap="round" stroke-miterlimit="10"><path fill="none" opacity="0.72" stroke-width="2px" d="M9.81 18.36L22.04 18.36"></path><path fill="none" opacity="0.48" stroke-width="2px" d="M9.81 25.57L20.33 25.57"></path><path fill="none" opacity="0.55" stroke-width="2px" d="M9.81 21.85L19.18 21.85"></path><circle cx="11.76" cy="10.88" r="2.54" fill="#fff" opacity="0.8"></circle><path fill="none" opacity="0.8" stroke-width="2px" d="M16.31 9.62L22.04 9.62"></path><path fill="none" opacity="0.6" d="M16.1 12.27L21.16 12.27"></path></g><path fill="none" opacity="0.62" stroke-linecap="round" stroke-miterlimit="10" stroke-width="3px" d="M30.59 9.62L35.85 9.62"></path><rect x="29.94" y="13.42" width="26.03" height="2.73" rx="0.64" ry="0.64" opacity="0.44" stroke-linecap="round" stroke-miterlimit="10"></rect><rect x="29.94" y="19.28" width="43.11" height="25.87" rx="2" ry="2" opacity="0.3" stroke-linecap="round" stroke-miterlimit="10"></rect></svg>
+                        </div>
+                        <span class="text-center">Flotando</span>
+                    </div>
+                    <div
+                        class="sidebar-example"
+                        :class="{ 'sidebar-example-selected': visuals.sidebar_margin === false }"
+                        role="button"
+                        tabindex="0"
+                        @click="onChangeSidebarMargin(false)"
+                    >
+                        <div>
+                            <svg data-name="icon-sidebar-sidebar" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 79.86 51.14" class="fill-primary stroke-primary group-data-[state=unchecked]:fill-muted-foreground group-data-[state=unchecked]:stroke-muted-foreground w-100" aria-hidden="true"><path d="M23.42.51h51.99c2.21 0 4 1.79 4 4v42.18c0 2.21-1.79 4-4 4H23.42s-.04-.02-.04-.04V.55s.02-.04.04-.04z" opacity="0.2" stroke-linecap="round" stroke-miterlimit="10"></path><path fill="none" opacity="0.72" stroke-linecap="round" stroke-miterlimit="10" stroke-width="2px" d="M5.56 14.88L17.78 14.88"></path><path fill="none" opacity="0.48" stroke-linecap="round" stroke-miterlimit="10" stroke-width="2px" d="M5.56 22.09L16.08 22.09"></path><path fill="none" opacity="0.55" stroke-linecap="round" stroke-miterlimit="10" stroke-width="2px" d="M5.56 18.38L14.93 18.38"></path><g stroke-linecap="round" stroke-miterlimit="10"><circle cx="7.51" cy="7.4" r="2.54" opacity="0.8"></circle><path fill="none" opacity="0.8" stroke-width="2px" d="M12.06 6.14L17.78 6.14"></path><path fill="none" opacity="0.6" d="M11.85 8.79L16.91 8.79"></path></g></svg>
+                        </div>
+                        <span class="text-center">Fijo</span>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="mt-3">
+                <label class="control-label">Mostrar panel de bienvenida en el dashboard</label>
+                <div>
+                    <el-switch
+                        v-model="showWelcome"
+                        active-text="Si"
+                        inactive-text="No"
+                        @change="updateConfig"
+                    >
+                    </el-switch>
+                </div>
+            </div>
+
+            <div class="mt-3">
+                <label class="control-label">Permitir cambiar de empresa y sucursal desde el sidebar</label>
+                <div>
+                    <el-switch
+                        v-model="branchSelectorInSidebar"
+                        active-text="Si"
+                        inactive-text="No"
+                        @change="updateBranchSelectorConfig"
+                    >
+                    </el-switch>
+                </div>
+            </div>
+
+            <div class="pt-3 form-modern">
+                <label class="control-label"
+                    >Visualización de productos en POS</label
+                >
+                <div
+                    :class="{
+                        'has-danger': errors.colums_grid_item
+                    }"
+                >
+                    <el-select
+                        v-model="form.colums_grid_item"
+                        @change="submitViewPos"
+                    >
+                        <el-option
+                            label="Predeterminado"
+                            :value="2"
+                        ></el-option>
+                        <el-option
+                            label="Cómodo"
+                            :value="3"
+                        ></el-option>
+                        <el-option
+                            label="Compacto"
+                            :value="4"
+                        ></el-option>
+                        <el-option
+                            label="Apilado"
+                            :value="5"
+                        ></el-option>
+                    </el-select>
+
+                </div>
+            </div>
+            <div class="pt-3 form-modern">
+                <label class="control-label">Imagen predeterminada de productos
+                    <el-tooltip class="item" content="Para un mejor resultado visual, sube una imagen cuadrada (ej. 215x215 px). Formatos permitidos: PNG o JPG."
+                        effect="dark" placement="top-start">
+                        <i class="fas fa-info-circle"></i>
+                    </el-tooltip>
+                </label>
+                <el-input v-model="fileName" :readonly="true" placeholder="Ninguna imagen subida">
+                    <el-upload
+                        slot="append"
+                        :on-success="successUploadDefaultImage"
+                        :on-error="errorUpload"
+                        :show-file-list="false"
+                        :action="`/api/configurations/default-image`"
+                        :with-credentials="true"
+                        name="image"
+                    >
+                        <el-button class="p-2" icon="el-icon-upload" type="primary"></el-button>
+                    </el-upload>
+                </el-input>
+            </div>
+            <div class="pt-3 form-modern">
+                <label class="control-label">Cambiar tema</label>
+                <div :class="{ 'has-danger': errors.compact_sidebar }">
+                    <el-select
+                        v-model="form.skin_id"
+                        placeholder="Tema"
+                        @change="submitForm"
+                        class="pb-3"
+                    >
+                        <el-option
+                            v-for="item in skins"
+                            :key="item.id"
+                            :label="item.name"
+                            :value="item.id"
+                        >
+                        </el-option>
+                    </el-select>
+                    <small
+                        class="form-control-feedback"
+                        v-if="errors.compact_sidebar"
+                        v-text="errors.compact_sidebar[0]"
+                    ></small>
+                    <el-button
+                        class="second-buton"
+                        type="button"
+                        @click="dialogSkins()"
+                        color="primary"
+                        >Subir tema</el-button
+                    >
+                </div>
+            </div>
         </div>
-        <div class="style-switcher-backdrop" @click="closeStyleSwitcher"></div>
+    </form>
+        <dialog-skins
+            :showDialog.sync="dialogSkinsVisible"
+            :skins.sync="skins"
+        />
     </div>
+    <div class="style-switcher-backdrop" @click="closeStyleSwitcher"></div>
+</div>
 </template>
 
 <script>
@@ -729,7 +725,7 @@ export default {
                     level = storedLevel;
                 }
             } catch (e) {
-                
+
             }
 
             const htmlElement = document.documentElement;

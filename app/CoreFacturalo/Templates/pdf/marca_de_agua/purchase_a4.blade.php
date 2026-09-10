@@ -110,7 +110,7 @@
                 <h5 class="text-center">{{ $document->document_type->description}}</h5>
                 <h3 class="text-center">{{ $tittle }}</h3>
             </td>
-        @endif        
+        @endif
     </tr>
 </table>
 <table class="full-width mt-5">
@@ -124,7 +124,7 @@
                     <td class="font-sm" width="8px">:</td>
                     <td class="font-sm">
                         {{ $supplier->name }}
-                    </td> 
+                    </td>
                 </tr>
                 <tr>
                     <td class="font-sm" width="80px">
@@ -141,19 +141,19 @@
                     if (!empty($customer->address)) {
                         $addressParts[] = $customer->address;
                     }
-                
+
                     if (!empty($customer->district_id) && $customer->district_id !== '-' && isset($customer->district) && !empty($customer->district->description)) {
                         $addressParts[] = $customer->district->description;
                     }
-                
+
                     if (!empty($customer->province_id) && $customer->province_id !== '-' && isset($customer->province) && !empty($customer->province->description)) {
                         $addressParts[] = $customer->province->description;
                     }
-                
+
                     if (!empty($customer->department_id) && $customer->department_id !== '-' && isset($customer->department) && !empty($customer->department->description)) {
                         $addressParts[] = $customer->department->description;
                     }
-                
+
                     $fullAddress = implode(', ', $addressParts);
                 @endphp
 
@@ -219,7 +219,7 @@
                     <td class="font-sm" width="8px">:</td>
                     <td class="font-sm">
                         {{ $document->date_of_issue->format('Y-m-d') }}
-                    </td> 
+                    </td>
                 </tr>
                  @if($document->date_of_due)
                  <tr>
@@ -229,7 +229,7 @@
                     <td class="font-sm" width="8px">:</td>
                     <td class="font-sm">
                         {{ $document->date_of_due->format('Y-m-d') }}
-                    </td> 
+                    </td>
                  </tr>
                 @endif
                 @if ($document->observation)
@@ -243,7 +243,7 @@
                 @endif
             </table>
         </td>
-    </tr>                    
+    </tr>
 </table>
 
 @php
@@ -277,20 +277,17 @@
             </td>
             <td class="text-center align-top desc cell-solid-rl p-1">{{ $row->item->unit_type_id }}</td>
             <td class="text-left align-top desc cell-solid-rl p-1">
-                
+
                 @if($row->name_product_pdf)
                     {!! $row->name_product_pdf !!}
                 @else
                     {!! $row->item->description !!}
                 @endif
-                
+
                 @if (!empty($row->item->presentation)) {!!$row->item->presentation->description!!} @endif
 
                 {{-- ########## INICIO SIN DETRACCIONES E ISC --}}
-                @if(\App\Services\LocalFiscalDocumentPolicy::showIsc() && ($row->total_isc > 0))
-                {{-- ######### FIN SIN DETRACCIONES E ISC --}}
-                    <br/><span style="font-size: 9px">ISC : {{ $row->total_isc }} ({{ $row->percentage_isc }}%)</span>
-                @endif
+
 
                 @if($row->attributes)
                     @foreach($row->attributes as $attr)
@@ -377,13 +374,7 @@
         </tr>
 
         {{-- ########## INICIO SIN DETRACCIONES E ISC --}}
-        @if(\App\Services\LocalFiscalDocumentPolicy::showIsc() && ($document->total_isc > 0))
-        {{-- ######### FIN SIN DETRACCIONES E ISC --}}
-        <tr>
-            <td colspan="6" class="p-1 text-right align-top desc cell-solid font-bold">ISC: {{ $document->currency_type->symbol }}</td>
-            <td class="p-1 text-right align-top desc cell-solid font-bold">{{ number_format($document->total_isc, 2) }}</td>
-        </tr>
-        @endif
+
 
         <tr>
             <td colspan="6" class="p-1 text-right align-top desc cell-solid font-bold">TOTAL A PAGAR: {{ $document->currency_type->symbol }}</td>

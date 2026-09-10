@@ -109,7 +109,6 @@
                 ($firstLevel == "reports" && $secondLevel == "sales") ||
                 ($firstLevel == "reports" && in_array($secondLevel, [
                     "items",
-                    "validate-documents",
                     "extra-general-items",
                     "general-items",
                     "quotations",

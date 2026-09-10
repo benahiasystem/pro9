@@ -27,7 +27,7 @@ class SystemActivityLogTransactionController extends Controller
 {
 
     use ElectronicDocumentTrait;
-    
+
 
     public function index()
     {
@@ -43,11 +43,11 @@ class SystemActivityLogTransactionController extends Controller
         ];
     }
 
-    
+
     /**
-     * 
+     *
      * Actividades del sistema - transacciones
-     * 
+     *
      *
      * @param  Request $request
      * @return SystemActivityTransactionCollection
@@ -55,13 +55,13 @@ class SystemActivityLogTransactionController extends Controller
     public function records(Request $request)
     {
         $records = $this->getRecords($request);
-        
+
         return new SystemActivityTransactionCollection($records->paginate(config('tenant.items_per_page')));
     }
 
-    
+
     /**
-     * 
+     *
      * @param  Request $request
      * @return Builder
      */
@@ -73,21 +73,18 @@ class SystemActivityLogTransactionController extends Controller
         $purchase_settlements = $this->getQuerySystemActivityLogTransaction('purchase_settlements', $request);
         $retentions = $this->getQuerySystemActivityLogTransaction('retentions', $request);
 
-        $summaries = $this->getQuerySystemActivityLogTransactionGroup('summaries', 'RC', $request);
-        $summary_voided = $this->getQuerySystemActivityLogTransactionGroup('summaries', 'RC', $request, true);
         $voided = $this->getQuerySystemActivityLogTransactionGroup('voided', 'RA', $request);
 
 
         $records = $documents->union($dispatches)
                             ->union($perceptions)->union($purchase_settlements)
-                            ->union($retentions)->union($summaries)
-                            ->union($summary_voided)->union($voided);
+                            ->union($retentions)->union($voided);
 
         // Orden por registro real (created_at), no por date_of_issue + time nulo de RA/RC
         return $records->orderBy('created_at', 'desc');
     }
 
-    
+
     /**
      *
      * @param  string $type
@@ -106,7 +103,7 @@ class SystemActivityLogTransactionController extends Controller
                 'company' => $header_data['company'],
                 'records' => $records,
             ];
-            
+
             $general_format_export = new GeneralFormatExport();
             $general_format_export->view_name("levelaccess::system_activity_logs.reports.transactions_{$type}")->data($data);
 

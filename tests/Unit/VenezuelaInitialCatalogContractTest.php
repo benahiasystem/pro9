@@ -185,7 +185,6 @@ class VenezuelaInitialCatalogContractTest extends TestCase
             'routes/web.php',
             'modules/Document/Routes/web.php',
             'modules/MobileApp/Routes/api-v2.php',
-            'modules/PseService/Routes/tenant.php',
         ]));
         $activeRoutes = preg_replace('/^\s*\/\/.*$/m', '', $routeSources) ?? $routeSources;
 

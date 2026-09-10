@@ -12,7 +12,7 @@ use App\Http\Controllers\SearchItemController;
 
 class SaleNoteHelper
 {
- 
+
     public static function transformForOrder($inputs)
     {
 
@@ -21,7 +21,7 @@ class SaleNoteHelper
         $customer = PersonTransform::transform($inputs['datos_del_cliente_o_receptor']);
 
         $inputs_transform = [
-            
+
             'establishment_id' => optional(auth()->user())->establishment_id
                 ?? Functions::valueKeyInArray($inputs, 'establishment_id')
                 ?? optional(\App\Models\Tenant\User::query()->whereNotNull('establishment_id')->orderBy('id')->first())->establishment_id
@@ -44,11 +44,8 @@ class SaleNoteHelper
             'total_exonerated' => Functions::valueKeyInArray($totals, 'total_operaciones_exoneradas', 0),
             'total_igv' => Functions::valueKeyInArray($totals, 'total_igv', 0),
             'total_igv_free' => Functions::valueKeyInArray($totals, 'total_igv_operaciones_gratuitas', 0),
-            'total_base_isc' => Functions::valueKeyInArray($totals, 'total_base_isc', 0),
-            'total_isc' => Functions::valueKeyInArray($totals, 'total_isc', 0),
             'total_base_other_taxes' => Functions::valueKeyInArray($totals, 'total_base_otros_impuestos', 0),
             'total_other_taxes' => Functions::valueKeyInArray($totals, 'total_otros_impuestos', 0),
-            'total_plastic_bag_taxes' => Functions::valueKeyInArray($totals, 'total_impuestos_bolsa_plastica', 0),
             'total_taxes' => Functions::valueKeyInArray($totals, 'total_impuestos', 0),
             'total_value' => Functions::valueKeyInArray($totals, 'total_valor', 0),
             'total' => Functions::valueKeyInArray($totals, 'total_venta', 0),
@@ -75,13 +72,13 @@ class SaleNoteHelper
             $items = [];
 
             foreach ($inputs['items'] as $row) {
-                
+
                 $record_items = Item::where('internal_id', $row['codigo_interno'])->take(1)->get(); //necesario para transformar la coleccion y preparar el item
                 $data_item = (SearchItemController::TransformToModalSaleNote($record_items))->first();
 
                 //Se usa cuando se genera nv desde ecommerce - producto promoción
                 $name_product_pdf = isset($row['nombre_producto_pdf']) ? ($row['nombre_producto_pdf'] ?? null) : null;
-                
+
                 $items[] = [
                     'item_id' => $data_item['id'],
                     'item' => $data_item,
@@ -91,7 +88,7 @@ class SaleNoteHelper
                     'affectation_igv_type_id' => Functions::valueKeyInArray($row, 'codigo_tipo_afectacion_igv'),
                     'total_base_igv' => Functions::valueKeyInArray($row, 'total_base_igv'),
                     'percentage_igv' => Functions::valueKeyInArray($row, 'porcentaje_igv'),
-                    'total_igv' => Functions::valueKeyInArray($row, 'total_igv'), 
+                    'total_igv' => Functions::valueKeyInArray($row, 'total_igv'),
                     'price_type_id' => Functions::valueKeyInArray($row, 'codigo_tipo_precio'),
                     'internal_id' => $row['codigo_interno'],
                     'description' => trim($row['descripcion']),
@@ -103,17 +100,11 @@ class SaleNoteHelper
                     'unit_price' => Functions::valueKeyInArray($row, 'precio_unitario'),
                     'input_unit_price_value' => Functions::valueKeyInArray($row, 'precio_unitario'),
                     'total_taxes' => Functions::valueKeyInArray($row, 'total_impuestos'),
-                    'total_value' => Functions::valueKeyInArray($row, 'total_valor_item'), 
+                    'total_value' => Functions::valueKeyInArray($row, 'total_valor_item'),
                     'total' => Functions::valueKeyInArray($row, 'total_item'),
-                    //data adicional para compatibilidad al registrar nv
-                    'system_isc_type_id' => null,
-                    'total_base_isc' => 0,
-                    'percentage_isc' => 0,
-                    'total_isc' => 0,
                     'total_base_other_taxes' => 0,
                     'percentage_other_taxes' => 0,
                     'total_other_taxes' => 0,
-                    'total_plastic_bag_taxes' => 0,
                     'input_unit_price_value' => 0,
                     'total_discount' => 0,
                     'total_charge' => 0,

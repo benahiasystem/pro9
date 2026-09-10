@@ -470,16 +470,11 @@ foreach ($document->items as $row) {
                 @endif
 
                 {{-- ########## INICIO SIN DETRACCIONES E ISC --}}
-                @if(\App\Services\LocalFiscalDocumentPolicy::showIsc() && ($row->total_isc > 0))
-                {{-- ######### FIN SIN DETRACCIONES E ISC --}}
-                    <br/><span style="font-size: 9px">ISC : {{ $row->total_isc }} ({{ $row->percentage_isc }}%)</span>
-                @endif
+
 
                 @if (!empty($row->item->presentation)) {!!$row->item->presentation->description!!} @endif
 
-                @if($row->total_plastic_bag_taxes > 0)
-                    <br/><span style="font-size: 9px">ICBPER : {{ $row->total_plastic_bag_taxes }}</span>
-                @endif
+
 
                 @if($row->attributes)
                     @foreach($row->attributes as $attr)
@@ -672,8 +667,6 @@ foreach ($document->items as $row) {
                     <br>
                 @endif
             <td class="p-1 text-center align-top desc cell-solid " rowspan="6">
-                <img src="data:image/png;base64, {{ $document->qr }}" class="p-0 m-0" style="width: 120px;"/> <br>
-                Código Hash: {{ $document->hash }}
             </td>
             <td class="p-1 text-right align-top desc cell-solid font-bold" colspan="{{ $colspan_total }}">OP. INAFECTAS: {{ $document->currency_type->symbol }}</td>
             <td class="p-1 text-right align-top desc cell-solid font-bold">{{ number_format($document->total_unaffected, 2) }}</td>
@@ -703,21 +696,10 @@ foreach ($document->items as $row) {
         </tr>
     @endif
 
-    @if($document->total_plastic_bag_taxes > 0)
-        <tr>
-            <td class="p-1 text-right align-top desc cell-solid font-bold" colspan="{{ $colspan_total }}">ICBPER: {{ $document->currency_type->symbol }}</td>
-            <td class="p-1 text-right align-top desc cell-solid font-bold">{{ number_format($document->total_plastic_bag_taxes, 2) }}</td>
-        </tr>
-    @endif
+
 
     {{-- ########## INICIO SIN DETRACCIONES E ISC --}}
-    @if(\App\Services\LocalFiscalDocumentPolicy::showIsc() && ($document->total_isc > 0))
-    {{-- ######### FIN SIN DETRACCIONES E ISC --}}
-        <tr>
-            <td class="p-1 text-right align-top desc cell-solid font-bold" colspan="{{ $colspan_total }}">ISC: {{ $document->currency_type->symbol }}</td>
-            <td class="p-1 text-right align-top desc cell-solid font-bold">{{ number_format($document->total_isc, 2) }}</td>
-        </tr>
-    @endif
+
 
     @if($document->subtotal > 0)
         @php
@@ -781,7 +763,7 @@ foreach ($document->items as $row) {
                 <td class="text-center align-top">1</td>
                 <td class="text-center align-top">NIU</td>
                 <td class="text-left align-top">
-                    ANTICIPO: {{($p->document_type_id == '02')? 'FACTURA':'BOLETA'}} NRO. {{$p->number}}
+                    ANTICIPO: FACTURA NRO. {{$p->number}}
                 </td>
                 <td class="text-right align-top"></td>
                 <td class="text-right align-top">-{{ number_format($p->total, 2) }}</td>
@@ -792,21 +774,7 @@ foreach ($document->items as $row) {
     @endif
     <tr>
         <td width="65%" style="text-align: top; vertical-align: top;">
-
-            @if ($customer->department_id == 16)
-                <br/><br/><br/>
-                <div>
-                    <center>
-                        Representación impresa del Comprobante de Pago Electrónico.
-                        <br/>Esta puede ser consultada en:
-                        <br/><b>{!! url('/buscar') !!}</b>
-                        <br/> "Bienes transferidos en la Amazonía
-                        <br/>para ser consumidos en la misma".
-                    </center>
-                </div>
-                <br/>
-            @endif
-            @foreach($document->additional_information as $information)
+@foreach($document->additional_information as $information)
                 @if ($information)
                     @if ($loop->first)
                         <strong>Información adicional</strong>
@@ -820,7 +788,7 @@ foreach ($document->items as $row) {
             @endforeach
             <br>
             @if(isset($configurationInPdf) && $configurationInPdf->show_bank_accounts_in_pdf)
-                @if(in_array($document->document_type->id,['01','03']))
+                @if(((string) $document->document_type->id === '01'))
                     @foreach($accounts as $account)
                         <p>
                             <span

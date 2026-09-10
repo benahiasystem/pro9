@@ -43,6 +43,21 @@ class SalesWithoutReceiptSourceContractTest extends TestCase
     }
 
     /** @test */
+    public function current_configuration_and_fast_pos_do_not_keep_a_receipt_default(): void
+    {
+        $configuration = $this->source('resources/js/views/tenant/configurations/form.vue');
+        $fastPos = $this->source('resources/js/views/tenant/pos/fast_bk.vue');
+        $schema = $this->source('database/migrations/tenant/2026_08_17_000067_create_configurations_table.php');
+
+        self::assertStringNotContainsString('default_document_type_03', $configuration);
+        self::assertStringNotContainsString('value="03"', $configuration);
+        self::assertStringNotContainsString('default_document_type_03', $fastPos);
+        self::assertStringNotContainsString('"03"', $this->between($fastPos, 'changeCustomer()', 'getLocalStorageIndex', 'changeCustomer'));
+        self::assertStringNotContainsString('default_document_type_03', $schema);
+        self::assertStringContainsString('default_document_type_80', $configuration);
+    }
+
+    /** @test */
     public function the_maintenance_skill_documents_history_compatibility(): void
     {
         $skill = $this->source('.codex/skills/mantener-facturas-notas-venta-sin-boleta/SKILL.md');
@@ -74,4 +89,3 @@ class SalesWithoutReceiptSourceContractTest extends TestCase
     }
 }
 // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
-

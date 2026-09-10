@@ -10,16 +10,17 @@ final class VendeyaDocumentPayloadNormalizer
             return $payload;
         }
 
-        // ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
-        if (in_array($payload['codigo_tipo_moneda'] ?? null, ['PEN', 'VED'], true)) {
-            $payload['codigo_tipo_moneda'] = Localization::nationalCurrencyId();
+        // ######## INICIO CONTRATO INSTALACIÓN NUEVA ########
+        if (!in_array($payload['codigo_tipo_moneda'] ?? null, [Localization::nationalCurrencyId(), Localization::secondaryCurrencyId()], true)) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'codigo_tipo_moneda' => 'Seleccione una moneda vigente: VES o USD.',
+            ]);
         }
-        // ######## FIN MIGRACIÓN MONEDA VENEZUELA ########
+        // ######## FIN CONTRATO INSTALACIÓN NUEVA ########
 
         // ########## INICIO CAMBIO AFECTACIÓN IVA
         $totals = [
             'taxed' => 0.0,
-            'unaffected' => 0.0,
             'exonerated' => 0.0,
             'tax' => 0.0,
             'value' => 0.0,
@@ -33,6 +34,13 @@ final class VendeyaDocumentPayloadNormalizer
                 ? (float) $item['total_item']
                 : $quantity * $unitPrice;
             $affectationId = (string) ($item['codigo_tipo_afectacion_igv'] ?? '10');
+            // ######## INICIO CONTRATO INSTALACIÓN NUEVA ########
+            if (!in_array($affectationId, Localization::selectableAffectationIds(), true)) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    "items.{$index}.codigo_tipo_afectacion_igv" => 'Seleccione Gravado o Exento.',
+                ]);
+            }
+            // ######## FIN CONTRATO INSTALACIÓN NUEVA ########
 
             if ($affectationId === '10') {
                 $base = $lineTotal / Localization::taxMultiplier();
@@ -56,11 +64,7 @@ final class VendeyaDocumentPayloadNormalizer
                 $item['total_impuestos'] = 0;
                 $item['total_valor_item'] = $lineTotal;
 
-                if ($affectationId === '20') {
-                    $totals['exonerated'] += $lineTotal;
-                } else {
-                    $totals['unaffected'] += $lineTotal;
-                }
+                $totals['exonerated'] += $lineTotal;
                 $totals['value'] += $lineTotal;
             }
 
@@ -71,7 +75,6 @@ final class VendeyaDocumentPayloadNormalizer
 
         $payload['totales'] = array_merge($payload['totales'] ?? [], [
             'total_operaciones_gravadas' => $totals['taxed'],
-            'total_operaciones_inafectas' => $totals['unaffected'],
             'total_operaciones_exoneradas' => $totals['exonerated'],
             'total_igv' => $totals['tax'],
             'total_impuestos' => $totals['tax'],

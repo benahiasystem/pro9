@@ -93,7 +93,7 @@
                            v-text="errors.customer_telephone[0]"></small>
                 </div>
                 <template v-else>
-                    <QrApi 
+                    <QrApi
                         colClass="col-md-6"
                         :wsPhone="form.customer_telephone"
                         :wsFile="form.print_ticket"
@@ -132,6 +132,7 @@
 </template>
 
 <script>
+import {whatsappNumber} from "@helpers/phone";
 import {mapState, mapActions} from "vuex/dist/vuex.mjs";
 import QrApi from '@viewsModuleQrApi/QrApiTemplate.vue'
 
@@ -267,8 +268,9 @@ export default {
             }
 
             // ########### INICIO CAMBIO TELEFONÍA VENEZUELA
-            const phone = String(this.form.customer_telephone).replace(/\D/g, '').replace(/^(58|51)/, '')
-            window.open(`https://wa.me/58${phone}?text=${encodeURIComponent(this.form.message_text)}`, '_blank');
+            const phone = whatsappNumber(this.form.customer_telephone)
+            if (!phone) return this.$message.error('Ingrese un teléfono venezolano válido.')
+            window.open(`https://wa.me/${phone}?text=${encodeURIComponent(this.form.message_text)}`, '_blank');
             // ########### FIN CAMBIO TELEFONÍA VENEZUELA
 
         },

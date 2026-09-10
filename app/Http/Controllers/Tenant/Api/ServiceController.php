@@ -5,7 +5,6 @@
     use App\CoreFacturalo\Helpers\Storage\StorageDocument;
     use App\CoreFacturalo\Services\Dni\Dni;
     use App\CoreFacturalo\Services\Extras\ExchangeRate;
-    use App\CoreFacturalo\Services\Extras\ValidateCpe2;
     use App\CoreFacturalo\Services\Ruc\Sunat;
     use App\Http\Controllers\Controller;
     use App\Http\Requests\Tenant\ServiceRequest;
@@ -169,46 +168,13 @@
                         'external_id' => $document->external_id,
                         'status_id' => $document->state_type_id,
                         'status' => $document->state_type->description,
-                        'qr' => $document->qr,
                         'number_to_letter' => $document->number_to_letter,
                     ],
                     'links' => [
-                        'xml' => $document->download_external_xml,
                         'pdf' => $document->download_external_pdf,
-                        'cdr' => ($document->download_external_cdr) ? $document->download_external_cdr : '',
                     ],
                 ];
             }
         }
-
-        public function validateCpe(Request $request)
-        {
-
-            $company_number = $request->numero_ruc_emisor;
-            $document_type_id = $request->codigo_tipo_documento;
-            $series = $request->serie_documento;
-            $number = $request->numero_documento;
-            $date_of_issue = $request->fecha_de_emision;
-            $total = $request->total;
-
-            $validate_cpe = new ValidateCpe2();
-            $response = $validate_cpe->search($company_number, $document_type_id, $series, $number, $date_of_issue, $total);
-
-            if ($response['success']) {
-
-                return [
-                    'success' => true,
-                    'data' => $response['data']
-                ];
-
-            } else {
-                return [
-                    'success' => false,
-                    'data' => $response
-                ];
-            }
-
-        }
-
 
     }

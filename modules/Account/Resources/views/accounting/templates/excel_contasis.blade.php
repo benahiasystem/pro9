@@ -59,7 +59,7 @@
                 <td>{{ $row['total_taxed'] }}</td>
                 <td>{{ $row['total_exonerated'] }}</td>
                 <td>{{ $row['total_unaffected'] }}</td>
-                <td>{{ $row['total_isc'] }}</td>
+
                 <td>{{ $row['total_igv'] }}</td>
                 <td>{{ $row['total_other_taxes'] }}</td>
                 <td>{{ $row['total'] }}</td>

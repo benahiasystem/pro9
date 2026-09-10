@@ -209,7 +209,6 @@
                     @endif
                     @if($user->type === 'admin')
                     <li>
-                        <a href="{{route('tenant.sale_notes.configuration')}}"><i class="ti ti-notes"></i>Nota de ventas</a>
                     </li>
                     @endif
                     @if($configuration->isMiTiendaPe()== true)

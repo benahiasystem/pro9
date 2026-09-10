@@ -327,7 +327,6 @@ JS;
                             'customer' => $document->customer->number,
                             'number' => $document->series . '-' . $document->number,
                             'total' => number_format((float) $document->total, 2, '.', ''),
-                            'download_xml' => $baseUrl . '/downloads/document/xml/' . $document->external_id,
                             'download_pdf' => $baseUrl . '/downloads/document/pdf/' . $document->external_id,
                         ];
                     })->values()->all();
@@ -589,4 +588,3 @@ JS;
         ];
     }
 }
-

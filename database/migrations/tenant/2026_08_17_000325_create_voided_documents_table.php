@@ -1,20 +1,17 @@
 <?php
-// ######### INICIO CAMBIO NELSON #########
-
-/**
- * Estructura efectiva clonada desde `tenancy_bbc`.
- * Tabla: `voided_documents`.
- *
- * Inventario de columnas:
- * - `id`: int(10) unsigned; NOT NULL; auto_increment — Sin comentario definido en el esquema fuente.
- * - `voided_id`: int(10) unsigned; NOT NULL — Sin comentario definido en el esquema fuente.
- * - `document_id`: int(10) unsigned; NOT NULL — Sin comentario definido en el esquema fuente.
- * - `description`: varchar(255); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
- */
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 
+// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
+/**
+ * Estructura inicial de `voided_documents` para instalaciones nuevas.
+ * Inventario de columnas:
+ * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
+ * - `voided_id` int(10) unsigned NOT NULL
+ * - `document_id` int(10) unsigned NOT NULL
+ * - `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
+ */
 return new class extends Migration
 {
     public function up(): void
@@ -37,4 +34,4 @@ SQL);
         DB::unprepared('DROP TABLE IF EXISTS `voided_documents`');
     }
 };
-// ######### FIN CAMBIO NELSON #########
+// ######## FIN ESQUEMA INICIAL VENEZUELA ########

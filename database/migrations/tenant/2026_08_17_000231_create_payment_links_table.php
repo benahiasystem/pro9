@@ -1,31 +1,28 @@
 <?php
-// ######### INICIO CAMBIO NELSON #########
-
-/**
- * Estructura efectiva clonada desde `tenancy_bbc`.
- * Tabla: `payment_links`.
- *
- * Inventario de columnas:
- * - `id`: int(10) unsigned; NOT NULL; auto_increment — Sin comentario definido en el esquema fuente.
- * - `fiscal_environment`: varchar(16); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
- * - `uuid`: char(36); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
- * - `user_id`: int(10) unsigned; NOT NULL — Sin comentario definido en el esquema fuente.
- * - `person_id`: int(10) unsigned; NULL — Sin comentario definido en el esquema fuente.
- * - `payment_link_type_id`: char(2); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
- * - `payment_id`: int(11); NULL — Sin comentario definido en el esquema fuente.
- * - `payment_type`: varchar(255); NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
- * - `total`: decimal(12,2); NOT NULL — Sin comentario definido en el esquema fuente.
- * - `status`: varchar(20); NOT NULL; DEFAULT pending; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
- * - `paid_at`: datetime; NULL — Sin comentario definido en el esquema fuente.
- * - `uploaded_filename`: varchar(255); NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
- * - `query_transaction`: tinyint(1); NOT NULL; DEFAULT 0 — Sin comentario definido en el esquema fuente.
- * - `created_at`: timestamp; NULL — Sin comentario definido en el esquema fuente.
- * - `updated_at`: timestamp; NULL — Sin comentario definido en el esquema fuente.
- */
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 
+// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
+/**
+ * Estructura inicial de `payment_links` para instalaciones nuevas.
+ * Inventario de columnas:
+ * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
+ * - `fiscal_environment` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL
+ * - `uuid` char(36) COLLATE utf8mb4_unicode_ci NOT NULL
+ * - `user_id` int(10) unsigned NOT NULL
+ * - `person_id` int(10) unsigned DEFAULT NULL
+ * - `payment_link_type_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL
+ * - `payment_id` int(11) DEFAULT NULL
+ * - `payment_type` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
+ * - `total` decimal(12,2) NOT NULL
+ * - `status` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'pending'
+ * - `paid_at` datetime DEFAULT NULL
+ * - `uploaded_filename` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
+ * - `query_transaction` tinyint(1) NOT NULL DEFAULT '0'
+ * - `created_at` timestamp NULL DEFAULT NULL
+ * - `updated_at` timestamp NULL DEFAULT NULL
+ */
 return new class extends Migration
 {
     public function up(): void
@@ -64,4 +61,4 @@ SQL);
         DB::unprepared('DROP TABLE IF EXISTS `payment_links`');
     }
 };
-// ######### FIN CAMBIO NELSON #########
+// ######## FIN ESQUEMA INICIAL VENEZUELA ########

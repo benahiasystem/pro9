@@ -231,33 +231,12 @@
                                 PDF
                             </button>
                         </td>
-                        <!--<td class="text-center">-->
-                        <!--<button type="button" class="btn waves-effect waves-light btn-xs btn-danger"-->
-                        <!--@click.prevent="clickDownload(row.download_xml_voided)"-->
-                        <!--v-if="row.has_xml_voided">XML</button>-->
-                        <!--<button type="button" class="btn waves-effect waves-light btn-xs btn-danger"-->
-                        <!--@click.prevent="clickDownload(row.download_cdr_voided)"-->
-                        <!--v-if="row.has_cdr_voided">CDR</button>-->
-                        <!--<button type="button" class="btn waves-effect waves-light btn-xs btn-warning"-->
-                        <!--@click.prevent="clickTicket(row.voided.id, row.group_id)"-->
-                        <!--v-if="row.btn_ticket">Consultar</button>-->
-                        <!--</td>-->
-
                         <td class="text-end">
                             <!-- <button type="button" class="btn waves-effect waves-light btn-xs btn-danger m-1__2"
                                     @click.prevent="clickVoided(row.id)"
                                     v-if="row.btn_voided"  >Anular</button>
                             <a :href="`/${resource_documents}/note/${row.id}`" class="btn waves-effect waves-light btn-xs btn-warning m-1__2"
                                v-if="row.btn_note">Nota</a> -->
-                            <!-- ########## INICIO CAMBIO SIN XML CDR SUNAT -->
-                            <!-- El registro local no ofrece reenvío fiscal. -->
-                            <!-- ######### FIN CAMBIO SIN XML CDR SUNAT -->
-                            <!-- <button type="button" class="btn waves-effect waves-light btn-xs btn-info m-1__2"
-                                    @click.prevent="clickSendOnline(row.id)"
-                                    v-if="isClient && !row.send_server">Enviar Servidor</button>
-                            <button type="button" class="btn waves-effect waves-light btn-xs btn-info m-1__2"
-                                    @click.prevent="clickCheckOnline(row.id)"
-                                    v-if="isClient && row.send_server && (row.state_type_id === '01')">Consultar Servidor</button> -->
                             <button
                                 type="button"
                                 class="btn waves-effect waves-light btn-xs btn-info m-1__2"
@@ -369,66 +348,10 @@ export default {
         clickDownload(download) {
             window.open(download, "_blank");
         },
-        // ########## INICIO CAMBIO SIN XML CDR SUNAT
-        // El listado no conserva un método de reenvío fiscal.
-        // ######### FIN CAMBIO SIN XML CDR SUNAT
-        clickSendOnline(document_id) {
-            this.$http
-                .get(`/${this.resource_documents}/send_server/${document_id}/1`)
-                .then(response => {
-                    if (response.data.success) {
-                        this.$message.success(
-                            "Se envio satisfactoriamente el comprobante."
-                        );
-                        this.$eventHub.$emit("reloadData");
-
-                        this.clickCheckOnline(document_id);
-                    } else {
-                        this.$message.error(response.data.message);
-                    }
-                })
-                .catch(error => {
-                    this.$message.error(error.response.data.message);
-                });
-        },
-        clickCheckOnline(document_id) {
-            this.$http
-                .get(`/${this.resource_documents}/check_server/${document_id}`)
-                .then(response => {
-                    if (response.data.success) {
-                        this.$message.success("Consulta satisfactoria.");
-                        this.$eventHub.$emit("reloadData");
-                    } else {
-                        this.$message.error(response.data.message);
-                    }
-                })
-                .catch(error => {
-                    this.$message.error(error.response.data.message);
-                });
-        },
         clickOptions(recordId = null) {
             this.recordId = recordId;
             this.showDialogOptions = true;
         },
-        tooltip(row, message = true) {
-            if (message) {
-                if (row.shipping_status) return row.shipping_status.message;
-
-                if (row.sunat_shipping_status)
-                    return row.sunat_shipping_status.message;
-
-                if (row.query_status) return row.query_status.message;
-            }
-
-            if (
-                row.shipping_status ||
-                row.sunat_shipping_status ||
-                row.query_status
-            )
-                return true;
-
-            return false;
-        }
     }
 };
 </script>

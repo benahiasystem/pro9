@@ -503,6 +503,7 @@ html.dark .pos-success {
 }
 </style>
 <script>
+import {whatsappNumber} from "@helpers/phone";
 import { mapState, mapActions } from "vuex/dist/vuex.mjs";
 import QrApi from "@viewsModuleQrApi/QrApiTemplate.vue";
 import Keypress from "vue-keypress";
@@ -575,9 +576,11 @@ export default {
                 return this.$message.error("El número es obligatorio");
             }
 
+            const phone = whatsappNumber(this.form.customer_telephone);
+            if (!phone) return this.$message.error('Ingrese un teléfono venezolano válido.');
             window.open(
                 // ########### INICIO CAMBIO TELEFONÍA VENEZUELA
-                `https://wa.me/58${String(this.form.customer_telephone).replace(/\D/g, '').replace(/^(58|51)/, '')}?text=${
+                `https://wa.me/${phone}?text=${
                     encodeURIComponent(this.form.message_text)
                 }`,
                 // ########### FIN CAMBIO TELEFONÍA VENEZUELA
@@ -743,7 +746,6 @@ export default {
             }
         },
         // clickConsultCdr(document_id) {
-        //     this.$http.get(`/${this.resource}/consult_cdr/${document_id}`)
         //         .then(response => {
         //             if (response.data.success) {
         //                 this.$message.success(response.data.message)

@@ -83,7 +83,7 @@ class DashboardView
                     $join->on('documents.id', '=', 'payments.document_id');
                 })
                 ->whereIn('state_type_id', ['01','03','05','07','13'])
-                ->whereIn('document_type_id', ['01','03','08'])
+                ->whereIn('document_type_id', ['01','08'])
                 ->select(DB::raw("documents.id as id, ".
                                     "DATE_FORMAT(documents.date_of_issue, '%Y/%m/%d') as date_of_issue, ".
                                     "persons.name as customer_name, persons.id as customer_id, documents.document_type_id,".
@@ -104,7 +104,7 @@ class DashboardView
                     $join->on('documents.id', '=', 'payments.document_id');
                 })
                 ->whereIn('state_type_id', ['01','03','05','07','13'])
-                ->whereIn('document_type_id', ['01','03','08'])
+                ->whereIn('document_type_id', ['01','08'])
                 ->select(DB::raw("documents.id as id, ".
                                     "DATE_FORMAT(documents.date_of_issue, '%Y/%m/%d') as date_of_issue, ".
                                     "persons.name as customer_name, persons.id as customer_id, documents.document_type_id, ".
@@ -206,7 +206,6 @@ class DashboardView
                             'number' => $item->number_full,
                             'date_of_issue' => $item->date_of_issue->format('Y-m-d'),
                             'date_of_shipping' => $item->date_of_shipping->format('Y-m-d'),
-                            'download_external_xml' => $item->download_external_xml,
                             'download_external_pdf' => $item->download_external_pdf,
                         ];
                     });
@@ -340,7 +339,7 @@ class DashboardView
                 $join->on('documents.id', '=', 'credit_notes.affected_document_id');
             })
             ->whereIn('state_type_id', ['01', '03', '05', '07', '13'])
-            ->whereIn('document_type_id', ['01', '03', '08'])
+            ->whereIn('document_type_id', ['01', '08'])
             ->select(DB::raw($document_select));
 
         // dd($documents->get());
@@ -398,11 +397,11 @@ class DashboardView
         }*/
         if ($d_start && $d_end) {
             $date_type = $request['date_type'] ?? 'emission';
-    
+
             if ($date_type === 'due') {
                 $documents->leftJoin('invoices', 'documents.id', '=', 'invoices.document_id')
                         ->whereBetween('invoices.date_of_due', [$d_start, $d_end]);
-        
+
                 $sale_notes->whereBetween('sale_notes.due_date', [$d_start, $d_end]);
             } else {
                 $sale_notes->whereBetween('sale_notes.date_of_issue', [$d_start, $d_end]);

@@ -37,7 +37,7 @@ class DownloadController extends Controller
                 if($document->document_type_id === '08') $type_pdf = 'debit';
             }
 
-            if ($document_type == 'document' && in_array($document->document_type_id, ['01', '03'], true)) {
+            if ($document_type == 'document' && in_array($document->document_type_id, ['01'], true)) {
                 if (trim(strip_tags(html_entity_decode($document->terms_condition ?? ''))) === '') {
                     $configuration = Configuration::select('terms_condition_sale')->first();
                     if ($configuration && trim(strip_tags(html_entity_decode($configuration->terms_condition_sale ?? ''))) !== '') {
@@ -51,7 +51,7 @@ class DownloadController extends Controller
             if ($format != null) {
                 $this->reloadPDF($document, $type_pdf, $format);
             } else {
-                // Validar la existencia física del PDF. 
+                // Validar la existencia física del PDF.
                 // Si el formato es null y no existe en disco, forzar 'a4' y regenerar preventivamente con el tipo correcto.
                 if (!$this->existFileInStorage($document->filename, 'pdf')) {
                     $format = 'a4';
@@ -60,8 +60,6 @@ class DownloadController extends Controller
             }
         }
 
-        // Cambio para que se refleje el qr_url de ose o sunat  dentro del pdf de gre ("a4") para el listado
-        //if(isset($document->document_type) && $document->document_type->id == '09' && $document->qr_url) $this->reloadPDF($document, 'dispatch', 'a4');
         // Órdenes de entrega: siempre regenerar el PDF al descargar/imprimir para que tomen la plantilla actual (p. ej. marca de agua).
         if (
             isset($document->document_type_id)
@@ -69,16 +67,6 @@ class DownloadController extends Controller
             && $type === 'pdf'
         ) {
             $this->reloadPDF($document, 'dispatch', $format ?? 'a4');
-        }
-
-
-        if($document->document_type_id === '09' && $type === 'cdr') {
-            if((new Facturalo)->hasPseSend()) {
-                $type = 'cdr';
-            } else {
-                $type = 'cdr_xml';
-            }
-
         }
         return $this->download($type, $document);
     }

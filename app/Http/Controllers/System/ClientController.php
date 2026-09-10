@@ -278,10 +278,6 @@ use Illuminate\Support\Facades\Mail;
                 ->table('configurations')
                 ->first()
                 ->quantity_sales_notes;
-                $quantity_pending_documents = $this->getQuantityPendingDocuments();
-                $row->document_regularize_shipping = $quantity_pending_documents['document_regularize_shipping'];
-                $row->document_not_sent = $quantity_pending_documents['document_not_sent'];
-                $row->document_to_be_canceled = $quantity_pending_documents['document_to_be_canceled'];
                 $row->monthly_sales_total = 0;
                 $row->count_whatsapp_month = 0;
 
@@ -346,17 +342,6 @@ use Illuminate\Support\Facades\Mail;
             return DB::connection('tenant')->table($table)->count();
         }
 
-
-        private function getQuantityPendingDocuments()
-        {
-
-            return [
-                'document_regularize_shipping' => DB::connection('tenant')->table('documents')->where('state_type_id', '01')->where('regularize_shipping', true)->count(),
-                'document_not_sent' => DB::connection('tenant')->table('documents')->whereIn('state_type_id', ['01', '03'])->where('date_of_issue', '<=', date('Y-m-d'))->count(),
-                'document_to_be_canceled' => DB::connection('tenant')->table('documents')->where('state_type_id', '13')->count(),
-            ];
-
-        }
 
 
         public function record($id)
@@ -940,10 +925,8 @@ use Illuminate\Support\Facades\Mail;
 
             \Log::info('Insertando configuración...');
             DB::connection('tenant')->table('configurations')->insert([
-                'send_auto' => true,
                 'locked_emission' => $request->input('locked_emission'),
                 'enable_list_product' => $request->input('enable_list_product'),
-                'ticket_single_shipment' => true,
                 'locked_tenant' => false,
                 'locked_users' => false,
                 'limit_documents' => $plan->limit_documents,
@@ -980,7 +963,6 @@ use Illuminate\Support\Facades\Mail;
                 'quantity_sales_notes' => 0,
                 'from_guest_register' => $from_guest_register,
                 'date_of_due_test_days' => $plan->test_days > 0 ? Carbon::now()->addDays($plan->test_days)->toDateTimeLocalString() :null,
-                'has_advanced_statuses' => true,
                 'show_item_discounts_charges_attributes' => false,
                 'edit_name_product' => false,
             ]);
@@ -988,36 +970,9 @@ use Illuminate\Support\Facades\Mail;
 
             \Log::info('Configuración insertada');
 
-            \Log::info('Sembrando Estados de Pedido Avanzados...');
-            DB::connection('tenant')->table('status_orders')->delete();
-
-            $advancedStatuses = [
-                // === ESTADOS FINANCIEROS (Payment) ===
-                ['description' => 'Pago pendiente', 'color' => '#ffc107', 'is_initial' => true, 'is_final' => false, 'is_payment_status' => true, 'is_shipping_status' => false, 'is_order_status' => false, 'action_mark_payment' => false, 'sort_order' => 1],
-                ['description' => 'Pago completado', 'color' => '#28a745', 'is_initial' => false, 'is_final' => true, 'is_payment_status' => true, 'is_shipping_status' => false, 'is_order_status' => false, 'action_mark_payment' => true, 'action_generate_document' => true, 'sort_order' => 2],
-                ['description' => 'Pago rechazado', 'color' => '#dc3545', 'is_initial' => false, 'is_final' => true, 'is_payment_status' => true, 'is_shipping_status' => false, 'is_order_status' => false, 'action_send_email' => true, 'sort_order' => 3],
-                ['description' => 'Reembolso', 'color' => '#6c757d', 'is_initial' => false, 'is_final' => true, 'is_payment_status' => true, 'is_shipping_status' => false, 'is_order_status' => false, 'action_send_email' => true, 'sort_order' => 4],
-
-                // === ESTADOS LOGÍSTICOS (Shipping) ===
-                ['description' => 'Preparando pedido', 'color' => '#17a2b8', 'is_initial' => true, 'is_final' => false, 'is_payment_status' => false, 'is_shipping_status' => true, 'is_order_status' => false, 'action_discount_stock' => true, 'sort_order' => 5],
-                ['description' => 'Listo para recojo', 'color' => '#fd7e14', 'is_initial' => false, 'is_final' => false, 'is_payment_status' => false, 'is_shipping_status' => true, 'is_order_status' => false, 'action_send_email' => true, 'sort_order' => 6],
-                ['description' => 'En camino', 'color' => '#007bff', 'is_initial' => false, 'is_final' => false, 'is_payment_status' => false, 'is_shipping_status' => true, 'is_order_status' => false, 'action_notify_dispatch' => true, 'sort_order' => 7],
-                ['description' => 'Entregado', 'color' => '#28a745', 'is_initial' => false, 'is_final' => true, 'is_payment_status' => false, 'is_shipping_status' => true, 'is_order_status' => false, 'action_mark_payment' => false, 'sort_order' => 8],
-                ['description' => 'Entrega pendiente', 'color' => '#ffc107', 'is_initial' => false, 'is_final' => false, 'is_payment_status' => false, 'is_shipping_status' => true, 'is_order_status' => false, 'action_send_email' => true, 'sort_order' => 9],
-
-                // === ESTADOS ADMINISTRATIVOS (Order) ===
-                ['description' => 'Nuevo pedido', 'color' => '#17a2b8', 'is_initial' => true, 'is_final' => false, 'is_payment_status' => false, 'is_shipping_status' => false, 'is_order_status' => true, 'sort_order' => 10],
-                ['description' => 'En proceso', 'color' => '#007bff', 'is_initial' => false, 'is_final' => false, 'is_payment_status' => false, 'is_shipping_status' => false, 'is_order_status' => true, 'sort_order' => 11],
-                ['description' => 'Cancelado', 'color' => '#dc3545', 'is_initial' => false, 'is_final' => true, 'is_payment_status' => false, 'is_shipping_status' => false, 'is_order_status' => true, 'action_send_email' => true, 'action_void_order' => true, 'sort_order' => 12],
-                ['description' => 'Completado', 'color' => '#28a745', 'is_initial' => false, 'is_final' => true, 'is_payment_status' => false, 'is_shipping_status' => false, 'is_order_status' => true, 'sort_order' => 13],
-            ];
-
-            foreach ($advancedStatuses as $status) {
-                $status['created_at'] = now();
-                $status['updated_at'] = now();
-                DB::connection('tenant')->table('status_orders')->insert($status);
-            }
-
+            // ######## INICIO CATÁLOGO INICIAL DE PEDIDOS ########
+            // Los trece estados se cargan en TenantMigrationDataSeeder.
+            // ######## FIN CATÁLOGO INICIAL DE PEDIDOS ########
 
             \Log::info('Configuración insertada');
 

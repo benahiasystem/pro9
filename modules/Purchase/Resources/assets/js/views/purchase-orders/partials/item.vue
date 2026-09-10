@@ -64,11 +64,11 @@
                                             <p v-if="loading_search" class="el-select-dropdown__empty">
                                                 Cargando...
                                             </p>
-                                        
+
                                             <p v-else class="el-select-dropdown__empty">
                                                 No se encontraron resultados
                                             </p>
-                                        
+
                                             <div
                                                 v-if="!loading_search"
                                                 class="el-select-dropdown__item new-option"
@@ -77,7 +77,7 @@
                                                 <span>{{ itemSearchTerm ? `Crear producto "${itemSearchTerm}"` : 'Crear producto' }}</span>
                                             </div>
                                         </template>
-                                    </el-select>                                    
+                                    </el-select>
                                 </el-input>
                             </template>
                             <small v-if="errors.item_id"
@@ -250,7 +250,7 @@
                                             </tr>
                                             </tbody>
                                         </table>
-                                    </div>                                    
+                                    </div>
                                 </div>
                                 <div v-if="charge_types.length > 0"
                                      class="col-md-12 px-0">
@@ -435,7 +435,7 @@ export default {
             all_affectation_igv_types: [],
             aux_items: [],
             affectation_igv_types: [],
-            system_isc_types: [],
+
             discount_types: [],
             charge_types: [],
             attribute_types: [],
@@ -476,7 +476,7 @@ export default {
         this.$http.get(`/${this.resource}/item/tables`).then(response => {
             this.items = response.data.items
             this.affectation_igv_types = response.data.affectation_igv_types
-            this.system_isc_types = response.data.system_isc_types
+
             this.discount_types = response.data.discount_types
             this.charge_types = response.data.charge_types
             this.attribute_types = response.data.attribute_types
@@ -522,7 +522,7 @@ export default {
         },
         async searchRemoteItems(input) {
             this.itemSearchTerm = input
-            
+
             if (input.length > 2) {
                 this.loading_search = true
                 const params = {
@@ -601,9 +601,9 @@ export default {
                 item: {},
                 affectation_igv_type_id: null,
                 affectation_igv_type: {},
-                has_isc: false,
-                system_isc_type_id: null,
-                percentage_isc: 0,
+
+
+
                 suggested_price: 0,
                 quantity: 1,
                 unit_price: 0,
@@ -764,7 +764,7 @@ export default {
                 })
             } else {
                 this.$http.get(`/${this.resource}/search/item/${item_id}`).then((response) => {
-                    
+
                     let item = response.data.items
                     this.form.item_id = item_id
 
@@ -772,10 +772,10 @@ export default {
                         item = item[0]
                         this.items.push(item)
                         this.form.item = _.find(this.items, {'id': this.form.item_id})
-                        this.form.affectation_igv_type = item.affectation_igv_type 
-                        this.form.affectation_igv_type_id = item.purchase_affectation_igv_type_id 
+                        this.form.affectation_igv_type = item.affectation_igv_type
+                        this.form.affectation_igv_type_id = item.purchase_affectation_igv_type_id
                         this.form.unit_price = item.purchase_unit_price
-                        
+
                     }
 
                     if(this.recordItem) {

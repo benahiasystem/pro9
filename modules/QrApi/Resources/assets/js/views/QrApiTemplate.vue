@@ -26,6 +26,7 @@
 </template>
 
 <script>
+import {whatsappNumber} from "@helpers/phone";
 
 import {mapState} from "vuex/dist/vuex.mjs";
 export default {
@@ -79,10 +80,10 @@ export default {
 
     methods: {
         async sendQrChat() {
-            this.loading_submit = true
-            if (this.wsPhone == '') {
-                return this.$message.error('El número es obligatorio')
+            if (!whatsappNumber(this.wsPhone)) {
+                return this.$message.error('Ingrese un teléfono venezolano válido.')
             }
+            this.loading_submit = true
 
             const {extension_only, filename_only} = this.wsData;
             this.convertFileToBase64(this.resolvedWsFile)
@@ -110,7 +111,7 @@ export default {
             this.form = {
                 file: base64file,
                 // ########### INICIO CAMBIO TELEFONÍA VENEZUELA
-                number: `58${String(this.wsPhone).replace(/\D/g, '').replace(/^(58|51)/, '')}`,
+                number: whatsappNumber(this.wsPhone),
                 // ########### FIN CAMBIO TELEFONÍA VENEZUELA
                 message: this.resolvedWsMessage,
                 filename: full_filename

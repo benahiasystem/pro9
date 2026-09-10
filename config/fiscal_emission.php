@@ -36,7 +36,6 @@ return [
         'retentions',
         'sale_notes',
         'sale_opportunities',
-        'summaries',
         'technical_services',
         'tips',
         'transactions',

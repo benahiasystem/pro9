@@ -187,7 +187,7 @@
                 $data->whereHas('document', function ($query) use ($date_start, $date_end) {
                     $query
                         ->whereBetween('date_of_issue', [$date_start, $date_end])
-                        ->whereIn('document_type_id', ['01', '03'])
+                        ->whereIn('document_type_id', ['01'])
                         ->whereIn('state_type_id', ['01', '03', '05', '07', '13'])
                         ->latest()
                         ->whereTypeUser();

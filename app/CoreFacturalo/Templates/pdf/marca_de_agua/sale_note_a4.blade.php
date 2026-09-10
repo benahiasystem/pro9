@@ -24,7 +24,7 @@
         $totalFilas = 6 + $totalProductos;
 
     // if (!empty($configurationInPdf->show_bank_accounts_in_pdf) &&
-    //     in_array($document->document_type->id, ['01', '03'])) {
+    //     ((string) $document->document_type->id === '01')) {
     //     $totalFilas += count($accounts);
     // }
 

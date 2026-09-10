@@ -48,11 +48,7 @@ class Perception extends ModelTenant
         'optional',
 
         'filename',
-        'hash',
-
-        'has_xml',
-        'has_pdf',
-        'has_cdr'
+        'has_pdf'
     ];
 
     protected $casts = [
@@ -172,11 +168,6 @@ class Perception extends ModelTenant
     /**
      * @return string
      */
-    public function getDownloadExternalXmlAttribute()
-    {
-        return route('tenant.download.external_id', ['model' => 'perception', 'type' => 'xml', 'external_id' => $this->external_id]);
-    }
-
     /**
      * @return string
      */
@@ -188,11 +179,6 @@ class Perception extends ModelTenant
     /**
      * @return string
      */
-    public function getDownloadExternalCdrAttribute()
-    {
-        return route('tenant.download.external_id', ['model' => 'perception', 'type' => 'cdr', 'external_id' => $this->external_id]);
-    }
-
     /**
      * Devuelve la clase Facturalo con los elementos cargados
      *

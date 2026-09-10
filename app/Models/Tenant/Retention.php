@@ -46,11 +46,7 @@ class Retention extends ModelTenant
         'legends',
 
         'filename',
-        'hash',
-
-        'has_xml',
         'has_pdf',
-        'has_cdr',
     ];
 
     protected $casts = [
@@ -164,11 +160,6 @@ class Retention extends ModelTenant
     /**
      * @return string
      */
-    public function getDownloadExternalXmlAttribute()
-    {
-        return route('tenant.download.external_id', ['model' => 'retention', 'type' => 'xml', 'external_id' => $this->external_id]);
-    }
-
     /**
      * @return string
      */
@@ -180,11 +171,6 @@ class Retention extends ModelTenant
     /**
      * @return string
      */
-    public function getDownloadExternalCdrAttribute()
-    {
-        return route('tenant.download.external_id', ['model' => 'retention', 'type' => 'cdr', 'external_id' => $this->external_id]);
-    }
-
     /**
      * Devuelve la clase Facturalo con los elementos cargados
      *
@@ -203,12 +189,6 @@ class Retention extends ModelTenant
      * @return array
      */
     public function  getCollectionData(){
-        $has_cdr = false;
-
-        if (in_array($this->state_type_id, ['05', '07', '09'])) {
-            $has_cdr = true;
-        }
-
         return [
             'id' => $this->id,
             'date_of_issue' => $this->date_of_issue->format('Y-m-d'),
@@ -219,12 +199,8 @@ class Retention extends ModelTenant
             'state_type_description' => $this->state_type->description,
             'total_retention' => $this->total_retention,
             'total' => $this->total,
-            'has_xml' => $this->has_xml,
             'has_pdf' => $this->has_pdf,
-            'has_cdr' => $has_cdr,
-            'download_external_xml' => $this->download_external_xml,
             'download_external_pdf' => $this->download_external_pdf,
-            'download_external_cdr' => $this->download_external_cdr,
             'created_at' => $this->created_at->format('Y-m-d H:i:s'),
             'updated_at' => $this->updated_at->format('Y-m-d H:i:s'),
         ];

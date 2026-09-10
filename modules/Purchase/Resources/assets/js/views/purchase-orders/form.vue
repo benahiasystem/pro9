@@ -492,7 +492,7 @@ export default {
     },
     async created() {
         // console.log(this.id, this.saleOpportunity)
-        await this.loadDecimalQuantity() 
+        await this.loadDecimalQuantity()
         await this.initForm()
         await this.$http.get(`/${this.resource}/tables`)
             .then(response => {
@@ -756,8 +756,8 @@ export default {
                 total_unaffected: 0,
                 total_exonerated: 0,
                 total_igv: 0,
-                total_base_isc: 0,
-                total_isc: 0,
+
+
                 total_base_other_taxes: 0,
                 total_other_taxes: 0,
                 total_taxes: 0,

@@ -10,33 +10,18 @@ use Modules\Webhook\Services\Payloads\PurchaseCreatedPayload;
  * Registro central de eventos de webhook.
  *
  * Para añadir un nuevo evento ver modules/Webhook/README.md
- * (constante + entrada en $map; si depende de un estado SUNAT,
+ * (constante + entrada en $map y, si depende de un estado local,
  * una línea más en $documentStateMap).
  */
 class WebhookEvents
 {
     const DOCUMENT_CREATED = 'document.created';
-    const DOCUMENT_ACCEPTED = 'document.accepted';
-    const DOCUMENT_OBSERVED = 'document.observed';
-    const DOCUMENT_REJECTED = 'document.rejected';
     const DOCUMENT_VOIDED = 'document.voided';
     const PURCHASE_CREATED = 'purchase.created';
 
     private static array $map = [
         self::DOCUMENT_CREATED => [
             'label' => 'Documento de venta emitido',
-            'payload' => DocumentPayload::class,
-        ],
-        self::DOCUMENT_ACCEPTED => [
-            'label' => 'Documento aceptado por SUNAT (CDR)',
-            'payload' => DocumentPayload::class,
-        ],
-        self::DOCUMENT_OBSERVED => [
-            'label' => 'Documento observado por SUNAT',
-            'payload' => DocumentPayload::class,
-        ],
-        self::DOCUMENT_REJECTED => [
-            'label' => 'Documento rechazado por SUNAT',
             'payload' => DocumentPayload::class,
         ],
         self::DOCUMENT_VOIDED => [
@@ -50,13 +35,9 @@ class WebhookEvents
     ];
 
     /**
-     * Mapa state_type_id (Facturalo) => evento. SENT '03' es tránsito
-     * interno y no se notifica.
+     * Mapa de estados locales que generan eventos adicionales.
      */
     private static array $documentStateMap = [
-        '05' => self::DOCUMENT_ACCEPTED,
-        '07' => self::DOCUMENT_OBSERVED,
-        '09' => self::DOCUMENT_REJECTED,
         '11' => self::DOCUMENT_VOIDED,
     ];
 

@@ -81,11 +81,7 @@ class PurchaseSettlementController extends Controller
         $fact = DB::connection('tenant')->transaction(function () use($data) {
             $facturalo = new Facturalo();
             $facturalo->save($data);
-            $facturalo->createXmlUnsigned();
-            $facturalo->signXmlUnsigned();
-            $facturalo->updateHash();
             $facturalo->createPdf();
-            $facturalo->senderXmlSignedBill();
 
             return $facturalo;
         });
@@ -103,8 +99,6 @@ class PurchaseSettlementController extends Controller
             $record_payment->save();
             $this->createGlobalPayment($record_payment, $payment);
         }
-
-        $response = $fact->getResponse();
 
         return [
             'success' => true,
@@ -136,7 +130,6 @@ class PurchaseSettlementController extends Controller
         ];
         $actions=[
             'send_email'=>true,
-            'send_xml_signed'=>true,
             'format_pdf'=>'a4',
         ];
         $suplier_info = PersonInput::set($inputs['supplier_id']);

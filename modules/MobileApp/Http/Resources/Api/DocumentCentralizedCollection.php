@@ -7,19 +7,6 @@ use App\Models\Tenant\SaleNote;
 
 class DocumentCentralizedCollection extends ResourceCollection
 {
-    private function resolveHasCdr($document): bool
-    {
-        if ($document->group_id === '01') {
-            return $document->state_type_id === '05';
-        }
-
-        if ($document->group_id === '02') {
-            return $document->state_type_id === '05' && $document->isSingleDocumentShipment();
-        }
-
-        return false;
-    }
-
     public function toArray($request)
     {
         return $this->collection->map(function ($record) {
@@ -56,10 +43,6 @@ class DocumentCentralizedCollection extends ResourceCollection
                 'print_ticket' => $is_sale_note
                     ? $record->getUrlPrintPdf('ticket')
                     : $record->getUrlPrintByFormat('ticket'),
-                'has_cdr'      => !$is_sale_note && $this->resolveHasCdr($record),
-                'download_cdr' => !$is_sale_note && $this->resolveHasCdr($record)
-                    ? $record->download_external_cdr
-                    : null,
                 'created_at'   => $record->created_at?->format('Y-m-d H:i:s'),
             ];
         });

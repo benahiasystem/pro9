@@ -15,8 +15,9 @@ class JiraInProgressMigrationContractTest extends TestCase
     {
         $facturalo = $this->source('app/CoreFacturalo/Facturalo.php');
         self::assertStringContainsString('LocalFiscalDocumentPolicy::registeredResponse()', $facturalo);
-        self::assertStringContainsString('private function registerLocally', $facturalo);
-        self::assertStringContainsString("'state_type_id' => self::REGISTERED", $facturalo);
+        self::assertStringNotContainsString('function createXmlUnsigned', $facturalo);
+        self::assertStringNotContainsString('function senderXmlSignedBill', $facturalo);
+        self::assertStringNotContainsString('function consultCdr', $facturalo);
 
         $storage = $this->source('app/CoreFacturalo/Helpers/Storage/StorageDocument.php');
         self::assertStringContainsString("['unsigned', 'signed', 'cdr', 'cdr_xml', 'cdr_b64']", $storage);
@@ -31,9 +32,11 @@ class JiraInProgressMigrationContractTest extends TestCase
         self::assertStringContainsString("'.pdf'", $email);
 
         $configuration = $this->source('app/Models/Tenant/Configuration.php');
-        self::assertStringContainsString('$localDocumentEmission = LocalFiscalDocumentPolicy::enabled()', $configuration);
-        self::assertStringContainsString("'send_auto' => \$localDocumentEmission ? false", $configuration);
-        self::assertStringContainsString("'ticket_single_shipment' => \$localDocumentEmission ? false", $configuration);
+        self::assertStringNotContainsString('LocalFiscalDocumentPolicy', $configuration);
+        self::assertStringNotContainsString('send_auto', $configuration);
+        self::assertStringNotContainsString('auto_send_dispatchs_to_sunat', $configuration);
+        self::assertStringNotContainsString('sunat_alternate_server', $configuration);
+        self::assertStringNotContainsString('ticket_single_shipment', $configuration);
 
         foreach ([
             'resources/js/views/tenant/pos/partials/payment.vue',
@@ -63,6 +66,8 @@ class JiraInProgressMigrationContractTest extends TestCase
 
         foreach ([
             "Route::get('documents/send/",
+            "Route::post('documents_server'",
+            "Route::post('document_check_server'",
             "Route::post('/sendSunat/",
             "Route::get('documents/consult_cdr/",
             "Route::post('/status_ticket'",
@@ -88,8 +93,12 @@ class JiraInProgressMigrationContractTest extends TestCase
         self::assertStringNotContainsString("safeAppend(\$notifications, 'appendSystemAlerts')", $notifications);
 
         $redirects = $this->source('app/Http/Middleware/RedirectModuleLevel.php');
-        self::assertMatchesRegularExpression("/case 'document_not_sent':.*tenant\.documents\.index/s", $redirects);
-        self::assertMatchesRegularExpression("/case 'regularize_shipping':.*tenant\.documents\.index/s", $redirects);
+        self::assertStringNotContainsString("case 'document_not_sent':", $redirects);
+        self::assertStringNotContainsString("case 'regularize_shipping':", $redirects);
+
+        self::assertFileDoesNotExist(base_path('modules/PseService'));
+        self::assertFileDoesNotExist(base_path('modules/Document/Resources/assets/js/components/DataTableValidateDocuments.vue'));
+        self::assertFileDoesNotExist(base_path('modules/Document/Resources/assets/js/views/validate_documents'));
     }
 
     /** @test */
@@ -109,7 +118,7 @@ class JiraInProgressMigrationContractTest extends TestCase
     }
 
     /** @test */
-    public function isc_and_plastic_bag_fields_remain_compatible_without_detractions(): void
+    public function item_forms_do_not_keep_retired_tax_fields(): void
     {
         $itemForms = [
             'resources/js/views/tenant/items/form.vue',
@@ -118,23 +127,25 @@ class JiraInProgressMigrationContractTest extends TestCase
         foreach ($itemForms as $path) {
             $source = $this->source($path);
             self::assertDoesNotMatchRegularExpression('/v-model=["\'][^"\']*(?:has_isc|purchase_has_isc|subject_to_detraction)/', $source, $path);
-            self::assertStringContainsString('has_isc', $source, $path);
+            self::assertStringNotContainsString('has_isc', $source, $path);
             self::assertStringNotContainsString('subject_to_detraction', $source, $path);
         }
 
         foreach ($this->plasticBagForms() as $path) {
             $source = $this->source($path);
             self::assertDoesNotMatchRegularExpression('/v-model=["\']form\.has_plastic_bag_taxes["\']/', $source, $path);
-            self::assertStringContainsString('has_plastic_bag_taxes', $source, $path);
+            self::assertStringNotContainsString('has_plastic_bag_taxes', $source, $path);
         }
     }
 
     /** @test */
-    public function every_report_that_mentions_isc_is_governed_by_the_visibility_policy(): void
+    public function reports_and_pdfs_have_no_retired_tax_fields_or_visibility_switch(): void
     {
-        foreach ($this->bladeFilesWithIsc() as $path) {
-            self::assertStringContainsString(
-                'LocalFiscalDocumentPolicy::showIsc',
+        $files = $this->reportBladeFiles();
+        self::assertNotEmpty($files);
+        foreach ($files as $path) {
+            self::assertDoesNotMatchRegularExpression(
+                '/total_isc|system_isc|total_plastic_bag_taxes|showIsc\s*\(/i',
                 (string) file_get_contents($path),
                 $path
             );
@@ -179,12 +190,13 @@ class JiraInProgressMigrationContractTest extends TestCase
     }
 
     /** @return list<string> */
-    private function bladeFilesWithIsc(): array
+    private function reportBladeFiles(): array
     {
         $files = [];
         foreach ([
             base_path('app/CoreFacturalo/Templates/pdf'),
             base_path('modules/Report/Resources/views'),
+            base_path('modules/Account/Resources/views'),
         ] as $root) {
             $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root));
             /** @var SplFileInfo $file */
@@ -192,10 +204,7 @@ class JiraInProgressMigrationContractTest extends TestCase
                 if (!$file->isFile() || !str_ends_with($file->getFilename(), '.blade.php')) {
                     continue;
                 }
-                $source = (string) file_get_contents($file->getPathname());
-                if (preg_match('/<th[^>]*>[^<]*\bISC\b|<td[^>]*>[^\n]*(?:total_isc|system_isc)|<span[^>]*>[^\n]*\bISC\b/i', $source) === 1) {
-                    $files[] = $file->getPathname();
-                }
+                $files[] = $file->getPathname();
             }
         }
 

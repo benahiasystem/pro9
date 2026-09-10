@@ -10,7 +10,6 @@
     use App\Models\Tenant\Catalogs\CurrencyType;
     use App\Models\Tenant\Catalogs\OperationType;
     use App\Models\Tenant\Catalogs\PriceType;
-    use App\Models\Tenant\Catalogs\SystemIscType;
     use App\Models\Tenant\Catalogs\UnitType;
     use App\Models\Tenant\Company;
     use App\Models\Tenant\Configuration;
@@ -389,7 +388,6 @@
             // $items = SearchItemController::getItemToContract();
             $categories = [];
             $affectation_igv_types = AffectationIgvType::whereActive()->get();
-            $system_isc_types = SystemIscType::available();
             $price_types = PriceType::whereActive()->get();
             $discount_types = ChargeDiscountType::whereType('discount')->whereLevel('item')->get();
             $charge_types = ChargeDiscountType::whereType('charge')->whereLevel('item')->get();
@@ -403,7 +401,6 @@
                 'items',
                 'categories',
                 'affectation_igv_types',
-                'system_isc_types',
                 'price_types',
                 'discount_types',
                 'charge_types',

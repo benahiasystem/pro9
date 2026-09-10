@@ -43,7 +43,7 @@ class AccountsReceivable implements FromView
                 $join->on('documents.id', '=', 'credit_notes.affected_document_id');
             })
             ->whereIn('state_type_id', ['01', '03', '05', '07', '13'])
-            ->whereIn('document_type_id', ['01', '03', '08'])
+            ->whereIn('document_type_id', ['01', '08'])
             ->select(DB::raw("documents.id as id, " .
                 "DATE_FORMAT(documents.date_of_issue, '%Y/%m/%d') as date_of_issue, " .
                 "persons.name as customer_name, persons.id as customer_id, documents.document_type_id," .
@@ -85,7 +85,7 @@ class AccountsReceivable implements FromView
 
 
         $collection = collect($records)->transform(function ($row) {
-            
+
             $total_to_pay = $this->getTotalToPay($row);
             // $total_to_pay = (float)$row->total - (float)$row->total_payment;
             $delay_payment = null;
@@ -121,7 +121,6 @@ class AccountsReceivable implements FromView
                         'number' => $item->number_full,
                         'date_of_issue' => $item->date_of_issue->format('Y-m-d'),
                         'date_of_shipping' => $item->date_of_shipping->format('Y-m-d'),
-                        'download_external_xml' => $item->download_external_xml,
                         'download_external_pdf' => $item->download_external_pdf,
                     ];
                 });

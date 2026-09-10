@@ -30,9 +30,9 @@ class SeriesRequest extends FormRequest
         ];
     }
 
-    
+
     /**
-     * 
+     *
      * Validaciones para el formato de la serie, aplica a facturas y boletas
      *
      * @return array
@@ -46,10 +46,10 @@ class SeriesRequest extends FormRequest
         $contingency = $this->input('contingency');
 
         // facturas y boletas
-        if(in_array($document_type_id, ['01', '03']))
+        if(in_array($document_type_id, ['01']))
         {
 
-            switch ($document_type_id) 
+            switch ($document_type_id)
             {
                 // validaciones para facturas
                 case '01':
@@ -63,25 +63,9 @@ class SeriesRequest extends FormRequest
                         $regex = 'regex:"^([F][A-Z0-9]{3})?$"';
                         $this->advanced_message = ' - Formato del campo: [F][A-Z0-9]{3}, Ejemplo: FF01';
                     }
-                    
+
                     $advanced_validations[] = $regex;
 
-                    break;
-
-                // validaciones para boletas
-                case '03':
-                    if($contingency)
-                    {
-                        $regex = 'regex:"^([0-9]{4})?$"';
-                        $this->advanced_message = ' - Formato del campo: [0-9]{4}, Ejemplo: 0022';
-                    }
-                    else
-                    {
-                        $regex = 'regex:"^([B][A-Z0-9]{3})?$"';
-                        $this->advanced_message = ' - Formato del campo: [B][A-Z0-9]{3}, Ejemplo: BB01';
-                    }
-                    
-                    $advanced_validations[] = $regex;
                     break;
             }
 
@@ -92,7 +76,7 @@ class SeriesRequest extends FormRequest
         return $general_validations;
     }
 
-    
+
     public function messages()
     {
         return [

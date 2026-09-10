@@ -243,10 +243,7 @@ $document_types=DocumentType::OnlyAvaibleDocuments()->get();
                         @endif
 
                         {{-- ########## INICIO SIN DETRACCIONES E ISC --}}
-                        @if(\App\Services\LocalFiscalDocumentPolicy::showIsc() && ($columns->total_isc->visible))
-                        {{-- ######### FIN SIN DETRACCIONES E ISC --}}
-                        <th style="padding: 5px; text-align: center;">Total ISC</th>
-                        @endif
+
                         @if ($columns->total->visible)
                             <th style="padding: 5px; text-align: center;">Total</th>
                         @endif
@@ -432,10 +429,7 @@ $document_types=DocumentType::OnlyAvaibleDocuments()->get();
                                             <td style="padding: 5px; text-align: center;" class="celda">0</td>
                                             <td style="padding: 5px; text-align: center;" class="celda">0</td>
                                             {{-- ########## INICIO SIN DETRACCIONES E ISC --}}
-                                            @if(\App\Services\LocalFiscalDocumentPolicy::showIsc() && ($columns->total_isc->visible))
-                                            {{-- ######### FIN SIN DETRACCIONES E ISC --}}
-                                            <td style="padding: 5px; text-align: center;" class="celda">0</td>
-                                            @endif
+
                                             <td style="padding: 5px; text-align: center;" class="celda">0</td>
 
                                     @else
@@ -461,10 +455,7 @@ $document_types=DocumentType::OnlyAvaibleDocuments()->get();
                                         @endif
 
                                         {{-- ########## INICIO SIN DETRACCIONES E ISC --}}
-                                        @if(\App\Services\LocalFiscalDocumentPolicy::showIsc() && ($columns->total_isc->visible))
-                                        {{-- ######### FIN SIN DETRACCIONES E ISC --}}
-                                            <td style="padding: 5px; text-align: center;" class="celda">{{$signal == '07' ? "-" : ""  }}{{$value->total_isc}}</td>
-                                        @endif
+
                                         @if ($columns->total->visible)
                                             <td style="padding: 5px; text-align: center;" class="celda">{{$signal == '07' ? "-" : ""  }}{{$value->total}}</td>
                                         @endif
@@ -497,10 +488,7 @@ $document_types=DocumentType::OnlyAvaibleDocuments()->get();
                                     @endif
 
                                     {{-- ########## INICIO SIN DETRACCIONES E ISC --}}
-                                    @if(\App\Services\LocalFiscalDocumentPolicy::showIsc() && ($columns->total_isc->visible))
-                                    {{-- ######### FIN SIN DETRACCIONES E ISC --}}
-                                    <td style="padding: 5px; text-align: center;" class="celda">{{ (in_array($document_type->id,['01','03']) && in_array($value->state_type_id,['09','11'])) ? 0 : $value->total_isc}}</td>
-                                    @endif
+
                                     @if ($columns->total->visible)
                                         <td style="padding: 5px; text-align: center;" class="celda">{{ (in_array($document_type->id,['01','03']) && in_array($value->state_type_id,['09','11'])) ? 0 : $value->total}}</td>
                                     @endif
@@ -634,10 +622,7 @@ $document_types=DocumentType::OnlyAvaibleDocuments()->get();
                             @endif
 
                             {{-- ########## INICIO SIN DETRACCIONES E ISC --}}
-                            @if(\App\Services\LocalFiscalDocumentPolicy::showIsc() && ($columns->total_isc->visible))
-                            {{-- ######### FIN SIN DETRACCIONES E ISC --}}
-                            <td></td>
-                            @endif
+
                             @if ($columns->total->visible)
                             <td>{{$acum_total}}</td>
                             @endif
@@ -668,10 +653,7 @@ $document_types=DocumentType::OnlyAvaibleDocuments()->get();
                             @endif
 
                             {{-- ########## INICIO SIN DETRACCIONES E ISC --}}
-                            @if(\App\Services\LocalFiscalDocumentPolicy::showIsc() && ($columns->total_isc->visible))
-                            {{-- ######### FIN SIN DETRACCIONES E ISC --}}
-                            <td></td>
-                            @endif
+
                             @if ($columns->total->visible)
                             <td>{{$acum_total_usd}}</td>
                             @endif

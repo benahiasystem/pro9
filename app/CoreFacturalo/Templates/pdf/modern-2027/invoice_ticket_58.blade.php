@@ -59,7 +59,7 @@
 <html>
 <head></head>
 <body class="ticket-58">
-    @if($document->state_type->id == '11') 
+    @if($document->state_type->id == '11')
     <div class="company_logo_box" style="position: absolute; text-align: center; top:30%;">
         <img
             src="data:{{mime_content_type(public_path("status_images".DIRECTORY_SEPARATOR."anulado.png"))}};base64, {{base64_encode(file_get_contents(public_path("status_images".DIRECTORY_SEPARATOR."anulado.png")))}}"
@@ -338,16 +338,11 @@
                 @endif
 
                 {{-- ########## INICIO SIN DETRACCIONES E ISC --}}
-                @if(\App\Services\LocalFiscalDocumentPolicy::showIsc() && ($row->total_isc > 0))
-                {{-- ######### FIN SIN DETRACCIONES E ISC --}}
-                    <br/>ISC : {{ $row->total_isc }} ({{ $row->percentage_isc }}%)
-                @endif
+
 
                 @if (!empty($row->item->presentation)) {!!$row->item->presentation->description!!} @endif
 
-                @if($row->total_plastic_bag_taxes > 0)
-                    <br/>ICBPER : {{ $row->total_plastic_bag_taxes }}
-                @endif
+
 
                 @foreach($row->additional_information as $information)
                     @if ($information)
@@ -359,10 +354,10 @@
                     @foreach($row->attributes as $attr)
                         {{-- Excluir atributos de placa (diferentes variaciones de texto) --}}
                         @if(!in_array(strtoupper(trim($attr->description)), [
-                            'PLACA', 
-                            'NRO PLACA', 
-                            'NUMERO DE PLACA', 
-                            'NÚMERO DE PLACA', 
+                            'PLACA',
+                            'NRO PLACA',
+                            'NUMERO DE PLACA',
+                            'NÚMERO DE PLACA',
                             'N° PLACA',
                             'NUMERO PLACA',
                             'NRO DE PLACA'
@@ -397,14 +392,14 @@
                 @endphp
                 @if($lot)
                     <small style="display:block; font-weight: normal; font-size: 7px;">
-                        Lote: {{ ltrim($lot, '/') }}  
+                        Lote: {{ ltrim($lot, '/') }}
                         <br>
-                        FV: 
+                        FV:
                         @if($date_due != '')
                             {{ ltrim($date_due, '/') }}
                         @elseif($row->relation_item->date_of_due)
                             {{ $row->relation_item->date_of_due->format('y-m-d') }}
-                        @endif 
+                        @endif
                         <br>
                     </small>
                 @endif
@@ -519,21 +514,10 @@
         @endif
     @endif
 
-    @if($document->total_plastic_bag_taxes > 0)
-        <tr>
-            <td colspan="2" class="m27-total-label m27-total-label-sm">ICBPER:</td>
-            <td class="m27-total-value m27-total-value-sm">{{ $document->currency_type->symbol }} {{ number_format($document->total_plastic_bag_taxes, 2) }}</td>
-        </tr>
-    @endif
+
 
     {{-- ########## INICIO SIN DETRACCIONES E ISC --}}
-    @if(\App\Services\LocalFiscalDocumentPolicy::showIsc() && ($document->total_isc > 0))
-    {{-- ######### FIN SIN DETRACCIONES E ISC --}}
-        <tr>
-            <td colspan="2" class="m27-total-label m27-total-label-sm">ISC:</td>
-            <td class="m27-total-value m27-total-value-sm">{{ $document->currency_type->symbol }} {{ number_format($document->total_isc, 2) }}</td>
-        </tr>
-    @endif
+
 
     <tr>
         <td colspan="2" class="m27-total-label m27-total-label-sm">IGV{{ $m27_igv_percentage ? ' ('.$m27_igv_percentage.'%)' : '' }}:</td>
@@ -661,7 +645,7 @@
         @endif
     @endforeach
     @if(isset($configurationInPdf) && $configurationInPdf->show_bank_accounts_in_pdf)
-        @if(in_array($document->document_type->id,['01','03']))
+        @if(((string) $document->document_type->id === '01'))
             @foreach($accounts as $account)
                 @if($loop->first)
                     <tr>
@@ -684,16 +668,6 @@
                 <div style="font-size: 7px;">
                     {!! $document->terms_condition !!}
                 </div>
-            </td>
-        </tr>
-    @endif
-    <tr>
-        <td class="m27-item-note m27-item-sub-sm pt-2">CÓDIGO HASH: {{ $document->hash }}</td>
-    </tr>
-    @if($document->qr)
-        <tr>
-            <td class="text-center pt-2">
-                <img src="data:image/png;base64, {{ $document->qr }}" style="max-width: 70px"/>
             </td>
         </tr>
     @endif

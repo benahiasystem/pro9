@@ -72,11 +72,11 @@
                                             <p v-if="loading_search" class="el-select-dropdown__empty">
                                                 Cargando...
                                             </p>
-                                        
+
                                             <p v-else class="el-select-dropdown__empty">
                                                 No se encontraron resultados
                                             </p>
-                                        
+
                                             <div
                                                 v-if="!loading_search"
                                                 class="el-select-dropdown__item new-option"
@@ -342,7 +342,7 @@
                                 class="hoverable border-top rounded-0 py-1 d-flex justify-content-between align-items-center"
                                 style="cursor: pointer;"
                                 @click="toggleAdditionalInfo"
-                            >                                
+                            >
 
                                 <p class="pl-1 mb-0">
                                     Información adicional atributos UBL 2.1
@@ -355,7 +355,7 @@
                                         class="card-action card-action-toggle"
                                         href="#"
                                         @click.prevent
-                                    >                                    
+                                    >
                                     </a>
                                 </div>
                             </header>
@@ -440,7 +440,7 @@
                                                 </tr>
                                             </tbody>
                                         </table>
-                                    </div>                                    
+                                    </div>
                                 </div>
                                 <div
                                     v-if="charge_types.length > 0"
@@ -519,7 +519,7 @@
                                                 </tr>
                                             </tbody>
                                         </table>
-                                    </div>                                    
+                                    </div>
                                 </div>
                                 <div
                                     v-if="attribute_types.length > 0"
@@ -591,7 +591,7 @@
                                                 </tr>
                                             </tbody>
                                         </table>
-                                    </div>                                    
+                                    </div>
                                 </div>
                             </div>
                         </section>
@@ -677,7 +677,7 @@ export default {
             all_affectation_igv_types: [],
             aux_items: [],
             affectation_igv_types: [],
-            system_isc_types: [],
+
             discount_types: [],
             charge_types: [],
             attribute_types: [],
@@ -719,7 +719,7 @@ export default {
         this.$http.get(`/${this.resource}/item/tables`).then(response => {
             this.items = response.data.items;
             this.affectation_igv_types = response.data.affectation_igv_types;
-            this.system_isc_types = response.data.system_isc_types;
+
             this.discount_types = response.data.discount_types;
             this.charge_types = response.data.charge_types;
             this.attribute_types = response.data.attribute_types;
@@ -862,9 +862,9 @@ export default {
                 item: {},
                 affectation_igv_type_id: null,
                 affectation_igv_type: {},
-                has_isc: false,
-                system_isc_type_id: null,
-                percentage_isc: 0,
+
+
+
                 suggested_price: 0,
                 quantity: 1,
                 unit_price: 0,
@@ -1096,8 +1096,7 @@ export default {
                 // ######### FIN CAMBIO IGV A IVA
                 this.form.unit_price = this.recordItem.input_unit_price_value;
                 this.form.unit_price_value = this.recordItem.input_unit_price_value;
-                this.form.has_plastic_bag_taxes =
-                    this.recordItem.total_plastic_bag_taxes > 0 ? true : false;
+
                 this.form.warehouse_id = this.recordItem.warehouse_id;
                 if (this.recordItem.item.name_product_pdf) {
                     this.form.name_product_pdf = this.recordItem.item.name_product_pdf;

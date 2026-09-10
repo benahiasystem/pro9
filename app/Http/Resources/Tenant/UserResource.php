@@ -47,7 +47,7 @@ class UserResource extends JsonResource {
             'annular_purchase' => $this->annular_purchase,
             'delete_purchase' => $this->delete_purchase,
 
-            
+
             'identity_document_type_id' => $this->identity_document_type_id,
             'number' => $this->number,
             'address' => $this->address,
@@ -69,7 +69,6 @@ class UserResource extends JsonResource {
             'default_document_types' => $this->default_document_types->transform(function($row){
                 return $row->getDataMultipleDocumentType();
             }),
-            'permission_force_send_by_summary' => $this->permission_force_send_by_summary,
             'permission_edit_item_prices' => $this->permission_edit_item_prices,
             'restaurant_pin' => $this->restaurant_pin,
             'restaurant_role_id' => $this->restaurant_role_id,

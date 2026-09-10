@@ -24,7 +24,7 @@ if ($hostname) {
 
         Route::middleware(['auth:api', 'locked.tenant'])->group(function () {
             //MOBILE
-            
+
             Route::get('stats/{startDate}/{endDate}', 'Tenant\Api\MobileController@stats');
             Route::get('record/qrapi', 'Tenant\Api\MobileController@record_qrapi');
             Route::get('document/series', 'Tenant\Api\MobileController@getSeries');
@@ -64,28 +64,15 @@ if ($hostname) {
             Route::get('purchase/find/{id}', 'Tenant\Api\PurchaseController@record');
             Route::get('dispatch/find/{id}', 'Tenant\Api\DispatchController@record');
             Route::post('documents/updatedocumentstatus', 'Tenant\Api\DocumentController@updatestatus');
-            Route::post('summaries', 'Tenant\Api\SummaryController@store');
             Route::post('voided', 'Tenant\Api\VoidedController@store');
             Route::post('retentions', 'Tenant\Api\RetentionController@store');
             Route::post('dispatches', 'Tenant\Api\DispatchController@store');
-            // ########## INICIO CAMBIO SIN XML CDR SUNAT
-            // La API local no publica envío, consulta de resúmenes ni tickets de anulación.
-            // ######### FIN CAMBIO SIN XML CDR SUNAT
             Route::get('services/ruc/{number}', 'Tenant\Api\ServiceController@ruc');
             Route::get('services/dni/{number}', 'Tenant\Api\ServiceController@dni');
-            // ########## INICIO CAMBIO SIN XML CDR SUNAT
-            // Consulta CDR y validación CPE no están disponibles en operación local.
-            // ######### FIN CAMBIO SIN XML CDR SUNAT
             Route::post('perceptions', 'Tenant\Api\PerceptionController@store');
 
-            // ########## INICIO CAMBIO SIN XML CDR SUNAT
-            // La API de guías conserva el registro local sin transmisión ni ticket.
-            // ######### FIN CAMBIO SIN XML CDR SUNAT
             Route::get('dispatches/tables', 'Tenant\Api\DispatchController@tables');
             Route::get('dispatches/records', 'Tenant\Api\DispatchController@records');
-
-            Route::post('documents_server', 'Tenant\Api\DocumentController@storeServer');
-            Route::get('document_check_server/{external_id}', 'Tenant\Api\DocumentController@documentCheckServer');
 
             //liquidacion de compra
             Route::post('purchase-settlements', 'Tenant\Api\PurchaseSettlementController@store');

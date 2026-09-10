@@ -11,9 +11,9 @@
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-plus"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 5l0 14" /><path d="M5 12l14 0" /></svg>
                                 </span>
                             </label>
-                            <el-select 
-                                v-model="form.fixed_asset_item_id" 
-                                @change="changeItem" 
+                            <el-select
+                                v-model="form.fixed_asset_item_id"
+                                @change="changeItem"
                                 filterable
                                 remote
                                 :remote-method="searchRemoteItems"
@@ -24,11 +24,11 @@
                                     <p v-if="loading_search" class="el-select-dropdown__empty">
                                         Cargando...
                                     </p>
-                                
+
                                     <p v-else class="el-select-dropdown__empty">
                                         No se encontraron resultados
                                     </p>
-                                
+
                                     <div
                                         v-if="!loading_search"
                                         class="el-select-dropdown__item new-option"
@@ -118,7 +118,7 @@
                                                 </tr>
                                                 </tbody>
                                             </table>
-                                        </div>                                        
+                                        </div>
                                     </div>
                                     <div class="col-md-12 px-0" v-if="charge_types.length > 0">
                                         <label class="control-label">
@@ -154,7 +154,7 @@
                                                 </tr>
                                                 </tbody>
                                             </table>
-                                        </div>                                        
+                                        </div>
                                     </div>
                                     <div class="col-md-12 px-0" v-if="attribute_types.length > 0">
                                         <label class="control-label">
@@ -186,7 +186,7 @@
                                                 </tr>
                                                 </tbody>
                                             </table>
-                                        </div>                                        
+                                        </div>
                                     </div>
                                 </div>
                             </section>
@@ -235,7 +235,7 @@
                 items: [],
                 all_items: [],
                 affectation_igv_types: [],
-                system_isc_types: [],
+
                 discount_types: [],
                 change_affectation_igv_type_id: false,
                 charge_types: [],
@@ -269,7 +269,7 @@
                 this.items = response.data.fixed_asset_items
                 this.all_items = response.data.fixed_asset_items
                 this.affectation_igv_types = response.data.affectation_igv_types
-                this.system_isc_types = response.data.system_isc_types
+
                 this.discount_types = response.data.discount_types
                 this.charge_types = response.data.charge_types
                 this.attribute_types = response.data.attribute_types
@@ -312,7 +312,7 @@
                 }).then(() => {
                   this.forceCloseDialog()
                 }).catch(() => {
-                
+
                 });
               } else {
                 this.forceCloseDialog()
@@ -339,9 +339,9 @@
                     item: {},
                     affectation_igv_type_id: null,
                     affectation_igv_type: {},
-                    has_isc: false,
-                    system_isc_type_id: null,
-                    percentage_isc: 0,
+
+
+
                     suggested_price: 0,
                     quantity: 1,
                     unit_price: 0,

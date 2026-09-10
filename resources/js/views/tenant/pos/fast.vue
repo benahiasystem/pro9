@@ -1375,11 +1375,11 @@ export default {
                 total_unaffected: 0,
                 total_exonerated: 0,
                 total_igv: 0,
-                total_base_isc: 0,
-                total_isc: 0,
+
+
                 total_base_other_taxes: 0,
                 total_other_taxes: 0,
-                total_plastic_bag_taxes: 0,
+
                 total_taxes: 0,
                 total_value: 0,
                 total: 0,
@@ -1420,10 +1420,10 @@ export default {
                 item: {},
                 affectation_igv_type_id: null,
                 affectation_igv_type: {},
-                has_isc: false,
-                system_isc_type_id: null,
+
+
                 calculate_quantity: false,
-                percentage_isc: 0,
+
                 suggested_price: 0,
                 quantity: 1,
                 aux_quantity: 1,
@@ -1433,7 +1433,7 @@ export default {
                 discounts: [],
                 attributes: [],
                 has_igv: false,
-                has_plastic_bag_taxes: false,
+
             };
         },
         async clickPayment() {
@@ -1541,7 +1541,7 @@ export default {
                 // exist_item.unit_price = unit_price
                 exist_item.item.unit_price = unit_price;
 
-                exist_item.has_plastic_bag_taxes = exist_item.item.has_plastic_bag_taxes;
+
 
                 this.row = calculateRowItem(
                     exist_item,
@@ -1570,7 +1570,7 @@ export default {
                 this.form_item.item = item;
                 this.form_item.unit_price_value = this.form_item.item.sale_unit_price;
                 this.form_item.has_igv = this.form_item.item.has_igv;
-                this.form_item.has_plastic_bag_taxes = this.form_item.item.has_plastic_bag_taxes;
+
                 this.form_item.affectation_igv_type_id = this.form_item.item.sale_affectation_igv_type_id;
                 this.form_item.quantity = 1;
                 this.form_item.aux_quantity = 1;
@@ -1664,7 +1664,7 @@ export default {
             let total_igv = 0;
             let total_value = 0;
             let total = 0;
-            let total_plastic_bag_taxes = 0
+
 
             this.form.items.forEach(row => {
                 total_discount += parseFloat(row.total_discount);
@@ -1698,7 +1698,7 @@ export default {
                     total += parseFloat(row.total);
                 }
                 total_value += parseFloat(row.total_value);
-                total_plastic_bag_taxes += parseFloat(row.total_plastic_bag_taxes)
+
 
             });
 
@@ -1715,9 +1715,9 @@ export default {
             this.form.total_igv = _.round(total_igv, 2);
             this.form.total_value = _.round(total_value, 2);
             this.form.total_taxes = _.round(total_igv, 2);
-            this.form.total_plastic_bag_taxes = _.round(total_plastic_bag_taxes, 2)
+
             // this.form.total = _.round(total, 2);
-            this.form.total = _.round(total + this.form.total_plastic_bag_taxes, 2)
+            this.form.total = _.round(total, 2)
             this.form.subtotal = this.form.total
 
         },

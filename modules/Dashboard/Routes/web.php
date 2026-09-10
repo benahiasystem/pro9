@@ -28,7 +28,6 @@ if($current_hostname) {
                 Route::get('low-stock', 'DashboardController@lowStock');
                 Route::get('sales-week', 'DashboardController@salesWeek');
                 Route::get('payment-methods', 'DashboardController@paymentMethods');
-                Route::get('sunat-status', 'DashboardController@sunatStatus');
                 Route::get('debtors', 'DashboardController@debtors');
                 Route::get('month-goal', 'DashboardController@monthGoal');
                 Route::get('sales-by-product', 'DashboardController@salesByProduct');

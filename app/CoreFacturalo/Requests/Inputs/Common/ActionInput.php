@@ -3,7 +3,6 @@
 namespace App\CoreFacturalo\Requests\Inputs\Common;
 
 use App\CoreFacturalo\Requests\Inputs\Functions;
-use App\Models\Tenant\Configuration;
 
 class ActionInput
 {
@@ -16,12 +15,9 @@ class ActionInput
            }
         }
 
-        $configuration = Configuration::first();
-
         return [
-            'send_email' => self::sendEmail($actions, $inputs, $configuration),
-            'send_xml_signed' => self::sendXmlSigned($actions, $inputs, $configuration),
-            'format_pdf' => self::formatPdf($actions, $inputs, $configuration),
+            'send_email' => Functions::valueKeyInArray($actions, 'send_email', false),
+            'format_pdf' => Functions::valueKeyInArray($actions, 'format_pdf', 'a4'),
             // Impresión automática server-side (app mozo): evita el 2do roundtrip
             'auto_print' => self::autoPrint($actions),
             'name_printer' => Functions::valueKeyInArray($actions, 'name_printer', null),
@@ -34,43 +30,4 @@ class ActionInput
         return (bool) Functions::valueKeyInArray($actions, 'auto_print', false);
     }
 
-    private static function sendEmail($actions, $inputs, $configuration)
-    {
-        return Functions::valueKeyInArray($actions, 'send_email', false);
-    }
-
-    private static function sendXmlSigned($actions, $inputs, $configuration)
-    {
-        $send_xml_signed = Functions::valueKeyInArray($actions, 'send_xml_signed', true);
-
-        if(in_array($inputs['type'], ['invoice', 'credit', 'debit'])) {
-
-            if($inputs['group_id'] === '02') 
-            {
-                $ticket_single_shipment = $inputs['ticket_single_shipment'] ?? false;
-                    
-                return $configuration->send_auto && $send_xml_signed & $ticket_single_shipment;
-
-                /*
-                if($inputs['document_type_id'] === '03')
-                {
-                    $ticket_single_shipment = $inputs['ticket_single_shipment'] ?? false;
-                    
-                    return $configuration->send_auto && $send_xml_signed & $ticket_single_shipment;
-                }
-
-                return false;
-                */
-            }
-            
-            return $configuration->send_auto && $send_xml_signed;
-        }
-
-        return true;
-    }
-
-    private static function formatPdf($actions, $inputs, $configuration)
-    {
-        return Functions::valueKeyInArray($actions, 'format_pdf', 'a4');
-    }
 }

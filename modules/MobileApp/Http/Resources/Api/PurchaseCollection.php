@@ -38,7 +38,6 @@ class PurchaseCollection extends ResourceCollection
                 'total_unaffected'          => (float) $purchase->total_unaffected,
                 'total_free'                => (float) $purchase->total_free,
                 'total_igv'                 => (float) $purchase->total_igv,
-                'total_isc'                 => (float) $purchase->total_isc,
                 'total_perception'          => (float) $purchase->total_perception,
                 'total'                     => (float) $purchase->total,
                 'total_canceled'            => (bool) $purchase->total_canceled,

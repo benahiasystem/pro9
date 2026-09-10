@@ -4,18 +4,6 @@
 
     $document_base = $document->note;
     $document_number = $document->series.'-'.str_pad($document->number, 8, '0', STR_PAD_LEFT);
-    $document_type_description_array = [
-        '01' => 'FACTURA',
-        '03' => 'BOLETA DE VENTA',
-        '07' => 'NOTA DE CREDITO',
-        '08' => 'NOTA DE DEBITO',
-    ];
-    $identity_document_type_description_array = [
-        '-' => 'Bs.D',
-        '0' => 'Bs.D',
-        '1' => 'DNI',
-        '6' => 'RIF',
-    ];
     $currency_type_description_array = [
         'VES' => 'Bs.D',
         '0' => 'Bs.D',
@@ -342,16 +330,6 @@
         </tr>
         <tr>
             <td class="m27-value">{{ $document->optional->observations }}</td>
-        </tr>
-    @endif
-    <tr>
-        <td class="m27-item-note pt-2">CÓDIGO HASH: {{ $document->hash }}</td>
-    </tr>
-    @if($document->qr)
-        <tr>
-            <td class="text-center pt-2">
-                <img class="m27-qr" src="data:image/png;base64, {{ $document->qr }}" />
-            </td>
         </tr>
     @endif
 </table>

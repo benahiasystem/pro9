@@ -100,7 +100,7 @@ class ReportCommissionDetailController extends Controller
 
     }
 
-    
+
     private function data($establishment_id, $date_start, $date_end, $model, $item_id, $category_id)
     {
 
@@ -110,7 +110,7 @@ class ReportCommissionDetailController extends Controller
 
                     $data = $model::whereHas('document',function($query) use($date_start, $date_end, $establishment_id){
                         $query->whereBetween('date_of_issue', [$date_start, $date_end])
-                        ->whereIn('document_type_id', ['01','03'])
+                        ->whereIn('document_type_id', ['01'])
                         ->where('establishment_id', $establishment_id)
                         ->whereStateTypeAccepted();
                     });
@@ -122,7 +122,7 @@ class ReportCommissionDetailController extends Controller
 
                 $data = $model::whereHas('document',function($query) use($date_start, $date_end){
                             $query->whereBetween('date_of_issue', [$date_start, $date_end])
-                            ->whereIn('document_type_id', ['01','03'])
+                            ->whereIn('document_type_id', ['01'])
                             ->whereStateTypeAccepted();
                         });
             }
@@ -133,7 +133,7 @@ class ReportCommissionDetailController extends Controller
 
 
             $this->filterByCategory($data, $category_id);
-    
+
             return $data;
 
 
@@ -165,14 +165,14 @@ class ReportCommissionDetailController extends Controller
 
 
             $this->filterByCategory($data, $category_id);
-    
+
             return $data;
 
         }
 
     }
 
-    
+
     /**
      *
      * @param  Builder $query

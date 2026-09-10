@@ -670,7 +670,7 @@ export default {
             warehouses: [],
             lots: [],
             affectation_igv_types: [],
-            system_isc_types: [],
+
             discount_types: [],
             charge_types: [],
             attribute_types: [],
@@ -691,7 +691,7 @@ export default {
         this.$http.get(`/${this.resource}/item/tables`).then(response => {
             this.all_items = response.data.items
             this.affectation_igv_types = response.data.affectation_igv_types
-            this.system_isc_types = response.data.system_isc_types
+
             this.discount_types = response.data.discount_types
             this.charge_types = response.data.charge_types
             this.attribute_types = response.data.attribute_types
@@ -797,9 +797,9 @@ export default {
                 item: {},
                 affectation_igv_type_id: null,
                 affectation_igv_type: {},
-                has_isc: false,
-                system_isc_type_id: null,
-                percentage_isc: 0,
+
+
+
                 suggested_price: 0,
                 quantity: 1,
                 unit_price: 0,
@@ -901,9 +901,9 @@ export default {
             this.setGlobalPurchaseCurrencyToItem()
 
             //asignar variables isc
-            this.form.has_isc = this.form.item.purchase_has_isc
-            this.form.percentage_isc = this.form.item.purchase_percentage_isc
-            this.form.system_isc_type_id = this.form.item.purchase_system_isc_type_id
+
+
+
 
         },
         setGlobalPurchaseCurrencyToItem(){

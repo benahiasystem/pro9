@@ -108,10 +108,6 @@ if ($hostname) {
             Route::post('companies/uploads', 'Tenant\CompanyController@uploadFile');
             Route::post('companies/uploads', 'Tenant\CompanyController@uploadFile');
             Route::delete('companies/delete-logo', 'Tenant\CompanyController@deleteLogo');
-            // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
-            // PSE no forma parte de la operación local venezolana.
-            // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
-
             //configuracion WhatsApp Api
             Route::post('companies/store-whatsapp-api', 'Tenant\CompanyController@storeWhatsAppApi');
             Route::get('companies/record-whatsapp-api', 'Tenant\CompanyController@recordWhatsAppApi');
@@ -124,8 +120,6 @@ if ($hostname) {
             Route::delete('card_brands/{card_brand}', 'Tenant\CardBrandController@destroy');
 
             //Configurations
-            Route::get('configurations/sale-notes', 'Tenant\SaleNoteController@SetAdvanceConfiguration')->name('tenant.sale_notes.configuration')->middleware('redirect.level');
-            Route::post('configurations/sale-notes', 'Tenant\SaleNoteController@SaveSetAdvanceConfiguration');
             Route::get('configurations/addSeeder', 'Tenant\ConfigurationController@addSeeder');
             Route::get('configurations/preprinted/addSeeder', 'Tenant\ConfigurationController@addPreprintedSeeder');
             Route::get('configurations/getFormats', 'Tenant\ConfigurationController@getFormats');
@@ -398,14 +392,9 @@ if ($hostname) {
             Route::get('documents/record/{document}', 'Tenant\DocumentController@record');
             Route::post('documents', 'Tenant\DocumentController@store');
             Route::post('documents/{id}/update', 'Tenant\DocumentController@update');
-            // ########## INICIO CAMBIO SIN XML CDR SUNAT
-            // El reenvío fiscal manual no se registra en operación local.
-            // ######### FIN CAMBIO SIN XML CDR SUNAT
             // Route::get('documents/remove/{document}', 'Tenant\DocumentController@remove');
-            // Route::get('documents/consult_cdr/{document}', 'Tenant\DocumentController@consultCdr');
             Route::post('documents/email', 'Tenant\DocumentController@email');
             // debe declararse antes del wildcard documents/note/{document}
-            Route::get('documents/note/penalty-item', 'Tenant\NoteController@penaltyItem');
             Route::get('documents/note/{document}', 'Tenant\NoteController@create');
             Route::get('documents/note/record/{document}', 'Tenant\NoteController@record');
             Route::get('documents/item/tables', 'Tenant\DocumentController@item_tables');
@@ -424,8 +413,6 @@ if ($hostname) {
             Route::get('document_payments/report/{start}/{end}/{report}', 'Tenant\DocumentPaymentController@report');
 
 
-            Route::get('documents/send_server/{document}/{query?}', 'Tenant\DocumentController@sendServer');
-            Route::get('documents/check_server/{document}', 'Tenant\DocumentController@checkServer');
             Route::get('documents/change_to_registered_status/{document}', 'Tenant\DocumentController@changeToRegisteredStatus');
 
             Route::post('documents/import', 'Tenant\DocumentController@import');
@@ -453,17 +440,9 @@ if ($hostname) {
             Route::get('contingencies/create', 'Tenant\ContingencyController@create')->name('tenant.contingencies.create');
 
             //Summaries
-            Route::get('summaries', 'Tenant\SummaryController@index')->name('tenant.summaries.index')->middleware('redirect.level');
-            Route::get('summaries/records', 'Tenant\SummaryController@records');
-            Route::post('summaries/documents', 'Tenant\SummaryController@documents');
-            Route::post('summaries', 'Tenant\SummaryController@store');
             // ########## INICIO CAMBIO SIN XML CDR SUNAT
             // Se retiraron consulta de estado, regularización y cancelación fiscal.
             // ######### FIN CAMBIO SIN XML CDR SUNAT
-            Route::get('summaries/columns', 'Tenant\SummaryController@columns');
-            Route::delete('summaries/{summary}', 'Tenant\SummaryController@destroy');
-            Route::get('summaries/record/{summary}', 'Tenant\SummaryController@record');
-            Route::get('summaries/tables', 'Tenant\SummaryController@tables');
 
             //Voided
             Route::get('voided', 'Tenant\VoidedController@index')->name('tenant.voided.index')->middleware('redirect.level');
@@ -498,7 +477,6 @@ if ($hostname) {
              * dispatches/tables
              * dispatches
              * dispatches/record/{id}
-             * dispatches/sendSunat/{document}
              * dispatches/email
              * dispatches/generate/{sale_note}
              * dispatches/record/{id}/tables
@@ -519,9 +497,6 @@ if ($hostname) {
                 Route::post('/tables', 'Tenant\DispatchController@tables');
                 Route::post('', 'Tenant\DispatchController@store');
                 Route::get('/record/{id}', 'Tenant\DispatchController@record');
-                // ########## INICIO CAMBIO SIN XML CDR SUNAT
-                // La guía se registra localmente y no expone envío SUNAT.
-                // ######### FIN CAMBIO SIN XML CDR SUNAT
                 Route::post('/email', 'Tenant\DispatchController@email');
                 Route::get('/generate/{sale_note}', 'Tenant\DispatchController@generate');
                 Route::get('/record/{id}/tables', 'Tenant\DispatchController@generateDocumentTables');
@@ -532,9 +507,6 @@ if ($hostname) {
                 Route::get('/data_table', 'Tenant\DispatchController@data_table');
                 Route::get('/search/customers', 'Tenant\DispatchController@searchCustomers');
                 Route::get('/search/customer/{id}', 'Tenant\DispatchController@searchClientById');
-                // ########## INICIO CAMBIO SIN XML CDR SUNAT
-                // No se consulta ticket fiscal para guías locales.
-                // ######### FIN CAMBIO SIN XML CDR SUNAT
                 Route::get('create_new/{table}/{id}', 'Tenant\DispatchController@createNew');
                 Route::get('/get_origin_addresses/{establishment_id}', 'Tenant\DispatchController@getOriginAddresses');
                 Route::get('/get_addresses_other_establishments/{establishment_id}', 'Tenant\DispatchController@getAddressesOtherEstablishments');
@@ -645,7 +617,6 @@ if ($hostname) {
             // Route::get('purchases/item_resource/{id}', 'Tenant\PurchaseController@itemResource');
 
             // Route::get('documents/send/{document}', 'Tenant\DocumentController@send');
-            // Route::get('documents/consult_cdr/{document}', 'Tenant\DocumentController@consultCdr');
             // Route::post('documents/email', 'Tenant\DocumentController@email');
             // Route::get('documents/note/{document}', 'Tenant\NoteController@create');
             Route::get('purchases/item/tables', 'Tenant\PurchaseController@item_tables');
@@ -696,9 +667,6 @@ if ($hostname) {
             Route::get('sale-notes/create/{salenote?}', 'Tenant\SaleNoteController@create')->name('tenant.sale_notes.create')->middleware('redirect.level');
 
             Route::get('sale-notes/tables', 'Tenant\SaleNoteController@tables');
-            Route::post('sale-notes/UpToOther', 'Tenant\SaleNoteController@EnviarOtroSitio');
-            Route::post('sale-notes/getUpToOther', 'Tenant\SaleNoteController@getSaleNoteToOtherSite');
-            Route::post('sale-notes/urlUpToOther', 'Tenant\SaleNoteController@getSaleNoteToOtherSiteUrl');
             Route::post('sale-notes/duplicate', 'Tenant\SaleNoteController@duplicate');
             Route::post('sale-notes/custom-fields/update', 'Tenant\SaleNoteController@updateCustomFields');
             Route::get('sale-notes/table/{table}', 'Tenant\SaleNoteController@table');
@@ -1070,7 +1038,6 @@ if ($hostname) {
             Route::get('massive-invoice/download-format', 'System\MassiveInvoiceController@downloadFormat')->name('system.massive-invoice.download');
             Route::post('massive-invoice/upload', 'System\MassiveInvoiceController@upload')->name('system.massive-invoice.upload');
             Route::post('massive-invoice/process', 'System\MassiveInvoiceController@process')->name('system.massive-invoice.process');
-            Route::get('massive-invoice/config', 'System\MassiveInvoiceController@config');
             Route::get('massive-invoice/records', 'System\MassiveInvoiceController@records');
             Route::get('massive-invoice/export', 'System\MassiveInvoiceController@export');
             Route::get('massive-invoice/download/{id}/{type}', 'System\MassiveInvoiceController@downloadFile');

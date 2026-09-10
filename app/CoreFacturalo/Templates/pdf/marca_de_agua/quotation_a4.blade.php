@@ -123,7 +123,7 @@
                 <h5 class="text-center">COTIZACIÓN</h5>
                 <h3 class="text-center">{{ $tittle }}</h3>
             </td>
-        @endif                
+        @endif
     </tr>
 </table>
 <table class="full-width mt-5">
@@ -154,19 +154,19 @@
                     if (!empty($customer->address)) {
                         $addressParts[] = $customer->address;
                     }
-                
+
                     if (!empty($customer->district_id) && $customer->district_id !== '-' && isset($customer->district) && !empty($customer->district->description)) {
                         $addressParts[] = $customer->district->description;
                     }
-                
+
                     if (!empty($customer->province_id) && $customer->province_id !== '-' && isset($customer->province) && !empty($customer->province->description)) {
                         $addressParts[] = $customer->province->description;
                     }
-                
+
                     if (!empty($customer->department_id) && $customer->department_id !== '-' && isset($customer->department) && !empty($customer->department->description)) {
                         $addressParts[] = $customer->department->description;
                     }
-                
+
                     $fullAddress = implode(', ', $addressParts);
                 @endphp
 
@@ -329,7 +329,7 @@
                 @endif
             </table>
         </td>
-    </tr>                          
+    </tr>
 </table>
 
 <table class="full-width mt-3">
@@ -433,16 +433,11 @@
                 @endif
 
                 {{-- ########## INICIO SIN DETRACCIONES E ISC --}}
-                @if(\App\Services\LocalFiscalDocumentPolicy::showIsc() && ($row->total_isc > 0))
-                {{-- ######### FIN SIN DETRACCIONES E ISC --}}
-                    <br/><span style="font-size: 9px">ISC : {{ $row->total_isc }} ({{ $row->percentage_isc }}%)</span>
-                @endif
+
 
                 @if (!empty($row->item->presentation)) {!!$row->item->presentation->description!!} @endif
 
-                @if($row->total_plastic_bag_taxes > 0)
-                    <br/><span style="font-size: 9px">ICBPER : {{ $row->total_plastic_bag_taxes }}</span>
-                @endif
+
 
                 @if($row->attributes)
                     @foreach($row->attributes as $attr)
@@ -505,7 +500,7 @@
                         -
                     @endif
                 </td>
-            @endif   
+            @endif
             <td class="text-center align-top desc cell-solid-rl p-1">{{ number_format($row->unit_price, 2) }}</td>
             <td class="text-center align-top desc cell-solid-rl p-1">
                 @if($row->discounts)

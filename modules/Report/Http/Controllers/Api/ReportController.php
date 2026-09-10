@@ -20,7 +20,7 @@ class ReportController extends Controller
     use ReportTrait;
 
     private function getDateRange() {
-        return 
+        return
         [
             now()->firstOfMonth()->format('Y-m-d'),
             now()->endOfMonth()->format('Y-m-d'),
@@ -42,7 +42,7 @@ class ReportController extends Controller
             return $response;
         }
         Log::info($request->all());
-        $records = $this->getRecords($request->all(), \App\Models\Tenant\Quotation::class); 
+        $records = $this->getRecords($request->all(), \App\Models\Tenant\Quotation::class);
 
         return $this->getCollectionQuotations($records->get());
     }
@@ -95,7 +95,7 @@ class ReportController extends Controller
                 $item_web_platform = $item->getWebPlatformModel();
                 if ($item_web_platform) {
                     $web_platform = $item_web_platform->name;
-                } 
+                }
                 $total_item_purchase = \Modules\Report\Http\Resources\GeneralItemCollection::getPurchaseUnitPrice($row);
                 $warehouse_description = \App\CoreFacturalo\Helpers\Template\ReportHelper::getWarehouseDescription($row, $document);
                 $isSaleNote = ($request->input('document_type_id') != '80' && $request->input('type') == 'sale') ? true : false;
@@ -115,7 +115,7 @@ class ReportController extends Controller
                     'number_document_customer' => $document->customer->number,
                     'customer_name' => $document->customer->name,
                     'seller' => $isSaleNote ? ($document->seller_id ? $document->user->name : $document->seller->name) : $document->user->name,
-                    'observation' => $observation,  
+                    'observation' => $observation,
                     'currency' => $document->currency_type_id,
                     'unit_type'=> $item->unit_type_id,
                     'internal_id'=> $item->internal_id,
@@ -128,9 +128,6 @@ class ReportController extends Controller
                     'total_value' => $item->total_value,
                     'affectation_igv_type' => $row->affectation_igv_type_id,
                     'igv' => $item->total_igv,
-                    'system_isc_type_id' => $row->system_isc_type_id,
-                    'total_isc' => $row->total_isc,
-                    'total_plastic_bag_taxes' => $row->total_plastic_bag_taxes,
                     'total' => $row->total,
                     'purchase_total' => $total_item_purchase,
                     'exchange_rate_sale' => $document->exchange_rate_sale,
@@ -160,9 +157,6 @@ class ReportController extends Controller
                     'total_value' => $row->getConvertTotalValueToPen(),
                     'affectation_igv_type' => $row->affectation_igv_type_id,
                     'total_igv' => $row->getConvertTotalIgvToPen(),
-                    'system_isc_type_id' => optional($row->system_isc_type_id)->description,
-                    'total_isc' => $row->getConvertTotalIscToPen(),
-                    'total_plastic_bag_taxes' => $row->total_plastic_bag_taxes,
                     'total' => $row->getConvertTotalToPen(),
                     'exchange_rate_sale' => $purchase->exchange_rate_sale,
                     'warehouse_description' => $warehouse_description
@@ -257,13 +251,12 @@ class ReportController extends Controller
                 'total_discount' => $totals['total_discount'],
                 'total_free' => $totals['total_free'],
                 'total_igv' => $totals['total_igv'],
-                'total_isc' => $totals['total_isc'],
                 'total' => $totals['total'],
             ];
         });
     }
 
-    private function totalesDocuments($record, $document_type) 
+    private function totalesDocuments($record, $document_type)
     {
         $totals = [
             'total_charge' => 0,
@@ -273,7 +266,6 @@ class ReportController extends Controller
             'total_discount' => 0,
             'total_free' => 0,
             'total_igv' => 0,
-            'total_isc' => 0,
             'total' => 0
         ];
 
@@ -302,7 +294,7 @@ class ReportController extends Controller
 
         $response = [
             'success' => true,
-            'message' => '',    
+            'message' => '',
         ];
 
         if ($request->input('item_name')) {
@@ -374,4 +366,4 @@ class ReportController extends Controller
 
     }
 
-}   
+}

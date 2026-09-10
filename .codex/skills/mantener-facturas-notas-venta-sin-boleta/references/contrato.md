@@ -7,19 +7,20 @@
 | Venta general, POS, pedidos, Hotel, ecommerce y restaurante | `01`, `80` | `03` |
 | Conversión de Nota de venta, cotización y guía | `01` | `03` |
 | Servicio técnico | `01`, `nv` | `03` |
-| Consulta, PDF, reenvío y auditoría histórica | `01`, `03`, `80` según exista | Ninguno: es lectura histórica |
+| Procesamiento de Facturas y notas fiscales | `01`, `07`, `08` | Tipos de otros módulos y `03` |
+| Consulta, PDF y auditoría | Tipos vigentes de cada módulo | Sin ramas exclusivas de Boletas |
 
 ## Puntos de control
 
 - `app/Services/SalesDocumentTypePolicy.php`: política compartida y rechazo de nuevas Boletas/series.
 - `app/CoreFacturalo/Facturalo.php`: última barrera común antes de guardar un documento fiscal.
-- `app/Services/SeriesCodeGenerator.php`: catálogo histórico y conjunto reducido para nuevas series.
-- `database/seeders/TenantMigrationDataSeeder.php`: no asignar el grupo de Boleta a tenants nuevos sin borrar tenants existentes.
+- `app/Services/SeriesCodeGenerator.php`: catálogo actual de series, sin resolutores para Boletas ni prefijos antiguos.
+- `database/seeders/TenantMigrationDataSeeder.php`: sembrar directamente el catálogo vigente sin conversiones de tenants existentes.
 - Controladores y vistas de POS, pedidos, Hotel, tienda, restaurante, servicio técnico, ecommerce, WhatsApp, guías, cotizaciones y conversión de Nota de venta: listas explícitas según la tabla anterior.
 
-## Compatibilidad histórica
+## Instalación nueva
 
-No eliminar `03` de modelos, relaciones, consultas, reportes, herramientas de búsqueda, PDF ni resolutores de series. El catálogo puede conservar `BB`, `BC` y `BD` para interpretar documentos existentes; solamente debe excluirlos al ofrecer o crear series nuevas.
+Retirar las ramas exclusivas de Boletas (`03`) y las series `BB`, `BC` y `BD` de modelos, consultas, reportes, herramientas de búsqueda, PDF y resolutores. No eliminar otros códigos `03` por coincidencia: motivos de notas, estados y otros catálogos tienen significados distintos. Conservar auditoría futura y funciones actuales compartidas. No ejecutar cambios sobre bases reales.
 
 ## Marcadores heredados de las tarjetas
 
@@ -38,5 +39,4 @@ Conservar el número de almohadillas utilizado por el archivo de origen. La dife
 2. Ejecutar la suite unitaria completa si el entorno dispone de sus dependencias.
 3. Validar sintaxis PHP y plantillas Vue modificadas.
 4. Buscar valores por defecto o selectores activos que todavía creen `03`.
-5. Revisar que las referencias restantes a Boleta pertenezcan exclusivamente a históricos, catálogos compatibles o archivos de respaldo no ejecutados.
-
+5. Revisar que las referencias restantes a Boleta sólo documenten su retirada o prueben su rechazo; no conservar caminos ejecutables exclusivos de documentos retirados.

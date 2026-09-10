@@ -1,24 +1,21 @@
 <?php
-// ######### INICIO CAMBIO NELSON #########
-
-/**
- * Estructura efectiva clonada desde `tenancy_bbc`.
- * Tabla: `notes`.
- *
- * Inventario de columnas:
- * - `id`: int(10) unsigned; NOT NULL; auto_increment — Sin comentario definido en el esquema fuente.
- * - `document_id`: int(10) unsigned; NOT NULL — Sin comentario definido en el esquema fuente.
- * - `note_type`: enum('credit','debit'); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
- * - `note_credit_type_id`: varchar(255); NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
- * - `note_debit_type_id`: varchar(255); NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
- * - `note_description`: varchar(255); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
- * - `affected_document_id`: int(10) unsigned; NULL — Sin comentario definido en el esquema fuente.
- * - `data_affected_document`: json; NULL — Sin comentario definido en el esquema fuente.
- */
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 
+// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
+/**
+ * Estructura inicial de `notes` para instalaciones nuevas.
+ * Inventario de columnas:
+ * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
+ * - `document_id` int(10) unsigned NOT NULL
+ * - `note_type` enum('credit','debit') COLLATE utf8mb4_unicode_ci NOT NULL
+ * - `note_credit_type_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
+ * - `note_debit_type_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
+ * - `note_description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
+ * - `affected_document_id` int(10) unsigned DEFAULT NULL
+ * - `data_affected_document` json DEFAULT NULL
+ */
 return new class extends Migration
 {
     public function up(): void
@@ -47,4 +44,4 @@ SQL);
         DB::unprepared('DROP TABLE IF EXISTS `notes`');
     }
 };
-// ######### FIN CAMBIO NELSON #########
+// ######## FIN ESQUEMA INICIAL VENEZUELA ########

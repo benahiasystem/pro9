@@ -131,7 +131,7 @@ class DashboardSalePurchase
             // $customers es un cliente con todos sus documentos generados
             // dd($customers[0]->total);
 
-            $transaction_quantity_sale = $customers->whereIn('document_type_id', ['01','03','08'])->count() + $customers->where('prefix', 'NV')->count();
+            $transaction_quantity_sale = $customers->whereIn('document_type_id', ['01','08'])->count() + $customers->where('prefix', 'NV')->count();
             $transaction_quantity_credit_note =$customers->where('document_type_id', '07')->count();
 
             $transaction_quantity = $transaction_quantity_sale - $transaction_quantity_credit_note;
@@ -145,7 +145,7 @@ class DashboardSalePurchase
                 ]);
             }
 
-            $totals = $customers->whereIn('document_type_id', ['01','03','08'])->sum(function ($row) {
+            $totals = $customers->whereIn('document_type_id', ['01','08'])->sum(function ($row) {
                 return $this->calculateTotalCurrency($row->currency_type_id, $row->exchange_rate_sale, $row->total);//count($product['colors']);
             });    //('total');
 
@@ -367,7 +367,7 @@ class DashboardSalePurchase
 
                 if($it->document){
 
-                    if(in_array($it->document->document_type_id,['01','03','08'])){
+                    if(in_array($it->document->document_type_id,['01','08'])){
 
 
                         $totals += $this->calculateTotalCurrency($it->document->currency_type_id, $it->document->exchange_rate_sale, $it->total);

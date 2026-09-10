@@ -90,6 +90,26 @@ class ItemImportWorkbookValidatorTest extends TestCase
         self::assertContains('2:22', $coordinates);
     }
 
+    public function test_image_data_requires_the_current_optional_header(): void
+    {
+        $path = $this->workbookPath();
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->fromArray(ItemImportContract::HEADERS, null, 'A1');
+        $sheet->fromArray($this->validRow('WITH-IMAGE'), null, 'A2');
+        $sheet->setCellValue('U2', 'https://example.test/product.png');
+        IOFactory::createWriter($spreadsheet, 'Xlsx')->save($path);
+
+        $result = $this->validator()->validate($path);
+        self::assertFalse($result->passes());
+        self::assertSame([[1, 21]], array_map(static fn (array $error): array => [$error['row'], $error['column']], $result->errors()));
+
+        $sheet->setCellValue('U1', ItemImportContract::OPTIONAL_IMAGE_HEADER);
+        IOFactory::createWriter($spreadsheet, 'Xlsx')->save($path);
+        self::assertTrue($this->validator()->validate($path)->passes());
+        $spreadsheet->disconnectWorksheets();
+    }
+
     /** @test */
     public function it_rejects_damaged_empty_and_multiple_sheet_workbooks(): void
     {

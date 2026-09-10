@@ -422,16 +422,11 @@ foreach ($document->items as $row) {
                 @endif
 
                 {{-- ########## INICIO SIN DETRACCIONES E ISC --}}
-                @if(\App\Services\LocalFiscalDocumentPolicy::showIsc() && ($row->total_isc > 0))
-                {{-- ######### FIN SIN DETRACCIONES E ISC --}}
-                    <br/><span style="font-size: 9px">ISC : {{ $row->total_isc }} ({{ $row->percentage_isc }}%)</span>
-                @endif
+
 
                 @if (!empty($row->item->presentation)) {!!$row->item->presentation->description!!} @endif
 
-                @if($row->total_plastic_bag_taxes > 0)
-                    <br/><span style="font-size: 9px">ICBPER : {{ $row->total_plastic_bag_taxes }}</span>
-                @endif
+
 
                 @if($row->attributes)
                     @foreach($row->attributes as $attr)
@@ -556,7 +551,7 @@ foreach ($document->items as $row) {
                 <td class="text-center align-top">1</td>
                 <td class="text-center align-top">NIU</td>
                 <td class="text-left align-top">
-                    ANTICIPO: {{($p->document_type_id == '02')? 'FACTURA':'BOLETA'}} NRO. {{$p->number}}
+                    ANTICIPO: FACTURA NRO. {{$p->number}}
                 </td>
                 <td class="text-right align-top"></td>
                 <td class="text-right align-top">-{{ number_format($p->total, 2) }}</td>
@@ -608,12 +603,7 @@ foreach ($document->items as $row) {
         </tr>
     @endif
 
-    @if($document->total_plastic_bag_taxes > 0)
-        <tr>
-            <td colspan="{{ $colspan_total - 1 }}" class="text-right font-bold pr-2">ICBPER: {{ $document->currency_type->symbol }}</td>
-            <td class="text-right font-bold">{{ number_format($document->total_plastic_bag_taxes, 2) }}</td>
-        </tr>
-    @endif
+
     <tr>
         {{-- ########## INICIO CAMBIO IGV A IVA --}}
         <td colspan="{{ $colspan_total - 1 }}" class="text-right font-bold pr-2">IVA: {{ $document->currency_type->symbol }}</td>
@@ -622,13 +612,7 @@ foreach ($document->items as $row) {
     </tr>
 
     {{-- ########## INICIO SIN DETRACCIONES E ISC --}}
-    @if(\App\Services\LocalFiscalDocumentPolicy::showIsc() && ($document->total_isc > 0))
-    {{-- ######### FIN SIN DETRACCIONES E ISC --}}
-        <tr>
-            <td colspan="{{ $colspan_total - 1 }}" class="text-right font-bold pr-2">ISC: {{ $document->currency_type->symbol }}</td>
-            <td class="text-right font-bold">{{ number_format($document->total_isc, 2) }}</td>
-        </tr>
-    @endif
+
 
     @if($document->subtotal > 0)
         @php
@@ -809,7 +793,7 @@ foreach ($document->items as $row) {
                     @endif
                 @endforeach
                 @if(isset($configurationInPdf) && $configurationInPdf->show_bank_accounts_in_pdf)
-                    @if(in_array($document->document_type->id,['01','03']))
+                    @if(((string) $document->document_type->id === '01'))
                         @foreach($accounts as $account)
                             <tr>
                                 <td colspan="2">
@@ -837,8 +821,6 @@ foreach ($document->items as $row) {
             </table>
         </td>
         <td width="18%" class="text-right">
-            <img src="data:image/png;base64, {{ $document->qr }}" style="margin-right: -10px;" width="16%"/>
-            <p style="font-size: 8px">{{ $document->hash }}</p>
         </td>
     </tr>
 </table>

@@ -12,7 +12,6 @@ use App\Models\Tenant\Catalogs\AffectationIgvType;
 use App\Models\Tenant\Catalogs\DocumentType;
 use Illuminate\Support\Facades\DB;
 use App\Models\Tenant\Catalogs\PriceType;
-use App\Models\Tenant\Catalogs\SystemIscType;
 use App\Models\Tenant\Catalogs\AttributeType;
 use App\Models\Tenant\Company;
 use Illuminate\Support\Str;
@@ -88,7 +87,7 @@ class FixedAssetPurchaseController extends Controller
                             });
 
                 break;
- 
+
             default:
                 $records = FixedAssetPurchase::where($request->column, 'like', "%{$request->value}%");
 
@@ -118,7 +117,6 @@ class FixedAssetPurchaseController extends Controller
 
         $fixed_asset_items = $this->table('fixed_asset_items');
         $affectation_igv_types = AffectationIgvType::whereActive()->get();
-        $system_isc_types = SystemIscType::available();
         $price_types = PriceType::whereActive()->get();
         $discount_types = ChargeDiscountType::whereType('discount')->whereLevel('item')->get();
         $charge_types = ChargeDiscountType::whereType('charge')->whereLevel('item')->get();
@@ -127,7 +125,7 @@ class FixedAssetPurchaseController extends Controller
         $show_ubl_attributes = \App\Services\LocalFiscalDocumentPolicy::showUblAttributes();
         // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
 
-        return compact('fixed_asset_items', 'affectation_igv_types', 'system_isc_types', 'price_types',
+        return compact('fixed_asset_items', 'affectation_igv_types', 'price_types',
                         'discount_types', 'charge_types', 'attribute_types', 'show_ubl_attributes');
     }
 
@@ -142,18 +140,18 @@ class FixedAssetPurchaseController extends Controller
 
     public function store(FixedAssetPurchaseRequest $request)
     {
- 
+
         $data = self::convert($request);
 
         $purchase = DB::connection('tenant')->transaction(function () use ($data, $request) {
 
             $doc =  FixedAssetPurchase::updateOrCreate( ['id' => $request->input('id')], $data);
             $doc->items()->delete();
-            
+
             foreach ($data['items'] as $row)
             {
                 $row['fixed_asset_item_id'] = $row['item']['id'];
-                $doc->items()->create($row); 
+                $doc->items()->create($row);
             }
 
             return $doc;
@@ -169,7 +167,7 @@ class FixedAssetPurchaseController extends Controller
         ];
     }
 
- 
+
 
     public function voided($id)
     {
@@ -293,6 +291,6 @@ class FixedAssetPurchaseController extends Controller
         return $persons;
 
     }
- 
+
 
 }

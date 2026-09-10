@@ -31,8 +31,8 @@ class PosCollection extends ResourceCollection
             $defaultImage = $configuration->product_default_image ?? 'imagen-no-disponible.jpg';
             $defaultImagePath = $defaultImage === 'imagen-no-disponible.jpg'
                 ? asset('logo/imagen-no-disponible.jpg')
-                : asset('storage/defaults/' . $defaultImage); 
-            
+                : asset('storage/defaults/' . $defaultImage);
+
             $allPricesLabel = PriceLabel::all();
 
 
@@ -82,7 +82,7 @@ class PosCollection extends ResourceCollection
                 'aux_quantity' => 1,
                 'edit_sale_unit_price' => $sale_unit_price,
                 'aux_sale_unit_price' => $sale_unit_price,
-                'image_url' => ($row->image && $row->image !== 'imagen-no-disponible.jpg') 
+                'image_url' => ($row->image && $row->image !== 'imagen-no-disponible.jpg')
                     ? asset('storage/uploads/items/' . $row->image)
                     : $defaultImagePath,
                 'warehouses' => collect($row->warehouses)->transform(function ($row) {
@@ -101,15 +101,7 @@ class PosCollection extends ResourceCollection
                 'unit_type' => $row->item_unit_types,
                 'category' => ($row->category) ? $row->category->name : null,
                 'brand' => ($row->brand) ? $row->brand->name : null,
-                'has_plastic_bag_taxes' => (bool) $row->has_plastic_bag_taxes,
-                'amount_plastic_bag_taxes' => $row->amount_plastic_bag_taxes,
 
-                'has_plastic_bag_taxes' => (bool) $row->has_plastic_bag_taxes,
-
-                'has_isc' => (bool)$row->has_isc,
-                'system_isc_type_id' => $row->system_isc_type_id,
-                'percentage_isc' => $row->percentage_isc,
-                
                 'exchange_points' => $row->exchange_points,
                 'quantity_of_points' => $row->quantity_of_points,
                 'exchanged_for_points' => false, //para determinar si desea canjear el producto
@@ -120,11 +112,11 @@ class PosCollection extends ResourceCollection
         });
     }
 
-    
+
     private function getSaleUnitPrice($row, $configuration){
 
         $sale_unit_price = number_format($row->sale_unit_price, $configuration->decimal_quantity, ".", "");
-        
+
         if($configuration->active_warehouse_prices){
 
             $warehouse_price = $row->warehousePrices()->where('warehouse_id', auth()->user()->establishment->warehouse->id)->first();
@@ -145,5 +137,5 @@ class PosCollection extends ResourceCollection
 
         return $sale_unit_price;
     }
-    
+
 }
