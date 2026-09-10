@@ -363,7 +363,7 @@ let scrollGuardado = null;
 const hayModalAbierto = () =>
     [
         ...document.querySelectorAll(
-            '.el-dialog__wrapper, .el-message-box__wrapper, .modal.show, .swal2-container'
+            '.el-dialog__wrapper, .el-drawer__wrapper, .el-message-box__wrapper, .modal.show, .swal2-container'
         )
     ].some(ventana => {
         // offsetParent no sirve aquí: es null en todo elemento position:fixed,
@@ -387,6 +387,7 @@ const actualizarBloqueoScroll = () => {
     // se desplaza. Se limpia en cualquier tamaño de pantalla.
     if (!abierto && document.body.classList.contains('el-popup-parent--hidden')) {
         document.body.classList.remove('el-popup-parent--hidden');
+        document.body.style.paddingRight = '';
     }
 
     if (!isMobile()) return;

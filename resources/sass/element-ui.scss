@@ -8,10 +8,17 @@ html {
   1) Element UI (y sweetalert2) agregan padding-right al body para compensar la
      barra que ocultan al abrir el modal. Como el carril ya está reservado con
      scrollbar-gutter, esa compensación desplaza el contenido de la página.
+     La regla se ancla también a body.pr-0 (clase que llevan los layouts, y que
+     en Bootstrap 4 era justamente padding-right:0 !important; en Bootstrap 5
+     ya no existe): la clase el-popup-parent--hidden puede quitarse antes de
+     que Element retire su padding inline (mobile-app-behavior.js la limpia al
+     no detectar un modal) y en esa ventana el padding volvía a aplicarse,
+     corriendo el contenido a la izquierda.
   2) Element hace scroll del diálogo completo (.el-dialog__wrapper), lo que suma
      una segunda barra junto al carril del html. En su lugar el scroll vive en
      el cuerpo del diálogo, dejando cabecera y pie siempre visibles.
 */
+body.pr-0,
 body.el-popup-parent--hidden,
 body.swal2-shown {
   padding-right: 0 !important;
