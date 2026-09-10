@@ -23556,6 +23556,44 @@ html.sidebar-left-collapsed .sidebar-left .contain-icon-establishment {
     z-index: 2;
     transition: background 0.15s, color 0.15s, transform 0.15s;
 }
+/* Selector de serie embebido dentro del tab activo: hereda el color del tab */
+.fp-doc-tab .fp-series-inline {
+    width: 55px;
+    max-width: 96px;
+    cursor: pointer;
+    margin-left: 5px;
+}
+.fp-doc-tab .fp-series-inline .el-input__inner {
+    height: 22px !important;
+    line-height: 22px !important;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-align: center;
+    letter-spacing: 0.02em;
+    padding: 0 16px 0 6px;
+    border-radius: 6px !important;
+    color: inherit !important;
+    background: color-mix(in srgb, currentColor 14%, transparent) !important;
+    border: 1px solid color-mix(in srgb, currentColor 32%, transparent) !important;
+    cursor: pointer;
+}
+.fp-doc-tab .fp-series-inline .el-input__inner:hover,
+.fp-doc-tab .fp-series-inline .el-input__inner:focus {
+    color: inherit !important;
+    background: color-mix(in srgb, currentColor 22%, transparent) !important;
+    border-color: color-mix(in srgb, currentColor 55%, transparent) !important;
+    box-shadow: none !important;
+}
+.fp-doc-tab .fp-series-inline .el-input__suffix {
+    right: 2px;
+}
+.fp-doc-tab .fp-series-inline .el-input__icon {
+    line-height: 22px;
+    width: 16px;
+    font-size: 0.7rem;
+    color: inherit;
+    opacity: 0.75;
+}
 .pos-order-top {
     border-bottom: none;
 }

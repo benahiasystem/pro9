@@ -45,8 +45,17 @@
                     <label class="fp-field-label mb-0">
                         Descuento ({{ discount_type === '01' ? currencyTypeActive.symbol : '%' }})
                     </label>
-                    <div class="position-relative">
-                        <span class="fp-sym">{{ discount_type === '01' ? currencyTypeActive.symbol : '%' }}</span>
+                    <div class="position-relative fp-discount-field">
+                        <el-dropdown class="fp-discount-type" trigger="click" @command="changeDiscountType">
+                            <button type="button" class="fp-discount-type-button text-muted" aria-label="Seleccionar tipo de descuento" aria-haspopup="true">
+                                {{ discount_type === '01' ? currencyTypeActive.symbol : '%' }}
+                                <i class="el-icon-arrow-down" aria-hidden="true"></i>
+                            </button>
+                            <el-dropdown-menu slot="dropdown">
+                                <el-dropdown-item command="01">Monto ({{ currencyTypeActive.symbol }})</el-dropdown-item>
+                                <el-dropdown-item command="02">Porcentaje (%)</el-dropdown-item>
+                            </el-dropdown-menu>
+                        </el-dropdown>
                         <el-input
                             v-model="discount_amount"
                             size="small"
@@ -228,6 +237,33 @@
     </div>
 </template>
 <style>
+.fp-discount-field .fp-discount-type {
+    position: absolute;
+    left: 10px;
+    top: 0;
+    bottom: 0;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+}
+.fp-discount-type-button {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    font: inherit;
+    cursor: pointer;
+}
+.fp-discount-type-button .el-icon-arrow-down {
+    font-size: 10px;
+}
+.fp-discount-field .fp-amount-inp .el-input__inner {
+    padding-left: 58px;
+}
+.pos-qty-wrap .pos-qty-field .el-input__inner {
+    border: none !important;
+    background-color: transparent !important;
+    height: 24px !important;
+}
 .c-width {
     margin-right: 0 !important;
     padding: 0 !important;
@@ -614,12 +650,22 @@ export default {
                 this.inputDiscountAmount()
             }
         },
+        changeDiscountType(type) {
+            this.userTouchedDiscount = true;
+            this.discount_type = type;
+            this.inputDiscountAmount();
+        },
         inputDiscountAmount() {
             if (this.enabled_discount) {
-                if (this.discount_amount && !isNaN(this.discount_amount) && parseFloat(this.discount_amount) > 0) {
-                    if (this.discount_amount >= this.form.total) {
-                        return this.$message.error("El monto de descuento debe ser menor al total de venta")
-                    }
+                const value = parseFloat(this.discount_amount);
+                const currentDiscount = this.form.discounts.find(d => d.discount_type_id === '03');
+                const base = Number(this.form.total) + (currentDiscount ? Number(currentDiscount.amount) : 0);
+                const amount = this.discount_type === '02' ? _.round(base * value / 100, 2) : value;
+                if (value < 0 || (this.discount_type === '02' && value >= 100) || (value > 0 && amount >= base)) {
+                    this.$message.error(this.discount_type === '02'
+                        ? 'El porcentaje debe ser mayor o igual a 0 y menor a 100, sin descontar el total de venta'
+                        : 'El monto de descuento debe ser mayor o igual a 0 y menor al total de venta');
+                    this.discount_amount = 0;
                 }
             }
             this.deleteDiscountGlobal()

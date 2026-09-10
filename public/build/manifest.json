@@ -170,7 +170,7 @@
     "src": "node_modules/element-ui/lib/theme-chalk/fonts/element-icons.woff"
   },
   "resources/js/app.css": {
-    "file": "assets/app-18d1216e.css",
+    "file": "assets/app-ca02ed8a.css",
     "src": "resources/js/app.css"
   },
   "resources/js/app.js": {
@@ -180,9 +180,9 @@
       "assets/tabler-icons-9920d986.ttf"
     ],
     "css": [
-      "assets/app-18d1216e.css"
+      "assets/app-ca02ed8a.css"
     ],
-    "file": "assets/app-ccda86a7.js",
+    "file": "assets/app-a8b054e2.js",
     "imports": [
       "_vue-clipboard-b39fb3bf.js",
       "_vue.esm-340a2d96.js",
@@ -195,14 +195,14 @@
     "src": "resources/js/app.js"
   },
   "resources/js/system.css": {
-    "file": "assets/system-815b16bd.css",
+    "file": "assets/system-9f0835fa.css",
     "src": "resources/js/system.css"
   },
   "resources/js/system.js": {
     "css": [
-      "assets/system-815b16bd.css"
+      "assets/system-9f0835fa.css"
     ],
-    "file": "assets/system-b4621672.js",
+    "file": "assets/system-17718ff4.js",
     "imports": [
       "_vue-clipboard-b39fb3bf.js",
       "_vue.esm-340a2d96.js",
