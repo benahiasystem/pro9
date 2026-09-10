@@ -905,7 +905,7 @@ class MobileController extends Controller
     {
         // Sin orderBy: la consulta solo devuelve agregados y no lleva GROUP BY, asi que
         // ordenar por una columna normal hace que MySQL responda el error 1140.
-        $documents = Document::whereTypeUser();
+        $documents = Document::whereTypeUser()->whereStateTypeAccepted();
         $sale_notes = SaleNote::whereTypeUser();
 
         if ($startDate != null)
@@ -914,11 +914,18 @@ class MobileController extends Controller
             $sale_notes->whereBetween('date_of_issue', [$startDate, $endDate]);
         }
 
+        // Igual que el dashboard: facturas, boletas y notas de debito suman; notas de credito descuentan
         $documents = $documents
                 ->selectRaw("
                     COUNT(CASE WHEN document_type_id = '01' THEN 1 END) AS facturas,
                     COUNT(CASE WHEN document_type_id = '03' THEN 1 END) AS boletas,
-                    COALESCE(SUM(total), 0) AS total,
+                    COUNT(CASE WHEN document_type_id = '07' THEN 1 END) AS notasCredito,
+                    COUNT(CASE WHEN document_type_id = '08' THEN 1 END) AS notasDebito,
+                    COALESCE(SUM(CASE
+                        WHEN document_type_id IN ('01', '03', '08') THEN total
+                        WHEN document_type_id = '07' THEN -total
+                        ELSE 0
+                    END), 0) AS total,
                     COUNT(*) AS count
                 ")->first();
 
@@ -933,6 +940,8 @@ class MobileController extends Controller
             'count' => (int) $documents->count + (int) $sale_notes->notasVenta,
             'facturas' => (int) $documents->facturas,
             'boletas' => (int) $documents->boletas,
+            'notasCredito' => (int) $documents->notasCredito,
+            'notasDebito' => (int) $documents->notasDebito,
             'notasVenta' => (int) $sale_notes->notasVenta,
         ];
     }
