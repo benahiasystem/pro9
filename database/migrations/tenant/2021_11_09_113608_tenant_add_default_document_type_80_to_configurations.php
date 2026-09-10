@@ -14,7 +14,7 @@ class TenantAddDefaultDocumentType80ToConfigurations extends Migration
     public function up()
     {
         Schema::table('configurations', function (Blueprint $table) {
-            $table->boolean('default_document_type_80')->after('default_document_type_03')->default(false);
+            $table->boolean('default_document_type_80')->after('default_document_type_03')->default(true);
         });
     }
 

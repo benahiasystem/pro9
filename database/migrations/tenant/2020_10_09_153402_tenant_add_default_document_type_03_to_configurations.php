@@ -14,7 +14,7 @@ class TenantAddDefaultDocumentType03ToConfigurations extends Migration
     public function up()
     {
         Schema::table('configurations', function (Blueprint $table) {
-            $table->boolean('default_document_type_03')->default(true)->after('header_image');
+            $table->boolean('default_document_type_03')->default(false)->after('header_image');
         });
     }
 
