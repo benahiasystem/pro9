@@ -43,6 +43,19 @@ class SalesWithoutReceiptSourceContractTest extends TestCase
     }
 
     /** @test */
+    public function configuration_rollbacks_do_not_reenable_receipts(): void
+    {
+        $migration = $this->source(
+            'database/migrations/tenant/2026_09_10_200000_tenant_rollback_default_usd_exonerado_and_pos_sale_note.php'
+        );
+        $client = $this->source('app/Http/Controllers/System/ClientController.php');
+
+        self::assertStringNotContainsString("'default_document_type_03' => true", $migration);
+        self::assertStringContainsString("'default_document_type_03' => false", $migration);
+        self::assertStringContainsString("'default_document_type_03' => false", $client);
+    }
+
+    /** @test */
     public function the_maintenance_skill_documents_history_compatibility(): void
     {
         $skill = $this->source('.codex/skills/mantener-facturas-notas-venta-sin-boleta/SKILL.md');
@@ -74,4 +87,3 @@ class SalesWithoutReceiptSourceContractTest extends TestCase
     }
 }
 // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
-

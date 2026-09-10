@@ -62,8 +62,7 @@ class ProductFlowSchemaContractTest extends TestCase
             '2026_09_08_170000_tenant_add_seller_id_to_order_notes.php',
             '2026_09_09_150000_tenant_add_configuration_menu_module_level.php',
             '2026_09_10_160000_tenant_add_utilidades_widget_to_dashboard_layouts.php',
-            '2026_09_10_170000_tenant_activate_exonerado_affectation_igv_type.php',
-            '2026_09_10_190000_tenant_set_pos_default_document_type_sale_note.php',
+            '2026_09_10_200000_tenant_rollback_default_usd_exonerado_and_pos_sale_note.php',
         ], array_slice($names, $repairPosition + 1));
     }
 
