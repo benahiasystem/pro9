@@ -14,12 +14,18 @@
                                 <span class="font-weight-bold d-block">COT-XXX</span>
                                 <span class="font-weight-bold">{{ company.name }}</span>
                                 <br>
-                                <div v-if="establishment.address != '-'">{{ establishment.address }},</div>
-                                {{ establishment.district.description }}, {{ establishment.province.description }},
-                                {{ establishment.department.description }} - {{ establishment.country.description }}
-                                <br>
-                                {{ establishment.email }} - <span
-                                v-if="establishment.telephone != '-'">{{ establishment.telephone }}</span>
+                                <!-- Sin esta guarda el encabezado reventaba cuando no habia
+                                     establecimiento y tumbaba todo el formulario. -->
+                                <template v-if="establishment">
+                                    <div v-if="establishment.address != '-'">{{ establishment.address }},</div>
+                                    <template v-if="establishment.district">
+                                        {{ establishment.district.description }}, {{ establishment.province.description }},
+                                        {{ establishment.department.description }} - {{ establishment.country.description }}
+                                    </template>
+                                    <br>
+                                    {{ establishment.email }} - <span
+                                    v-if="establishment.telephone != '-'">{{ establishment.telephone }}</span>
+                                </template>
                             </address>
                         </div>
                     </div>
@@ -691,6 +697,8 @@ export default {
             company: null,
             establishments: [],
             establishment: null,
+            // Copia del local que guarda la cotizacion, respaldo del encabezado.
+            record_establishment: null,
             currency_type: {},
             customer_addresses: [],
             quotationNewId: null,
@@ -932,6 +940,11 @@ export default {
 
                     let dato = payload.quotation
                     this.form.id = dato.id
+
+                    // Si /tables no trae ningun local, el encabezado usa la copia que
+                    // guarda la cotizacion en vez de quedar undefined.
+                    this.record_establishment = dato.establishment || null
+                    this.changeEstablishment()
                     this.form.customer_id = dato.customer_id
 
                     if (payload.customer) {
@@ -1137,6 +1150,8 @@ export default {
         },
         changeEstablishment() {
             this.establishment = _.find(this.establishments, {'id': this.form.establishment_id})
+                || this.record_establishment
+                || null
 
         },
         cleanCustomer() {
