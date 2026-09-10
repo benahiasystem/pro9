@@ -650,8 +650,6 @@ html.sidebar-light:not(.dark) .page-header .breadcrumbs span {
     overflow: hidden;
 }
 .card-body.pointer.px-2.pt-2 .img-custom {
-    height: 150px !important;
-    object-fit: cover;
     filter: brightness(0.98);
     border-radius: 4px;
 }
@@ -1620,6 +1618,11 @@ html.dark .minitour-tooltip p b {
 }
 .row.top.kpi-row {
     margin-bottom: 8px !important;
+}
+@media only screen and (min-width: 768px) {
+    html.fixed.has-system-ads-toolbar .page-header {
+        top: 60px;
+    }
 }
 /* theme dark */
 html.dark,html.dark body{

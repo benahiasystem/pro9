@@ -50,7 +50,7 @@ class TenantMigrationDataSeederTest extends TestCase
         // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
 
         // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
-        self::assertCount(323, $createMigrations);
+        self::assertCount(325, $createMigrations);
         // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
         self::assertCount(1, $foreignKeyMigrations);
         self::assertCount(1, $currencyMigrations);
@@ -69,7 +69,7 @@ class TenantMigrationDataSeederTest extends TestCase
             glob(database_path('migrations/tenant/*_repair_items_parent_item_contract.php')) ?: []
         );
         // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
-        self::assertCount(358, glob(database_path('migrations/tenant/*.php')) ?: []);
+        self::assertCount(371, glob(database_path('migrations/tenant/*.php')) ?: []);
         // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
         // ########### FIN CONTRATO FLUJO DE PRODUCTOS ###########
         // ######### FIN CAMBIO SUNAT A SENIAT

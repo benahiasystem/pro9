@@ -385,10 +385,6 @@
        en una sola fila pegada al título. */
     .content-body .row > .filter-container {
         margin-top: 0 !important;
-        flex: 0 0 auto;
-        width: auto;
-        max-width: none;
-        padding-right: 0;
     }
 
     /* El bloque siguiente (ver todos + selector) conserva el ancho completo
@@ -497,6 +493,29 @@
         background: var(--color-bg, rgba(0, 0, 0, 0.05));
     }
 
+    /* Acción con desplegable propio (p. ej. "Traslados"): sus opciones se
+       anidan aquí, así el menú no se cierra al abrirlas */
+    .m-menu-acciones__grupo-btn::after {
+        content: "\25BE";
+        float: right;
+        margin-left: 8px;
+        opacity: 0.55;
+    }
+
+    .m-menu-acciones__grupo.is-open .m-menu-acciones__grupo-btn::after {
+        content: "\25B4";
+    }
+
+    .m-menu-acciones__subitem {
+        display: none;
+        padding-left: 26px;
+        font-size: 13.5px;
+    }
+
+    .m-menu-acciones__grupo.is-open .m-menu-acciones__subitem {
+        display: block;
+    }
+
     /* Leyenda de colores (Boletas / Facturas / Notas de crédito): ocupa una
        franja entera en celular; los colores siguen visibles en las filas */
     .documents-legend {
@@ -568,6 +587,9 @@
            dejaban un hueco entre la cabecera y la barra de herramientas */
         margin-top: 0 !important;
     }
+    .content-body .filter-content {
+        margin-top: 12px !important;
+    }
 
     /* Los .row de Bootstrap tienen margen negativo: sin esto los botones
        del toolbar quedan pegados al borde de la pantalla.
@@ -610,14 +632,14 @@
 
     /* Primera columna congelada: al desplazar en horizontal se mantiene la
        referencia de a qué registro pertenece cada dato */
-    .table-responsive .table > thead > tr > th:first-child,
+    /* .table-responsive .table > thead > tr > th:first-child,
     .table-responsive .table > tbody > tr > td:first-child {
         position: sticky;
         left: 0;
         z-index: 2;
         background: var(--color-surface, #fff);
         box-shadow: 2px 0 5px rgba(0, 0, 0, 0.06);
-    }
+    } */
 
     .table-responsive .table > thead > tr > th:first-child {
         z-index: 3;
@@ -627,11 +649,11 @@
        entrega) en columnas de ~117px, donde la fecha se veía cortada
        ("16-08" en vez de 16-08-2026) y las etiquetas largas partían la
        fila. En celular van a media fila para que quepa la fecha completa. */
-    .content-body .row > [class*="col-4"]:has(.el-date-editor),
+    /* .content-body .row > [class*="col-4"]:has(.el-date-editor),
     .content-body .row > [class*="col-4"]:has(.el-select) {
         flex: 0 0 50%;
         max-width: 50%;
-    }
+    } */
 
     /* Barra de campos personalizable (formulario de producto): en celular se
        respeta el ORDEN que definió el usuario, pero no los anchos —se guardan
@@ -645,14 +667,14 @@
         max-width: 100% !important;
     }
 
-    .item-form-pinned-bar [class*="col-md-"]:has(.el-date-editor),
+    /* .item-form-pinned-bar [class*="col-md-"]:has(.el-date-editor),
     .item-form-pinned-bar [class*="col-md-"]:has(.el-select),
     .item-form-pinned-bar [class*="col-md-"]:has(.el-input-number),
     .item-form-pinned-bar [class*="col-md-"]:has(input[inputmode="decimal"]),
     .item-form-pinned-bar [class*="col-md-"].m-campo-corto {
         flex: 0 0 50% !important;
         max-width: 50% !important;
-    }
+    } */
 
     /* Campos cortos a media fila en lugar de ocupar todo el ancho.
        Dos señales, ambas del propio formulario:
@@ -664,13 +686,13 @@
        page-header queda fuera: no es un formulario sino la barra de
        herramientas del módulo, y a la mitad del ancho sus controles
        (lista de precios + botones de vista) no entran en una fila. */
-    .row:not(.page-header) > .col-md-1:not(:has(.el-input-group)):not(:has(.input-group)),
+    /* .row:not(.page-header) > .col-md-1:not(:has(.el-input-group)):not(:has(.input-group)),
     .row:not(.page-header) > .col-md-2:not(:has(.el-input-group)):not(:has(.input-group)),
     .row:not(.page-header) > .col-md-3:not(:has(.el-input-group)):not(:has(.input-group)),
     .row:not(.page-header) > .m-campo-corto {
         flex: 0 0 50%;
         max-width: 50%;
-    }
+    } */
 
     /* Modal "Agregar Producto o Servicio": Cantidad / Precio Unitario /
        Total venían en tres columnas de ~106px, donde la etiqueta "Precio

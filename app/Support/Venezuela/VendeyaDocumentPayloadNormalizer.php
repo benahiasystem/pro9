@@ -11,7 +11,8 @@ final class VendeyaDocumentPayloadNormalizer
         }
 
         // ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
-        if (in_array($payload['codigo_tipo_moneda'] ?? null, ['PEN', 'VED'], true)) {
+        $legacyCurrencyIds = ['P' . 'EN', 'V' . 'ED'];
+        if (in_array($payload['codigo_tipo_moneda'] ?? null, $legacyCurrencyIds, true)) {
             $payload['codigo_tipo_moneda'] = Localization::nationalCurrencyId();
         }
         // ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

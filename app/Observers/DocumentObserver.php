@@ -24,6 +24,35 @@ class DocumentObserver
      */
     public function creating(Document $document)
     {
+        // El correlativo de una serie asignada a una máquina VendeYa es
+        // autoridad LOCAL de esa máquina: usarla online garantiza colisión.
+        // El bloqueo es POR SERIE — el resto de series del establecimiento
+        // emite online con normalidad. Aplica también a máquinas revocadas
+        // cuyas series aún no se liberan (su cola pendiente puede llegar al
+        // reconectar); "Liberar series" en el panel las devuelve al online.
+        // Los lotes del propio canal entran con el bypass registrado.
+        if (!app()->bound('sync.batch.bypass')
+            && class_exists(\Modules\Sync\Models\OfflineMachine::class)
+            && \Illuminate\Support\Facades\Schema::connection('tenant')->hasTable('offline_machines')
+        ) {
+            $serieTakenByMachine = \App\Models\Tenant\Series::where('establishment_id', $document->establishment_id)
+                ->where('document_type_id', $document->document_type_id)
+                ->where('number', $document->series)
+                ->whereNotNull('series_device_group_id')
+                ->whereIn(
+                    'series_device_group_id',
+                    \Modules\Sync\Models\OfflineMachine::query()->select('series_device_group_id')
+                )
+                ->exists();
+
+            if ($serieTakenByMachine) {
+                throw new \Exception(
+                    "La serie {$document->series} está asignada a una máquina VendeYa (conexión offline): " .
+                    'usa otra serie del establecimiento o libérala desde el panel de Conexión Offline.'
+                );
+            }
+        }
+
         $company = Company::active();
 
         // Serializa la asignaci├│n de correlativo por serie (evita duplicados en pagos concurrentes).
@@ -117,7 +146,17 @@ class DocumentObserver
             ['state', true],
         ])->first();
 
-        if (! $cash) {
+        // Reintentos del canal offline (bandeja): la caja del turno original ya
+        // cerró — el documento se asocia a la última caja del usuario.
+        if (!$cash && app()->bound('sync.batch.bypass')) {
+            $cash = Cash::where('user_id', auth()->id())->latest('id')->first();
+        }
+
+        if (!$cash) {
+            if (app()->bound('sync.batch.bypass')) {
+                throw (new \Illuminate\Database\Eloquent\ModelNotFoundException())->setModel(Cash::class);
+            }
+
             return;
         }
 

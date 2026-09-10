@@ -486,7 +486,7 @@ class Dispatch extends ModelTenant
      */
     public function getDownloadExternalXmlAttribute()
     {
-        return route('tenant.download.external_id', ['model' => 'dispatch', 'type' => 'xml', 'external_id' => $this->external_id]);
+        return $this->buildDownloadExternalUrl('xml');
     }
 
     /**
@@ -494,7 +494,7 @@ class Dispatch extends ModelTenant
      */
     public function getDownloadExternalPdfAttribute()
     {
-        return route('tenant.download.external_id', ['model' => 'dispatch', 'type' => 'pdf', 'external_id' => $this->external_id]);
+        return $this->buildDownloadExternalUrl('pdf');
     }
 
     /**
@@ -502,7 +502,24 @@ class Dispatch extends ModelTenant
      */
     public function getDownloadExternalCdrAttribute()
     {
-        return route('tenant.download.external_id', ['model' => 'dispatch', 'type' => 'cdr', 'external_id' => $this->external_id]);
+        return $this->buildDownloadExternalUrl('cdr');
+    }
+
+    /**
+     * En jobs/cola no hay hostname HTTP: las rutas tenant de web.php no se registran.
+     * Evita "Route [tenant.download.external_id] not defined" al exportar reportes.
+     */
+    protected function buildDownloadExternalUrl(string $type): string
+    {
+        if (!\Illuminate\Support\Facades\Route::has('tenant.download.external_id')) {
+            return '';
+        }
+
+        return route('tenant.download.external_id', [
+            'model' => 'dispatch',
+            'type' => $type,
+            'external_id' => $this->external_id,
+        ]);
     }
 
     /**

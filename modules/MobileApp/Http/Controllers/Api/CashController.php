@@ -75,7 +75,10 @@ class CashController extends Controller
      */
 	public function records(Request $request)
 	{
-        $records = Cash::whereFilterRecordsApi($request->input);
+        // El orden ya no lo pone el scope (antes usaba latest()): se declara aqui,
+        // igual que en byScroll, para ordenar por el indice primario.
+        $records = Cash::whereFilterRecordsApi($request->input)
+                        ->orderBy('id', 'desc');
 
 		return new CashCollection($records->paginate(config('tenant.items_per_page')));
 	}
@@ -104,9 +107,14 @@ class CashController extends Controller
         $input = $request->input('input', '');
         $state = $request->input('state');
 
-        $limit = min((int) $limit, 100);
+        // Tope superior y tambien inferior: un limit de 0 o negativo llegaba tal
+        // cual a cursorPaginate.
+        $limit = max(1, min((int) $limit, 100));
 
+        // getApiRowResource() lee $this->user->name en cada fila: sin el eager
+        // load eso son tantas consultas extra como registros traiga la pagina.
         $query = Cash::whereFilterRecordsApi($input)
+            ->with('user:id,name')
             ->orderBy('id', 'desc');
 
         if ($state !== null) {
@@ -120,16 +128,13 @@ class CashController extends Controller
             ]);
         }
 
-        if ($cursor) {
-            $records = $query->cursorPaginate($limit, ['*'], 'cursor', $cursor);
-        } else {
-            $records = $query->cursorPaginate($limit);
-        }
+        // cursorPaginate resuelve por si mismo el cursor nulo: no hacen falta dos ramas.
+        $records = $query->cursorPaginate($limit, ['*'], 'cursor', $cursor);
 
         return [
             'data' => CashCollection::make($records),
             'pagination' => [
-                'next_cursor' => $records->nextCursor()?->encode() ?? null,
+                'next_cursor' => optional($records->nextCursor())->encode(),
                 'has_more' => $records->hasMorePages(),
             ]
         ];

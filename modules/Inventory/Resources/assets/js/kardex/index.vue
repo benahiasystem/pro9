@@ -24,7 +24,13 @@
             <!-- <td>{{ index }}</td> -->
             <td v-if="!item_id">{{ row.item_name }}</td>
             <td>{{ row.date_time }}</td>
-            <td>{{ row.type_transaction }}</td>
+            <td>
+                <template v-if="hasVoidLabel(row.type_transaction)">
+                    {{ voidLabelBase(row.type_transaction) }}
+                    <span class="text-danger">(Anulación)</span>
+                </template>
+                <template v-else>{{ row.type_transaction }}</template>
+            </td>
             <td>{{ row.number }}</td>
             <td>{{ row.sale_note_asoc }}</td>
             <td>{{ row.order_note_asoc }}</td>
@@ -75,6 +81,12 @@ export default {
         })
     },
     methods: {
+        hasVoidLabel(typeTransaction) {
+            return typeof typeTransaction === 'string' && typeTransaction.includes('(Anulación)')
+        },
+        voidLabelBase(typeTransaction) {
+            return String(typeTransaction).replace(/\s*\(Anulación\)\s*$/, '').trim()
+        },
         downloadPdf(row) {
             if (row.guide_id) {
                 window.open(`/${this.resource}/get_pdf_guide/${row.guide_id}`, "_blank");

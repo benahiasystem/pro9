@@ -44,6 +44,7 @@ else
                 Route::get('records', 'System\MultiUserController@records');
                 Route::get('tables', 'System\MultiUserController@tables');
                 Route::post('', 'System\MultiUserController@store');
+                Route::get('{id}/can-delete', 'System\MultiUserController@canDelete');
                 Route::delete('{id}', 'System\MultiUserController@delete');
 
             });

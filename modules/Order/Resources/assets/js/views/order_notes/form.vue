@@ -305,6 +305,30 @@
                                     </div>
 
                                     <div class="">
+                                        <div class="form-group form-seller">
+                                            <label class="control-label">Vendedor</label>
+                                            <el-select
+                                                v-model="form.seller_id"
+                                                filterable
+                                                clearable
+                                                :disabled="typeUser === 'seller'"
+                                            >
+                                                <el-option
+                                                    v-for="sel in sellers"
+                                                    :key="sel.id"
+                                                    :value="sel.id"
+                                                    :label="sel.name"
+                                                ></el-option>
+                                            </el-select>
+                                            <small
+                                                class="form-control-feedback"
+                                                v-if="errors.seller_id"
+                                                v-text="errors.seller_id[0]"
+                                            ></small>
+                                        </div>
+                                    </div>
+
+                                    <div class="">
                                         <div class="form-group">
                                             <label class="control-label"
                                                 >Dirección de envío
@@ -1204,6 +1228,7 @@ export default {
                 }
             ],
             payment_destinations: [],
+            sellers: [],
             customerSearchTerm: '',
             selected_option_price: 1
         };
@@ -1254,6 +1279,12 @@ export default {
                         : null;
                 this.payment_method_types = response.data.payment_method_types;
                 this.payment_destinations = response.data.payment_destinations;
+                this.sellers = response.data.sellers || [];
+                if (!this.form.seller_id && this.authUser && this.authUser.id) {
+                    this.form.seller_id = this.authUser.id;
+                } else if (!this.form.seller_id && this.sellers.length) {
+                    this.form.seller_id = this.sellers[0].id;
+                }
 
                 this.$nextTick(() => this.updateEmptyPaymentDestinations());
 
@@ -1366,6 +1397,15 @@ export default {
             this.selected_option_price = customer?.price_label_id
                 ? `price${customer.price_label_id}`
                 : 1;
+
+            if (customer && customer.seller_id) {
+                const seller = this.sellers.find(
+                    element => element.id == customer.seller_id
+                );
+                if (seller !== undefined) {
+                    this.form.seller_id = seller.id;
+                }
+            }
         },
         setAddressByCustomer() {
             let customer = _.find(this.customers, {
@@ -1463,6 +1503,7 @@ export default {
                 payment_method_type_id: null,
                 additional_information: null,
                 shipping_address: null,
+                seller_id: this.authUser ? this.authUser.id : null,
                 actions: {
                     format_pdf: "a4"
                 },

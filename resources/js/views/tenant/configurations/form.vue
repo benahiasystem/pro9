@@ -893,15 +893,24 @@
                                         </div>
                                     </div>
                                     <div class="row mx-0 adv-conf-container">
-                                        <div v-if="typeUser != 'integrator'" class="inputs-column">
-                                            <label class="control-label">Impuesto bolsa plástica</label>
-                                            <div :class="{ 'has-danger': errors.amount_plastic_bag_taxes }" class="form-group w-50">
-                                                <el-input-number v-model="form.amount_plastic_bag_taxes" :max="0.5" :min="0.1"
-                                                    :precision="2" :step="0.1"
-                                                    @change="changeAmountPlasticBagTaxes"></el-input-number>
-                                                <small v-if="errors.amount_plastic_bag_taxes" class="form-control-feedback"
-                                                    v-text="errors.amount_plastic_bag_taxes[0]"></small>
+                                        <div class="col-12">
+                                            <!-- ########## INICIO CAMBIO IGV A IVA -->
+                                            <label class="control-label">Manejo de IVA
+                                                <el-tooltip class="item" effect="dark" placement="top-start">
+                                                    <div slot="content">
+                                                        <strong>Activado (global):</strong> todos los productos se registran con IVA incluido. El checkbox "Incluye IVA" se oculta del formulario de productos.<br />
+                                                        <strong>Desactivado (individual):</strong> el checkbox "Incluye IVA" se muestra y se configura por producto.
+                                                    </div>
+                                                    <i class="fa fa-info-circle"></i>
+                                                </el-tooltip>
+                                            </label>
+                                            <div :class="{ 'has-danger': errors.global_igv_handling }" class="form-group">
+                                                <el-switch v-model="form.global_igv_handling"
+                                                    @change="submit"></el-switch>
+                                                <small v-if="errors.global_igv_handling" class="form-control-feedback"
+                                                    v-text="errors.global_igv_handling[0]"></small>
                                             </div>
+                                            <!-- ######### FIN CAMBIO IGV A IVA -->
                                         </div>
 
                                         <div v-if="!form.global_igv_handling" class="col-12">
@@ -916,6 +925,17 @@
                                                     @change="submit"></el-switch>
                                                 <small v-if="errors.include_igv" class="form-control-feedback"
                                                     v-text="errors.include_igv[0]"></small>
+                                            </div>
+                                        </div>
+
+                                        <div v-if="typeUser != 'integrator'" class="inputs-column">
+                                            <label class="control-label">Impuesto bolsa plástica</label>
+                                            <div :class="{ 'has-danger': errors.amount_plastic_bag_taxes }" class="form-group w-50">
+                                                <el-input-number v-model="form.amount_plastic_bag_taxes" :max="0.5" :min="0.1"
+                                                    :precision="2" :step="0.1"
+                                                    @change="changeAmountPlasticBagTaxes"></el-input-number>
+                                                <small v-if="errors.amount_plastic_bag_taxes" class="form-control-feedback"
+                                                    v-text="errors.amount_plastic_bag_taxes[0]"></small>
                                             </div>
                                         </div>
 
@@ -1142,20 +1162,21 @@
                                                 <small v-if="errors.global_discount_type_id" class="form-control-feedback"
                                                     v-text="errors.global_discount_type_id[0]"></small>
                                             </div>
+                                        </div>
 
+                                        <div class="col-12">
+                                            <label class="control-label">
+                                                Habilitar descuento global
+                                                <el-tooltip class="item"
+                                                    content="Permite aplicar descuento global en POS, ventas, cotizaciones y servicios técnicos"
+                                                    effect="dark" placement="top-start">
+                                                    <i class="fa fa-info-circle"></i>
+                                                </el-tooltip>
+                                            </label>
                                             <div :class="{ 'has-danger': errors.enable_global_discount }" class="form-group">
-                                                <label class="control-label">
-                                                    Habilitar descuento global
-                                                    <el-tooltip class="item"
-                                                        content="Permite aplicar descuento global en POS, ventas, cotizaciones y servicios técnicos"
-                                                        effect="dark" placement="top-start">
-                                                        <i class="fa fa-info-circle"></i>
-                                                    </el-tooltip>
-                                                </label>
                                                 <el-switch v-model="form.enable_global_discount" @change="submit"></el-switch>
                                                 <small v-if="errors.enable_global_discount" class="form-control-feedback"
                                                     v-text="errors.enable_global_discount[0]"></small>
-
                                                     <!-- <div class="col-md-12 mt-2">
                                                         <div :class="{ 'has-danger': errors.exact_discoutn }"
                                                         class="form-group" v-if="validateDiscountAffectBase">
@@ -1478,22 +1499,24 @@
                                                         <small v-if="errors.global_igv_handling" class="form-control-feedback"
                                                             v-text="errors.global_igv_handling[0]"></small>
                                                     </div>
-                                                    <label class="control-label ms-2">Manejo de IGV
+                                                    <!-- ########## INICIO CAMBIO IGV A IVA -->
+                                                    <label class="control-label ms-2">Manejo de IVA
                                                         <el-tooltip class="item" effect="dark" placement="top-start">
                                                             <div slot="content">
-                                                                <strong>Activado (global):</strong> todos los productos se registran con IGV incluido. El checkbox "Incluye Igv" se oculta del formulario de productos.<br />
-                                                                <strong>Desactivado (individual):</strong> el checkbox "Incluye Igv" se muestra y se configura por producto.
+                                                                <strong>Activado (global):</strong> todos los productos se registran con IVA incluido. El checkbox "Incluye IVA" se oculta del formulario de productos.<br />
+                                                                <strong>Desactivado (individual):</strong> el checkbox "Incluye IVA" se muestra y se configura por producto.
                                                             </div>
                                                             <i class="fa fa-info-circle"></i>
                                                         </el-tooltip>
                                                     </label>
+                                                    <!-- ######### FIN CAMBIO IGV A IVA -->
                                                 </div>
                                                 <div>
                                                     <span v-if="form.global_igv_handling" class="text-muted small">
-                                                        Todos los productos se registrarán con IGV incluido. El checkbox "Incluye IGV" no aparecerá en el formulario.
+                                                        Todos los productos se registrarán con IVA incluido. El checkbox "Incluye IVA" no aparecerá en el formulario.
                                                     </span>
                                                     <span v-else class="text-muted small">
-                                                        El checkbox "Incluye IGV" se mostrará en el formulario y podrás configurarlo producto por producto.
+                                                        El checkbox "Incluye IVA" se mostrará en el formulario y podrás configurarlo producto por producto.
                                                     </span>
                                                 </div>
                                             </div>

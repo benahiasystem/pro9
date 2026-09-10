@@ -176,14 +176,74 @@ class StoreController extends Controller
     {
         $payment_method_type = $document->payment_method_type;
 
-        if ($payment_method_type) {
-            if ($payment_method_type->isCredit()) {
-                //credito o credito con cuotas
-                $rec['payment_condition_id'] = ($payment_method_type->number_days) ? '02' : '03';
-                $rec['data_payments_fee'] = $document->payments;
-                $rec['document_payment_method_type'] = $payment_method_type;
-            }
+        if (!$payment_method_type) {
+            return;
         }
+
+        $date_of_issue = $rec['date_of_issue'];
+
+        // Contado: los pagos de la cotizacion se arrastran como pagos del
+        // comprobante, no como cuotas.
+        if (!$payment_method_type->isCredit()) {
+            $rec['payments'] = $this->mapQuotationPaymentsToPayments($document, $date_of_issue);
+
+            return;
+        }
+
+        //credito o credito con cuotas
+        $rec['payment_condition_id'] = ($payment_method_type->number_days) ? '01' : '02';
+        $rec['data_payments_fee'] = $document->payments;
+        $rec['document_payment_method_type'] = $payment_method_type;
+
+        if ($rec['payment_condition_id'] === '01') {
+            $rec['fee'] = [];
+            $rec['payments'] = $this->mapQuotationPaymentsToPayments($document, $date_of_issue);
+
+            return;
+        }
+
+        $rec['fee'] = $this->mapQuotationPaymentsToFee($document, $date_of_issue);
+    }
+
+
+    private function mapQuotationPaymentsToFee($document, $date_of_issue)
+    {
+        return $document->payments->map(function ($payment) use ($document, $date_of_issue) {
+            return [
+                // El comprobante genera sus propias cuotas: el id del pago de la
+                // cotizacion no se arrastra.
+                'id' => null,
+                'document_id' => null,
+                'payment_method_type_id' => $payment->payment_method_type_id,
+                // document_fee.date es NOT NULL
+                'date' => optional($payment->date_of_payment)->format('Y-m-d') ?: $date_of_issue,
+                'currency_type_id' => $document->currency_type_id,
+                'amount' => (float)$payment->payment,
+            ];
+        })->values();
+    }
+
+
+    private function mapQuotationPaymentsToPayments($document, $date_of_issue)
+    {
+        return $document->payments->map(function ($payment) use ($date_of_issue) {
+            return [
+                'id' => null,
+                'document_id' => null,
+                'date_of_payment' => optional($payment->date_of_payment)->format('Y-m-d') ?: $date_of_issue,
+                'payment_method_type_id' => $payment->payment_method_type_id,
+                'has_card' => (bool)$payment->has_card,
+                'card_brand_id' => $payment->card_brand_id,
+                'reference' => $payment->reference,
+                'change' => $payment->change,
+                'payment' => (float)$payment->payment,
+                'payment_received' => true,
+                'payment_destination_id' => null,
+                'filename' => null,
+                'temp_path' => null,
+                'file_list' => [],
+            ];
+        })->values();
     }
 
 

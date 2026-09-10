@@ -983,6 +983,8 @@ use Illuminate\Support\Facades\Mail;
                 'has_advanced_statuses' => true,
                 'show_item_discounts_charges_attributes' => false,
                 'edit_name_product' => false,
+                'default_document_type_03' => false,
+                'default_document_type_80' => true,
             ]);
 
 
@@ -1051,9 +1053,8 @@ use Illuminate\Support\Facades\Mail;
             // Se siembran las series comerciales habilitadas y la serie interna U4 requerida
             // por los traslados. Fuente única: SeriesCodeGenerator.
             DB::connection('tenant')->table('series')->insert(
-                \App\Services\SeriesCodeGenerator::defaultTenantSeries($establishment_id)
+                \App\Services\SeriesCodeGenerator::defaultTenantSeries($establishment_id, (bool) $is_nrus)
             );
-
             \Log::info('Series insertadas');
 
             \Log::info('Insertando usuario...');

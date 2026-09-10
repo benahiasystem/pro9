@@ -1,5 +1,5 @@
 <template>
-    <el-dialog :title="titleDialog" :visible="showDialog" :close-on-click-modal="false" :close-on-press-escape="false" @close="handleCloseDialog" @open="create">
+    <el-dialog :title="titleDialog" :visible="showDialog" :close-on-click-modal="false" :close-on-press-escape="false" append-to-body @close="handleCloseDialog" @open="create">
         <form autocomplete="off" @submit.prevent="submit">
             <div class="form-body">
                  

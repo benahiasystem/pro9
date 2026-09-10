@@ -126,7 +126,7 @@
                 </div>
             </div>
 
-            <template v-if="isInvoiceDocument">
+            <template v-if="showPaymentCondition">
                 <div class="col-lg-6">
                     <div :class="{'has-danger': errors.payment_condition_id}" class="form-group">
                         <label class="control-label">Condición de pago</label>
@@ -146,7 +146,7 @@
 
             <div class="col-lg-12 mt-3">
 
-                <template v-if="isInvoiceDocument">
+                <template v-if="showPaymentCondition">
 
                     <!-- Crédito con cuotas -->
                     <template v-if="document.payment_condition_id === '03'">
@@ -451,6 +451,11 @@ export default {
         {
             return ['01', '03'].includes(this.document.document_type_id)
         },
+        // Factura y nota de venta permiten elegir contado/crédito al generar desde pedido.
+        showPaymentCondition()
+        {
+            return ['01', '80'].includes(this.document.document_type_id)
+        },
         credit_payment_method_types()
         {
             return _.filter(this.payment_method_types, {is_credit: true})
@@ -579,7 +584,8 @@ export default {
         {
             let payment_method_type_id = null
 
-            if(this.isInvoiceDocument)
+            // Contado en CPE o NV: métodos de pago al contado.
+            if(this.showPaymentCondition)
             {
                 payment_method_type_id = this.cash_payment_method_types.length > 0 ? this.cash_payment_method_types[0].id : null
             }
@@ -777,6 +783,13 @@ export default {
             // Condicion de pago Credito con cuota pasa a credito
             if (this.document.payment_condition_id === '03') this.document.payment_condition_id = '02'
 
+            // Crédito: sin pagos al guardar (queda pendiente / no pagado).
+            if (['02', '03'].includes(temp_payment_condition_id)) {
+                this.document.payments = []
+                this.document.paid = false
+                this.document.total_canceled = false
+            }
+
             this.$http
                 .post(`/${this.resource_documents}`, this.document)
                 .then(response => {
@@ -872,7 +885,7 @@ export default {
                 format_pdf: "a4"
             };
             this.document.order_note_id = this.form.id;
-            this.document.seller_id = q.user_id;
+            this.document.seller_id = q.seller_id || q.user_id;
         },
         getSaleLotsGroup(lots_group) {
 
@@ -946,7 +959,8 @@ export default {
                 .get(`/${this.resource}/record2/${this.recordId}`)
                 .then(response => {
                     this.form = response.data.data;
-                    this.form.order_note.seller_id = this.form.order_note.user_id;
+                    this.form.order_note.seller_id = this.form.order_note.seller_id
+                        || this.form.order_note.user_id;
                     // this.validateIdentityDocumentType()
                     this.getCustomer();
                     let type = this.type == "edit" ? "editado" : "registrado";
@@ -993,8 +1007,9 @@ export default {
 
             if(this.configuration.enabled_tips_pos && !this.isInvoiceDocument) this.cleanFormTip()
 
-            if(!this.isInvoiceDocument)
-            {
+            // Antes, al elegir NV (!factura/boleta) se forzaba contado + pago y quedaba "pagado".
+            // NV ahora usa showPaymentCondition; no reiniciar condición ni pagos.
+            if (!this.showPaymentCondition) {
                 this.document.fee = []
                 this.document.payments = []
                 this.document.payment_condition_id = '01'

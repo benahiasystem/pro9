@@ -340,6 +340,9 @@ export default {
         series(newSeries) {
             this.$emit('series-filtered', newSeries.length);
         },
+        all_series() {
+            this.emitSeriesDocTypes();
+        },
         customer: {
             handler(valueNew, valueOld) {
                 if (!_.isNull(valueNew)) {
@@ -503,8 +506,13 @@ export default {
             }
         },
         reloadDataCustomers(customer_id) {
+            // customer_id va como parametro para que el backend, que ahora
+            // devuelve una tanda acotada, garantice al cliente recien creado
+            // aunque no entre en el tope alfabetico.
             this.$http
-                .get(`/${this.resource}/table/customers`)
+                .get(`/${this.resource}/table/customers`, {
+                    params: { customer_id }
+                })
                 .then(response => {
                     this.all_customers = response.data;
                     this.form.customer_id = customer_id;
@@ -989,6 +997,10 @@ export default {
                 sale_note_id: null
             }
         },
+        emitSeriesDocTypes() {
+            const docTypes = _.uniq(_.map(this.all_series, s => String(s.document_type_id)));
+            this.$emit('series-doc-types', docTypes);
+        },
         filterSeries() {
             this.userSelectedDocType = true;
 
@@ -1319,6 +1331,7 @@ export default {
                     this.all_series = response.data.series
                     this.payment_method_types = response.data.payment_method_types
                     this.cards_brand = response.data.cards_brand
+                    this.emitSeriesDocTypes()
                     this.filterSeries()
                 });
 

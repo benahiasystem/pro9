@@ -49,6 +49,7 @@ import SystemConfigurationPhpInfo from './views/system/configuration/php_info.vu
 import SystemConfigurationServerStatus from './views/system/configuration/server_status.vue';
 import SystemConfigurationLogin from './views/system/configuration/login.vue';
 import SystemConfigurationOtherConfiguration from './views/system/configuration/other_configuration.vue';
+import SystemAdsConfiguration from './views/system/configuration/ads_configuration.vue';
 import SystemConfigurationEmail from './views/system/configuration/emailConfiguration.vue';
 import SystemWhatsAppNotifyConfiguration from './views/system/configuration/whatsAppNotifyConfiguration.vue';
 import PublicSearchBackgroundConfiguration from './views/shared/public_search_background.vue';
@@ -145,6 +146,7 @@ Vue.component('system-server-status', SystemConfigurationServerStatus);
 // Login/Access settings
 Vue.component('system-login-settings', SystemConfigurationLogin);
 Vue.component('system-login-other-configuration', SystemConfigurationOtherConfiguration);
+Vue.component('system-ads-configuration', SystemAdsConfiguration);
 Vue.component('system-email-configuration', SystemConfigurationEmail);
 Vue.component('system-whatsapp-notify-configuration', SystemWhatsAppNotifyConfiguration);
 Vue.component('system-public-search-configuration', PublicSearchBackgroundConfiguration);

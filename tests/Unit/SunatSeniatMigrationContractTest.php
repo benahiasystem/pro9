@@ -215,7 +215,6 @@ class SunatSeniatMigrationContractTest extends TestCase
             'modules/FullSuscription/Resources/assets/js/clients/server.vue',
             'modules/Suscription/Resources/assets/js/clients/form.vue',
             'modules/Suscription/Resources/assets/js/clients/person.vue',
-            'resources/js/views/tenant/dispatches/Carrier/Form.vue',
             'resources/js/views/tenant/dispatches/dispatchers/form.vue',
             'resources/js/views/tenant/dispatches/drivers/form.vue',
             'resources/js/views/tenant/dispatches/partials/buyer.vue',

@@ -43,6 +43,9 @@
                 <div :class="colClass('other')" v-show="isVisible('other')">
                     <slot name="other"></slot>
                 </div>
+                <div :class="colClass('ads')" v-show="isVisible('ads')">
+                    <slot name="ads"></slot>
+                </div>
                 <div :class="colClass('apk')" v-show="isVisible('apk')">
                     <slot name="apk"></slot>
                 </div>
@@ -158,6 +161,7 @@ export default {
             sections: [
                 {key: 'other', category: 'general', label: 'Otras configuraciones', keywords: 'registro invitados validar ruc planes url registro', half: false},
                 {key: 'apk', category: 'general', label: 'URL de descarga de aplicación móvil', keywords: 'apk android app movil descarga', half: true},
+                {key: 'ads', category: 'general', label: 'Publicidad', keywords: 'publicidad anuncio banner modal imagen barra toolbar notificacion toast aviso campaña promocion', half: false},
 
                 {key: 'login', category: 'apariencia', label: 'Login de los clientes', keywords: 'login acceso logo imagen fondo redes sociales facebook instagram tiktok', half: false},
                 {key: 'themes', category: 'apariencia', label: 'Temas del sistema', keywords: 'tema color estilo dark modo oscuro', half: false},

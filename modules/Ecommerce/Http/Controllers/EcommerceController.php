@@ -358,6 +358,10 @@ class EcommerceController extends Controller
             'technical_specifications' => $row->technical_specifications,
             'name' => $row->name,
             'second_name' => $row->second_name,
+            'barcode' => $row->barcode,
+            'model' => $row->model,
+            'line' => $row->line,
+            'unit_type' => $row->unit_type,
             'sale_unit_price' => ($row->currency_type_id === 'VES') ? $sale_unit_price : ($sale_unit_price * $exchange_rate_sale),
             'currency_type' => $row->currency_type,
             'has_igv' => (bool) $row->has_igv,
@@ -1050,7 +1054,7 @@ class EcommerceController extends Controller
 
         $order_total = (float) ($request->order_total ?? 0);
         $user = auth('ecommerce')->user();
-        $person_id = $user?->id;
+        $person_id = optional($user)->id;
 
         $found = false;
         $validCoupons = [];
@@ -1113,7 +1117,7 @@ class EcommerceController extends Controller
         }
 
         $user = auth('ecommerce')->user();
-        $person_id = $user?->id;
+        $person_id = optional($user)->id;
 
         $coupon = null;
         if ($request->discount_coupon_id) {
@@ -1261,7 +1265,7 @@ class EcommerceController extends Controller
                             // reconstruir total original (antes del descuento) para validaciones
                             $original_total = round($order->total + $discount, 2);
 
-                            if ($coupon->canBeUsedBy($user?->id, $original_total)) {
+                            if ($coupon->canBeUsedBy(optional($user)->id, $original_total)) {
                                 $order->total_discount = $discount;
                                 $order->discount_coupon_code = $coupon->code;
                                 $order->discount_coupon_id = $coupon->id;
@@ -1271,13 +1275,13 @@ class EcommerceController extends Controller
 
                                 DiscountCouponUsage::create([
                                     'discount_coupon_id' => $coupon->id,
-                                    'person_id' => $user?->id,
+                                    'person_id' => optional($user)->id,
                                     'order_id' => $order->id
                                 ]);
                             }
                         } else {
                             // Si frontend no envió el monto, calcularlo en servidor usando el total actual
-                            if ($coupon->canBeUsedBy($user?->id, $order->total)) {
+                            if ($coupon->canBeUsedBy(optional($user)->id, $order->total)) {
                                 $discount = $coupon->calculateDiscountAmount($order->total);
                                 $order->total_discount = $discount;
                                 $order->discount_coupon_code = $coupon->code;
@@ -1287,7 +1291,7 @@ class EcommerceController extends Controller
 
                                 DiscountCouponUsage::create([
                                     'discount_coupon_id' => $coupon->id,
-                                    'person_id' => $user?->id,
+                                    'person_id' => optional($user)->id,
                                     'order_id' => $order->id
                                 ]);
                             }
@@ -3174,7 +3178,7 @@ class EcommerceController extends Controller
         $activeZoneIds = DeliveryZone::active()->pluck('id');
 
         if ($activeZoneIds->isEmpty()) {
-            $message = ConfigurationEcommerce::first()?->delivery_no_coverage_message ?? '';
+            $message = optional(ConfigurationEcommerce::first())->delivery_no_coverage_message ?? '';
             return response()->json(['found' => false, 'configured' => false, 'message' => $message]);
         }
 
@@ -3211,7 +3215,7 @@ class EcommerceController extends Controller
         $uniqueZoneIds = $matchedZoneIds->unique()->values();
 
         if ($uniqueZoneIds->isEmpty()) {
-            $message = ConfigurationEcommerce::first()?->delivery_no_coverage_message ?? '';
+            $message = optional(ConfigurationEcommerce::first())->delivery_no_coverage_message ?? '';
             return response()->json(['found' => false, 'configured' => true, 'message' => $message]);
         }
 
@@ -3424,12 +3428,12 @@ class EcommerceController extends Controller
             $purchaseCustomer = [];
         }
 
-        $email = $user?->email
+        $email = optional($user)->email
             ?? ($customer['correo_electronico'] ?? null)
             ?? ($customer['email'] ?? null)
             ?? ($purchaseCustomer['correo_electronico'] ?? null);
 
-        $name = $user?->name
+        $name = optional($user)->name
             ?? ($customer['apellidos_y_nombres_o_razon_social'] ?? null)
             ?? ($purchaseCustomer['apellidos_y_nombres_o_razon_social'] ?? null)
             ?? 'Cliente';

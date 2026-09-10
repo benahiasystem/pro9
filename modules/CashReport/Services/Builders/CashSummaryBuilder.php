@@ -174,7 +174,7 @@ class CashSummaryBuilder implements CashReportBuilderInterface
             if ($cash_document->sale_note) {
                 $sale_note = $cash_document->sale_note;
                 $pays = [];
-                $document = $sale_note->documents->first(); 
+                $document = $sale_note->documents->first();
                 $description= null;
                 $number_full = null;
                 if ($document) {
@@ -191,7 +191,7 @@ class CashSummaryBuilder implements CashReportBuilderInterface
                     );
                     // $cash_income += $total;
                     // $final_balance += $total;
-                    if (count($sale_note->payments) > 0) {
+                    if (count($sale_note->payments) > 0 || count($sale_note->fee) > 0) {
                         $pays = $sale_note->payments->filter(function ($payment) use ($cash_id) {
                             return $payment->cashDocumentPayments->contains('cash_id', $cash_id);
                         });
@@ -206,6 +206,15 @@ class CashSummaryBuilder implements CashReportBuilderInterface
                             }
                             if($record->id === '01') $data['total_payment_cash_01_sale_note'] += $record_total;
                             if($record->is_cash &&  $record->id !== '01') $data['total_payment_cash_sale_note'] += $record_total;
+
+                            $total_credit_sl = $sale_note->fee->where('payment_method_type_id', $record->id)->sum('amount');
+
+                            if ($total_credit_sl > 0) {
+                                if ($record->is_credit) {
+                                    $record->sum += $sale_note->total - $record_total;
+                                    $credit += $total_credit_sl;
+                                }
+                            }
                         }
 
                         $data['total_cash_income_pmt_01'] += $this->getIncomeEgressCashDocumentPayments($sale_note->payments,$cash_id);
@@ -319,7 +328,6 @@ class CashSummaryBuilder implements CashReportBuilderInterface
                             if ($record->is_credit) {
                                 $usado .= '<br>Se usan los pagos Credito Tipo '.$record->id.' ****<br>';
                                 // $record->sum += $document->total;
-                                $credit += $document->total;
                             } elseif ($record_total != 0) {
                                 if ((in_array($record->id, $methods_payment_credit))) {
                                     $record->sum += $record_total;
@@ -327,21 +335,18 @@ class CashSummaryBuilder implements CashReportBuilderInterface
                                     $cash_income += $record_total;
                                     $credit -= $record_total;
                                     $final_balance += $record_total;
-                                } else {
-                                    $record->sum += $record_total;
-                                    $credit += $record_total;
                                 }
                             }
-                        }
-                        foreach ($methods_payment as $record) {
 
-                            $total = $document->fee->where('payment_method_type_id', $record->id)->sum('amount');
+                            $total_credit_dc = $document->fee->where('payment_method_type_id', $record->id)->sum('amount');
 
-                            if ($total > 0) {
+                            if ($total_credit_dc > 0) {
                                 if ($record->is_credit) {
                                     $record->sum += $document->total - $pagado;
+                                    $credit += $total_credit_dc;
                                 }
                             }
+
                         }
                     }
 
@@ -403,7 +408,7 @@ class CashSummaryBuilder implements CashReportBuilderInterface
                 // fin items
             }
             /** Documentos de Tipo Servicio tecnico */
-            elseif ($cash_document->technical_service) 
+            elseif ($cash_document->technical_service)
             {
                 $usado = '<br>Se usan para cash<br>';
                 $technical_service = $cash_document->technical_service;
@@ -679,7 +684,7 @@ class CashSummaryBuilder implements CashReportBuilderInterface
         }
 
         $incomes=$incomes->get();
-        
+
         if (isset($incomes[0])) {
 
             $data['cash_documents_total'] = (int)$incomes->count();

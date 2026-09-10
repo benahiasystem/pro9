@@ -20,6 +20,7 @@ if($current_hostname)
                 });
 
                 Route::prefix('permissions')->group(function () {
+                    Route::get('records', 'AppPermissionController@records');
                     Route::get('record/{user_id}', 'AppPermissionController@record');
                     Route::get('tables', 'AppPermissionController@tables');
                     Route::post('', 'AppPermissionController@store');

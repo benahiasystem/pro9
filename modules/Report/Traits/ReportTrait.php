@@ -356,24 +356,31 @@ trait ReportTrait
      * @return mixed
      */
     public function getDataTablePerson($type, $request) {
+        $input = trim((string) $request->input('input', ''));
 
-        $persons = Person::where('number','like', "%{$request->input}%")
-                            ->orWhere('name','like', "%{$request->input}%")
-                            ->whereType($type)->orderBy('name')
-                            ->get()->transform(function($row) {
-                                return [
-                                    'id' => $row->id,
-                                    'description' => $row->number.' - '.$row->name,
-                                    'name' => $row->name,
-                                    'number' => $row->number,
-                                    'identity_document_type_id' => $row->identity_document_type_id,
-                                    'perception_agent' => (bool) $row->perception_agent,
-                                    'credit_days' => (int) $row->credit_days,
-                                ];
-                            });
+        $persons = Person::whereType($type)
+            ->when($input !== '', function ($query) use ($input) {
+                $query->where(function ($q) use ($input) {
+                    $q->where('number', 'like', "%{$input}%")
+                        ->orWhere('name', 'like', "%{$input}%");
+                });
+            })
+            ->orderBy('name')
+            ->take(20)
+            ->get()
+            ->transform(function ($row) {
+                return [
+                    'id' => $row->id,
+                    'description' => $row->number.' - '.$row->name,
+                    'name' => $row->name,
+                    'number' => $row->number,
+                    'identity_document_type_id' => $row->identity_document_type_id,
+                    'perception_agent' => (bool) $row->perception_agent,
+                    'credit_days' => (int) $row->credit_days,
+                ];
+            });
 
         return $persons;
-
     }
 
     /**

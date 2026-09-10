@@ -51,6 +51,19 @@ class ProductFlowSchemaContractTest extends TestCase
             '2026_09_04_000005_ensure_warehouse_internal_series.php',
             '2026_09_04_000006_add_transfer_id_to_temporary_kardex_records.php',
             '2026_09_04_000007_rename_warehouse_guides_to_notes.php',
+            '2026_09_04_000008_create_offline_machines_table.php',
+            '2026_09_04_000009_create_sync_events_table.php',
+            '2026_09_04_000010_add_offline_columns_to_sync_events_table.php',
+            '2026_09_04_000011_tenant_add_pos_image_aspect_ratio_to_configurations.php',
+            '2026_09_04_000012_tenant_add_pos_image_fit_to_configurations.php',
+            '2026_09_04_160000_tenant_add_dispatch_id_to_inventories_transfer.php',
+            '2026_09_07_130000_tenant_backfill_default_series.php',
+            '2026_09_08_160000_tenant_fix_editable_flag_on_documents_from_order_or_quotation.php',
+            '2026_09_08_170000_tenant_add_seller_id_to_order_notes.php',
+            '2026_09_09_150000_tenant_add_configuration_menu_module_level.php',
+            '2026_09_10_160000_tenant_add_utilidades_widget_to_dashboard_layouts.php',
+            '2026_09_10_170000_tenant_activate_exonerado_affectation_igv_type.php',
+            '2026_09_10_190000_tenant_set_pos_default_document_type_sale_note.php',
         ], array_slice($names, $repairPosition + 1));
     }
 

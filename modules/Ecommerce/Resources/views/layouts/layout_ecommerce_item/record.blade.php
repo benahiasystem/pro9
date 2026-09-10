@@ -80,6 +80,8 @@
 
     <!-- Estilos personalizados -->
     <link rel="stylesheet" href="{{ asset('porto-light/css/styles_ecommerce.css') }}" />
+    @php($pdpCssPath = public_path('porto-light/css/product-detail.css'))
+    <link rel="stylesheet" href="{{ asset('porto-light/css/product-detail.css') }}?v={{ is_file($pdpCssPath) ? filemtime($pdpCssPath) : 1 }}" />
     @include('ecommerce::layouts.partials_ecommerce.primary_color_style')
 </head>
 
@@ -93,25 +95,31 @@
 
 
         <main class="main">
-            <nav aria-label="breadcrumb" class="breadcrumb-nav">
+            @php($breadcrumbCategory = data_get($record ?? null, 'category'))
+            <nav aria-label="breadcrumb" class="breadcrumb-nav pdp-breadcrumb-nav">
                 <div class="container">
                     <ol class="breadcrumb">
-                        <!--<li class="breadcrumb-item"><a href="index-2.html"><i class="icon-home"></i></a></li>
-                        <li class="breadcrumb-item"><a href="#">Electronics</a></li>
-                        <li class="breadcrumb-item active" aria-current="page">Headsets</li>-->
+                        <li class="breadcrumb-item">
+                            <a href="{{ route('tenant.ecommerce.index') }}">Inicio</a>
+                        </li>
+                        @if($breadcrumbCategory && data_get($breadcrumbCategory, 'name'))
+                            <li class="breadcrumb-item">
+                                <a href="{{ route('tenant.ecommerce.category', \Illuminate\Support\Str::slug(data_get($breadcrumbCategory, 'name'), '-')) }}">
+                                    {{ data_get($breadcrumbCategory, 'name') }}
+                                </a>
+                            </li>
+                        @endif
+                        <li class="breadcrumb-item active" aria-current="page">{{ $productName }}</li>
                     </ol>
                 </div><!-- End .container -->
             </nav>
             <div class="container">
                 <div class="row">
-                    <div class="col-lg-9">
+                    <div class="col-12">
 
                         @yield('content')
 
-                    </div><!-- End .col-lg-9 -->
-
-                    <div class="sidebar-overlay"></div>
-                    @include('ecommerce::layouts.partials_ecommerce.sidebar_product_right')
+                    </div><!-- End .col-12 -->
                 </div><!-- End .row -->
             </div><!-- End .container -->
 

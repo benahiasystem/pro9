@@ -847,9 +847,8 @@ export default {
     mounted() {
         this.getTables();
 
-        this.$eventHub.$on("reloadDataItems", item_id => {
-            this.reloadDataItems(item_id);
-        });
+        // El listener de "reloadDataItems" ya se registra en created(): tenerlo
+        // aqui tambien disparaba la carga dos veces por cada emit.
 
         this.$eventHub.$on("selectWarehouseId", warehouse_id => {
             this.form.warehouse_id = warehouse_id;
@@ -1144,7 +1143,11 @@ export default {
 
 
             if (this.recordItem) {
-                await this.reloadDataItems(this.recordItem.item_id);
+                // El dialogo abre con @open="create": aqui se deja disponible el
+                // item del renglon antes de armar el formulario. Antes esto era
+                // reloadDataItems(), que traia el catalogo entero.
+                await this.findItemById(this.recordItem.item_id);
+
                 this.form.item_id = this.recordItem.item_id;
                 await this.changeItem();
 
@@ -1154,8 +1157,7 @@ export default {
                 // El campo form.unit_price es el valor que ingresa el usuario (SIN IVA)
                 // ######### FIN CAMBIO IGV A IVA
                 // input_unit_price_value es el valor original ingresado
-                this.form.unit_price = this.recordItem.input_unit_price_value;
-                this.form.unit_price_value = this.recordItem.input_unit_price_value;
+                this.setUnitPriceValue();
                 this.form.has_plastic_bag_taxes =
                     this.recordItem.total_plastic_bag_taxes > 0 ? true : false;
                 this.form.warehouse_id = this.recordItem.warehouse_id;
@@ -1355,16 +1357,25 @@ export default {
             this.$emit("update:showDialog", false);
         },
         async changeItem() {
-            this.getItems();
+            const item = await this.findItemById(this.form.item_id);
 
-            this.form.item = _.find(this.items, { id: this.form.item_id });
-            this.form.unit_price = this.form.item.sale_unit_price;
-            this.form.unit_price_value = this.form.item.sale_unit_price;
-            this.lots = this.form.item.lots;
-            this.form.has_igv = this.form.item.has_igv;
-            this.form.affectation_igv_type_id = this.form.item.sale_affectation_igv_type_id;
+            // Antes se asignaba el undefined de _.find a form.item: reventaba en
+            // la linea siguiente con sale_unit_price y despues en el render del
+            // dialogo con currency_type_symbol. Se deja el objeto vacio con el
+            // que arranca initForm.
+            if (!item) {
+                this.form.item = {};
+                return;
+            }
+
+            this.form.item = item;
+            this.form.unit_price = item.sale_unit_price;
+            this.form.unit_price_value = item.sale_unit_price;
+            this.lots = item.lots;
+            this.form.has_igv = item.has_igv;
+            this.form.affectation_igv_type_id = item.sale_affectation_igv_type_id;
             this.form.quantity = 1;
-            this.item_unit_types = this.form.item.item_unit_types;
+            this.item_unit_types = item.item_unit_types;
             this.item_unit_types.length > 0
                 ? (this.has_list_prices = true)
                 : (this.has_list_prices = false);
@@ -1428,15 +1439,46 @@ export default {
                 this.total_item = this.form.unit_price_value;
             }
         },
-        reloadDataItems(item_id) {
-            this.$http.get(`/${this.resource}/table/items`).then(response => {
-                this.items = response.data;
-                this.form.item_id = item_id;
-                if (item_id) {
-                    this.changeItem();
+        /**
+         * Trae un unico item por id. Lo agrega a this.items para que el select
+         * pueda pintar la opcion.
+         */
+        async findItemById(item_id) {
+            if (!item_id) return null;
+
+            // Si getTables() o la busqueda remota del select ya lo trajeron, no
+            // se vuelve a pedir: el caso normal resuelve sin peticion.
+            const cached = _.find(this.items, { id: item_id });
+
+            if (cached) return cached;
+
+            this.loading_dialog = true;
+
+            try {
+                const response = await this.$http.get(
+                    `/${this.resource}/search/item/${item_id}`
+                );
+                const item = (response.data.items || [])[0] || null;
+
+                if (item && !_.find(this.items, { id: item.id })) {
+                    this.items.push(item);
                 }
-                // this.filterItems()
-            });
+
+                return item;
+            } finally {
+                this.loading_dialog = false;
+            }
+        },
+        reloadDataItems(item_id) {
+            // Antes pedia /table/items (catalogo completo) solo para resolver un
+            // id, duplicando lo que getTables() ya trajo al montar. El select es
+            // remoto: le basta el item puntual, que resuelve changeItem.
+            // Ademas faltaba el return, asi que el await de create() no esperaba.
+            if (!item_id) return Promise.resolve();
+
+            this.form.item_id = item_id;
+
+            return this.changeItem();
         },
 
         calculateTotal() {
@@ -1444,7 +1486,6 @@ export default {
                 this.form.quantity * this.form.unit_price_value,
                 4
             );
-            console.log(this.readonly_total);
         },
         calculateQuantity() {
             if (this.form.item.calculate_quantity) {
@@ -1457,6 +1498,30 @@ export default {
         },
         cleanTotalItem() {
             this.total_item = null;
+        },
+        /**
+         * Precio con el que se abre el input. input_unit_price_value no existe
+         * como columna en order_note_items, asi que en un pedido ya guardado
+         * llega undefined y el campo salia vacio: se cae al precio del renglon,
+         * deshaciendo el ajuste por IGV que aplico clickAddItem (mismo criterio
+         * que sale_notes/partials/item.vue).
+         */
+        setUnitPriceValue() {
+            const has_igv = this.recordItem.item
+                ? this.recordItem.item.has_igv
+                : this.form.has_igv;
+
+            const price = has_igv
+                ? this.recordItem.unit_price
+                : this.recordItem.unit_value;
+
+            const value = this.recordItem.input_unit_price_value
+                ? this.recordItem.input_unit_price_value
+                : price;
+
+            this.form.unit_price = value;
+            this.form.unit_price_value = value;
+            this.form.input_unit_price_value = value;
         },
         async clickAddItem() {
             this.validateQuantity();
@@ -1480,6 +1545,10 @@ export default {
             if (this.validateTotalItem().total_item) return;
 
             // this.form.item.unit_price = this.form.unit_price;
+            // El valor tal como lo escribio el usuario, antes de ajustarlo por
+            // IGV: es el que create() vuelve a poner en el input al reabrir.
+            this.form.input_unit_price_value = this.form.unit_price;
+
             let unit_price = this.form.has_igv
                 ? this.form.unit_price
                 : this.form.unit_price * (1 + this.percentageIgv);
@@ -1581,18 +1650,6 @@ export default {
             }
 
             this.calculateQuantity();
-        },
-        async getItems() {
-            this.loading_dialog = true;
-
-            await this.$http
-                .get(`/${this.resource}/item/tables`)
-                .then(response => {
-                    this.items = response.data.items;
-                })
-                .then(() => {
-                    this.loading_dialog = false;
-                });
         },
         addRowLotGroup(id) {
             this.form.IdLoteSelected = id;

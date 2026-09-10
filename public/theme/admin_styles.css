@@ -159,12 +159,6 @@ ul.nav-main li.nav-parent > a:after {
 .el-dialog__body{
     padding-top: 0 !important;
 }
-.el-input__inner,
-.el-textarea__inner {
-    border: 1px solid #EAEEF7;
-    color: #031a6e;
-    background-color: #f2f4fa61;
-}
 .el-checkbox {
     color: #60769a;
 }
@@ -748,7 +742,8 @@ html .card-primary .card-header,
     border-radius: 8px 8px 0 0;
     padding-left: 14px;
 }
-.el-input__inner{
+.el-input__inner,
+.el-textarea__inner{
     background-color: var(--light-color) !important;
     border: 1px solid var(--accent-color) !important;
     border-radius: 8px !important;
@@ -1572,6 +1567,16 @@ div.sub-title.text-muted{
     font-size: 12px;
     color: var(--muted) !important;
 }
+.mu-toolbar-count{
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--dark-color);
+    background-color: var(--light-color);
+    border: 1px solid var(--accent-color);
+    border-radius: 20px;
+    padding: 4px 12px;
+    white-space: nowrap;
+}
 .mu-table .table td{
     vertical-align: middle;
 }
@@ -1579,6 +1584,7 @@ div.sub-title.text-muted{
     display: flex;
     align-items: center;
     gap: 10px;
+    min-width: 190px;
 }
 .mu-avatar{
     flex: 0 0 32px;
@@ -1593,52 +1599,161 @@ div.sub-title.text-muted{
     align-items: center;
     justify-content: center;
 }
-.mu-user-email{
+.mu-user-info{
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+.mu-user-name{
+    font-size: 13px;
     font-weight: 600;
     color: var(--dark-color);
-    word-break: break-all;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
-.mu-flow{
+.mu-user-email{
+    font-size: 11px;
+    color: var(--muted);
+    word-break: break-word;
+}
+.mu-links{
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     flex-wrap: wrap;
     padding: 4px 0;
 }
-.mu-flow-link{
+.mu-chip{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    max-width: 340px;
+    background-color: color-mix(in srgb, var(--success) 6%, #fff);
+    border: 1px solid color-mix(in srgb, var(--success) 30%, #fff);
+    border-radius: 8px;
+    padding: 4px 6px 4px 10px;
+}
+.mu-chip--missing{
+    background-color: var(--light-color);
+    border-color: var(--accent-color);
+}
+.mu-chip-body{
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+.mu-chip-name{
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--dark-color);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.mu-chip--missing .mu-chip-name{
+    color: var(--warning);
+}
+.mu-chip-meta{
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    min-width: 0;
+    font-size: 11px;
+    color: var(--muted);
+}
+.mu-chip-number,
+.mu-chip-host{
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.mu-meta-dot{
     flex: 0 0 auto;
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    background-color: color-mix(in srgb, var(--success) 12%, #fff);
-    color: var(--success);
+}
+.mu-chip-remove{
+    flex: 0 0 auto;
     display: flex;
     align-items: center;
     justify-content: center;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background-color: transparent;
+    color: var(--muted);
+    cursor: pointer;
+}
+.mu-chip-remove:hover{
+    background-color: color-mix(in srgb, var(--danger) 12%, #fff);
+    color: var(--danger);
+}
+.mu-role{
+    flex: 0 0 auto;
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 1.6;
+    padding: 0 8px;
+    border-radius: 20px;
+    white-space: nowrap;
+}
+.mu-role--admin{
+    background-color: color-mix(in srgb, var(--primary-color) 12%, #fff);
+    color: var(--primary-color);
+}
+.mu-role--seller{
+    background-color: color-mix(in srgb, var(--warning) 14%, #fff);
+    color: var(--warning);
+}
+.mu-links-toggle{
+    border: 1px dashed var(--accent-color);
+    background-color: transparent;
+    border-radius: 8px;
+    padding: 5px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--primary-color);
+    cursor: pointer;
+}
+.mu-links-toggle:hover{
+    background-color: var(--light-color);
+}
+.mu-links-add{
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px dashed var(--accent-color);
+    background-color: transparent;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--primary-color);
+    cursor: pointer;
+}
+.mu-links-add:hover{
+    background-color: var(--light-color);
+}
+.mu-links-add svg{
+    display: block;
+}
+.mu-links-empty{
+    font-size: 12px;
+    color: var(--muted);
 }
 .mu-company{
     display: flex;
     flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
     min-width: 150px;
-    max-width: 240px;
+    max-width: 260px;
     background-color: var(--light-color);
     border: 1px solid var(--accent-color);
     border-radius: 8px;
     padding: 5px 10px;
-}
-.mu-company--destination{
-    background-color: color-mix(in srgb, var(--success) 6%, #fff);
-    border-color: color-mix(in srgb, var(--success) 30%, #fff);
-}
-.mu-company-label{
-    font-size: 9px;
-    font-weight: 700;
-    letter-spacing: .5px;
-    text-transform: uppercase;
-    color: var(--muted);
-}
-.mu-company--destination .mu-company-label{
-    color: var(--success);
 }
 .mu-company-name{
     font-size: 12px;
@@ -1651,9 +1766,23 @@ div.sub-title.text-muted{
 .mu-company--missing .mu-company-name{
     color: var(--warning);
 }
-.mu-company-host{
+.mu-company-meta{
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    max-width: 100%;
+    min-width: 0;
     font-size: 11px;
     color: var(--muted);
+}
+.mu-company-number,
+.mu-company-host{
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.mu-company .mu-role{
+    margin-top: 3px;
 }
 .mu-btn-icon{
     padding: 6px 8px !important;
@@ -1716,5 +1845,11 @@ div.sub-title.text-muted{
     }
     .mu-company{
         min-width: 120px;
+    }
+    .mu-chip{
+        max-width: 100%;
+    }
+    .mu-user{
+        min-width: 0;
     }
 }

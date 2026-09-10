@@ -352,8 +352,21 @@ class ConfigurationController extends Controller
     public function storeOtherConfiguration(Request $request)
     {
         $record = Configuration::first();
-        $record->regex_password_client = $request->regex_password_client;
-        $record->tenant_show_ads = $request->tenant_show_ads;
+        if ($request->has('regex_password_client')) {
+            $record->regex_password_client = (bool) $request->regex_password_client;
+        }
+        if ($request->has('tenant_show_ads')) {
+            $record->tenant_show_ads = (bool) $request->tenant_show_ads;
+        }
+        if ($request->has('tenant_ads_link')) {
+            $record->tenant_ads_link = $this->sanitizeAdsLink($request->tenant_ads_link);
+        }
+        if ($request->has('tenant_ads_toolbar')) {
+            $record->tenant_ads_toolbar = $this->sanitizeAdsToolbar($request->tenant_ads_toolbar);
+        }
+        if ($request->has('tenant_ads_notification')) {
+            $record->tenant_ads_notification = $this->sanitizeAdsNotification($request->tenant_ads_notification);
+        }
         if ($request->has('enable_guest_register')) {
             $record->enable_guest_register = (bool) $request->enable_guest_register;
         }
@@ -368,7 +381,141 @@ class ConfigurationController extends Controller
         return [
             'success' => true,
             'message' => 'Configuración actualizada',
+            'tenant_ads_link' => $record->tenant_ads_link,
+            'tenant_ads_toolbar' => $record->tenant_ads_toolbar,
+            'tenant_ads_notification' => $record->tenant_ads_notification,
         ];
+    }
+
+
+    /**
+     *
+     * El enlace termina en un href dentro del layout de los tenant, asi que solo
+     * se aceptan http/https (un javascript: seria XSS). Si no trae esquema se
+     * asume https para no obligar al admin a escribirlo.
+     *
+     * @param  string|null $value
+     * @return string|null
+     */
+    private function sanitizeAdsLink($value)
+    {
+        $link = trim((string) $value);
+
+        if ($link === '') {
+            return null;
+        }
+
+        if (!preg_match('#^https?://#i', $link)) {
+            $link = 'https://'.ltrim($link, '/');
+        }
+
+        return filter_var($link, FILTER_VALIDATE_URL) ? $link : null;
+    }
+
+
+    /**
+     *
+     * Publicidad tipo barra. Se normaliza aqui para que el layout del tenant
+     * solo reciba valores que puede pintar sin riesgo.
+     *
+     * @param  mixed $value
+     * @return array
+     */
+    private function sanitizeAdsToolbar($value)
+    {
+        $value = is_array($value) ? $value : [];
+        $text = trim((string) ($value['text'] ?? ''));
+
+        return [
+            'enabled' => filter_var($value['enabled'] ?? false, FILTER_VALIDATE_BOOLEAN),
+            'text' => mb_substr($text, 0, 255),
+            'link' => $this->sanitizeAdsLink($value['link'] ?? null),
+            'background_color' => $this->sanitizeAdsColor($value['background_color'] ?? null, '#1b7fd4'),
+            'text_color' => $this->sanitizeAdsColor($value['text_color'] ?? null, '#ffffff'),
+            'dismissible' => filter_var($value['dismissible'] ?? true, FILTER_VALIDATE_BOOLEAN),
+        ];
+    }
+
+
+    /**
+     *
+     * El color se pinta en un atributo style, asi que solo se acepta hexadecimal.
+     *
+     * @param  mixed  $value
+     * @param  string $fallback
+     * @return string
+     */
+    private function sanitizeAdsColor($value, $fallback)
+    {
+        $color = trim((string) $value);
+
+        return preg_match('/^#([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i', $color) ? $color : $fallback;
+    }
+
+
+    /**
+     *
+     * Publicidad tipo notificacion (toast).
+     *
+     * @param  mixed $value
+     * @return array
+     */
+    private function sanitizeAdsNotification($value)
+    {
+        $value = is_array($value) ? $value : [];
+
+        $position = $value['position'] ?? null;
+        $positions = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
+
+        $theme = $value['theme'] ?? 'light';
+
+        $icon_type = $value['icon_type'] ?? 'none';
+        $icon_svg = $this->sanitizeAdsIconSvg($value['icon_svg'] ?? null);
+        $icon = trim((string) ($value['icon'] ?? ''));
+        $emoji = trim((string) ($value['emoji'] ?? ''));
+
+        // Si el svg no pasa la lista blanca, se descarta el icono completo.
+        if ($icon_svg === '') {
+            $icon = '';
+        }
+
+        return [
+            'enabled' => filter_var($value['enabled'] ?? false, FILTER_VALIDATE_BOOLEAN),
+            'position' => in_array($position, $positions, true) ? $position : 'bottom-right',
+            'theme' => in_array($theme, ['light', 'dark', 'auto'], true) ? $theme : 'light',
+            // Segundos visible. 0 = infinita (hasta que el usuario la cierre).
+            'duration' => min(300, max(0, (int) ($value['duration'] ?? 0))),
+            'icon_type' => in_array($icon_type, ['none', 'tabler', 'emoji'], true) ? $icon_type : 'none',
+            'icon' => preg_match('/^[a-z0-9-]{1,64}$/', $icon) ? $icon : '',
+            'icon_svg' => $icon_svg,
+            'emoji' => mb_substr($emoji, 0, 16),
+            'title' => mb_substr(trim((string) ($value['title'] ?? '')), 0, 120),
+            'description' => mb_substr(trim((string) ($value['description'] ?? '')), 0, 300),
+            'link' => $this->sanitizeAdsLink($value['link'] ?? null),
+        ];
+    }
+
+
+    /**
+     *
+     * El svg del icono se inyecta sin escapar en el layout del tenant. El catalogo
+     * de Tabler solo usa <path> con los atributos d, fill, opacity y stroke, asi
+     * que se valida contra esa lista blanca y se descarta cualquier otra cosa.
+     *
+     * @param  mixed $value
+     * @return string
+     */
+    private function sanitizeAdsIconSvg($value)
+    {
+        $svg = trim((string) $value);
+
+        if ($svg === '') {
+            return '';
+        }
+
+        $allowed = '#^(?:<path(?:\s+(?:d|fill|opacity|stroke)="[^"<>]*")+\s*/?>)+$#';
+
+        return preg_match($allowed, $svg) ? $svg : '';
     }
 
 
@@ -382,6 +529,9 @@ class ConfigurationController extends Controller
                                 'regex_password_client',
                                 'tenant_show_ads',
                                 'tenant_image_ads',
+                                'tenant_ads_link',
+                                'tenant_ads_toolbar',
+                                'tenant_ads_notification',
                                 'enable_guest_register',
                                 'guest_register_plan_id',
                                 'validate_ruc_register'

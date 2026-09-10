@@ -1103,27 +1103,27 @@ html.sidebar-light:not(.dark) .style-switcher h5.title-visual{
 }
 span.badge.bg-secondary.text-white.bg-success,
 span.badge.text-white.bg-success {
-    background: color-mix(in srgb, var(--success) 20%, #ffffff00) !important;
+    background: color-mix(in srgb, var(--success) 10%, #ffffff00) !important;
     color: var(--success) !important;
 }
 span.badge.bg-secondary.text-white.bg-danger,
 span.badge.text-white.bg-danger {
-    background: color-mix(in srgb, var(--danger) 20%, #ffffff00) !important;
+    background: color-mix(in srgb, var(--danger) 10%, #ffffff00) !important;
     color: var(--danger) !important;
 }
 span.badge.bg-secondary.text-white.bg-warning,
 span.badge.text-white.bg-warning {
-    background: color-mix(in srgb, var(--warning) 20%, #ffffff00) !important;
+    background: color-mix(in srgb, var(--warning) 10%, #ffffff00) !important;
     color: var(--warning) !important;
 }
 span.badge.bg-secondary.text-white.bg-info,
 span.badge.text-white.bg-info {
-    background: color-mix(in srgb, var(--info) 20%, #ffffff00) !important;
+    background: color-mix(in srgb, var(--info) 10%, #ffffff00) !important;
     color: var(--info) !important;
 }
 span.badge.bg-secondary.text-white.bg-primary,
 span.badge.text-white.bg-primary {
-    background: color-mix(in srgb, var(--primary) 20%, #ffffff00) !important;
+    background: color-mix(in srgb, var(--primary) 10%, #ffffff00) !important;
     color: var(--primary) !important;
 }
 /* .btn-warning:hover, .btn-warning.hover {
@@ -1357,10 +1357,6 @@ ul.nav-main li.nav-parent > a:after {
     /* -webkit-box-orient: vertical; */
     text-overflow: ellipsis;
     overflow: hidden;
-}
-.card-body.pointer.px-2.pt-2 .img-custom {
-    height: 150px !important;
-    object-fit: cover;
 }
 .transfer-data-table{
     border: 1px solid var(--accent-color);

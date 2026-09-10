@@ -57,10 +57,71 @@ class ReportGeneralItemController extends Controller
     {
 
         $records = $this->getRecordsItems($request->all())->latest('id');
+
+        // GeneralItemCollection recorre por fila el documento, el producto y su
+        // plataforma: sin precarga cada acceso era una consulta, y Document e
+        // Item arrastran muchas relaciones por su $with. Asi van una vez por pagina.
+        $relation = [
+            DocumentItem::class => 'document.document_type',
+            PurchaseItem::class => 'purchase',
+            SaleNoteItem::class => 'sale_note',
+        ][get_class($records->getModel())];
+
+        $records->with([
+            $relation,
+            'relation_item.brand',
+            'relation_item.web_platform',
+            'relation_item.sets.relation_item',
+        ]);
         
         return new GeneralItemCollection($records->paginate(config('tenant.items_per_page')));
     }
 
+
+    /**
+     * document_type_id llega de varias formas: array desde el filtro multiple,
+     * texto suelto desde la API o clientes viejos, y '' / 'null' / 'undefined'
+     * cuando el select se vacia. Siempre devuelve una lista limpia.
+     */
+    public static function normalizeDocumentTypeIds($value): array
+    {
+        if (is_string($value)) {
+            $value = explode(',', $value);
+        }
+
+        return collect((array) $value)
+            ->map(function ($id) {
+                return trim((string) $id);
+            })
+            ->reject(function ($id) {
+                return in_array($id, ['', 'null', 'undefined'], true);
+            })
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Es el reporte de notas de venta solo si 80 es lo unico elegido: vive en
+     * otra tabla y no se mezcla con comprobantes. Las vistas, el job y la API
+     * solo necesitan saber esto, no la lista completa.
+     */
+    public static function isSaleNoteReport($value): bool
+    {
+        return self::normalizeDocumentTypeIds($value) === ['80'];
+    }
+
+    /**
+     * Tipos que se consultan cuando no se elige ninguno: los que ofrece
+     * filter(), sin la nota de venta. Compras tampoco lleva nota de credito,
+     * igual que el filtro del componente.
+     */
+    private static function defaultDocumentTypeIds(bool $is_sale): array
+    {
+        $ids = ['01', '03', '07', 'GU75', 'NE76'];
+
+        return $is_sale ? $ids : array_values(array_diff($ids, ['07']));
+    }
 
     public function getRecordsItems($request){
 
@@ -76,7 +137,7 @@ class ReportGeneralItemController extends Controller
         }
         $data_type = $this->getDataType($request);
 
-        $document_type_id = isset($request['document_type_id']) ? $request['document_type_id'] : null;
+        $document_type_ids = self::normalizeDocumentTypeIds($request['document_type_id'] ?? null);
 
         $person_id = isset($request['person_id']) ? $request['person_id'] : null;
         $type_person = isset($request['type_person']) ? $request['type_person'] : null;
@@ -94,7 +155,7 @@ class ReportGeneralItemController extends Controller
         }
         $web_platform_id = isset($request['web_platform_id']) ? $request['web_platform_id'] : null;
 
-        $records = $this->dataItems($d_start, $d_end, $document_type_id, $data_type, $person_id, $type_person, $item_id, $web_platform_id, $brand_id, $category_id, $user_id, $user_type);
+        $records = $this->dataItems($d_start, $d_end, $document_type_ids, $data_type, $person_id, $type_person, $item_id, $web_platform_id, $brand_id, $category_id, $user_id, $user_type);
 
         return $records;
 
@@ -104,7 +165,7 @@ class ReportGeneralItemController extends Controller
     /**
      * @param $date_start
      * @param $date_end
-     * @param $document_type_id
+     * @param string[] $document_type_ids
      * @param $data_type
      * @param $person_id
      * @param $type_person
@@ -117,14 +178,14 @@ class ReportGeneralItemController extends Controller
      *
      * @return \App\Models\Tenant\SaleNoteItem|\Illuminate\Database\Eloquent\Builder|\Illuminate\Database\Query\Builder
      */
-    private function dataItems($date_start, $date_end, $document_type_id, $data_type, $person_id, $type_person, $item_id, $web_platform_id, $brand_id, $category_id, $user_id, $user_type)
+    private function dataItems($date_start, $date_end, $document_type_ids, $data_type, $person_id, $type_person, $item_id, $web_platform_id, $brand_id, $category_id, $user_id, $user_type)
     {
         /* columna state_type_id */
         $documents_excluded = [
             '11', // Documentos anulados
             '09' // Documentos rechazados
         ];
-        if( $document_type_id && $document_type_id == '80' ) {
+        if (self::isSaleNoteReport($document_type_ids)) {
             $relation = 'sale_note';
 
             $data = SaleNoteItem::whereHas('sale_note', function($query) use($date_start, $date_end, $user_id, $documents_excluded){
@@ -143,7 +204,14 @@ class ReportGeneralItemController extends Controller
             $model = $data_type['model'];
             $relation = $data_type['relation'];
 
-            $document_types = $document_type_id ? [$document_type_id] : ['01','03'];
+            // Sin seleccion se consultan todos los comprobantes del filtro, no
+            // solo 01 y 03. La nota de venta (80) solo se atiende sola en la
+            // rama de arriba: mezclada con otros tipos se descarta aqui.
+            $document_types = array_values(array_diff($document_type_ids, ['80']));
+
+            if (empty($document_types)) {
+                $document_types = self::defaultDocumentTypeIds($model === DocumentItem::class);
+            }
 
             $data = $model::whereHas($relation, function ($query) use ($date_start, $date_end, $document_types, $model,$documents_excluded) {
                 $query

@@ -132,6 +132,12 @@ if ($hostname) {
                 Route::get('/addresses', 'Tenant\Api\ConsignedController@consignedAddresses');
             });
             Route::get('price-labels/active', 'Tenant\Api\MobileController@priceLabels');
+
+            // Placas por cliente - giro de negocio grifo/taps (equivalente movil de
+            // bussiness_turns/plates del modulo BusinessTurn).
+            Route::get('plates/{person_id}', 'Tenant\Api\PlateController@records');
+            Route::post('plates', 'Tenant\Api\PlateController@store');
+            Route::post('plates/{plate}/destroy', 'Tenant\Api\PlateController@destroy');
         });
         Route::get('documents/search/customers', 'Tenant\DocumentController@searchCustomers');
 

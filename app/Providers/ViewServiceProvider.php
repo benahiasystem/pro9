@@ -68,6 +68,10 @@ class ViewServiceProvider extends ServiceProvider
             'App\Http\ViewComposers\Tenant\CompactSidebarViewComposer'
         );
         view()->composer(
+            'tenant.layouts.app',
+            'App\Http\ViewComposers\Tenant\SystemAdsViewComposer'
+        );
+        view()->composer(
             'tenant.layouts.app_pos',
             'App\Http\ViewComposers\Tenant\CompactSidebarViewComposer'
         );

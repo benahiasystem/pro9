@@ -2,8 +2,10 @@
 
 namespace Modules\Dashboard\Helpers;
 
+use App\Models\Tenant\Document;
 use App\Models\Tenant\DocumentItem;
 use App\Models\Tenant\PurchaseItem;
+use App\Models\Tenant\SaleNote;
 use App\Models\Tenant\SaleNoteItem;
 use Modules\Expense\Models\Expense;
 
@@ -35,7 +37,12 @@ class DashboardUtility
             $this->getExpenses($establishment_id, $d_start, $d_end, $enabled_expense)
         );
 
-        $total_income = $document_totals['document_sale_total'] + $sale_note_totals['sale_note_sale_total'];
+        // Sin filtro de producto: mismo total de ventas que el KPI / reporte (cabeceras).
+        // Con filtro de producto: se mantiene la suma por ítems de ese producto.
+        $total_income = $item_id
+            ? $document_totals['document_sale_total'] + $sale_note_totals['sale_note_sale_total']
+            : $this->getSalesIncomeFromHeaders($establishment_id, $d_start, $d_end);
+
         $total_egress = $document_totals['document_purchase_total']
             + $sale_note_totals['sale_note_purchase_total']
             + $expenses_total;
@@ -65,6 +72,55 @@ class DashboardUtility
                 ],
             ],
         ];
+    }
+
+    /**
+     * Total de ventas del periodo (cabeceras CPE + NV − NC), alineado con DashboardData::kpisForRange.
+     */
+    private function getSalesIncomeFromHeaders($establishment_id, $d_start, $d_end)
+    {
+        $documents = Document::query()
+            ->whereIn('state_type_id', ['01', '03', '05', '07', '13'])
+            ->when($establishment_id, function ($query) use ($establishment_id) {
+                $query->where('establishment_id', $establishment_id);
+            })
+            ->when($d_start && $d_end, function ($query) use ($d_start, $d_end) {
+                $query->whereBetween('date_of_issue', [$d_start, $d_end]);
+            })
+            ->get(['id', 'document_type_id', 'currency_type_id', 'exchange_rate_sale', 'total']);
+
+        $documents_sales_total = 0.0;
+        $documents_note_credit = 0.0;
+
+        foreach ($documents as $doc) {
+            $factor = ($doc->currency_type_id === 'USD') ? (float) $doc->exchange_rate_sale : 1.0;
+
+            if (in_array($doc->document_type_id, ['01', '03', '08'], true)) {
+                $documents_sales_total += (float) $doc->total * $factor;
+            } elseif ($doc->document_type_id === '07') {
+                $documents_note_credit += (float) $doc->total * $factor;
+            }
+        }
+
+        $sale_notes = SaleNote::query()
+            ->where('changed', false)
+            ->whereStateTypeAccepted()
+            ->when($establishment_id, function ($query) use ($establishment_id) {
+                $query->where('establishment_id', $establishment_id);
+            })
+            ->when($d_start && $d_end, function ($query) use ($d_start, $d_end) {
+                $query->whereBetween('date_of_issue', [$d_start, $d_end]);
+            })
+            ->get(['id', 'currency_type_id', 'exchange_rate_sale', 'total']);
+
+        $sale_notes_total = 0.0;
+
+        foreach ($sale_notes as $sn) {
+            $factor = ($sn->currency_type_id === 'USD') ? (float) $sn->exchange_rate_sale : 1.0;
+            $sale_notes_total += (float) $sn->total * $factor;
+        }
+
+        return round(($documents_sales_total - $documents_note_credit) + $sale_notes_total, 2);
     }
 
     private function getDocumentItems($establishment_id, $d_start, $d_end, $item_id)

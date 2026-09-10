@@ -1,4 +1,14 @@
 {{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
+@php
+    $storeImageRatio = in_array(data_get($preferences ?? [], 'image_aspect_ratio'), ['4:5', '5:4', '1:1'], true)
+        ? data_get($preferences, 'image_aspect_ratio')
+        : '1:1';
+    $storeImageFit = in_array(data_get($preferences ?? [], 'image_fit'), ['cover', 'contain'], true)
+        ? data_get($preferences, 'image_fit')
+        : 'contain';
+    $storeMediaClass = 'store-card-media store-card-media--' . str_replace(':', '-', $storeImageRatio)
+        . ' store-card-media--fit-' . $storeImageFit;
+@endphp
 @foreach ($dataPaginate as $item)
     @php
         $configuration = \App\Models\Tenant\Configuration::first();
@@ -14,7 +24,9 @@
     <div>
         <div class="product product-style {{ stock($item, $configuration) ? 'productdisabled' : '' }}">
             <div class="position-relative">
-                <img src="{{ $imagePath }}" class="image-product" alt="{{ $item->description }}">
+                <div class="{{ $storeMediaClass }}">
+                    <img src="{{ $imagePath }}" class="image-product" alt="{{ $item->description }}">
+                </div>
                 {{-- <a href="/restaurant/item/{{ $item->id }}" class="product-image product-image-list-restaurant">
                     <img src="{{ $imagePath }}" class="image" alt="{{ $item->description }}">
                 </a> --}}
@@ -116,6 +128,49 @@
     }
     .add-cart::before{
         content: none
+    }
+
+    .products-restaurant.list-view .store-card-media {
+        display: contents;
+    }
+
+    .products-restaurant.grid-view .store-card-media {
+        display: block;
+        width: 100%;
+        max-width: 100%;
+        overflow: hidden;
+        border-radius: 16px 16px 0 0;
+    }
+
+    .products-restaurant.grid-view .store-card-media--1-1 {
+        aspect-ratio: 1 / 1;
+    }
+
+    .products-restaurant.grid-view .store-card-media--4-5 {
+        aspect-ratio: 4 / 5;
+    }
+
+    .products-restaurant.grid-view .store-card-media--5-4 {
+        aspect-ratio: 5 / 4;
+    }
+
+    .products-restaurant.grid-view .store-card-media .image-product {
+        display: block;
+        width: 100%;
+        height: 100%;
+        min-height: 0;
+        max-height: none;
+        border-radius: 0;
+    }
+
+    .products-restaurant.grid-view .store-card-media--fit-cover .image-product {
+        object-fit: cover;
+        object-position: center;
+    }
+
+    .products-restaurant.grid-view .store-card-media--fit-contain .image-product {
+        object-fit: contain;
+        object-position: center;
     }
 </style>
 

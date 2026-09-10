@@ -352,6 +352,42 @@ use Modules\Sale\Models\Agent;
         }
 
         /**
+         * Descuento total con IGV para plantillas PDF (DESCUENTO TOTAL).
+         * Misma lógica que Document: las plantillas de NV usan $document->total_discount_with_igv.
+         *
+         * @return float
+         */
+        public function getTotalDiscountWithIgvAttribute()
+        {
+            $total_discount_item = 0;
+            $total_discount_global = 0;
+
+            $this->items->each(function ($it) use (&$total_discount_item, &$total_discount_global) {
+                if ($it->discounts) {
+                    foreach ($it->discounts as $dis) {
+                        $amount = $dis->discount_type_id == '00'
+                            ? $dis->amount_without_rounded * \App\Support\Venezuela\Localization::taxMultiplier()
+                            : $dis->amount;
+
+                        if (isset($dis->from_global_distribution) && $dis->from_global_distribution) {
+                            $total_discount_global += $amount;
+                        } else {
+                            $total_discount_item += $amount;
+                        }
+                    }
+                }
+            });
+
+            if ($this->total_value > 0 && $total_discount_item == 0 && $total_discount_global == 0) {
+                $factor = ($this->total_value + $this->total_taxes) / $this->total_value;
+
+                return round($this->total_discount * $factor, 2);
+            }
+
+            return round($total_discount_global + $total_discount_item, 2);
+        }
+
+        /**
          * Datos esenciales de la nota de venta para consumo por API.
          *
          * Mismo criterio de descuentos que en Document: los que traen
@@ -855,25 +891,10 @@ use Modules\Sale\Models\Agent;
          */
         public function getBtnGenerate($total_documents)
         {
-            if($total_documents > 0)
-            {
-                $btn_generate = false;
-            }
-            else
-            {
-                // si proviene de un pedido o registro externo que afecta inventario se deshabilita la opcion editar
-                // si se habilita se deben controlar los movimientos que afectan a inventario
-                if($this->isGeneratedFromExternalRecord())
-                {
-                    $btn_generate = false;
-                }
-                else
-                {
-                    $btn_generate = true;
-                }
-            }
-
-            return $btn_generate;
+            // Editar disponible mientras no tenga CPE generado.
+            // Antes se ocultaba también si venía de pedido (order_note_id) por inventario;
+            // el update de stock ya evita doble descuento cuando hay order_note_id.
+            return $total_documents <= 0;
         }
 
 
