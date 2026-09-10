@@ -98,26 +98,38 @@ Se retiraron todas las leyendas peruanas de transferencia gratuita, percepción,
 
 ### Motivos de gasto (`expense_reasons`)
 
-1. Honorarios profesionales jurídicos y contables
-2. Servicios de publicidad, propaganda y mercadeo
+1. Honorarios profesionales
+2. Publicidad, propaganda y mercadeo
 3. Comisiones de ventas y corretaje
-4. Mantenimiento y reparación de activos fijos
-5. Servicios de vigilancia y seguridad privada
-6. Servicios de limpieza y aseo industrial
-7. Fletes y transporte nacional
+4. Mantenimiento y reparación
+5. Vigilancia y seguridad
+6. Limpieza y aseo
+7. Fletes, transporte y mensajería
 8. Arrendamiento de inmuebles
-9. Alquiler de bienes muebles
+9. Alquiler de bienes muebles y equipos
 10. Energía eléctrica
-11. Servicio de agua potable
-12. Telecomunicaciones e Internet
-13. Viáticos, gastos de viaje y movilización
+11. Agua potable
+12. Telecomunicaciones, Internet y servicios digitales
+13. Viáticos, viajes y movilización
 14. Gastos de representación
-15. Suministros de oficina y papelería
-16. Pago de impuestos y tasas municipales
-17. Intereses de mora, multas y sanciones
-18. Gastos sin factura legal o soportes informales
+15. Papelería, útiles y suministros de oficina
+16. Impuestos, tasas y contribuciones
+17. Multas, sanciones e intereses de mora
+18. Gastos sin soporte fiscal válido
+19. Sueldos, salarios y remuneraciones
+20. Beneficios laborales y prestaciones sociales
+21. Aportes patronales: IVSS, FAOV e INCES
+22. Seguros y pólizas
+23. Gastos bancarios, comisiones y servicios financieros
+24. Intereses y gastos de financiamiento
+25. Depreciación y amortización
+26. Combustible, lubricantes y peajes
+27. Repuestos y mantenimiento de vehículos
+28. Sistemas, software, licencias y suscripciones
+29. Servicios profesionales técnicos y consultoría
+30. Otros gastos operativos
 
-Las descripciones fiscales sobre retenciones son reglas futuras de parametrización; `expense_reasons` sólo posee `id` y `description`, por lo que no se inventan porcentajes ni banderas inexistentes.
+Este catálogo no conserva datos históricos: los IDs `1` a `30` constituyen el contrato inicial completo. La migración tenant sólo crea la estructura y todas las filas se cargan desde `database/seeders/data/tenant_initial_data.php`. Las descripciones fiscales sobre retenciones son reglas futuras de parametrización; `expense_reasons` sólo posee `id` y `description`, por lo que no se inventan porcentajes ni banderas inexistentes.
 
 ### Grupos (`groups`)
 

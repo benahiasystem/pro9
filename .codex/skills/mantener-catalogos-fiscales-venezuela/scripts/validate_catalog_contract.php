@@ -42,6 +42,11 @@ try {
         '--realpath' => true,
         '--force' => true,
     ]);
+
+    // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+    assertSame(0, DB::connection('tenant')->table('expense_reasons')->count(), 'La migración de expense_reasons no debe insertar datos.');
+    // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
+
     runArtisan('db:seed', [
         '--database' => 'tenant',
         '--class' => 'Database\\Seeders\\TenancyDatabaseSeeder',
@@ -70,7 +75,7 @@ try {
         'cat_note_debit_types' => 3,
         'cat_operation_types' => 2,
         'cat_transfer_reason_types' => 6,
-        'expense_reasons' => 18,
+        'expense_reasons' => 30,
         'groups' => 1,
         'departments' => 25,
         'provinces' => 335,
@@ -78,6 +83,46 @@ try {
     ] as $table => $count) {
         assertSame($count, DB::connection('tenant')->table($table)->count(), "Conteo incorrecto en {$table}.");
     }
+
+    // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+    $expectedExpenseReasons = [
+        1 => 'Honorarios profesionales',
+        2 => 'Publicidad, propaganda y mercadeo',
+        3 => 'Comisiones de ventas y corretaje',
+        4 => 'Mantenimiento y reparación',
+        5 => 'Vigilancia y seguridad',
+        6 => 'Limpieza y aseo',
+        7 => 'Fletes, transporte y mensajería',
+        8 => 'Arrendamiento de inmuebles',
+        9 => 'Alquiler de bienes muebles y equipos',
+        10 => 'Energía eléctrica',
+        11 => 'Agua potable',
+        12 => 'Telecomunicaciones, Internet y servicios digitales',
+        13 => 'Viáticos, viajes y movilización',
+        14 => 'Gastos de representación',
+        15 => 'Papelería, útiles y suministros de oficina',
+        16 => 'Impuestos, tasas y contribuciones',
+        17 => 'Multas, sanciones e intereses de mora',
+        18 => 'Gastos sin soporte fiscal válido',
+        19 => 'Sueldos, salarios y remuneraciones',
+        20 => 'Beneficios laborales y prestaciones sociales',
+        21 => 'Aportes patronales: IVSS, FAOV e INCES',
+        22 => 'Seguros y pólizas',
+        23 => 'Gastos bancarios, comisiones y servicios financieros',
+        24 => 'Intereses y gastos de financiamiento',
+        25 => 'Depreciación y amortización',
+        26 => 'Combustible, lubricantes y peajes',
+        27 => 'Repuestos y mantenimiento de vehículos',
+        28 => 'Sistemas, software, licencias y suscripciones',
+        29 => 'Servicios profesionales técnicos y consultoría',
+        30 => 'Otros gastos operativos',
+    ];
+    $actualExpenseReasons = DB::connection('tenant')->table('expense_reasons')
+        ->orderBy('id')
+        ->pluck('description', 'id')
+        ->all();
+    assertSame($expectedExpenseReasons, $actualExpenseReasons, 'El catálogo expense_reasons no coincide con el contrato venezolano.');
+    // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
 
     foreach (['documents', 'sale_notes', 'purchases', 'quotations', 'order_notes', 'contracts', 'fixed_asset_purchases', 'suscription_plans', 'user_rel_suscription_plans'] as $table) {
         assertSame(false, $schema->hasColumn($table, 'detraction'), "Columna retirada en {$table}.");

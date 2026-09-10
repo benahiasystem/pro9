@@ -3784,12 +3784,12 @@ return array (
         0 =>
         array (
           'id' => 1,
-          'description' => 'Honorarios profesionales jurídicos y contables',
+          'description' => 'Honorarios profesionales',
         ),
         1 =>
         array (
           'id' => 2,
-          'description' => 'Servicios de publicidad, propaganda y mercadeo',
+          'description' => 'Publicidad, propaganda y mercadeo',
         ),
         2 =>
         array (
@@ -3799,22 +3799,22 @@ return array (
         3 =>
         array (
           'id' => 4,
-          'description' => 'Mantenimiento y reparación de activos fijos',
+          'description' => 'Mantenimiento y reparación',
         ),
         4 =>
         array (
           'id' => 5,
-          'description' => 'Servicios de vigilancia y seguridad privada',
+          'description' => 'Vigilancia y seguridad',
         ),
         5 =>
         array (
           'id' => 6,
-          'description' => 'Servicios de limpieza y aseo industrial',
+          'description' => 'Limpieza y aseo',
         ),
         6 =>
         array (
           'id' => 7,
-          'description' => 'Fletes y transporte nacional',
+          'description' => 'Fletes, transporte y mensajería',
         ),
         7 =>
         array (
@@ -3824,7 +3824,7 @@ return array (
         8 =>
         array (
           'id' => 9,
-          'description' => 'Alquiler de bienes muebles',
+          'description' => 'Alquiler de bienes muebles y equipos',
         ),
         9 =>
         array (
@@ -3834,17 +3834,17 @@ return array (
         10 =>
         array (
           'id' => 11,
-          'description' => 'Servicio de agua potable',
+          'description' => 'Agua potable',
         ),
         11 =>
         array (
           'id' => 12,
-          'description' => 'Telecomunicaciones e Internet',
+          'description' => 'Telecomunicaciones, Internet y servicios digitales',
         ),
         12 =>
         array (
           'id' => 13,
-          'description' => 'Viáticos, gastos de viaje y movilización',
+          'description' => 'Viáticos, viajes y movilización',
         ),
         13 =>
         array (
@@ -3854,22 +3854,82 @@ return array (
         14 =>
         array (
           'id' => 15,
-          'description' => 'Suministros de oficina y papelería',
+          'description' => 'Papelería, útiles y suministros de oficina',
         ),
         15 =>
         array (
           'id' => 16,
-          'description' => 'Pago de impuestos y tasas municipales',
+          'description' => 'Impuestos, tasas y contribuciones',
         ),
         16 =>
         array (
           'id' => 17,
-          'description' => 'Intereses de mora, multas y sanciones',
+          'description' => 'Multas, sanciones e intereses de mora',
         ),
         17 =>
         array (
           'id' => 18,
-          'description' => 'Gastos sin factura legal o soportes informales',
+          'description' => 'Gastos sin soporte fiscal válido',
+        ),
+        18 =>
+        array (
+          'id' => 19,
+          'description' => 'Sueldos, salarios y remuneraciones',
+        ),
+        19 =>
+        array (
+          'id' => 20,
+          'description' => 'Beneficios laborales y prestaciones sociales',
+        ),
+        20 =>
+        array (
+          'id' => 21,
+          'description' => 'Aportes patronales: IVSS, FAOV e INCES',
+        ),
+        21 =>
+        array (
+          'id' => 22,
+          'description' => 'Seguros y pólizas',
+        ),
+        22 =>
+        array (
+          'id' => 23,
+          'description' => 'Gastos bancarios, comisiones y servicios financieros',
+        ),
+        23 =>
+        array (
+          'id' => 24,
+          'description' => 'Intereses y gastos de financiamiento',
+        ),
+        24 =>
+        array (
+          'id' => 25,
+          'description' => 'Depreciación y amortización',
+        ),
+        25 =>
+        array (
+          'id' => 26,
+          'description' => 'Combustible, lubricantes y peajes',
+        ),
+        26 =>
+        array (
+          'id' => 27,
+          'description' => 'Repuestos y mantenimiento de vehículos',
+        ),
+        27 =>
+        array (
+          'id' => 28,
+          'description' => 'Sistemas, software, licencias y suscripciones',
+        ),
+        28 =>
+        array (
+          'id' => 29,
+          'description' => 'Servicios profesionales técnicos y consultoría',
+        ),
+        29 =>
+        array (
+          'id' => 30,
+          'description' => 'Otros gastos operativos',
         ),
       ),
     ),

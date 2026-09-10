@@ -8,6 +8,9 @@
  * Inventario de columnas:
  * - `id`: int(10) unsigned; NOT NULL; auto_increment — Sin comentario definido en el esquema fuente.
  * - `description`: varchar(255); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
+ *
+ * Esta migración crea únicamente la estructura. Los motivos iniciales se cargan
+ * desde `database/seeders/data/tenant_initial_data.php`.
  */
 
 use Illuminate\Database\Migrations\Migration;
@@ -18,11 +21,13 @@ return new class extends Migration
     public function up(): void
     {
         DB::unprepared(<<<'SQL'
+-- ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
 CREATE TABLE `expense_reasons` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+-- ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
 SQL);
     }
 
