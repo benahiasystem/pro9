@@ -311,7 +311,7 @@
     </header>
     <nav class="mobile-nav">
         <ul class="mobile-menu">
-            <li class="{{ request()->routeIs('tenant.ecommerce.index') ? 'active' : '' }}">
+            <li class="{{ request()->routeIs('tenant.ecommerce.index', 'tenant.home') ? 'active' : '' }}">
                 <a href="{{ route('tenant.ecommerce.index') }}">
                     <span class="mobile-menu-link-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11 12 4l9 7"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg></span>
                     <span>Inicio</span>

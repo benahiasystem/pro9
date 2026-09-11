@@ -45,7 +45,8 @@ class ConfigurationEcommerce extends ModelTenant
         'publicidad_activa',
         'publicidad_texto',
         'publicidad_color_fondo',
-        'publicidad_link'
+        'publicidad_link',
+        'ecommerce_as_home'
     ];
 
     protected $casts = [
@@ -57,6 +58,7 @@ class ConfigurationEcommerce extends ModelTenant
         'quotation_validity_days'      => 'integer',
         'enable_yape'                  => 'boolean',
         'enable_transfer'              => 'boolean',
+        'ecommerce_as_home'            => 'boolean',
     ];
     /**
      * Devuelve los enlaces personalizados para el header
@@ -72,6 +74,14 @@ class ConfigurationEcommerce extends ModelTenant
             'title_three' => $config->title_three_customised_link ?? null,
             'link_three' => $config->customised_link_three ?? null,
         ];
+    }
+
+    /**
+     * Tienda virtual como página principal: la raíz del subdominio redirige al ecommerce.
+     */
+    public static function isHomePage(): bool
+    {
+        return (bool) optional(self::first())->ecommerce_as_home;
     }
 
     /**

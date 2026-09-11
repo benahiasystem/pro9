@@ -4,9 +4,14 @@ $current_hostname = app(Hyn\Tenancy\Contracts\CurrentHostname::class);
 
 if($current_hostname) {
     Route::domain($current_hostname->fqdn)->group(function () {
-        Route::middleware(['auth', 'locked.tenant', 'check.email.verified'])->group(function () {
+        // Raíz del subdominio fuera de auth: puede mostrar la tienda virtual a visitantes
+        // sin sesión; si no, sigue el flujo normal hacia /dashboard (o login).
+        // Mismos middleware que las rutas de la tienda (ambos admiten visitantes).
+        Route::get('/', 'HomeController@index')
+            ->middleware(['locked.tenant', 'check.email.verified'])
+            ->name('tenant.home');
 
-            Route::redirect('/', '/dashboard');
+        Route::middleware(['auth', 'locked.tenant', 'check.email.verified'])->group(function () {
 
             Route::prefix('dashboard')->group(function () {
                 Route::get('/', 'DashboardController@index')->name('tenant.dashboard.index');

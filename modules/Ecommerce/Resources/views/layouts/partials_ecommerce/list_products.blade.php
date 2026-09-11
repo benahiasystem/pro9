@@ -64,7 +64,7 @@
             ? ($configuration ? $variationStock <= 0 : false)
             : stock($item, $configuration);
     @endphp
-    <div class="col-6 mb-2 {{ \Route::currentRouteName() == 'tenant.ecommerce.index' ? 'col-md-3' : 'col-md-4' }}">
+    <div class="col-6 mb-2 {{ request()->routeIs('tenant.ecommerce.index', 'tenant.home') ? 'col-md-3' : 'col-md-4' }}">
         <div class="product product-style h-100 m-0 d-flex flex-column {{ $isOutOfStock ? 'productdisabled' : '' }}"
              @if($variationSelector) data-variation-selector='@json($variationSelector)' @endif>
             <figure class="product-image-container product-image-container-ecommerce h-auto">

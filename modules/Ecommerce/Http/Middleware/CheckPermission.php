@@ -17,15 +17,26 @@ class CheckPermission
      */
     public function handle(Request $request, Closure $next)
     {
-        // se requiere consultar el primer usuario (administrador) para conocer los permisos
-        $modules = User::first()->getModules();
-        $access_modules = $modules->filter(function ($module, $key) {
-            return $module->value === 'ecommerce';
-        });
-        if($access_modules->count() == 0){
+        if (! self::tenantHasEcommerce()) {
             abort(404);
-        };
+        }
 
         return $next($request);
+    }
+
+    /**
+     * Si el tenant tiene habilitado el módulo ecommerce. Se consulta el primer usuario
+     * (administrador) para conocer los permisos, así funciona también sin sesión.
+     */
+    public static function tenantHasEcommerce(): bool
+    {
+        $user = User::first();
+        if (! $user) {
+            return false;
+        }
+
+        return $user->getModules()->contains(function ($module) {
+            return $module->value === 'ecommerce';
+        });
     }
 }

@@ -56,6 +56,10 @@ class ConfigurationEcommerceRequest extends FormRequest
                 'string',
                 'max:5000',
             ],
+            'ecommerce_as_home' => [
+                'sometimes',
+                'boolean',
+            ],
         ];
     }
 
@@ -78,7 +82,7 @@ class ConfigurationEcommerceRequest extends FormRequest
      */
     protected function prepareForValidation()
     {
-        $booleanFields = ['quotation_enabled', 'quotation_show_prices'];
+        $booleanFields = ['quotation_enabled', 'quotation_show_prices', 'ecommerce_as_home'];
 
         foreach ($booleanFields as $field) {
             if (! $this->exists($field)) {

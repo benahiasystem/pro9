@@ -563,6 +563,20 @@
                   </small>
                 </div>
               </div>
+              <div class="col-md-6">
+                <div class="form-group form-modern mb-3">
+                  <el-switch v-model="form.ecommerce_as_home" :active-value="1" :inactive-value="0"></el-switch>
+                  <label class="ms-2 mb-0">Tienda virtual como página principal</label>
+                  <small class="d-block text-muted ms-5" style="padding: 0 !important; line-height: 1.5;">
+                    <template v-if="form.ecommerce_as_home == 1">
+                      Al entrar a {{ current_host }} se muestra la tienda virtual. El sistema sigue disponible en {{ current_host }}/login.
+                    </template>
+                    <template v-else>
+                      Al entrar a {{ current_host }} se muestra el login o el dashboard del sistema.
+                    </template>
+                  </small>
+                </div>
+              </div>
 
               <div class="col-12 mt-4 mb-3">
                 <h4 class="mb-0"><strong>Configuración de Cotizaciones</strong></h4>
@@ -816,6 +830,7 @@ export default {
       activeConfigTab: '0',
       loading_submit: false,
       resource: "ecommerce",
+      current_host: window.location.host,
       errors: {},
       form: {},
       products: [],
@@ -929,6 +944,7 @@ export default {
           // configuración de documentos electrónicos y recojo en tienda
           enable_electronic_documents: data.enable_electronic_documents ? 1 : 0,
           enable_store_pickup: data.enable_store_pickup ? 1 : 0,
+          ecommerce_as_home: data.ecommerce_as_home ? 1 : 0,
           // configuración de cotizaciones
           quotation_enabled: data.quotation_enabled ? 1 : 0,
           quotation_mode: data.quotation_mode || 'quote_and_sell',
@@ -1136,6 +1152,7 @@ export default {
         about_us: '',
         enable_electronic_documents: 0,
         enable_store_pickup: 0,
+        ecommerce_as_home: 0,
         quotation_enabled: 0,
         quotation_mode: 'quote_and_sell',
         quotation_show_prices: 1,
