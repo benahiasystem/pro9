@@ -32,8 +32,6 @@
 
     $configurationInPdf= App\CoreFacturalo\Helpers\Template\TemplateHelper::getConfigurationInPdf();
 
-    $max_chars_description = config('tenant.enabled_template_ticket_80') ? 46 : 47;
-
 @endphp
 <html>
 <head>
@@ -503,9 +501,10 @@
     @endphp
     @if($hay_fusionados)
         <tr>
-            <td colspan="3" class="text-left desc-9 align-top pt-2">
+            <td colspan="2" class="text-left desc-9 align-top pt-2" style="width:72%; word-wrap:break-word; overflow-wrap:break-word;">
                 <span style="font-size: 7px;">001</span> Por consumo
             </td>
+            <td class="desc-9 align-top pt-2" style="width:28%;"></td>
         </tr>
         <tr>
             <td colspan="2" class="text-left desc-9 pb-2">
@@ -538,19 +537,9 @@
 
                 $show_item_code = $item_code !== '' && $item_code !== null
                     && mb_strpos(strip_tags((string) $item_description), (string) $item_code) === false;
-
-                if (!$use_name_product_pdf) {
-                    $available_chars = $max_chars_description;
-                    if ($show_item_code) {
-                        $available_chars -= (int) ceil(mb_strlen((string) $item_code) * 7 / 9) + 1;
-                    }
-                    if (mb_strlen($item_description) > $available_chars) {
-                        $item_description = rtrim(mb_substr($item_description, 0, max($available_chars - 1, 1))).'.';
-                    }
-                }
             @endphp
             <tr>
-                <td colspan="3" class="text-left desc-9 align-top pt-2">
+                <td colspan="2" class="text-left desc-9 align-top pt-2" style="width:72%; word-wrap:break-word; overflow-wrap:break-word;">
                     @if($show_item_code)<span style="font-size: 7px;">{{ $item_code }}</span> @endif
                     @if($use_name_product_pdf)
                         {!! $item_description_html !!}
@@ -650,6 +639,7 @@
                         @endisset
                     </small>
                 </td>
+                <td class="desc-9 align-top pt-2" style="width:28%;"></td>
             </tr>
             <tr>
                 <td colspan="2" class="text-left desc-9 pb-2">
