@@ -948,11 +948,16 @@ $modules_levels = []){
      *
      * @return User[]|Builder[]|Collection|\Illuminate\Database\Query\Builder[]|\Illuminate\Support\Collection
      */
-    public static function  getSellersToNvCpe($establishment_id =0,$userId=0){
-        return  self::where('establishment_id',$establishment_id)
-            ->whereIn('type', ['seller', 'admin'])->orWhere('id', $userId)
+    public static function getSellersToNvCpe($establishment_id = 0, $userId = 0)
+    {
+        return self::where(function ($query) use ($establishment_id) {
+            $query->where('establishment_id', $establishment_id)
+                ->whereIn('type', ['seller', 'admin']);
+        })
+            ->when($userId, function ($query) use ($userId) {
+                $query->orWhere('id', $userId);
+            })
             ->get();
-
     }
 
 
@@ -1171,6 +1176,7 @@ $modules_levels = []){
     public function getDataOnlyAuthUser()
     {
         return [
+            'id' => $this->id,
             'name' => $this->name,
             'email' => $this->email,
             'password' => $this->password,

@@ -523,10 +523,17 @@
 
             $this->company = Company::active();
             $data = $request->toArray();
+            $authUser = auth()->user();
+            $sellerId = $request->input('seller_id')
+                ?: (($order_note && $order_note->seller_id) ? $order_note->seller_id : auth()->id());
+
+            if ($authUser && $authUser->type === 'seller') {
+                $sellerId = auth()->id();
+            }
+
             $values = [
                 'user_id' => ($order_note) ? $order_note->user_id : auth()->id(),
-                'seller_id' => $request->input('seller_id')
-                    ?: (($order_note && $order_note->seller_id) ? $order_note->seller_id : auth()->id()),
+                'seller_id' => $sellerId,
                 'external_id' => Str::uuid()->toString(),
                 'customer' => PersonInput::set($request->customer_id),
                 'establishment' => EstablishmentInput::set($request->establishment_id),

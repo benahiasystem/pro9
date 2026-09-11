@@ -406,6 +406,7 @@
                     this.form.establishment_id = (this.establishments.length > 0)?this.establishments[0].id:null
                     this.payment_method_types = response.data.payment_method_types
                     this.sellers = response.data.sellers || []
+                    this.applyDefaultSeller()
 
                     this.changeEstablishment()
                     this.changeDateOfIssue()
@@ -453,9 +454,34 @@
             {
                 this.form.additional_data.splice(index, 1)
             },
+            applyDefaultSeller() {
+                if (this.typeUser === 'seller' && this.authUser && this.authUser.id) {
+                    this.ensureSellerInList(this.authUser)
+                    this.form.seller_id = this.authUser.id
+                }
+            },
+            ensureSellerInList(user) {
+                if (!user || !user.id) {
+                    return
+                }
+
+                const exists = this.sellers.some(seller => seller.id === user.id)
+                if (!exists) {
+                    this.sellers.unshift({
+                        id: user.id,
+                        name: user.name || 'Vendedor',
+                    })
+                }
+            },
             changeCustomer(){
                 this.setAddressByCustomer()
                 let customer = _.find(this.customers, {id : this.form.customer_id})
+
+                if (this.typeUser === 'seller') {
+                    this.applyDefaultSeller()
+                    return
+                }
+
                 if (customer && customer.seller_id) {
                     const seller = this.sellers.find(element => element.id == customer.seller_id)
                     if (seller !== undefined) {
