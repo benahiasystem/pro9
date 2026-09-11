@@ -430,7 +430,7 @@
                                             <el-input
                                                 min="0"
                                                 inputmode="decimal"
-                                                v-model="item.edit_sale_unit_price"
+                                                v-model="item.edit_sale_unit_price" decimal
                                                 class="pos-price-edit__input"
                                                 size="mini"
                                                 @focus="valueInputSelect"

@@ -117,7 +117,7 @@
                                                    value="USD"></el-option>
                                     </el-select>
                                     <el-input v-if="form.item.currency_type_id !== undefined"
-                                              v-model="form.unit_price"
+                                              v-model="form.unit_price" decimal
                                               class="input-with-select"
                                               :filterable="false"
                                     >                                        
@@ -145,7 +145,7 @@
                                         <i class="fa fa-info-circle"></i>
                                     </el-tooltip>
                                 </label>
-                                <el-input v-model="sale_unit_price"></el-input>
+                                <el-input v-model="sale_unit_price" decimal></el-input>
                                 <small v-if="errors.sale_unit_price"
                                        class="form-control-feedback"
                                        v-text="errors.sale_unit_price[0]"></small>
@@ -572,8 +572,10 @@ import Keypress from "vue-keypress";
 import {ItemOptionDescription, ItemSlotTooltip} from "../../../../helpers/modal_item";
 import {mapActions, mapState} from "vuex/dist/vuex.mjs";
 import moment from "moment";
+import { ensureActiveAffectationIgvType } from "@mixins/ensure-active-affectation-igv-type";
 
 export default {
+    mixins: [ensureActiveAffectationIgvType],
     props: [
         'showDialog',
         'currencyTypeIdActive',
@@ -879,6 +881,7 @@ export default {
             this.sale_unit_price = parseFloat(saleUnitPrice).toFixed(2);
             this.form.unit_price = this.form.item.purchase_unit_price
             this.form.affectation_igv_type_id = this.form.item.purchase_affectation_igv_type_id
+            this.ensureActiveAffectationIgvType()
             this.form.item_unit_types = _.find(this.items, {'id': this.form.item_id}).item_unit_types
             this.prices = this.form.item_unit_types;
             this.date_of_due = this.form.date_of_due;
@@ -918,6 +921,7 @@ export default {
             this.sale_unit_price = parseFloat(saleUnitPrice).toFixed(2);
             this.form.unit_price = this.form.item.purchase_unit_price
             this.form.affectation_igv_type_id = this.form.item.purchase_affectation_igv_type_id
+            this.ensureActiveAffectationIgvType()
             this.form.item_unit_types = item.item_unit_types
             this.prices = this.form.item_unit_types;
             this.date_of_due = this.form.date_of_due;
@@ -927,6 +931,8 @@ export default {
             this.setGlobalIgvToItem()
         },
         async clickAddItem() {
+            if (!(await this.ensureActiveAffectationIgvType())) return false
+
             if (this.form.item.lots_enabled) {
                 if (!this.lot_code)
                     return this.$message.error('Código de lote es requerido');

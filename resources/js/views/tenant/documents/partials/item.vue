@@ -397,7 +397,7 @@
                                 </template>
                                 <template v-if="form.item">
                                     <el-input
-                                        v-model="form.unit_price_value"
+                                        v-model="form.unit_price_value" decimal
                                         ref="inputUnitPrice"
                                         class="currency-container input-with-select"
                                         :tabindex="'3'"
@@ -414,7 +414,7 @@
                             </template>
                             <template v-else>
                                 <el-input
-                                    v-model="form.unit_price_value"
+                                    v-model="form.unit_price_value" decimal
                                     ref="inputUnitPrice"
                                     class="currency-container"
                                     :tabindex="'3'"
@@ -1090,6 +1090,7 @@ import {
 import Keypress from "vue-keypress";
 import HistorySalesForm from "../../../../../../modules/Pos/Resources/assets/js/views/history/sales.vue";
 import { checkPermissionEditPrices } from "@mixins/check-permission-edit-prices";
+import { ensureActiveAffectationIgvType } from "@mixins/ensure-active-affectation-igv-type";
 import WeightedAverageCost from "@components/items/WeightedAverageCost.vue";
 
 export default {
@@ -1129,7 +1130,7 @@ export default {
         "vue-ckeditor": VueCkeditor.component,
         WeightedAverageCost
     },
-    mixins: [checkPermissionEditPrices],
+    mixins: [checkPermissionEditPrices, ensureActiveAffectationIgvType],
     data() {
         return {
             selected_price_id: null,
@@ -1157,7 +1158,6 @@ export default {
             attribute_types: [],
             use_price: 1,
             change_affectation_igv_type_id: false,
-            activating_affectation_igv_type: null,
             activePanel: 0,
             total_item: 0,
             item_unit_types: [],
@@ -1422,58 +1422,6 @@ export default {
         },
         ItemOptionDescriptionView(item) {
             return ItemOptionDescription(item);
-        },
-        hasInactiveAffectationIgvType() {
-            // Solo llegan los tipos activos: si el del producto no está, fue desactivado
-            const affectation_igv_type_id = this.form.affectation_igv_type_id;
-            if (!affectation_igv_type_id || !this.all_affectation_igv_types.length) return false;
-
-            const operation_type = _.find(this.operation_types, { id: this.operationTypeId });
-            if (operation_type && operation_type.exportation) return false;
-
-            return !_.find(this.all_affectation_igv_types, { id: affectation_igv_type_id });
-        },
-        ensureActiveAffectationIgvType() {
-            if (!this.hasInactiveAffectationIgvType()) return Promise.resolve(true);
-
-            // Una sola activación en curso aunque la pidan changeItem y clickAddItem a la vez
-            if (!this.activating_affectation_igv_type) {
-                this.activating_affectation_igv_type = this.activateAffectationIgvType(this.form.affectation_igv_type_id)
-                    .finally(() => {
-                        this.activating_affectation_igv_type = null;
-                    });
-            }
-
-            return this.activating_affectation_igv_type;
-        },
-        async activateAffectationIgvType(id) {
-            try {
-                const { data } = await this.$http.get(`/item-affectations-igv/active/${id}/1`);
-                if (!data.success) throw new Error(data.message);
-
-                // item/records no trae free ni exportation: se usa la relación del producto o se recargan las tablas
-                const item_affectation = this.form.item ? this.form.item.sale_affectation_igv_type : null;
-                if (item_affectation && item_affectation.id === id) {
-                    this.all_affectation_igv_types.push({ ...item_affectation, active: 1 });
-                } else {
-                    const tables = await this.$http.get(`/${this.resource}/item/tables`);
-                    this.all_affectation_igv_types = tables.data.affectation_igv_types;
-                }
-
-                const operation_type = _.find(this.operation_types, { id: this.operationTypeId });
-                this.affectation_igv_types = _.filter(this.all_affectation_igv_types, {
-                    exportation: operation_type ? operation_type.exportation : 0
-                });
-
-                const affectation = _.find(this.all_affectation_igv_types, { id });
-                if (!affectation) throw new Error('no se encontró en el catálogo');
-
-                this.$message.info(`Se activó el tipo de afectación "${affectation.description}"`);
-                return true;
-            } catch (error) {
-                this.$message.error(`No se pudo activar el tipo de afectación ${id}: ${error.message}`);
-                return false;
-            }
         },
         getTables() {
             this.$http.get(`/${this.resource}/item/tables`).then(response => {

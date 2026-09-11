@@ -37,6 +37,8 @@ class ItemAffectationsIgvController extends Controller
         return [
             'success' => true,
             'message' => 'Afectación IGV actualizada correctamente',
+            // Fila completa (free, exportation): la usan los diálogos de producto al activarla
+            'data' => $record,
         ];
     }
 

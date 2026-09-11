@@ -163,7 +163,7 @@
                         >
                             <label class="control-label">Precio Unitario</label>
                             <el-input
-                                v-model="form.unit_price"
+                                v-model="form.unit_price" decimal
                                 class="currency-container"
                                 :disabled="
                                     !hasPermissionEditItemPrices(
@@ -340,6 +340,7 @@ import {
     ItemSlotTooltip
 } from "@helpers/modal_item";
 import { checkPermissionEditPrices } from "@mixins/check-permission-edit-prices";
+import { ensureActiveAffectationIgvType } from "@mixins/ensure-active-affectation-igv-type";
 
 export default {
     props: [
@@ -355,7 +356,7 @@ export default {
         WarehousesDetail,
         "vue-ckeditor": VueCkeditor.component
     },
-    mixins: [checkPermissionEditPrices],
+    mixins: [checkPermissionEditPrices, ensureActiveAffectationIgvType],
     data() {
         return {
             can_add_new_product: false,
@@ -578,6 +579,7 @@ export default {
             this.form.has_igv = this.form.item.has_igv;
 
             this.form.affectation_igv_type_id = this.form.item.sale_affectation_igv_type_id;
+            this.ensureActiveAffectationIgvType();
             this.form.quantity = 1;
             this.item_unit_types = this.form.item.item_unit_types;
 
@@ -628,7 +630,9 @@ export default {
             this.form.item.unit_type_id = row.unit_type_id;
             this.form.item_unit_type_id = row.id;
         },
-        clickAddItem() {
+        async clickAddItem() {
+            if (!(await this.ensureActiveAffectationIgvType())) return false;
+
             if (this.validateTotalItem().total_item) return;
 
             // this.form.item.unit_price = this.form.unit_price;

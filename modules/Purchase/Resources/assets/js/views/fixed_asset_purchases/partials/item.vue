@@ -61,7 +61,7 @@
                     <div class="col-md-3 col-6">
                         <div class="form-group" :class="{'has-danger': errors.unit_price}">
                             <label class="control-label">Precio Unitario</label>
-                            <el-input v-model="form.unit_price">
+                            <el-input v-model="form.unit_price" decimal>
                                 <template slot="prepend" v-if="form.item.currency_type_symbol">{{ form.item.currency_type_symbol }}</template>
                             </el-input>
                             <small class="form-control-feedback" v-if="errors.unit_price" v-text="errors.unit_price[0]"></small>
@@ -211,8 +211,10 @@
     import FaItemForm from '../../fixed_asset_items/form.vue'
     import {calculateRowItem} from '@helpers/functions'
     import { mapState } from 'vuex/dist/vuex.mjs'
+    import { ensureActiveAffectationIgvType } from "@mixins/ensure-active-affectation-igv-type";
 
     export default {
+        mixins: [ensureActiveAffectationIgvType],
         props: ['showDialog', 'currencyTypeIdActive', 'exchangeRateSale', 'percentageIgv'],
         components: {FaItemForm},
         computed: {
@@ -412,8 +414,11 @@
                 this.form.item = _.find(this.items, {'id': this.form.fixed_asset_item_id})
                 this.form.unit_price = this.form.item.purchase_unit_price > 0 ? this.formatDecimal(this.form.item.purchase_unit_price) : 0
                 this.form.affectation_igv_type_id = this.form.item.purchase_affectation_igv_type_id
+                this.ensureActiveAffectationIgvType()
             },
             async clickAddItem() {
+                if (!(await this.ensureActiveAffectationIgvType())) return false
+
 
 
                 this.form.item.unit_price = this.form.unit_price

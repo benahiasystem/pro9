@@ -174,7 +174,7 @@
                         <div :class="{'has-danger': errors.unit_price_value}"
                              class="form-group">
                             <label class="control-label">Precio Unitario</label>
-                            <el-input v-model="form.unit_price_value"
+                            <el-input v-model="form.unit_price_value" decimal
                                       :readonly="!edit_unit_price"
                                       @input="calculateQuantity">
                                 <template v-if="form.item.currency_type_symbol"
@@ -495,8 +495,10 @@ import SelectLotsForm from './lots.vue'
 import ClassicEditor from '@ckeditor/ckeditor5-build-classic'
 import VueCkeditor from 'vue-ckeditor5'
 import {mapActions, mapState} from "vuex/dist/vuex.mjs";
+import { ensureActiveAffectationIgvType } from "@mixins/ensure-active-affectation-igv-type";
 
 export default {
+    mixins: [ensureActiveAffectationIgvType],
     props: [
         'recordItem',
         'showDialog',
@@ -937,6 +939,7 @@ export default {
             this.form.has_igv = this.form.item.has_igv;
             this.form.has_plastic_bag_taxes = this.form.item.has_plastic_bag_taxes;
             this.form.affectation_igv_type_id = this.form.item.sale_affectation_igv_type_id;
+            this.ensureActiveAffectationIgvType();
             this.form.quantity = 1;
             this.cleanTotalItem();
             this.showListStock = true
@@ -987,6 +990,8 @@ export default {
             this.total_item = null
         },
         async clickAddItem() {
+            if (!(await this.ensureActiveAffectationIgvType())) return false;
+
 
             // if(this.form.quantity < this.getMinQuantity()){
             //     return this.$message.error(`La cantidad no puede ser inferior a ${this.getMinQuantity()}`);

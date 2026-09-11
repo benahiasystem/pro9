@@ -255,7 +255,7 @@
                                     <template v-else>
                                         <el-input
                                             min="0"
-                                            v-model="item.edit_sale_unit_price"
+                                            v-model="item.edit_sale_unit_price" decimal
                                             class="mt-3 mb-3"
                                             size="mini"
                                             @focus="$event.target.select()"
@@ -630,7 +630,7 @@
                     <td width="30%">
                       <p class="font-weight-semibold m-0 text-center">
                         <el-input
-                          v-model="item.item.unit_price"
+                          v-model="item.item.unit_price" decimal
                           @blur="blurCalculateQuantity2(index)"
                         >
                         </el-input>

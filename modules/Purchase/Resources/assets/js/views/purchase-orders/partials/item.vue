@@ -119,7 +119,7 @@
                         <div :class="{'has-danger': errors.unit_price}"
                              class="form-group">
                             <label class="control-label">Precio Unitario</label>
-                            <el-input v-model="form.unit_price"
+                            <el-input v-model="form.unit_price" decimal
                                       @input="calculateQuantity">
                                 <template v-if="form.item.currency_type_symbol"
                                           slot="prepend">{{ form.item.currency_type_symbol }}
@@ -399,8 +399,10 @@ import {mapActions, mapState} from "vuex/dist/vuex.mjs";
 import {ItemOptionDescription, ItemSlotTooltip} from "@helpers/modal_item";
 import WarehousesDetail
     from "../../../../../../../Sale/Resources/assets/js/views/sale_opportunities/partials/warehouses.vue";
+import { ensureActiveAffectationIgvType } from "@mixins/ensure-active-affectation-igv-type";
 
 export default {
+    mixins: [ensureActiveAffectationIgvType],
     props: [
         'showDialog',
         'currencyTypeIdActive',
@@ -689,13 +691,16 @@ export default {
             // console.log(this.form.item.purchase_unit_price +' <<< ')
             this.form.unit_price = this.form.item.purchase_unit_price
             this.form.affectation_igv_type_id = this.form.item.purchase_affectation_igv_type_id
+            this.ensureActiveAffectationIgvType()
 
             this.form.item_unit_types = _.find(this.items, {'id': this.form.item_id}).item_unit_types
             this.form.purchase_has_igv = this.form.item.purchase_has_igv;
 
             this.lots = []
         },
-        clickAddItem() {
+        async clickAddItem() {
+            if (!(await this.ensureActiveAffectationIgvType())) return false
+
 
 
             let affectation_igv_types_exonerated_unaffected = ['20', '21', '30', '31', '32', '33', '34', '35', '36', '37']

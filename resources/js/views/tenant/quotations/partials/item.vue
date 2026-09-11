@@ -314,7 +314,7 @@
                                 "
                             >
                                 <el-input
-                                    v-model="form.unit_price"
+                                    v-model="form.unit_price" decimal
                                     class="currency-container"
                                     :disabled="
                                         !hasPermissionEditItemPrices(
@@ -339,7 +339,7 @@
                             </template>
                             <template v-else>
                                 <el-input
-                                    v-model="form.unit_price"
+                                    v-model="form.unit_price" decimal
                                     class="currency-container"
                                     :disabled="
                                         !hasPermissionEditItemPrices(
@@ -934,6 +934,7 @@ import {
     ItemSlotTooltip
 } from "../../../../helpers/modal_item";
 import { checkPermissionEditPrices } from "@mixins/check-permission-edit-prices";
+import { ensureActiveAffectationIgvType } from "@mixins/ensure-active-affectation-igv-type";
 import HistorySalesForm from "../../../../../../modules/Pos/Resources/assets/js/views/history/sales.vue";
 
 export default {
@@ -959,7 +960,7 @@ export default {
         LotsGroup,
         HistorySalesForm
     },
-    mixins: [checkPermissionEditPrices],
+    mixins: [checkPermissionEditPrices, ensureActiveAffectationIgvType],
     data() {
         return {
             selected_price_id: null,
@@ -1638,6 +1639,7 @@ export default {
             this.form.has_igv = this.form.item.has_igv;
             this.form.has_plastic_bag_taxes = this.form.item.has_plastic_bag_taxes;
             this.form.affectation_igv_type_id = this.form.item.sale_affectation_igv_type_id;
+            this.ensureActiveAffectationIgvType();
             this.form.quantity = 1;
             this.item_unit_types.length > 0
                 ? (this.has_list_prices = true)
@@ -1714,6 +1716,8 @@ export default {
             this.total_item = null;
         },
         async clickAddItem() {
+            if (!(await this.ensureActiveAffectationIgvType())) return false;
+
             if (
                 !this.form.item.description ||
                 !this.form.item.description.trim().length

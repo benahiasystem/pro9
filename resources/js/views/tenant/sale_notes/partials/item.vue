@@ -308,7 +308,7 @@
                             >
                                 <el-input
                                     tabindex="3"
-                                    v-model="form.unit_price_value"
+                                    v-model="form.unit_price_value" decimal
                                     class="currency-container"
                                     :disabled="
                                         !hasPermissionEditItemPrices(
@@ -338,7 +338,7 @@
                             <template v-else>
                                 <el-input
                                     tabindex="3"
-                                    v-model="form.unit_price_value"
+                                    v-model="form.unit_price_value" decimal
                                     class="currency-container"
                                     :disabled="
                                         !hasPermissionEditItemPrices(
@@ -854,6 +854,7 @@ import {
 } from "../../../../helpers/modal_item";
 import Keypress from "vue-keypress";
 import { checkPermissionEditPrices } from "@mixins/check-permission-edit-prices";
+import { ensureActiveAffectationIgvType } from "@mixins/ensure-active-affectation-igv-type";
 import HistorySalesForm from "../../../../../../modules/Pos/Resources/assets/js/views/history/sales.vue";
 
 export default {
@@ -884,7 +885,7 @@ export default {
         HistorySalesForm,
         "vue-ckeditor": VueCkeditor.component
     },
-    mixins: [checkPermissionEditPrices],
+    mixins: [checkPermissionEditPrices, ensureActiveAffectationIgvType],
     data() {
         return {
             extra_temp: undefined,
@@ -1604,6 +1605,7 @@ export default {
             this.form.has_igv = this.form.item.has_igv;
             this.form.has_plastic_bag_taxes = this.form.item.has_plastic_bag_taxes;
             this.form.affectation_igv_type_id = this.form.item.sale_affectation_igv_type_id;
+            this.ensureActiveAffectationIgvType();
             this.form.quantity = 1;
             this.cleanTotalItem();
             this.showListStock = true;
@@ -1710,6 +1712,8 @@ export default {
             return this.getResponseMessage(true);
         },
         async clickAddItem() {
+            if (!(await this.ensureActiveAffectationIgvType())) return false;
+
             // if(this.form.quantity < this.getMinQuantity()){
             //     return this.$message.error(`La cantidad no puede ser inferior a ${this.getMinQuantity()}`);
             // }

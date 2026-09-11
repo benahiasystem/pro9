@@ -10,6 +10,10 @@ import locale from 'element-ui/lib/locale'
 
 // Agrega remote-search (input con debounce) a el-input, antes de Vue.use(ElementUI)
 import './vendor/element-input-remote-search'
+// el-input-number acepta coma decimal (la cambia por punto), antes de Vue.use(ElementUI)
+import './vendor/element-input-number-decimal'
+// Atributo decimal en el-input (coma → punto, sin letras); después de remote-search
+import './vendor/element-input-decimal'
 
 // Cargar Bootstrap PRIMERO
 import 'bootstrap/dist/css/bootstrap.min.css';

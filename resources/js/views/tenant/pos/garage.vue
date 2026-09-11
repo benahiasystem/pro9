@@ -329,7 +329,7 @@
                                     <template v-else>
                                         <el-input
                                             min="0"
-                                            v-model="item.edit_sale_unit_price"
+                                            v-model="item.edit_sale_unit_price" decimal
                                             class="mt-1 mb-2 px-2"
                                             size="mini"
                                             @focus="$event.target.select()"

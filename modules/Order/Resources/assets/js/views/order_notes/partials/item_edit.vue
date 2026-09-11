@@ -63,7 +63,7 @@
                         <div class="form-group">
                             <label class="control-label">Precio Unitario</label>
                             <el-input
-                                v-model="form.unit_price"
+                                v-model="form.unit_price" decimal
                                 class="currency-container"
                             >
                                 <template
@@ -183,6 +183,7 @@ import {
     ItemSlotTooltip
 } from "@helpers/modal_item";
 import { checkPermissionEditPrices } from "@mixins/check-permission-edit-prices";
+import { ensureActiveAffectationIgvType } from "@mixins/ensure-active-affectation-igv-type";
 import HistorySalesForm from "../../../../../../../Pos/Resources/assets/js/views/history/sales.vue";
 
 export default {
@@ -205,7 +206,7 @@ export default {
         HistorySalesForm,
         "vue-ckeditor": VueCkeditor.component
     },
-    mixins: [checkPermissionEditPrices],
+    mixins: [checkPermissionEditPrices, ensureActiveAffectationIgvType],
     data() {
         return {
             can_add_new_product: false,
@@ -790,6 +791,7 @@ export default {
             this.lots = item.lots;
             this.form.has_igv = item.has_igv;
             this.form.affectation_igv_type_id = item.sale_affectation_igv_type_id;
+            this.ensureActiveAffectationIgvType();
             if (!this.recordItem) {
                 this.form.quantity = 1;
             }
@@ -924,6 +926,8 @@ export default {
             this.form.input_unit_price_value = value;
         },
         async clickAddItem() {
+            if (!(await this.ensureActiveAffectationIgvType())) return false;
+
             this.validateQuantity();
 
             if (this.form.item.lots_enabled) {
