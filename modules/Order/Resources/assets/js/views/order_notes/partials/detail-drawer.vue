@@ -332,7 +332,9 @@ export default {
                 || null;
         },
         sellerLabel() {
-            return this.record?.user?.name
+            return this.record?.seller_name
+                || this.record?.seller?.name
+                || this.record?.user?.name
                 || this.record?.user_name
                 || '—';
         },
@@ -346,7 +348,7 @@ export default {
             return initials.toUpperCase();
         },
         sellerAccountLabel() {
-            const seller = this.record?.user || {};
+            const seller = this.record?.seller || this.record?.user || {};
             const role = String(seller.role || seller.type || '').toLowerCase();
             const name = String(this.sellerLabel || '').toLowerCase();
             const isMainAccount = seller.is_admin || seller.is_main || role.includes('admin') || name.includes('administrador');
@@ -558,6 +560,7 @@ export default {
                 customer_name: this.initialRow.customer_name,
                 customer_number: this.initialRow.customer_number,
                 user_name: this.initialRow.user_name,
+                seller_name: this.initialRow.seller_name || this.initialRow.user_name,
                 state_type_description: this.initialRow.state_type_description,
                 state_type_id: this.initialRow.state_type_id,
                 documents: this.initialRow.documents || [],
@@ -601,6 +604,8 @@ export default {
                             || snapshot.state_type_description,
                         state_type_id: orderNote.state_type_id ?? snapshot.state_type_id,
                         user_name: orderNote.user?.name || snapshot.user_name,
+                        seller_name: orderNote.seller?.name || snapshot.seller_name || orderNote.user?.name || snapshot.user_name,
+                        seller: orderNote.seller || snapshot.seller || null,
                         customer_name: orderNote.customer?.name || snapshot.customer_name,
                         customer_number: orderNote.customer?.number || snapshot.customer_number,
                         documents: snapshot.documents || orderNote.documents || [],

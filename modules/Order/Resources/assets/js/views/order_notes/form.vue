@@ -1276,11 +1276,7 @@ export default {
                 this.payment_method_types = response.data.payment_method_types;
                 this.payment_destinations = response.data.payment_destinations;
                 this.sellers = response.data.sellers || [];
-                if (!this.form.seller_id && this.authUser && this.authUser.id) {
-                    this.form.seller_id = this.authUser.id;
-                } else if (!this.form.seller_id && this.sellers.length) {
-                    this.form.seller_id = this.sellers[0].id;
-                }
+                this.applyDefaultSeller();
 
                 this.$nextTick(() => this.updateEmptyPaymentDestinations());
 
@@ -1387,12 +1383,43 @@ export default {
             "loadCompany",
             "loadEstablishment"
         ]),
+        applyDefaultSeller() {
+            if (this.typeUser === 'seller' && this.authUser && this.authUser.id) {
+                this.ensureSellerInList(this.authUser);
+                this.form.seller_id = this.authUser.id;
+                return;
+            }
+
+            if (!this.form.seller_id && this.authUser && this.authUser.id) {
+                this.form.seller_id = this.authUser.id;
+            } else if (!this.form.seller_id && this.sellers.length) {
+                this.form.seller_id = this.sellers[0].id;
+            }
+        },
+        ensureSellerInList(user) {
+            if (!user || !user.id) {
+                return;
+            }
+
+            const exists = this.sellers.some(seller => seller.id === user.id);
+            if (!exists) {
+                this.sellers.unshift({
+                    id: user.id,
+                    name: user.name || 'Vendedor',
+                });
+            }
+        },
         changeCustomer() {
             this.setAddressByCustomer();
             let customer = _.find(this.customers, { id: this.form.customer_id });
             this.selected_option_price = customer?.price_label_id
                 ? `price${customer.price_label_id}`
                 : 1;
+
+            if (this.typeUser === 'seller') {
+                this.applyDefaultSeller();
+                return;
+            }
 
             if (customer && customer.seller_id) {
                 const seller = this.sellers.find(

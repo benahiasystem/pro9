@@ -21,6 +21,7 @@ class OrderNoteResource2 extends JsonResource
             'date_of_issue' => $this->date_of_issue->format('Y-m-d'),
             'time_of_issue' => $this->date_of_issue->format('H:i:s'),
             'customer_id' => $this->customer_id,
+            'seller_id' => $this->seller_id,
             'currency_type_id' => $this->currency_type_id,
             'purchase_order' => $this->purchase_order,
             'exchange_rate_sale' => $this->exchange_rate_sale,

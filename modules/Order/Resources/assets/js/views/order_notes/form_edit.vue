@@ -395,7 +395,7 @@
         async created() {
             await this.initForm()
             await this.$http.get(`/${this.resource}/tables`)
-                .then(response => {
+                .then(async response => {
                     this.currency_types = response.data.currency_types
                     this.establishments = response.data.establishments
                     this.all_customers = response.data.customers
@@ -411,7 +411,7 @@
                     this.changeDateOfIssue()
                     this.changeCurrencyType()
                     this.allCustomers()
-                    this.initRecord()
+                    await this.initRecord()
 
                 })
             this.loading_form = true
@@ -453,9 +453,61 @@
             {
                 this.form.additional_data.splice(index, 1)
             },
+            applySellerFromRecord(data) {
+                if (this.typeUser === 'seller' && this.authUser && this.authUser.id) {
+                    this.ensureSellerInList(this.authUser)
+                    this.form.seller_id = this.authUser.id
+                    return
+                }
+
+                const sellerId = data.seller_id || data.user_id || null
+                if (!sellerId) {
+                    return
+                }
+
+                const sellerRef = data.seller
+                    || this.sellers.find(seller => seller.id == sellerId)
+                    || (data.user && data.user.id == sellerId ? data.user : null)
+
+                if (sellerRef) {
+                    this.ensureSellerInList({
+                        id: sellerRef.id,
+                        name: sellerRef.name,
+                    })
+                } else {
+                    this.ensureSellerInList({
+                        id: sellerId,
+                        name: 'Vendedor',
+                    })
+                }
+
+                this.form.seller_id = sellerId
+            },
+            ensureSellerInList(user) {
+                if (!user || !user.id) {
+                    return
+                }
+
+                const exists = this.sellers.some(seller => seller.id == user.id)
+                if (!exists) {
+                    this.sellers.unshift({
+                        id: user.id,
+                        name: user.name || 'Vendedor',
+                    })
+                }
+            },
             changeCustomer(){
                 this.setAddressByCustomer()
                 let customer = _.find(this.customers, {id : this.form.customer_id})
+
+                if (this.typeUser === 'seller') {
+                    if (this.authUser && this.authUser.id) {
+                        this.ensureSellerInList(this.authUser)
+                        this.form.seller_id = this.authUser.id
+                    }
+                    return
+                }
+
                 if (customer && customer.seller_id) {
                     const seller = this.sellers.find(element => element.id == customer.seller_id)
                     if (seller !== undefined) {
@@ -568,6 +620,7 @@
                         this.form.items = data.items
                         this.form.observation = data.observation
                         this.form.additional_data = this.prepareAdditionalData(data)
+                        this.applySellerFromRecord(data)
                         this.calculateTotal()
                         this.reloadDataCustomers(this.form.customer_id)
                     })
