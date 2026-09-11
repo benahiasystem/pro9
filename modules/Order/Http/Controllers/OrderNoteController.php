@@ -128,8 +128,15 @@
 
             if ($request->column == 'user_name') {
 
-                $records = OrderNote::whereHas('user', function ($query) use ($request) {
-                    $query->where('name', 'like', "%{$request->value}%");
+                $records = OrderNote::where(function ($query) use ($request) {
+                    $query->whereHas('seller', function ($sellerQuery) use ($request) {
+                        $sellerQuery->where('name', 'like', "%{$request->value}%");
+                    })->orWhere(function ($fallbackQuery) use ($request) {
+                        $fallbackQuery->whereNull('seller_id')
+                            ->whereHas('user', function ($userQuery) use ($request) {
+                                $userQuery->where('name', 'like', "%{$request->value}%");
+                            });
+                    });
                 })
                     ->whereTypeUser()
                     ->latest();
@@ -168,7 +175,7 @@
                                     ->latest();
             }
 
-            return $records;
+            return $records->with(['user', 'seller']);
         }
 
         public function updateCustomFields(Request $request)
@@ -461,7 +468,7 @@
         public function record($id)
         {
             $record = new OrderNoteResource(
-                OrderNote::with(['payment_method_type'])->findOrFail($id)
+                OrderNote::with(['payment_method_type', 'user', 'seller'])->findOrFail($id)
             );
 
             return $record;
@@ -469,7 +476,9 @@
 
         public function record2($id)
         {
-            $record = new OrderNoteResource(OrderNote::findOrFail($id));
+            $record = new OrderNoteResource(
+                OrderNote::with(['user', 'seller'])->findOrFail($id)
+            );
 
             return $record;
         }

@@ -154,7 +154,7 @@
                         <template v-for="col in orderedColumns">
                             <td v-if="col.visible && col.key === 'date_of_issue'" :key="col.key" class="text-start">{{ row.date_of_issue | toDate }}</td>
                             <td v-if="col.visible && col.key === 'delivery_date'" :key="col.key" class="text-center">{{ row.delivery_date | toDate }}</td>
-                            <td v-if="col.visible && col.key === 'seller'" :key="col.key">{{ row.user_name }}</td>
+                            <td v-if="col.visible && col.key === 'seller'" :key="col.key">{{ row.seller_name || row.user_name }}</td>
                             <td v-if="col.visible && col.key === 'customer'" :key="col.key">
                                 <span
                                     role="button"
