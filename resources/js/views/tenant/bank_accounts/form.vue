@@ -131,9 +131,19 @@
                         .then(response => {
                             this.form = response.data.data
                         })
+                } else {
+                    this.setDefaultCurrency()
                 }
 
                 this.setData()
+            },
+            setDefaultCurrency() {
+                const soles = this.currency_types.find(c => c.id === 'PEN')
+                if (soles) {
+                    this.form.currency_type_id = 'PEN'
+                } else if (this.currency_types.length) {
+                    this.form.currency_type_id = this.currency_types[0].id
+                }
             },
             setData()
             {
