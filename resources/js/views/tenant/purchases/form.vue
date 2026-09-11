@@ -782,7 +782,7 @@ import PersonForm from '../persons/form.vue'
 import PurchaseOptions from './partials/options.vue'
 import AddSupplyModal from './partials/AddSupplyModal.vue'
 import {exchangeRate, functions, fnPaymentsFee, operationsForDiscounts} from '../../../mixins/functions'
-import {calculateRowItem, showNamePdfOfDescription} from '../../../helpers/functions'
+import {calculateRowItem, showNamePdfOfDescription, fillMissingItemUnitPrice, getRowsWithInvalidUnitValue} from '../../../helpers/functions'
 import SeriesForm from './partials/series.vue'
 import {mapActions, mapState} from "vuex";
 import InputLotGroup from '@components/secondary/InputLotGroup.vue'
@@ -1129,6 +1129,7 @@ export default {
                             it.attributes = it.attributes ? Object.values(it.attributes) : []
                             it.discounts = it.discounts ? Object.values(it.discounts) : []
                             it.lots = it.item.lots ? it.item.lots : []
+                            fillMissingItemUnitPrice(it, purchase_order.currency_type_id)
 
                             it.lot_code = null
                             it.date_of_due = null
@@ -1432,7 +1433,7 @@ export default {
                     this.form.payment_method_type_id = dato.purchase_payments.payment_method_type_id
                     this.form.currency_type_id = dato.currency_type_id
                     this.form.exchange_rate_sale = dato.exchange_rate_sale
-                    this.form.items = dato.items
+                    this.form.items = dato.items.map(row => fillMissingItemUnitPrice(row, dato.currency_type_id))
                     this.form.payments = dato.purchase_payments
                     this.form.purchase_payments_id = dato.purchase_payments.id
                     this.form.purchase_order_id = dato.purchase_order_id
@@ -1491,7 +1492,8 @@ export default {
         async changeDateOfIssue() {
             this.form.date_of_due = this.form.date_of_issue
             await this.searchExchangeRateByDate(this.form.date_of_issue).then(response => {
-                this.form.exchange_rate_sale = response
+                // Sin tipo de cambio para la fecha llega NaN: no se pisa el valor vigente
+                if (response > 0) this.form.exchange_rate_sale = response
             })
             await this.getPercentageIgv();
             this.changeCurrencyType();
@@ -1677,6 +1679,12 @@ export default {
             })
 
             if(errors_lots_group > 0) return this.getCurrentResponse(false, 'No ha registrado el lote o fecha de vencimiento para el producto')
+
+            const invalid_rows = getRowsWithInvalidUnitValue(this.form.items)
+            if (invalid_rows.length > 0) {
+                const names = invalid_rows.map(row => row.item ? row.item.description : row.item_id).join(', ')
+                return this.getCurrentResponse(false, `Precio unitario no válido en: ${names}. Revise el precio o el tipo de cambio y vuelva a agregar el producto.`)
+            }
 
             return this.getCurrentResponse()
         },

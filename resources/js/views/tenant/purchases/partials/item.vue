@@ -1006,6 +1006,17 @@ export default {
                     return this.$message.error('La cantidad de series registradas son diferentes al stock');
             }
 
+            // El precio se escribe en un el-input de texto: vacío o con letras terminaba en unit_value NaN (null en el backend)
+            const input_unit_price = parseFloat(String(this.form.unit_price).replace(',', '.'))
+            if (isNaN(input_unit_price) || input_unit_price < 0)
+                return this.$message.error('Ingrese un precio unitario válido');
+
+            this.form.unit_price = input_unit_price
+
+            const needs_exchange_rate = this.form.item.currency_type_id && this.form.item.currency_type_id !== this.currencyTypeIdActive
+            if (needs_exchange_rate && !(parseFloat(this.exchangeRateSale) > 0))
+                return this.$message.error('No hay tipo de cambio para convertir el precio del producto. Revise el tipo de cambio del documento.');
+
             let affectation_igv_types_exonerated_unaffected = ['20', '21', '30', '31', '32', '33', '34', '35', '36', '37']
 
             let unit_price = this.form.unit_price

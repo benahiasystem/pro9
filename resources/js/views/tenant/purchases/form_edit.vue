@@ -532,7 +532,7 @@ import PurchaseFormItem from './partials/item.vue'
 import PersonForm from '../persons/form.vue'
 import PurchaseOptions from './partials/options.vue'
 import {functions, exchangeRate, fnPaymentsFee} from '../../../mixins/functions'
-import {calculateRowItem, showNamePdfOfDescription} from '../../../helpers/functions'
+import {calculateRowItem, showNamePdfOfDescription, fillMissingItemUnitPrice, getRowsWithInvalidUnitValue} from '../../../helpers/functions'
 
 export default {
     props: {
@@ -897,7 +897,7 @@ export default {
                     this.form.payment_method_type_id = dato.purchase_payments.payment_method_type_id
                     this.form.currency_type_id = dato.currency_type_id
                     this.form.exchange_rate_sale = dato.exchange_rate_sale
-                    this.form.items = dato.items
+                    this.form.items = dato.items.map(row => fillMissingItemUnitPrice(row, dato.currency_type_id))
                     this.form.payments = dato.purchase_payments
                     this.form.purchase_payments_id = dato.purchase_payments.id
                     this.form.purchase_order_id = dato.purchase_order_id
@@ -1093,7 +1093,8 @@ export default {
         async changeDateOfIssue() {
             this.form.date_of_due = this.form.date_of_issue
             await this.searchExchangeRateByDate(this.form.date_of_issue).then(response => {
-                this.form.exchange_rate_sale = response
+                // Sin tipo de cambio para la fecha llega NaN: no se pisa el valor vigente
+                if (response > 0) this.form.exchange_rate_sale = response
             })
             await this.getPercentageIgv();
             this.changeCurrencyType();
@@ -1239,7 +1240,11 @@ export default {
 
         },
         async submit() {
-
+            const invalid_rows = getRowsWithInvalidUnitValue(this.form.items)
+            if (invalid_rows.length > 0) {
+                const names = invalid_rows.map(row => row.item ? row.item.description : row.item_id).join(', ')
+                return this.$message.error(`Precio unitario no válido en: ${names}. Revise el precio o el tipo de cambio y vuelva a agregar el producto.`)
+            }
 
             let validate = await this.validate_payments()
             if (!validate.success) {

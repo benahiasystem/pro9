@@ -534,8 +534,32 @@ const getQuantityPrecisionByUnitType = (unit_type_id, fallback = 0) => {
     return DECIMAL_UNIT_TYPES.includes(unit_type) ? 4 : fallback
 }
 
+/**
+ * Filas guardadas sin item.unit_price (compras creadas fuera del formulario) hacen que
+ * calculateRowItem devuelva unit_value NaN al recalcular: se completa con el precio de la fila,
+ * que está en la moneda del documento.
+ */
+const fillMissingItemUnitPrice = (row, currency_type_id) => {
+    if (!row.item || !isNaN(parseFloat(row.item.unit_price))) return row
+
+    const unit_price = parseFloat(row.unit_price)
+    if (!isNaN(unit_price)) {
+        row.item.unit_price = unit_price
+        row.item.currency_type_id = currency_type_id
+    }
+
+    return row
+}
+
+/**
+ * Filas cuyo unit_value no se puede guardar: NaN e Infinity viajan como null en el JSON.
+ */
+const getRowsWithInvalidUnitValue = (rows) => {
+    return rows.filter(row => !row.is_supply && !Number.isFinite(parseFloat(row.unit_value)))
+}
+
 export {
     calculateRowItem, getUniqueArray, showNamePdfOfDescription,
     sumAmountDiscountsNoBaseByItem, FormatUnitPriceRow, filterWords,
-    getQuantityPrecisionByUnitType
+    getQuantityPrecisionByUnitType, fillMissingItemUnitPrice, getRowsWithInvalidUnitValue
 }
