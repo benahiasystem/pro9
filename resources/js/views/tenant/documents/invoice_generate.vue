@@ -1457,21 +1457,12 @@
                             </tbody>
                         </table>
                     </div>
-                    <!-- @todo: Mejorar evitando duplicar codigo -->
-                    <!-- Mostrar en cel -->
-                    <div class="d-none">
-                        <div class="col-12 text-center">
-                            <button
-                                class="btn waves-effect waves-light btn-primary btn-sm"
-                                style="width: 180px;"
-                                type="button"
-                                @click.prevent="clickAddItemInvoice"
-                            >
-                                + Agregar Producto
-                            </button>
-                        </div>
-
-                        <div class="col-12 text-center table-responsive">
+                    <!-- ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA -->
+                    <div
+                        class="row justify-content-end mt-3"
+                        data-testid="invoice-totals-payments"
+                    >
+                        <div class="col-12 col-lg-7 text-center table-responsive">
                             <table
                                 class="table table-sm text-end"
                                 style="width: 100%;"
@@ -1939,10 +1930,10 @@
                                                     form.payment_condition_id ===
                                                         '01'
                                             "
-                                            class="table-responsive payment"
+                                            class="table-responsive payment mt-4"
                                         >
                                             <table
-                                                class="text-start payment-method"
+                                                class="text-start table payment-method"
                                             >
                                                 <thead>
                                                     <tr>
@@ -1956,7 +1947,7 @@
                                                             "
                                                         >
                                                             <th
-                                                                style="width:50px"
+                                                                style="min-width:55px"
                                                             >
                                                                 Voucher
                                                             </th>
@@ -1969,7 +1960,7 @@
                                                                     .length >
                                                                     0
                                                             "
-                                                            style="width: 120px"
+                                                            style="min-width: 140px"
                                                         >
                                                             Método de pago
                                                         </th>
@@ -1985,7 +1976,7 @@
                                                                         .length >
                                                                         0
                                                                 "
-                                                                style="width: 120px"
+                                                                style="min-width: 140px"
                                                             >
                                                                 Destino
                                                                 <el-tooltip
@@ -2006,7 +1997,7 @@
                                                                         .length >
                                                                         0
                                                                 "
-                                                                style="width: 100px"
+                                                                style="min-width: 140px"
                                                             >
                                                                 Referencia
                                                             </th>
@@ -2017,12 +2008,12 @@
                                                                         .length >
                                                                         0
                                                                 "
-                                                                style="width: 100px"
+                                                                style="min-width: 90px"
                                                             >
                                                                 Monto
                                                             </th>
                                                             <th
-                                                                style="width: 30px"
+                                                                style="min-width: 40px"
                                                             ></th>
                                                         </template>
                                                     </tr>
@@ -2228,8 +2219,7 @@
                             </table>
                         </div>
                     </div>
-                    <!-- @todo: Mejorar evitando duplicar codigo -->
-                    <!-- Mostrar en cel -->
+                    <!-- ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA -->
                 </div>
                 <!-- @todo: Mejorar evitando duplicar codigo -->
                 <!-- Ocultar en cel -->
