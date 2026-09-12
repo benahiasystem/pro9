@@ -1701,8 +1701,7 @@ a.ws-flotante {
     }
     html.sidebarMode-dark ul.nav-main li.nav-active:not(.nav-parent)>a,
     html.fixed.sidebarMode-dark:not(.dark) .sidebar-left a,
-    html.sidebarMode-dark .contain-icon-establishment,
-    html.sidebarMode-dark .sidebar-pinned-empty {
+    html.sidebarMode-dark .contain-icon-establishment {
         color: var(--black-light) !important;
     }
     html.sidebarMode-dark ul.nav-main li.nav-active:not(.nav-parent)>a,
@@ -1740,7 +1739,7 @@ a.ws-flotante {
         color: var(--black-dark) !important;
     }
     html.sidebarMode-dark:not(.dark) .logo-light {
-        display: block;
+    display: block;
     }
     html.sidebarMode-dark:not(.dark) .logo-dark {
         display: none;
@@ -1751,9 +1750,7 @@ a.ws-flotante {
     html.sidebarMode-dark.dark .logo-dark {
         display: var(--show-dark-logo, block);
     }
-    html.sidebarMode-dark .establishment-selector-container,
-    html.sidebarMode-dark .sidebar-favorites,
-    html.sidebarMode-dark .sidebar-favorites-title {
+    html.sidebarMode-dark .establishment-selector-container{
         border-color: var(--black-border-dark);
     }
     html.sidebarMode-dark .establishment-selector-container .form-group label.control-label{
@@ -1767,14 +1764,6 @@ a.ws-flotante {
     html.sidebarMode-dark .establishment-selector-container .form-group select:focus{
         box-shadow: 0 0 0 0.2rem var(--black-border-dark);
         border-color: var(--black-content-dark) !important;
-    }
-    html.sidebarMode-dark .sidebar-search-trigger:hover, 
-    html.sidebarMode-dark .sidebar-search-trigger:focus, 
-    html.sidebarMode-dark .sidebar-menu-config-quick-trigger:hover, 
-    html.sidebarMode-dark .sidebar-menu-config-quick-trigger:focus,
-    html.sidebarMode-dark .sidebar-search-bar:hover, 
-    html.sidebarMode-dark .sidebar-search-bar:focus {
-        color: var(--black-light) !important;
     }
 }
 /* end */
