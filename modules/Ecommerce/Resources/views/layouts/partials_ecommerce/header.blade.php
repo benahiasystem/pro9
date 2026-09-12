@@ -510,7 +510,7 @@ div.cart-dropdown {
                             sale_affectation_igv_type_id: item.sale_affectation_igv_type_id || '10',
                             currency_type_id: item.currency_type_id || 'VES',
                             currency_type_symbol: item.currency_type_symbol || 'Bs.',
-                            unit_type_id: item.unit_type_id || 'NIU',
+                            unit_type_id: item.unit_type_id || 'UND',
                             internal_id: item.internal_id || '',
                             quantity: 1,
                             stock: item.stock != null ? parseInt(item.stock, 10) : undefined,

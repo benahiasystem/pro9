@@ -86,7 +86,7 @@ class DocumentImportExcelFormat implements ToCollection
                 } elseif ($unit_type === 'LT') {
                     $unit_type_id = 'LTR';
                 } else {
-                    $unit_type_id = 'NIU';
+                    $unit_type_id = 'UND';
                 }
 
                 $quantity = floatval($row['quantity']);

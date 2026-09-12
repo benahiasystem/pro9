@@ -163,7 +163,7 @@ class DashboardUtility
         $unit_type_id = optional($record->relation_item)->unit_type_id
             ?? ($record->item->unit_type_id ?? null);
 
-        if ($unit_type_id === 'ZZ') {
+        if ($unit_type_id === 'SERV') {
             return 0.0;
         }
 

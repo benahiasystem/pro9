@@ -409,7 +409,7 @@ import {mapActions, mapState} from "vuex/dist/vuex.mjs";
                     second_name:null,
                     name:null,
                     category_id: null,
-                    unit_type_id: 'NIU',
+                    unit_type_id: 'UND',
                     currency_type_id: 'VES',
                     sale_unit_price: 0,
                     purchase_unit_price: 0,

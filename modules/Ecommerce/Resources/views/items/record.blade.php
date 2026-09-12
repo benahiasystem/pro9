@@ -509,7 +509,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     sale_affectation_igv_type_id: @json($record->sale_affectation_igv_type_id ?? '10'),
                     currency_type_id: @json($record->currency_type_id ?? 'VES'),
                     currency_type_symbol: @json($record->currency_type['symbol'] ?? 'Bs.'),
-                    unit_type_id: @json($record->unit_type_id ?? 'NIU'),
+                    unit_type_id: @json($record->unit_type_id ?? 'UND'),
                     internal_id: @json($record->internal_id ?? ''),
                     original_price: {{ number_format((float) $record->sale_unit_price, 2, '.', '') }},
                     compare_at_price: {{ $compareAtPrice !== null ? number_format((float) $compareAtPrice, 2, '.', '') : 'null' }},

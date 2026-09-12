@@ -57,7 +57,7 @@
             var token = Culqi.token.id;
             var email = Culqi.token.email;
             var installments = Culqi.token.metadata.installments;
-            let items = [{ description: 'Pago programado facturador', cantidad: '1', unit_type_id: 'NIU' }]
+            let items = [{ description: 'Pago programado facturador', cantidad: '1', unit_type_id: 'UND' }]
             var data = {
                 producto: 'Pago Progamado Cuenta Facturador Pro',
                 precio: price_payment_account,

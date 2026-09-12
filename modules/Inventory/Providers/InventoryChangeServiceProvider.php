@@ -28,7 +28,7 @@ class InventoryChangeServiceProvider extends ServiceProvider
         Item::created(function ($item) {
 
 
-            if($item->unit_type_id == 'ZZ')
+            if($item->unit_type_id == 'SERV')
             {
                 return;
             }

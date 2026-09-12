@@ -27,6 +27,7 @@ description: Coordinar y documentar Pro9 para instalaciones nuevas en Venezuela,
 - Telefonía: mostrar +58, normalizar teléfonos y construir enlaces `tel:`/`wa.me` y payloads QR sin prefijos duplicados.
 - POS: mantener `PAGAR` visible, permitir FACTURA/NOTA DE VENTA y proteger accesos opcionales a QZ y turnos de negocio.
 - Importación: validar íntegramente `public/formats/items.xlsx` antes de `ItemsImport` y entregar un XLSX corregible cuando haya errores.
+- Unidades de medida: aplicar [mantener-unidades-medida-venezuela](../mantener-unidades-medida-venezuela/SKILL.md); usar `UND` para productos y `SERV` para servicios, sin aceptar `NIU` ni `ZZ`.
 - Datos de prueba: usar `TenancyMockDataSeeder` sólo para registros identificados con `MOCK-`; no confundirlos con datos productivos.
 - Eliminación de documentos de prueba: limitar la acción a administradores, exigir la confirmación literal `ELIMINAR` en frontend y backend, y borrar relaciones dentro de una transacción tenant antes del registro principal. Nunca incluir documentos históricos ni productivos fuera del alcance marcado como prueba.
 

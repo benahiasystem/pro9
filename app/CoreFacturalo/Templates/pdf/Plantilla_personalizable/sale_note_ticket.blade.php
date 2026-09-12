@@ -204,7 +204,7 @@
                 {{ ((int)$cantidad_fusionada != $cantidad_fusionada) ? $cantidad_fusionada : number_format($cantidad_fusionada, 0) }}
             </td>
             @endif
-            @if($show_unidad) <td class="text-center desc-9 align-top">NIU</td> @endif
+            @if($show_unidad) <td class="text-center desc-9 align-top">UND</td> @endif
             @if($show_descripcion) <td class="text-left desc-9 align-top">Por consumo</td> @endif
             @if($show_precio_unitario) <td class="text-right desc-9 align-top">{{ number_format($total_fusionado, 2) }}</td> @endif
             @if($show_total) <td class="text-right desc-9 align-top">{{ number_format($total_fusionado, 2) }}</td> @endif
@@ -239,7 +239,7 @@
             @if($show_unidad)
             <td class="text-center desc-9 align-top">
                 @if(!empty($row->item->esFusionado))
-                    NIU
+                    UND
                 @else
                     {{ $row->item->unit_type_id }}
                 @endif

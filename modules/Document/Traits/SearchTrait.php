@@ -19,7 +19,7 @@ trait SearchTrait
         }
         if ($request->search_by_barcode == 1) {
             return $item->with(['item_lots'])
-                ->where('unit_type_id','ZZ')
+                ->where('unit_type_id','SERV')
                 ->whereNotIsSet()
                 ->where('barcode', $request->input)
                 ->limit(1)
@@ -35,7 +35,7 @@ trait SearchTrait
             })
             ->OrWhereJsonContains('attributes', ['value' => $request->input])
             ->with(['item_lots'])
-            ->where('unit_type_id','ZZ')
+            ->where('unit_type_id','SERV')
             ->whereNotIsSet()
             ->orderBy('description')
             ->get();
@@ -101,7 +101,7 @@ trait SearchTrait
     public function getItemsServicesById($id){
 
         return Item::where('id', $id)
-                    ->where('unit_type_id','ZZ')
+                    ->where('unit_type_id','SERV')
                     ->whereNotIsSet()
                     ->whereIsActive()
                     ->get();
@@ -126,7 +126,7 @@ trait SearchTrait
 
 
 
-        if($row->unit_type_id != 'ZZ')
+        if($row->unit_type_id != 'SERV')
         {
             $warehouse_stock = 0;
             if($row->warehouses && $warehouse)

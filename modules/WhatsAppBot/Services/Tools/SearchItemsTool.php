@@ -168,7 +168,7 @@ class SearchItemsTool implements ToolInterface
     private function unitDescription(?string $code): string
     {
         return match ($code) {
-            'NIU' => 'unidades',
+            'UND' => 'unidades',
             'KGM' => 'kilogramos',
             'GRM' => 'gramos',
             'LTR' => 'litros',
@@ -176,7 +176,7 @@ class SearchItemsTool implements ToolInterface
             'BLL' => 'barriles',
             'PK' => 'paquetes',
             'BX' => 'cajas',
-            'ZZ' => 'servicios',
+            'SERV' => 'servicios',
             default => $code ?: 'unidades',
         };
     }

@@ -103,7 +103,9 @@ class ItemImportContractTest extends TestCase
             'internal id varchar 30' => [1, str_repeat('I', 31), 2],
             'model varchar 100' => [2, str_repeat('M', 101), 3],
             'item code exact SUNAT format' => [3, 'ABC-123', 4],
-            'unit catalog' => [4, 'INVALID', 5],
+            'unknown unit catalog' => [4, 'INVALID', 5],
+            'legacy product unit catalog' => [4, 'NIU', 5],
+            'legacy service unit catalog' => [4, 'ZZ', 5],
             'currency catalog' => [5, 'VED', 6],
             'sale price decimal 16 6' => [6, '12345678901.123456', 7],
             'sale affectation catalog' => [7, '99', 8],
@@ -136,7 +138,7 @@ class ItemImportContractTest extends TestCase
     private function catalogs(): array
     {
         return [
-            'unit_type_ids' => ['NIU'],
+            'unit_type_ids' => ['UND'],
             'currency_type_ids' => ['VES', 'USD'],
             'affectation_igv_type_ids' => ['10', '20'],
             'existing_internal_ids' => [],
@@ -150,7 +152,7 @@ class ItemImportContractTest extends TestCase
             'ITEM-001',
             'MODELO-1',
             '12345678',
-            'NIU',
+            'UND',
             'VES',
             10.50,
             '10',

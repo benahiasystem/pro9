@@ -318,7 +318,7 @@
     @foreach($document->items as $row)
         @php
             $unitTypeId = $row->item->unit_type_id ?? null;
-            $unitMeasure = ($unitTypeId === 'NIU')
+            $unitMeasure = ($unitTypeId === 'UND')
                 ? 'UNIDAD'
                 : ($unitTypeService->getDescription($unitTypeId) ?: $unitTypeId);
             $itemWeight = $row->item->weight

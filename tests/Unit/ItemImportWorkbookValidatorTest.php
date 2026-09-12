@@ -69,6 +69,26 @@ class ItemImportWorkbookValidatorTest extends TestCase
     }
 
     /** @test */
+    public function it_rejects_legacy_product_and_service_unit_codes(): void
+    {
+        foreach (['NIU', 'ZZ'] as $legacyCode) {
+            $path = $this->workbookPath();
+            $spreadsheet = new Spreadsheet();
+            $sheet = $spreadsheet->getActiveSheet();
+            $sheet->fromArray(ItemImportContract::HEADERS, null, 'A1');
+            $row = $this->validRow('LEGACY-' . $legacyCode);
+            $row[4] = $legacyCode;
+            $sheet->fromArray($row, null, 'A2');
+            IOFactory::createWriter($spreadsheet, 'Xlsx')->save($path);
+
+            $result = $this->validator()->validate($path);
+            self::assertFalse($result->passes(), $legacyCode);
+            self::assertContains(5, array_column($result->errors(), 'column'), $legacyCode);
+            $spreadsheet->disconnectWorksheets();
+        }
+    }
+
+    /** @test */
     public function it_rejects_extra_populated_columns_in_headers_and_rows(): void
     {
         $path = $this->workbookPath();
@@ -158,7 +178,7 @@ class ItemImportWorkbookValidatorTest extends TestCase
             public function snapshot(): array
             {
                 return [
-                    'unit_type_ids' => ['NIU'],
+                    'unit_type_ids' => ['UND'],
                     'currency_type_ids' => ['VES', 'USD'],
                     'affectation_igv_type_ids' => ['10', '20'],
                     'existing_internal_ids' => [],
@@ -183,7 +203,7 @@ class ItemImportWorkbookValidatorTest extends TestCase
     private function validRow(string $internalId): array
     {
         return [
-            'Producto', $internalId, 'M1', '12345678', 'NIU', 'VES', 10, '10', 'SI', 5,
+            'Producto', $internalId, 'M1', '12345678', 'UND', 'VES', 10, '10', 'SI', 5,
             '10', 1, 1, 'Categoría', 'Marca', 'Nombre', 'Secundario', null, null, 'BAR-1',
         ];
     }

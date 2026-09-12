@@ -191,7 +191,7 @@
         @endphp
         <tr>
             <td class="text-center desc-9 align-top">{{ $cantidad_fusionada_format }}</td>
-            <td class="text-center desc-9 align-top">NIU</td>
+            <td class="text-center desc-9 align-top">UND</td>
             <td class="text-left desc-9 align-top">Por consumo</td>
             <td class="text-right desc-9 align-top">{{ number_format($total_fusionado, 2) }}</td>
             <td class="text-right desc-9 align-top">{{ number_format($total_fusionado, 2) }}</td>

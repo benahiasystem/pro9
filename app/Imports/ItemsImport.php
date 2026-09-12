@@ -361,7 +361,7 @@ class ItemsImport implements ToCollection
         }
 
         if ($this->isBlank($unit_type_id)) {
-            throw new Exception("Fila {$rowNumber}: la unidad de medida es obligatoria (columna E). Ejemplo: NIU, KG, UND.");
+            throw new Exception("Fila {$rowNumber}: la unidad de medida es obligatoria (columna E). Ejemplo: UND, KG, UND.");
         }
 
         if ($this->isBlank($currency_type_id)) {

@@ -303,7 +303,7 @@ class ReportDocumentController extends Controller
         foreach ($records as $document) {
 
             $id_categories = $document->items->filter(function($row) use($is_service){
-                return (($is_service) ? (!is_null($row->relation_item->category_id) && $row->item->unit_type_id === 'ZZ') : !is_null($row->relation_item->category_id)) ;
+                return (($is_service) ? (!is_null($row->relation_item->category_id) && $row->item->unit_type_id === 'SERV') : !is_null($row->relation_item->category_id)) ;
             })->pluck('relation_item.category_id');
 
             foreach ($id_categories as $value) {

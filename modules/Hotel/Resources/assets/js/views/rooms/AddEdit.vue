@@ -206,7 +206,7 @@ export default {
         suggested_price: 0,
 
         temp_path: null,
-        unit_type_id: "ZZ",
+        unit_type_id: "SERV",
         web_platform_id: null,
       };
       this.$http

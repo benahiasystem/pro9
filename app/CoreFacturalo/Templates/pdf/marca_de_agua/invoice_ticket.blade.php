@@ -394,7 +394,7 @@
         <tr>
             <td class="text-center desc-9 align-top font-bold">001</td>
             <td class="text-center">{{ number_format($cantidad_fusionada, 0) }}</td>
-            <td class="text-center desc-9 align-top">NIU</td>
+            <td class="text-center desc-9 align-top">UND</td>
             <td class="text-left desc-9 align-top font-bold">Por consumo</td>
             <td class="text-right">{{ number_format($total_fusionado, 2) }}</td>
             <td class="text-right">{{ number_format($total_fusionado, 2) }}</td>
@@ -487,7 +487,7 @@
                 <td class="text-center desc-9 align-top">
                     1
                 </td>
-                <td class="text-center desc-9 align-top">NIU</td>
+                <td class="text-center desc-9 align-top">UND</td>
                 <td class="text-left desc-9 align-top">
                     ANTICIPO: FACTURA NRO. {{$p->number}}
                 </td>

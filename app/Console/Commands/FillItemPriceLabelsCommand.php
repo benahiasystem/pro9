@@ -71,8 +71,8 @@ class FillItemPriceLabelsCommand extends Command
         // Iteramos productos: necesitan al menos una presentación para tener listas de precios.
         Item::with('item_unit_types')->chunkById(200, function ($items) use ($labels, $overwrite, $dry, &$unitTypesCreated, &$created, &$updated, &$skipped, &$noPrice, &$services) {
             foreach ($items as $item) {
-                // Los servicios (ZZ) no usan presentaciones ni listas de precios.
-                if ($item->unit_type_id === 'ZZ') {
+                // Los servicios (SERV) no usan presentaciones ni listas de precios.
+                if ($item->unit_type_id === 'SERV') {
                     $services++;
                     continue;
                 }

@@ -637,7 +637,7 @@ class DocumentController extends Controller
                 ->whereIsActive()
                 ->orderBy('description');
             $items_s = Item::with('warehousePrices')
-                ->where('items.unit_type_id', 'ZZ')
+                ->where('items.unit_type_id', 'SERV')
                 ->whereIsActive()
                 ->orderBy('description');
             $items_u = $items_u
@@ -721,7 +721,7 @@ class DocumentController extends Controller
         $brand = ($row->brand) ? "{$row->brand->name}" : "";
 
 
-        if ($row->unit_type_id != 'ZZ') {
+        if ($row->unit_type_id != 'SERV') {
             if (isset($row['stock'])) {
                 $warehouse_stock = number_format($row['stock'], 2);
             } else {

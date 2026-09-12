@@ -1602,7 +1602,7 @@ export default {
                 );
                 // console.log(this.row)
 
-                // this.row['unit_type_id'] = item.presentation ? item.presentation.unit_type_id : 'NIU';
+                // this.row['unit_type_id'] = item.presentation ? item.presentation.unit_type_id : 'UND';
 
                 this.row["unit_type_id"] = item.presentation
                     ? item.presentation.unit_type_id

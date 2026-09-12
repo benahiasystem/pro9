@@ -12,7 +12,7 @@ Preservar un único contrato entre el esquema tenant, el modelo `Item` y todos l
 ## Procedimiento
 
 1. Leer [references/contrato.md](references/contrato.md) antes de modificar el esquema, las variaciones, la creación o un buscador de productos.
-2. Reproducir el flujo tanto con un producto como con un servicio (`unit_type_id=ZZ`). Distinguir un resultado vacío por filtros de un error de consulta o esquema.
+2. Aplicar [mantener-unidades-medida-venezuela](../mantener-unidades-medida-venezuela/SKILL.md) y reproducir el flujo tanto con un producto (`unit_type_id=UND`) como con un servicio (`unit_type_id=SERV`). Distinguir un resultado vacío por filtros de un error de consulta o esquema.
 3. Mantener `items.parent_item_id` como entero unsigned nullable, indexado y con clave foránea autorreferenciada a `items.id`. Los productos raíz usan `NULL`; sus variaciones apuntan al padre.
 4. Incluir la columna y el índice en `create_items_table`, y la FK en `000999_add_tenant_foreign_keys`. Las tablas de variables y valores de variación nacen directamente en el consolidado. No mantener migraciones de reparación de tenants anteriores.
 5. Tratar `ItemController::store` como la ruta común de creación y preservar su transacción, relaciones de almacén, invalidación de caché y respuesta de éxito.

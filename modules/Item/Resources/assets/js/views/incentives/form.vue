@@ -74,7 +74,7 @@
                     description: null,
                     name: null,
                     second_name: null,
-                    unit_type_id: 'NIU',
+                    unit_type_id: 'UND',
                     currency_type_id: 'VES',
                     sale_unit_price: 0,
                     purchase_unit_price: 0,

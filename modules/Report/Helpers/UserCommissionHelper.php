@@ -66,7 +66,7 @@ class UserCommissionHelper
 
         $purchase_unit_price = 0;
 
-        if($record->item->unit_type_id != 'ZZ'){
+        if($record->item->unit_type_id != 'SERV'){
 
             if($record->relation_item->purchase_unit_price > 0){
 

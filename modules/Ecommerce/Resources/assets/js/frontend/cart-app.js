@@ -5083,7 +5083,7 @@ var app_cart = new Vue({
                     "codigo_interno":              "DELIVERY-ECOM",
                     "descripcion":                 "Costo de Envío - " + this.deliveryZone.name,
                     "codigo_producto_sunat":       "",
-                    "unidad_de_medida":            "ZZ",
+                    "unidad_de_medida":            "SERV",
                     "cantidad":                    1,
                     "valor_unitario":              parseFloat(unit_value.toFixed(6)),
                     "codigo_tipo_precio":          "01",

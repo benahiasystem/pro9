@@ -703,7 +703,7 @@ foreach($document->items as $row) {
                 <td class="text-center">{{ $row->item->weight }}</td>
             @endif
             <td class="text-right">
-                @if ($row->item->unit_type_id == 'NIU')
+                @if ($row->item->unit_type_id == 'UND')
                     {{ number_format($row->quantity, 0) }}
                 @else 
                     {{ $row->quantity }}

@@ -166,7 +166,7 @@
                         'currency_type_id' => $record->currency_type_id ?? 'VES',
                         'currency_type_symbol' => optional($record->currency_type)->symbol ?? 'Bs.',
                         'sale_affectation_igv_type_id' => $record->sale_affectation_igv_type_id ?? '10',
-                        'unit_type_id' => $record->unit_type_id ?? 'NIU',
+                        'unit_type_id' => $record->unit_type_id ?? 'UND',
                         'internal_id' => $record->internal_id,
                         'stock' => (int) $stock,
                     ];

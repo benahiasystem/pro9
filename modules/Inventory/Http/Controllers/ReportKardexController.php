@@ -100,7 +100,7 @@ class ReportKardexController extends Controller
     {
         $query = Item::query()->whereNotIsSet()
             ->with('warehouses')
-            ->where([['item_type_id', '01'], ['unit_type_id', '!=', 'ZZ']]);
+            ->where([['item_type_id', '01'], ['unit_type_id', '!=', 'SERV']]);
 
         if ($warehouse_id !== 'all') {
             $query->whereHas('warehouses', function ($query) use ($warehouse_id) {
@@ -213,7 +213,7 @@ class ReportKardexController extends Controller
     public function records_lots()
     {
         $records = ItemWarehouse::with(['item'])->whereHas('item', function ($q) {
-            $q->where([['item_type_id', '01'], ['unit_type_id', '!=', 'ZZ'], ['lot_code', '!=', null]]);
+            $q->where([['item_type_id', '01'], ['unit_type_id', '!=', 'SERV'], ['lot_code', '!=', null]]);
             $q->whereNotIsSet();
         });
 
@@ -730,7 +730,7 @@ class ReportKardexController extends Controller
     //     $item_selected = $request->item_selected;
 
     //     $items = Item::query()->whereNotIsSet()
-    //         ->where([['item_type_id', '01'], ['unit_type_id', '!=','ZZ']])
+    //         ->where([['item_type_id', '01'], ['unit_type_id', '!=','SERV']])
     //         ->latest()
     //         ->get();
 

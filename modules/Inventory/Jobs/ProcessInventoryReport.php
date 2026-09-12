@@ -257,7 +257,7 @@
                 ->whereHas('item', function ($q) {
                     $q->where([
                         ['item_type_id', '01'],
-                        ['unit_type_id', '!=', 'ZZ'],
+                        ['unit_type_id', '!=', 'SERV'],
                     ])
                         ->whereNotIsSet();
                 });
@@ -285,7 +285,7 @@
                     ->whereHas('item', function ($q) {
                         $q->where([
                             ['item_type_id', '01'],
-                            ['unit_type_id', '!=', 'ZZ'],
+                            ['unit_type_id', '!=', 'SERV'],
                         ])
                             ->whereNotIsSet()
                             ->whereStockMin();
@@ -305,7 +305,7 @@
                     ->whereHas('item', function ($q) {
                         $q->where([
                             ['item_type_id', '01'],
-                            ['unit_type_id', '!=', 'ZZ'],
+                            ['unit_type_id', '!=', 'SERV'],
                         ])
                             ->whereNotIsSet()
                             ->whereStockMinValidate();

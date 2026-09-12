@@ -208,7 +208,7 @@
                                 <template
                                     v-if="
                                         typeUser == 'seller' &&
-                                        row.unit_type_id != 'ZZ'
+                                        row.unit_type_id != 'SERV'
                                     "
                                 >{{ row.stock }}
                                 </template
@@ -216,7 +216,7 @@
                                 <template
                                     v-else-if="
                                         typeUser != 'seller' &&
-                                        row.unit_type_id != 'ZZ'
+                                        row.unit_type_id != 'SERV'
                                     "
                                 >
                                     <button
@@ -441,7 +441,7 @@ export default {
         };
     },
     created() {
-        if (this.type === 'ZZ') {
+        if (this.type === 'SERV') {
             this.titleTopBar = 'Servicios';
             this.title = 'Listado de servicios';
         } else {

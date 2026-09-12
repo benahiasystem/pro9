@@ -93,7 +93,7 @@
                 $inputs = $request->all();
                 $items = $request->input('items');
                 foreach ($items as $index => $item) {
-                    $unit_type = $item['item']['unit_type_id']??'ZZ';
+                    $unit_type = $item['item']['unit_type_id']??'SERV';
                     if (isset($item['additional_information']) && is_array($item['additional_information'])) {
                         $item['additional_information'] = implode(' ', $item['additional_information']);
                     }
@@ -113,7 +113,7 @@
                     $a->fill($tempItem);
                     $inputs['items'][$index] = $a->toArray();
                     $inputs['items'][$index]['item'] = (array)$a->getArrayItem();
-                    $inputs['items'][$index]['item']['unit_type_id']  = !empty($unit_type)?$unit_type:'ZZ';
+                    $inputs['items'][$index]['item']['unit_type_id']  = !empty($unit_type)?$unit_type:'SERV';
                     if (isset($inputs['items'][$index]['additional_information'])) {
                         $inputs['items'][$index]['additional_information'] = implode(' ', $inputs['items'][$index]['additional_information']);
                     }
@@ -147,7 +147,7 @@
         }
 
         /**
-         * Normalmente, los items no registrados son parte del servicio, por ello unit_type_id es ZZ
+         * Normalmente, los items no registrados son parte del servicio, por ello unit_type_id es SERV
          *
          * @param $row
          *
@@ -161,11 +161,11 @@
             $item_type_id = $row['item_type_id'] ?? ($row['item']['item_type_id'] ?? null);
             $second_name = $row['second_name'] ?? ($row['item']['second_name'] ?? null);
             $name = $row['name'] ?? ($row['item']['name'] ?? null);
-            $unit_type_id = $row['unit_type_id'] ?? ($row['item']['unit_type_id'] ?? 'ZZ');
+            $unit_type_id = $row['unit_type_id'] ?? ($row['item']['unit_type_id'] ?? 'SERV');
             $currency_type_id = $row['currency_type_id'] ?? ($row['item']['currency_type_id'] ?? 'VES');
             $unit_price = $row['unit_price'] ?? ($row['item']['unit_price'] ?? null);
             $affectation_igv_type_id = $row['affectation_igv_type_id'] ?? ($row['item']['affectation_igv_type_id'] ?? null);
-            if(empty($unit_type_id)) $unit_type_id = 'ZZ';
+            if(empty($unit_type_id)) $unit_type_id = 'SERV';
             $data = [
                 'internal_id' => $internal_id,
                 'description' => $description,

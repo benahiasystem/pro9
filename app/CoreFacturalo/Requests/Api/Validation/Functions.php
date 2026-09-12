@@ -9,6 +9,7 @@ use App\Models\Tenant\Item;
 use App\Models\Tenant\Person;
 use App\Models\Tenant\Series;
 use App\Models\Tenant\Catalogs\District;
+use App\Models\Tenant\Catalogs\UnitType;
 use Exception;
 use App\Models\Tenant\Configuration;
 use App\Services\SeriesCodeGenerator;
@@ -76,6 +77,9 @@ class Functions
 
     public static function item($inputs)
     {
+        // ######## INICIO CONTRATO UNIDADES DE MEDIDA VENEZUELA ########
+        $inputs['unit_type_id'] = UnitType::requireActiveCode($inputs['unit_type_id'] ?? null);
+        // ######## FIN CONTRATO UNIDADES DE MEDIDA VENEZUELA ########
         $item = Item::where('internal_id', $inputs['internal_id'])
             ->first();
 
@@ -114,6 +118,10 @@ class Functions
     }
 
     public static function item2($inputs) {
+
+        // ######## INICIO CONTRATO UNIDADES DE MEDIDA VENEZUELA ########
+        $inputs['unit_type_id'] = UnitType::requireActiveCode($inputs['unit_type_id'] ?? null);
+        // ######## FIN CONTRATO UNIDADES DE MEDIDA VENEZUELA ########
 
         $item = Item::firstOrCreate([
             'internal_id' => $inputs['internal_id'],

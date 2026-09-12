@@ -141,7 +141,7 @@ class ItemController extends Controller
 
     public function indexServices()
     {
-        $type = 'ZZ';
+        $type = 'SERV';
         return view('tenant.items.index', compact('type'));
     }
 
@@ -896,7 +896,7 @@ class ItemController extends Controller
 
             if ($type_product === 'restaurant') {
                 $items->where(function ($q) {
-                    $q->where('unit_type_id', '!=', 'ZZ')
+                    $q->where('unit_type_id', '!=', 'SERV')
                     ->orWhereExists(function ($sub) {
                         $sub->select(DB::raw(1))
                             ->from('restaurant_item_supplies')

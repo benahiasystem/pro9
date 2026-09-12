@@ -272,7 +272,7 @@ class DashboardData
             ->whereHas('item', function ($query) {
                 $query->whereNotIsSet()
                       ->where('status', true)
-                      ->where('unit_type_id', '!=', 'ZZ');
+                      ->where('unit_type_id', '!=', 'SERV');
             })
             ->when($establishment_id, function ($query) use ($establishment_id) {
                 $query->whereHas('warehouse', function ($query) use ($establishment_id) {

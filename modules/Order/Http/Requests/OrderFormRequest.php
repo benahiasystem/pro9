@@ -2,6 +2,7 @@
 
 namespace Modules\Order\Http\Requests;
 
+use App\Models\Tenant\Catalogs\UnitType;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -22,6 +23,7 @@ class OrderFormRequest extends FormRequest
             ],
             'unit_type_id' => [
                 'required',
+                UnitType::activeValidationRule(),
             ],
             'transfer_reason_description' => [
                 'required',

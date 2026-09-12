@@ -526,8 +526,8 @@ export default {
                 });
         },
         getQueryParameters() {
-            if (this.productType == 'ZZ') {
-                this.search.type = 'ZZ';
+            if (this.productType == 'SERV') {
+                this.search.type = 'SERV';
             }
             if (this.productType == 'PRODUCTS') {
                 this.search.type = this.productType;

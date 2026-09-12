@@ -48,6 +48,7 @@ Usar estos archivos como fuente de verdad en `Pro9`:
 - Mantener las columnas `0..19` por posición y permitir la columna `20` solamente como campo opcional `URL Imagen`.
 - La columna de imagen puede omitirse, pero cuando tenga datos debe incluir `URL Imagen` en U1. No aceptar la variante anterior con imágenes bajo un encabezado vacío; señalar U1 en el reporte y no importar filas. No cambiar el mapeo de `ItemsImport`.
 - Usar `VES`, nunca `VED`, como identificador de moneda de Venezuela.
+- Usar `UND` para productos y `SERV` para servicios; rechazar los códigos retirados `NIU` y `ZZ` sin convertirlos.
 - Validar identificadores activos de unidad, moneda y afectación de IVA contra los catálogos actuales del tenant.
 - Rechazar fórmulas, archivos XLSX dañados, varias hojas, encabezados desplazados, libros vacíos, identificadores internos duplicados, columnas adicionales pobladas y valores incompatibles con precisión, escala, nulabilidad o longitud de base de datos.
 - Agrupar los mensajes por celda para que cada coordenada inválida reciba un solo comentario con todos sus errores actuales.

@@ -217,7 +217,7 @@ class HeaderNotifications
             ->whereHas('item', function ($query) {
                 $query->whereNotIsSet()
                     ->where('status', true)
-                    ->where('unit_type_id', '!=', 'ZZ')
+                    ->where('unit_type_id', '!=', 'SERV')
                     ->where('stock_min', '>', 0);
             })
             ->whereRaw('stock <= (SELECT stock_min FROM items WHERE items.id = item_warehouse.item_id)');

@@ -1117,7 +1117,7 @@ export default {
                 return this.$message.warning('El monto a pagar es menor al total');
             }
 
-            let unit_type_notAllowed = ['ZZ','NIU'];
+            let unit_type_notAllowed = ['SERV','UND'];
 
             let errorZeroQuantity = false
             let errorFloatQuantity = false

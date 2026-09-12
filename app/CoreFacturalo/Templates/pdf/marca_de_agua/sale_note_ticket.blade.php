@@ -182,7 +182,7 @@
             <td class="text-center desc-9 align-top">
                 {{ fmod($cantidad_total, 1) ? $cantidad_total : intval($cantidad_total) }}
             </td>
-            <td class="text-center desc-9 align-top">NIU</td>
+            <td class="text-center desc-9 align-top">UND</td>
             <td class="text-left desc-9 align-top">Por consumo</td>
             <td class="text-right desc-9 align-top">{{ number_format($importe_total, 2) }}</td>
             <td class="text-right desc-9 align-top">{{ number_format($importe_total, 2) }}</td>

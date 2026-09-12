@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Tenant;
 
+use App\Models\Tenant\Catalogs\UnitType;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -25,6 +26,7 @@ class DispatchRequest extends FormRequest
         return [
             'unit_type_id' => [
                 'required',
+                UnitType::activeValidationRule(),
             ],
             'delivery_address_id'=> [
                 'required_if:document_type_id, "09"',

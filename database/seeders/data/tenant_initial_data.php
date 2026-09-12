@@ -1585,479 +1585,199 @@ return array (
       array (
         0 =>
         array (
-          'id' => 'AV',
-          'active' => 0,
-          'symbol' => 'CAPS',
-          'description' => 'Cápsula',
+          'id' => 'BOL',
+          'active' => 1,
+          'symbol' => 'BOL',
+          'description' => 'Bolsa',
         ),
         1 =>
         array (
-          'id' => 'BE',
-          'active' => 0,
-          'symbol' => 'FARD',
-          'description' => 'Fardo',
+          'id' => 'BOT',
+          'active' => 1,
+          'symbol' => 'BOT',
+          'description' => 'Botella',
         ),
         2 =>
         array (
-          'id' => 'BG',
+          'id' => 'BTO',
           'active' => 1,
-          'symbol' => 'BOLS',
-          'description' => 'Bolsa',
+          'symbol' => 'BTO',
+          'description' => 'Bulto',
         ),
         3 =>
         array (
-          'id' => 'BJ',
-          'active' => 0,
-          'symbol' => 'BALD',
-          'description' => 'Balde',
-        ),
-        4 =>
-        array (
-          'id' => 'BLL',
-          'active' => 0,
-          'symbol' => 'BRL',
-          'description' => 'Barril',
-        ),
-        5 =>
-        array (
-          'id' => 'BO',
-          'active' => 0,
-          'symbol' => 'BOT',
-          'description' => 'Botellas',
-        ),
-        6 =>
-        array (
-          'id' => 'BT',
-          'active' => 0,
-          'symbol' => 'TORN',
-          'description' => 'Tornillo',
-        ),
-        7 =>
-        array (
-          'id' => 'BX',
+          'id' => 'CAJ',
           'active' => 1,
           'symbol' => 'CAJ',
           'description' => 'Caja',
         ),
-        8 =>
+        4 =>
         array (
-          'id' => 'C62',
-          'active' => 0,
-          'symbol' => 'PZ',
-          'description' => 'Piezas',
-        ),
-        9 =>
-        array (
-          'id' => 'CA',
-          'active' => 0,
-          'symbol' => 'LT',
-          'description' => 'Latas',
-        ),
-        10 =>
-        array (
-          'id' => 'CEN',
-          'active' => 0,
-          'symbol' => 'CTO',
-          'description' => 'Centenar o ciento',
-        ),
-        11 =>
-        array (
-          'id' => 'CH',
-          'active' => 0,
-          'symbol' => 'ENV',
-          'description' => 'Envase',
-        ),
-        12 =>
-        array (
-          'id' => 'CMK',
-          'active' => 0,
-          'symbol' => 'CM2',
-          'description' => 'Centímetro cuadrado',
-        ),
-        13 =>
-        array (
-          'id' => 'CMQ',
-          'active' => 0,
-          'symbol' => 'CM3',
-          'description' => 'Centímetro cúbico',
-        ),
-        14 =>
-        array (
-          'id' => 'CMT',
-          'active' => 0,
+          'id' => 'CM',
+          'active' => 1,
           'symbol' => 'CM',
           'description' => 'Centímetro',
         ),
-        15 =>
+        5 =>
         array (
-          'id' => 'CT',
-          'active' => 0,
-          'symbol' => 'CTON',
-          'description' => 'Cartón',
+          'id' => 'DIA',
+          'active' => 1,
+          'symbol' => 'DIA',
+          'description' => 'Día',
         ),
-        16 =>
+        6 =>
         array (
-          'id' => 'CY',
-          'active' => 0,
-          'symbol' => 'CIL',
-          'description' => 'Cilindro',
-        ),
-        17 =>
-        array (
-          'id' => 'DZN',
-          'active' => 0,
+          'id' => 'DOC',
+          'active' => 1,
           'symbol' => 'DOC',
           'description' => 'Docena',
         ),
-        18 =>
+        7 =>
         array (
-          'id' => 'DZP',
-          'active' => 0,
-          'symbol' => 'DOC2',
-          'description' => 'Docena de paquetes',
+          'id' => 'GAL',
+          'active' => 1,
+          'symbol' => 'GAL',
+          'description' => 'Galón',
         ),
-        19 =>
+        8 =>
         array (
-          'id' => 'FOT',
-          'active' => 0,
-          'symbol' => 'PIE',
-          'description' => 'Pies',
-        ),
-        20 =>
-        array (
-          'id' => 'FTK',
-          'active' => 0,
-          'symbol' => 'PIE2',
-          'description' => 'Pies cuadrados',
-        ),
-        21 =>
-        array (
-          'id' => 'FTQ',
-          'active' => 0,
-          'symbol' => 'PIE3',
-          'description' => 'Pies cúbicos',
-        ),
-        22 =>
-        array (
-          'id' => 'GLI',
-          'active' => 0,
-          'symbol' => 'GL',
-          'description' => 'Galón inglés',
-        ),
-        23 =>
-        array (
-          'id' => 'GLL',
-          'active' => 0,
-          'symbol' => 'GL',
-          'description' => 'Galones',
-        ),
-        24 =>
-        array (
-          'id' => 'GRM',
-          'active' => 0,
+          'id' => 'GR',
+          'active' => 1,
           'symbol' => 'GR',
-          'description' => 'Gramos',
+          'description' => 'Gramo',
         ),
-        25 =>
+        9 =>
         array (
-          'id' => 'HD',
-          'active' => 0,
-          'symbol' => '1/2 DOC',
-          'description' => 'Media docena',
-        ),
-        26 =>
-        array (
-          'id' => 'HT',
-          'active' => 0,
-          'symbol' => '1/2 H',
-          'description' => 'Media hora',
-        ),
-        27 =>
-        array (
-          'id' => 'HUR',
-          'active' => 0,
+          'id' => 'HR',
+          'active' => 1,
           'symbol' => 'HR',
           'description' => 'Hora',
         ),
-        28 =>
+        10 =>
         array (
-          'id' => 'INH',
-          'active' => 0,
-          'symbol' => 'INCH',
-          'description' => 'Pulgadas',
+          'id' => 'JGO',
+          'active' => 1,
+          'symbol' => 'JGO',
+          'description' => 'Juego',
         ),
-        29 =>
+        11 =>
         array (
-          'id' => 'JG',
-          'active' => 0,
-          'symbol' => 'JARR',
-          'description' => 'Jarra',
-        ),
-        30 =>
-        array (
-          'id' => 'JR',
-          'active' => 0,
-          'symbol' => 'FCO',
-          'description' => 'Frasco',
-        ),
-        31 =>
-        array (
-          'id' => 'KGM',
+          'id' => 'KG',
           'active' => 1,
           'symbol' => 'KG',
-          'description' => 'Kilos',
+          'description' => 'Kilogramo',
         ),
-        32 =>
+        12 =>
         array (
-          'id' => 'KT',
-          'active' => 0,
-          'symbol' => 'KIT',
-          'description' => 'Kit',
-        ),
-        33 =>
-        array (
-          'id' => 'KTM',
-          'active' => 0,
+          'id' => 'KM',
+          'active' => 1,
           'symbol' => 'KM',
           'description' => 'Kilómetro',
         ),
-        34 =>
+        13 =>
         array (
-          'id' => 'KWH',
-          'active' => 0,
-          'symbol' => 'KWxH',
-          'description' => 'Kilovatio hora',
-        ),
-        35 =>
-        array (
-          'id' => 'LBR',
-          'active' => 0,
+          'id' => 'LB',
+          'active' => 1,
           'symbol' => 'LB',
-          'description' => 'Libras',
+          'description' => 'Libra',
         ),
-        36 =>
+        14 =>
         array (
-          'id' => 'LEF',
-          'active' => 0,
-          'symbol' => 'HOJA',
-          'description' => 'Hoja',
-        ),
-        37 =>
-        array (
-          'id' => 'LTR',
+          'id' => 'LT',
           'active' => 1,
           'symbol' => 'LT',
-          'description' => 'Litros',
+          'description' => 'Litro',
         ),
-        38 =>
+        15 =>
         array (
-          'id' => 'MGM',
-          'active' => 0,
-          'symbol' => 'MG',
-          'description' => 'Miligramos',
+          'id' => 'M',
+          'active' => 1,
+          'symbol' => 'M',
+          'description' => 'Metro',
         ),
-        39 =>
+        16 =>
         array (
-          'id' => 'MIL',
-          'active' => 0,
-          'symbol' => 'MIL',
-          'description' => 'Millar',
-        ),
-        40 =>
-        array (
-          'id' => 'MLT',
-          'active' => 0,
-          'symbol' => 'ML',
-          'description' => 'Mililitro',
-        ),
-        41 =>
-        array (
-          'id' => 'MMK',
-          'active' => 0,
-          'symbol' => 'MM2',
-          'description' => 'Milímetro cuadrado',
-        ),
-        42 =>
-        array (
-          'id' => 'MMQ',
-          'active' => 0,
-          'symbol' => 'MM3',
-          'description' => 'Milímetro cúbico',
-        ),
-        43 =>
-        array (
-          'id' => 'MMT',
-          'active' => 0,
-          'symbol' => 'MM',
-          'description' => 'Milímetro',
-        ),
-        44 =>
-        array (
-          'id' => 'MTK',
-          'active' => 0,
+          'id' => 'M2',
+          'active' => 1,
           'symbol' => 'M2',
           'description' => 'Metro cuadrado',
         ),
-        45 =>
+        17 =>
         array (
-          'id' => 'MTQ',
-          'active' => 0,
+          'id' => 'M3',
+          'active' => 1,
           'symbol' => 'M3',
           'description' => 'Metro cúbico',
         ),
-        46 =>
+        18 =>
         array (
-          'id' => 'MTR',
+          'id' => 'MG',
           'active' => 1,
-          'symbol' => 'M',
-          'description' => 'Metros',
+          'symbol' => 'MG',
+          'description' => 'Miligramo',
         ),
-        47 =>
+        19 =>
         array (
-          'id' => 'MWH',
-          'active' => 0,
-          'symbol' => 'MWxH',
-          'description' => 'Megavatio hora',
-        ),
-        48 =>
-        array (
-          'id' => 'NIU',
+          'id' => 'ML',
           'active' => 1,
-          'symbol' => 'UND',
-          'description' => 'Unidades',
+          'symbol' => 'ML',
+          'description' => 'Mililitro',
         ),
-        49 =>
+        20 =>
         array (
-          'id' => 'ONZ',
-          'active' => 0,
-          'symbol' => 'ONZ',
-          'description' => 'Onzas',
+          'id' => 'MM',
+          'active' => 1,
+          'symbol' => 'MM',
+          'description' => 'Milímetro',
         ),
-        50 =>
+        21 =>
         array (
-          'id' => 'PF',
-          'active' => 0,
-          'symbol' => 'PAL',
-          'description' => 'Paletas',
+          'id' => 'PAR',
+          'active' => 1,
+          'symbol' => 'PAR',
+          'description' => 'Par',
         ),
-        51 =>
+        22 =>
         array (
-          'id' => 'PG',
-          'active' => 0,
-          'symbol' => 'PLAC',
-          'description' => 'Placas',
-        ),
-        52 =>
-        array (
-          'id' => 'PK',
+          'id' => 'PQT',
           'active' => 1,
           'symbol' => 'PQT',
           'description' => 'Paquete',
         ),
-        53 =>
+        23 =>
         array (
-          'id' => 'PR',
-          'active' => 0,
-          'symbol' => 'PAR',
-          'description' => 'Par',
+          'id' => 'PULG',
+          'active' => 1,
+          'symbol' => 'PULG',
+          'description' => 'Pulgada',
         ),
-        54 =>
+        24 =>
         array (
-          'id' => 'QD',
-          'active' => 0,
-          'symbol' => '1/4 DOC',
-          'description' => 'Cuarto de docena',
-        ),
-        55 =>
-        array (
-          'id' => 'RD',
-          'active' => 0,
-          'symbol' => 'VAR',
-          'description' => 'Varilla',
-        ),
-        56 =>
-        array (
-          'id' => 'RL',
-          'active' => 0,
-          'symbol' => 'CRR',
-          'description' => 'Carrete',
-        ),
-        57 =>
-        array (
-          'id' => 'RM',
-          'active' => 0,
-          'symbol' => 'RESM',
-          'description' => 'Resma',
-        ),
-        58 =>
-        array (
-          'id' => 'SA',
-          'active' => 0,
-          'symbol' => 'SCO',
+          'id' => 'SAC',
+          'active' => 1,
+          'symbol' => 'SAC',
           'description' => 'Saco',
         ),
-        59 =>
+        25 =>
         array (
-          'id' => 'SEC',
-          'active' => 0,
-          'symbol' => 'SEG',
-          'description' => 'Segundo',
-        ),
-        60 =>
-        array (
-          'id' => 'SET',
-          'active' => 0,
-          'symbol' => 'JGO',
-          'description' => 'Juego',
-        ),
-        61 =>
-        array (
-          'id' => 'ST',
-          'active' => 0,
-          'symbol' => 'PLGO',
-          'description' => 'Pliego',
-        ),
-        62 =>
-        array (
-          'id' => 'TNE',
-          'active' => 0,
-          'symbol' => 'TNL',
-          'description' => 'Toneladas',
-        ),
-        63 =>
-        array (
-          'id' => 'TU',
-          'active' => 0,
-          'symbol' => 'TB',
-          'description' => 'Tubos',
-        ),
-        64 =>
-        array (
-          'id' => 'U2',
-          'active' => 0,
-          'symbol' => 'BLIST',
-          'description' => 'Tableta o blister',
-        ),
-        65 =>
-        array (
-          'id' => 'UM',
-          'active' => 0,
-          'symbol' => 'MILL',
-          'description' => 'Millón',
-        ),
-        66 =>
-        array (
-          'id' => 'YRD',
-          'active' => 0,
-          'symbol' => 'YD',
-          'description' => 'Yardas',
-        ),
-        67 =>
-        array (
-          'id' => 'ZZ',
+          'id' => 'SERV',
           'active' => 1,
           'symbol' => 'SERV',
           'description' => 'Servicio',
+        ),
+        26 =>
+        array (
+          'id' => 'TON',
+          'active' => 1,
+          'symbol' => 'TON',
+          'description' => 'Tonelada',
+        ),
+        27 =>
+        array (
+          'id' => 'UND',
+          'active' => 1,
+          'symbol' => 'UND',
+          'description' => 'Unidad',
         ),
       ),
     ),
@@ -7630,7 +7350,7 @@ return array (
           'date_of_due' => NULL,
           'account_id' => NULL,
           'item_code_gs1' => NULL,
-          'unit_type_id' => 'ZZ',
+          'unit_type_id' => 'SERV',
           'currency_type_id' => 'VES',
           'sale_unit_price' => '0.000000',
           'purchase_has_igv' => 1,

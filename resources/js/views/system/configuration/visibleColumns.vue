@@ -206,7 +206,7 @@ import draggable from 'vuedraggable'
 const SAMPLE_BY_TYPE = {
     id:       [1, 2, 3],
     code:     ['P001', 'P002', 'S001'],
-    unit:     ['NIU', 'NIU', 'ZZ'],
+    unit:     ['UND', 'UND', 'SERV'],
     image:    ['🖼', '🖼', '🖼'],
     text:     ['Ejemplo 1', 'Ejemplo 2', 'Ejemplo 3'],
     longtext: ['Descripción del producto A', 'Descripción del producto B', 'Descripción del servicio'],

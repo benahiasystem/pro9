@@ -22,7 +22,7 @@ class DashboardStock
 
                         $query->whereNotIsSet();
                         $query->where('status',true);
-                        $query->where('unit_type_id','!=', 'ZZ');
+                        $query->where('unit_type_id','!=', 'SERV');
 
                     })
                     ->when($establishment_id, function($query) use($establishment_id){

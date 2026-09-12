@@ -2652,7 +2652,7 @@ export default {
                 }
             });
 
-            let unit_type_notAllowed = ['ZZ', 'NIU'];
+            let unit_type_notAllowed = ['SERV', 'UND'];
             let errorZeroQuantity = false
             let errorFloatQuantity = false
             let existError = this.form.items.some(item => {
@@ -2942,7 +2942,7 @@ export default {
 
                 this.row.item.sale_unit_price_original = this.row.item.sale_unit_price
 
-                // this.row['unit_type_id'] = item.presentation ? item.presentation.unit_type_id : 'NIU';
+                // this.row['unit_type_id'] = item.presentation ? item.presentation.unit_type_id : 'UND';
 
                 this.row["unit_type_id"] = presentation
                     ? presentation.unit_type_id

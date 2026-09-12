@@ -650,8 +650,8 @@ foreach ($document->items as $row) {
                     foreach ($document->items as $itRow) {
                         $itemType = $itRow->item->item_type_id ?? null;
                         $unitType = $itRow->item->unit_type_id ?? null;
-                        // Considerar como producto si no es servicio ('02') y unidad no es 'ZZ'
-                        if (!in_array($itemType, ['02']) && $unitType !== 'ZZ') {
+                        // Considerar como producto si no es servicio ('02') y unidad no es 'SERV'
+                        if (!in_array($itemType, ['02']) && $unitType !== 'SERV') {
                             $total_packages += $itRow->quantity;
                             $has_product = true;
                         }
@@ -761,7 +761,7 @@ foreach ($document->items as $row) {
         @foreach($document->prepayments as $p)
             <tr>
                 <td class="text-center align-top">1</td>
-                <td class="text-center align-top">NIU</td>
+                <td class="text-center align-top">UND</td>
                 <td class="text-left align-top">
                     ANTICIPO: FACTURA NRO. {{$p->number}}
                 </td>

@@ -45,13 +45,13 @@
                                     <td>{{ index + 1 }}</td>
                                     <td>{{ row.id }}</td>
                                     <td class="text-center">
-                                        <el-switch v-model="row.active" @change="clickActive(row)"></el-switch>
+                                        <el-switch v-model="row.active" :disabled="isReservedUnit(row)" @change="clickActive(row)"></el-switch>
                                     </td>
                                     <td>{{ row.description }}</td>
                                     <td>{{ row.symbol }}</td>
                                     <td class="text-end">
                                         <button type="button" class="btn btn-info btn-xs me-2" @click.prevent="clickCreate(row.id)">Editar</button>
-                                        <template v-if="typeUser === 'admin'">
+                                        <template v-if="typeUser === 'admin' && !isReservedUnit(row)">
                                             <button type="button" class="btn btn-danger btn-xs" @click.prevent="clickDelete(row.id)">Eliminar</button>
                                         </template>
                                     </td>
@@ -105,6 +105,11 @@
             });
         },
         methods: {
+            // ######## INICIO CONTRATO UNIDADES DE MEDIDA VENEZUELA ########
+            isReservedUnit(row) {
+                return row && ['UND', 'SERV'].includes(row.id)
+            },
+            // ######## FIN CONTRATO UNIDADES DE MEDIDA VENEZUELA ########
             isUnitInactive(row) {
                 if (row && typeof row.active_value === 'boolean') return !row.active_value
                 const value = row?.active

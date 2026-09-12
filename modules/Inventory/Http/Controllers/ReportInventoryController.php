@@ -75,7 +75,7 @@ class ReportInventoryController extends Controller
                               ->whereHas('item', function ($q) use ($request) {
                                   $q->where([
                                                 ['item_type_id', '01'],
-                                                ['unit_type_id', '!=', 'ZZ'],
+                                                ['unit_type_id', '!=', 'SERV'],
                                             ]);
                                     if (!is_null($request->active)) {
                                         $q->where('active', $request->active == '01' ? true : false);
@@ -113,7 +113,7 @@ class ReportInventoryController extends Controller
               ->whereHas('item', function ($q) {
                 $q->where([
                     ['item_type_id', '01'],
-                    ['unit_type_id', '!=', 'ZZ'],
+                    ['unit_type_id', '!=', 'SERV'],
                 ]);
                 $q->where('stock', '>', 0);
                 $q->whereColumn('items.stock_min', '>=', 'item_warehouse.stock');
@@ -134,7 +134,7 @@ class ReportInventoryController extends Controller
               ->whereHas('item', function ($q) {
                   $q->where([
                                 ['item_type_id', '01'],
-                                ['unit_type_id', '!=', 'ZZ'],
+                                ['unit_type_id', '!=', 'SERV'],
                             ])
                     ->whereNotIsSet()
                     ->whereStockMinValidate();
@@ -215,7 +215,7 @@ class ReportInventoryController extends Controller
     {
 
         $reports = ItemWarehouse::with(['item'])->whereHas('item', function ($q) {
-            $q->where([['item_type_id', '01'], ['unit_type_id', '!=', 'ZZ']]);
+            $q->where([['item_type_id', '01'], ['unit_type_id', '!=', 'SERV']]);
             $q->whereNotIsSet();
         })->latest()->get();
 
@@ -236,13 +236,13 @@ class ReportInventoryController extends Controller
 
         if ($request->warehouse_id && $request->warehouse_id != 'all') {
             $reports = ItemWarehouse::with(['item', 'item.brand'])->where('warehouse_id', $request->warehouse_id)->whereHas('item', function ($q) {
-                $q->where([['item_type_id', '01'], ['unit_type_id', '!=', 'ZZ']]);
+                $q->where([['item_type_id', '01'], ['unit_type_id', '!=', 'SERV']]);
                 $q->whereNotIsSet();
             })->latest()->get();
         } else {
 
             $reports = ItemWarehouse::with(['item', 'item.brand'])->whereHas('item', function ($q) {
-                $q->where([['item_type_id', '01'], ['unit_type_id', '!=', 'ZZ']]);
+                $q->where([['item_type_id', '01'], ['unit_type_id', '!=', 'SERV']]);
                 $q->whereNotIsSet();
             })->latest()->get();
         }
@@ -268,13 +268,13 @@ class ReportInventoryController extends Controller
 
         if ($request->warehouse_id && $request->warehouse_id != 'all') {
             $records = ItemWarehouse::with(['item', 'item.brand'])->where('warehouse_id', $request->warehouse_id)->whereHas('item', function ($q) {
-                $q->where([['item_type_id', '01'], ['unit_type_id', '!=', 'ZZ']]);
+                $q->where([['item_type_id', '01'], ['unit_type_id', '!=', 'SERV']]);
                 $q->whereNotIsSet();
             })->latest()->get();
 
         } else {
             $records = ItemWarehouse::with(['item', 'item.brand'])->whereHas('item', function ($q) {
-                $q->where([['item_type_id', '01'], ['unit_type_id', '!=', 'ZZ']]);
+                $q->where([['item_type_id', '01'], ['unit_type_id', '!=', 'SERV']]);
                 $q->whereNotIsSet();
             })->latest()->get();
 

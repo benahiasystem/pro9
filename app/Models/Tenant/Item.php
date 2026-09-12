@@ -118,7 +118,10 @@ class Item extends ModelTenant
     protected $with = ['item_type', 'unit_type', 'currency_type', 'warehouses','item_unit_types', 'tags','item_lots'];
     protected $appends = ['modifiers'];
 
-    public const SERVICE_UNIT_TYPE = 'ZZ';
+    // ######## INICIO CONTRATO UNIDADES DE MEDIDA VENEZUELA ########
+    public const DEFAULT_UNIT_TYPE = UnitType::DEFAULT_UNIT_TYPE;
+    public const SERVICE_UNIT_TYPE = UnitType::SERVICE_UNIT_TYPE;
+    // ######## FIN CONTRATO UNIDADES DE MEDIDA VENEZUELA ########
 
     protected $fillable = [
         'warehouse_id',
@@ -474,7 +477,7 @@ class Item extends ModelTenant
         if ($warehouse) {
             return $query->whereHas('warehouses', function($query) use($warehouse) {
                             $query->where('warehouse_id', $warehouse->id);
-                        })->orWhere('unit_type_id', 'ZZ');
+                        })->orWhere('unit_type_id', self::SERVICE_UNIT_TYPE);
         }
         return $query;
      }
@@ -507,7 +510,7 @@ class Item extends ModelTenant
      */
     public function scopeWhereIsNotService($query)
     {
-        return $query->where('unit_type_id', '!=', 'ZZ');
+        return $query->where('unit_type_id', '!=', self::SERVICE_UNIT_TYPE);
     }
 
     /**
@@ -977,7 +980,7 @@ class Item extends ModelTenant
      */
     public function scopeWhereNotService($query)
     {
-        return $query->where('unit_type_id','!=', 'ZZ');
+        return $query->where('unit_type_id','!=', self::SERVICE_UNIT_TYPE);
     }
 
     /**
@@ -987,7 +990,7 @@ class Item extends ModelTenant
      */
     public function scopeWhereService($query)
     {
-        return $query->where('unit_type_id', 'ZZ');
+        return $query->where('unit_type_id', self::SERVICE_UNIT_TYPE);
     }
 
     /**
@@ -1147,7 +1150,7 @@ class Item extends ModelTenant
         $desc = ($this->internal_id) ? $this->internal_id.' - '.$this->description : $this->description;
         $category = ($this->category) ? "{$this->category->name}" : '';
         $brand = ($this->brand) ? "{$this->brand->name}" : '';
-        if ($this->unit_type_id != 'ZZ') {
+        if ($this->unit_type_id != self::SERVICE_UNIT_TYPE) {
             if (isset($this['stock'])) {
                 $warehouse_stock = number_format($this['stock'], 2);
             } else {
@@ -1907,7 +1910,7 @@ class Item extends ModelTenant
             ->setInArray('stock',0)
             ->setInArray('stock_min',0)
             ->setInArray('currency_type_id','VES')
-            ->setInArray('unit_type_id','NIU')
+            ->setInArray('unit_type_id',self::DEFAULT_UNIT_TYPE)
             ->setInArray('active',$active)
             ->setInArray('sale_unit_price',1)
             ->setInArray('sale_unit_price_set',null)
@@ -2719,7 +2722,7 @@ class Item extends ModelTenant
     public function scopeForProduction($query){
         return $query->where([
              ['item_type_id', '01'],
-            ['unit_type_id', '!=', 'ZZ'],
+            ['unit_type_id', '!=', self::SERVICE_UNIT_TYPE],
              ['is_for_production', 1],
              ['is_set', 0]
         ]);
@@ -2729,7 +2732,7 @@ class Item extends ModelTenant
     public function scopeForProductionSupply($query){
         return $query->where([
                 ['item_type_id', '01'],
-                ['unit_type_id', '!=', 'ZZ'],
+                ['unit_type_id', '!=', self::SERVICE_UNIT_TYPE],
                 ['is_for_production', 0],
                 ['is_set', 0]
         ]);
@@ -2777,7 +2780,7 @@ class Item extends ModelTenant
     public function scopeProductEnded(Builder $query){
         return $query->where([
             ['item_type_id', '01'],
-            ['unit_type_id', '!=', 'ZZ'],
+            ['unit_type_id', '!=', self::SERVICE_UNIT_TYPE],
             ['is_for_production', 1]
         ])
             ->with('supplies')
@@ -2792,7 +2795,7 @@ class Item extends ModelTenant
     public function scopeProductSupply(Builder $query){
         $sup = ItemSupply::select('individual_item_id')->distinct()->pluck('individual_item_id');
         return $query->where([
-            ['unit_type_id', '!=', 'ZZ'],
+            ['unit_type_id', '!=', self::SERVICE_UNIT_TYPE],
         ])
             ->wherein('id',$sup)
             ->with('supplies_items')
@@ -2967,7 +2970,7 @@ class Item extends ModelTenant
      */
     public function scopeWhereFilterReportKardex($query)
     {
-        return $query->whereNotIsSet()->where([['item_type_id', '01'], ['unit_type_id', '!=', 'ZZ']]);
+        return $query->whereNotIsSet()->where([['item_type_id', '01'], ['unit_type_id', '!=', self::SERVICE_UNIT_TYPE]]);
     }
 
 
@@ -3230,7 +3233,7 @@ class Item extends ModelTenant
                     ->whereIsActive();
 
         if ($configuration->isShowServiceOnPos() !== true) {
-            $record->where('unit_type_id', '!=', 'ZZ');
+            $record->where('unit_type_id', '!=', self::SERVICE_UNIT_TYPE);
         }
 
         // Inventario (app): filtrar por el stock de un almacen concreto

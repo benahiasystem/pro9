@@ -12,9 +12,12 @@ class ProductModuleFlowContractTest extends TestCase
     {
         $controller = $this->source('app/Http/Controllers/Tenant/ItemController.php');
         $item = $this->source('app/Models/Tenant/Item.php');
+        $unitType = $this->source('app/Models/Tenant/Catalogs/UnitType.php');
         $store = $this->methodBody($controller, 'public function store(ItemRequest $request)');
 
-        self::assertStringContainsString("public const SERVICE_UNIT_TYPE = 'ZZ'", $item);
+        self::assertStringContainsString("public const DEFAULT_UNIT_TYPE = 'UND'", $unitType);
+        self::assertStringContainsString("public const SERVICE_UNIT_TYPE = 'SERV'", $unitType);
+        self::assertStringContainsString('public const SERVICE_UNIT_TYPE = UnitType::SERVICE_UNIT_TYPE', $item);
         self::assertStringContainsString('DB::beginTransaction()', $store);
         self::assertStringContainsString('$item->fill($request->all())', $store);
         self::assertStringContainsString('$item->save()', $store);

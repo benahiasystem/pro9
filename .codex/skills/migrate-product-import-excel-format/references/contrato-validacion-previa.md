@@ -65,7 +65,7 @@
 | 1 | `internal_id` | texto escalar anulable, máximo 30; único dentro del libro; determina actualización o creación |
 | 2 | `model` | texto escalar anulable, máximo 100 |
 | 3 | `item_code` | código SUNAT anulable de exactamente 8 dígitos numéricos, conforme al importador actual de Pro9 |
-| 4 | `unit_type_id` | identificador obligatorio, presente y activo en el catálogo de unidades del tenant |
+| 4 | `unit_type_id` | identificador obligatorio, presente y activo en el catálogo de unidades del tenant; usar `UND` para productos y `SERV` para servicios; rechazar `NIU` y `ZZ` |
 | 5 | `currency_type_id` | identificador obligatorio, presente y activo en el catálogo de monedas del tenant; Venezuela usa `VES`, no `VED` |
 | 6 | `sale_unit_price` | `decimal(16,6)` obligatorio y estrictamente mayor que cero |
 | 7 | `sale_affectation_igv_type_id` | identificador activo de afectación de IVA obligatorio |
@@ -88,6 +88,8 @@ Aceptar valores numéricos solo cuando quepan en la precisión y escala efectiva
 ## Instantánea de catálogos
 
 Leer solamente identificadores activos de `cat_unit_types`, `cat_currency_types` y `cat_affectation_igv_types` del tenant. Leer todos los valores no vacíos de `items.internal_id` para detectar actualizaciones y códigos repetidos. Comparar identificadores como cadenas sin espacios exteriores.
+
+Para Venezuela, `UND` y `SERV` son los códigos canónicos. `NIU` y `ZZ` no forman parte del catálogo activo y deben producir un error de validación, sin conversión automática.
 
 ## Reporte de errores
 

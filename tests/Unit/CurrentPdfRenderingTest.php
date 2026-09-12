@@ -122,7 +122,7 @@ class CurrentPdfRenderingTest extends TestCase
         ]);
         $item = new Fluent([
             'internal_id' => 'PRUEBA-001',
-            'unit_type_id' => 'NIU',
+            'unit_type_id' => 'UND',
             'description' => 'Producto gravado de prueba',
             'model' => null,
             'lots' => null,

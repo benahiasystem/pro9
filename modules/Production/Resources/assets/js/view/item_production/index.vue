@@ -83,8 +83,8 @@
                         <!-- Celda fiscal item_code retirada para mantener alineado el listado. -->
                         <!-- ######### FIN CAMBIO NELSON: RETIRO CÓDIGO SUNAT -->
                         <!-- <td>
-                            <template v-if="typeUser=='seller' && row.unit_type_id !='ZZ'">{{ row.stock }}</template>
-                            <template v-else-if="typeUser!='seller'&& row.unit_type_id !='ZZ'">
+                            <template v-if="typeUser=='seller' && row.unit_type_id !='SERV'">{{ row.stock }}</template>
+                            <template v-else-if="typeUser!='seller'&& row.unit_type_id !='SERV'">
                                 <button type="button" class="btn waves-effect waves-light btn-xs btn-info" @click.prevent="clickWarehouseDetail(row.warehouses)"><i class="fa fa-search"></i></button>
                             </template>
                         </td> -->

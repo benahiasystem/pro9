@@ -1066,7 +1066,7 @@ class SaleNoteController extends Controller
 
                 $items_u = Item::whereWarehouse()->whereIsActive()->whereNotIsSet()->orderBy('description')->take(20)->get();
 
-                $items_s = Item::where('unit_type_id','ZZ')->whereIsActive()->orderBy('description')->take(10)->get();
+                $items_s = Item::where('unit_type_id','SERV')->whereIsActive()->orderBy('description')->take(10)->get();
 
                 $items = $items_u->merge($items_s);
 
@@ -1272,7 +1272,7 @@ class SaleNoteController extends Controller
         $category = ($row->category) ? "{$row->category->name}" : "";
         $brand = ($row->brand) ? "{$row->brand->name}" : "";
 
-        if($row->unit_type_id != 'ZZ')
+        if($row->unit_type_id != 'SERV')
         {
             $warehouse_stock = ($row->warehouses && $warehouse) ? number_format($row->warehouses->where('warehouse_id', $warehouse->id)->first() != null ? $row->warehouses->where('warehouse_id', $warehouse->id)->first()->stock : 0 ,2) : 0;
             $stock = ($row->warehouses && $warehouse) ? "{$warehouse_stock}" : "";

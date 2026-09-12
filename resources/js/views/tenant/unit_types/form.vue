@@ -13,14 +13,14 @@
                     <div class="col-md-4">
                         <div class="form-group" :class="{'has-danger': errors.description}">
                             <label class="control-label">Descripción</label>
-                            <el-input v-model="form.description"></el-input>
+                            <el-input v-model="form.description" :readonly="isReserved"></el-input>
                             <small class="form-control-feedback" v-if="errors.description" v-text="errors.description[0]"></small>
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="form-group" :class="{'has-danger': errors.symbol}">
                             <label class="control-label">Símbolo</label>
-                            <el-input v-model="form.symbol"></el-input>
+                            <el-input v-model="form.symbol" :readonly="isReserved"></el-input>
                             <small class="form-control-feedback" v-if="errors.symbol" v-text="errors.symbol[0]"></small>
                         </div>
                     </div>
@@ -28,7 +28,7 @@
                         <div class="form-group" :class="{'has-danger': errors.active}">
                             <label class="control-label">Activo</label>
                             <div class="transfer-data-table pl-3 pt-3 pb-2">
-                                <el-switch v-model="form.active" active-text="Si" inactive-text="No"></el-switch>
+                                <el-switch v-model="form.active" :disabled="isReserved" active-text="Si" inactive-text="No"></el-switch>
                                 <small class="form-control-feedback" v-if="errors.active" v-text="errors.active[0]"></small>
                             </div>
                         </div>
@@ -59,6 +59,13 @@
         },
         created() {
             this.initForm()
+        },
+        computed: {
+            // ######## INICIO CONTRATO UNIDADES DE MEDIDA VENEZUELA ########
+            isReserved() {
+                return ['UND', 'SERV'].includes(this.recordId)
+            },
+            // ######## FIN CONTRATO UNIDADES DE MEDIDA VENEZUELA ########
         },
         methods: {
             initForm() {

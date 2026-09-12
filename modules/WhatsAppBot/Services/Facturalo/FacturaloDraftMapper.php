@@ -194,7 +194,7 @@ class FacturaloDraftMapper
             'item_id' => $item->id,
             'item' => array_merge($item->toArray(), [
                 'description' => $item->name,
-                'unit_type_id' => $item->unit_type_id ?: 'NIU',
+                'unit_type_id' => $item->unit_type_id ?: 'UND',
                 'currency_type_id' => $item->currency_type_id ?: 'VES',
                 'has_igv' => (bool) $item->has_igv,
                 'calculate_quantity' => false,

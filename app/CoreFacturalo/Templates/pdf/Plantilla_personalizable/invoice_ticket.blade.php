@@ -434,7 +434,7 @@
         <tr>
         @if($show_codigo) <td class="text-center desc-9 align-top font-bold">001</td> @endif
         @if($show_cantidad) <td class="text-center">{{ number_format($cantidad_fusionada, 0) }}</td> @endif
-        @if($show_unidad) <td class="text-center desc-9 align-top">NIU</td> @endif
+        @if($show_unidad) <td class="text-center desc-9 align-top">UND</td> @endif
         @if($show_descripcion) <td class="text-left desc-9 align-top font-bold">Por consumo</td> @endif
         @if($show_precio_unitario) <td class="text-right">{{ number_format($total_fusionado, 2) }}</td> @endif
         @if($show_descuento) <td class="text-right">0.00</td> @endif
@@ -588,7 +588,7 @@
             <tr>
                 @if($show_codigo) <td class="text-center desc-9 align-top"></td> @endif
                 @if($show_cantidad) <td class="text-center desc-9 align-top">1</td> @endif
-                @if($show_unidad) <td class="text-center desc-9 align-top">NIU</td> @endif
+                @if($show_unidad) <td class="text-center desc-9 align-top">UND</td> @endif
                 @if($show_descripcion)
                 <td class="text-left desc-9 align-top">
                     ANTICIPO: FACTURA NRO. {{$p->number}}

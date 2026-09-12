@@ -166,7 +166,7 @@
                     internal_id: null,
                     description: null,
                     name: null,
-                    unit_type_id: 'NIU',
+                    unit_type_id: 'UND',
                     currency_type_id: 'VES',
                     purchase_unit_price: 0,
                     purchase_affectation_igv_type_id: null,

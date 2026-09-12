@@ -222,7 +222,7 @@
                     // Blade se come un "(...)" que siga a una directiva como @endif,
                     // asi que la linea secundaria se arma aqui y se imprime entera.
                     $item_unit_price = $row->unit_price;
-                    $item_unit_label = $row->item->unit_type_id !== 'NIU' ? $row->item->unit_type_id.' x ' : '';
+                    $item_unit_label = $row->item->unit_type_id !== 'UND' ? $row->item->unit_type_id.' x ' : '';
                     $item_code_label = trim((string) $item_code);
                     $item_sub_line = ($item_code_label !== '' ? $item_code_label.' ' : '')
                         .'('.$item_unit_label.$document->currency_type->symbol.' '.number_format($item_unit_price, 2).')';

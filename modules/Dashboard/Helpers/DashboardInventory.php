@@ -31,7 +31,7 @@ class DashboardInventory
         $products = ItemWarehouse::whereHas('item',function($query) use($date_start,$date_end){
 
                         $query->whereNotIsSet();
-                        $query->where('unit_type_id','!=', 'ZZ');
+                        $query->where('unit_type_id','!=', 'SERV');
                         $query->whereBetween('date_of_due', [$date_start, $date_end]);
 
                     })
@@ -41,7 +41,7 @@ class DashboardInventory
             $products = ItemWarehouse::whereHas('item',function($query){
 
                 $query->whereNotIsSet();
-                $query->where('unit_type_id','!=', 'ZZ');
+                $query->where('unit_type_id','!=', 'SERV');
 
             })
             ->when($establishment_id, $filter_establishment)

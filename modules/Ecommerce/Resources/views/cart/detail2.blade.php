@@ -451,7 +451,7 @@
                         "codigo_interno": "0",
                         "descripcion": item.description,
                         "codigo_producto_sunat": "0",
-                        "unidad_de_medida": "NIU",
+                        "unidad_de_medida": "UND",
                         "cantidad": item.cantidad,
                         "valor_unitario": 50,
                         "codigo_tipo_precio": "01",

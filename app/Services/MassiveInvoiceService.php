@@ -4,6 +4,8 @@
 
 namespace App\Services;
 
+use App\Models\Tenant\Catalogs\UnitType;
+
 use Illuminate\Support\Collection;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use Carbon\Carbon;
@@ -108,7 +110,7 @@ class MassiveInvoiceService
                         'codigo_interno' => $row[15] ?? '',
                         'descripcion' => $row[16] ?? '',
                         'codigo_producto_sunat' => '51121703',
-                        'unidad_de_medida' => $this->normalizeUnidadMedida($row[18] ?? 'NIU'),
+                        'unidad_de_medida' => $this->normalizeUnidadMedida($row[18] ?? UnitType::DEFAULT_UNIT_TYPE),
                         'cantidad' => $cantidad,
                         'valor_unitario' => $montos['valorUnitario'],
                         'codigo_tipo_precio' => '01',
@@ -190,13 +192,20 @@ class MassiveInvoiceService
 
     private function normalizeUnidadMedida($unidad)
     {
+        // ######## INICIO CONTRATO UNIDADES DE MEDIDA VENEZUELA ########
+        $code = strtoupper(trim((string) $unidad));
+        if ($code === '') {
+            return UnitType::DEFAULT_UNIT_TYPE;
+        }
+
         $unidades = [
-            'UNIDAD SERVICIOS' => 'ZZ',
-            'UNIDAD' => 'NIU',
-            'SERVICIO' => 'ZZ'
+            'UNIDAD SERVICIOS' => UnitType::SERVICE_UNIT_TYPE,
+            'UNIDAD' => UnitType::DEFAULT_UNIT_TYPE,
+            'SERVICIO' => UnitType::SERVICE_UNIT_TYPE,
         ];
 
-        return $unidades[strtoupper($unidad)] ?? 'NIU';
+        return UnitType::requireActiveCode($unidades[$code] ?? $code);
+        // ######## FIN CONTRATO UNIDADES DE MEDIDA VENEZUELA ########
     }
 
     private function getReceptorData($numero, $tipoComprobante)

@@ -297,7 +297,7 @@
             <td class="text-center desc-9 align-top">
                 1
             </td>
-            <td class="text-center desc-9 align-top">NIU</td>
+            <td class="text-center desc-9 align-top">UND</td>
             <td class="text-left desc-9 align-top">
                 ANTICIPO: FACTURA NRO. {{$p->number}}
             </td>

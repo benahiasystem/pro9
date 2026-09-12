@@ -47,6 +47,14 @@ class UnitTypeController extends Controller
     {
         $id = $request->input('id');
         $unit_type = UnitType::findOrFail($id);
+        // ######## INICIO CONTRATO UNIDADES DE MEDIDA VENEZUELA ########
+        if (UnitType::isReserved((string) $id) && !$request->boolean('active')) {
+            return [
+                'success' => false,
+                'message' => 'UND y SERV deben permanecer activos.',
+            ];
+        }
+        // ######## FIN CONTRATO UNIDADES DE MEDIDA VENEZUELA ########
         $unit_type->active = $request->boolean('active') ? 1 : 0;
         $unit_type->save();
 
@@ -58,6 +66,14 @@ class UnitTypeController extends Controller
 
     public function destroy($id)
     {
+        // ######## INICIO CONTRATO UNIDADES DE MEDIDA VENEZUELA ########
+        if (UnitType::isReserved((string) $id)) {
+            return [
+                'success' => false,
+                'message' => 'Las unidades UND y SERV no se pueden eliminar.',
+            ];
+        }
+        // ######## FIN CONTRATO UNIDADES DE MEDIDA VENEZUELA ########
         try {
             $record = UnitType::findOrFail($id);
             $record->delete();

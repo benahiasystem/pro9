@@ -98,7 +98,7 @@ class PosController extends Controller
             ->whereWarehouse();
 
         if ($configuration->isShowServiceOnPos() !== true) {
-            $items_query->where('unit_type_id', '!=', 'ZZ');
+            $items_query->where('unit_type_id', '!=', 'SERV');
         }
 
         if ($search_item_by_barcode_presentation) $items_query->orFilterItemUnitTypeBarcode($request->input_item);
@@ -328,7 +328,7 @@ class PosController extends Controller
             $configuration = Configuration::first();
 
             if ($configuration->isShowServiceOnPos() !== true) {
-                $items->where('unit_type_id', '!=', 'ZZ');
+                $items->where('unit_type_id', '!=', 'SERV');
             }
             //$items = $items->where('series_enabled', 0)
             $items = $items->orderBy('description')
@@ -442,7 +442,7 @@ class PosController extends Controller
                 $stock = $item_warehouse->stock - $total_item_quantity;
 
 
-                if ($item_warehouse->item->unit_type_id !== 'ZZ') {
+                if ($item_warehouse->item->unit_type_id !== 'SERV') {
                     if (($inventory_configuration->stock_control) && ($stock < 0)) {
                         return [
                             'success' => false,
@@ -456,14 +456,14 @@ class PosController extends Controller
 
         } else {
 
-            if ($item->unit_type_id == 'ZZ') {
+            if ($item->unit_type_id == 'SERV') {
                 return [
                     'success' => true,
                     'message' => ''
                 ];
             }
 
-            if (!$item_warehouse && $item->unit_type_id !== 'ZZ')
+            if (!$item_warehouse && $item->unit_type_id !== 'SERV')
                 return [
                     'success' => false,
                     'message' => "El producto seleccionado no está disponible en su almacén!"
@@ -472,7 +472,7 @@ class PosController extends Controller
             $stock = $item_warehouse->stock - $quantity;
 
 
-            if ($item_warehouse->item->unit_type_id !== 'ZZ') {
+            if ($item_warehouse->item->unit_type_id !== 'SERV') {
                 if (($inventory_configuration->stock_control) && ($stock < 0)) {
                     return [
                         'success' => false,
@@ -510,7 +510,7 @@ class PosController extends Controller
             ->orderBy('description');
         $config = Configuration::first();
         if ($config->isShowServiceOnPos() !== true) {
-            $items->where('unit_type_id', '!=', 'ZZ');
+            $items->where('unit_type_id', '!=', 'SERV');
         }
 
         if ($request->garage == 1) {
@@ -626,7 +626,7 @@ class PosController extends Controller
 
         $config = Configuration::first();
         if ($config->isShowServiceOnPos() !== true) {
-            $item->where('unit_type_id', '!=', 'ZZ');
+            $item->where('unit_type_id', '!=', 'SERV');
         }
 
         self::applyVariationsGrouping($item, $request);

@@ -5,7 +5,7 @@
 - Tabla: `items`.
 - Variaciones: `parent_item_id int unsigned NULL`, índice `items_parent_item_id_index` y FK `items_parent_item_id_foreign` hacia `items.id` con borrado restringido.
 - Modelo: `parent()` pertenece a `Item`; `variations()` contiene muchos `Item` por `parent_item_id`.
-- Producto: unidad distinta de `ZZ`. Servicio: `Item::SERVICE_UNIT_TYPE`, actualmente `ZZ`.
+- Producto predeterminado: `Item::DEFAULT_UNIT_TYPE`, actualmente `UND`. Servicio: `Item::SERVICE_UNIT_TYPE`, actualmente `SERV`. Toda unidad debe existir y estar activa en `cat_unit_types`.
 
 No elimines `withCount('variations')` ni el agrupamiento por `parent_item_id` para ocultar una columna ausente: repara el esquema.
 

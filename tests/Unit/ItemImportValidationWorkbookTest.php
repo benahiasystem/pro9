@@ -134,7 +134,7 @@ class ItemImportValidationWorkbookTest extends TestCase
             public function snapshot(): array
             {
                 return [
-                    'unit_type_ids' => ['NIU'],
+                    'unit_type_ids' => ['UND'],
                     'currency_type_ids' => ['VES', 'USD'],
                     'affectation_igv_type_ids' => ['10', '20'],
                     'existing_internal_ids' => [],
@@ -148,7 +148,7 @@ class ItemImportValidationWorkbookTest extends TestCase
     private function validRow(): array
     {
         return [
-            'Producto', 'ITEM-001', 'M1', '12345678', 'NIU', 'VES', 10, '10', 'SI', 5,
+            'Producto', 'ITEM-001', 'M1', '12345678', 'UND', 'VES', 10, '10', 'SI', 5,
             '10', 1, 1, 'Categoría', 'Marca', 'Nombre', 'Secundario', null, null, 'BAR-1',
         ];
     }

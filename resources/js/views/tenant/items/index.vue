@@ -233,7 +233,7 @@
                 </el-dropdown>
             </div>
             <div class="card-body">
-                <data-table ref="DataTable" :productType="type" :resource="resource" :sort-field="sortField" :sort-direction="sortDirection" :showProductFilter="type !== 'ZZ'" :extra-filters="{ variations_view }" @sort-change="handleSortChange" @records-changed="handleRecordsChanged">
+                <data-table ref="DataTable" :productType="type" :resource="resource" :sort-field="sortField" :sort-direction="sortDirection" :showProductFilter="type !== 'SERV'" :extra-filters="{ variations_view }" @sort-change="handleSortChange" @records-changed="handleRecordsChanged">
                     <tr slot="heading" width="100%" slot-scope="{ sort }">
                         <th class="text-center" style="width: 34px;">
                             <el-checkbox :value="allSelectedInView" @change="toggleSelectAll"></el-checkbox>
@@ -332,12 +332,12 @@
                                     {{ formatStock(row.stock, row.unit_type_id) }} <!-- <small class="text-muted ms-1">{{ unitSymbol(row.unit_type_id) }}</small> -->
                                 </div>
                                 <div v-else>
-                                    <template class="fw-semibold" v-if="typeUser == 'seller' && row.unit_type_id != 'ZZ'">
+                                    <template class="fw-semibold" v-if="typeUser == 'seller' && row.unit_type_id != 'SERV'">
                                         <span :class="{ 'text-danger': row.stock < row.stock_min }">
                                             {{ formatStock(row.stock, row.unit_type_id) }}<!-- <small class="text-muted ms-1">{{ unitSymbol(row.unit_type_id) }}</small> -->
                                         </span>
                                     </template>
-                                    <template v-else-if="typeUser != 'seller' && row.unit_type_id != 'ZZ'">
+                                    <template v-else-if="typeUser != 'seller' && row.unit_type_id != 'SERV'">
                                         <button class="btn waves-effect waves-light btn-xs btn-info" type="button" @click.prevent="clickWarehouseDetail(row.warehouses, row.item_unit_types)"><i class="fa fa-search"></i></button>
                                     </template>
                                 </div>
@@ -753,7 +753,7 @@ export default {
         if (this.config.show_extra_info_to_item !== true) {
             delete this.columns.extra_data;
         }
-        if (this.type === "ZZ") {
+        if (this.type === "SERV") {
             this.titleTopBar = "Servicios";
             this.title = "Listado de servicios";
         } else {
@@ -781,7 +781,7 @@ export default {
             if (this.config.show_extra_info_to_item !== true) {
                 delete this.columns.extra_data;
             }
-            if (this.type === "ZZ") {
+            if (this.type === "SERV") {
                 this.titleTopBar = "Servicios";
                 this.title = "Listado de servicios";
             } else {
@@ -823,7 +823,7 @@ export default {
                 .sort((a, b) => a.order - b.order);
         },
         itemUrl() {
-            return this.type === "ZZ" ? "/services" : "/items";
+            return this.type === "SERV" ? "/services" : "/items";
         },
         selectedEnabledCount() {
           return this.selected.reduce((acc, id) => {
@@ -926,18 +926,18 @@ export default {
             return html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
         },
         isDecimalUnit(unitTypeId) {
-            // Solo la unidad NIU (Unidad SUNAT) exige cantidades enteras; el resto (incluidas las unidades creadas manualmente) admite decimales
-            return unitTypeId !== 'NIU';
+            // Solo la unidad UND (Unidad SUNAT) exige cantidades enteras; el resto (incluidas las unidades creadas manualmente) admite decimales
+            return unitTypeId !== 'UND';
         },
         unitSymbol(unitTypeId) {
             const map = {
-                NIU: 'und', BX: 'caja', BO: 'bot', BG: 'bls', DZN: 'doc',
+                UND: 'und', BX: 'caja', BO: 'bot', BG: 'bls', DZN: 'doc',
                 PK: 'paq', SET: 'jgo', PR: 'par', '4B': 'rollo', CEN: 'cien', MLR: 'mll',
                 KGM: 'kg', GRM: 'g', MGM: 'mg', TNE: 't', LBR: 'lb',
                 LTR: 'L', MLT: 'mL', GLL: 'gal',
                 MTR: 'm', CMT: 'cm', KMT: 'km', MTK: 'm²', MTQ: 'm³',
                 HUR: 'h', DAY: 'día', MIN: 'min',
-                ZZ: '',
+                SERV: '',
             };
             return map[unitTypeId] !== undefined ? map[unitTypeId] : (unitTypeId || '').toLowerCase();
         },
@@ -1323,7 +1323,7 @@ export default {
         changeActive(row) {
             const newValue = row.active;
             const previousValue = !newValue;
-            const entityLabel = this.type === 'ZZ' ? 'servicio' : 'producto';
+            const entityLabel = this.type === 'SERV' ? 'servicio' : 'producto';
 
             const applyChange = () => {
                 const url = newValue

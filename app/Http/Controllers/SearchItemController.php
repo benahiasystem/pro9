@@ -633,7 +633,7 @@
 
             $items_u = Item::whereWarehouse()->whereIsActive()->whereNotIsSet()->orderBy('description')->take(20)->get();
 
-            $items_s = Item::where('unit_type_id','ZZ')->whereIsActive()->orderBy('description')->take(10)->get();
+            $items_s = Item::where('unit_type_id','SERV')->whereIsActive()->orderBy('description')->take(10)->get();
 
             $items = $items_u->merge($items_s);
             */
@@ -836,7 +836,7 @@
             $category = ($item->category) ? "{$item->category->name}" : "";
             $brand = ($item->brand) ? "{$item->brand->name}" : "";
 
-            if ($item->unit_type_id != 'ZZ') {
+            if ($item->unit_type_id != 'SERV') {
                 $warehouse_stock = ($item->warehouses && $warehouse) ? number_format($item->warehouses->where('warehouse_id', $warehouse->id)->first() != null ? $item->warehouses->where('warehouse_id', $warehouse->id)->first()->stock : 0, 2) : 0;
                 $stock = ($item->warehouses && $warehouse) ? "{$warehouse_stock}" : "";
             } else {
@@ -1388,7 +1388,7 @@
                 ->whereHas('warehouses', function ($query) use ($warehouse_id) {
                     $query->where('warehouse_id', $warehouse_id);
                 })
-                ->where([['item_type_id', '01'], ['unit_type_id', '!=', 'ZZ']])
+                ->where([['item_type_id', '01'], ['unit_type_id', '!=', 'SERV']])
                 ->whereNotIsSet();
         }
 

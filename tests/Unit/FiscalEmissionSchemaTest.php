@@ -169,7 +169,7 @@ class FiscalEmissionSchemaTest extends TestCase
             $parent = $service->replicate();
             $parent->fill([
                 'internal_id' => 'TEST-PARENT', 'description' => 'Producto de prueba',
-                'unit_type_id' => 'NIU', 'sale_unit_price' => 116,
+                'unit_type_id' => 'UND', 'sale_unit_price' => 116,
                 'sale_affectation_igv_type_id' => '10', 'purchase_affectation_igv_type_id' => '10',
             ]);
             $parent->save();
@@ -198,8 +198,8 @@ class FiscalEmissionSchemaTest extends TestCase
             self::assertEquals(3, $variation->fresh()->warehouses->first()->stock);
             self::assertEquals(116, $loaded->sale_unit_price);
             self::assertSame('10', $loaded->sale_affectation_igv_type_id);
-            self::assertSame('ZZ', $service->unit_type_id);
-            self::assertSame('ZZ', $newService->fresh()->unit_type_id);
+            self::assertSame('SERV', $service->unit_type_id);
+            self::assertSame('SERV', $newService->fresh()->unit_type_id);
         } finally {
             $db->rollBack();
         }
@@ -229,6 +229,16 @@ class FiscalEmissionSchemaTest extends TestCase
     private function assertFiscalSchema(Connection $db): void
     {
         self::assertSame(['demo', 'production'], $db->table('fiscal_environments')->orderBy('id')->pluck('id')->all());
+        // ######## INICIO CONTRATO UNIDADES DE MEDIDA VENEZUELA ########
+        self::assertSame([
+            'BOL', 'BOT', 'BTO', 'CAJ', 'CM', 'DIA', 'DOC', 'GAL', 'GR', 'HR', 'JGO', 'KG',
+            'KM', 'LB', 'LT', 'M', 'M2', 'M3', 'MG', 'ML', 'MM', 'PAR', 'PQT', 'PULG',
+            'SAC', 'SERV', 'TON', 'UND',
+        ], $db->table('cat_unit_types')->orderBy('id')->pluck('id')->all());
+        self::assertSame(28, $db->table('cat_unit_types')->where('active', 1)->count());
+        self::assertSame(28, $db->table('cat_unit_types')->whereColumn('id', 'symbol')->count());
+        self::assertSame(0, $db->table('cat_unit_types')->whereIn('id', ['NIU', 'ZZ'])->count());
+        // ######## FIN CONTRATO UNIDADES DE MEDIDA VENEZUELA ########
         $this->assertNoTransportColumns($db);
         foreach (['companies', 'documents', 'fiscal_configuration_audits'] as $table) {
             $column = $db->selectOne('SELECT IS_NULLABLE AS nullable, CHARACTER_MAXIMUM_LENGTH AS length FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ?', [$this->database, $table, 'fiscal_emission_mode']);

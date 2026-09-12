@@ -95,7 +95,7 @@ class DocumentsImport implements ToCollection
                 } elseif (rtrim($cdunimed) == 'LT'){
                     $unit_type = 'LTR';
                 } else {
-                    $unit_type = 'NIU';
+                    $unit_type = 'UND';
                 }
 
 

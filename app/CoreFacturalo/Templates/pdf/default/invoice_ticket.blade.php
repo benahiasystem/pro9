@@ -431,7 +431,7 @@
         </tr>
         <tr>
             <td colspan="2" class="text-left desc-9 pb-2">
-                {{ number_format($cantidad_fusionada, 0) }} NIU x {{ number_format($total_fusionado, 2) }}
+                {{ number_format($cantidad_fusionada, 0) }} UND x {{ number_format($total_fusionado, 2) }}
             </td>
             <td class="text-right desc-9 font-bold pb-2">{{ number_format($total_fusionado, 2) }}</td>
         </tr>
@@ -592,7 +592,7 @@
             </tr>
             <tr>
                 <td colspan="2" class="text-left desc-9 pb-2">
-                    1 NIU x -{{ number_format($p->total, 2) }}
+                    1 UND x -{{ number_format($p->total, 2) }}
                 </td>
                 <td class="text-right desc-9 font-bold pb-2">-{{ number_format($p->total, 2) }}</td>
             </tr>

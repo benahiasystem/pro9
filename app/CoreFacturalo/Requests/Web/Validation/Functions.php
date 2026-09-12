@@ -10,6 +10,7 @@ use App\Models\Tenant\{
     Person,
     Item
 };
+use App\Models\Tenant\Catalogs\UnitType;
 use App\Services\SeriesCodeGenerator;
 use App\Support\Venezuela\IdentityDocument;
 use Exception;
@@ -71,6 +72,9 @@ class Functions
 
     public static function item($inputs)
     {
+        // ######## INICIO CONTRATO UNIDADES DE MEDIDA VENEZUELA ########
+        $inputs['unit_type_id'] = UnitType::requireActiveCode($inputs['unit_type_id'] ?? null);
+        // ######## FIN CONTRATO UNIDADES DE MEDIDA VENEZUELA ########
         $item = Item::updateOrCreate([
             'internal_id' => $inputs['internal_id'],
         ], [

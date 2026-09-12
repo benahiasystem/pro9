@@ -382,7 +382,7 @@ import ItemSetFormItem from './partials/item.vue'
                     description: null,
                     name: null,
                     second_name: null,
-                    unit_type_id: 'NIU',
+                    unit_type_id: 'UND',
                     currency_type_id: 'VES',
                     sale_unit_price: 0,
                     purchase_unit_price: 0,
@@ -497,7 +497,7 @@ import ItemSetFormItem from './partials/item.vue'
                 this.form.item_unit_types.push({
                     id: null,
                     description: null,
-                    unit_type_id: 'NIU',
+                    unit_type_id: 'UND',
                     quantity_unit: 0,
                     price1: 0,
                     price2: 0,

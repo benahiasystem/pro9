@@ -50,7 +50,7 @@ trait InventoryTrait
      */
     public function optionsItem()
     {
-        $records = Item::where([['item_type_id', '01'], ['unit_type_id', '!=', 'ZZ']])->whereNotIsSet()->get();
+        $records = Item::where([['item_type_id', '01'], ['unit_type_id', '!=', 'SERV']])->whereNotIsSet()->get();
         return collect($records)->transform(function ($row) {
             return [
                 'id' => $row->id,
@@ -61,7 +61,7 @@ trait InventoryTrait
 
     public function optionsItemProduction()
     {
-        $records = Item::where([['item_type_id', '01'], ['unit_type_id', '!=', 'ZZ'], ['is_for_production', 1]])->whereNotIsSet()->get();
+        $records = Item::where([['item_type_id', '01'], ['unit_type_id', '!=', 'SERV'], ['is_for_production', 1]])->whereNotIsSet()->get();
         return collect($records)->transform(function ($row) {
             return [
                 'id' => $row->id,
@@ -90,7 +90,7 @@ trait InventoryTrait
     {
         $establishment_id = auth()->user()->establishment_id;
         $current_warehouse = Warehouse::where('establishment_id', $establishment_id)->first();
-        $records = Item::whereWarehouse()->where([['item_type_id', '01'], ['unit_type_id', '!=', 'ZZ']])->whereNotIsSet()->get();
+        $records = Item::whereWarehouse()->where([['item_type_id', '01'], ['unit_type_id', '!=', 'SERV']])->whereNotIsSet()->get();
         return collect($records)->transform(function ($row) use ($current_warehouse) {
             return [
                 'id' => $row->id,
@@ -126,7 +126,7 @@ trait InventoryTrait
             ->whereHas('warehouses', function ($query) use ($warehouse_id) {
                 $query->where('warehouse_id', $warehouse_id);
             })
-            ->where([['item_type_id', '01'], ['unit_type_id', '!=', 'ZZ']])
+            ->where([['item_type_id', '01'], ['unit_type_id', '!=', 'SERV']])
             ->whereNotIsSet()
             ->get();
         return collect($records)->transform(function ($row) use ($warehouse_id) {
@@ -171,7 +171,7 @@ trait InventoryTrait
                 },
                 'lots_group'
             ])
-            ->where([['item_type_id', '01'], ['unit_type_id', '!=', 'ZZ']])
+            ->where([['item_type_id', '01'], ['unit_type_id', '!=', 'SERV']])
             ->whereNotIsSet();
 
         if($search)
@@ -246,7 +246,7 @@ trait InventoryTrait
     {
         $query = Item::query()
             ->with('item_lots', 'item_lots.item_loteable', 'lots_group','supplies')
-            ->where([['item_type_id', '01'], ['unit_type_id', '!=', 'ZZ'], ['is_for_production', 1]])
+            ->where([['item_type_id', '01'], ['unit_type_id', '!=', 'SERV'], ['is_for_production', 1]])
             ->whereNotIsSet();
         if ($search) {
             $query->where('description', 'like', "%{$search}%")
@@ -388,7 +388,7 @@ trait InventoryTrait
         $item_warehouse = ItemWarehouse::firstOrNew(['item_id' => $item_id, 'warehouse_id' => $warehouse_id]);
         $item_warehouse->stock = $item_warehouse->stock + $quantity;
         // dd($item_warehouse->item->unit_type_id);
-        if ($quantity < 0 && $item_warehouse->item->unit_type_id !== 'ZZ') {
+        if ($quantity < 0 && $item_warehouse->item->unit_type_id !== 'SERV') {
             if (($inventory_configuration->stock_control) && ($item_warehouse->stock < 0)) {
                 // return [
                 //     'success' => false,

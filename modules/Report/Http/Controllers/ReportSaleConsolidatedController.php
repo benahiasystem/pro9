@@ -72,7 +72,7 @@ class ReportSaleConsolidatedController extends Controller
 
 
         return $records->map(function(\Illuminate\Database\Eloquent\Collection $row, $key){
-            $unit_type_id = 'ZZ';
+            $unit_type_id = 'SERV';
             $first =$row->first();
             $quantity = $row->sum('quantity');
             $brand = "";
@@ -83,7 +83,7 @@ class ReportSaleConsolidatedController extends Controller
             if (property_exists($first->item, 'presentation') && $first->item->presentation) {
                 $unit_type_id = $first->item->presentation->unit_type_id;
             }
-            if($unit_type_id !== 'ZZ'){
+            if($unit_type_id !== 'SERV'){
                 $item = \App\Models\Tenant\Item::select('brand_id')->where('internal_id',$first->item->internal_id)->first();
                 if(!empty($item)){
                     $brand = $item->brand;

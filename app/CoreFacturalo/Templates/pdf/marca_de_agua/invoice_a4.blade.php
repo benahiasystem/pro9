@@ -491,7 +491,7 @@
                         {{ number_format($row->quantity, 0) }}
                     @endif
                 </td>
-                <td class="p-1 text-center align-top desc cell-solid-rl" style="white-space:nowrap;">{{ $row->item->unit_type_id === 'NIU' ? 'UNIDADES' : $row->item->unit_type_id }}</td>
+                <td class="p-1 text-center align-top desc cell-solid-rl" style="white-space:nowrap;">{{ $row->item->unit_type_id === 'UND' ? 'UNIDADES' : $row->item->unit_type_id }}</td>
                 <td class="p-1 text-left align-top desc text-upp cell-solid-rl">
                     @if($row->name_product_pdf)
                         <div style="white-space:pre-line;line-height:1.35;">{!! \App\CoreFacturalo\Helpers\Template\TemplateHelper::formatNameProductPdfForTicket($row->name_product_pdf) !!}</div>
@@ -642,8 +642,8 @@
                     foreach ($document->items as $itRow) {
                         $itemType = $itRow->item->item_type_id ?? null;
                         $unitType = $itRow->item->unit_type_id ?? null;
-                        // Considerar como producto si no es servicio ('02') y unidad no es 'ZZ'
-                        if (!in_array($itemType, ['02']) && $unitType !== 'ZZ') {
+                        // Considerar como producto si no es servicio ('02') y unidad no es 'SERV'
+                        if (!in_array($itemType, ['02']) && $unitType !== 'SERV') {
                             $total_packages += $itRow->quantity;
                             $has_product = true;
                         }

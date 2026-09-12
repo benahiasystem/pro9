@@ -779,7 +779,7 @@ $showColumns = $columnsConfig ? $columnsConfig->columns_config : [
             <tr>
                 @if($showColumns['codigo']) <td class="text-center align-top"></td> @endif
                 @if($showColumns['cantidad']) <td class="text-center align-top">1</td> @endif
-                @if($showColumns['unidad']) <td class="text-center align-top">NIU</td> @endif
+                @if($showColumns['unidad']) <td class="text-center align-top">UND</td> @endif
                 @if($showColumns['descripcion'])
                 <td class="text-left align-top">
                     ANTICIPO: FACTURA NRO. {{$p->number}}

@@ -109,7 +109,7 @@
                         </td>
                         <td class="text-center">
                             <el-tooltip
-                                v-if="!row.has_supplies && row.unit_type_id === 'ZZ'"
+                                v-if="!row.has_supplies && row.unit_type_id === 'SERV'"
                                 content="Este plato no tiene insumos"
                                 placement="top"
                             >
@@ -118,7 +118,7 @@
                                         size="medium"
                                         @change="visibleRestaurant($event, row.id)"
                                         v-model="row.apply_restaurant"
-                                        :disabled="!row.has_supplies && row.unit_type_id === 'ZZ'"
+                                        :disabled="!row.has_supplies && row.unit_type_id === 'SERV'"
                                     ></el-checkbox>
                                 </span>
                             </el-tooltip>
@@ -128,7 +128,7 @@
                                     size="medium"
                                     @change="visibleRestaurant($event, row.id)"
                                     v-model="row.apply_restaurant"
-                                    :disabled="!row.has_supplies && row.unit_type_id === 'ZZ'"
+                                    :disabled="!row.has_supplies && row.unit_type_id === 'SERV'"
                                 ></el-checkbox>
                             </template>
                         </td>

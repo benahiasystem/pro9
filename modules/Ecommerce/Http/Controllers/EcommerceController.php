@@ -497,7 +497,7 @@ class EcommerceController extends Controller
                     'currency_type_id' => $variation->currency_type_id ?: 'VES',
                     'currency_type_symbol' => $symbol,
                     'sale_affectation_igv_type_id' => $variation->sale_affectation_igv_type_id ?: '10',
-                    'unit_type_id' => $variation->unit_type_id ?: 'NIU',
+                    'unit_type_id' => $variation->unit_type_id ?: 'UND',
                     'internal_id' => $variation->internal_id ?: '',
                     'stock' => (int) $stock,
                 ],

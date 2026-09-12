@@ -2,6 +2,7 @@
 
 namespace Modules\Purchase\Http\Requests;
 
+use App\Models\Tenant\Catalogs\UnitType;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -25,6 +26,7 @@ class FixedAssetItemRequest extends FormRequest
             ], 
             'unit_type_id' => [
                 'required',
+                UnitType::activeValidationRule(),
             ],
             'currency_type_id' => [
                 'required'

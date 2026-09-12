@@ -42,7 +42,7 @@ class SaleConsolidatedCollection extends ResourceCollection
 
                 }
                 // unit_price
-                if($unit_type_id !== 'ZZ'){
+                if($unit_type_id !== 'SERV'){
                     $item = Item::select('brand_id')->where('internal_id',$row->item->internal_id)->first();
                     if(!empty($item)){
                         $brand = $item->brand;

@@ -507,7 +507,7 @@ foreach ($document->items as $row) {
         <tr>
             @php
                 $is_service = $document->items->every(function($item) {
-                    return isset($item->item->unit_type_id) && $item->item->unit_type_id === 'ZZ';
+                    return isset($item->item->unit_type_id) && $item->item->unit_type_id === 'SERV';
                 });
             @endphp
             <td class="p-1 text-left align-top desc cell-solid" colspan="3" rowspan="6">
@@ -518,8 +518,8 @@ foreach ($document->items as $row) {
                     foreach ($document->items as $itRow) {
                         $itemType = $itRow->item->item_type_id ?? null;
                         $unitType = $itRow->item->unit_type_id ?? null;
-                        // Considerar como producto si no es servicio ('02') y unidad no es 'ZZ'
-                        if (!in_array($itemType, ['02']) && $unitType !== 'ZZ') {
+                        // Considerar como producto si no es servicio ('02') y unidad no es 'SERV'
+                        if (!in_array($itemType, ['02']) && $unitType !== 'SERV') {
                             $total_packages += $itRow->quantity;
                             $has_product = true;
                         }

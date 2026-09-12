@@ -301,7 +301,7 @@
             <td colspan="2" class="m27-item-sub text-left">
                 @php
                     $item_unit_price = $row->unit_price;
-                    $item_unit_label = $row->item->unit_type_id !== 'NIU' ? $row->item->unit_type_id.' x ' : '';
+                    $item_unit_label = $row->item->unit_type_id !== 'UND' ? $row->item->unit_type_id.' x ' : '';
                     $item_code_label = trim((string) $internal_id);
                     $item_sub_line = ($item_code_label !== '' ? $item_code_label.' ' : '')
                         .'('.$item_unit_label.$document->currency_type->symbol.' '.number_format($item_unit_price, 2).')';

@@ -2,6 +2,7 @@
 
 namespace Modules\MobileApp\Http\Requests\Api;
 
+use App\Models\Tenant\Catalogs\UnitType;
 use App\Traits\SunatItemCodeTrait;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -43,6 +44,7 @@ class ItemRequest extends FormRequest
             ],
             'unit_type_id' => [
                 'required',
+                UnitType::activeValidationRule(),
             ],
             'currency_type_id' => [
                 'required'

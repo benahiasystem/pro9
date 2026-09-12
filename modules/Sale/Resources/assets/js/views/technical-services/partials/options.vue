@@ -402,7 +402,7 @@ export default {
                         'item_type_id': '02',
                         'has_igv': true,
                         'price_type_id': '01',
-                        'unit_type_id': 'ZZ',
+                        'unit_type_id': 'SERV',
                         'affectation_igv_type_id': '10',
                         'description': item_description,
                         'percentage_igv': this.percentage_igv * 100,

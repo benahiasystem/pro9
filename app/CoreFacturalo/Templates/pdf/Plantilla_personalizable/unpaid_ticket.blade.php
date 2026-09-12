@@ -183,7 +183,7 @@
         @foreach($document->prepayments as $p)
         <tr>
             <td class="text-centerdesc-9 align-top">1</td>
-            <td class="text-centerdesc-9 align-top">NIU</td>
+            <td class="text-centerdesc-9 align-top">UND</td>
             <td class="text-leftdesc-9 align-top">
                 ANTICIPO: FACTURA NRO. {{$p->number}}
             </td>

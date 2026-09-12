@@ -64,7 +64,7 @@ class TenancyMockDataSeeder extends Seeder
                     'description' => 'MOCK-PRODUCTO-VENEZUELA',
                     'item_type_id' => '01',
                     'item_code' => 'MOCK-ITEM-VES-001',
-                    'unit_type_id' => 'NIU',
+                    'unit_type_id' => 'UND',
                     'currency_type_id' => 'VES',
                     'sale_unit_price' => 100,
                     'purchase_unit_price' => 50,

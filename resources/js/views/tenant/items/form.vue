@@ -480,7 +480,7 @@
                             </div>
                             <button v-if="editingLayout" type="button" class="pin-from-form-btn" @click.prevent="pinFromForm('sale_affectation_igv_type_id')"><i class="el-icon-top"></i> Fijar arriba</button>
                         </div>
-                        <div v-if="form.unit_type_id !='ZZ'"
+                        <div v-if="form.unit_type_id !='SERV'"
                              v-show="recordId==null && !isPinned('warehouse_id')"
                              class="col-md-3 field-pinnable">
                             <div :class="{'has-danger': errors.warehouse_id}"
@@ -507,7 +507,7 @@
                             </div>
                             <button v-if="editingLayout" type="button" class="pin-from-form-btn" @click.prevent="pinFromForm('warehouse_id')"><i class="el-icon-top"></i> Fijar arriba</button>
                         </div>
-                        <div v-show="variation_rows.length === 0 && (recordId==null && form.unit_type_id !='ZZ' && !isPinned('stock'))  "
+                        <div v-show="variation_rows.length === 0 && (recordId==null && form.unit_type_id !='SERV' && !isPinned('stock'))  "
                              class="col-md-3 field-pinnable">
                             <div :class="{'has-danger': errors.stock}"
                                  class="form-group">
@@ -519,7 +519,7 @@
                             </div>
                             <button v-if="editingLayout" type="button" class="pin-from-form-btn" @click.prevent="pinFromForm('stock')"><i class="el-icon-top"></i> Fijar arriba</button>
                         </div>
-                        <div v-show="form.unit_type_id !='ZZ' && !isPinned('stock_min')"
+                        <div v-show="form.unit_type_id !='SERV' && !isPinned('stock_min')"
                              class="col-md-3 field-pinnable">
                             <div :class="{'has-danger': errors.stock_min}"
                                  class="form-group">
@@ -876,7 +876,7 @@
                              name="second">
                     <span slot="label">Almacenes</span>
                     <div class="row">
-                        <div v-show="form.unit_type_id !='ZZ'"
+                        <div v-show="form.unit_type_id !='SERV'"
                              class="col-12">
                             <h5 class="separator-title mt-0">Precios por almacén</h5>
                             <div class="table-responsive">
@@ -908,7 +908,7 @@
                 <el-tab-pane class v-if="!isService && showTab('presentations')" name="third">
                     <span slot="label">Presentaciones</span>
                     <div class="row">
-                        <div v-show="form.unit_type_id !='ZZ'"
+                        <div v-show="form.unit_type_id !='SERV'"
                              class="col-md-12">
                             <h5 class="separator-title mt-0">
                                 Listado de precios
@@ -922,7 +922,7 @@
                             </h5>
                         </div>
                         <div v-if="form.item_unit_types.length > 0"
-                             v-show="form.unit_type_id !='ZZ'"
+                             v-show="form.unit_type_id !='SERV'"
                              class="col-md-12">
                             <div class="table-responsive table-list-prices">
                                 <table class="table table-sm mb-0">
@@ -1553,7 +1553,7 @@
                         </div>
                     </div>
 
-                    <div v-show="form.unit_type_id != 'ZZ'" class="advanced-section">
+                    <div v-show="form.unit_type_id != 'SERV'" class="advanced-section">
                         <h6 class="advanced-section__title">Trazabilidad de inventario</h6>
 
                         <div class="advanced-toggle">
@@ -1767,7 +1767,7 @@ export default {
             // Tener en cuenta que solo oculta las pestañas para tipo servicio.
             if (this.form !== undefined) {
                 // Es servicio por selección
-                if (this.form.unit_type_id !== undefined && this.form.unit_type_id === 'ZZ') {
+                if (this.form.unit_type_id !== undefined && this.form.unit_type_id === 'SERV') {
                     if (
                         this.activeName == 'second' ||
                         this.activeName == 'third' ||
@@ -2327,7 +2327,7 @@ export default {
             }
         },
         clickAddRow() {
-            let unitTypeId = 'NIU';
+            let unitTypeId = 'UND';
             let description = null;
             let quantityUnit = 0;
 
@@ -2369,7 +2369,7 @@ export default {
                 description: null,
                 name: null,
                 second_name: null,
-                unit_type_id: 'NIU',
+                unit_type_id: 'UND',
                 currency_type_id: 'VES',
                 sale_unit_price: 0,
                 purchase_unit_price: 0,
@@ -2522,7 +2522,7 @@ this.activeName = null
             this.lastClickedTab = null
             if (this.type) {
                 if (this.type !== 'PRODUCTS') {
-                    this.form.unit_type_id = 'ZZ';
+                    this.form.unit_type_id = 'SERV';
                 }
             }
 
@@ -2640,8 +2640,8 @@ this.activeName = null
             if (this.enabled_percentage_of_profit) this.form.sale_unit_price = (this.form.purchase_unit_price * (100 + parseFloat(this.form.percentage_of_profit))) / 100
         },
         isDecimalUnit(unitTypeId) {
-            // Solo la unidad NIU (Unidad SUNAT) exige cantidades enteras; el resto (incluidas las unidades creadas manualmente) admite decimales
-            return unitTypeId !== 'NIU';
+            // Solo la unidad UND (Unidad SUNAT) exige cantidades enteras; el resto (incluidas las unidades creadas manualmente) admite decimales
+            return unitTypeId !== 'UND';
         },
         validateItemUnitTypes() {
 
@@ -2695,7 +2695,7 @@ this.activeName = null
             }
 
             if (this.validateItemUnitTypes() > 0)
-                return this.$message.error('Factor inválido: mínimo 0.0001 y solo se permiten decimales en unidades distintas a NIU (Unidad).');
+                return this.$message.error('Factor inválido: mínimo 0.0001 y solo se permiten decimales en unidades distintas a UND (Unidad).');
 
             if (this.fromPharmacy === true) {
                 if (!payload.cod_digemid)

@@ -28,7 +28,7 @@
                                     </div>
                                 </div>
                                 <div class="col-md-4">
-                                    <div v-show="form.unit_type_id !='ZZ'"
+                                    <div v-show="form.unit_type_id !='SERV'"
                                         class="">
                                         <div :class="{'has-danger': errors.calculate_quantity}"
                                             class="form-group">
@@ -154,7 +154,7 @@
                                     </div>
                                 </div>
                                 <div class="col-12"></div>
-                                <div v-if="form.unit_type_id !='ZZ'"
+                                <div v-if="form.unit_type_id !='SERV'"
                                     v-show="recordId==null"
                                     class="col-md-3">
                                     <div :class="{'has-danger': errors.warehouse_id}"
@@ -180,7 +180,7 @@
                                             v-text="errors.warehouse_id[0]"></small>
                                     </div>
                                 </div>
-                                <div v-show="recordId==null && form.unit_type_id !='ZZ'"
+                                <div v-show="recordId==null && form.unit_type_id !='SERV'"
                                     class="col-md-3">
                                     <div :class="{'has-danger': errors.stock}"
                                         class="form-group">
@@ -191,7 +191,7 @@
                                             v-text="errors.stock[0]"></small>
                                     </div>
                                 </div>
-                                <div v-show="form.unit_type_id !='ZZ'"
+                                <div v-show="form.unit_type_id !='SERV'"
                                     class="col-md-3">
                                     <div :class="{'has-danger': errors.stock_min}"
                                         class="form-group">
@@ -202,7 +202,7 @@
                                             v-text="errors.stock_min[0]"></small>
                                     </div>
                                 </div>
-                                <div v-show="form.unit_type_id !='ZZ'"
+                                <div v-show="form.unit_type_id !='SERV'"
                                     class="col-md-3">
                                     <div :class="{'has-danger': errors.date_of_due}"
                                         class="form-group">
@@ -361,21 +361,21 @@
                                                     </el-checkbox>
                                                 </th>
                                                 <th width="25%">
-                                                    <div v-show="form.unit_type_id !='ZZ'">
+                                                    <div v-show="form.unit_type_id !='SERV'">
                                                         <el-checkbox v-model="form.lots_enabled"
                                                                     @change="changeLotsEnabled">¿Maneja lotes?
                                                         </el-checkbox>
                                                     </div>
                                                 </th>
                                                 <th width="25%">
-                                                    <div v-show="form.unit_type_id !='ZZ'">
+                                                    <div v-show="form.unit_type_id !='SERV'">
                                                         <el-checkbox v-model="form.series_enabled"
                                                                     @change="changeLotsEnabled">¿Maneja series?
                                                         </el-checkbox>
                                                     </div>
                                                 </th>
                                                 <!-- <th width="25%">
-                                                    <div v-show="form.unit_type_id !='ZZ' && canSeeProduction">
+                                                    <div v-show="form.unit_type_id !='SERV' && canSeeProduction">
                                                         <el-checkbox v-model="form.is_for_production"
                                                                     @change="changeProductioTab">Este producto, ¿requiere insumos?
                                                         </el-checkbox>
@@ -394,7 +394,7 @@
                                                     </div>
                                                 </td>
                                                 <td>
-                                                    <div v-show="form.unit_type_id !='ZZ' && form.lots_enabled">
+                                                    <div v-show="form.unit_type_id !='SERV' && form.lots_enabled">
                                                         <div :class="{'has-danger': errors.lot_code}"
                                                             class="form-group">
 
@@ -412,7 +412,7 @@
                                                     </div>
                                                 </td>
                                                 <td>
-                                                    <div v-show="form.unit_type_id !='ZZ' && form.series_enabled && !recordId">
+                                                    <div v-show="form.unit_type_id !='SERV' && form.series_enabled && !recordId">
                                                         <div :class="{'has-danger': errors.lot_code}"
                                                             class="form-group">
                                                             <el-button icon="el-icon-edit-outline"
@@ -485,7 +485,7 @@
                                     name="second">
                             <span slot="label">Almacenes</span>
                             <div class="row">
-                                <div v-show="form.unit_type_id !='ZZ'"
+                                <div v-show="form.unit_type_id !='SERV'"
                                     class="col-12">
                                     <h5 class="separator-title mt-0">Precios por almacén</h5>
                                     <div class="table-responsive">
@@ -520,7 +520,7 @@
                                     name="third">
                             <span slot="label">Presentaciones</span>
                             <div class="row">
-                                <div v-show="form.unit_type_id !='ZZ'"
+                                <div v-show="form.unit_type_id !='SERV'"
                                     class="col-md-12">
                                     <h5 class="separator-title mt-0">
                                         Listado de precios
@@ -533,7 +533,7 @@
                                     </h5>
                                 </div>
                                 <div v-if="form.item_unit_types.length > 0"
-                                    v-show="form.unit_type_id !='ZZ'"
+                                    v-show="form.unit_type_id !='SERV'"
                                     class="col-md-12">
                                     <div class="table-responsive">
                                         <table class="table table-sm mb-0">
@@ -1073,7 +1073,7 @@ export default {
             // Tener en cuenta que solo oculta las pestañas para tipo servicio.
             if (this.form !== undefined) {
                 // Es servicio por selección
-                if (this.form.unit_type_id !== undefined && this.form.unit_type_id === 'ZZ') {
+                if (this.form.unit_type_id !== undefined && this.form.unit_type_id === 'SERV') {
                     if (
                         this.activeName == 'second' ||
                         this.activeName == 'third' ||
@@ -1325,7 +1325,7 @@ export default {
             this.form.item_unit_types.push({
                 id: null,
                 description: null,
-                unit_type_id: 'NIU',
+                unit_type_id: 'UND',
                 quantity_unit: 0,
                 price1: 0,
                 price2: 0,
@@ -1351,7 +1351,7 @@ export default {
                 description: null,
                 name: null,
                 second_name: null,
-                unit_type_id: 'NIU',
+                unit_type_id: 'UND',
                 currency_type_id: 'VES',
                 sale_unit_price: 0,
                 purchase_unit_price: 0,
@@ -1466,7 +1466,7 @@ export default {
 this.activeName =  'first'
             if (this.type) {
                 if (this.type !== 'PRODUCTS') {
-                    this.form.unit_type_id = 'ZZ';
+                    this.form.unit_type_id = 'SERV';
                 }
             }
 

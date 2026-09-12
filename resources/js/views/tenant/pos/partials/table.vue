@@ -91,13 +91,13 @@
                     <div v-else>
                         <template
                             v-if="
-                                typeUser == 'seller' && row.unit_type_id != 'ZZ'
+                                typeUser == 'seller' && row.unit_type_id != 'SERV'
                             "
                             >{{ row.stock }}</template
                         >
                         <template
                             v-else-if="
-                                typeUser != 'seller' && row.unit_type_id != 'ZZ'
+                                typeUser != 'seller' && row.unit_type_id != 'SERV'
                             "
                         >
                             <button
@@ -404,7 +404,7 @@ export default {
         },
         /**
          * F4: stock por almacén del producto resaltado (si su fila muestra
-         * el botón: no aplica a vendedores ni a unidades ZZ).
+         * el botón: no aplica a vendedores ni a unidades SERV).
          */
         handleF4() {
             if (this.keyboardBlocked()) return;
@@ -417,7 +417,7 @@ export default {
         canOpenStock(row) {
             if (this.config.product_only_location == true) return false;
 
-            return this.typeUser != "seller" && row.unit_type_id != "ZZ";
+            return this.typeUser != "seller" && row.unit_type_id != "SERV";
         },
         /**
          * F9: historial de ventas del producto resaltado.

@@ -35,7 +35,7 @@ class TemplatePreview
 //            $template_item->name = 'AAAAAAAAAAAAAAAAAAAAAA';
 //            $template_item->description = [];
 //            $template_item->attributes = [];
-//            $template_item->unit_type_name = 'NIU';
+//            $template_item->unit_type_name = 'UND';
 //            $template_item->quantity = 1;
 //            $template_item->unit_value = '100.00';
 //            $template_item->unit_price = '118.00';
@@ -47,7 +47,7 @@ class TemplatePreview
 //            $template_item->name = 'bbbbbbbbbbbbbbbbbbbbbbbbbb';
 //            $template_item->description = [];
 //            $template_item->attributes = [];
-//            $template_item->unit_type_name = 'NIU';
+//            $template_item->unit_type_name = 'UND';
 //            $template_item->quantity = 2;
 //            $template_item->unit_value = '200.00';
 //            $template_item->unit_price = '236.00';

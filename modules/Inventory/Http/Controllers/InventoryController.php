@@ -60,7 +60,7 @@ class InventoryController extends Controller
         if ($column == 'warehouse') {
             $records = ItemWarehouse::with(['item', 'warehouse'])
                 ->whereHas('item', function ($query) use ($request) {
-                    $query->where('unit_type_id', '!=', 'ZZ');
+                    $query->where('unit_type_id', '!=', 'SERV');
                     $query->whereNotIsSet();
                 })
                 ->whereHas('warehouse', function ($query) use ($request) {
@@ -92,7 +92,7 @@ class InventoryController extends Controller
     {
         $query = ItemWarehouse::with(['item', 'warehouse'])
             ->whereHas('item', function ($query) use ($request) {
-                $query->where('unit_type_id', '!=', 'ZZ');
+                $query->where('unit_type_id', '!=', 'SERV');
                 $query->whereNotIsSet();
 
                 if ($this->applyAdvancedRecordsSearch() && $request->column === 'description') {

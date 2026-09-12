@@ -252,13 +252,13 @@ export default {
             }
         },
         entityLabel() {
-            return this.type === 'ZZ' ? 'Detalle del servicio' : 'Detalle del producto';
+            return this.type === 'SERV' ? 'Detalle del servicio' : 'Detalle del producto';
         },
         entityShortLabel() {
-            return this.type === 'ZZ' ? 'servicio' : 'producto';
+            return this.type === 'SERV' ? 'servicio' : 'producto';
         },
         isService() {
-            return this.type === 'ZZ' || this.record?.unit_type_id === 'ZZ';
+            return this.type === 'SERV' || this.record?.unit_type_id === 'SERV';
         },
         itemInitials() {
             const words = String(this.record?.description || '')

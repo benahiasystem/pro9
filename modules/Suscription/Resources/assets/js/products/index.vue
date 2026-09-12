@@ -160,8 +160,8 @@ export default {
                 });
         },
         getQueryParameters() {
-            if (this.productType == 'ZZ') {
-                this.search.type = 'ZZ';
+            if (this.productType == 'SERV') {
+                this.search.type = 'SERV';
             }
             return queryString.stringify({
                 page: this.pagination.current_page,
