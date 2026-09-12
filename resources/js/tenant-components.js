@@ -370,6 +370,7 @@ import TenantRestaurantCashFilterPos from '../../modules/Restaurant/Resources/as
 import TenantRestaurantConfiguration from '../../modules/Restaurant/Resources/assets/js/views/configuration/index.vue'
 import TenantRestaurantMozoAccessModal from '../../modules/Restaurant/Resources/assets/js/views/configuration/partials/mozo-access-modal.vue'
 import TenantRestaurantSuppliesIndex from '../../modules/Restaurant/Resources/assets/js/views/supplies/index.vue'
+import TenantReportStockRunningOutIndex from '../../modules/Report/Resources/assets/js/views/stock_running_out/index.vue'
 import TenantRestaurantModifierGroupsIndex from '../../modules/Restaurant/Resources/assets/js/views/modifier-groups/index.vue'
 import TenantRestaurantModifierGroupsForm from '../../modules/Restaurant/Resources/assets/js/views/modifier-groups/form.vue'
 
@@ -648,6 +649,7 @@ Vue.component('tenant-sale-opportunities-form', TenantSaleOpportunitiesForm)
 Vue.component('tenant-payment-method-types-index', TenantPaymentMethodTypesIndex)
 Vue.component('tenant-contracts-index', TenantContractsIndex)
 Vue.component('tenant-contracts-form', TenantContractsForm)
+Vue.component('tenant-report-stock-running-out-index', TenantReportStockRunningOutIndex)
 Vue.component('tenant-production-orders-index', TenantProductionOrdersIndex)
 Vue.component('tenant-agents-index', TenantAgentsIndex)
 

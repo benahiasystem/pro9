@@ -37,7 +37,19 @@
                          Route::get('/pdf', 'ReportSalesByBrandController@pdf');
                          Route::get('/filter', 'ReportSalesByBrandController@filter');
                     });
-                    
+
+                    Route::prefix('stock-running-out')->group(function () {
+                         Route::get('', 'ReportStockRunningOutController@index')
+                              ->name('tenant.reports.stock_running_out.index');
+                         Route::get('/pdf', 'ReportStockRunningOutController@pdf')
+                              ->name('tenant.reports.stock_running_out.pdf');
+                         Route::get('/excel', 'ReportStockRunningOutController@excel')
+                              ->name('tenant.reports.stock_running_out.excel');
+                         Route::get('/filter', 'ReportStockRunningOutController@filter')
+                              ->name('tenant.reports.stock_running_out.filter');
+                         Route::get('/records', 'ReportStockRunningOutController@records')
+                              ->name('tenant.reports.stock_running_out.records');
+                    });
 
                     Route::get('data-table/persons/{type}', 'ReportController@dataTablePerson');
                     Route::get('data-table/items', 'ReportController@dataTableItem');

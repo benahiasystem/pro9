@@ -181,6 +181,10 @@
                         <li>
                             <a href="{{route('tenant.reports.sales_by_brand.index')}}">Producto - Marca</a>
                         </li>
+
+                        <li>
+                            <a href="{{route('tenant.reports.stock_running_out.index')}}">Productos por agotarse</a>
+                        </li>
                         
                     </ul>
                 </div>
