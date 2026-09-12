@@ -94,6 +94,31 @@ trait ApiResourceFindTrait
     }
 
     /**
+     * Normaliza los pagos aplicados para la API.
+     *
+     * Document y SaleNote guardan sus pagos en tablas distintas pero con las
+     * mismas columnas, y la representacion impresa los muestra igual: metodo,
+     * referencia e importe. El vuelto viaja aparte porque la plantilla lo suma
+     * al importe de la linea y al total recibido (payment + change).
+     *
+     * @param  iterable  $payments
+     * @return array
+     */
+    protected function buildApiResourcePayments($payments)
+    {
+        return collect($payments)->map(function ($row) {
+            return [
+                'date_of_payment'                 => optional($row->date_of_payment)->format('Y-m-d'),
+                'payment_method_type_id'          => $row->payment_method_type_id,
+                'payment_method_type_description' => optional($row->payment_method_type)->description,
+                'reference'                       => $row->reference,
+                'payment'                         => round((float) $row->payment, 2),
+                'change'                          => round((float) $row->change, 2),
+            ];
+        })->values()->all();
+    }
+
+    /**
      * Normaliza las lineas para la API.
      *
      * Los descuentos con from_global_distribution provienen de repartir el descuento
@@ -125,6 +150,7 @@ trait ApiResourceFindTrait
             return [
                 'quantity'       => (float) $row->quantity,
                 'unit_type_id'   => optional($row->item)->unit_type_id,
+                'internal_id'    => optional($row->item)->internal_id,
                 'description'    => $row->name_product_pdf ?: optional($row->item)->description,
                 'unit_price'     => round((float) $row->unit_price, 2),
                 // Solo el descuento propio de la linea, sin la parte repartida del global.

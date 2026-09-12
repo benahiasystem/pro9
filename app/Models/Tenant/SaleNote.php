@@ -5,6 +5,7 @@
     use App\Models\Tenant\Catalogs\CurrencyType;
     use App\Models\Tenant\Catalogs\DocumentType;
     use App\Models\Tenant\Catalogs\District;
+    use App\Traits\ApiResourceFindTrait;
     use App\Traits\SellerIdTrait;
     use Carbon\Carbon;
     use Hyn\Tenancy\Traits\UsesTenantConnection;
@@ -140,6 +141,7 @@ use Modules\Sale\Models\Agent;
         use UsesTenantConnection;
         use SellerIdTrait;
         use FinanceTrait;
+        use ApiResourceFindTrait;
 
         protected $with = [
             'user',
@@ -419,6 +421,7 @@ use Modules\Sale\Models\Agent;
                 return [
                     'quantity'       => (float) $row->quantity,
                     'unit_type_id'   => optional($row->item)->unit_type_id,
+                    'internal_id'    => optional($row->item)->internal_id,
                     'description'    => $row->name_product_pdf ?: optional($row->item)->description,
                     'unit_price'     => round((float) $row->unit_price, 2),
                     // Solo el descuento propio de la linea, sin la parte repartida del global.
@@ -460,6 +463,15 @@ use Modules\Sale\Models\Agent;
                 'observations'           => $this->observation,
                 'terms_condition'        => $this->terms_condition,
                 'legends'                => $this->legends,
+
+                // Pie de la representacion impresa (plantilla modern-2027): cajero,
+                // vendedor y pagos aplicados. La nota de venta no tiene hash ni
+                // condicion de pago: su plantilla cierra con SALDO.
+                'user_name'                       => optional($this->user)->name,
+                'seller'                          => $this->seller,
+                'payment_method_type_id'          => $this->payment_method_type_id,
+                'payment_method_type_description' => optional($this->payment_method_type)->description,
+                'payments'                        => $this->buildApiResourcePayments($this->payments),
             ];
         }
 

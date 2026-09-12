@@ -7,6 +7,7 @@ use App\Http\Controllers\Tenant\DownloadController;
 use App\Models\Tenant\Catalogs\CurrencyType;
 use App\Models\Tenant\Catalogs\DocumentType;
 use App\Models\Tenant\Catalogs\District;
+use App\Traits\ApiResourceFindTrait;
 use App\Traits\SellerIdTrait;
 use Carbon\Carbon;
 use Eloquent;
@@ -145,6 +146,7 @@ class Document extends ModelTenant
 {
     use UsesTenantConnection;
     use SellerIdTrait;
+    use ApiResourceFindTrait;
 
     public const DOCUMENT_TYPE_TICKET = '03';
 
@@ -399,6 +401,7 @@ class Document extends ModelTenant
             return [
                 'quantity'       => (float) $row->quantity,
                 'unit_type_id'   => optional($row->item)->unit_type_id,
+                'internal_id'    => optional($row->item)->internal_id,
                 'description'    => $row->name_product_pdf ?: optional($row->item)->description,
                 'unit_price'     => round((float) $row->unit_price, 2),
                 // Solo el descuento propio de la linea, sin la parte repartida del global.
@@ -442,6 +445,16 @@ class Document extends ModelTenant
             'terms_condition'        => $this->terms_condition,
             'legends'                => $this->legends,
             'seller'                 => $this->seller,
+
+            // Pie de la representacion impresa (plantilla modern-2027): cajero,
+            // hash, condicion de pago y pagos aplicados.
+            'hash'                            => $this->hash,
+            'user_name'                       => optional($this->user)->name,
+            'payment_condition_id'            => $this->payment_condition_id,
+            'payment_condition_name'          => optional($this->payment_condition)->name,
+            'payment_method_type_id'          => $this->payment_method_type_id,
+            'payment_method_type_description' => optional($this->payment_method_type)->description,
+            'payments'                        => $this->buildApiResourcePayments($this->payments),
         ];
     }
 
