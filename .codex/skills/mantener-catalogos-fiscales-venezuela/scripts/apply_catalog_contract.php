@@ -60,18 +60,21 @@ $desiredRows = [
         $tables['cat_charge_discount_types']['rows'] ?? [],
         static fn (array $catalogRow): bool => in_array((string) $catalogRow['id'], ['00', '01', '02', '03', '46', '62'], true)
     )),
-    'cat_document_types' => array_values(array_map(
-        static function (array $catalogRow): array {
-            if ((string) $catalogRow['id'] === 'U4') {
-                $catalogRow['description'] = 'Nota de Transferencia Almacén';
-            }
-            return $catalogRow;
-        },
-        array_filter(
-            $tables['cat_document_types']['rows'] ?? [],
-            static fn (array $catalogRow): bool => in_array((string) $catalogRow['id'], ['01', '07', '08', '09', '20', '80', 'NE76', 'U2', 'U3', 'U4'], true)
-        )
-    )),
+    'cat_document_types' => [
+        $row('01', 'FACTURA', ['active' => 1, 'short' => 'FT', 'is_sunat' => 1]),
+        $row('FE', 'FACTURA DE EXPORTACIÓN', ['active' => 1, 'short' => null, 'is_sunat' => 1]),
+        $row('07', 'NOTA DE CRÉDITO', ['active' => 1, 'short' => 'NC', 'is_sunat' => 1]),
+        $row('08', 'NOTA DE DÉBITO', ['active' => 1, 'short' => 'ND', 'is_sunat' => 1]),
+        $row('20', 'COMPROBANTE DE RETENCIÓN DE IVA', ['active' => 1, 'short' => null, 'is_sunat' => 1]),
+        $row('ISLR', 'COMPROBANTE DE RETENCIÓN DE I.S.L.R.', ['active' => 1, 'short' => null, 'is_sunat' => 1]),
+        $row('09', 'ORDEN DE ENTREGA', ['active' => 1, 'short' => null, 'is_sunat' => 1]),
+        $row('CBU', 'CERTIFICACIÓN DE COMPRA DE BIENES USADOS', ['active' => 1, 'short' => null, 'is_sunat' => 1]),
+        $row('80', 'NOTA DE VENTA', ['active' => 1, 'short' => null, 'is_sunat' => 1]),
+        $row('U2', 'NOTA DE INGRESO ALMACÉN', ['active' => 1, 'short' => null, 'is_sunat' => 1]),
+        $row('U3', 'NOTA DE SALIDA ALMACÉN', ['active' => 1, 'short' => null, 'is_sunat' => 1]),
+        $row('U4', 'NOTA DE TRANSFERENCIA ALMACÉN', ['active' => 1, 'short' => null, 'is_sunat' => 1]),
+        $row('NE76', 'NOTA DE ENTRADA', ['active' => 1, 'short' => null, 'is_sunat' => 1]),
+    ],
     'cat_legend_types' => array_values(array_filter(
         $tables['cat_legend_types']['rows'] ?? [],
         static fn (array $catalogRow): bool => (string) $catalogRow['id'] === '1000'

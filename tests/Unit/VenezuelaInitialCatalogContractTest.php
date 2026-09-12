@@ -15,10 +15,14 @@ class VenezuelaInitialCatalogContractTest extends TestCase
         $expected = [
             'cat_affectation_igv_types' => ['10' => 'Gravado', '20' => 'Exento'],
             'cat_document_types' => [
-                '01' => 'FACTURA DE VENTA', '07' => 'NOTA DE CRÉDITO', '08' => 'NOTA DE DÉBITO',
-                '09' => 'ORDEN DE ENTREGA', '20' => 'COMPROBANTE DE RETENCIÓN', '80' => 'NOTA DE VENTA',
-                'NE76' => 'NOTA DE ENTRADA', 'U2' => 'Nota de Ingreso Almacén',
-                'U3' => 'Nota de Salida Almacén', 'U4' => 'Nota de Transferencia Almacén',
+                '01' => 'FACTURA', 'FE' => 'FACTURA DE EXPORTACIÓN',
+                '07' => 'NOTA DE CRÉDITO', '08' => 'NOTA DE DÉBITO',
+                '20' => 'COMPROBANTE DE RETENCIÓN DE IVA',
+                'ISLR' => 'COMPROBANTE DE RETENCIÓN DE I.S.L.R.',
+                '09' => 'ORDEN DE ENTREGA', 'CBU' => 'CERTIFICACIÓN DE COMPRA DE BIENES USADOS',
+                '80' => 'NOTA DE VENTA', 'U2' => 'NOTA DE INGRESO ALMACÉN',
+                'U3' => 'NOTA DE SALIDA ALMACÉN', 'U4' => 'NOTA DE TRANSFERENCIA ALMACÉN',
+                'NE76' => 'NOTA DE ENTRADA',
             ],
             'cat_identity_document_types' => [
                 '0' => 'Doc.sin.rif', '1' => 'Venezolano', '6' => 'Juridico', '7' => 'Pasaporte',

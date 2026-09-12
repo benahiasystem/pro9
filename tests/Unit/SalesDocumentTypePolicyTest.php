@@ -75,6 +75,7 @@ class SalesDocumentTypePolicyTest extends TestCase
         self::assertSame(
             [
                 ['establishment_id' => 7, 'document_type_id' => '01', 'number' => 'FF01'],
+                ['establishment_id' => 7, 'document_type_id' => 'FE', 'number' => 'FE01'],
                 ['establishment_id' => 7, 'document_type_id' => '07', 'number' => 'FC01'],
                 ['establishment_id' => 7, 'document_type_id' => '08', 'number' => 'FD01'],
                 ['establishment_id' => 7, 'document_type_id' => '80', 'number' => 'NV01'],
@@ -84,6 +85,61 @@ class SalesDocumentTypePolicyTest extends TestCase
             ],
             $series
         );
+    }
+
+    /** @test */
+    public function series_catalog_has_the_required_seniat_and_internal_order(): void
+    {
+        $actual = array_map(static function (array $type): array {
+            return [
+                $type['document_type_id'],
+                $type['label'],
+                $type['category'],
+                $type['prefix'],
+                $type['sort_order'],
+            ];
+        }, SeriesCodeGenerator::SERIES_TYPES);
+
+        self::assertSame([
+            ['01', 'FACTURA', 'basic', 'FF', 10],
+            ['FE', 'FACTURA DE EXPORTACIÓN', 'basic', 'FE', 20],
+            ['07', 'NOTA DE CRÉDITO', 'basic', 'FC', 30],
+            ['08', 'NOTA DE DÉBITO', 'basic', 'FD', 40],
+            ['20', 'COMPROBANTE DE RETENCIÓN DE IVA', 'advanced', 'RI', 50],
+            ['ISLR', 'COMPROBANTE DE RETENCIÓN DE I.S.L.R.', 'advanced', 'RL', 60],
+            ['09', 'ORDEN DE ENTREGA', 'advanced', 'TT', 70],
+            ['CBU', 'CERTIFICACIÓN DE COMPRA DE BIENES USADOS', 'advanced', 'CB', 80],
+            ['80', 'NOTA DE VENTA', 'internal', 'NV', 90],
+            ['U2', 'NOTA DE INGRESO ALMACÉN', 'internal', 'AI', 100],
+            ['U3', 'NOTA DE SALIDA ALMACÉN', 'internal', 'AS', 110],
+            ['U4', 'NOTA DE TRANSFERENCIA ALMACÉN', 'internal', 'AT', 120],
+        ], $actual);
+
+        $seed = require base_path('database/seeders/data/tenant_initial_data.php');
+        $seedIds = array_map('strval', array_column($seed['tables']['cat_document_types']['rows'], 'id'));
+        foreach (SeriesCodeGenerator::SERIES_TYPES as $type) {
+            self::assertContains($type['document_type_id'], $seedIds);
+            self::assertSame(
+                $type,
+                SeriesCodeGenerator::typeByNumber($type['prefix'].'01', $type['document_type_id'])
+            );
+        }
+
+        self::assertNull(SeriesCodeGenerator::typeByDocumentType('NE76'));
+        self::assertNull(SeriesCodeGenerator::typeByDocumentType('04'));
+        self::assertNull(SeriesCodeGenerator::typeByDocumentType('40'));
+    }
+
+    /** @test */
+    public function series_ui_uses_seniat_category_labels_and_catalog_order(): void
+    {
+        $source = (string) file_get_contents(base_path('resources/js/views/tenant/establishments/partials/series.vue'));
+
+        self::assertStringContainsString('Básico SENIAT', $source);
+        self::assertStringContainsString('Avanzado SENIAT', $source);
+        self::assertStringContainsString('a.sort_order', $source);
+        self::assertStringNotContainsString('Básico (SUNAT)', $source);
+        self::assertStringNotContainsString('Avanzado (SUNAT)', $source);
     }
 }
 // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA

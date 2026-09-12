@@ -52,8 +52,10 @@ Se retiraron `04`, `05`, `06`, `45`, `47`, `48`, `49`, `50`, `51`, `52` y `53`.
 
 ### Tipos de documento (`cat_document_types`)
 
-- `01` FACTURA DE VENTA; `07` NOTA DE CRÉDITO; `08` NOTA DE DÉBITO; `09` ORDEN DE ENTREGA; `20` COMPROBANTE DE RETENCIÓN; `80` NOTA DE VENTA.
-- `NE76` NOTA DE ENTRADA; `U2` Nota de Ingreso Almacén; `U3` Nota de Salida Almacén; `U4` Nota de Transferencia Almacén.
+- Básico SENIAT: `01` FACTURA; `FE` FACTURA DE EXPORTACIÓN; `07` NOTA DE CRÉDITO; `08` NOTA DE DÉBITO.
+- Avanzado SENIAT: `20` COMPROBANTE DE RETENCIÓN DE IVA; `ISLR` COMPROBANTE DE RETENCIÓN DE I.S.L.R.; `09` ORDEN DE ENTREGA; `CBU` CERTIFICACIÓN DE COMPRA DE BIENES USADOS.
+- Interno: `80` NOTA DE VENTA; `U2` NOTA DE INGRESO ALMACÉN; `U3` NOTA DE SALIDA ALMACÉN; `U4` NOTA DE TRANSFERENCIA ALMACÉN.
+- Compras: `NE76` NOTA DE ENTRADA; permanece fuera del administrador de series.
 
 Se retiraron `02` Recibo por honorarios, `03` Boleta de venta electrónica, `04` Liquidación de compra, `14` Servicios públicos, `40` Comprobante de percepción, `71` orden/guía complementaria y `GU75` Guía. Los nombres de almacén con “Guía” pasaron a “Nota”.
 
@@ -164,7 +166,7 @@ El consolidado contenía 25 departamentos, 196 provincias y 1.876 distritos de P
 
 No existe ambiente Interno ni equivalencia pública con `01`, `02` o `03`. Las modalidades se validan en `FiscalEmissionSettings`: `fiscal_machine`, `digital`, `free_form`; no son ambientes ni implican integración con un proveedor.
 
-El seeder no crea los tipos de auditoría `companies_certificate`, `companies_soap_password`, `companies_soap_send_id`, `companies_soap_type_id`, `companies_soap_url` y `companies_soap_username`. No hay registros anteriores que limpiar. Los cambios nuevos se registran en `fiscal_configuration_audits`, creada directamente por el consolidado y sin filas iniciales ni secretos. El inventario de tablas con datos iniciales contiene 72 tablas y 858 filas después de retirar los niveles `document_not_sent` y `regularize_shipping`; no renumerar otros identificadores.
+El seeder no crea los tipos de auditoría `companies_certificate`, `companies_soap_password`, `companies_soap_send_id`, `companies_soap_type_id`, `companies_soap_url` y `companies_soap_username`. No hay registros anteriores que limpiar. Los cambios nuevos se registran en `fiscal_configuration_audits`, creada directamente por el consolidado y sin filas iniciales ni secretos. El inventario de tablas con datos iniciales contiene 72 tablas y 861 filas después de completar los tipos documentales venezolanos y retirar los niveles `document_not_sent` y `regularize_shipping`; no renumerar otros identificadores.
 
 La instalación nueva define directamente los trece estados actuales de ecommerce en `status_orders`, sin convertir cuatro estados anteriores ni volver a sembrarlos desde el alta del tenant. No incluye el servicio PENALIDAD asociado al motivo retirado de nota de débito 13; conserva DELIVERY-ECOM. Los cambios de conteo incluyen estas decisiones y la configuración inicial consolidada.
 

@@ -68,7 +68,7 @@ class TemplatePdf
             } else {
                 // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
                 $documentNames = [
-                    '01' => 'FACTURA DE VENTA',
+                    '01' => 'FACTURA',
                     '07' => 'NOTA DE CRÉDITO',
                     '08' => 'NOTA DE DÉBITO',
                 ];

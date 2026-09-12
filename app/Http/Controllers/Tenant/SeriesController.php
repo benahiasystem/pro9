@@ -36,7 +36,7 @@ class SeriesController extends Controller
         }
 
         $data = $query->get()->map(function (Series $serie) {
-            $type = SeriesCodeGenerator::typeByNumber($serie->number, $serie->document_type_id);
+            $type = SeriesCodeGenerator::typeByDocumentType($serie->document_type_id);
             $correlative = $serie->series_configurations ? (int) $serie->series_configurations->number : 1;
 
             return [
@@ -50,6 +50,7 @@ class SeriesController extends Controller
                 'series_device_group_id'   => $serie->series_device_group_id,
                 'group_name'               => optional($serie->device_group)->name,
                 'category'                 => $type['category'] ?? SeriesCodeGenerator::categoryForDocumentType($serie->document_type_id),
+                'sort_order'               => $type['sort_order'] ?? 999999,
                 'document_type_description' => $type['label'] ?? $serie->document_type_id,
                 'correlative'              => $correlative,
             ];

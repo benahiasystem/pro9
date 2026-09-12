@@ -152,7 +152,9 @@
         public function scopeOnlyAvaibleDocuments($query)
         {
             // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
-            return $query->OnlyActive()->wherein('id', ['01', '07', '08', '09', '20', '80', 'U2', 'U3', 'U4']);
+            return $query->OnlyActive()->wherein('id', [
+                '01', 'FE', '07', '08', '20', 'ISLR', '09', 'CBU', '80', 'U2', 'U3', 'U4',
+            ]);
             // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
         }
 

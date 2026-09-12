@@ -28,7 +28,7 @@ return [
     'tenant' => [
         'document_types' => [
             // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
-            '01' => 'Factura de venta',
+            '01' => 'Factura',
             '07' => 'Nota de crédito',
             '08' => 'Nota de débito',
             // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES

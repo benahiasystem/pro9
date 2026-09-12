@@ -299,7 +299,7 @@ export default {
         getTipoDoc(tipo) {
             const tipos = {
                 // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
-                '01': 'FACTURA DE VENTA',
+                '01': 'FACTURA',
                 // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
                 '03': 'BOLETA DE VENTA ELECTRÓNICA'
             };

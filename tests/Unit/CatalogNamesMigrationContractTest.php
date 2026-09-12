@@ -14,18 +14,21 @@ class CatalogNamesMigrationContractTest extends TestCase
     {
         $documentTypes = $this->rowsById('cat_document_types');
 
-        self::assertSame('FACTURA DE VENTA', $documentTypes['01']['description']);
+        self::assertSame('FACTURA', $documentTypes['01']['description']);
+        self::assertSame('FACTURA DE EXPORTACIÓN', $documentTypes['FE']['description']);
         self::assertSame('NOTA DE CRÉDITO', $documentTypes['07']['description']);
         self::assertSame('NOTA DE DÉBITO', $documentTypes['08']['description']);
+        self::assertSame('COMPROBANTE DE RETENCIÓN DE IVA', $documentTypes['20']['description']);
+        self::assertSame('COMPROBANTE DE RETENCIÓN DE I.S.L.R.', $documentTypes['ISLR']['description']);
         self::assertSame('ORDEN DE ENTREGA', $documentTypes['09']['description']);
-        self::assertSame('COMPROBANTE DE RETENCIÓN', $documentTypes['20']['description']);
-        self::assertSame('Nota de Transferencia Almacén', $documentTypes['U4']['description']);
+        self::assertSame('CERTIFICACIÓN DE COMPRA DE BIENES USADOS', $documentTypes['CBU']['description']);
+        self::assertSame('NOTA DE TRANSFERENCIA ALMACÉN', $documentTypes['U4']['description']);
 
         $appModules = $this->rowsById('app_modules');
         self::assertSame('Factura de venta', $appModules[1]['description']);
 
         self::assertSame(
-            ['01', '07', '08', '09', '20', '80', 'NE76', 'U2', 'U3', 'U4'],
+            ['01', 'FE', '07', '08', '20', 'ISLR', '09', 'CBU', '80', 'U2', 'U3', 'U4', 'NE76'],
             array_map('strval', array_keys($documentTypes))
         );
         self::assertSame(['01', '80'], DocumentType::SALE_DOCUMENT_TYPES);
@@ -147,7 +150,7 @@ class CatalogNamesMigrationContractTest extends TestCase
     public function presentation_contract_uses_final_names_and_hides_ubl_panels_by_capability(): void
     {
         $invoiceType = collect(SeriesCodeGenerator::SERIES_TYPES)->firstWhere('document_type_id', '01');
-        self::assertSame('FACTURA DE VENTA', $invoiceType['label']);
+        self::assertSame('FACTURA', $invoiceType['label']);
         self::assertFalse(config('venezuela.visible_fiscal_features.ubl_attributes'));
 
         $ublViews = [

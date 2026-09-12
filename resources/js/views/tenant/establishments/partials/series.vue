@@ -18,8 +18,8 @@
         <!-- Filtros (estilo maqueta) + toggle Dedicado a la altura de los tabs -->
         <div class="series-filters d-flex align-items-center flex-wrap mb-3">
             <button type="button" class="chip" :class="{active: filter === 'all'}" @click="setFilter('all')">Todos</button>
-            <button type="button" class="chip" :class="{active: filter === 'basic'}" @click="setFilter('basic')">Básico</button>
-            <button type="button" class="chip" :class="{active: filter === 'advanced'}" @click="setFilter('advanced')">Avanzado</button>
+            <button type="button" class="chip" :class="{active: filter === 'basic'}" @click="setFilter('basic')">Básico SENIAT</button>
+            <button type="button" class="chip" :class="{active: filter === 'advanced'}" @click="setFilter('advanced')">Avanzado SENIAT</button>
             <button type="button" class="chip" :class="{active: filter === 'internal'}" @click="setFilter('internal')">Interno</button>
             <span class="fdiv" v-if="enableDedicatedSeries || hasContingency"></span>
             <button type="button" v-if="enableDedicatedSeries" class="chip ded" :class="{active: filter === 'dedicated'}" @click="setFilter('dedicated')"><span class="dot"></span>Dedicado</button>
@@ -203,13 +203,16 @@
                 if (this.filter === 'dedicated') items = items.filter(row => row.dedicated)
                 else if (this.filter === 'contingency') items = items.filter(row => row.contingency)
                 else if (this.filter !== 'all') items = items.filter(row => row.category === this.filter && !row.dedicated)
-                // 'all' incluye todo (también dedicadas); ordenado por número de serie
-                return items.sort((a, b) => a.number.localeCompare(b.number))
+                // 'all' incluye todo (también dedicadas); el catálogo define el orden funcional.
+                return items.sort((a, b) => {
+                    const byType = (a.sort_order || Number.MAX_SAFE_INTEGER) - (b.sort_order || Number.MAX_SAFE_INTEGER)
+                    return byType || a.number.localeCompare(b.number)
+                })
             },
             groupedTypes() {
                 const groups = [
-                    {value: 'basic', label: 'Básico (SUNAT)'},
-                    {value: 'advanced', label: 'Avanzado (SUNAT)'},
+                    {value: 'basic', label: 'Básico SENIAT'},
+                    {value: 'advanced', label: 'Avanzado SENIAT'},
                     {value: 'internal', label: 'Interno'},
                 ]
                 return groups
@@ -355,7 +358,7 @@
                 await Promise.all([this.getGroups(), this.getGroupTables(), this.getData()])
             },
             categoryLabel(category) {
-                return {basic: 'Básico', advanced: 'Avanzado', internal: 'Interno'}[category] || category
+                return {basic: 'Básico SENIAT', advanced: 'Avanzado SENIAT', internal: 'Interno'}[category] || category
             },
             optionsByCategory(category) {
                 let list = this.seriesTypes.filter(type => type.category === category)

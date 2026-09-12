@@ -1112,10 +1112,18 @@ return array (
           'id' => '01',
           'active' => 1,
           'short' => 'FT',
-          'description' => 'FACTURA DE VENTA',
+          'description' => 'FACTURA',
           'is_sunat' => 1,
         ),
         1 =>
+        array (
+          'id' => 'FE',
+          'active' => 1,
+          'short' => NULL,
+          'description' => 'FACTURA DE EXPORTACIÓN',
+          'is_sunat' => 1,
+        ),
+        2 =>
         array (
           'id' => '07',
           'active' => 1,
@@ -1123,7 +1131,7 @@ return array (
           'description' => 'NOTA DE CRÉDITO',
           'is_sunat' => 1,
         ),
-        2 =>
+        3 =>
         array (
           'id' => '08',
           'active' => 1,
@@ -1131,7 +1139,23 @@ return array (
           'description' => 'NOTA DE DÉBITO',
           'is_sunat' => 1,
         ),
-        3 =>
+        4 =>
+        array (
+          'id' => '20',
+          'active' => 1,
+          'short' => NULL,
+          'description' => 'COMPROBANTE DE RETENCIÓN DE IVA',
+          'is_sunat' => 1,
+        ),
+        5 =>
+        array (
+          'id' => 'ISLR',
+          'active' => 1,
+          'short' => NULL,
+          'description' => 'COMPROBANTE DE RETENCIÓN DE I.S.L.R.',
+          'is_sunat' => 1,
+        ),
+        6 =>
         array (
           'id' => '09',
           'active' => 1,
@@ -1139,15 +1163,15 @@ return array (
           'description' => 'ORDEN DE ENTREGA',
           'is_sunat' => 1,
         ),
-        4 =>
+        7 =>
         array (
-          'id' => '20',
+          'id' => 'CBU',
           'active' => 1,
           'short' => NULL,
-          'description' => 'COMPROBANTE DE RETENCIÓN',
+          'description' => 'CERTIFICACIÓN DE COMPRA DE BIENES USADOS',
           'is_sunat' => 1,
         ),
-        5 =>
+        8 =>
         array (
           'id' => '80',
           'active' => 1,
@@ -1155,36 +1179,36 @@ return array (
           'description' => 'NOTA DE VENTA',
           'is_sunat' => 1,
         ),
-        6 =>
+        9 =>
+        array (
+          'id' => 'U2',
+          'active' => 1,
+          'short' => NULL,
+          'description' => 'NOTA DE INGRESO ALMACÉN',
+          'is_sunat' => 1,
+        ),
+        10 =>
+        array (
+          'id' => 'U3',
+          'active' => 1,
+          'short' => NULL,
+          'description' => 'NOTA DE SALIDA ALMACÉN',
+          'is_sunat' => 1,
+        ),
+        11 =>
+        array (
+          'id' => 'U4',
+          'active' => 1,
+          'short' => NULL,
+          'description' => 'NOTA DE TRANSFERENCIA ALMACÉN',
+          'is_sunat' => 1,
+        ),
+        12 =>
         array (
           'id' => 'NE76',
           'active' => 1,
           'short' => NULL,
           'description' => 'NOTA DE ENTRADA',
-          'is_sunat' => 1,
-        ),
-        7 =>
-        array (
-          'id' => 'U2',
-          'active' => 1,
-          'short' => NULL,
-          'description' => 'Nota de Ingreso Almacén',
-          'is_sunat' => 1,
-        ),
-        8 =>
-        array (
-          'id' => 'U3',
-          'active' => 1,
-          'short' => NULL,
-          'description' => 'Nota de Salida Almacén',
-          'is_sunat' => 1,
-        ),
-        9 =>
-        array (
-          'id' => 'U4',
-          'active' => 1,
-          'short' => NULL,
-          'description' => 'Nota de Transferencia Almacén',
           'is_sunat' => 1,
         ),
       ),

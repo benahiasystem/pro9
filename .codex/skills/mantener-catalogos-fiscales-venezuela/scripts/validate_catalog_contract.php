@@ -64,7 +64,7 @@ try {
         'cat_affectation_igv_types' => 2,
         'cat_attribute_types' => 27,
         'cat_charge_discount_types' => 6,
-        'cat_document_types' => 10,
+        'cat_document_types' => 13,
         'cat_legend_types' => 1,
         'cat_note_credit_types' => 4,
         'cat_note_debit_types' => 3,

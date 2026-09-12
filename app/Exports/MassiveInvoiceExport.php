@@ -140,7 +140,7 @@ class MassiveInvoiceExport extends DefaultValueBinder implements
     {
         $tipos = [
             // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
-            '01' => 'FACTURA DE VENTA',
+            '01' => 'FACTURA',
             // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
         ];
 

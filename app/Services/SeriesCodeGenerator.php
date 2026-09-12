@@ -31,24 +31,23 @@ class SeriesCodeGenerator
      *
      * category: basic | advanced | internal
      *
-     * @var array<int, array<string, string>>
+     * @var array<int, array<string, string|int>>
      */
     public const SERIES_TYPES = [
         // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
-        ['key' => 'invoice',             'document_type_id' => '01', 'prefix' => 'FF', 'category' => 'basic',    'label' => 'FACTURA DE VENTA'],
+        ['key' => 'invoice',             'document_type_id' => '01',   'prefix' => 'FF', 'category' => 'basic',    'sort_order' => 10, 'label' => 'FACTURA'],
+        ['key' => 'export_invoice',      'document_type_id' => 'FE',   'prefix' => 'FE', 'category' => 'basic',    'sort_order' => 20, 'label' => 'FACTURA DE EXPORTACIÓN'],
+        ['key' => 'credit_note_invoice', 'document_type_id' => '07',   'prefix' => 'FC', 'category' => 'basic',    'sort_order' => 30, 'label' => 'NOTA DE CRÉDITO'],
+        ['key' => 'debit_note_invoice',  'document_type_id' => '08',   'prefix' => 'FD', 'category' => 'basic',    'sort_order' => 40, 'label' => 'NOTA DE DÉBITO'],
+        ['key' => 'vat_retention',       'document_type_id' => '20',   'prefix' => 'RI', 'category' => 'advanced', 'sort_order' => 50, 'label' => 'COMPROBANTE DE RETENCIÓN DE IVA'],
+        ['key' => 'islr_retention',      'document_type_id' => 'ISLR', 'prefix' => 'RL', 'category' => 'advanced', 'sort_order' => 60, 'label' => 'COMPROBANTE DE RETENCIÓN DE I.S.L.R.'],
+        ['key' => 'dispatch_sender',     'document_type_id' => '09',   'prefix' => 'TT', 'category' => 'advanced', 'sort_order' => 70, 'label' => 'ORDEN DE ENTREGA'],
+        ['key' => 'used_goods_purchase', 'document_type_id' => 'CBU',  'prefix' => 'CB', 'category' => 'advanced', 'sort_order' => 80, 'label' => 'CERTIFICACIÓN DE COMPRA DE BIENES USADOS'],
+        ['key' => 'sale_note',           'document_type_id' => '80',   'prefix' => 'NV', 'category' => 'internal', 'sort_order' => 90, 'label' => 'NOTA DE VENTA'],
+        ['key' => 'warehouse_entry',     'document_type_id' => 'U2',   'prefix' => 'AI', 'category' => 'internal', 'sort_order' => 100, 'label' => 'NOTA DE INGRESO ALMACÉN'],
+        ['key' => 'warehouse_exit',      'document_type_id' => 'U3',   'prefix' => 'AS', 'category' => 'internal', 'sort_order' => 110, 'label' => 'NOTA DE SALIDA ALMACÉN'],
+        ['key' => 'warehouse_transfer',  'document_type_id' => 'U4',   'prefix' => 'AT', 'category' => 'internal', 'sort_order' => 120, 'label' => 'NOTA DE TRANSFERENCIA ALMACÉN'],
         // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
-        ['key' => 'credit_note_invoice', 'document_type_id' => '07', 'prefix' => 'FC', 'category' => 'basic',    'label' => 'NOTA DE CRÉDITO (factura)'],
-        ['key' => 'debit_note_invoice',  'document_type_id' => '08', 'prefix' => 'FD', 'category' => 'basic',    'label' => 'NOTA DE DÉBITO (factura)'],
-        // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
-        ['key' => 'retention',           'document_type_id' => '20', 'prefix' => 'RR', 'category' => 'advanced', 'label' => 'COMPROBANTE DE RETENCIÓN'],
-        ['key' => 'perception',          'document_type_id' => '40', 'prefix' => 'PP', 'category' => 'advanced', 'label' => 'COMPROBANTE DE PERCEPCIÓN'],
-        ['key' => 'dispatch_sender',     'document_type_id' => '09', 'prefix' => 'TT', 'category' => 'advanced', 'label' => 'ORDEN DE ENTREGA'],
-        // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
-        ['key' => 'purchase_settlement', 'document_type_id' => '04', 'prefix' => 'LL', 'category' => 'advanced', 'label' => 'LIQUIDACIÓN DE COMPRA'],
-        ['key' => 'sale_note',           'document_type_id' => '80', 'prefix' => 'NV', 'category' => 'internal', 'label' => 'NOTA DE VENTA'],
-        ['key' => 'warehouse_entry',     'document_type_id' => 'U2', 'prefix' => 'AI', 'category' => 'internal', 'label' => 'NOTA DE INGRESO ALMACÉN'],
-        ['key' => 'warehouse_exit',      'document_type_id' => 'U3', 'prefix' => 'AS', 'category' => 'internal', 'label' => 'NOTA DE SALIDA ALMACÉN'],
-        ['key' => 'warehouse_transfer',  'document_type_id' => 'U4', 'prefix' => 'AT', 'category' => 'internal', 'label' => 'NOTA DE TRANSFERENCIA ALMACÉN'],
     ];
 
     /**
@@ -60,7 +59,7 @@ class SeriesCodeGenerator
     public static function defaultTenantSeries(int $establishment_id): array
     {
         // ########## INICIO CAMBIO QUITAR BOLETAS A CRÉDITO
-        $keys = ['invoice', 'credit_note_invoice', 'debit_note_invoice', 'sale_note', 'warehouse_entry', 'warehouse_exit', 'warehouse_transfer'];
+        $keys = ['invoice', 'export_invoice', 'credit_note_invoice', 'debit_note_invoice', 'sale_note', 'warehouse_entry', 'warehouse_exit', 'warehouse_transfer'];
         // ######### FIN CAMBIO QUITAR BOLETAS A CRÉDITO
         $rows = [];
 
@@ -140,9 +139,22 @@ class SeriesCodeGenerator
      */
     public static function categoryForDocumentType(string $document_type_id): ?string
     {
+        $type = self::typeByDocumentType($document_type_id);
+
+        return $type['category'] ?? null;
+    }
+
+    /**
+     * Entrada canónica identificada por el tipo documental, sin depender del prefijo
+     * de una serie que pudiera haber sido creada antes del catálogo vigente.
+     *
+     * @return array<string, string|int>|null
+     */
+    public static function typeByDocumentType(string $document_type_id): ?array
+    {
         foreach (self::SERIES_TYPES as $type) {
             if ($type['document_type_id'] === $document_type_id) {
-                return $type['category'];
+                return $type;
             }
         }
 
@@ -153,7 +165,7 @@ class SeriesCodeGenerator
      * Catálogo de tipos permitido según el régimen de la empresa.
      *
      * @param  bool $is_nrus
-     * @return array<int, array<string, string>>
+     * @return array<int, array<string, string|int>>
      */
     public static function availableTypes(bool $is_nrus = false): array
     {
@@ -188,7 +200,7 @@ class SeriesCodeGenerator
      *
      * @param  string $number            código de la serie (ej. FF01, FC01).
      * @param  string $document_type_id
-     * @return array<string, string>|null
+     * @return array<string, string|int>|null
      */
     public static function typeByNumber(string $number, string $document_type_id): ?array
     {
