@@ -41,6 +41,7 @@ use App\CoreFacturalo\Helpers\Storage\StorageDocument;
 use App\CoreFacturalo\Requests\Inputs\Common\PersonInput;
 use App\CoreFacturalo\Requests\Inputs\Common\EstablishmentInput;
 use Illuminate\Support\Arr;
+use App\Services\SalesCustomerIdentityPolicy;
 
 
 class SaleNoteController extends Controller
@@ -96,6 +97,16 @@ class SaleNoteController extends Controller
         $request['establishment_id'] = $request['establishment_id'] ? $request['establishment_id'] : auth()->user()->establishment_id;
         $force_create_if_not_exist = isset($request['force_create_if_not_exist']) ? (bool)$request['force_create_if_not_exist'] : false;
         $request['force_create_if_not_exist'] = $force_create_if_not_exist;
+
+        // ######## INICIO POLITICA IDENTIDAD ACTIVA EN VENTAS ########
+        if ($force_create_if_not_exist) {
+            SalesCustomerIdentityPolicy::assertIdentityTypeAllowed(
+                data_get($request->all(), 'datos_del_cliente_o_receptor.codigo_tipo_documento_identidad')
+            );
+        } else {
+            SalesCustomerIdentityPolicy::assertCustomerAllowed($request->input('customer_id'));
+        }
+        // ######## FIN POLITICA IDENTIDAD ACTIVA EN VENTAS ########
 
         // Acciones de impresión directa (mismo contrato que el flujo de documentos):
         // wrapper "acciones" en español; campos nuevos en inglés.

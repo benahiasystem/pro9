@@ -21,11 +21,12 @@ description: Coordinar y documentar Pro9 para instalaciones nuevas en Venezuela,
 ## Cobertura de esta adaptación
 
 - País y territorio: usar VE, zona horaria `America/Caracas`, Estado/Municipio/Parroquia y ubicación inicial `14/0229/000619`.
-- Clientes: normalizar país y nacionalidad, validar RIF/cédula/Extranjero, guardar direcciones venezolanas y conservar Sitio Web/Observaciones.
+- Clientes: normalizar país y nacionalidad, validar RIF/cédula/Extranjero, guardar direcciones venezolanas y conservar Sitio Web/Observaciones. Los ocho tipos canónicos (`0`, `1`, `6`, `7`, `E`, `C`, `G`, `R`) nacen con `cat_identity_document_types.active = 1`; ventas admite los registros activos y reacciona dinámicamente ante una desactivación posterior.
 - Moneda: usar VES/Bs./Bolívares y USD; revisar documentos, compras, POS, caja, finanzas, ecommerce, restaurante y reportes. No interpretar monedas retiradas como VES.
 - Métodos de pago: sembrar exclusivamente desde `database/seeders/data/tenant_initial_data.php` los IDs `01`–`07` y `09`–`13` del contrato venezolano; usar `05` para Crédito a 30 días, no crear `08`, y no crear una migración incremental ni conservar registros históricos para este catálogo.
 - Telefonía: mostrar +58, normalizar teléfonos y construir enlaces `tel:`/`wa.me` y payloads QR sin prefijos duplicados.
 - POS: mantener `PAGAR` visible, permitir FACTURA/NOTA DE VENTA y proteger accesos opcionales a QZ y turnos de negocio.
+- Emisión: aplicar `SalesCustomerIdentityPolicy` antes de cualquier efecto lateral en Factura, Nota de venta y notas de crédito/débito; cualquier identidad activa sirve para cualquier comprobante vigente, sin restricciones por monto o por combinación.
 - Importación: validar íntegramente `public/formats/items.xlsx` antes de `ItemsImport` y entregar un XLSX corregible cuando haya errores.
 - Unidades de medida: aplicar [mantener-unidades-medida-venezuela](../mantener-unidades-medida-venezuela/SKILL.md); usar `UND` para productos y `SERV` para servicios, sin aceptar `NIU` ni `ZZ`.
 - Datos de prueba: usar `TenancyMockDataSeeder` sólo para registros identificados con `MOCK-`; no confundirlos con datos productivos.
@@ -65,6 +66,7 @@ Modalidad y ambiente se rigen por [mantener-modalidad-emision-fiscal-pro9](../ma
 - Ejecutar `VenezuelaSourceContractTest` para fuentes activas, estructura consolidada, defaults, parroquias sin código, esquema de personas, POS, moneda y datos mock.
 - Ejecutar `VenezuelaGeopoliticalContractTest`, `VenezuelaCurrencyTest`, `VenezuelaPhoneLocalizationTest`, `TenantMigrationDataSeederTest` y todas las pruebas `ItemImport*`.
 - Ejecutar `VenezuelaInitialCatalogContractTest` para verificar el catálogo exacto de `payment_method_types`, sus banderas activas y la ausencia de `08`.
+- Ejecutar `SalesCustomerIdentityPolicyTest` y `SalesIdentityDocumentEmissionContractTest`; cubrir la matriz de los ocho documentos canónicos contra `01`, `80`/`nv`, `07` y `08`, todos los canales de ventas y el rechazo al desactivar temporalmente una identidad.
 - Mantener estas pruebas enfocadas en el estado final; no confundir un país disponible como nacionalidad extranjera con un default geográfico PE.
 
 ## Secuencia

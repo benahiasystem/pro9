@@ -15,6 +15,7 @@ use App\Models\Tenant\Document;
 use App\Models\Tenant\Item;
 use Illuminate\Support\Str;
 use App\Services\SalesDocumentTypePolicy;
+use App\Services\SalesCustomerIdentityPolicy;
 use Modules\Offline\Models\OfflineConfiguration;
 
 
@@ -25,6 +26,9 @@ class DocumentUpdateInput
         $inputs = \App\Support\Venezuela\RetiredDetractionFields::discard($inputs);
         $document_type_id = $inputs['document_type_id'];
         SalesDocumentTypePolicy::assertNewFiscalDocumentAllowed($document_type_id);
+        // ######## INICIO POLITICA IDENTIDAD ACTIVA EN VENTAS ########
+        SalesCustomerIdentityPolicy::assertCustomerAllowed($inputs['customer_id'] ?? null);
+        // ######## FIN POLITICA IDENTIDAD ACTIVA EN VENTAS ########
         $series = $inputs['series'];
         $number = $inputs['number'];
 

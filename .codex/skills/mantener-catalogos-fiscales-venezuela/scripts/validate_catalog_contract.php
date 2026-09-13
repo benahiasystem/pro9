@@ -65,6 +65,7 @@ try {
         'cat_attribute_types' => 27,
         'cat_charge_discount_types' => 6,
         'cat_document_types' => 13,
+        'cat_identity_document_types' => 8,
         'cat_legend_types' => 1,
         'cat_note_credit_types' => 4,
         'cat_note_debit_types' => 3,
@@ -118,6 +119,20 @@ try {
         ->all();
     assertSame($expectedExpenseReasons, $actualExpenseReasons, 'El catálogo expense_reasons no coincide con el contrato venezolano.');
     // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
+
+    // ########## INICIO CATÁLOGO IDENTIDADES ACTIVAS VENEZUELA ##########
+    $activeIdentityIds = DB::connection('tenant')->table('cat_identity_document_types')
+        ->where('active', 1)
+        ->orderBy('id')
+        ->pluck('id')
+        ->map(static fn ($id): string => (string) $id)
+        ->all();
+    assertSame(
+        ['0', '1', '6', '7', 'C', 'E', 'G', 'R'],
+        $activeIdentityIds,
+        'Todos los tipos de identidad venezolanos deben estar activos.'
+    );
+    // ######### FIN CATÁLOGO IDENTIDADES ACTIVAS VENEZUELA #########
 
     foreach (['documents', 'sale_notes', 'purchases', 'quotations', 'order_notes', 'contracts', 'fixed_asset_purchases', 'suscription_plans', 'user_rel_suscription_plans'] as $table) {
         assertSame(false, $schema->hasColumn($table, 'detraction'), "Columna retirada en {$table}.");

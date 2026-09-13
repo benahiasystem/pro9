@@ -14,19 +14,22 @@ Aplicar un único contrato funcional en todos los canales de venta: Facturas (`0
 1. Leer [references/contrato.md](references/contrato.md) antes de modificar un flujo de emisión, conversión o series.
 2. Identificar si el código crea documentos nuevos o solamente consulta documentos existentes.
 3. En creación, validar el tipo en el servidor antes de persistir o ejecutar efectos laterales. Reutilizar `App\Services\SalesDocumentTypePolicy`; no confiar únicamente en filtros de interfaz.
-4. Restringir cada selector y endpoint al subconjunto permitido por su flujo. Usar `01` y `80` en ventas; usar `01` y `nv` únicamente donde el servicio técnico mantenga ese alias.
-5. Retirar ramas exclusivas de Boletas en lectura, listado, PDF, envío y reportes; conservar las funciones compartidas de Facturas, notas de crédito/débito y Notas de venta. No cambiar bases reales.
-6. Retirar series `BB`, `BC` y `BD` y sus resolutores históricos. Las series de venta iniciales son `FF`, `FC`, `FD` y `NV`; también se conservan las series internas vigentes de almacén.
-7. Encerrar los cambios funcionales con los marcadores de la tarjeta correspondiente indicados en el contrato.
-8. Si se cambia Vue o JavaScript empaquetado, seguir el skill `frontend-build`; no editar `public/build/` a mano.
-9. Ejecutar las pruebas unitarias del contrato, análisis de sintaxis y búsquedas de regresión antes de entregar.
-10. Para una Nota de venta creada desde Hotel (`source_module=HOTEL`), el resumen de productos de Hotel no muestra IVA como total separado; conserva Subtotal y Total. Esta es una regla de presentación exclusiva de Hotel y no autoriza cambiar los cálculos, los datos persistidos ni otros canales de venta.
+4. Validar además el cliente con `App\Services\SalesCustomerIdentityPolicy`: su tipo debe existir con `active = 1` en `cat_identity_document_types`. Aplicar la barrera antes de persistir o crear clientes implícitamente por API.
+5. Restringir cada selector y endpoint al subconjunto permitido por su flujo. Usar `01` y `80` en ventas; usar `01` y `nv` únicamente donde el servicio técnico mantenga ese alias.
+6. Retirar ramas exclusivas de Boletas en lectura, listado, PDF, envío y reportes; conservar las funciones compartidas de Facturas, notas de crédito/débito y Notas de venta. No cambiar bases reales.
+7. Retirar series `BB`, `BC` y `BD` y sus resolutores históricos. Las series de venta iniciales son `FF`, `FC`, `FD` y `NV`; también se conservan las series internas vigentes de almacén.
+8. Encerrar los cambios funcionales con los marcadores de la tarjeta correspondiente indicados en el contrato.
+9. Si se cambia Vue o JavaScript empaquetado, seguir el skill `frontend-build`; no editar `public/build/` a mano.
+10. Ejecutar las pruebas unitarias del contrato, análisis de sintaxis y búsquedas de regresión antes de entregar.
+11. Para una Nota de venta creada desde Hotel (`source_module=HOTEL`), el resumen de productos de Hotel no muestra IVA como total separado; conserva Subtotal y Total. Esta es una regla de presentación exclusiva de Hotel y no autoriza cambiar los cálculos, los datos persistidos ni otros canales de venta.
 
 ## Reglas de aceptación
 
 - Una petición manipulada con `document_type_id=03` falla también en el servidor.
 - Ningún flujo nuevo propone `03`, `BB`, `BC` o `BD`.
 - Facturas y Notas de venta siguen creándose desde todos los canales que las soportan.
+- Los ocho tipos canónicos `0`, `1`, `6`, `7`, `E`, `C`, `G` y `R` nacen activos y pueden emitir `01`, `80`/`nv`, `07` y `08`; una identidad desactivada posteriormente se rechaza en backend en todos los canales aunque la petición sea manipulada.
+- No existen restricciones por combinación identidad/comprobante ni por monto. La tabla tenant conserva la autoridad sobre una desactivación posterior.
 - No quedan rutas o ramas que sólo sirvan para Boletas antiguas o sus resúmenes fiscales. Los resúmenes comerciales de caja conservan su función.
 - Los textos activos no prometen emisión de Boletas.
 - El resumen de una Nota de venta de Hotel no muestra una fila o importe separado de IVA.

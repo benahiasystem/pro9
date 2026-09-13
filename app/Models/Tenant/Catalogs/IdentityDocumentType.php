@@ -9,6 +9,7 @@
     use Illuminate\Database\Eloquent\Builder;
     use Illuminate\Database\Eloquent\Collection;
     use Illuminate\Database\Eloquent\Relations\HasMany;
+    use Illuminate\Validation\Rule;
     use Modules\BusinessTurn\Models\DocumentHotel;
     use Modules\BusinessTurn\Models\DocumentTransport;
     use Modules\Order\Models\Dispatcher;
@@ -144,6 +145,21 @@
         {
             return $query->orderByPersonPriority();
         }
+
+        // ######## INICIO POLITICA IDENTIDAD ACTIVA EN VENTAS ########
+        public function scopeWhereSalesEmissionActive($query)
+        {
+            return $query->where('active', true);
+        }
+
+        public static function salesEmissionValidationRule()
+        {
+            return Rule::exists('tenant.cat_identity_document_types', 'id')
+                ->where(static function ($query): void {
+                    $query->where('active', 1);
+                });
+        }
+        // ######## FIN POLITICA IDENTIDAD ACTIVA EN VENTAS ########
 
         /**
          * Orden de prioridad para el select de Tipo Doc. Identidad (clientes/ventas).

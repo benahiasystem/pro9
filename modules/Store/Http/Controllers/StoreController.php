@@ -266,9 +266,12 @@ class StoreController extends Controller
         $identity_document_type_id = $request->input('identity_document_type_id');
         $input = $request->input('input');
         $query = Person::query()
-            ->where('number', 'like', "%{$input}%")
-            ->orWhere('name', 'like', "%{$input}%")
-            ->whereType('customers');
+            ->where(function ($query) use ($input): void {
+                $query->where('number', 'like', "%{$input}%")
+                    ->orWhere('name', 'like', "%{$input}%");
+            })
+            ->whereType('customers')
+            ->whereSalesIdentityActive();
         if ($identity_document_type_id) {
             $query->whereIn('identity_document_type_id', $identity_document_type_id);
         }

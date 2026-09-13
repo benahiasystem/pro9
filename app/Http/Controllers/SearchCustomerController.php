@@ -24,6 +24,7 @@
             // @todo usar el archivo como busqueda general
             $customers = Person::with('addresses')
                 ->whereType('customers')
+                ->whereSalesIdentityActive()
                 ->whereIsEnabled()
                 ->orderBy('name')
                 ->take(20)
@@ -42,6 +43,7 @@
 
             $customers = Person::with('addresses')
                 ->whereType('customers')
+                ->whereSalesIdentityActive()
                 ->where('id', $id)
                 ->get()
                 ->transform(function ($row) {
@@ -61,22 +63,9 @@
 
             // if($operation_type_id === '0101' || $operation_type_id === '1001') {
 
-            if (in_array($operation_type_id, ['0101', '1001', '1004'])) {
-
-                if ($document_type_id == '01') {
-                    $identity_document_type_id = [6];
-                } else {
-                    if (config('tenant.document_type_03_filter')) {
-                        $identity_document_type_id = [1];
-                    } else {
-                        $identity_document_type_id = ['0', '1', '6', '7', 'E', 'C', 'G', 'R'];
-                    }
-                }
-            } else {
-                $identity_document_type_id = ['0', '1', '6', '7', 'E', 'C', 'G', 'R'];
-            }
-
-            return $identity_document_type_id;
+            // ######## INICIO POLITICA IDENTIDAD ACTIVA EN VENTAS ########
+            return \App\Services\SalesCustomerIdentityPolicy::activeIdentityTypeIds();
+            // ######## FIN POLITICA IDENTIDAD ACTIVA EN VENTAS ########
         }
 
 
@@ -89,10 +78,15 @@
             //tru de boletas en env esta en true filtra a los con dni   , false a todos
 //        $operation_type_id_id = $this->getIdentityDocumentTypeId($request->operation_type_id);
 
-            $customers = Person::
-            where('number', 'like', "%{$request->input}%")
-                ->orWhere('name', 'like', "%{$request->input}%")
-                ->whereType('customers')->orderBy('name')
+            $identity_document_type_id = self::getIdentityDocumentTypeIdToDocument(
+                $request->document_type_id,
+                $request->operation_type_id
+            );
+
+            $customers = Person::where(function ($query) use ($request): void {
+                $query->where('number', 'like', "%{$request->input}%")
+                    ->orWhere('name', 'like', "%{$request->input}%");
+            })->whereType('customers')->whereSalesIdentityActive()->orderBy('name')
                 ->whereIn('identity_document_type_id', $identity_document_type_id)
                 ->whereIsEnabled()
                 ->get()->transform(function ($row) {
@@ -172,6 +166,7 @@
             /** @var \Illuminate\Database\Eloquent\Collection|static[] $data */
             $data = $person->take(20)
             ->whereType('customers')
+            ->whereSalesIdentityActive()
             ->whereIsEnabled()
             ->orderBy('name')
             ->get()
@@ -227,6 +222,7 @@
             }
             return $person
                 ->whereType('customers')
+                ->whereSalesIdentityActive()
                 ->whereIsEnabled()
                 ->orderBy($orderColum);
 

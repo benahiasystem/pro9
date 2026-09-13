@@ -5,6 +5,7 @@ namespace App\CoreFacturalo\Requests\Api\Validation;
 use App\Models\Tenant\Establishment;
 use App\Models\Tenant\User;
 use App\Services\SalesDocumentTypePolicy;
+use App\Services\SalesCustomerIdentityPolicy;
 
 class DocumentValidation
 {
@@ -12,6 +13,12 @@ class DocumentValidation
         // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
         SalesDocumentTypePolicy::assertNewFiscalDocumentAllowed($inputs['document_type_id'] ?? null);
         // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
+
+        // ######## INICIO POLITICA IDENTIDAD ACTIVA EN VENTAS ########
+        SalesCustomerIdentityPolicy::assertIdentityTypeAllowed(
+            data_get($inputs, 'customer.identity_document_type_id')
+        );
+        // ######## FIN POLITICA IDENTIDAD ACTIVA EN VENTAS ########
 
         // Tienda / invitado: auth() puede ser null (pago ecommerce sin sesión admin).
         $authUser = auth()->user();

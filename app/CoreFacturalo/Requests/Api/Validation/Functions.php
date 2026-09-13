@@ -13,6 +13,7 @@ use App\Models\Tenant\Catalogs\UnitType;
 use Exception;
 use App\Models\Tenant\Configuration;
 use App\Services\SeriesCodeGenerator;
+use App\Services\SalesCustomerIdentityPolicy;
 use App\Support\Venezuela\IdentityDocument;
 use Carbon\Carbon;
 
@@ -196,16 +197,9 @@ class Functions
 
     public static function identityDocumentTypeInvoice($inputs)
     {
-        if($inputs['document_type_id'] == '01') {
-            if($inputs['operation_type_id'] === '0101') {
-                $person = Person::find($inputs['customer_id']);
-                // ########## INICIO FACTURAS PARA TODOS LOS DOCUMENTOS VENEZOLANOS ##########
-                if (!in_array((string) $person->identity_document_type_id, IdentityDocument::ids(), true)) {
-                    throw new Exception("El tipo doc. identidad {$person->identity_document_type->description} del cliente no es válido.");
-                }
-                // ######### FIN FACTURAS PARA TODOS LOS DOCUMENTOS VENEZOLANOS #########
-            }
-        }
+        // ######## INICIO POLITICA IDENTIDAD ACTIVA EN VENTAS ########
+        SalesCustomerIdentityPolicy::assertCustomerAllowed($inputs['customer_id'] ?? null);
+        // ######## FIN POLITICA IDENTIDAD ACTIVA EN VENTAS ########
     }
 
 

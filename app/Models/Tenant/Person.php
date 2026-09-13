@@ -320,6 +320,15 @@ use Illuminate\Support\Facades\DB;
             return $query->where('type', $type);
         }
 
+        // ######## INICIO POLITICA IDENTIDAD ACTIVA EN VENTAS ########
+        public function scopeWhereSalesIdentityActive($query)
+        {
+            return $query->whereHas('identity_document_type', static function (Builder $identityQuery): void {
+                $identityQuery->whereSalesEmissionActive();
+            });
+        }
+        // ######## FIN POLITICA IDENTIDAD ACTIVA EN VENTAS ########
+
         public function getAddressFullAttribute()
         {
             $address = trim($this->address);

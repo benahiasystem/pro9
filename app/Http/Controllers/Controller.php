@@ -56,6 +56,7 @@
         {
 
             $customers = Person::whereType('customers')
+                ->whereSalesIdentityActive()
                 ->where('id', $id)
                 ->get()
                 ->transform(function ($row) {
@@ -170,23 +171,13 @@
         public function searchCustomers(Request $request)
         {
 
-            //true de boletas en env esta en true filtra a los con dni   , false a todos
-            $identity_document_type_id = ['0', '1', '6', '7', 'E', 'C', 'G', 'R'];
-            if (in_array($request->operation_type_id, ['0101', '1001', '1004'])) {
-                $identity_document_type_id = config('tenant.document_type_03_filter') ? ['1'] : ['0', '1', '6', '7', 'E', 'C', 'G', 'R'];
-                if ($request->document_type_id == '01') {
-                    $identity_document_type_id = [6];
-                }
-            }
-            //dispatcher
-            if ($request->has('searchBy')) {
-                if ($request->searchBy == 'dispatches') {
-                    $identity_document_type_id = ['0', '1', '6', '7', 'E', 'C', 'G', 'R'];
-                }
-            }
-            $customers = Person::where('number', 'like', "%{$request->input}%")
-                ->orWhere('name', 'like', "%{$request->input}%")
-                ->whereType('customers')->orderBy('name')
+            // ######## INICIO POLITICA IDENTIDAD ACTIVA EN VENTAS ########
+            $identity_document_type_id = \App\Services\SalesCustomerIdentityPolicy::activeIdentityTypeIds();
+            // ######## FIN POLITICA IDENTIDAD ACTIVA EN VENTAS ########
+            $customers = Person::where(function ($query) use ($request): void {
+                $query->where('number', 'like', "%{$request->input}%")
+                    ->orWhere('name', 'like', "%{$request->input}%");
+            })->whereType('customers')->whereSalesIdentityActive()->orderBy('name')
                 ->whereIn('identity_document_type_id', $identity_document_type_id)
                 ->whereIsEnabled()
                 ->get()->transform(function ($row) {
@@ -377,7 +368,7 @@ $string = var_export($header,true);
 
         /**
          *
-         * Verificar si es una factura o boleta
+         * Verificar si es una factura
          *
          * @param  string $document_type_id
          * @return bool

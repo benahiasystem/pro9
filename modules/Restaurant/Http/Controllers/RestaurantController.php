@@ -32,6 +32,7 @@ use Modules\ApiPeruDev\Data\ServiceData;
 use App\Models\Tenant\Person;
 use App\Models\Tenant\Configuration;
 use App\Models\Tenant\Company;
+use App\Models\Tenant\Catalogs\IdentityDocumentType;
 use Modules\BusinessTurn\Models\BusinessTurn;
 use Modules\MobileApp\Models\AppConfiguration;
 use App\Services\System\MozoConfigurationService;
@@ -453,6 +454,12 @@ class RestaurantController extends Controller
     public function detailCart()
     {
         $configuration = ConfigurationEcommerce::first();
+        // ######## INICIO POLITICA IDENTIDAD ACTIVA EN VENTAS ########
+        $sales_identity_document_types = IdentityDocumentType::query()
+            ->whereSalesEmissionActive()
+            ->orderByPersonPriority()
+            ->get(['id', 'description']);
+        // ######## FIN POLITICA IDENTIDAD ACTIVA EN VENTAS ########
 
         $history_records = [];
         if (auth('ecommerce')->user()) {
@@ -464,7 +471,7 @@ class RestaurantController extends Controller
                         return $row->getCollectionData();
                     })->toArray();
         }
-        return view('restaurant::cart.detail', compact(['configuration','history_records']));
+        return view('restaurant::cart.detail', compact(['configuration', 'history_records', 'sales_identity_document_types']));
     }
 
     public function paymentCash(Request $request)
@@ -484,9 +491,9 @@ class RestaurantController extends Controller
         $validator = Validator::make($customer, [
             'telefono' => 'required|numeric',
             'direccion' => 'required',
-            'codigo_tipo_documento_identidad' => ['required', Rule::in(IdentityDocument::ids())],
+            'codigo_tipo_documento_identidad' => ['required', IdentityDocumentType::salesEmissionValidationRule()],
             'numero_documento' => ['required', 'string', 'regex:/^[A-Z0-9-]{1,20}$/i'],
-            'identity_document_type_id' => ['required', Rule::in(IdentityDocument::ids())],
+            'identity_document_type_id' => ['required', IdentityDocumentType::salesEmissionValidationRule()],
         ]);
 
         if ($validator->fails()) {

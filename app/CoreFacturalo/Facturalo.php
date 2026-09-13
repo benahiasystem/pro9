@@ -5,6 +5,7 @@ namespace App\CoreFacturalo;
 use App\Http\Controllers\Tenant\EmailController;
 use App\Models\Tenant\DispatchItem;
 use App\Services\SalesDocumentTypePolicy;
+use App\Services\SalesCustomerIdentityPolicy;
 use App\Services\LocalFiscalDocumentPolicy;
 use Exception;
 use Mpdf\Mpdf;
@@ -102,6 +103,12 @@ class Facturalo
             SalesDocumentTypePolicy::assertNewFiscalDocumentAllowed($inputs['document_type_id'] ?? null);
         }
         // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
+
+        // ######## INICIO POLITICA IDENTIDAD ACTIVA EN VENTAS ########
+        if (in_array($this->type, ['invoice', 'credit', 'debit'], true)) {
+            SalesCustomerIdentityPolicy::assertCustomerAllowed($inputs['customer_id'] ?? null);
+        }
+        // ######## FIN POLITICA IDENTIDAD ACTIVA EN VENTAS ########
 
         switch ($this->type) {
             case 'debit':

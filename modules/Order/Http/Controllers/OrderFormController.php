@@ -174,11 +174,9 @@ class OrderFormController extends Controller
                 ];
             });
 
-        $identities = ['6', '1'];
-
         $customers = Person::query()
-            ->whereIn('identity_document_type_id', $identities)
             ->whereType('customers')
+            ->whereSalesIdentityActive()
             ->orderBy('name')
             ->whereIsEnabled()
             ->get()

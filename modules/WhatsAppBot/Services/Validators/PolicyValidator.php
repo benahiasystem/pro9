@@ -4,6 +4,9 @@
 
 namespace Modules\WhatsAppBot\Services\Validators;
 
+use App\Services\SalesCustomerIdentityPolicy;
+use Illuminate\Validation\ValidationException;
+
 class PolicyValidator implements DocumentValidator
 {
     // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
@@ -27,12 +30,19 @@ class PolicyValidator implements DocumentValidator
             return ValidationResult::fail('El comprobante no tiene items.', 'no_items');
         }
 
-        if ($type === '01') {
-            $docType = $draft['customer_identity_document_type_id'] ?? null;
-            if ($docType !== '6') {
-                return ValidationResult::fail('Para factura el cliente debe tener RIF.', 'factura_requires_ruc');
-            }
+        // ######## INICIO POLITICA IDENTIDAD ACTIVA EN VENTAS ########
+        try {
+            SalesCustomerIdentityPolicy::assertIdentityTypeAllowed(
+                $draft['customer_identity_document_type_id'] ?? null,
+                'customer_identity_document_type_id'
+            );
+        } catch (ValidationException $exception) {
+            return ValidationResult::fail(
+                'El tipo de identidad del cliente no está activo para ventas.',
+                'inactive_customer_identity_type'
+            );
         }
+        // ######## FIN POLITICA IDENTIDAD ACTIVA EN VENTAS ########
 
         return ValidationResult::ok();
     }

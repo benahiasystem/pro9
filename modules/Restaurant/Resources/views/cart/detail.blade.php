@@ -249,13 +249,9 @@
             response_search: {},
             text_search: '',
             loading_search: false,
-            identity_document_types: [{
-                id: '1',
-                description: 'DNI'
-            }, {
-                id: '6',
-                description: 'RIF'
-            }],
+            // ######## INICIO POLITICA IDENTIDAD ACTIVA EN VENTAS ########
+            identity_document_types: {!! json_encode($sales_identity_document_types ?? []) !!},
+            // ######## FIN POLITICA IDENTIDAD ACTIVA EN VENTAS ########
             formIdentity: {
                 identity_document_type_id: ''
             },
@@ -279,7 +275,11 @@
             numberDocument: '',
             history_records: {!! json_encode($history_records ) !!},
             phone_whatsapp: {!! json_encode($configuration->phone_whatsapp ) !!},
-            all_identity_document_types : [{id: '6', name: 'RIF'}, {id: '0', name: 'DOC'},{id: '4', name: 'CE'},{id: '1', name: 'DNI'}]
+            // ######## INICIO POLITICA IDENTIDAD ACTIVA EN VENTAS ########
+            all_identity_document_types: {!! json_encode(collect($sales_identity_document_types ?? [])->map(function ($item) {
+                return ['id' => (string) $item->id, 'name' => $item->description];
+            })->values()) !!},
+            // ######## FIN POLITICA IDENTIDAD ACTIVA EN VENTAS ########
         },
         computed: {
             maxLength: function () {
@@ -383,21 +383,9 @@
                 this.typeDocumentList = []
                 this.typeDocuments = null
 
-                if(this.form_document.codigo_tipo_documento == '01')
-                {
-                    this.typeDocumentList = this.getIdentityDocumentTypes(['6'])
-                }
-                else if (this.form_document.codigo_tipo_documento == '03' && this.payment_cash.amount >= 700)
-                {
-                    this.typeDocumentList = this.getIdentityDocumentTypes(['1'])
-                }
-                else if (this.form_document.codigo_tipo_documento == '80')
-                {
-                    this.typeDocumentList = (this.payment_cash.amount >= 700) ? this.getIdentityDocumentTypes(['6', '1']) : this.getIdentityDocumentTypes()
-                }
-                else {
-                    this.typeDocumentList = this.getIdentityDocumentTypes(['0', '1', '4'])
-                }
+                // ######## INICIO POLITICA IDENTIDAD ACTIVA EN VENTAS ########
+                this.typeDocumentList = this.getIdentityDocumentTypes()
+                // ######## FIN POLITICA IDENTIDAD ACTIVA EN VENTAS ########
 
             },
             getIdentityDocumentTypes(identity_document_types_id = null){

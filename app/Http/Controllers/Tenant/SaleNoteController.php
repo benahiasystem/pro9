@@ -33,6 +33,7 @@ use App\Models\Tenant\Person;
 use App\Models\Tenant\SaleNote;
 use App\Models\Tenant\SaleNoteItem;
 use App\Models\Tenant\SaleNotePayment;
+use App\Services\SalesCustomerIdentityPolicy;
 use App\Models\Tenant\Document;
 use App\Models\Tenant\Series;
 use App\Services\SeriesResolver;
@@ -205,9 +206,10 @@ class SaleNoteController extends Controller
     public function searchCustomers(Request $request)
     {
 
-        $customers = Person::where('number','like', "%{$request->input}%")
-                            ->orWhere('name','like', "%{$request->input}%")
-                            ->whereType('customers')->orderBy('name')
+        $customers = Person::where(function ($query) use ($request): void {
+                                $query->where('number','like', "%{$request->input}%")
+                                    ->orWhere('name','like', "%{$request->input}%");
+                            })->whereType('customers')->whereSalesIdentityActive()->orderBy('name')
                             ->whereIsEnabled()
                             ->get()->transform(function(Person $row) {
                                 return $row->getCollectionData();
@@ -339,6 +341,9 @@ class SaleNoteController extends Controller
 
     public function storeWithData($inputs)
     {
+        // ######## INICIO POLITICA IDENTIDAD ACTIVA EN VENTAS ########
+        SalesCustomerIdentityPolicy::assertCustomerAllowed($inputs['customer_id'] ?? null);
+        // ######## FIN POLITICA IDENTIDAD ACTIVA EN VENTAS ########
         DB::connection('tenant')->beginTransaction();
         try {
             $isUpdate = true;
@@ -1040,6 +1045,7 @@ class SaleNoteController extends Controller
             case 'customers':
 
                 $customers = Person::whereType('customers')
+                    ->whereSalesIdentityActive()
                     ->whereIsEnabled()->orderBy('name')->take(20)->get()->transform(function(Person$row) {
                     return $row->getCollectionData();
                     return [

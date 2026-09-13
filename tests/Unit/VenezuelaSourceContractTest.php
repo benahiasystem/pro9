@@ -154,7 +154,7 @@ class VenezuelaSourceContractTest extends TestCase
         self::assertStringContainsString('(con IVA)', $itemForm);
         self::assertStringContainsString('Incluye IVA', $itemForm);
         self::assertStringContainsString(' IVA = Bs.', $itemForm);
-        self::assertStringContainsString('cliente debe tener RIF', $garagePayment);
+        self::assertStringNotContainsString('cliente debe tener RIF', $garagePayment);
         self::assertStringNotContainsString('cliente debe tener RUC', $garagePayment);
         // ######## FIN CONTRATO VISUAL POS VENEZUELA ########
     }

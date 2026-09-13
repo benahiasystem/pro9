@@ -6,6 +6,8 @@ namespace Modules\WhatsAppBot\Services\Tools;
 
 use App\Models\Tenant\Item;
 use App\Models\Tenant\Person;
+use App\Services\SalesCustomerIdentityPolicy;
+use Illuminate\Validation\ValidationException;
 
 class CreateDocumentTool implements ToolInterface
 {
@@ -41,7 +43,7 @@ class CreateDocumentTool implements ToolInterface
                         'customer_id' => [
                             // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
                             'type' => 'integer',
-                            'description' => 'ID del cliente con RIF (id de Person).',
+                            'description' => 'ID de un cliente con tipo de identidad activo para ventas (id de Person).',
                             // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
                         ],
                         'items' => [
@@ -97,6 +99,13 @@ class CreateDocumentTool implements ToolInterface
         if (!$customer) {
             return ['status' => 'error', 'error' => "Cliente id={$customerId} no encontrado."];
         }
+        // ######## INICIO POLITICA IDENTIDAD ACTIVA EN VENTAS ########
+        try {
+            $customer = SalesCustomerIdentityPolicy::assertCustomerAllowed($customerId);
+        } catch (ValidationException $exception) {
+            return ['status' => 'error', 'error' => 'El cliente no tiene un tipo de identidad activo para ventas.'];
+        }
+        // ######## FIN POLITICA IDENTIDAD ACTIVA EN VENTAS ########
         // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
 
         $lines = [];

@@ -46,7 +46,9 @@ class LookupPersonTool implements ToolInterface
             return ['matches' => [], 'message' => 'Provee al menos document o name.'];
         }
 
-        $query = Person::query()->where('type', 'customers');
+        // ######## INICIO POLITICA IDENTIDAD ACTIVA EN VENTAS ########
+        $query = Person::query()->where('type', 'customers')->whereSalesIdentityActive();
+        // ######## FIN POLITICA IDENTIDAD ACTIVA EN VENTAS ########
 
         if ($document !== '') {
             $query->where('number', $document);

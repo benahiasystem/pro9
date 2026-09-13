@@ -135,28 +135,9 @@ var app_cart = new Vue({
         response_search: {},
         text_search: '',
         loading_search: false,
-        identity_document_types: [{
-            id: '1',
-            description: 'Venezolano'
-        }, {
-            id: '6',
-            description: 'Juridico'
-        }, {
-            id: '7',
-            description: 'Pasaporte'
-        }, {
-            id: 'E',
-            description: 'Extranjero'
-        }, {
-            id: 'C',
-            description: 'Comuna'
-        }, {
-            id: 'G',
-            description: 'Gubernamental'
-        }, {
-            id: 'R',
-            description: 'Firma Personal'
-        }],
+        // ######## INICIO POLITICA IDENTIDAD ACTIVA EN VENTAS ########
+        identity_document_types: (window.__ecommerce_config?.sales_identity_document_types || []),
+        // ######## FIN POLITICA IDENTIDAD ACTIVA EN VENTAS ########
         formIdentity: {
             identity_document_type_id: ''
         },
@@ -191,16 +172,10 @@ var app_cart = new Vue({
         phone_whatsapp: window.__ecommerce_config?.phone_whatsapp || '',
         enable_whatsapp: window.__ecommerce_config?.enable_whatsapp || false,
         global_discount_type: window.__ecommerce_config?.global_discount_type || {},
-        all_identity_document_types : [
-            {id: '0', name: 'Doc.sin.rif'},
-            {id: '1', name: 'Venezolano'},
-            {id: '6', name: 'Juridico'},
-            {id: '7', name: 'Pasaporte'},
-            {id: 'E', name: 'Extranjero'},
-            {id: 'C', name: 'Comuna'},
-            {id: 'G', name: 'Gubernamental'},
-            {id: 'R', name: 'Firma Personal'},
-        ],
+        // ######## INICIO POLITICA IDENTIDAD ACTIVA EN VENTAS ########
+        all_identity_document_types: (window.__ecommerce_config?.sales_identity_document_types || [])
+            .map(item => ({id: String(item.id), name: item.description})),
+        // ######## FIN POLITICA IDENTIDAD ACTIVA EN VENTAS ########
         addressSuggestions: [],
         departments: [],
         provinces: [],
@@ -338,7 +313,6 @@ var app_cart = new Vue({
         guestAutoAddressSnapshot: null,
         guestReturningAddressNotice: false,
         guestTripleLookupLoading: false,
-        guestHighAmountThreshold: 700,
         guestAddressesStorageKey: 'guest_addresses_draft',
         guest_form: {
             email: '',
@@ -448,29 +422,14 @@ var app_cart = new Vue({
                 return false;
             }
 
-            if (this.guestRequiresIdentityDocument) {
-                if (!name) {
-                    return false;
-                }
-                if (docType !== '1' && docType !== '6') {
-                    return false;
-                }
-                if (docType === '1' && cleanNumber.length !== 8) {
-                    return false;
-                }
-                if (docType === '6' && cleanNumber.length !== 11) {
-                    return false;
-                }
-            } else {
-                if (!name || !number) {
-                    return false;
-                }
-                if (docType === '1' && cleanNumber.length !== 8) {
-                    return false;
-                }
-                if (docType === '6' && cleanNumber.length !== 11) {
-                    return false;
-                }
+            if (!name || !number) {
+                return false;
+            }
+            if (docType === '1' && cleanNumber.length !== 8) {
+                return false;
+            }
+            if (docType === '6' && cleanNumber.length !== 11) {
+                return false;
             }
 
             if (!this.isPickupMode && !(this.form_contact.address || '').trim()) {
@@ -629,30 +588,9 @@ var app_cart = new Vue({
             return parseFloat(this.summary.total || 0);
         },
         guestRequiresIdentityDocument() {
-            return this.guestCheckoutTotal > this.guestHighAmountThreshold;
+            return false;
         },
         guestHighAmountIdentityComplete() {
-            if (!this.guestRequiresIdentityDocument) {
-                return true;
-            }
-
-            const name = (this.guest_form.name || '').trim();
-            const docType = String(this.guest_form.identity_document_type_id || '0');
-            const cleanNumber = (this.guest_form.number || '').replace(/\D/g, '');
-
-            if (!name) {
-                return false;
-            }
-            if (docType !== '1' && docType !== '6') {
-                return false;
-            }
-            if (docType === '1' && cleanNumber.length !== 8) {
-                return false;
-            }
-            if (docType === '6' && cleanNumber.length !== 11) {
-                return false;
-            }
-
             return true;
         },
         guestHighAmountIdentityNotice() {
@@ -664,14 +602,11 @@ var app_cart = new Vue({
                 return null;
             }
 
-            return 'Por normativa, en compras mayores a Bs. 700.00 debes ingresar tu nombre y un documento válido (Cédula o RIF).';
+            return null;
         },
         guestInvoiceTypeLabel() {
-            const docType = String(this.guest_form.identity_document_type_id || '0');
             // ########## INICIO CAMBIO SOLO FACTURA Y NOTA DE VENTA
-            if (docType === '1') return 'Nota de venta';
-            if (docType === '6') return 'Factura de venta';
-            return 'Nota de venta';
+            return this.form_document.codigo_tipo_documento === '01' ? 'Factura de venta' : 'Nota de venta';
             // ######### FIN CAMBIO SOLO FACTURA Y NOTA DE VENTA
         },
         guestInvoiceNotice() {
@@ -679,30 +614,14 @@ var app_cart = new Vue({
                 return null;
             }
 
-            const docType = String(this.guest_form.identity_document_type_id || '0');
             // ########## INICIO CAMBIO SOLO FACTURA Y NOTA DE VENTA
-            if (docType === '1') {
-                return 'Al ingresar tu documento Venezolano se generará automáticamente una Nota de venta.';
-            }
-            if (docType === '6') {
-                // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
-                return 'Al ingresar tu documento Juridico se generará automáticamente tu Factura de venta.';
-                // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
-            }
-            return 'Sin documento Venezolano ni Juridico se emitirá una Nota de venta.';
+            return 'El tipo de identidad activo no cambia el comprobante seleccionado.';
             // ######### FIN CAMBIO SOLO FACTURA Y NOTA DE VENTA
         },
         guestDocumentTypeOptions() {
-            return [
-                { id: '0', label: 'Doc.sin.rif' },
-                { id: '1', label: 'Venezolano' },
-                { id: '6', label: 'Juridico' },
-                { id: '7', label: 'Pasaporte' },
-                { id: 'E', label: 'Extranjero' },
-                { id: 'C', label: 'Comuna' },
-                { id: 'G', label: 'Gubernamental' },
-                { id: 'R', label: 'Firma Personal' },
-            ];
+            // ######## INICIO POLITICA IDENTIDAD ACTIVA EN VENTAS ########
+            return this.all_identity_document_types.map(item => ({id: item.id, label: item.name}));
+            // ######## FIN POLITICA IDENTIDAD ACTIVA EN VENTAS ########
         },
         guestDocumentNumberMaxLength() {
             const docType = String(this.guest_form.identity_document_type_id || '0');
@@ -1037,7 +956,7 @@ var app_cart = new Vue({
 
             this.typeDocuments = '0';
             this.numberDocument = '0';
-            this.typeDocumentList = this.getIdentityDocumentTypes(['0', '1', '6']);
+            this.typeDocumentList = this.getIdentityDocumentTypes();
             this.optionDocument();
         },
         normalizeGuestContactFields() {
@@ -1370,7 +1289,7 @@ var app_cart = new Vue({
 
             this.typeDocuments = '0';
             this.numberDocument = '0';
-            this.typeDocumentList = this.getIdentityDocumentTypes(['0', '1', '6']);
+            this.typeDocumentList = this.getIdentityDocumentTypes();
             this.optionDocument();
             this.applyGuestDocumentDefaults();
         },
@@ -1449,18 +1368,12 @@ var app_cart = new Vue({
                 return;
             }
 
-            if (docType === '1') {
-                // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
+            // ######## INICIO POLITICA IDENTIDAD ACTIVA EN VENTAS ########
+            if (!['01', '80'].includes(this.form_document.codigo_tipo_documento)) {
                 this.form_document.codigo_tipo_documento = '80';
-                // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
-                this.typeDocuments = '1';
-            } else if (docType === '6') {
-                this.form_document.codigo_tipo_documento = '01';
-                this.typeDocuments = '6';
-            } else {
-                this.form_document.codigo_tipo_documento = '80';
-                this.typeDocuments = docType;
             }
+            this.typeDocuments = docType;
+            // ######## FIN POLITICA IDENTIDAD ACTIVA EN VENTAS ########
 
             this.numberDocument = number || '0';
             if (this.form_document.datos_del_cliente_o_receptor) {
@@ -1470,7 +1383,7 @@ var app_cart = new Vue({
             }
         },
         enforceGuestHighAmountIdentityRule() {
-            // La validación de montos > Bs. 700 se aplica al enviar; no se restringe la selección en el selector.
+            // Compatibilidad del evento: la identidad activa no se restringe por monto.
         },
         normalizeGuestEmail(email) {
             return String(email || '').trim().toLowerCase();
@@ -1999,30 +1912,16 @@ var app_cart = new Vue({
                 errors.push('teléfono válido');
             }
 
-            if (this.guestRequiresIdentityDocument) {
-                if (!name) {
-                    errors.push('nombre o razón social');
-                }
+            if (!name) {
+                errors.push('nombre o razón social');
+            }
 
-                if (docType !== '1' && docType !== '6') {
-                    errors.push('Cédula o RIF (obligatorio por monto superior a Bs. 700.00)');
-                } else if (docType === '1' && cleanNumber.length !== 8) {
-                    errors.push('Cédula de 8 dígitos');
-                } else if (docType === '6' && cleanNumber.length !== 11) {
-                    errors.push('RIF de 11 dígitos');
-                }
-            } else {
-                if (!name) {
-                    errors.push('nombre o razón social');
-                }
-
-                if (!number) {
-                    errors.push('número de documento');
-                } else if (docType === '1' && cleanNumber.length !== 8) {
-                    errors.push('Cédula de 8 dígitos');
-                } else if (docType === '6' && cleanNumber.length !== 11) {
-                    errors.push('RIF de 11 dígitos');
-                }
+            if (!number) {
+                errors.push('número de documento');
+            } else if (docType === '1' && cleanNumber.length !== 8) {
+                errors.push('Cédula de 8 dígitos');
+            } else if (docType === '6' && cleanNumber.length !== 11) {
+                errors.push('RIF de 11 dígitos');
             }
 
             return errors;
@@ -2032,33 +1931,6 @@ var app_cart = new Vue({
         },
         validateGuestFormForPayment() {
             this.ensureGuestFormDocument();
-
-            if (this.guestRequiresIdentityDocument) {
-                const docType = String(this.guest_form.identity_document_type_id || '0');
-                const name = (this.guest_form.name || '').trim();
-                const cleanNumber = (this.guest_form.number || '').replace(/\D/g, '');
-
-                if (!name || (docType !== '1' && docType !== '6')) {
-                    return {
-                        valid: false,
-                        message: 'Por montos superiores a Bs. 700.00 debes ingresar tu nombre y un Cédula o RIF válido.',
-                    };
-                }
-
-                if (docType === '1' && cleanNumber.length !== 8) {
-                    return {
-                        valid: false,
-                        message: 'Por montos superiores a Bs. 700.00 debes ingresar un Cédula válido de 8 dígitos.',
-                    };
-                }
-
-                if (docType === '6' && cleanNumber.length !== 11) {
-                    return {
-                        valid: false,
-                        message: 'Por montos superiores a Bs. 700.00 debes ingresar un RIF válido de 11 dígitos.',
-                    };
-                }
-            }
 
             const errors = this.getGuestFormValidationErrors();
 
@@ -2537,21 +2409,9 @@ var app_cart = new Vue({
             this.typeDocumentList = []
             this.typeDocuments = null
 
-            if(this.form_document.codigo_tipo_documento == '01')
-            {
-                this.typeDocumentList = this.getIdentityDocumentTypes(['6'])
-            }
-            else if (this.form_document.codigo_tipo_documento == '03' && this.payment_cash.amount >= 700)
-            {
-                this.typeDocumentList = this.getIdentityDocumentTypes(['1'])
-            }
-            else if (this.form_document.codigo_tipo_documento == '80')
-            {
-                this.typeDocumentList = (this.payment_cash.amount >= 700) ? this.getIdentityDocumentTypes(['6', '1']) : this.getIdentityDocumentTypes()
-            }
-            else {
-                this.typeDocumentList = this.getIdentityDocumentTypes(['0', '1', 'E', '7', 'C', 'G', 'R'])
-            }
+            // ######## INICIO POLITICA IDENTIDAD ACTIVA EN VENTAS ########
+            this.typeDocumentList = this.getIdentityDocumentTypes()
+            // ######## FIN POLITICA IDENTIDAD ACTIVA EN VENTAS ########
         },
         getIdentityDocumentTypes(identity_document_types_id = null){
             if(!identity_document_types_id) return this.all_identity_document_types
@@ -5182,7 +5042,7 @@ var app_cart = new Vue({
         },
         // Establece el tipo de documento y los datos del cliente según la configuración de documentos electrónicos.
         // Si está desactivado: fuerza nota de venta (código 80) con los datos del usuario.
-        // Si está activado: usa Nota de venta para Cédula y Factura para RIF.
+        // Si está activado: conserva el comprobante seleccionado, sin inferirlo por identidad.
         applyDocumentDefaults() {
             if (!this.enable_electronic_documents) {
                 const userNumber = (this.user && this.user.number) ? String(this.user.number).trim() : '0';
@@ -5193,37 +5053,26 @@ var app_cart = new Vue({
                     this.form_document.datos_del_cliente_o_receptor.codigo_tipo_documento_identidad = '0';
                     this.form_document.datos_del_cliente_o_receptor.numero_documento = userNumber;
                 }
-                this.typeDocumentList = this.getIdentityDocumentTypes(['0']);
+                this.typeDocumentList = this.getIdentityDocumentTypes();
                 return;
             }
 
-            // Modo electrónico: inferir tipo según longitud del número del usuario
+            // ######## INICIO POLITICA IDENTIDAD ACTIVA EN VENTAS ########
             if (!this.user || !this.user.number) return;
             const numStr = String(this.user.number).trim();
-
-            if (numStr.length === 8) {
-                // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
-                // Cédula → Nota de venta
+            const identityTypeId = String(this.user.identity_document_type_id || '0');
+            if (!['01', '80'].includes(this.form_document.codigo_tipo_documento)) {
                 this.form_document.codigo_tipo_documento = '80';
-                // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
-                this.typeDocuments = '1';
-                this.numberDocument = numStr;
-                if (this.form_document.datos_del_cliente_o_receptor) {
-                    this.form_document.datos_del_cliente_o_receptor.codigo_tipo_documento_identidad = '1';
-                    this.form_document.datos_del_cliente_o_receptor.numero_documento = numStr;
-                }
-                this.typeDocumentList = this.getIdentityDocumentTypes(['1']);
-            } else if (numStr.length === 11) {
-                // RIF → Factura
-                this.form_document.codigo_tipo_documento = '01';
-                this.typeDocuments = '6';
-                this.numberDocument = numStr;
-                if (this.form_document.datos_del_cliente_o_receptor) {
-                    this.form_document.datos_del_cliente_o_receptor.codigo_tipo_documento_identidad = '6';
-                    this.form_document.datos_del_cliente_o_receptor.numero_documento = numStr;
-                }
-                this.typeDocumentList = this.getIdentityDocumentTypes(['6']);
             }
+            this.typeDocuments = identityTypeId;
+            this.numberDocument = numStr;
+            if (this.form_document.datos_del_cliente_o_receptor) {
+                this.form_document.datos_del_cliente_o_receptor.codigo_tipo_documento_identidad = identityTypeId;
+                this.form_document.datos_del_cliente_o_receptor.identity_document_type_id = identityTypeId;
+                this.form_document.datos_del_cliente_o_receptor.numero_documento = numStr;
+            }
+            this.typeDocumentList = this.getIdentityDocumentTypes();
+            // ######## FIN POLITICA IDENTIDAD ACTIVA EN VENTAS ########
         },
         deleteItem(id, index) {
             this.records.splice(index, 1)

@@ -116,6 +116,7 @@ class CompanyController extends Controller
     {
         return Person::without(['country', 'department', 'province', 'district'])
             ->whereType('customers')
+            ->whereSalesIdentityActive()
             ->whereIsEnabled();
     }
 

@@ -16,10 +16,10 @@ class VenezuelaIdentityDocumentContractTest extends TestCase
             ['id' => '1', 'active' => 1, 'description' => 'Venezolano'],
             ['id' => '6', 'active' => 1, 'description' => 'Juridico'],
             ['id' => '7', 'active' => 1, 'description' => 'Pasaporte'],
-            ['id' => 'E', 'active' => 0, 'description' => 'Extranjero'],
-            ['id' => 'C', 'active' => 0, 'description' => 'Comuna'],
-            ['id' => 'G', 'active' => 0, 'description' => 'Gubernamental'],
-            ['id' => 'R', 'active' => 0, 'description' => 'Firma Personal'],
+            ['id' => 'E', 'active' => 1, 'description' => 'Extranjero'],
+            ['id' => 'C', 'active' => 1, 'description' => 'Comuna'],
+            ['id' => 'G', 'active' => 1, 'description' => 'Gubernamental'],
+            ['id' => 'R', 'active' => 1, 'description' => 'Firma Personal'],
         ];
 
         self::assertSame($expected, array_map(static function (array $type): array {
@@ -28,6 +28,7 @@ class VenezuelaIdentityDocumentContractTest extends TestCase
 
         $payload = require database_path('seeders/data/tenant_initial_data.php');
         self::assertSame($expected, $payload['tables']['cat_identity_document_types']['rows']);
+        self::assertSame(['0', '1', '6', '7', 'E', 'C', 'G', 'R'], IdentityDocument::activeIds());
     }
 
     /** @test */
@@ -67,7 +68,7 @@ class VenezuelaIdentityDocumentContractTest extends TestCase
     {
         $type = new IdentityDocumentType([
             'id' => 'E',
-            'active' => 0,
+            'active' => 1,
             'description' => 'Extranjero',
         ]);
 
@@ -141,6 +142,8 @@ class VenezuelaIdentityDocumentContractTest extends TestCase
         self::assertStringContainsString('database/seeders/data/tenant_initial_data.php', $skill);
         self::assertStringContainsString('En todo el sistema', $skill);
         self::assertStringContainsString('No agregar, quitar, renombrar, reordenar ni cambiar', $skill);
+        self::assertStringContainsString('SalesCustomerIdentityPolicy', $skill);
+        self::assertStringContainsString('cat_identity_document_types.active = 1', $skill);
     }
 
     /** @test */

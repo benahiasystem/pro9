@@ -22,6 +22,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
 use App\Models\Tenant\StatusOrder;
 use App\Support\Venezuela\IdentityDocument;
+use App\Models\Tenant\Catalogs\IdentityDocumentType;
 use App\Services\Tenant\OrderDocumentFromStatusService;
 use Illuminate\Validation\Rule;
 use Modules\Payment\Models\PaymentConfiguration;
@@ -83,9 +84,9 @@ class CulqiController extends Controller
 
         $rules = [
             'telefono' => 'required|numeric',
-            'codigo_tipo_documento_identidad' => ['required', Rule::in(IdentityDocument::ids())],
+            'codigo_tipo_documento_identidad' => ['required', IdentityDocumentType::salesEmissionValidationRule()],
             'numero_documento' => ['required', 'string', 'regex:/^[A-Z0-9-]{1,20}$/i'],
-            'identity_document_type_id' => ['required', Rule::in(IdentityDocument::ids())],
+            'identity_document_type_id' => ['required', IdentityDocumentType::salesEmissionValidationRule()],
         ];
 
         if ($this->isPickupShippingAddress($shippingAddress)) {

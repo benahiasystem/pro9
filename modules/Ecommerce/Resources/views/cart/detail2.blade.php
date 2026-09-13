@@ -334,23 +334,18 @@
             checkDocument(typeDocument) {
                 this.formIdentity.identity_document_type_id = typeDocument
                 //this.typeDocumentSelected = typeDocument
-                let total = this.summary.total
+                // ######## INICIO POLITICA IDENTIDAD ACTIVA EN VENTAS ########
+                let tipoDocumento = this.user.identity_document_type_id
+                let number = this.user.number
 
-                if (total > 700 || typeDocument === '6') {
-                    let tipoDocumento = this.user.identity_document_type_id
-                    let number = this.user.number
-
-                    if (!tipoDocumento || !number) {
-                        $('#modal_identity_document').modal('show');
-                    } else {
-                        this.form_document.datos_del_cliente_o_receptor.codigo_tipo_documento_identidad = tipoDocumento
-                        this.form_document.datos_del_cliente_o_receptor.numero_documento = number
-                        this.sendDocument()
-                    }
-
+                if (!tipoDocumento || !number) {
+                    $('#modal_identity_document').modal('show');
                 } else {
+                    this.form_document.datos_del_cliente_o_receptor.codigo_tipo_documento_identidad = tipoDocumento
+                    this.form_document.datos_del_cliente_o_receptor.numero_documento = number
                     this.sendDocument()
                 }
+                // ######## FIN POLITICA IDENTIDAD ACTIVA EN VENTAS ########
 
             },
             finallyProcess(form) {

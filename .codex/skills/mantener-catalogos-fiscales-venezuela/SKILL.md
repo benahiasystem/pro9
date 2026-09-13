@@ -12,6 +12,7 @@ Antes de cambiar cualquier categoría cubierta por esta skill, leer el inventari
 - El catálogo de ambientes fiscales es `fiscal_environments`, exclusivamente `demo` y `production`. Aplicar [mantener-modalidad-emision-fiscal-pro9](../mantener-modalidad-emision-fiscal-pro9/SKILL.md): el esquema nace sin SOAP/PFX y sin tipos de auditoría retirados, por lo que no se crean migraciones incrementales de conversión o limpieza. Esta excepción prevalece sobre las instrucciones generales para instalaciones existentes.
 
 - Tratar los IDs conservados como contratos estables: no reasignar códigos. Los códigos venezolanos nuevos de traslado son `20` y `21`.
+- `cat_identity_document_types` contiene exactamente `0`, `1`, `6`, `7`, `E`, `C`, `G` y `R`, en ese orden y todos con `active = 1`. Mantener sincronizados la fuente central, el seeder y los consumidores sin crear un backfill para tenants existentes.
 - Tratar `expense_reasons` como un catálogo inicial nuevo sin históricos: sus IDs contractuales son `1` a `30` y no representan una reclasificación de gastos preexistentes.
 - El estado inicial venezolano es una depuración total de los catálogos enumerados en el inventario. No reintroducir filas retiradas como inactivas.
 - No conservar Boletas, series BB/BC/BD ni resúmenes fiscales de Boletas. Aplicar `mantener-facturas-notas-venta-sin-boleta` a creación, consultas, reportes y PDF.
@@ -44,6 +45,6 @@ Antes de cambiar cualquier categoría cubierta por esta skill, leer el inventari
 - Delimitar cada hunk con `########## INICIO CAMBIO CATÁLOGOS DE NOMBRES` y `######### FIN CAMBIO CATÁLOGOS DE NOMBRES`, usando comentarios válidos.
 - Ejecutar `scripts/apply_catalog_contract.php` sólo cuando se necesite reaplicar mecánicamente el inventario al consolidado; revisar siempre su diff.
 - Ejecutar `scripts/validate_catalog_contract.php` para comprobar migración limpia, `TenancyDatabaseSeeder`, ausencia de tablas retiradas y conteos venezolanos en una base temporal descartable. La comprobación de `pse_providers` es estructural; no cargar modelos del módulo `PseService`, porque el módulo completo está retirado.
-- Probar el inventario completo, las tablas ausentes, los bancos, los 30 motivos de gasto, métodos de pago, códigos de traslado, afectaciones `10/20` y paneles UBL.
+- Probar el inventario completo, las tablas ausentes, los bancos, los 30 motivos de gasto, métodos de pago, los ocho tipos de identidad activos, códigos de traslado, afectaciones `10/20` y paneles UBL.
 - Verificar en una base tenant nueva que la migración deje `expense_reasons` vacía antes del seeding y que `TenancyDatabaseSeeder` cargue exactamente los 30 motivos contractuales.
 - Ejecutar las pruebas de contrato de catálogos, IVA, ventas sin Boleta, datos tenant y SUNAT/SENIAT, además de `git diff --check` y lint PHP.

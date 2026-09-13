@@ -3808,6 +3808,7 @@
         user: {!! json_encode($ecommerceUserPayload) !!},
         userAddress: {!! json_encode($userAddress ?? null) !!},
         userAddresses: {!! json_encode($userAddresses ?? []) !!},
+        sales_identity_document_types: {!! json_encode($sales_identity_document_types ?? []) !!},
         enable_electronic_documents: {!! json_encode($enable_electronic_documents ?? false) !!},
         enable_store_pickup: {!! json_encode($enable_store_pickup ?? false) !!},
         quotation_enabled: {!! json_encode($quotation_enabled ?? false) !!},

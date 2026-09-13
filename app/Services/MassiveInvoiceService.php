@@ -5,6 +5,7 @@
 namespace App\Services;
 
 use App\Models\Tenant\Catalogs\UnitType;
+use App\Support\Venezuela\IdentityDocument;
 
 use Illuminate\Support\Collection;
 use PhpOffice\PhpSpreadsheet\IOFactory;
@@ -66,10 +67,13 @@ class MassiveInvoiceService
 
             // Validar documento del receptor
             $receptorDocNum = $row[5] ?? '';
-            $this->validateReceptorDocument($receptorDocNum, $tipoComprobante);
+            // ######## INICIO POLITICA IDENTIDAD ACTIVA EN VENTAS ########
+            $receptorIdentityTypeId = (string) ($row[21] ?? '');
+            $this->validateReceptorDocument($receptorDocNum, $receptorIdentityTypeId);
+            // ######## FIN POLITICA IDENTIDAD ACTIVA EN VENTAS ########
 
             // Consultar datos del receptor
-            $receptorData = $this->getReceptorData($receptorDocNum, $tipoComprobante);
+            $receptorData = $this->getReceptorData($receptorDocNum, $receptorIdentityTypeId);
 
             return [
                 'tenant_id' => $rucEmisor,
@@ -87,7 +91,7 @@ class MassiveInvoiceService
                     'numero_orden_de_compra' => $row[10] ?? '',
 
                     'datos_del_cliente_o_receptor' => array_merge([
-                        'codigo_tipo_documento_identidad' => $tipoComprobante === '03' ? '1' : '6',
+                        'codigo_tipo_documento_identidad' => $receptorIdentityTypeId,
                         'numero_documento' => $receptorDocNum,
                         'codigo_pais' => 'VE',
                         'correo_electronico' => $row[6] ?? '',
@@ -187,7 +191,8 @@ class MassiveInvoiceService
                !empty($row[2]) && // RUC emisor
                !empty($row[3]) && // Tipo comprobante
                !empty($row[4]) && // Serie
-               !empty($row[5]);   // RUC/DNI receptor
+               !empty($row[5]) && // Número de identidad del receptor
+               isset($row[21]) && (string) $row[21] !== ''; // Tipo de identidad del receptor
     }
 
     private function normalizeUnidadMedida($unidad)
@@ -208,7 +213,7 @@ class MassiveInvoiceService
         // ######## FIN CONTRATO UNIDADES DE MEDIDA VENEZUELA ########
     }
 
-    private function getReceptorData($numero, $tipoComprobante)
+    private function getReceptorData($numero, $identityDocumentTypeId)
     {
         $data = [
             'apellidos_y_nombres_o_razon_social' => 'CLIENTE GENERAL',
@@ -218,14 +223,18 @@ class MassiveInvoiceService
 
         try {
             $serviceData = new \Modules\ApiPeruDev\Data\ServiceData();
-            $response = $serviceData->service($tipoComprobante === '03' ? 'dni' : 'ruc', $numero);
+            if (! in_array($identityDocumentTypeId, ['1', '6'], true)) {
+                return $data;
+            }
+
+            $response = $serviceData->service($identityDocumentTypeId === '1' ? 'dni' : 'ruc', $numero);
 
             if (isset($response['success']) && $response['success']) {
                 $data['apellidos_y_nombres_o_razon_social'] = $response['data']['name'];
                 $data['direccion'] = $response['data']['address'] ?? 'DIRECCION GENERAL';
 
                 // Solo para RUC y si location_id existe y es array
-                if ($tipoComprobante === '01' &&
+                if ($identityDocumentTypeId === '6' &&
                     isset($response['data']['location_id']) &&
                     is_array($response['data']['location_id']) &&
                     count($response['data']['location_id']) === 3 &&
@@ -266,11 +275,18 @@ class MassiveInvoiceService
         return $tipos[$tipo] ?? '10';
     }
 
-    private function validateReceptorDocument($numero, $tipoComprobante)
+    private function validateReceptorDocument($numero, $identityDocumentTypeId)
     {
-        if ($tipoComprobante === '01' && strlen($numero) !== 11) {
-            throw new \Exception("Para facturas el receptor debe tener RUC válido de 11 dígitos");
+        // ######## INICIO POLITICA IDENTIDAD ACTIVA EN VENTAS ########
+        if (! in_array($identityDocumentTypeId, IdentityDocument::activeIds(), true)) {
+            throw new \Exception('El tipo de documento de identidad del receptor no está activo para ventas.');
         }
+
+        $pattern = $identityDocumentTypeId === '1' ? '/^[0-9]{6,8}$/' : '/^[0-9]{1,20}$/';
+        if (preg_match($pattern, (string) $numero) !== 1) {
+            throw new \Exception('El número de documento de identidad del receptor no tiene un formato válido.');
+        }
+        // ######## FIN POLITICA IDENTIDAD ACTIVA EN VENTAS ########
 
         return true;
     }

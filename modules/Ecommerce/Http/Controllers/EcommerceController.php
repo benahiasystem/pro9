@@ -34,6 +34,7 @@ use App\Models\Tenant\Document;
 use Modules\Item\Models\Category;
 use Modules\Item\Models\Brand;
 use App\Models\Tenant\Catalogs\Department;
+use App\Models\Tenant\Catalogs\IdentityDocumentType;
 use Modules\Ecommerce\Models\Tenant\DeliveryZone;
 use Modules\Ecommerce\Models\Tenant\DeliveryZoneLocation;
 use Modules\Ecommerce\Models\Tenant\DiscountCoupon;
@@ -659,6 +660,12 @@ class EcommerceController extends Controller
         $quotation_terms              = $quotation_settings['terms'];
         $enable_yape                  = (bool) ($configuration->enable_yape ?? false);
         $enable_transfer              = (bool) ($configuration->enable_transfer ?? false);
+        // ######## INICIO POLITICA IDENTIDAD ACTIVA EN VENTAS ########
+        $sales_identity_document_types = IdentityDocumentType::query()
+            ->whereSalesEmissionActive()
+            ->orderByPersonPriority()
+            ->get(['id', 'description']);
+        // ######## FIN POLITICA IDENTIDAD ACTIVA EN VENTAS ########
 
         // Sucursales de recojo activas para el checkout
         $pickup_branches = $enable_store_pickup
@@ -711,6 +718,7 @@ class EcommerceController extends Controller
             'quotation_success_message',
             'quotation_validity_days',
             'quotation_terms',
+            'sales_identity_document_types',
             'pickup_branches',
             'enable_yape',
             'enable_transfer',
@@ -3379,9 +3387,9 @@ class EcommerceController extends Controller
     {
         $rules = [
             'telefono' => 'required|numeric',
-            'codigo_tipo_documento_identidad' => ['required', Rule::in(IdentityDocument::ids())],
+            'codigo_tipo_documento_identidad' => ['required', IdentityDocumentType::salesEmissionValidationRule()],
             'numero_documento' => ['required', 'string', 'regex:/^[A-Z0-9-]{1,20}$/i'],
-            'identity_document_type_id' => ['required', Rule::in(IdentityDocument::ids())],
+            'identity_document_type_id' => ['required', IdentityDocumentType::salesEmissionValidationRule()],
         ];
 
         if (!$this->isPickupShippingAddress($shippingAddress)) {

@@ -5280,25 +5280,9 @@ export default {
             }
         },
         filterCustomers() {
-            const protectCustomer = this.shouldProtectPreloadedCustomer();
-
-            if (
-                this.form.operation_type_id === "0101"
-            ) {
-                if (this.form.document_type_id === "01") {
-                    this.customers = this.all_customers;
-                } else {
-                    if (this.document_type_03_filter) {
-                        this.customers = _.filter(this.all_customers, c => {
-                            return c.identity_document_type_id !== "6";
-                        });
-                    } else {
-                        this.customers = this.all_customers;
-                    }
-                }
-            } else {
-                this.customers = this.all_customers;
-            }
+            // ######## INICIO POLITICA IDENTIDAD ACTIVA EN VENTAS ########
+            this.customers = this.all_customers;
+            // ######## FIN POLITICA IDENTIDAD ACTIVA EN VENTAS ########
 
             this.ensurePreloadedCustomerInList();
         },
@@ -6751,23 +6735,9 @@ export default {
             };
         },
         async submit() {
-            // validar monto total y cliente_id para "Clientes varios"
-            const monto = parseFloat(this.form.total) || 0;
-
             let customer = _.find(this.customers, {
                 id: this.form.customer_id
             });
-
-            if (customer) {
-                // Si monto > 700 y cliente_id = 1 (Clientes varios)
-                if (monto > 700 && (customer.number === "99999999" && customer.identity_document_type_id === "0")) {
-                    this.$alert('Ventas mayores a Bs. 700 requieren un cliente con DNI registrado.', 'Cliente Requerido', {
-                        confirmButtonText: 'Entendido',
-                        type: 'error'
-                    });
-                    return false;
-                }
-            }
 
             if (customer) {
                 this.validateCustomerRetention(customer.identity_document_type_id)

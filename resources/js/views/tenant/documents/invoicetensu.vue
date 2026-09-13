@@ -644,7 +644,7 @@
                     this.customers = _.filter(this.all_customers, {'identity_document_type_id': '6'})
                 } else {
                     if(this.document_type_03_filter) {
-                        this.customers = _.filter(this.all_customers, (c) => { return c.identity_document_type_id !== '6' })
+                        this.customers = this.all_customers
                     } else {
                         this.customers = this.all_customers
                     }

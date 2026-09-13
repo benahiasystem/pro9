@@ -75,6 +75,18 @@ $desiredRows = [
         $row('U4', 'NOTA DE TRANSFERENCIA ALMACÉN', ['active' => 1, 'short' => null, 'is_sunat' => 1]),
         $row('NE76', 'NOTA DE ENTRADA', ['active' => 1, 'short' => null, 'is_sunat' => 1]),
     ],
+    // ########## INICIO CATÁLOGO IDENTIDADES ACTIVAS VENEZUELA ##########
+    'cat_identity_document_types' => [
+        $activeCatalogRow('0', 'Doc.sin.rif'),
+        $activeCatalogRow('1', 'Venezolano'),
+        $activeCatalogRow('6', 'Juridico'),
+        $activeCatalogRow('7', 'Pasaporte'),
+        $activeCatalogRow('E', 'Extranjero'),
+        $activeCatalogRow('C', 'Comuna'),
+        $activeCatalogRow('G', 'Gubernamental'),
+        $activeCatalogRow('R', 'Firma Personal'),
+    ],
+    // ######### FIN CATÁLOGO IDENTIDADES ACTIVAS VENEZUELA #########
     'cat_legend_types' => array_values(array_filter(
         $tables['cat_legend_types']['rows'] ?? [],
         static fn (array $catalogRow): bool => (string) $catalogRow['id'] === '1000'

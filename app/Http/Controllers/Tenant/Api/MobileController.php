@@ -186,7 +186,7 @@ class MobileController extends Controller
 
     public function customers()
     {
-        $customers = Person::whereType('customers')->orderBy('name')->take(20)->get()->transform(function($row) {
+        $customers = Person::whereType('customers')->whereSalesIdentityActive()->orderBy('name')->take(20)->get()->transform(function($row) {
             return [
                 'id' => $row->id,
                 'description' => $row->number.' - '.$row->name,
@@ -612,9 +612,11 @@ class MobileController extends Controller
 
         $identity_document_type_id = $this->getIdentityDocumentTypeId($request->document_type_id);
 
-        $customers = Person::where('name', 'like', "%{$request->input}%" )
-                            ->orWhere('number','like', "%{$request->input}%")
-                            ->whereType('customers')
+        $customers = Person::where(function ($query) use ($request): void {
+                                $query->where('name', 'like', "%{$request->input}%" )
+                                    ->orWhere('number','like', "%{$request->input}%");
+                            })->whereType('customers')
+                            ->whereSalesIdentityActive()
                             ->whereIn('identity_document_type_id', $identity_document_type_id)
                             ->orderBy('name')
                             ->get()
@@ -655,8 +657,9 @@ class MobileController extends Controller
 
 
     public function getIdentityDocumentTypeId($document_type_id){
-
-        return ($document_type_id == '01') ? [6] : [1,4,6,7,0];
+        // ######## INICIO POLITICA IDENTIDAD ACTIVA EN VENTAS ########
+        return \App\Services\SalesCustomerIdentityPolicy::activeIdentityTypeIds();
+        // ######## FIN POLITICA IDENTIDAD ACTIVA EN VENTAS ########
 
     }
 

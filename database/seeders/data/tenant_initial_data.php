@@ -1248,25 +1248,25 @@ return array (
         4 =>
         array (
           'id' => 'E',
-          'active' => 0,
+          'active' => 1,
           'description' => 'Extranjero',
         ),
         5 =>
         array (
           'id' => 'C',
-          'active' => 0,
+          'active' => 1,
           'description' => 'Comuna',
         ),
         6 =>
         array (
           'id' => 'G',
-          'active' => 0,
+          'active' => 1,
           'description' => 'Gubernamental',
         ),
         7 =>
         array (
           'id' => 'R',
-          'active' => 0,
+          'active' => 1,
           'description' => 'Firma Personal',
         ),
       ),

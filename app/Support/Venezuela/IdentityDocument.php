@@ -9,16 +9,28 @@ final class IdentityDocument
         ['id' => '1', 'active' => 1, 'description' => 'Venezolano', 'code' => 'V'],
         ['id' => '6', 'active' => 1, 'description' => 'Juridico', 'code' => 'J'],
         ['id' => '7', 'active' => 1, 'description' => 'Pasaporte', 'code' => 'P'],
-        ['id' => 'E', 'active' => 0, 'description' => 'Extranjero', 'code' => 'E'],
-        ['id' => 'C', 'active' => 0, 'description' => 'Comuna', 'code' => 'C'],
-        ['id' => 'G', 'active' => 0, 'description' => 'Gubernamental', 'code' => 'G'],
-        ['id' => 'R', 'active' => 0, 'description' => 'Firma Personal', 'code' => 'R'],
+        // ######## INICIO CATÁLOGO IDENTIDADES ACTIVAS VENEZUELA ########
+        ['id' => 'E', 'active' => 1, 'description' => 'Extranjero', 'code' => 'E'],
+        ['id' => 'C', 'active' => 1, 'description' => 'Comuna', 'code' => 'C'],
+        ['id' => 'G', 'active' => 1, 'description' => 'Gubernamental', 'code' => 'G'],
+        ['id' => 'R', 'active' => 1, 'description' => 'Firma Personal', 'code' => 'R'],
+        // ######## FIN CATÁLOGO IDENTIDADES ACTIVAS VENEZUELA ########
     ];
 
     public static function ids(): array
     {
         return array_column(self::TYPES, 'id');
     }
+
+    // ######## INICIO POLITICA IDENTIDAD ACTIVA EN VENTAS ########
+    public static function activeIds(): array
+    {
+        return array_values(array_map(
+            static fn (array $type): string => $type['id'],
+            array_filter(self::TYPES, static fn (array $type): bool => (int) $type['active'] === 1)
+        ));
+    }
+    // ######## FIN POLITICA IDENTIDAD ACTIVA EN VENTAS ########
 
     public static function definition($id): ?array
     {

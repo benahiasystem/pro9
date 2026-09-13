@@ -661,18 +661,9 @@ export default {
             this.filterSeries();
         },
         async validateIdentityDocumentType() {
-
-            let identity_document_types = ['0', '1']
-
-
-            if (identity_document_types.includes(this.form.sale_note.customer.identity_document_type_id)) {
-
-                this.document_types = _.filter(this.all_document_types, {'id': '03'})
-
-            } else {
-                this.document_types = this.all_document_types
-
-            }
+            // ######## INICIO POLITICA IDENTIDAD ACTIVA EN VENTAS ########
+            this.document_types = this.all_document_types.filter(row => row.id === '01')
+            // ######## FIN POLITICA IDENTIDAD ACTIVA EN VENTAS ########
 
             this.document.document_type_id = (this.document_types.length > 0) ? this.document_types[0].id : null
             await this.changeDocumentType()

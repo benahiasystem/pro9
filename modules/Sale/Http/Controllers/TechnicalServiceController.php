@@ -90,9 +90,10 @@
 
         public function searchCustomers(Request $request)
         {
-            $customers = Person::where('number', 'like', "%{$request->input}%")
-                ->orWhere('name', 'like', "%{$request->input}%")
-                ->whereType('customers')->orderBy('name')
+            $customers = Person::where(function ($query) use ($request): void {
+                $query->where('number', 'like', "%{$request->input}%")
+                    ->orWhere('name', 'like', "%{$request->input}%");
+            })->whereType('customers')->whereSalesIdentityActive()->orderBy('name')
                 ->whereIsEnabled()
                 ->get()->transform(function ($row) {
                     return [
@@ -200,7 +201,7 @@
             switch ($table) {
                 case 'customers':
 
-                    $customers = Person::whereType('customers')->whereIsEnabled()->orderBy('name')->take(20)->get()->transform(function ($row) {
+                    $customers = Person::whereType('customers')->whereSalesIdentityActive()->whereIsEnabled()->orderBy('name')->take(20)->get()->transform(function ($row) {
                         return [
                             'id' => $row->id,
                             'description' => $row->number . ' - ' . $row->name,

@@ -2449,23 +2449,9 @@ export default {
             this.form.series_id = (this.series.length > 0) ? this.series[0].id : null
         },
         filterCustomers() {
-            if (this.form.operation_type_id === '0101') {
-
-                if (this.form.document_type_id === '01') {
-                    this.customers = _.filter(this.all_customers, {'identity_document_type_id': '6'})
-                } else {
-                    if (this.document_type_03_filter) {
-                        this.customers = _.filter(this.all_customers, (c) => {
-                            return c.identity_document_type_id !== '6'
-                        })
-                    } else {
-                        this.customers = this.all_customers
-                    }
-                }
-
-            } else {
-                this.customers = this.all_customers
-            }
+            // ######## INICIO POLITICA IDENTIDAD ACTIVA EN VENTAS ########
+            this.customers = this.all_customers
+            // ######## FIN POLITICA IDENTIDAD ACTIVA EN VENTAS ########
         },
         clickAddInitGuides() {
             this.form.guides.push({

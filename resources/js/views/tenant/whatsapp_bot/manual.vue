@@ -69,8 +69,7 @@
                                     <li>Atender a números que no estén en la lista de usuarios autorizados.</li>
                                     <li>Emitir un comprobante sin que el vendedor confirme con un mensaje afirmativo.</li>
                                     <li>Emitir si el vendedor no tiene una caja abierta (debe aperturarla primero).</li>
-                                    <li>Emitir factura si el cliente no tiene RIF.</li>
-                                    <li>Emitir boleta a consumidor final si el monto supera Bs. 700 sin DNI del cliente.</li>
+                                    <li>Emitir si el cliente no tiene un tipo de identidad activo para ventas.</li>
                                     <li>Procesar mensajes en ráfaga del mismo usuario: solo atiende uno a la vez por número.</li>
                                     <li>Detectar automáticamente cuando el dueño responde manualmente desde otra app: el vendedor debe escribir <code>{{ pauseCmd }}</code> para pausar.</li>
                                     <li>Modificar un comprobante después de emitido.</li>

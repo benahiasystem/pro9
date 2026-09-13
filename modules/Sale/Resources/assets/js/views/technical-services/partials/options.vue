@@ -587,14 +587,10 @@ export default {
             this.document.date_of_due = this.document.date_of_issue;
         },
         parserDocumentByCustomer(){
-            let customer = this.customers.filter(element => element.id === this.form.customer_id)[0]
-            if (customer.identity_document_type_id == '6' ) {
-                this.form.document_type_id = this.document_types.filter((element) => element.id === "01")[0].id
-            } else if ((customer.identity_document_type_id == '1' || customer.identity_document_type_id == '0' )) {
-                this.form.document_type_id = this.document_types.filter((element) => element.id === "03")[0].id
-            }
-
+            // ######## INICIO POLITICA IDENTIDAD ACTIVA EN VENTAS ########
+            this.form.document_type_id = this.form.document_type_id || this.document_types[0]?.id
             this.changeDocumentType()
+            // ######## FIN POLITICA IDENTIDAD ACTIVA EN VENTAS ########
 
         },
         resetDocument() {
@@ -622,15 +618,6 @@ export default {
         async submit() {
             // await this.assignDocument();
             //
-            let customer = this.customers.filter(element => element.id === this.form.customer_id)[0]
-
-            if (customer.identity_document_type_id == '6' && this.form.document_type_id === "03") {
-                return this.$message.error('Los clientes con RIF no pueden generar boleta');
-            }
-            if ((customer.identity_document_type_id == '1' || customer.identity_document_type_id == '0' ) && this.form.document_type_id === "01") {
-                return this.$message.error('Los clientes con DNI no pueden generar factura');
-            }
-
             let validate_payment_destination = await this.validatePaymentDestination()
 
             if (validate_payment_destination.error_by_item > 0) {
@@ -758,23 +745,11 @@ export default {
             }
         },
         async validateIdentityDocumentType() {
-            let identity_document_types = ["0", "1"];
-            // console.log(this.document)
-            let customer = _.find(this.customers, {
-                id: this.document.customer_id,
-            });
-
-            if (
-                identity_document_types.includes(
-                    customer.identity_document_type_id
-                )
-            ) {
-                this.document_types = _.filter(this.all_document_types, {
-                    id: "03",
-                });
-            } else {
-                this.document_types = this.all_document_types;
-            }
+            // ######## INICIO POLITICA IDENTIDAD ACTIVA EN VENTAS ########
+            this.document_types = this.all_document_types.filter(row =>
+                ["01", "nv"].includes(row.id)
+            );
+            // ######## FIN POLITICA IDENTIDAD ACTIVA EN VENTAS ########
 
             this.document.document_type_id =
                 this.document_types.length > 0

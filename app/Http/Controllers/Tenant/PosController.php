@@ -262,7 +262,7 @@ class PosController extends Controller
      */
     private function seedCustomers($establishment)
     {
-        $customers = Person::whereType('customers')->whereIsEnabled()
+        $customers = Person::whereType('customers')->whereSalesIdentityActive()->whereIsEnabled()
             ->with(['plates', 'identity_document_type'])
             ->orderBy('name')->take(self::CUSTOMER_SEED_LIMIT)->get();
 
@@ -271,7 +271,7 @@ class PosController extends Controller
         $customer_id = $establishment ? $establishment->customer_id : null;
 
         if ($customer_id && !$customers->contains('id', $customer_id)) {
-            $default = Person::whereType('customers')->whereIsEnabled()
+            $default = Person::whereType('customers')->whereSalesIdentityActive()->whereIsEnabled()
                 ->with(['plates', 'identity_document_type'])
                 ->where('id', $customer_id)->first();
 
@@ -292,7 +292,7 @@ class PosController extends Controller
         $id = $request->input('id');
         $input = trim((string) $request->input('input', ''));
 
-        $query = Person::whereType('customers')->whereIsEnabled();
+        $query = Person::whereType('customers')->whereSalesIdentityActive()->whereIsEnabled();
 
         if ($id) {
             $query->whereIn('id', (array) $id);
@@ -317,7 +317,7 @@ class PosController extends Controller
     {
         if ($table === 'customers') {
             return $this->transformCustomers(
-                Person::whereType('customers')->whereIsEnabled()->orderBy('name')->get()
+                Person::whereType('customers')->whereSalesIdentityActive()->whereIsEnabled()->orderBy('name')->get()
             );
         }
 

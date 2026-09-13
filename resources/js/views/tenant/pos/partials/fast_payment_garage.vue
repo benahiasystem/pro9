@@ -1098,15 +1098,6 @@ export default {
                 return this.$message.warning('Debe seleccionar un cliente');
             }
 
-            if (this.form.document_type_id === '01') {
-                const customer = _.find(this.all_customers, { id: this.form.customer_id });
-                if (customer && customer.identity_document_type_id !== '6') {
-                    // ######## INICIO DOCUMENTO FISCAL VENEZUELA ########
-                    return this.$message.warning('Para emitir factura el cliente debe tener RIF');
-                    // ######## FIN DOCUMENTO FISCAL VENEZUELA ########
-                }
-            }
-
             if (this.businessTurns.active) {
                 if (this.form.document_type_id == '01' && !this.form.plate_number) {
                     return this.$message.warning('Debe ingresar placa');

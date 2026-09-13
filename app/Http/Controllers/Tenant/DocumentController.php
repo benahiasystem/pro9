@@ -50,7 +50,6 @@ use App\Models\Tenant\SaleNote;
 use App\Models\Tenant\Series;
 use App\Services\SeriesResolver;
 use App\Support\Venezuela\Localization;
-use App\Support\Venezuela\IdentityDocument;
 use App\Models\Tenant\StateType;
 use App\Models\Tenant\User;
 use App\Traits\OfflineTrait;
@@ -305,6 +304,7 @@ class DocumentController extends Controller
                 ->orWhere('name', 'like', "%{$request->input}%");
         })
             ->whereType('customers')
+            ->whereSalesIdentityActive()
             ->orderBy('name')
             ->whereIn('identity_document_type_id', $identity_document_type_id)
             ->whereIsEnabled()
@@ -571,6 +571,7 @@ class DocumentController extends Controller
         if ($table === 'customers') {
             $customers = Person::with('addresses')
                 ->whereType('customers')
+                ->whereSalesIdentityActive()
                 ->whereIsEnabled()
                 ->orderBy('name')
                 ->take(20)
@@ -1149,6 +1150,7 @@ class DocumentController extends Controller
     {
 
         $customers = Person::with('addresses')->whereType('customers')
+            ->whereSalesIdentityActive()
             ->where('id', $id)
             ->get()->transform(function ($row) {
                 /** @var  Person $row */
@@ -1171,25 +1173,9 @@ class DocumentController extends Controller
 
     public function getIdentityDocumentTypeId($document_type_id, $operation_type_id)
     {
-
-        // if($operation_type_id === '0101' || $operation_type_id === '1001') {
-
-        if (in_array($operation_type_id, ['0101', '1001', '1004'])) {
-
-            if ($document_type_id == '01') {
-                $identity_document_type_id = IdentityDocument::ids();
-            } else {
-                if (config('tenant.document_type_03_filter')) {
-                    $identity_document_type_id = [1];
-                } else {
-                    $identity_document_type_id = ['0', '1', '6', '7', 'E', 'C', 'G', 'R'];
-                }
-            }
-        } else {
-            $identity_document_type_id = ['0', '1', '6', '7', 'E', 'C', 'G', 'R'];
-        }
-
-        return $identity_document_type_id;
+        // ######## INICIO POLITICA IDENTIDAD ACTIVA EN VENTAS ########
+        return \App\Services\SalesCustomerIdentityPolicy::activeIdentityTypeIds();
+        // ######## FIN POLITICA IDENTIDAD ACTIVA EN VENTAS ########
     }
 
     public function changeToRegisteredStatus($document_id)

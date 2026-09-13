@@ -58,9 +58,11 @@
 
         public function customers(Request $request)
         {
-            $customers = Person::query()->where('number', 'like', "%{$request->input}%")
-                ->orWhere('name', 'like', "%{$request->input}%")
-                ->whereType('customers')
+            $customers = Person::query()->where(function ($query) use ($request): void {
+                $query->where('number', 'like', "%{$request->input}%")
+                    ->orWhere('name', 'like', "%{$request->input}%");
+            })->whereType('customers')
+                ->whereSalesIdentityActive()
                 ->whereIsEnabled()
                 ->orderBy('name')
                 ->get()->transform(function ($row) {

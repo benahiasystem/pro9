@@ -61,7 +61,7 @@ Se retiraron `02` Recibo por honorarios, `03` Boleta de venta electrónica, `04`
 
 ### Identidad (`cat_identity_document_types`)
 
-- `0` Doc.sin.rif; `1` Venezolano; `6` Juridico; `7` Pasaporte; `E` Extranjero; `C` Comuna; `G` Gubernamental; `R` Firma Personal.
+- `0` Doc.sin.rif; `1` Venezolano; `6` Juridico; `7` Pasaporte; `E` Extranjero; `C` Comuna; `G` Gubernamental; `R` Firma Personal. Los ocho registros tienen `active = 1` en el catálogo inicial.
 
 Ya no forman parte del consolidado Ced. Diplomática, TIN, IN ni TAM.
 

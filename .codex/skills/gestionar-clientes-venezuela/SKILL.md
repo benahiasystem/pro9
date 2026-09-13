@@ -15,14 +15,14 @@ description: Mantener el alta, edición, catálogo, persistencia y presentación
 | 2 | `1` | `1` | `Venezolano` | `V` |
 | 3 | `6` | `1` | `Juridico` | `J` |
 | 4 | `7` | `1` | `Pasaporte` | `P` |
-| 5 | `E` | `0` | `Extranjero` | `E` |
-| 6 | `C` | `0` | `Comuna` | `C` |
-| 7 | `G` | `0` | `Gubernamental` | `G` |
-| 8 | `R` | `0` | `Firma Personal` | `R` |
+| 5 | `E` | `1` | `Extranjero` | `E` |
+| 6 | `C` | `1` | `Comuna` | `C` |
+| 7 | `G` | `1` | `Gubernamental` | `G` |
+| 8 | `R` | `1` | `Firma Personal` | `R` |
 
 - No agregar, quitar, renombrar, reordenar ni cambiar `active` en estos registros durante otras modificaciones.
 - Mantener la misma lista y orden en `database/seeders/data/tenant_initial_data.php`.
-- Considerar `active` un dato contractual heredado, no una regla de visibilidad: los siete tipos con letra deben estar disponibles para registrar clientes aunque `E`, `C`, `G` y `R` tengan `active = 0`.
+- Los ocho tipos canónicos nacen con `active = 1` y permanecen disponibles tanto para mantener clientes como para emitir ventas. La tabla sigue siendo autoritativa: si un registro se desactiva directamente, debe dejar de seleccionarse y emitirse sin requerir cambios de código.
 - Sembrar directamente estos ocho registros. No usar `IdentityDocumentCatalogMigrator` ni transformar números o tipos de instalaciones anteriores; la validación vigente sigue siendo obligatoria.
 
 ## Selección y persistencia
@@ -33,6 +33,13 @@ description: Mantener el alta, edición, catálogo, persistencia y presentación
 - En el alta y la edición de clientes, aceptar y guardar en `persons.number` únicamente dígitos ASCII (`0-9`). Rechazar letras, espacios, signos, guiones y cualquier otro carácter especial tanto en `PersonRequest` como en el formulario Vue; no eliminar ni normalizar silenciosamente esos caracteres antes de validar.
 - Mantener los prefijos `V-`, `J-`, `P-`, `E-`, `C-`, `G-` y `R-` fuera del campo editable. Añadirlos únicamente al presentar el documento mediante el formateador centralizado.
 - Validar en backend que `identity_document_type_id` pertenezca al catálogo contractual; no confiar sólo en el selector Vue.
+
+## Política de identidad en ventas
+
+- Para Factura (`01`), Nota de venta (`80` o `nv`) y notas de crédito/débito (`07`/`08`), obtener siempre los tipos elegibles desde `cat_identity_document_types.active = 1`; no mantener listas locales como fuente de verdad.
+- Aplicar `App\Services\SalesCustomerIdentityPolicy` como barrera backend antes de persistir o ejecutar efectos laterales, incluso cuando el cliente llegue precargado, por API, importación, ecommerce, restaurante, POS, Hotel, pedidos, tienda o servicio técnico.
+- Filtrar buscadores y selectores de ventas con el mismo criterio. El catálogo inicial muestra los ocho tipos; cualquier desactivación posterior debe excluir sólo el tipo afectado de la emisión.
+- No emparejar tipos de identidad con tipos de comprobante ni con montos: todo tipo activo puede emitir cualquiera de los comprobantes de venta vigentes. No restaurar reglas como “sólo Juridico para Factura” o límites para `Doc.sin.rif`.
 
 ## Presentación global
 
@@ -58,9 +65,10 @@ description: Mantener el alta, edición, catálogo, persistencia y presentación
 - Comprobar por prueba automatizada la lista completa, valores, orden, descripciones y banderas `active` tanto en la fuente central como en `tenant_initial_data.php`.
 - Probar el alta y la edición para cada selección con un valor compuesto sólo por dígitos. Verificar que letras y caracteres especiales —por ejemplo `J-123456789`, `123.456` o `123 456`— sean rechazados y que `123456789` se guarde sin cambios y se presente como `J-123456789` cuando el tipo sea `6`.
 - Probar en alta y edición que Extranjero (`E`) y Pasaporte (`7`) aceptan una dirección sin jerarquía territorial y que cualquier `location_id`, `department_id`, `province_id` o `district_id` recibido queda vacío o nulo en la persona y sus direcciones.
-- Probar que los siete tipos aparecen en el selector con descripciones limpias, sin concatenar su letra, y que el número formateado conserva el prefijo correspondiente.
-- En Facturación, admitir para Facturas todos los tipos del catálogo venezolano. El filtro y la validación no pueden restringirse a Juridico; el cliente debe seguir visible, seleccionable y facturable con sus datos completos.
+- Probar que los ocho tipos aparecen al mantener clientes, con descripciones limpias y sin concatenar su letra, y que el número formateado conserva el prefijo correspondiente.
+- En todos los módulos de ventas, probar que inicialmente aparecen y se aceptan los ocho tipos con `active = 1`; verificar además que cambiar una bandera a `0` modifica la elegibilidad sin cambiar código.
+- Probar la matriz completa de `0`, `1`, `6`, `7`, `E`, `C`, `G` y `R` contra Factura, Nota de venta y notas de crédito/débito. El filtro y la validación no pueden restringir Factura a Juridico ni condicionar `Doc.sin.rif` por monto.
 - Probar el formato global en los recursos centrales de clientes y en las plantillas/documentos de presentación; no considerar suficiente una prueba que sólo cubra el formulario.
 - Verificar el catálogo y todas sus referencias en una instalación nueva temporal, sin modificar bases reales.
-- Compilar el frontend mediante la skill `frontend-build` antes de validar el flujo en navegador.
-- Al generar una Factura desde una o varias Notas de venta, conservar y resolver el cliente de origen en Facturación aunque su tipo de identidad no sea `Juridico`. El filtro ordinario de Facturas no puede reemplazar ni vaciar ese cliente precargado; debe seguir visible, seleccionable y facturable con sus datos completos.
+- Seguir la skill `frontend-build` para cambios en fuentes Vue/JavaScript; no compilar salvo petición explícita del usuario.
+- Al generar una Factura desde una o varias Notas de venta, conservar y resolver el cliente de origen si su tipo de identidad continúa activo. Un tipo inactivo debe bloquear la emisión también en conversiones y clientes precargados.

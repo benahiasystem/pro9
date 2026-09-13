@@ -1115,24 +1115,9 @@ export default {
             }
         },
         filterCustomers() {
+            // ######## INICIO POLITICA IDENTIDAD ACTIVA EN VENTAS ########
             let customers = this.all_customers;
-            if (this.form.operation_type_id !== undefined && ['0101', '1001', '1004'].includes(this.form.operation_type_id)) {
-
-                if (this.form.document_type_id === '01') {
-                    customers = _.filter(this.all_customers, {'identity_document_type_id': '6'})
-                } else {
-                    if (this.document_type_03_filter) {
-                        customers = _.filter(this.all_customers, (c) => {
-                            return c.identity_document_type_id !== '6'
-                        })
-                    } else {
-                        customers = this.all_customers
-                    }
-                }
-
-            } else {
-                customers = this.all_customers
-            }
+            // ######## FIN POLITICA IDENTIDAD ACTIVA EN VENTAS ########
 
             // this.$store.commit('setCustomers', customers)
             this.customers = customers
