@@ -139,6 +139,24 @@ use Modules\Sale\Models\Agent;
  */
 class Document extends ModelTenant
 {
+    // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+    private ?int $fiscalReservationId = null;
+
+    /** Internal creation context; never mass assignable from an HTTP payload. */
+    public function useFiscalReservation(int $id): self
+    {
+        if ($this->exists || $id < 1) {
+            throw new \DomainException('Solo un documento nuevo puede recibir una reserva fiscal.');
+        }
+        $this->fiscalReservationId = $id;
+        return $this;
+    }
+
+    public function fiscalReservationId(): ?int
+    {
+        return $this->fiscalReservationId;
+    }
+    // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
     use UsesTenantConnection;
     use SellerIdTrait;
 
@@ -861,7 +879,9 @@ class Document extends ModelTenant
      */
     public function getNumberFullAttribute()
     {
-        return $this->series . '-' . $this->number;
+        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+        return ($this->series === null || $this->series === '') ? (string) $this->number : $this->series . '-' . $this->number;
+        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
     }
 
     public function getNumberToLetterAttribute()

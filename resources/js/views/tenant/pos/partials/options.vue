@@ -35,6 +35,9 @@
         </span>
 
         <div class="pos-success__body">
+            <!-- ######## INICIO NUMERACIÓN FISCAL VENEZUELA ######## -->
+            <fiscal-status v-if="resource === 'documents' && form.id && showDialog" :key="form.id" :document-id="Number(form.id)" />
+            <!-- ######## FIN NUMERACIÓN FISCAL VENEZUELA ######## -->
 
             <!-- Vista previa del comprobante -->
             <div class="pos-success__preview">
@@ -504,6 +507,9 @@ html.dark .pos-success {
 </style>
 <script>
 import {whatsappNumber} from "@helpers/phone";
+// ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+import FiscalStatus from '../../documents/partials/fiscal-status.vue';
+// ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
 import { mapState, mapActions } from "vuex/dist/vuex.mjs";
 import QrApi from "@viewsModuleQrApi/QrApiTemplate.vue";
 import Keypress from "vue-keypress";
@@ -513,6 +519,7 @@ import { buhoprinter } from "@mixins/buhoprinter";
 export default {
     props: ["showDialog", "recordId", "statusDocument", "resource", "fromPos", "isPrint"],
     components: {
+        FiscalStatus,
         Keypress,
         SaleNoteGenerate,
         QrApi

@@ -9,7 +9,7 @@ use App\Services\SalesCustomerIdentityPolicy;
 
 class DocumentValidation
 {
-    public static function validation($inputs) {
+    public static function validation($inputs, bool $fiscalApi = false, bool $resolvedFiscal = false) {
         // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
         SalesDocumentTypePolicy::assertNewFiscalDocumentAllowed($inputs['document_type_id'] ?? null);
         // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
@@ -20,19 +20,26 @@ class DocumentValidation
         );
         // ######## FIN POLITICA IDENTIDAD ACTIVA EN VENTAS ########
 
-        // Tienda / invitado: auth() puede ser null (pago ecommerce sin sesión admin).
-        $authUser = auth()->user();
-        if ($authUser && ! empty($authUser->establishment_id)) {
-            $inputs['establishment_id'] = $authUser->establishment_id;
-        } elseif (empty($inputs['establishment_id'])) {
-            $inputs['establishment_id'] = optional(
-                User::query()->whereNotNull('establishment_id')->orderBy('id')->first()
-            )->establishment_id
-                ?? optional(Establishment::query()->orderBy('id')->first())->id;
+        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+        if ($resolvedFiscal) {
+            if (empty($inputs['fiscal_profile_id']) || empty($inputs['operation_key']) || empty($inputs['fiscal_fingerprint'])) {
+                throw new \DomainException('Falta el contexto fiscal resuelto para el pedido.');
+            }
+        } elseif ($fiscalApi) {
+            $inputs = \App\Services\Fiscal\FiscalApiDocumentContext::prepareFor($inputs, auth()->user(), \App\Models\Tenant\Company::active()->getConnection(), app(\App\Services\SeriesResolver::class)->activeGroupId());
+        } else {
+            // Internal callers are migrated separately from the authenticated HTTP API.
+            $authUser = auth()->user();
+            if ($authUser && !empty($authUser->establishment_id)) {
+                $inputs['establishment_id'] = $authUser->establishment_id;
+            } elseif (empty($inputs['establishment_id'])) {
+                $inputs['establishment_id'] = optional(
+                    User::query()->whereNotNull('establishment_id')->orderBy('id')->first()
+                )->establishment_id ?? optional(Establishment::query()->orderBy('id')->first())->id;
+            }
+            Functions::validateSeries($inputs);
         }
-        //unset($inputs['establishment']);
-        
-        Functions::validateSeries($inputs);
+        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
         
         if (in_array($inputs['document_type_id'], ['07', '08'])) {
 

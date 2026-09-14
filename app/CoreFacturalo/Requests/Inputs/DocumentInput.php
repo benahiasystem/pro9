@@ -81,6 +81,13 @@ class DocumentInput
         $point_system_data = self::getPointSystemData($inputs, $configuration);
 
         return [
+            // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+            'operation_key' => $inputs['operation_key'] ?? null,
+            'fiscal_profile_id' => $inputs['fiscal_profile_id'] ?? null,
+            'fiscal_channel' => $inputs['fiscal_channel'] ?? null,
+            'fiscal_group_id' => $inputs['fiscal_group_id'] ?? null,
+            'fiscal_fingerprint' => $inputs['fiscal_fingerprint'] ?? null,
+            // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
             'type' => $inputs['type'],
             'group_id' => $inputs['group_id'],
             'user_id' => auth()->id(),

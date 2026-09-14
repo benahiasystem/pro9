@@ -25,6 +25,14 @@ class InputRequest
             }
             $inputs = $this->validationInputs($inputs, $type, $service);
             $request->replace($this->setInputs($inputs, $type, $service));
+        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json(['success' => false, 'message' => 'Revise los datos del comprobante.', 'errors' => $e->errors()], 422);
+        } catch (\Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 403);
+        } catch (\DomainException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -44,6 +52,9 @@ class InputRequest
     private function validationInputs($inputs, $type, $service)
     {
         $class = "App\\CoreFacturalo\\Requests\\".ucfirst($service)."\\Validation\\".ucfirst($type)."Validation";
+        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+        if ($service === 'api' && $type === 'document') return $class::validation($inputs, true);
+        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
         return $class::validation($inputs);
     }
 

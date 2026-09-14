@@ -32,7 +32,9 @@ class EstablishmentResource extends JsonResource
             'customer_id' => $this->customer_id,
             'customer_number' => format_person_identity_document($this->customer),
             'logo' => $this->logo ? asset($this->logo) : null,
-            'has_igv_31556' => $this->has_igv_31556,
+            // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+            // Se aplica exclusivamente el contrato de IVA venezolano.
+            // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
         ];
     }
 }

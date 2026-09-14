@@ -5,6 +5,10 @@ description: Mantener la operación comercial local de Pro9 para instalaciones n
 
 # Mantener operación local fiscal de Pro9
 
+## Evolución aprobada
+
+Para la implementación de numeración y emisión de SCRUM-39, aplicar [el contrato de numeración fiscal](../mantener-numeracion-fiscal-venezuela-pro9/SKILL.md). Sustituye la limitación de emisión exclusivamente local por estados separados de registro comercial y resultado fiscal. No restaura XML/CDR/SUNAT/PSE. Los adaptadores simulados sólo acreditan pruebas demo; consultar el informe de numeración antes de afirmar que un flujo está integrado.
+
 ## Objetivo
 
 Sostener conjuntamente los contratos de SCRUM-19, SCRUM-22, SCRUM-41, SCRUM-53 y SCRUM-54. Antes de cambiarlos, leer [references/traceability.md](references/traceability.md).

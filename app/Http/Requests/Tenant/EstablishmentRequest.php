@@ -55,7 +55,9 @@ class EstablishmentRequest extends FormRequest
     public function messages()
     {
         return [
-            'code.unique' => 'El código de domicilio fiscal ingresado ya existe. Por favor ingrese uno nuevo',
+            // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+            'code.unique' => 'El código interno de sucursal ya existe. Ingrese uno diferente.',
+            // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
         ];
     }
 }

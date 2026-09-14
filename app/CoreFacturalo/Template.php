@@ -12,7 +12,20 @@ class Template
         }
         $path_template =  $this->validate_template($base_template, $template, $format_pdf);
         // Log::info($document);
-        return self::render($path_template, $company, $document, $configuration);
+        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+        $fiscal = \App\Services\Fiscal\FiscalPdfData::forDocument($document);
+        $company = \App\Services\Fiscal\FiscalPdfData::issuerForPrint($company, $fiscal);
+        $html = self::render($path_template, $company, $document, $configuration);
+        if ($fiscal) {
+            $identity = view('pdf.partials.fiscal_identity', compact('fiscal'))->render();
+            if (preg_match('/<body\b[^>]*>/i', $html)) {
+                $html = preg_replace_callback('/<body\b[^>]*>/i', fn ($match) => $match[0] . $identity, $html, 1);
+            } else {
+                $html = $identity . $html;
+            }
+        }
+        return $html;
+        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
     }
 
     public function preprintedpdf($base_template, $template, $company, $format_pdf)

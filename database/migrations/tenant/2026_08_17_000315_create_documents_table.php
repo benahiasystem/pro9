@@ -18,8 +18,8 @@ use Illuminate\Support\Facades\DB;
  * - `ubl_version` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `group_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `document_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `series` char(4) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `number` int(11) NOT NULL
+ * - `series` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL
+ * - `number` bigint unsigned NOT NULL
  * - `date_of_issue` date NOT NULL
  * - `time_of_issue` time NOT NULL
  * - `customer_id` int(10) unsigned NOT NULL
@@ -119,8 +119,10 @@ CREATE TABLE `documents` (
   `ubl_version` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `group_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL,
   `document_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `series` char(4) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `number` int(11) NOT NULL,
+  -- ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+  `series` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `number` bigint unsigned NOT NULL,
+  -- ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
   `date_of_issue` date NOT NULL,
   `time_of_issue` time NOT NULL,
   `customer_id` int(10) unsigned NOT NULL,

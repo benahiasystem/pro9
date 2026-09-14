@@ -15,13 +15,14 @@
                 <!-- ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA -->
             </div>
             <div class="col-2 px-0">
-                <el-select v-model="form.series_id" class="c-width" style="height: 30px;">
+                <el-select v-if="form.document_type_id === '80'" v-model="form.series_id" class="c-width" style="height: 30px;">
                     <el-option v-for="option in series"
                                :key="option.id"
                                :label="option.number"
                                :value="option.id">
                     </el-option>
                 </el-select>
+                <fiscal-profile-summary v-else :profile="fiscalProfile" />
             </div>
             <div class="col-3" v-if="enableGlobalDiscount">
                 <el-switch v-model="enabled_discount"
@@ -212,6 +213,9 @@
 </style>
 
 <script>
+// ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+import { fiscalSale } from "@mixins/fiscal-sale";
+// ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
 import Keypress from 'vue-keypress'
 
 import CardBrandsForm from '../../card_brands/form.vue'
@@ -222,7 +226,7 @@ import { buhoprinter } from '@mixins/buhoprinter'
 
 export default {
     components: {OptionsForm, CardBrandsForm, SaleNotesOptions, MultiplePaymentForm, Keypress},
-    mixins: [buhoprinter],
+    mixins: [fiscalSale, buhoprinter],
 
     props: ['form', 'customer', 'configuration', 'config', 'currencyTypeActive', 'exchangeRateSale', 'is_payment', 'companyEnvironment', 'businessTurns', 'isPrint', 'rowsItems'],
     data() {
@@ -667,7 +671,7 @@ export default {
             this.series = _.filter(this.all_series, {'document_type_id': this.form.document_type_id});
             this.form.series_id = (this.series.length > 0) ? this.series[0].id : null
 
-            if (!this.form.series_id) {
+            if (this.form.document_type_id === '80' && !this.form.series_id) {
                 return this.$message.warning('El sucursal no tiene series disponibles para el comprobante');
             }
         },
@@ -731,6 +735,9 @@ export default {
             }
         },
         async clickPayment() {
+            // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+            if (this.loading_submit || this.locked_submit || !this.prepareFiscalSale()) return;
+            // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
             // if(this.has_card && !this.form_payment.card_brand_id) return this.$message.error('Seleccione una tarjeta');
 
             if(this.businessTurns.active) {
@@ -747,7 +754,7 @@ export default {
                 return this.$message.error('La fecha de emisión no coincide con la del día actual');
             }
 
-            if (!this.form.series_id) {
+            if (this.form.document_type_id === '80' && !this.form.series_id) {
                 return this.$message.warning('El sucursal no tiene series disponibles para el comprobante');
             }
 
@@ -893,6 +900,7 @@ export default {
             this.$http.get(`/${this.resource}/payment_tables`)
                 .then(response => {
                     this.all_series = response.data.series
+                    this.fiscalProfiles = response.data.fiscal_profiles || []
                     this.payment_method_types = response.data.payment_method_types
                     this.cards_brand = response.data.cards_brand
                     this.filterSeries()

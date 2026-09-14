@@ -34,17 +34,25 @@ class DispatchInput
 
         $company = Company::active();
         $fiscal_environment = $company->fiscal_environment;
-        $number = Functions::newNumber($fiscal_environment, $document_type_id, $series, $number, Dispatch::class);
-
-        if (is_null($inputs['id'])) {
+        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+        if (empty($inputs['fiscal_profile_id'])) {
+            $number = Functions::newNumber($fiscal_environment, $document_type_id, $series, $number, Dispatch::class);
+        }
+        if (empty($inputs['fiscal_profile_id']) && empty($inputs['id'])) {
             Functions::validateUniqueDocument($fiscal_environment, $document_type_id, $series, $number, Dispatch::class);
         }
 
-        $filename = Functions::filename($company, $document_type_id, $series, $number);
+        $filename = empty($inputs['fiscal_profile_id']) ? Functions::filename($company, $document_type_id, $series, $number) : '';
+        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
         $establishment = EstablishmentInput::set($inputs['establishment_id']);
         $customer = self::customer($inputs);
         $inputs['type'] = 'dispatch';
         $data = [
+            'operation_key' => $inputs['operation_key'] ?? null,
+            'fiscal_profile_id' => $inputs['fiscal_profile_id'] ?? null,
+            'fiscal_channel' => $inputs['fiscal_channel'] ?? null,
+            'fiscal_group_id' => $inputs['fiscal_group_id'] ?? null,
+            'fiscal_fingerprint' => $inputs['fiscal_fingerprint'] ?? null,
             'id' => Functions::valueKeyInArray($inputs, 'id'),
             'type' => $inputs['type'],
             'user_id' => auth()->id(),

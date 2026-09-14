@@ -57,6 +57,9 @@ class OrderDocumentFromStatusService
         $order->loadMissing('sale_note');
 
         $purchase = json_decode(json_encode($order->purchase), true) ?: [];
+        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+        $orderSource = ['id' => (int) $order->id, 'purchase_fingerprint' => \App\Services\Fiscal\FiscalOrderConversion::fingerprint($purchase)];
+        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
         // ########## INICIO CAMBIO FACTURAS Y NOTAS DE VENTA EN PEDIDOS
         $tipoDoc = $purchase['codigo_tipo_documento'] ?? '01';
         // ######### FIN CAMBIO FACTURAS Y NOTAS DE VENTA EN PEDIDOS
@@ -96,15 +99,29 @@ class OrderDocumentFromStatusService
             }
             // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
 
-            $emitterUser = User::query()
-                ->whereNotNull('establishment_id')
-                ->orderBy('id')
-                ->first()
-                ?: User::query()->orderBy('id')->first();
+            // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+            $fiscalInputs = null;
+            $stockReservation = json_decode($order->stock_reservation ?? 'null', true, 512, JSON_THROW_ON_ERROR);
+            if ($tipoDoc === '01') {
+                $fiscalInputs = \App\Services\Fiscal\FiscalOrderContext::prepare(
+                    DocumentTransform::transform($purchase), (int) $order->id,
+                    !empty($purchase['establishment_id']) ? (int) $purchase['establishment_id'] : ($order->stock_discounted && $stockReservation ? (int) $stockReservation['establishment_id'] : null), $order->getConnection()
+                );
+                $establishmentId = $fiscalInputs['establishment_id'];
+                $emitterUser = User::findOrFail($fiscalInputs['user_id']);
+            } else {
+                $emitterUser = User::query()
+                    ->whereNotNull('establishment_id')
+                    ->orderBy('id')
+                    ->first()
+                    ?: User::query()->orderBy('id')->first();
 
-            $establishmentId = $purchase['establishment_id']
-                ?? optional($emitterUser)->establishment_id
-                ?? optional(Establishment::query()->orderBy('id')->first())->id;
+                $establishmentId = $purchase['establishment_id']
+                    ?? ($order->stock_discounted && $stockReservation ? (int) $stockReservation['establishment_id'] : null)
+                    ?? optional($emitterUser)->establishment_id
+                    ?? optional(Establishment::query()->orderBy('id')->first())->id;
+            }
+            // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
 
             if (! $establishmentId) {
                 Log::error('No hay establecimiento disponible para generar el comprobante del pedido '.$order->id);
@@ -117,11 +134,11 @@ class OrderDocumentFromStatusService
 
             $purchase['establishment_id'] = $establishmentId;
 
-            $series = Series::where('establishment_id', $establishmentId)
+            $series = $tipoDoc === '80' ? Series::where('establishment_id', $establishmentId)
                 ->where('document_type_id', $tipoDoc)
-                ->first();
+                ->first() : null;
 
-            if (! $series) {
+            if ($tipoDoc === '80' && !$series) {
                 Log::error('No hay series disponibles para generar el comprobante. Tipo doc: '.$tipoDoc);
 
                 return array_merge($empty, [
@@ -140,7 +157,7 @@ class OrderDocumentFromStatusService
                     $saleNoteData['establishment_id'] = $establishmentId;
                 }
 
-                $response = app(SaleNoteController::class)->storeWithData($saleNoteData);
+                $response = app(SaleNoteController::class)->storeWithData($saleNoteData, array_replace($orderSource, ['emitter_user_id' => (int) $emitterUser->id]));
 
                 if (! isset($response['success']) || ! $response['success']) {
                     Log::error('Error al generar la nota de venta autom├ítica: '.($response['message'] ?? ''));
@@ -166,20 +183,13 @@ class OrderDocumentFromStatusService
 
             // Mismo flujo que el panel web (DocumentController::storeWithData):
             // Generar el documento local y su PDF sin demorar la interfaz con el correo.
-            $purchase['serie_documento'] = $series->number;
-
-            $inputs = DocumentTransform::transform($purchase);
-            $inputs['establishment_id'] = $establishmentId;
-            $inputs = DocumentValidation::validation($inputs);
+            // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+            $inputs = DocumentValidation::validation($fiscalInputs, false, true);
             $inputs = DocumentInput::set($inputs);
+            $inputs['user_id'] = (int) $emitterUser->id;
+            // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
 
-            // Tienda / invitado: auth()->id() puede ser null; Facturalo exige usuario emisor.
-            if (empty($inputs['user_id'])) {
-                $inputs['user_id'] = optional($emitterUser)->id
-                    ?? User::query()->orderBy('id')->value('id');
-            }
-
-            $response = app(DocumentController::class)->storeWithData($inputs);
+            $response = app(DocumentController::class)->storeWithData($inputs, $orderSource);
 
             if (! isset($response['success']) || ! $response['success']) {
                 Log::error('Error al generar el comprobante autom├ítico: '.($response['message'] ?? ''));
@@ -200,10 +210,8 @@ class OrderDocumentFromStatusService
                 ]);
             }
 
-            $order->update([
-                'document_external_id' => $document->external_id,
-                'number_document' => $document->number_full,
-            ]);
+            // The invoice and order link were committed together by FiscalOrderConversion.
+            $order->refresh();
 
             return array_merge($empty, [
                 'generated' => true,

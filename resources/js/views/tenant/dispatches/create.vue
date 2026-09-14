@@ -35,15 +35,12 @@
                                 </div>
                             </div>
                             <div class="col-lg-2">
-                                <div :class="{ 'has-danger': errors.series }" class="form-group">
-                                    <label class="control-label">Serie<span class="text-danger"> *</span></label>
-                                    <el-select v-model="form.series" :disabled="generalDisabledSeries()">
-                                        <el-option v-for="option in series" :key="option.number" :label="option.number"
-                                            :value="option.number"></el-option>
-                                    </el-select>
-                                    <small v-if="errors.series" class="form-control-feedback"
-                                        v-text="errors.series[0]"></small>
+                                <!-- ######## INICIO NUMERACIÓN FISCAL VENEZUELA ######## -->
+                                <div class="form-group">
+                                    <label class="control-label">Numeración y emisión</label>
+                                    <fiscal-profile-summary :profile="fiscalProfile" />
                                 </div>
+                                <!-- ######## FIN NUMERACIÓN FISCAL VENEZUELA ######## -->
                             </div>
                             <div class="col-lg-2">
                                 <div :class="{ 'has-danger': errors.date_of_issue }" class="form-group">
@@ -941,6 +938,9 @@ import DispatchFinish from './partials/finish.vue'
 import { mapActions, mapState } from "vuex/dist/vuex.mjs";
 import WarehousesDetail from '@components/WarehousesDetail.vue'
 import { setDefaultSeriesByMultipleDocumentTypes } from '@mixins/functions'
+// ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+import { fiscalSale } from '@mixins/fiscal-sale'
+// ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
 import BuyerComp from './partials/buyer.vue'
 import ReplaceNamePencil from './partials/ReplaceNamePencil.vue'
 
@@ -973,7 +973,7 @@ export default {
         BuyerComp,
         ReplaceNamePencil
     },
-    mixins: [setDefaultSeriesByMultipleDocumentTypes],
+    mixins: [setDefaultSeriesByMultipleDocumentTypes, fiscalSale],
     computed: {
         ...mapState([
             'config',
@@ -1138,6 +1138,7 @@ export default {
             this.countries = response.data.countries;
             this.locations = response.data.locations;
             this.seriesAll = response.data.series;
+            this.fiscalProfiles = response.data.fiscal_profiles || [];
             this.drivers = response.data.drivers;
             this.dispatchers = response.data.dispatchers;
             this.transports = response.data.transports;
@@ -1809,6 +1810,7 @@ export default {
             this.calculatePackagesFromItems();
         },
         async submit() {
+            if (this.loading_submit) return;
             // if (this.form.is_transport_m1l && (!this.form.license_plate_m1l || this.form.license_plate_m1l.trim() === '')) {
             //     this.errors = {license_plate_m1l: ['El número de placa es obligatorio']};
             //     return this.$message.error('El número de placa es obligatorio');
@@ -1959,10 +1961,14 @@ export default {
             // if (this.form.origin.location_id.length !== 3 || this.form.delivery.location_id.length !== 3) {
             //     return this.$message.error('El campo ubigeo es obligatorio')
             // }
+            // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+            if (this.loading_submit || !this.prepareFiscalSale()) return;
+            // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
             this.loading_submit = true;
-            this.$http.post(`/${this.resource}`, this.form).then(response => {
+            return this.$http.post(`/${this.resource}`, this.form).then(response => {
                 if (response.data.success) {
                     this.initForm();
+                    this.setDefaultCustomer();
                     this.recordId = response.data.data.id
                     this.showDialogFinish = true
                 } else {
@@ -1971,13 +1977,12 @@ export default {
             }).catch(error => {
                 this.loading_submit = false;
 
-                if (error.response.status === 422) {
-                    this.errors = error.response.data;
-                } else {
-                    this.$message.error(error.response.data.message);
-                }
+                // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+                const data = error.response && error.response.data;
+                this.errors = (data && data.errors) || {};
+                this.$message.error((data && data.message) || 'No se pudo registrar la orden. Puede reintentar la misma operación.');
+                // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
             }).then(() => {
-                this.setDefaultCustomer();
                 this.loading_submit = false;
             });
         },

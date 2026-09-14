@@ -14,6 +14,7 @@ use App\Models\Tenant\Catalogs\UnitType;
 use App\Services\SeriesCodeGenerator;
 use App\Services\SalesCustomerIdentityPolicy;
 use App\Support\Venezuela\IdentityDocument;
+use App\Support\Venezuela\PersonLocation;
 use Exception;
 
 class Functions
@@ -48,9 +49,9 @@ class Functions
     {
         if (isset($inputs['id'])) return Person::find($inputs['id'])->id;
 
-        $district_id = $inputs['district_id'];
-        $province_id = ($district_id) ? substr($district_id, 0, 4) : null;
-        $department_id = ($district_id) ? substr($district_id, 0, 2) : null;
+        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+        $location = PersonLocation::resolve((new Person())->getConnection(), $inputs['country_id'], $inputs['district_id'] ?? null);
+        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
 
         $person = Person::updateOrCreate([
             'type' => $type,
@@ -60,9 +61,9 @@ class Functions
             'name' => $inputs['name'],
             'trade_name' => $inputs['trade_name'],
             'country_id' => $inputs['country_id'],
-            'department_id' => $department_id,
-            'province_id' => $province_id,
-            'district_id' => $district_id,
+            'department_id' => $location['department_id'],
+            'province_id' => $location['province_id'],
+            'district_id' => $location['district_id'],
             'address' => $inputs['address'],
             'email' => $inputs['email'],
             'telephone' => $inputs['telephone'],

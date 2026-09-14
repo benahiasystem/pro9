@@ -1359,17 +1359,9 @@ class AccountController extends Controller
 
     private function getIgv($date,$establishment_id)
     {
-        $date_start = config('tenant.igv_31556_start');
-        $date_end = config('tenant.igv_31556_end');
-        $date_percentage = config('tenant.igv_31556_percentage');
-        $establishment = Establishment::query()
-            ->select('id', 'has_igv_31556')
-            ->find($establishment_id);
-        if ($establishment->has_igv_31556) {
-            if ($date >= $date_start && $date <= $date_end) {
-                return $date_percentage*100;
-            }
-        }
+        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+        // La sucursal no puede sustituir el IVA venezolano por un régimen peruano.
+        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
         // ########## INICIO CAMBIO AFECTACIÓN IVA
         return \App\Support\Venezuela\Localization::taxPercentage();
         // ######### FIN CAMBIO AFECTACIÓN IVA

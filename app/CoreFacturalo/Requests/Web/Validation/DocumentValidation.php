@@ -11,9 +11,9 @@ class DocumentValidation
         SalesDocumentTypePolicy::assertNewFiscalDocumentAllowed($inputs['document_type_id'] ?? null);
         // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
 
-        $series = Functions::findSeries($inputs);
-        $inputs['series'] = $series->number;
-        unset($inputs['series_id']);
+        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+        $inputs = \App\Services\Fiscal\FiscalWebDocumentContext::prepare($inputs);
+        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
 
         Functions::DNI($inputs);
         Functions::identityDocumentTypeInvoice($inputs);

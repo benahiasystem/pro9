@@ -26,6 +26,14 @@ class DocumentObserver
     {
         $company = Company::active();
 
+        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+        if ($document->fiscalReservationId() !== null) {
+            $document->filename = Functions::filename($company, $document->document_type_id, $document->series, $document->number);
+            $document->unique_filename = $document->filename;
+            return;
+        }
+        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
+
         // Serializa la asignaci├│n de correlativo por serie (evita duplicados en pagos concurrentes).
         Series::where('document_type_id', $document->document_type_id)
             ->where('number', $document->series)

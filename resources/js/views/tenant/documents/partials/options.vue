@@ -33,6 +33,9 @@
         </div>
         <Keypress key-event="keyup" :multiple-keys="multiple" @success="checkKeyWithAlt"/>
         <div v-loading="loading">
+            <!-- ######## INICIO NUMERACIÓN FISCAL VENEZUELA ######## -->
+            <fiscal-status v-if="form.id && showDialog" :key="form.id" :document-id="Number(form.id)" />
+            <!-- ######## FIN NUMERACIÓN FISCAL VENEZUELA ######## -->
             <div v-if="form.response_message"
                  class="row mb-4">
                 <div class="col-md-12">
@@ -197,10 +200,14 @@ import {mapState, mapActions} from "vuex/dist/vuex.mjs";
 import Keypress from "vue-keypress";
 import QrApi from '@viewsModuleQrApi/QrApiTemplate.vue'
 import QrChatWsapp from '@viewsModuleQrChatBuho/ButtonSend.vue'
+// ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+import FiscalStatus from './fiscal-status.vue'
+// ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
 
 export default {
     props: ['showDialog', 'recordId', 'showClose', 'isContingency', 'generatDispatch', 'dispatchId', 'isUpdate', 'configuration', 'table', 'failsInSend', 'failsMessage'],
     components: {
+        FiscalStatus,
         Keypress,
         QrApi,
         QrChatWsapp

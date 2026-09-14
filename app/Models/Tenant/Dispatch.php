@@ -66,6 +66,23 @@ use App\Models\Tenant\Catalogs\IdentityDocumentType;
  */
 class Dispatch extends ModelTenant
 {
+    // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+    private ?int $fiscalReservationId = null;
+
+    public function useFiscalReservation(int $id): self
+    {
+        if ($this->exists || $id < 1) {
+            throw new \DomainException('Solo una orden nueva puede recibir una reserva fiscal.');
+        }
+        $this->fiscalReservationId = $id;
+        return $this;
+    }
+
+    public function fiscalReservationId(): ?int
+    {
+        return $this->fiscalReservationId;
+    }
+    // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
     use ApiResourceFindTrait;
 
     protected $with = ['user', 'fiscal_environment_type', 'state_type', 'document_type', 'unit_type', 'transport_mode_type','transfer_reason_type', 'items', 'reference_document'];
@@ -469,7 +486,9 @@ class Dispatch extends ModelTenant
      */
     public function getNumberFullAttribute()
     {
-        return $this->series . '-' . $this->number;
+        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+        return ($this->series === null || $this->series === '') ? (string) $this->number : $this->series . '-' . $this->number;
+        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
     }
 
 

@@ -3,7 +3,9 @@
     $customer = $document->customer;
     //$path_style = app_path('CoreFacturalo'.DIRECTORY_SEPARATOR.'Templates'.DIRECTORY_SEPARATOR.'pdf'.DIRECTORY_SEPARATOR.'style.css');
 
-    $document_number = $document->series.'-'.str_pad($document->number, 8, '0', STR_PAD_LEFT);
+    /* ######## INICIO NUMERACIÓN FISCAL VENEZUELA ######## */
+$document_number = $document->number_full;
+/* ######## FIN NUMERACIÓN FISCAL VENEZUELA ######## */
     // $document_type_driver = App\Models\Tenant\Catalogs\IdentityDocumentType::findOrFail($document->driver->identity_document_type_id);
 
 @endphp

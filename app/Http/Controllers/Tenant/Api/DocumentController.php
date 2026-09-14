@@ -18,20 +18,23 @@ class DocumentController extends Controller
 
     public function store(Request $request)
     {
-        // dd($request->all());
+        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
         $print_result = ['auto_printed' => false, 'print_order_id' => null, 'reason' => null];
-
-        $fact = DB::connection('tenant')->transaction(function () use ($request, &$print_result) {
-            $facturalo = new Facturalo();
-            $facturalo->save($request->all());
-            $facturalo->createPdf();
-            $print_result = $facturalo->generatePrintOrder();
-            $facturalo->sendEmail();
-
-            return $facturalo;
-        });
-
+        $data = $request->all();
+        $fact = (new Facturalo())->saveFiscal($data, (int) $data['fiscal_profile_id'], $data['operation_key'], $data['fiscal_fingerprint'], $data['fiscal_channel'], $data['fiscal_group_id']);
         $document = $fact->getDocument();
+        $db = $document->getConnection();
+        $reservation = $db->table('fiscal_number_reservations')->where('document_id', $document->id)->first();
+        $reservation = (new \App\Services\Fiscal\FiscalEmissionService($db))->process((int) $reservation->id);
+        $fact->createPdf();
+        if ($fact->wasNewFiscalRegistration()) {
+            $print_result = $fact->generatePrintOrder();
+            $fact->sendEmail();
+        } else {
+            $print_result['reason'] = 'already_registered';
+            $print_result['retry_requires_review'] = true;
+        }
+        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
         $response = $fact->getResponse();
 
         return [
@@ -44,6 +47,8 @@ class DocumentController extends Controller
                 'state_type_description' => $this->getStateTypeDescription($document->state_type_id),
                 'number_to_letter' => $document->number_to_letter,
                 'id' => $document->id,
+                'fiscal' => ['status' => $reservation->status, 'control_number' => $reservation->control_number, 'reservation_id' => $reservation->id],
+                'replayed' => !$fact->wasNewFiscalRegistration(),
                 'print_ticket' =>  $document->getUrlPrintByFormat('ticket'),
             ],
             // Resultado de la impresión automática server-side.

@@ -36,7 +36,9 @@ class DocumentRequest extends FormRequest
                 'required',
             ],
             'series' => [
-                'required',
+                // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+                'nullable', 'string', 'max:32',
+                // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
             ],
             'date_of_issue' => [
                 'required',

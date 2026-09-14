@@ -1,7 +1,9 @@
 <template>
     <el-dialog :visible="showDialog" @close="close" @open="onOpen" :close-on-click-modal="false" width="880px">
         <div slot="title" class="series-title">
-            <span class="font-weight-bold">Series</span>
+            <!-- ######## INICIO NUMERACIÓN FISCAL VENEZUELA ######## -->
+            <span class="font-weight-bold">{{ internalOnly ? 'Documentos internos y grupos' : 'Series' }}</span>
+            <!-- ######## FIN NUMERACIÓN FISCAL VENEZUELA ######## -->
             <span class="text-muted" v-if="establishment" style="font-size:13px">
                 Sucursal <b>{{ establishment.description }}</b> · {{ establishment.code }}
             </span>
@@ -18,8 +20,12 @@
         <!-- Filtros (estilo maqueta) + toggle Dedicado a la altura de los tabs -->
         <div class="series-filters d-flex align-items-center flex-wrap mb-3">
             <button type="button" class="chip" :class="{active: filter === 'all'}" @click="setFilter('all')">Todos</button>
-            <button type="button" class="chip" :class="{active: filter === 'basic'}" @click="setFilter('basic')">Básico SENIAT</button>
-            <button type="button" class="chip" :class="{active: filter === 'advanced'}" @click="setFilter('advanced')">Avanzado SENIAT</button>
+            <!-- ######## INICIO NUMERACIÓN FISCAL VENEZUELA ######## -->
+            <button v-if="!internalOnly" type="button" class="chip" :class="{active: filter === 'basic'}" @click="setFilter('basic')">Facturas y notas</button>
+            <!-- ######## FIN NUMERACIÓN FISCAL VENEZUELA ######## -->
+            <!-- ######## INICIO NUMERACIÓN FISCAL VENEZUELA ######## -->
+            <button v-if="!internalOnly" type="button" class="chip" :class="{active: filter === 'advanced'}" @click="setFilter('advanced')">Órdenes de entrega</button>
+            <!-- ######## FIN NUMERACIÓN FISCAL VENEZUELA ######## -->
             <button type="button" class="chip" :class="{active: filter === 'internal'}" @click="setFilter('internal')">Interno</button>
             <span class="fdiv" v-if="enableDedicatedSeries || hasContingency"></span>
             <button type="button" v-if="enableDedicatedSeries" class="chip ded" :class="{active: filter === 'dedicated'}" @click="setFilter('dedicated')"><span class="dot"></span>Dedicado</button>
@@ -149,7 +155,9 @@
                     <el-radio-group v-model="form.emission" size="small" @change="onEmissionChange">
                         <el-radio-button label="normal">Normal</el-radio-button>
                         <el-radio-button v-if="enableDedicatedSeries" label="dedicated">Dedicado</el-radio-button>
-                        <el-radio-button label="contingency">Contingencia</el-radio-button>
+                        <!-- ######## INICIO NUMERACIÓN FISCAL VENEZUELA ######## -->
+                        <el-radio-button v-if="!internalOnly" label="contingency">Contingencia</el-radio-button>
+                        <!-- ######## FIN NUMERACIÓN FISCAL VENEZUELA ######## -->
                     </el-radio-group>
                 </div>
                 <div class="col-8 text-end">
@@ -174,7 +182,9 @@
 
 <script>
     export default {
-        props: ['showDialog', 'establishmentId', 'establishment'],
+        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+        props: ['showDialog', 'establishmentId', 'establishment', 'internalOnly'],
+        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
         data() {
             return {
                 resource: 'series',
@@ -199,7 +209,9 @@
                 return this.records.some(row => row.contingency)
             },
             visibleRecords() {
-                let items = this.records.slice()
+                // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+                let items = this.records.filter(row => !this.internalOnly || row.category === 'internal')
+                // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
                 if (this.filter === 'dedicated') items = items.filter(row => row.dedicated)
                 else if (this.filter === 'contingency') items = items.filter(row => row.contingency)
                 else if (this.filter !== 'all') items = items.filter(row => row.category === this.filter && !row.dedicated)
@@ -211,8 +223,8 @@
             },
             groupedTypes() {
                 const groups = [
-                    {value: 'basic', label: 'Básico SENIAT'},
-                    {value: 'advanced', label: 'Avanzado SENIAT'},
+                    {value: 'basic', label: 'Facturas y notas'},
+                    {value: 'advanced', label: 'Órdenes de entrega'},
                     {value: 'internal', label: 'Interno'},
                 ]
                 return groups
@@ -249,7 +261,9 @@
             },
             async getTables() {
                 const {data} = await this.$http.get(`/${this.resource}/tables`)
-                this.seriesTypes = data.series_types || []
+                // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+                this.seriesTypes = (data.series_types || []).filter(type => !this.internalOnly || type.category === 'internal')
+                // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
                 this.enableDedicatedSeries = !!data.enable_dedicated_series
             },
             async getData() {
@@ -358,7 +372,7 @@
                 await Promise.all([this.getGroups(), this.getGroupTables(), this.getData()])
             },
             categoryLabel(category) {
-                return {basic: 'Básico SENIAT', advanced: 'Avanzado SENIAT', internal: 'Interno'}[category] || category
+                return {basic: 'Facturas y notas', advanced: 'Órdenes de entrega', internal: 'Interno'}[category] || category
             },
             optionsByCategory(category) {
                 let list = this.seriesTypes.filter(type => type.category === category)

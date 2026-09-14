@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\DB;
  * - `total_discount` decimal(12,2) NOT NULL DEFAULT '0.00'
  * - `discount_coupon_code` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `discount_coupon_id` bigint(20) unsigned DEFAULT NULL
+ * - `stock_reservation` json DEFAULT NULL: movimientos previos de existencias, controlados por servidor
  * - `stock_discounted` tinyint(1) NOT NULL DEFAULT '0'
  * - `reference_payment` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `document_external_id` char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL
@@ -48,6 +49,7 @@ CREATE TABLE `orders` (
   `discount_coupon_code` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `discount_coupon_id` bigint(20) unsigned DEFAULT NULL,
   `stock_discounted` tinyint(1) NOT NULL DEFAULT '0',
+  `stock_reservation` json DEFAULT NULL,
   `reference_payment` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `document_external_id` char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `number_document` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,

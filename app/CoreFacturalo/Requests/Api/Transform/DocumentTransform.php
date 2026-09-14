@@ -36,6 +36,9 @@ class DocumentTransform
         // }
 
         $inputs_transform = [
+            // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+            'operation_key' => $inputs['operation_key'] ?? $inputs['clave_operacion'] ?? null,
+            // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
             'series' => Functions::valueKeyInArray($inputs, 'serie_documento'),
             'number' => Functions::valueKeyInArray($inputs, 'numero_documento'),
             'consigned_id' => Functions::valueKeyInArray($inputs, 'codigo_consignado'),
@@ -234,18 +237,6 @@ class DocumentTransform
         return null;
     }
 
-
-    private static function parseLocation($district_id)
-    {
-        $province_id = $district_id ? substr($district_id, 0 ,4) : null;
-        $department_id = $district_id ? substr($district_id, 0 ,2) : null;
-
-        return [
-            $department_id,
-            $province_id,
-            $district_id
-        ];
-    }
 
     private static function perception($inputs)
     {

@@ -255,7 +255,10 @@
                         class="btn-sunat btn-danger" data-toggle="tooltip" data-placement="bottom"
                         title="Clic para ver o cambiar la configuración del entorno y el tipo de conexión">
                         <span class="btn-title">Modo: DEMO</span>
-                        <span style="font-size: 12px;">Conectado a {{ $environment }}</span>
+                        {{-- ######## INICIO NUMERACIÓN FISCAL VENEZUELA ######## --}}
+                        <span style="font-size: 12px;">Modalidad: {{ $environment }}</span>
+                        <span style="font-size: 12px;">Integración no verificada</span>
+                        {{-- ######## FIN NUMERACIÓN FISCAL VENEZUELA ######## --}}
                     </a>
                 </li>
             @elseif($vc_company->fiscal_environment == 'production')
@@ -264,7 +267,10 @@
                         class="btn-sunat {{ $productionClass }}" data-toggle="tooltip" data-placement="bottom"
                         title="Clic para ver o cambiar la configuración del entorno y el tipo de conexión">
                         <span class="btn-title">PRODUCCIÓN</span>
-                        <span style="font-size: 12px;">Conectado a {{ $environment }}</span>
+                        {{-- ######## INICIO NUMERACIÓN FISCAL VENEZUELA ######## --}}
+                        <span style="font-size: 12px;">Modalidad: {{ $environment }}</span>
+                        <span style="font-size: 12px;">Integración no verificada</span>
+                        {{-- ######## FIN NUMERACIÓN FISCAL VENEZUELA ######## --}}
                     </a>
                 </li>
             @else

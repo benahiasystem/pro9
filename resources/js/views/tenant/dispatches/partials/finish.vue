@@ -7,6 +7,9 @@
                :close-on-press-escape="false"
                :show-close="false"
                @open="create">
+        <!-- ######## INICIO NUMERACIÓN FISCAL VENEZUELA ######## -->
+        <fiscal-status v-if="recordId && showDialog" :key="recordId" :document-id="Number(recordId)" resource="dispatches" />
+        <!-- ######## FIN NUMERACIÓN FISCAL VENEZUELA ######## -->
         <div v-if="form.response_message"
              class="row mb-4">
             <div class="col-md-12">
@@ -117,6 +120,9 @@
 </template>
 
 <script>
+// ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+import FiscalStatus from '../../documents/partials/fiscal-status.vue'
+// ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
 import {whatsappNumber} from "@helpers/phone";
 import {mapState} from "vuex/dist/vuex.mjs";
 import QrApi from '@viewsModuleQrApi/QrApiTemplate.vue'
@@ -127,6 +133,7 @@ export default {
         'showClose'
     ],
     components: {
+        FiscalStatus,
         QrApi
     },
     name: 'DispatchFinish',

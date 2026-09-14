@@ -21,8 +21,8 @@ use Illuminate\Support\Facades\DB;
  * - `reference_quotation_id` int(10) unsigned DEFAULT NULL
  * - `reference_order_form_id` int(10) unsigned DEFAULT NULL
  * - `reference_order_note_id` int(10) unsigned DEFAULT NULL
- * - `series` char(4) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `number` int(11) NOT NULL
+ * - `series` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL
+ * - `number` bigint unsigned NOT NULL
  * - `date_of_issue` date NOT NULL
  * - `time_of_issue` time NOT NULL
  * - `date_delivery_to_transport` date DEFAULT NULL COMMENT 'para orden de entrega solo con transporte publico'
@@ -104,8 +104,10 @@ CREATE TABLE `dispatches` (
   `reference_quotation_id` int(10) unsigned DEFAULT NULL,
   `reference_order_form_id` int(10) unsigned DEFAULT NULL,
   `reference_order_note_id` int(10) unsigned DEFAULT NULL,
-  `series` char(4) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `number` int(11) NOT NULL,
+  -- ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+  `series` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `number` bigint unsigned NOT NULL,
+  -- ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
   `date_of_issue` date NOT NULL,
   `time_of_issue` time NOT NULL,
   `date_delivery_to_transport` date DEFAULT NULL COMMENT 'para orden de entrega solo con transporte publico',

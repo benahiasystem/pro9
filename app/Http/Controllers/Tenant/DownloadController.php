@@ -29,6 +29,10 @@ class DownloadController extends Controller
 
         if (!$document) throw new Exception("El código {$external_id} es inválido, no se encontró documento relacionado");
 
+        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+        $hasFiscalReservation = \App\Services\Fiscal\FiscalPdfData::forDocument($document) !== null;
+        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
+
         $type_pdf = $document_type;
         if ($type == 'pdf') {
             if ($document_type == 'document') {
@@ -37,7 +41,7 @@ class DownloadController extends Controller
                 if($document->document_type_id === '08') $type_pdf = 'debit';
             }
 
-            if ($document_type == 'document' && in_array($document->document_type_id, ['01'], true)) {
+            if (!$hasFiscalReservation && $document_type == 'document' && in_array($document->document_type_id, ['01'], true)) {
                 if (trim(strip_tags(html_entity_decode($document->terms_condition ?? ''))) === '') {
                     $configuration = Configuration::select('terms_condition_sale')->first();
                     if ($configuration && trim(strip_tags(html_entity_decode($configuration->terms_condition_sale ?? ''))) !== '') {
@@ -48,8 +52,8 @@ class DownloadController extends Controller
                 }
             }
 
-            if ($format != null) {
-                $this->reloadPDF($document, $type_pdf, $format);
+            if ($hasFiscalReservation || $format != null) {
+                $this->reloadPDF($document, $type_pdf, $format ?? 'a4');
             } else {
                 // Validar la existencia física del PDF.
                 // Si el formato es null y no existe en disco, forzar 'a4' y regenerar preventivamente con el tipo correcto.

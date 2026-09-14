@@ -42,8 +42,9 @@ class AppConfiguration extends ModelTenant
             'header_waves' => $this->header_waves,
             'app_mode' => $this->app_mode,
             'direct_print' => $this->direct_print,
-            'has_igv_31556' => auth()->user() ? auth()->user()->establishment->has_igv_31556 : false,
-            'igv_31556_percentage' => config('tenant.igv_31556_percentage'),
+            // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+            // Se aplica exclusivamente el contrato de IVA venezolano.
+            // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
             'direct_send_documents_whatsapp' => $this->direct_send_documents_whatsapp,
             'primary_color' => $this->primary_color,
         ];

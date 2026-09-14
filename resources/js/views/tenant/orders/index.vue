@@ -894,9 +894,6 @@ export default {
                 }
             }
 
-            // Marcar en el front que el stock será descontado
-            this.record.stock_discounted = true;
-
             await this.$http
                 .post(`/statusOrder/update`, {
                     record: this.record,
@@ -904,10 +901,18 @@ export default {
                     field: this.statusField
                 })
                 .then(response => {
+                    // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+                    if (response.data.type === 'warning' || response.data.type === 'error') {
+                        this.$message.warning(response.data.message);
+                        return;
+                    }
+                    this.record.stock_discounted = true;
+                    // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
                     this.$message.success(response.data.message);
                     this.$eventHub.$emit('reloadData');
                     this.close();
-                });
+                })
+                .catch(error => { this.$message.error((error.response && error.response.data && error.response.data.message) || 'No se pudo reservar el inventario del pedido.'); });
         },
         close() {
             this.form = [];

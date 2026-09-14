@@ -58,6 +58,96 @@ class Facturalo
     protected $response;
     protected $apply_change;
 
+    // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+    private ?int $fiscalReservationId = null;
+    private bool $newFiscalRegistration = false;
+
+    public function wasNewFiscalRegistration(): bool
+    {
+        return $this->newFiscalRegistration;
+    }
+
+    /** Caller resolves the authorized channel/profile and retains the same key on retries. */
+    public function saveFiscal(array $inputs, int $profileId, string $operationKey, string $fingerprint, string $channel, ?int $deviceGroupId = null, ?array $orderSource = null): self
+    {
+        $this->newFiscalRegistration = false;
+        if (!in_array($inputs['type'] ?? null, ['invoice', 'credit', 'debit', 'dispatch'], true) || !empty($inputs['id'])) {
+            throw new \DomainException('Este registro fiscal requiere una factura, nota u orden de entrega nueva.');
+        }
+        if ($orderSource !== null && ($inputs['type'] !== 'invoice' || !empty($inputs['dispatch_id']))) {
+            throw new \DomainException('El pedido debe convertirse directamente en una factura.');
+        }
+        $this->actions = $inputs['actions'] ?? [];
+        $this->type = $inputs['type'];
+        $reservation = (new \App\Services\Fiscal\FiscalCommercialService($this->company->getConnection()))->register(
+            $profileId, $operationKey, $fingerprint, (int) $inputs['establishment_id'], $channel,
+            function (array $identifiers, int $reservationId) use ($inputs, $operationKey, $orderSource): int {
+                $this->newFiscalRegistration = true;
+                $this->fiscalReservationId = $reservationId;
+                try {
+                    if ($orderSource !== null) {
+                        return \App\Services\Fiscal\FiscalOrderConversion::register(
+                            $this->company->getConnection(), array_replace($orderSource, ['establishment_id' => (int) $inputs['establishment_id']]), $operationKey,
+                            function (object $order) use ($inputs, $identifiers): int {
+                                $this->save(\App\Services\Fiscal\FiscalOrderStockReservation::applyWarehouses(array_replace($inputs, $identifiers), $order));
+                                return (int) $this->document->id;
+                            }
+                        );
+                    }
+                    if (in_array($inputs['type'], ['credit', 'debit'], true)) {
+                        $db = $this->company->getConnection();
+                        $actor = auth()->user();
+                        if (!$actor instanceof \App\Models\Tenant\User) {
+                            throw new \DomainException('La nota requiere un usuario tenant autorizado.');
+                        }
+                        $reference = \App\Services\Fiscal\FiscalNoteReference::capture($db, $inputs['note'], array_replace($inputs, $identifiers), $actor);
+                        $reservation = $db->table('fiscal_number_reservations')->find($reservationId);
+                        $snapshot = json_decode($reservation->fiscal_snapshot, true, 512, JSON_THROW_ON_ERROR);
+                        $snapshot['affected_document'] = $reference;
+                        $db->table('fiscal_number_reservations')->where('id', $reservationId)->update(['fiscal_snapshot' => json_encode($snapshot, JSON_THROW_ON_ERROR)]);
+                    }
+                    if (!empty($inputs['dispatch_id']) && $inputs['type'] === 'invoice') {
+                        $actor = auth()->user();
+                        if (!$actor instanceof \App\Models\Tenant\User) {
+                            throw new \DomainException('La conversión requiere un usuario tenant autorizado.');
+                        }
+                        return \App\Services\Fiscal\FiscalDispatchConversion::register(
+                            $this->company->getConnection(), array_replace($inputs, $identifiers), $actor,
+                            function () use ($inputs, $identifiers): int {
+                                $this->save(array_replace($inputs, $identifiers));
+                                return (int) $this->document->id;
+                            }
+                        );
+                    }
+                    $this->save(array_replace($inputs, $identifiers));
+                    return (int) $this->document->id;
+                } finally {
+                    $this->fiscalReservationId = null;
+                }
+            }, $deviceGroupId, function (object $reservation) use ($inputs): void {
+                $snapshot = json_decode($reservation->fiscal_snapshot, true, 512, JSON_THROW_ON_ERROR);
+                if ($snapshot['mode'] === 'free_form') {
+                    // Validate the exact linked draft while its identifiers and effects are still uncommitted.
+                    \App\Services\Fiscal\FiscalPdfData::assertItemCapacity($snapshot, count($inputs['items'] ?? []));
+                    $this->createPdf(null, null, null, 'validate');
+                }
+            }
+        );
+        $this->document = $this->type === 'dispatch' ? Dispatch::findOrFail($reservation->dispatch_id) : Document::findOrFail($reservation->document_id);
+        return $this;
+    }
+
+    private function createDocument(array $inputs): Document
+    {
+        $document = new Document($inputs);
+        if ($this->fiscalReservationId !== null) {
+            $document->useFiscalReservation($this->fiscalReservationId);
+        }
+        $document->save();
+        return $document;
+    }
+    // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
+
     public function __construct()
     {
         // ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
@@ -113,7 +203,7 @@ class Facturalo
         switch ($this->type) {
             case 'debit':
             case 'credit':
-                $document = Document::create($inputs);
+                $document = $this->createDocument($inputs);
                 $document->note()->create($inputs['note']);
                 foreach ($inputs['items'] as $row) {
                     $document->items()->create($row);
@@ -122,7 +212,7 @@ class Facturalo
                 $this->document = Document::find($document->id);
                 break;
             case 'invoice':
-                $document = Document::create($inputs);
+                $document = $this->createDocument($inputs);
                 $this->savePayments($document, $inputs['payments']);
                 $this->saveFee($document, $inputs['fee']);
                 foreach ($inputs['items'] as $row) {
@@ -168,10 +258,19 @@ class Facturalo
                 $this->document = PurchaseSettlement::find($document->id);
                 break;
             default:
-                DispatchItem::query()->where('dispatch_id', $inputs['id'])->delete();
-                $document = Dispatch::query()->updateOrCreate([
-                    'id' => $inputs['id']
-                ], $inputs);
+                // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+                if ($this->fiscalReservationId !== null) {
+                    $document = new Dispatch($inputs);
+                    $document->useFiscalReservation($this->fiscalReservationId);
+                    $document->save();
+                } else {
+                    if (!empty($inputs['id']) && $this->company->getConnection()->table('fiscal_number_reservations')->where('dispatch_id', $inputs['id'])->exists()) {
+                        throw new \DomainException('La orden ya tiene una reserva fiscal y no puede reescribirse.');
+                    }
+                    DispatchItem::query()->where('dispatch_id', $inputs['id'])->delete();
+                    $document = Dispatch::query()->updateOrCreate(['id' => $inputs['id']], $inputs);
+                }
+                // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
                 foreach ($inputs['items'] as $row) {
                     $document->items()->create($row);
                 }
@@ -244,6 +343,10 @@ class Facturalo
         $format_pdf = $this->actions['format_pdf'] ?? null;
 
         $this->document = ($document != null) ? $document : $this->document;
+        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+        $fiscalPdfData = \App\Services\Fiscal\FiscalPdfData::forDocument($this->document);
+        $this->company = \App\Services\Fiscal\FiscalPdfData::issuerForPrint($this->company, $fiscalPdfData);
+        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
         $format_pdf = ($format != null) ? $format : $format_pdf;
         $this->type = ($type != null) ? $type : $this->type;
 
@@ -645,6 +748,9 @@ class Facturalo
             $this->renderMpdfSafely(function () use ($pdf, $html) {
                 return $pdf->WriteHTML($html, HTMLParserMode::HTML_BODY);
             });
+            // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+            \App\Services\Fiscal\FiscalPdfData::assertPageCount($fiscalPdfData, $pdf->page);
+            // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
             return "<style>".$ticket_html.$stylesheet."</style>".$html;
         }
         else {
@@ -679,6 +785,12 @@ class Facturalo
         }
 
         // echo $html_header.$html.$html_footer; exit();
+        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+        \App\Services\Fiscal\FiscalPdfData::assertPageCount($fiscalPdfData, $pdf->page);
+        if ($output === 'validate') {
+            return $pdf->page;
+        }
+        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
         $this->uploadFile($this->renderMpdfSafely(function () use ($pdf) {
             return $pdf->output('', 'S');
         }), 'pdf');
@@ -920,6 +1032,13 @@ class Facturalo
      */
     public function update($inputs,$id)
     {
+        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+        if ($this->company->getConnection()->table('fiscal_number_reservations')->where('document_id', $id)->exists()) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'document' => 'El comprobante ya tiene una reserva fiscal y su contenido no puede reescribirse. Use el procedimiento de corrección correspondiente.',
+            ]);
+        }
+        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
 
         $this->actions = array_key_exists('actions', $inputs)?$inputs['actions']:[];
         $this->type = @$inputs['type'];

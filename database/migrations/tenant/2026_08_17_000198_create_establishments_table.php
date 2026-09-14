@@ -23,7 +23,6 @@ use Illuminate\Support\Facades\DB;
  * - `customer_id` int(10) unsigned DEFAULT NULL
  * - `logo` varchar(150) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `template_pdf` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'default'
- * - `has_igv_31556` tinyint(1) NOT NULL DEFAULT '0'
  * - `template_ticket_pdf` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'default'
  * - `created_at` timestamp NULL DEFAULT NULL
  * - `updated_at` timestamp NULL DEFAULT NULL
@@ -50,7 +49,6 @@ CREATE TABLE `establishments` (
   `customer_id` int(10) unsigned DEFAULT NULL,
   `logo` varchar(150) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `template_pdf` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'default',
-  `has_igv_31556` tinyint(1) NOT NULL DEFAULT '0',
   `template_ticket_pdf` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'default',
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,

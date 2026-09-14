@@ -352,38 +352,19 @@ class DispatchController extends Controller
 
     public function store(DispatchRequest $request)
     {
-        $company = Company::query()
-            ->select('fiscal_environment')
-            ->first();
         $configuration = Configuration::first();
-        $res = [];
-        if ($request->series[0] == 'T') {
-            /** @var Facturalo $fact */
-            $fact = DB::connection('tenant')->transaction(function () use ($request, $configuration) {
-                $facturalo = new Facturalo();
-                $facturalo->save($request->all());
-                $document = $facturalo->getDocument();
-                $facturalo->createPdf();
-                return $facturalo;
-            });
-
-            $document = $fact->getDocument();
-//            if ($company->fiscal_environment === 'production') {
-//            }
-            // $response = $fact->getResponse();
-        } else {
-            /** @var Facturalo $fact */
-            $fact = DB::connection('tenant')->transaction(function () use ($request) {
-                $facturalo = new Facturalo();
-                $facturalo->save($request->all());
-                $facturalo->createPdf();
-
-                return $facturalo;
-            });
-
-            $document = $fact->getDocument();
-            // $response = $fact->getResponse();
+        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+        $data = $request->all();
+        $fact = new Facturalo();
+        $fact->saveFiscal($data, (int) $data['fiscal_profile_id'], $data['operation_key'], $data['fiscal_fingerprint'], $data['fiscal_channel'], $data['fiscal_group_id']);
+        $document = $fact->getDocument();
+        $connection = $document->getConnection();
+        $reservation = $connection->table('fiscal_number_reservations')->where('dispatch_id', $document->id)->first();
+        if ($connection->transactionLevel() === 0) {
+            $reservation = (new \App\Services\Fiscal\FiscalEmissionService($connection))->process((int) $reservation->id);
+            $fact->createPdf();
         }
+        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
 
         if (!empty($document->reference_document_id) && $configuration->getUpdateDocumentOnDispaches()) {
             $reference = Document::find($document->reference_document_id);
@@ -393,7 +374,7 @@ class DispatchController extends Controller
         }
 
         // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
-        $message = "Se creó la orden de entrega {$document->series}-{$document->number}";
+        $message = "Se registró la orden de entrega {$document->number_full}";
         // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
 
         return [
@@ -401,6 +382,7 @@ class DispatchController extends Controller
             'message' => $message,
             'data' => [
                 'id' => $document->id,
+                'fiscal' => ['status' => $reservation->status, 'control_number' => $reservation->control_number],
             ],
         ];
     }
@@ -533,15 +515,19 @@ class DispatchController extends Controller
         $transportModeTypes = TransportModeType::whereActive()->get();
         $unitTypes = UnitType::query()
             ->where('active', true)
-            ->whereIn('id', ['KGM', 'TNE'])->get()->transform(function ($r) {
+            ->whereIn('id', ['KG', 'TON'])->get()->transform(function ($r) {
                 return [
                     'id' => $r->id,
                     'name' => func_str_to_upper_utf8($r->description)
                 ];
             });
 
-        $establishments = Establishment::all();
-        $series = app(SeriesResolver::class)->applyContext(Series::query())->get()->toArray();
+        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+        $establishments = Establishment::where('id', auth()->user()->establishment_id)->get();
+        $series = [];
+        $fiscal_profiles = (new \App\Services\FiscalProfileService(Company::active()->getConnection()))
+            ->forSelection((int) auth()->user()->establishment_id, 'presential', app(SeriesResolver::class)->activeGroupId());
+        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
         $company = Company::select('number', 'name', 'identity_document_type_id')->first();
         $drivers = (new DriverController())->getOptions();
         $transports = (new TransportController())->getOptions();
@@ -549,6 +535,7 @@ class DispatchController extends Controller
         $related_document_types = RelatedDocumentType::available();
 
         return compact(
+            'fiscal_profiles',
             'establishments',
             'customers',
             'series',
@@ -630,7 +617,13 @@ class DispatchController extends Controller
 
     public function generateDocumentTables($id)
     {
-        $dispatch = Dispatch::findOrFail($id);
+        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+        $actor = auth()->user();
+        abort_unless($actor && in_array($actor->type, ['admin', 'seller'], true), 403);
+        $query = Dispatch::where('establishment_id', $actor->establishment_id);
+        if ($actor->type === 'seller') $query->where('user_id', $actor->id);
+        $dispatch = $query->findOrFail($id);
+        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
         $establishment = Establishment::where('id', auth()->user()->establishment_id)->first();
         $establishment_id = $establishment->id;
         $warehouse = ModuleWarehouse::where('establishment_id', $establishment_id)->first();
@@ -702,7 +695,11 @@ class DispatchController extends Controller
         });
 
         // Series filtradas por contexto (oculta dedicadas / restringe al grupo activo). Ver SeriesResolver.
-        $series = app(SeriesResolver::class)->applyContext(Series::where('establishment_id', $establishment->id))->get();
+        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+        $series = app(SeriesResolver::class)->applyContext(Series::where('establishment_id', $establishment->id)->where('document_type_id', '80'))->get();
+        $fiscal_profiles = (new \App\Services\FiscalProfileService($dispatch->getConnection()))
+            ->forSelection((int) $establishment->id, 'presential', app(SeriesResolver::class)->activeGroupId());
+        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
         // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
         $document_types_invoice = DocumentType::whereIn('id', ['01'])->get();
         // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
@@ -714,6 +711,7 @@ class DispatchController extends Controller
 
         return response()->json([
             'dispatch' => $dispatch,
+            'fiscal_profiles' => $fiscal_profiles,
             'document_types_invoice' => $document_types_invoice,
             'establishments' => $establishment,
             'payment_destinations' => $payment_destinations,

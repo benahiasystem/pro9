@@ -5,6 +5,10 @@ description: Mantener en Pro9 las ventas con Factura y Nota de venta para instal
 
 # Mantener Facturas y Notas de venta sin Boleta
 
+## Numeración venezolana
+
+La adecuación aprobada de SCRUM-39 se rige por [mantener-numeracion-fiscal-venezuela-pro9](../mantener-numeracion-fiscal-venezuela-pro9/SKILL.md). Los prefijos FF/FC/FD descritos abajo dejan de ser una obligación de formato fiscal al integrar el nuevo servicio. La separación entre Factura, NC/ND, Nota de venta y Órdenes de entrega permanece; no habilitar FE ni retenciones por la mera existencia de una fila de catálogo. Mantener el rechazo de Boletas y las identidades activas.
+
 ## Objetivo
 
 Aplicar un único contrato funcional en todos los canales de venta: Facturas (`01`) y Notas de venta (`80` o el alias técnico vigente `nv`). La instalación nueva no tiene Boletas ni datos anteriores que convertir. Conservar la auditoría de las operaciones actuales.

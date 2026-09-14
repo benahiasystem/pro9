@@ -8,6 +8,30 @@ return new class extends Migration
 {
     public function up(): void
     {
+        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+        DB::unprepared("ALTER TABLE `fiscal_number_reservations` ADD CONSTRAINT `fiscal_reservations_parent_foreign` FOREIGN KEY (`parent_reservation_id`) REFERENCES `fiscal_number_reservations` (`id`)");
+        DB::unprepared("ALTER TABLE `fiscal_number_reservations` ADD CONSTRAINT `fiscal_number_reservations_document_id_foreign` FOREIGN KEY (`document_id`) REFERENCES `documents` (`id`)");
+        DB::unprepared("ALTER TABLE `fiscal_number_reservations` ADD CONSTRAINT `fiscal_number_reservations_dispatch_id_foreign` FOREIGN KEY (`dispatch_id`) REFERENCES `dispatches` (`id`)");
+        DB::unprepared("ALTER TABLE `fiscal_number_reservations` ADD CONSTRAINT `fiscal_number_reservations_current_attempt_id_foreign` FOREIGN KEY (`current_attempt_id`) REFERENCES `fiscal_emission_attempts` (`id`)");
+        DB::unprepared("ALTER TABLE `fiscal_number_reservations` ADD CONSTRAINT `fiscal_number_reservations_confirmed_by_foreign` FOREIGN KEY (`confirmed_by`) REFERENCES `users` (`id`)");
+        DB::unprepared("ALTER TABLE `fiscal_emission_attempts` ADD CONSTRAINT `fiscal_emission_attempts_reservation_id_foreign` FOREIGN KEY (`reservation_id`) REFERENCES `fiscal_number_reservations` (`id`)");
+        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
+        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+        DB::unprepared("ALTER TABLE `fiscal_profiles` ADD CONSTRAINT `fiscal_profiles_establishment_id_foreign` FOREIGN KEY (`establishment_id`) REFERENCES `establishments` (`id`)");
+        DB::unprepared("ALTER TABLE `fiscal_profiles` ADD CONSTRAINT `fiscal_profiles_document_type_id_foreign` FOREIGN KEY (`document_type_id`) REFERENCES `cat_document_types` (`id`)");
+        DB::unprepared("ALTER TABLE `fiscal_profiles` ADD CONSTRAINT `fiscal_profiles_sequence_id_foreign` FOREIGN KEY (`sequence_id`) REFERENCES `fiscal_sequences` (`id`)");
+        DB::unprepared("ALTER TABLE `fiscal_profiles` ADD CONSTRAINT `fiscal_profiles_control_lot_id_foreign` FOREIGN KEY (`control_lot_id`) REFERENCES `fiscal_control_lots` (`id`)");
+        DB::unprepared("ALTER TABLE `fiscal_profiles` ADD CONSTRAINT `fiscal_profiles_device_group_id_foreign` FOREIGN KEY (`device_group_id`) REFERENCES `series_device_groups` (`id`)");
+        DB::unprepared("ALTER TABLE `fiscal_numbering_audits` ADD CONSTRAINT `fiscal_numbering_audits_actor_id_foreign` FOREIGN KEY (`actor_id`) REFERENCES `users` (`id`)");
+        DB::unprepared("ALTER TABLE `fiscal_number_reservations` ADD CONSTRAINT `fiscal_number_reservations_profile_id_foreign` FOREIGN KEY (`profile_id`) REFERENCES `fiscal_profiles` (`id`)");
+        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
+        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+        DB::unprepared("ALTER TABLE `fiscal_sequences` ADD CONSTRAINT `fiscal_sequences_establishment_id_foreign` FOREIGN KEY (`establishment_id`) REFERENCES `establishments` (`id`)");
+        DB::unprepared("ALTER TABLE `fiscal_sequences` ADD CONSTRAINT `fiscal_sequences_document_type_id_foreign` FOREIGN KEY (`document_type_id`) REFERENCES `cat_document_types` (`id`)");
+        DB::unprepared("ALTER TABLE `fiscal_control_lots` ADD CONSTRAINT `fiscal_control_lots_establishment_id_foreign` FOREIGN KEY (`establishment_id`) REFERENCES `establishments` (`id`)");
+        DB::unprepared("ALTER TABLE `fiscal_number_reservations` ADD CONSTRAINT `fiscal_number_reservations_sequence_id_foreign` FOREIGN KEY (`sequence_id`) REFERENCES `fiscal_sequences` (`id`)");
+        DB::unprepared("ALTER TABLE `fiscal_number_reservations` ADD CONSTRAINT `fiscal_number_reservations_control_lot_id_foreign` FOREIGN KEY (`control_lot_id`) REFERENCES `fiscal_control_lots` (`id`)");
+        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
         DB::unprepared("ALTER TABLE `authorized_discount_users` ADD CONSTRAINT `authorized_discount_users_seller_id_foreign` FOREIGN KEY (`seller_id`) REFERENCES `users` (`id`)");
         DB::unprepared("ALTER TABLE `authorized_discount_users` ADD CONSTRAINT `authorized_discount_users_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)");
         DB::unprepared("ALTER TABLE `bank_accounts` ADD CONSTRAINT `bank_accounts_bank_id_foreign` FOREIGN KEY (`bank_id`) REFERENCES `banks` (`id`)");
@@ -505,6 +529,30 @@ return new class extends Migration
 
     public function down(): void
     {
+        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+        DB::unprepared("ALTER TABLE `fiscal_emission_attempts` DROP FOREIGN KEY `fiscal_emission_attempts_reservation_id_foreign`");
+        DB::unprepared("ALTER TABLE `fiscal_number_reservations` DROP FOREIGN KEY `fiscal_number_reservations_confirmed_by_foreign`");
+        DB::unprepared("ALTER TABLE `fiscal_number_reservations` DROP FOREIGN KEY `fiscal_number_reservations_current_attempt_id_foreign`");
+        DB::unprepared("ALTER TABLE `fiscal_number_reservations` DROP FOREIGN KEY `fiscal_number_reservations_dispatch_id_foreign`");
+        DB::unprepared("ALTER TABLE `fiscal_number_reservations` DROP FOREIGN KEY `fiscal_number_reservations_document_id_foreign`");
+        DB::unprepared("ALTER TABLE `fiscal_number_reservations` DROP FOREIGN KEY `fiscal_reservations_parent_foreign`");
+        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
+        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+        DB::unprepared("ALTER TABLE `fiscal_number_reservations` DROP FOREIGN KEY `fiscal_number_reservations_profile_id_foreign`");
+        DB::unprepared("ALTER TABLE `fiscal_numbering_audits` DROP FOREIGN KEY `fiscal_numbering_audits_actor_id_foreign`");
+        DB::unprepared("ALTER TABLE `fiscal_profiles` DROP FOREIGN KEY `fiscal_profiles_device_group_id_foreign`");
+        DB::unprepared("ALTER TABLE `fiscal_profiles` DROP FOREIGN KEY `fiscal_profiles_control_lot_id_foreign`");
+        DB::unprepared("ALTER TABLE `fiscal_profiles` DROP FOREIGN KEY `fiscal_profiles_sequence_id_foreign`");
+        DB::unprepared("ALTER TABLE `fiscal_profiles` DROP FOREIGN KEY `fiscal_profiles_document_type_id_foreign`");
+        DB::unprepared("ALTER TABLE `fiscal_profiles` DROP FOREIGN KEY `fiscal_profiles_establishment_id_foreign`");
+        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
+        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+        DB::unprepared("ALTER TABLE `fiscal_number_reservations` DROP FOREIGN KEY `fiscal_number_reservations_control_lot_id_foreign`");
+        DB::unprepared("ALTER TABLE `fiscal_number_reservations` DROP FOREIGN KEY `fiscal_number_reservations_sequence_id_foreign`");
+        DB::unprepared("ALTER TABLE `fiscal_control_lots` DROP FOREIGN KEY `fiscal_control_lots_establishment_id_foreign`");
+        DB::unprepared("ALTER TABLE `fiscal_sequences` DROP FOREIGN KEY `fiscal_sequences_document_type_id_foreign`");
+        DB::unprepared("ALTER TABLE `fiscal_sequences` DROP FOREIGN KEY `fiscal_sequences_establishment_id_foreign`");
+        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
         DB::unprepared("ALTER TABLE `workers` DROP FOREIGN KEY `workers_identity_document_type_id_foreign`");
         DB::unprepared("ALTER TABLE `weighted_average_costs` DROP FOREIGN KEY `weighted_average_costs_item_id_foreign`");
         DB::unprepared("ALTER TABLE `webhook_deliveries` DROP FOREIGN KEY `webhook_deliveries_webhook_subscription_id_foreign`");

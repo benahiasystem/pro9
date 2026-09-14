@@ -9,7 +9,7 @@ class NoteController extends Controller
 {
     public function create($document_id)
     {
-        $document_affected = Document::find($document_id);
+        $document_affected = $this->authorizedDocuments()->findOrFail($document_id);
         $configuration = Configuration::first();
 
         return view('tenant.documents.note', compact('document_affected', 'configuration'));
@@ -17,7 +17,7 @@ class NoteController extends Controller
 
     public function record($document_id)
     {
-        $record = Document::find($document_id);
+        $record = $this->authorizedDocuments()->findOrFail($document_id);
 
         return $record;
     }
@@ -25,9 +25,9 @@ class NoteController extends Controller
     public function hasDocuments($document_id)
     {
 
-        $record = Document::wherehas('affected_documents', function ($q) {
+        $record = $this->authorizedDocuments()->wherehas('affected_documents', function ($q) {
             $q->whereHas('document', function ($q) {
-                $q->where('state_type_id', '05');
+                $q->whereIn('state_type_id', ['01', '05']);
             });
         })->find($document_id);
 
@@ -54,4 +54,18 @@ class NoteController extends Controller
 
     }
 
+    // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+    private function authorizedDocuments()
+    {
+        $user = auth()->user();
+        abort_unless($user instanceof \App\Models\Tenant\User && in_array($user->type, ['admin', 'seller'], true), 403);
+        $query = Document::query()->where('establishment_id', $user->establishment_id);
+        if ($user->type !== 'admin') {
+            $query->where(function ($scope) use ($user) {
+                $scope->where('user_id', $user->id)->orWhere('seller_id', $user->id);
+            });
+        }
+        return $query;
+    }
+    // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
 }

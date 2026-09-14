@@ -115,6 +115,20 @@ class OrderController extends Controller
 
         $statusOrder = $statuses->firstWhere('id', $request->record[$field]);
 
+        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+        if ($statusOrder && ($statusOrder->action_discount_stock || $statusOrder->action_free_reserved_stock || $statusOrder->action_void_order)) {
+            $stockOrder = Order::find($request->record['id']);
+            if (!$stockOrder) return ['message' => 'Pedido no encontrado', 'type' => 'error'];
+            try {
+                \App\Services\Fiscal\FiscalOrderStockGuard::assertCanMutate(
+                    (int) $stockOrder->id, $stockOrder->document_external_id, $stockOrder->getConnection()
+                );
+            } catch (\DomainException $exception) {
+                return ['message' => $exception->getMessage(), 'type' => 'warning'];
+            }
+        }
+        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
+
         if ($statusOrder && $statusOrder->action_generate_document) {
             $order = Order::with('sale_note')->find($request->record['id']);
             if (!$order) {
@@ -167,84 +181,27 @@ class OrderController extends Controller
             return $this->voidOrder($request, $field);
         }
 
-        // Descuento de stock: antes hardcodeado para id=3, ahora guiado por el flag del estado
-        if ($statusOrder && $statusOrder->action_discount_stock) {
-            // Obtener la orden para verificar si ya se descontó stock
-            $order = Order::where('id', $request->record['id'])->first();
-
-            if ($order && $order->stock_discounted) {
-                return ['message' => 'El stock ya fue descontado para esta orden'];
+        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+        if ($statusOrder && ($statusOrder->action_discount_stock || $statusOrder->action_free_reserved_stock)) {
+            try {
+                \App\Services\Fiscal\FiscalOrderStockReservation::change(
+                    (new Order())->getConnection(), (int) $request->record['id'], (int) auth()->user()->establishment_id,
+                    $statusOrder->action_discount_stock ? (array) $request->discount : null,
+                    $field, (int) $request->record[$field]
+                );
+            } catch (\DomainException $exception) {
+                return ['message' => $exception->getMessage(), 'type' => 'warning'];
             }
-            for ($i = 0; $i <= count($request->discount) - 1; $i++) {
-                if (isset($request->discount[$i]['id'])) {
-                    $itemWarehouse = ItemWarehouse::where('id', $request->discount[$i]['id'])->first();
-
-                    ItemWarehouse::where('id', $itemWarehouse->id)->update([
-                        'stock' => ($itemWarehouse->stock - $request->discount[$i]['cantidad'])
-                    ]);
-                }
-            }
-
-            Order::where('id', $request->record['id'])->update([
-                $field => $request->record[$field],
-                'stock_discounted' => true
-            ]);
-
-            // Encolar notificación por correo si el estado lo requiere
             if ($statusOrder->action_send_email ?? false) {
                 try {
                     dispatch(new SendOrderStatusEmail($request->record['id'], $statusOrder->id, $this->buildOrderListUrl()));
-                } catch (\Throwable $e) {
-                    \Log::error('Failed to dispatch SendOrderStatusEmail: '.$e->getMessage());
+                } catch (\Throwable $exception) {
+                    \Log::error('Failed to dispatch SendOrderStatusEmail: '.$exception->getMessage());
                 }
             }
-
-            return ['message' => 'Estatus y Stock actualizado'];
+            return ['message' => 'Estado y existencias actualizados', 'type' => 'success'];
         }
-
-        // Lógica de reversión de stock cuando se rechaza/cancela un pedido
-        if ($statusOrder && $statusOrder->action_free_reserved_stock) {
-            $order = Order::where('id', $request->record['id'])->first();
-            if ($order && $order->stock_discounted) {
-                foreach ($order->items as $item) {
-                    $warehouse_id = null;
-                    if (isset($item->warehouse_id)) {
-                        $warehouse_id = $item->warehouse_id;
-                    } elseif (isset($item->warehouses) && count($item->warehouses) > 0) {
-                        $warehouse_id = $item->warehouses[0]->warehouse_id;
-                    }
-
-                    $query = ItemWarehouse::where('item_id', $item->id);
-                    if ($warehouse_id) {
-                        $query->where('warehouse_id', $warehouse_id);
-                    }
-                    
-                    $itemWarehouse = $query->first();
-
-                    if ($itemWarehouse) {
-                        ItemWarehouse::where('id', $itemWarehouse->id)->update([
-                            'stock' => ($itemWarehouse->stock + $item->cantidad)
-                        ]);
-                    }
-                }
-
-                Order::where('id', $request->record['id'])->update([
-                    $field => $request->record[$field],
-                    'stock_discounted' => false
-                ]);
-
-                // Notificar por correo si es necesario
-                if ($statusOrder->action_send_email ?? false) {
-                    try {
-                        dispatch(new SendOrderStatusEmail($request->record['id'], $statusOrder->id, $this->buildOrderListUrl()));
-                    } catch (\Throwable $e) {
-                        \Log::error('Failed to dispatch SendOrderStatusEmail: '.$e->getMessage());
-                    }
-                }
-
-                return ['message' => 'Pedido rechazado y stock devuelto al inventario', 'type' => 'error'];
-            }
-        }
+        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
 
         Order::where('id', $request->record['id'])->update([
             $field => $request->record[$field]
@@ -318,49 +275,23 @@ class OrderController extends Controller
             return ['message' => 'Pedido no encontrado'];
         }
 
-        // Persistir el estado de anulación
-        Order::where('id', $order->id)->update([$field => $request->record[$field]]);
-
-        // Revertir stock según el caso
+        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
         if ($order->sale_note && (string) $order->sale_note->state_type_id !== '11') {
-            // Caso con NV: reutiliza la anulación de nota de venta (revierte stock y lotes)
             app(SaleNoteController::class)->anulate($order->sale_note->id);
-        } elseif ($order->stock_discounted) {
-            // Caso sin NV: revierte el stock descontado directamente
-            $this->revertOrderStock($order);
-        }
-
-        return ['message' => 'Pedido anulado'];
-    }
-
-    /**
-     * Revierte el stock descontado de un pedido sin nota de venta, devolviendo las
-     * cantidades al almacén del establecimiento del usuario. Marca stock_discounted = false.
-     */
-    private function revertOrderStock(Order $order): void
-    {
-        $warehouse = ModuleWarehouse::where('establishment_id', auth()->user()->establishment_id)->first();
-
-        if ($warehouse) {
-            foreach ($order->items as $item) {
-                $itemId  = $item->id ?? null;
-                $quantity = $item->cantidad ?? 0;
-
-                if (!$itemId || !$quantity) {
-                    continue;
-                }
-
-                $itemWarehouse = ItemWarehouse::where('item_id', $itemId)
-                    ->where('warehouse_id', $warehouse->id)
-                    ->first();
-
-                if ($itemWarehouse) {
-                    $itemWarehouse->update(['stock' => $itemWarehouse->stock + $quantity]);
-                }
+            $order->update([$field => $request->record[$field]]);
+        } else {
+            try {
+                \App\Services\Fiscal\FiscalOrderStockReservation::change(
+                    $order->getConnection(), (int) $order->id, (int) auth()->user()->establishment_id,
+                    null, $field, (int) $request->record[$field]
+                );
+            } catch (\DomainException $exception) {
+                return ['message' => $exception->getMessage(), 'type' => 'warning'];
             }
         }
+        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
 
-        $order->update(['stock_discounted' => false]);
+        return ['message' => 'Pedido anulado'];
     }
 
     /**

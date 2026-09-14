@@ -339,13 +339,25 @@ class SaleNoteController extends Controller
     }
 
 
-    public function storeWithData($inputs)
+    public function storeWithData($inputs, ?array $orderSource = null)
     {
         // ######## INICIO POLITICA IDENTIDAD ACTIVA EN VENTAS ########
         SalesCustomerIdentityPolicy::assertCustomerAllowed($inputs['customer_id'] ?? null);
         // ######## FIN POLITICA IDENTIDAD ACTIVA EN VENTAS ########
         DB::connection('tenant')->beginTransaction();
         try {
+            // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+            if ($orderSource !== null) {
+                $context = \App\Services\Fiscal\FiscalOrderSalesNoteContext::prepare(DB::connection('tenant'), $orderSource, $inputs);
+                $inputs = $context['inputs'];
+                if ($context['existing_id'] !== null) {
+                    $existing = SaleNote::findOrFail($context['existing_id']);
+                    DB::connection('tenant')->commit();
+                    return ['success' => true, 'data' => ['id' => $existing->id, 'number_full' => $existing->number_full], 'replayed' => true,
+                        'links' => ['print_ticket' => url('')."/sale-notes/print/{$existing->external_id}/ticket"]];
+                }
+            }
+            // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
             $isUpdate = true;
             if (!isset($inputs['id'])) {
                 $inputs['id'] = false;
@@ -353,6 +365,12 @@ class SaleNoteController extends Controller
             }
             $data = $this->mergeData($inputs, $isUpdate);
 
+            // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+            if ($orderSource !== null) {
+                $data['user_id'] = $inputs['user_id'];
+                $data['seller_id'] = $inputs['seller_id'];
+            }
+            // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
             $this->sale_note =  SaleNote::query()->updateOrCreate(['id' => $inputs['id']], $data);
 
             $this->deleteAllPayments($this->sale_note->payments);

@@ -7,6 +7,9 @@
                append-to-body
                width="30%"
                @open="create">
+        <!-- ######## INICIO NUMERACIÓN FISCAL VENEZUELA ######## -->
+        <fiscal-status v-if="form.id && showDialog" :key="form.id" :document-id="Number(form.id)" resource="dispatches" />
+        <!-- ######## FIN NUMERACIÓN FISCAL VENEZUELA ######## -->
 
         <div v-if="form.response_message"
              class="row mb-4">
@@ -117,7 +120,9 @@
 
 <script>
 import {whatsappNumber} from "@helpers/phone";
+import FiscalStatus from '../../documents/partials/fiscal-status.vue';
 export default {
+    components: { FiscalStatus },
     props: ['showDialog', 'recordId', 'showClose', 'isUpdate'],
     data() {
         return {

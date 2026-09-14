@@ -206,7 +206,7 @@ class PosController extends Controller
         // Series filtradas por contexto (oculta dedicadas / restringe al grupo activo). Ver SeriesResolver.
         // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
         $series = app(SeriesResolver::class)->applyContext(
-            Series::whereIn('document_type_id', ['01', '80'])
+            Series::whereIn('document_type_id', ['80'])
                 ->where([['establishment_id', auth()->user()->establishment_id], ['contingency', false]])
         )->get();
         // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
@@ -219,7 +219,11 @@ class PosController extends Controller
         // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
 
 
-        return compact('series', 'payment_method_types', 'cards_brand', 'payment_destinations', 'global_discount_types');
+        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+        $fiscal_profiles = (new \App\Services\FiscalProfileService(\App\Models\Tenant\Company::active()->getConnection()))
+            ->forSelection((int) auth()->user()->establishment_id, 'presential', app(SeriesResolver::class)->activeGroupId());
+        return compact('series', 'fiscal_profiles', 'payment_method_types', 'cards_brand', 'payment_destinations', 'global_discount_types');
+        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
 
     }
 

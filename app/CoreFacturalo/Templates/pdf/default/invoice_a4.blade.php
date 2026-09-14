@@ -10,14 +10,18 @@ $itinerant = $document->itinerant;
 // dd($itinerant->description);
 
 //$path_style = app_path('CoreFacturalo'.DIRECTORY_SEPARATOR.'Templates'.DIRECTORY_SEPARATOR.'pdf'.DIRECTORY_SEPARATOR.'style.css');
-$document_number = $document->series.'-'.str_pad($document->number, 8, '0', STR_PAD_LEFT);
+/* ######## INICIO NUMERACIÓN FISCAL VENEZUELA ######## */
+$document_number = $document->number_full;
+/* ######## FIN NUMERACIÓN FISCAL VENEZUELA ######## */
 // $accounts = \App\Models\Tenant\BankAccount::where('show_in_documents', true)->get();
 $templatePdf = (new TemplatePdf);
 $accounts = $templatePdf->getBankAccountsForPdf($document->establishment_id);
 
 if($document_base) {
 
-$affected_document_number = ($document_base->affected_document) ? $document_base->affected_document->series.'-'.str_pad($document_base->affected_document->number, 8, '0', STR_PAD_LEFT) : $document_base->data_affected_document->series.'-'.str_pad($document_base->data_affected_document->number, 8, '0', STR_PAD_LEFT);
+/* ######## INICIO NUMERACIÓN FISCAL VENEZUELA ######## */
+$affected_document_number = $document_base->affected_document ? $document_base->affected_document->number_full : (($document_base->data_affected_document->series ?? '') !== '' ? $document_base->data_affected_document->series.'-' : '').$document_base->data_affected_document->number;
+/* ######## FIN NUMERACIÓN FISCAL VENEZUELA ######## */
 
 } else {
 

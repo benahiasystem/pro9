@@ -1,7 +1,9 @@
 @php
     $establishment = $document->establishment;
     $customer = $document->customer;
-    $document_number = $document->series.'-'.str_pad($document->number, 8, '0', STR_PAD_LEFT);
+    /* ######## INICIO NUMERACIÓN FISCAL VENEZUELA ######## */
+$document_number = $document->number_full;
+/* ######## FIN NUMERACIÓN FISCAL VENEZUELA ######## */
 @endphp
 <html>
 <head>

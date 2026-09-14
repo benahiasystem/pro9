@@ -3,7 +3,9 @@
     $customer = $document->customer;
 
     $document_base = $document->note;
-    $document_number = $document->series.'-'.str_pad($document->number, 8, '0', STR_PAD_LEFT);
+    /* ######## INICIO NUMERACIÓN FISCAL VENEZUELA ######## */
+$document_number = $document->number_full;
+/* ######## FIN NUMERACIÓN FISCAL VENEZUELA ######## */
     $currency_type_description_array = [
         'VES' => 'Bs.D',
         '0' => 'Bs.D',
@@ -11,7 +13,9 @@
         '6' => 'RIF',
     ];
 
-    $affected_document_number = ($document_base->affected_document) ? $document_base->affected_document->series.'-'.str_pad($document_base->affected_document->number, 8, '0', STR_PAD_LEFT) : $document_base->data_affected_document->series.'-'.str_pad($document_base->data_affected_document->number, 8, '0', STR_PAD_LEFT);
+    /* ######## INICIO NUMERACIÓN FISCAL VENEZUELA ######## */
+$affected_document_number = $document_base->affected_document ? $document_base->affected_document->number_full : (($document_base->data_affected_document->series ?? '') !== '' ? $document_base->data_affected_document->series.'-' : '').$document_base->data_affected_document->number;
+/* ######## FIN NUMERACIÓN FISCAL VENEZUELA ######## */
 
     $accounts = \App\Models\Tenant\BankAccount::all();
 

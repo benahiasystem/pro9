@@ -32,9 +32,12 @@ class InventoryVoidedServiceProvider extends ServiceProvider
         //Revisar los tipos de documentos, ello varia el control de stock en las anulaciones.
         Document::updated(function ($document) {
             // if($document['document_type_id'] == '01' || $document['document_type_id'] == '03'){
-            if(in_array($document['document_type_id'], ['01', '08'], true))
+            // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+            // Monetary debit notes never generated an inventory movement to reverse.
+            if($document['document_type_id'] === '01')
             {
-                if (!$document->wasChanged('state_type_id')) return;
+                if (!$document->wasChanged('state_type_id') || in_array($document->getRawOriginal('state_type_id'), ['09', '11'], true)) return;
+                // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
 
                 if(in_array($document['state_type_id'], [ '09', '11' ], true)){
                     // $warehouse = $this->findWarehouse($document['establishment_id']);
@@ -96,8 +99,10 @@ class InventoryVoidedServiceProvider extends ServiceProvider
 
             if($document->isCreditNote() && $document->isVoidedOrRejected())
             {
-                // si es nota credito tipo 13, no se asocia a inventario
-                if($document->isCreditNoteAndType13()) return;
+                // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+                if (!$document->wasChanged('state_type_id') || in_array($document->getRawOriginal('state_type_id'), ['09', '11'], true)
+                    || !\App\Services\Fiscal\FiscalInventoryPolicy::affectsStock('07', $document->note->note_credit_type_id)) return;
+                // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
 
                 foreach ($document->items as $document_item)
                 {

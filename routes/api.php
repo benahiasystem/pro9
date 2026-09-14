@@ -52,6 +52,13 @@ if ($hostname) {
             Route::get('report', 'Tenant\Api\MobileController@report');
 
             Route::post('documents', 'Tenant\Api\DocumentController@store');
+            // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+            Route::get('documents/{document}/fiscal', 'Tenant\FiscalDocumentEmissionController@record');
+            Route::post('documents/{document}/fiscal/process', 'Tenant\FiscalDocumentEmissionController@process');
+            Route::post('documents/{document}/fiscal/confirm-print', 'Tenant\FiscalDocumentEmissionController@confirmPrint');
+            Route::post('documents/{document}/fiscal/invalidate-print', 'Tenant\FiscalDocumentEmissionController@invalidatePrint');
+            Route::post('documents/{document}/fiscal/contingency', 'Tenant\FiscalDocumentEmissionController@contingency');
+            // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
             Route::get('documents/lists', 'Tenant\Api\DocumentController@lists');
             Route::get('documents/lists/{startDate}/{endDate}', 'Tenant\Api\DocumentController@lists');
             // "documents/record/{id}" ya lo registra el modulo MobileApp, que gana por

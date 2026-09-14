@@ -198,6 +198,13 @@ if ($hostname) {
 
             //Establishments
             Route::get('establishments', 'Tenant\EstablishmentController@index')->name('tenant.establishments.index');
+            // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+            Route::get('establishments/{establishment}/fiscal-numbering', 'Tenant\FiscalNumberingController@records');
+            Route::post('establishments/{establishment}/fiscal-numbering/sequences', 'Tenant\FiscalNumberingController@sequence');
+            Route::post('establishments/{establishment}/fiscal-numbering/lots', 'Tenant\FiscalNumberingController@lot');
+            Route::post('establishments/{establishment}/fiscal-numbering/profiles', 'Tenant\FiscalNumberingController@profile');
+            Route::post('establishments/{establishment}/fiscal-numbering/archive', 'Tenant\FiscalNumberingController@archive');
+            // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
             Route::get('establishments/create', 'Tenant\EstablishmentController@create');
             Route::get('establishments/tables', 'Tenant\EstablishmentController@tables');
             Route::get('establishments/record/{establishment}', 'Tenant\EstablishmentController@record');
@@ -391,6 +398,13 @@ if ($hostname) {
             Route::get('documents/tables', 'Tenant\DocumentController@tables');
             Route::get('documents/record/{document}', 'Tenant\DocumentController@record');
             Route::post('documents', 'Tenant\DocumentController@store');
+            // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+            Route::get('documents/{document}/fiscal', 'Tenant\FiscalDocumentEmissionController@record');
+            Route::post('documents/{document}/fiscal/process', 'Tenant\FiscalDocumentEmissionController@process');
+            Route::post('documents/{document}/fiscal/confirm-print', 'Tenant\FiscalDocumentEmissionController@confirmPrint');
+            Route::post('documents/{document}/fiscal/invalidate-print', 'Tenant\FiscalDocumentEmissionController@invalidatePrint');
+            Route::post('documents/{document}/fiscal/contingency', 'Tenant\FiscalDocumentEmissionController@contingency');
+            // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
             Route::post('documents/{id}/update', 'Tenant\DocumentController@update');
             // Route::get('documents/remove/{document}', 'Tenant\DocumentController@remove');
             Route::post('documents/email', 'Tenant\DocumentController@email');
@@ -496,6 +510,13 @@ if ($hostname) {
                 Route::post('/custom-fields/update', 'Tenant\DispatchController@updateCustomFields');
                 Route::post('/tables', 'Tenant\DispatchController@tables');
                 Route::post('', 'Tenant\DispatchController@store');
+                // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+                Route::get('{document}/fiscal', 'Tenant\FiscalDispatchEmissionController@record');
+                Route::post('{document}/fiscal/process', 'Tenant\FiscalDispatchEmissionController@process');
+                Route::post('{document}/fiscal/confirm-print', 'Tenant\FiscalDispatchEmissionController@confirmPrint');
+                Route::post('{document}/fiscal/invalidate-print', 'Tenant\FiscalDispatchEmissionController@invalidatePrint');
+                Route::post('{document}/fiscal/contingency', 'Tenant\FiscalDispatchEmissionController@contingency');
+                // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
                 Route::get('/record/{id}', 'Tenant\DispatchController@record');
                 Route::post('/email', 'Tenant\DispatchController@email');
                 Route::get('/generate/{sale_note}', 'Tenant\DispatchController@generate');

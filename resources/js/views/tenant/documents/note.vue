@@ -41,17 +41,18 @@
                                    v-text="errors.document_type_id[0]"></small>
                         </div>
                     </div>
-                    <div class="col-md-2">
-                        <div class="form-group" :class="{'has-danger': errors.series_id}">
-                            <label class="control-label">Serie</label>
-                            <el-select v-model="form.series_id">
-                                <el-option v-for="option in series" :key="option.id" :value="option.id"
-                                           :label="option.number"></el-option>
-                            </el-select>
-                            <small class="form-control-feedback" v-if="errors.series_id"
-                                   v-text="errors.series_id[0]"></small>
+                    <!-- ######## INICIO NUMERACIÓN FISCAL VENEZUELA ######## -->
+                    <div class="col-md-3">
+                        <label class="control-label">Numeración y emisión</label>
+                        <div v-if="currentFiscalProfile">
+                            <strong>{{ currentFiscalProfile.name }}</strong>
+                            <small class="d-block">Serie: {{ currentFiscalProfile.series_code || 'Sin serie' }}</small>
+                            <small class="d-block">Próximo estimado: {{ currentFiscalProfile.next_number }}. Se asigna al guardar.</small>
                         </div>
+                        <div v-else class="text-danger">Configure un perfil fiscal para este tipo de nota.</div>
+                        <small v-if="errors.operation_key" class="text-danger">{{ errors.operation_key[0] }}</small>
                     </div>
+                    <!-- ######## FIN NUMERACIÓN FISCAL VENEZUELA ######## -->
                     <div class="col-md-2">
                         <template v-if="form.document_type_id === '08'">
                             <div class="form-group" :class="{'has-danger': errors['note.note_debit_type_id']}">
@@ -322,6 +323,9 @@
 <script>
 
 import DocumentFormItem from './partials/item.vue'
+// ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+import { newFiscalOperationKey } from '../../../helpers/fiscal-operation'
+// ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
 import DocumentOptions from '../documents/partials/options.vue'
 import {functions, exchangeRate} from '../../../mixins/functions'
 import {calculateRowItem} from '../../../helpers/functions'
@@ -332,6 +336,7 @@ export default {
     props: ['document_affected', 'configuration', 'authUser'],
     data() {
         return {
+            fiscalProfiles: [],
             recordItem: null,
             isEditItemNote: false,
             showDialogAddItem: false,
@@ -371,6 +376,7 @@ export default {
                 this.document_types = response.data.document_types_note
                 this.currency_types = response.data.currency_types
                 this.all_series = response.data.series
+                this.fiscalProfiles = response.data.fiscal_profiles || []
                 // this.customers = response.data.customers
                 this.note_credit_types = response.data.note_credit_types
                 this.note_debit_types = response.data.note_debit_types
@@ -393,6 +399,11 @@ export default {
 
     },
     computed: {
+        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+        currentFiscalProfile() {
+            return this.fiscalProfiles.find(profile => profile.document_type_id === this.form.document_type_id)
+        },
+        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
 
 
         hasDiscounts: function () {
@@ -481,6 +492,7 @@ export default {
 
             this.errors = {}
             this.form = {
+                operation_key: newFiscalOperationKey(),
                 establishment_id: this.document.establishment_id,
                 document_type_id: null,
                 series_id: null,
@@ -763,6 +775,10 @@ export default {
             return (affectations.includes(affectation_igv_type_id) && this.isDebitNote && debit_note_types.includes(this.form.note_credit_or_debit_type_id))
         },
         async submit() {
+            // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+            if (this.loading_submit) return;
+            if (!this.currentFiscalProfile) return this.$message.error('Configure la numeración y emisión fiscal de esta nota.');
+            // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
 
             await this.checkPercentageIgvDebitNote()
 
@@ -785,11 +801,9 @@ export default {
                     }
                 })
                 .catch(error => {
-                    if (error.response.status === 422) {
-                        this.errors = error.response.data
-                    } else {
-                        this.$message.error(error.response.data.message)
-                    }
+                    const data = error.response && error.response.data;
+                    this.errors = (data && data.errors) || {};
+                    this.$message.error((data && data.message) || 'No se pudo registrar la nota. Puede reintentar la misma operación.');
                 })
                 .then(() => {
                     this.loading_submit = false
