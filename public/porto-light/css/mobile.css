@@ -141,7 +141,11 @@
         animation: none;
     }
 }
-
+@media (max-width: 567.98px) {
+    .el-drawer.rtl {
+        width: 100% !important;
+    }
+}
 /* ============================================================================
    CELULAR (≤ 767px)
    ========================================================================== */
@@ -255,11 +259,6 @@
         /* Espacio para que el botón flotante de WhatsApp no tape los
            botones de acción que quedan al final de la página */
         padding-bottom: 76px !important;
-    }
-
-    .card-body,
-    .card .card-body {
-        padding: 12px;
     }
 
     .page-header {
@@ -377,6 +376,9 @@
 
     .content-body .page-header .right-wrapper .btn {
         margin: 0 !important;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
     /* Fila de herramientas del listado: el contenedor de filtros traía 40px
@@ -385,15 +387,6 @@
        en una sola fila pegada al título. */
     .content-body .row > .filter-container {
         margin-top: 0 !important;
-    }
-
-    /* El bloque siguiente (ver todos + selector) conserva el ancho completo
-       y se alinea a la izquierda: si se le deja ancho automático, el
-       selector hereda el desplazamiento de la fila compartida */
-    .content-body .row > .filter-container + [class*="col-"] {
-        /* mismo margen que el contenedor de filtros, para que los iconos
-           queden alineados verticalmente entre sí */
-        padding-left: 10px;
     }
 
     .content-body .row > .filter-container + [class*="col-"] > .row {
@@ -582,13 +575,10 @@
         flex-wrap: wrap;
         justify-content: flex-start !important;
         gap: 6px;
-        padding: 0 10px;
+        /* padding: 0 10px; */
         /* 40px de separación pensados para escritorio: en celular sólo
            dejaban un hueco entre la cabecera y la barra de herramientas */
         margin-top: 0 !important;
-    }
-    .content-body .filter-content {
-        margin-top: 12px !important;
     }
 
     /* Los .row de Bootstrap tienen margen negativo: sin esto los botones

@@ -8678,9 +8678,6 @@ html .card-dark .card-title {
     .el-message-box{
         width: 90% !important;
     }
-    .btn-add-new {
-        display: none;
-    }
 }
 @media (min-width: 576px) {
     .card-group .card + .card {

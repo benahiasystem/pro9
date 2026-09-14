@@ -12,7 +12,7 @@
                     <el-tab-pane class name="first">
                         <span slot="label">Datos de Usuario</span>
                 <div class="row">
-                    <div class="col-md-6">
+                    <div class="col-md-5">
                         <div :class="{ 'has-danger': errors.name }" class="form-group">
                             <label class="control-label">
                                 Nombre
@@ -31,7 +31,7 @@
                             ></small>
                         </div>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-5">
                         <div :class="{ 'has-danger': errors.email }" class="form-group">
                             <label class="control-label">Correo electrónico
                                 <el-tooltip class="item"
@@ -49,6 +49,17 @@
                                 v-if="errors.email"
                                 class="form-control-feedback"
                                 v-text="errors.email[0]"
+                            ></small>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div :class="{ 'has-danger': errors.restaurant_pin }" class="form-group">
+                            <label class="control-label">Pin</label>
+                            <el-input v-model="form.restaurant_pin"></el-input>
+                            <small
+                                v-if="errors.restaurant_pin"
+                                class="form-control-feedback"
+                                v-text="errors.restaurant_pin[0]"
                             ></small>
                         </div>
                     </div>
@@ -1114,6 +1125,10 @@ export default {
             })
         },
         submit() {
+            if (this.form.restaurant_pin && this.form.restaurant_pin.length != 4) {
+                return this.$message.error("Debe ingresar pin de 4 dígitos");
+            }
+
             const leftNodes = this.$refs.treeLeft ? this.$refs.treeLeft.getCheckedNodes() : [];
             const rightNodes = this.$refs.treeRight ? this.$refs.treeRight.getCheckedNodes() : [];
             const modulesAndLevelsSelecteds = leftNodes.concat(rightNodes);
