@@ -94,6 +94,44 @@
 				</div>
 			</form>
 		</div>
+
+		<el-dialog :visible.sync="showDialogDemo"
+				   :close-on-click-modal="!loading_delete"
+				   :close-on-press-escape="!loading_delete"
+				   :show-close="!loading_delete"
+				   append-to-body
+				   custom-class="demo-documents-dialog"
+				   width="460px">
+			<div class="demo-documents">
+				<div class="demo-documents__icon">
+					<i class="el-icon-warning-outline"></i>
+				</div>
+				<h4 class="demo-documents__title">Hay documentos creados en demo</h4>
+				<p class="demo-documents__text">
+					Antes de pasar a producción, elimina los documentos de prueba para evitar conflictos.
+				</p>
+
+				<ul v-if="demoTypes.length" class="demo-documents__list">
+					<li v-for="(type, index) in demoTypes" :key="index">
+						<i class="el-icon-document"></i>
+						<span>{{ type.description }}</span>
+						<span v-if="type.count" class="demo-documents__count">{{ type.count }}</span>
+					</li>
+				</ul>
+				<p v-else-if="verifyDemo" class="demo-documents__text" v-text="verifyDemo.message"></p>
+
+				<div class="demo-documents__alert">
+					<i class="el-icon-info"></i>
+					<span>Se eliminarán todos los registros de prueba (ventas, compras, cotizaciones, gastos, etc.). Esta acción no se puede deshacer.</span>
+				</div>
+			</div>
+			<div slot="footer" class="demo-documents__footer">
+				<el-button :disabled="loading_delete" @click="showDialogDemo = false">Cancelar</el-button>
+				<el-button type="danger" icon="el-icon-delete" :loading="loading_delete" @click="deleteDemoDocuments">
+					Eliminar documentos de prueba
+				</el-button>
+			</div>
+		</el-dialog>
 	</div>
 </template>
 
@@ -109,7 +147,15 @@ export default {
 			soap_sends: [],
 			soap_types: [],
 			verifyDemo: null,
+			showDialogDemo: false,
+			loading_delete: false,
+			pending_soap_type_id: null,
 		}
+	},
+	computed: {
+		demoTypes() {
+			return (this.verifyDemo && this.verifyDemo.types) || []
+		},
 	},
 	async created() {
 		await this.initForm()
@@ -133,10 +179,34 @@ export default {
 					}
 				})
 		},
-		verifyDocumentsInDemo() {
-			if (this.verifyDemo && this.verifyDemo.success) {
+		verifyDocumentsInDemo(value) {
+			if (value !== '01' && this.verifyDemo && this.verifyDemo.success) {
+				this.pending_soap_type_id = value
 				this.form.soap_type_id = '01'
-				this.$message.warning(this.verifyDemo.message)
+				this.showDialogDemo = true
+			}
+		},
+		async deleteDemoDocuments() {
+			this.loading_delete = true
+			try {
+				const response = await this.$http.post('/options/delete_documents')
+				if (!response.data.success) {
+					this.$message.error(response.data.message)
+					return
+				}
+				this.$message.success(response.data.message)
+				await this.getTables()
+				if (this.verifyDemo && this.verifyDemo.success) {
+					this.$message.warning(this.verifyDemo.message)
+					return
+				}
+				this.form.soap_type_id = this.pending_soap_type_id
+				this.showDialogDemo = false
+			} catch (error) {
+				this.$message.error('No se pudieron eliminar los documentos de prueba')
+				console.log(error)
+			} finally {
+				this.loading_delete = false
 			}
 		},
 		initForm() {
@@ -198,3 +268,108 @@ export default {
 	}
 }
 </script>
+
+<style>
+.demo-documents-dialog {
+	border-radius: 12px;
+	max-width: calc(100% - 32px);
+}
+.demo-documents-dialog .el-dialog__header {
+	padding: 12px 12px 0;
+}
+.demo-documents-dialog .el-dialog__body {
+	padding: 0 28px 8px;
+}
+.demo-documents-dialog .el-dialog__footer {
+	padding: 16px 28px 24px;
+}
+.demo-documents {
+	text-align: center;
+	word-break: normal;
+	overflow-wrap: break-word;
+}
+.demo-documents__icon {
+	width: 56px;
+	height: 56px;
+	margin: 0 auto 14px;
+	border-radius: 50%;
+	background: #fdf6ec;
+	color: #e6a23c;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 30px;
+}
+.demo-documents__title {
+	margin: 0 0 6px;
+	font-size: 18px;
+	font-weight: 600;
+	color: #303133;
+}
+.demo-documents__text {
+	margin: 0 0 16px;
+	font-size: 14px;
+	line-height: 1.5;
+	color: #606266;
+}
+.demo-documents__list {
+	list-style: none;
+	margin: 0 0 16px;
+	padding: 0;
+	text-align: left;
+}
+.demo-documents__list li {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 10px 12px;
+	border: 1px solid #ebeef5;
+	border-radius: 8px;
+	font-size: 14px;
+	color: #303133;
+}
+.demo-documents__list li + li {
+	margin-top: 8px;
+}
+.demo-documents__list li > i {
+	color: #909399;
+	font-size: 16px;
+}
+.demo-documents__list li > span:first-of-type {
+	flex: 1;
+}
+.demo-documents__count {
+	min-width: 26px;
+	padding: 2px 8px;
+	border-radius: 10px;
+	background: #fef0f0;
+	color: #f56c6c;
+	font-size: 12px;
+	font-weight: 600;
+	text-align: center;
+}
+.demo-documents__alert {
+	display: flex;
+	align-items: flex-start;
+	gap: 8px;
+	padding: 10px 12px;
+	border-radius: 8px;
+	background: #f4f4f5;
+	font-size: 12px;
+	line-height: 1.5;
+	color: #909399;
+	text-align: left;
+}
+.demo-documents__alert i {
+	margin-top: 2px;
+}
+.demo-documents__footer {
+	display: flex;
+	justify-content: flex-end;
+	flex-wrap: wrap;
+	gap: 10px;
+}
+.demo-documents__footer .el-button + .el-button {
+	margin-left: 0;
+}
+</style>

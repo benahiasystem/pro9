@@ -49,21 +49,27 @@ class CompanyController extends Controller
             'success' => false,
         ];
 
+        $types = [];
+
         foreach ($models as $index => $model) {
             $count = $model::where('soap_type_id', '01')->count();
             if ($count > 0) {
                 if ($model === Document::class) {
-                   array_unshift($message, 'Factura/Boleta o Nota de Crédito o Nota de Débito'); 
+                   $type = 'Factura/Boleta o Nota de Crédito o Nota de Débito';
                 } else if ($model === SaleNote::class) {
-                   array_unshift($message, 'Nota de Venta'); 
+                   $type = 'Nota de Venta';
                 } else if ($model === Dispatch::class) {
-                   array_unshift($message, 'Guía de Remisión'); 
+                   $type = 'Guía de Remisión';
                 }
+
+                array_unshift($message, $type);
+                $types[] = ['description' => $type, 'count' => $count];
 
                 $verifyDocumentsInDemo['success'] = true;
             } 
         }
 
+        $verifyDocumentsInDemo['types'] = $types;
         $verifyDocumentsInDemo['message'] = implode(', ', $message);
 
         return compact('soap_types', 'soap_sends', 'verifyDocumentsInDemo');
