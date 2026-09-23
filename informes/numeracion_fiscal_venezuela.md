@@ -23,7 +23,7 @@ Rama desde develop: `codex/numeracion-fiscal-venezuela`. Instalaciones nuevas; n
 - [x] Pruebas de concurrencia, permisos, aislamiento, recuperación y regresión comercial.
 - [x] Verificación visual de fuentes compiladas y PDF de forma libre.
 - [x] Contraste de la implementación con las providencias documentadas y la factura legal de referencia.
-- [ ] Contraste directo con la tarjeta privada Jira SCRUM-39; Atlassian continúa solicitando inicio de sesión.
+- [x] SCRUM-39 consultada como antecedente; sus criterios quedaron excluidos por instrucción expresa del usuario.
 
 ## Avance verificado — primera etapa
 
@@ -548,4 +548,4 @@ El usuario autorizó explícitamente compilar para completar la tarea. La compil
 - `FiscalCommercialServiceTest::test_preprinted_free_form_registers_and_confirms_every_document_type_in_scope` crea perfiles de forma libre para Factura 01, Nota de crédito 07, Nota de débito 08 y Orden de entrega 09. Los cuatro consumen controles consecutivos de un único lote, pasan por pendiente de impresión y confirmación, conservan cuatro operaciones comerciales y generan sus auditorías de impresión.
 - Regresión PHP final después de añadir esa aceptación: **739 pruebas, 12.933 aserciones y 12 pruebas MySQL optativas omitidas**, satisfactoria. No se modificaron fuentes frontend en este cierre; se conserva el build ya validado de 32 entradas sin archivos faltantes.
 - La rama actual contiene el commit `c3ba25ef6` sobre `a5d5b1b59`, ambos descendientes directos de `develop` en `ea264971d`. Esto confirma que las modificaciones recuperadas no se perdieron y quedaron consolidadas en `codex/numeracion-fiscal-venezuela`.
-- Única dependencia externa pendiente: leer y contrastar el contenido privado de Jira SCRUM-39. La pestaña disponible redirige al inicio de sesión de Atlassian; no se infiere el contenido de la tarjeta mientras permanezca inaccesible.
+- SCRUM-39 fue consultada después de recuperar el acceso. Describe una migración histórica y limitada de etiquetas visibles «Serie» a «N° de Control». Por instrucción expresa posterior del usuario, sus criterios de aceptación e instrucciones no forman parte de esta entrega; no se aplicaron a los 17 flujos históricos. El contrato vigente es la adecuación fiscal venezolana solicitada directamente, con forma libre preimpresa como única modalidad operativa.
