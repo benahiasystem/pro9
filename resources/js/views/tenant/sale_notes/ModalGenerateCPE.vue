@@ -154,6 +154,9 @@ export default {
         number_full : `${data.series}-${data.number}`,
         id : data.id,
         items : data.items,
+        source_paid: Number(data.source_paid || 0),
+        currency_type_id: data.currency_type_id,
+        exchange_rate_sale: data.exchange_rate_sale,
       }
     },
     onFetchNoteItems() {
@@ -170,6 +173,8 @@ export default {
 
         const data = {
           notes_id: this.form.selecteds,
+          select_all: true,
+          group_items: true,
         };
 
         this.$http
@@ -183,39 +188,13 @@ export default {
               }
             });
             const items = response.data.data;
-            const data = [];
-            let lots = [];
-            items.map((i) => {
-              const it = {
-                id: i.item_id,
-                quantity: 0,
-                unit_price: i.unit_price
-              };
-              items.map((ite) => {
-                if (ite.item_id === it.id) {
-                  it.quantity = it.quantity + parseFloat(ite.quantity);
-                }
-              });
-              const itemIsDuplicated = data.find((item) => item.id === it.id);
-              if (itemIsDuplicated) {
-                itemIsDuplicated.quantity = it.quantity;
-              } else {
-                data.push(it);
-              }
-            });
-
-            items.map((row) => {
-              if ( row.item.lots && row.item.lots.length > 0) {
-                  row.item.lots.map((lot) => {
-                      lots.push(lot);
-                  });
-              }
-            });
             const client = this.clients.find((c) => c.id === this.form.client_id);
             localStorage.setItem("client", JSON.stringify(client));
-            localStorage.setItem("itemsForNotes", JSON.stringify(data));
+            localStorage.setItem("itemsNotGroupForNotes", JSON.stringify(items));
+            localStorage.removeItem("itemsForNotes");
             localStorage.setItem("notes", JSON.stringify(notes));
-            localStorage.setItem("lotsItems", JSON.stringify(lots));
+            localStorage.setItem("saleNoteEconomics", JSON.stringify(response.data.economics));
+
             this.onClose();
             window.location.href = "/documents/create";
           })
@@ -250,6 +229,7 @@ export default {
             localStorage.setItem("client", JSON.stringify(client));
             localStorage.setItem("itemsNotGroupForNotes", JSON.stringify(items));
             localStorage.setItem("notes", JSON.stringify(notes));
+            localStorage.setItem("saleNoteEconomics", JSON.stringify(response.data.economics));
             this.onClose();
             window.location.href = "/documents/create";
           })

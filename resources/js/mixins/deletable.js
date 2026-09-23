@@ -29,36 +29,28 @@ export const deletable = {
                 });
             })
         },
-        anular(url) {
-            return new Promise((resolve) => {
-                this.$confirm('¿Desea anular el registro?', 'Anular', {
-                    confirmButtonText: 'Anular',
-                    cancelButtonText: 'Cancelar',
-                    type: 'warning'
-                }).then(() => {
-                    this.$http.get(url)
-                        .then(res => {
-                            if (res.data.success) {
-                                this.$message.success('Se anuló correctamente el registro')
-                                resolve()
-                            }
-                            else{
-                                const {message = 'Error al intentar anular'} = res.data
-                                this.$message.error(message)
-                            }
-                        })
-                        .catch(error => {
-                            if (error.response.status === 500) {
-                                this.$message.error('Error al intentar anular');
-                            } else {
-                                console.log(error.response.data.message)
-                            }
-                        })
-                }).catch(error => {
-                    console.log(error)
+        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+        async anular(url, method = 'get') {
+            try {
+                await this.$confirm('¿Desea anular el registro?', 'Anular', {
+                    confirmButtonText: 'Anular', cancelButtonText: 'Cancelar', type: 'warning'
                 });
-            })
+            } catch (_) { return false; }
+            try {
+                const response = await this.$http[method](url);
+                if (response.data.success) {
+                    this.$message.success('Se anuló correctamente el registro');
+                    return true;
+                }
+                this.$message.error(response.data.message || 'Error al intentar anular');
+            } catch (error) {
+                const data = (error.response && error.response.data) || {};
+                const first = data.errors && Object.values(data.errors)[0];
+                this.$message.error((Array.isArray(first) ? first[0] : first) || data.message || 'Error al intentar anular');
+            }
+            return false;
         },
+        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
         delete(url) {
             return new Promise((resolve) => {
                 this.$confirm('¿Desea eliminar permanentemente el registro?', 'Anular', {

@@ -22,9 +22,11 @@ class SalesWithoutReceiptSourceContractTest extends TestCase
             'modules/Order/Http/Controllers/OrderNoteController.php' => "['01', '80']",
             'modules/Hotel/Http/Controllers/HotelRentController.php' => "['80', '01']",
             'modules/Sale/Http/Controllers/GenerateDocumentController.php' => 'TECHNICAL_SERVICE_DOCUMENT_TYPE_IDS',
-            'app/Http/Controllers/Tenant/PosController.php' => "['01', '80']",
+            'app/Http/Controllers/Tenant/PosController.php' => "Series::whereIn('document_type_id', ['80'])",
         ];
 
+        // Facturas POS usan perfiles fiscales; sólo la Nota de venta conserva series comerciales.
+        self::assertStringContainsString('FiscalProfileService', $this->source('app/Http/Controllers/Tenant/PosController.php'));
         foreach ($contracts as $file => $expected) {
             self::assertStringContainsString($expected, $this->source($file), $file);
         }

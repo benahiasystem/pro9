@@ -17,6 +17,35 @@ final class FiscalEmissionService
         $this->simulator = $simulator ?? new SimulatedFiscalAdapter($db);
     }
 
+    /** Reservations are the durable emission queue; each entry is visited once per sweep. */
+    public function recoverPending(): array
+    {
+        if ($this->db->transactionLevel() !== 0) {
+            throw new \DomainException('La recuperación requiere operaciones comerciales confirmadas.');
+        }
+        $result = ['visited' => 0, 'states' => [], 'failed' => 0, 'failed_ids' => []];
+        $lastId = (int) $this->db->table('fiscal_number_reservations')->max('id');
+        $this->db->table('fiscal_number_reservations')
+            ->where('id', '<=', $lastId)
+            ->whereIn('status', ['reserved', 'processing', 'uncertain'])
+            ->where(fn ($query) => $query->whereNotNull('document_id')->orWhereNotNull('dispatch_id'))
+            ->select('id')->chunkById(100, function ($rows) use (&$result) {
+                foreach ($rows as $row) {
+                    $result['visited']++;
+                    try {
+                        // process claims under lock, then consults/emits outside the transaction.
+                        $status = $this->process((int) $row->id)->status;
+                        $result['states'][$status] = ($result['states'][$status] ?? 0) + 1;
+                    } catch (\Throwable $exception) {
+                        // Continue past damaged entries; never expose provider payloads or secrets.
+                        $result['failed']++;
+                        if (count($result['failed_ids']) < 100) $result['failed_ids'][] = (int) $row->id;
+                    }
+                }
+            });
+        return $result;
+    }
+
     public function process(int $id): object
     {
         if ($this->db->transactionLevel() !== 0) {

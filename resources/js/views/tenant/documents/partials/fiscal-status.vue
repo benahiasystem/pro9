@@ -11,6 +11,7 @@
                 Control: {{ fiscal.control_number || 'No asignado' }}
             </p>
             <p v-if="fiscal.invalidation_reason">Motivo: {{ fiscal.invalidation_reason }}</p>
+            <p v-if="fiscal.print_replacement"><strong>Reemplazo:</strong> conserva inutilizado el control {{ fiscal.print_replacement.replaced_control_number }}.</p>
             <p v-if="fiscal.contingency"><strong>Contingencia:</strong> {{ fiscal.contingency.reason }}. Reserva original: {{ fiscal.contingency.original_series }} {{ fiscal.contingency.original_document_number }}.</p>
             <div class="d-flex flex-wrap" style="gap: 6px">
                 <el-button v-if="fiscal.can_process" size="small" :disabled="loading" @click="act('process')">
@@ -18,6 +19,7 @@
                 </el-button>
                 <el-button v-if="fiscal.can_confirm_print" size="small" type="primary" :disabled="loading" @click="confirmPrint">Confirmar impresión</el-button>
                 <el-button v-if="fiscal.can_invalidate_print" size="small" type="danger" :disabled="loading" @click="invalidatePrint">Inutilizar control</el-button>
+                <el-button v-if="fiscal.can_replace_print" size="small" type="primary" :disabled="loading" @click="replacePrint">Asignar nuevo control</el-button>
                 <el-button v-if="fiscal.can_start_contingency" size="small" :disabled="loading" @click="contingencyOpen = true">Iniciar contingencia</el-button>
                 <el-button size="small" :disabled="loading" @click="load">Actualizar estado</el-button>
             </div>
@@ -103,6 +105,18 @@ export default {
                 result = await this.$prompt('Indique por qué el formato preimpreso no puede utilizarse. El control no volverá a estar disponible.', 'Inutilizar control', { confirmButtonText: 'Inutilizar', cancelButtonText: 'Cancelar', inputValidator: value => !!value && !!value.trim() && value.trim().length <= 255, inputErrorMessage: 'Indique un motivo de hasta 255 caracteres.' });
             } catch (_) { return; }
             await this.act('invalidate-print', { reason: result.value.trim() });
+        },
+        async replacePrint() {
+            const profiles = this.fiscal.replacement_profiles || [];
+            if (!profiles.length) {
+                this.error = 'Configure y active un perfil de forma libre con un lote disponible para reemplazar el control.';
+                return;
+            }
+            const profile = profiles[0];
+            try {
+                await this.$confirm(`Se reservarán otro número de documento y otro control mediante ${profile.name}. Conserve el formato inutilizado y su copia.`, 'Asignar nuevo control', { confirmButtonText: 'Reservar reemplazo', cancelButtonText: 'Cancelar', type: 'warning' });
+            } catch (_) { return; }
+            await this.act('replace-print', { profile_id: profile.id });
         }
     }
 };

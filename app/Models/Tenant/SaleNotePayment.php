@@ -29,6 +29,20 @@ class SaleNotePayment extends ModelTenant
         'date_of_payment' => 'date',
     ];
 
+    // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+    protected static function boot()
+    {
+        parent::boot();
+        $protectAppliedReceipt = function (self $payment): void {
+            if ($payment->exists && $payment->getConnection()->table('document_payments')->where('source_sale_note_payment_id', $payment->id)->exists()) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['payment' => 'El cobro está aplicado a una factura y su origen no puede alterarse.']);
+            }
+        };
+        static::saving($protectAppliedReceipt);
+        static::deleting($protectAppliedReceipt);
+    }
+    // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
+
     public function payment_method_type()
     {
         return $this->belongsTo(PaymentMethodType::class);

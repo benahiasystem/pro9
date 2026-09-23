@@ -131,12 +131,12 @@ class SalesDocumentTypePolicyTest extends TestCase
     }
 
     /** @test */
-    public function series_ui_uses_seniat_category_labels_and_catalog_order(): void
+    public function series_ui_uses_document_categories_and_catalog_order(): void
     {
         $source = (string) file_get_contents(base_path('resources/js/views/tenant/establishments/partials/series.vue'));
 
-        self::assertStringContainsString('Básico SENIAT', $source);
-        self::assertStringContainsString('Avanzado SENIAT', $source);
+        self::assertStringContainsString('Facturas y notas', $source);
+        self::assertStringContainsString('Órdenes de entrega', $source);
         self::assertStringContainsString('a.sort_order', $source);
         self::assertStringNotContainsString('Básico (SUNAT)', $source);
         self::assertStringNotContainsString('Avanzado (SUNAT)', $source);

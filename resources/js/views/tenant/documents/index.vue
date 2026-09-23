@@ -237,6 +237,11 @@
                                 <svg data-v-e4dd5c75="" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-list-details" style="margin-top: -4px;"><path data-v-e4dd5c75="" stroke="none" d="M0 0h24v24H0z" fill="none"></path><path data-v-e4dd5c75="" d="M13 5h8"></path><path data-v-e4dd5c75="" d="M13 9h5"></path><path data-v-e4dd5c75="" d="M13 15h8"></path><path data-v-e4dd5c75="" d="M13 19h5"></path><path data-v-e4dd5c75="" d="M3 5a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4"></path><path data-v-e4dd5c75="" d="M3 15a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4"></path></svg>
                                 {{ row.number }}
                             </span>
+                            <template v-if="row.fiscal_identity">
+                                <small v-if="row.fiscal_identity.control_number" class="d-block">Control: {{ row.fiscal_identity.control_number }}</small>
+                                <small v-if="row.fiscal_identity.device_serial" class="d-block">Equipo: {{ row.fiscal_identity.device_serial }}</small>
+                                <small v-if="row.fiscal_identity.contingency" class="d-block">Contingencia · Reserva original: {{ row.fiscal_identity.original_number_full }}</small>
+                            </template>
                         </td>
                         <td v-if="col.visible && col.key === 'notes'" :key="col.key">
                             <template v-for="(note, i) in row.notes">

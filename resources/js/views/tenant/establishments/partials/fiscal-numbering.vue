@@ -22,14 +22,15 @@
                 </div>
             </el-tab-pane>
             <el-tab-pane label="Imprentas y controles" name="lots">
-                <p>Registre los rangos preimpresos recibidos de su imprenta. Los controles digitales los asignará el proveedor integrado.</p>
+                <p>Registre los rangos de controles de los formatos preimpresos recibidos de la imprenta autorizada.</p>
                 <el-button size="small" type="primary" @click="create('lots')">Registrar lote preimpreso</el-button>
                 <div class="table-responsive"><table class="table table-sm"><thead><tr><th>Imprenta</th><th>RIF</th><th>Autorización</th><th>Desde</th><th>Hasta</th><th>Próximo control</th><th>Estado</th><th>Acción</th></tr></thead>
                     <tbody><tr v-for="row in data.lots" :key="row.id"><td>{{ row.printer_name }}</td><td>{{ row.printer_rif }}</td><td>{{ row.authorization }}</td><td>{{ row.start_control }}</td><td>{{ row.end_control }}</td><td>{{ row.next_control || 'Agotado' }}</td><td>{{ !row.active ? 'Archivado' : row.exhausted ? 'Agotado' : 'Disponible' }}</td><td><el-button v-if="row.active" size="mini" @click="archive('lot', row)">Archivar</el-button></td></tr>
                     <tr v-if="!data.lots.length"><td colspan="8">No hay lotes preimpresos registrados.</td></tr></tbody></table></div>
             </el-tab-pane>
             <el-tab-pane label="Modalidades y canales" name="profiles">
-                <p>Configure un perfil para cada documento y canal. Los simuladores sólo permiten pruebas en DEMO.</p>
+                <el-alert title="Esta etapa opera únicamente con forma libre preimpresa. Impresora fiscal e imprenta digital permanecen en desarrollo." type="info" :closable="false" show-icon />
+                <p>Configure un perfil de forma libre para cada documento y canal que utilice.</p>
                 <el-button size="small" type="primary" @click="create('profiles')">Nuevo perfil</el-button>
                 <div class="table-responsive"><table class="table table-sm"><thead><tr><th>Perfil</th><th>Canal</th><th>Documento</th><th>Modalidad</th><th>Grupo</th><th>Integración</th><th>Estado</th><th>Acciones</th></tr></thead>
                     <tbody><tr v-for="row in data.profiles" :key="row.id"><td>{{ row.name }}</td><td>{{ data.channels[row.channel] }}</td><td>{{ typeLabel(row.document_type_id) }}</td><td>{{ data.modes[row.mode] }}</td><td>{{ groupLabel(row.device_group_id) }}</td><td>{{ integrationLabel(row.integration_status) }}</td><td>{{ row.active ? 'Activo' : 'Archivado' }}</td><td><el-button size="mini" @click="editProfile(row)">Editar</el-button><el-button v-if="row.active" size="mini" @click="archive('profile', row)">Archivar</el-button></td></tr>
@@ -62,13 +63,14 @@
                 <el-alert v-if="form.in_use" title="Perfil utilizado: puede cambiar el nombre, las credenciales o archivarlo. Para otra configuración fiscal, cree un perfil nuevo." type="info" :closable="false" />
                 <el-form-item label="Nombre" :error="fieldError('name')"><el-input v-model="form.name" maxlength="120" /></el-form-item>
                 <el-form-item label="Canal" :error="fieldError('channel')"><el-select v-model="form.channel" :disabled="form.in_use"><el-option v-for="(label, id) in data.channels" :key="id" :label="label" :value="id" /></el-select></el-form-item>
-                <el-form-item label="Modalidad" :error="fieldError('mode')"><el-select v-model="form.mode" :disabled="form.in_use" @change="modeChanged"><el-option v-for="(label, id) in data.modes" :key="id" :label="label" :value="id" :disabled="(form.channel === 'digital' && id !== 'digital') || (form.channel === 'contingency' && id !== 'free_form')" /></el-select></el-form-item>
+                <el-form-item label="Modalidad" :error="fieldError('mode')"><el-select v-model="form.mode" :disabled="form.in_use" @change="modeChanged"><el-option v-for="(label, id) in data.modes" :key="id" :label="developmentMode(id) ? label + ' (en desarrollo)' : label" :value="id" :disabled="developmentMode(id) || (form.channel === 'digital' && !['digital', 'free_form'].includes(id)) || (form.channel === 'contingency' && id !== 'free_form')" /></el-select></el-form-item>
                 <el-form-item label="Documento" :error="fieldError('document_type_id')"><el-select v-model="form.document_type_id" :disabled="form.in_use" @change="form.sequence_id = null"><el-option v-for="id in availableTypes" :key="id" :label="typeLabel(id)" :value="id" /></el-select></el-form-item>
                 <el-form-item label="Numeración" :error="fieldError('sequence_id')"><el-select v-model="form.sequence_id" :disabled="form.in_use"><el-option v-for="row in profileSequences" :key="row.id" :label="(row.series_code || 'Sin serie') + ' · próximo ' + row.next_number" :value="row.id" /></el-select></el-form-item>
                 <el-form-item label="Grupo de equipo (opcional)" :error="fieldError('device_group_id')"><el-select v-model="form.device_group_id" clearable :disabled="form.in_use"><el-option v-for="group in data.groups" :key="group.id" :label="group.name" :value="group.id" /></el-select></el-form-item>
                 <template v-if="form.mode === 'free_form'">
                     <el-form-item label="Lote preimpreso" :error="fieldError('control_lot_id')"><el-select v-model="form.control_lot_id" clearable :disabled="form.in_use"><el-option v-for="row in data.lots" :key="row.id" :label="row.printer_name + ' · ' + row.start_control + ' a ' + row.end_control" :value="row.id" :disabled="!row.active || row.exhausted" /></el-select></el-form-item>
                     <el-form-item label="Máximo de líneas por documento preimpreso" :error="fieldError('configuration.page_capacity')"><el-input v-model="form.configuration.page_capacity" inputmode="numeric" :disabled="form.in_use" /></el-form-item>
+                    <el-form-item v-if="form.channel === 'digital'" label="Usuario emisor de pedidos/API" :error="fieldError('configuration.emitter_user_id')"><el-select v-model="form.configuration.emitter_user_id" clearable :disabled="form.in_use"><el-option v-for="user in data.emitters" :key="user.id" :value="user.id" :label="user.name" /></el-select></el-form-item>
                 </template>
                 <template v-else>
                     <el-form-item label="Proveedor" :error="fieldError('provider')"><el-select v-model="form.provider" :disabled="form.in_use"><el-option label="Pendiente de integración" value="none" /><el-option label="Simulador DEMO" value="simulator" /></el-select></el-form-item>
@@ -95,7 +97,7 @@ import InternalSeries from './series.vue'
 export default {
     components: {InternalSeries},
     props: ['showDialog', 'establishmentId', 'establishment'],
-    data() { return {loading: false, saving: false, loadError: '', saveError: '', errors: {}, tab: 'sequences', editor: null, form: {}, showInternal: false, data: {sequences: [], lots: [], profiles: [], groups: [], emitters: [], modes: {}, channels: {}, document_types: {}, capabilities: {}}, machineFields: [{key: 'model', label: 'Modelo'}, {key: 'serial', label: 'Registro/serial fiscal'}, {key: 'port', label: 'Puerto del controlador'}]} },
+    data() { return {loading: false, saving: false, loadError: '', saveError: '', errors: {}, tab: 'sequences', editor: null, form: {}, showInternal: false, data: {sequences: [], lots: [], profiles: [], groups: [], emitters: [], modes: {}, development_modes: [], channels: {}, document_types: {}, capabilities: {}}, machineFields: [{key: 'model', label: 'Modelo'}, {key: 'serial', label: 'Registro/serial fiscal'}, {key: 'port', label: 'Puerto del controlador'}]} },
     computed: {
         base() { return `/establishments/${this.establishmentId}/fiscal-numbering` },
         availableTypes() { return this.data.capabilities[this.form.mode] || [] },
@@ -112,6 +114,7 @@ export default {
         },
         fieldError(field) { return (this.errors[field] || []).join(' ') },
         typeLabel(id) { return this.data.document_types[id] || id },
+        developmentMode(id) { return (this.data.development_modes || []).includes(id) },
         groupLabel(id) { const group = this.data.groups.find(row => row.id === id); return group ? group.name : 'General' },
         integrationLabel(status) { return {manual_printing: 'Impresión física', simulated: 'Simulación DEMO', not_integrated: 'Sin integración'}[status] || 'Sin verificar' },
         cancel() { this.editor = null; this.form = {}; this.errors = {}; this.saveError = '' },

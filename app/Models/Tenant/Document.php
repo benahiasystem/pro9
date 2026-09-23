@@ -158,6 +158,7 @@ class Document extends ModelTenant
     }
     // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
     use UsesTenantConnection;
+    use \App\Models\Tenant\Traits\HasFiscalIdentity;
     use SellerIdTrait;
 
     public const GROUP_INVOICE = '01';
@@ -880,7 +881,7 @@ class Document extends ModelTenant
     public function getNumberFullAttribute()
     {
         // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
-        return ($this->series === null || $this->series === '') ? (string) $this->number : $this->series . '-' . $this->number;
+        return $this->fiscal_identity['number_full'];
         // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
     }
 

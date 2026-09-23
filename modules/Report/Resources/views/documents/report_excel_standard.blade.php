@@ -1,3 +1,6 @@
+{{-- ######## INICIO NUMERACIÓN FISCAL VENEZUELA ######## --}}
+@php \App\Services\Fiscal\FiscalIdentity::preload($records); @endphp
+{{-- ######## FIN NUMERACIÓN FISCAL VENEZUELA ######## --}}
 {{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 <?php
     use App\Models\Tenant\Document;
@@ -184,7 +187,7 @@
                             @endif
                         </td>
                         <td class="celda">{{$document_type->id}}</td>
-                        <td class="celda">{{$value->series}}-{{$value->number}}</td>
+                        <td class="celda">{{$value->number_full}}@include('partials.fiscal_report_control', ['value' => $value])</td>
                         <td class="celda">{{$value->date_of_issue->format('Y-m-d')}}</td>
                         <td class="celda">{{isset($value->invoice) ? $value->invoice->date_of_due->format('Y-m-d'):''}}</td>
                         @if(in_array($document_type->id,["07","08"]) && $value->note)

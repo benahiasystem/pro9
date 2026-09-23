@@ -24,10 +24,24 @@ class DocumentPaymentController extends Controller
 
     public function records($document_id)
     {
+        $this->authorizedDocument($document_id);
         $records = DocumentPayment::where('document_id', $document_id)->get();
 
         return new DocumentPaymentCollection($records);
     }
+
+    // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+    private function authorizedDocument($id)
+    {
+        $actor = auth()->user();
+        abort_unless($actor && in_array($actor->type, ['admin', 'seller', 'integrator'], true) && $actor->establishment_id, 403);
+        $query = Document::where('establishment_id', $actor->establishment_id);
+        if ($actor->type !== 'admin') $query->where('user_id', $actor->id);
+        $document = $query->find($id);
+        abort_unless($document, 404);
+        return $document;
+    }
+    // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
 
     public function tables()
     {
@@ -40,7 +54,7 @@ class DocumentPaymentController extends Controller
 
     public function document($document_id)
     {
-        $document = Document::find($document_id);
+        $document = $this->authorizedDocument($document_id);
 
         if ($document->retention) {
             $total = $document->total - $document->retention->amount;
@@ -76,7 +90,9 @@ class DocumentPaymentController extends Controller
 
         $data = DB::connection('tenant')->transaction(function () use ($id, $request) {
 
-            $record = DocumentPayment::firstOrNew(['id' => $id]);
+            $this->authorizedDocument($request->document_id);
+            $record = $id ? DocumentPayment::where('document_id', $request->document_id)->find($id) : new DocumentPayment();
+            abort_unless($record, 404);
             $record->fill($request->all());
             $record->save();
             $this->createGlobalPayment($record, $request->all());
@@ -127,6 +143,8 @@ class DocumentPaymentController extends Controller
     public function destroy($id)
     {
         $item = DocumentPayment::findOrFail($id);
+        $this->authorizedDocument($item->document_id);
+        if ($item->source_sale_note_payment_id) throw \Illuminate\Validation\ValidationException::withMessages(['payment' => 'Este cobro aplicado conserva su origen y no puede eliminarse.']);
         $item->cashDocumentPayments()->delete();
         $item->delete();
 

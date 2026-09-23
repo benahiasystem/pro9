@@ -84,17 +84,22 @@
                         </thead>
                         <tbody>
                             @foreach($records as $key => $value)
+                            @php $serie_affec = ''; @endphp
                             <tr>
                                 <td class="celda">{{$loop->iteration}}</td>
                                 <td class="celda">{{$value->document_type->id}}</td>
-                                <td class="celda">{{$value->series}}-{{$value->number}}</td>
+                                <td class="celda">{{$value->number_full}}
+                                    @if($value->fiscal_identity['control_number'])<br>Control: {{$value->fiscal_identity['control_number']}}@endif
+                                    @if($value->fiscal_identity['device_serial'])<br>Equipo: {{$value->fiscal_identity['device_serial']}}@endif
+                                    @if($value->fiscal_identity['contingency'])<br>Reserva original: {{$value->fiscal_identity['original_number_full']}}@endif
+                                </td>
                                 <td class="celda">{{$value->date_of_issue->format('Y-m-d')}}</td>
                                   @if(in_array($value->document_type_id,["07","08"]) && $value->note)
 
                                         @php
-                                            $serie = ($value->note->affected_document) ? $value->note->affected_document->series : $value->note->data_affected_document->series;
-                                            $number =  ($value->note->affected_document) ? $value->note->affected_document->number : $value->note->data_affected_document->number;
-                                            $serie_affec = $serie.' - '.$number;
+                                            $serie_affec = $value->note->affected_document
+                                                ? $value->note->affected_document->number_full
+                                                : \App\Services\Fiscal\FiscalIdentity::numberFull($value->note->data_affected_document->series, $value->note->data_affected_document->number);
 
                                         @endphp
 

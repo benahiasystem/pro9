@@ -34,20 +34,23 @@ class DispatchController extends Controller
             'origin.address' => 'required|max:100',
         ]);
 
-        $fact = DB::connection('tenant')->transaction(function () use ($request) {
-            $facturalo = new Facturalo();
-            $facturalo->save($request->all());
-            $document = $facturalo->getDocument();
-            $facturalo->createPdf();
-            return $facturalo;
-        });
-
+        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+        $fact = \App\Services\Fiscal\FiscalApiDispatchService::register($request->all());
         $document = $fact->getDocument();
+        $db = $document->getConnection();
+        $reservation = $db->table('fiscal_number_reservations')->where('dispatch_id', $document->id)->first();
+        $reservation = (new \App\Services\Fiscal\FiscalEmissionService($db))->process((int) $reservation->id);
+        $fact->createPdf();
+        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
 
         return [
             'success' => true,
             'data' => [
+                'id' => $document->id,
                 'number' => $document->number_full,
+                'fiscal_identity' => $document->fiscal_identity,
+                'replayed' => !$fact->wasNewFiscalRegistration(),
+                'fiscal' => ['status' => $reservation->status, 'control_number' => $reservation->control_number],
                 'filename' => $document->filename,
                 'external_id' => $document->external_id,
             ],
@@ -65,7 +68,8 @@ class DispatchController extends Controller
         $transferReasonTypes = TransferReasonType::whereActive()->get();
         $transportModeTypes = TransportModeType::whereActive()->get();
         $unitTypes = UnitType::whereActive()->get();
-        $establishments = Establishment::all();
+        $this->authorizedQuery();
+        $establishments = Establishment::where('id', auth()->user()->establishment_id)->get();
         $origin_addresses = OriginAddress::all();
         $dispatchers = app(\Modules\Dispatch\Http\Controllers\DispatcherController::class)->getOptions();
         $transports = Transport::query()
@@ -100,15 +104,17 @@ class DispatchController extends Controller
 
     public function records(Request $request)
     {
+        $request->validate(['input' => ['nullable', 'string', 'max:128'], 'series' => ['nullable', 'string', 'max:32'], 'number' => ['nullable', 'regex:/^[0-9]+$/D'], 'control_number' => ['nullable', 'string', 'max:32']]);
         $input = $request->input;
-        $records = Dispatch::query()
-            ->where('document_type_id', '09')
-            ->when($input, function ($query) use ($input) {
-                return $query
-                    ->where('series', 'like', '%' . $input . '%')
-                    ->orWhere('number', 'like', '%' . $input . '%');
-            })
-            ->latest();
+        $records = $this->authorizedQuery()->where('document_type_id', '09');
+        if ($request->filled('control_number') || $request->filled('series') || $request->filled('number')) {
+            $records->whereFiscalIdentifiers($request->series, $request->number, $request->control_number);
+        } elseif ($input !== null && $input !== '') {
+            if (preg_match('/^[0-9]{2}-[0-9]+$/D', $input)) $records->whereFiscalIdentifiers(null, null, $input);
+            elseif (ctype_digit((string) $input)) $records->whereFiscalIdentifiers(null, $input);
+            else $records->whereFiscalIdentifiers($input);
+        }
+        $records->latest();
         return new DispatchCollection($records->paginate(config('tenant.items_per_page')));
     }
 
@@ -116,12 +122,11 @@ class DispatchController extends Controller
     /**
      * Devuelve una orden de entrega por su id.
      *
-     * whereTypeUser() evita que un vendedor pueda leer registros de otro usuario
-     * pasando ids ajenos; para los demas perfiles no restringe nada.
+     * Restringe por sucursal y por propietario para vendedores e integradores.
      */
     public function record($id)
     {
-        $record = Dispatch::whereTypeUser()->find($id);
+        $record = $this->authorizedQuery()->find($id);
 
         if (!$record) {
             return response()->json([
@@ -135,5 +140,16 @@ class DispatchController extends Controller
             'data' => $record->getApiResourceFind(),
         ]);
     }
+    private function authorizedQuery()
+    {
+        $actor = auth()->user();
+        if (!$actor instanceof \App\Models\Tenant\User || !in_array($actor->type, ['admin', 'seller', 'integrator'], true) || !$actor->establishment_id) {
+            throw new \Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException('La API de órdenes requiere un usuario autorizado con sucursal.');
+        }
+        $query = Dispatch::query()->where('establishment_id', $actor->establishment_id);
+        if ($actor->type !== 'admin') $query->where('user_id', $actor->id);
+        return $query;
+    }
+
 }
 // ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

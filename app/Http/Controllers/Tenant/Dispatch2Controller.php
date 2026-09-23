@@ -57,19 +57,19 @@ class Dispatch2Controller extends Controller
     }
     
     public function store(Request $request) {
-        $fact = DB::connection('tenant')->transaction(function () use($request) {
-            $facturalo = new Facturalo();
-            $facturalo->save($request->all());
-            $facturalo->createPdf();
-
-            return $facturalo;
-        });
-        
+        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+        $data = $request->all();
+        $fact = (new Facturalo())->saveFiscal($data, (int) $data['fiscal_profile_id'], $data['operation_key'], $data['fiscal_fingerprint'], $data['fiscal_channel'], $data['fiscal_group_id']);
         $document = $fact->getDocument();
+        $db = $document->getConnection();
+        $reservation = $db->table('fiscal_number_reservations')->where('dispatch_id', $document->id)->first();
+        (new \App\Services\Fiscal\FiscalEmissionService($db))->process((int) $reservation->id);
+        $fact->createPdf();
+        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
         return [
             'success' => true,
             // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
-            'message' => "Se creó la orden de entrega {$document->series}-{$document->number}",
+            'message' => "Se creó la orden de entrega {$document->number_full}",
             // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
         ];
     }

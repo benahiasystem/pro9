@@ -37,6 +37,32 @@ class FiscalDocumentEmissionController extends Controller
         return $this->mutate($request, $document, 'invalidatePrint');
     }
 
+    public function replacePrint(Request $request, int $document): array
+    {
+        $db = $this->authorizedConnection($request, $document, true);
+        $data = \Illuminate\Support\Facades\Validator::make($request->all(), [
+            'profile_id' => ['required', 'integer', 'min:1'],
+        ])->validate();
+        $root = $db->table('fiscal_number_reservations')->where($this->reservationColumn, $document)->first();
+        if (!$root) throw new NotFoundHttpException('El documento no tiene reserva fiscal.');
+        $modelClass = $this->subjectTable === 'dispatches' ? \App\Models\Tenant\Dispatch::class : \App\Models\Tenant\Document::class;
+        $subject = (new $modelClass())->setConnection($db->getName())->newQuery()->findOrFail($document);
+        $type = $this->subjectTable === 'dispatches' ? 'dispatch' : ($subject->document_type_id === '01' ? 'invoice' : ($subject->document_type_id === '07' ? 'credit' : 'debit'));
+        try {
+            (new \App\Services\Fiscal\FiscalPrintReplacementService($db))->replace(
+                (int) $root->id, (int) $data['profile_id'], (int) $request->user()->id,
+                function () use ($subject, $type) {
+                    (new \App\CoreFacturalo\Facturalo())->createPdf($subject, $type, 'a4', 'validate');
+                }
+            );
+            // A file write may be retried against the same durable replacement.
+            (new \App\CoreFacturalo\Facturalo())->createPdf($subject, $type, 'a4');
+        } catch (\DomainException $exception) {
+            throw ValidationException::withMessages(['fiscal' => $exception->getMessage()]);
+        }
+        return ['success' => true, 'data' => $this->view($db, $document, $request->user())];
+    }
+
     public function contingency(Request $request, int $document): array
     {
         $db = $this->authorizedConnection($request, $document, true);
@@ -128,6 +154,14 @@ class FiscalDocumentEmissionController extends Controller
             ->where('document_type_id', $snapshot['document_type_id'])->where('channel', 'contingency')
             ->where('mode', 'free_form')->where('active', true)
             ->where('device_group_id', $snapshot['profile']['device_group_id'] ?? null)->get(['id', 'name']) : [];
+        $canReplacePrint = $user->type === 'admin' && $record->status === 'inutilized' && $snapshot['mode'] === 'free_form';
+        $replacementProfiles = $canReplacePrint ? $db->table('fiscal_profiles as p')
+            ->join('fiscal_control_lots as l', 'l.id', '=', 'p.control_lot_id')
+            ->where('p.establishment_id', $user->establishment_id)
+            ->where('p.document_type_id', $snapshot['document_type_id'])->where('p.channel', $snapshot['channel'])
+            ->where('p.mode', 'free_form')->where('p.active', true)->where('l.active', true)
+            ->whereColumn('l.next_ordinal', '<=', 'l.end_ordinal')
+            ->where('p.device_group_id', $snapshot['profile']['device_group_id'] ?? null)->get(['p.id', 'p.name']) : [];
         return [
             'status' => $record->status, 'mode' => $snapshot['mode'], 'environment' => $snapshot['environment'],
             'series' => $snapshot['series'], 'document_number' => (string) $record->document_number,
@@ -136,9 +170,11 @@ class FiscalDocumentEmissionController extends Controller
             'provider_reference' => $result['provider_reference'] ?? null,
             'invalidation_reason' => $record->invalidation_reason,
             'contingency' => $snapshot['contingency'] ?? null,
+            'print_replacement' => $snapshot['print_replacement'] ?? null,
             'can_process' => in_array($record->status, ['reserved', 'uncertain', 'processing'], true),
             'can_confirm_print' => $record->status === 'awaiting_print',
             'can_invalidate_print' => $record->status === 'awaiting_print' && $user->type === 'admin',
+            'can_replace_print' => $canReplacePrint, 'replacement_profiles' => $replacementProfiles,
             'can_start_contingency' => $canContingency, 'contingency_profiles' => $profiles,
             'attempts' => $db->table('fiscal_emission_attempts')->whereIn('reservation_id', [$originalId, $record->id])
                 ->orderBy('id')->get(['action', 'status', 'created_at', 'finished_at']),

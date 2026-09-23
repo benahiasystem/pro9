@@ -176,7 +176,7 @@ class DispatchInput
                 $origin = $inputs['origin'];
                 $country_id = key_exists('country_id', $origin) ? $origin['country_id'] : 'VE';
                 $address = $origin['address'];
-                $location_id = $origin['location_id'][2] == '0' ? $origin['location_id'] : $origin['location_id'][2];
+                $location_id = is_array($origin['location_id']) ? ($origin['location_id'][2] ?? null) : $origin['location_id'];
                 $code = key_exists('code', $origin) ? $origin['code'] : '0000';
 
                 return [

@@ -97,7 +97,8 @@ class FiscalWebDocumentContextTest extends FiscalDatabaseTestCase
 
     public static function reservedKeys(): array
     {
-        return [['ecommerce-order-25-invoice'], ['ECOMMERCE-ORDER-25-INVOICE'], ['contingency-1'], ['CONTINGENCY-1']];
+        return [['ecommerce-order-25-invoice'], ['ECOMMERCE-ORDER-25-INVOICE'], ['contingency-1'], ['CONTINGENCY-1'],
+            ['print-replacement-1'], ['PRINT-REPLACEMENT-1']];
     }
 }
 // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########

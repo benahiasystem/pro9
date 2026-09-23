@@ -66,6 +66,7 @@ use App\Models\Tenant\Catalogs\IdentityDocumentType;
  */
 class Dispatch extends ModelTenant
 {
+    use \App\Models\Tenant\Traits\HasFiscalIdentity;
     // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
     private ?int $fiscalReservationId = null;
 
@@ -408,8 +409,9 @@ class Dispatch extends ModelTenant
         })->values()->all();
 
         return [
-            'series'                      => $this->series,
-            'number'                      => $this->number,
+            'series'                      => $this->fiscal_identity['series'],
+            'number'                      => $this->fiscal_identity['document_number'],
+            'fiscal_identity'             => $this->fiscal_identity,
             'document_type_id'            => $this->document_type_id,
             'date_of_issue'               => optional($this->date_of_issue)->format('Y-m-d'),
             'time_of_issue'               => $this->time_of_issue,
@@ -487,7 +489,7 @@ class Dispatch extends ModelTenant
     public function getNumberFullAttribute()
     {
         // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
-        return ($this->series === null || $this->series === '') ? (string) $this->number : $this->series . '-' . $this->number;
+        return $this->fiscal_identity['number_full'];
         // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
     }
 
@@ -692,6 +694,7 @@ class Dispatch extends ModelTenant
             'fiscal_environment' => $this->fiscal_environment,
             'date_of_issue' => $this->date_of_issue->format('Y-m-d'),
             'number' => $this->number_full,
+            'fiscal_identity' => $this->fiscal_identity,
             'customer_id' => $this->customer_id,
             'customer_name' => $customer_name,
             'customer_number' => $customer_number,

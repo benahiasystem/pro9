@@ -55,6 +55,7 @@ class FiscalNumberingController extends Controller
             'emitters' => $db->table('users')->where('establishment_id', $establishment)->where('active', true)->whereIn('type', ['admin', 'integrator'])->get(['id', 'name']),
             'channels' => FiscalProfileService::CHANNELS, 'document_types' => FiscalProfileService::TYPES,
             'modes' => FiscalEmissionSettings::MODES,
+            'development_modes' => ['digital', 'fiscal_machine'],
             'capabilities' => collect(array_keys(FiscalEmissionSettings::MODES))->mapWithKeys(fn ($mode) => [$mode => FiscalProfileService::supportedTypes($mode)]),
             'environment' => $db->table('companies')->value('fiscal_environment'),
         ]];
@@ -69,6 +70,14 @@ class FiscalNumberingController extends Controller
             'series_code' => ['present', 'nullable', 'string', 'max:32', 'regex:/\A[A-Z0-9-]*\z/'],
             'initial_number' => ['required', 'integer', 'min:1', 'max:2147483646'],
             'centralized' => ['required', 'boolean'],
+        ], [
+            'initial_number.required' => 'Indique el número inicial.',
+            'initial_number.integer' => 'El número inicial debe ser un entero.',
+            'initial_number.min' => 'El número inicial debe ser mayor o igual a 1.',
+            'initial_number.max' => 'El número inicial no puede superar 2147483646.',
+        ], [
+            'document_type_id' => 'tipo de documento', 'series_code' => 'código de serie',
+            'initial_number' => 'número inicial', 'centralized' => 'secuencia compartida',
         ]);
         return $this->execute(fn () => $db->transaction(function () use ($data, $db, $request, $establishment) {
             $repository = new FiscalNumberingRepository($db);

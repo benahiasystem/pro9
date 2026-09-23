@@ -63,6 +63,14 @@
                             </el-input>
                         </div>
                     </div>
+                    <!-- ######## INICIO NUMERACIÓN FISCAL VENEZUELA ######## -->
+                    <div class="col-lg-2 col-md-2">
+                        <div class="form-group">
+                            <label class="control-label">Número de control</label>
+                            <el-input v-model="search.control_number" placeholder="00-00000001" clearable />
+                        </div>
+                    </div>
+                    <!-- ######## FIN NUMERACIÓN FISCAL VENEZUELA ######## -->
                     <div class="col-lg-2 col-md-2 pb-2">
                         <div class="form-group">
                             <label class="control-label">Fecha inicio </label>
@@ -301,6 +309,7 @@ export default {
                     state_type_id: null,
                     series: null,
                     number: null,
+                    control_number: null,
                     d_start: null,
                     d_end: null,
                     pending_payment: false,
@@ -430,6 +439,7 @@ export default {
                     state_type_id:null,
                     series:null,
                     number:null,
+                    control_number:null,
                     d_start:null,
                     d_end:null,
                     pending_payment:false,
@@ -445,18 +455,18 @@ export default {
             filterSeries() {
                 this.search.series = null
                 this.series = _.filter(this.all_series, {'document_type_id': this.search.document_type_id});
-                this.search.series = (this.series.length > 0)?this.series[0].number:null
+                this.search.series = null
             },
             customIndex(index) {
                 return (this.pagination.per_page * (this.pagination.current_page - 1)) + index + 1
             },
             async getRecordsByFilter(){
 
-                this.loading_submit = await true
-                await this.getRecords()
-                this.loading_submit = await false
-                this.getTotalRecords()
-                if (this.auto_hide_filters) this.see_more = false
+                this.loading_submit = true
+                if (await this.getRecords()) {
+                    this.getTotalRecords()
+                    if (this.auto_hide_filters) this.see_more = false
+                }
 
             },
             getRecords() {
@@ -479,8 +489,13 @@ export default {
                     });
                     this.pagination = response.data.meta
                     this.pagination.per_page = parseInt(response.data.meta.per_page)
-                    this.loading_submit = false
-                });
+                    return true
+                }).catch(error => {
+                    const data = error.response && error.response.data;
+                    const errors = data && (data.errors || (typeof data.message === 'object' && data.message));
+                    this.$message.error(errors ? Object.values(errors).flat().join(' ') : (data && data.message) || 'No se pudo consultar el listado.');
+                    return false;
+                }).finally(() => { this.loading_submit = false; });
 
             },
             getTotalRecords() {

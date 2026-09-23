@@ -14,6 +14,7 @@ class DocumentCollection extends ResourceCollection
     public function toArray($request) {
 
 
+        \App\Services\Fiscal\FiscalIdentity::preload($this->collection);
         return $this->collection->transform(function(\App\Models\Tenant\Document $row, $key){
 
 
@@ -22,7 +23,7 @@ class DocumentCollection extends ResourceCollection
 
                 $series = ($row->note->affected_document) ? $row->note->affected_document->series : $row->note->data_affected_document->series;
                 $number =  ($row->note->affected_document) ? $row->note->affected_document->number : $row->note->data_affected_document->number;
-                $affected_document = $series.' - '.$number;
+                $affected_document = $row->note->affected_document ? $row->note->affected_document->number_full : \App\Services\Fiscal\FiscalIdentity::numberFull($series, $number);
             }
 
             $signal = $row->document_type_id;
@@ -54,8 +55,9 @@ class DocumentCollection extends ResourceCollection
                 'fiscal_environment_description' => $row->fiscal_environment_type->description,
                 'date_of_issue' => $row->date_of_issue->format('Y-m-d'),
                 'date_of_due' => (in_array($row->document_type_id, ['01'])) ? $row->invoice->date_of_due->format('Y-m-d') : null,
-                'serie' => $row->series,
-                'number' => $row->number,
+                'serie' => $row->fiscal_identity['series'],
+                'fiscal_identity' => $row->fiscal_identity,
+                'number' => $row->fiscal_identity['document_number'],
                 'customer_name' => $row->customer->name,
                 'customer_number' => format_person_identity_document($row->customer),
                 'currency_type_id' => $row->currency_type_id,
@@ -68,9 +70,9 @@ class DocumentCollection extends ResourceCollection
                 'date_sale' => $row->sale_note?$row->sale_note->date_of_issue->format('Y-m-d'):'',
                 'payment_form' => ($row->payments()->count() > 0) ? $row->payments()->first()->payment_method_type->description : '',
                 'payment_method' => $payment_description,
-                'series' => $row->series,
+                'series' => $row->fiscal_identity['series'],
                 'establishment_id' => $row->establishment_id,
-                'alone_number' => $row->number,
+                'alone_number' => $row->fiscal_identity['document_number'],
                 'purchase_order' => $row->purchase_order,
                 'guides' => !empty($row->guides)?(array)$row->guides:null,
 

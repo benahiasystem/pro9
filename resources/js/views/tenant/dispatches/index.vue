@@ -114,7 +114,12 @@
                                 <small>{{ row.customer_number }}</small>
                             </td>
                         </template>
-                        <td>{{ row.number }}</td>
+                        <td>{{ row.number }}
+                            <template v-if="row.fiscal_identity">
+                                <small v-if="row.fiscal_identity.control_number" class="d-block">Control: {{ row.fiscal_identity.control_number }}</small>
+                                <small v-if="row.fiscal_identity.contingency" class="d-block">Contingencia · Reserva original: {{ row.fiscal_identity.original_number_full }}</small>
+                            </template>
+                        </td>
                         <td>
                             <span
                                 class="badge bg-secondary text-white"

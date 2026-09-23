@@ -22,7 +22,8 @@ class DispatchCollection extends ResourceCollection
 	 */
 	public function toArray($request)
 	{
-		return $this->collection->transform(function ($row, $key) {
+		\App\Services\Fiscal\FiscalIdentity::preload($this->collection);
+        return $this->collection->transform(function ($row, $key) {
             /** @var Dispatch $row */
             return $row->getCollectionData();
 		});

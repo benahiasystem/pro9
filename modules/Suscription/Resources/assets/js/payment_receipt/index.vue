@@ -639,7 +639,7 @@ export default {
                 .then(() => {});
         },
         clickVoided(id) {
-            this.anular(`/${this.resource}/anulate/${id}`).then(() =>
+            this.anular(`/${this.resource}/anulate/${id}`, 'post').then(() =>
                 this.$eventHub.$emit("reloadData")
             );
         }

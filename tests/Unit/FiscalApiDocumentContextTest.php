@@ -77,5 +77,20 @@ class FiscalApiDocumentContextTest extends FiscalDatabaseTestCase
         $this->assertSame($profile, $retry['fiscal_profile_id']);
         $this->assertSame($prepared['fiscal_fingerprint'], $retry['fiscal_fingerprint']);
     }
+
+    public function test_integrator_api_can_use_preprinted_free_form(): void
+    {
+        $lot = $this->repository->createLot(['establishment_id' => 1, 'start' => '00-1', 'end' => '00-2',
+            'printer_name' => 'Test', 'printer_rif' => 'J-00000000-0', 'authorization' => 'TEST',
+            'authorization_date' => '2026-01-01', 'prepared_at' => '2026-02-01']);
+        $profile = (new FiscalProfileService($this->db))->save(1, [
+            'name' => 'API forma libre', 'channel' => 'digital', 'document_type_id' => '01', 'mode' => 'free_form',
+            'sequence_id' => $this->repository->createSequence('01', 'API', 1, 1), 'provider' => 'none',
+            'control_lot_id' => $lot, 'configuration' => ['page_capacity' => 10], 'active' => true,
+        ], 1)['id'];
+        $result = FiscalApiDocumentContext::prepareFor($this->input(), $this->actor('integrator'), $this->db, null);
+        $this->assertSame('digital', $result['fiscal_channel']);
+        $this->assertSame($profile, $result['fiscal_profile_id']);
+    }
 }
 // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########

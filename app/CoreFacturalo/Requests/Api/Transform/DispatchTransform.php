@@ -19,19 +19,20 @@ class DispatchTransform
     {
         $data = [
             'id' => null,
+            'operation_key' => $inputs['operation_key'] ?? $inputs['clave_operacion'] ?? null,
             'series' => Functions::valueKeyInArray($inputs, 'serie_documento'),
             'number' => Functions::valueKeyInArray($inputs, 'numero_documento'),
             'date_of_issue' => Functions::valueKeyInArray($inputs, 'fecha_de_emision'),
             'time_of_issue' => Functions::valueKeyInArray($inputs, 'hora_de_emision'),
             'document_type_id' => Functions::valueKeyInArray($inputs, 'codigo_tipo_documento'),
-            'establishment' => EstablishmentTransform::transform($inputs['datos_del_emisor']),
+            'establishment' => isset($inputs['datos_del_emisor']) ? EstablishmentTransform::transform($inputs['datos_del_emisor']) : null,
             'customer' => self::customer($inputs),
             'observations' => Functions::valueKeyInArray($inputs, 'observaciones'),
             'transport_mode_type_id' => Functions::valueKeyInArray($inputs, 'codigo_modo_transporte'),
             'transfer_reason_type_id' => Functions::valueKeyInArray($inputs, 'codigo_motivo_traslado'),
             'transfer_reason_description' => Functions::valueKeyInArray($inputs, 'descripcion_motivo_traslado'),
             'date_of_shipping' => Functions::valueKeyInArray($inputs, 'fecha_de_traslado'),
-            'transshipment_indicator' => Functions::valueKeyInArray($inputs, 'indicador_de_transbordo'),
+            'transshipment_indicator' => Functions::valueKeyInArray($inputs, 'indicador_de_transbordo', false),
             'port_code' => Functions::valueKeyInArray($inputs, 'codigo_de_puerto'),
             'unit_type_id' => Functions::valueKeyInArray($inputs, 'unidad_peso_total'),
             'total_weight' => Functions::valueKeyInArray($inputs, 'peso_total'),
@@ -214,7 +215,7 @@ class DispatchTransform
 
     private static function driver($inputs)
     {
-        if (key_exists('chofer', $inputs)) {
+        if (isset($inputs['chofer']) && is_array($inputs['chofer'])) {
             $driver = $inputs['chofer'];
             return [
                 'identity_document_type_id' => $driver['codigo_tipo_documento_identidad'],

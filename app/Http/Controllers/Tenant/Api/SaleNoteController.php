@@ -119,27 +119,28 @@ class SaleNoteController extends Controller
         ];
         $print_result = ['auto_printed' => false, 'print_order_id' => null, 'reason' => null];
 
-        $data = [];
-        if ($request['force_create_if_not_exist']) {
-            // Se saca de tenant, para que pueda guardar el item correctamente.
-            self::ExtraLog(__FILE__ . "::" . __LINE__ . "   " . __FUNCTION__ . "  \n Entra por crear " . __FUNCTION__ . " \n" . var_export($request->all(), true) . "\n\n\n\n");
-            $data = $this->mergeData($request);
-        }
-
-        DB::connection('tenant')->transaction(function () use ($request, $data, $actions, &$print_result) {
-            if (!$request['force_create_if_not_exist']) {
-                $data = $this->mergeData($request);
+        DB::connection('tenant')->transaction(function () use ($request, $actions, &$print_result) {
+            // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+            if ($request->input('id')) {
+                $source = \App\Services\Fiscal\FiscalSaleNoteMutationGuard::lockEditable(DB::connection('tenant'), (int) $request->input('id'), auth()->user());
+                abort_unless((int) $request->establishment_id === (int) $source->establishment_id, 403);
             }
+            $request->request->remove('document_id');
+            $request->request->remove('changed');
+            $data = $this->mergeData($request);
+            unset($data['document_id'], $data['changed']);
+            // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
             $this->sale_note = SaleNote::updateOrCreate(
                 ['id' => $request->input('id')],
                 $data
             );
 
-            $this->sale_note->payments()->delete();
+            $commercial = new \App\Http\Controllers\Tenant\SaleNoteController();
+            $commercial->deleteAllPayments($this->sale_note->payments);
+            $commercial->deleteAllItems($this->sale_note->items);
 
             foreach ($data['items'] as $row) {
-                $item_id = isset($row['id']) ? $row['id'] : null;
-                $sale_note_item = SaleNoteItem::firstOrNew(['id' => $item_id]);
+                $sale_note_item = new SaleNoteItem();
 
                 if (isset($row['item']['lots'])) {
                     $row['item']['lots'] = isset($row['lots']) ? $row['lots'] : $row['item']['lots'];
@@ -165,6 +166,12 @@ class SaleNoteController extends Controller
             if(key_exists('payments', $data)) {
                 $payments = new \App\Http\Controllers\Tenant\SaleNoteController;
                 $payments->savePayments($this->sale_note, $data['payments']);
+                foreach ($this->sale_note->payments()->whereHas('global_payment', fn ($query) => $query->where('destination_type', \App\Models\Tenant\Cash::class))->get() as $payment) {
+                    $commercial->createCashDocumentPayment($payment, false);
+                }
+                $paid = (string) $this->sale_note->payments()->sum('payment');
+                $this->sale_note->update(['total_canceled' => bccomp($paid, (string) $this->sale_note->total, 2) >= 0]);
+
             }
 
             $this->setFilename();
@@ -698,126 +705,150 @@ class SaleNoteController extends Controller
 
     public function generateCPE(Request $request, $saleNoteId)
     {
-        /**
-         * codigo_tipo_documento => 01 = Factura || 03 = Factura
-         * serie_documento
-         * numero_documento
-         * fecha_de_emision
-         * hora_de_emision
-         * fecha_de_vencimiento
-         * codigo_condicion_de_pago
-         **/
+        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+        $request->validate([
+            'codigo_tipo_documento' => ['required', 'in:01'],
+            'fecha_de_emision' => ['required', 'date_format:Y-m-d'],
+            'hora_de_emision' => ['required', 'date_format:H:i:s'],
+            'fecha_de_vencimiento' => ['required', 'date_format:Y-m-d'],
+            'codigo_condicion_de_pago' => ['required', 'in:01,02'],
+        ]);
         $user = auth()->guard('api')->user();
-        $saleNote = SaleNote::where('id', $saleNoteId)->first();
-        if (!$saleNote) {
-            return response()->json([
-                'success' => false,
-                'message' => 'La nota de venta asociada no existe.'
-            ], 500);
+        if (!$user || !in_array($user->type, ['admin', 'seller', 'integrator'], true) || !$user->establishment_id) {
+            abort(403, 'La conversión requiere un usuario autorizado con sucursal.');
         }
-        $saleNote->items = $saleNote->items
-            ->each(function ($item) {
-                $itemBD = Item::without(['item_type', 'unit_type', 'currency_type', 'warehouses', 'item_unit_types', 'tags'])
-                    ->findOrFail($item->item_id);
+        $db = Company::active()->getConnection();
+        $fact = $db->transaction(function () use ($db, $request, $saleNoteId, $user) {
+            // Mismo orden de bloqueo que la reserva fiscal: emisor, origen, efectos comerciales.
+            $db->table('companies')->orderBy('id')->lockForUpdate()->first();
+            $query = SaleNote::where('id', $saleNoteId)->where('establishment_id', $user->establishment_id);
+            if ($user->type !== 'admin') $query->where('user_id', $user->id);
+            $saleNote = $query->lockForUpdate()->first();
+            if (!$saleNote) abort(404, 'No se encontró la nota de venta solicitada.');
+            if ($saleNote->fiscal_environment !== Company::active()->fiscal_environment) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['sale_note_id' => 'La nota de venta pertenece a otro ambiente fiscal.']);
+            }
+            if ($saleNote->isVoidedOrRejected()) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['sale_note_id' => 'La nota de venta está anulada o rechazada.']);
+            }
+            $saleNote->items = $saleNote->items
+                ->each(function ($item) {
+                    $itemBD = Item::without(['item_type', 'unit_type', 'currency_type', 'warehouses', 'item_unit_types', 'tags'])
+                        ->findOrFail($item->item_id);
 
-                $itemToArray = json_decode(json_encode($item->item), true);
-                $itemToArray['internal_id'] = $itemBD->internal_id ?? '';
-                $itemToArray['item_code'] = $itemBD->item_code ?? '';
-                $itemToArray['item_code_gs1'] = $itemBD->item_code_gs1 ?? '';
-                $itemToArray['IdLoteSelected'] = null;
+                    $itemToArray = json_decode(json_encode($item->item), true);
+                    $itemToArray['internal_id'] = $itemBD->internal_id ?? '';
+                    $itemToArray['item_code'] = $itemBD->item_code ?? '';
+                    $itemToArray['item_code_gs1'] = $itemBD->item_code_gs1 ?? '';
+                    $itemToArray['IdLoteSelected'] = null;
 
-                $item->item = $itemToArray;
-                return (object)$item;
-            });
-        $saleNote = $saleNote->toArray();
+                    $item->item = $itemToArray;
+                    return (object)$item;
+                });
+            $saleNote = $saleNote->toArray();
 
-        $data = [
-            'type' => 'invoice',
-            'group_id' => '01',
-            'user_id' => $user->id,
-            'external_id' => $saleNote['external_id'],
-            'establishment_id' => $saleNote['establishment_id'],
-            'establishment' => $saleNote['establishment'],
-            "fiscal_environment" => $saleNote['fiscal_environment'],
-            "state_type_id" => $saleNote['state_type_id'],
-            "ubl_version" => "2.1",
-            "filename" => "",
-            "document_type_id" => $request->codigo_tipo_documento,
-            "series" => $request->serie_documento,
-            "number" => $request->numero_documento,
-            "date_of_issue" => $request->fecha_de_emision,
-            "time_of_issue" => $request->hora_de_emision,
-            "customer_id" => $saleNote['customer_id'],
-            "seller_id" => null,
-            "customer" => $saleNote['customer'],
-            "currency_type_id" => $saleNote['currency_type_id'],
-            "purchase_order" => $saleNote['purchase_order'],
-            "quotation_id" => $saleNote['quotation_id'],
-            "order_note_id" => $saleNote['order_note_id'],
-            "exchange_rate_sale" => $saleNote['exchange_rate_sale'],
-            "total_prepayment" => $saleNote['total_prepayment'],
-            "total_discount" => $saleNote['total_discount'],
-            "total_charge" => $saleNote['total_charge'],
-            "total_exportation" => $saleNote['total_exportation'],
-            "total_free" => $saleNote['total_free'],
-            "total_taxed" => $saleNote['total_taxed'],
-            "total_unaffected" => $saleNote['total_unaffected'],
-            "total_exonerated" => $saleNote['total_exonerated'],
-            "total_igv" => $saleNote['total_igv'],
-            "total_base_other_taxes" => $saleNote['total_base_other_taxes'],
-            "total_other_taxes" => $saleNote['total_other_taxes'],
-            "total_taxes" => $saleNote['total_taxes'],
-            "total_value" => $saleNote['total_value'],
-            "total" => $saleNote['total'],
-            "has_prepayment" => 0,
-            "affectation_type_prepayment" => null,
-            "was_deducted_prepayment" => 0,
-            "pending_amount_prepayment" => 0,
-            "items" => $saleNote['items'],
-            "charges" => $saleNote['charges'],
-            "discounts" => $saleNote['discounts'],
-            "prepayments" => $saleNote['prepayments'],
-            "guides" => $saleNote['guides'],
-            "related" => $saleNote['related'],
-            "perception" => $saleNote['perception'],
-            "invoice" => [
-                'operation_type_id' => "0101",
-                'date_of_due' => $request->fecha_de_vencimiento,
-            ],
-            "hotel" => [],
-            "transport" => [],
-            "plate_number" => $saleNote['plate_number'],
-            "legends" => [
-                ['code' => 1000, 'value' => NumberLetter::convertToLetter($saleNote['total'])]
-            ],
-            "actions" => [
-                "send_email" => false,
-                "format_pdf" => "a4",
-            ],
-            "payments" => [],
-            "payment_method_type_id" => $saleNote['payment_method_type_id'],
-            "reference_data" => $saleNote['reference_data'],
-            "fee" => [],
-            'sale_note_id' => $saleNoteId,
-            'payment_condition_id' => $request->codigo_condicion_de_pago,
-        ];
+            $data = [
+                'type' => 'invoice',
+                'group_id' => '01',
+                'user_id' => $user->id,
+                'external_id' => Str::uuid()->toString(),
+                'establishment_id' => $saleNote['establishment_id'],
+                'establishment' => $saleNote['establishment'],
+                "fiscal_environment" => $saleNote['fiscal_environment'],
+                "state_type_id" => "01",
+                "ubl_version" => "2.1",
+                "filename" => "",
+                "document_type_id" => $request->codigo_tipo_documento,
+                "series" => $request->serie_documento,
+                "number" => $request->numero_documento,
+                "date_of_issue" => $request->fecha_de_emision,
+                "time_of_issue" => $request->hora_de_emision,
+                "customer_id" => $saleNote['customer_id'],
+                "seller_id" => null,
+                "customer" => $saleNote['customer'],
+                "currency_type_id" => $saleNote['currency_type_id'],
+                "purchase_order" => $saleNote['purchase_order'],
+                "quotation_id" => $saleNote['quotation_id'],
+                "order_note_id" => $saleNote['order_note_id'],
+                "exchange_rate_sale" => $saleNote['exchange_rate_sale'],
+                "total_prepayment" => $saleNote['total_prepayment'],
+                "total_discount" => $saleNote['total_discount'],
+                "total_charge" => $saleNote['total_charge'],
+                "total_exportation" => $saleNote['total_exportation'],
+                "total_free" => $saleNote['total_free'],
+                "total_taxed" => $saleNote['total_taxed'],
+                "total_unaffected" => $saleNote['total_unaffected'],
+                "total_exonerated" => $saleNote['total_exonerated'],
+                "total_igv" => $saleNote['total_igv'],
+                "total_base_other_taxes" => $saleNote['total_base_other_taxes'],
+                "total_other_taxes" => $saleNote['total_other_taxes'],
+                "total_taxes" => $saleNote['total_taxes'],
+                "total_value" => $saleNote['total_value'],
+                "total" => $saleNote['total'],
+                "has_prepayment" => 0,
+                "affectation_type_prepayment" => null,
+                "was_deducted_prepayment" => 0,
+                "pending_amount_prepayment" => 0,
+                "items" => $saleNote['items'],
+                "charges" => $saleNote['charges'],
+                "discounts" => $saleNote['discounts'],
+                "prepayments" => $saleNote['prepayments'],
+                "guides" => $saleNote['guides'],
+                "related" => $saleNote['related'],
+                "perception" => $saleNote['perception'],
+                "invoice" => [
+                    'operation_type_id' => "0101",
+                    'date_of_due' => $request->fecha_de_vencimiento,
+                ],
+                "hotel" => [],
+                "transport" => [],
+                "plate_number" => $saleNote['plate_number'],
+                "legends" => [
+                    ['code' => 1000, 'value' => NumberLetter::convertToLetter($saleNote['total'])]
+                ],
+                "actions" => [
+                    "send_email" => false,
+                    "format_pdf" => "a4",
+                ],
+                "payments" => [],
+                "payment_method_type_id" => $saleNote['payment_method_type_id'],
+                "reference_data" => $saleNote['reference_data'],
+                "fee" => [],
+                'sale_note_id' => $saleNoteId,
+                'payment_condition_id' => $request->codigo_condicion_de_pago,
+            ];
 
 
-        $dataToRequest = new Request($data);
-
-        $fact = DB::connection('tenant')->transaction(function () use ($dataToRequest) {
-            $facturalo = new Facturalo();
-            $facturalo->save($dataToRequest->all());
-            $facturalo->createPdf();
-            $facturalo->sendEmail();
-
-            return $facturalo;
+            $data['operation_key'] = $request->input('operation_key', $request->input('clave_operacion'));
+            $data = \App\Services\Fiscal\FiscalApiDocumentContext::prepareFor($data, $user, $db, app(SeriesResolver::class)->activeGroupId());
+            $previous = $db->table('fiscal_number_reservations')->where('operation_key', $data['operation_key'])->first();
+            $linked = $db->table('documents')->where('sale_note_id', $saleNoteId)->pluck('id')->all();
+            if (!empty($saleNote['document_id'])) $linked[] = $saleNote['document_id'];
+            foreach (array_unique($linked) as $documentId) {
+                if (!$previous || (int) $previous->document_id !== (int) $documentId) {
+                    throw \Illuminate\Validation\ValidationException::withMessages(['sale_note_id' => 'La nota de venta ya está vinculada a una factura.']);
+                }
+            }
+            $fact = (new Facturalo())->saveFiscal($data, $data['fiscal_profile_id'], $data['operation_key'], $data['fiscal_fingerprint'], $data['fiscal_channel'], $data['fiscal_group_id']);
+            $fact->setDocument($fact->getDocument()->fresh());
+            $fiscalSnapshot = json_decode($db->table('fiscal_number_reservations')->where('document_id', $fact->getDocument()->id)->value('fiscal_snapshot'), true);
+            if ($fiscalSnapshot['mode'] === 'free_form') $fact->createPdf(null, null, null, 'validate');
+            $db->table('sale_notes')->where('id', $saleNoteId)->update(['document_id' => $fact->getDocument()->id, 'changed' => true]);
+            return $fact;
         });
 
         $document = $fact->getDocument();
+        $reservation = $db->table('fiscal_number_reservations')->where('document_id', $document->id)->first();
+        $reservation = (new \App\Services\Fiscal\FiscalEmissionService($db))->process((int) $reservation->id);
+        $fact->createPdf();
+        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
         return [
             'success' => true,
             'data' => [
+                'id' => $document->id,
+                'replayed' => !$fact->wasNewFiscalRegistration(),
+                'fiscal' => ['status' => $reservation->status, 'control_number' => $reservation->control_number],
+                'fiscal_identity' => $document->fiscal_identity,
                 'number' => $document->number_full,
                 'filename' => $document->filename,
                 'external_id' => $document->external_id,

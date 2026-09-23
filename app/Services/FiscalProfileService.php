@@ -59,11 +59,12 @@ final class FiscalProfileService
         if (!in_array($data['document_type_id'], self::supportedTypes($data['mode']), true)) {
             $this->invalid('document_type_id', 'La modalidad no soporta este documento.');
         }
-        if (($data['channel'] === 'digital' && $data['mode'] !== 'digital') || ($data['channel'] === 'contingency' && $data['mode'] !== 'free_form')) {
+        if (($data['channel'] === 'digital' && !in_array($data['mode'], ['digital', 'free_form'], true))
+            || ($data['channel'] === 'contingency' && $data['mode'] !== 'free_form')) {
             $this->invalid('mode', 'La modalidad no corresponde al canal.');
         }
         $allowed = match ($data['mode']) {
-            'free_form' => ['page_capacity'],
+            'free_form' => ['page_capacity', 'emitter_user_id'],
             'digital' => ['authorization', 'authorization_date', 'emitter_user_id'],
             'fiscal_machine' => ['model', 'serial', 'port'],
         };

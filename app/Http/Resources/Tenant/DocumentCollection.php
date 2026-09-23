@@ -18,6 +18,7 @@ class DocumentCollection extends ResourceCollection
      */
     public function toArray($request)
     {
+        \App\Services\Fiscal\FiscalIdentity::preload($this->collection);
         return $this->collection->transform(function ($row, $key) {
             $has_pdf = true;
             $btn_note = false;
@@ -124,6 +125,7 @@ class DocumentCollection extends ResourceCollection
                 'date_of_issue' => $row->date_of_issue->format('d-m-Y'),
                 'date_of_due' => (in_array($row->document_type_id, ['01'])) ? $row->invoice->date_of_due->format('d-m-Y') : null,
                 'number' => $row->number_full,
+                'fiscal_identity' => $row->fiscal_identity,
                 'customer_name' => $row->customer->name,
                 'customer_number' => format_person_identity_document($row->customer),
                 'customer_identity_document_type_description' => optional(optional($row->customer)->identity_document_type)->description,

@@ -29,8 +29,8 @@ final class FiscalWebDocumentContext
         if (!is_string($input['operation_key'] ?? null) || !preg_match('/\A[a-zA-Z0-9_-]{1,128}\z/', $input['operation_key'])) {
             throw ValidationException::withMessages(['operation_key' => 'Se requiere una clave de operación válida para evitar duplicados.']);
         }
-        if (preg_match('/\Acontingency-/i', $input['operation_key'])) {
-            throw ValidationException::withMessages(['operation_key' => 'Esta clave está reservada al flujo interno de contingencia.']);
+        if (preg_match('/\A(?:contingency|print-replacement)-/i', $input['operation_key'])) {
+            throw ValidationException::withMessages(['operation_key' => 'Esta clave está reservada a un flujo fiscal interno.']);
         }
         if (($internalOrderId === null && preg_match('/\Aecommerce-order-/i', $input['operation_key']))
             || ($internalOrderId !== null && ($internalOrderId < 1 || $input['operation_key'] !== 'ecommerce-order-' . $internalOrderId . '-invoice' || $channel !== 'digital' || $input['document_type_id'] !== '01'))) {

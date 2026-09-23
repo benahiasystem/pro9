@@ -39,6 +39,7 @@ final class FiscalPdfData
             'provider_reference' => $result['provider_reference'] ?? null,
             'affected_document' => $snapshot['affected_document'] ?? null,
             'contingency' => $snapshot['contingency'] ?? null,
+            'print_replacement' => $snapshot['print_replacement'] ?? null,
             'printer' => $lot ? [
                 'name' => $lot['printer_name'], 'rif' => $lot['printer_rif'], 'authorization' => $lot['authorization'],
                 'authorization_date' => $lot['authorization_date'], 'prepared_at' => $lot['prepared_at'],

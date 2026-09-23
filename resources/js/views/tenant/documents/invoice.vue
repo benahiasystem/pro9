@@ -12,6 +12,18 @@
         <form autocomplete="off"
               class="row no-gutters"
               @submit.prevent="submit">
+                <!-- ######## INICIO NUMERACIÓN FISCAL VENEZUELA ######## -->
+                <div v-if="hasSourceSaleNoteEconomics" class="alert alert-info col-12">
+                    Los importes de las notas de origen se conservan en esta conversión.
+                    <div v-for="(discount, index) in sourceSaleNoteEconomics.discounts" :key="'source-discount-' + index">
+                        Descuento: {{ discount.description }} · {{ form.currency_type_id }} {{ discount.amount }}
+                    </div>
+                    <div v-for="(charge, index) in sourceSaleNoteEconomics.charges" :key="'source-charge-' + index">
+                        Cargo: {{ charge.description }} · {{ form.currency_type_id }} {{ charge.amount }}
+                    </div>
+                </div>
+                <!-- ######## FIN NUMERACIÓN FISCAL VENEZUELA ######## -->
+
             <div class="col-xl-9 col-md-9 col-12">
                 <div class="row card-header no-gutters align-items-start mx-0"
                      style="background-color: #FFFFFF !important;">
@@ -273,7 +285,7 @@
                         <div class="col-12 text-center table-responsive">
                             <table class="table table-sm text-right"
                                    style="width: 100%;">
-                                <tr v-if="form.total > 0 && enabled_discount_global">
+                                <tr v-if="form.total > 0 && enabled_discount_global && !hasSourceSaleNoteEconomics">
                                     <td>
                                         DESCUENTO
                                         <template v-if="is_amount"> MONTO</template>
@@ -1011,6 +1023,7 @@
 }
 </style>
 <script>
+import { fiscalSaleNoteEconomics } from '../../../mixins/fiscal-sale-note-economics';
 import DocumentFormItem from './partials/item.vue'
 import PersonForm from '../persons/form.vue'
 import DocumentOptions from '../documents/partials/options.vue'
@@ -1046,7 +1059,7 @@ export default {
         // ######### FIN SIN DETRACCIONES E ISC
         DocumentTransportForm
     },
-    mixins: [functions, exchangeRate, buhoprinter],
+    mixins: [fiscalSaleNoteEconomics, functions, exchangeRate, buhoprinter],
     data() {
         return {
             datEmision: {
@@ -1233,6 +1246,19 @@ export default {
             }).finally(() => this.loading_submit = false);
         }
 
+        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+        // Load source currency before preparing prices and stored item snapshots.
+        const sourceNotes = JSON.parse(localStorage.getItem('notes') || '[]');
+        this.form.sale_notes_relateds = sourceNotes;
+        this.loadSaleNoteEconomics(sourceNotes, JSON.parse(localStorage.getItem('saleNoteEconomics') || 'null'));
+        localStorage.removeItem('saleNoteEconomics');
+        if (sourceNotes.length && sourceNotes[0].currency_type_id) {
+            this.form.currency_type_id = sourceNotes[0].currency_type_id;
+            this.form.exchange_rate_sale = Number(sourceNotes[0].exchange_rate_sale);
+            this.currency_type = _.find(this.currency_types, {id: this.form.currency_type_id});
+        }
+        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
+
         const itemsFromDispatches = localStorage.getItem('items');
         if (itemsFromDispatches) {
             const itemsParsed = JSON.parse(itemsFromDispatches);
@@ -1270,7 +1296,7 @@ export default {
         }
 
         //parse items from multiple sale notes not group
-        this.processItemsForNotesNotGroup()
+        await this.processItemsForNotesNotGroup()
 
         const clientfromDispatchesOrNotes = localStorage.getItem('client');
         if (clientfromDispatchesOrNotes) {
@@ -1283,7 +1309,7 @@ export default {
             this.changeEstablishment();
             this.filterSeries();
             this.filterCustomers();
-            this.changeCurrencyType()
+            if (!sourceNotes.length) this.changeCurrencyType()
             localStorage.removeItem('client');
         }
         const dispatchesNumbersFromDispatches = localStorage.getItem('dispatches');
@@ -1294,6 +1320,12 @@ export default {
         const notesNumbersFromNotes = localStorage.getItem('notes');
         if (notesNumbersFromNotes) {
             this.form.sale_notes_relateds = JSON.parse(notesNumbersFromNotes);
+            const source = this.form.sale_notes_relateds[0];
+            if (source && source.currency_type_id) {
+                this.form.currency_type_id = source.currency_type_id;
+                this.form.exchange_rate_sale = Number(source.exchange_rate_sale);
+            }
+            this.calculatePayments();
             localStorage.removeItem('notes')
         }
 
@@ -2493,6 +2525,14 @@ export default {
             this.calculateTotal()
         },
         calculateTotal() {
+            // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+            if (this.applySaleNoteEconomics()) {
+                this.setTotalDefaultPayment();
+                this.setPendingAmount();
+                this.calculateFee();
+                return;
+            }
+            // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
             let total_discount = 0
             let total_charge = 0
             let total_exportation = 0
@@ -3198,6 +3238,7 @@ export default {
             })
         },
         getTotal() {
+            const sourcePaid = (this.form.sale_notes_relateds || []).reduce((sum, note) => sum + Number(note.source_paid || 0), 0);
             let total_pay = this.form.total;
             if(this.form.has_retention) {
                 total_pay -= this.form.retention.amount;
@@ -3209,11 +3250,11 @@ export default {
 
             if (!_.isEmpty(this.form.retention) && this.form.total_pending_payment > 0) {
                 console.log('1');
-                return this.form.total_pending_payment
+                return Math.max(0, this.form.total_pending_payment - sourcePaid)
             }
 
             console.log('2');
-            return total_pay
+            return Math.max(0, total_pay - sourcePaid)
         },
         setDescriptionOfItem(item) {
             return showNamePdfOfDescription(item, this.config.show_pdf_name)

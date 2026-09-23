@@ -106,6 +106,12 @@ class Facturalo
                         $snapshot['affected_document'] = $reference;
                         $db->table('fiscal_number_reservations')->where('id', $reservationId)->update(['fiscal_snapshot' => json_encode($snapshot, JSON_THROW_ON_ERROR)]);
                     }
+                    if (!empty($inputs['technical_service_id']) && $inputs['type'] === 'invoice') {
+                        $actor = auth()->user();
+                        if (!$actor instanceof \App\Models\Tenant\User) throw new \DomainException('La conversión requiere un usuario tenant.');
+                        \App\Services\Fiscal\FiscalTechnicalServiceConversion::assertAvailable(
+                            $this->company->getConnection(), array_replace($inputs, $identifiers), $actor);
+                    }
                     if (!empty($inputs['dispatch_id']) && $inputs['type'] === 'invoice') {
                         $actor = auth()->user();
                         if (!$actor instanceof \App\Models\Tenant\User) {
@@ -118,6 +124,26 @@ class Facturalo
                                 return (int) $this->document->id;
                             }
                         );
+                    }
+                    if ((!empty($inputs['sale_note_id']) || !empty($inputs['sale_notes_relateds'])) && $inputs['type'] === 'invoice') {
+                        $db = $this->company->getConnection();
+                        $actor = auth()->user();
+                        if (!$actor instanceof \App\Models\Tenant\User) throw new \DomainException('La conversión requiere un usuario tenant.');
+                        $sourceIds = \App\Services\Fiscal\FiscalSaleNoteConversion::assertAvailable($db, array_replace($inputs, $identifiers), $actor);
+                        $inputs = \App\Services\Fiscal\FiscalSaleNoteEconomics::apply($inputs,
+                            \App\Services\Fiscal\FiscalSaleNoteEconomics::capture($db->table('sale_notes')->whereIn('id', $sourceIds)->orderBy('id')->get()));
+                        $this->save(array_replace($inputs, $identifiers, ['payments' => []]));
+                        \App\Services\Fiscal\FiscalSaleNotePaymentAllocation::applyMany($db, $sourceIds, (int) $this->document->id);
+                        $this->savePayments($this->document, $inputs['payments'] ?? []);
+                        foreach ($this->document->payments()->whereNull('source_sale_note_payment_id')
+                            ->whereHas('global_payment', fn ($query) => $query->where('destination_type', \App\Models\Tenant\Cash::class))->get() as $payment) {
+                            $this->createCashDocumentPayment($payment, true);
+                        }
+                        $paid = $db->table('document_payments')->where('document_id', $this->document->id)->sum('payment');
+                        $this->document->update(['total_canceled' => bccomp((string) $paid, (string) $this->document->total, 2) >= 0]);
+                        $db->table('sale_notes')->whereIn('id', $sourceIds)->update(['document_id' => $this->document->id, 'changed' => true]);
+                        $this->document = $this->document->fresh();
+                        return (int) $this->document->id;
                     }
                     $this->save(array_replace($inputs, $identifiers));
                     return (int) $this->document->id;

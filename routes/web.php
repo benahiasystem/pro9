@@ -403,6 +403,7 @@ if ($hostname) {
             Route::post('documents/{document}/fiscal/process', 'Tenant\FiscalDocumentEmissionController@process');
             Route::post('documents/{document}/fiscal/confirm-print', 'Tenant\FiscalDocumentEmissionController@confirmPrint');
             Route::post('documents/{document}/fiscal/invalidate-print', 'Tenant\FiscalDocumentEmissionController@invalidatePrint');
+            Route::post('documents/{document}/fiscal/replace-print', 'Tenant\FiscalDocumentEmissionController@replacePrint');
             Route::post('documents/{document}/fiscal/contingency', 'Tenant\FiscalDocumentEmissionController@contingency');
             // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
             Route::post('documents/{id}/update', 'Tenant\DocumentController@update');
@@ -515,6 +516,7 @@ if ($hostname) {
                 Route::post('{document}/fiscal/process', 'Tenant\FiscalDispatchEmissionController@process');
                 Route::post('{document}/fiscal/confirm-print', 'Tenant\FiscalDispatchEmissionController@confirmPrint');
                 Route::post('{document}/fiscal/invalidate-print', 'Tenant\FiscalDispatchEmissionController@invalidatePrint');
+                Route::post('{document}/fiscal/replace-print', 'Tenant\FiscalDispatchEmissionController@replacePrint');
                 Route::post('{document}/fiscal/contingency', 'Tenant\FiscalDispatchEmissionController@contingency');
                 // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
                 Route::get('/record/{id}', 'Tenant\DispatchController@record');
@@ -718,7 +720,7 @@ if ($hostname) {
 
             Route::post('sale-notes/enabled-concurrency', 'Tenant\SaleNoteController@enabledConcurrency');
 
-            Route::get('sale-notes/anulate/{id}', 'Tenant\SaleNoteController@anulate');
+            Route::post('sale-notes/anulate/{id}', 'Tenant\SaleNoteController@anulate');
 
             Route::get('sale-notes/downloadExternal/{external_id}/{format?}', 'Tenant\SaleNoteController@downloadExternal');
 

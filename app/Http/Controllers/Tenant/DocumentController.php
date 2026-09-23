@@ -118,41 +118,11 @@ class DocumentController extends Controller
     // TODO: refactorizar para usar el mismo método en el controller de sale notes
     public function records(Request $request)
     {
-        $auth_id = auth()->user()->id;
-        $cacheParams = [
-            'category_id' => $request->category_id,
-            'page' => $request->page,
-            'customer_id' => $request->customer_id,
-            'd_end' => $request->d_end,
-            'd_start' => $request->d_start,
-            'date_of_issue' => $request->date_of_issue,
-            'document_type_id' => $request->document_type_id,
-            'item_id' => $request->item_id,
-            'number' => $request->number,
-            'observations' => $request->observations,
-            'pending_payment' => $request->pending_payment,
-            'series' => $request->series,
-            'state_type_id' => $request->state_type_id,
-            'purchase_order' => $request->purchase_order,
-            'guides' => $request->guides,
-            'plate_numbers' => $request->plate_numbers,
-        ];
-        $cacheKey = 'document_list_' . "user-$auth_id" . "_" . md5(json_encode($cacheParams));
-        if ($this->pingCache()) {
-            return $this->cacheWithTagKey(
-                $cacheKey,
-                ['document_list'], // Etiqueta para el detalle del item
-                300, // 1 hora (el detalle cambia menos frecuentemente que las listas)
-                fn () => new DocumentCollection($this->getRecords($request)->paginate(config('tenant.items_per_page'))),
-                [ 'section' => 'Document List', 'filters' => $cacheParams ] // Contexto adicional para logging
-            );
-        } else {
-            return new DocumentCollection($this->getRecords($request)->paginate(config('tenant.items_per_page')));
-        }
-        // $records = $this->getRecords($request);
-
-
-        // return new DocumentCollection($records->paginate(config('tenant.items_per_page')));
+        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+        // Fiscal replacement changes identifiers and filter membership without updating the sale.
+        // Query current rows instead of serving a five-minute cached page of the original numbers.
+        return new DocumentCollection($this->getRecords($request)->paginate(config('tenant.items_per_page')));
+        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
     }
 
     /**
@@ -972,7 +942,9 @@ class DocumentController extends Controller
                     $reservation = (new \App\Services\Fiscal\FiscalEmissionService($connection))->process((int) $reservation->id);
                     $fact->createPdf();
                 }
-                $fiscal = ['reservation_id' => $reservation->id, 'status' => $reservation->status, 'control_number' => $reservation->control_number];
+                $fiscal = ['reservation_id' => $reservation->id, 'status' => $reservation->status, 'control_number' => $reservation->control_number,
+                    'profile_id' => (int) $reservation->profile_id,
+                    'next_number' => (int) $connection->table('fiscal_sequences')->where('id', $reservation->sequence_id)->value('next_number')];
             }
             // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
             return [
@@ -991,6 +963,10 @@ class DocumentController extends Controller
 
     private function associateSaleNoteToDocument(Request $request, int $documentId)
     {
+        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+        // La conversión fiscal ya enlazó los orígenes dentro de la reserva.
+        if ($request->fiscal_profile_id) return;
+        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
         if ($request->sale_note_id) {
             SaleNote::where('id', $request->sale_note_id)
                 ->update(['document_id' => $documentId]);
@@ -1359,12 +1335,7 @@ class DocumentController extends Controller
         if ($document_type_id) {
             $records->where('document_type_id', 'like', '%' . $document_type_id . '%');
         }
-        if ($series) {
-            $records->where('series', 'like', '%' . $series . '%');
-        }
-        if ($number) {
-            $records->where('number', $number);
-        }
+        $records->whereFiscalIdentifiers($series, $number, $request->control_number);
         if ($state_type_id) {
             $records->where('state_type_id', 'like', '%' . $state_type_id . '%');
         }
@@ -1416,10 +1387,10 @@ class DocumentController extends Controller
         $categories = Category::orderBy('name')->get();
         $state_types = StateType::get();
         $document_types = DocumentType::whereIn('id', ['01', '03', '07', '08'])->get();
-        // Series filtradas por contexto (oculta dedicadas / restringe al grupo activo). Ver SeriesResolver.
-        $series = app(SeriesResolver::class)
-            ->applyContext(Series::whereIn('document_type_id', ['01', '03', '07', '08']))
-            ->get();
+        $series = \App\Models\Tenant\FiscalSequence::query()->whereIn('document_type_id', ['01', '07', '08'])
+            ->where('series_code', '<>', '')->where(function ($query) {
+                $query->whereNull('establishment_id')->orWhere('establishment_id', auth()->user()->establishment_id);
+            })->select('document_type_id', 'series_code as number')->distinct()->get();
         $establishments = Establishment::where('id', auth()->user()->establishment_id)->get();// Establishment::all();
 
         return compact('customers', 'document_types', 'series', 'establishments', 'state_types', 'items', 'categories');

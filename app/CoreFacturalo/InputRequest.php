@@ -24,7 +24,10 @@ class InputRequest
                 $inputs = $this->transformInputs($inputs, $type);
             }
             $inputs = $this->validationInputs($inputs, $type, $service);
-            $request->replace($this->setInputs($inputs, $type, $service));
+            // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+            // API delivery orders materialize catalogs atomically with their fiscal reservation.
+            $request->replace($service === 'api' && $type === 'dispatch' ? $inputs : $this->setInputs($inputs, $type, $service));
+            // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
         // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json(['success' => false, 'message' => 'Revise los datos del comprobante.', 'errors' => $e->errors()], 422);

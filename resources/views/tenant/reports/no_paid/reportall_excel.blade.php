@@ -68,7 +68,10 @@
                                     <tr>
                                         <td class="celda">{{$loop->iteration}}</td>
                                         <td class="celda">{{$value['date_of_issue']}}</td>
-                                        <td class="celda">{{$value['number_full']}}</td>
+                                        <td class="celda">{{$value['number_full']}}
+                                            @if(!empty($value['fiscal_identity']['control_number']))<br>Control: {{$value['fiscal_identity']['control_number']}}@endif
+                                            @if(!empty($value['fiscal_identity']['original_number_full']))<br>Reserva original: {{$value['fiscal_identity']['original_number_full']}}@endif
+                                        </td>
                                         <td class="celda">{{$value['customer_name']}}</td>
                                         <td class="celda">{{$value['currency_type_id']}}</td>
                                         <td class="celda">

@@ -8,6 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
+        DB::unprepared("ALTER TABLE `document_payments` ADD CONSTRAINT `document_payments_source_sale_note_foreign` FOREIGN KEY (`source_sale_note_payment_id`) REFERENCES `sale_note_payments` (`id`)");
         // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
         DB::unprepared("ALTER TABLE `fiscal_number_reservations` ADD CONSTRAINT `fiscal_reservations_parent_foreign` FOREIGN KEY (`parent_reservation_id`) REFERENCES `fiscal_number_reservations` (`id`)");
         DB::unprepared("ALTER TABLE `fiscal_number_reservations` ADD CONSTRAINT `fiscal_number_reservations_document_id_foreign` FOREIGN KEY (`document_id`) REFERENCES `documents` (`id`)");
@@ -529,6 +530,7 @@ return new class extends Migration
 
     public function down(): void
     {
+        DB::unprepared("ALTER TABLE `document_payments` DROP FOREIGN KEY `document_payments_source_sale_note_foreign`");
         // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
         DB::unprepared("ALTER TABLE `fiscal_emission_attempts` DROP FOREIGN KEY `fiscal_emission_attempts_reservation_id_foreign`");
         DB::unprepared("ALTER TABLE `fiscal_number_reservations` DROP FOREIGN KEY `fiscal_number_reservations_confirmed_by_foreign`");

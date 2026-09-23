@@ -27,6 +27,7 @@
     use Modules\Sale\Http\Resources\TechnicalServiceResource;
     use Modules\Sale\Models\TechnicalService;
 
+    // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
     class GenerateDocumentController extends Controller
     {
         use FinanceTrait;
@@ -34,7 +35,7 @@
         public function tables()
         {
             $establishment = Establishment::query()->where('id', auth()->user()->establishment_id)->first();
-            $series = app(SeriesResolver::class)->applyContext(Series::query()->where('establishment_id', $establishment->id))->get();
+            $series = app(SeriesResolver::class)->applyContext(Series::query()->where('establishment_id', $establishment->id)->where('document_type_id', '80'))->get();
             // ########## INICIO CAMBIO SOLO FACTURA Y NOTA DE VENTA
             // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
             $document_types = [
@@ -46,13 +47,20 @@
             $payment_method_types = PaymentMethodType::all();
             $payment_destinations = $this->getPaymentDestinations();
 
-            return compact('series', 'document_types', 'payment_method_types', 'payment_destinations', 'establishment');
+            $fiscal_profiles = (new \App\Services\FiscalProfileService(\App\Models\Tenant\Company::active()->getConnection()))->forSelection((int) $establishment->id, 'presential', app(SeriesResolver::class)->activeGroupId());
+            return compact('fiscal_profiles', 'series', 'document_types', 'payment_method_types', 'payment_destinations', 'establishment');
         }
 
         public function record($table, $id)
         {
             if ($table === 'technical-services') {
-                return new TechnicalServiceResource(TechnicalService::query()->findOrFail($id));
+                $actor = auth()->user();
+                abort_unless(in_array($actor->type, ['admin', 'seller'], true), 403);
+                $query = TechnicalService::where('establishment_id', $actor->establishment_id);
+                if ($actor->type !== 'admin') $query->where('user_id', $actor->id);
+                $source = $query->find($id);
+                abort_unless($source, 404);
+                return new TechnicalServiceResource($source);
             }
         }
 
@@ -90,11 +98,25 @@
             );
             // ######### FIN CAMBIO SOLO FACTURA Y NOTA DE VENTA
 
-            DB::connection('tenant')->beginTransaction();
+            $request->validate(['technical_service_id' => ['required', 'integer'], 'establishment_id' => ['required', 'integer'],
+                'customer_id' => ['required', 'integer'], 'items' => ['required', 'array', 'min:1']]);
+            $db = DB::connection('tenant');
+            $db->beginTransaction();
             try {
                 $inputs = $request->all();
+                $company = $db->table('companies')->orderBy('id')->lockForUpdate()->first();
+                $inputs['fiscal_environment'] = $company->fiscal_environment;
+                $replay = false;
+                if ($inputs['document_type_id'] === SalesDocumentTypePolicy::INVOICE) {
+                    $inputs = \App\Services\Fiscal\FiscalWebDocumentContext::prepare($inputs);
+                    $reservation = (new \App\Services\FiscalNumberingRepository($db))->reserveForProfile(
+                        $inputs['fiscal_profile_id'], $inputs['operation_key'], $inputs['fiscal_fingerprint'],
+                        $inputs['establishment_id'], $inputs['fiscal_channel'], $inputs['fiscal_group_id']);
+                    $replay = (bool) $reservation->document_id;
+                }
+                if (!$replay) \App\Services\Fiscal\FiscalTechnicalServiceConversion::assertAvailable($db, $inputs, auth()->user());
                 $items = $request->input('items');
-                foreach ($items as $index => $item) {
+                foreach ($replay ? [] : $items as $index => $item) {
                     $unit_type = $item['item']['unit_type_id']??'SERV';
                     if (isset($item['additional_information']) && is_array($item['additional_information'])) {
                         $item['additional_information'] = implode(' ', $item['additional_information']);
@@ -124,7 +146,7 @@
                 // ########## INICIO CAMBIO SOLO FACTURA Y NOTA DE VENTA
                 if ($request->input('document_type_id') === SalesDocumentTypePolicy::INVOICE) {
                     $documentController = new DocumentController();
-                    $doc_input = DocumentInput::set($inputs);
+                    $doc_input = $replay ? array_replace($inputs, ['type' => 'invoice']) : DocumentInput::set($inputs);
                     $res = $documentController->storeWithData($doc_input);
                 } else {
                     $inputs['items'] = DocumentInput::items($inputs);
@@ -134,15 +156,23 @@
                 }
                 // ######### FIN CAMBIO SOLO FACTURA Y NOTA DE VENTA
 
-                DB::connection('tenant')->commit();
+                $db->commit();
+                if ($inputs['document_type_id'] === SalesDocumentTypePolicy::INVOICE) {
+                    $document = \App\Models\Tenant\Document::findOrFail($res['data']['id']);
+                    $reservation = $db->table('fiscal_number_reservations')->where('document_id', $document->id)->first();
+                    $reservation = (new \App\Services\Fiscal\FiscalEmissionService($db))->process((int) $reservation->id);
+                    $fact = new \App\CoreFacturalo\Facturalo();
+                    $fact->setDocument($document);
+                    $fact->createPdf(null, 'invoice', 'a4');
+                    $res['data']['replayed'] = $replay;
+                    $res['data']['fiscal'] = ['status' => $reservation->status, 'control_number' => $reservation->control_number];
+                }
                 return $res;
 
             } catch (Exception $e) {
                 DB::connection('tenant')->rollBack();
-                return [
-                    'success' => false,
-                    'message' => $e->getFile() . '-' . $e->getLine() . '-' . $e->getMessage()
-                ];
+                if ($e instanceof \DomainException) throw \Illuminate\Validation\ValidationException::withMessages(['technical_service_id' => $e->getMessage()]);
+                throw $e;
             }
 
 
@@ -223,4 +253,5 @@
 //    }
     }
 
+// ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
 // ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

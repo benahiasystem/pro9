@@ -52,7 +52,7 @@
                 <div v-show="!showGenerate"
                      class="col-md-9">
                     <div class="form-group">
-                        <el-checkbox v-model="generate">Generar comprobante electrónico</el-checkbox>
+                        <el-checkbox v-model="generate">Generar comprobante</el-checkbox>
                     </div>
                 </div>
             </div>
@@ -98,7 +98,13 @@
                                v-text="errors.document_type_id[0]"></small>
                     </div>
                 </div>
-                <div class="col-lg-4">
+                <!-- ######## INICIO NUMERACIÓN FISCAL VENEZUELA ######## -->
+                <div v-if="form.document_type_id === '01'" class="col-lg-4">
+                    <fiscal-profile-summary :profile="fiscalProfile" />
+                    <small v-if="errors.operation_key" class="text-danger">{{ errors.operation_key[0] }}</small>
+                </div>
+                <!-- ######## FIN NUMERACIÓN FISCAL VENEZUELA ######## -->
+                <div v-else class="col-lg-4">
                     <div :class="{'has-danger': errors.series_id}"
                          class="form-group">
                         <label class="control-label">Serie</label>
@@ -259,10 +265,11 @@ import queryString from 'query-string'
 import SeriesForm from "./series_form.vue";
 import {mapActions, mapState} from "vuex/dist/vuex.mjs";
 import {functions} from '@mixins/functions'
+import {fiscalSale} from '@mixins/fiscal-sale'
 
 export default {
     components: {DocumentOptions, SaleNoteOptions, SeriesForm},
-    mixins: [functions],
+    mixins: [functions, fiscalSale],
     computed: {
         ...mapState([
             'exchange_rate',
@@ -332,6 +339,7 @@ export default {
                     this.establishment = response.data.establishment;
                     this.document_types = response.data.document_types;
                     this.all_series = response.data.series;
+                    this.fiscalProfiles = response.data.fiscal_profiles || [];
                     this.payment_destinations = response.data.payment_destinations;
                     this.payment_method_types = response.data.payment_method_types;
                 });
@@ -616,6 +624,7 @@ export default {
 
         },
         async submit() {
+            if (this.form.document_type_id === '01' && !this.prepareFiscalSale()) return;
             // await this.assignDocument();
             //
             let validate_payment_destination = await this.validatePaymentDestination()
@@ -678,7 +687,8 @@ export default {
                 })
                 .catch((error) => {
                     if (error.response.status === 422) {
-                        this.errors = error.response.data;
+                        this.errors = error.response.data.errors || error.response.data.message || {};
+                        if (typeof this.errors !== 'object') this.$message.error(String(this.errors));
                     } else {
                         this.$message.error(error.response.data.message);
                     }
@@ -759,6 +769,7 @@ export default {
         },
         filterSeries() {
             this.form.series = null;
+            if (this.form.document_type_id === '01') { this.series = []; return; }
             this.series = _.filter(this.all_series, {'document_type_id': this.form.document_type_id});
             this.form.series = this.series.length > 0 ? this.series[0].number : null;
         },

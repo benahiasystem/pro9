@@ -13,6 +13,7 @@ class DocumentExportStandard implements  FromView, ShouldAutoSize
     use Exportable;
 
     public function records($records) {
+        \App\Services\Fiscal\FiscalIdentity::preload($records);
         $this->records = $records;
 
         return $this;

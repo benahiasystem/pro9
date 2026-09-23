@@ -7,6 +7,9 @@
     @if(!empty($fiscal['contingency']))
         <div><strong>Emisión en contingencia</strong></div>
     @endif
+    @if(!empty($fiscal['print_replacement']))
+        <div>Reemplaza el control inutilizado {{ $fiscal['print_replacement']['replaced_control_number'] }}.</div>
+    @endif
     <div>N° de documento: <strong>{{ $fiscal['document_number'] }}</strong></div>
     @if($fiscal['series'] !== '')
         <div>Serie: {{ $fiscal['series'] }}</div>

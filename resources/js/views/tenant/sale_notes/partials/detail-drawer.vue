@@ -841,8 +841,9 @@ export default {
 
             this.voiding = true;
 
-            this.anular(`/${this.resource}/anulate/${this.record.id}`)
-                .then(() => {
+            this.anular(`/${this.resource}/anulate/${this.record.id}`, 'post')
+                .then(success => {
+                    if (!success) return;
                     this.visibleDrawer = false;
                     this.$eventHub.$emit('reloadData');
                 })

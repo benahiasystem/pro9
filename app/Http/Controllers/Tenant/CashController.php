@@ -424,6 +424,7 @@ class CashController extends Controller
         ]);
 
         $document->payments->each(function($payment) use($cash,$isDocument,$cashDocument){
+            if ($isDocument && $payment->source_sale_note_payment_id) return;
             CashDocumentPayment::updateOrCreate([
                 'cash_id' => $cash->id,
                 $isDocument ? 'document_payment_id' : 'sale_note_payment_id' => $payment->id,

@@ -41,3 +41,10 @@ for (const body of [{errors: {fiscal: ['Debe conciliar la emisión']}}, {message
     });
 }
 // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
+
+for (const relative of ['components/DataTableDocuments.vue', 'views/tenant/documents/index.vue', 'views/tenant/dispatches/index.vue']) {
+    test(`fiscal identifier template compiles: ${relative}`, () => {
+        const parsed = compiler.parseComponent(fs.readFileSync(require('node:path').join(__dirname, '../../resources/js', relative), 'utf8'));
+        assert.deepEqual(compiler.compile(parsed.template.content).errors, []);
+    });
+}

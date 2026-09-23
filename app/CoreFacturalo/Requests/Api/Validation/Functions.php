@@ -122,7 +122,10 @@ class Functions
             'sale_unit_price' =>  $inputs['unit_price'],
             'sale_affectation_igv_type_id' => $inputs['affectation_igv_type_id'],
             'purchase_affectation_igv_type_id' => $inputs['affectation_igv_type_id'],
-            'stock' => $inputs['quantity']
+            // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+            // Una orden de salida no crea existencias iniciales.
+            'stock' => 0
+            // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
         ]);
         return $item->id;
     }

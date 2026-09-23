@@ -16,13 +16,9 @@
                     </div>
                 </div>
                 <div class="col-lg-4">
-                    <div class="form-group" :class="{'has-danger': errors.series_id}">
-                        <label class="control-label">Serie</label>
-                        <el-select v-model="document.series_id">
-                            <el-option v-for="option in series" :key="option.id" :value="option.id" :label="option.number"></el-option>
-                        </el-select>
-                        <small class="form-control-feedback" v-if="errors.series_id" v-text="errors.series_id[0]"></small>
-                    </div>
+                    <!-- ######## INICIO NUMERACIÓN FISCAL VENEZUELA ######## -->
+                    <fiscal-profile-summary :profile="fiscalProfile" />
+                    <!-- ######## FIN NUMERACIÓN FISCAL VENEZUELA ######## -->
                 </div>
                 <div class="col-lg-12">
                     <div class="form-group">
@@ -154,6 +150,8 @@
                     </table>
                 </div>
                 <div class="col-lg-12" v-show="document.payment_condition_id != '02'">
+                    <p>Cobros de la nota aplicados automáticamente: {{ document.currency_type_id }} {{ sourcePaid }}.</p>
+                    <p>Agregue únicamente cobros recibidos ahora.</p>
                     <table>
                         <thead>
                             <tr width="100%">
@@ -263,6 +261,8 @@
 <script>
 
     import DocumentOptions from '../../documents/partials/options.vue'
+    import FiscalProfileSummary from '../../../../components/FiscalProfileSummary.vue'
+    import { newFiscalOperationKey } from '../../../../helpers/fiscal-operation'
     import moment from "moment";
     import ListRestrictItems from '@components/secondary/ListRestrictItems.vue'
     import {fnRestrictSaleItemsCpe} from '@mixins/functions'
@@ -272,7 +272,7 @@
     } from '../../../../helpers/lotValidation'
 
     export default {
-        components: {DocumentOptions, ListRestrictItems},
+        components: {DocumentOptions, ListRestrictItems, FiscalProfileSummary},
         mixins: [
             fnRestrictSaleItemsCpe
         ],
@@ -284,6 +284,7 @@
         ],
         data() {
             return {
+                fiscalProfiles: [],
                 sellers: [],
                 titleDialog: null,
                 loading: false,
@@ -325,6 +326,10 @@
             this.validateDateOfIssue()
 
            // console.log(moment().format('YYYY-MM-DD'))
+        },
+        computed: {
+            fiscalProfile() { return this.fiscalProfiles.find(p => p.document_type_id === this.document.document_type_id) || null; },
+            sourcePaid() { return (this.form.payments || (this.form.sale_note && this.form.sale_note.payments) || []).reduce((sum, row) => sum + Number(row.payment || 0), 0).toFixed(2); }
         },
         methods: {
             /**
@@ -379,12 +384,6 @@
             changePaymentCondition() {
                 this.document.fee = [];
                 this.document.payments = [];
-                if(this.document.payment_condition_id === '01') {
-                    this.document.payments = this.form.sale_note.payments;
-                    if(this.document.payments === undefined || this.document.payments.length < 1) {
-                        this.clickAddPayment();
-                    }
-                }
                 if(this.document.payment_condition_id === '02') {
                     this.document.fee = this.getFeesData(this.form.sale_note);
                     if(this.document.fee === undefined || this.document.fee.length < 1){
@@ -483,6 +482,7 @@
             },
             initDocument(){
                 this.document = {
+                    operation_key: newFiscalOperationKey(),
                     document_type_id:null,
                     series_id:null,
                     establishment_id: null,
@@ -579,6 +579,7 @@
             },
             async submit()
             {
+                if (!this.fiscalProfile) return this.$message.error('Configure el perfil fiscal de la sucursal antes de emitir.');
                 // validacion restriccion de productos
                 const validate_restrict_sale_items_cpe = this.fnValidateRestrictSaleItemsCpe(this.document)
                 if(!validate_restrict_sale_items_cpe.success) return this.$message.error(validate_restrict_sale_items_cpe.message)
@@ -614,7 +615,7 @@
 
                 this.loading_submit = true;
 
-                this.document.exchange_rate_sale = 1;
+
 
                 // Reasegurar lotes justo antes del POST (por si mutaron en validaciones previas)
                 this.ensureItemsLotsForSubmit();
@@ -628,10 +629,7 @@
                             // ######### FIN CAMBIO SIN XML CDR SUNAT
 
                             this.showDialogDocumentOptions = true;
-                            this.$http.get(`/${this.resource}/changed/${this.form.id}`).then(() => {
-                                this.$eventHub.$emit('reloadData');
-                                // this.flag_generate = false
-                            });
+                            this.$eventHub.$emit('reloadData');
                             this.resetDocument()
 
                             this.$emit('hasGeneratedDocument')
@@ -758,7 +756,7 @@
                 };
                 this.document.sale_note_id = this.form.id;
                 // this.document.payments = q.payments;
-                this.document.payments = this.getPaymentsData(q)
+                this.document.payments = []; // Los cobros originales se aplican en el servidor.
                 this.document.seller_id = q.seller_id;
                 this.document.user_id = q.user_id;
                 this.document.fee = this.getFeesData(q)
@@ -807,6 +805,7 @@
                 await this.$http.get(`/${this.resource}/option/tables`).then(response => {
                     this.all_document_types = response.data.document_types_invoice;
                     this.all_series = response.data.series;
+                    this.fiscalProfiles = response.data.fiscal_profiles || [];
                     this.payment_destinations = response.data.payment_destinations;
                     this.payment_method_types = response.data.payment_method_types;
                     this.sellers = response.data.sellers

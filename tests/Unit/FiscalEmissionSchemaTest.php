@@ -136,8 +136,9 @@ class FiscalEmissionSchemaTest extends TestCase
         $seller = $db->table('users')->insertGetId(['name' => 'HTTP seller', 'email' => 'http-seller@example.test', 'password' => 'not-a-login-hash', 'type' => 'seller', 'establishment_id' => $establishment]);
         $db->table('offline_configurations')->insert(['is_client' => false]);
         $warehouse = $db->table('warehouses')->insertGetId(['establishment_id' => $establishment, 'description' => 'HTTP warehouse']);
+        $nvSeries = $db->table('series')->insertGetId(['establishment_id' => $establishment, 'document_type_id' => '80', 'number' => 'NV01']);
         $item = \App\Models\Tenant\Item::where('internal_id', 'MOCK-ITEM-VES-001')->firstOrFail();
-        $db->table('item_warehouse')->insert(['item_id' => $item->id, 'warehouse_id' => $warehouse, 'stock' => 10]);
+        $db->table('item_warehouse')->insert(['item_id' => $item->id, 'warehouse_id' => $warehouse, 'stock' => 22]);
         $customer = \App\Models\Tenant\Person::where('number', 'MOCK-CLIENTE-VE')->firstOrFail();
         $invoice = [
             'operation_key' => 'http-invoice-retry', 'document_type_id' => '01', 'group_id' => '01', 'type' => 'invoice',
@@ -165,6 +166,43 @@ class FiscalEmissionSchemaTest extends TestCase
                 'valor_unitario' => 100, 'precio_unitario' => 116, 'codigo_tipo_precio' => '01', 'codigo_tipo_afectacion_igv' => '10',
                 'total_base_igv' => 200, 'porcentaje_igv' => 16, 'total_igv' => 32, 'total_impuestos' => 32, 'total_valor_item' => 200, 'total_item' => 232]],
         ];
+        $db->table('cat_transfer_reason_types')->where('id', '01')->update(['discount_stock' => true]);
+        $apiDispatch = array_replace($apiInvoice, [
+            'clave_operacion' => 'http-api-dispatch-retry', 'codigo_tipo_documento' => '09',
+            'fecha_de_traslado' => '2026-09-13', 'codigo_modo_transporte' => '02', 'codigo_motivo_traslado' => '01',
+            'unidad_peso_total' => 'KG', 'peso_total' => 1, 'numero_de_bultos' => 1,
+            'direccion_partida' => ['ubigeo' => '000619', 'direccion' => 'Origen', 'codigo_del_domicilio_fiscal' => '0000'],
+            'direccion_llegada' => ['ubigeo' => ['14', '0229', '000619'], 'direccion' => 'Destino', 'codigo_del_domicilio_fiscal' => '0000'],
+            'chofer' => ['codigo_tipo_documento_identidad' => '1', 'numero_documento' => 'V12345678', 'nombres' => 'Chofer test', 'numero_licencia' => 'TEST'],
+            'vehiculo' => ['numero_de_placa' => 'TEST123', 'modelo' => 'Test', 'marca' => 'Test'],
+        ]);
+        $webConversion = array_replace($invoice, ['operation_key' => 'http-web-nv-conversion', 'sale_note_id' => 2,
+            'payments' => [['date_of_payment' => '2026-09-13', 'payment_method_type_id' => '01', 'payment_destination_id' => 'cash', 'payment' => 132]]]);
+        $groupedConversion = array_replace_recursive($webConversion, ['operation_key' => 'http-grouped-nv', 'sale_note_id' => null,
+            'sale_notes_relateds' => [['id' => 4], ['id' => 3]], 'total_taxed' => 500, 'total_igv' => 80, 'total_taxes' => 80, 'total_value' => 500, 'total' => 580,
+            'items' => [$invoice['items'][0], array_replace($invoice['items'][0], ['unit_value' => 150, 'unit_price' => 174,
+                'total_base_igv' => 300, 'total_igv' => 48, 'total_taxes' => 48, 'total_value' => 300, 'total' => 348])],
+            'payments' => [['payment' => 380]]]);
+        $nvUpdate = array_replace($invoice, ['id' => 5, 'series_id' => $nvSeries, 'number' => 5, 'prefix' => 'NV', 'document_type_id' => '80',
+            'type_period' => null, 'quantity_period' => 0, 'payment_method_type_id' => '01',
+            'items' => [array_replace($invoice['items'][0], ['id' => 1, 'item' => $item->toArray()])],
+            'payments' => [['date_of_payment' => '2026-09-13', 'payment_method_type_id' => '01', 'payment' => 100, 'payment_destination_id' => 'cash']]]);
+        $conversion = ['clave_operacion' => 'http-nv-conversion', 'codigo_tipo_documento' => '01',
+            'fecha_de_emision' => '2026-09-13', 'hora_de_emision' => '12:00:00',
+            'fecha_de_vencimiento' => '2026-09-13', 'codigo_condicion_de_pago' => '01'];
+        $db->table('technical_services')->insert(['id' => 1, 'user_id' => $admin, 'establishment_id' => $establishment,
+            'customer_id' => $customer->id, 'customer' => json_encode($customer->toArray()), 'fiscal_environment' => 'demo',
+            'cellphone' => '04121234567', 'date_of_issue' => '2026-09-13', 'time_of_issue' => '12:00:00',
+            'description' => 'Servicio de prueba', 'state' => 'COMPLETED', 'reason' => 'Prueba', 'serial_number' => 'TEST']);
+        $technicalInvoice = array_replace($invoice, ['operation_key' => 'http-technical-retry', 'technical_service_id' => 1]);
+        $technicalInvoice['items'][0]['item'] = $item->toArray();
+        $creditReturn = array_replace($invoice, ['operation_key' => 'http-credit-return', 'document_type_id' => '07',
+            'type' => 'credit', 'affected_document_id' => 1, 'note_credit_or_debit_type_id' => '07',
+            'note_description' => 'Devolución física de prueba', 'payments' => []]);
+        $creditDiscount = array_replace($creditReturn, ['operation_key' => 'http-credit-discount', 'affected_document_id' => 2,
+            'note_credit_or_debit_type_id' => '04', 'note_description' => 'Descuento de prueba']);
+        $debit = array_replace($creditReturn, ['operation_key' => 'http-debit', 'document_type_id' => '08',
+            'type' => 'debit', 'note_credit_or_debit_type_id' => '02', 'note_description' => 'Aumento de valor de prueba']);
         $path = '/establishments/' . $establishment . '/fiscal-numbering';
         $process = new \Symfony\Component\Process\Process([PHP_BINARY, dirname(__DIR__) . '/Support/fiscal_http_worker.php']);
         $process->setInput(json_encode(['connection' => $db->getConfig(), 'system_connection' => $systemConfig, 'requests' => [
@@ -206,14 +244,245 @@ class FiscalEmissionSchemaTest extends TestCase
             ['path' => '/documents/4/fiscal/confirm-print', 'method' => 'POST', 'user_id' => $admin],
             ['path' => '/documents/4/fiscal', 'user_id' => $admin],
             ['path' => '/fixture-register-only', 'method' => 'POST', 'register_only' => true, 'user_id' => $integrator, 'body' => array_replace($apiInvoice, ['clave_operacion' => 'http-contingency-source'])],
+            ['path' => '/documents/records?number=5', 'user_id' => $admin],
+            ['path' => '/documents/records?number=4', 'user_id' => $admin],
+            ['path' => '/documents/records?control_number=00-2', 'user_id' => $admin],
+            ['path' => '/documents/record/4', 'user_id' => $admin],
+            ['path' => '/reports/sales/excel?document_type_id=01&period=between_dates&date_start=2026-09-13&date_end=2026-09-13&user_type=CREADOR&seller_id=&person_id=', 'user_id' => $admin],
+            ['path' => $path . '/sequences', 'method' => 'POST', 'user_id' => $admin, 'body' => ['document_type_id' => '09', 'series_code' => 'OE', 'initial_number' => 10, 'centralized' => true]],
+            ['path' => $path . '/profiles', 'method' => 'POST', 'user_id' => $admin, 'body' => ['name' => 'HTTP API delivery', 'channel' => 'digital', 'document_type_id' => '09', 'mode' => 'digital', 'sequence_id' => 2, 'provider' => 'simulator', 'configuration' => ['emitter_user_id' => $integrator], 'active' => true]],
+            ['path' => '/api/dispatches', 'method' => 'POST', 'api_token' => $apiToken, 'body' => $apiDispatch],
+            ['path' => '/api/dispatches', 'method' => 'POST', 'api_token' => $apiToken, 'body' => $apiDispatch],
+            ['path' => '/api/dispatches/1/fiscal', 'api_token' => $apiToken],
+            ['path' => '/api/dispatches/records?number=10', 'api_token' => $apiToken],
+            ['path' => '/api/dispatches/records?number=10', 'api_token' => 'OTHER-HTTP-TEST-TOKEN'],
+            ['path' => '/api/dispatch/find/1', 'api_token' => 'OTHER-HTTP-TEST-TOKEN'],
+            ['path' => '/api/dispatches', 'method' => 'POST', 'api_token' => $apiToken, 'body' => array_replace_recursive($apiDispatch, ['datos_del_cliente_o_receptor' => ['apellidos_y_nombres_o_razon_social' => 'Rejected dispatch change']])],
+            ['path' => '/api/dispatches', 'method' => 'POST', 'api_token' => $apiToken, 'body' => array_replace_recursive($apiDispatch, ['clave_operacion' => 'http-invalid-location', 'direccion_partida' => ['ubigeo' => ['01', '0229', '000619']]])],
+            ['path' => '/api/dispatches', 'method' => 'POST', 'api_token' => $apiToken, 'body' => array_replace($apiDispatch, ['clave_operacion' => 'http-missing-driver', 'chofer' => null])],
+            ['path' => '/fixture-sale-note', 'sale_note_fixture' => true, 'user_id' => $integrator],
+            ['path' => '/api/sale-note/1/generate-cpe', 'method' => 'POST', 'api_token' => 'OTHER-HTTP-TEST-TOKEN', 'body' => $conversion],
+            ['path' => '/api/sale-note/1/generate-cpe', 'method' => 'POST', 'api_token' => $apiToken, 'body' => $conversion],
+            ['path' => '/api/sale-note/1/generate-cpe', 'method' => 'POST', 'api_token' => $apiToken, 'body' => $conversion],
+            ['path' => '/api/sale-note/1/generate-cpe', 'method' => 'POST', 'api_token' => $apiToken, 'body' => array_replace($conversion, ['clave_operacion' => 'http-second-nv-conversion'])],
+            ['path' => $path . '/archive', 'method' => 'POST', 'user_id' => $admin, 'body' => ['entity' => 'profile', 'id' => 2]],
+            ['path' => $path . '/profiles', 'method' => 'POST', 'user_id' => $admin, 'body' => ['name' => 'HTTP technical profile', 'channel' => 'presential', 'document_type_id' => '01', 'mode' => 'digital', 'sequence_id' => 1, 'provider' => 'simulator', 'configuration' => [], 'active' => true]],
+            ['path' => '/generate-document', 'method' => 'POST', 'user_id' => $admin, 'body' => $technicalInvoice],
+            ['path' => '/generate-document', 'method' => 'POST', 'user_id' => $admin, 'body' => $technicalInvoice],
+            ['path' => '/generate-document', 'method' => 'POST', 'user_id' => $admin, 'body' => array_replace($technicalInvoice, ['operation_key' => 'http-technical-second'])],
+            ['path' => '/generate-document', 'method' => 'POST', 'user_id' => $seller, 'body' => array_replace($technicalInvoice, ['operation_key' => 'http-technical-foreign'])],
+            ['path' => '/generate-document/record/technical-services/1', 'user_id' => $seller],
+            ['path' => '/sale_note_payments', 'method' => 'POST', 'user_id' => $integrator, 'body' => ['sale_note_id' => 1, 'date_of_payment' => '2026-09-13', 'payment_method_type_id' => '01', 'payment_destination_id' => 'cash', 'payment' => 50]],
+            ['path' => '/sale_note_payments/1', 'method' => 'DELETE', 'user_id' => $integrator],
+            ['path' => '/sale_note_payments', 'method' => 'POST', 'user_id' => $seller, 'body' => ['sale_note_id' => 1, 'date_of_payment' => '2026-09-13', 'payment_method_type_id' => '01', 'payment_destination_id' => 'cash', 'payment' => 50]],
+            ['path' => '/document_payments/document/5', 'user_id' => $integrator],
+            ['path' => '/document_payments/records/5', 'user_id' => $integrator],
+            ['path' => '/document_payments/5', 'method' => 'DELETE', 'user_id' => $integrator],
+            ['path' => '/api/cash/cash_document', 'method' => 'POST', 'api_token' => $apiToken, 'body' => ['document_id' => 5]],
+            ['path' => '/document_payments', 'method' => 'POST', 'user_id' => $integrator, 'body' => ['document_id' => 5, 'date_of_payment' => '2026-09-13', 'payment_method_type_id' => '01', 'payment_destination_id' => 'cash', 'payment' => 132]],
+            ['path' => '/document_payments/document/5', 'user_id' => $integrator],
+            ['path' => '/api/sale-note/1/generate-cpe', 'method' => 'POST', 'api_token' => $apiToken, 'body' => $conversion],
+            ['path' => '/api/cash/close/1', 'api_token' => $apiToken],
+            ['path' => '/fixture-sale-note', 'sale_note_fixture' => true, 'user_id' => $admin],
+            ['path' => '/documents', 'method' => 'POST', 'user_id' => $admin, 'body' => $webConversion],
+            ['path' => '/documents', 'method' => 'POST', 'user_id' => $admin, 'body' => $webConversion],
+            ['path' => '/documents', 'method' => 'POST', 'user_id' => $admin, 'body' => array_replace($webConversion, ['operation_key' => 'http-web-nv-second'])],
+            ['path' => '/document_payments/document/7', 'user_id' => $admin],
+            ['path' => '/fixture-sale-note', 'sale_note_fixture' => true, 'user_id' => $admin, 'global_discount' => 12],
+            ['path' => '/fixture-sale-note', 'sale_note_fixture' => true, 'user_id' => $admin, 'amount_factor' => '1.5', 'global_charge' => 12],
+            ['path' => '/sale-notes/list-by-client?client_id=' . $customer->id, 'user_id' => $admin],
+            ['path' => '/sale-notes/items', 'method' => 'POST', 'user_id' => $admin, 'body' => ['notes_id' => [3, 4], 'select_all' => true, 'group_items' => true]],
+            ['path' => '/sale-notes/items', 'method' => 'POST', 'user_id' => $integrator, 'body' => ['notes_id' => [3, 4]]],
+            ['path' => '/documents', 'method' => 'POST', 'user_id' => $admin, 'body' => array_replace_recursive($groupedConversion, ['operation_key' => 'http-altered-source-tax', 'items' => [['total_igv' => 31]]])],
+            ['path' => '/documents', 'method' => 'POST', 'user_id' => $admin, 'body' => $groupedConversion],
+            ['path' => '/documents', 'method' => 'POST', 'user_id' => $admin, 'body' => $groupedConversion],
+            ['path' => '/documents', 'method' => 'POST', 'user_id' => $admin, 'body' => array_replace($groupedConversion, ['operation_key' => 'http-grouped-second'])],
+            ['path' => '/document_payments/document/8', 'user_id' => $admin],
+            ['path' => '/sale-notes/delete-relation-invoice', 'method' => 'POST', 'user_id' => $admin, 'body' => ['id' => 1]],
+            ['path' => '/sale-notes/delete-relation-invoice', 'method' => 'POST', 'user_id' => $seller, 'body' => ['id' => 1]],
+            ['path' => '/sale-notes/anulate/1', 'method' => 'POST', 'user_id' => $integrator],
+            ['path' => '/sale-notes/destroy_sale_note_item/1', 'method' => 'DELETE', 'user_id' => $integrator],
+            ['path' => '/sale-notes', 'method' => 'POST', 'user_id' => $integrator, 'body' => array_replace($invoice, ['id' => 1, 'series_id' => 1])],
+            ['path' => '/api/sale-note', 'method' => 'POST', 'api_token' => $apiToken, 'body' => ['id' => 1, 'customer_id' => $customer->id, 'establishment_id' => $establishment]],
+            ['path' => '/sale-notes/delete-relation-invoice', 'method' => 'POST', 'user_id' => $admin, 'body' => ['id' => 3]],
+            ['path' => '/fixture-sale-note', 'sale_note_fixture' => true, 'user_id' => $integrator],
+            ['path' => '/api/sale-note', 'method' => 'POST', 'api_token' => $apiToken, 'body' => $nvUpdate],
+            ['path' => '/sale-notes/anulate/5', 'method' => 'POST', 'user_id' => $integrator],
+            ['path' => '/sale-notes/anulate/5', 'method' => 'POST', 'user_id' => $integrator],
+            ['path' => '/sale-notes/anulate/1', 'user_id' => $integrator],
+            ['path' => $path . '/sequences', 'method' => 'POST', 'user_id' => $admin, 'body' => ['document_type_id' => '07', 'series_code' => 'NC', 'initial_number' => 20, 'centralized' => true]],
+            ['path' => $path . '/profiles', 'method' => 'POST', 'user_id' => $admin, 'body' => ['name' => 'HTTP credit', 'channel' => 'presential', 'document_type_id' => '07', 'mode' => 'digital', 'sequence_id' => 3, 'provider' => 'simulator', 'configuration' => [], 'active' => true]],
+            ['path' => '/documents', 'method' => 'POST', 'user_id' => $admin, 'body' => $creditReturn],
+            ['path' => '/documents', 'method' => 'POST', 'user_id' => $admin, 'body' => $creditReturn],
+            ['path' => '/documents', 'method' => 'POST', 'user_id' => $admin, 'body' => $creditDiscount],
+            ['path' => '/documents', 'method' => 'POST', 'user_id' => $admin, 'body' => $creditDiscount],
+            ['path' => $path . '/sequences', 'method' => 'POST', 'user_id' => $admin, 'body' => ['document_type_id' => '08', 'series_code' => 'ND', 'initial_number' => 40, 'centralized' => true]],
+            ['path' => $path . '/profiles', 'method' => 'POST', 'user_id' => $admin, 'body' => ['name' => 'HTTP debit', 'channel' => 'presential', 'document_type_id' => '08', 'mode' => 'digital', 'sequence_id' => 4, 'provider' => 'simulator', 'configuration' => [], 'active' => true]],
+            ['path' => '/documents', 'method' => 'POST', 'user_id' => $admin, 'body' => $debit],
+            ['path' => '/documents', 'method' => 'POST', 'user_id' => $admin, 'body' => $debit],
+            ['path' => $path . '/lots', 'method' => 'POST', 'user_id' => $admin, 'body' => ['start' => '00-20', 'end' => '00-22', 'printer_name' => 'HTTP replacement printer', 'printer_rif' => 'J000000000', 'authorization' => 'TEST REPLACEMENT', 'authorization_date' => '2026-09-01', 'prepared_at' => '2026-09-01']],
+            ['path' => $path . '/archive', 'method' => 'POST', 'user_id' => $admin, 'body' => ['entity' => 'profile', 'id' => 6]],
+            ['path' => $path . '/profiles', 'method' => 'POST', 'user_id' => $admin, 'body' => ['name' => 'HTTP replacement form', 'channel' => 'presential', 'document_type_id' => '01', 'mode' => 'free_form', 'sequence_id' => 1, 'control_lot_id' => 2, 'provider' => 'none', 'configuration' => ['page_capacity' => 10], 'active' => true]],
+            ['path' => '/documents', 'method' => 'POST', 'user_id' => $admin, 'body' => array_replace($invoice, ['operation_key' => 'http-print-replacement'])],
+            ['path' => '/documents/{subject}/fiscal', 'user_id' => $admin, 'subject_operation_key' => 'http-print-replacement'],
+            ['path' => '/documents/{subject}/fiscal/invalidate-print', 'method' => 'POST', 'user_id' => $admin, 'subject_operation_key' => 'http-print-replacement', 'body' => ['reason' => 'Formato dañado durante la impresión']],
+            ['path' => '/documents/{subject}/fiscal', 'user_id' => $admin, 'subject_operation_key' => 'http-print-replacement'],
+            ['path' => '/documents/{subject}/fiscal/replace-print', 'method' => 'POST', 'user_id' => $seller, 'subject_operation_key' => 'http-print-replacement', 'fiscal_profile_name' => 'HTTP replacement form'],
+            ['path' => '/documents/{subject}/fiscal/replace-print', 'method' => 'POST', 'user_id' => $admin, 'subject_operation_key' => 'http-print-replacement', 'fiscal_profile_name' => 'HTTP replacement form'],
+            ['path' => '/documents/{subject}/fiscal/replace-print', 'method' => 'POST', 'user_id' => $admin, 'subject_operation_key' => 'http-print-replacement', 'fiscal_profile_name' => 'HTTP replacement form'],
+            ['path' => '/documents/{subject}/fiscal', 'user_id' => $admin, 'subject_operation_key' => 'http-print-replacement'],
+            ['path' => '/documents/{subject}/fiscal/confirm-print', 'method' => 'POST', 'user_id' => $admin, 'subject_operation_key' => 'http-print-replacement'],
+            ['path' => '/documents/{subject}/fiscal', 'user_id' => $admin, 'subject_operation_key' => 'http-print-replacement'],
         ]], JSON_THROW_ON_ERROR));
         $process->setTimeout(60);
         $process->run();
-        self::assertSame(0, $process->getExitCode(), $process->getErrorOutput());
+        self::assertSame(0, $process->getExitCode(), $process->getErrorOutput() . substr($process->getOutput(), -6000));
         $output = explode("\nFISCAL_HTTP_RESULT\n", $process->getOutput(), 2);
         self::assertCount(2, $output, substr($process->getOutput(), -2000));
         $responses = json_decode($output[1], true, 512, JSON_THROW_ON_ERROR);
-        self::assertSame([401, 403, 200, 422, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 401, 401, 200, 200, 200, 422, 422, 404, 200, 201, 403, 200, 200, 200, 200, 200, 201], array_column($responses, 'status'), json_encode($responses));
+        self::assertSame([401, 403, 200, 422, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 401, 401, 200, 200, 200, 422, 422, 404, 200, 201, 403, 200, 200, 200, 200, 200, 201, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 404, 422, 422, 422, 201, 404, 200, 200, 422, 200, 200, 200, 200, 422, 422, 404, 422, 422, 403, 200, 200, 422, 200, 200, 200, 200, 200, 201, 200, 200, 200, 200, 201, 201, 200, 200, 403, 200, 200, 200, 200, 200, 422, 403, 422, 422, 200, 422, 422, 201, 200, 200, 422, 405, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 403, 200, 200, 200, 200, 200], array_column($responses, 'status'), json_encode($responses));
+        self::assertSame('awaiting_print', $responses[117]['body']['data']['fiscal']['status']);
+        self::assertSame('00-00000020', $responses[118]['body']['data']['control_number']);
+        self::assertSame('inutilized', $responses[119]['body']['data']['status']);
+        self::assertTrue($responses[120]['body']['data']['can_replace_print']);
+        self::assertSame('HTTP replacement form', $responses[120]['body']['data']['replacement_profiles'][0]['name']);
+        self::assertSame('awaiting_print', $responses[122]['body']['data']['status']);
+        self::assertSame('00-00000021', $responses[122]['body']['data']['control_number']);
+        self::assertSame('11', $responses[122]['body']['data']['document_number']);
+        self::assertSame($responses[122]['body']['data']['control_number'], $responses[123]['body']['data']['control_number']);
+        self::assertSame('00-00000020', $responses[124]['body']['data']['print_replacement']['replaced_control_number']);
+        self::assertSame('issued', $responses[125]['body']['data']['status']);
+        self::assertSame('issued', $responses[126]['body']['data']['status']);
+        $replacementRoot = $db->table('fiscal_number_reservations')->where('operation_key', 'http-print-replacement')->first();
+        self::assertNotNull($replacementRoot);
+        self::assertSame(1, $db->table('documents')->where('id', $replacementRoot->document_id)->count());
+        self::assertSame(1, $db->table('document_payments')->where('document_id', $replacementRoot->document_id)->count());
+        self::assertSame(1, $db->table('fiscal_number_reservations')->where('parent_reservation_id', $replacementRoot->id)->count());
+        self::assertSame(1, $db->table('fiscal_numbering_audits')->where('action', 'replace_print')->count());
+        self::assertSame(12, (int) $db->table('fiscal_sequences')->where('id', 1)->value('next_number'));
+        self::assertSame(22, (int) $db->table('fiscal_control_lots')->where('id', 2)->value('next_ordinal'));
+        foreach ([[106, 107, 9, 'NC-20'], [108, 109, 10, 'NC-21'], [112, 113, 11, 'ND-40']] as [$first, $retry, $id, $number]) {
+            self::assertTrue($responses[$first]['body']['success'], json_encode($responses[$first]));
+            self::assertSame($id, $responses[$first]['body']['data']['id']);
+            self::assertSame($id, $responses[$retry]['body']['data']['id']);
+            self::assertSame($number, $responses[$first]['body']['data']['number_full']);
+            self::assertSame('issued', $responses[$retry]['body']['data']['fiscal']['status']);
+            self::assertSame($responses[$first]['pdf_count'], $responses[$retry]['pdf_count']);
+            self::assertSame(0, $db->table('document_payments')->where('document_id', $id)->count());
+            self::assertSame(1, $db->table('notes')->where('document_id', $id)->count());
+        }
+        $noteMovements = $db->table('inventory_kardex')->where('inventory_kardexable_type', \App\Models\Tenant\Document::class);
+        self::assertSame(1, (clone $noteMovements)->where('inventory_kardexable_id', 9)->count());
+        self::assertEquals(2, (clone $noteMovements)->where('inventory_kardexable_id', 9)->sum('quantity'));
+        self::assertSame(0, (clone $noteMovements)->whereIn('inventory_kardexable_id', [10, 11])->count());
+        self::assertSame($responses[103]['pdf_count'] + 3, $responses[113]['pdf_count']);
+        self::assertSame(22, (int) $db->table('fiscal_sequences')->where('id', 3)->value('next_number'));
+        self::assertSame(41, (int) $db->table('fiscal_sequences')->where('id', 4)->value('next_number'));
+        $noteSnapshot = json_decode($db->table('fiscal_number_reservations')->where('document_id', 10)->value('fiscal_snapshot'), true);
+        self::assertSame('00-00000001', $noteSnapshot['affected_document']['control_number']);
+        self::assertSame('2', $noteSnapshot['affected_document']['number']);
+        self::assertSame('2026-09-13', $noteSnapshot['affected_document']['date_of_issue']);
+        self::assertTrue($responses[101]['body']['success']);
+        self::assertSame('11', $db->table('sale_notes')->where('id', 5)->value('state_type_id'));
+        self::assertTrue($responses[100]['body']['success'], json_encode($responses[100]));
+        self::assertSame(5, $responses[100]['body']['data']['id']);
+        self::assertSame(1, $db->table('sale_note_items')->where('sale_note_id', 5)->count());
+        self::assertSame(1, (int) $db->table('sale_note_items')->where('id', 1)->value('sale_note_id'));
+        self::assertSame(0, (int) $db->table('sale_notes')->where('id', 5)->value('total_canceled'));
+        self::assertSame(1, $db->table('sale_note_payments')->where('sale_note_id', 5)->count());
+        self::assertSame(1, $db->table('cash_document_payments')->where('sale_note_payment_id', 6)->where('cash_id', 3)->count());
+        self::assertSame(0, $db->table('cash_document_payments')->where('sale_note_payment_id', 5)->count());
+        self::assertFalse($responses[96]['body']['success']);
+        self::assertSame(1, (int) $db->table('documents')->where('id', 5)->value('sale_note_id'));
+        self::assertSame('01', $db->table('sale_notes')->where('id', 1)->value('state_type_id'));
+        self::assertSame(5, $db->table('sale_note_items')->count());
+        self::assertCount(2, $responses[84]['body']['data']);
+        self::assertEquals(200, array_sum(array_column($responses[84]['body']['data'], 'source_paid')));
+        self::assertCount(2, $responses[85]['body']['data']);
+        self::assertEquals(580, array_sum(array_column($responses[85]['body']['data'], 'total')));
+        self::assertEquals([116, 174], array_map('floatval', array_column($responses[85]['body']['data'], 'unit_price')));
+        self::assertEquals(12, $responses[85]['body']['economics']['totals']['total_discount']);
+        self::assertEquals(12, $responses[85]['body']['economics']['totals']['total_charge']);
+        self::assertEquals(580, $responses[85]['body']['economics']['totals']['total']);
+        self::assertEquals(12, $db->table('documents')->where('id', 8)->value('total_discount'));
+        self::assertEquals(12, $db->table('documents')->where('id', 8)->value('total_charge'));
+        self::assertSame('HTTP source global discount', json_decode($db->table('documents')->where('id', 8)->value('discounts'), true)[0]['description']);
+        self::assertSame('HTTP source global charge', json_decode($db->table('documents')->where('id', 8)->value('charges'), true)[0]['description']);
+        self::assertFalse($responses[87]['body']['success']);
+        self::assertSame(0, $db->table('fiscal_number_reservations')->where('operation_key', 'http-altered-source-tax')->count());
+        self::assertTrue($responses[88]['body']['success'], json_encode($responses[88]));
+        self::assertSame(8, $responses[88]['body']['data']['id']);
+        self::assertSame(8, $responses[89]['body']['data']['id']);
+        self::assertFalse($responses[90]['body']['success']);
+        self::assertEquals(580, $responses[91]['body']['total_paid']);
+        self::assertEquals(0, $responses[91]['body']['total_difference']);
+        self::assertSame(2, $db->table('sale_notes')->whereIn('id', [3, 4])->where('document_id', 8)->where('changed', true)->count());
+        self::assertSame(2, $db->table('document_payments')->where('document_id', 8)->whereNotNull('source_sale_note_payment_id')->count());
+        self::assertSame(0, $db->table('cash_document_payments')->whereIn('document_payment_id', [10, 11])->count());
+        self::assertSame(1, $db->table('cash_document_payments')->where('document_payment_id', 12)->where('cash_id', 2)->count());
+        self::assertSame(0, $db->table('fiscal_number_reservations')->where('operation_key', 'http-grouped-second')->count());
+        self::assertTrue($responses[78]['body']['success'], json_encode($responses[78]));
+        self::assertSame(7, $responses[78]['body']['data']['id']);
+        self::assertSame(7, $responses[79]['body']['data']['id']);
+        self::assertSame('issued', $responses[79]['body']['data']['fiscal']['status']);
+        self::assertFalse($responses[80]['body']['success']);
+        self::assertEquals(232, $responses[81]['body']['total_paid']);
+        self::assertEquals(0, $responses[81]['body']['total_difference']);
+        self::assertSame(7, (int) $db->table('sale_notes')->where('id', 2)->value('document_id'));
+        self::assertSame(1, (int) $db->table('sale_notes')->where('id', 2)->value('changed'));
+        self::assertSame(1, $db->table('document_payments')->where('source_sale_note_payment_id', 2)->count());
+        self::assertSame(0, $db->table('cash_document_payments')->where('document_payment_id', 8)->count());
+        self::assertSame(1, $db->table('cash_document_payments')->where('document_payment_id', 9)->where('cash_id', 2)->count());
+        self::assertSame(0, $db->table('fiscal_number_reservations')->where('operation_key', 'http-web-nv-second')->count());
+        self::assertEquals(232, $db->table('cash')->where('id', 1)->value('final_balance'));
+        self::assertEquals(232, $responses[74]['body']['total_paid']);
+        self::assertEquals(0, $responses[74]['body']['total_difference']);
+        self::assertTrue($responses[75]['body']['data']['replayed']);
+        self::assertSame(1, (int) $db->table('documents')->where('id', 5)->value('total_canceled'));
+        self::assertEquals(100, $responses[69]['body']['total_paid']);
+        self::assertEquals(132, $responses[69]['body']['total_difference']);
+        self::assertTrue($responses[70]['body']['data'][0]['is_source_allocation']);
+        self::assertSame(1, $responses[70]['body']['data'][0]['source_sale_note_id']);
+        self::assertSame(1, $db->table('document_payments')->where('source_sale_note_payment_id', 1)->count());
+        self::assertSame(0, $db->table('cash_document_payments')->where('document_payment_id', 5)->count());
+        self::assertSame(1, (int) $db->table('sale_notes')->where('id', 1)->value('changed'));
+        self::assertSame(5, $db->table('sale_note_payments')->count());
+        self::assertEquals(500, $db->table('sale_note_payments')->sum('payment'));
+        self::assertSame(8, $db->table('global_payments')->count());
+        self::assertSame(1, $db->table('cash_document_payments')->where('sale_note_payment_id', 1)->count());
+        self::assertSame(6, $responses[61]['body']['data']['id']);
+        self::assertSame(6, $responses[62]['body']['data']['id']);
+        self::assertFalse($responses[61]['body']['data']['replayed']);
+        self::assertTrue($responses[62]['body']['data']['replayed']);
+        self::assertSame('issued', $responses[62]['body']['data']['fiscal']['status']);
+        self::assertSame(7, $responses[62]['pdf_count']);
+        self::assertSame(1, $db->table('documents')->where('technical_service_id', 1)->count());
+        self::assertSame(0, $db->table('fiscal_number_reservations')->whereIn('operation_key', ['http-technical-second', 'http-technical-foreign'])->count());
+        self::assertSame(5, $responses[56]['body']['data']['id']);
+        self::assertFalse($responses[56]['body']['data']['replayed']);
+        self::assertTrue($responses[57]['body']['data']['replayed']);
+        self::assertSame('issued', $responses[57]['body']['data']['fiscal']['status']);
+        self::assertSame(6, $responses[57]['pdf_count']);
+        self::assertSame(5, (int) $db->table('sale_notes')->where('id', 1)->value('document_id'));
+        self::assertSame(1, $db->table('documents')->where('sale_note_id', 1)->count());
+        self::assertSame(0, $db->table('fiscal_number_reservations')->where('operation_key', 'http-second-nv-conversion')->count());
+        self::assertSame($responses[45]['body']['data']['id'], $responses[46]['body']['data']['id']);
+        self::assertFalse($responses[45]['body']['data']['replayed']);
+        self::assertTrue($responses[46]['body']['data']['replayed']);
+        self::assertSame('OE-10', $responses[45]['body']['data']['number']);
+        self::assertSame('issued', $responses[47]['body']['data']['status']);
+        self::assertSame(5, $responses[47]['pdf_count']);
+        self::assertCount(1, $responses[48]['body']['data']);
+        self::assertSame([], $responses[49]['body']['data']);
+        self::assertSame(0, $db->table('fiscal_number_reservations')->whereIn('operation_key', ['http-invalid-location', 'http-missing-driver'])->count());
+        self::assertSame(1, $db->table('dispatches')->count());
+        self::assertSame(1, $db->table('dispatch_items')->count());
+        self::assertSame(0, $db->table('persons')->where('name', 'Rejected dispatch change')->count());
+        self::assertSame(11, (int) $db->table('fiscal_sequences')->where('id', 2)->value('next_number'));
+        self::assertSame(1, $responses[7]['body']['data']['fiscal']['profile_id']);
+        self::assertSame(2, $responses[7]['body']['data']['fiscal']['next_number']);
+        self::assertSame(2, $responses[8]['body']['data']['fiscal']['next_number']);
+        self::assertSame(21, $responses[107]['body']['data']['fiscal']['next_number']);
         self::assertTrue($responses[7]['body']['success'], json_encode($responses[7]));
         self::assertTrue($responses[8]['body']['success'], json_encode($responses[8]));
         self::assertSame($responses[7]['body']['data']['id'], $responses[8]['body']['data']['id']);
@@ -224,7 +493,7 @@ class FiscalEmissionSchemaTest extends TestCase
         self::assertSame('issued', $responses[19]['body']['data']['status']);
         self::assertSame(2, $responses[19]['pdf_count']);
         self::assertSame(3, (int) $db->table('fiscal_control_lots')->value('next_ordinal'));
-        self::assertSame(6, (int) $db->table('fiscal_sequences')->value('next_number'));
+        self::assertSame(12, (int) $db->table('fiscal_sequences')->where('id', 1)->value('next_number'));
         self::assertArrayNotHasKey('data', $responses[28]['body']);
         self::assertSame(0, $db->table('persons')->where('name', 'Rejected API change')->count());
         self::assertSame(0, $db->table('fiscal_number_reservations')->where('operation_key', 'ecommerce-order-25-invoice')->count());
@@ -241,22 +510,35 @@ class FiscalEmissionSchemaTest extends TestCase
         self::assertSame('issued', $responses[36]['body']['data']['status']);
         self::assertSame(4, $responses[36]['pdf_count']);
         self::assertSame($responses[30]['body']['document_id'], $responses[37]['body']['document_id']);
-        self::assertSame(5, $db->table('fiscal_number_reservations')->count());
+        self::assertSame(15, $db->table('fiscal_number_reservations')->count());
+        self::assertCount(1, $responses[38]['body']['data']);
+        self::assertSame(4, $responses[38]['body']['data'][0]['id']);
+        self::assertSame('5', $responses[38]['body']['data'][0]['number']);
+        self::assertSame('00-00000002', $responses[38]['body']['data'][0]['fiscal_identity']['control_number']);
+        self::assertSame('4', $responses[38]['body']['data'][0]['fiscal_identity']['original_number_full']);
+        self::assertSame([], $responses[39]['body']['data']);
+        self::assertCount(1, $responses[40]['body']['data']);
+        self::assertSame(4, $responses[40]['body']['data'][0]['id']);
+        self::assertSame('5', $responses[41]['body']['data']['number']);
+        self::assertStringContainsString('Control: 00-00000002', $responses[42]['xlsx_text']);
+        self::assertStringContainsString('Reserva original: 4', $responses[42]['xlsx_text']);
+        self::assertSame('00-00000002', $responses[41]['body']['data']['fiscal_identity']['control_number']);
+        self::assertSame(4, (int) $db->table('documents')->where('id', 4)->value('number'));
         self::assertSame('contingency', $db->table('fiscal_number_reservations')->where('document_id', 4)->value('status'));
         self::assertSame(1, $db->table('fiscal_numbering_audits')->where('action', 'start_contingency')->count());
         $apiCustomer = $db->table('persons')->where('name', 'HTTP API customer')->first();
         self::assertNotNull($apiCustomer);
         self::assertSame('6', $apiCustomer->identity_document_type_id);
         self::assertSame(['14', '0229', '000619'], [$apiCustomer->department_id, $apiCustomer->province_id, $apiCustomer->district_id]);
-        self::assertSame(4, $db->table('documents')->count());
-        self::assertSame(4, $db->table('document_payments')->count());
-        self::assertSame(4, $db->table('inventory_kardex')->count());
+        self::assertSame(12, $db->table('documents')->count());
+        self::assertSame(13, $db->table('document_payments')->count());
+        self::assertSame(20, $db->table('inventory_kardex')->count());
         self::assertEquals(2, $db->table('item_warehouse')->where('item_id', $item->id)->where('warehouse_id', $warehouse)->value('stock'));
         self::assertSame('issued', $responses[9]['body']['data']['status']);
         self::assertSame(1, $responses[9]['pdf_count']);
-        self::assertSame(1, $db->table('fiscal_sequences')->count());
+        self::assertSame(4, $db->table('fiscal_sequences')->count());
         self::assertSame(1, (int) $db->table('fiscal_sequences')->value('initial_number'));
-        self::assertSame(4, $db->table('fiscal_profiles')->count());
+        self::assertSame(9, $db->table('fiscal_profiles')->count());
         self::assertSame(0, (int) $db->table('fiscal_profiles')->value('active'));
         self::assertNotEmpty($db->table('fiscal_profiles')->value('credentials'));
         self::assertNotSame('HTTP-TEST-SECRET', $db->table('fiscal_profiles')->value('credentials'));

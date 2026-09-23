@@ -90,6 +90,45 @@ class FiscalProfileServiceTest extends FiscalDatabaseTestCase
         }
     }
 
+    public function test_preprinted_free_form_is_the_supported_production_path(): void
+    {
+        $lot = $this->repository->createLot(['establishment_id' => 1, 'start' => '00-1', 'end' => '00-2',
+            'printer_name' => 'Imprenta autorizada', 'printer_rif' => 'J-00000000-0', 'authorization' => 'PRUEBA',
+            'authorization_date' => '2026-01-01', 'prepared_at' => '2026-02-01']);
+        $input = $this->input('01', 'free_form');
+        $input['control_lot_id'] = $lot;
+        $input['configuration'] = ['page_capacity' => 10];
+        $profile = (new FiscalProfileService($this->db))->save(1, $input, 1);
+        $this->db->table('companies')->update(['fiscal_environment' => 'production']);
+        $reservation = $this->repository->reserveForProfile($profile['id'], 'production-sale', hash('sha256', 'production-sale'), 1, 'presential');
+        $this->assertSame('00-00000001', $reservation->control_number);
+        $this->assertSame('production', json_decode($reservation->fiscal_snapshot, true)['environment']);
+        $this->assertSame(2, (int) $this->db->table('fiscal_control_lots')->value('next_ordinal'));
+    }
+
+    public function test_preprinted_free_form_covers_every_document_type_in_scope(): void
+    {
+        $lot = $this->repository->createLot(['establishment_id' => 1, 'start' => '00-1', 'end' => '00-10',
+            'printer_name' => 'Imprenta autorizada', 'printer_rif' => 'J-00000000-0', 'authorization' => 'PRUEBA',
+            'authorization_date' => '2026-01-01', 'prepared_at' => '2026-02-01']);
+        $service = new FiscalProfileService($this->db);
+        $this->db->table('companies')->update(['fiscal_environment' => 'production']);
+
+        foreach (['01', '07', '08', '09'] as $index => $type) {
+            $input = $this->input($type, 'free_form');
+            $input['name'] = 'Forma libre ' . $type;
+            $input['control_lot_id'] = $lot;
+            $input['configuration'] = ['page_capacity' => 10];
+            $profile = $service->save(1, $input, 1);
+            $reservation = $this->repository->reserveForProfile(
+                $profile['id'], 'production-' . $type, hash('sha256', 'production-' . $type), 1, 'presential'
+            );
+
+            $this->assertSame($type, json_decode($reservation->fiscal_snapshot, true)['document_type_id']);
+            $this->assertSame(sprintf('00-%08d', $index + 1), $reservation->control_number);
+        }
+    }
+
     public function test_used_profile_is_immutable_and_retry_works_after_archival(): void
     {
         $input = $this->input();

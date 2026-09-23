@@ -15,7 +15,10 @@
 export default {
     props: { profile: { type: Object, default: null } },
     computed: {
-        modeLabel() { return { free_form: 'Forma libre', digital: 'Medios digitales', fiscal_machine: 'Máquina fiscal' }[this.profile.mode] || this.profile.mode; }
+        modeLabel() {
+            const label = { free_form: 'Forma libre', digital: 'Medios digitales', fiscal_machine: 'Máquina fiscal' }[this.profile.mode] || this.profile.mode;
+            return this.profile.mode === 'free_form' ? label : `${label} (en desarrollo)`;
+        }
     }
 };
 // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########

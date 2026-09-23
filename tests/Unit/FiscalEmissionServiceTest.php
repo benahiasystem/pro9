@@ -30,6 +30,99 @@ class FiscalEmissionServiceTest extends FiscalDatabaseTestCase
         return $reservation;
     }
 
+    public function test_recovery_emits_committed_reservations_once_and_skips_unlinked_entries(): void
+    {
+        $reservation = $this->reserve();
+        $this->repository->reserveForProfile($reservation->profile_id, 'unlinked', hash('sha256', 'unlinked'), 1, 'digital');
+        $service = new FiscalEmissionService($this->db);
+        $this->assertSame(['visited' => 1, 'states' => ['issued' => 1], 'failed' => 0, 'failed_ids' => []], $service->recoverPending());
+        $this->assertSame(0, $service->recoverPending()['visited']);
+        $this->assertSame(1, $this->db->table('fiscal_demo_receipts')->count());
+        $this->assertSame(1, $this->db->table('fiscal_emission_attempts')->count());
+        $this->assertSame(2, $this->db->table('fiscal_number_reservations')->count());
+        $this->db->table('fiscal_number_reservations')->whereNull('document_id')->update(['dispatch_id' => 1]);
+        $this->assertSame(['issued' => 1], $service->recoverPending()['states']);
+        $this->assertSame(2, $this->db->table('fiscal_demo_receipts')->count());
+    }
+
+    public function test_recovery_queries_expired_attempt_and_waits_until_next_sweep_to_resend(): void
+    {
+        $reservation = $this->reserve();
+        $attempt = $this->db->table('fiscal_emission_attempts')->insertGetId([
+            'reservation_id' => $reservation->id, 'action' => 'emit', 'status' => 'processing', 'created_at' => now(),
+        ]);
+        $this->db->table('fiscal_number_reservations')->update(['status' => 'processing', 'current_attempt_id' => $attempt]);
+        $service = new FiscalEmissionService($this->db);
+        $this->assertSame(['processing' => 1], $service->recoverPending()['states']);
+        $this->assertSame(1, $this->db->table('fiscal_emission_attempts')->count());
+        $this->db->table('fiscal_emission_attempts')->update(['created_at' => now()->subMinutes(3)]);
+        $this->assertSame(['reserved' => 1], $service->recoverPending()['states']);
+        $this->assertSame(0, $this->db->table('fiscal_demo_receipts')->count());
+        $this->assertSame(['issued' => 1], $service->recoverPending()['states']);
+        $this->assertSame(['emit', 'lookup', 'emit'], $this->db->table('fiscal_emission_attempts')->orderBy('id')->pluck('action')->all());
+    }
+
+    public function test_recovery_continues_after_bad_entry_across_batches_without_exposing_payload(): void
+    {
+        $first = $this->reserve();
+        $this->db->table('fiscal_number_reservations')->where('id', $first->id)->update(['fiscal_snapshot' => '{secret-token']);
+        for ($i = 2; $i <= 102; $i++) {
+            $row = $this->repository->reserveForProfile($first->profile_id, 'sale-'.$i, hash('sha256', 'sale-'.$i), 1, 'digital');
+            $this->db->table('fiscal_number_reservations')->where('id', $row->id)->update(['document_id' => $i]);
+        }
+        $service = new FiscalEmissionService($this->db);
+        $result = $service->recoverPending();
+        $this->assertSame(102, $result['visited']);
+        $this->assertSame(['issued' => 101], $result['states']);
+        $this->assertSame(1, $result['failed']);
+        $this->assertSame([(int) $first->id], $result['failed_ids']);
+        $this->assertStringNotContainsString('secret-token', json_encode($result));
+        $this->assertSame(101, $this->db->table('fiscal_demo_receipts')->count());
+        $this->assertSame(1, $service->recoverPending()['visited']);
+    }
+
+    public function test_recovery_does_not_confirm_physical_printing(): void
+    {
+        $this->reserve('free_form');
+        $service = new FiscalEmissionService($this->db);
+        $this->assertSame(['awaiting_print' => 1], $service->recoverPending()['states']);
+        $this->assertSame(0, $service->recoverPending()['visited']);
+        $this->assertSame(0, $this->db->table('fiscal_numbering_audits')->where('action', 'confirm_print')->count());
+    }
+
+    public function test_recovery_rejects_uncommitted_commercial_transaction(): void
+    {
+        $this->reserve();
+        $this->expectException(\DomainException::class);
+        $this->db->transaction(function () { (new FiscalEmissionService($this->db))->recoverPending(); });
+    }
+
+    public function test_recovery_command_requires_tenant_and_reports_its_selected_scope(): void
+    {
+        $reservation = $this->reserve();
+        $environment = $this->getMockBuilder(\Hyn\Tenancy\Environment::class)->disableOriginalConstructor()->onlyMethods(['tenant'])->getMock();
+        $tenant = new \Hyn\Tenancy\Models\Website();
+        $tenant->id = 42;
+        $environment->method('tenant')->willReturnOnConsecutiveCalls(null, $tenant, $tenant);
+        app()->instance(\Hyn\Tenancy\Environment::class, $environment);
+        $connections = app('config')['database.connections'];
+        $connections['tenant'] = $this->db->getConfig();
+        app('config')['database.connections'] = $connections;
+        app('db')->extend('tenant', fn () => $this->db);
+        $command = new \App\Console\Commands\RecoverFiscalEmissionsCommand();
+        $command->setLaravel(app());
+        $tester = new \Symfony\Component\Console\Tester\CommandTester($command);
+        $this->assertSame(1, $tester->execute([]));
+        $this->assertStringContainsString('tenancy:run', $tester->getDisplay());
+        $this->assertSame('reserved', $this->db->table('fiscal_number_reservations')->value('status'));
+        $this->assertSame(0, $tester->execute([]));
+        $result = json_decode(trim($tester->getDisplay()), true, 512, JSON_THROW_ON_ERROR);
+        $this->assertSame(42, $result['tenant_id']);
+        $this->assertSame(['issued' => 1], $result['states']);
+        $this->assertSame(0, $tester->execute([]));
+        $this->assertSame(1, $this->db->table('fiscal_demo_receipts')->count());
+    }
+
     public function test_repeated_processing_keeps_one_receipt_and_one_attempt(): void
     {
         $reservation = $this->reserve();
@@ -83,7 +176,8 @@ class FiscalEmissionServiceTest extends FiscalDatabaseTestCase
         };
         $service = new FiscalEmissionService($this->db, $adapter);
         $this->assertSame('uncertain', $service->process($reservation->id)->status);
-        $this->assertSame('issued', $service->process($reservation->id)->status);
+        $this->assertSame(['issued' => 1], $service->recoverPending()['states']);
+        $this->assertSame(0, $service->recoverPending()['visited']);
         $this->assertSame(1, $adapter->emits);
         $attempts = $this->db->table('fiscal_emission_attempts')->orderBy('id')->get();
         $this->assertSame(['emit', 'lookup'], $attempts->pluck('action')->all());

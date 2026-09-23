@@ -100,17 +100,13 @@ class DispatchController extends Controller
         if ($d_start && $d_end) {
             $query = Dispatch::query()
                 ->where('document_type_id', '09')
-                ->where('series', 'like', '%' . $series . '%')
                 ->whereBetween('date_of_issue', [$d_start, $d_end]);
         } else {
             $query = Dispatch::query()
-                ->where('document_type_id', '09')
-                ->where('series', 'like', '%' . $series . '%');
+                ->where('document_type_id', '09');
         }
 
-        if ($number) {
-            $query->where('number', $number);
-        }
+        $query->whereFiscalIdentifiers($series, $number, $request->control_number);
 
         if ($customer_id) {
             $query->where('customer_id', $customer_id);
@@ -149,7 +145,10 @@ class DispatchController extends Controller
         });
 
         // Series filtradas por contexto (oculta dedicadas / restringe al grupo activo). Ver SeriesResolver.
-        $series = app(SeriesResolver::class)->applyContext(Series::where('document_type_id', '09'))->get();
+        $series = \App\Models\Tenant\FiscalSequence::query()->where('document_type_id', '09')
+            ->where('series_code', '<>', '')->where(function ($query) {
+                $query->whereNull('establishment_id')->orWhere('establishment_id', auth()->user()->establishment_id);
+            })->select('document_type_id', 'series_code as number')->distinct()->get();
 
         return compact('customers', 'series');
 

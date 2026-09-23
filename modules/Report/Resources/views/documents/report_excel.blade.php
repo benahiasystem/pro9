@@ -1,10 +1,12 @@
+{{-- ######## INICIO NUMERACIÓN FISCAL VENEZUELA ######## --}}
+@php \App\Services\Fiscal\FiscalIdentity::preload($records); @endphp
+{{-- ######## FIN NUMERACIÓN FISCAL VENEZUELA ######## --}}
 {{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 <?php
     use App\Models\Tenant\Document;
     use App\CoreFacturalo\Helpers\Template\TemplateHelper;
     use App\Models\Tenant\SaleNote;
     use App\Models\Tenant\Catalogs\DocumentType;
-    use App\Models\Tenant\Series;
 
     $enabled_sales_agents = App\Models\Tenant\Configuration::getRecordIndividualColumn('enabled_sales_agents');
 
@@ -126,7 +128,7 @@ $document_types=DocumentType::OnlyAvaibleDocuments()->get();
                 foreach ($records as $key => $value) {
                     $document_type = $value->getDocumentType();
                     $clear_type[] = $document_type->id;
-                    $clear_series[] = $value->series;
+                    $clear_series[] = \App\Services\Fiscal\FiscalIdentity::forDocument($value)['series'];
 
                 }
                 $clear_type=array_unique($clear_type);
@@ -145,7 +147,7 @@ $document_types=DocumentType::OnlyAvaibleDocuments()->get();
                                 'id'=>$document_types[$c],
                                 'description'=>$document_types[$c]->description,
                             ];
-                            $series_document=Series::FilterDocumentType($document_types[$c]->id)->select('number')->get();
+                            $series_document=\App\Services\Fiscal\FiscalIdentity::seriesForType($records, (string) $document_types[$c]->id);
                             //dd($document_types[$c]->id==$clear_type[$i]);
                             $title=$document_types[$c]->description;
                             //dd($series_document);
@@ -316,7 +318,7 @@ $document_types=DocumentType::OnlyAvaibleDocuments()->get();
 
                         ?>
                         @if ($document_types[$c]->id==$document_type->id)
-                        @if ($serie_type['number']==$value->series)
+                        @if ($serie_type['number']==\App\Services\Fiscal\FiscalIdentity::forDocument($value)['series'])
                         <tr>
                             <td class="celda">{{$t+1}}</td>
                             @if ($columns->user_seller->visible)
@@ -329,8 +331,8 @@ $document_types=DocumentType::OnlyAvaibleDocuments()->get();
                             </td>
                             @endif
                             <td class="celda">{{$document_type->id}}</td>
-                            <td class="celda">{{$value->series}}</td>
-                            <td class="celda">{{$value->number}}</td>
+                            <td class="celda">{{\App\Services\Fiscal\FiscalIdentity::forDocument($value)['series']}}</td>
+                            <td class="celda">{{\App\Services\Fiscal\FiscalIdentity::forDocument($value)['document_number']}}@include('partials.fiscal_report_control', ['value' => $value])</td>
                             <td class="celda">{{$value->date_of_issue->format('Y-m-d')}}</td>
                             <td class="celda">{{isset($value->invoice) ? $value->invoice->date_of_due->format('Y-m-d'):''}}</td>
                             @if(in_array($document_type->id,["07","08"]) && $value->note)

@@ -71,7 +71,11 @@ class SaleNotePaymentController extends Controller
 
         DB::connection('tenant')->transaction(function () use ($id, $request) {
 
-            $record = SaleNotePayment::firstOrNew(['id' => $id]);
+            // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+            \App\Services\Fiscal\FiscalSaleNotePaymentGuard::lockEditable(DB::connection('tenant'), (int) $request->sale_note_id, auth()->user());
+            $record = $id ? SaleNotePayment::where('sale_note_id', $request->sale_note_id)->find($id) : new SaleNotePayment();
+            abort_unless($record, 404);
+            // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
             $record->fill($request->all());
             $record->save();
             $this->createGlobalPayment($record, $request->all());
@@ -118,14 +122,23 @@ class SaleNotePaymentController extends Controller
 
     public function destroy($id)
     {
-        $item = SaleNotePayment::findOrFail($id);
-        $sale_note_id = $item->sale_note_id;
-        $item->cashDocumentPayments()->delete();
-        $item->delete();
-
-        $sale_note = SaleNote::find($item->sale_note_id);
-        $sale_note->total_canceled = false;
-        $sale_note->save();
+        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+        $sale_note_id = DB::connection('tenant')->transaction(function () use ($id) {
+            $item = SaleNotePayment::find($id);
+            abort_unless($item, 404);
+            \App\Services\Fiscal\FiscalSaleNotePaymentGuard::lockEditable(DB::connection('tenant'), (int) $item->sale_note_id, auth()->user());
+            // Re-read after acquiring the issuer/source locks.
+            $item = SaleNotePayment::where('sale_note_id', $item->sale_note_id)->lockForUpdate()->find($id);
+            abort_unless($item, 404);
+            $sale_note_id = $item->sale_note_id;
+            $item->cashDocumentPayments()->delete();
+            $item->delete();
+            $sale_note = SaleNote::findOrFail($sale_note_id);
+            $sale_note->total_canceled = round((float) $sale_note->payments()->sum('payment'), 2) >= round((float) $sale_note->total, 2);
+            $sale_note->save();
+            return $sale_note_id;
+        });
+        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
 
         $this->createPdf($sale_note_id);
 
