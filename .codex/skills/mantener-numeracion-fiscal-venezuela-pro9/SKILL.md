@@ -5,6 +5,8 @@ description: Mantener numeración y emisión fiscal venezolana de Pro9 por estab
 
 # Numeración y emisión fiscal venezolana
 
+La [referencia técnica HKA, con contraste PDF/Swagger](../../../informes/imprenta_digital_hka_api.md) y el skill de [numeración HKA](../gestionar-numeracion-documentos-hka/SKILL.md) describen un futuro adaptador de imprenta digital. Sus códigos (`01`–`07`, además del `99` DNF publicado sólo en Swagger) son exclusivos del borde HKA: los tipos `01/07/08/09`, las secuencias, las reservas y las validaciones internas de Pro9 permanecen intactos.
+
 ## Contrato del producto
 
 - Instalaciones nuevas: editar el esquema consolidado; nunca convertir ni alterar bases reales para verificarlo.

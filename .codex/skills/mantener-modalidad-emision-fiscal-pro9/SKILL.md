@@ -5,6 +5,8 @@ description: Mantener la modalidad de emisión fiscal y el ambiente de Pro9, el 
 
 # Modalidad de emisión fiscal de Pro9
 
+Para una futura integración con la imprenta digital HKA, consultar [la referencia técnica HKA, incluido el Swagger DEMO](../../../informes/imprenta_digital_hka_api.md) y [conexión API HKA](../conectar-api-hka/SKILL.md). Es documentación preparatoria: no habilita producción ni sustituye las reglas actuales de modalidad y ambiente.
+
 ## Evolución de numeración fiscal
 
 El plan aprobado de SCRUM-39 sustituye la modalidad única por perfiles de establecimiento/canal y añade emisión fiscal con responsabilidades separadas. Para ese trabajo aplicar [mantener-numeracion-fiscal-venezuela-pro9](../mantener-numeracion-fiscal-venezuela-pro9/SKILL.md); las restricciones de modalidad única y ausencia absoluta de controles que siguen abajo describen la etapa anterior. Consultar el informe de numeración para distinguir el contrato objetivo del estado implementado. El bloqueo de ambiente, cifrado, auditoría y retirada de transporte peruano permanecen vigentes.
