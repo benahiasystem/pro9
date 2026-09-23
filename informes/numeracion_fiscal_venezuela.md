@@ -2,27 +2,28 @@
 
 ## Alcance aprobado
 
-Rama desde develop: `codex/numeracion-fiscal-venezuela`. Instalaciones nuevas; ninguna conversión ni modificación de bases reales. Facturas, NC/ND y órdenes de entrega. Perfiles por canal/establecimiento; forma libre y adaptadores simulados para digital/máquina hasta elegir proveedores. Skill de proyecto y pruebas unitarias obligatorios.
+Rama desde develop: `codex/numeracion-fiscal-venezuela`. Instalaciones nuevas; ninguna conversión ni modificación de bases reales. Facturas, NC/ND y órdenes de entrega. Perfiles por canal/establecimiento; forma libre preimpresa como modalidad operativa. Impresora fiscal e imprenta digital permanecen en desarrollo y fuera de la aceptación productiva. Skill de proyecto y pruebas unitarias obligatorios.
 
-## Auditoría de entrega (pendiente hasta disponer de evidencia)
+## Auditoría de entrega vigente (2026-09-22)
 
-- [ ] Configuración por establecimiento/canal, capacidades y grupos dedicados.
-- [ ] Secuencias, lotes y controles con unicidad global por emisor y transacciones.
-- [ ] Estados, instantáneas fiscales, intentos e idempotencia.
-- [ ] Forma libre, impresión, agotamiento, inutilización y reimpresión.
-- [ ] Adaptadores digital/máquina, simulación demo y bloqueo de producción.
-- [ ] Conciliación, resultado incierto y contingencia sin duplicar ventas.
-- [ ] Integración de todos los canales, notas y órdenes de entrega.
-- [ ] PDF, libros, búsqueda, exportaciones, correo y API.
-- [ ] Editor con Guardar/Cancelar, siguiente número real y estados de carga.
-- [ ] Retirada IGV 31556 y código interno de sucursal.
-- [ ] Indicador de modalidad sin promesa de conexión.
-- [ ] Catálogo de capacidades sin ofrecer FE/retenciones no implementados.
-- [ ] Actualización de skills que entren en conflicto y validación del nuevo skill.
-- [ ] Esquema temporal: creación, seeding, integridad, rollback y repetición.
-- [ ] Pruebas de concurrencia, permisos, aislamiento, recuperación y regresión comercial.
-- [ ] Verificación visual de fuentes compiladas y PDF.
-- [ ] Contraste final de normativa, incluida Gaceta de 00084/2026.
+- [x] Configuración por establecimiento/canal, capacidades y grupos dedicados.
+- [x] Secuencias, lotes y controles con unicidad global por emisor y transacciones.
+- [x] Estados, instantáneas fiscales, intentos e idempotencia.
+- [x] Forma libre: impresión, agotamiento, inutilización, reemplazo y reimpresión.
+- [x] Impresora fiscal e imprenta digital visibles como «en desarrollo» y bloqueadas fuera de DEMO.
+- [x] Conciliación, resultado incierto y contingencia sin duplicar ventas.
+- [x] Canales presencial/API/pedidos y documentos 01/07/08/09 mediante forma libre.
+- [x] PDF, libros, búsqueda, exportaciones, correo y API.
+- [x] Editor con Guardar/Cancelar, siguiente número real y estados de carga.
+- [x] Retirada IGV 31556 y código interno de sucursal.
+- [x] Indicador de modalidad sin promesa de conexión.
+- [x] Catálogo de capacidades sin ofrecer FE/retenciones no implementados.
+- [x] Actualización de skills que entren en conflicto y validación del nuevo skill.
+- [x] Esquema temporal: creación, seeding, integridad, rollback y repetición.
+- [x] Pruebas de concurrencia, permisos, aislamiento, recuperación y regresión comercial.
+- [x] Verificación visual de fuentes compiladas y PDF de forma libre.
+- [x] Contraste de la implementación con las providencias documentadas y la factura legal de referencia.
+- [ ] Contraste directo con la tarjeta privada Jira SCRUM-39; Atlassian continúa solicitando inicio de sesión.
 
 ## Avance verificado — primera etapa
 
@@ -540,3 +541,11 @@ El usuario autorizó explícitamente compilar para completar la tarea. La compil
 - El encabezado de BBC fue alineado con la configuración activa: «Modalidad: Forma libre · Impresión manual por establecimiento». La vista móvil deja de mostrar la referencia heredada a SUNAT y presenta el ambiente fiscal y la modalidad configurada.
 - La aceptación visual posterior reveló que el diálogo y el PDF ya usaban el reemplazo, pero el listado seguía mostrando la reserva inutilizada. Se corrigió `FiscalIdentity` para precargar y recorrer toda la cadena de contingencias/reemplazos, y los filtros ahora resuelven la hoja efectiva hasta su reserva comercial raíz. En BBC el listado muestra `DEMO-4 / 90-00000003`; buscar el control nuevo devuelve el documento 3 y buscar el control inutilizado `90-00000002` no lo devuelve como identidad vigente.
 - El PDF A4 de ese documento fue regenerado y revisado: una sola página, estado confirmado, número 4, control `90-00000003`, rango e imprenta de prueba y leyenda «Reemplaza el control inutilizado 90-00000002». Una prueba unitaria adicional cubre una cadena de dos sustituciones y verifica que listado y filtros ignoren el control intermedio inutilizado.
+
+### Cierre de aceptación automatizada de forma libre (2026-09-22)
+
+- La aceptación productiva queda expresamente limitada a **forma libre preimpresa**. Impresora fiscal e imprenta digital permanecen en desarrollo; sus simuladores no se usan como evidencia de aceptación de esta entrega.
+- `FiscalCommercialServiceTest::test_preprinted_free_form_registers_and_confirms_every_document_type_in_scope` crea perfiles de forma libre para Factura 01, Nota de crédito 07, Nota de débito 08 y Orden de entrega 09. Los cuatro consumen controles consecutivos de un único lote, pasan por pendiente de impresión y confirmación, conservan cuatro operaciones comerciales y generan sus auditorías de impresión.
+- Regresión PHP final después de añadir esa aceptación: **739 pruebas, 12.933 aserciones y 12 pruebas MySQL optativas omitidas**, satisfactoria. No se modificaron fuentes frontend en este cierre; se conserva el build ya validado de 32 entradas sin archivos faltantes.
+- La rama actual contiene el commit `c3ba25ef6` sobre `a5d5b1b59`, ambos descendientes directos de `develop` en `ea264971d`. Esto confirma que las modificaciones recuperadas no se perdieron y quedaron consolidadas en `codex/numeracion-fiscal-venezuela`.
+- Única dependencia externa pendiente: leer y contrastar el contenido privado de Jira SCRUM-39. La pestaña disponible redirige al inicio de sesión de Atlassian; no se infiere el contenido de la tarjeta mientras permanezca inaccesible.

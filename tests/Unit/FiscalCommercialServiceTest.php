@@ -3,6 +3,7 @@
 namespace Tests\Unit;
 
 use App\Services\Fiscal\FiscalCommercialService;
+use App\Services\Fiscal\FiscalEmissionService;
 use App\Services\FiscalProfileService;
 use Tests\Support\FiscalDatabaseTestCase;
 
@@ -158,6 +159,46 @@ class FiscalCommercialServiceTest extends FiscalDatabaseTestCase
         $this->assertSame(1, $calls);
         $this->assertSame($first->id, $retry->id);
         $this->assertSame(1, $this->db->table('documents')->count());
+    }
+
+    public function test_preprinted_free_form_registers_and_confirms_every_document_type_in_scope(): void
+    {
+        $lot = $this->repository->createLot([
+            'establishment_id' => 1, 'printer_name' => 'Imprenta autorizada', 'printer_rif' => 'J000000000',
+            'authorization' => 'TEST ONLY', 'authorization_date' => '2026-09-01', 'prepared_at' => '2026-09-01',
+            'start' => '00-1', 'end' => '00-10',
+        ]);
+        $profiles = new FiscalProfileService($this->db);
+        $commercial = new FiscalCommercialService($this->db);
+        $emission = new FiscalEmissionService($this->db);
+        $this->db->table('companies')->update(['fiscal_environment' => 'production']);
+
+        foreach (['01', '07', '08', '09'] as $offset => $type) {
+            $profile = $profiles->save(1, [
+                'name' => 'Forma libre ' . $type, 'channel' => 'presential', 'document_type_id' => $type,
+                'mode' => 'free_form', 'sequence_id' => $this->repository->createSequence($type, '', 1, 1),
+                'control_lot_id' => $lot, 'provider' => 'none', 'configuration' => ['page_capacity' => 10],
+                'active' => true,
+            ], 1);
+            $table = $type === '09' ? 'dispatches' : 'documents';
+            $reservation = $commercial->register(
+                $profile['id'], 'free-form-' . $type, hash('sha256', 'free-form-' . $type), 1, 'presential',
+                fn (array $identifiers): int => $this->write($identifiers, $table), null,
+                fn (object $draft) => \App\Services\Fiscal\FiscalPdfData::assertItemCapacity(
+                    json_decode($draft->fiscal_snapshot, true, 512, JSON_THROW_ON_ERROR), 1
+                )
+            );
+
+            $this->assertSame(sprintf('00-%08d', $offset + 1), $reservation->control_number);
+            $this->assertSame('awaiting_print', $emission->process($reservation->id)->status);
+            $this->assertSame('issued', $emission->confirmPrinted($reservation->id, 1)->status);
+        }
+
+        $this->assertSame(3, $this->db->table('documents')->count());
+        $this->assertSame(1, $this->db->table('dispatches')->count());
+        $this->assertSame(8, $this->db->table('commercial_effects')->count());
+        $this->assertSame(4, $this->db->table('fiscal_numbering_audits')->where('action', 'confirm_print')->count());
+        $this->assertSame(5, (int) $this->db->table('fiscal_control_lots')->value('next_ordinal'));
     }
 }
 // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
