@@ -765,6 +765,55 @@ class FiscalEmissionSchemaTest extends TestCase
             }
             (new \Database\Seeders\TenancyDatabaseSeeder())->setContainer(Container::getInstance())->run();
             $this->assertFiscalSchema($db);
+            // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+            $providerRows = $db->table('cat_providers_types')->orderBy('id')->get(['id', 'code', 'description', 'active'])
+                ->map(static fn ($row): array => [(int) $row->id, $row->code, $row->description, (int) $row->active])
+                ->all();
+            self::assertSame([
+                [1, null, 'Normal', 1],
+                [2, 'SR', 'Sin RIF', 1],
+                [3, 'NR', 'No Residenciado', 1],
+                [4, 'ND', 'No Domiciliado', 1],
+            ], $providerRows);
+            $providerPrimaryKey = $db->select("SHOW INDEX FROM `cat_providers_types` WHERE Key_name = 'PRIMARY'");
+            self::assertCount(1, $providerPrimaryKey);
+            self::assertSame('id', $providerPrimaryKey[0]->Column_name);
+            $providerCodeIndex = $db->select("SHOW INDEX FROM `cat_providers_types` WHERE Key_name = 'cat_providers_types_code_unique'");
+            self::assertCount(1, $providerCodeIndex);
+            self::assertSame('code', $providerCodeIndex[0]->Column_name);
+            self::assertSame(0, (int) $providerCodeIndex[0]->Non_unique);
+
+            $regimeRows = $db->table('cat_special_tax_regime')->orderBy('id')->get(['id', 'description', 'active'])
+                ->map(static fn ($row): array => [(int) $row->id, $row->description, (int) $row->active])
+                ->all();
+            self::assertSame([
+                [1, 'Zonas económicas especiales', 1],
+                [2, 'Zona franca de Paraguaná', 1],
+                [3, 'Zona libre de Paraguaná', 1],
+                [4, 'Puerto libre Santa Elena de Uairén', 1],
+                [5, 'Zona Libre de Mérida', 1],
+                [6, 'Puerto libre Estado Nueva Esparta', 1],
+                [7, 'Dutty Free', 1],
+            ], $regimeRows);
+            $regimePrimaryKey = $db->select("SHOW INDEX FROM `cat_special_tax_regime` WHERE Key_name = 'PRIMARY'");
+            self::assertCount(1, $regimePrimaryKey);
+            self::assertSame('id', $regimePrimaryKey[0]->Column_name);
+
+            $transactionRows = $db->table('cat_transactions_types')->orderBy('id')->get(['id', 'description', 'active'])
+                ->map(static fn ($row): array => [(string) $row->id, $row->description, (int) $row->active])
+                ->all();
+            self::assertSame([
+                ['01', 'Registro', 1],
+                ['02', 'Complemento', 1],
+                ['03', 'Anulación', 1],
+                ['04', 'Ajuste', 1],
+                ['98', 'ND por IGTF', 1],
+                ['99', 'Solo cuando la factura es a Terceros', 1],
+            ], $transactionRows);
+            $primaryKey = $db->select("SHOW INDEX FROM `cat_transactions_types` WHERE Key_name = 'PRIMARY'");
+            self::assertCount(1, $primaryKey);
+            self::assertSame('id', $primaryKey[0]->Column_name);
+            // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
             $current = $this->schemaSnapshot($db);
             if (getenv('PRO9_EXPORT_CONTRACT') === '1') {
                 file_put_contents('/tmp/pro9-fresh-final-schema.json', json_encode($current, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));

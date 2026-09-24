@@ -20,7 +20,7 @@ Pro9 conserva sus tipos, números, series, controles, reservas, secuencias, vali
 | Orden de entrega | `09` | `04` (nota de entrega/guía) | Igual; conservar el nombre y contrato internos de dispatch. |
 | Retención IVA | Sin correspondencia fiscal Pro9 definida | `05` | Documentar; no crear tipo interno por inferencia. |
 | Retención ISLR | Sin correspondencia fiscal Pro9 definida | `06` | Igual. |
-| Retenciones varias ARCV | Sin correspondencia fiscal Pro9 definida | `07` | `07` HKA **no** significa nota de crédito Pro9. |
+| Retenciones varias ARCV | `ARCV` (sólo catálogo; emisión pendiente) | `07` | `07` HKA **no** significa nota de crédito Pro9. |
 
 La numeración documental local y el número de control asignado por la imprenta son identidades distintas. `AsignarNumeraciones` y la respuesta de emisión deben conciliarse con la reserva fiscal local, respetando idempotencia y estados inciertos. Los códigos monetarios, unidades, IVA, identidad del cliente y medios de pago también necesitan mapeos de borde; no se reemplazan catálogos Pro9 con tablas HKA. [Fuente: pp. 9, 14–15, 37–40; contratos Pro9 citados arriba.]
 
@@ -164,14 +164,14 @@ Para `07` HKA (ARCV), el manual define además: `Banderas adicionales (ARCV)` co
 
 ## 5. Catálogos HKA (sección 6, pp. 37–40)
 
-Estos valores sirven para el **payload HKA**. No sustituir catálogos de tenant ni códigos de documento de Pro9.
+Estos valores sirven para el **payload HKA**. Los catálogos HKA de proveedores, transacciones y regímenes especiales se conservan en la base tenant, pero sus identificadores no sustituyen los catálogos comerciales ni los tipos de documento de Pro9.
 
 | # | Catálogo y valores documentados |
 |---:|---|
 | 1 | Tipo fiscal: factura `01`, NC `02`, ND `03`, nota de entrega/guía `04`, retención IVA `05`, retención ISLR `06`, ARCV `07`. |
-| 2 | Proveedor: normal `null`, sin RIF `SR`, no residenciado `NR`, no domiciliado `ND`. |
-| 3 | Transacción: registro `01`, complemento `02`, anulación `03`, ajuste `04`, ND IGTF `98`, factura a terceros `99`. |
-| 4 | Régimen especial: zonas económicas especiales, zona franca/libre de Paraguaná, Puerto Libre Santa Elena de Uairén, Zona Libre de Mérida, Puerto Libre Nueva Esparta, duty free. No se publican códigos. |
+| 2 | Proveedor: normal `null`, sin RIF `SR`, no residenciado `NR`, no domiciliado `ND`. Pro9 conserva estos cuatro registros en `cat_providers_types`: `code` es el valor HKA y los IDs numéricos son locales. |
+| 3 | Transacción: registro `01`, complemento `02`, anulación `03`, ajuste `04`, ND IGTF `98`, factura a terceros `99`. Pro9 conserva estos seis valores en `cat_transactions_types` para el futuro campo HKA `tipoTransaccion`. El `99` requiere una factura a terceros; el catálogo por sí solo no valida esa condición. |
+| 4 | Régimen especial: zonas económicas especiales, zona franca y zona libre de Paraguaná, Puerto libre Santa Elena de Uairén, Zona Libre de Mérida, Puerto libre Estado Nueva Esparta y Dutty Free. Pro9 conserva los siete nombres en `cat_special_tax_regime`; el manual no publica códigos HKA y sus IDs son locales. |
 | 5 | Venta: interna o exportación con INCOTERM `FOB`, `CIF`, `EXW`; sin códigos adicionales. |
 | 6 | Concepto ISLR: remite a `MT_Retenciones ISLR3.0_2014`; no incorpora el catálogo de conceptos. |
 | 7 | Moneda: remite a ISO 4217; la tabla ejemplifica `VED` y `USD`, mientras otras páginas usan `VEF`, `VES`, `BsD`. Confirmar código VES aceptado. |
@@ -185,6 +185,8 @@ Estos valores sirven para el **payload HKA**. No sustituir catálogos de tenant 
 | 15 | Producto: alcohol, cigarrillos. Sin códigos publicados. |
 | 16 | Origen: nacional, importado, nacional e importado. Sin códigos publicados. |
 | 17 | Tributación/destino: tierra firme, régimen especial. Sin códigos publicados. |
+
+`tipoTransaccion` utiliza los códigos del catálogo 3. `transaccionId` es otro campo: identifica una solicitud de emisión o asignación y no consulta `cat_transactions_types`. Los tipos de transacción de caja de Pro9 también son independientes.
 
 ## 6. Respuestas, errores y recuperación (sección 7, pp. 40–43)
 

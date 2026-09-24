@@ -38,7 +38,7 @@ class SalesDocumentTypePolicyTest extends TestCase
 
     public static function nonInvoiceTypes(): array
     {
-        return [['80'], ['09'], ['20'], ['99'], [null]];
+        return [['80'], ['09'], ['20'], ['ARCV'], ['99'], [null]];
     }
 
     /** @test */
@@ -126,6 +126,7 @@ class SalesDocumentTypePolicyTest extends TestCase
         }
 
         self::assertNull(SeriesCodeGenerator::typeByDocumentType('NE76'));
+        self::assertNull(SeriesCodeGenerator::typeByDocumentType('ARCV'));
         self::assertNull(SeriesCodeGenerator::typeByDocumentType('04'));
         self::assertNull(SeriesCodeGenerator::typeByDocumentType('40'));
     }

@@ -1155,7 +1155,16 @@ return array (
           'description' => 'COMPROBANTE DE RETENCIÓN DE I.S.L.R.',
           'is_sunat' => 1,
         ),
+        // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
         6 =>
+        array (
+          'id' => 'ARCV',
+          'active' => 1,
+          'short' => NULL,
+          'description' => 'COMPROBANTE DE RETENCIONES VARIAS ARCV',
+          'is_sunat' => 1,
+        ),
+        7 =>
         array (
           'id' => '09',
           'active' => 1,
@@ -1163,7 +1172,7 @@ return array (
           'description' => 'ORDEN DE ENTREGA',
           'is_sunat' => 1,
         ),
-        7 =>
+        8 =>
         array (
           'id' => 'CBU',
           'active' => 1,
@@ -1171,7 +1180,7 @@ return array (
           'description' => 'CERTIFICACIÓN DE COMPRA DE BIENES USADOS',
           'is_sunat' => 1,
         ),
-        8 =>
+        9 =>
         array (
           'id' => '80',
           'active' => 1,
@@ -1179,7 +1188,7 @@ return array (
           'description' => 'NOTA DE VENTA',
           'is_sunat' => 1,
         ),
-        9 =>
+        10 =>
         array (
           'id' => 'U2',
           'active' => 1,
@@ -1187,7 +1196,7 @@ return array (
           'description' => 'NOTA DE INGRESO ALMACÉN',
           'is_sunat' => 1,
         ),
-        10 =>
+        11 =>
         array (
           'id' => 'U3',
           'active' => 1,
@@ -1195,7 +1204,7 @@ return array (
           'description' => 'NOTA DE SALIDA ALMACÉN',
           'is_sunat' => 1,
         ),
-        11 =>
+        12 =>
         array (
           'id' => 'U4',
           'active' => 1,
@@ -1203,7 +1212,7 @@ return array (
           'description' => 'NOTA DE TRANSFERENCIA ALMACÉN',
           'is_sunat' => 1,
         ),
-        12 =>
+        13 =>
         array (
           'id' => 'NE76',
           'active' => 1,
@@ -1211,6 +1220,7 @@ return array (
           'description' => 'NOTA DE ENTRADA',
           'is_sunat' => 1,
         ),
+        // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
       ),
     ),
     'cat_identity_document_types' =>
@@ -1477,6 +1487,46 @@ return array (
         ),
       ),
     ),
+    // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+    'cat_providers_types' =>
+    array (
+      'key_columns' =>
+      array (
+        0 => 'id',
+      ),
+      'rows' =>
+      array (
+        0 =>
+        array (
+          'id' => 1,
+          'code' => NULL,
+          'description' => 'Normal',
+          'active' => 1,
+        ),
+        1 =>
+        array (
+          'id' => 2,
+          'code' => 'SR',
+          'description' => 'Sin RIF',
+          'active' => 1,
+        ),
+        2 =>
+        array (
+          'id' => 3,
+          'code' => 'NR',
+          'description' => 'No Residenciado',
+          'active' => 1,
+        ),
+        3 =>
+        array (
+          'id' => 4,
+          'code' => 'ND',
+          'description' => 'No Domiciliado',
+          'active' => 1,
+        ),
+      ),
+    ),
+    // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
     'cat_retention_types' =>
     array (
       'key_columns' =>
@@ -1501,6 +1551,108 @@ return array (
         ),
       ),
     ),
+    // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+    'cat_special_tax_regime' =>
+    array (
+      'key_columns' =>
+      array (
+        0 => 'id',
+      ),
+      'rows' =>
+      array (
+        0 =>
+        array (
+          'id' => 1,
+          'description' => 'Zonas económicas especiales',
+          'active' => 1,
+        ),
+        1 =>
+        array (
+          'id' => 2,
+          'description' => 'Zona franca de Paraguaná',
+          'active' => 1,
+        ),
+        2 =>
+        array (
+          'id' => 3,
+          'description' => 'Zona libre de Paraguaná',
+          'active' => 1,
+        ),
+        3 =>
+        array (
+          'id' => 4,
+          'description' => 'Puerto libre Santa Elena de Uairén',
+          'active' => 1,
+        ),
+        4 =>
+        array (
+          'id' => 5,
+          'description' => 'Zona Libre de Mérida',
+          'active' => 1,
+        ),
+        5 =>
+        array (
+          'id' => 6,
+          'description' => 'Puerto libre Estado Nueva Esparta',
+          'active' => 1,
+        ),
+        6 =>
+        array (
+          'id' => 7,
+          'description' => 'Dutty Free',
+          'active' => 1,
+        ),
+      ),
+    ),
+    // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
+    // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+    'cat_transactions_types' =>
+    array (
+      'key_columns' =>
+      array (
+        0 => 'id',
+      ),
+      'rows' =>
+      array (
+        0 =>
+        array (
+          'id' => '01',
+          'description' => 'Registro',
+          'active' => 1,
+        ),
+        1 =>
+        array (
+          'id' => '02',
+          'description' => 'Complemento',
+          'active' => 1,
+        ),
+        2 =>
+        array (
+          'id' => '03',
+          'description' => 'Anulación',
+          'active' => 1,
+        ),
+        3 =>
+        array (
+          'id' => '04',
+          'description' => 'Ajuste',
+          'active' => 1,
+        ),
+        4 =>
+        array (
+          'id' => '98',
+          'description' => 'ND por IGTF',
+          'active' => 1,
+        ),
+        5 =>
+        array (
+          'id' => '99',
+          'description' => 'Solo cuando la factura es a Terceros',
+          'active' => 1,
+        ),
+      ),
+    ),
+    // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
     'cat_transfer_reason_types' =>
     array (
       'key_columns' =>

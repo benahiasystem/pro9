@@ -20,6 +20,8 @@ class CatalogNamesMigrationContractTest extends TestCase
         self::assertSame('NOTA DE DÉBITO', $documentTypes['08']['description']);
         self::assertSame('COMPROBANTE DE RETENCIÓN DE IVA', $documentTypes['20']['description']);
         self::assertSame('COMPROBANTE DE RETENCIÓN DE I.S.L.R.', $documentTypes['ISLR']['description']);
+        self::assertSame('COMPROBANTE DE RETENCIONES VARIAS ARCV', $documentTypes['ARCV']['description']);
+        self::assertSame(1, (int) $documentTypes['ARCV']['active']);
         self::assertSame('ORDEN DE ENTREGA', $documentTypes['09']['description']);
         self::assertSame('CERTIFICACIÓN DE COMPRA DE BIENES USADOS', $documentTypes['CBU']['description']);
         self::assertSame('NOTA DE TRANSFERENCIA ALMACÉN', $documentTypes['U4']['description']);
@@ -28,7 +30,7 @@ class CatalogNamesMigrationContractTest extends TestCase
         self::assertSame('Factura de venta', $appModules[1]['description']);
 
         self::assertSame(
-            ['01', 'FE', '07', '08', '20', 'ISLR', '09', 'CBU', '80', 'U2', 'U3', 'U4', 'NE76'],
+            ['01', 'FE', '07', '08', '20', 'ISLR', 'ARCV', '09', 'CBU', '80', 'U2', 'U3', 'U4', 'NE76'],
             array_map('strval', array_keys($documentTypes))
         );
         self::assertSame(['01', '80'], DocumentType::SALE_DOCUMENT_TYPES);

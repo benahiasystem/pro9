@@ -19,6 +19,7 @@ class VenezuelaInitialCatalogContractTest extends TestCase
                 '07' => 'NOTA DE CRÉDITO', '08' => 'NOTA DE DÉBITO',
                 '20' => 'COMPROBANTE DE RETENCIÓN DE IVA',
                 'ISLR' => 'COMPROBANTE DE RETENCIÓN DE I.S.L.R.',
+                'ARCV' => 'COMPROBANTE DE RETENCIONES VARIAS ARCV',
                 '09' => 'ORDEN DE ENTREGA', 'CBU' => 'CERTIFICACIÓN DE COMPRA DE BIENES USADOS',
                 '80' => 'NOTA DE VENTA', 'U2' => 'NOTA DE INGRESO ALMACÉN',
                 'U3' => 'NOTA DE SALIDA ALMACÉN', 'U4' => 'NOTA DE TRANSFERENCIA ALMACÉN',
@@ -49,6 +50,25 @@ class VenezuelaInitialCatalogContractTest extends TestCase
                 '03' => 'Gastos de despacho, fletes, seguros o embalaje',
             ],
             'cat_operation_types' => ['0101' => 'Venta interna', '0200' => 'Exportación de Bienes'],
+            // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+            'cat_providers_types' => [
+                1 => 'Normal', 2 => 'Sin RIF', 3 => 'No Residenciado', 4 => 'No Domiciliado',
+            ],
+            'cat_transactions_types' => [
+                '01' => 'Registro', '02' => 'Complemento', '03' => 'Anulación',
+                '04' => 'Ajuste', '98' => 'ND por IGTF',
+                '99' => 'Solo cuando la factura es a Terceros',
+            ],
+            'cat_special_tax_regime' => [
+                1 => 'Zonas económicas especiales',
+                2 => 'Zona franca de Paraguaná',
+                3 => 'Zona libre de Paraguaná',
+                4 => 'Puerto libre Santa Elena de Uairén',
+                5 => 'Zona Libre de Mérida',
+                6 => 'Puerto libre Estado Nueva Esparta',
+                7 => 'Dutty Free',
+            ],
+            // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
             'cat_transfer_reason_types' => [
                 '01' => 'Venta',
                 '04' => 'Traslado entre almacenes',
@@ -61,6 +81,26 @@ class VenezuelaInitialCatalogContractTest extends TestCase
 
         foreach ($expected as $table => $rows) {
             self::assertSame($rows, $this->descriptionsById($table), $table);
+        }
+
+        $transactions = $this->rows('cat_transactions_types');
+        self::assertSame(['01', '02', '03', '04', '98', '99'], array_column($transactions, 'id'));
+        foreach ($transactions as $transaction) {
+            self::assertSame(1, (int) $transaction['active']);
+        }
+
+        $providers = $this->rows('cat_providers_types');
+        self::assertSame([1, 2, 3, 4], array_column($providers, 'id'));
+        self::assertSame([null, 'SR', 'NR', 'ND'], array_column($providers, 'code'));
+        foreach ($providers as $provider) {
+            self::assertSame(1, (int) $provider['active']);
+        }
+
+        $regimes = $this->rows('cat_special_tax_regime');
+        self::assertSame([1, 2, 3, 4, 5, 6, 7], array_column($regimes, 'id'));
+        foreach ($regimes as $regime) {
+            self::assertSame(1, (int) $regime['active']);
+            self::assertSame(['id', 'description', 'active'], array_keys($regime));
         }
     }
 
