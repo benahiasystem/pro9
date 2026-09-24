@@ -577,6 +577,7 @@
 import PersonForm from "@views/persons/form.vue";
 import moment from "moment";
 import {calculateRowItem} from "@helpers/functions";
+import {ensureExchangeRateSale} from "@helpers/ensure-exchange-rate-sale";
 import {functions} from "@mixins/functions";
 import {mapState} from "vuex/dist/vuex.mjs";
 import QuantityPersons from './partials/QuantityPersons.vue';
@@ -995,6 +996,9 @@ export default {
                 this.document.hotel_data_persons = this.form.data_persons
                 this.loading = true;
 
+                // ######## INICIO MONEDA VENEZUELA HOTEL ########
+                await ensureExchangeRateSale(this.document, this.$http);
+                // ######## FIN MONEDA VENEZUELA HOTEL ########
                 const response = await this.$http.post(`/${this.resource_documents}`, this.document);
 
                 if (response.data.success) {
@@ -1010,7 +1014,7 @@ export default {
                 if (error.response) {
                     this.errors = error.response.data;
                 } else {
-                    this.$message.error(error.response.data.message || "Error inesperado");
+                    this.$message.error(error.message || "Error inesperado");
                 }
             } finally {
                 this.loading = false;

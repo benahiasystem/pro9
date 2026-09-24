@@ -419,6 +419,7 @@ import moment from "moment";
 import DocumentOptions from "@views/documents/partials/options.vue";
 import SaleNoteOptions from "@views/sale_notes/partials/options.vue";
 import {calculateRowItem} from "@helpers/functions";
+import {ensureExchangeRateSale} from "@helpers/ensure-exchange-rate-sale";
 import {exchangeRate, functions} from "@mixins/functions";
 import {mapActions, mapState} from "vuex/dist/vuex.mjs";
 
@@ -746,6 +747,13 @@ export default {
             if(!validate_total_payments.success) return this.$message.error(validate_total_payments.message)
 
             this.updateDataForSend()
+            // ######## INICIO MONEDA VENEZUELA HOTEL ########
+            try {
+                await ensureExchangeRateSale(this.document, this.$http);
+            } catch (error) {
+                return this.$message.error(error.message || 'No se pudo obtener el tipo de cambio.');
+            }
+            // ######## FIN MONEDA VENEZUELA HOTEL ########
             this.loading = true;
             this.$http
                 .post(`/${this.resource_documents}`, this.document)

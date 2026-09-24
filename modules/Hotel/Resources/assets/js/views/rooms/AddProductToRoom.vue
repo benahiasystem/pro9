@@ -276,6 +276,7 @@
 <script>
 // import DocumentFormItem from "@views/documents/partials/item.vue";
 import {functions} from "@mixins/functions";
+import {ensureExchangeRateSale} from "@helpers/ensure-exchange-rate-sale";
 import moment from "moment";
 import {mapState} from "vuex/dist/vuex.mjs";
 import SaleNoteOptions from "@views/sale_notes/partials/options.vue";
@@ -643,6 +644,9 @@ export default {
 
                 this.loading = true;
 
+                // ######## INICIO MONEDA VENEZUELA HOTEL ########
+                await ensureExchangeRateSale(this.document, this.$http);
+                // ######## FIN MONEDA VENEZUELA HOTEL ########
                 const response = await this.$http.post(`/${this.resource_documents}`, this.document);
 
                 if (response.data.success) {
@@ -658,7 +662,7 @@ export default {
                 if (error.response) {
                     this.errors = error.response.data;
                 } else {
-                    this.$message.error(error.response.data.message || "Error inesperado");
+                    this.$message.error(error.message || "Error inesperado");
                 }
             } finally {
                 this.loading = false;
