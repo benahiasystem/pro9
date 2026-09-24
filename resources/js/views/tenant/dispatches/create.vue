@@ -1265,7 +1265,9 @@ export default {
                 transfer_reason_description: null,
                 transshipment_indicator: false,
                 port_code: null,
-                unit_type_id: 'KGM',
+                // ######## INICIO CONTRATO UNIDADES DE MEDIDA VENEZUELA ########
+                unit_type_id: 'KG',
+                // ######## FIN CONTRATO UNIDADES DE MEDIDA VENEZUELA ########
                 total_weight: 0,
                 packages_number: 0,
                 container_number: null,
@@ -1979,8 +1981,9 @@ export default {
 
                 // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
                 const data = error.response && error.response.data;
-                this.errors = (data && data.errors) || {};
-                this.$message.error((data && data.message) || 'No se pudo registrar la orden. Puede reintentar la misma operación.');
+                this.errors = (data && data.errors) || (error.response && error.response.status === 422 && data) || {};
+                const firstError = Object.values(this.errors).find(messages => Array.isArray(messages) && messages.length);
+                this.$message.error((data && data.message) || (firstError && firstError[0]) || 'No se pudo registrar la orden. Puede reintentar la misma operación.');
                 // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
             }).then(() => {
                 this.loading_submit = false;
