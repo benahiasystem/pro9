@@ -512,14 +512,16 @@ class DispatchController extends Controller
 
         $transferReasonTypes = TransferReasonType::whereActive()->get();
         $transportModeTypes = TransportModeType::whereActive()->get();
+        // ######## INICIO CONTRATO UNIDADES DE MEDIDA VENEZUELA ########
         $unitTypes = UnitType::query()
             ->where('active', true)
             ->whereIn('id', ['KG', 'TON'])->get()->transform(function ($r) {
                 return [
                     'id' => $r->id,
-                    'name' => func_str_to_upper_utf8($r->description)
+                    'description' => $r->description,
                 ];
             });
+        // ######## FIN CONTRATO UNIDADES DE MEDIDA VENEZUELA ########
 
         // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
         $establishments = Establishment::where('id', auth()->user()->establishment_id)->get();

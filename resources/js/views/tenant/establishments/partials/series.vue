@@ -252,9 +252,15 @@
                 return Array.from(map.values()).sort((a, b) => a.number.localeCompare(b.number))
             },
         },
+        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
         async created() {
             await this.getTables()
+            // El componente interno se monta con showDialog=true desde el padre (v-if).
+            // En ese primer montaje Element UI puede no emitir @open, así que carga
+            // los registros aquí también para que el listado no dependa de crear una serie.
+            if (this.showDialog) await this.getData()
         },
+        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
         methods: {
             emptyForm() {
                 return {seriesTypeKey: null, number: '', mode: 'auto', correlative: 1, emission: 'normal', error: ''}

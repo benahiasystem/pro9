@@ -832,8 +832,11 @@ export default {
                 }
             }).catch(error => {
                 const data = error.response && error.response.data;
-                this.errors = (data && data.errors) || {};
-                this.$message.error((data && data.message) || 'No se pudo registrar la orden. Puede reintentar la misma operación.');
+                // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+                this.errors = (data && data.errors) || (error.response && error.response.status === 422 && data) || {};
+                const firstError = Object.values(this.errors).find(messages => Array.isArray(messages) && messages.length);
+                this.$message.error((data && data.message) || (firstError && firstError[0]) || 'No se pudo registrar la orden. Puede reintentar la misma operación.');
+                // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
             }).then(() => {
                 this.loading_submit = false;
             });

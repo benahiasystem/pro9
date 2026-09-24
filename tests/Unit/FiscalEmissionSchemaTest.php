@@ -140,6 +140,31 @@ class FiscalEmissionSchemaTest extends TestCase
         $item = \App\Models\Tenant\Item::where('internal_id', 'MOCK-ITEM-VES-001')->firstOrFail();
         $db->table('item_warehouse')->insert(['item_id' => $item->id, 'warehouse_id' => $warehouse, 'stock' => 22]);
         $customer = \App\Models\Tenant\Person::where('number', 'MOCK-CLIENTE-VE')->firstOrFail();
+        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+        $originAddress = $db->table('origin_addresses')->insertGetId([
+            'address' => 'HTTP origen', 'location_id' => json_encode(['14', '0229', '000619']),
+            'country_id' => 'VE', 'establishment_id' => $establishment, 'establishment_code' => '0000',
+        ]);
+        $deliveryAddress = $db->table('dispatch_addresses')->insertGetId([
+            'person_id' => $customer->id, 'address' => 'HTTP destino',
+            'location_id' => json_encode(['14', '0229', '000619']), 'establishment_code' => '0000',
+        ]);
+        $webDispatch = [
+            'operation_key' => 'http-web-dispatch-retry', 'document_type_id' => '09',
+            'establishment_id' => $establishment, 'series' => null, 'number' => '#',
+            'date_of_issue' => '2026-09-13', 'time_of_issue' => '12:00:00', 'date_of_shipping' => '2026-09-13',
+            'customer_id' => $customer->id, 'observations' => '',
+            'transport_mode_type_id' => '02', 'transfer_reason_type_id' => '01',
+            'transshipment_indicator' => false, 'port_code' => null,
+            'unit_type_id' => 'KG', 'total_weight' => 1, 'packages_number' => 1, 'container_number' => null,
+            'origin_address_id' => $originAddress, 'delivery_address_id' => $deliveryAddress,
+            'origin' => ['country_id' => 'VE', 'address' => 'HTTP origen', 'location_id' => ['14', '0229', '000619'], 'code' => '0000'],
+            'delivery' => ['country_id' => 'VE', 'address' => 'HTTP destino', 'location_id' => ['14', '0229', '000619'], 'code' => '0000'],
+            'driver' => ['identity_document_type_id' => '1', 'number' => 'V12345678', 'name' => 'HTTP conductor', 'license' => 'TEST', 'telephone' => '04121234567'],
+            'items' => [['item_id' => $item->id, 'description' => $item->description, 'unit_type_id' => 'UND', 'quantity' => 1]],
+            'reference_documents' => [],
+        ];
+        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
         $invoice = [
             'operation_key' => 'http-invoice-retry', 'document_type_id' => '01', 'group_id' => '01', 'type' => 'invoice',
             'establishment_id' => $establishment, 'customer_id' => $customer->id,
@@ -333,6 +358,13 @@ class FiscalEmissionSchemaTest extends TestCase
             ['path' => '/documents/{subject}/fiscal', 'user_id' => $admin, 'subject_operation_key' => 'http-print-replacement'],
             ['path' => '/documents/{subject}/fiscal/confirm-print', 'method' => 'POST', 'user_id' => $admin, 'subject_operation_key' => 'http-print-replacement'],
             ['path' => '/documents/{subject}/fiscal', 'user_id' => $admin, 'subject_operation_key' => 'http-print-replacement'],
+            // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+            ['path' => $path . '/lots', 'method' => 'POST', 'user_id' => $admin, 'body' => ['start' => '00-30', 'end' => '00-33', 'printer_name' => 'HTTP dispatch printer', 'printer_rif' => 'J000000000', 'authorization' => 'TEST DISPATCH', 'authorization_date' => '2026-09-01', 'prepared_at' => '2026-09-01']],
+            ['path' => $path . '/profiles', 'method' => 'POST', 'user_id' => $admin, 'body' => ['name' => 'HTTP web delivery', 'channel' => 'presential', 'document_type_id' => '09', 'mode' => 'free_form', 'sequence_id' => 2, 'control_lot_id' => 3, 'provider' => 'none', 'configuration' => ['page_capacity' => 10], 'active' => true]],
+            ['path' => '/dispatches/tables', 'method' => 'POST', 'user_id' => $admin],
+            ['path' => '/dispatches', 'method' => 'POST', 'user_id' => $admin, 'body' => $webDispatch],
+            ['path' => '/dispatches', 'method' => 'POST', 'user_id' => $admin, 'body' => $webDispatch],
+            // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
         ]], JSON_THROW_ON_ERROR));
         $process->setTimeout(60);
         $process->run();
@@ -340,7 +372,7 @@ class FiscalEmissionSchemaTest extends TestCase
         $output = explode("\nFISCAL_HTTP_RESULT\n", $process->getOutput(), 2);
         self::assertCount(2, $output, substr($process->getOutput(), -2000));
         $responses = json_decode($output[1], true, 512, JSON_THROW_ON_ERROR);
-        self::assertSame([401, 403, 200, 422, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 401, 401, 200, 200, 200, 422, 422, 404, 200, 201, 403, 200, 200, 200, 200, 200, 201, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 404, 422, 422, 422, 201, 404, 200, 200, 422, 200, 200, 200, 200, 422, 422, 404, 422, 422, 403, 200, 200, 422, 200, 200, 200, 200, 200, 201, 200, 200, 200, 200, 201, 201, 200, 200, 403, 200, 200, 200, 200, 200, 422, 403, 422, 422, 200, 422, 422, 201, 200, 200, 422, 405, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 403, 200, 200, 200, 200, 200], array_column($responses, 'status'), json_encode($responses));
+        self::assertSame([401, 403, 200, 422, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 401, 401, 200, 200, 200, 422, 422, 404, 200, 201, 403, 200, 200, 200, 200, 200, 201, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 404, 422, 422, 422, 201, 404, 200, 200, 422, 200, 200, 200, 200, 422, 422, 404, 422, 422, 403, 200, 200, 422, 200, 200, 200, 200, 200, 201, 200, 200, 200, 200, 201, 201, 200, 200, 403, 200, 200, 200, 200, 200, 422, 403, 422, 422, 200, 422, 422, 201, 200, 200, 422, 405, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 403, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200], array_column($responses, 'status'), json_encode(array_slice($responses, -5)));
         self::assertSame('awaiting_print', $responses[117]['body']['data']['fiscal']['status']);
         self::assertSame('00-00000020', $responses[118]['body']['data']['control_number']);
         self::assertSame('inutilized', $responses[119]['body']['data']['status']);
@@ -475,8 +507,8 @@ class FiscalEmissionSchemaTest extends TestCase
         self::assertCount(1, $responses[48]['body']['data']);
         self::assertSame([], $responses[49]['body']['data']);
         self::assertSame(0, $db->table('fiscal_number_reservations')->whereIn('operation_key', ['http-invalid-location', 'http-missing-driver'])->count());
-        self::assertSame(1, $db->table('dispatches')->count());
-        self::assertSame(1, $db->table('dispatch_items')->count());
+        self::assertSame(2, $db->table('dispatches')->count());
+        self::assertSame(2, $db->table('dispatch_items')->count());
         self::assertSame(0, $db->table('persons')->where('name', 'Rejected dispatch change')->count());
         self::assertSame(11, (int) $db->table('fiscal_sequences')->where('id', 2)->value('next_number'));
         self::assertSame(1, $responses[7]['body']['data']['fiscal']['profile_id']);

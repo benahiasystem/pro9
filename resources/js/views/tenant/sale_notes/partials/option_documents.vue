@@ -263,6 +263,7 @@
     import DocumentOptions from '../../documents/partials/options.vue'
     import FiscalProfileSummary from '../../../../components/FiscalProfileSummary.vue'
     import { newFiscalOperationKey } from '../../../../helpers/fiscal-operation'
+    import { ensureExchangeRateSale } from '../../../../helpers/ensure-exchange-rate-sale'
     import moment from "moment";
     import ListRestrictItems from '@components/secondary/ListRestrictItems.vue'
     import {fnRestrictSaleItemsCpe} from '@mixins/functions'
@@ -613,6 +614,13 @@
                     return this.$message.error(validate_payment_date.message);
                 }
 
+                // ######## INICIO MONEDA VENEZUELA HOTEL ########
+                try {
+                    await ensureExchangeRateSale(this.document, this.$http);
+                } catch (error) {
+                    return this.$message.error(error.message || 'No se pudo obtener el tipo de cambio.');
+                }
+                // ######## FIN MONEDA VENEZUELA HOTEL ########
                 this.loading_submit = true;
 
 
