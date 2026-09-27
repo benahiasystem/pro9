@@ -5,11 +5,6 @@
             <ol class="breadcrumbs">
                 <li class="active"><span> Listado de unidades </span></li>
             </ol>
-            <div class="right-wrapper pull-right">
-                <button type="button" class="btn btn-custom btn-sm mt-2 me-2" @click.prevent="clickCreate()">
-                    <i class="fa fa-plus-circle"></i> Nuevo
-                </button>
-            </div>
         </div>
 
         <div class="card tab-content-default row-new">
@@ -37,7 +32,7 @@
                                     <th class="text-center">Activo</th>
                                     <th>Descripción</th>
                                     <th>Símbolo</th>
-                                    <th class="text-end">Acciones</th>
+                                    <th>Código HKA</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -49,12 +44,7 @@
                                     </td>
                                     <td>{{ row.description }}</td>
                                     <td>{{ row.symbol }}</td>
-                                    <td class="text-end">
-                                        <button type="button" class="btn btn-info btn-xs me-2" @click.prevent="clickCreate(row.id)">Editar</button>
-                                        <template v-if="typeUser === 'admin' && !isReservedUnit(row)">
-                                            <button type="button" class="btn btn-danger btn-xs" @click.prevent="clickDelete(row.id)">Eliminar</button>
-                                        </template>
-                                    </td>
+                                    <td>{{ row.hka_code }}</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -62,27 +52,15 @@
                 </div>
             </div>
         </div>
-
-        <unit-types-form
-            :showDialog.sync="showDialog"
-            :recordId="recordId">
-        </unit-types-form>
     </div>
 </template>
 
 <script>
-    import UnitTypesForm from './form.vue'
-    import {deletable} from '../../../mixins/deletable'
-
     export default {
-        mixins: [deletable],
         props: ['typeUser'],
-        components: {UnitTypesForm},
         data() {
             return {
-                showDialog: false,
                 resource: 'unit_types',
-                recordId: null,
                 records: [],
                 filter: { active: '1' },
                 showLeftShadow: false,
@@ -130,15 +108,6 @@
                 .then(response => {
                     this.records = response.data.data
                 })
-            },
-            clickCreate(recordId = null) {
-                this.recordId = recordId
-                this.showDialog = true
-            },
-            clickDelete(id) {
-                this.destroy(`/${this.resource}/${id}`).then(() =>
-                    this.$eventHub.$emit('reloadData')
-                )
             },
             clickActive(row) {
                 this.$http.post(`/${this.resource}/active`, row)

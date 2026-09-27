@@ -222,7 +222,7 @@ class QuotationController extends Controller
         $charge_types = ChargeDiscountType::whereType('charge')->whereLevel('item')->get();
         $company = Company::active();
         $document_type_03_filter = config('tenant.document_type_03_filter');
-        $payment_method_types = PaymentMethodType::orderBy('id', 'desc')->get();
+        $payment_method_types = PaymentMethodType::active()->orderBy('id', 'desc')->get();
         $payment_destinations = $this->getPaymentDestinations();
         $configuration = Configuration::select('destination_sale')->first();
         $enabled_discount_global = Configuration::isGlobalDiscountEnabled();
@@ -939,6 +939,7 @@ class QuotationController extends Controller
 
         foreach ($payments as $payment) {
 
+            PaymentMethodType::assertActiveForPayment($payment['payment_method_type_id'] ?? null);
             $record_payment = $quotation->payments()->create($payment);
 
             if (isset($payment['payment_destination_id'])) {

@@ -211,7 +211,7 @@ class PosController extends Controller
         )->get();
         // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
 
-        $payment_method_types = PaymentMethodType::NotCredit()->get();
+        $payment_method_types = PaymentMethodType::active()->NotCredit()->get();
         $cards_brand = CardBrand::all();
         $payment_destinations = $this->getPaymentDestinations();
         // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES

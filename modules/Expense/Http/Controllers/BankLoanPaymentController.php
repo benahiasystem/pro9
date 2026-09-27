@@ -28,7 +28,7 @@
         public function tables()
         {
             return [
-                 'payment_method_types' => PaymentMethodType::NotCash()->NotCredit()->get(),
+                 'payment_method_types' => PaymentMethodType::active()->NotCash()->NotCredit()->get(),
 
                 'payment_destinations' => $this->getPaymentDestinations()
             ];

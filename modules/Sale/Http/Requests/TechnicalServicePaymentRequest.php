@@ -23,6 +23,7 @@ class TechnicalServicePaymentRequest extends FormRequest
             ],
             'payment_method_type_id' => [
                 'required',
+                Rule::exists('tenant.payment_method_types', 'id')->where('is_active', 1),
             ],
             'payment_destination_id' => [
                 'required',

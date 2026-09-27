@@ -4,6 +4,7 @@ namespace Tests\Unit;
 
 use App\Http\Controllers\Tenant\UnitTypeController;
 use App\Models\Tenant\Catalogs\UnitType;
+use Illuminate\Http\Request;
 use InvalidArgumentException;
 use Illuminate\Validation\Rules\Exists;
 use PhpOffice\PhpSpreadsheet\IOFactory;
@@ -25,15 +26,27 @@ class VenezuelaUnitTypeContractTest extends TestCase
             'PULG' => 'Pulgada', 'SAC' => 'Saco', 'SERV' => 'Servicio',
             'TON' => 'Tonelada', 'UND' => 'Unidad',
         ];
+        $expectedHkaCodes = [
+            'BOL' => 'XBG', 'BOT' => 'XBO', 'BTO' => 'XBE', 'CAJ' => 'XBX',
+            'CM' => 'CMT', 'DIA' => 'DAY', 'DOC' => 'DZN', 'GAL' => 'GLL',
+            'GR' => 'GRM', 'HR' => 'HUR', 'JGO' => 'SET', 'KG' => 'KGM',
+            'KM' => 'KMT', 'LB' => 'LBR', 'LT' => 'LTR', 'M' => 'MTR',
+            'M2' => 'MTK', 'M3' => 'MTQ', 'MG' => 'MGM', 'ML' => 'MLT',
+            'MM' => 'MMT', 'PAR' => 'PR', 'PQT' => 'XPK', 'PULG' => 'INH',
+            'SAC' => 'XSA', 'SERV' => 'E48', 'TON' => 'TNE', 'UND' => 'C62',
+        ];
 
         $payload = require database_path('seeders/data/tenant_initial_data.php');
         $rows = $payload['tables']['cat_unit_types']['rows'];
 
         self::assertCount(28, $rows);
         self::assertSame($expected, array_column($rows, 'description', 'id'));
+        self::assertSame($expectedHkaCodes, array_column($rows, 'hka_code', 'id'));
         foreach ($rows as $row) {
             self::assertSame(1, $row['active'], $row['id']);
             self::assertSame($row['id'], $row['symbol'], $row['id']);
+            self::assertNotEmpty($row['hka_code'], $row['id']);
+            self::assertMatchesRegularExpression('/^[A-Z0-9]{2,3}$/', $row['hka_code'], $row['id']);
         }
         self::assertNotContains('NIU', array_column($rows, 'id'));
         self::assertNotContains('ZZ', array_column($rows, 'id'));
@@ -88,14 +101,18 @@ class VenezuelaUnitTypeContractTest extends TestCase
     }
 
     /** @test */
-    public function reserved_units_cannot_be_deleted(): void
+    public function unit_catalog_rejects_creation_editing_and_deletion_before_writing(): void
     {
         $controller = app(UnitTypeController::class);
-
-        foreach (UnitType::RESERVED_UNIT_TYPES as $id) {
-            $response = $controller->destroy($id);
-            self::assertFalse($response['success']);
-            self::assertStringContainsString('no se pueden eliminar', $response['message']);
+        foreach ([
+            $controller->store(Request::create('/unit_types', 'POST', ['id' => 'ABC'])),
+            $controller->store(Request::create('/unit_types', 'POST', ['id' => 'UND'])),
+            $controller->destroy('BOL'),
+            $controller->destroy('UND'),
+        ] as $response) {
+            self::assertSame(409, $response->getStatusCode());
+            self::assertSame('UNIT_CATALOG_CLOSED', $response->getData(true)['code']);
+            self::assertFalse($response->getData(true)['success']);
         }
     }
 

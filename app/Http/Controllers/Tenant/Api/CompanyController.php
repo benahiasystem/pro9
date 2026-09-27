@@ -61,7 +61,7 @@ class CompanyController extends Controller
             ->get()
             ->map(fn ($row) => $this->transformCustomer($row))
             ->values();
-        $payment_method_types = PaymentMethodType::NotCredit()->
+        $payment_method_types = PaymentMethodType::active()->NotCredit()->
         where('id', '!=', '07')->get();
 
         $payment_destinations = $this->getPaymentDestinations();

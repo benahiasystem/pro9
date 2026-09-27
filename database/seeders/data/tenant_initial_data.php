@@ -1879,6 +1879,7 @@ return array (
           'active' => 1,
           'symbol' => 'BOL',
           'description' => 'Bolsa',
+          'hka_code' => 'XBG',
         ),
         1 =>
         array (
@@ -1886,6 +1887,7 @@ return array (
           'active' => 1,
           'symbol' => 'BOT',
           'description' => 'Botella',
+          'hka_code' => 'XBO',
         ),
         2 =>
         array (
@@ -1893,6 +1895,7 @@ return array (
           'active' => 1,
           'symbol' => 'BTO',
           'description' => 'Bulto',
+          'hka_code' => 'XBE',
         ),
         3 =>
         array (
@@ -1900,6 +1903,7 @@ return array (
           'active' => 1,
           'symbol' => 'CAJ',
           'description' => 'Caja',
+          'hka_code' => 'XBX',
         ),
         4 =>
         array (
@@ -1907,6 +1911,7 @@ return array (
           'active' => 1,
           'symbol' => 'CM',
           'description' => 'Centímetro',
+          'hka_code' => 'CMT',
         ),
         5 =>
         array (
@@ -1914,6 +1919,7 @@ return array (
           'active' => 1,
           'symbol' => 'DIA',
           'description' => 'Día',
+          'hka_code' => 'DAY',
         ),
         6 =>
         array (
@@ -1921,6 +1927,7 @@ return array (
           'active' => 1,
           'symbol' => 'DOC',
           'description' => 'Docena',
+          'hka_code' => 'DZN',
         ),
         7 =>
         array (
@@ -1928,6 +1935,7 @@ return array (
           'active' => 1,
           'symbol' => 'GAL',
           'description' => 'Galón',
+          'hka_code' => 'GLL',
         ),
         8 =>
         array (
@@ -1935,6 +1943,7 @@ return array (
           'active' => 1,
           'symbol' => 'GR',
           'description' => 'Gramo',
+          'hka_code' => 'GRM',
         ),
         9 =>
         array (
@@ -1942,6 +1951,7 @@ return array (
           'active' => 1,
           'symbol' => 'HR',
           'description' => 'Hora',
+          'hka_code' => 'HUR',
         ),
         10 =>
         array (
@@ -1949,6 +1959,7 @@ return array (
           'active' => 1,
           'symbol' => 'JGO',
           'description' => 'Juego',
+          'hka_code' => 'SET',
         ),
         11 =>
         array (
@@ -1956,6 +1967,7 @@ return array (
           'active' => 1,
           'symbol' => 'KG',
           'description' => 'Kilogramo',
+          'hka_code' => 'KGM',
         ),
         12 =>
         array (
@@ -1963,6 +1975,7 @@ return array (
           'active' => 1,
           'symbol' => 'KM',
           'description' => 'Kilómetro',
+          'hka_code' => 'KMT',
         ),
         13 =>
         array (
@@ -1970,6 +1983,7 @@ return array (
           'active' => 1,
           'symbol' => 'LB',
           'description' => 'Libra',
+          'hka_code' => 'LBR',
         ),
         14 =>
         array (
@@ -1977,6 +1991,7 @@ return array (
           'active' => 1,
           'symbol' => 'LT',
           'description' => 'Litro',
+          'hka_code' => 'LTR',
         ),
         15 =>
         array (
@@ -1984,6 +1999,7 @@ return array (
           'active' => 1,
           'symbol' => 'M',
           'description' => 'Metro',
+          'hka_code' => 'MTR',
         ),
         16 =>
         array (
@@ -1991,6 +2007,7 @@ return array (
           'active' => 1,
           'symbol' => 'M2',
           'description' => 'Metro cuadrado',
+          'hka_code' => 'MTK',
         ),
         17 =>
         array (
@@ -1998,6 +2015,7 @@ return array (
           'active' => 1,
           'symbol' => 'M3',
           'description' => 'Metro cúbico',
+          'hka_code' => 'MTQ',
         ),
         18 =>
         array (
@@ -2005,6 +2023,7 @@ return array (
           'active' => 1,
           'symbol' => 'MG',
           'description' => 'Miligramo',
+          'hka_code' => 'MGM',
         ),
         19 =>
         array (
@@ -2012,6 +2031,7 @@ return array (
           'active' => 1,
           'symbol' => 'ML',
           'description' => 'Mililitro',
+          'hka_code' => 'MLT',
         ),
         20 =>
         array (
@@ -2019,6 +2039,7 @@ return array (
           'active' => 1,
           'symbol' => 'MM',
           'description' => 'Milímetro',
+          'hka_code' => 'MMT',
         ),
         21 =>
         array (
@@ -2026,6 +2047,7 @@ return array (
           'active' => 1,
           'symbol' => 'PAR',
           'description' => 'Par',
+          'hka_code' => 'PR',
         ),
         22 =>
         array (
@@ -2033,6 +2055,7 @@ return array (
           'active' => 1,
           'symbol' => 'PQT',
           'description' => 'Paquete',
+          'hka_code' => 'XPK',
         ),
         23 =>
         array (
@@ -2040,6 +2063,7 @@ return array (
           'active' => 1,
           'symbol' => 'PULG',
           'description' => 'Pulgada',
+          'hka_code' => 'INH',
         ),
         24 =>
         array (
@@ -2047,6 +2071,7 @@ return array (
           'active' => 1,
           'symbol' => 'SAC',
           'description' => 'Saco',
+          'hka_code' => 'XSA',
         ),
         25 =>
         array (
@@ -2054,6 +2079,7 @@ return array (
           'active' => 1,
           'symbol' => 'SERV',
           'description' => 'Servicio',
+          'hka_code' => 'E48',
         ),
         26 =>
         array (
@@ -2061,6 +2087,7 @@ return array (
           'active' => 1,
           'symbol' => 'TON',
           'description' => 'Tonelada',
+          'hka_code' => 'TNE',
         ),
         27 =>
         array (
@@ -2068,6 +2095,7 @@ return array (
           'active' => 1,
           'symbol' => 'UND',
           'description' => 'Unidad',
+          'hka_code' => 'C62',
         ),
       ),
     ),
@@ -4873,6 +4901,7 @@ return array (
         array (
           'id' => '01',
           'description' => 'Efectivo Bolivares',
+          'hka_code' => '08',
           'has_card' => 0,
           'charge' => NULL,
           'number_days' => NULL,
@@ -4884,6 +4913,7 @@ return array (
         array (
           'id' => '02',
           'description' => 'Tarjeta de crédito',
+          'hka_code' => '06',
           'has_card' => 1,
           'charge' => NULL,
           'number_days' => NULL,
@@ -4895,6 +4925,7 @@ return array (
         array (
           'id' => '03',
           'description' => 'Tarjeta de débito',
+          'hka_code' => '05',
           'has_card' => 1,
           'charge' => NULL,
           'number_days' => NULL,
@@ -4906,6 +4937,7 @@ return array (
         array (
           'id' => '04',
           'description' => 'Transferencia Bancaria',
+          'hka_code' => '03',
           'has_card' => 0,
           'charge' => NULL,
           'number_days' => NULL,
@@ -4917,6 +4949,7 @@ return array (
         array (
           'id' => '05',
           'description' => 'Crédito a 30 días',
+          'hka_code' => '99',
           'has_card' => 0,
           'charge' => NULL,
           'number_days' => 30,
@@ -4928,6 +4961,7 @@ return array (
         array (
           'id' => '06',
           'description' => 'Tarjeta Internacional',
+          'hka_code' => '99',
           'has_card' => 1,
           'charge' => NULL,
           'number_days' => NULL,
@@ -4939,6 +4973,7 @@ return array (
         array (
           'id' => '07',
           'description' => 'Delivery / Pago en Sitio',
+          'hka_code' => '99',
           'has_card' => 0,
           'charge' => NULL,
           'number_days' => NULL,
@@ -4950,6 +4985,7 @@ return array (
         array (
           'id' => '09',
           'description' => 'Crédito',
+          'hka_code' => '99',
           'has_card' => 1,
           'charge' => NULL,
           'number_days' => NULL,
@@ -4961,6 +4997,7 @@ return array (
         array (
           'id' => '10',
           'description' => 'Efectivo Dólares',
+          'hka_code' => '09',
           'has_card' => 0,
           'charge' => NULL,
           'number_days' => NULL,
@@ -4972,6 +5009,7 @@ return array (
         array (
           'id' => '11',
           'description' => 'Pago Móvil',
+          'hka_code' => '02',
           'has_card' => 0,
           'charge' => NULL,
           'number_days' => NULL,
@@ -4983,6 +5021,7 @@ return array (
         array (
           'id' => '12',
           'description' => 'Biopago',
+          'hka_code' => '99',
           'has_card' => 0,
           'charge' => NULL,
           'number_days' => NULL,
@@ -4994,11 +5033,168 @@ return array (
         array (
           'id' => '13',
           'description' => 'Zelle',
+          'hka_code' => '99',
           'has_card' => 0,
           'charge' => NULL,
           'number_days' => NULL,
           'is_credit' => 0,
           'is_cash' => 1,
+          'is_active' => 0,
+        ),
+        12 =>
+        array (
+          'id' => '14',
+          'description' => 'Depósito en cuenta',
+          'hka_code' => '01',
+          'has_card' => 0,
+          'charge' => NULL,
+          'number_days' => NULL,
+          'is_credit' => 0,
+          'is_cash' => 0,
+          'is_active' => 0,
+        ),
+        13 =>
+        array (
+          'id' => '15',
+          'description' => 'Orden de Pago',
+          'hka_code' => '04',
+          'has_card' => 0,
+          'charge' => NULL,
+          'number_days' => NULL,
+          'is_credit' => 0,
+          'is_cash' => 0,
+          'is_active' => 0,
+        ),
+        14 =>
+        array (
+          'id' => '16',
+          'description' => 'Cheques con cláusula «NO NEGOCIABLE», «INTRANSFERIBLES», «NO A LA ORDEN» o equivalente',
+          'hka_code' => '07',
+          'has_card' => 0,
+          'charge' => NULL,
+          'number_days' => NULL,
+          'is_credit' => 0,
+          'is_cash' => 0,
+          'is_active' => 0,
+        ),
+        15 =>
+        array (
+          'id' => '17',
+          'description' => 'Medios de pago usados en comercio exterior',
+          'hka_code' => '10',
+          'has_card' => 0,
+          'charge' => NULL,
+          'number_days' => NULL,
+          'is_credit' => 0,
+          'is_cash' => 0,
+          'is_active' => 0,
+        ),
+        16 =>
+        array (
+          'id' => '18',
+          'description' => 'Transferencias – Comercio exterior',
+          'hka_code' => '11',
+          'has_card' => 0,
+          'charge' => NULL,
+          'number_days' => NULL,
+          'is_credit' => 0,
+          'is_cash' => 0,
+          'is_active' => 0,
+        ),
+        17 =>
+        array (
+          'id' => '19',
+          'description' => 'Cheques bancarios – Comercio exterior',
+          'hka_code' => '12',
+          'has_card' => 0,
+          'charge' => NULL,
+          'number_days' => NULL,
+          'is_credit' => 0,
+          'is_cash' => 0,
+          'is_active' => 0,
+        ),
+        18 =>
+        array (
+          'id' => '20',
+          'description' => 'Orden de pago simple – Comercio exterior',
+          'hka_code' => '13',
+          'has_card' => 0,
+          'charge' => NULL,
+          'number_days' => NULL,
+          'is_credit' => 0,
+          'is_cash' => 0,
+          'is_active' => 0,
+        ),
+        19 =>
+        array (
+          'id' => '21',
+          'description' => 'Orden de pago documentario – Comercio exterior',
+          'hka_code' => '14',
+          'has_card' => 0,
+          'charge' => NULL,
+          'number_days' => NULL,
+          'is_credit' => 0,
+          'is_cash' => 0,
+          'is_active' => 0,
+        ),
+        20 =>
+        array (
+          'id' => '22',
+          'description' => 'Remesa simple – Comercio exterior',
+          'hka_code' => '15',
+          'has_card' => 0,
+          'charge' => NULL,
+          'number_days' => NULL,
+          'is_credit' => 0,
+          'is_cash' => 0,
+          'is_active' => 0,
+        ),
+        21 =>
+        array (
+          'id' => '23',
+          'description' => 'Remesa documentaria – Comercio exterior',
+          'hka_code' => '16',
+          'has_card' => 0,
+          'charge' => NULL,
+          'number_days' => NULL,
+          'is_credit' => 0,
+          'is_cash' => 0,
+          'is_active' => 0,
+        ),
+        22 =>
+        array (
+          'id' => '24',
+          'description' => 'Carta de crédito simple – Comercio exterior',
+          'hka_code' => '17',
+          'has_card' => 0,
+          'charge' => NULL,
+          'number_days' => NULL,
+          'is_credit' => 0,
+          'is_cash' => 0,
+          'is_active' => 0,
+        ),
+        23 =>
+        array (
+          'id' => '25',
+          'description' => 'Carta de crédito documentario – Comercio exterior',
+          'hka_code' => '18',
+          'has_card' => 0,
+          'charge' => NULL,
+          'number_days' => NULL,
+          'is_credit' => 0,
+          'is_cash' => 0,
+          'is_active' => 0,
+        ),
+        24 =>
+        array (
+          'id' => '26',
+          'description' => 'Otros medios de pago',
+          'hka_code' => '99',
+          'has_card' => 0,
+          'charge' => NULL,
+          'number_days' => NULL,
+          'is_credit' => 0,
+          'is_cash' => 0,
           'is_active' => 0,
         ),
       ),

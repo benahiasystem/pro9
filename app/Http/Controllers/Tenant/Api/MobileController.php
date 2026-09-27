@@ -324,7 +324,7 @@ class MobileController extends Controller
 
     public function getPaymentmethod(){
 
-        $payment_method_type = PaymentMethodType::all();
+        $payment_method_type = PaymentMethodType::active()->get();
         $payment_destinations = $this->getPaymentDestinations();
         return compact( 'payment_method_type','payment_destinations');
     }

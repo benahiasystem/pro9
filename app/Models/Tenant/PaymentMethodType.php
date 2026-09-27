@@ -10,12 +10,14 @@
     use Modules\Sale\Models\QuotationPayment;
     use Modules\Sale\Models\TechnicalServicePayment;
     use App\Models\Tenant\PurchaseSettlementPayment;
+    use Illuminate\Validation\ValidationException;
 
     /**
      * App\Models\Tenant\PaymentMethodType
      *
      * @property int                                                       $id
      * @property string                                                    $description
+     * @property string                                                    $hka_code
      * @property bool                                                      $has_card
      * @property-read CollectionAlias|CashTransaction[]                    $cash_transactions
      * @property-read int|null                                             $cash_transactions_count
@@ -69,6 +71,7 @@
             //'13', // Zelle
         ];
         // ######### FIN CATÁLOGO MÉTODOS DE PAGO VENEZUELA #########
+        // hka_code se asigna en el catálogo inicial o en el controlador; no se acepta del formulario.
         protected $fillable = [
             'id',
             'description',
@@ -93,11 +96,27 @@
         public const INITIAL_PAYMENT_METHOD_IDS = [
             '01', '02', '03', '04', '05', '06', '07',
             '09', '10', '11', '12', '13',
+            '14', '15', '16', '17', '18', '19', '20',
+            '21', '22', '23', '24', '25', '26',
+        ];
+
+        public const HKA_REFERENCE_PAYMENT_METHOD_IDS = [
+            '14', '15', '16', '17', '18', '19', '20',
+            '21', '22', '23', '24', '25', '26',
         ];
 
         public static function isInitialPaymentMethodId($id): bool
         {
             return in_array((string) $id, self::INITIAL_PAYMENT_METHOD_IDS, true);
+        }
+
+        public static function assertActiveForPayment($id): void
+        {
+            if (!self::query()->active()->where('id', (string) $id)->exists()) {
+                throw ValidationException::withMessages([
+                    'payment_method_type_id' => 'La forma de pago seleccionada no está disponible.',
+                ]);
+            }
         }
         // ######### FIN PROTECCIÓN MÉTODOS INICIALES VENEZUELA #########
 

@@ -160,7 +160,7 @@ class ContractController extends Controller
         $charge_types = ChargeDiscountType::whereType('charge')->whereLevel('item')->get();
         $company = Company::active();
         $document_type_03_filter = config('tenant.document_type_03_filter');
-        $payment_method_types = PaymentMethodType::orderBy('id','desc')->get();
+        $payment_method_types = PaymentMethodType::active()->orderBy('id','desc')->get();
         $payment_destinations = $this->getPaymentDestinations();
         $configuration = Configuration::select('destination_sale', 'show_pdf_name')->first();
         $sellers = User::without(['establishment'])
@@ -178,7 +178,7 @@ class ContractController extends Controller
         $establishment = Establishment::where('id', auth()->user()->establishment_id)->first();
         $series = app(SeriesResolver::class)->applyContext(Series::where('establishment_id',$establishment->id))->get();
         $document_types_invoice = DocumentType::whereIn('id', ['01', '03'])->get();
-        $payment_method_types = PaymentMethodType::all();
+        $payment_method_types = PaymentMethodType::active()->get();
         $payment_destinations = $this->getPaymentDestinations();
 
         return compact('series', 'document_types_invoice', 'payment_method_types', 'payment_destinations');
@@ -582,6 +582,7 @@ class ContractController extends Controller
 
         foreach ($payments as $payment) {
 
+            \App\Models\Tenant\PaymentMethodType::assertActiveForPayment($payment['payment_method_type_id'] ?? null);
             $record_payment = $contract->payments()->create($payment);
 
             if(isset($payment['payment_destination_id'])){

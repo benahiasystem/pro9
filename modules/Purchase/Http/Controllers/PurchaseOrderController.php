@@ -103,7 +103,7 @@ class PurchaseOrderController extends Controller
         $establishment = Establishment::where('id', auth()->user()->establishment_id)->first();
         $currency_types = CurrencyType::whereActive()->get();
         $company = Company::active();
-        $payment_method_types = PaymentMethodType::all();
+        $payment_method_types = PaymentMethodType::active()->get();
 
         return compact('suppliers', 'establishment','company','currency_types','payment_method_types');
     }

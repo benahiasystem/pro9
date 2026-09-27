@@ -114,6 +114,11 @@ class PaymentMethodTypeController extends Controller
     public function active(Request $request)
     {
         $id = $request->input('id');
+        // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+        if (in_array((string) $id, PaymentMethodType::HKA_REFERENCE_PAYMENT_METHOD_IDS, true)) {
+            return response()->json(['success' => false, 'message' => 'Los métodos HKA de referencia no se pueden activar'], 409);
+        }
+        // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
         $unit_type = PaymentMethodType::findOrFail($id);
         $unit_type->is_active = $request->boolean('is_active') ? 1 : 0;
         $unit_type->save();

@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\DB;
  * - `active` tinyint(1) NOT NULL
  * - `symbol` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
+ * - `hka_code` varchar(3) COLLATE utf8mb4_unicode_ci NOT NULL
  */
 return new class extends Migration
 {
@@ -22,6 +23,7 @@ CREATE TABLE `cat_unit_types` (
   `active` tinyint(1) NOT NULL,
   `symbol` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `hka_code` varchar(3) COLLATE utf8mb4_unicode_ci NOT NULL,
   KEY `cat_unit_types_id_index` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL);

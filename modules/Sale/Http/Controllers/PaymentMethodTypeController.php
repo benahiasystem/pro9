@@ -32,8 +32,16 @@ class PaymentMethodTypeController extends Controller
     {
 
         $id = $request->input('id');
+        // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+        if (in_array((string) $id, PaymentMethodType::HKA_REFERENCE_PAYMENT_METHOD_IDS, true)) {
+            return response()->json(['success' => false, 'message' => 'Los métodos HKA de referencia no se pueden editar ni activar'], 409);
+        }
+        // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
         $record = PaymentMethodType::firstOrNew(['id' => $id]);
         $record->fill($request->all());
+        if (!$record->exists) {
+            $record->hka_code = '99';
+        }
         $record->save();
 
 

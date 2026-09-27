@@ -68,7 +68,7 @@ class IncomeController extends Controller
         $establishment = Establishment::where('id', auth()->user()->establishment_id)->first();
         $currency_types = CurrencyType::whereActive()->get();
         $income_types = IncomeType::get();
-        $payment_method_types = PaymentMethodType::all();
+        $payment_method_types = PaymentMethodType::active()->get();
         $income_reasons = IncomeReason::all();
         $payment_destinations = $this->getPaymentDestinations();
 
@@ -100,6 +100,7 @@ class IncomeController extends Controller
 
             foreach ($data['payments'] as $row)
             {
+                PaymentMethodType::assertActiveForPayment($row['payment_method_type_id'] ?? null);
                 $record_payment = $doc->payments()->create($row);
                 $this->createGlobalPayment($record_payment, $row);
             }

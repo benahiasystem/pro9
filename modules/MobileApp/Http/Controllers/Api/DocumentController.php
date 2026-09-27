@@ -102,7 +102,7 @@ class DocumentController extends Controller
      */
     public function getTablesSalePayment()
     {
-        $payment_method_types = PaymentMethodType::get();
+        $payment_method_types = PaymentMethodType::active()->get();
         $payment_destinations = $this->getPaymentDestinations();
         $payment_conditions = PaymentCondition::selectGeneralColumns()->get();
         $terms_condition = Configuration::first()->terms_condition_sale;

@@ -3,11 +3,9 @@ namespace App\Http\Controllers\Tenant;
 
 use App\Models\Tenant\Catalogs\UnitType;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Tenant\UnitTypeRequest;
 use App\Http\Resources\Tenant\UnitTypeCollection;
 use App\Http\Resources\Tenant\UnitTypeResource;
 use Illuminate\Http\Request;
-use Exception;
 
 class UnitTypeController extends Controller
 {
@@ -30,17 +28,9 @@ class UnitTypeController extends Controller
         return $record;
     }
 
-    public function store(UnitTypeRequest $request)
+    public function store(Request $request)
     {
-        $id = $request->input('id');
-        $unit_type = UnitType::firstOrNew(['id' => $id]);
-        $unit_type->fill($request->all());
-        $unit_type->save();
-
-        return [
-            'success' => true,
-            'message' => ($id)?'Unidad editada con éxito':'Unidad registrada con éxito'
-        ];
+        return $this->catalogClosed();
     }
 
     public function active(Request $request)
@@ -66,26 +56,15 @@ class UnitTypeController extends Controller
 
     public function destroy($id)
     {
-        // ######## INICIO CONTRATO UNIDADES DE MEDIDA VENEZUELA ########
-        if (UnitType::isReserved((string) $id)) {
-            return [
-                'success' => false,
-                'message' => 'Las unidades UND y SERV no se pueden eliminar.',
-            ];
-        }
-        // ######## FIN CONTRATO UNIDADES DE MEDIDA VENEZUELA ########
-        try {
-            $record = UnitType::findOrFail($id);
-            $record->delete();
+        return $this->catalogClosed();
+    }
 
-            return [
-                'success' => true,
-                'message' => 'Unidad eliminada con éxito',
-            ];
-        } catch (Exception $e) {
-            return $e->getCode() === '23000'
-                ? ['success' => false, 'message' => 'La unidad esta siendo usada por otros registros, no puede eliminar']
-                : ['success' => false, 'message' => 'Error inesperado, no se pudo eliminar la unidad'];
-        }
+    private function catalogClosed()
+    {
+        return response()->json([
+            'success' => false,
+            'code' => 'UNIT_CATALOG_CLOSED',
+            'message' => 'No se permite crear, editar ni eliminar unidades de medida.',
+        ], 409);
     }
 }

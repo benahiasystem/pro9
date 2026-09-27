@@ -424,6 +424,7 @@ use Modules\Purchase\Helpers\WeightedAverageCostHelper;
 
                     foreach ($data['payments'] as $payment) {
 
+                        PaymentMethodType::assertActiveForPayment($payment['payment_method_type_id'] ?? null);
                         $record_payment = $doc->purchase_payments()->create($payment);
 
                         if (isset($payment['payment_destination_id'])) {
@@ -713,6 +714,7 @@ use Modules\Purchase\Helpers\WeightedAverageCostHelper;
 
                 foreach ($request['payments'] as $payment) {
 
+                    PaymentMethodType::assertActiveForPayment($payment['payment_method_type_id'] ?? null);
                     $record_payment = $doc->purchase_payments()->create($payment);
 
                     if (isset($payment['payment_destination_id'])) {
@@ -1282,6 +1284,7 @@ use Modules\Purchase\Helpers\WeightedAverageCostHelper;
                 $data = array_merge($model, $values);
 
                 $purchase = DB::connection('tenant')->transaction(function () use ($data) {
+                    PaymentMethodType::assertActiveForPayment($data['payment_method_type_id'] ?? null);
                     $doc = Purchase::create($data);
                     foreach ($data['items'] as $row) {
                         $doc->items()->create($row);

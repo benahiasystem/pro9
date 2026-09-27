@@ -167,6 +167,9 @@ class ExpenseController extends Controller
 
             foreach ($data['payments'] as $row)
             {
+                if (isset($row['payment_method_type_id'])) {
+                    \App\Models\Tenant\PaymentMethodType::assertActiveForPayment($row['payment_method_type_id']);
+                }
                 $record_payment = $doc->payments()->create($row);
 
                 // Metodo 1 (efectivo) va a caja; el resto respeta el destino elegido

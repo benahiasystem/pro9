@@ -243,7 +243,7 @@ class SaleNoteController extends Controller
         $charge_types = ChargeDiscountType::whereType('charge')->whereLevel('item')->get();
         $global_charge_types = ChargeDiscountType::whereIn('id', ['50'])->get();
         $company = Company::active();
-        $payment_method_types = PaymentMethodType::all();
+        $payment_method_types = PaymentMethodType::active()->get();
         $series = collect(app(SeriesResolver::class)->applyContext(Series::query())->get())->transform(function($row) {
             return [
                 'id' => $row->id,
@@ -1347,7 +1347,7 @@ class SaleNoteController extends Controller
         // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
         $document_types_invoice = DocumentType::whereIn('id', ['01'])->get();
         // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
-        $payment_method_types = PaymentMethodType::all();
+        $payment_method_types = PaymentMethodType::active()->get();
         $payment_destinations = $this->getPaymentDestinations();
         $sellers = User::GetSellers(false)->get();
         $configuration = Configuration::select(['restrict_sale_items_cpe', 'global_discount_type_id','restrict_receipt_date', 'shipping_time_days'])->first();
@@ -1529,6 +1529,12 @@ class SaleNoteController extends Controller
 
 
     public function savePayments($sale_note, $payments, $isUpdate = false){
+
+        // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+        foreach ($payments as $payment) {
+            PaymentMethodType::assertActiveForPayment($payment['payment_method_type_id'] ?? null);
+        }
+        // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
 
         $total = $sale_note->total;
         $balance = $total - collect($payments)->sum('payment');

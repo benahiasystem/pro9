@@ -5,6 +5,7 @@ namespace App\Http\Requests\Tenant;
 use App\Models\Tenant\Item;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Validator;
+use Illuminate\Validation\Rule;
 
 /**
  * Class DocumentRequest
@@ -57,6 +58,11 @@ class DocumentRequest extends FormRequest
                 'numeric',
                 'min:0.01'
             ],
+            // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+            'payments.*.payment_method_type_id' => [
+                'required', Rule::exists('tenant.payment_method_types', 'id')->where('is_active', 1),
+            ],
+            // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
         ];
     }
 

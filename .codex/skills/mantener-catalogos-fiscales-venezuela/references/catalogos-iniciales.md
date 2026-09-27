@@ -31,6 +31,12 @@ Fuente histórica: `../pro6/database/migrations/tenant/2018_01_00_000001_tenant_
 
 Se retiraron las 17 filas que tenían `active = 0`.
 
+### Formas de pago Pro9 y HKA (`payment_method_types`)
+
+La tabla operativa conserva los doce IDs locales `01`–`07`, `09`–`13`; su columna `hka_code char(2) NOT NULL` almacena el código del catálogo 11 de HKA. Los métodos locales sin equivalente específico (`05`, `06`, `07`, `09`, `12`, `13`) usan `99` Otros medios de pago. Las equivalencias específicas son `01→08`, `02→06`, `03→05`, `04→03`, `10→09` y `11→02`.
+
+Los IDs locales `14`–`26` cubren, en orden, los códigos HKA `01`, `04`, `07`, `10`–`18` y `99`. Son trece filas iniciales inactivas de referencia, protegidas contra edición y eliminación. El código `99` se repite en siete filas, por lo que `hka_code` no es único. Los métodos locales que se creen después reciben `99` desde el servidor; el formulario no puede modificar `hka_code`. El catálogo no habilita por sí mismo pagos nuevos ni envío a HKA.
+
 ### Tipos de alícuota del manual HKA (`cat_iva_rate_types`)
 
 | Código | Descripción | Porcentaje de referencia | Tributo |
@@ -219,7 +225,9 @@ El consolidado contenía 25 departamentos, 196 provincias y 1.876 distritos de P
 
 No existe ambiente Interno ni equivalencia pública con `01`, `02` o `03`. Las modalidades se validan en `FiscalEmissionSettings`: `fiscal_machine`, `digital`, `free_form`; no son ambientes ni implican integración con un proveedor.
 
-El seeder no crea los tipos de auditoría `companies_certificate`, `companies_soap_password`, `companies_soap_send_id`, `companies_soap_type_id`, `companies_soap_url` y `companies_soap_username`. No hay registros anteriores que limpiar. Los cambios nuevos se registran en `fiscal_configuration_audits`, creada directamente por el consolidado y sin filas iniciales ni secretos. El inventario actual de datos iniciales contiene 76 tablas y 926 filas, incluidos ARCV y los catálogos HKA de proveedores, transacciones y regímenes especiales; no renumerar otros identificadores.
+El seeder no crea los tipos de auditoría `companies_certificate`, `companies_soap_password`, `companies_soap_send_id`, `companies_soap_type_id`, `companies_soap_url` y `companies_soap_username`. No hay registros anteriores que limpiar. Los cambios nuevos se registran en `fiscal_configuration_audits`, creada directamente por el consolidado y sin filas iniciales ni secretos. El inventario actual de datos iniciales contiene 77 tablas y 949 filas, incluidos los catálogos HKA de referencia; no renumerar otros identificadores.
+
+`cat_unit_types` conserva 28 unidades locales activas y añade `hka_code varchar(3) NOT NULL` con una equivalencia UNECE Rec. 20 por fila. Las unidades de envase usan el prefijo `X` de la nota 2 del Excel (por ejemplo, `BOL` → `XBG`); `BTO` → `XBE` interpreta «bulto» como *bundle*. El mantenimiento queda cerrado: no se pueden crear, editar ni eliminar unidades; las consultas y el cambio de estado de las no reservadas siguen disponibles. Los códigos son referencia y no habilitan envío de unidades a HKA. La tabla íntegra está en la skill `mantener-unidades-medida-venezuela`.
 
 ### Retenciones ISLR declaradas ante SENIAT
 

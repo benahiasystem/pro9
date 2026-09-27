@@ -19,6 +19,7 @@ class UnitTypeResource extends JsonResource
             'active' => (bool) $this->active,
             'symbol' => $this->symbol,
             'description' => $this->description,
+            'hka_code' => $this->hka_code,
         ];
     }
 }

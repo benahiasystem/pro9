@@ -17,6 +17,7 @@ use App\Models\Tenant\Establishment;
 use Mpdf\Config\FontVariables;
 use App\Models\Tenant\Dispatch;
 use App\Models\Tenant\Document;
+use App\Models\Tenant\PaymentMethodType;
 use App\Models\Tenant\Retention;
 use Mpdf\Config\ConfigVariables;
 use App\Models\Tenant\Perception;
@@ -993,6 +994,11 @@ class Facturalo
 
     private function savePayments($document, $payments, $isUpdate = false)
     {
+        // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+        foreach ($payments as $payment) {
+            PaymentMethodType::assertActiveForPayment($payment['payment_method_type_id'] ?? null);
+        }
+        // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
         $total = $document->total;
         $balance = $total - collect($payments)->sum('payment');
 

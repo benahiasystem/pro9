@@ -136,7 +136,7 @@ El manual propone `subtotal = montoGravadoTotal + montoExentoTotal`, `totalIVA =
 | `indicadorBienoServicio` | O | `1` bien, `2` servicio. |
 | `descripcion` | O | Hasta 255 caracteres. |
 | `cantidad` | O | 8 enteros y 2 decimales. |
-| `unidadMedida` | O | 3 caracteres, catálogo 12. Requiere traducción desde UND/SERV de Pro9. |
+| `unidadMedida` | O | El manual indica 3 caracteres, catálogo 12. `cat_unit_types.hka_code` guarda una equivalencia de referencia desde las 28 unidades Pro9; aún no se envía a HKA. `PR` tiene dos caracteres en Rec. 20 y requiere validación DEMO. |
 | `precioUnitario` | O | 16+2 decimales. |
 | `precioUnitarioDescuento`, `montoBonificación`, `descripBonificación`, `descuentoMonto`, `RecargoMonto` | P | Precio neto, bonificación, causa, descuento de línea y recargo; montos 16+2, descripción 255. |
 | `precioItem` | O | Precio de línea antes de impuesto, después de descuento; 16+2. |
@@ -178,13 +178,50 @@ Estos valores sirven para el **payload HKA**. Los catálogos HKA de proveedores,
 | 8 | Identificación: natural `V`, jurídica `J`, extranjero residenciado `E`, pasaporte `P`, ente gubernamental `G`, comunal `C`; no domiciliado: `RUT`, `NIT`, etc. Pro9 conserva una fila local `ND` inactiva en `cat_identity_document_types`, con `external_document_examples = 'RUT, NIT'`. Es sólo referencia: `ND` no es un código HKA ni habilita clientes o ventas no domiciliadas. |
 | 9 | País: ISO 3166-1; ejemplo `VE`. |
 | 10 | IVA/tributo: reducido `R` 8%, general `G` 16%, adicional `A` 31%, exento/exonerado/no gravado `E` 0%, percibido `P` 0%, IGTF 3%. Pro9 los reproduce en `cat_iva_rate_types` con porcentaje decimal y `tax_kind` (`IVA` o `IGTF`). IGTF es un tributo distinto del IVA. Son valores de referencia del manual, no tasas configurables de Pro9 ni prueba de vigencia actual. |
-| 11 | Pago: depósito `01`, pago móvil `02`, transferencia `03`, orden de pago `04`, débito `05`, crédito `06`, cheque no negociable `07`, efectivo legal `08`, efectivo divisas `09`, medios exterior `10`, transferencia exterior `11`, cheque exterior `12`, orden de pago simple `13`, documentaria `14`, remesa simple `15`, documentaria `16`, carta de crédito simple `17`, documentaria `18`, otros `99`. |
-| 12 | Unidad: remite a UNECE Rec. 20; no hay tabla interna de códigos en el PDF. |
+| 11 | Pago: depósito `01`, pago móvil `02`, transferencia `03`, orden de pago `04`, débito `05`, crédito `06`, cheque no negociable `07`, efectivo legal `08`, efectivo divisas `09`, medios exterior `10`, transferencia exterior `11`, cheque exterior `12`, orden de pago simple `13`, documentaria `14`, remesa simple `15`, documentaria `16`, carta de crédito simple `17`, documentaria `18`, otros `99`. Pro9 guarda estos códigos en `payment_method_types.hka_code`: seis métodos locales tienen equivalencia específica; otros seis usan `99`. Trece filas nuevas (`14`–`26`) completan el catálogo HKA y permanecen inactivas. Los IDs locales no son códigos HKA y esta referencia no habilita envío de pagos al proveedor. |
+| 12 | Unidad: remite a UNECE Rec. 20; el PDF no enumera los códigos. Pro9 mantiene la correspondencia de referencia en `cat_unit_types.hka_code`, obligatoria en sus 28 filas iniciales. |
 | 13 | Otro impuesto global: IGTF, ejemplo 3% aplicado a la porción pagada en divisas. |
 | 14 | Motivo traslado: reparación/perfeccionamiento; traslado entre almacenes propios; almacén ajeno; tránsito aduanero; otras causas. Sin códigos publicados. |
 | 15 | Producto: alcohol, cigarrillos. Sin códigos publicados. |
 | 16 | Origen: nacional, importado, nacional e importado. Sin códigos publicados. |
 | 17 | Tributación/destino: tierra firme, régimen especial. Sin códigos publicados. |
+
+### Correspondencia de unidades Pro9 con UNECE Rec. 20
+
+`cat_unit_types.hka_code` es `varchar(3) NOT NULL` y se carga para las 28 unidades iniciales. El catálogo está cerrado a creación, edición y eliminación; el código se muestra como referencia de solo lectura. La nota 2 del Excel Rec. 20 antepone `X` a códigos de envase de dos caracteres. La equivalencia no participa todavía en el payload HKA.
+
+| Pro9 | Descripción | Inglés Rec. 20 | `hka_code` |
+|---|---|---|---|
+| BOL | Bolsa | bag | `XBG` |
+| BOT | Botella | bottle | `XBO` |
+| BTO | Bulto | bundle | `XBE` |
+| CAJ | Caja | box | `XBX` |
+| CM | Centímetro | centimetre | `CMT` |
+| DIA | Día | day | `DAY` |
+| DOC | Docena | dozen | `DZN` |
+| GAL | Galón | gallon (US) | `GLL` |
+| GR | Gramo | gram | `GRM` |
+| HR | Hora | hour | `HUR` |
+| JGO | Juego | set | `SET` |
+| KG | Kilogramo | kilogram | `KGM` |
+| KM | Kilómetro | kilometre | `KMT` |
+| LB | Libra | pound | `LBR` |
+| LT | Litro | litre | `LTR` |
+| M | Metro | metre | `MTR` |
+| M2 | Metro cuadrado | square metre | `MTK` |
+| M3 | Metro cúbico | cubic metre | `MTQ` |
+| MG | Miligramo | milligram | `MGM` |
+| ML | Mililitro | millilitre | `MLT` |
+| MM | Milímetro | millimetre | `MMT` |
+| PAR | Par | pair | `PR` |
+| PQT | Paquete | pack / package | `XPK` |
+| PULG | Pulgada | inch | `INH` |
+| SAC | Saco | sack | `XSA` |
+| SERV | Servicio | service unit | `E48` |
+| TON | Tonelada | tonne (metric ton) | `TNE` |
+| UND | Unidad | one / unit | `C62` |
+
+Se interpreta «Bulto» como *bundle* (`XBE`), «Galón» como galón estadounidense (`GLL`) y «Tonelada» como tonelada métrica (`TNE`). `PR` tiene dos caracteres en Rec. 20, aunque el manual HKA indica tres; comprobar su aceptación en DEMO antes de emitirlo.
 
 `tipoTransaccion` utiliza los códigos del catálogo 3. `transaccionId` es otro campo: identifica una solicitud de emisión o asignación y no consulta `cat_transactions_types`. Los tipos de transacción de caja de Pro9 también son independientes.
 

@@ -46,6 +46,10 @@ class FiscalEmissionSchemaTest extends TestCase
             'fiscal_emission' => require $root . '/config/fiscal_emission.php',
             'venezuela' => require $root . '/config/venezuela.php',
         ]));
+        $app->instance('validator', new \Illuminate\Validation\Factory(
+            new \Illuminate\Translation\Translator(new \Illuminate\Translation\ArrayLoader(), 'es'),
+            $app
+        ));
         $environment = is_file($root . '/.env') ? \Dotenv\Dotenv::parse(file_get_contents($root . '/.env')) : [];
         $connection = [
             'driver' => 'mysql',
@@ -72,6 +76,9 @@ class FiscalEmissionSchemaTest extends TestCase
         $tenancy->method('systemName')->willReturn('system');
         $app->instance(\Hyn\Tenancy\Database\Connection::class, $tenancy);
         $this->capsule->bootEloquent();
+        $app->make('validator')->setPresenceVerifier(
+            new \Illuminate\Validation\DatabasePresenceVerifier($this->capsule->getDatabaseManager())
+        );
     }
 
     protected function tearDown(): void
@@ -815,6 +822,43 @@ class FiscalEmissionSchemaTest extends TestCase
             (new \Database\Seeders\TenancyDatabaseSeeder())->setContainer(Container::getInstance())->run();
             $this->assertFiscalSchema($db);
             // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+            $methods = $db->table('payment_method_types')->orderBy('id')->get(['id', 'hka_code', 'is_active']);
+            self::assertCount(25, $methods);
+            self::assertSame(19, $methods->pluck('hka_code')->unique()->count());
+            self::assertSame(7, $methods->where('hka_code', '99')->count());
+            self::assertSame(9, $methods->where('is_active', 1)->count());
+            self::assertSame(0, $methods->where('id', '14')->first()->is_active);
+            self::assertSame(0, $methods->where('id', '26')->first()->is_active);
+            self::assertSame(9, \App\Models\Tenant\PaymentMethodType::getPaymentMethodTypes()->count());
+            $paymentRules = (new \App\Http\Requests\Tenant\DocumentPaymentRequest())->rules();
+            $validator = Container::getInstance()->make('validator');
+            $paymentInput = [
+                'date_of_payment' => '2026-09-13', 'payment_method_type_id' => '14',
+                'payment_destination_id' => 'cash', 'payment' => 10,
+            ];
+            self::assertTrue($validator->make(array_replace($paymentInput, ['payment_method_type_id' => '01']), $paymentRules)->passes());
+            self::assertTrue($validator->make($paymentInput, $paymentRules)->fails());
+            \App\Models\Tenant\PaymentMethodType::assertActiveForPayment('01');
+            try {
+                \App\Models\Tenant\PaymentMethodType::assertActiveForPayment('14');
+                self::fail('Un método HKA inactivo no puede registrarse como pago.');
+            } catch (\Illuminate\Validation\ValidationException $exception) {
+                self::assertArrayHasKey('payment_method_type_id', $exception->errors());
+            }
+            $column = $db->select("SHOW COLUMNS FROM `payment_method_types` LIKE 'hka_code'");
+            self::assertSame('char(2)', $column[0]->Type);
+            self::assertSame('NO', $column[0]->Null);
+            $hkaIndex = $db->select("SHOW INDEX FROM `payment_method_types` WHERE Key_name = 'payment_method_types_hka_code_index'");
+            self::assertCount(1, $hkaIndex);
+            self::assertSame(1, (int) $hkaIndex[0]->Non_unique);
+            $customMethod = \Modules\Sale\Http\Requests\PaymentMethodTypeRequest::create('/', 'POST', [
+                'id' => '27', 'description' => 'Método local de prueba', 'is_active' => 1,
+            ]);
+            app(\Modules\Sale\Http\Controllers\PaymentMethodTypeController::class)->store($customMethod);
+            self::assertSame('99', $db->table('payment_method_types')->where('id', '27')->value('hka_code'));
+            $db->table('payment_method_types')->where('id', '27')->delete();
+            // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
+            // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
             // ########## INICIO CAMBIO AFECTACIÓN IVA
             self::assertSame([
                 ['A', 'Alícuota Adicional (suntuario)', '31.00', 'IVA'],
@@ -1030,7 +1074,27 @@ class FiscalEmissionSchemaTest extends TestCase
         ], $db->table('cat_unit_types')->orderBy('id')->pluck('id')->all());
         self::assertSame(28, $db->table('cat_unit_types')->where('active', 1)->count());
         self::assertSame(28, $db->table('cat_unit_types')->whereColumn('id', 'symbol')->count());
+        self::assertSame(0, $db->table('cat_unit_types')->whereNull('hka_code')->count());
+        self::assertSame(28, $db->table('cat_unit_types')->distinct()->count('hka_code'));
+        self::assertSame('XBG', $db->table('cat_unit_types')->where('id', 'BOL')->value('hka_code'));
+        self::assertSame('XBE', $db->table('cat_unit_types')->where('id', 'BTO')->value('hka_code'));
+        self::assertSame('PR', $db->table('cat_unit_types')->where('id', 'PAR')->value('hka_code'));
+        $hkaColumn = $db->selectOne('SELECT IS_NULLABLE AS nullable, DATA_TYPE AS type, CHARACTER_MAXIMUM_LENGTH AS length, COLUMN_DEFAULT AS default_value FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ?', [$this->database, 'cat_unit_types', 'hka_code']);
+        self::assertSame('NO', $hkaColumn->nullable);
+        self::assertSame('varchar', $hkaColumn->type);
+        self::assertSame(3, (int) $hkaColumn->length);
+        self::assertNull($hkaColumn->default_value);
         self::assertSame(0, $db->table('cat_unit_types')->whereIn('id', ['NIU', 'ZZ'])->count());
+        $unitController = new \App\Http\Controllers\Tenant\UnitTypeController();
+        $unitRequest = \Illuminate\Http\Request::create('/unit_types/records', 'GET', ['active' => '1']);
+        self::assertCount(28, $unitController->records($unitRequest)->toArray($unitRequest));
+        self::assertSame('XBG', $unitController->record('BOL')->toArray($unitRequest)['hka_code']);
+        self::assertFalse($unitController->active(\Illuminate\Http\Request::create('/unit_types/active', 'POST', ['id' => 'UND', 'active' => false]))['success']);
+        self::assertTrue($unitController->active(\Illuminate\Http\Request::create('/unit_types/active', 'POST', ['id' => 'BOL', 'active' => false]))['success']);
+        self::assertCount(27, $unitController->records($unitRequest)->toArray($unitRequest));
+        self::assertSame('XBG', $unitController->record('BOL')->toArray($unitRequest)['hka_code']);
+        self::assertTrue($unitController->active(\Illuminate\Http\Request::create('/unit_types/active', 'POST', ['id' => 'BOL', 'active' => true]))['success']);
+        self::assertCount(28, $unitController->records($unitRequest)->toArray($unitRequest));
         // ######## FIN CONTRATO UNIDADES DE MEDIDA VENEZUELA ########
         $this->assertNoTransportColumns($db);
         foreach (['companies', 'documents', 'fiscal_configuration_audits'] as $table) {

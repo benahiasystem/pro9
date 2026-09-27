@@ -22,6 +22,7 @@ class UnitTypeCollection extends ResourceCollection
                 'active_value' => (bool) $row->active,
                 'symbol' => $row->symbol,
                 'description' => $row->description,
+                'hka_code' => $row->hka_code,
             ];
         });
     }

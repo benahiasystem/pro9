@@ -25,7 +25,7 @@ class PurchasePaymentController extends Controller
     public function tables()
     {
         return [
-            'payment_method_types' => PaymentMethodType::all(),
+            'payment_method_types' => PaymentMethodType::active()->get(),
             'payment_destinations' => $this->getPaymentDestinations()
         ];
     }

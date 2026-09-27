@@ -60,7 +60,7 @@ try {
 
     foreach ([
         'banks' => 13,
-        'payment_method_types' => 12,
+        'payment_method_types' => 25,
         'cat_affectation_igv_types' => 2,
         'cat_attribute_types' => 27,
         'cat_charge_discount_types' => 6,

@@ -44,7 +44,7 @@
             ];
             // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
             // ######### FIN CAMBIO SOLO FACTURA Y NOTA DE VENTA
-            $payment_method_types = PaymentMethodType::all();
+            $payment_method_types = PaymentMethodType::active()->get();
             $payment_destinations = $this->getPaymentDestinations();
 
             $fiscal_profiles = (new \App\Services\FiscalProfileService(\App\Models\Tenant\Company::active()->getConnection()))->forSelection((int) $establishment->id, 'presential', app(SeriesResolver::class)->activeGroupId());

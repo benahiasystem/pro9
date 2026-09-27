@@ -23,6 +23,9 @@ class PaymentMethodTypeCollection extends ResourceCollection
 
             // ######### INICIO PROTECCIÓN MÉTODOS INICIALES VENEZUELA #########
             $can_delete = !PaymentMethodType::isInitialPaymentMethodId($row->id);
+            if (in_array((string) $row->id, PaymentMethodType::HKA_REFERENCE_PAYMENT_METHOD_IDS, true)) {
+                $show_actions = false;
+            }
             // ######### FIN PROTECCIÓN MÉTODOS INICIALES VENEZUELA #########
 
             if(in_array($row->id, ['01', '05', '08', '09', '04'])){

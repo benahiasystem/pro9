@@ -199,6 +199,9 @@
                 }
                 $this->deleteAllPayments($doc->payments);
                 foreach ($data['payments'] as $row) {
+                    if (isset($row['payment_method_type_id'])) {
+                        \App\Models\Tenant\PaymentMethodType::assertActiveForPayment($row['payment_method_type_id']);
+                    }
                     $record_payment = $doc->payments()->create($row);
 
                     if (isset($row['bank_loan_method_type_id']) && $row['bank_loan_method_type_id'] == 1) {

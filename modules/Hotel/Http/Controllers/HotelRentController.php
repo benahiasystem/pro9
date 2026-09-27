@@ -117,6 +117,7 @@ class HotelRentController extends Controller
 	{
 		if($item->isPaid())
 		{
+			\App\Models\Tenant\PaymentMethodType::assertActiveForPayment($rent_payment['payment_method_type_id'] ?? null);
 			$record = $item->payments()->create([
 				'date_of_payment' => date('Y-m-d'),
 				'payment_method_type_id' => $rent_payment['payment_method_type_id'],
