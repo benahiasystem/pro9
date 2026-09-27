@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Tenant;
 
 use App\CoreFacturalo\Helpers\Storage\StorageDocument;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Tenant\RetentionRequest;
 use App\Http\Resources\Tenant\RetentionCollection;
 use App\Http\Resources\Tenant\RetentionResource;
 use App\Models\Tenant\Catalogs\Code;
@@ -19,17 +18,11 @@ use App\Models\Tenant\Catalogs\RetentionType;
 use App\Models\Tenant\Person;
 use App\Models\Tenant\Catalogs\CurrencyType;
 use App\Models\Tenant\Catalogs\DocumentType;
-use Illuminate\Support\Facades\DB;
-use App\CoreFacturalo\Facturalo;
 
 class RetentionController extends Controller
 {
     use StorageDocument;
     
-    public function __construct() {
-        $this->middleware('input.request:retention,web', ['only' => ['store']]);
-    }
-
     public function index()
     {
         return view('tenant.retentions.index');
@@ -54,7 +47,7 @@ class RetentionController extends Controller
 
     public function create()
     {
-        return view('tenant.retentions.form');
+        return $this->creationDisabled();
     }
 
     public function tables()
@@ -105,29 +98,18 @@ class RetentionController extends Controller
     }
  
 
-    public function store(RetentionRequest $request)
+    public function store()
     {
-        $fact = DB::connection('tenant')->transaction(function () use($request) {
-            $facturalo = new Facturalo();
-            $facturalo->save($request->all());
-            $facturalo->createPdf();
-
-            return $facturalo;
-        });
-
-        $document = $fact->getDocument();
-        $response = $fact->getResponse();
-
-        return [
-            'success' => true,
-            'message' => "Se generó la retención {$document->series}-{$document->number}",
-            'data' => [
-                'id' => $document->id,
-                'response' =>$response
-
-            ],
-        ];
+        return $this->creationDisabled();
     }
 
+    private function creationDisabled()
+    {
+        return response()->json([
+            'success' => false,
+            'code' => 'RETENTION_CREATION_DISABLED',
+            'message' => 'La creación de retenciones está deshabilitada hasta definir el nuevo cálculo de ISLR.',
+        ], 409);
+    }
 }
 // ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

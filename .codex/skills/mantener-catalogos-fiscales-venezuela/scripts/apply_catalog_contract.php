@@ -24,6 +24,13 @@ $activeCatalogRow = static fn (string $id, string $description): array => [
     'description' => $description,
 ];
 
+$identityCatalogRow = static fn (string $id, string $description, int $active = 1, ?string $examples = null): array => [
+    'id' => $id,
+    'active' => $active,
+    'description' => $description,
+    'external_document_examples' => $examples,
+];
+
 $banks = [
     'BANCO DE VENEZUELA',
     'BANESCO',
@@ -77,16 +84,27 @@ $desiredRows = [
     ],
     // ########## INICIO CATÁLOGO IDENTIDADES ACTIVAS VENEZUELA ##########
     'cat_identity_document_types' => [
-        $activeCatalogRow('0', 'Doc.sin.rif'),
-        $activeCatalogRow('1', 'Venezolano'),
-        $activeCatalogRow('6', 'Juridico'),
-        $activeCatalogRow('7', 'Pasaporte'),
-        $activeCatalogRow('E', 'Extranjero'),
-        $activeCatalogRow('C', 'Comuna'),
-        $activeCatalogRow('G', 'Gubernamental'),
-        $activeCatalogRow('R', 'Firma Personal'),
+        $identityCatalogRow('0', 'Doc.sin.rif'),
+        $identityCatalogRow('1', 'Venezolano'),
+        $identityCatalogRow('6', 'Juridico'),
+        $identityCatalogRow('7', 'Pasaporte'),
+        $identityCatalogRow('E', 'Extranjero'),
+        $identityCatalogRow('C', 'Comuna'),
+        $identityCatalogRow('G', 'Gubernamental'),
+        $identityCatalogRow('R', 'Firma Personal'),
+        $identityCatalogRow('ND', 'No Domiciliado', 0, 'RUT, NIT'),
     ],
     // ######### FIN CATÁLOGO IDENTIDADES ACTIVAS VENEZUELA #########
+    // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+    'cat_iva_rate_types' => [
+        ['id' => 'R', 'description' => 'Alícuota Reducida', 'percentage' => '8.00', 'tax_kind' => 'IVA'],
+        ['id' => 'G', 'description' => 'Alícuota General', 'percentage' => '16.00', 'tax_kind' => 'IVA'],
+        ['id' => 'A', 'description' => 'Alícuota Adicional (suntuario)', 'percentage' => '31.00', 'tax_kind' => 'IVA'],
+        ['id' => 'E', 'description' => 'Exento, Exonerado o No Gravado', 'percentage' => '0.00', 'tax_kind' => 'IVA'],
+        ['id' => 'P', 'description' => 'Percibido', 'percentage' => '0.00', 'tax_kind' => 'IVA'],
+        ['id' => 'IGTF', 'description' => 'Impuesto a las Grandes Transacciones Financieras', 'percentage' => '3.00', 'tax_kind' => 'IGTF'],
+    ],
+    // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
     'cat_legend_types' => array_values(array_filter(
         $tables['cat_legend_types']['rows'] ?? [],
         static fn (array $catalogRow): bool => (string) $catalogRow['id'] === '1000'
@@ -104,7 +122,7 @@ $desiredRows = [
     ],
     'cat_operation_types' => array_values(array_filter(
         $tables['cat_operation_types']['rows'] ?? [],
-        static fn (array $catalogRow): bool => in_array((string) $catalogRow['id'], ['0101', '0200'], true)
+        static fn (array $catalogRow): bool => in_array((string) $catalogRow['id'], ['0101', '0200', '0201', '0202', '0203'], true)
     )),
     'cat_transfer_reason_types' => [
         $activeCatalogRow('01', 'Venta') + ['discount_stock' => 0],

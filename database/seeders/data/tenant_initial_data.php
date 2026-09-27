@@ -1223,6 +1223,7 @@ return array (
         // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
       ),
     ),
+    // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
     'cat_identity_document_types' =>
     array (
       'key_columns' =>
@@ -1236,51 +1237,81 @@ return array (
           'id' => '0',
           'active' => 1,
           'description' => 'Doc.sin.rif',
+          'external_document_examples' => NULL,
         ),
         1 =>
         array (
           'id' => '1',
           'active' => 1,
           'description' => 'Venezolano',
+          'external_document_examples' => NULL,
         ),
         2 =>
         array (
           'id' => '6',
           'active' => 1,
           'description' => 'Juridico',
+          'external_document_examples' => NULL,
         ),
         3 =>
         array (
           'id' => '7',
           'active' => 1,
           'description' => 'Pasaporte',
+          'external_document_examples' => NULL,
         ),
         4 =>
         array (
           'id' => 'E',
           'active' => 1,
           'description' => 'Extranjero',
+          'external_document_examples' => NULL,
         ),
         5 =>
         array (
           'id' => 'C',
           'active' => 1,
           'description' => 'Comuna',
+          'external_document_examples' => NULL,
         ),
         6 =>
         array (
           'id' => 'G',
           'active' => 1,
           'description' => 'Gubernamental',
+          'external_document_examples' => NULL,
         ),
         7 =>
         array (
           'id' => 'R',
           'active' => 1,
           'description' => 'Firma Personal',
+          'external_document_examples' => NULL,
+        ),
+        8 =>
+        array (
+          'id' => 'ND',
+          'active' => 0,
+          'description' => 'No Domiciliado',
+          'external_document_examples' => 'RUT, NIT',
         ),
       ),
     ),
+    // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
+    // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+    'cat_iva_rate_types' =>
+    array (
+      'key_columns' => array ('id'),
+      'rows' => array (
+        array ('id' => 'R', 'description' => 'Alícuota Reducida', 'percentage' => '8.00', 'tax_kind' => 'IVA'),
+        array ('id' => 'G', 'description' => 'Alícuota General', 'percentage' => '16.00', 'tax_kind' => 'IVA'),
+        array ('id' => 'A', 'description' => 'Alícuota Adicional (suntuario)', 'percentage' => '31.00', 'tax_kind' => 'IVA'),
+        array ('id' => 'E', 'description' => 'Exento, Exonerado o No Gravado', 'percentage' => '0.00', 'tax_kind' => 'IVA'),
+        array ('id' => 'P', 'description' => 'Percibido', 'percentage' => '0.00', 'tax_kind' => 'IVA'),
+        array ('id' => 'IGTF', 'description' => 'Impuesto a las Grandes Transacciones Financieras', 'percentage' => '3.00', 'tax_kind' => 'IGTF'),
+      ),
+    ),
+    // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
     'cat_legend_types' =>
     array (
       'key_columns' =>
@@ -1359,6 +1390,7 @@ return array (
         ),
       ),
     ),
+    // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
     'cat_operation_types' =>
     array (
       'key_columns' =>
@@ -1373,6 +1405,7 @@ return array (
           'active' => 1,
           'exportation' => 0,
           'description' => 'Venta interna',
+          'incoterm' => NULL,
         ),
         1 =>
         array (
@@ -1380,9 +1413,35 @@ return array (
           'active' => 0,
           'exportation' => 1,
           'description' => 'Exportación de Bienes',
+          'incoterm' => NULL,
+        ),
+        2 =>
+        array (
+          'id' => '0201',
+          'active' => 0,
+          'exportation' => 1,
+          'description' => 'Exportación FOB',
+          'incoterm' => 'FOB',
+        ),
+        3 =>
+        array (
+          'id' => '0202',
+          'active' => 0,
+          'exportation' => 1,
+          'description' => 'Exportación CIF',
+          'incoterm' => 'CIF',
+        ),
+        4 =>
+        array (
+          'id' => '0203',
+          'active' => 0,
+          'exportation' => 1,
+          'description' => 'Exportación EXW',
+          'incoterm' => 'EXW',
         ),
       ),
     ),
+    // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
     'cat_periods' =>
     array (
       'key_columns' =>
@@ -1527,30 +1586,109 @@ return array (
       ),
     ),
     // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
-    'cat_retention_types' =>
+    // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+    'cat_retention_concept' =>
     array (
-      'key_columns' =>
-      array (
-        0 => 'id',
-      ),
-      'rows' =>
-      array (
-        0 =>
-        array (
-          'id' => '01',
-          'active' => 1,
-          'percentage' => '3.00',
-          'description' => 'Tasa 3%',
-        ),
-        1 =>
-        array (
-          'id' => '02',
-          'active' => 1,
-          'percentage' => '6.00',
-          'description' => 'Tasa 6%',
-        ),
+      'key_columns' => array ('id'),
+      'rows' => array (
+        array ('id' => '001', 'description' => 'Sueldos y salarios', 'percentage_label' => 'Variable'),
+        array ('id' => '002', 'description' => 'Honorarios profesionales no mercantiles (PNR)', 'percentage_label' => '3 %'),
+        array ('id' => '003', 'description' => 'Honorarios profesionales no mercantiles (PNNR)', 'percentage_label' => '34 %'),
+        array ('id' => '004', 'description' => 'Honorarios profesionales no mercantiles (PJD)', 'percentage_label' => '5 %'),
+        array ('id' => '005', 'description' => 'Honorarios profesionales no mercantiles (PJND)', 'percentage_label' => '15 % hasta 2.000 UT; 22 % de 2.000 a 3.000 UT; 34 % sobre el excedente de 3.000 UT'),
+        array ('id' => '006', 'description' => 'Honorarios profesionales mancomunados no mercantiles (PNR)', 'percentage_label' => '3 %'),
+        array ('id' => '007', 'description' => 'Honorarios profesionales mancomunados no mercantiles (PNNR)', 'percentage_label' => '34 %'),
+        array ('id' => '008', 'description' => 'Honorarios profesionales mancomunados no mercantiles (PJD)', 'percentage_label' => '5 %'),
+        array ('id' => '009', 'description' => 'Honorarios profesionales mancomunados no mercantiles (PJND)', 'percentage_label' => '15 % hasta 2.000 UT; 22 % de 2.000 a 3.000 UT; 34 % sobre el excedente de 3.000 UT'),
+        array ('id' => '010', 'description' => 'Honorarios profesionales pagados a jinetes, veterinarios, preparadores o entrenadores (PNR)', 'percentage_label' => '3 %'),
+        array ('id' => '011', 'description' => 'Honorarios profesionales pagados a jinetes, veterinarios, preparadores o entrenadores (PNNR)', 'percentage_label' => '34 %'),
+        array ('id' => '012', 'description' => 'Honorarios profesionales pagados por clínicas, hospitales, centros de salud, bufetes, escritorios, oficinas, colegios profesionales u otra institución a profesionales no mercantiles sin relación de dependencia (PNR)', 'percentage_label' => '3 %'),
+        array ('id' => '013', 'description' => 'Honorarios profesionales pagados por clínicas, hospitales, centros de salud, bufetes, escritorios, oficinas, colegios profesionales u otra institución a profesionales no mercantiles sin relación de dependencia (PNNR)', 'percentage_label' => '34 %'),
+        array ('id' => '014', 'description' => 'Comisiones por venta de inmuebles (PNR)', 'percentage_label' => '3 %'),
+        array ('id' => '015', 'description' => 'Comisiones por venta de inmuebles (PNNR)', 'percentage_label' => '34 %'),
+        array ('id' => '016', 'description' => 'Comisiones por venta de inmuebles (PJD)', 'percentage_label' => '5 %'),
+        array ('id' => '017', 'description' => 'Comisiones por venta de inmuebles (PJND)', 'percentage_label' => '5 %'),
+        array ('id' => '018', 'description' => 'Otras comisiones distintas de remuneraciones accesorias de sueldos y similares (PNR)', 'percentage_label' => '3 %'),
+        array ('id' => '019', 'description' => 'Otras comisiones distintas de remuneraciones accesorias de sueldos y similares (PNNR)', 'percentage_label' => '34 %'),
+        array ('id' => '020', 'description' => 'Otras comisiones distintas de remuneraciones accesorias de sueldos y similares (PJD)', 'percentage_label' => '5 %'),
+        array ('id' => '021', 'description' => 'Otras comisiones distintas de remuneraciones accesorias de sueldos y similares (PJND)', 'percentage_label' => '5 %'),
+        array ('id' => '022', 'description' => 'Intereses de capitales tomados en préstamo e invertidos en producción de renta (PNNR)', 'percentage_label' => '34 %'),
+        array ('id' => '023', 'description' => 'Intereses de capitales tomados en préstamo e invertidos en producción de renta (PJND)', 'percentage_label' => '15 % hasta 2.000 UT; 22 % de 2.000 a 3.000 UT; 34 % sobre el excedente de 3.000 UT'),
+        array ('id' => '024', 'description' => 'Intereses de préstamos y otros créditos pagaderos a instituciones financieras constituidas en el exterior y no domiciliadas (PJND)', 'percentage_label' => '4,95 %'),
+        array ('id' => '025', 'description' => 'Intereses pagados por personas jurídicas o comunidades a otras personas o comunidades (PNR)', 'percentage_label' => '3 %'),
+        array ('id' => '026', 'description' => 'Intereses pagados por personas jurídicas o comunidades a otras personas o comunidades (PNNR)', 'percentage_label' => '34 %'),
+        array ('id' => '027', 'description' => 'Intereses pagados por personas jurídicas o comunidades a otras personas o comunidades (PJD)', 'percentage_label' => '5 %'),
+        array ('id' => '028', 'description' => 'Intereses pagados por personas jurídicas o comunidades a otras personas o comunidades (PJND)', 'percentage_label' => '15 % hasta 2.000 UT; 22 % de 2.000 a 3.000 UT; 34 % sobre el excedente de 3.000 UT'),
+        array ('id' => '029', 'description' => 'Enriquecimientos netos de agencias internacionales cuando paga una persona jurídica o comunidad domiciliada (PJND)', 'percentage_label' => '15 % hasta 2.000 UT; 22 % de 2.000 a 3.000 UT; 34 % sobre el excedente de 3.000 UT'),
+        array ('id' => '030', 'description' => 'Enriquecimientos netos de fletes pagados a agencias o empresas de transporte internacional constituidas y domiciliadas en el exterior (PNNR)', 'percentage_label' => '15 % hasta 2.000 UT; 22 % de 2.000 a 3.000 UT; 34 % sobre el excedente de 3.000 UT'),
+        array ('id' => '031', 'description' => 'Enriquecimientos netos de fletes pagados a agencias o empresas de transporte internacional constituidas y domiciliadas en el exterior (PJND)', 'percentage_label' => '15 % hasta 2.000 UT; 22 % de 2.000 a 3.000 UT; 34 % sobre el excedente de 3.000 UT'),
+        array ('id' => '032', 'description' => 'Enriquecimientos netos por exhibición de películas, cine o televisión (PNNR)', 'percentage_label' => '34 %'),
+        array ('id' => '033', 'description' => 'Enriquecimientos netos por exhibición de películas, cine o televisión (PJND)', 'percentage_label' => '15 % hasta 2.000 UT; 22 % de 2.000 a 3.000 UT; 34 % sobre el excedente de 3.000 UT'),
+        array ('id' => '034', 'description' => 'Enriquecimientos por regalías y participaciones análogas (PNNR)', 'percentage_label' => '34 %'),
+        array ('id' => '035', 'description' => 'Enriquecimientos por regalías y participaciones análogas (PJND)', 'percentage_label' => '15 % hasta 2.000 UT; 22 % de 2.000 a 3.000 UT; 34 % sobre el excedente de 3.000 UT'),
+        array ('id' => '036', 'description' => 'Enriquecimientos por remuneraciones, honorarios y pagos análogos de asistencia técnica (PNNR)', 'percentage_label' => '34 %'),
+        array ('id' => '037', 'description' => 'Enriquecimientos por remuneraciones, honorarios y pagos análogos de asistencia técnica (PJND)', 'percentage_label' => '15 % hasta 2.000 UT; 22 % de 2.000 a 3.000 UT; 34 % sobre el excedente de 3.000 UT'),
+        array ('id' => '038', 'description' => 'Enriquecimientos por servicios tecnológicos utilizados en el país o cedidos a terceros (PNNR)', 'percentage_label' => '34 %'),
+        array ('id' => '039', 'description' => 'Enriquecimientos por servicios tecnológicos utilizados en el país o cedidos a terceros (PJND)', 'percentage_label' => '15 % hasta 2.000 UT; 22 % de 2.000 a 3.000 UT; 34 % sobre el excedente de 3.000 UT'),
+        array ('id' => '040', 'description' => 'Enriquecimientos netos por primas de seguros y reaseguros (PJND)', 'percentage_label' => '10 %'),
+        array ('id' => '041', 'description' => 'Ganancias por juegos y apuestas (PNR)', 'percentage_label' => '34 %'),
+        array ('id' => '042', 'description' => 'Ganancias por juegos y apuestas (PNNR)', 'percentage_label' => '34 %'),
+        array ('id' => '043', 'description' => 'Ganancias por juegos y apuestas (PJD)', 'percentage_label' => '34 %'),
+        array ('id' => '044', 'description' => 'Ganancias por juegos y apuestas (PJND)', 'percentage_label' => '34 %'),
+        array ('id' => '045', 'description' => 'Ganancias por premios de loterías e hipódromos (PNR)', 'percentage_label' => '16 %'),
+        array ('id' => '046', 'description' => 'Ganancias por premios de loterías e hipódromos (PNNR)', 'percentage_label' => '16 %'),
+        array ('id' => '047', 'description' => 'Ganancias por premios de loterías e hipódromos (PJD)', 'percentage_label' => '16 %'),
+        array ('id' => '048', 'description' => 'Ganancias por premios de loterías e hipódromos (PJND)', 'percentage_label' => '16 %'),
+        array ('id' => '049', 'description' => 'Premios pagados a propietarios de animales de carrera (PNR)', 'percentage_label' => '3 %'),
+        array ('id' => '050', 'description' => 'Premios pagados a propietarios de animales de carrera (PNNR)', 'percentage_label' => '34 %'),
+        array ('id' => '051', 'description' => 'Premios pagados a propietarios de animales de carrera (PJD)', 'percentage_label' => '5 %'),
+        array ('id' => '052', 'description' => 'Premios pagados a propietarios de animales de carrera (PJND)', 'percentage_label' => '5 %'),
+        array ('id' => '053', 'description' => 'Pagos a contratistas o subcontratistas por ejecución de obras o servicios mediante valuaciones y órdenes de pago (PNR)', 'percentage_label' => '1 %'),
+        array ('id' => '054', 'description' => 'Pagos a contratistas o subcontratistas por ejecución de obras o servicios mediante valuaciones y órdenes de pago (PNNR)', 'percentage_label' => '34 %'),
+        array ('id' => '055', 'description' => 'Pagos a contratistas o subcontratistas por ejecución de obras o servicios mediante valuaciones y órdenes de pago (PJD)', 'percentage_label' => '2 %'),
+        array ('id' => '056', 'description' => 'Pagos a contratistas o subcontratistas por ejecución de obras o servicios mediante valuaciones y órdenes de pago (PJND)', 'percentage_label' => '15 % hasta 2.000 UT; 22 % de 2.000 a 3.000 UT; 34 % sobre el excedente de 3.000 UT'),
+        array ('id' => '057', 'description' => 'Pagos a arrendadores de inmuebles situados en el país (PNR)', 'percentage_label' => '3 %'),
+        array ('id' => '058', 'description' => 'Pagos a arrendadores de inmuebles situados en el país (PNNR)', 'percentage_label' => '34 %'),
+        array ('id' => '059', 'description' => 'Pagos a arrendadores de inmuebles situados en el país (PJD)', 'percentage_label' => '5 %'),
+        array ('id' => '060', 'description' => 'Pagos a arrendadores de inmuebles situados en el país (PJND)', 'percentage_label' => '15 % hasta 2.000 UT; 22 % de 2.000 a 3.000 UT; 34 % sobre el excedente de 3.000 UT'),
+        array ('id' => '061', 'description' => 'Cánones de arrendamiento de muebles situados en el país (PNR)', 'percentage_label' => '3 %'),
+        array ('id' => '062', 'description' => 'Cánones de arrendamiento de muebles situados en el país (PNNR)', 'percentage_label' => '34 %'),
+        array ('id' => '063', 'description' => 'Cánones de arrendamiento de muebles situados en el país (PJD)', 'percentage_label' => '5 %'),
+        array ('id' => '064', 'description' => 'Cánones de arrendamiento de muebles situados en el país (PJND)', 'percentage_label' => '5 %'),
+        array ('id' => '065', 'description' => 'Pagos de emisoras de tarjetas de crédito o consumo por venta de bienes y servicios u otro concepto (PNR)', 'percentage_label' => '3 %'),
+        array ('id' => '066', 'description' => 'Pagos de emisoras de tarjetas de crédito o consumo por venta de bienes y servicios u otro concepto (PNNR)', 'percentage_label' => '34 %'),
+        array ('id' => '067', 'description' => 'Pagos de emisoras de tarjetas de crédito o consumo por venta de bienes y servicios u otro concepto (PJD)', 'percentage_label' => '5 %'),
+        array ('id' => '068', 'description' => 'Pagos de emisoras de tarjetas de crédito o consumo por venta de bienes y servicios u otro concepto (PJND)', 'percentage_label' => '5 %'),
+        array ('id' => '069', 'description' => 'Pagos de emisoras de tarjetas por venta de gasolina en estaciones de servicio (PNR)', 'percentage_label' => '1 %'),
+        array ('id' => '070', 'description' => 'Pagos de emisoras de tarjetas por venta de gasolina en estaciones de servicio (PJD)', 'percentage_label' => '1 %'),
+        array ('id' => '071', 'description' => 'Pagos por gastos de transporte conformados por fletes (PNR)', 'percentage_label' => '1 %'),
+        array ('id' => '072', 'description' => 'Pagos por gastos de transporte conformados por fletes (PJD)', 'percentage_label' => '3 %'),
+        array ('id' => '073', 'description' => 'Pagos de empresas de seguro, corretaje de seguros y reaseguros por sus servicios propios (PNR)', 'percentage_label' => '3 %'),
+        array ('id' => '074', 'description' => 'Pagos de empresas de seguro, corretaje de seguros y reaseguros por sus servicios propios (PJD)', 'percentage_label' => '5 %'),
+        array ('id' => '075', 'description' => 'Pagos de aseguradoras a contratistas por reparación de daños sufridos por asegurados (PNR)', 'percentage_label' => '3 %'),
+        array ('id' => '076', 'description' => 'Pagos de aseguradoras a contratistas por reparación de daños sufridos por asegurados (PJD)', 'percentage_label' => '5 %'),
+        array ('id' => '077', 'description' => 'Pagos de aseguradoras a clínicas, hospitales y centros de salud por atención médica a asegurados (PNR)', 'percentage_label' => '3 %'),
+        array ('id' => '078', 'description' => 'Pagos de aseguradoras a clínicas, hospitales y centros de salud por atención médica a asegurados (PJD)', 'percentage_label' => '5 %'),
+        array ('id' => '079', 'description' => 'Pagos por adquisición de fondos de comercio situados en el país (PNR)', 'percentage_label' => '3 %'),
+        array ('id' => '080', 'description' => 'Pagos por adquisición de fondos de comercio situados en el país (PNNR)', 'percentage_label' => '34 %'),
+        array ('id' => '081', 'description' => 'Pagos por adquisición de fondos de comercio situados en el país (PJD)', 'percentage_label' => '5 %'),
+        array ('id' => '082', 'description' => 'Pagos por adquisición de fondos de comercio situados en el país (PJND)', 'percentage_label' => '5 %'),
+        array ('id' => '083', 'description' => 'Pagos por publicidad, propaganda y cesión de espacios para esos fines (PNR)', 'percentage_label' => '3 %'),
+        array ('id' => '084', 'description' => 'Pagos por publicidad, propaganda y cesión de espacios para esos fines (PJD)', 'percentage_label' => '5 %'),
+        array ('id' => '085', 'description' => 'Pagos por publicidad, propaganda y cesión de espacios para esos fines (PJND)', 'percentage_label' => '5 %'),
+        array ('id' => '086', 'description' => 'Pagos por publicidad, propaganda y cesión de espacios a emisoras de radio (PJD)', 'percentage_label' => '3 %'),
       ),
     ),
+    'cat_retention_types' =>
+    array (
+      'key_columns' => array ('id'),
+      'rows' => array (
+        array ('id' => '01', 'description' => 'Dividendo en acciones', 'abbreviation' => 'DA'),
+        array ('id' => '02', 'description' => 'Dividendo en efectivo', 'abbreviation' => 'DE'),
+        array ('id' => '03', 'description' => 'Venta de acciones', 'abbreviation' => 'VA'),
+      ),
+    ),
+    // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
     // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
     'cat_special_tax_regime' =>
     array (

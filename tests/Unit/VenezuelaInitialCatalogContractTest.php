@@ -28,6 +28,7 @@ class VenezuelaInitialCatalogContractTest extends TestCase
             'cat_identity_document_types' => [
                 '0' => 'Doc.sin.rif', '1' => 'Venezolano', '6' => 'Juridico', '7' => 'Pasaporte',
                 'E' => 'Extranjero', 'C' => 'Comuna', 'G' => 'Gubernamental', 'R' => 'Firma Personal',
+                'ND' => 'No Domiciliado',
             ],
             'cat_legend_types' => ['1000' => 'Monto en Letras'],
             'cat_charge_discount_types' => [
@@ -49,7 +50,10 @@ class VenezuelaInitialCatalogContractTest extends TestCase
                 '01' => 'Intereses de mora o financiamiento',
                 '03' => 'Gastos de despacho, fletes, seguros o embalaje',
             ],
-            'cat_operation_types' => ['0101' => 'Venta interna', '0200' => 'Exportación de Bienes'],
+            'cat_operation_types' => [
+                '0101' => 'Venta interna', '0200' => 'Exportación de Bienes',
+                '0201' => 'Exportación FOB', '0202' => 'Exportación CIF', '0203' => 'Exportación EXW',
+            ],
             // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
             'cat_providers_types' => [
                 1 => 'Normal', 2 => 'Sin RIF', 3 => 'No Residenciado', 4 => 'No Domiciliado',
@@ -89,6 +93,16 @@ class VenezuelaInitialCatalogContractTest extends TestCase
             self::assertSame(1, (int) $transaction['active']);
         }
 
+        self::assertSame([
+            ['0101', 1, 0, null],
+            ['0200', 0, 1, null],
+            ['0201', 0, 1, 'FOB'],
+            ['0202', 0, 1, 'CIF'],
+            ['0203', 0, 1, 'EXW'],
+        ], array_map(static fn (array $row): array => [
+            $row['id'], $row['active'], $row['exportation'], $row['incoterm'],
+        ], $this->rows('cat_operation_types')));
+
         $providers = $this->rows('cat_providers_types');
         self::assertSame([1, 2, 3, 4], array_column($providers, 'id'));
         self::assertSame([null, 'SR', 'NR', 'ND'], array_column($providers, 'code'));
@@ -101,6 +115,18 @@ class VenezuelaInitialCatalogContractTest extends TestCase
         foreach ($regimes as $regime) {
             self::assertSame(1, (int) $regime['active']);
             self::assertSame(['id', 'description', 'active'], array_keys($regime));
+        }
+    }
+
+    /** @test */
+    public function incoterm_export_types_cannot_be_activated_before_the_export_flow_exists(): void
+    {
+        $controller = new \App\Http\Controllers\Tenant\OperationTypeController();
+
+        foreach (['0201', '0202', '0203'] as $id) {
+            $response = $controller->changeActive($id, '1');
+            self::assertSame(409, $response->getStatusCode());
+            self::assertSame('EXPORT_OPERATION_DISABLED', json_decode($response->getContent(), true)['code']);
         }
     }
 

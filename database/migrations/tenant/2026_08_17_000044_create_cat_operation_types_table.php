@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\DB;
  * - `active` tinyint(1) NOT NULL
  * - `exportation` tinyint(1) NOT NULL
  * - `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
+ * - `incoterm` varchar(3) COLLATE utf8mb4_unicode_ci DEFAULT NULL, código local para exportación
  */
 return new class extends Migration
 {
@@ -22,6 +23,7 @@ CREATE TABLE `cat_operation_types` (
   `active` tinyint(1) NOT NULL,
   `exportation` tinyint(1) NOT NULL,
   `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `incoterm` varchar(3) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   KEY `cat_operation_types_id_index` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL);

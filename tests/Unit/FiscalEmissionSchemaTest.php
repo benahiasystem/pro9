@@ -753,6 +753,55 @@ class FiscalEmissionSchemaTest extends TestCase
     }
     // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
 
+    public function test_retention_creation_routes_return_conflict_without_writing_records(): void
+    {
+        $db = $this->capsule->getConnection('tenant');
+        foreach ($this->migrations('migrations/tenant/*.php') as $migration) $migration->up();
+        $app = Container::getInstance();
+        (new \Database\Seeders\TenancyDatabaseSeeder())->setContainer($app)->run();
+
+        $this->httpSystemDatabase = 'pro9_fiscal_test_' . bin2hex(random_bytes(6));
+        $this->capsule->getConnection('control')->statement('CREATE DATABASE `' . $this->httpSystemDatabase . '` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
+        $systemConfig = array_replace($db->getConfig(), ['database' => $this->httpSystemDatabase]);
+        $this->capsule->getDatabaseManager()->purge('system');
+        $this->capsule->addConnection($systemConfig, 'system');
+        $this->capsule->getDatabaseManager()->setDefaultConnection('system');
+        foreach ($this->migrations('migrations/*.php') as $migration) $migration->up();
+        $system = $this->capsule->getConnection('system');
+        $system->table('hostnames')->insert(['id' => 1, 'fqdn' => 'fiscal-http.example.test']);
+        $plan = $system->table('plans')->insertGetId(['name' => 'Retention test plan', 'pricing' => 0, 'limit_users' => 10, 'limit_documents' => 0, 'plan_documents' => json_encode(['ISLR'])]);
+        $system->table('clients')->insert(['hostname_id' => 1, 'number' => 'J123456789', 'name' => 'Retention test client', 'email' => 'retention@example.test', 'token' => 'test-only', 'plan_id' => $plan]);
+        $this->capsule->getDatabaseManager()->setDefaultConnection('tenant');
+
+        $db->table('configurations')->insert(['quantity_documents' => 0, 'quantity_sales_notes' => 0, 'locked_tenant' => false, 'locked_users' => false]);
+        $db->table('companies')->insert(['id' => 1, 'identity_document_type_id' => '6', 'number' => 'J123456789', 'name' => 'Retention test', 'trade_name' => 'Retention test', 'fiscal_environment' => 'demo', 'fiscal_emission_mode' => 'digital']);
+        $establishment = $db->table('establishments')->insertGetId(['description' => 'Retention test', 'country_id' => 'VE', 'department_id' => '14', 'province_id' => '0229', 'district_id' => '000619', 'address' => 'Test', 'telephone' => '04121234567', 'code' => '0000']);
+        $admin = $db->table('users')->insertGetId(['name' => 'Retention admin', 'email' => 'retention-admin@example.test', 'password' => 'not-a-login-hash', 'type' => 'admin', 'establishment_id' => $establishment]);
+        $token = 'RETENTION-HTTP-TEST-TOKEN';
+        $db->table('users')->insert(['name' => 'Retention integrator', 'email' => 'retention-api@example.test', 'password' => 'not-a-login-hash', 'api_token' => $token, 'type' => 'integrator', 'establishment_id' => $establishment]);
+
+        $process = new \Symfony\Component\Process\Process([PHP_BINARY, dirname(__DIR__).'/Support/fiscal_http_worker.php']);
+        $process->setInput(json_encode(['connection' => $db->getConfig(), 'system_connection' => $systemConfig, 'requests' => [
+            ['path' => '/retentions/create', 'user_id' => $admin],
+            ['path' => '/retentions', 'method' => 'POST', 'user_id' => $admin, 'body' => ['retention_type_id' => '01']],
+            ['path' => '/api/retentions', 'method' => 'POST', 'api_token' => $token, 'body' => ['codigo_tipo_retencion' => '01']],
+            ['path' => '/retentions', 'user_id' => $admin],
+            ['path' => '/retentions/records?column=number&value=', 'user_id' => $admin],
+        ]], JSON_THROW_ON_ERROR));
+        $process->setTimeout(60);
+        $process->run();
+        self::assertSame(0, $process->getExitCode(), $process->getErrorOutput().substr($process->getOutput(), -2000));
+        $output = explode("\nFISCAL_HTTP_RESULT\n", $process->getOutput(), 2);
+        self::assertCount(2, $output, substr($process->getOutput(), -2000));
+        $responses = json_decode($output[1], true, 512, JSON_THROW_ON_ERROR);
+        self::assertSame([409, 409, 409, 200, 200], array_column($responses, 'status'), json_encode($responses));
+        foreach (array_slice($responses, 0, 3) as $response) {
+            self::assertSame('RETENTION_CREATION_DISABLED', $response['body']['code']);
+        }
+        self::assertSame(0, $db->table('retentions')->count());
+        self::assertSame(0, $db->table('retention_documents')->count());
+    }
+
     public function test_fresh_tenant_migrations_seed_rollback_and_repeat(): void
     {
         $db = $this->capsule->getConnection('tenant');
@@ -765,6 +814,53 @@ class FiscalEmissionSchemaTest extends TestCase
             }
             (new \Database\Seeders\TenancyDatabaseSeeder())->setContainer(Container::getInstance())->run();
             $this->assertFiscalSchema($db);
+            // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+            // ########## INICIO CAMBIO AFECTACIÓN IVA
+            self::assertSame([
+                ['A', 'Alícuota Adicional (suntuario)', '31.00', 'IVA'],
+                ['E', 'Exento, Exonerado o No Gravado', '0.00', 'IVA'],
+                ['G', 'Alícuota General', '16.00', 'IVA'],
+                ['IGTF', 'Impuesto a las Grandes Transacciones Financieras', '3.00', 'IGTF'],
+                ['P', 'Percibido', '0.00', 'IVA'],
+                ['R', 'Alícuota Reducida', '8.00', 'IVA'],
+            ], $db->table('cat_iva_rate_types')->orderBy('id')->get(['id', 'description', 'percentage', 'tax_kind'])
+                ->map(static fn ($row): array => [$row->id, $row->description, number_format((float) $row->percentage, 2, '.', ''), $row->tax_kind])->all());
+            self::assertCount(1, $db->select("SHOW INDEX FROM `cat_iva_rate_types` WHERE Key_name = 'PRIMARY'"));
+            // ######### FIN CAMBIO AFECTACIÓN IVA
+            self::assertTrue($db->getSchemaBuilder()->hasColumn('cat_identity_document_types', 'external_document_examples'));
+            self::assertSame(9, $db->table('cat_identity_document_types')->count());
+            self::assertSame(8, $db->table('cat_identity_document_types')->where('active', 1)->count());
+            self::assertSame(1, $db->table('cat_identity_document_types')->whereNotNull('external_document_examples')->count());
+            $nondomiciled = $db->table('cat_identity_document_types')->where('id', 'ND')->first(['active', 'description', 'external_document_examples']);
+            self::assertSame(0, (int) $nondomiciled->active);
+            self::assertSame('No Domiciliado', $nondomiciled->description);
+            self::assertSame('RUT, NIT', $nondomiciled->external_document_examples);
+            self::assertTrue($db->getSchemaBuilder()->hasColumn('cat_operation_types', 'incoterm'));
+            self::assertSame([
+                ['0101', 'Venta interna', 1, 0, null],
+                ['0200', 'Exportación de Bienes', 0, 1, null],
+                ['0201', 'Exportación FOB', 0, 1, 'FOB'],
+                ['0202', 'Exportación CIF', 0, 1, 'CIF'],
+                ['0203', 'Exportación EXW', 0, 1, 'EXW'],
+            ], $db->table('cat_operation_types')->orderBy('id')->get(['id', 'description', 'active', 'exportation', 'incoterm'])
+                ->map(static fn ($row): array => [$row->id, $row->description, (int) $row->active, (int) $row->exportation, $row->incoterm])->all());
+            self::assertSame(['0101'], $db->table('cat_operation_types')->where('active', 1)->pluck('id')->all());
+            $concepts = $db->table('cat_retention_concept')->orderBy('id')->get(['id', 'percentage_label']);
+            self::assertCount(86, $concepts);
+            self::assertSame('001', $concepts[0]->id);
+            self::assertSame('Variable', $concepts[0]->percentage_label);
+            self::assertSame('086', $concepts[85]->id);
+            self::assertStringContainsString('22 %', $concepts[4]->percentage_label);
+            self::assertSame([
+                ['01', 'Dividendo en acciones', 'DA'],
+                ['02', 'Dividendo en efectivo', 'DE'],
+                ['03', 'Venta de acciones', 'VA'],
+            ], $db->table('cat_retention_types')->orderBy('id')->get(['id', 'description', 'abbreviation'])
+                ->map(static fn ($row): array => [$row->id, $row->description, $row->abbreviation])->all());
+            self::assertFalse($db->getSchemaBuilder()->hasColumn('cat_retention_types', 'percentage'));
+            self::assertCount(1, $db->select("SHOW INDEX FROM `cat_retention_concept` WHERE Key_name = 'PRIMARY'"));
+            self::assertCount(1, $db->select("SHOW INDEX FROM `cat_retention_types` WHERE Key_name = 'PRIMARY'"));
+            // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
             // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
             $providerRows = $db->table('cat_providers_types')->orderBy('id')->get(['id', 'code', 'description', 'active'])
                 ->map(static fn ($row): array => [(int) $row->id, $row->code, $row->description, (int) $row->active])

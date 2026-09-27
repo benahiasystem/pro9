@@ -21,6 +21,7 @@ class SalesCustomerIdentityPolicyTest extends TestCase
             $table->string('id')->primary();
             $table->boolean('active');
             $table->string('description');
+            $table->string('external_document_examples')->nullable();
         });
         foreach (['countries', 'departments', 'provinces', 'districts'] as $tableName) {
             Schema::connection('tenant')->create($tableName, function ($table): void {
@@ -45,6 +46,10 @@ class SalesCustomerIdentityPolicyTest extends TestCase
             static fn (array $type): array => ['id' => $type['id'], 'active' => $type['active'], 'description' => $type['description']],
             IdentityDocument::TYPES
         ));
+        DB::connection('tenant')->table('cat_identity_document_types')->insert([
+            'id' => 'ND', 'active' => 0, 'description' => 'No Domiciliado',
+            'external_document_examples' => 'RUT, NIT',
+        ]);
 
         $id = 1;
         foreach (IdentityDocument::ids() as $identityTypeId) {
@@ -57,6 +62,10 @@ class SalesCustomerIdentityPolicyTest extends TestCase
             ]);
             $id++;
         }
+        DB::connection('tenant')->table('persons')->insert([
+            'id' => 9, 'type' => 'customers', 'identity_document_type_id' => 'ND',
+            'number' => 'FOREIGN-123', 'name' => 'Cliente no domiciliado',
+        ]);
         DB::connection('tenant')->table('persons')->insert([
             'id' => 99, 'type' => 'suppliers', 'identity_document_type_id' => '6',
             'number' => '12345678901', 'name' => 'Proveedor',
@@ -89,7 +98,7 @@ class SalesCustomerIdentityPolicyTest extends TestCase
             self::assertSame($customerId, SalesCustomerIdentityPolicy::assertCustomerAllowed($customerId)->id);
         }
 
-        foreach ([99, 999] as $customerId) {
+        foreach ([9, 99, 999] as $customerId) {
             try {
                 SalesCustomerIdentityPolicy::assertCustomerAllowed($customerId);
                 self::fail('El cliente no elegible debe rechazarse: '.$customerId);
@@ -151,6 +160,13 @@ class SalesCustomerIdentityPolicyTest extends TestCase
             DB::connection('tenant')->table('cat_identity_document_types')
                 ->where('id', $identityTypeId)
                 ->update(['active' => 1]);
+        }
+
+        try {
+            SalesCustomerIdentityPolicy::assertIdentityTypeAllowed('ND');
+            self::fail('La referencia ND inactiva debe rechazarse.');
+        } catch (ValidationException $exception) {
+            self::assertArrayHasKey('identity_document_type_id', $exception->errors());
         }
 
         try {

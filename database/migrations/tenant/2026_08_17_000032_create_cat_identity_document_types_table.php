@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
  * - `id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `active` tinyint(1) NOT NULL
  * - `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
+ * - `external_document_examples` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  */
 return new class extends Migration
 {
@@ -20,6 +21,7 @@ CREATE TABLE `cat_identity_document_types` (
   `id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `active` tinyint(1) NOT NULL,
   `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `external_document_examples` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   KEY `cat_identity_document_types_id_index` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL);

@@ -21,6 +21,7 @@
      * @property string                         $id
      * @property bool                           $active
      * @property string                         $description
+     * @property string|null                    $external_document_examples
      * @property Collection|Company[]           $companies_where_identity_document_type
      * @property Collection|Dispatcher[]        $dispatchers_where_identity_document_type
      * @property Collection|DocumentHotel[]     $document_hotels_where_identity_document_type
@@ -54,7 +55,8 @@
         protected $fillable = [
             'id',
             'active',
-            'description'
+            'description',
+            'external_document_examples'
         ];
 
         protected $appends = [

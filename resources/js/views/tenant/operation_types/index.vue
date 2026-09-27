@@ -27,6 +27,7 @@
                                     <td class="text-start">
                                         <el-switch
                                             v-model="row.active"
+                                            :disabled="isPendingExportType(row.id)"
                                             @change="changeActive(index)"
                                         ></el-switch>
                                     </td>
@@ -54,6 +55,9 @@ export default {
         this.getRecords()
     },
     methods: {
+        isPendingExportType(id) {
+            return ['0201', '0202', '0203'].includes(id)
+        },
         getRecords() {
             this.$http.get(`${this.resource}/records`).then(response => {
                 this.records = response.data

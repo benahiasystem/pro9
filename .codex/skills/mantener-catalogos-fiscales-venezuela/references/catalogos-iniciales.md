@@ -31,6 +31,19 @@ Fuente histórica: `../pro6/database/migrations/tenant/2018_01_00_000001_tenant_
 
 Se retiraron las 17 filas que tenían `active = 0`.
 
+### Tipos de alícuota del manual HKA (`cat_iva_rate_types`)
+
+| Código | Descripción | Porcentaje de referencia | Tributo |
+| --- | --- | ---: | --- |
+| `R` | Alícuota Reducida | 8,00 % | IVA |
+| `G` | Alícuota General | 16,00 % | IVA |
+| `A` | Alícuota Adicional (suntuario) | 31,00 % | IVA |
+| `E` | Exento, Exonerado o No Gravado | 0,00 % | IVA |
+| `P` | Percibido | 0,00 % | IVA |
+| `IGTF` | Impuesto a las Grandes Transacciones Financieras | 3,00 % | IGTF |
+
+Esta tabla reproduce el catálogo 10 del manual HKA como referencia histórica; `IGTF` es otro tributo y por eso se distingue en `tax_kind`. Sus porcentajes no configuran el IVA operativo de Pro9 ni habilitan IGTF. Los únicos tratamientos seleccionables continúan en `cat_affectation_igv_types` (`10` Gravado, `20` Exento); el IVA operativo se obtiene de `Localization`.
+
 ### Atributos (`cat_attribute_types`)
 
 - `5010` Numero de Placa; `5011` Categoria; `5012` Marca; `5013` Modelo; `5014` Color; `5015` Motor; `5016` Combustible; `5017` Form. Rodante; `5018` VIN; `5019` Serie/Chasis.
@@ -63,7 +76,8 @@ Se retiraron `02` Recibo por honorarios, `03` Boleta de venta electrónica, `04`
 
 ### Identidad (`cat_identity_document_types`)
 
-- `0` Doc.sin.rif; `1` Venezolano; `6` Juridico; `7` Pasaporte; `E` Extranjero; `C` Comuna; `G` Gubernamental; `R` Firma Personal. Los ocho registros tienen `active = 1` en el catálogo inicial.
+- `0` Doc.sin.rif; `1` Venezolano; `6` Juridico; `7` Pasaporte; `E` Extranjero; `C` Comuna; `G` Gubernamental; `R` Firma Personal. Los ocho registros operativos tienen `active = 1` y `external_document_examples = null`.
+- `ND` No Domiciliado tiene `active = 0` y `external_document_examples = 'RUT, NIT'`. Su ID es local; el manual HKA sólo presenta esos valores como ejemplos de identificación de terceros compradores. Esta novena fila es referencia y no habilita altas de clientes, ventas ni un código para enviar a HKA.
 
 Ya no forman parte del consolidado Ced. Diplomática, TIN, IN ni TAM.
 
@@ -88,8 +102,13 @@ Se retiraron todas las leyendas peruanas de transferencia gratuita, percepción,
 
 ### Operaciones (`cat_operation_types`)
 
-- `0101`: Venta interna
-- `0200`: Exportación de Bienes
+- `0101`: Venta interna; activa; `incoterm = null`.
+- `0200`: Exportación de Bienes; inactiva; `incoterm = null`.
+- `0201`: Exportación FOB; inactiva; `incoterm = FOB`.
+- `0202`: Exportación CIF; inactiva; `incoterm = CIF`.
+- `0203`: Exportación EXW; inactiva; `incoterm = EXW`.
+
+`0201`–`0203` son identificadores locales de Pro9; el catálogo 5 del manual HKA no publica códigos para estas opciones. Permanecen inactivas y no se pueden habilitar desde la pantalla de tipos de operación hasta implementar y validar el flujo de exportación. No enviarlas como códigos HKA.
 
 ### Tipos de proveedor HKA (`cat_providers_types`)
 
@@ -200,7 +219,11 @@ El consolidado contenía 25 departamentos, 196 provincias y 1.876 distritos de P
 
 No existe ambiente Interno ni equivalencia pública con `01`, `02` o `03`. Las modalidades se validan en `FiscalEmissionSettings`: `fiscal_machine`, `digital`, `free_form`; no son ambientes ni implican integración con un proveedor.
 
-El seeder no crea los tipos de auditoría `companies_certificate`, `companies_soap_password`, `companies_soap_send_id`, `companies_soap_type_id`, `companies_soap_url` y `companies_soap_username`. No hay registros anteriores que limpiar. Los cambios nuevos se registran en `fiscal_configuration_audits`, creada directamente por el consolidado y sin filas iniciales ni secretos. El inventario actual de datos iniciales contiene 75 tablas y 839 filas, incluidos ARCV y los catálogos HKA de proveedores, transacciones y regímenes especiales; no renumerar otros identificadores.
+El seeder no crea los tipos de auditoría `companies_certificate`, `companies_soap_password`, `companies_soap_send_id`, `companies_soap_type_id`, `companies_soap_url` y `companies_soap_username`. No hay registros anteriores que limpiar. Los cambios nuevos se registran en `fiscal_configuration_audits`, creada directamente por el consolidado y sin filas iniciales ni secretos. El inventario actual de datos iniciales contiene 76 tablas y 926 filas, incluidos ARCV y los catálogos HKA de proveedores, transacciones y regímenes especiales; no renumerar otros identificadores.
+
+### Retenciones ISLR declaradas ante SENIAT
+
+`cat_retention_concept` contiene los 86 códigos `001`–`086`, su actividad y el porcentaje **textual** del anexo 6.1 del manual técnico 3.1 de junio de 2014. `cat_retention_types` contiene exclusivamente los tres tipos del anexo 6.2: `01` Dividendo en acciones (DA), `02` Dividendo en efectivo (DE) y `03` Venta de acciones (VA). Sustituyen las antiguas filas `01` Tasa 3 % y `02` Tasa 6 %; la creación del módulo que calculaba con esas tasas queda deshabilitada. Las tablas son referencias históricas y no acreditan vigencia de las tasas, generación XML ni emisión fiscal. Ver [el informe fuente](../../../../informes/xml_retenciones_islr_seniat.md).
 
 La instalación nueva define directamente los trece estados actuales de ecommerce en `status_orders`, sin convertir cuatro estados anteriores ni volver a sembrarlos desde el alta del tenant. No incluye el servicio PENALIDAD asociado al motivo retirado de nota de débito 13; conserva DELIVERY-ECOM. Los cambios de conteo incluyen estas decisiones y la configuración inicial consolidada.
 

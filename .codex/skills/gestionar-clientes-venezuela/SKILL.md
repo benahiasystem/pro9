@@ -7,7 +7,7 @@ description: Mantener el alta, edición, catálogo, persistencia y presentación
 
 ## Catálogo inmutable de documentos de identidad
 
-`cat_identity_document_types` debe contener exactamente estos registros y conservar este orden contractual:
+`cat_identity_document_types` debe contener exactamente estos nueve registros y conservar este orden contractual. `external_document_examples` es `null` salvo en la fila `ND`:
 
 | Orden | id | active | description | Prefijo del número |
 |---:|---|---:|---|---|
@@ -19,11 +19,12 @@ description: Mantener el alta, edición, catálogo, persistencia y presentación
 | 6 | `C` | `1` | `Comuna` | `C` |
 | 7 | `G` | `1` | `Gubernamental` | `G` |
 | 8 | `R` | `1` | `Firma Personal` | `R` |
+| 9 | `ND` | `0` | `No Domiciliado` | Sin prefijo; referencia HKA `RUT, NIT` |
 
-- No agregar, quitar, renombrar, reordenar ni cambiar `active` en estos registros durante otras modificaciones.
+- No agregar, quitar, renombrar, reordenar ni cambiar `active` en estos registros durante otras modificaciones. `ND` es un ID local de referencia, no un código HKA.
 - Mantener la misma lista y orden en `database/seeders/data/tenant_initial_data.php`.
-- Los ocho tipos canónicos nacen con `active = 1` y permanecen disponibles tanto para mantener clientes como para emitir ventas. La tabla sigue siendo autoritativa: si un registro se desactiva directamente, debe dejar de seleccionarse y emitirse sin requerir cambios de código.
-- Sembrar directamente estos ocho registros. No usar `IdentityDocumentCatalogMigrator` ni transformar números o tipos de instalaciones anteriores; la validación vigente sigue siendo obligatoria.
+- Los ocho tipos canónicos nacen con `active = 1` y permanecen disponibles tanto para mantener clientes como para emitir ventas. `ND` nace inactivo y queda fuera de `IdentityDocument::TYPES`, de la validación de clientes y de los selectores. `RUT, NIT` son ejemplos externos, no un código único. La tabla sigue siendo autoritativa para emisión: si un tipo operativo se desactiva directamente, debe dejar de emitirse sin requerir cambios de código.
+- Sembrar directamente las nueve filas. No usar `IdentityDocumentCatalogMigrator` ni transformar números o tipos de instalaciones anteriores; la validación vigente sigue siendo obligatoria.
 
 ## Selección y persistencia
 
@@ -33,6 +34,7 @@ description: Mantener el alta, edición, catálogo, persistencia y presentación
 - En el alta y la edición de clientes, aceptar y guardar en `persons.number` únicamente dígitos ASCII (`0-9`). Rechazar letras, espacios, signos, guiones y cualquier otro carácter especial tanto en `PersonRequest` como en el formulario Vue; no eliminar ni normalizar silenciosamente esos caracteres antes de validar.
 - Mantener los prefijos `V-`, `J-`, `P-`, `E-`, `C-`, `G-` y `R-` fuera del campo editable. Añadirlos únicamente al presentar el documento mediante el formateador centralizado.
 - Validar en backend que `identity_document_type_id` pertenezca al catálogo contractual; no confiar sólo en el selector Vue.
+- No admitir `ND` en el alta o edición de clientes hasta definir formato, validación, presentación y mapeo de documentos extranjeros. No enviar `ND` al proveedor HKA.
 
 ## Política de identidad en ventas
 
