@@ -352,7 +352,7 @@ class InventoryValuedKardex
             return true;
         }
 
-        if ($document->dispatch && optional($document->dispatch->transfer_reason_type)->discount_stock) {
+        if ($document->dispatch && $document->dispatch->discountsPhysicalStock()) {
             return true;
         }
 
@@ -380,6 +380,7 @@ class InventoryValuedKardex
         // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
         return Dispatch::where('id', $dispatch->id)
             ->whereIn('transfer_reason_type_id', ['04', '21', '22', '23', '24'])
+            ->where('discount_stock', true)
             ->whereStateTypeAccepted()
             ->whereTypeUser()
             ->exists();
@@ -773,18 +774,8 @@ class InventoryValuedKardex
                 $operation_type = null;
                 $operation_type_code = null;
 
-                if($document->transfer_reason_type_id == '04'){
-                    $operation_type = $document->transfer_reason_type->description;
-                    $operation_type_code = '11';
-
-                }elseif($document->transfer_reason_type_id == '24'){
-                    $operation_type = $document->transfer_reason_description ?? $document->transfer_reason_type->description;
-                    $operation_type_code = '99';
-
-                }else{
-                    $operation_type = 'VENTA';
-                    $operation_type_code = $record_item->dispatch->transfer_reason_type_id;
-                }
+                $operation_type = $document->transfer_reason_label;
+                $operation_type_code = $document->transfer_reason_type_id;
 
                 $factor = -1;
 

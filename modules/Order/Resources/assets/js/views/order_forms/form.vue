@@ -63,21 +63,21 @@
                             </div>
                             <div class="col-lg-4">
                                 <div class="form-group" :class="{'has-danger': errors.transfer_reason_type_id}">
-                                    <label class="control-label font-weight-bold">Motivo de translado<span class="text-danger"> *</span></label>
-                                    <el-select v-model="form.transfer_reason_type_id">
+                                    <label class="control-label font-weight-bold">Motivo de traslado<span class="text-danger"> *</span></label>
+                                    <el-select v-model="form.transfer_reason_type_id" @change="changeTransferReasonType">
                                         <el-option v-for="option in transferReasonTypes" :key="option.id" :value="option.id" :label="option.description"></el-option>
                                     </el-select>
                                     <small class="form-control-feedback" v-if="errors.transfer_reason_type_id" v-text="errors.transfer_reason_type_id[0]"></small>
                                 </div>
                             </div>
     
-                            <div class="col-lg-6">
+                            <div v-if="form.transfer_reason_type_id === '24'" class="col-lg-6">
                                 <div class="form-group" :class="{'has-danger': errors.transfer_reason_description}">
                                     <!-- ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES -->
                                     <label class="control-label font-weight-bold">Descripción de motivo de traslado<span
                                         v-if="form.transfer_reason_type_id === '24'" class="text-danger"> *</span></label>
                                     <!-- ######### FIN CAMBIO CATÁLOGOS DE NOMBRES -->
-                                    <el-input type="textarea" :rows="3" placeholder="Descripción de motivo de traslado..." v-model="form.transfer_reason_description" maxlength="100"></el-input>
+                                    <el-input type="textarea" :rows="3" placeholder="Descripción de motivo de traslado..." v-model="form.transfer_reason_description" maxlength="255"></el-input>
                                     <small class="form-control-feedback" v-if="errors.transfer_reason_description" v-text="errors.transfer_reason_description[0]"></small>
                                 </div>
                             </div>
@@ -202,7 +202,8 @@
                         </div>
                         <h4></h4>
                         <div class="row mx-0">
-                            <div class="col-lg-3">
+                            <!-- ########## INICIO RETIRO DATOS VEHICULARES SECUNDARIOS ########## -->
+                            <div class="col-lg-6">
     
                                 <div class="form-group" :class="{'has-danger': errors['license_plates.license_plate_1']}">
                                     <label class="control-label font-weight-bold">N° placa del vehiculo<span class="text-danger"> *</span></label>
@@ -210,27 +211,14 @@
                                     <small class="form-control-feedback" v-if="errors['license_plates.license_plate_1']" v-text="errors['license_plates.license_plate_1'][0]"></small>
                                 </div>
                             </div>
-                            <div class="col-lg-3">
+                            <div class="col-lg-6">
                                 <div class="form-group" :class="{'has-danger': errors['license_plates.register_number_1']}">
                                     <label class="control-label font-weight-bold">N° registro<span class="text-danger"> *</span></label>
                                     <el-input v-model="form.license_plates.register_number_1" ></el-input>
                                     <small class="form-control-feedback" v-if="errors['license_plates.register_number_1']" v-text="errors['license_plates.register_number_1'][0]"></small>
                                 </div>
                             </div>
-                            <div class="col-lg-3">
-                                <div class="form-group" :class="{'has-danger': errors['license_plates.license_plate_2']}">
-                                    <label class="control-label font-weight-bold">N° placa semirremolque<span class="text-danger"> *</span></label>
-                                    <el-input v-model="form.license_plates.license_plate_2" @keyup.native="keyUpLicensePlate2" :maxlength="8"></el-input>
-                                    <small class="form-control-feedback" v-if="errors['license_plates.license_plate_2']" v-text="errors['license_plates.license_plate_2'][0]"></small>
-                                </div>
-                            </div>
-                            <div class="col-lg-3">
-                                <div class="form-group" :class="{'has-danger': errors['license_plates.register_number_2']}">
-                                    <label class="control-label font-weight-bold">N° registro<span class="text-danger"> *</span></label>
-                                    <el-input v-model="form.license_plates.register_number_2" ></el-input>
-                                    <small class="form-control-feedback" v-if="errors['license_plates.register_number_2']" v-text="errors['license_plates.register_number_2'][0]"></small>
-                                </div>
-                            </div>
+                            <!-- ######### FIN RETIRO DATOS VEHICULARES SECUNDARIOS ######### -->
                         </div>
                     </div>
                     <hr>
@@ -376,17 +364,15 @@
             this.events()
         },
         methods: {
+            changeTransferReasonType() {
+                if (this.form.transfer_reason_type_id !== '24') {
+                    this.form.transfer_reason_description = null
+                }
+            },
             async keyUpLicensePlate1(e){
 
                 if(this.form.license_plates.license_plate_1.length == 3 && e.keyCode !== 8){
                     this.form.license_plates.license_plate_1 = await this.form.license_plates.license_plate_1.concat('-')
-                }
-
-            },
-            async keyUpLicensePlate2(e){
-
-                if(this.form.license_plates.license_plate_2.length == 3 && e.keyCode !== 8){
-                    this.form.license_plates.license_plate_2 = await this.form.license_plates.license_plate_2.concat('-')
                 }
 
             },
@@ -465,9 +451,7 @@
                     driver_id: null,
                     license_plates: {
                         license_plate_1: null,
-                        license_plate_2: null,
                         register_number_1: null,
-                        register_number_2: null,
                     },
 
 

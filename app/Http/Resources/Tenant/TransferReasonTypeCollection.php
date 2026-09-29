@@ -19,6 +19,7 @@ class TransferReasonTypeCollection extends ResourceCollection
                 'id' => $row->id,
                 'active' => ($row->active)?'Si':'No',
                 'discount_stock' => ($row->discount_stock)?'Si':'No',
+                'discount_stock_value' => (bool) $row->discount_stock,
                 'description' => $row->description,
             ];
         });

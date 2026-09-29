@@ -111,11 +111,11 @@
                             </div>
                         </div>
                         <!-- ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES -->
-                        <div class="col-lg-12">
+                        <div v-if="form.transfer_reason_type_id === '24'" class="col-lg-12">
                             <div :class="{'has-danger': errors.transfer_reason_description}" class="form-group">
                                 <label class="control-label">Descripción de motivo de traslado<span
                                     v-if="form.transfer_reason_type_id === '24'" class="text-danger"> *</span></label>
-                                <el-input v-model="form.transfer_reason_description" :rows="3"
+                                <el-input v-model="form.transfer_reason_description" :rows="3" maxlength="255"
                                           type="textarea"></el-input>
                                 <small v-if="errors.transfer_reason_description" class="form-control-feedback"
                                        v-text="errors.transfer_reason_description[0]"></small>
@@ -353,9 +353,9 @@
                             <div :class="{'has-danger': errors.license_plate}" class="form-group">
                                 <label class="control-label">Número de placa del vehiculo
                                 </label>
-                                <x-input-service v-model="form.license_plate"
-                                                 service_type="placa"
-                                                 @search="searchLicensePlate"></x-input-service>
+                                <!-- ########## INICIO CAMBIO NELSON: RETIRO PALABRA SUNAT -->
+                                <el-input v-model="form.license_plate" :maxlength="8"></el-input>
+                                <!-- ######### FIN CAMBIO NELSON: RETIRO PALABRA SUNAT -->
                                 <small v-if="errors.license_plate" class="form-control-feedback"
                                        v-text="errors.license_plate[0]"></small>
                             </div>
@@ -366,14 +366,6 @@
                                 <x-input-service v-model="form.driver.license"
                                                  service_type="licencia"
                                                  @search="searchDriverLicense"></x-input-service>
-                            </div>
-                        </div>
-                        <div class="col-lg-4">
-                            <div class="form-group">
-                                <label class="control-label">N° placa semirremolque</label>
-                                <x-input-service v-model="form.secondary_license_plates.semitrailer"
-                                                 service_type="placa"
-                                                 @search="searchSemitrailerPlate"></x-input-service>
                             </div>
                         </div>
                     </div>
@@ -612,10 +604,6 @@ export default {
                 this.form.driver = this.dispatch.driver
                 this.form.license_plate = this.dispatch.license_plate
 
-                if (this.dispatch.secondary_license_plates) {
-                    this.form.secondary_license_plates = this.dispatch.secondary_license_plates
-                }
-
             }
         }).then(() => {
             this.changeEstablishment()
@@ -677,9 +665,6 @@ export default {
                     invoice_number: this.document.series + '-' + this.document.number
                 },
                 items: [],
-                secondary_license_plates: {
-                    semitrailer: null
-                },
                 related: {
                     number: null,
                     document_type_id: '01',
@@ -750,24 +735,6 @@ export default {
 
             const detail = [data.category, data.state].filter(v => v).join(' - ')
             if (detail) this.$message.success(`Licencia: ${detail}`)
-        },
-        // Consulta de placa: normaliza el número y avisa marca/modelo hallados.
-        searchLicensePlate(data) {
-            if (!data) return
-
-            if (data.plate_number) this.form.license_plate = data.plate_number
-
-            const detail = [data.brand, data.model].filter(v => v).join(' ')
-            if (detail) this.$message.success(`Vehículo: ${detail}`)
-        },
-        // Consulta de placa del semirremolque.
-        searchSemitrailerPlate(data) {
-            if (!data) return
-
-            if (data.plate_number) this.form.secondary_license_plates.semitrailer = data.plate_number
-
-            const detail = [data.brand, data.model].filter(v => v).join(' ')
-            if (detail) this.$message.success(`Semirremolque: ${detail}`)
         },
         changeDriver() {
             let v = _.find(this.drivers, {'id': this.driver})

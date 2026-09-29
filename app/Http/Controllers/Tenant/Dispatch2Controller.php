@@ -125,7 +125,7 @@ class Dispatch2Controller extends Controller
             });
         
         $identityDocumentTypes = IdentityDocumentType::whereActive()->get();
-        $transferReasonTypes = TransferReasonType::whereActive()->get();
+        $transferReasonTypes = TransferReasonType::whereContractActive()->get();
         $transportModeTypes = TransportModeType::whereActive()->get();
         $departments = Department::whereActive()->get();
         $provinces = Province::whereActive()->get();

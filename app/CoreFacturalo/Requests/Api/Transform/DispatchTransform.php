@@ -17,6 +17,18 @@ class DispatchTransform
 {
     public static function transform($inputs)
     {
+        // ########## INICIO RETIRO DATOS VEHICULARES SECUNDARIOS ##########
+        if (array_key_exists('placa_semirremolque', $inputs)) {
+            throw new \DomainException('La placa de semirremolque fue retirada de las Órdenes de entrega.');
+        }
+        // ######### FIN RETIRO DATOS VEHICULARES SECUNDARIOS #########
+        // ########## INICIO RETIRO TRASLADO M1/L1 ##########
+        foreach (['indicador_traslado_vehiculo_m1l', 'placa_m1l'] as $retiredField) {
+            if (array_key_exists($retiredField, $inputs)) {
+                throw new \DomainException('El traslado de vehículos M1/L1 fue retirado de las Órdenes de entrega.');
+            }
+        }
+        // ######### FIN RETIRO TRASLADO M1/L1 #########
         $data = [
             'id' => null,
             'operation_key' => $inputs['operation_key'] ?? $inputs['clave_operacion'] ?? null,
@@ -62,24 +74,12 @@ class DispatchTransform
             'secondary_drivers' => self::secondary_drivers($inputs),
             'payer' => self::payer($inputs),
             'reference_documents' => self::documentRelated($inputs),
-            // indicadores GRE: conductor/vehiculo en transporte publico, traslado en vehiculos M1 o L
+            // Indicador vigente: conductor/vehículo del transportista.
             'has_transport_driver_01' => Functions::valueKeyInArray($inputs, 'indicador_vehiculo_conductor_transportista', false),
-            'is_transport_m1l' => Functions::valueKeyInArray($inputs, 'indicador_traslado_vehiculo_m1l', false),
-            'license_plate_m1l' => Functions::valueKeyInArray($inputs, 'placa_m1l'),
-            'secondary_license_plates' => self::secondaryLicensePlates($inputs),
         ];
         self::AffectedDocument($data, $inputs);
         return $data;
     }
-    private static function secondaryLicensePlates($inputs)
-    {
-        $semitrailer = Functions::valueKeyInArray($inputs, 'placa_semirremolque');
-        if ($semitrailer === null || $semitrailer === '') {
-            return null;
-        }
-        return ['semitrailer' => $semitrailer];
-    }
-
     private static function addressData($inputs, $type)
     {
         if (key_exists('direccion_remitente_id', $inputs) ||

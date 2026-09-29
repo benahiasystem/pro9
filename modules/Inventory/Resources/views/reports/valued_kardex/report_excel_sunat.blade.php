@@ -9,15 +9,11 @@
     <title>Kardex valorizado</title>
 </head>
 <body>
-<div>
-    {{-- <h3 align="center" class="title"><strong>FORMATO 13.1: "REGISTRO DE INVENTARIO PERMANENTE VALORIZADO - DETALLE DEL INVENTARIO VALORIZADO"</strong></h3> --}}
-</div>
-<br>
 <div style="margin-top:20px; margin-bottom:15px;">
     <table>
         <tr >
             <td colspan="8">
-                <p><b>FORMATO 13.1: "REGISTRO DE INVENTARIO PERMANENTE VALORIZADO - DETALLE DEL INVENTARIO VALORIZADO" </b></p>
+                <p><b>KARDEX VALORIZADO - DETALLE DE MOVIMIENTOS DE INVENTARIO</b></p>
             </td>
         </tr>
         <tr>
@@ -54,7 +50,7 @@
         </tr>
         <tr>
             <td>
-                <p><b>ESTABLECIMIENTO (1):</b>  </p>
+                <p><b>ESTABLECIMIENTO:</b>  </p>
             </td>
             <td>
                 {{ optional($establishment)->description }}
@@ -62,18 +58,10 @@
         </tr>
         <tr>
             <td>
-                <p><b>CÓDIGO DE LA EXISTENCIA:</b></p>
+                <p><b>CÓDIGO DEL PRODUCTO:</b></p>
             </td>
             <td>
                 {{ $additionalData['internal_id'] }}
-            </td>
-        </tr>
-        <tr>
-            <td>
-                <p><b>TIPO (TABLA 5):</b> </p>
-            </td>
-            <td>
-                01
             </td>
         </tr>
         <tr>
@@ -86,7 +74,7 @@
         </tr>
         <tr>
             <td>
-                <p><b>CÓDIGO DE LA UNIDAD DE MEDIDA (TABLA 6):</b> </p>
+                <p><b>UNIDAD DE MEDIDA:</b> </p>
             </td>
             <td>
                 {{ $additionalData['unit_type_table_six']['code'] }} - {{ $additionalData['unit_type_table_six']['description'] }}
@@ -94,7 +82,7 @@
         </tr>
         <tr>
             <td>
-                <p><b>MÉTODO DE VALUACIÓN:</b> </p>
+                <p><b>CRITERIO DE VALORACIÓN:</b> </p>
             </td>
             <td>
                 COSTO PROMEDIO
@@ -105,10 +93,10 @@
     <table>
         <tr>
             <td colspan="4" align="center">
-                <p><b>DOCUMENTO DE TRASLADO, COMPROBANTE DE PAGO, DOCUMENTO DE TRASLADO, COMPROBANTE DE PAGO, DOCUMENTO INTERNO O SIMILAR</b></p>
+                <p><b>MOVIMIENTO DE INVENTARIO Y DOCUMENTO DE SOPORTE</b></p>
             </td>
             <td rowspan="2" align="center">
-                <p><b>TIPO DE OPERACIÓN (TABLA 12)</b></p>
+                <p><b>TIPO DE MOVIMIENTO</b></p>
             </td>
             <td colspan="3" align="center">
                 <p><b>ENTRADAS</b></p>
@@ -125,7 +113,7 @@
                 <p><b>FECHA</b></p>
             </td>
             <td>
-                <p><b>TIPO (TABLA 10)</b></p>
+                <p><b>TIPO DE DOCUMENTO</b></p>
             </td>
             <td>
                 <p><b>SERIE</b></p>

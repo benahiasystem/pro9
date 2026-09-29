@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Tenant;
 
 use App\Models\Tenant\Catalogs\UnitType;
+use App\Models\Tenant\Catalogs\TransferReasonType;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -12,6 +13,15 @@ use Illuminate\Validation\Rule;
  */
 class DispatchRequest extends FormRequest
 {
+    // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+    protected function prepareForValidation()
+    {
+        if ($this->input('transfer_reason_type_id') !== TransferReasonType::OTHER) {
+            $this->merge(['transfer_reason_description' => null]);
+        }
+    }
+    // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
+
     public function authorize()
     {
         return true;
@@ -20,8 +30,8 @@ class DispatchRequest extends FormRequest
     public function rules()
     {
         //$id = $this->input('id');
-        $condition_driver_id = $this->is_transport_m1l ? 'nullable' :
-                'required_if:transport_mode_type_id, "02"';
+        // ########## INICIO RETIRO TRASLADO M1/L1 ##########
+        $condition_driver_id = 'required_if:transport_mode_type_id,02';
 
         return [
             'unit_type_id' => [
@@ -29,10 +39,10 @@ class DispatchRequest extends FormRequest
                 UnitType::activeValidationRule(),
             ],
             'delivery_address_id'=> [
-                'required_if:document_type_id, "09"',
+                'required_if:document_type_id,09',
             ],
             'origin_address_id'=> [
-                'required_if:document_type_id, "09"',
+                'required_if:document_type_id,09',
             ],
             // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
             'transfer_reason_description' => [
@@ -70,6 +80,15 @@ class DispatchRequest extends FormRequest
             'driver_id'=> [
                 $condition_driver_id
             ],
+            'transport_id' => [
+                'required_if:transport_mode_type_id,02',
+            ],
+            'dispatcher_id' => [
+                'required_if:transport_mode_type_id,01',
+            ],
+            'is_transport_m1l' => ['prohibited'],
+            'license_plate_m1l' => ['prohibited'],
+            // ######### FIN RETIRO TRASLADO M1/L1 #########
 //            'driver.number'=> [
 //                'required_if:transport_mode_type_id, "02"',
 //            ],
@@ -77,15 +96,19 @@ class DispatchRequest extends FormRequest
             //     'required_if:document_type_id, "09"',
             // ],
             'transport_mode_type_id'=> [
-                'required_if:document_type_id, "09"',
+                'required_if:document_type_id,09',
             ],
             'transfer_reason_type_id'=> [
-                'required_if:document_type_id, "09"',
+                'required_if:document_type_id,09',
                 'nullable',
-                'exists:tenant.cat_transfer_reason_types,id',
+                TransferReasonType::activeValidationRule(),
             ],
             'origin.address'=> [
-                'required_if:document_type_id, "09"',
+                'required_if:document_type_id,09',
+                'max:100',
+            ],
+            'delivery.address'=> [
+                'required_if:document_type_id,09',
                 'max:100',
             ],
         ];

@@ -13,12 +13,6 @@
             </ol>
         </div>
         <div class="card tab-content tab-content-default row-new mb-0 pt-2 pt-md-0 mt-5">
-            <!-- <div class="card-header bg-info">
-
-                <!-- ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES -->
-                <h3 class="my-0">Nueva Orden de entrega</h3>
-                <!-- ######### FIN CAMBIO CATÁLOGOS DE NOMBRES -->
-            </div> -->
             <div class="invoice p-3 invoice-dispatch">
                 <form autocomplete="off" @submit.prevent="submit">
                     <div class="form-body">
@@ -125,11 +119,11 @@
                                 </div>
                             </div>
                             <!-- ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES -->
-                            <div class="col-lg-6">
+                            <div v-if="form.transfer_reason_type_id === '24'" class="col-lg-6">
                                 <div :class="{ 'has-danger': errors.transfer_reason_description }" class="form-group">
                                     <label class="control-label">Descripción de motivo de traslado<span
                                         v-if="form.transfer_reason_type_id === '24'" class="text-danger"> *</span></label>
-                                    <el-input v-model="form.transfer_reason_description" :rows="3" maxlength="100"
+                                    <el-input v-model="form.transfer_reason_description" :rows="3" maxlength="255"
                                         placeholder="Descripción de motivo de traslado..." type="textarea"></el-input>
                                     <small v-if="errors.transfer_reason_description" class="form-control-feedback"
                                         v-text="errors.transfer_reason_description[0]"></small>
@@ -323,7 +317,8 @@
                             </div>
                         </div>
                         <hr>
-                        <div class="row" v-if="form.transport_mode_type_id === '01' && !form.is_transport_m1l">
+                        <!-- ########## INICIO RETIRO TRASLADO M1/L1 -->
+                        <div class="row" v-if="form.transport_mode_type_id === '01'">
                             <div class="col-lg-4">
                                 <div class="form-comtrol">
                                     <el-checkbox v-model="form.has_transport_driver_01">
@@ -336,24 +331,8 @@
                             <div class="col-lg-3">
                                 <h4 class="mb-0" >Datos modo de traslado</h4>
                             </div>
-                            <div class="col-lg-5">
-                                <div class="form-comtrol border-0 p-0">
-                                    <el-checkbox v-model="form.is_transport_m1l">
-                                    Traslados de vehículos de la categoría M1 o L
-                                    </el-checkbox>
-                                </div>
-                            </div>
-                            <div v-if="form.is_transport_m1l" class="col-lg-4">
-                                <div :class="{ 'has-danger': errors.license_plate_m1l }" class="form-group mb-0">
-                                    <label class="control-label">Número de placa<span class="text-danger"> *</span></label>
-                                    <x-input-service v-model="form.license_plate_m1l"
-                                                     service_type="placa"
-                                                     @search="searchLicensePlateM1l"></x-input-service>
-                                    <small v-if="errors.license_plate_m1l" class="form-control-feedback" v-text="errors.license_plate_m1l[0]"></small>
-                                </div>
-                            </div>
                         </div>
-                        <div class="row" v-if="!form.is_transport_m1l">
+                        <div class="row">
                             <template v-if="form.transport_mode_type_id === '01'">
                                 <div class="col-lg-6">
                                     <div :class="{ 'has-danger': errors.dispatcher_id }" class="form-group">
@@ -473,16 +452,9 @@
                                             v-text="errors.transport_id[0]"></small>
                                     </div>
                                 </div>
-                                <div class="col-lg-3" v-if="form.transport_mode_type_id === '02'">
-                                    <div class="form-group">
-                                        <label class="control-label">N° placa semirremolque</label>
-                                        <x-input-service v-model="form.secondary_license_plates.semitrailer"
-                                                         service_type="placa"
-                                                         @search="searchSemitrailerPlate"></x-input-service>
-                                    </div>
-                                </div>
                             </template>
                         </div>
+                        <!-- ######### FIN RETIRO TRASLADO M1/L1 -->
                         <hr>
                         <div class="col-md-12">
                             <div class="table-responsive">
@@ -1175,24 +1147,6 @@ export default {
 
     },
     methods: {
-        // Consulta de placa del vehículo M1 o L.
-        searchLicensePlateM1l(data) {
-            if (!data) return
-
-            if (data.plate_number) this.form.license_plate_m1l = data.plate_number
-
-            const detail = [data.brand, data.model].filter(v => v).join(' ')
-            if (detail) this.$message.success(`Vehículo: ${detail}`)
-        },
-        // Consulta de placa del semirremolque.
-        searchSemitrailerPlate(data) {
-            if (!data) return
-
-            if (data.plate_number) this.form.secondary_license_plates.semitrailer = data.plate_number
-
-            const detail = [data.brand, data.model].filter(v => v).join(' ')
-            if (detail) this.$message.success(`Semirremolque: ${detail}`)
-        },
         addReferenceDocument(row) {
             this.form.reference_documents.push(JSON.parse(JSON.stringify(row)))
         },
@@ -1253,9 +1207,6 @@ export default {
                 items: [],
                 reference_order_form_id: null,
                 // license_plate: null,
-                secondary_license_plates: {
-                    semitrailer: null
-                },
                 related: {},
                 order_form_external: null,
                 terms_condition: null,
@@ -1266,8 +1217,6 @@ export default {
                 reference_documents: [],
                 secondary_drivers: null,
                 has_transport_driver_01: false,
-                is_transport_m1l: false,
-                license_plate_m1l:null,
                 custom_fields_data: {}
             };
             if (this.series && this.series.length > 0) {
@@ -1778,10 +1727,6 @@ export default {
         },
         async submit() {
             if (this.loading_submit) return;
-            // if (this.form.is_transport_m1l && (!this.form.license_plate_m1l || this.form.license_plate_m1l.trim() === '')) {
-            //     this.errors = {license_plate_m1l: ['El número de placa es obligatorio']};
-            //     return this.$message.error('El número de placa es obligatorio');
-            // }
             if (this.config.affect_all_documents) {
                 this.form.terms_condition = this.config.terms_condition_sale;
             }
@@ -1804,27 +1749,25 @@ export default {
                 }
 
 
-                if (!this.form.is_transport_m1l) {
-                    if (!this.form.driver_id) {
-                        return this.$message.error('El conductor es requerido')
-                    }
-                    if (!this.form.transport_id) {
-                        return this.$message.error('El vehículo es requerido')
-                    }
-                    this.form.driver = _.find(this.drivers, { 'id': this.form.driver_id });
-                    this.form.transport = _.find(this.transports, { 'id': this.form.transport_id });
-                    if (this.form.driver.identity_document_type_id === '' || _.isNull(this.form.driver.identity_document_type_id)) {
-                        return this.$message.error('El tipo de documento del conductor es requerido')
-                    }
-                    if (this.form.driver.number === '' || _.isNull(this.form.driver.number)) {
-                        return this.$message.error('El número del conductor es requerido')
-                    }
-                    if (this.form.driver.name === '' || _.isNull(this.form.driver.name)) {
-                        return this.$message.error('El nombre del conductor es requerido')
-                    }
-                    if (this.form.driver.license === '' || _.isNull(this.form.driver.license)) {
-                        return this.$message.error('La licencia del conductor es requerido')
-                    }
+                if (!this.form.driver_id) {
+                    return this.$message.error('El conductor es requerido')
+                }
+                if (!this.form.transport_id) {
+                    return this.$message.error('El vehículo es requerido')
+                }
+                this.form.driver = _.find(this.drivers, { 'id': this.form.driver_id });
+                this.form.transport = _.find(this.transports, { 'id': this.form.transport_id });
+                if (this.form.driver.identity_document_type_id === '' || _.isNull(this.form.driver.identity_document_type_id)) {
+                    return this.$message.error('El tipo de documento del conductor es requerido')
+                }
+                if (this.form.driver.number === '' || _.isNull(this.form.driver.number)) {
+                    return this.$message.error('El número del conductor es requerido')
+                }
+                if (this.form.driver.name === '' || _.isNull(this.form.driver.name)) {
+                    return this.$message.error('El nombre del conductor es requerido')
+                }
+                if (this.form.driver.license === '' || _.isNull(this.form.driver.license)) {
+                    return this.$message.error('La licencia del conductor es requerido')
                 }
 
                 if (this.selectedDrivers.length > 1) {
@@ -1840,32 +1783,23 @@ export default {
                 this.form.driver = null;
                 this.form.selectedDrivers = null;
                 this.form.selectedTransports = null;
-                if (this.form.is_transport_m1l) {
-                    this.form.has_transport_driver_01 = false
-                    delete this.form.dispatcher
-                    this.form.dispatcher_id = null;
+                if (!this.form.dispatcher_id) {
+                    return this.$message.error('El transportista es requerido')
                 }
+                let v = _.find(this.dispatchers, { 'id': this.form.dispatcher_id })
+                this.form.dispatcher.identity_document_type_id = v.identity_document_type_id;
+                this.form.dispatcher.number = v.number;
+                this.form.dispatcher.name = v.name;
+                this.form.dispatcher.number_mtc = v.number_mtc;
 
-                if (!this.form.is_transport_m1l) {
-                    if (!this.form.dispatcher_id) {
-                        return this.$message.error('El transportista es requerido')
-                    }
-                    let v = _.find(this.dispatchers, { 'id': this.form.dispatcher_id })
-                    this.form.dispatcher.identity_document_type_id = v.identity_document_type_id;
-                    this.form.dispatcher.number = v.number;
-                    this.form.dispatcher.name = v.name;
-                    this.form.dispatcher.number_mtc = v.number_mtc;
-
-                    if (this.form.dispatcher.identity_document_type_id !== '6') {
-                        return this.$message.error('El transportista debe tener RIF')
-                    }
-                    if (this.form.dispatcher.number === '' || _.isNull(this.form.dispatcher.number)) {
-                        return this.$message.error('El número del transportista es requerido')
-                    }
-                    if (this.form.dispatcher.name === '' || _.isNull(this.form.dispatcher.name)) {
-                        return this.$message.error('El nombre del transportista es requerido')
-                    }
-
+                if (this.form.dispatcher.identity_document_type_id !== '6') {
+                    return this.$message.error('El transportista debe tener RIF')
+                }
+                if (this.form.dispatcher.number === '' || _.isNull(this.form.dispatcher.number)) {
+                    return this.$message.error('El número del transportista es requerido')
+                }
+                if (this.form.dispatcher.name === '' || _.isNull(this.form.dispatcher.name)) {
+                    return this.$message.error('El nombre del transportista es requerido')
                 }
 
                 if(this.form.has_transport_driver_01){
@@ -1920,8 +1854,8 @@ export default {
                 return this.$message.error('Los productos no pueden tener cantidad 0.')
             }
 
-            this.form.origin = _.find(this.origin_addresses, { 'id': this.form.origin_address_id });
-            this.form.delivery = _.find(this.delivery_addresses, { 'id': this.form.delivery_address_id });
+            this.form.origin = this.origin_addresses.find(row => String(row.id) === String(this.form.origin_address_id));
+            this.form.delivery = this.delivery_addresses.find(row => String(row.id) === String(this.form.delivery_address_id));
             this.form.total_weight = _.round(this.form.total_weight, 2) > 0 ? _.round(this.form.total_weight, 2) : 1;
             // this.form.origin = this.origin;
 

@@ -6,45 +6,62 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\TransferReasonTypeRequest;
 use App\Http\Resources\Tenant\TransferReasonTypeCollection;
 use App\Http\Resources\Tenant\TransferReasonTypeResource;
-use Exception;
 
 class TransferReasonTypeController extends Controller
 {
     public function records()
     {
-        $records = TransferReasonType::all();
+        $records = TransferReasonType::query()
+            ->whereIn('id', TransferReasonType::CONTRACT_IDS)
+            ->orderByRaw("CASE id WHEN '04' THEN 1 WHEN '21' THEN 2 WHEN '22' THEN 3 WHEN '23' THEN 4 WHEN '24' THEN 5 ELSE 6 END")
+            ->get();
 
         return new TransferReasonTypeCollection($records);
     }
 
     public function record($id)
     {
-        $record = new TransferReasonTypeResource(TransferReasonType::findOrFail($id));
+        $record = new TransferReasonTypeResource(
+            TransferReasonType::whereIn('id', TransferReasonType::CONTRACT_IDS)->findOrFail($id)
+        );
 
         return $record;
     }
 
     public function store(TransferReasonTypeRequest $request)
     {
+        if ($request->hasAny(['description', 'active'])) {
+            return $this->catalogClosed();
+        }
+
         $id = $request->input('id');
-        $record = TransferReasonType::firstOrNew(['id' => $id]);
-        $record->fill($request->all());
+        if (!TransferReasonType::isContractId($id)) {
+            return $this->catalogClosed();
+        }
+        $record = TransferReasonType::whereIn('id', TransferReasonType::CONTRACT_IDS)->find($id);
+        if (!$record) {
+            return $this->catalogClosed();
+        }
+        $record->discount_stock = $request->boolean('discount_stock');
         $record->save();
 
         return [
             'success' => true,
-            'message' => ($id)?'Motivo de traslado editado con éxito':'Motivo de traslado registrado con éxito'
+            'message' => 'Configuración de inventario actualizada con éxito',
         ];
     }
 
     public function destroy($id)
     {
-        $record = TransferReasonType::findOrFail($id);
-        $record->delete();
+        return $this->catalogClosed();
+    }
 
-        return [
-            'success' => true,
-            'message' => 'Motivo de traslado eliminado con éxito'
-        ];
+    private function catalogClosed()
+    {
+        return response()->json([
+            'success' => false,
+            'code' => 'TRANSFER_REASON_CATALOG_CLOSED',
+            'message' => 'No se permite crear, renumerar, desactivar ni eliminar motivos de traslado.',
+        ], 409);
     }
 }

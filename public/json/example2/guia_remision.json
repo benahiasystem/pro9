@@ -5,8 +5,8 @@
   "hora_de_emision": "10:11:11",
   "codigo_tipo_documento": "09",
   "datos_del_emisor": {
-    "codigo_pais": "PE",
-    "ubigeo": "150101",
+    "codigo_pais": "VE",
+    "ubigeo": "000619",
     "direccion": "Av. 2 de Mayo",
     "correo_electronico": "demo@gmail.com",
     "telefono": "427-1148",
@@ -17,29 +17,29 @@
     "numero_documento": "10414711225",
     "apellidos_y_nombres_o_razon_social": "EMPRESA XYZ S.A.",
     "nombre_comercial": "EMPRESA XYZ",
-    "codigo_pais": "PE",
-    "ubigeo": "150101",
+    "codigo_pais": "VE",
+    "ubigeo": "000619",
     "direccion": "Av. 2 de Mayo",
     "correo_electronico": "demo@gmail.com",
     "telefono": "427-1148"
   },
   "observaciones": "aaaaaaaaaaaaaaa",
   "codigo_modo_transporte": "01",
-  "codigo_motivo_traslado": "01",
-  "descripcion_motivo_traslado": "El cliente solicito envia a su trabajo en ...",
+  "codigo_motivo_traslado": "24",
+  "descripcion_motivo_traslado": "Entrega especial solicitada por el cliente",
   "fecha_de_traslado": "2019-01-16",
   "codigo_de_puerto": "",
   "indicador_de_transbordo": false,
-  "unidad_peso_total": "KGM",
+  "unidad_peso_total": "KG",
   "peso_total": 30.00,
   "numero_de_bultos": 1,
   "numero_de_contenedor": "",
   "direccion_partida": {
-    "ubigeo": "150101",
+    "ubigeo": "000619",
     "direccion": "PUNTO A"
   },
   "direccion_llegada": {
-    "ubigeo": "150101",
+    "ubigeo": "000619",
     "direccion": "PUNTO 2"
   },
   "transportista": {

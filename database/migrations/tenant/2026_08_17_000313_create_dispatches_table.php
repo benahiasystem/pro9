@@ -34,6 +34,7 @@ use Illuminate\Support\Facades\DB;
  * - `transport_mode_type_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `transfer_reason_type_id` varchar(2) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `transfer_reason_description` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
+ * - `discount_stock` tinyint(1) NOT NULL DEFAULT '0', snapshot del efecto real de inventario
  * - `date_of_shipping` date NOT NULL
  * - `transshipment_indicator` tinyint(1) NOT NULL
  * - `port_code` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
@@ -63,7 +64,6 @@ use Illuminate\Support\Facades\DB;
  * - `transport_id` int(10) unsigned DEFAULT NULL
  * - `transport_data` json DEFAULT NULL
  * - `secondary_transports` json DEFAULT NULL
- * - `secondary_license_plates` json DEFAULT NULL
  * - `legends` json DEFAULT NULL
  * - `payer` json DEFAULT NULL
  * - `optional` json DEFAULT NULL
@@ -79,8 +79,6 @@ use Illuminate\Support\Facades\DB;
  * - `additional_data` json DEFAULT NULL
  * - `origin_address_id` int(10) unsigned DEFAULT NULL
  * - `delivery_address_id` int(10) unsigned DEFAULT NULL
- * - `is_transport_m1l` tinyint(1) DEFAULT '0'
- * - `license_plate_m1l` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `reference_documents` json DEFAULT NULL
  * - `custom_fields_data` json DEFAULT NULL
  */
@@ -119,6 +117,9 @@ CREATE TABLE `dispatches` (
   `transport_mode_type_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `transfer_reason_type_id` varchar(2) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `transfer_reason_description` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  -- ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+  `discount_stock` tinyint(1) NOT NULL DEFAULT '0',
+  -- ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
   `date_of_shipping` date NOT NULL,
   `transshipment_indicator` tinyint(1) NOT NULL,
   `port_code` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
@@ -148,7 +149,6 @@ CREATE TABLE `dispatches` (
   `transport_id` int(10) unsigned DEFAULT NULL,
   `transport_data` json DEFAULT NULL,
   `secondary_transports` json DEFAULT NULL,
-  `secondary_license_plates` json DEFAULT NULL,
   `legends` json DEFAULT NULL,
   `payer` json DEFAULT NULL,
   `optional` json DEFAULT NULL,
@@ -164,8 +164,6 @@ CREATE TABLE `dispatches` (
   `additional_data` json DEFAULT NULL,
   `origin_address_id` int(10) unsigned DEFAULT NULL,
   `delivery_address_id` int(10) unsigned DEFAULT NULL,
-  `is_transport_m1l` tinyint(1) DEFAULT '0',
-  `license_plate_m1l` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `reference_documents` json DEFAULT NULL,
   `custom_fields_data` json DEFAULT NULL,
   PRIMARY KEY (`id`),

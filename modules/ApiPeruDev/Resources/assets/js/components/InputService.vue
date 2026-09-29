@@ -39,7 +39,7 @@
                 default: null
             },
             // Fuerza el servicio a consultar, sin pasar por el tipo de documento.
-            // Util para consultas que no son de identidad: 'placa', 'licencia'.
+            // Util para consultas que no son de identidad, como 'licencia'.
             service_type: {
                 required: false,
                 type: String,
@@ -73,7 +73,9 @@
                     dni:      {maxLength: 8,  buttonText: 'Buscar'},
                     // ######### FIN CAMBIO NELSON: RETIRO PALABRA SUNAT
                     ce:       {maxLength: 12, buttonText: 'CE'},
-                    placa:    {maxLength: 8,  buttonText: 'SUNARP'},
+                    // ########## INICIO CAMBIO NELSON: RETIRO PALABRA SUNAT
+                    // Las placas de Órdenes de entrega se capturan manualmente.
+                    // ######### FIN CAMBIO NELSON: RETIRO PALABRA SUNAT
                     licencia: {maxLength: 9,  buttonText: 'MTC'},
                 },
                 // El CE ('4') queda fuera a proposito: se mantiene el

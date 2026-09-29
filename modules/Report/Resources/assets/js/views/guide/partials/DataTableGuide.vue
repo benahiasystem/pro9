@@ -165,6 +165,17 @@
                             </el-select>
                         </div>
                     </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label class="control-label">Motivo de traslado</label>
+                            <el-select v-model="form.transfer_reason_type_id" clearable filterable>
+                                <el-option v-for="option in transfer_reason_types"
+                                           :key="option.id"
+                                           :label="`${option.id} - ${option.description}`"
+                                           :value="option.id"></el-option>
+                            </el-select>
+                        </div>
+                    </div>
                     <!--
                        <div class="col-md-3">
                         <div class="form-group">
@@ -327,6 +338,7 @@ export default {
             web_platforms: [],
             customers: {},
             users: {},
+            transfer_reason_types: [],
             form: {
                 min: 1,
                 max: 2,
@@ -365,6 +377,7 @@ export default {
                 this.web_platforms = response.data.web_platforms
                 this.customers = response.data.customers
                 this.users = response.data.users
+                this.transfer_reason_types = response.data.transfer_reason_types
             });
 
 
@@ -469,6 +482,7 @@ export default {
                 item_id: null,
                 user_id: null,
                 document_type_id: null,
+                transfer_reason_type_id: null,
                 period: 'month',
                 date_start: moment().format('YYYY-MM-DD'),
                 date_end: moment().format('YYYY-MM-DD'),

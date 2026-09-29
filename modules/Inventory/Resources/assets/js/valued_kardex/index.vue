@@ -62,11 +62,11 @@
                         <td class="text-center">
 
                             <el-tooltip class="item"
-                                        content="Exportar Formato SUNAT 13.1"
+                                        content="Exportar Kardex valorizado detallado"
                                         effect="dark"
                                         placement="top">
 
-                                <el-button type="success" @click.prevent="clickDownloadFormatSunat(row.id)" size="small"><i
+                                <el-button type="success" @click.prevent="clickDownloadLocal(row.id)" size="small"><i
                                     class="fa fa-file-excel"></i> 
                                 </el-button>
                             </el-tooltip>
@@ -99,8 +99,8 @@ export default {
         this.title = 'Kardex valorizado'
     },
     methods: {
-        clickDownloadFormatSunat(item_id) {        
-            this.$eventHub.$emit('exportFormatSunat', item_id)
+        clickDownloadLocal(item_id) {
+            this.$eventHub.$emit('exportKardexLocal', item_id)
         },
     }
 }

@@ -2620,7 +2620,7 @@ class Item extends ModelTenant
     }
 
     /**
-     * Datos de la tabla 6 para reporte kardex valorizado formato sunat 13.1
+     * Datos de unidad de medida para la exportación local del Kardex valorizado.
      */
     public function getDataTableSixKardexSunat()
     {

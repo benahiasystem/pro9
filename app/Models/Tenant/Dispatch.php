@@ -8,6 +8,7 @@ use App\Traits\ApiResourceFindTrait;
 use App\CoreFacturalo\Facturalo;
 use App\Http\Controllers\Tenant\DownloadController;
 use App\Models\Tenant\Catalogs\DocumentType;
+use App\Models\Tenant\Catalogs\District;
 use App\Models\Tenant\Catalogs\TransferReasonType;
 use App\Models\Tenant\Catalogs\TransportModeType;
 use App\Models\Tenant\Catalogs\UnitType;
@@ -41,7 +42,6 @@ use App\Models\Tenant\Catalogs\IdentityDocumentType;
  * @property mixed $legends
  * @property string $number_full
  * @property mixed $origin
- * @property mixed $secondary_license_plates
  * @property \Illuminate\Database\Eloquent\Collection|InventoryKardex[] $inventory_kardex
  * @property int|null $inventory_kardex_count
  * @property \Illuminate\Database\Eloquent\Collection|\App\Models\Tenant\DispatchItem[] $items
@@ -108,6 +108,7 @@ class Dispatch extends ModelTenant
         'transfer_reason_type_id',
         'transfer_reason_type',
         'transfer_reason_description',
+        'discount_stock',
         'date_of_shipping',
         'transshipment_indicator',
         'port_code',
@@ -133,7 +134,6 @@ class Dispatch extends ModelTenant
         'reference_quotation_id',
         'reference_order_note_id',
         'reference_order_form_id',
-        'secondary_license_plates',
         'reference_sale_note_id',
         'data_affected_document',
         'related',
@@ -156,8 +156,6 @@ class Dispatch extends ModelTenant
         'secondary_transports',
         'secondary_drivers',
         'payer',
-        'is_transport_m1l',
-        'license_plate_m1l',
         'reference_documents',
         'buyer_id',
         'buyer',
@@ -179,6 +177,7 @@ class Dispatch extends ModelTenant
         'payer' => 'array',
         'reference_documents' => 'array',
         'custom_fields_data' => 'array',
+        'discount_stock' => 'boolean',
     ];
 
     public function getAdditionalDataAttribute($value)
@@ -536,16 +535,6 @@ class Dispatch extends ModelTenant
         return $this->morphMany(InventoryKardex::class, 'inventory_kardexable');
     }
 
-    public function getSecondaryLicensePlatesAttribute($value)
-    {
-        return (is_null($value)) ? null : (object)json_decode($value);
-    }
-
-    public function setSecondaryLicensePlatesAttribute($value)
-    {
-        $this->attributes['secondary_license_plates'] = (is_null($value)) ? null : json_encode($value);
-    }
-
     /**
      * @param \Illuminate\Database\Query\Builder|Builder $query
      *
@@ -614,15 +603,72 @@ class Dispatch extends ModelTenant
             return false;
         }
 
-        $transferReason = $this->getRelationValue('transfer_reason_type');
-        if (!$transferReason || !$transferReason->discount_stock) {
-            return false;
+        if (array_key_exists('discount_stock', $this->getAttributes())) {
+            return (bool) $this->discount_stock;
         }
 
-        return !$this->reference_sale_note_id
+        $transferReason = $this->getRelationValue('transfer_reason_type');
+
+        return (bool) optional($transferReason)->discount_stock
+            && !$this->reference_sale_note_id
             && !$this->reference_order_note_id
             && !$this->reference_document_id;
     }
+
+    /**
+     * Compatibilidad de lectura/escritura con tenants anteriores al consolidado.
+     */
+    public static function hasDiscountStockSnapshotColumn(): bool
+    {
+        $model = new static();
+        $connection = $model->getConnection();
+        $cacheKey = $connection->getName().'|'.$connection->getDatabaseName();
+        static $cache = [];
+
+        if (!array_key_exists($cacheKey, $cache)) {
+            $cache[$cacheKey] = $connection->getSchemaBuilder()->hasColumn('dispatches', 'discount_stock');
+        }
+
+        return $cache[$cacheKey];
+    }
+
+    // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+    public function getTransferReasonLabelAttribute(): string
+    {
+        $reason = $this->getRelationValue('transfer_reason_type');
+
+        return $reason ? $reason->displayDescription($this->transfer_reason_description) : '';
+    }
+
+    public function getOriginAddressLabelAttribute(): string
+    {
+        return $this->formatTransferAddress($this->origin);
+    }
+
+    public function getDeliveryAddressLabelAttribute(): string
+    {
+        return $this->formatTransferAddress($this->delivery);
+    }
+
+    private function formatTransferAddress($address): string
+    {
+        if (!$address) {
+            return '';
+        }
+
+        $location = $address->location_id ?? null;
+        $locationId = is_array($location) ? ($location[2] ?? null) : $location;
+        $district = $locationId ? District::with('province.department')->find($locationId) : null;
+        $parts = array_filter([
+            ($address->address ?? null) === '-' ? null : ($address->address ?? null),
+            optional($district)->description,
+            optional(optional($district)->province)->description,
+            optional(optional(optional($district)->province)->department)->description,
+        ], static fn ($part): bool => $part !== null && $part !== '');
+
+        return implode(', ', $parts);
+    }
+    // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
 
     /**
      * Retorna un standar de nomenclatura para el modelo
@@ -719,7 +765,10 @@ class Dispatch extends ModelTenant
             'updated_at' => $this->updated_at->format('Y-m-d H:i:s'),
             'btn_generate_document' => $this->generate_document || $this->reference_document_id || !$btn_generate_document ? false : true,
             'transfer_reason_type' => $this->transfer_reason_type,
+            'transfer_reason_type_description' => optional($this->transfer_reason_type)->description,
             'transfer_reason_description' => $this->transfer_reason_description,
+            'transfer_reason_label' => $this->transfer_reason_label,
+            'discount_stock' => $this->discountsPhysicalStock(),
             'documents' => $documents,
             'order_form_description' => $this->getOrderFormDescription(),
             'btn_pdf' => $btn_pdf,
@@ -785,6 +834,7 @@ class Dispatch extends ModelTenant
     {
         // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
         return $query->whereIn('transfer_reason_type_id', ['04', '21', '22', '23', '24'])
+            ->where('discount_stock', true)
             ->whereStateTypeAccepted()
             ->whereTypeUser()
             ->whereBetween('date_of_issue', [$params->date_start, $params->date_end]);

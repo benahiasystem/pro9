@@ -2,6 +2,8 @@
 
 namespace App\CoreFacturalo\Requests\Api\Validation;
 
+use App\Models\Tenant\Catalogs\TransferReasonType;
+
 class DispatchValidation
 {
     public static function validation($inputs)
@@ -12,14 +14,21 @@ class DispatchValidation
         unset($inputs['establishment']);
         $inputs = \App\Services\Fiscal\FiscalApiDocumentContext::prepareFor($inputs, auth()->user(),
             \App\Models\Tenant\Company::active()->getConnection(), app(\App\Services\SeriesResolver::class)->activeGroupId());
+        if (($inputs['transfer_reason_type_id'] ?? null) !== TransferReasonType::OTHER) {
+            $inputs['transfer_reason_description'] = null;
+        }
         \Illuminate\Support\Facades\Validator::make($inputs, [
             'transshipment_indicator' => ['required', 'boolean'],
             'time_of_issue' => ['required', 'date_format:H:i:s'],
             'total_weight' => ['required', 'numeric', 'gt:0'], 'packages_number' => ['nullable', 'integer', 'min:1'],
-            'driver' => [\Illuminate\Validation\Rule::requiredIf(($inputs['transport_mode_type_id'] ?? null) === '02' && empty($inputs['is_transport_m1l'])), 'nullable', 'array'],
+            // ########## INICIO RETIRO TRASLADO M1/L1 ##########
+            'driver' => [\Illuminate\Validation\Rule::requiredIf(($inputs['transport_mode_type_id'] ?? null) === '02'), 'nullable', 'array'],
             'driver.identity_document_type_id' => ['required_with:driver'],
             'driver.number' => ['required_with:driver', 'string', 'max:20'],
             'driver.name' => ['required_with:driver', 'string', 'max:255'],
+            'transport' => [\Illuminate\Validation\Rule::requiredIf(($inputs['transport_mode_type_id'] ?? null) === '02'), 'nullable', 'array'],
+            'transport.plate_number' => ['required_with:transport', 'string', 'max:20'],
+            // ######### FIN RETIRO TRASLADO M1/L1 #########
             'dispatcher' => ['required_if:transport_mode_type_id,01', 'nullable', 'array'],
             'dispatcher.identity_document_type_id' => ['required_with:dispatcher'],
             'dispatcher.number' => ['required_with:dispatcher', 'string', 'max:20'],
@@ -31,7 +40,7 @@ class DispatchValidation
             'origin.location_id' => ['required'], 'delivery' => ['required', 'array'],
             'delivery.address' => ['required', 'string', 'max:100'], 'delivery.location_id' => ['required'],
             'transport_mode_type_id' => ['required', 'exists:tenant.cat_transport_mode_types,id'],
-            'transfer_reason_type_id' => ['required', 'exists:tenant.cat_transfer_reason_types,id'],
+            'transfer_reason_type_id' => ['required', TransferReasonType::activeValidationRule()],
             // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
             'transfer_reason_description' => ['required_if:transfer_reason_type_id,24', 'nullable', 'string', 'max:255'],
             // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES

@@ -77,6 +77,7 @@
                         <th class="text-start">Fecha Emisión</th>
                         <th>Cliente</th>
                         <th>Número</th>
+                        <th>Motivo de traslado</th>
                         <th>Estado</th>
                         <th class="text-center">Fecha Envío</th>
                         <th class="text-center">N° Comprobante</th>
@@ -104,7 +105,7 @@
                         <template v-if="!row.customer_id">
                             <td>
                                 <small>{{
-                                    row.transfer_reason_type.description
+                                    row.transfer_reason_label
                                 }}</small>
                             </td>
                         </template>
@@ -120,6 +121,7 @@
                                 <small v-if="row.fiscal_identity.contingency" class="d-block">Contingencia · Reserva original: {{ row.fiscal_identity.original_number_full }}</small>
                             </template>
                         </td>
+                        <td>{{ row.transfer_reason_label }}</td>
                         <td>
                             <span
                                 class="badge bg-secondary text-white"

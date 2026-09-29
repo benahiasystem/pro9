@@ -65,7 +65,7 @@ class DispatchController extends Controller
     * @return \Illuminate\Http\Response
     */
     public function tables(Request $request) {
-        $transferReasonTypes = TransferReasonType::whereActive()->get();
+        $transferReasonTypes = TransferReasonType::whereContractActive()->get();
         $transportModeTypes = TransportModeType::whereActive()->get();
         $unitTypes = UnitType::whereActive()->get();
         $this->authorizedQuery();

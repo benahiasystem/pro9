@@ -120,7 +120,6 @@
                     <th class="text-center">Producto</th>
                     <th class="text-center">Cantidad</th>
                     <th class="text-center">Motivo de Traslado</th>
-                    <th class="text-center">Descripcion de Motivo de Traslado</th>
 
                     <th class="text-center">Transportista Tipo Doc</th>
                     <th class="text-center"># Documento</th>
@@ -161,12 +160,8 @@
                             $order_note_prefix = $dispatches['order_notes']['prefix'];
                             $order_note=$order_note_prefix.'-'.$order_note_id;
                         }
-                        $transfer_reason='';
-                        if(isset($dispatches['transfer_reason_type'])){
-                            $transfer_reason=$dispatches['transfer_reason_type']['description'];
-                        }
+                        $transfer_reason=$dispatches['transfer_reason_label'] ?? '';
                         $type_doc=isset($dispatches['type_disparcher'][0]) ? $dispatches['type_disparcher'][0]['description'] : '';
-                        $transfer_description = $dispatches['transfer_reason_description']? $dispatches['transfer_reason_description'] : 0;
                         $order_form_description = $dispatches['order_form_description'];
                         $num_doc = '';
                         $name_dispatcher = '';
@@ -186,7 +181,6 @@
                         <td class="celda"> {{$item_description}} </td>
                         <td class="celda"> {{$value->getQtyFormated()}} </td>
                         <td class="celda">{{$transfer_reason}}</td>
-                        <td class="celda">{{$transfer_description}}</td>
                         <td class="celda">{{$type_doc}}</td>
                         <td class="celda">{{$num_doc}}</td>
                         <td class="celda">{{$name_dispatcher}}</td>
@@ -198,7 +192,7 @@
                     @endphp
                 @endforeach
                 <tr>
-                    <td class="celda" colspan="7"></td>
+                    <td class="celda" colspan="6"></td>
                     <td class="celda"><strong>Total</strong></td>
                     <td class="celda">{{number_format($acum_total,2)}}</td>
                     <td class="celda" colspan="7"></td>

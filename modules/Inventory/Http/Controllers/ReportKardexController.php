@@ -394,7 +394,7 @@ class ReportKardexController extends Controller
                                     $query->select('prefix', 'id');
                                 }
                             ])
-                            ->select('id', 'reference_sale_note_id', 'reference_order_note_id', 'reference_document_id', 'transfer_reason_type_id', 'series', 'number', 'date_of_issue');
+                            ->select('id', 'reference_sale_note_id', 'reference_order_note_id', 'reference_document_id', 'transfer_reason_type_id', 'transfer_reason_description', 'discount_stock', 'series', 'number', 'date_of_issue');
                     },
                     Devolution::class => function ($query) {
                         $query->select('prefix', 'id', 'date_of_issue');

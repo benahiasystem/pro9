@@ -104,7 +104,7 @@ $document_number = $document->number_full;
         <td>Fecha Inicio de Traslado: {{ $document->date_of_shipping->format('Y-m-d') }}</td>
     </tr>
     <tr>
-        <td>Motivo Traslado: {{ $document->transfer_reason_type->description }}</td>
+        <td>Motivo de traslado: {{ $document->transfer_reason_label }}</td>
         <td>Modalidad de Transporte: {{ $document->transport_mode_type->description }}</td>
     </tr>
 
@@ -122,8 +122,8 @@ $document_number = $document->number_full;
         @endif
     </tr>
     <tr>
-        <td>P.Partida: {{ $document->origin->location_id }} - {{ $document->origin->address }}</td>
-        <td>P.Llegada: {{ $document->delivery->location_id }} - {{ $document->delivery->address }}</td>
+        <td>P.Partida: {{ $document->origin_address_label }}</td>
+        <td>P.Llegada: {{ $document->delivery_address_label }}</td>
     </tr>
     </tbody>
 </table>
@@ -152,11 +152,7 @@ $document_number = $document->number_full;
         @endif
     </tr>
     <tr>
-        @if($document->secondary_license_plates)
-            @if($document->secondary_license_plates->semitrailer)
-                <td>Número de placa semirremolque: {{ $document->secondary_license_plates->semitrailer }}</td>
-            @endif
-        @endif
+        {{-- ########## RETIRO DATOS VEHICULARES SECUNDARIOS ########## --}}
         @if($document->driver->license)
             <td>Licencia del conductor: {{ $document->driver->license }}</td>
         @endif

@@ -138,7 +138,7 @@ $document_number = $document->number_full;
         <td>Fecha Inicio de Traslado: {{ $document->date_of_shipping->format('Y-m-d') }}</td>
     </tr>
     <tr>
-        <td>Motivo Traslado: {{ $document->transfer_reason_type->description }}</td>
+        <td>Motivo de traslado: {{ $document->transfer_reason_label }}</td>
         <td>Modalidad de Transporte: {{ $document->transport_mode_type->description }}</td>
     </tr>
 
@@ -160,8 +160,8 @@ $document_number = $document->number_full;
             $direction_label_delivery = 'P.Llegada:';
             $direction_label_origin = 'P.Partida:';
         @endphp
-        <td> {{ $direction_label_origin }} {{ $document->origin->location_id }} - {{ $document->origin->address }}</td>
-        <td> {{ $direction_label_delivery }} {{ $document->delivery->location_id }} - {{ $document->delivery->address }}</td>
+        <td>{{ $direction_label_origin }} {{ $document->origin_address_label }}</td>
+        <td>{{ $direction_label_delivery }} {{ $document->delivery_address_label }}</td>
     </tr>
     </tbody>
 </table>
@@ -172,17 +172,8 @@ $document_number = $document->number_full;
     </tr>
     </thead>
     <tbody>
-    @if($document->is_transport_m1l)
-    <tr>
-        @if($document->is_transport_m1l)
-            <td>Indicador de traslado en vehículos de categoría M1 o L: SI</td>
-        @endif
-        @if($document->license_plate_m1l)
-            <td>Placa de vehículo: {{ $document->license_plate_m1l}}</td>
-        @endif
-    </tr>
-    @endif
-    @if($document->transport_mode_type_id === '01' && !$document->is_transport_m1l)
+    {{-- ########## INICIO RETIRO TRASLADO M1/L1 ########## --}}
+    @if($document->transport_mode_type_id === '01')
         @php
             $document_type_dispatcher = App\Models\Tenant\Catalogs\IdentityDocumentType::findOrFail($document->dispatcher->identity_document_type_id);
         @endphp
@@ -191,7 +182,6 @@ $document_number = $document->number_full;
         <td>{{ $document_type_dispatcher->description }}: {{ $document->dispatcher->number }}</td>
     </tr>
     @else
-        @if(!$document->is_transport_m1l)
         <tr>
             @if($document->transport_data)
                 <td>Número de placa del vehículo Principal: {{ $document->transport_data['plate_number'] }}</td>
@@ -209,20 +199,16 @@ $document_number = $document->number_full;
             @endif
         </tr>
         <tr>
-            @if($document->secondary_license_plates)
-                @if($document->secondary_license_plates->semitrailer)
-                    <td>Número de placa semirremolque: {{ $document->secondary_license_plates->semitrailer }}</td>
-                @endif
-            @endif
+        {{-- ########## RETIRO DATOS VEHICULARES SECUNDARIOS ########## --}}
             @if($document->driver->license)
                 <td>Licencia del conductor: {{ $document->driver->license }}</td>
             @endif
         </tr>
-        @endif
     @endif
+    {{-- ######### FIN RETIRO TRASLADO M1/L1 ######### --}}
     </tbody>
 </table>
-@if($document->secondary_transports && !$document->is_transport_m1l)
+@if($document->secondary_transports)
     <table class="full-width border-box mt-10 mb-10">
         <thead>
         <tr>
@@ -243,7 +229,7 @@ $document_number = $document->number_full;
         </tbody>
     </table>
 @endif
-@if($document->secondary_drivers && !$document->is_transport_m1l)
+@if($document->secondary_drivers)
     <table class="full-width border-box mt-10 mb-10">
         <thead>
         <tr>

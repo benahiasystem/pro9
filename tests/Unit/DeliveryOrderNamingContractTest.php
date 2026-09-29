@@ -60,4 +60,70 @@ class DeliveryOrderNamingContractTest extends TestCase
             $this->assertDoesNotMatchRegularExpression('/Gu[ií]a(?:s)? de Remisi[oó]n|G\.R\. (?:Remitente|Transportista)/ui', $contents, $file);
         }
     }
+
+    public function test_peruvian_vehicle_transfer_controls_are_not_exposed(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $manualPlateViews = [
+            'resources/js/views/tenant/dispatches/create.vue',
+            'resources/js/views/tenant/dispatches/form.vue',
+            'resources/js/views/tenant/dispatches/transports/form.vue',
+        ];
+
+        foreach ($manualPlateViews as $file) {
+            $contents = file_get_contents($root . '/' . $file);
+            $this->assertStringNotContainsString('service_type="placa"', $contents, $file);
+            $this->assertStringNotContainsString('SUNARP', $contents, $file);
+        }
+
+        $this->assertStringNotContainsString(
+            'SUNARP',
+            file_get_contents($root . '/modules/ApiPeruDev/Resources/assets/js/components/InputService.vue')
+        );
+        $this->assertStringNotContainsString(
+            '<!-- <div class="card-header bg-info">',
+            file_get_contents($root . '/resources/js/views/tenant/dispatches/create.vue')
+        );
+
+        $retiredDataConsumers = [
+            'app/Models/Tenant/Dispatch.php',
+            'app/CoreFacturalo/Requests/Inputs/DispatchInput.php',
+            'database/migrations/tenant/2026_08_17_000313_create_dispatches_table.php',
+            'resources/js/views/tenant/dispatches/create.vue',
+        ];
+        $pdfTemplates = glob($root . '/app/CoreFacturalo/Templates/pdf/*/dispatch*.blade.php');
+
+        foreach (array_merge($retiredDataConsumers, $pdfTemplates) as $file) {
+            $path = str_starts_with($file, $root) ? $file : $root . '/' . $file;
+            $contents = file_get_contents($path);
+            $this->assertStringNotContainsString('is_transport_m1l', $contents, $file);
+            $this->assertStringNotContainsString('license_plate_m1l', $contents, $file);
+            $this->assertStringNotContainsString('categoría M1', $contents, $file);
+        }
+    }
+
+    public function test_semitrailer_data_is_not_exposed_or_persisted(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $consumers = [
+            'app/CoreFacturalo/Facturalo.php',
+            'app/CoreFacturalo/Requests/Inputs/DispatchInput.php',
+            'app/Models/Tenant/Dispatch.php',
+            'database/migrations/tenant/2026_08_17_000313_create_dispatches_table.php',
+            'modules/Order/Helpers/OrderFormHelper.php',
+            'modules/Order/Resources/assets/js/views/order_forms/form.vue',
+            'resources/js/views/tenant/dispatches/create.vue',
+            'resources/js/views/tenant/dispatches/form.vue',
+        ];
+        $templates = glob($root . '/app/CoreFacturalo/Templates/pdf/*/{dispatch*,order_form_a4}.blade.php', GLOB_BRACE);
+
+        foreach (array_merge($consumers, $templates) as $file) {
+            $path = str_starts_with($file, $root) ? $file : $root . '/' . $file;
+            $contents = file_get_contents($path);
+            $this->assertStringNotContainsString('secondary_license_plates', $contents, $file);
+            $this->assertStringNotContainsString('license_plate_2', $contents, $file);
+            $this->assertStringNotContainsString('register_number_2', $contents, $file);
+            $this->assertStringNotContainsString('placa semirremolque', mb_strtolower($contents), $file);
+        }
+    }
 }

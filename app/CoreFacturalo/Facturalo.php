@@ -922,7 +922,6 @@ class Facturalo
         $transport_mode_type = 0;
         $driver = 0;
         $license_plate = 0;
-        $secondary_license_plates = 0;
 
         if($format == 'ticket_58')
         {
@@ -939,7 +938,6 @@ class Facturalo
         if($document->transfer_reason_type) $transfer_reason_type = 6;
         if($document->transport_mode_type) $transport_mode_type = 6;
         if($document->license_plate) $license_plate = 5;
-        if($document->secondary_license_plates) $secondary_license_plates = 5;
 
         if($document->driver)
         {
@@ -948,7 +946,7 @@ class Facturalo
         }
 
         $append_height += $base_height + $observations + $data_affected_document + $transfer_reason_type + $transport_mode_type + $driver
-                            + $license_plate + $secondary_license_plates;
+                            + $license_plate;
 
     }
 

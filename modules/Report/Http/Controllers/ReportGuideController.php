@@ -11,6 +11,7 @@
     use App\Models\Tenant\Establishment;
     use App\Models\Tenant\Person;
     use App\Models\Tenant\User;
+    use App\Models\Tenant\Catalogs\TransferReasonType;
     use Barryvdh\DomPDF\Facade\Pdf as PDF;
     use Carbon\Carbon;
     use Illuminate\Http\Request;
@@ -74,8 +75,9 @@
             $items = $this->getItems('items', $dispatch_item_ids)->get();
             $establishments = Establishment::wherein('id', $dispatch_establishment_id)->get();
             $web_platforms = $this->getWebPlatforms();
+            $transfer_reason_types = TransferReasonType::whereContractActive()->get(['id', 'description']);
 
-            return compact('document_types', 'establishments', 'items', 'web_platforms', 'customers', 'users');
+            return compact('document_types', 'establishments', 'items', 'web_platforms', 'customers', 'users', 'transfer_reason_types');
         }
 
         /**
@@ -132,6 +134,7 @@
             $user_id = isset($request['user_id']) ? (int)$request['user_id'] : 0;
             $customer_id = isset($request['customer_id']) ? (int)$request['customer_id'] : 0;
             $establishment_id = isset($request['establishment_id']) ? (int)$request['establishment_id'] : 0;
+            $transfer_reason_type_id = $request['transfer_reason_type_id'] ?? null;
 
             $d_start = null;
             $d_end = null;
@@ -175,6 +178,9 @@
             }
             if ($item_id != 0) {
                 $dispatch->where('dispatch_items.item_id', $item_id);
+            }
+            if ($transfer_reason_type_id) {
+                $dispatch->where('dispatches.transfer_reason_type_id', $transfer_reason_type_id);
             }
 
 

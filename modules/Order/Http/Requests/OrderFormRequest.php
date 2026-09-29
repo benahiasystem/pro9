@@ -3,11 +3,42 @@
 namespace Modules\Order\Http\Requests;
 
 use App\Models\Tenant\Catalogs\UnitType;
+use App\Models\Tenant\Catalogs\TransferReasonType;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class OrderFormRequest extends FormRequest
 {
+    // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+    protected function prepareForValidation()
+    {
+        if ($this->input('transfer_reason_type_id') !== TransferReasonType::OTHER) {
+            $this->merge(['transfer_reason_description' => null]);
+        }
+    }
+    // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
+
+    // ########## INICIO RETIRO SEMIRREMOLQUE ##########
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            $licensePlates = $this->input('license_plates');
+            if (!is_array($licensePlates)) {
+                return;
+            }
+
+            foreach (['license_plate_2', 'register_number_2'] as $retiredField) {
+                if (array_key_exists($retiredField, $licensePlates)) {
+                    $validator->errors()->add(
+                        "license_plates.{$retiredField}",
+                        'Los datos de semirremolque fueron retirados de los formularios de pedido.'
+                    );
+                }
+            }
+        });
+    }
+    // ######### FIN RETIRO SEMIRREMOLQUE #########
+
     public function authorize()
     {
         return true;
@@ -49,7 +80,7 @@ class OrderFormRequest extends FormRequest
             ],
             'transfer_reason_type_id'=> [
                 'required',
-                'exists:tenant.cat_transfer_reason_types,id',
+                TransferReasonType::activeValidationRule(),
             ],
             'origin.address'=> [
                 'required',
@@ -68,14 +99,6 @@ class OrderFormRequest extends FormRequest
             'license_plates.register_number_1'=> [
                 'required',
             ],
-            'license_plates.license_plate_2'=> [
-                'required',
-            ],
-            'license_plates.register_number_2'=> [
-                'required',
-            ],
-            
-           
         ];
     }
 

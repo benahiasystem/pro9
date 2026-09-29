@@ -44,6 +44,11 @@ class DispatchResource extends JsonResource
                 'extension_only' => 'pdf'
             ],
             'reference_documents' => $this->reference_documents,
+            'transfer_reason_type_id' => $this->transfer_reason_type_id,
+            'transfer_reason_type_description' => optional($this->transfer_reason_type)->description,
+            'transfer_reason_description' => $this->transfer_reason_description,
+            'transfer_reason_label' => $this->transfer_reason_label,
+            'discount_stock' => $this->discountsPhysicalStock(),
 
         ];
     }

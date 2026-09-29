@@ -167,6 +167,15 @@ class OrderForm extends ModelTenant
         return $this->belongsTo(TransferReasonType::class, 'transfer_reason_type_id');
     }
 
+    // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+    public function getTransferReasonLabelAttribute(): string
+    {
+        $reason = $this->getRelationValue('transfer_reason_type');
+
+        return $reason ? $reason->displayDescription($this->transfer_reason_description) : '';
+    }
+    // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
+
     public function items()
     {
         return $this->hasMany(OrderFormItem::class);

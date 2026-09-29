@@ -112,7 +112,7 @@ class ReportValuedKardexController extends Controller
     }
 
 
-    public function excelFormatSunat(Request $request)
+    public function excelLocal(Request $request)
     {
 
         // dd($request->all());
@@ -142,8 +142,14 @@ class ReportValuedKardexController extends Controller
             ->company($company)
             ->establishment($establishment);
 
-        return $valuedKardexFormatSunatExport->download('Reporte_Kardex_Valorizado_Sunat_13_1' . Carbon::now() . '.xlsx');
+        return $valuedKardexFormatSunatExport->download('Reporte_Kardex_Valorizado_Detallado_' . Carbon::now() . '.xlsx');
 
+    }
+
+    /** Alias técnico conservado para enlaces existentes. */
+    public function excelFormatSunat(Request $request)
+    {
+        return $this->excelLocal($request);
     }
 
 }

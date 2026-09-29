@@ -147,6 +147,16 @@ class FiscalEmissionSchemaTest extends TestCase
         $item = \App\Models\Tenant\Item::where('internal_id', 'MOCK-ITEM-VES-001')->firstOrFail();
         $db->table('item_warehouse')->insert(['item_id' => $item->id, 'warehouse_id' => $warehouse, 'stock' => 22]);
         $customer = \App\Models\Tenant\Person::where('number', 'MOCK-CLIENTE-VE')->firstOrFail();
+        // ########## INICIO RETIRO SEMIRREMOLQUE ##########
+        $dispatcher = $db->table('dispatchers')->insertGetId([
+            'identity_document_type_id' => '6', 'number' => 'J987654321',
+            'name' => 'HTTP transportista', 'address' => 'HTTP transportista',
+        ]);
+        $driver = $db->table('drivers')->insertGetId([
+            'identity_document_type_id' => '1', 'number' => 'V87654321',
+            'name' => 'HTTP conductor pedido', 'license' => 'LIC-TEST', 'telephone' => '04121234567',
+        ]);
+        // ######### FIN RETIRO SEMIRREMOLQUE #########
         // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
         $originAddress = $db->table('origin_addresses')->insertGetId([
             'address' => 'HTTP origen', 'location_id' => json_encode(['14', '0229', '000619']),
@@ -168,6 +178,7 @@ class FiscalEmissionSchemaTest extends TestCase
             'origin' => ['country_id' => 'VE', 'address' => 'HTTP origen', 'location_id' => ['14', '0229', '000619'], 'code' => '0000'],
             'delivery' => ['country_id' => 'VE', 'address' => 'HTTP destino', 'location_id' => ['14', '0229', '000619'], 'code' => '0000'],
             'driver' => ['identity_document_type_id' => '1', 'number' => 'V12345678', 'name' => 'HTTP conductor', 'license' => 'TEST', 'telephone' => '04121234567'],
+            'transport' => ['plate_number' => 'TEST123', 'model' => 'Test', 'brand' => 'Test', 'tuc' => null],
             'items' => [['item_id' => $item->id, 'description' => $item->description, 'unit_type_id' => 'UND', 'quantity' => 1]],
             'reference_documents' => [],
         ];
@@ -371,6 +382,53 @@ class FiscalEmissionSchemaTest extends TestCase
             ['path' => '/dispatches/tables', 'method' => 'POST', 'user_id' => $admin],
             ['path' => '/dispatches', 'method' => 'POST', 'user_id' => $admin, 'body' => $webDispatch],
             ['path' => '/dispatches', 'method' => 'POST', 'user_id' => $admin, 'body' => $webDispatch],
+            // ########## INICIO RETIRO TRASLADO M1/L1 ##########
+            ['path' => '/api/dispatches', 'method' => 'POST', 'api_token' => $apiToken, 'body' => array_replace($apiDispatch, [
+                'clave_operacion' => 'http-retired-api-m1l',
+                'indicador_traslado_vehiculo_m1l' => true,
+                'placa_m1l' => 'M1LTEST',
+            ])],
+            ['path' => '/dispatches', 'method' => 'POST', 'user_id' => $admin, 'body' => array_replace($webDispatch, [
+                'operation_key' => 'http-retired-web-m1l',
+                'is_transport_m1l' => true,
+                'license_plate_m1l' => 'M1LTEST',
+            ])],
+            // ######### FIN RETIRO TRASLADO M1/L1 #########
+            // ########## INICIO RETIRO SEMIRREMOLQUE ##########
+            ['path' => '/api/dispatches', 'method' => 'POST', 'api_token' => $apiToken, 'body' => array_replace($apiDispatch, [
+                'clave_operacion' => 'http-retired-api-semitrailer',
+                'placa_semirremolque' => null,
+            ])],
+            ['path' => '/dispatches', 'method' => 'POST', 'user_id' => $admin, 'body' => array_replace($webDispatch, [
+                'operation_key' => 'http-retired-web-semitrailer',
+                'secondary_license_plates' => [],
+            ])],
+            ['path' => '/order-forms', 'method' => 'POST', 'user_id' => $admin, 'body' => [
+                'license_plates' => ['license_plate_2' => null],
+            ]],
+            ['path' => '/order-forms', 'method' => 'POST', 'user_id' => $admin, 'body' => [
+                'license_plates' => ['register_number_2' => 'RETIRADO'],
+            ]],
+            ['path' => '/order-forms', 'method' => 'POST', 'user_id' => $admin, 'body' => [
+                'id' => null, 'url' => 'http://fiscal-http.example.test',
+                'establishment_id' => $establishment, 'date_of_issue' => '2026-09-13',
+                'time_of_issue' => '12:00:00', 'date_of_shipping' => '2026-09-13',
+                'customer_id' => $customer->id, 'observations' => 'Pedido sin semirremolque',
+                'transport_mode_type_id' => '02', 'transfer_reason_type_id' => '21',
+                'transshipment_indicator' => false, 'port_code' => null,
+                'unit_type_id' => 'KG', 'total_weight' => 1, 'packages_number' => 1,
+                'container_number' => null,
+                'origin' => ['country_id' => 'VE', 'address' => 'HTTP origen', 'location_id' => ['14', '0229', '000619']],
+                'delivery' => ['country_id' => 'VE', 'address' => 'HTTP destino', 'location_id' => ['14', '0229', '000619']],
+                'dispatcher_id' => $dispatcher,
+                'dispatcher' => ['identity_document_type_id' => '6', 'number' => 'J987654321', 'name' => 'HTTP transportista'],
+                'driver_id' => $driver,
+                'driver' => ['identity_document_type_id' => '1', 'number' => 'V87654321'],
+                'license_plates' => ['license_plate_1' => 'ABC-123', 'register_number_1' => 'REG-1'],
+                'items' => [['item_id' => $item->id, 'quantity' => 1]],
+                'legends' => [],
+            ]],
+            // ######### FIN RETIRO SEMIRREMOLQUE #########
             // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
         ]], JSON_THROW_ON_ERROR));
         $process->setTimeout(60);
@@ -379,6 +437,43 @@ class FiscalEmissionSchemaTest extends TestCase
         $output = explode("\nFISCAL_HTTP_RESULT\n", $process->getOutput(), 2);
         self::assertCount(2, $output, substr($process->getOutput(), -2000));
         $responses = json_decode($output[1], true, 512, JSON_THROW_ON_ERROR);
+        // ########## INICIO RETIRO TRASLADO M1/L1 ##########
+        $retiredResponses = array_splice($responses, 132);
+        $retiredM1lResponses = array_slice($retiredResponses, 0, 2);
+        self::assertSame([422, 422], array_column($retiredM1lResponses, 'status'));
+        foreach ($retiredM1lResponses as $response) {
+            self::assertStringContainsString('M1/L1', $response['body']['message']);
+        }
+        self::assertSame(0, $db->table('fiscal_number_reservations')
+            ->whereIn('operation_key', ['http-retired-api-m1l', 'http-retired-web-m1l'])
+            ->count());
+        // ######### FIN RETIRO TRASLADO M1/L1 #########
+        // ########## INICIO RETIRO SEMIRREMOLQUE ##########
+        $retiredSemitrailerResponses = array_slice($retiredResponses, 2);
+        self::assertSame([422, 422, 422, 422, 200], array_column($retiredSemitrailerResponses, 'status'));
+        self::assertStringContainsString('semirremolque', mb_strtolower($retiredSemitrailerResponses[0]['body']['message']));
+        self::assertStringContainsString('semirremolque', mb_strtolower($retiredSemitrailerResponses[1]['body']['message']));
+        self::assertStringContainsString('semirremolque', mb_strtolower(json_encode($retiredSemitrailerResponses[2]['body'], JSON_THROW_ON_ERROR)));
+        self::assertStringContainsString('semirremolque', mb_strtolower(json_encode($retiredSemitrailerResponses[3]['body'], JSON_THROW_ON_ERROR)));
+        self::assertSame(0, $db->table('fiscal_number_reservations')
+            ->whereIn('operation_key', ['http-retired-api-semitrailer', 'http-retired-web-semitrailer'])
+            ->count());
+        self::assertSame(1, $db->table('order_forms')->count());
+        $storedLicensePlates = json_decode((string) $db->table('order_forms')->value('license_plates'), true, 512, JSON_THROW_ON_ERROR);
+        self::assertSame(['license_plate_1' => 'ABC-123', 'register_number_1' => 'REG-1'], $storedLicensePlates);
+        // ######### FIN RETIRO SEMIRREMOLQUE #########
+        self::assertSame(1, (int) $db->table('dispatches')->where('id', 1)->value('discount_stock'));
+        self::assertEquals(-2, $db->table('inventory_kardex')
+            ->where('inventory_kardexable_type', \App\Models\Tenant\Dispatch::class)
+            ->where('inventory_kardexable_id', 1)
+            ->sum('quantity'));
+        self::assertSame(1, (int) $db->table('dispatches')->where('id', 2)->value('discount_stock'));
+        self::assertEquals(-1, $db->table('inventory_kardex')
+            ->where('inventory_kardexable_type', \App\Models\Tenant\Dispatch::class)
+            ->where('inventory_kardexable_id', 2)
+            ->sum('quantity'));
+        $db->table('cat_transfer_reason_types')->where('id', '21')->update(['discount_stock' => false]);
+        self::assertSame(1, (int) $db->table('dispatches')->where('id', 1)->value('discount_stock'), 'El snapshot histórico no debe cambiar con el catálogo.');
         self::assertSame([401, 403, 200, 422, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 401, 401, 200, 200, 200, 422, 422, 404, 200, 201, 403, 200, 200, 200, 200, 200, 201, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 404, 422, 422, 422, 201, 404, 200, 200, 422, 200, 200, 200, 200, 422, 422, 404, 422, 422, 403, 200, 200, 422, 200, 200, 200, 200, 200, 201, 200, 200, 200, 200, 201, 201, 200, 200, 403, 200, 200, 200, 200, 200, 422, 403, 422, 422, 200, 422, 422, 201, 200, 200, 422, 405, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 403, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200], array_column($responses, 'status'), json_encode(array_slice($responses, -5)));
         self::assertSame('awaiting_print', $responses[117]['body']['data']['fiscal']['status']);
         self::assertSame('00-00000020', $responses[118]['body']['data']['control_number']);
@@ -517,7 +612,10 @@ class FiscalEmissionSchemaTest extends TestCase
         self::assertSame(2, $db->table('dispatches')->count());
         self::assertSame(2, $db->table('dispatch_items')->count());
         self::assertSame(0, $db->table('persons')->where('name', 'Rejected dispatch change')->count());
-        self::assertSame(11, (int) $db->table('fiscal_sequences')->where('id', 2)->value('next_number'));
+        self::assertSame($responses[130]['body']['data']['id'], $responses[131]['body']['data']['id']);
+        self::assertSame(1, $db->table('fiscal_number_reservations')->where('operation_key', 'http-web-dispatch-retry')->count());
+        self::assertSame(11, (int) $db->table('dispatches')->where('id', $responses[130]['body']['data']['id'])->value('number'));
+        self::assertSame(12, (int) $db->table('fiscal_sequences')->where('id', 2)->value('next_number'));
         self::assertSame(1, $responses[7]['body']['data']['fiscal']['profile_id']);
         self::assertSame(2, $responses[7]['body']['data']['fiscal']['next_number']);
         self::assertSame(2, $responses[8]['body']['data']['fiscal']['next_number']);
@@ -549,7 +647,7 @@ class FiscalEmissionSchemaTest extends TestCase
         self::assertSame('issued', $responses[36]['body']['data']['status']);
         self::assertSame(4, $responses[36]['pdf_count']);
         self::assertSame($responses[30]['body']['document_id'], $responses[37]['body']['document_id']);
-        self::assertSame(15, $db->table('fiscal_number_reservations')->count());
+        self::assertSame(16, $db->table('fiscal_number_reservations')->count());
         self::assertCount(1, $responses[38]['body']['data']);
         self::assertSame(4, $responses[38]['body']['data'][0]['id']);
         self::assertSame('5', $responses[38]['body']['data'][0]['number']);
@@ -571,13 +669,13 @@ class FiscalEmissionSchemaTest extends TestCase
         self::assertSame(['14', '0229', '000619'], [$apiCustomer->department_id, $apiCustomer->province_id, $apiCustomer->district_id]);
         self::assertSame(12, $db->table('documents')->count());
         self::assertSame(13, $db->table('document_payments')->count());
-        self::assertSame(20, $db->table('inventory_kardex')->count());
-        self::assertEquals(2, $db->table('item_warehouse')->where('item_id', $item->id)->where('warehouse_id', $warehouse)->value('stock'));
+        self::assertSame(21, $db->table('inventory_kardex')->count());
+        self::assertEquals(1, $db->table('item_warehouse')->where('item_id', $item->id)->where('warehouse_id', $warehouse)->value('stock'));
         self::assertSame('issued', $responses[9]['body']['data']['status']);
         self::assertSame(1, $responses[9]['pdf_count']);
         self::assertSame(4, $db->table('fiscal_sequences')->count());
         self::assertSame(1, (int) $db->table('fiscal_sequences')->value('initial_number'));
-        self::assertSame(9, $db->table('fiscal_profiles')->count());
+        self::assertSame(10, $db->table('fiscal_profiles')->count());
         self::assertSame(0, (int) $db->table('fiscal_profiles')->value('active'));
         self::assertNotEmpty($db->table('fiscal_profiles')->value('credentials'));
         self::assertNotSame('HTTP-TEST-SECRET', $db->table('fiscal_profiles')->value('credentials'));
@@ -1006,6 +1104,16 @@ class FiscalEmissionSchemaTest extends TestCase
             self::assertSame('PRI', $transferReasonColumn[0]->Key);
             self::assertSame('NO', $transferReasonColumn[0]->Null);
             self::assertSame('varchar(2)', $db->select("SHOW COLUMNS FROM `dispatches` LIKE 'transfer_reason_type_id'")[0]->Type);
+            $discountStockColumn = $db->select("SHOW COLUMNS FROM `dispatches` LIKE 'discount_stock'")[0];
+            self::assertSame('tinyint(1)', $discountStockColumn->Type);
+            self::assertSame('0', $discountStockColumn->Default);
+            // ########## INICIO RETIRO TRASLADO M1/L1 ##########
+            self::assertSame([], $db->select("SHOW COLUMNS FROM `dispatches` LIKE 'is_transport_m1l'"));
+            self::assertSame([], $db->select("SHOW COLUMNS FROM `dispatches` LIKE 'license_plate_m1l'"));
+            // ######### FIN RETIRO TRASLADO M1/L1 #########
+            // ########## INICIO RETIRO SEMIRREMOLQUE ##########
+            self::assertSame([], $db->select("SHOW COLUMNS FROM `dispatches` LIKE 'secondary_license_plates'"));
+            // ######### FIN RETIRO SEMIRREMOLQUE #########
             self::assertSame('varchar(2)', $db->select("SHOW COLUMNS FROM `order_forms` LIKE 'transfer_reason_type_id'")[0]->Type);
             // ######### FIN CAMBIO CATÁLOGO MOTIVOS DE TRASLADO VENEZUELA
             // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES

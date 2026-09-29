@@ -61,7 +61,7 @@ class ReportKardexCollection extends ResourceCollection
 
                 if(isset($row->inventory_kardexable->dispatch)){
 
-                    if($row->inventory_kardexable->dispatch->transfer_reason_type->discount_stock){
+                    if($row->inventory_kardexable->dispatch->discountsPhysicalStock()){
                         // $cpe_input = '-';
                         $cpe_output = '-';
                         $cpe_discounted_stock = true;
@@ -209,7 +209,7 @@ class ReportKardexCollection extends ResourceCollection
                     'id' => $row->id,
                     'item_name' => $row->item->description,
                     'date_time' => $row->created_at->format('Y-m-d H:i:s'),
-                    'type_transaction' =>  isset($row->inventory_kardexable->transfer_reason_type->description) ? $row->inventory_kardexable->transfer_reason_type->description : '',
+                    'type_transaction' => $row->inventory_kardexable->transfer_reason_label,
                     // 'type_transaction' => "Guía",
                     'date_of_issue' => isset($row->inventory_kardexable->date_of_issue) ? $row->inventory_kardexable->date_of_issue->format('Y-m-d') : '',
                     'number' => optional($row->inventory_kardexable)->number_full,
@@ -298,7 +298,7 @@ class ReportKardexCollection extends ResourceCollection
                     $cpe_discounted_stock = false;
                     //para cpe que provienen de una guia
                     if (isset($data[$i]->inventory_kardexable->dispatch)) {
-                        if ($data[$i]->inventory_kardexable->dispatch->transfer_reason_type->discount_stock) {
+                        if ($data[$i]->inventory_kardexable->dispatch->discountsPhysicalStock()) {
                             $cpe_discounted_stock = true;
                         }
                     }

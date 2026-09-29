@@ -10,6 +10,7 @@ use App\CoreFacturalo\Requests\Inputs\Common\PersonInput;
 use App\Models\Tenant\Company;
 use App\Models\Tenant\Dispatch;
 use App\Models\Tenant\Item;
+use App\Models\Tenant\Catalogs\TransferReasonType;
 use Illuminate\Support\Str;
 
 class OrderFormHelper
@@ -41,7 +42,9 @@ class OrderFormHelper
             'observations' => $inputs['observations'],
             'transport_mode_type_id' => $inputs['transport_mode_type_id'],
             'transfer_reason_type_id' => $inputs['transfer_reason_type_id'],
-            'transfer_reason_description' => $inputs['transfer_reason_description'],
+            'transfer_reason_description' => $inputs['transfer_reason_type_id'] === TransferReasonType::OTHER
+                ? trim((string) ($inputs['transfer_reason_description'] ?? '')) ?: null
+                : null,
             'date_of_shipping' => $inputs['date_of_shipping'],
             'transshipment_indicator' => $inputs['transshipment_indicator'],
             'port_code' => $inputs['port_code'],
@@ -58,7 +61,12 @@ class OrderFormHelper
             'optional' => null,
             'dispatcher_id' => $inputs['dispatcher_id'],
             'driver_id' => $inputs['driver_id'],
-            'license_plates' => $inputs['license_plates'],
+            // ########## INICIO RETIRO DATOS VEHICULARES SECUNDARIOS ##########
+            'license_plates' => [
+                'license_plate_1' => $inputs['license_plates']['license_plate_1'],
+                'register_number_1' => $inputs['license_plates']['register_number_1'],
+            ],
+            // ######### FIN RETIRO DATOS VEHICULARES SECUNDARIOS #########
         ];
     }
 

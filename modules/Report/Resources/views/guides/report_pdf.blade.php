@@ -114,6 +114,7 @@
                     <th class="text-center">O.Pedido</th>
                     <th class="text-center">Producto</th>
                     <th class="text-center">Cantidad</th>
+                    <th class="text-center">Motivo de traslado</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -136,6 +137,7 @@
                         $state_type_description = $dispatches['state_type_description'];
                         $state_type_id = $dispatches['state_type_id'];
                         $order_form_description = $dispatches['order_form_description'];
+                        $transfer_reason_label = $dispatches['transfer_reason_label'] ?? '';
 
                         ?>
 
@@ -150,12 +152,13 @@
                         <td class="celda">{{ $order_form_description }}</td>
                         <td class="celda"> {{$item_description}} </td>
                         <td class="celda"> {{$value->getQtyFormated()}} </td>
+                        <td class="celda"> {{ $transfer_reason_label }} </td>
                     @php
                         $acum_total += $qty
                     @endphp
                 @endforeach
                 <tr>
-                    <td class="celda" colspan="8"></td>
+                    <td class="celda" colspan="9"></td>
                     <td class="celda"><strong>Total</strong></td>
                     <td class="celda">{{number_format($acum_total,2)}}</td>
                 </tr>

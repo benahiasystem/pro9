@@ -240,15 +240,10 @@ $document_number = $document->number_full;
         <td>Fecha Inicio de Traslado: {{ $document->date_of_shipping->format('Y-m-d') }}</td>
     </tr>
     <tr>
-        <td>Motivo Traslado: {{ $document->transfer_reason_type->description }}</td>
+        <td>Motivo de traslado: {{ $document->transfer_reason_label }}</td>
         <td>Modalidad de Transporte: {{ $document->transport_mode_type->description }}</td>
     </tr>
 
-    @if($document->transfer_reason_description)
-        <tr>
-            <td colspan="2">Descripción de motivo de traslado: {{ $document->transfer_reason_description }}</td>
-        </tr>
-    @endif
 
     @if($document->related)
         <tr>
@@ -265,36 +260,12 @@ $document_number = $document->number_full;
     </tr>
     <tr>
         <td colspan="2">
-            {{-- P.Partida: {{ $document->origin->location_id }} - {{ $document->origin->address }} --}}
-            @php
-                $direction_label_origin = 'P.Partida:';
-                $origin = $document->origin;
-                $ubigeo_origin = App\Models\Tenant\Catalogs\District::find($origin->location_id);
-            @endphp
-            {{ $direction_label_origin }}
-            {{ ($origin->address !== '-')? $origin->address : '' }}
-            {{ (isset($ubigeo_origin)) ? ', '.$ubigeo_origin->description : '' }}
-            {{ (isset($ubigeo_origin))? ', '.$ubigeo_origin->province->description : '' }}
-            {{ (isset($ubigeo_origin))? '- '.$ubigeo_origin->province->department->description : '' }}
+            P.Partida: {{ $document->origin_address_label }}
         </td>
     </tr>
     <tr>
         <td colspan="2">
-            {{-- P.Llegada: {{ $document->delivery->location_id }} - {{ $document->delivery->address }} --}}
-            @php
-                $delivery = Illuminate\Support\Facades\DB::connection('tenant')->table('districts')
-                    ->join('provinces', 'districts.province_id', '=', 'provinces.id')
-                    ->join('departments', 'provinces.department_id', '=', 'departments.id')
-                    ->where('districts.id', '=', $document->delivery->location_id)
-                    ->select('districts.description as district_description', 'provinces.description as province_description','departments.description as department_description')
-                    ->first();
-                $direction_label_delivery = 'P.Llegada:';
-            @endphp
-            {{ $direction_label_delivery }}
-            {{  $document->delivery->address  }}
-            {{ ($delivery->district_description !== '-')? ', '.$delivery->district_description : '' }}
-            {{ ($delivery->province_description !== '-')? ', '.$delivery->province_description : '' }}
-            {{ ($delivery->department_description !== '-')? '- '.$delivery->department_description : '' }}
+            P.Llegada: {{ $document->delivery_address_label }}
         </td>
     </tr>
     <tr>
@@ -340,17 +311,8 @@ $document_number = $document->number_full;
     </tr>
     </thead>
     <tbody>
-    @if($document->is_transport_m1l)
-    <tr>
-        @if($document->is_transport_m1l)
-            <td>Indicador de traslado en vehículos de categoría M1 o L: SI</td>
-        @endif
-        @if($document->license_plate_m1l)
-            <td>Placa de vehículo: {{ $document->license_plate_m1l}}</td>
-        @endif
-    </tr>
-    @endif
-    @if($document->transport_mode_type_id === '01' && !$document->is_transport_m1l)
+    {{-- ########## INICIO RETIRO TRASLADO M1/L1 ########## --}}
+    @if($document->transport_mode_type_id === '01')
         @php
             $document_type_dispatcher = App\Models\Tenant\Catalogs\IdentityDocumentType::findOrFail($document->dispatcher->identity_document_type_id);
         @endphp
@@ -376,18 +338,13 @@ $document_number = $document->number_full;
                 @endif
             </tr>
             <tr>
-                @if($document->secondary_license_plates)
-                    @if($document->secondary_license_plates->semitrailer)
-                        <td>Número de placa semirremolque: {{ $document->secondary_license_plates->semitrailer }}</td>
-                    @endif
-                @endif
+        {{-- ########## RETIRO DATOS VEHICULARES SECUNDARIOS ########## --}}
                 @if($document->driver->license)
                     <td>Licencia del conductor: {{ $document->driver->license }}</td>
                 @endif
             </tr>
         @endif
     @else
-        @if(!$document->is_transport_m1l)
         <tr>
             @if($document->transport_data)
                 <td>Número de placa del vehículo Principal: {{ $document->transport_data['plate_number'] }}</td>
@@ -405,20 +362,16 @@ $document_number = $document->number_full;
             @endif
         </tr>
         <tr>
-            @if($document->secondary_license_plates)
-                @if($document->secondary_license_plates->semitrailer)
-                    <td>Número de placa semirremolque: {{ $document->secondary_license_plates->semitrailer }}</td>
-                @endif
-            @endif
+            {{-- ########## RETIRO DATOS VEHICULARES SECUNDARIOS ########## --}}
             @if($document->driver->license)
                 <td>Licencia del conductor: {{ $document->driver->license }}</td>
             @endif
         </tr>
-        @endif
     @endif
+    {{-- ######### FIN RETIRO TRASLADO M1/L1 ######### --}}
     </tbody>
 </table>
-@if($document->secondary_transports && !$document->is_transport_m1l)
+@if($document->secondary_transports)
     <table class="full-width border-box mt-10 mb-10">
         <thead>
         <tr>
@@ -439,7 +392,7 @@ $document_number = $document->number_full;
         </tbody>
     </table>
 @endif
-@if($document->secondary_drivers && !$document->is_transport_m1l)
+@if($document->secondary_drivers)
     <table class="full-width border-box mt-10 mb-10">
         <thead>
         <tr>

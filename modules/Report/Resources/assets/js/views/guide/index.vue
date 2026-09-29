@@ -51,6 +51,7 @@
                             <th class="text-center">Orden de pedido</th>
                             <th class="text-center">Producto</th>
                             <th class="text-center">Cantidad</th>
+                            <th class="text-center">Motivo de traslado</th>
                         </tr>
                         <tr slot-scope="{ index, row }">
                             <!-- <td>{{ index }}</td> -->
@@ -106,6 +107,9 @@
                             </td>
                             <td class="text-center">
                                 {{ row.quantity }}
+                            </td>
+                            <td class="text-center">
+                                {{ row.dispatches.transfer_reason_label }}
                             </td>
                         </tr>
                     </data-table>

@@ -77,7 +77,7 @@
         <td>Fecha Inicio de Traslado: {{ $document->date_of_shipping->format('Y-m-d') }}</td>
     </tr>
     <tr>
-        <td>Motivo Traslado: {{ $document->transfer_reason_type->description }}</td>
+        <td>Motivo de traslado: {{ $document->transfer_reason_label }}</td>
         <td>Modalidad de Transporte: {{ $document->transport_mode_type->description }}</td>
     </tr>
     <tr>
@@ -111,10 +111,7 @@
             <td>N° placa del vehiculo: {{ $document->license_plates->license_plate_1 }}</td>
             <td>N° registro: {{ $document->license_plates->register_number_1 }}</td>
         </tr>
-        <tr>
-            <td >N° placa semirremolque: {{ $document->license_plates->license_plate_2 }}</td>
-            <td>N° registro: {{ $document->license_plates->register_number_2 }}</td>
-        </tr>
+        {{-- ########## RETIRO DATOS VEHICULARES SECUNDARIOS ########## --}}
     </tbody>
 </table>
 

@@ -100,16 +100,6 @@
 
                         </template>
 
-                        <!-- <el-tooltip class="item"
-                                    content="Formato SUNAT 13.1"
-                                    effect="dark"
-                                    placement="top">
-
-                            <el-button class="submit" type="success" @click.prevent="clickDownload('excel-format-sunat')"><i
-                                class="fa fa-file-excel"></i> Exportar Format Sunat
-                            </el-button>
-                        </el-tooltip> -->
-
                     </div>
 
                 </div>
@@ -314,7 +304,7 @@ export default {
             this.showLeftShadow = scrollLeft > 1;
             this.showRightShadow = scrollRight > 1;
         },
-        exportFormatSunat(item_id){
+        exportKardexLocal(item_id){
             
             let data = this.form
             data.item_id = item_id
@@ -323,13 +313,13 @@ export default {
                 ...data
             })
 
-            window.open(`/${this.resource}/excel-format-sunat/?${query}`, '_blank')
+            window.open(`/${this.resource}/excel-local/?${query}`, '_blank')
 
         },
         events(){
             
-            this.$eventHub.$on('exportFormatSunat', (item_id) => {
-                this.exportFormatSunat(item_id)
+            this.$eventHub.$on('exportKardexLocal', (item_id) => {
+                this.exportKardexLocal(item_id)
             })
 
             this.$eventHub.$on('reloadData', () => {

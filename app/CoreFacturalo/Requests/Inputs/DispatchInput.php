@@ -10,7 +10,9 @@ use App\CoreFacturalo\Requests\Inputs\Common\LegendInput;
 use App\CoreFacturalo\Requests\Inputs\Common\PersonInput;
 use App\Models\Tenant\Company;
 use App\Models\Tenant\Dispatch;
+use App\Models\Tenant\Establishment;
 use App\Models\Tenant\Item;
+use App\Models\Tenant\PersonAddress;
 use Illuminate\Support\Str;
 use Modules\Dispatch\Models\DispatchAddress;
 use Modules\Dispatch\Models\Dispatcher;
@@ -21,7 +23,9 @@ use Modules\Dispatch\Models\ReceiverAddress;
 use Modules\Dispatch\Models\Sender;
 use Modules\Dispatch\Models\SenderAddress;
 use Modules\Dispatch\Models\Transport;
+use Modules\Dispatch\Models\OriginAddress;
 use App\Models\Tenant\Catalogs\District;
+use App\Models\Tenant\Catalogs\TransferReasonType;
 
 class DispatchInput
 {
@@ -46,6 +50,19 @@ class DispatchInput
         $establishment = EstablishmentInput::set($inputs['establishment_id']);
         $customer = self::customer($inputs);
         $inputs['type'] = 'dispatch';
+        // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+        $transferReasonId = (string) Functions::valueKeyInArray($inputs, 'transfer_reason_type_id');
+        $transferReason = TransferReasonType::query()
+            ->where('active', true)
+            ->whereIn('id', TransferReasonType::CONTRACT_IDS)
+            ->findOrFail($transferReasonId);
+        $hasPreviousStockMovement = !empty($inputs['reference_sale_note_id'])
+            || !empty($inputs['reference_order_note_id'])
+            || !empty($inputs['reference_document_id']);
+        $transferReasonDescription = $transferReasonId === TransferReasonType::OTHER
+            ? trim((string) Functions::valueKeyInArray($inputs, 'transfer_reason_description'))
+            : null;
+        // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
         $data = [
             'operation_key' => $inputs['operation_key'] ?? null,
             'fiscal_profile_id' => $inputs['fiscal_profile_id'] ?? null,
@@ -71,8 +88,8 @@ class DispatchInput
             'customer' => $customer,
             'observations' => $inputs['observations'],
             'transport_mode_type_id' => Functions::valueKeyInArray($inputs, 'transport_mode_type_id'),
-            'transfer_reason_type_id' => Functions::valueKeyInArray($inputs, 'transfer_reason_type_id'),
-            'transfer_reason_description' => Functions::valueKeyInArray($inputs, 'transfer_reason_description'),
+            'transfer_reason_type_id' => $transferReasonId,
+            'transfer_reason_description' => $transferReasonDescription ?: null,
             'date_of_shipping' => $inputs['date_of_shipping'],
             'transshipment_indicator' => $inputs['transshipment_indicator'],
             'port_code' => $inputs['port_code'],
@@ -95,7 +112,6 @@ class DispatchInput
             'reference_order_note_id' => Functions::valueKeyInArray($inputs, 'reference_order_note_id'),
             'reference_order_form_id' => Functions::valueKeyInArray($inputs, 'reference_order_form_id'),
             'reference_sale_note_id' => Functions::valueKeyInArray($inputs, 'reference_sale_note_id'),
-            'secondary_license_plates' => self::secondary_license_plates($inputs),
             'related' => self::related($inputs),
             'order_form_external' => Functions::valueKeyInArray($inputs, 'order_form_external'),
             'additional_data' => Functions::valueKeyInArray($inputs, 'additional_data'),
@@ -104,6 +120,7 @@ class DispatchInput
             // 'delivery_address_id' => Functions::valueKeyInArray($inputs, 'delivery_address_id', null),
             'driver_id' => self::getDriverId($inputs),
             'dispatcher_id' => self::getDispatcherId($inputs),
+            'transport_id' => self::getTransportId($inputs),
             'sender_id' => self::getSenderId($inputs),
             'receiver_id' => self::getReceiverId($inputs),
             'sender_address_id' => self::getSenderAddressId($inputs),
@@ -119,8 +136,6 @@ class DispatchInput
             'buyer_id' => self::getBuyerId($inputs),
             'buyer' => self::buyer($inputs),
             'has_transport_driver_01' => Functions::valueKeyInArray($inputs, 'has_transport_driver_01'),
-            'is_transport_m1l' => Functions::valueKeyInArray($inputs, 'is_transport_m1l'),
-            'license_plate_m1l' => Functions::valueKeyInArray($inputs, 'license_plate_m1l'),
             'reference_documents' => $inputs['reference_documents'],
             'custom_fields_data' => Functions::valueKeyInArray($inputs, 'custom_fields_data'),
         ];
@@ -128,6 +143,14 @@ class DispatchInput
         if (isset($inputs['data_affected_document'])) {
             $data['data_affected_document'] = $inputs['data_affected_document'];
         }
+
+        // Los tenants creados antes del esquema consolidado no tienen todavía el
+        // snapshot. No se envía una columna desconocida; en ellos el modelo aplica
+        // la regla histórica del catálogo y las referencias documentales.
+        if (Dispatch::hasDiscountStockSnapshotColumn()) {
+            $data['discount_stock'] = (bool) $transferReason->discount_stock && !$hasPreviousStockMovement;
+        }
+
         // dd($data);
         return $data;
     }
@@ -171,20 +194,19 @@ class DispatchInput
     private static function origin($inputs)
     {
         if($inputs['document_type_id'] == '09') {
-            if (array_key_exists('origin', $inputs)) {
-                $origin = $inputs['origin'];
-                $country_id = key_exists('country_id', $origin) ? $origin['country_id'] : 'VE';
-                $address = $origin['address'];
-                $location_id = is_array($origin['location_id']) ? ($origin['location_id'][2] ?? null) : $origin['location_id'];
-                $code = key_exists('code', $origin) ? $origin['code'] : '0000';
-
-                return [
-                    'country_id' => $country_id,
-                    'location_id' => $location_id,
-                    'address' => $address,
-                    'code' => $code,
-                ];
+            $origin = $inputs['origin'] ?? null;
+            if (is_array($origin) && !empty($origin['address']) && !empty($origin['location_id'])) {
+                return self::addressSnapshot($origin);
             }
+
+            $addressId = Functions::valueKeyInArray($inputs, 'origin_address_id', null);
+            $record = (string) $addressId === '0'
+                ? Establishment::find($inputs['establishment_id'])
+                : OriginAddress::query()
+                    ->where('establishment_id', $inputs['establishment_id'])
+                    ->find($addressId);
+
+            return self::addressSnapshot($record);
         }
         return null;
     }
@@ -192,22 +214,58 @@ class DispatchInput
     private static function delivery($inputs)
     {
         if($inputs['document_type_id'] == '09') {
-            if (array_key_exists('delivery', $inputs)) {
-                $delivery = $inputs['delivery'];
-                $country_id = key_exists('country_id', $delivery) ? $delivery['country_id'] : 'VE';
-                $address = $delivery['address'];
-                $location_id = is_array($delivery['location_id']) ? $delivery['location_id'][2] : $delivery['location_id'];
-                $code = key_exists('code', $delivery) ? $delivery['code'] : '0000';
-
-                return [
-                    'country_id' => $country_id,
-                    'location_id' => $location_id,
-                    'address' => $address,
-                    'code' => $code,
-                ];
+            $delivery = $inputs['delivery'] ?? null;
+            if (is_array($delivery) && !empty($delivery['address']) && !empty($delivery['location_id'])) {
+                return self::addressSnapshot($delivery);
             }
+
+            $addressId = Functions::valueKeyInArray($inputs, 'delivery_address_id', null);
+            if ($inputs['transfer_reason_type_id'] === TransferReasonType::OWN_WAREHOUSES) {
+                $addresses = Establishment::query()
+                    ->where('id', '!=', $inputs['establishment_id'])
+                    ->get()
+                    ->concat(OriginAddress::query()
+                        ->where('is_active', true)
+                        ->where('establishment_id', '!=', $inputs['establishment_id'])
+                        ->get())
+                    ->values();
+                $record = $addresses->get(max(0, (int) $addressId - 1));
+                // Compatibilidad con formularios abiertos antes de cambiar el
+                // motivo: pueden conservar una dirección de persona ya visible.
+                if (!$record) {
+                    $record = PersonAddress::find($addressId);
+                }
+            } else {
+                $record = PersonAddress::query()
+                    ->where('person_id', Functions::valueKeyInArray($inputs, 'customer_id'))
+                    ->find($addressId);
+            }
+
+            return self::addressSnapshot($record);
         }
         return null;
+    }
+
+    private static function addressSnapshot($address): ?array
+    {
+        if (!$address) {
+            return null;
+        }
+
+        $value = is_array($address) ? $address : $address->toArray();
+        $location = $value['location_id'] ?? ($value['district_id'] ?? null);
+        $locationId = is_array($location) ? ($location[2] ?? null) : $location;
+
+        if (empty($value['address']) || empty($locationId)) {
+            return null;
+        }
+
+        return [
+            'country_id' => $value['country_id'] ?? 'VE',
+            'location_id' => $locationId,
+            'address' => $value['address'],
+            'code' => $value['code'] ?? ($value['establishment_code'] ?? '0000'),
+        ];
     }
 
     private static function dispatcher($inputs)
@@ -350,24 +408,10 @@ class DispatchInput
         return null;
     }
 
-    private static function secondary_license_plates($inputs)
-    {
-        if (!empty($inputs['secondary_license_plates']) && is_array($inputs['secondary_license_plates'])) {
-            $secondary_license_plates = $inputs['secondary_license_plates'];
-            $semitrailer = $secondary_license_plates['semitrailer'] ?? null;
-            return [
-                'semitrailer' => $semitrailer,
-            ];
-
-        }
-        return null;
-    }
-
     private static function getDispatcherId($inputs)
     {
-        $is_transport_m1l = isset($inputs['is_transport_m1l']) ? $inputs['is_transport_m1l'] : false;
-        if (!$is_transport_m1l) {
-            if ($inputs['document_type_id'] === '09' && $inputs['transport_mode_type_id'] === '01') {
+        // ########## INICIO RETIRO TRASLADO M1/L1 ##########
+        if ($inputs['document_type_id'] === '09' && $inputs['transport_mode_type_id'] === '01') {
             $dispatcher = $inputs['dispatcher'];
             $record = Dispatcher::query()
                 ->firstOrCreate([
@@ -380,9 +424,9 @@ class DispatchInput
                 ]);
 
             return $record->id;
-            }
         }
         return null;
+        // ######### FIN RETIRO TRASLADO M1/L1 #########
     }
 
 
@@ -420,10 +464,8 @@ class DispatchInput
 
     private static function getDriverId($inputs)
     {
-        // dd($inputs);
-        $is_transport_m1l = isset($inputs['is_transport_m1l']) ? $inputs['is_transport_m1l'] : false;
-        if (!$is_transport_m1l) {
-            if ($inputs['document_type_id'] === '09' && $inputs['transport_mode_type_id'] === '02') {
+        // ########## INICIO RETIRO TRASLADO M1/L1 ##########
+        if ($inputs['document_type_id'] === '09' && $inputs['transport_mode_type_id'] === '02') {
     //            if (key_exists('driver_id', $inputs)) {
                     // return $inputs['driver_id'];
     //            }
@@ -439,27 +481,26 @@ class DispatchInput
                     ]);
 
                 return $record->id;
-            }
-            return null;
         }
+        return null;
+        // ######### FIN RETIRO TRASLADO M1/L1 #########
     }
 
     private static function getTransportId($inputs)
     {
         if ($inputs['document_type_id'] === '09' && $inputs['transport_mode_type_id'] === '02') {
-//            if (key_exists('transport_id', $inputs)) {
-                return $inputs['transport_id'];
-//            }
-//            $transport = $inputs['transport'];
-//            $record = Transport::query()
-//                ->firstOrCreate([
-//                    'plate_number' => $transport['plate_number']
-//                ], [
-//                    'model' => $transport['model'],
-//                    'brand' => $transport['brand']
-//                ]);
-//
-//            return $record->id;
+            if (!empty($inputs['transport_id'])) {
+                return (int) $inputs['transport_id'];
+            }
+            $transport = $inputs['transport'];
+            $record = Transport::query()->firstOrCreate([
+                'plate_number' => $transport['plate_number'],
+            ], [
+                'model' => $transport['model'] ?? null,
+                'brand' => $transport['brand'] ?? null,
+            ]);
+
+            return $record->id;
         }
         return null;
     }

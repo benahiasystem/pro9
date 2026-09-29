@@ -180,6 +180,8 @@ Los IDs `1` y `2` son locales y ambos registros nacen activos. El manual HKA enu
 
 `id` es simultáneamente la clave primaria `varchar(2)` y el código funcional. HKA enumera estos motivos pero no publica códigos; `22`, `23` y `24` son identificadores locales de Pro9 y no deben presentarse como códigos oficiales de HKA o SENIAT. Todos nacen activos y con `discount_stock = 0`.
 
+Los cinco códigos y sus descripciones forman un catálogo cerrado: el tenant sólo puede configurar `discount_stock`. Cada Orden de entrega guarda en `dispatches.discount_stock` el efecto real calculado al emitirse; las órdenes relacionadas con una venta, nota de pedido o documento previo conservan `0` para evitar un segundo descuento. Anulaciones, Kardex y reportes consultan ese snapshot y no el valor vigente del catálogo. El código `24` exige detalle y se presenta como `Otras causas (especifique): {detalle}`.
+
 ### Motivos de gasto (`expense_reasons`)
 
 1. Honorarios profesionales

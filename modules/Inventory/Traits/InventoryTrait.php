@@ -788,7 +788,7 @@ trait InventoryTrait
         } else
         {
             if ($document_item->document->dispatch) {
-                if (!$document_item->document->dispatch->transfer_reason_type->discount_stock) {
+                if (!$document_item->document->dispatch->discountsPhysicalStock()) {
                     $this->updateStock($document_item->item_id, ($factor * ($document_item->quantity * $presentationQuantity)), $warehouse->id);
                 }
             }

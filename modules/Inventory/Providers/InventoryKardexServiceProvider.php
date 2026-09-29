@@ -123,7 +123,7 @@ class InventoryKardexServiceProvider extends ServiceProvider
                 {
                     if ($document_item->document->dispatch)
                     {
-                        if (!$document_item->document->dispatch->transfer_reason_type->discount_stock) {
+                        if (!$document_item->document->dispatch->discountsPhysicalStock()) {
                             $this->updateStock($document_item->item_id, ($factor * ($document_item->quantity * $presentationQuantity)), $warehouse->id);
                         }
                     }
@@ -148,7 +148,7 @@ class InventoryKardexServiceProvider extends ServiceProvider
                         $this->updateStock($ind_item->id, ($factor * ($document_item->quantity * $presentationQuantity * $item_set_quantity)), $warehouse->id);
                     } else {
                         if ($document_item->document->dispatch) {
-                            if (!$document_item->document->dispatch->transfer_reason_type->discount_stock) {
+                            if (!$document_item->document->dispatch->discountsPhysicalStock()) {
                                 $this->updateStock($ind_item->id, ($factor * ($document_item->quantity * $presentationQuantity * $item_set_quantity)), $warehouse->id);
                             }
                         }
@@ -425,7 +425,7 @@ class InventoryKardexServiceProvider extends ServiceProvider
                     $this->updateStock($item_id, ($quanty), $warehouse->id);
                 } else {
                     if ($document->dispatch) {
-                        if (!$document->dispatch->transfer_reason_type->discount_stock) {
+                        if (!$document->dispatch->discountsPhysicalStock()) {
                             $this->updateStock($item_id, ($quanty), $warehouse->id);
                         }
                     }
@@ -451,7 +451,7 @@ class InventoryKardexServiceProvider extends ServiceProvider
                         $this->updateStock($item_id, ($quanty), $warehouse->id);
                     } else {
                         if ($document->dispatch) {
-                            if (!$document->dispatch->transfer_reason_type->discount_stock) {
+                            if (!$document->dispatch->discountsPhysicalStock()) {
                                 $this->updateStock($item_id, ($quanty), $warehouse->id);
                             }
                         }
@@ -706,7 +706,7 @@ class InventoryKardexServiceProvider extends ServiceProvider
         DispatchItem::created(function(DispatchItem $dispatch_item) {
             $dispatch = $dispatch_item->dispatch;
             if($dispatch->document_type_id === '09') {
-                if($dispatch->transfer_reason_type->discount_stock){
+                if($dispatch->discountsPhysicalStock()){
 
                     $warehouse = $this->findWarehouse();
 
@@ -827,7 +827,7 @@ class InventoryKardexServiceProvider extends ServiceProvider
                 $this->updateStock($merged_item_id, ($factor * $total_quantity), $warehouse->id);
             } else {
                 if ($document->dispatch) {
-                    if (!$document->dispatch->transfer_reason_type->discount_stock) {
+                    if (!$document->dispatch->discountsPhysicalStock()) {
                         $this->updateStock($merged_item_id, ($factor * $total_quantity), $warehouse->id);
                     }
                 }
@@ -963,7 +963,7 @@ class InventoryKardexServiceProvider extends ServiceProvider
                         $this->updateStock($modifier_item_id, ($factor * $modifier_quantity), $warehouse->id);
                     } else {
                         if ($document->dispatch) {
-                            if (!$document->dispatch->transfer_reason_type->discount_stock) {
+                            if (!$document->dispatch->discountsPhysicalStock()) {
                                 $this->updateStock($modifier_item_id, ($factor * $modifier_quantity), $warehouse->id);
                             }
                         }

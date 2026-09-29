@@ -510,7 +510,7 @@ class DispatchController extends Controller
         $locations = func_get_locations();
         $identityDocumentTypes = func_get_identity_document_types();
 
-        $transferReasonTypes = TransferReasonType::whereActive()->get();
+        $transferReasonTypes = TransferReasonType::whereContractActive()->get();
         $transportModeTypes = TransportModeType::whereActive()->get();
         // ######## INICIO CONTRATO UNIDADES DE MEDIDA VENEZUELA ########
         $unitTypes = UnitType::query()

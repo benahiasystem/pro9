@@ -3,6 +3,9 @@
 namespace Tests\Unit;
 
 use App\Http\Requests\Tenant\DispatchRequest;
+use App\Http\Requests\Tenant\TransferReasonTypeRequest;
+use App\Models\Tenant\Catalogs\TransferReasonType;
+use App\Models\Tenant\Dispatch;
 use App\Models\Tenant\PaymentMethodType;
 use Modules\Sale\Http\Controllers\PaymentMethodTypeController;
 use Modules\Sale\Http\Requests\PaymentMethodTypeRequest;
@@ -192,13 +195,38 @@ class VenezuelaInitialCatalogContractTest extends TestCase
         self::assertStringContainsString('PRIMARY KEY (`id`)', $transferReasonMigration);
         self::assertStringNotContainsString('cat_transfer_reason_types_id_index', $transferReasonMigration);
         self::assertStringContainsString('`transfer_reason_type_id` varchar(2)', file_get_contents(base_path('database/migrations/tenant/2026_08_17_000313_create_dispatches_table.php')));
-        self::assertStringContainsString('`transfer_reason_type_id` varchar(2)', file_get_contents(base_path('database/migrations/tenant/2026_08_17_000229_create_order_forms_table.php')));
+        self::assertStringContainsString('`discount_stock` tinyint(1) NOT NULL DEFAULT \'0\'', file_get_contents(base_path('database/migrations/tenant/2026_08_17_000313_create_dispatches_table.php')));
+        $orderFormMigration = file_get_contents(base_path('database/migrations/tenant/2026_08_17_000229_create_order_forms_table.php'));
+        self::assertStringContainsString('`transfer_reason_type_id` varchar(2)', $orderFormMigration);
+        self::assertStringContainsString('`transfer_reason_description` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL', $orderFormMigration);
 
         $dispatchRequest = DispatchRequest::create('/', 'POST', [
             'transfer_reason_type_id' => '24',
         ]);
         self::assertContains('required_if:transfer_reason_type_id,24', $dispatchRequest->rules()['transfer_reason_description']);
-        self::assertContains('exists:tenant.cat_transfer_reason_types,id', $dispatchRequest->rules()['transfer_reason_type_id']);
+        self::assertSame(['04', '21', '22', '23', '24'], TransferReasonType::CONTRACT_IDS);
+        self::assertInstanceOf(\Illuminate\Validation\Rules\Exists::class, $dispatchRequest->rules()['transfer_reason_type_id'][2]);
+        $otherReason = new TransferReasonType(['id' => '24', 'description' => 'Otras causas (especifique)']);
+        self::assertSame('Otras causas (especifique): Caso especial', $otherReason->displayDescription(' Caso especial '));
+        $dispatch = new Dispatch(['document_type_id' => '09', 'discount_stock' => true]);
+        $dispatch->setRelation('transfer_reason_type', new TransferReasonType(['id' => '21', 'discount_stock' => false]));
+        self::assertTrue($dispatch->discountsPhysicalStock(), 'El snapshot no debe cambiar con el valor actual del catálogo.');
+        $legacyDispatch = new Dispatch(['document_type_id' => '09']);
+        $legacyDispatch->setRelation('transfer_reason_type', new TransferReasonType(['id' => '21', 'discount_stock' => true]));
+        self::assertTrue($legacyDispatch->discountsPhysicalStock(), 'Un tenant anterior debe usar la regla histórica si la columna no existe.');
+        $legacyReferencedDispatch = new Dispatch(['document_type_id' => '09', 'reference_document_id' => 10]);
+        $legacyReferencedDispatch->setRelation('transfer_reason_type', new TransferReasonType(['id' => '21', 'discount_stock' => true]));
+        self::assertFalse($legacyReferencedDispatch->discountsPhysicalStock(), 'La compatibilidad no debe duplicar el descuento de un documento relacionado.');
+        $closedResponse = (new \App\Http\Controllers\Tenant\TransferReasonTypeController())->destroy('04');
+        self::assertSame(409, $closedResponse->getStatusCode());
+        self::assertStringContainsString('TRANSFER_REASON_CATALOG_CLOSED', $closedResponse->getContent());
+        $protectedUpdate = TransferReasonTypeRequest::create('/', 'POST', [
+            'id' => '04',
+            'discount_stock' => true,
+            'description' => 'Descripción no autorizada',
+        ]);
+        $protectedResponse = (new \App\Http\Controllers\Tenant\TransferReasonTypeController())->store($protectedUpdate);
+        self::assertSame(409, $protectedResponse->getStatusCode());
         $validator = app('validator');
         $descriptionRules = ['transfer_reason_description' => $dispatchRequest->rules()['transfer_reason_description']];
         self::assertTrue($validator->make(['transfer_reason_type_id' => '24'], $descriptionRules)->fails());

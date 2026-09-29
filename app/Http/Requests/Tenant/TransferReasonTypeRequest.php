@@ -3,7 +3,6 @@
 namespace App\Http\Requests\Tenant;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class TransferReasonTypeRequest extends FormRequest
 {
@@ -14,20 +13,16 @@ class TransferReasonTypeRequest extends FormRequest
 
     public function rules()
     {
-        $id = $this->input('id');
         return [
             'id' => [
                 'required',
                 'string',
                 'size:2',
                 'regex:/^\d{2}$/',
-                Rule::unique('tenant.cat_transfer_reason_types')->ignore($id),
             ],
-            'description' => [
+            'discount_stock' => [
                 'required',
-            ],
-            'active' => [
-                'required',
+                'boolean',
             ],
         ];
     }

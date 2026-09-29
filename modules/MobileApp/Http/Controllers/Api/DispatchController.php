@@ -26,7 +26,7 @@ class DispatchController extends Controller
      */
     public function tables()
     {
-        $transferReasonTypes = TransferReasonType::whereActive()
+        $transferReasonTypes = TransferReasonType::whereContractActive()
             ->get()
             ->map(fn($row) => [
                 'id' => $row->id,

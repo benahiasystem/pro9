@@ -61,7 +61,7 @@ class InventoryVoidedServiceProvider extends ServiceProvider
 
                                 if($detail->document->dispatch){
 
-                                    if(!$detail->document->dispatch->transfer_reason_type->discount_stock){
+                                    if(!$detail->document->dispatch->discountsPhysicalStock()){
                                         // $warehouse = $this->findWarehouse($document['establishment_id']);
                                         $this->updateStock($detail['item_id'], $detail['quantity'] * $presentationQuantity, $warehouse->id);
                                     }
@@ -237,10 +237,7 @@ class InventoryVoidedServiceProvider extends ServiceProvider
             }
 
             // dd($dispatch, $dispatch['state_type_id'],$dispatch->state_type_id);
-            if($dispatch->transfer_reason_type == null) {
-                $dispatch = Dispatch::where('id', $dispatch->id)->first();
-            }
-            if(isset($dispatch->transfer_reason_type->discount_stock) && $dispatch->transfer_reason_type->discount_stock){
+            if($dispatch->discountsPhysicalStock()){
 
                     $warehouse = $this->findWarehouse($dispatch->establishment_id);
 
@@ -248,9 +245,7 @@ class InventoryVoidedServiceProvider extends ServiceProvider
 
                         $this->createInventoryKardex($dispatch, $detail->item_id, $detail->quantity, $warehouse->id);
 
-                        if(!$detail->dispatch->reference_sale_note_id && !$detail->dispatch->reference_order_note_id && !$detail->dispatch->reference_document_id){
-                            $this->updateStock($detail->item_id, $detail->quantity, $warehouse->id);
-                        }
+                        $this->updateStock($detail->item_id, $detail->quantity, $warehouse->id);
 
                         $this->updateDataLots($detail);
                     }

@@ -13,10 +13,11 @@
             <div :class="{'has-danger': errors.plate_number}"
                  class="form-group">
               <label class="control-label">Nro. de Placa <span class="text-danger">*</span></label>
-              <x-input-service v-model="form.plate_number"
-                               service_type="placa"
-                               dusk="name"
-                               @search="searchPlate"></x-input-service>
+              <!-- ########## INICIO CAMBIO NELSON: RETIRO PALABRA SUNAT -->
+              <el-input v-model="form.plate_number"
+                        :maxlength="8"
+                        dusk="name"></el-input>
+              <!-- ######### FIN CAMBIO NELSON: RETIRO PALABRA SUNAT -->
               <small v-if="errors.plate_number"
                      class="form-control-feedback"
                      v-text="errors.plate_number[0]"></small>
@@ -100,14 +101,6 @@ export default {
         is_default: false,
         is_active: true,
       }
-    },
-    // Autocompleta marca y modelo con el resultado de la consulta de placa.
-    searchPlate(data) {
-      if (!data) return
-
-      if (data.plate_number) this.form.plate_number = data.plate_number
-      if (data.brand) this.form.brand = data.brand
-      if (data.model) this.form.model = data.model
     },
     async create() {
       this.initForm();
