@@ -18,6 +18,9 @@ class TransferReasonTypeRequest extends FormRequest
         return [
             'id' => [
                 'required',
+                'string',
+                'size:2',
+                'regex:/^\d{2}$/',
                 Rule::unique('tenant.cat_transfer_reason_types')->ignore($id),
             ],
             'description' => [

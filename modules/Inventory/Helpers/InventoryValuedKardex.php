@@ -377,11 +377,13 @@ class InventoryValuedKardex
 
     private static function dispatchAppliesToValuedKardex($dispatch)
     {
+        // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
         return Dispatch::where('id', $dispatch->id)
-            ->whereIn('transfer_reason_type_id', ['01', '02', '04', '13'])
+            ->whereIn('transfer_reason_type_id', ['04', '21', '22', '23', '24'])
             ->whereStateTypeAccepted()
             ->whereTypeUser()
             ->exists();
+        // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
     }
 
     private static function dispatchKardexShouldBeSkipped($dispatch)
@@ -740,9 +742,9 @@ class InventoryValuedKardex
         }else if($record_item instanceof DispatchItem){
 
 
-            $type = (in_array($record_item->dispatch->transfer_reason_type_id, ['01', '04', '13'])) ? 'output' : 'input';
+            // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+            $type = 'output';
 
-            // $type = ($record_item->dispatch->transfer_reason_type_id == '01') ? 'output' : 'input';
             $document = $record_item->dispatch;
 
             $input_quantity = null;
@@ -775,7 +777,7 @@ class InventoryValuedKardex
                     $operation_type = $document->transfer_reason_type->description;
                     $operation_type_code = '11';
 
-                }elseif($document->transfer_reason_type_id == '13'){
+                }elseif($document->transfer_reason_type_id == '24'){
                     $operation_type = $document->transfer_reason_description ?? $document->transfer_reason_type->description;
                     $operation_type_code = '99';
 
@@ -787,6 +789,7 @@ class InventoryValuedKardex
                 $factor = -1;
 
             }
+            // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
             // dd($document);
             $temp_data = [
                 'id' => $document->id,

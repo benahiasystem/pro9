@@ -62,7 +62,7 @@ $document_number = $document->number_full;
 <table class="full-width border-box mt-10 mb-10">
     <thead>
     <tr>
-        <th class="border-bottom text-left">{{ $document['transfer_reason_type_id'] != '02' ? 'DESTINATARIO' : 'PROVEEDOR' }}</th>
+        <th class="border-bottom text-left">DESTINATARIO</th>
     </tr>
     </thead>
     <tbody>
@@ -90,7 +90,7 @@ $document_number = $document->number_full;
     </tr>
     </tbody>
 </table>
-@if ($document['transfer_reason_type_id'] == '02')
+@if (false)
 <table class="full-width border-box mt-10 mb-10">
     @php
         // dd($document->toArray());
@@ -157,8 +157,8 @@ $document_number = $document->number_full;
     </tr>
     <tr>
         @php
-            $direction_label_delivery = $document['transfer_reason_type_id'] == '02' ? 'P.Partida:': 'P.Llegada:';
-            $direction_label_origin = $document['transfer_reason_type_id'] != '02' ? 'P.Partida:': 'P.Llegada:';
+            $direction_label_delivery = 'P.Llegada:';
+            $direction_label_origin = 'P.Partida:';
         @endphp
         <td> {{ $direction_label_origin }} {{ $document->origin->location_id }} - {{ $document->origin->address }}</td>
         <td> {{ $direction_label_delivery }} {{ $document->delivery->location_id }} - {{ $document->delivery->address }}</td>

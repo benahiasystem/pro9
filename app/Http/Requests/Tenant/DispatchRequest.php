@@ -34,9 +34,14 @@ class DispatchRequest extends FormRequest
             'origin_address_id'=> [
                 'required_if:document_type_id, "09"',
             ],
-            // 'transfer_reason_description' => [
-            //     'required',
-            // ],
+            // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+            'transfer_reason_description' => [
+                'required_if:transfer_reason_type_id,24',
+                'nullable',
+                'string',
+                'max:255',
+            ],
+            // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
             // 'observations' => [
             //     'required',
             // ],
@@ -76,17 +81,12 @@ class DispatchRequest extends FormRequest
             ],
             'transfer_reason_type_id'=> [
                 'required_if:document_type_id, "09"',
+                'nullable',
+                'exists:tenant.cat_transfer_reason_types,id',
             ],
             'origin.address'=> [
                 'required_if:document_type_id, "09"',
                 'max:100',
-            ],
-            'related.number'=> [
-                'required_if:transfer_reason_type_id, "09"',
-                'regex:"^[0-9]{3}-[0-9]{4}-[0-9]{2}-[0-9]{1,6}$"'
-            ],
-            'related.document_type_id'=> [
-                'required_if:transfer_reason_type_id, "09"',
             ],
         ];
     }

@@ -451,17 +451,23 @@ use Illuminate\Support\Str;
         
         public static function sellerPresence($document)
         {
-            return in_array($document['transfer_reason_type_id'], ['02', '07', '13']);
+            // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+            return false;
+            // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
         }
 
         public static function sameAsSender($document)
         {
-            return in_array($document['transfer_reason_type_id'], ['02', '07', '04']);
+            // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+            return $document['transfer_reason_type_id'] === '04';
+            // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
         }
 
         public static function sellerSupplierPresence($document)
         {
-            return in_array($document['transfer_reason_type_id'], ['02', '07']);
+            // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+            return false;
+            // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
         }
         
         /**

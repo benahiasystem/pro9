@@ -1442,6 +1442,60 @@ return array (
       ),
     ),
     // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
+    // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+    'cat_product_origins' =>
+    array (
+      'key_columns' =>
+      array (
+        0 => 'id',
+      ),
+      'rows' =>
+      array (
+        0 =>
+        array (
+          'id' => 1,
+          'description' => 'Nacional',
+          'active' => 1,
+        ),
+        1 =>
+        array (
+          'id' => 2,
+          'description' => 'Importado',
+          'active' => 1,
+        ),
+        2 =>
+        array (
+          'id' => 3,
+          'description' => 'Nacional e Importado',
+          'active' => 1,
+        ),
+      ),
+    ),
+    // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
+    // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+    'cat_product_types' =>
+    array (
+      'key_columns' =>
+      array (
+        0 => 'id',
+      ),
+      'rows' =>
+      array (
+        0 =>
+        array (
+          'id' => 1,
+          'description' => 'Alcohol',
+          'active' => 1,
+        ),
+        1 =>
+        array (
+          'id' => 2,
+          'description' => 'Cigarrillos',
+          'active' => 1,
+        ),
+      ),
+    ),
+    // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
     'cat_periods' =>
     array (
       'key_columns' =>
@@ -1744,6 +1798,30 @@ return array (
     ),
     // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
     // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+    'cat_taxation_products' =>
+    array (
+      'key_columns' =>
+      array (
+        0 => 'id',
+      ),
+      'rows' =>
+      array (
+        0 =>
+        array (
+          'id' => 1,
+          'description' => 'Tierra Firme',
+          'active' => 1,
+        ),
+        1 =>
+        array (
+          'id' => 2,
+          'description' => 'Régimen Especial',
+          'active' => 1,
+        ),
+      ),
+    ),
+    // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
+    // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
     'cat_transactions_types' =>
     array (
       'key_columns' =>
@@ -1791,6 +1869,7 @@ return array (
       ),
     ),
     // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
+    // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
     'cat_transfer_reason_types' =>
     array (
       'key_columns' =>
@@ -1801,48 +1880,42 @@ return array (
       array (
         0 =>
         array (
-          'id' => '01',
+          'id' => '04',
           'active' => 1,
-          'description' => 'Venta',
+          'description' => 'Traslado entre almacenes propios',
           'discount_stock' => 0,
         ),
         1 =>
         array (
-          'id' => '04',
+          'id' => '21',
           'active' => 1,
-          'description' => 'Traslado entre almacenes',
+          'description' => 'Reparación o perfeccionamiento',
           'discount_stock' => 0,
         ),
         2 =>
         array (
-          'id' => '06',
+          'id' => '22',
           'active' => 1,
-          'description' => 'Devolución a proveedor',
+          'description' => 'Almacenes, depósitos o bodegas de otros',
           'discount_stock' => 0,
         ),
         3 =>
         array (
-          'id' => '05',
+          'id' => '23',
           'active' => 1,
-          'description' => 'Demostración, evento o consignación',
+          'description' => 'Tránsito aduanero',
           'discount_stock' => 0,
         ),
         4 =>
         array (
-          'id' => '20',
+          'id' => '24',
           'active' => 1,
-          'description' => 'Demostración o evento',
-          'discount_stock' => 0,
-        ),
-        5 =>
-        array (
-          'id' => '21',
-          'active' => 1,
-          'description' => 'Reparación, servicio técnico o mantenimiento',
+          'description' => 'Otras causas (especifique)',
           'discount_stock' => 0,
         ),
       ),
     ),
+    // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
     'cat_transport_mode_types' =>
     array (
       'key_columns' =>

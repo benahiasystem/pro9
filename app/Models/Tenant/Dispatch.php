@@ -783,10 +783,12 @@ class Dispatch extends ModelTenant
      */
     public function scopeWhereValuedKardexFormatSunat($query, $params)
     {
-        return $query->whereIn('transfer_reason_type_id', ['01', '02', '04', '13'])
+        // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+        return $query->whereIn('transfer_reason_type_id', ['04', '21', '22', '23', '24'])
             ->whereStateTypeAccepted()
             ->whereTypeUser()
             ->whereBetween('date_of_issue', [$params->date_start, $params->date_end]);
+        // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
     }
 
 

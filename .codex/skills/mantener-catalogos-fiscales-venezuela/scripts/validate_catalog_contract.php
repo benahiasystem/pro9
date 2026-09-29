@@ -64,14 +64,19 @@ try {
         'cat_affectation_igv_types' => 2,
         'cat_attribute_types' => 27,
         'cat_charge_discount_types' => 6,
-        'cat_document_types' => 13,
+        // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+        'cat_document_types' => 14,
+        // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
         'cat_identity_document_types' => 9,
         'cat_iva_rate_types' => 6,
         'cat_legend_types' => 1,
         'cat_note_credit_types' => 4,
         'cat_note_debit_types' => 3,
         'cat_operation_types' => 5,
-        'cat_transfer_reason_types' => 6,
+        'cat_product_origins' => 3,
+        'cat_product_types' => 2,
+        'cat_taxation_products' => 2,
+        'cat_transfer_reason_types' => 5,
         'expense_reasons' => 30,
         'groups' => 1,
         'departments' => 25,
@@ -82,6 +87,12 @@ try {
     }
 
     // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+    assertSame(
+        ['01', 'FE', '07', '08', '20', 'ISLR', 'ARCV', '09', 'CBU', '80', 'U2', 'U3', 'U4', 'NE76'],
+        DB::connection('tenant')->table('cat_document_types')->orderByRaw("FIELD(id, '01', 'FE', '07', '08', '20', 'ISLR', 'ARCV', '09', 'CBU', '80', 'U2', 'U3', 'U4', 'NE76')")->pluck('id')->all(),
+        'El catálogo cat_document_types no coincide con el contrato venezolano.'
+    );
+
     $expectedExpenseReasons = [
         1 => 'Honorarios profesionales',
         2 => 'Publicidad, propaganda y mercadeo',
@@ -119,6 +130,38 @@ try {
         ->pluck('description', 'id')
         ->all();
     assertSame($expectedExpenseReasons, $actualExpenseReasons, 'El catálogo expense_reasons no coincide con el contrato venezolano.');
+
+    assertSame(
+        [1 => 'Nacional', 2 => 'Importado', 3 => 'Nacional e Importado'],
+        DB::connection('tenant')->table('cat_product_origins')->orderBy('id')->pluck('description', 'id')->all(),
+        'El catálogo cat_product_origins no coincide con la referencia HKA.'
+    );
+    assertSame(
+        3,
+        DB::connection('tenant')->table('cat_product_origins')->where('active', 1)->count(),
+        'Los orígenes de producto HKA deben nacer activos.'
+    );
+
+    assertSame(
+        [1 => 'Alcohol', 2 => 'Cigarrillos'],
+        DB::connection('tenant')->table('cat_product_types')->orderBy('id')->pluck('description', 'id')->all(),
+        'El catálogo cat_product_types no coincide con la referencia HKA.'
+    );
+    assertSame(
+        2,
+        DB::connection('tenant')->table('cat_product_types')->where('active', 1)->count(),
+        'Los tipos de producto HKA deben nacer activos.'
+    );
+    assertSame(
+        [1 => 'Tierra Firme', 2 => 'Régimen Especial'],
+        DB::connection('tenant')->table('cat_taxation_products')->orderBy('id')->pluck('description', 'id')->all(),
+        'El catálogo cat_taxation_products no coincide con la referencia HKA.'
+    );
+    assertSame(
+        2,
+        DB::connection('tenant')->table('cat_taxation_products')->where('active', 1)->count(),
+        'Las tributaciones de producto HKA deben nacer activas.'
+    );
     // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
 
     // ########## INICIO CATÁLOGO IDENTIDADES ACTIVAS VENEZUELA ##########

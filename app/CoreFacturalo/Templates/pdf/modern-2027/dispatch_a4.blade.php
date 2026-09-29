@@ -68,7 +68,7 @@ $document_number = $document->number_full;
     <table class="full-width border-box mt-10 mb-10">
         <thead>
         <tr>
-            <th class="border-bottom text-left">{{ $document['transfer_reason_type_id'] != '02' ? 'DESTINATARIO' : 'PROVEEDOR' }}</th>
+            <th class="border-bottom text-left">DESTINATARIO</th>
         </tr>
         </thead>
         <tbody>
@@ -85,7 +85,7 @@ $document_number = $document->number_full;
     <table class="full-width border-box mt-10 mb-10">
         <thead>
         <tr>
-            <th class="border-bottom text-left">{{ $document['transfer_reason_type_id'] != '02' ? 'DESTINATARIO' : 'PROVEEDOR' }}</th>
+            <th class="border-bottom text-left">DESTINATARIO</th>
         </tr>
         </thead>
         <tbody>
@@ -100,7 +100,7 @@ $document_number = $document->number_full;
             @php
                 $ubigeo = App\Models\Tenant\Catalogs\District::find($customer->district_id);
             @endphp
-            @if($document->transfer_reason_type_id === '09')
+            @if(false)
                 <td>Dirección: {{ $customer->address }} - {{ $customer->country->description }}
                 </td>
             @else
@@ -125,7 +125,7 @@ $document_number = $document->number_full;
     </table>
 @endif
 
-@if ($document['transfer_reason_type_id'] == '02')
+@if (false)
     <table class="full-width border-box mt-10 mb-10">
     @php
         // dd($document->toArray());
@@ -162,7 +162,7 @@ $document_number = $document->number_full;
     </table>
 @endif
 
-@if ($document['transfer_reason_type_id'] == '03')
+@if (false)
     @php
         $buyer = $document->buyer;
         $identify_description = App\Models\Tenant\Catalogs\IdentityDocumentType::find($buyer->identity_document_type_id)->description;
@@ -267,7 +267,7 @@ $document_number = $document->number_full;
         <td colspan="2">
             {{-- P.Partida: {{ $document->origin->location_id }} - {{ $document->origin->address }} --}}
             @php
-                $direction_label_origin = $document['transfer_reason_type_id'] != '02' ? 'P.Partida:': 'P.Llegada:';
+                $direction_label_origin = 'P.Partida:';
                 $origin = $document->origin;
                 $ubigeo_origin = App\Models\Tenant\Catalogs\District::find($origin->location_id);
             @endphp
@@ -288,7 +288,7 @@ $document_number = $document->number_full;
                     ->where('districts.id', '=', $document->delivery->location_id)
                     ->select('districts.description as district_description', 'provinces.description as province_description','departments.description as department_description')
                     ->first();
-                $direction_label_delivery = $document['transfer_reason_type_id'] == '02' ? 'P.Partida:': 'P.Llegada:';
+                $direction_label_delivery = 'P.Llegada:';
             @endphp
             {{ $direction_label_delivery }}
             {{  $document->delivery->address  }}

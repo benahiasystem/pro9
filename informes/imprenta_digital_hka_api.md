@@ -182,9 +182,9 @@ Estos valores sirven para el **payload HKA**. Los catálogos HKA de proveedores,
 | 12 | Unidad: remite a UNECE Rec. 20; el PDF no enumera los códigos. Pro9 mantiene la correspondencia de referencia en `cat_unit_types.hka_code`, obligatoria en sus 28 filas iniciales. |
 | 13 | Otro impuesto global: IGTF, ejemplo 3% aplicado a la porción pagada en divisas. |
 | 14 | Motivo traslado: reparación/perfeccionamiento; traslado entre almacenes propios; almacén ajeno; tránsito aduanero; otras causas. Sin códigos publicados. |
-| 15 | Producto: alcohol, cigarrillos. Sin códigos publicados. |
-| 16 | Origen: nacional, importado, nacional e importado. Sin códigos publicados. |
-| 17 | Tributación/destino: tierra firme, régimen especial. Sin códigos publicados. |
+| 15 | Producto: alcohol, cigarrillos. Pro9 conserva ambos valores activos en `cat_product_types`; sus IDs `1` y `2` son locales porque HKA no publica códigos. No enviar esos IDs al proveedor. |
+| 16 | Origen: nacional, importado, nacional e importado. Pro9 conserva los tres valores activos en `cat_product_origins`; sus IDs `1`–`3` son locales porque HKA no publica códigos. No enviar esos IDs al proveedor. |
+| 17 | Tributación/destino: tierra firme, régimen especial. Pro9 conserva ambos valores activos en `cat_taxation_products`; sus IDs `1` y `2` son locales porque HKA no publica códigos. No enviar esos IDs al proveedor. |
 
 ### Correspondencia de unidades Pro9 con UNECE Rec. 20
 

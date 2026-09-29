@@ -61,7 +61,7 @@
                         <div class="col-lg-4">
                             <div class="form-group" :class="{'has-danger': errors.transfer_reason_type_id}">
                                 <label class="control-label">Motivo de traslado</label>
-                                <el-select v-model="form.transfer_reason_type_id">
+                                <el-select v-model="form.transfer_reason_type_id" @change="changeTransferReason">
                                     <el-option v-for="option in transferReasonTypes" :key="option.id" :value="option.id" :label="option.description"></el-option>
                                 </el-select>
                                 <small class="form-control-feedback" v-if="errors.transfer_reason_type_id" v-text="errors.transfer_reason_type_id[0]"></small>
@@ -134,7 +134,7 @@
                     <div class="row">
                         <div class="col-lg-6">
                             <div class="form-group" :class="{'has-danger': errors.transfer_reason_description}">
-                                <label class="control-label">Descripción de motivo de traslado</label>
+                                <label class="control-label">Descripción de motivo de traslado <span v-if="form.transfer_reason_type_id === '24'" class="text-danger">*</span></label>
                                 <el-input type="textarea" :rows="3" placeholder="Descripción de motivo de traslado..." v-model="form.transfer_reason_description" maxlength="100"></el-input>
                                 <small class="form-control-feedback" v-if="errors.transfer_reason_description" v-text="errors.transfer_reason_description[0]"></small>
                             </div>
@@ -396,6 +396,11 @@
                 this.code = this.form.establishment_id;
                 this.establishment_id = this.form.establishment_id;
             },
+            changeTransferReason() {
+                if (this.form.transfer_reason_type_id !== '24') {
+                    this.form.transfer_reason_description = null;
+                }
+            },
             filterProvince(origin = true) {
                 if (origin) {
                     this.provincesOrigin = _.filter(this.provincesAll, {
@@ -493,6 +498,8 @@
                         country_id: 'VE'
                     },
                     number: '#',
+                    transfer_reason_type_id: null,
+                    transfer_reason_description: null,
                     items: [],
                     total_weight: null,
                     packages_number: null,

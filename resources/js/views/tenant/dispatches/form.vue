@@ -89,50 +89,39 @@
                                        v-text="errors.transfer_reason_type_id[0]"></small>
                             </div>
                         </div>
-                        <template v-if="form.transfer_reason_type_id === '09'">
-                            <div class="col-lg-3">
-                                <div :class="{'has-danger': errors['related.number']}"
-                                     class="form-group">
-                                    <label class="control-label">Número de documento (DAM)
-                                        <el-tooltip class="item"
-                                                    content="Formato del campo: XXXX-XX-XXX-XXXXXX, Ejemplo: 0001-01-002-001234"
-                                                    effect="dark"
-                                                    placement="top">
-                                            <i class="fa fa-info-circle"></i>
-                                        </el-tooltip>
-                                        <span class="text-danger"> *</span>
-                                    </label>
-                                    <el-input v-model="form.related.number" placeholder="0001-01-002-001234"></el-input>
-                                    <small v-if="errors['related.number']" class="form-control-feedback"
-                                           v-text="errors['related.number'][0]"></small>
-                                </div>
+                        <div class="col-lg-3">
+                            <div :class="{'has-danger': errors['related.number']}" class="form-group">
+                                <label class="control-label">Número de documento relacionado</label>
+                                <el-input v-model="form.related.number"></el-input>
+                                <small v-if="errors['related.number']" class="form-control-feedback"
+                                       v-text="errors['related.number'][0]"></small>
                             </div>
-
-                            <div class="col-lg-3">
-                                <div :class="{'has-danger': errors['related.document_type_id']}"
-                                     class="form-group">
-                                    <label class="control-label">Tipo documento relacionado<span
-                                        class="text-danger"> *</span></label>
-                                    <el-select v-model="form.related.document_type_id" disabled>
-                                        <el-option v-for="option in related_document_types"
-                                                   :key="option.id"
-                                                   :label="option.description"
-                                                   :value="option.id"></el-option>
-                                    </el-select>
-                                    <small v-if="errors['related.document_type_id']" class="form-control-feedback"
-                                           v-text="errors['related.document_type_id'][0]"></small>
-                                </div>
+                        </div>
+                        <div class="col-lg-3">
+                            <div :class="{'has-danger': errors['related.document_type_id']}" class="form-group">
+                                <label class="control-label">Tipo de documento relacionado</label>
+                                <el-select v-model="form.related.document_type_id">
+                                    <el-option v-for="option in related_document_types"
+                                               :key="option.id"
+                                               :label="option.description"
+                                               :value="option.id"></el-option>
+                                </el-select>
+                                <small v-if="errors['related.document_type_id']" class="form-control-feedback"
+                                       v-text="errors['related.document_type_id'][0]"></small>
                             </div>
-                        </template>
-                        <div :class="form.transfer_reason_type_id === '09' ? 'col-lg-12' : 'col-lg-6'">
+                        </div>
+                        <!-- ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES -->
+                        <div class="col-lg-12">
                             <div :class="{'has-danger': errors.transfer_reason_description}" class="form-group">
-                                <label class="control-label">Descripción de motivo de traslado</label>
+                                <label class="control-label">Descripción de motivo de traslado<span
+                                    v-if="form.transfer_reason_type_id === '24'" class="text-danger"> *</span></label>
                                 <el-input v-model="form.transfer_reason_description" :rows="3"
                                           type="textarea"></el-input>
                                 <small v-if="errors.transfer_reason_description" class="form-control-feedback"
                                        v-text="errors.transfer_reason_description[0]"></small>
                             </div>
                         </div>
+                        <!-- ######### FIN CAMBIO CATÁLOGOS DE NOMBRES -->
                         <div class="col-lg-2">
                             <div :class="{'has-danger': errors.unit_type_id}" class="form-group">
                                 <label class="control-label">Unidad de medida<span class="text-danger"> *</span></label>
@@ -567,7 +556,9 @@ export default {
             this.form.date_of_issue = this.document.date_of_issue
             this.form.date_of_shipping = this.form.date_of_issue
             this.form.customer_id = this.document.customer_id
-            this.form.transfer_reason_type_id = '01'
+            // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+            this.form.transfer_reason_type_id = null
+            // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
             this.form.transport_mode_type_id = '02'
             this.form.items = this.document.items
             if (this.documentItems !== undefined) {
@@ -608,6 +599,7 @@ export default {
             this.form.total_weight = total_weight
             if (this.dispatch) {
                 this.form.transfer_reason_description = this.dispatch.transfer_reason_description
+                this.form.related = this.dispatch.related || this.form.related
                 this.form.unit_type_id = this.dispatch.unit_type_id
                 this.form.total_weight = this.dispatch.total_weight
                 this.form.packages_number = this.dispatch.packages_number
@@ -688,7 +680,10 @@ export default {
                 secondary_license_plates: {
                     semitrailer: null
                 },
-                related: {},
+                related: {
+                    number: null,
+                    document_type_id: '01',
+                },
                 order_form_external: null,
                 terms_condition: null,
             }
@@ -700,14 +695,9 @@ export default {
             return item.description;
         },
         changeTransferReasonType() {
-            if (this.form.transfer_reason_type_id === '09') {
-                this.form.related = {
-                    number: null,
-                    document_type_id: '01'
-                }
-            } else {
-                this.form.related = {}
-            }
+            // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+            if (this.form.transfer_reason_type_id !== '24') this.form.transfer_reason_description = null
+            // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
         },
         setOriginAddressByEstablishment() {
             if (this.configuration.set_address_by_establishment) {

@@ -26,7 +26,12 @@ class OrderFormRequest extends FormRequest
                 UnitType::activeValidationRule(),
             ],
             'transfer_reason_description' => [
-                'required',
+                // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+                'required_if:transfer_reason_type_id,24',
+                'nullable',
+                'string',
+                'max:255',
+                // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
             ],
             'observations' => [
                 'required',
@@ -44,6 +49,7 @@ class OrderFormRequest extends FormRequest
             ],
             'transfer_reason_type_id'=> [
                 'required',
+                'exists:tenant.cat_transfer_reason_types,id',
             ],
             'origin.address'=> [
                 'required',

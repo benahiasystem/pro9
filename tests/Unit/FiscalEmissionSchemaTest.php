@@ -161,7 +161,7 @@ class FiscalEmissionSchemaTest extends TestCase
             'establishment_id' => $establishment, 'series' => null, 'number' => '#',
             'date_of_issue' => '2026-09-13', 'time_of_issue' => '12:00:00', 'date_of_shipping' => '2026-09-13',
             'customer_id' => $customer->id, 'observations' => '',
-            'transport_mode_type_id' => '02', 'transfer_reason_type_id' => '01',
+            'transport_mode_type_id' => '02', 'transfer_reason_type_id' => '21',
             'transshipment_indicator' => false, 'port_code' => null,
             'unit_type_id' => 'KG', 'total_weight' => 1, 'packages_number' => 1, 'container_number' => null,
             'origin_address_id' => $originAddress, 'delivery_address_id' => $deliveryAddress,
@@ -198,10 +198,10 @@ class FiscalEmissionSchemaTest extends TestCase
                 'valor_unitario' => 100, 'precio_unitario' => 116, 'codigo_tipo_precio' => '01', 'codigo_tipo_afectacion_igv' => '10',
                 'total_base_igv' => 200, 'porcentaje_igv' => 16, 'total_igv' => 32, 'total_impuestos' => 32, 'total_valor_item' => 200, 'total_item' => 232]],
         ];
-        $db->table('cat_transfer_reason_types')->where('id', '01')->update(['discount_stock' => true]);
+        $db->table('cat_transfer_reason_types')->where('id', '21')->update(['discount_stock' => true]);
         $apiDispatch = array_replace($apiInvoice, [
             'clave_operacion' => 'http-api-dispatch-retry', 'codigo_tipo_documento' => '09',
-            'fecha_de_traslado' => '2026-09-13', 'codigo_modo_transporte' => '02', 'codigo_motivo_traslado' => '01',
+            'fecha_de_traslado' => '2026-09-13', 'codigo_modo_transporte' => '02', 'codigo_motivo_traslado' => '21',
             'unidad_peso_total' => 'KG', 'peso_total' => 1, 'numero_de_bultos' => 1,
             'direccion_partida' => ['ubigeo' => '000619', 'direccion' => 'Origen', 'codigo_del_domicilio_fiscal' => '0000'],
             'direccion_llegada' => ['ubigeo' => ['14', '0229', '000619'], 'direccion' => 'Destino', 'codigo_del_domicilio_fiscal' => '0000'],
@@ -906,6 +906,44 @@ class FiscalEmissionSchemaTest extends TestCase
             self::assertCount(1, $db->select("SHOW INDEX FROM `cat_retention_types` WHERE Key_name = 'PRIMARY'"));
             // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
             // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+            $referenceCatalogs = [
+                'cat_product_origins' => [
+                    [1, 'Nacional', 1],
+                    [2, 'Importado', 1],
+                    [3, 'Nacional e Importado', 1],
+                ],
+                'cat_product_types' => [
+                    [1, 'Alcohol', 1],
+                    [2, 'Cigarrillos', 1],
+                ],
+                'cat_taxation_products' => [
+                    [1, 'Tierra Firme', 1],
+                    [2, 'Régimen Especial', 1],
+                ],
+            ];
+            foreach ($referenceCatalogs as $table => $expectedRows) {
+                $rows = $db->table($table)->orderBy('id')->get(['id', 'description', 'active'])
+                    ->map(static fn ($row): array => [(int) $row->id, $row->description, (int) $row->active])
+                    ->all();
+                self::assertSame($expectedRows, $rows, $table);
+                $columns = collect($db->select("SHOW COLUMNS FROM `{$table}`"))
+                    ->map(static fn ($column): array => [
+                        $column->Field,
+                        preg_replace('/^tinyint\(3\) unsigned$/', 'tinyint unsigned', $column->Type),
+                        $column->Null,
+                        $column->Key,
+                    ])
+                    ->all();
+                self::assertSame([
+                    ['id', 'tinyint unsigned', 'NO', 'PRI'],
+                    ['description', 'varchar(255)', 'NO', ''],
+                    ['active', 'tinyint(1)', 'NO', ''],
+                ], $columns, $table);
+                $primaryKey = $db->select("SHOW INDEX FROM `{$table}` WHERE Key_name = 'PRIMARY'");
+                self::assertCount(1, $primaryKey, $table);
+                self::assertSame('id', $primaryKey[0]->Column_name, $table);
+            }
+
             $providerRows = $db->table('cat_providers_types')->orderBy('id')->get(['id', 'code', 'description', 'active'])
                 ->map(static fn ($row): array => [(int) $row->id, $row->code, $row->description, (int) $row->active])
                 ->all();
@@ -953,6 +991,23 @@ class FiscalEmissionSchemaTest extends TestCase
             $primaryKey = $db->select("SHOW INDEX FROM `cat_transactions_types` WHERE Key_name = 'PRIMARY'");
             self::assertCount(1, $primaryKey);
             self::assertSame('id', $primaryKey[0]->Column_name);
+
+            // ########## INICIO CAMBIO CATÁLOGO MOTIVOS DE TRASLADO VENEZUELA
+            self::assertSame([
+                ['04', 'Traslado entre almacenes propios', 1, 0],
+                ['21', 'Reparación o perfeccionamiento', 1, 0],
+                ['22', 'Almacenes, depósitos o bodegas de otros', 1, 0],
+                ['23', 'Tránsito aduanero', 1, 0],
+                ['24', 'Otras causas (especifique)', 1, 0],
+            ], $db->table('cat_transfer_reason_types')->orderBy('id')->get(['id', 'description', 'active', 'discount_stock'])
+                ->map(static fn ($row): array => [$row->id, $row->description, (int) $row->active, (int) $row->discount_stock])->all());
+            $transferReasonColumn = $db->select("SHOW COLUMNS FROM `cat_transfer_reason_types` LIKE 'id'");
+            self::assertSame('varchar(2)', $transferReasonColumn[0]->Type);
+            self::assertSame('PRI', $transferReasonColumn[0]->Key);
+            self::assertSame('NO', $transferReasonColumn[0]->Null);
+            self::assertSame('varchar(2)', $db->select("SHOW COLUMNS FROM `dispatches` LIKE 'transfer_reason_type_id'")[0]->Type);
+            self::assertSame('varchar(2)', $db->select("SHOW COLUMNS FROM `order_forms` LIKE 'transfer_reason_type_id'")[0]->Type);
+            // ######### FIN CAMBIO CATÁLOGO MOTIVOS DE TRASLADO VENEZUELA
             // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
             $current = $this->schemaSnapshot($db);
             if (getenv('PRO9_EXPORT_CONTRACT') === '1') {
@@ -967,6 +1022,7 @@ class FiscalEmissionSchemaTest extends TestCase
             $snapshot = $current;
             $seedSnapshot = $currentSeeds;
             $this->assertProductAndVariationPersistence($db);
+            $this->assertTransferReasonPersistence($db);
             $db->table('companies')->insert([
                 'id' => 1, 'identity_document_type_id' => '6', 'number' => 'J123456789',
                 'name' => 'Test fiscal', 'trade_name' => 'Test fiscal',
@@ -983,6 +1039,54 @@ class FiscalEmissionSchemaTest extends TestCase
                 $migration->down();
             }
             self::assertSame([], $db->select('SHOW TABLES'), 'Rollback completo sin tablas residuales.');
+        }
+    }
+
+    private function assertTransferReasonPersistence(Connection $db): void
+    {
+        $db->beginTransaction();
+        try {
+            $establishmentId = $db->table('establishments')->insertGetId([
+                'description' => 'Establecimiento motivos de traslado', 'country_id' => 'VE',
+                'department_id' => '14', 'province_id' => '0229', 'district_id' => '000619',
+                'address' => 'Dirección de prueba', 'telephone' => '04121234567', 'code' => '0099',
+            ]);
+            $userId = $db->table('users')->insertGetId([
+                'name' => 'Usuario motivos de traslado', 'email' => 'transfer-reasons@example.test',
+                'password' => 'not-a-login-hash', 'type' => 'admin', 'establishment_id' => $establishmentId,
+            ]);
+
+            foreach (['04', '21', '22', '23', '24'] as $index => $reasonId) {
+                $db->table('dispatches')->insert([
+                    'user_id' => $userId,
+                    'external_id' => sprintf('00000000-0000-0000-0000-%012d', $index + 1),
+                    'establishment_id' => $establishmentId,
+                    'establishment' => json_encode(['id' => $establishmentId, 'description' => 'Establecimiento motivos de traslado']),
+                    'fiscal_environment' => 'demo',
+                    'state_type_id' => '01',
+                    'ubl_version' => '2.1',
+                    'document_type_id' => '09',
+                    'series' => 'OE',
+                    'number' => $index + 1,
+                    'date_of_issue' => '2026-09-13',
+                    'time_of_issue' => '12:00:00',
+                    'transport_mode_type_id' => '02',
+                    'transfer_reason_type_id' => $reasonId,
+                    'transfer_reason_description' => $reasonId === '24' ? 'Causa especial de prueba' : null,
+                    'date_of_shipping' => '2026-09-13',
+                    'transshipment_indicator' => 0,
+                    'unit_type_id' => 'KG',
+                    'total_weight' => 1,
+                ]);
+            }
+
+            self::assertSame(
+                ['04', '21', '22', '23', '24'],
+                $db->table('dispatches')->orderBy('number')->pluck('transfer_reason_type_id')->all()
+            );
+            self::assertSame('Causa especial de prueba', $db->table('dispatches')->where('transfer_reason_type_id', '24')->value('transfer_reason_description'));
+        } finally {
+            $db->rollBack();
         }
     }
 

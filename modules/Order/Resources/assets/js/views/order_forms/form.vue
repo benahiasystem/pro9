@@ -73,7 +73,10 @@
     
                             <div class="col-lg-6">
                                 <div class="form-group" :class="{'has-danger': errors.transfer_reason_description}">
-                                    <label class="control-label font-weight-bold">Descripción de motivo de traslado<span class="text-danger"> *</span></label>
+                                    <!-- ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES -->
+                                    <label class="control-label font-weight-bold">Descripción de motivo de traslado<span
+                                        v-if="form.transfer_reason_type_id === '24'" class="text-danger"> *</span></label>
+                                    <!-- ######### FIN CAMBIO CATÁLOGOS DE NOMBRES -->
                                     <el-input type="textarea" :rows="3" placeholder="Descripción de motivo de traslado..." v-model="form.transfer_reason_description" maxlength="100"></el-input>
                                     <small class="form-control-feedback" v-if="errors.transfer_reason_description" v-text="errors.transfer_reason_description[0]"></small>
                                 </div>

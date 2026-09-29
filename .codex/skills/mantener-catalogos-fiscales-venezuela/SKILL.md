@@ -11,7 +11,7 @@ Antes de cambiar cualquier categoría cubierta por esta skill, leer el inventari
 
 - El catálogo de ambientes fiscales es `fiscal_environments`, exclusivamente `demo` y `production`. Aplicar [mantener-modalidad-emision-fiscal-pro9](../mantener-modalidad-emision-fiscal-pro9/SKILL.md): el esquema nace sin SOAP/PFX y sin tipos de auditoría retirados, por lo que no se crean migraciones incrementales de conversión o limpieza. Esta excepción prevalece sobre las instrucciones generales para instalaciones existentes.
 
-- Tratar los IDs conservados como contratos estables: no reasignar códigos. Los códigos venezolanos nuevos de traslado son `20` y `21`.
+- Tratar los IDs conservados como contratos estables: no reasignar códigos. Para motivos de traslado se conserva `04` y los códigos locales venezolanos son `21`, `22`, `23` y `24`; HKA no publica códigos para este catálogo.
 - `cat_identity_document_types` contiene exactamente `0`, `1`, `6`, `7`, `E`, `C`, `G` y `R`, en ese orden y todos con `active = 1`. Mantener sincronizados la fuente central, el seeder y los consumidores sin crear un backfill para tenants existentes.
 - Tratar `expense_reasons` como un catálogo inicial nuevo sin históricos: sus IDs contractuales son `1` a `30` y no representan una reclasificación de gastos preexistentes.
 - El estado inicial venezolano es una depuración total de los catálogos enumerados en el inventario. No reintroducir filas retiradas como inactivas.

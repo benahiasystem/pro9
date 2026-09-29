@@ -74,6 +74,9 @@ $desiredRows = [
         $row('08', 'NOTA DE DÉBITO', ['active' => 1, 'short' => 'ND', 'is_sunat' => 1]),
         $row('20', 'COMPROBANTE DE RETENCIÓN DE IVA', ['active' => 1, 'short' => null, 'is_sunat' => 1]),
         $row('ISLR', 'COMPROBANTE DE RETENCIÓN DE I.S.L.R.', ['active' => 1, 'short' => null, 'is_sunat' => 1]),
+        // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+        $row('ARCV', 'COMPROBANTE DE RETENCIONES VARIAS ARCV', ['active' => 1, 'short' => null, 'is_sunat' => 1]),
+        // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
         $row('09', 'ORDEN DE ENTREGA', ['active' => 1, 'short' => null, 'is_sunat' => 1]),
         $row('CBU', 'CERTIFICACIÓN DE COMPRA DE BIENES USADOS', ['active' => 1, 'short' => null, 'is_sunat' => 1]),
         $row('80', 'NOTA DE VENTA', ['active' => 1, 'short' => null, 'is_sunat' => 1]),
@@ -124,14 +127,15 @@ $desiredRows = [
         $tables['cat_operation_types']['rows'] ?? [],
         static fn (array $catalogRow): bool => in_array((string) $catalogRow['id'], ['0101', '0200', '0201', '0202', '0203'], true)
     )),
+    // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
     'cat_transfer_reason_types' => [
-        $activeCatalogRow('01', 'Venta') + ['discount_stock' => 0],
-        $activeCatalogRow('04', 'Traslado entre almacenes') + ['discount_stock' => 0],
-        $activeCatalogRow('06', 'Devolución a proveedor') + ['discount_stock' => 0],
-        $activeCatalogRow('05', 'Demostración, evento o consignación') + ['discount_stock' => 0],
-        $activeCatalogRow('20', 'Demostración o evento') + ['discount_stock' => 0],
-        $activeCatalogRow('21', 'Reparación, servicio técnico o mantenimiento') + ['discount_stock' => 0],
+        $activeCatalogRow('04', 'Traslado entre almacenes propios') + ['discount_stock' => 0],
+        $activeCatalogRow('21', 'Reparación o perfeccionamiento') + ['discount_stock' => 0],
+        $activeCatalogRow('22', 'Almacenes, depósitos o bodegas de otros') + ['discount_stock' => 0],
+        $activeCatalogRow('23', 'Tránsito aduanero') + ['discount_stock' => 0],
+        $activeCatalogRow('24', 'Otras causas (especifique)') + ['discount_stock' => 0],
     ],
+    // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
     // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
     'expense_reasons' => array_map(
         static fn (string $description, int $index): array => $row($index + 1, $description),

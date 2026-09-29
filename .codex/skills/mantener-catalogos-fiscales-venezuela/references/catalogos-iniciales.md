@@ -116,6 +116,21 @@ Se retiraron todas las leyendas peruanas de transferencia gratuita, percepción,
 
 `0201`–`0203` son identificadores locales de Pro9; el catálogo 5 del manual HKA no publica códigos para estas opciones. Permanecen inactivas y no se pueden habilitar desde la pantalla de tipos de operación hasta implementar y validar el flujo de exportación. No enviarlas como códigos HKA.
 
+### Orígenes de producto HKA (`cat_product_origins`)
+
+1. Nacional
+2. Importado
+3. Nacional e Importado
+
+Los IDs `1` a `3` son locales y los tres registros nacen activos. El manual HKA enumera estos orígenes, pero no publica códigos; los IDs de Pro9 no deben enviarse al proveedor. Este catálogo no reutiliza `origin_addresses`, que corresponde a direcciones de despacho, y todavía no se relaciona con `items`.
+
+### Tipos de producto HKA (`cat_product_types`)
+
+1. Alcohol
+2. Cigarrillos
+
+Los IDs `1` y `2` son locales y ambos registros nacen activos. El manual HKA enumera estos tipos de producto, pero no publica códigos; los IDs de Pro9 no deben enviarse al proveedor. Este catálogo es sólo una referencia fiscal: no sustituye `item_types`, no reutiliza las categorías comerciales y todavía no se relaciona con `items`.
+
 ### Tipos de proveedor HKA (`cat_providers_types`)
 
 - `1` Normal: código HKA `NULL`.
@@ -148,14 +163,22 @@ Los seis registros iniciales están activos. Estos códigos corresponden al camp
 
 Los IDs `1` a `7` son locales y los siete registros están activos. El manual HKA no publica códigos para estos regímenes; no enviar los IDs como códigos al proveedor.
 
+### Tributación del producto HKA (`cat_taxation_products`)
+
+1. Tierra Firme
+2. Régimen Especial
+
+Los IDs `1` y `2` son locales y ambos registros nacen activos. El manual HKA enumera estos destinos tributarios, pero no publica códigos; los IDs de Pro9 no deben enviarse al proveedor. Esta clasificación general no sustituye `cat_special_tax_regime`, que conserva el detalle de los regímenes especiales, y todavía no se relaciona con `items`.
+
 ### Motivos de traslado (`cat_transfer_reason_types`)
 
-- `01`: Venta
-- `04`: Traslado entre almacenes
-- `06`: Devolución a proveedor
-- `05`: Demostración, evento o consignación
-- `20`: Demostración o evento (código venezolano nuevo)
-- `21`: Reparación, servicio técnico o mantenimiento (código venezolano nuevo)
+- `04`: Traslado entre almacenes propios
+- `21`: Reparación o perfeccionamiento
+- `22`: Almacenes, depósitos o bodegas de otros
+- `23`: Tránsito aduanero
+- `24`: Otras causas (especifique)
+
+`id` es simultáneamente la clave primaria `varchar(2)` y el código funcional. HKA enumera estos motivos pero no publica códigos; `22`, `23` y `24` son identificadores locales de Pro9 y no deben presentarse como códigos oficiales de HKA o SENIAT. Todos nacen activos y con `discount_stock = 0`.
 
 ### Motivos de gasto (`expense_reasons`)
 
@@ -225,7 +248,7 @@ El consolidado contenía 25 departamentos, 196 provincias y 1.876 distritos de P
 
 No existe ambiente Interno ni equivalencia pública con `01`, `02` o `03`. Las modalidades se validan en `FiscalEmissionSettings`: `fiscal_machine`, `digital`, `free_form`; no son ambientes ni implican integración con un proveedor.
 
-El seeder no crea los tipos de auditoría `companies_certificate`, `companies_soap_password`, `companies_soap_send_id`, `companies_soap_type_id`, `companies_soap_url` y `companies_soap_username`. No hay registros anteriores que limpiar. Los cambios nuevos se registran en `fiscal_configuration_audits`, creada directamente por el consolidado y sin filas iniciales ni secretos. El inventario actual de datos iniciales contiene 77 tablas y 949 filas, incluidos los catálogos HKA de referencia; no renumerar otros identificadores.
+El seeder no crea los tipos de auditoría `companies_certificate`, `companies_soap_password`, `companies_soap_send_id`, `companies_soap_type_id`, `companies_soap_url` y `companies_soap_username`. No hay registros anteriores que limpiar. Los cambios nuevos se registran en `fiscal_configuration_audits`, creada directamente por el consolidado y sin filas iniciales ni secretos. El inventario actual de datos iniciales contiene 80 tablas y 955 filas, incluidos los catálogos HKA de referencia; no renumerar otros identificadores.
 
 `cat_unit_types` conserva 28 unidades locales activas y añade `hka_code varchar(3) NOT NULL` con una equivalencia UNECE Rec. 20 por fila. Las unidades de envase usan el prefijo `X` de la nota 2 del Excel (por ejemplo, `BOL` → `XBG`); `BTO` → `XBE` interpreta «bulto» como *bundle*. El mantenimiento queda cerrado: no se pueden crear, editar ni eliminar unidades; las consultas y el cambio de estado de las no reservadas siguen disponibles. Los códigos son referencia y no habilitan envío de unidades a HKA. La tabla íntegra está en la skill `mantener-unidades-medida-venezuela`.
 

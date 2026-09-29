@@ -2,11 +2,13 @@
 
 namespace Tests\Unit;
 
+use App\Http\Requests\Tenant\DispatchRequest;
 use App\Models\Tenant\PaymentMethodType;
 use Modules\Sale\Http\Controllers\PaymentMethodTypeController;
 use Modules\Sale\Http\Requests\PaymentMethodTypeRequest;
 use Modules\Finance\Http\Controllers\PaymentMethodTypeController as FinancePaymentMethodTypeController;
 use Illuminate\Http\Request;
+use Modules\Order\Http\Requests\OrderFormRequest;
 use Tests\TestCase;
 
 // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
@@ -58,6 +60,12 @@ class VenezuelaInitialCatalogContractTest extends TestCase
                 '0201' => 'Exportación FOB', '0202' => 'Exportación CIF', '0203' => 'Exportación EXW',
             ],
             // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+            'cat_product_origins' => [
+                1 => 'Nacional', 2 => 'Importado', 3 => 'Nacional e Importado',
+            ],
+            'cat_product_types' => [
+                1 => 'Alcohol', 2 => 'Cigarrillos',
+            ],
             'cat_providers_types' => [
                 1 => 'Normal', 2 => 'Sin RIF', 3 => 'No Residenciado', 4 => 'No Domiciliado',
             ],
@@ -75,20 +83,30 @@ class VenezuelaInitialCatalogContractTest extends TestCase
                 6 => 'Puerto libre Estado Nueva Esparta',
                 7 => 'Dutty Free',
             ],
+            'cat_taxation_products' => [
+                1 => 'Tierra Firme', 2 => 'Régimen Especial',
+            ],
             // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
             'cat_transfer_reason_types' => [
-                '01' => 'Venta',
-                '04' => 'Traslado entre almacenes',
-                '06' => 'Devolución a proveedor',
-                '05' => 'Demostración, evento o consignación',
-                '20' => 'Demostración o evento',
-                '21' => 'Reparación, servicio técnico o mantenimiento',
+                '04' => 'Traslado entre almacenes propios',
+                '21' => 'Reparación o perfeccionamiento',
+                '22' => 'Almacenes, depósitos o bodegas de otros',
+                '23' => 'Tránsito aduanero',
+                '24' => 'Otras causas (especifique)',
             ],
         ];
 
         foreach ($expected as $table => $rows) {
             self::assertSame($rows, $this->descriptionsById($table), $table);
         }
+
+        // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+        $validatorSource = (string) file_get_contents(base_path('.codex/skills/mantener-catalogos-fiscales-venezuela/scripts/validate_catalog_contract.php'));
+        self::assertStringContainsString("'cat_document_types' => 14", $validatorSource);
+        self::assertStringContainsString("'ARCV', '09', 'CBU'", $validatorSource);
+        $applySource = (string) file_get_contents(base_path('.codex/skills/mantener-catalogos-fiscales-venezuela/scripts/apply_catalog_contract.php'));
+        self::assertStringContainsString("\$row('ARCV', 'COMPROBANTE DE RETENCIONES VARIAS ARCV'", $applySource);
+        // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
 
         $transactions = $this->rows('cat_transactions_types');
         self::assertSame(['01', '02', '03', '04', '98', '99'], array_column($transactions, 'id'));
@@ -106,6 +124,47 @@ class VenezuelaInitialCatalogContractTest extends TestCase
             $row['id'], $row['active'], $row['exportation'], $row['incoterm'],
         ], $this->rows('cat_operation_types')));
 
+        // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+        $productOrigins = $this->rows('cat_product_origins');
+        self::assertSame([1, 2, 3], array_column($productOrigins, 'id'));
+        foreach ($productOrigins as $productOrigin) {
+            self::assertSame(1, (int) $productOrigin['active']);
+            self::assertSame(['id', 'description', 'active'], array_keys($productOrigin));
+        }
+        $productOriginMigration = file_get_contents(base_path('database/migrations/tenant/2026_08_17_000046_create_cat_product_origins_table.php'));
+        self::assertStringContainsString('`id` tinyint unsigned NOT NULL', $productOriginMigration);
+        self::assertStringContainsString('`description` varchar(255)', $productOriginMigration);
+        self::assertStringContainsString('`active` tinyint(1) NOT NULL', $productOriginMigration);
+        self::assertStringContainsString('PRIMARY KEY (`id`)', $productOriginMigration);
+        self::assertStringContainsString("DROP TABLE IF EXISTS `cat_product_origins`", $productOriginMigration);
+
+        $productTypes = $this->rows('cat_product_types');
+        self::assertSame([1, 2], array_column($productTypes, 'id'));
+        foreach ($productTypes as $productType) {
+            self::assertSame(1, (int) $productType['active']);
+            self::assertSame(['id', 'description', 'active'], array_keys($productType));
+        }
+        $productTypeMigration = file_get_contents(base_path('database/migrations/tenant/2026_08_17_000045_create_cat_product_types_table.php'));
+        self::assertStringContainsString('`id` tinyint unsigned NOT NULL', $productTypeMigration);
+        self::assertStringContainsString('`description` varchar(255)', $productTypeMigration);
+        self::assertStringContainsString('`active` tinyint(1) NOT NULL', $productTypeMigration);
+        self::assertStringContainsString('PRIMARY KEY (`id`)', $productTypeMigration);
+        self::assertStringContainsString("DROP TABLE IF EXISTS `cat_product_types`", $productTypeMigration);
+
+        $taxationProducts = $this->rows('cat_taxation_products');
+        self::assertSame([1, 2], array_column($taxationProducts, 'id'));
+        foreach ($taxationProducts as $taxationProduct) {
+            self::assertSame(1, (int) $taxationProduct['active']);
+            self::assertSame(['id', 'description', 'active'], array_keys($taxationProduct));
+        }
+        $taxationProductMigration = file_get_contents(base_path('database/migrations/tenant/2026_08_17_000328_create_cat_taxation_products_table.php'));
+        self::assertStringContainsString('`id` tinyint unsigned NOT NULL', $taxationProductMigration);
+        self::assertStringContainsString('`description` varchar(255)', $taxationProductMigration);
+        self::assertStringContainsString('`active` tinyint(1) NOT NULL', $taxationProductMigration);
+        self::assertStringContainsString('PRIMARY KEY (`id`)', $taxationProductMigration);
+        self::assertStringContainsString("DROP TABLE IF EXISTS `cat_taxation_products`", $taxationProductMigration);
+        // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
+
         $providers = $this->rows('cat_providers_types');
         self::assertSame([1, 2, 3, 4], array_column($providers, 'id'));
         self::assertSame([null, 'SR', 'NR', 'ND'], array_column($providers, 'code'));
@@ -119,6 +178,38 @@ class VenezuelaInitialCatalogContractTest extends TestCase
             self::assertSame(1, (int) $regime['active']);
             self::assertSame(['id', 'description', 'active'], array_keys($regime));
         }
+
+        $transferReasons = $this->rows('cat_transfer_reason_types');
+        self::assertSame(['04', '21', '22', '23', '24'], array_column($transferReasons, 'id'));
+        foreach ($transferReasons as $transferReason) {
+            self::assertSame(1, (int) $transferReason['active']);
+            self::assertSame(0, (int) $transferReason['discount_stock']);
+        }
+
+        // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+        $transferReasonMigration = file_get_contents(base_path('database/migrations/tenant/2026_08_17_000055_create_cat_transfer_reason_types_table.php'));
+        self::assertStringContainsString('`id` varchar(2)', $transferReasonMigration);
+        self::assertStringContainsString('PRIMARY KEY (`id`)', $transferReasonMigration);
+        self::assertStringNotContainsString('cat_transfer_reason_types_id_index', $transferReasonMigration);
+        self::assertStringContainsString('`transfer_reason_type_id` varchar(2)', file_get_contents(base_path('database/migrations/tenant/2026_08_17_000313_create_dispatches_table.php')));
+        self::assertStringContainsString('`transfer_reason_type_id` varchar(2)', file_get_contents(base_path('database/migrations/tenant/2026_08_17_000229_create_order_forms_table.php')));
+
+        $dispatchRequest = DispatchRequest::create('/', 'POST', [
+            'transfer_reason_type_id' => '24',
+        ]);
+        self::assertContains('required_if:transfer_reason_type_id,24', $dispatchRequest->rules()['transfer_reason_description']);
+        self::assertContains('exists:tenant.cat_transfer_reason_types,id', $dispatchRequest->rules()['transfer_reason_type_id']);
+        $validator = app('validator');
+        $descriptionRules = ['transfer_reason_description' => $dispatchRequest->rules()['transfer_reason_description']];
+        self::assertTrue($validator->make(['transfer_reason_type_id' => '24'], $descriptionRules)->fails());
+        self::assertTrue($validator->make(['transfer_reason_type_id' => '24', 'transfer_reason_description' => 'Caso especial'], $descriptionRules)->passes());
+        self::assertTrue($validator->make(['transfer_reason_type_id' => '23'], $descriptionRules)->passes());
+
+        $orderFormRequest = OrderFormRequest::create('/', 'POST', [
+            'transfer_reason_type_id' => '24',
+        ]);
+        self::assertContains('required_if:transfer_reason_type_id,24', $orderFormRequest->rules()['transfer_reason_description']);
+        // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
     }
 
     /** @test */

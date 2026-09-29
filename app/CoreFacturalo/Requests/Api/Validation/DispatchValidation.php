@@ -32,6 +32,9 @@ class DispatchValidation
             'delivery.address' => ['required', 'string', 'max:100'], 'delivery.location_id' => ['required'],
             'transport_mode_type_id' => ['required', 'exists:tenant.cat_transport_mode_types,id'],
             'transfer_reason_type_id' => ['required', 'exists:tenant.cat_transfer_reason_types,id'],
+            // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+            'transfer_reason_description' => ['required_if:transfer_reason_type_id,24', 'nullable', 'string', 'max:255'],
+            // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
             'items' => ['required', 'array', 'min:1'], 'items.*.internal_id' => ['required', 'string', 'max:100'],
             'items.*.quantity' => ['required', 'numeric', 'gt:0'], 'items.*.unit_price' => ['nullable', 'numeric', 'min:0'],
             'items.*.total' => ['nullable', 'numeric', 'min:0'],

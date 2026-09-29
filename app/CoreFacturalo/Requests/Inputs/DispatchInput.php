@@ -8,7 +8,6 @@ use App\CoreFacturalo\Requests\Inputs\Common\ActionInput;
 use App\CoreFacturalo\Requests\Inputs\Common\EstablishmentInput;
 use App\CoreFacturalo\Requests\Inputs\Common\LegendInput;
 use App\CoreFacturalo\Requests\Inputs\Common\PersonInput;
-use App\Models\Tenant\Buyer;
 use App\Models\Tenant\Company;
 use App\Models\Tenant\Dispatch;
 use App\Models\Tenant\Item;
@@ -541,18 +540,10 @@ class DispatchInput
 
     private static function getBuyerId($inputs)
     {
-        if ( isset($inputs['transfer_reason_type_id']) && ($inputs['transfer_reason_type_id'] === '03')) {
-            $record = Buyer::firstOrCreate([
-                'identity_document_type_id' => $inputs['buyer']['identity_document_type_id'],
-                'number' => $inputs['buyer']['number']
-            ], [
-                'name' => $inputs['buyer']['name'],
-                'address' => $inputs['buyer']['address'],
-                'location_id' => $inputs['buyer']['location_id']
-            ]);
-            return $record->id;
-        }
+        // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+        // El catálogo venezolano vigente no contiene el motivo histórico 03.
         return null;
+        // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
     }
 
     private static function buyer($inputs)

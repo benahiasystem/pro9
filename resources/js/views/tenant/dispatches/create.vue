@@ -124,45 +124,18 @@
                                         v-text="errors.transfer_reason_type_id[0]"></small>
                                 </div>
                             </div>
-                            <!-- numero de DAM -->
-                            <template v-if="form.transfer_reason_type_id === '09' ||form.transfer_reason_type_id === '08' " >
-                                <div class="col-lg-4">
-                                    <div :class="{ 'has-danger': errors['related.number'] }" class="form-group">
-                                        <label class="control-label">Número de documento (DAM/DS)
-                                            <el-tooltip class="item"
-                                                content="Formato del campo: XXX-XXXX-XX-XXXXXX, Ejemplo: 001-0001-40-001234"
-                                                effect="dark" placement="top">
-                                                <i class="fa fa-info-circle"></i>
-                                            </el-tooltip>
-                                            <span class="text-danger"> *</span>
-                                        </label>
-                                        <el-input v-model="form.related.number" placeholder="001-0001-40-001234"></el-input>
-                                        <small v-if="errors['related.number']" class="form-control-feedback"
-                                            v-text="errors['related.number'][0]"></small>
-                                    </div>
-                                </div>
-                                <div class="col-lg-4">
-                                    <div :class="{ 'has-danger': errors['related.document_type_id'] }" class="form-group">
-                                        <label class="control-label">Tipo documento relacionado<span class="text-danger">
-                                                *</span></label>
-                                        <el-select v-model="form.related.document_type_id">
-                                            <el-option v-for="option in related_document_types" :key="option.id"
-                                                :label="option.description" :value="option.id"></el-option>
-                                        </el-select>
-                                        <small v-if="errors['related.document_type_id']" class="form-control-feedback"
-                                            v-text="errors['related.document_type_id'][0]"></small>
-                                    </div>
-                                </div>
-                            </template>
-                            <div :class="form.transfer_reason_type_id === '09' ? 'col-lg-8' : 'col-lg-6'">
+                            <!-- ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES -->
+                            <div class="col-lg-6">
                                 <div :class="{ 'has-danger': errors.transfer_reason_description }" class="form-group">
-                                    <label class="control-label">Descripción de motivo de traslado</label>
+                                    <label class="control-label">Descripción de motivo de traslado<span
+                                        v-if="form.transfer_reason_type_id === '24'" class="text-danger"> *</span></label>
                                     <el-input v-model="form.transfer_reason_description" :rows="3" maxlength="100"
                                         placeholder="Descripción de motivo de traslado..." type="textarea"></el-input>
                                     <small v-if="errors.transfer_reason_description" class="form-control-feedback"
                                         v-text="errors.transfer_reason_description[0]"></small>
                                 </div>
                             </div>
+                            <!-- ######### FIN CAMBIO CATÁLOGOS DE NOMBRES -->
                         </div>
                         <div class="row">
                             <div class="col-lg-2">
@@ -311,8 +284,9 @@
                             <div class="col-lg-12">
                                 <div :class="{ 'has-danger': errors.origin_address_id }" class="form-group">
                                     <label class="control-label">
-                                        <span v-show="form.transfer_reason_type_id != '02'">Punto de partida</span>
-                                        <span v-show="form.transfer_reason_type_id == '02'">Punto de llegada</span>
+                                        <!-- ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES -->
+                                        <span>Punto de partida</span>
+                                        <!-- ######### FIN CAMBIO CATÁLOGOS DE NOMBRES -->
                                         <span class="text-danger"> *</span>
                                         <a href="#" @click.prevent="showDialogOriginAddressForm = true">
                                             [+ Nuevo]
@@ -331,8 +305,9 @@
                             <div class="col-lg-12">
                                 <div :class="{ 'has-danger': errors.delivery_address_id }" class="form-group">
                                     <label class="control-label">
-                                        <span v-show="form.transfer_reason_type_id != '02'">Punto de llegada</span>
-                                        <span v-show="form.transfer_reason_type_id == '02'">Punto de partida</span>
+                                        <!-- ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES -->
+                                        <span>Punto de llegada</span>
+                                        <!-- ######### FIN CAMBIO CATÁLOGOS DE NOMBRES -->
                                         <span class="text-danger"> *</span>
                                             <a href="#" v-if="form.customer_id"
                                                 @click.prevent="showDialogDeliveryAddressForm = true">[+ Nuevo]</a>
@@ -1002,11 +977,7 @@ export default {
             }
             return false;
         },
-        showBuyer()
-        {
-            if (this.form.transfer_reason_type_id === '03') {
-                return true;
-            }
+        showBuyer() {
             return false;
         },
         personFormInput() {
@@ -1261,7 +1232,9 @@ export default {
                 customer_id: customer_id,
                 observations: '',
                 transport_mode_type_id: '02',
-                transfer_reason_type_id: '01',
+                // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+                transfer_reason_type_id: null,
+                // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
                 transfer_reason_description: null,
                 transshipment_indicator: false,
                 port_code: null,
@@ -1354,21 +1327,19 @@ export default {
             this.showWarehousesDetail = true
         },
         changeTransferReasonType() {
-            const isReasonType09 = this.form.transfer_reason_type_id === '09';
+            // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
             const isReasonType04 = this.form.transfer_reason_type_id === '04';
 
-            // this.form.related = isReasonType09 ? { number: null, document_type_id: 50 } : {};
-            this.form.customer_id = isReasonType09 || isReasonType04 ? null : this.form.customer_id;
-
-            this.delivery = isReasonType09
-                ? { country_id: 'VE', location_id: [], address: null }
-                : { ...this.delivery, country_id: 'VE' };
+            this.form.customer_id = isReasonType04 ? null : this.form.customer_id;
+            this.delivery = { ...this.delivery, country_id: 'VE' };
+            if (this.form.transfer_reason_type_id !== '24') this.form.transfer_reason_description = null;
 
             isReasonType04 ? this.getAddressesOtherEstablishment(this.form.establishment_id) : this.searchRemoteCustomers('');
 
             if (this.showBuyer) {
                 this.getBuyers();
             }
+            // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
         },
         getFormatQuantity(quantity) {
             return _.round(quantity, 4)
@@ -1546,9 +1517,6 @@ export default {
             this.customerSearchTerm = input
             this.loading_search = true
             let identity_document_type_id = ['0', '1', '6', '7', 'E', 'C', 'G', 'R'];
-            if (this.form.transfer_reason_type_id === '09') {
-                identity_document_type_id = ['6'];
-            }
             this.$http.post(`/store/get_customers`, {
                 'identity_document_type_id': identity_document_type_id,
                 'input': input,
@@ -1562,9 +1530,6 @@ export default {
         searchRemoteDispatchers(input) {
             this.loading_search_dispatcher = true
             let identity_document_type_id = ['0', '1', '6', '7', 'E', 'C', 'G', 'R'];
-            if (this.form.transfer_reason_type_id === '09') {
-                identity_document_type_id = ['0'];
-            }
             this.$http.post(`/dispatchers/search`, {
                 'input': input,
             })

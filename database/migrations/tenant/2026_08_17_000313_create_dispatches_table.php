@@ -32,7 +32,7 @@ use Illuminate\Support\Facades\DB;
  * - `customer` json DEFAULT NULL
  * - `observations` text COLLATE utf8mb4_unicode_ci
  * - `transport_mode_type_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `transfer_reason_type_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
+ * - `transfer_reason_type_id` varchar(2) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `transfer_reason_description` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `date_of_shipping` date NOT NULL
  * - `transshipment_indicator` tinyint(1) NOT NULL
@@ -117,7 +117,7 @@ CREATE TABLE `dispatches` (
   `customer` json DEFAULT NULL,
   `observations` text COLLATE utf8mb4_unicode_ci,
   `transport_mode_type_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `transfer_reason_type_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `transfer_reason_type_id` varchar(2) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `transfer_reason_description` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `date_of_shipping` date NOT NULL,
   `transshipment_indicator` tinyint(1) NOT NULL,
