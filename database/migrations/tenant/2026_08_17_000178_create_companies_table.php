@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\DB;
  * - `fiscal_emission_mode` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `fiscal_configuration` text COLLATE utf8mb4_unicode_ci
  * - `fiscal_credentials` text COLLATE utf8mb4_unicode_ci
+ * - `hka_authenticated_at` timestamp NULL DEFAULT NULL
  * - `fiscal_environment_locked` tinyint(1) NOT NULL DEFAULT '0'
  * - `logo` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `logo_dark` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
@@ -59,6 +60,7 @@ CREATE TABLE `companies` (
   `fiscal_emission_mode` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL,
   `fiscal_configuration` text COLLATE utf8mb4_unicode_ci,
   `fiscal_credentials` text COLLATE utf8mb4_unicode_ci,
+  `hka_authenticated_at` timestamp NULL DEFAULT NULL,
   `fiscal_environment_locked` tinyint(1) NOT NULL DEFAULT '0',
   `logo` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `logo_dark` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,

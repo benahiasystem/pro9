@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Models\Tenant\Company;
+use App\Services\Fiscal\HkaAuthentication;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -90,20 +92,25 @@ final class FiscalEmissionSettings
 
     public static function publicData(Company $company): array
     {
+        $hkaConfigured = HkaAuthentication::credentials($company) !== null;
+        $hkaVerified = $company->fiscal_emission_mode === 'digital'
+            && $hkaConfigured && $company->hka_authenticated_at !== null;
         return [
             'fiscal_emission_mode' => $company->fiscal_emission_mode,
             'fiscal_environment' => $company->fiscal_environment,
             'fiscal_configuration' => (object) ($company->fiscal_configuration ?? []),
             'fiscal_credentials_configured' => !empty($company->getRawOriginal('fiscal_credentials')),
+            'hka_credentials_configured' => $hkaConfigured,
+            'hka_authenticated_at' => $hkaVerified ? $company->hka_authenticated_at->toIso8601String() : null,
             'fiscal_environment_locked' => self::hasOperations($company),
-            'fiscal_integration_status' => 'not_integrated',
+            'fiscal_integration_status' => $hkaVerified ? 'authenticated' : 'not_integrated',
         ];
     }
 
-    public static function update(Company $company, array $input, string $actorType, int $actorId, bool $initial = false): Company
+    public static function update(Company $company, array $input, string $actorType, int $actorId, bool $initial = false, ?CarbonInterface $hkaAuthenticatedAt = null): Company
     {
         $data = self::validate($input);
-        return $company->getConnection()->transaction(function () use ($company, $data, $actorType, $actorId, $initial) {
+        return $company->getConnection()->transaction(function () use ($company, $data, $actorType, $actorId, $initial, $hkaAuthenticatedAt) {
             $company = $company->newQuery()->lockForUpdate()->findOrFail($company->id);
             $locked = self::hasOperations($company);
             if ($data['fiscal_environment'] !== $company->fiscal_environment && $locked) {
@@ -116,11 +123,13 @@ final class FiscalEmissionSettings
             if ($modeChanged || array_key_exists('fiscal_configuration', $data)) {
                 $company->fiscal_configuration = $data['fiscal_configuration'] ?? [];
             }
-            if ($modeChanged || !empty($data['clear_fiscal_credentials'])) {
+            if ($modeChanged || !empty($data['clear_fiscal_credentials']) || $data['fiscal_environment'] !== $company->getOriginal('fiscal_environment')) {
                 $company->fiscal_credentials = null;
+                $company->hka_authenticated_at = null;
             }
             if (isset($data['fiscal_credentials']) && $data['fiscal_credentials'] !== '') {
                 $company->fiscal_credentials = $data['fiscal_credentials'];
+                $company->hka_authenticated_at = $hkaAuthenticatedAt;
             }
             $changed = array_values(array_unique(array_merge(
                 $initial ? ['fiscal_emission_mode', 'fiscal_environment'] : [],

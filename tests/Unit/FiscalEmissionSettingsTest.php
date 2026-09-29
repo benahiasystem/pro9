@@ -7,6 +7,9 @@ use App\Models\Tenant\Company;
 use App\Models\Tenant\ModelTenant;
 use App\Models\Tenant\User;
 use App\Services\FiscalEmissionSettings;
+use App\Services\Fiscal\HkaAuthentication;
+use Illuminate\Cache\ArrayStore;
+use Illuminate\Cache\Repository as CacheRepository;
 use Illuminate\Config\Repository;
 use Illuminate\Container\Container;
 use Illuminate\Database\Capsule\Manager;
@@ -14,6 +17,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Encryption\Encrypter;
 use Illuminate\Events\Dispatcher;
 use Illuminate\Http\Request;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\Factory as HttpFactory;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Facade;
 use Illuminate\Translation\ArrayLoader;
 use Illuminate\Translation\Translator;
@@ -51,6 +57,8 @@ class FiscalEmissionSettingsTest extends TestCase
         ]));
         $app->instance('validator', new Factory(new Translator(new ArrayLoader(), 'es'), $app));
         $app->instance('encrypter', new Encrypter(str_repeat('k', 32), 'AES-256-CBC'));
+        $app->instance('http', new HttpFactory());
+        $app->instance('cache', new CacheRepository(new ArrayStore()));
         $this->capsule = new Manager($app);
         $this->capsule->addConnection(['driver' => 'sqlite', 'database' => ':memory:', 'prefix' => ''], 'tenant');
         $this->capsule->getDatabaseManager()->setDefaultConnection('tenant');
@@ -59,7 +67,7 @@ class FiscalEmissionSettingsTest extends TestCase
         $this->capsule->bootEloquent();
         $app->instance('db', $this->capsule->getDatabaseManager());
         $db = $this->capsule->getConnection('tenant');
-        $db->statement('CREATE TABLE companies (id INTEGER PRIMARY KEY, fiscal_emission_mode TEXT NOT NULL, fiscal_environment TEXT NOT NULL, fiscal_configuration TEXT NULL, fiscal_credentials TEXT NULL, fiscal_environment_locked INTEGER DEFAULT 0, created_at TEXT, updated_at TEXT)');
+        $db->statement('CREATE TABLE companies (id INTEGER PRIMARY KEY, fiscal_emission_mode TEXT NOT NULL, fiscal_environment TEXT NOT NULL, fiscal_configuration TEXT NULL, fiscal_credentials TEXT NULL, hka_authenticated_at TEXT NULL, fiscal_environment_locked INTEGER DEFAULT 0, created_at TEXT, updated_at TEXT)');
         $db->statement('CREATE TABLE fiscal_configuration_audits (id INTEGER PRIMARY KEY, company_id INTEGER, actor_type TEXT, actor_id INTEGER, changed_fields TEXT, fiscal_emission_mode TEXT, fiscal_environment TEXT, created_at TEXT)');
         $db->statement('CREATE TABLE documents (id INTEGER PRIMARY KEY, fiscal_environment TEXT, fiscal_emission_mode TEXT)');
         $db->statement('CREATE TABLE purchases (id INTEGER PRIMARY KEY, fiscal_environment TEXT)');
@@ -209,7 +217,8 @@ class FiscalEmissionSettingsTest extends TestCase
 
     public function test_non_administrators_are_rejected_even_with_ajax_header(): void
     {
-        $request = Request::create('/companies/fiscal-emission', 'POST', [], [], [], ['HTTP_X_REQUESTED_WITH' => 'XMLHttpRequest']);
+        Http::fake();
+        $request = Request::create('/companies/fiscal-emission', 'POST', ['hka_usuario' => 'user', 'hka_clave' => 'secret'], [], [], ['HTTP_X_REQUESTED_WITH' => 'XMLHttpRequest']);
         $request->setUserResolver(fn () => new User(['type' => 'seller']));
         try {
             (new FiscalEmissionController())->store($request);
@@ -217,6 +226,7 @@ class FiscalEmissionSettingsTest extends TestCase
         } catch (HttpException $exception) {
             self::assertSame(403, $exception->getStatusCode());
             self::assertSame('free_form', Company::firstOrFail()->fiscal_emission_mode);
+            Http::assertSentCount(0);
         }
     }
 
@@ -224,25 +234,27 @@ class FiscalEmissionSettingsTest extends TestCase
     {
         $this->capsule->addConnection(['driver' => 'sqlite', 'database' => ':memory:', 'prefix' => ''], 'other_tenant');
         $other = $this->capsule->getConnection('other_tenant');
-        $other->statement('CREATE TABLE companies (id INTEGER PRIMARY KEY, fiscal_emission_mode TEXT, fiscal_environment TEXT)');
+        $other->statement('CREATE TABLE companies (id INTEGER PRIMARY KEY, fiscal_emission_mode TEXT, fiscal_environment TEXT, fiscal_credentials TEXT)');
         $other->table('companies')->insert(['id' => 1, 'fiscal_emission_mode' => 'free_form', 'fiscal_environment' => 'production']);
+        $this->fakeHkaSuccess();
         $request = Request::create('/companies/fiscal-emission', 'POST', [
             'id' => 999,
             'tenant' => 'other_tenant',
             'fiscal_emission_mode' => 'digital',
             'fiscal_environment' => 'demo',
             'fiscal_configuration' => ['provider' => 'Proveedor de prueba'],
-            'fiscal_credentials' => 'secret-for-current-tenant',
+            'hka_usuario' => 'demo-user',
+            'hka_clave' => 'demo-password',
         ]);
         $request->setUserResolver(fn () => (new User())->forceFill(['id' => 7, 'type' => 'admin']));
         $response = (new FiscalEmissionController())->store($request);
         self::assertTrue($response['success']);
         self::assertSame('digital', Company::firstOrFail()->fiscal_emission_mode);
         self::assertSame('free_form', $other->table('companies')->value('fiscal_emission_mode'));
-        self::assertStringNotContainsString('secret-for-current-tenant', json_encode($response));
-        self::assertTrue($response['data']['fiscal_credentials_configured']);
+        self::assertNull($other->table('companies')->value('fiscal_credentials'));
+        self::assertTrue($response['data']['hka_credentials_configured']);
         self::assertSame('Proveedor de prueba', $response['data']['fiscal_configuration']->provider);
-        self::assertSame('not_integrated', $response['data']['fiscal_integration_status']);
+        self::assertSame('authenticated', $response['data']['fiscal_integration_status']);
     }
 
     public function test_guest_and_ecommerce_identity_cannot_access_configuration(): void
@@ -277,6 +289,147 @@ class FiscalEmissionSettingsTest extends TestCase
             self::assertFalse(Company::firstOrFail()->fiscal_environment_locked);
             self::assertSame(1, $db->table('documents')->count());
         }
+    }
+
+    private function hkaRequest(array $extra = []): Request
+    {
+        $request = Request::create('/companies/fiscal-emission', 'POST', array_replace([
+            'fiscal_emission_mode' => 'digital',
+            'fiscal_environment' => 'demo',
+            'fiscal_configuration' => [],
+            'hka_usuario' => 'demo-user',
+            'hka_clave' => 'demo-password',
+        ], $extra));
+        $request->setUserResolver(fn () => (new User())->forceFill(['id' => 7, 'type' => 'admin']));
+        return $request;
+    }
+
+    private function fakeHkaSuccess(): void
+    {
+        Http::fake(['demoemisionv2.thefactoryhka.com.ve/*' => Http::response([
+            'codigo' => 200,
+            'mensaje' => 'Autenticado',
+            'token' => 'demo-jwt-token',
+            'expiracion' => now()->addHour()->toIso8601String(),
+        ])]);
+    }
+
+    public function test_digital_mode_can_be_saved_without_credentials(): void
+    {
+        Http::fake();
+        $response = (new FiscalEmissionController())->store($this->hkaRequest(['hka_usuario' => '', 'hka_clave' => '']));
+        self::assertSame('digital', Company::firstOrFail()->fiscal_emission_mode);
+        self::assertSame('not_integrated', $response['data']['fiscal_integration_status']);
+        self::assertFalse($response['data']['hka_credentials_configured']);
+        Http::assertSentCount(0);
+    }
+
+    public function test_hka_credentials_are_verified_encrypted_and_hidden(): void
+    {
+        $this->fakeHkaSuccess();
+        $response = (new FiscalEmissionController())->store($this->hkaRequest());
+        $company = Company::firstOrFail();
+        self::assertSame(['usuario' => 'demo-user', 'clave' => 'demo-password'], HkaAuthentication::credentials($company));
+        self::assertNotNull($company->hka_authenticated_at);
+        self::assertSame('authenticated', $response['data']['fiscal_integration_status']);
+        self::assertStringNotContainsString('demo-password', $company->getRawOriginal('fiscal_credentials'));
+        self::assertStringNotContainsString('demo-password', json_encode($response));
+        self::assertStringNotContainsString('demo-jwt-token', json_encode($response));
+        self::assertStringNotContainsString('demo-password', json_encode($this->capsule->getConnection('tenant')->table('fiscal_configuration_audits')->get()));
+        Http::assertSent(fn ($request) => $request->url() === 'https://demoemisionv2.thefactoryhka.com.ve/api/Autenticacion'
+            && $request['usuario'] === 'demo-user' && $request['clave'] === 'demo-password');
+    }
+
+    public function test_hka_is_only_called_when_credentials_change(): void
+    {
+        $this->fakeHkaSuccess();
+        $controller = new FiscalEmissionController();
+        $controller->store($this->hkaRequest());
+        $controller->store($this->hkaRequest(['hka_usuario' => '', 'hka_clave' => '']));
+        $controller->store($this->hkaRequest());
+        Http::assertSentCount(1);
+        $controller->store($this->hkaRequest(['hka_clave' => 'replacement']));
+        Http::assertSentCount(2);
+        self::assertSame('replacement', HkaAuthentication::credentials(Company::firstOrFail())['clave']);
+        $controller->store($this->hkaRequest(['hka_usuario' => '', 'hka_clave' => '', 'clear_fiscal_credentials' => true]));
+        self::assertNull(Company::firstOrFail()->hka_authenticated_at);
+        self::assertNull(HkaAuthentication::credentials(Company::firstOrFail()));
+    }
+
+    public function test_hka_token_is_reused_from_encrypted_cache_until_credentials_change(): void
+    {
+        $this->fakeHkaSuccess();
+        (new FiscalEmissionController())->store($this->hkaRequest());
+        $company = Company::firstOrFail();
+        $client = new HkaAuthentication();
+        self::assertSame('demo-jwt-token', $client->tokenFor($company));
+        self::assertSame('demo-jwt-token', $client->tokenFor($company));
+        Http::assertSentCount(2);
+        (new FiscalEmissionController())->store($this->hkaRequest(['hka_clave' => 'replacement']));
+        self::assertSame('demo-jwt-token', $client->tokenFor(Company::firstOrFail()));
+        Http::assertSentCount(4);
+    }
+
+    /** @dataProvider badHkaResponses */
+    public function test_failed_hka_authentication_does_not_save(array $body, int $status): void
+    {
+        Http::fake(['demoemisionv2.thefactoryhka.com.ve/*' => Http::response($body, $status)]);
+        try {
+            (new FiscalEmissionController())->store($this->hkaRequest());
+            self::fail('Expected HKA authentication failure.');
+        } catch (ValidationException $exception) {
+            self::assertSame('free_form', Company::firstOrFail()->fiscal_emission_mode);
+            self::assertNull(Company::firstOrFail()->fiscal_credentials);
+            self::assertSame(0, $this->capsule->getConnection('tenant')->table('fiscal_configuration_audits')->count());
+        }
+    }
+
+    public static function badHkaResponses(): array
+    {
+        return [
+            'rejected' => [['codigo' => 401, 'mensaje' => 'No autorizado'], 200],
+            'http failure' => [['mensaje' => 'No autorizado'], 401],
+            'missing token' => [['codigo' => 200, 'expiracion' => '2030-01-01T00:00:00Z'], 200],
+            'invalid expiration' => [['codigo' => 200, 'token' => 'jwt', 'expiracion' => 'bad-date'], 200],
+            'expired' => [['codigo' => 200, 'token' => 'jwt', 'expiracion' => '2020-01-01T00:00:00Z'], 200],
+        ];
+    }
+
+    public function test_hka_timeout_does_not_save_or_expose_credentials(): void
+    {
+        Http::fake(fn () => throw new ConnectionException('transport failure'));
+        try {
+            (new FiscalEmissionController())->store($this->hkaRequest());
+            self::fail('Expected timeout failure.');
+        } catch (ValidationException $exception) {
+            self::assertStringNotContainsString('transport failure', $exception->getMessage());
+            self::assertSame('free_form', Company::firstOrFail()->fiscal_emission_mode);
+        }
+        Http::assertSentCount(0);
+    }
+
+    public function test_hka_uses_the_selected_environment_and_authenticates_again_after_switch(): void
+    {
+        $body = [
+            'codigo' => 200,
+            'token' => 'jwt',
+            'expiracion' => now()->addHour()->toIso8601String(),
+        ];
+        Http::fake([
+            'demoemisionv2.thefactoryhka.com.ve/*' => Http::response($body),
+            'emisionv2.thefactoryhka.com.ve/*' => Http::response($body),
+        ]);
+        $controller = new FiscalEmissionController();
+        $controller->store($this->hkaRequest());
+        $controller->store($this->hkaRequest(['fiscal_environment' => 'production']));
+        self::assertSame('production', Company::firstOrFail()->fiscal_environment);
+        self::assertSame('authenticated', FiscalEmissionSettings::publicData(Company::firstOrFail())['fiscal_integration_status']);
+        Http::assertSentCount(2);
+        Http::assertSent(fn ($request) => $request->url() === 'https://emisionv2.thefactoryhka.com.ve/api/Autenticacion');
+        $controller->store($this->hkaRequest(['fiscal_environment' => 'demo', 'hka_usuario' => '', 'hka_clave' => '']));
+        self::assertNull(HkaAuthentication::credentials(Company::firstOrFail()));
+        self::assertNull(Company::firstOrFail()->hka_authenticated_at);
+        Http::assertSentCount(2);
     }
 }
 

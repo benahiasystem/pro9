@@ -1,5 +1,13 @@
 # Adaptación de la modalidad de emisión fiscal de Pro9
 
+## Actualización: autenticación HKA, 29 de septiembre de 2026
+
+La sección fiscal de `/companies/create` permite elegir Medios digitales y presentar Usuario HKA y Clave HKA. El endpoint tenant `POST /companies/fiscal-emission` autentica ambos datos contra `/api/Autenticacion` del ambiente fiscal seleccionado antes de guardarlos como JSON cifrado. El cliente usa hosts separados para demo y producción. Una modalidad digital sin credenciales queda pendiente; un rechazo o fallo de red no cambia la configuración anterior. Los guardados sin cambios de credenciales ni de ambiente no repiten la autenticación. La fecha `companies.hka_authenticated_at` muestra la última prueba correcta, no una conexión permanente ni la habilitación de emisión. Superadmin y autorregistro conservan su selector anterior.
+
+Esta fase no envía documentos ni toca numeración fiscal. El JWT queda reservado al cliente interno HKA y se cifra al almacenarlo temporalmente en caché. No hay credenciales HKA en el repositorio: las pruebas automatizadas simulan la respuesta del proveedor y la comprobación real depende de que HKA proporcione acceso. Los resultados de verificación históricos que siguen pertenecen a la implementación inicial de esta documentación.
+
+Verificación de esta actualización: `FiscalEmissionSettingsTest`, 33 pruebas y 106 aserciones; `FiscalEmissionSchemaTest` en MySQL temporal, 5 pruebas y 1878 aserciones; sintaxis PHP y Vue, validación de ambas skills HKA y `git diff --check`, sin errores. No se ejecutó una autenticación real ni una compilación de assets.
+
 Fecha: 10 de septiembre de 2026. Rama: `codex/modalidad-emision-fiscal`, creada desde `develop` (`67208981d1263e85d2d9cc8b7b7dd4405266dfb3`). Sin commits. Consolidación para instalación nueva, sin tenants ni datos anteriores que convertir.
 
 ## Resultado funcional

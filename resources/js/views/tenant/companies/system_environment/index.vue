@@ -4,7 +4,7 @@
         <div class="card-header bg-info"><h3 class="my-0">Modalidad de emisión fiscal</h3></div>
         <div class="card-body">
             <form v-if="loaded" autocomplete="off" @submit.prevent="submit">
-                <fiscal-emission-fields :form="form" :errors="errors" />
+                <fiscal-emission-fields :form="form" :errors="errors" :enable-hka="true" />
                 <div class="text-end pt-2"><el-button type="primary" native-type="submit" :loading="loading">Guardar</el-button></div>
             </form>
             <p v-else>{{ loadMessage }}</p>
@@ -26,13 +26,13 @@ export default {
         } catch (error) { this.loadMessage = 'La configuración fiscal está disponible para el administrador del tenant.' }
     },
     methods: {
-        setForm(data) { this.form = { ...data, fiscal_configuration: data.fiscal_configuration || {}, fiscal_credentials: '', clear_fiscal_credentials: false } },
+        setForm(data) { this.form = { ...data, fiscal_configuration: data.fiscal_configuration || {}, hka_usuario: '', hka_clave: '', clear_fiscal_credentials: false } },
         async submit() {
             this.loading = true
             this.errors = {}
-            const { fiscal_emission_mode, fiscal_environment, fiscal_configuration, fiscal_credentials, clear_fiscal_credentials } = this.form
+            const { fiscal_emission_mode, fiscal_environment, fiscal_configuration, hka_usuario, hka_clave, clear_fiscal_credentials } = this.form
             try {
-                const response = await this.$http.post('/companies/fiscal-emission', { fiscal_emission_mode, fiscal_environment, fiscal_configuration, fiscal_credentials, clear_fiscal_credentials })
+                const response = await this.$http.post('/companies/fiscal-emission', { fiscal_emission_mode, fiscal_environment, fiscal_configuration, hka_usuario, hka_clave, clear_fiscal_credentials })
                 this.setForm(response.data.data)
                 this.$message.success(response.data.message)
             } catch (error) {

@@ -5,7 +5,7 @@ description: Mantener la modalidad de emisión fiscal y el ambiente de Pro9, el 
 
 # Modalidad de emisión fiscal de Pro9
 
-Para una futura integración con la imprenta digital HKA, consultar [la referencia técnica HKA, incluido el Swagger DEMO](../../../informes/imprenta_digital_hka_api.md) y [conexión API HKA](../conectar-api-hka/SKILL.md). Es documentación preparatoria: no habilita producción ni sustituye las reglas actuales de modalidad y ambiente.
+La autenticación HKA se configura en el tenant según [configurar-conexion-hka-pro9](../configurar-conexion-hka-pro9/SKILL.md) y [conexión API HKA](../conectar-api-hka/SKILL.md). Esta etapa verifica credenciales en el ambiente elegido; no habilita emisión de documentos.
 
 ## Evolución de numeración fiscal
 
@@ -18,13 +18,13 @@ El plan aprobado de SCRUM-39 sustituye la modalidad única por perfiles de estab
 - El alta exige modalidad y ambiente en superadmin, autoregistro y API. Los parámetros se completan progresivamente; elegir una modalidad no conecta equipos ni acredita emisión fiscal efectiva.
 - Este contrato parte de una instalación nueva sin tenants ni datos anteriores. No crear conversiones, backfills ni migraciones incrementales SOAP/PFX. Cada tenant nace con modalidad y ambiente obligatorios.
 - El administrador tenant y el superadmin pueden configurar modalidad y ambiente. Después de cualquier operación el ambiente queda bloqueado, incluso si posteriormente se eliminan los movimientos. Producción requiere otro tenant limpio; no copiar operaciones ni correlativos demo.
-- La primera etapa conserva el registro comercial local y PDF. No transmite, firma XML ni asigna números de control fiscales. Una integración futura requiere alcance y proveedor concretos.
+- La operación comercial sigue siendo local y genera PDF. La verificación de autenticación HKA no transmite documentos, firma XML ni asigna números de control fiscales.
 
 ## Puntos de implementación
 
 - `App\Services\FiscalEmissionSettings` centraliza valores válidos, parámetros, validación y actualización. `companies` del tenant es la fuente; el superadmin consulta ese registro y no mantiene otra copia.
 - El endpoint tenant dedicado es `GET/POST /companies/fiscal-emission`; exige un usuario tenant de tipo `admin`, también en AJAX. El editor general de empresa rechaza campos fiscales para impedir saltarse las reglas.
-- Máquina fiscal: modelo, serial, puerto y proveedor/controlador. Digital: proveedor, autorización y credenciales. Forma libre: imprenta, número de control, inicio y fin de rango. No aceptar parámetros de otra modalidad ni rangos negativos/invertidos.
+- Máquina fiscal: modelo, serial, puerto y proveedor/controlador. Digital: proveedor, autorización y credenciales; en la pantalla tenant, la conexión HKA usa usuario y clave cifrados y registra la última autenticación por ambiente. Forma libre: imprenta, número de control, inicio y fin de rango. No aceptar parámetros de otra modalidad ni rangos negativos/invertidos.
 - Las credenciales se cifran en el modelo, se ocultan de toda serialización y no se incluyen en logs. Campo vacío conserva el secreto; borrado explícito lo elimina; cambiar modalidad descarta parámetros y credenciales anteriores.
 - `fiscal_configuration_audits` registra actor, campos modificados, modalidad y ambiente; nunca valores secretos.
 - El guardado de operaciones en `ModelTenant` comparte el bloqueo transaccional de la empresa con la actualización del ambiente. Revisar `config/fiscal_emission.php` al incorporar nuevas tablas o escritores que omitan Eloquent.

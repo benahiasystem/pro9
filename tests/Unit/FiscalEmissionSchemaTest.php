@@ -1319,6 +1319,9 @@ class FiscalEmissionSchemaTest extends TestCase
             self::assertSame('YES', $column->nullable);
             self::assertSame('text', $column->type);
         }
+        $hkaAuthenticated = $db->selectOne('SELECT IS_NULLABLE AS nullable, DATA_TYPE AS type FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ?', [$this->database, 'companies', 'hka_authenticated_at']);
+        self::assertSame('YES', $hkaAuthenticated->nullable);
+        self::assertSame('timestamp', $hkaAuthenticated->type);
         self::assertNotNull($db->selectOne('SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ? AND REFERENCED_TABLE_NAME = ?', [$this->database, 'fiscal_configuration_audits', 'company_id', 'companies']));
         foreach (['digital_certificate_qztray', 'private_certificate_qztray'] as $column) {
             self::assertTrue($db->getSchemaBuilder()->hasColumn('companies', $column));

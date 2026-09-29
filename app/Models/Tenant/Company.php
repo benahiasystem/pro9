@@ -42,6 +42,7 @@ class Company extends ModelTenant
         // ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
         'fiscal_configuration' => 'array',
         'fiscal_credentials' => 'encrypted',
+        'hka_authenticated_at' => 'datetime',
         'fiscal_environment_locked' => 'boolean',
         // ######## FIN MODALIDAD DE EMISIÓN FISCAL ########
     ];
