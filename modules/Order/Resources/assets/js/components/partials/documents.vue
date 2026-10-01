@@ -43,7 +43,7 @@
                                     </td>
                                     <td>
                                         <el-select v-model="row.series_id">
-                                            <el-option v-for="option in row.series" :key="option.id" :value="option.id" :label="option.number"></el-option>
+                                            <el-option v-for="option in row.series" :key="option.id" :value="option.id" :label="option.number || 'Sin serie'"></el-option>
                                         </el-select>
                                     </td>
                                 </tr>

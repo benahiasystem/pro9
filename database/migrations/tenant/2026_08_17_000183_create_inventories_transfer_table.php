@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
  * Estructura inicial de `inventories_transfer` para instalaciones nuevas.
  * Inventario de columnas:
  * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
+ * - `establishment_id` int(10) unsigned NOT NULL
  * - `external_id` char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `fiscal_environment` varchar(16) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `document_type_id` char(2) COLLATE utf8mb4_unicode_ci DEFAULT NULL
@@ -30,6 +31,7 @@ return new class extends Migration
         DB::unprepared(<<<'SQL'
 CREATE TABLE `inventories_transfer` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `establishment_id` int(10) unsigned NOT NULL,
   `external_id` char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `fiscal_environment` varchar(16) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `document_type_id` char(2) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
@@ -45,6 +47,8 @@ CREATE TABLE `inventories_transfer` (
   `updated_at` timestamp NULL DEFAULT NULL,
   `user_id` int(10) unsigned DEFAULT '0' COMMENT 'usuario que crea el registro',
   PRIMARY KEY (`id`),
+  UNIQUE KEY `inventories_transfer_branch_number_unique` (`establishment_id`,`fiscal_environment`,`document_type_id`,`series`,`number`),
+  KEY `inventories_transfer_establishment_id_foreign` (`establishment_id`),
   KEY `inventories_transfer_warehouse_id_foreign` (`warehouse_id`),
   KEY `inventories_transfer_warehouse_destination_id_foreign` (`warehouse_destination_id`),
   KEY `inventories_transfer_fiscal_environment_foreign` (`fiscal_environment`),

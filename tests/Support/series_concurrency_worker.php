@@ -37,8 +37,8 @@ try {
             protected $table = 'documents';
         };
         $model->fiscal_environment = 'demo';
-        $number = App\Services\SeriesNumbering::next($model, '01', 'FF01', $input['number'] ?? '#', 1);
-        $db->table('documents')->insert(['document_type_id' => '01', 'series' => 'FF01', 'number' => $number, 'fiscal_environment' => 'demo', 'establishment_id' => 1]);
+        $number = App\Services\SeriesNumbering::next($model, '01', $input['series'] ?? 'FF01', $input['number'] ?? '#', $input['branch'] ?? 1);
+        $db->table('documents')->insert(['document_type_id' => '01', 'series' => $input['series'] ?? 'FF01', 'number' => $number, 'fiscal_environment' => 'demo', 'establishment_id' => $input['branch'] ?? 1]);
         return ['number' => $number];
     });
 } catch (Illuminate\Validation\ValidationException $e) { $result = ['duplicate' => true]; }

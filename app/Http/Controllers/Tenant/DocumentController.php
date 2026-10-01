@@ -608,7 +608,7 @@ class DocumentController extends Controller
 
                 return [
                     'id' => $row->id,
-                    'description' => $row->series . '-' . $row->number,
+                    'description' => $row->number_full,
                     'series' => $row->series,
                     'number' => $row->number,
                     'document_type_id' => ($row->document_type_id == '01') ? '02' : '03',
@@ -996,25 +996,19 @@ class DocumentController extends Controller
     private function associateDispatchesToDocument(Request $request, int $documentId)
     {
         $dispatches_relateds = $request->dispatches_relateds;
-        if ($dispatches_relateds) {
-            foreach ($dispatches_relateds as $dispatch) {
-                $dispatchToArray = explode('-', $dispatch);
-                if (count($dispatchToArray) === 2) {
-                    Dispatch::where('series', $dispatchToArray[0])
-                        ->where('number', $dispatchToArray[1])
-                        ->update([
-                            'reference_document_id' => $documentId,
-                        ]);
-
-                    $document = Dispatch::where('series', $dispatchToArray[0])
-                        ->where('number', $dispatchToArray[1])
-                        ->first();
-
-                    if ($document) {
-                        $facturalo = new Facturalo();
-                        $facturalo->createPdf($document, 'dispatch', 'a4');
-                    }
-                }
+        if (!$dispatches_relateds) return;
+        $invoice = Document::findOrFail($documentId);
+        foreach ($dispatches_relateds as $reference) {
+            $parts = \App\Services\Fiscal\FiscalIdentity::parseNumberFull((string) $reference);
+            if ($parts === null) continue;
+            $dispatch = Dispatch::where('establishment_id', $invoice->establishment_id)
+                ->where('fiscal_environment', $invoice->fiscal_environment)
+                ->where('document_type_id', '09')
+                ->where('series', \App\Services\SeriesNumbering::normalizeCode($parts[0]))
+                ->where('number', $parts[1])->first();
+            if ($dispatch) {
+                $dispatch->update(['reference_document_id' => $documentId]);
+                (new Facturalo())->createPdf($dispatch, 'dispatch', 'a4');
             }
         }
     }

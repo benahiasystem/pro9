@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 /** Identifiers belong to the commercial document, without provider reservations. */
 final class FiscalIdentity
 {
+    public const EMPTY_SERIES_FILTER = '__without_series__';
+
     public static function preload(iterable $rows): void
     {
         // Kept for batch report callers: direct attributes require no extra queries.
@@ -26,6 +28,15 @@ final class FiscalIdentity
     public static function numberFull($series, $number): string
     {
         return ($series === null || $series === '') ? (string) $number : $series . '-' . $number;
+    }
+
+    /** The final separator precedes the number; earlier hyphens belong to the series. */
+    public static function parseNumberFull(string $reference): ?array
+    {
+        if (!preg_match('/\A(?:([A-Za-z0-9-]{0,20})-)?([0-9]+)\z/', trim($reference), $parts)) {
+            return null;
+        }
+        return [\App\Services\SeriesNumbering::normalizeCode($parts[1] ?? ''), $parts[2]];
     }
 
     public static function forDocument(Model $document): array

@@ -766,11 +766,11 @@
                     <p class="sc-section-label">Datos del Comprobante</p>
                     <div class="form-row-3">
                         <div class="form-group-field">
-                            <label class="field-label" for="series">Serie <span style="color:#e53935">*</span></label>
+                            <label class="field-label" for="series">Serie</label>
                             <div class="field-wrap">
-                                <input type="text" name="series" id="series" maxlength="10"
+                                <input type="text" name="series" id="series" maxlength="20"
                                     value="{{ old('series', $form['series']) }}"
-                                    placeholder="F001">
+                                    placeholder="Sin serie">
                             </div>
                             @error('series')
                                 <div class="invalid-msg">{{ $message }}</div>

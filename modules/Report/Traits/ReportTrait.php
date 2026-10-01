@@ -444,7 +444,7 @@ trait ReportTrait
     public function getSeries($document_types)
     {
         $series = Series::wherein('document_type_id', $document_types->pluck('id')->toArray());
-        return $series->get();
+        return $series->get()->unique('number')->values();
     }
 
     /**

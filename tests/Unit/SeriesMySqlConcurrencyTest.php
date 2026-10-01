@@ -41,17 +41,21 @@ class SeriesMySqlConcurrencyTest extends SeriesDatabaseTestCase
     }
 
     /** @dataProvider requestedNumbers */
-    public function test_parallel_saves_wait_for_the_issuer_and_never_duplicate($requested): void
+    public function test_parallel_saves_wait_for_the_issuer_and_never_duplicate($requested, string $code, bool $separateBranches): void
     {
-        $this->db->table('series')->insert(['id' => 1, 'establishment_id' => 1, 'document_type_id' => '01', 'number' => 'FF01']);
-        $this->db->table('series_configurations')->insert(['series_id' => 1, 'document_type_id' => '01', 'series' => 'FF01', 'number' => 100]);
+        $this->db->table('series')->insert(['id' => 1, 'establishment_id' => 1, 'document_type_id' => '01', 'number' => $code]);
+        $this->db->table('series_configurations')->insert(['series_id' => 1, 'document_type_id' => '01', 'series' => $code, 'number' => 100]);
+        if ($separateBranches) {
+            $this->db->table('series')->insert(['id' => 2, 'establishment_id' => 2, 'document_type_id' => '01', 'number' => $code]);
+            $this->db->table('series_configurations')->insert(['series_id' => 2, 'document_type_id' => '01', 'series' => $code, 'number' => 100]);
+        }
         $processes = [];
         $this->db->beginTransaction();
         try {
             $this->db->table('companies')->where('id', 1)->lockForUpdate()->first();
             for ($i = 0; $i < 2; $i++) {
                 $process = new Process([PHP_BINARY, dirname(__DIR__) . '/Support/series_concurrency_worker.php']);
-                $process->setInput(json_encode(['connection' => $this->connection, 'number' => $requested], JSON_THROW_ON_ERROR));
+                $process->setInput(json_encode(['connection' => $this->connection, 'number' => $requested, 'series' => $code, 'branch' => $separateBranches ? $i + 1 : 1], JSON_THROW_ON_ERROR));
                 $process->setTimeout(20); $process->start(); $processes[] = $process;
             }
             $deadline = microtime(true) + 10;
@@ -70,8 +74,8 @@ class SeriesMySqlConcurrencyTest extends SeriesDatabaseTestCase
                 $results[] = json_decode(substr($process->getOutput(), strlen("READY\n")), true, 512, JSON_THROW_ON_ERROR);
             }
             $numbers = $this->db->table('documents')->orderBy('number')->pluck('number')->map(fn ($n) => (int) $n)->all();
-            self::assertSame($requested === '#' ? [100, 101] : [100], $numbers);
-            self::assertSame($requested === '#' ? 0 : 1, count(array_filter($results, fn ($r) => !empty($r['duplicate']))));
+            self::assertSame($separateBranches ? [100, 100] : ($requested === '#' ? [100, 101] : [100]), $numbers);
+            self::assertSame(($separateBranches || $requested === '#') ? 0 : 1, count(array_filter($results, fn ($r) => !empty($r['duplicate']))));
         } finally {
             if ($this->db->transactionLevel()) $this->db->rollBack();
             foreach ($processes as $process) if ($process->isRunning()) $process->stop();
@@ -92,7 +96,7 @@ class SeriesMySqlConcurrencyTest extends SeriesDatabaseTestCase
             };
             $model->fiscal_environment = 'demo';
             $number = \App\Services\SeriesNumbering::next($model, '01', 'FF01', '#', 1);
-            $this->db->table('documents')->insert(['document_type_id' => '01', 'series' => 'FF01', 'number' => $number, 'fiscal_environment' => 'demo']);
+            $this->db->table('documents')->insert(['document_type_id' => '01', 'series' => 'FF01', 'number' => $number, 'fiscal_environment' => 'demo', 'establishment_id' => 1]);
             $worker->start();
             $deadline = microtime(true) + 10;
             while (!str_contains($worker->getOutput(), "READY\n")) {
@@ -113,5 +117,5 @@ class SeriesMySqlConcurrencyTest extends SeriesDatabaseTestCase
         }
     }
 
-    public static function requestedNumbers(): array { return [['#'], [100]]; }
+    public static function requestedNumbers(): array { return [['#', 'FF01', false], [100, 'FF01', false], ['#', '', false], [100, '', false], ['#', '', true], [100, '', true]]; }
 }

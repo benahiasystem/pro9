@@ -58,7 +58,7 @@
           <label class="control-label mb-0">Serie de documento<span class="text-danger"> *</span></label>
           <el-input
             v-model="form.serie"
-            :maxlength="4"
+            :maxlength="20"
             @input="clearError('serie')"
             @blur="validateField('serie')"></el-input>
           <div v-if="errors.serie" class="el-form-item__error">{{ errors.serie }}</div>
@@ -168,10 +168,11 @@ export default {
           setError(requiredMessage)
           return false
         }
-        if (value.length !== 4) {
-          setError('La serie está compuesta por 4 dígitos')
+        if (value.length > 20 || !/^[a-zA-Z0-9-]+$/.test(value)) {
+          setError('La serie debe tener hasta 20 letras, números o guiones (-)')
           return false
         }
+        this.form.serie = value.toUpperCase()
         return true
       }
 

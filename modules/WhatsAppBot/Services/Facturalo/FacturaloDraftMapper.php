@@ -235,10 +235,12 @@ class FacturaloDraftMapper
     {
         $last = Document::query()
             ->where('series', $series->number)
+            ->where('establishment_id', $series->establishment_id)
+            ->where('fiscal_environment', \App\Models\Tenant\Company::active()->fiscal_environment)
             ->where('document_type_id', $series->document_type_id)
             ->max('number');
 
-        return (int) ($last ?? 0) + 1;
+        return $last === null ? (int) (\Modules\Document\Models\SeriesConfiguration::where('series_id', $series->id)->value('number') ?? 1) : (int) $last + 1;
     }
 
     private function establishmentSnapshot(int $establishmentId): array

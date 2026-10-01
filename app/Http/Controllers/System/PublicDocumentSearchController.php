@@ -271,10 +271,13 @@ JS;
 
     private function resolveSearch(Request $request): array
     {
+        if ($request->input('series') === null || is_string($request->input('series'))) {
+            $request->merge(['series' => \App\Services\SeriesNumbering::normalizeCode($request->input('series'))]);
+        }
         $validated = $request->validate([
             'tenant_slug' => ['nullable', 'string', 'max:255'],
             'ruc_emisor' => ['nullable', 'digits:11', 'required_without:tenant_slug'],
-            'series' => ['required', 'string', 'max:10'],
+            'series' => ['nullable', 'string', 'max:20', 'regex:/\A[A-Za-z0-9-]*\z/'],
             'number' => ['required', 'string', 'max:20'],
             'customer_number' => ['required', 'string', 'max:15'],
             'total' => ['required', 'numeric', 'min:0'],
@@ -325,7 +328,8 @@ JS;
                     $result = $documents->map(function (Document $document) use ($baseUrl) {
                         return [
                             'customer' => $document->customer->number,
-                            'number' => $document->series . '-' . $document->number,
+                            'number' => $document->number_full,
+                            'establishment_id' => $document->establishment_id,
                             'total' => number_format((float) $document->total, 2, '.', ''),
                             'download_pdf' => $baseUrl . '/downloads/document/pdf/' . $document->external_id,
                         ];
@@ -561,7 +565,7 @@ JS;
 
     private function resolveDocuments(array $validated, int $customerId)
     {
-        $series = strtoupper(trim($validated['series']));
+        $series = \App\Services\SeriesNumbering::normalizeCode($validated['series'] ?? null);
         $number = (int) $validated['number'];
         $total = round((float) $validated['total'], 2);
 

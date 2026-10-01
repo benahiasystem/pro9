@@ -30,9 +30,11 @@ class DocumentsImportTwoFormat implements ToCollection
                 // dd($row);
                 //serie-correlativo
                 $nrodocumento = $row[1];
-                $serienumero = explode('-', $nrodocumento);
-                $serie = $serienumero[0];
-                $number = $serienumero[1];
+                $serienumero = \App\Services\Fiscal\FiscalIdentity::parseNumberFull((string) $nrodocumento);
+                if ($serienumero === null) {
+                    throw \Illuminate\Validation\ValidationException::withMessages(['number' => 'Indique una referencia válida de serie y número.']);
+                }
+                [$serie, $number] = $serienumero;
                 $correlativo = (int)$number;
 
                 //tipo de documento

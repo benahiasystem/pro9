@@ -116,7 +116,7 @@
                                 <el-select v-model="form.series_id">
                                     <el-option v-for="option in series"
                                                :key="option.id"
-                                               :label="option.number"
+                                               :label="option.number || 'Sin serie'"
                                                :disabled="option.disabled"
                                                :value="option.id"></el-option>
                                 </el-select>

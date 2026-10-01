@@ -28,7 +28,7 @@ class DocumentInput
         // ######## INICIO POLITICA IDENTIDAD ACTIVA EN VENTAS ########
         SalesCustomerIdentityPolicy::assertCustomerAllowed($inputs['customer_id'] ?? null);
         // ######## FIN POLITICA IDENTIDAD ACTIVA EN VENTAS ########
-        $series = $inputs['series'];
+        $series = \App\Services\SeriesNumbering::normalizeCode($inputs['series'] ?? null);
         $number = $inputs['number'];
 
         $company = Company::active();
@@ -39,10 +39,10 @@ class DocumentInput
         $configuration = Configuration::getColumnsForDocuments();
 
         if ($number !== '#') {
-            Functions::validateUniqueDocument($fiscal_environment, $document_type_id, $series, $number, Document::class);
+            Functions::validateUniqueDocument($fiscal_environment, $document_type_id, $series, $number, Document::class, (int) $inputs['establishment_id']);
         }
 
-        // $filename = Functions::filename($company, $document_type_id, $series, $number);
+        // $filename = Functions::filename($company, $document_type_id, $series, $number, (int) $inputs['establishment_id']);
         $validate_itinerant = false;
         if(isset($inputs['itinerant']) ){
             $validate_itinerant = $inputs['itinerant']['id'] == 1 ? false : true;

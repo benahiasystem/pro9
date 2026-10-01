@@ -317,10 +317,10 @@ use Modules\Sale\Models\Agent;
         public static function getLastNumberByModel(SaleNote $model)
         {
             // Read-only suggestion; insertion always validates under the issuer lock.
-            $max = self::where('series', $model->series)
+            $max = self::where('establishment_id', $model->establishment_id)->where('series', \App\Services\SeriesNumbering::normalizeCode($model->series))
                 ->where('fiscal_environment', $model->fiscal_environment)->max('number');
             if ($max !== null) return (int) $max + 1;
-            $seriesId = \App\Models\Tenant\Series::where('document_type_id', '80')->where('number', $model->series)->value('id');
+            $seriesId = \App\Models\Tenant\Series::where('document_type_id', '80')->where('number', \App\Services\SeriesNumbering::normalizeCode($model->series))->where('establishment_id', $model->establishment_id)->value('id');
             return (int) (\Modules\Document\Models\SeriesConfiguration::where('series_id', $seriesId)->value('number') ?? 1);
         }
 
@@ -750,7 +750,7 @@ use Modules\Sale\Models\Agent;
          */
         public function getNumberFullAttribute()
         {
-            $number_full = ($this->series && $this->number) ? $this->series . '-' . $this->number : $this->prefix . '-' . $this->id;
+            $number_full = $this->number ? \App\Services\Fiscal\FiscalIdentity::numberFull($this->series, $this->number) : $this->prefix . '-' . $this->id;
 
             return $number_full;
         }
@@ -951,7 +951,7 @@ use Modules\Sale\Models\Agent;
                 'date_of_issue' => $this->date_of_issue->format('Y-m-d'),
                 'time_of_issue' => $this->time_of_issue,
                 'identifier' => $this->identifier,
-                'full_number' => $this->series . '-' . $this->number,
+                'full_number' => \App\Services\Fiscal\FiscalIdentity::numberFull($this->series, $this->number),
                 'customer_name' => $customer->name,
                 'customer_number' => format_person_identity_document($customer),
                 'children_name' => $child_name,

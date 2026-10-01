@@ -29,8 +29,8 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group" :class="{'has-danger': errors.series}">
-                                <label class="control-label mt-2">Serie<span class="text-danger"> *</span></label>
-                                <el-input v-model="form.series" :maxlength="4"></el-input>
+                                <label class="control-label mt-2">Serie</label>
+                                <el-input v-model="form.series" :maxlength="20" placeholder="Sin serie"></el-input>
                                 <small class="form-control-feedback" v-if="errors.series" v-text="errors.series[0]"></small>
                             </div>
                         </div>
@@ -40,6 +40,14 @@
                                 <el-input v-model="form.number"></el-input>
                                 <small class="form-control-feedback" v-if="errors.number" v-text="errors.number[0]"></small>
                             </div>
+                        </div>
+                    </div>
+                    <div class="row" v-if="!form.series || !form.series.trim()">
+                        <div class="col-md-6 form-group">
+                            <label class="control-label mt-2">Sucursal</label>
+                            <el-select v-model="form.establishment_id">
+                                <el-option v-for="branch in establishments" :key="branch.id" :value="branch.id" :label="branch.description"></el-option>
+                            </el-select>
                         </div>
                     </div>
                     <div class="row">
@@ -104,7 +112,8 @@
                 errors: {},
                 form: {},
                 record: null,
-                document_types: []
+                document_types: [],
+                establishments: []
             }
         },
         created() {
@@ -112,6 +121,8 @@
             this.$http.get(`/${this.resource}/tables`)
                 .then(response => {
                     this.document_types = response.data.document_types
+                    this.establishments = response.data.establishments
+                    this.form.establishment_id = this.establishments.length === 1 ? this.establishments[0].id : null
                 })
         },
         methods: {
@@ -122,6 +133,7 @@
                     document_type_id: '01',
                     customer_number: null,
                     series: null,
+                    establishment_id: null,
                     number: null,
                     total: null,
                     date_of_issue: moment().format('YYYY-MM-DD'),

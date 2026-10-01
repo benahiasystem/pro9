@@ -142,20 +142,20 @@
             if ($request->has('external_id') or $request->has('serie_number')) {
                 $external_id = $request->input('external_id');
                 $request_serie = $request->input('serie_number');
-                $serie_number = explode('-', $request_serie);
-                $serie = $serie_number[0];
-                $number = $serie_number[1];
-
-                if (!$external_id) {
-                    $document = Document::where('number', $number)
-                        ->where('series', $serie)
-                        ->first();
-                } else {
-                    $document = Document::where('external_id', $external_id)
-                        ->where('number', $number)
-                        ->where('series', $serie)
-                        ->first();
+                $query = Document::query();
+                if ($external_id) $query->where('external_id', $external_id);
+                if ($request_serie !== null && $request_serie !== '') {
+                    $parts = \App\Services\Fiscal\FiscalIdentity::parseNumberFull((string) $request_serie);
+                    if ($parts === null) throw new Exception('Indique un número de factura válido.');
+                    $serie = \App\Services\SeriesNumbering::normalizeCode($parts[0]);
+                    $query->where('series', $serie)->where('number', $parts[1]);
+                    if ($serie === '' && !$external_id) {
+                        $branch = $request->input('establishment_id') ?? optional(auth()->user())->establishment_id;
+                        if (!$branch) throw new Exception('Indique la sucursal de la factura sin serie.');
+                        $query->where('establishment_id', $branch)->where('document_type_id', $request->input('document_type_id', '01'));
+                    }
                 }
+                $document = $query->first();
 
                 if (!$document) {
                     throw new Exception("El documento con código externo {$external_id} o numero {$request_serie}, no se encuentra registrado.");

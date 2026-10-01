@@ -46,7 +46,7 @@
                             <label class="control-label">Serie</label>
                             <el-select v-model="form.series_id">
                                 <el-option v-for="option in series" :key="option.id" :value="option.id"
-                                           :label="option.number"></el-option>
+                                           :label="option.number || 'Sin serie'"></el-option>
                             </el-select>
                             <small class="form-control-feedback" v-if="errors.series_id"
                                    v-text="errors.series_id[0]"></small>

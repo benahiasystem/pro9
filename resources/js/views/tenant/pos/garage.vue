@@ -691,7 +691,7 @@
                                 <el-option
                                     v-for="s in ($refs.componentFastPaymentGarage ? $refs.componentFastPaymentGarage.series : [])"
                                     :key="s.id"
-                                    :label="s.number"
+                                    :label="s.number || 'Sin serie'"
                                     :value="s.id"
                                 ></el-option>
                             </el-select>

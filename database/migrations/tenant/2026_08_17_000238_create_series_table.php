@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\DB;
  * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
  * - `establishment_id` int(10) unsigned NOT NULL
  * - `document_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `number` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
+ * - `number` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT ''
  * - `contingency` tinyint(1) NOT NULL DEFAULT '0'
  * - `dedicated` tinyint(1) NOT NULL DEFAULT '0'
  * - `series_device_group_id` int(10) unsigned DEFAULT NULL
@@ -27,7 +27,7 @@ CREATE TABLE `series` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `establishment_id` int(10) unsigned NOT NULL,
   `document_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `number` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `number` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
   `contingency` tinyint(1) NOT NULL DEFAULT '0',
   `dedicated` tinyint(1) NOT NULL DEFAULT '0',
   `series_device_group_id` int(10) unsigned DEFAULT NULL,
@@ -35,7 +35,7 @@ CREATE TABLE `series` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `series_document_type_number_unique` (`document_type_id`,`number`),
+  UNIQUE KEY `series_document_type_number_unique` (`establishment_id`,`document_type_id`,`number`),
   KEY `series_establishment_id_foreign` (`establishment_id`),
   KEY `series_document_type_id_foreign` (`document_type_id`),
   KEY `series_series_device_group_id_foreign` (`series_device_group_id`)

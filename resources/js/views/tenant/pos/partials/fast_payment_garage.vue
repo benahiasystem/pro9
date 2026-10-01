@@ -972,9 +972,10 @@ export default {
         filterSeries() {
             this.userSelectedDocType = true;
 
-            this.form.series_id = null
             this.series = _.filter(this.all_series, {'document_type_id': this.form.document_type_id});
-            this.form.series_id = (this.series.length > 0) ? this.series[0].id : null
+            // Cambiar el cliente o recargar las opciones no debe reemplazar la serie elegida.
+            const selectedSeries = this.series.find(series => series.id === this.form.series_id);
+            this.form.series_id = selectedSeries ? selectedSeries.id : (this.series.length > 0 ? this.series[0].id : null);
 
             if (!this.form.series_id) {
                 return this.$message.warning('El sucursal no tiene series disponibles para el comprobante');

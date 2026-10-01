@@ -82,3 +82,72 @@ test('new series scrolls its inline editor into view without writes', () => {
     assert.deepEqual(calls,['nearest']);
     assert.equal(ctx.form.seriesTypeKey,'invoice');
 });
+
+
+test('optional series starts empty and changing emission never requests an automatic code', () => {
+    const ctx=context();
+    ctx.$nextTick=callback=>callback(); ctx.$refs={};
+    ctx.$http={get(){throw new Error('Must not request next-code');}};
+    ctx.clickNew();
+    assert.equal(ctx.form.number,'');
+    assert.equal(ctx.form.correlative,1);
+    assert.equal(Object.hasOwn(ctx.form,'mode'),false);
+    ctx.form.emission='contingency'; ctx.onEmissionChange();
+    assert.equal(ctx.form.number,'');
+    assert.ok(!source.includes('next-code'));
+    assert.ok(!source.includes('label="auto"') && !source.includes('label="manual"'));
+});
+
+test('blank series saves normally, labels explain internal numbering, and nullable records sort', async () => {
+    const ctx=context(); const calls=[];
+    ctx.form={seriesTypeKey:'invoice',number:'   ',correlative:1,emission:'normal'};
+    ctx.$http={post:async(url,data)=>{calls.push(data); return {data:{success:true}}},get:async()=>({data:{data:[]}})};
+    await ctx.confirmCreate();
+    assert.equal(calls[0].number,'');
+    assert.equal(calls[0].correlative,1);
+    ctx.records=[{id:1,number:null,sort_order:1},{id:2,number:'FF01',sort_order:1},{id:3,number:'',sort_order:1}];
+    assert.equal(ctx.visibleRecords.length,3);
+    assert.ok(source.includes('Número'));
+    assert.ok(!source.includes('Factura N°'));
+    assert.ok(source.includes(':maxlength="20"'));
+    assert.ok(source.includes('numeración interna del sistema'));
+    assert.ok(source.includes('@focus=') && source.includes('@click="$refs.tableNumberHelp.doShow()"'));
+    assert.ok(source.includes("row.number || 'Sin serie'"));
+});
+
+test('document references accept 20 characters and reject longer or malformed series', () => {
+    const source = fs.readFileSync('resources/js/views/tenant/dispatches/Carrier/partials/DialogReferenceDocument.vue','utf8');
+    const parsed = compiler.parseComponent(source);
+    const exported = {};
+    vm.runInNewContext(babel.transformSync(parsed.script.content,{configFile:false,babelrc:false,plugins:['@babel/plugin-transform-modules-commonjs']}).code,{exports:exported});
+    const ctx={form:{serie:' abcdefghijklmnop1234 '},errors:{},$set:(object,key,value)=>object[key]=value,$delete:(object,key)=>delete object[key]};
+    Object.assign(ctx,exported.default.methods);
+    assert.equal(ctx.validateField('serie'),true);
+    assert.equal(ctx.form.serie,'ABCDEFGHIJKLMNOP1234');
+    ctx.form.serie='ab-CD-01';
+    assert.equal(ctx.validateField('serie'),true);
+    assert.equal(ctx.form.serie,'AB-CD-01');
+    for(const invalid of ['A'.repeat(21),'ABC DEF','ABC_DEF']) {
+        ctx.form.serie=invalid;
+        assert.equal(ctx.validateField('serie'),false);
+        assert.ok(ctx.errors.serie.includes('20'));
+    }
+});
+
+
+test('series accepts both letter cases, numbers and hyphens but never posts other characters', async () => {
+    const ctx=context(); const calls=[];
+    ctx.$http={post:async(url,data)=>{calls.push(data); return {data:{success:true}}},get:async()=>({data:{data:[]}})};
+    for(const code of ['ab-CD-012', '-', 'AB-CD123456789012345', '']) {
+        ctx.form={seriesTypeKey:'invoice',number:code,correlative:1,emission:'normal'};
+        await ctx.confirmCreate();
+        assert.equal(calls.at(-1).number,code.toUpperCase());
+    }
+    const count=calls.length;
+    for(const code of ['AB_CD','AB.CD','AB/CD','AB CD','áBC','ABC@','ABC😀','A'.repeat(21)]) {
+        ctx.form={seriesTypeKey:'invoice',number:code,correlative:1,emission:'normal'};
+        await ctx.confirmCreate();
+        assert.equal(calls.length,count);
+        assert.ok(ctx.form.error.includes('guiones'));
+    }
+});

@@ -171,6 +171,7 @@ return new class extends Migration
         DB::unprepared("ALTER TABLE `global_payments` ADD CONSTRAINT `global_payments_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)");
         DB::unprepared("ALTER TABLE `guide_items` ADD CONSTRAINT `guide_items_guide_id_foreign` FOREIGN KEY (`guide_id`) REFERENCES `guides` (`id`) ON DELETE CASCADE");
         DB::unprepared("ALTER TABLE `guide_items` ADD CONSTRAINT `guide_items_item_id_foreign` FOREIGN KEY (`item_id`) REFERENCES `items` (`id`)");
+        DB::unprepared("ALTER TABLE `guides` ADD CONSTRAINT `guides_establishment_id_foreign` FOREIGN KEY (`establishment_id`) REFERENCES `establishments` (`id`)");
         DB::unprepared("ALTER TABLE `guides` ADD CONSTRAINT `guides_document_type_id_foreign` FOREIGN KEY (`document_type_id`) REFERENCES `cat_document_types` (`id`)");
         DB::unprepared("ALTER TABLE `guides` ADD CONSTRAINT `guides_fiscal_environment_foreign` FOREIGN KEY (`fiscal_environment`) REFERENCES `fiscal_environments` (`id`)");
         DB::unprepared("ALTER TABLE `guides` ADD CONSTRAINT `guides_inventory_transaction_id_foreign` FOREIGN KEY (`inventory_transaction_id`) REFERENCES `inventory_transactions` (`id`)");
@@ -210,6 +211,7 @@ return new class extends Migration
         DB::unprepared("ALTER TABLE `inventories` ADD CONSTRAINT `inventories_inventory_transaction_id_foreign` FOREIGN KEY (`inventory_transaction_id`) REFERENCES `inventory_transactions` (`id`)");
         DB::unprepared("ALTER TABLE `inventories` ADD CONSTRAINT `inventories_item_id_foreign` FOREIGN KEY (`item_id`) REFERENCES `items` (`id`) ON DELETE CASCADE");
         DB::unprepared("ALTER TABLE `inventories` ADD CONSTRAINT `inventories_warehouse_id_foreign` FOREIGN KEY (`warehouse_id`) REFERENCES `warehouses` (`id`) ON DELETE CASCADE");
+        DB::unprepared("ALTER TABLE `inventories_transfer` ADD CONSTRAINT `inventories_transfer_establishment_id_foreign` FOREIGN KEY (`establishment_id`) REFERENCES `establishments` (`id`)");
         DB::unprepared("ALTER TABLE `inventories_transfer` ADD CONSTRAINT `inventories_transfer_document_type_id_foreign` FOREIGN KEY (`document_type_id`) REFERENCES `cat_document_types` (`id`)");
         DB::unprepared("ALTER TABLE `inventories_transfer` ADD CONSTRAINT `inventories_transfer_fiscal_environment_foreign` FOREIGN KEY (`fiscal_environment`) REFERENCES `fiscal_environments` (`id`)");
         DB::unprepared("ALTER TABLE `inventories_transfer` ADD CONSTRAINT `inventories_transfer_transfer_collect_id_foreign` FOREIGN KEY (`transfer_collect_id`) REFERENCES `inventories_transfer` (`id`)");
@@ -793,6 +795,7 @@ return new class extends Migration
         DB::unprepared("ALTER TABLE `inventory_transfer_items` DROP FOREIGN KEY `inventory_transfer_items_inventory_transfer_id_foreign`");
         DB::unprepared("ALTER TABLE `inventory_kardex` DROP FOREIGN KEY `inventory_kardex_warehouse_id_foreign`");
         DB::unprepared("ALTER TABLE `inventory_kardex` DROP FOREIGN KEY `inventory_kardex_item_id_foreign`");
+        DB::unprepared("ALTER TABLE `inventories_transfer` DROP FOREIGN KEY `inventories_transfer_establishment_id_foreign`");
         DB::unprepared("ALTER TABLE `inventories_transfer` DROP FOREIGN KEY `inventories_transfer_transfer_collect_id_foreign`");
         DB::unprepared("ALTER TABLE `inventories_transfer` DROP FOREIGN KEY `inventories_transfer_fiscal_environment_foreign`");
         DB::unprepared("ALTER TABLE `inventories_transfer` DROP FOREIGN KEY `inventories_transfer_document_type_id_foreign`");
@@ -830,6 +833,7 @@ return new class extends Migration
         DB::unprepared("ALTER TABLE `hotel_rates` DROP FOREIGN KEY `hotel_rates_establishment_id_foreign`");
         DB::unprepared("ALTER TABLE `hotel_floors` DROP FOREIGN KEY `hotel_floors_establishment_id_foreign`");
         DB::unprepared("ALTER TABLE `hotel_categories` DROP FOREIGN KEY `hotel_categories_establishment_id_foreign`");
+        DB::unprepared("ALTER TABLE `guides` DROP FOREIGN KEY `guides_establishment_id_foreign`");
         DB::unprepared("ALTER TABLE `guides` DROP FOREIGN KEY `guides_warehouse_id_foreign`");
         DB::unprepared("ALTER TABLE `guides` DROP FOREIGN KEY `guides_user_id_foreign`");
         DB::unprepared("ALTER TABLE `guides` DROP FOREIGN KEY `guides_inventory_transaction_id_foreign`");

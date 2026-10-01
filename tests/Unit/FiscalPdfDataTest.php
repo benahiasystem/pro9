@@ -6,6 +6,16 @@ use PHPUnit\Framework\TestCase;
 
 class FiscalPdfDataTest extends TestCase
 {
+    public function test_pdf_data_uses_plain_number_and_independent_control_without_series(): void
+    {
+        $document = new \App\Models\Tenant\Document();
+        $document->setRawAttributes(['id' => 1, 'series' => '', 'number' => 457, 'control_number' => '00-00001234', 'establishment_id' => 2, 'fiscal_environment' => 'demo']);
+        $document->exists = true;
+        $data = FiscalPdfData::forDocument($document);
+        self::assertSame('457', $data['number_full']);
+        self::assertSame('00-00001234', $data['control_number']);
+    }
+
     public function test_printing_reads_own_identifiers_without_provider_queries_or_number_consumption(): void
     {
         foreach ([\App\Models\Tenant\Document::class, \App\Models\Tenant\Dispatch::class] as $model) {

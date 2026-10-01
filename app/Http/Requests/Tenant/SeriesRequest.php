@@ -7,8 +7,13 @@ use Illuminate\Validation\Rule;
 
 class SeriesRequest extends FormRequest
 {
-
-    public $advanced_message;
+    protected function prepareForValidation()
+    {
+        $value = $this->input('number');
+        if ($value === null || is_string($value)) {
+            $this->merge(['number' => \App\Services\SeriesNumbering::normalizeCode($value)]);
+        }
+    }
 
 
     public function authorize()
@@ -33,56 +38,21 @@ class SeriesRequest extends FormRequest
     }
 
 
-    /**
-     *
-     * Validaciones para el formato de la serie, aplica a facturas y boletas
-     *
-     * @return array
-     */
+    /** Optional local series, shared by every document type and emission mode. */
     public function advancedValidationNumber()
     {
-
-        $general_validations = ['required', 'string', 'size:4', 'regex:/^[A-Z0-9]{4}$/'];
-        $advanced_validations = [];
-        $document_type_id = $this->input('document_type_id');
-        $contingency = $this->input('contingency');
-
-        // facturas y boletas
-        if(in_array($document_type_id, ['01']))
-        {
-
-            switch ($document_type_id)
-            {
-                // validaciones para facturas
-                case '01':
-                    if($contingency)
-                    {
-                        $regex = 'regex:"^([0-9]{4})?$"';
-                        $this->advanced_message = ' - Formato del campo: [0-9]{4}, Ejemplo: 0001';
-                    }
-                    else
-                    {
-                        $regex = 'regex:"^([F][A-Z0-9]{3})?$"';
-                        $this->advanced_message = ' - Formato del campo: [F][A-Z0-9]{3}, Ejemplo: FF01';
-                    }
-
-                    $advanced_validations[] = $regex;
-
-                    break;
-            }
-
-            return array_merge($general_validations, $advanced_validations);
+        if ($this->input('number') === null || (is_string($this->input('number')) && trim($this->input('number')) === '')) {
+            return ['nullable', 'string'];
         }
-        // facturas y boletas
-
-        return $general_validations;
+        return ['nullable', 'string', 'max:20', 'regex:/\A[A-Za-z0-9-]*\z/'];
     }
-
 
     public function messages()
     {
         return [
-            'number.regex' => 'El formato de la serie es inválido'.$this->advanced_message ?? '',
+            'number.max' => 'La serie debe tener hasta 20 caracteres.',
+            'number.string' => 'La serie debe ser un texto.',
+            'number.regex' => 'La serie sólo admite letras, números y guiones (-), sin espacios internos ni otros símbolos.',
         ];
     }
 

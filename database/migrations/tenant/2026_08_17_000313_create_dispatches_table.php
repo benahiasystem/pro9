@@ -169,7 +169,7 @@ CREATE TABLE `dispatches` (
   `reference_documents` json DEFAULT NULL,
   `custom_fields_data` json DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `dispatches_environment_type_series_number_unique` (`fiscal_environment`,`document_type_id`,`series`,`number`),
+  UNIQUE KEY `dispatches_environment_type_series_number_unique` (`establishment_id`,`fiscal_environment`,`document_type_id`,`series`,`number`),
   KEY `dispatches_user_id_foreign` (`user_id`),
   KEY `dispatches_establishment_id_foreign` (`establishment_id`),
   KEY `dispatches_fiscal_environment_foreign` (`fiscal_environment`),

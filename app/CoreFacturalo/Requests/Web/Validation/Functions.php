@@ -31,7 +31,7 @@ class Functions
 
     public static function validateSeries($inputs)
     {
-        return \App\Services\SeriesNumbering::resolve($inputs['document_type_id'], $inputs['series'], (int) $inputs['establishment_id']);
+        return \App\Services\SeriesNumbering::resolve($inputs['document_type_id'], $inputs['series'] ?? null, (int) $inputs['establishment_id']);
     }
 
     public static function person($inputs, $type)
@@ -99,7 +99,7 @@ class Functions
             $series = Series::findOrFail($inputs['series_id']);
             $code = $series->number;
         }
-        if (!is_string($code)) throw new Exception('Seleccione explícitamente una serie.');
+        if ($code !== null && !is_string($code)) throw new Exception('La serie debe ser un texto.');
         return \App\Services\SeriesNumbering::resolve($inputs['document_type_id'], $code, (int) $inputs['establishment_id']);
     }
 

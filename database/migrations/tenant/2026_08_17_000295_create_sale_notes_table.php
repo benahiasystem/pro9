@@ -185,6 +185,7 @@ CREATE TABLE `sale_notes` (
   `user_rel_subscription_plan_id` int(10) unsigned DEFAULT '0' COMMENT 'Relacion con suscripciones',
   `voided_description` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`id`),
+  UNIQUE KEY `sale_notes_branch_number_unique` (`establishment_id`,`fiscal_environment`,`series`,`number`),
   UNIQUE KEY `sale_notes_unique_filename_unique` (`unique_filename`),
   KEY `sale_notes_user_id_foreign` (`user_id`),
   KEY `sale_notes_establishment_id_foreign` (`establishment_id`),

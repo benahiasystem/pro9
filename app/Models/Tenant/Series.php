@@ -97,7 +97,7 @@
          */
         public function setNumberAttribute($value)
         {
-            $this->attributes['number'] = strtoupper($value);
+            $this->attributes['number'] = \App\Services\SeriesNumbering::normalizeCode($value);
         }
 
         /**
@@ -105,7 +105,9 @@
          */
         public function documents()
         {
-            return $this->hasMany(Document::class, 'series', 'number');
+            return $this->hasMany(Document::class, 'series', 'number')
+                ->where('documents.establishment_id', $this->establishment_id)
+                ->where('documents.document_type_id', $this->document_type_id);
         }
 
         /**

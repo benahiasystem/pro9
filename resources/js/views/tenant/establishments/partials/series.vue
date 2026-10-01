@@ -62,7 +62,7 @@
                 <small class="text-muted d-block mb-1">Series dedicadas disponibles</small>
                 <el-checkbox-group v-if="selectableSeries.length" v-model="groupForm.series_ids">
                     <el-checkbox v-for="serie in selectableSeries" :key="serie.id" :label="serie.id" border size="small" class="mb-1 me-1">
-                        <span class="series-number">{{ serie.number }}</span>
+                        <span class="series-number">{{ serie.number || 'Sin serie' }}</span>
                     </el-checkbox>
                 </el-checkbox-group>
                 <small v-else class="text-muted">No hay series dedicadas sin agrupar. Crea series con emisión "Dedicado" y luego agrúpalas.</small>
@@ -80,8 +80,12 @@
                 <tr>
                     <th style="width:90px">Categoría</th>
                     <th>Tipo de documento</th>
-                    <th>Número</th>
-                    <th style="width:120px">Correlativo</th>
+                    <th>Serie</th>
+                    <th style="width:150px">Número <el-tooltip content="numeración interna del sistema" placement="top">
+                            <el-popover ref="tableNumberHelp" placement="top" trigger="manual" content="numeración interna del sistema">
+                                <button slot="reference" type="button" class="series-info" aria-label="numeración interna del sistema" @click="$refs.tableNumberHelp.doShow()" @focus="$refs.tableNumberHelp.doShow()" @blur="$refs.tableNumberHelp.doClose()"><i class="el-icon-info" aria-hidden="true"></i></button>
+                            </el-popover>
+                        </el-tooltip></th>
                     <th class="text-right"></th>
                 </tr>
                 </thead>
@@ -90,7 +94,7 @@
                     <td><span class="badge badge-light text-dark border">{{ categoryLabel(row.category) }}</span></td>
                     <td>{{ row.document_type_description }}</td>
                     <td>
-                        <span class="series-number">{{ row.number }}</span>
+                        <span class="series-number">{{ row.number || 'Sin serie' }}</span>
                         <span class="badge badge-success mx-1" v-if="row.dedicated">DEDICADO</span>
                         <span class="badge badge-warning mx-1" v-else-if="row.contingency">CONTINGENCIA</span>
                         <span class="badge badge-info mx-1" v-if="row.dedicated && row.group_name">{{ row.group_name }}</span>
@@ -122,28 +126,27 @@
             <div class="row no-gutters mb-2">
                 <div class="col-5">
                     <el-select v-model="form.seriesTypeKey" size="small" placeholder="Tipo de documento"
-                               filterable @change="onTypeChange" style="min-width:280px">
+                               filterable style="min-width:280px">
                         <el-option-group v-for="group in groupedTypes" :key="group.value" :label="group.label">
                             <el-option v-for="type in group.items" :key="type.key" :label="type.label" :value="type.key"></el-option>
                         </el-option-group>
                     </el-select>
                 </div>
                 <div class="col-4">
-                    <el-radio-group v-if="form.emission !== 'contingency'" v-model="form.mode" size="small" @change="refreshNumber" class="me-2">
-                        <el-radio-button label="auto">Auto</el-radio-button>
-                        <el-radio-button label="manual">Manual</el-radio-button>
-                    </el-radio-group>
-                    <el-input v-model="form.number" size="small" :maxlength="4" :placeholder="numberPlaceholder"
-                          :disabled="form.emission !== 'contingency' && form.mode === 'auto'" style="width:130px"></el-input>
+                    <el-input v-model="form.number" size="small" :maxlength="20" placeholder="Serie (opcional)" aria-label="Serie" style="width:100%"></el-input>
                 </div>
                 <div class="col-3 text-end">
-                    <el-input v-model.number="form.correlative" size="small" type="number" :min="1" style="width:160px">
-                        <template slot="prepend">Correlativo</template>
+                    <el-input v-model.number="form.correlative" size="small" type="number" :min="1" style="width:210px">
+                        <template slot="prepend">Número <el-tooltip content="numeración interna del sistema" placement="top">
+                            <el-popover ref="createNumberHelp" placement="top" trigger="manual" content="numeración interna del sistema">
+                                <button slot="reference" type="button" class="series-info" aria-label="numeración interna del sistema" @click="$refs.createNumberHelp.doShow()" @focus="$refs.createNumberHelp.doShow()" @blur="$refs.createNumberHelp.doClose()"><i class="el-icon-info" aria-hidden="true"></i></button>
+                            </el-popover>
+                        </el-tooltip></template>
                     </el-input>
                 </div>
             </div>
 
-            <!-- Línea 2: número + auto/manual + correlativo + acciones -->
+            <!-- Modalidad de serie y acciones -->
             <div class="row">
                 <div class="col-4">
                     <el-radio-group v-model="form.emission" size="small" @change="onEmissionChange">
@@ -167,7 +170,7 @@
         <!-- Footer -->
         <div class="d-flex flex-wrap align-items-center mt-3" style="gap:14px">
             <el-button type="primary" icon="el-icon-plus" @click="clickNew">Nuevo</el-button>
-            <small class="text-muted">El <b>correlativo</b> es el número desde el que continuará la serie. Útil al migrar de otro sistema; por defecto 1.</small>
+            <small class="text-muted">La <b>Número</b> configura el primer número de la numeración interna; por defecto 1. La serie es opcional.</small>
         </div>
     </el-dialog>
 </template>
@@ -206,7 +209,7 @@
                 // 'all' incluye todo (también dedicadas); el catálogo define el orden funcional.
                 return items.sort((a, b) => {
                     const byType = (a.sort_order || Number.MAX_SAFE_INTEGER) - (b.sort_order || Number.MAX_SAFE_INTEGER)
-                    return byType || a.number.localeCompare(b.number)
+                    return byType || (a.number || '').localeCompare(b.number || '')
                 })
             },
             groupedTypes() {
@@ -222,10 +225,6 @@
             selectedType() {
                 return this.seriesTypes.find(type => type.key === this.form.seriesTypeKey) || null
             },
-            numberPlaceholder() {
-                if (this.form.emission === 'contingency') return '____'
-                return this.selectedType ? this.selectedType.prefix + '__' : '____'
-            },
             emptyMessage() {
                 if (this.filter === 'contingency') return 'No hay series de contingencia.'
                 if (this.filter === 'dedicated') return 'No hay series dedicadas.'
@@ -237,7 +236,7 @@
                 const map = new Map()
                 this.availableSeries.forEach(serie => map.set(serie.id, serie))
                 this.editingGroupSeries.forEach(serie => map.set(serie.id, serie))
-                return Array.from(map.values()).sort((a, b) => a.number.localeCompare(b.number))
+                return Array.from(map.values()).sort((a, b) => (a.number || '').localeCompare(b.number || ''))
             },
         },
         // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
@@ -250,7 +249,7 @@
         // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
         methods: {
             emptyForm() {
-                return {seriesTypeKey: null, number: '', mode: 'auto', correlative: 1, emission: 'normal', error: ''}
+                return {seriesTypeKey: null, number: '', correlative: 1, emission: 'normal', error: ''}
             },
             async getTables() {
                 const {data} = await this.$http.get(`/${this.resource}/tables`)
@@ -407,32 +406,11 @@
             pickFirstType() {
                 const first = this.firstAvailableType()
                 this.form.seriesTypeKey = first ? first.key : null
-                this.refreshNumber()
-            },
-            onTypeChange() {
-                this.refreshNumber()
             },
             onEmissionChange() {
-                if (this.form.emission === 'contingency') {
-                    this.form.mode = 'manual'
-                    this.form.number = ''
-                }
                 const stillValid = this.selectedType &&
                     this.optionsByCategory(this.selectedType.category).some(type => type.key === this.form.seriesTypeKey)
                 if (!stillValid) this.pickFirstType()
-                else this.refreshNumber()
-            },
-            async refreshNumber() {
-                if (this.form.emission === 'contingency') {
-                    this.form.number = ''
-                    return
-                }
-                if (this.form.mode === 'auto' && this.selectedType) {
-                    const {data} = await this.$http.get(`/${this.resource}/next-code`, {params: {prefix: this.selectedType.prefix}})
-                    this.form.number = data.number
-                } else {
-                    this.form.number = ''
-                }
             },
             cancelCreate() {
                 this.creating = false
@@ -444,11 +422,16 @@
                     return
                 }
                 this.form.error = ''
+                const series = (this.form.number || '').trim()
+                if (series.length > 20 || !/^[a-zA-Z0-9-]*$/.test(series)) {
+                    this.form.error = 'La serie debe tener hasta 20 caracteres y sólo admite letras, números y guiones (-).'
+                    return
+                }
                 this.saving = true
                 const payload = {
                     establishment_id: this.establishmentId,
                     document_type_id: this.selectedType.document_type_id,
-                    number: (this.form.number || '').toUpperCase(),
+                    number: series.toUpperCase(),
                     contingency: this.form.emission === 'contingency',
                     dedicated: this.form.emission === 'dedicated',
                     correlative: Math.max(1, parseInt(this.form.correlative) || 1),
@@ -491,7 +474,7 @@
                     this.$message.warning('La serie ya tiene comprobantes: no se puede eliminar.')
                     return
                 }
-                this.$confirm('¿Eliminar la serie ' + row.number + '?', 'Confirmar', {
+                this.$confirm('¿Eliminar la serie ' + (row.number || 'Sin serie') + '?', 'Confirmar', {
                     confirmButtonText: 'Eliminar', cancelButtonText: 'Cancelar', type: 'warning',
                 }).then(async () => {
                     const {data} = await this.$http.delete(`/${this.resource}/${row.id}`)
@@ -512,6 +495,8 @@
 </script>
 
 <style scoped>
+    .series-info { border: 0; background: transparent; color: #7A8794; cursor: pointer; padding: 0 3px; }
+    .series-info:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
     .series-title { display: flex; align-items: center; gap: 10px; }
     .series-number { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-weight: 700; letter-spacing: .04em; }
     .series-create { background: #F6F8FA; border: 1px solid #EAEDF0; border-radius: 8px; }

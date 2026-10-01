@@ -31,7 +31,7 @@
             <table class="t-pb-5 t-pt-20">
                 <tr>
                     <td class="t-fs-xxxl">{{ $document->document_type_name }}</td>
-                    <td class="t-fs-xxl t-text-right">{{ $document->series.' - '.$document->number }}</td>
+                    <td class="t-fs-xxl t-text-right">{{ \App\Services\Fiscal\FiscalIdentity::numberFull($document->series, $document->number) }}</td>
                 </tr>
             </table>
         </td>

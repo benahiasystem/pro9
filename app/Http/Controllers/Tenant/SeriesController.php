@@ -85,6 +85,9 @@ class SeriesController extends Controller
      */
     public function store(SeriesRequest $request)
     {
+        if (is_string($request->input('number')) || $request->input('number') === null) {
+            $request->merge(['number' => \App\Services\SeriesNumbering::normalizeCode($request->input('number'))]);
+        }
         return \App\Services\SeriesAdministration::transaction(function () use ($request) {
             $validate_series = $this->validateSeries($request);
             if (!$validate_series['success']) return $validate_series;
@@ -216,6 +219,9 @@ class SeriesController extends Controller
             ['document_type_id', $request->document_type_id],
             ['number', $request->number],
         ]);
+        if ($request->number === '') {
+            $query->where('establishment_id', $request->input('establishment_id'));
+        }
 
         if ($request->input('id')) {
             $query->where('id', '!=', $request->input('id'));

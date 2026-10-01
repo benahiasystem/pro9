@@ -154,7 +154,7 @@ class Retention extends ModelTenant
      */
     public function getNumberFullAttribute()
     {
-        return $this->series.'-'.$this->number;
+        return \App\Services\Fiscal\FiscalIdentity::numberFull($this->series, $this->number);
     }
 
     /**

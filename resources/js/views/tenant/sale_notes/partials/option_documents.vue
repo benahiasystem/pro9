@@ -19,7 +19,7 @@
                     <div class="form-group" :class="{'has-danger': errors.series_id}">
                         <label class="control-label">Serie</label>
                         <el-select v-model="document.series_id">
-                            <el-option v-for="option in series" :key="option.id" :value="option.id" :label="option.number"></el-option>
+                            <el-option v-for="option in series" :key="option.id" :value="option.id" :label="option.number || 'Sin serie'"></el-option>
                         </el-select>
                         <small class="form-control-feedback" v-if="errors.series_id" v-text="errors.series_id[0]"></small>
                     </div>
@@ -266,6 +266,9 @@
     import moment from "moment";
     import ListRestrictItems from '@components/secondary/ListRestrictItems.vue'
     import {fnRestrictSaleItemsCpe} from '@mixins/functions'
+    // ######## INICIO MONEDA VENEZUELA HOTEL ########
+    import {ensureExchangeRateSale} from '../../../../helpers/ensure-exchange-rate-sale'
+    // ######## FIN MONEDA VENEZUELA HOTEL ########
     import {
         hydrateItemLots,
         validateItemsLots,
@@ -615,13 +618,12 @@
                 // ######## INICIO MONEDA VENEZUELA HOTEL ########
                 try {
                     await ensureExchangeRateSale(this.document, this.$http);
+                    // Conservar la tasa validada al enviar la factura.
                 } catch (error) {
                     return this.$message.error(error.message || 'No se pudo obtener el tipo de cambio.');
                 }
                 // ######## FIN MONEDA VENEZUELA HOTEL ########
                 this.loading_submit = true;
-
-                this.document.exchange_rate_sale = 1;
 
                 // Reasegurar lotes justo antes del POST (por si mutaron en validaciones previas)
                 this.ensureItemsLotsForSubmit();

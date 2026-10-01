@@ -16,7 +16,7 @@
                     <div class="col-lg-3">
                         <div class="form-group" :class="{'has-danger': errors.series}">
                             <label class="control-label">Serie</label>
-                            <el-input v-model="form.series" :maxlength="4"></el-input>
+                            <el-input v-model="form.series" :maxlength="20"></el-input>
                             <small class="form-control-feedback" v-if="errors.series" v-text="errors.series[0]"></small>
                         </div>
                     </div>

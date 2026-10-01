@@ -507,9 +507,13 @@ class Document extends ModelTenant
      *
      * @return int
      */
-    public static function getLastNumberBySerie($serie)
+    public static function getLastNumberBySerie($serie, $establishmentId = null)
     {
-        $t = Document::where('series', $serie)->select('number')->orderby('number', 'DESC')->first();
+        $serie = \App\Services\SeriesNumbering::normalizeCode($serie);
+        if ($serie === '' && !$establishmentId) throw new \InvalidArgumentException('La numeración sin serie requiere sucursal.');
+        $query = Document::where('series', $serie);
+        if ($establishmentId !== null) $query->where('establishment_id', $establishmentId);
+        $t = $query->select('number')->orderby('number', 'DESC')->first();
         if (!empty($t)) {
             return $t->number;
         }

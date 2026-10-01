@@ -7,6 +7,14 @@ use Illuminate\Validation\Rule;
 
 class SearchRequest extends FormRequest
 {
+    protected function prepareForValidation()
+    {
+        $value = $this->input('series');
+        if ($value === null || is_string($value)) {
+            $this->merge(['series' => \App\Services\SeriesNumbering::normalizeCode($value)]);
+        }
+    }
+
     public function authorize()
     {
         return true;
@@ -15,11 +23,12 @@ class SearchRequest extends FormRequest
     public function rules()
     {
         return [
+            'establishment_id' => ['nullable', 'integer', 'exists:tenant.establishments,id'],
             'document_type_id' => [
                 'required',
             ],
             'series' => [
-                'required',
+                'nullable', 'string', 'max:20', 'regex:/\A[A-Za-z0-9-]*\z/',
             ],
             'number' => [
                 'required',

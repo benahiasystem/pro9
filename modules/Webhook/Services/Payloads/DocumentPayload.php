@@ -24,7 +24,7 @@ class DocumentPayload implements PayloadBuilderInterface
         return [
             'id' => $model->id,
             'external_id' => $model->external_id,
-            'number' => $model->series.'-'.$model->number,
+            'number' => $model->number_full,
             'filename' => $model->filename,
             'state_type_id' => $model->state_type_id,
             'state_type_description' => optional(StateType::find($model->state_type_id))->description,

@@ -46,7 +46,13 @@ class InventoryTransfer extends ModelTenant
 
     use UsesTenantConnection;
 
+    public function getNumberFullAttribute(): string
+    {
+        return \App\Services\Fiscal\FiscalIdentity::numberFull($this->series, $this->number);
+    }
+
     protected $fillable = [
+        'establishment_id',
         'external_id',
         'user_id',
         'fiscal_environment',

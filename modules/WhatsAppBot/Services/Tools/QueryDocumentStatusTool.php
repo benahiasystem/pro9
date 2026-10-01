@@ -23,11 +23,20 @@ class QueryDocumentStatusTool implements ToolInterface
                     'properties' => [
                         'number_full' => [
                             'type' => 'string',
-                            'description' => 'Serie y número del comprobante (ej. FF01-15, FC01-9).',
+                            'description' => 'Serie y número del comprobante (FF01-15, FC01-9), o sólo número si no tiene serie.',
                         ],
                         'document_id' => [
                             'type' => 'integer',
                             'description' => 'Alternativa: ID interno del Document (si lo conoces).',
+                        ],
+                        'establishment_id' => [
+                            'type' => 'integer',
+                            'description' => 'Sucursal requerida cuando el comprobante no tiene serie.',
+                        ],
+                        'document_type_id' => [
+                            'type' => 'string',
+                            'enum' => ['01', '07', '08'],
+                            'description' => 'Tipo: 01 factura (por defecto), 07 crédito u 08 débito.',
                         ],
                     ],
                 ],
@@ -44,12 +53,14 @@ class QueryDocumentStatusTool implements ToolInterface
         }
 
         if (!$document && !empty($arguments['number_full'])) {
-            $parts = explode('-', strtoupper(trim($arguments['number_full'])));
-            if (count($parts) === 2) {
+            $parts = \App\Services\Fiscal\FiscalIdentity::parseNumberFull((string) $arguments['number_full']);
+            if ($parts !== null) {
                 [$series, $number] = $parts;
-                $document = Document::where('series', $series)
-                    ->where('number', (int) ltrim($number, '0'))
-                    ->first();
+                $branch = $arguments['establishment_id'] ?? optional(auth()->user())->establishment_id;
+                if ($series === '' && !$branch) return ['status' => 'error', 'error' => 'Indique la sucursal del comprobante sin serie.'];
+                $query = Document::where('series', $series)->where('number', (int) ltrim($number, '0'));
+                if ($series === '') $query->where('establishment_id', $branch)->where('document_type_id', $arguments['document_type_id'] ?? '01');
+                $document = $query->first();
             }
         }
 
@@ -58,7 +69,7 @@ class QueryDocumentStatusTool implements ToolInterface
         }
 
         return [
-            'number_full' => $document->series . '-' . $document->number,
+            'number_full' => $document->number_full,
             'type' => $document->document_type->description,
             'date' => $document->date_of_issue?->format('Y-m-d'),
             'total' => (float) $document->total,

@@ -10,13 +10,21 @@ use Modules\Document\Models\SeriesConfiguration;
 /** Must run in the transaction that inserts the document. */
 final class SeriesNumbering
 {
-    public static function next(Model $model, string $type, string $code, $number, ?int $establishmentId = null): int
+    public static function normalizeCode(?string $code): string
+    {
+        return strtoupper(trim($code ?? ''));
+    }
+
+    public static function next(Model $model, string $type, ?string $code, $number, ?int $establishmentId = null): int
     {
         $connection = $model->getConnection();
         if ($connection->transactionLevel() < 1) throw new \LogicException('La numeración requiere una transacción de guardado.');
         \App\Models\Tenant\Company::query()->lockForUpdate()->firstOrFail();
         $series = self::resolve($type, $code, $establishmentId, true);
+        $model->series = $series->number;
+        $model->establishment_id = $series->establishment_id;
         $query = $model->newQueryWithoutRelationships()->where('series', $series->number)
+            ->where('establishment_id', $series->establishment_id)
             ->where('fiscal_environment', $model->fiscal_environment ?? \App\Models\Tenant\Company::active()->fiscal_environment);
         if ($model->getTable() !== 'sale_notes') $query->where('document_type_id', $type);
         $max = $query->max('number');
@@ -35,9 +43,13 @@ final class SeriesNumbering
         return (int) $number;
     }
 
-    public static function resolve(string $type, string $code, ?int $establishmentId = null, bool $lock = false): Series
+    public static function resolve(string $type, ?string $code, ?int $establishmentId = null, bool $lock = false): Series
     {
-        $query = Series::where('document_type_id', $type)->where('number', strtoupper($code));
+        $code = self::normalizeCode($code);
+        if ($code === '' && $establishmentId === null) {
+            throw ValidationException::withMessages(['establishment_id' => 'Indique la sucursal para la numeración sin serie.']);
+        }
+        $query = Series::where('document_type_id', $type)->where('number', $code);
         if ($establishmentId !== null) $query->where('establishment_id', $establishmentId);
         if ($lock) $query->lockForUpdate();
         $series = $query->first();
@@ -62,7 +74,8 @@ final class SeriesNumbering
         $db = $series->getConnection();
         foreach (['documents', 'dispatches', 'sale_notes', 'retentions', 'perceptions', 'purchase_settlements', 'guides', 'inventories_transfer'] as $table) {
             if (!$db->getSchemaBuilder()->hasTable($table)) continue;
-            $query = $db->table($table)->where('series', $series->number);
+            $query = $db->table($table)->where('series', $series->number)
+                ->where('establishment_id', $series->establishment_id);
             if ($table === 'sale_notes') {
                 if ($series->document_type_id !== '80') continue;
             } else $query->where('document_type_id', $series->document_type_id);

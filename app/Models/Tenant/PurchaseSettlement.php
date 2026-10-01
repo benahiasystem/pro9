@@ -69,9 +69,13 @@ class PurchaseSettlement extends ModelTenant
         'date_of_issue' => 'date',
     ];
 
-    public static function getLastNumberBySerie($serie)
+    public static function getLastNumberBySerie($serie, $establishmentId = null)
     {
-        $t = PurchaseSettlement::where('series', $serie)->select('number')->orderby('number', 'DESC')->first();
+        $serie = \App\Services\SeriesNumbering::normalizeCode($serie);
+        if ($serie === '' && !$establishmentId) throw new \InvalidArgumentException('La numeración sin serie requiere sucursal.');
+        $query = PurchaseSettlement::where('series', $serie);
+        if ($establishmentId !== null) $query->where('establishment_id', $establishmentId);
+        $t = $query->select('number')->orderby('number', 'DESC')->first();
         if ( !empty($t)) {
             return $t->number;
         }
@@ -227,7 +231,7 @@ class PurchaseSettlement extends ModelTenant
         }
     public function getNumberFullAttribute()
     {
-        return $this->series.'-'.$this->number;
+        return \App\Services\Fiscal\FiscalIdentity::numberFull($this->series, $this->number);
     }
 
     public function getNumberToLetterAttribute()

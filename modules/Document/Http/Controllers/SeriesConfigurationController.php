@@ -35,11 +35,7 @@ class SeriesConfigurationController extends Controller
 
         $records = SeriesConfiguration::get()->transform(function($row, $key) {
 
-          if($row->document_type_id == '09') {
-            $quantity_documents = Dispatch::where('series', $row->series)->where('document_type_id', '09')->count();
-          } else{
-            $quantity_documents = $this->getQuantityDocuments($row->document_type_id, $row->series);
-          }
+            $quantity_documents = \App\Services\SeriesNumbering::used($row->relationSeries) ? 1 : 0;
 
             return [
                 'id' => $row->id,
@@ -90,7 +86,7 @@ class SeriesConfigurationController extends Controller
     {
         \App\Services\SeriesAdministration::authorize();
         $series = Series::findOrFail($request->series_id);
-        if ($series->number !== strtoupper($request->series) || $series->document_type_id !== $request->document_type_id) {
+        if ($series->number !== \App\Services\SeriesNumbering::normalizeCode($request->series) || $series->document_type_id !== $request->document_type_id) {
             throw \Illuminate\Validation\ValidationException::withMessages(['series' => 'La configuración no corresponde a la serie seleccionada.']);
         }
         return app(\App\Http\Controllers\Tenant\SeriesController::class)->updateCorrelative(

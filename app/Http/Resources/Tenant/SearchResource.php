@@ -18,7 +18,7 @@ class SearchResource extends JsonResource
         return [
             'id' => $this->id,
             'customer' => $this->customer->number,
-            'number' => $this->series.'-'.$this->number,
+            'number' => $this->number_full,
             'total' => (float) $this->total,
             'download_pdf' => $this->download_external_pdf,
         ];

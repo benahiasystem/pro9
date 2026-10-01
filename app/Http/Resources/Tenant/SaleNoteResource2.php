@@ -17,7 +17,7 @@ class SaleNoteResource2 extends JsonResource
      */
     public function toArray($request)
     {
-        $serie = Series::where('number', $this->series)->first();
+        $serie = Series::where('number', $this->series)->where('document_type_id', '80')->where('establishment_id', $this->establishment_id)->first();
         return [
             'number' => $this->number,
             'series_id' => ($serie) ? $serie->id : null,

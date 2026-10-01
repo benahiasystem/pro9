@@ -13,7 +13,7 @@ El módulo de asignación anticipada y sus perfiles/secuencias/reservas fue reti
 
 Leer [referencia HKA](../../../informes/imprenta_digital_hka_api.md) y contrastar el [Swagger HKA](https://demoemisionv2.thefactoryhka.com.ve/swagger/v1/swagger.json) antes de implementar nuevas operaciones. Los contratos del proveedor no determinan el esquema local.
 
-- Número documental: correlativo local por tipo y serie. Número de control: identificador de imprenta independiente; conservarlo como texto, con prefijo y ceros. Un documento 16 puede tener control `00-00000021`.
+- Número documental: correlativo local por sucursal, tipo y serie; la serie local puede estar vacía. Número de control: identificador de imprenta independiente; conservarlo como texto, con prefijo y ceros. Un documento 16 puede tener control `00-00000021`.
 - Traducción Pro9 → HKA: Factura `01→01`, crédito `07→02`, débito `08→03`, entrega `09→04`. No modificar códigos internos ni catálogos por los del proveedor.
 - Todas las operaciones autenticadas usan JWT y host HTTPS del ambiente de empresa, según [conexión HKA](../conectar-api-hka/SKILL.md). Nunca devolver credenciales/JWT ni mensajes crudos del proveedor.
 - `POST /api/AsignarNumeraciones` utiliza `detalleAsignacion`; sus detalles de reserva no sustituyen una verificación de tipo, serie, rango y cobertura. Es una mutación remota; no llamar al guardar una serie.

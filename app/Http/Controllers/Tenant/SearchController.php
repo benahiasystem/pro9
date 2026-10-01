@@ -19,8 +19,11 @@ class SearchController extends Controller
     public function tables()
     {
         $document_types = DocumentType::whereIn('id', ['01', '03', '07', '08'])->get();
-
-        return compact('document_types');
+        $establishments = \App\Models\Tenant\Establishment::select('id', 'description');
+        $user = auth()->user();
+        if ($user && $user->type !== 'admin') $establishments->where('id', $user->establishment_id);
+        $establishments = $establishments->get();
+        return compact('document_types', 'establishments');
     }
 
     public function store(SearchRequest $request)
@@ -35,13 +38,21 @@ class SearchController extends Controller
             ];
         }
 
-        $document = Document::where('date_of_issue', $request->input('date_of_issue'))
+        $series = \App\Services\SeriesNumbering::normalizeCode($request->input('series'));
+        $branch = $request->input('establishment_id') ?? optional(auth()->user())->establishment_id;
+        $user = auth()->user();
+        if ($user && $user->type !== 'admin') $branch = $user->establishment_id;
+        if ($series === '' && !$branch) {
+            return ['success' => false, 'message' => 'Indique la sucursal para buscar una factura sin serie.'];
+        }
+        $query = Document::where('date_of_issue', $request->input('date_of_issue'))
                             ->where('document_type_id', $request->input('document_type_id'))
-                            ->where('series', strtoupper($request->input('series')))
+                            ->where('series', $series)
                             ->where('number', (int) $request->input('number'))
                             ->where('total', $request->input('total'))
-                            ->where('customer_id', $customer->id)
-                            ->first();
+                            ->where('customer_id', $customer->id);
+        if ($series === '') $query->where('establishment_id', $branch);
+        $document = $query->first();
         if ($document) {
             return [
                 'success' => true,

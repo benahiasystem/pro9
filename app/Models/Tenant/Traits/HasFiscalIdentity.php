@@ -15,7 +15,8 @@ trait HasFiscalIdentity
 
     public function scopeWhereFiscalIdentifiers(Builder $query, $series = null, $number = null, $control = null): Builder
     {
-        if ($series !== null && $series !== '') $query->where($this->qualifyColumn('series'), 'like', '%' . $series . '%');
+        if ($series === FiscalIdentity::EMPTY_SERIES_FILTER) $query->where($this->qualifyColumn('series'), '');
+        elseif ($series !== null && $series !== '') $query->where($this->qualifyColumn('series'), 'like', '%' . $series . '%');
         if ($number !== null && $number !== '') $query->where($this->qualifyColumn('number'), $number);
         if ($control !== null && $control !== '') {
             try {

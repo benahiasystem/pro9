@@ -317,7 +317,7 @@
                             document_items.item_id as item_id, documents.date_of_issue as date_of_issue");
 
             if (isset($params['series'])) {
-                $query->where('series', $params['series']);
+                $query->where('series', $params['series'] === \App\Services\Fiscal\FiscalIdentity::EMPTY_SERIES_FILTER ? '' : $params['series']);
             }
             if (isset($params['establishment_id'])) {
                 $query->where('establishment_id', $params['establishment_id']);

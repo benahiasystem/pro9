@@ -151,7 +151,7 @@ export default {
   methods: {
     getObjectForNote(data){
       return {
-        number_full : `${data.series}-${data.number}`,
+        number_full : data.series ? `${data.series}-${data.number}` : String(data.number),
         id : data.id,
         items : data.items,
       }

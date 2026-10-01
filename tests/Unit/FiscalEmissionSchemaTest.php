@@ -329,6 +329,9 @@ class FiscalEmissionSchemaTest extends TestCase
             // ######### FIN CAMBIO CATÁLOGO MOTIVOS DE TRASLADO VENEZUELA
             // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
             $current = $this->schemaSnapshot($db);
+            foreach (['retentions', 'perceptions', 'purchase_settlements'] as $table) {
+                self::assertSame('varchar(20)', $db->select("SHOW COLUMNS FROM `$table` LIKE 'series'")[0]->Type);
+            }
             if (getenv('PRO9_EXPORT_CONTRACT') === '1') {
                 file_put_contents('/tmp/pro9-fresh-final-schema.json', json_encode($current, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
             }
@@ -472,6 +475,58 @@ class FiscalEmissionSchemaTest extends TestCase
             $transfer = \Modules\Inventory\Models\InventoryTransfer::create(['document_type_id' => 'U4', 'series' => 'AT01', 'number' => '#',
                 'warehouse_id' => $warehouse, 'warehouse_destination_id' => $warehouse, 'quantity' => 1]);
             self::assertSame(100, $transfer->number);
+            // Real commercial persistence with blank series in two branches.
+            $secondBranch = $db->table('establishments')->insertGetId(['description' => 'Second branch', 'country_id' => 'VE', 'department_id' => '14', 'province_id' => '0229', 'district_id' => '000619', 'address' => 'Test', 'telephone' => '04121234567', 'code' => '0001']);
+            $secondWarehouse = $db->table('warehouses')->insertGetId(['establishment_id' => $secondBranch, 'description' => 'Second warehouse']);
+            $db->table('item_warehouse')->insert(['item_id' => $item->id, 'warehouse_id' => $secondWarehouse, 'stock' => 100]);
+            $filenames = [];
+            foreach ([$establishment => $warehouse, $secondBranch => $secondWarehouse] as $branch => $originWarehouse) {
+                foreach (['01', '07', '08', '09', '80', 'U2', 'U3', 'U4'] as $type) {
+                    $db->table('series')->insert(['establishment_id' => $branch, 'document_type_id' => $type, 'number' => '']);
+                }
+                $blankInput = array_replace($input, ['establishment_id' => $branch, 'series' => '', 'external_id' => \Illuminate\Support\Str::uuid()->toString()]);
+                $blankInput['items'][0]['warehouse_id'] = $originWarehouse;
+                $blankFirst = (new \App\CoreFacturalo\Facturalo())->save($blankInput)->getDocument();
+                $blankInput['external_id'] = \Illuminate\Support\Str::uuid()->toString();
+                $blankSecond = (new \App\CoreFacturalo\Facturalo())->save($blankInput)->getDocument();
+                self::assertSame('1', $blankFirst->number_full);
+                self::assertSame('2', $blankSecond->number_full);
+                self::assertSame('', $blankFirst->series);
+                self::assertNull($blankFirst->control_number);
+                $filenames[] = $blankFirst->filename;
+                foreach (['07' => 'credit', '08' => 'debit'] as $type => $kind) {
+                    $blankNote = array_replace($blankInput, ['external_id' => \Illuminate\Support\Str::uuid()->toString(), 'document_type_id' => $type, 'type' => $kind,
+                        'note' => ['affected_document_id' => $blankFirst->id, 'note_type_id' => '01', 'note_description' => 'Blank series note']]);
+                    $savedNote = (new \App\CoreFacturalo\Facturalo())->save($blankNote)->getDocument();
+                    self::assertSame('1', $savedNote->number_full);
+                    self::assertSame($blankFirst->id, $savedNote->note->affected_document_id);
+                }
+                $blankOrder = array_replace($order, ['establishment_id' => $branch, 'series' => '', 'external_id' => \Illuminate\Support\Str::uuid()->toString(), 'discount_stock' => false]);
+                $blankOrder['items'][0]['warehouse_id'] = $originWarehouse;
+                self::assertSame('1', (new \App\CoreFacturalo\Facturalo())->save($blankOrder)->getDocument()->number_full);
+                $blankSale = array_replace($saleInput, ['establishment_id' => $branch, 'series' => '']);
+                self::assertSame('1', \App\Models\Tenant\SaleNote::create($saleController->mergeData($blankSale))->number_full);
+                foreach (['U2', 'U3'] as $type) {
+                    $transactionId = $db->table('inventory_transactions')->where('type', $type === 'U2' ? 'input' : 'output')->value('id');
+                    $blankGuide = \Modules\Inventory\Models\Guide::create(['document_type_id' => $type, 'series' => '', 'number' => '#',
+                        'warehouse_id' => $originWarehouse, 'date_of_issue' => '2026-09-10', 'time_of_issue' => '12:00:00', 'inventory_transaction_id' => $transactionId]);
+                    self::assertSame($branch, (int) $blankGuide->establishment_id);
+                    self::assertSame('1', $blankGuide->number_full);
+                }
+                $blankTransfer = \Modules\Inventory\Models\InventoryTransfer::create(['document_type_id' => 'U4', 'series' => '', 'number' => '#',
+                    'warehouse_id' => $originWarehouse, 'warehouse_destination_id' => $originWarehouse, 'quantity' => 1]);
+                self::assertSame($branch, (int) $blankTransfer->establishment_id);
+                self::assertSame('1', $blankTransfer->number_full);
+            }
+            self::assertCount(2, array_unique($filenames));
+            $longCode = 'AB-CD123456789012345';
+            $db->table('series')->insert(['establishment_id' => $establishment, 'document_type_id' => '01', 'number' => $longCode]);
+            $longInput = array_replace($input, ['series' => $longCode, 'external_id' => \Illuminate\Support\Str::uuid()->toString()]);
+            $longDocument = (new \App\CoreFacturalo\Facturalo())->save($longInput)->getDocument();
+            self::assertSame($longCode.'-1', $longDocument->number_full);
+            self::assertStringContainsString($longCode, $longDocument->filename);
+            self::assertSame($longDocument->id, \App\Models\Tenant\Document::where('establishment_id', $establishment)->where('series', $longCode)->where('number', 1)->value('id'));
+
         } finally {
             $db->rollBack();
             \Illuminate\Database\Eloquent\Model::setEventDispatcher($previousDispatcher);

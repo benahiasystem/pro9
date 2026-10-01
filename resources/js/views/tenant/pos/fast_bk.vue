@@ -534,7 +534,7 @@
                         </div>
                         <div class="col-lg-4 col-md-4">
                             <el-select v-model="form.series_id" class="c-width">
-                                <el-option   v-for="option in series" :key="option.id" :label="option.number" :value="option.id">
+                                <el-option   v-for="option in series" :key="option.id" :label="option.number || 'Sin serie'" :value="option.id">
                                 </el-option>
                             </el-select>
                         </div>

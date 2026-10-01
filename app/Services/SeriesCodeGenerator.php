@@ -232,7 +232,8 @@ class SeriesCodeGenerator
 
         foreach ($numbers as $number) {
             $suffix = substr($number, $length);
-            if ($suffix !== '' && ctype_digit($suffix)) {
+            // Manual codes may contain a 20-character suffix; only generated-size codes participate.
+            if (strlen($number) === max(4, $length + 2) && $suffix !== '' && ctype_digit($suffix)) {
                 $max = max($max, (int) $suffix);
             }
         }
@@ -240,6 +241,10 @@ class SeriesCodeGenerator
         // Mantener 4 caracteres totales (prefijo 2 + correlativo 2) cuando el prefijo sea de 2 letras.
         $pad = max(2, 4 - $length);
 
-        return $prefix . str_pad((string) ($max + 1), $pad, '0', STR_PAD_LEFT);
+        do {
+            $code = $prefix . str_pad((string) (++$max), $pad, '0', STR_PAD_LEFT);
+        } while (Series::where('number', $code)->exists());
+
+        return $code;
     }
 }

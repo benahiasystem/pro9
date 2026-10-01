@@ -135,11 +135,11 @@ class PurchaseSettlementController extends Controller
         $suplier_info = PersonInput::set($inputs['supplier_id']);
         $suplier_info['address_type_id'] = '01';
         //dd($suplier_info);
-        $last_number = PurchaseSettlement::getLastNumberBySerie($inputs['series']);
+        $last_number = PurchaseSettlement::getLastNumberBySerie($inputs['series'], $inputs['establishment_id']);
         // se actualiza el numero actual en $imputs
         $number_new= $last_number + 1;
         $type='purchase_settlement';
-        $filename= Functions::filename(Company::active(), $inputs['document_type_id'], $inputs['series'], $number_new);
+        $filename= Functions::filename(Company::active(), $inputs['document_type_id'], $inputs['series'], $number_new, $inputs['establishment_id']);
         $company = Company::active();
         $values = [
             'user_id' => auth()->id(),

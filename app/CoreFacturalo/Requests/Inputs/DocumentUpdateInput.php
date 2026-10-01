@@ -29,7 +29,7 @@ class DocumentUpdateInput
         // ######## INICIO POLITICA IDENTIDAD ACTIVA EN VENTAS ########
         SalesCustomerIdentityPolicy::assertCustomerAllowed($inputs['customer_id'] ?? null);
         // ######## FIN POLITICA IDENTIDAD ACTIVA EN VENTAS ########
-        $series = $inputs['series'];
+        $series = \App\Services\SeriesNumbering::normalizeCode($inputs['series'] ?? null);
         $number = $inputs['number'];
 
         $company = Company::active();

@@ -30,7 +30,7 @@
 
 ## Instalación nueva
 
-Retirar las ramas exclusivas de Boletas (`03`) y las series `BB`, `BC` y `BD` de modelos, consultas, reportes, herramientas de búsqueda, PDF y resolutores. No eliminar otros códigos `03` por coincidencia: motivos de notas, estados y otros catálogos tienen significados distintos. Conservar auditoría futura y funciones actuales compartidas. No ejecutar cambios sobre bases reales.
+Retirar las ramas exclusivas de Boletas (`03`), sus series sembradas y sus resolutores de modelos, consultas, reportes, herramientas de búsqueda y PDF. Las series manuales son códigos libres de hasta 20 caracteres con letras, números o guiones: BB/BC/BD no identifican un tipo documental ni se rechazan por prefijo. No eliminar otros códigos `03` por coincidencia: motivos de notas, estados y otros catálogos tienen significados distintos. Conservar auditoría futura y funciones actuales compartidas. No ejecutar cambios sobre bases reales.
 
 ## Marcadores heredados de las tarjetas
 

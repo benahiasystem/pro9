@@ -1,46 +1,64 @@
-# Restauración de series y correlativos
+# Serie opcional y numeración interna por sucursal
 
-## Entrega vigente — 1 de octubre de 2026
+Entrega del 1 de octubre de 2026.
 
-La configuración de todas las modalidades vuelve al modelo original de `main`, tomando como base el código anterior al módulo de secuencias y conservando los catálogos venezolanos y la conexión HKA de la empresa.
+## Comportamiento
 
-## Formulario
+El diálogo de Sucursales muestra «Serie» y «Número». La serie comienza vacía, es editable y no utiliza Auto/Manual ni consultas de generación automática. El icono de información muestra «numeración interna del sistema» mediante hover, foco y clic. El valor configurado conserva su significado de primer número (1 por defecto) y permanece bloqueado cuando la configuración está usada.
 
-`resources/js/views/tenant/establishments/partials/series.vue` se abre desde Sucursales y contiene Todos, Básico, Avanzado, Interno, Dedicado y Contingencia. El interruptor habilita Dedicado. La tabla muestra categoría, documento, serie, correlativo y acciones.
+Una serie omitida, null, vacía o con espacios se guarda como `''`. Los códigos con contenido se recortan, se convierten a mayúsculas y conservan las límite de 20 caracteres con letras ASCII, números y guiones (-), sin prefijo obligatorio; se rechazan espacios internos y otros símbolos. Los nombres técnicos `number` y `correlative` de la API permanecen.
 
-Nuevo permite elegir el tipo documental, serie Auto/Manual, correlativo inicial y Normal/Dedicado/Contingencia dentro de la misma ventana. Cancelar no guarda. Dedicado permite recuperar, crear y editar grupos, asociar sus series y desvincular equipos; el vínculo del equipo permanece disponible en el perfil de usuario. Se mantuvieron los nombres y documentos del catálogo venezolano, sin Boletas.
+Existe una configuración sin serie por sucursal y tipo de documento, compartida entre Normal/Dedicado/Contingencia. Los códigos con contenido mantienen unicidad empresarial por tipo mediante validación dentro del bloqueo de empresa. Los códigos sembrados no cambiaron.
 
-Se retiraron los formularios y acciones de perfiles fiscales, asignación anticipada, consulta de numeraciones HKA y conciliación. Los formularios comerciales vuelven a seleccionar series sin exigir un perfil fiscal.
+## Numeración e identidad
 
-## Contratos vigentes
+`SeriesNumbering` resuelve y bloquea empresa → serie dentro de la transacción de guardado. El cálculo del máximo y la detección de duplicados distinguen sucursal, ambiente, tipo y serie. Dos sucursales sin serie emiten 1, luego 2, de manera independiente. Una reversión no consume un número ni deja la configuración usada. Se conservan las restricciones de sucursal y grupo dedicado.
 
-- `series`: identidad documental, sucursal, clase normal/dedicada/contingencia y grupo.
-- `series_configurations.number`: primer número configurado, por defecto 1. Sin documentos, inicio 100 produce 100; con documentos, se continúa desde el mayor número del mismo ambiente, tipo y serie.
-- `series_device_groups`: asociaciones de series y vínculo del equipo. El servidor valida sucursal y grupo autorizado.
-- `SeriesNumbering`: exige la transacción que inserta el documento y bloquea empresa → serie hasta el guardado. Valida números positivos y rechaza duplicados explícitos; una reversión tampoco consume el correlativo.
-- `SeriesAdministration`: administrador del tenant, con el mismo orden de bloqueo para edición y eliminación. Una serie utilizada, incluso sin `in_use` histórico, no permite cambiar inicio/identidad ni eliminarla. Las asociaciones de grupos se guardan atómicamente.
-- Facturas y notas usan `DocumentObserver`; órdenes de entrega se numeran al insertar `Dispatch`; notas de venta se numeran en su evento `creating` dentro de `ModelTenant::save`, incluyendo web, API y duplicaciones; internos utilizan el mismo servicio dentro de sus transacciones. Se conservaron los efectos comerciales de pagos e inventario.
-- Consultas, reportes, conversiones e impresión utilizan los atributos propios: serie, número documental y número de control. `control_number` es independiente y nullable; conservar sus prefijos y ceros. No se deduce ni asigna un control al crear una serie o un documento local.
+Guías y transferencias de inventario persisten la sucursal del almacén de origen. La comprobación de uso de las configuraciones también incluye sucursal y tipo.
 
-Se recuperaron las rutas `/series`, `/series/records/{establishment}`, `/series/{series}/correlative` y `/series/groups/*`. Las rutas del módulo fiscal descartado ya no tienen consumidores y se retiraron.
+Sin serie, la identificación visible muestra únicamente el número, sin guion inicial. Los nombres de archivos incorporan `SIN_SERIE_S{id_sucursal}` para evitar colisiones; los archivos con serie conservan sus nombres. Se adaptaron selectores, conversiones, búsquedas, anticipos, recursos, reportes y plantillas PDF. En reportes, `__without_series__` distingue seleccionar «Sin serie» de limpiar el filtro; no se persiste como código de serie. Las consultas de un documento sin serie requieren sucursal o un identificador interno/externo inequívoco; la búsqueda pública devuelve sus coincidencias identificadas por sucursal.
 
-## Esquema inicial
+El número de control de imprenta sigue siendo texto independiente y nullable. No se integra emisión HKA ni numeración de máquinas fiscales.
 
-Las instalaciones nuevas contienen el modelo de series y los campos `documents.control_number` y `dispatches.control_number`. Las claves únicas documentales distinguen ambiente, tipo, serie y número; las series tienen unicidad de tipo y código. El identificador único del archivo de factura incluye ambiente.
+## Esquema consolidado
 
-Se retiraron del consolidado las tablas y relaciones exclusivas de secuencias, perfiles, lotes preimpresos, reservas fiscales, intentos, auditorías de ese módulo, recibos simulados y asignaciones anticipadas HKA. No se añadió una migración de conversión ni se modificó el esquema o los datos de tenants existentes.
+Se modificaron las migraciones creadoras para instalaciones nuevas, sin migraciones incrementales ni conversiones históricas:
 
-## HKA
+- `series`: código NOT NULL DEFAULT '' e índice único sucursal/tipo/código.
+- `documents`, `dispatches` y `guides`: claves únicas sucursal/ambiente/tipo/serie/número.
+- `inventories_transfer`: sucursal obligatoria, índice, FK y clave única sucursal/ambiente/tipo/serie/número.
+- `guides`: sucursal obligatoria, índice y FK.
+- `sale_notes`: clave única sucursal/ambiente/serie/número.
 
-La autenticación, credenciales cifradas, ambiente y última conexión verificada de la empresa se mantienen. No se llaman servicios de numeración HKA desde Series. La emisión automática HKA, incluida la asociación del control durante la emisión, requiere una entrega posterior y no está implementada en este cambio.
+La comparación completa del DDL de HEAD y las fuentes modificadas, reconstruidos en bases MySQL temporales independientes, produjo 333 tablas en ambos casos. Sólo cambiaron las seis tablas anteriores. Las claves foráneas se agregan y retiran en la migración final consolidada. No cambiaron los datos iniciales.
 
 ## Verificación
 
-- Pruebas unitarias PHP: 430 pruebas y 13036 aserciones satisfactorias, con 5 pruebas omitidas en esa ejecución; se añadieron y ejecutaron por separado las pruebas de concurrencia descritas abajo.
-- JavaScript: 20 pruebas satisfactorias, incluyendo filtros, alta/cancelación, errores, grupos y uso del mismo diálogo en todas las modalidades.
-- Concurrencia MySQL: 3 pruebas y 22 aserciones; dos procesos generan 100/101, un número explícito duplicado se rechaza y la eliminación espera al guardado antes de bloquearse por uso.
-- Esquema MySQL temporal: 2 pruebas y 1570 aserciones; instalación, seeding, integridad, rollback y repetición. Se guardaron facturas 100/101, notas de crédito/débito, orden de entrega y notas de venta 100/101; se verificaron conversiones a factura, entradas/salidas/transferencias internas, pagos, inventario y control independiente.
-- Revisión en Chrome: diálogo original, alta integrada, grupos y adaptación a pantalla estrecha. Las pruebas de navegador no guardan ni eliminan configuración real.
-- La ejecución general encontró un error del ejemplo de prueba web por la base `multifacturalo_dusk` ausente. No se creó ni modificó esa base para resolver el ejemplo. Los 5 casos omitidos en la suite unitaria corresponden a los 2 casos de esquema y 3 de concurrencia, ejecutados por separado en MySQL.
+- `SeriesNumberingTest`: 34 pruebas y 190 aserciones; todos los tipos, inicios personalizados, normalización, duplicados, sucursales, permisos, grupos, reversión y bloqueo de configuraciones usadas.
+- Identidad, datos PDF, renderizado PDF, contratos de plantillas y configuración fiscal: 43 pruebas y 607 aserciones. Incluye filtros sin serie, archivos distintos por sucursal y PDF con y sin serie.
+- JavaScript: 26 pruebas; alta vacía, ausencia de generación automática, popup, etiquetas, ordenación, filtros y flujos de conversión.
+- Suite unitaria completa: 442 pruebas, 13126 aserciones, sin fallos. Los nueve casos MySQL omitidos en esta ejecución se ejecutaron por separado.
+- Las fuentes PHP y Vue/JavaScript se validaron sin compilar; el PDF sin serie también se inspeccionó renderizado.
+- `FiscalEmissionSchemaTest` y `SeriesMySqlConcurrencyTest`: 9 pruebas y 1661 aserciones, sin fallos; instalación, catálogos, integridad, rollback/repetición, emisión real en el esquema temporal y procesos simultáneos con serie vacía en una o dos sucursales.
 
-Las bases de integración y concurrencia son aleatorias, temporales y se eliminan al terminar. No se importaron, asignaron ni liberaron controles reales. No se ejecutó una compilación; los assets visibles proceden del watcher del usuario.
+Las bases de prueba usan nombres aleatorios y se eliminan al terminar. No se modificaron bases reales ni assets de `public/build/`. Se actualizaron las skills de numeración, esquema y consulta de contratos HKA. La comprobación visual del diálogo en navegador queda pendiente de compilar las fuentes, según la instrucción del usuario.
+
+## Ampliación de series a 20 caracteres
+
+La configuración acepta de 1 a 20 letras/números en cualquier tipo y modalidad, además de serie vacía. Se normalizan espacios externos y mayúsculas. «Factura N°» se renombra a «Número» en tabla, alta y explicación; se conservan `number` y `correlative` en la API, el inicio configurado, el popup y el bloqueo de uso.
+
+Se ampliaron los límites de búsquedas internas/públicas y referencias de órdenes de entrega y retenciones/percepciones. La política de ventas rechaza Boletas por su tipo `03`, sin interpretar BB/BC/BD introducidos manualmente como tipos documentales. El generador de inventario ignora sufijos manuales largos y busca un código disponible si el siguiente ya existe.
+
+`retentions.series`, `perceptions.series` y `purchase_settlements.series` cambian de `char(4)` a `varchar(20)` en las migraciones iniciales y su inventario de columnas. La comparación completa contra las fuentes existentes antes de esta ampliación produjo 333 tablas en ambos esquemas temporales, con diferencias sólo en esas tres tablas. Se conservan los datos sembrados y no se actualizan bases reales.
+
+Las pruebas cubren series vacías y de 1/4/20 caracteres, todos los tipos y modalidades, rechazo de 21 caracteres/símbolos/espacios internos, búsquedas y referencias, emisión/archivo y PDF de 20 caracteres, generación automática segura y regresiones de numeración/concurrencia. El PDF largo se renderizó e inspeccionó sin truncamiento. Resultados de esta ampliación: suite unitaria de 446 pruebas y 13269 aserciones sin fallos (9 casos MySQL omitidos y ejecutados por separado); esquema/concurrencia MySQL de 9 pruebas y 1670 aserciones sin fallos; JavaScript de 27 pruebas sin fallos. Sintaxis PHP, 46 fuentes Vue/JavaScript y `git diff --check` válidos. No se compiló ni se modificó `public/build/`; la revisión visual del formulario en navegador sigue pendiente del build.
+
+## Validación de letras, números y guiones
+
+La serie permite únicamente A–Z, a–z, 0–9 y el guion ASCII `-`, con el límite de 20 caracteres y la opción vacía. Se conserva la normalización a mayúsculas y el recorte de espacios externos. Se rechazan espacios internos, acentos, guiones Unicode, puntos, barras, guion bajo y otros símbolos. El formulario muestra el error antes de enviar; el servidor valida también las peticiones directas y los consumidores de búsqueda/configuración.
+
+Las referencias completas separan serie y correlativo por el último guion, conservando todos los guiones de la serie. Se unificó la lectura en `FiscalIdentity::parseNumberFull` para anticipos/reversiones, asociación de órdenes de entrega, consulta API/bot e importaciones. Las pruebas verifican series con guiones consecutivos/iniciales/finales, ambos tipos de letras, duplicados normalizados, rechazos de símbolos, emisión y PDF.
+
+No se modifican columnas ni datos reales por esta validación y no se compilan assets.
+
+Verificación final de guiones: 459 pruebas unitarias y 13361 aserciones sin fallos (9 casos MySQL omitidos en esa ejecución); `FiscalEmissionSchemaTest` ejecutado aparte en bases temporales: 2 pruebas y 1616 aserciones, con emisión y archivo de una serie de 20 caracteres con guion; JavaScript: 28 pruebas sin fallos. Sintaxis PHP, fuentes Vue/JavaScript y `git diff --check` válidos. La comprobación visual del diálogo sigue pendiente del build solicitado al usuario.

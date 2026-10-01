@@ -24,6 +24,7 @@ class DocumentObserver
      */
     public function creating(Document $document)
     {
+        $document->series = \App\Services\SeriesNumbering::normalizeCode($document->series);
         $company = Company::active();
 
         $number = Functions::newNumber(
@@ -32,7 +33,7 @@ class DocumentObserver
         );
 
         $document->number = $number;
-        $document->filename = Functions::filename($company, $document->document_type_id, $document->series, $number);
+        $document->filename = Functions::filename($company, $document->document_type_id, $document->series, $number, $document->establishment_id);
         $document->unique_filename = $document->fiscal_environment . '-' . $document->filename; //campo ├║nico para evitar duplicados
     }
 

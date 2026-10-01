@@ -354,7 +354,7 @@ class DispatchController extends Controller
             ->first();
         $configuration = Configuration::first();
         $res = [];
-        if ($request->series[0] == 'T') {
+        if (str_starts_with((string) $request->series, 'T')) {
             /** @var Facturalo $fact */
             $fact = DB::connection('tenant')->transaction(function () use ($request, $configuration) {
                 $facturalo = new Facturalo();
@@ -390,7 +390,7 @@ class DispatchController extends Controller
         }
 
         // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
-        $message = "Se creó la orden de entrega {$document->series}-{$document->number}";
+        $message = "Se creó la orden de entrega {$document->number_full}";
         // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
 
         return [

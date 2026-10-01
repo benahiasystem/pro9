@@ -83,8 +83,8 @@
                                                    filterable>
                                             <el-option v-for="option in series"
                                                        :key="option.number"
-                                                       :label="option.number"
-                                                       :value="option.number"></el-option>
+                                                       :label="option.number || 'Sin serie'"
+                                                       :value="option.number || '__without_series__'"></el-option>
                                         </el-select>
     
                                     </div>

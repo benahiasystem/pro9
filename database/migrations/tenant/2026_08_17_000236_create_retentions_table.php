@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\DB;
  * - `state_type_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `ubl_version` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `document_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `series` char(4) COLLATE utf8mb4_unicode_ci NOT NULL
+ * - `series` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `number` int(11) NOT NULL
  * - `date_of_issue` date NOT NULL
  * - `time_of_issue` time NOT NULL
@@ -49,7 +49,7 @@ CREATE TABLE `retentions` (
   `state_type_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL,
   `ubl_version` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `document_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `series` char(4) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `series` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL,
   `number` int(11) NOT NULL,
   `date_of_issue` date NOT NULL,
   `time_of_issue` time NOT NULL,

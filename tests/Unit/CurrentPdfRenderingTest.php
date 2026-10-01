@@ -55,7 +55,8 @@ class CurrentPdfRenderingTest extends TestCase
         ]);
     }
 
-    public function test_default_invoice_template_produces_a_readable_pdf(): void
+    /** @dataProvider invoiceSeries */
+    public function test_default_invoice_template_produces_a_readable_pdf(string $series): void
     {
         $company = new Fluent([
             'name' => 'Empresa Venezolana de Prueba, C.A.',
@@ -64,6 +65,9 @@ class CurrentPdfRenderingTest extends TestCase
             'logo' => null,
         ]);
         $document = $this->documentFixture();
+        $document->series = $series;
+        $document->number = 457;
+        $document->number_full = (new \App\Models\Tenant\Document(['series' => $series, 'number' => 457]))->number_full;
 
         $html = (new Template())->pdf('default', 'invoice', $company, $document, 'a4', [
             'is_preview' => false,
@@ -71,6 +75,8 @@ class CurrentPdfRenderingTest extends TestCase
         ]);
 
         self::assertStringContainsString('FACTURA', $html);
+        self::assertStringContainsString('<h3>'.($series === '' ? '457' : $series.'-457').'</h3>', $html);
+        if ($series === '') self::assertStringNotContainsString('-457', $html);
         self::assertStringContainsString('J-12345678-9', $html);
         self::assertStringContainsString('IVA:', $html);
         self::assertStringNotContainsStringIgnoringCase('BOLETA', $html);
@@ -101,6 +107,11 @@ class CurrentPdfRenderingTest extends TestCase
         }
         file_put_contents($path, $pdf);
         self::assertFileExists($path);
+    }
+
+    public function invoiceSeries(): array
+    {
+        return [['FF01'], [''], ['AB-CD123456789012345']];
     }
 
     private function documentFixture(): CurrentPdfDocumentFixture

@@ -32,7 +32,7 @@ class DocumentValidation
         }
         //unset($inputs['establishment']);
 
-        Functions::validateSeries($inputs);
+        $inputs['series'] = Functions::validateSeries($inputs)->number;
 
         if (in_array($inputs['document_type_id'], ['07', '08'])) {
 

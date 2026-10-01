@@ -20,16 +20,16 @@ class PurchaseSettlementInput
 
 
         $document_type_id = $inputs['document_type_id'];
-        $series = $inputs['series'];
+        $series = \App\Services\SeriesNumbering::normalizeCode($inputs['series'] ?? null);
         $number = $inputs['number'];
 
         $company = Company::active();
         $fiscal_environment = $company->fiscal_environment;
         $number = Functions::newNumber($fiscal_environment, $document_type_id, $series, $number, PurchaseSettlement::class);
 
-        Functions::validateUniqueDocument($fiscal_environment, $document_type_id, $series, $number, PurchaseSettlement::class);
+        Functions::validateUniqueDocument($fiscal_environment, $document_type_id, $series, $number, PurchaseSettlement::class, (int) $inputs['establishment_id']);
 
-        $filename = Functions::filename($company, $document_type_id, $series, $number);
+        $filename = Functions::filename($company, $document_type_id, $series, $number, (int) $inputs['establishment_id']);
         $establishment = EstablishmentInput::set($inputs['establishment_id']);
         // $establishment = $inputs['establishment'];
         $supplier = PersonInput::set($inputs['supplier_id']);

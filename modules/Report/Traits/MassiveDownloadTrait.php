@@ -80,7 +80,7 @@ use Illuminate\Support\Str;
             }
             if ($model == Document::class || $model == SaleNote::class) {
                 if ($params->series) {
-                    $records = $records->where('series', $params->series);
+                    $records = $records->where('series', $params->series === \App\Services\Fiscal\FiscalIdentity::EMPTY_SERIES_FILTER ? '' : $params->series);
                 }
                 if ($params->sellers && $model == Document::class) {
                     $records = $records->wherein('seller_id', $params->sellers);

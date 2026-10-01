@@ -21,7 +21,7 @@ Aplicar un único contrato funcional en todos los canales de venta: Facturas (`0
 4. Validar además el cliente con `App\Services\SalesCustomerIdentityPolicy`: su tipo debe existir con `active = 1` en `cat_identity_document_types`. Aplicar la barrera antes de persistir o crear clientes implícitamente por API.
 5. Restringir cada selector y endpoint al subconjunto permitido por su flujo. Usar `01` y `80` en ventas; usar `01` y `nv` únicamente donde el servicio técnico mantenga ese alias.
 6. Retirar ramas exclusivas de Boletas en lectura, listado, PDF, envío y reportes; conservar las funciones compartidas de Facturas, notas de crédito/débito y Notas de venta. No cambiar bases reales.
-7. Retirar series `BB`, `BC` y `BD` y sus resolutores históricos. Las series de venta iniciales son `FF`, `FC`, `FD` y `NV`; también se conservan las series internas vigentes de almacén.
+7. Retirar la siembra y los resolutores históricos de Boletas. El código de una serie es libre (hasta 20 letras/números/guiones): no rechazar prefijos BB/BC/BD cuando pertenecen a un tipo vigente. Rechazar Boletas por `document_type_id=03`. Las series de venta iniciales son `FF`, `FC`, `FD` y `NV`; también se conservan las series internas vigentes de almacén.
 8. Encerrar los cambios funcionales con los marcadores de la tarjeta correspondiente indicados en el contrato.
 9. Si se cambia Vue o JavaScript empaquetado, seguir el skill `frontend-build`; no editar `public/build/` a mano.
 10. Ejecutar las pruebas unitarias del contrato, análisis de sintaxis y búsquedas de regresión antes de entregar.
@@ -30,7 +30,7 @@ Aplicar un único contrato funcional en todos los canales de venta: Facturas (`0
 ## Reglas de aceptación
 
 - Una petición manipulada con `document_type_id=03` falla también en el servidor.
-- Ningún flujo nuevo propone `03`, `BB`, `BC` o `BD`.
+- Ningún flujo nuevo propone `03` ni siembra series de Boleta; los prefijos de códigos introducidos manualmente no determinan el tipo documental.
 - Facturas y Notas de venta siguen creándose desde todos los canales que las soportan.
 - Los ocho tipos canónicos `0`, `1`, `6`, `7`, `E`, `C`, `G` y `R` nacen activos y pueden emitir `01`, `80`/`nv`, `07` y `08`; una identidad desactivada posteriormente se rechaza en backend en todos los canales aunque la petición sea manipulada.
 - No existen restricciones por combinación identidad/comprobante ni por monto. La tabla tenant conserva la autoridad sobre una desactivación posterior.

@@ -60,8 +60,8 @@ class SalesDocumentTypePolicyTest extends TestCase
     public function it_blocks_new_receipt_series_and_keeps_invoice_series(): void
     {
         self::assertTrue(SalesDocumentTypePolicy::isProhibitedNewSeries('03', 'BB01'));
-        self::assertTrue(SalesDocumentTypePolicy::isProhibitedNewSeries('07', 'BC01'));
-        self::assertTrue(SalesDocumentTypePolicy::isProhibitedNewSeries('08', 'BD01'));
+        self::assertFalse(SalesDocumentTypePolicy::isProhibitedNewSeries('07', 'BC01'));
+        self::assertFalse(SalesDocumentTypePolicy::isProhibitedNewSeries('08', 'BD01'));
         self::assertFalse(SalesDocumentTypePolicy::isProhibitedNewSeries('01', 'FF01'));
         self::assertFalse(SalesDocumentTypePolicy::isProhibitedNewSeries('07', 'FC01'));
         self::assertFalse(SalesDocumentTypePolicy::isProhibitedNewSeries('08', 'FD01'));

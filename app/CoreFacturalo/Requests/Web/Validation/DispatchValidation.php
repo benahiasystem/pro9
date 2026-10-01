@@ -26,6 +26,8 @@ class DispatchValidation
         // ######### FIN RETIRO TRASLADO M1/L1 #########
         $series = Functions::findSeries($inputs);
         if (!$series) throw new Exception("La serie no fue encontrada.");
+        $inputs['series'] = $series->number;
+        unset($inputs['series_id']);
         return $inputs;
         // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
     }

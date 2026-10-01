@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\DB;
  * - `ubl_version` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `operation_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `document_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `series` char(4) COLLATE utf8mb4_unicode_ci NOT NULL
+ * - `series` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `number` int(11) NOT NULL
  * - `date_of_issue` date NOT NULL
  * - `time_of_issue` time NOT NULL
@@ -61,7 +61,7 @@ CREATE TABLE `purchase_settlements` (
   `ubl_version` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `operation_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `document_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `series` char(4) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `series` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL,
   `number` int(11) NOT NULL,
   `date_of_issue` date NOT NULL,
   `time_of_issue` time NOT NULL,

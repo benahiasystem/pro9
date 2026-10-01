@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
  * Estructura inicial de `guides` para instalaciones nuevas.
  * Inventario de columnas:
  * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
+ * - `establishment_id` int(10) unsigned NOT NULL
  * - `external_id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `user_id` int(10) unsigned NOT NULL
  * - `warehouse_id` int(10) unsigned NOT NULL
@@ -32,6 +33,7 @@ return new class extends Migration
         DB::unprepared(<<<'SQL'
 CREATE TABLE `guides` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `establishment_id` int(10) unsigned NOT NULL,
   `external_id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
   `user_id` int(10) unsigned NOT NULL,
   `warehouse_id` int(10) unsigned NOT NULL,
@@ -49,7 +51,8 @@ CREATE TABLE `guides` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `guides_series_number_unique` (`fiscal_environment`,`document_type_id`,`series`,`number`),
+  KEY `guides_establishment_id_foreign` (`establishment_id`),
+  UNIQUE KEY `guides_series_number_unique` (`establishment_id`,`fiscal_environment`,`document_type_id`,`series`,`number`),
   KEY `guides_user_id_foreign` (`user_id`),
   KEY `guides_warehouse_id_foreign` (`warehouse_id`),
   KEY `guides_document_type_id_foreign` (`document_type_id`),

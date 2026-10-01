@@ -38,18 +38,11 @@ final class SalesDocumentTypePolicy
     }
 
     /**
-     * Rechaza los códigos de series retirados del catálogo.
+     * El tipo documental define el flujo; una serie libre no identifica una Boleta.
      */
     public static function isProhibitedNewSeries(string $documentTypeId, string $number): bool
     {
-        if ($documentTypeId === self::RECEIPT) {
-            return true;
-        }
-
-        $prefix = strtoupper(substr(trim($number), 0, 2));
-
-        return ($documentTypeId === '07' && $prefix === 'BC')
-            || ($documentTypeId === '08' && $prefix === 'BD');
+        return $documentTypeId === self::RECEIPT;
     }
 }
 // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA

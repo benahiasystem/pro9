@@ -2,8 +2,8 @@
     $establishment = $document->establishment;
     $customer = $document->customer;
     $invoice = $document->invoice;
-    $left =  ($document->series) ? $document->series : $document->prefix;
-    $tittle = $left.'-'.str_pad($document->number, 8, '0', STR_PAD_LEFT);
+    $left = $document->series;
+    $tittle = \App\Services\Fiscal\FiscalIdentity::numberFull($left, str_pad($document->number, 8, '0', STR_PAD_LEFT));
     $payments = $document->payments;
 
     $logo = "storage/uploads/logos/{$company->logo}";

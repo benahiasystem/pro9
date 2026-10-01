@@ -809,7 +809,7 @@ class ReportKardexController extends Controller
         $data = [
             'company_number' => $company->number,
             'document_type_name' => $record->document_type->description,
-            'document_number' => $record->series . '-' . $record->number,
+            'document_number' => \App\Services\Fiscal\FiscalIdentity::numberFull($record->series, $record->number),
             'document_date_of_issue' => $record->date_of_issue->format('d/m/Y'),
             'warehouse_name' => $record->warehouse->description,
             'transaction_name' => $record->inventory_transaction->name,

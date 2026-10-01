@@ -60,7 +60,7 @@
                                         <el-option
                                             v-for="option in series_order"
                                             :key="option.id"
-                                            :label="option.number"
+                                            :label="option.number || 'Sin serie'"
                                             :value="option.id"
                                         ></el-option>
                                     </el-select>
@@ -87,7 +87,7 @@
                                         <el-option
                                             v-for="option in series_document_ft"
                                             :key="option.id"
-                                            :label="option.number"
+                                            :label="option.number || 'Sin serie'"
                                             :value="option.id"
                                         ></el-option>
                                     </el-select>

@@ -180,7 +180,9 @@ class SaleNoteController extends Controller
             $records->where($request->column, 'like', "%{$request->value}%")
                     ->latest('id');
         }
-        if($request->series) {
+        if ($request->series === \App\Services\Fiscal\FiscalIdentity::EMPTY_SERIES_FILTER) {
+            $records->where('series', '');
+        } elseif($request->series) {
             $records->where('series', 'like', '%' . $request->series . '%');
         }
         if($request->number) {
@@ -583,7 +585,7 @@ class SaleNoteController extends Controller
         if (key_exists('series_id', $inputs)) {
             $series = Series::query()->find($inputs['series_id'])->number;
         } else {
-            $series = $inputs['series'];
+            $series = \App\Services\SeriesNumbering::normalizeCode($inputs['series'] ?? null);
         }
 
         $number = null;
@@ -677,7 +679,7 @@ class SaleNoteController extends Controller
 
     private function setFilename()
     {
-        $name = [$this->sale_note->series,$this->sale_note->number,date('Ymd')];
+        $name = [$this->sale_note->series === '' ? 'SIN_SERIE_S'.$this->sale_note->establishment_id : $this->sale_note->series, $this->sale_note->number, date('Ymd')];
         $this->sale_note->filename = join('-', $name);
 
         $this->sale_note->unique_filename = $this->sale_note->fiscal_environment . '-' . $this->sale_note->filename; //campo único para evitar duplicados
@@ -1350,7 +1352,7 @@ class SaleNoteController extends Controller
                 'id' => $row->id,
                 'series' => $row->series,
                 'number' => $row->number,
-                'number_full' => "{$row->series}-{$row->number}",
+                'number_full' => $row->number_full,
             ];
         }); ;
 

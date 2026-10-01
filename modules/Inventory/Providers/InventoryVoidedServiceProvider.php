@@ -129,11 +129,15 @@ class InventoryVoidedServiceProvider extends ServiceProvider
         if($document->prepayments){
 
             foreach ($document->prepayments as $row) {
-                $fullnumber = explode('-', $row->number);
+                $fullnumber = \App\Services\Fiscal\FiscalIdentity::parseNumberFull((string) $row->number);
+                if ($fullnumber === null) continue;
                 $series = $fullnumber[0];
                 $number = $fullnumber[1];
 
-                $doc = Document::where([['series',$series],['number',$number]])->first();
+                $doc = Document::where([['series',$series],['number',$number]])
+                    ->where('establishment_id', $document->establishment_id)
+                    ->where('fiscal_environment', $document->fiscal_environment)
+                    ->where('document_type_id', ($row->document_type_id ?? '02') === '03' ? '03' : '01')->first();
                 if($doc){
                     $doc->was_deducted_prepayment = false;
                     $doc->pending_amount_prepayment += $row->total;
@@ -167,8 +171,12 @@ class InventoryVoidedServiceProvider extends ServiceProvider
                     {
                         foreach($affected_document->prepayments as $row)
                         {
-                            $number_full = explode('-', $row->number);
-                            $find_document = Document::whereFilterWithOutRelations()->where([['series', $number_full[0]],['number', $number_full[1]]])->first();
+                            $number_full = \App\Services\Fiscal\FiscalIdentity::parseNumberFull((string) $row->number);
+                            if ($number_full === null) continue;
+                            $find_document = Document::whereFilterWithOutRelations()->where([['series', $number_full[0]],['number', $number_full[1]]])
+                                ->where('establishment_id', $affected_document->establishment_id)
+                                ->where('fiscal_environment', $affected_document->fiscal_environment)
+                                ->where('document_type_id', ($row->document_type_id ?? '02') === '03' ? '03' : '01')->first();
 
                             if($find_document)
                             {

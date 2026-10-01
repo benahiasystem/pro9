@@ -32,6 +32,9 @@
             if ($this->exists || !in_array($this->getTable(), config('fiscal_emission.operation_tables', []), true)) {
                 return parent::save($options);
             }
+            if (array_key_exists('series', $this->getAttributes())) {
+                $this->series = \App\Services\SeriesNumbering::normalizeCode($this->series);
+            }
             return $this->getConnection()->transaction(function () use ($options) {
                 $company = Company::query()->lockForUpdate()->first();
                 // Seeders may create catalog opening stock before the company is inserted.
@@ -52,7 +55,7 @@
                 }
                 if ($this->getTable() === 'dispatches') {
                     $this->number = \App\Services\SeriesNumbering::next($this, $this->document_type_id, $this->series, $this->number, $this->establishment_id);
-                    $this->filename = \App\CoreFacturalo\Requests\Inputs\Functions::filename($company, $this->document_type_id, $this->series, $this->number);
+                    $this->filename = \App\CoreFacturalo\Requests\Inputs\Functions::filename($company, $this->document_type_id, $this->series, $this->number, $this->establishment_id);
                 }
                 return parent::save($options);
             });

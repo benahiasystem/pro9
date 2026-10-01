@@ -35,7 +35,7 @@
                         <el-select v-model="document.series_id">
                             <el-option v-for="option in series"
                                        :key="option.id"
-                                       :label="option.number"
+                                       :label="option.number || 'Sin serie'"
                                        :value="option.id"></el-option>
                         </el-select>
                         <small v-if="errors.series_id"

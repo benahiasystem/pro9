@@ -30,10 +30,11 @@ class DocumentsImport implements ToCollection
             {
                 // dd($row);
                 $nrodocumento = $row[3];
-                $serienumero = explode('-', $nrodocumento);
-                $serie = $serienumero[0];
-                // $number = $serienumero[1];
-                $number = $serienumero[1] ?? null;
+                $serienumero = \App\Services\Fiscal\FiscalIdentity::parseNumberFull((string) $nrodocumento);
+                if ($serienumero === null) {
+                    throw \Illuminate\Validation\ValidationException::withMessages(['number' => 'Indique una referencia válida de serie y número.']);
+                }
+                [$serie, $number] = $serienumero;
                 $correlativo = (int)$number;
 
                 if($row[2] == '03'){

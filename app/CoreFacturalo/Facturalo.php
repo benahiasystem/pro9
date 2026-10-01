@@ -829,11 +829,15 @@ class Facturalo
 
             foreach ($inputs['prepayments'] as $row) {
 
-                $fullnumber = explode('-', $row['number']);
+                $fullnumber = \App\Services\Fiscal\FiscalIdentity::parseNumberFull((string) $row['number']);
+                if ($fullnumber === null) continue;
                 $series = $fullnumber[0];
                 $number = $fullnumber[1];
 
-                $doc = Document::where([['series',$series],['number',$number]])->first();
+                $doc = Document::where([['series',$series],['number',$number]])
+                    ->where('establishment_id', $this->document->establishment_id)
+                    ->where('fiscal_environment', $this->document->fiscal_environment)
+                    ->where('document_type_id', ($row['document_type_id'] ?? '02') === '03' ? '03' : '01')->first();
 
                 if($doc){
 
@@ -931,9 +935,11 @@ class Facturalo
         switch ($this->type) {
             case 'invoice':
                 $document = Document::find($id);
-                if ($inputs['series'] !== $document->series || $inputs['document_type_id'] !== $document->document_type_id || (isset($inputs['number']) && (string) $inputs['number'] !== (string) $document->number)) {
+                $inputs['series'] = \App\Services\SeriesNumbering::normalizeCode($inputs['series'] ?? null);
+                if ($inputs['series'] !== $document->series || $inputs['document_type_id'] !== $document->document_type_id || (isset($inputs['number']) && (string) $inputs['number'] !== (string) $document->number) || (isset($inputs['establishment_id']) && (int) $inputs['establishment_id'] !== (int) $document->establishment_id)) {
                     throw \Illuminate\Validation\ValidationException::withMessages(['series' => 'No se puede cambiar la identidad de un documento registrado.']);
                 }
+                $this->document = $document;
                 $document->fill($inputs);
                 $document->save();
 

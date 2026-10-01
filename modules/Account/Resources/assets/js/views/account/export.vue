@@ -39,7 +39,7 @@
                             <!--<x-form-group label="Series" :error="errors.series">-->
                                 <!--<el-select v-model="form.series">-->
                                     <!--<el-option key="all" value="all" label="Todos"></el-option>-->
-                                    <!--<el-option v-for="option in series" :key="option.id" :value="option.number" :label="option.number"></el-option>-->
+                                    <!--<el-option v-for="option in series" :key="option.id" :value="option.number" :label="option.number || 'Sin serie'"></el-option>-->
                                 <!--</el-select>-->
                             <!--</x-form-group>-->
                         <!--</div>-->

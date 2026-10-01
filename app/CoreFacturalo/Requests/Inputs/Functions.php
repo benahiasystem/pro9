@@ -18,17 +18,25 @@ class Functions
         return \App\Services\SeriesNumbering::next($subject, $document_type_id, $series, $number, $establishment_id);
     }
 
-    public static function filename($company, $document_type_id, $series, $number)
+    public static function filename($company, $document_type_id, $series, $number, $establishment_id = null)
     {
+        $series = \App\Services\SeriesNumbering::normalizeCode($series);
+        if ($series === '') {
+            if (!$establishment_id) throw new \InvalidArgumentException('La numeración sin serie requiere sucursal.');
+            return join('-', [$company->number, $document_type_id, 'SIN_SERIE_S' . $establishment_id, $number]);
+        }
         return join('-', [$company->number, $document_type_id, $series, $number]);
     }
 
-    public static function validateUniqueDocument($fiscal_environment, $document_type_id, $series, $number, $model)
+    public static function validateUniqueDocument($fiscal_environment, $document_type_id, $series, $number, $model, $establishment_id = null)
     {
-        $document = $model::where('fiscal_environment', $fiscal_environment)->where('document_type_id', $document_type_id)
+        $series = \App\Services\SeriesNumbering::normalizeCode($series);
+        $query = $model::where('fiscal_environment', $fiscal_environment)->where('document_type_id', $document_type_id)
                         ->where('series', $series)
-                        ->where('number', $number)
-                        ->first();
+                        ->where('number', $number);
+        if ($establishment_id !== null) $query->where('establishment_id', $establishment_id);
+        if ($series === '' && !$establishment_id) throw new \InvalidArgumentException('La numeración sin serie requiere sucursal.');
+        $document = $query->first();
         if($document) {
             throw new Exception("El documento: {$document_type_id} {$series}-{$number} ya se encuentra registrado.");
         }
