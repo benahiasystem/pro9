@@ -76,6 +76,7 @@ class SeriesDeviceGroupController extends Controller
      */
     public function records($establishmentId)
     {
+        \App\Services\SeriesAdministration::authorize((int) $establishmentId);
         $groups = SeriesDeviceGroup::with('series')
             ->where('establishment_id', $establishmentId)
             ->orderBy('name')
@@ -98,6 +99,7 @@ class SeriesDeviceGroupController extends Controller
      */
     public function tables($establishmentId)
     {
+        \App\Services\SeriesAdministration::authorize((int) $establishmentId);
         $available_series = Series::where('establishment_id', $establishmentId)
             ->dedicated()
             ->when($this->resolver->isNrus(), function ($query) {
@@ -127,46 +129,57 @@ class SeriesDeviceGroupController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'establishment_id' => 'required',
-            'name'             => 'required|string|max:255',
-            'series_ids'       => 'array',
-        ]);
+        return \App\Services\SeriesAdministration::transaction(function () use ($request) {
+            $request->validate([
+                'establishment_id' => 'required',
+                'name'             => 'required|string|max:255',
+                'series_ids'       => 'array',
+                'series_ids.*' => 'integer|distinct',
+            ]);
 
-        $module_value = $request->input('module_value');
-        if ($module_value !== null && ! array_key_exists($module_value, SeriesDeviceGroup::ASSIGNABLE_MODULES)) {
-            return ['success' => false, 'message' => 'Módulo no válido.'];
-        }
+            $module_value = $request->input('module_value');
+            if ($module_value !== null && ! array_key_exists($module_value, SeriesDeviceGroup::ASSIGNABLE_MODULES)) {
+                return ['success' => false, 'message' => 'Módulo no válido.'];
+            }
 
-        $id = $request->input('id');
-        $group = SeriesDeviceGroup::firstOrNew(['id' => $id]);
-        $group->establishment_id = $request->input('establishment_id');
-        $group->name             = $request->input('name');
-        $group->module_value     = $module_value;
-        $group->save();
+            $id = $request->input('id');
+            \App\Services\SeriesAdministration::authorize((int) $request->input('establishment_id'));
+            $group = $id ? SeriesDeviceGroup::lockForUpdate()->where('establishment_id', $request->input('establishment_id'))->findOrFail($id) : new SeriesDeviceGroup();
+            $selected = array_values(array_unique($request->input('series_ids', [])));
+            $valid = Series::whereIn('id', $selected)->where('dedicated', true)->where('establishment_id', $request->input('establishment_id'))
+                ->where(function ($query) use ($id) { $query->whereNull('series_device_group_id'); if ($id) $query->orWhere('series_device_group_id', $id); })->lockForUpdate()->get();
+            if ($valid->count() !== count($selected)) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['series_ids' => 'Seleccione series dedicadas de esta sucursal que estén disponibles.']);
+            }
+            $group->establishment_id = $request->input('establishment_id');
+            $group->name             = $request->input('name');
+            $group->module_value     = $module_value;
+            $group->save();
 
-        $series_ids = $request->input('series_ids', []);
+            $series_ids = $request->input('series_ids', []);
 
-        // Quitar del grupo las series que ya no están seleccionadas.
-        Series::where('series_device_group_id', $group->id)
-            ->whereNotIn('id', $series_ids ?: [0])
-            ->update(['series_device_group_id' => null]);
+            // Quitar del grupo las series que ya no están seleccionadas.
+            Series::where('series_device_group_id', $group->id)
+                ->whereNotIn('id', $series_ids ?: [0])
+                ->update(['series_device_group_id' => null]);
 
-        // Asignar solo series dedicadas del establecimiento que no estén en otro grupo.
-        if (! empty($series_ids)) {
-            Series::whereIn('id', $series_ids)
-                ->where('dedicated', true)
-                ->where('establishment_id', $group->establishment_id)
-                ->when($this->resolver->isNrus(), function ($query) {
-                    $query->whereIn('document_type_id', SeriesCodeGenerator::nrusDocumentTypeIds());
-                })
-                ->where(function ($query) use ($group) {
-                    $query->whereNull('series_device_group_id')->orWhere('series_device_group_id', $group->id);
-                })
-                ->update(['series_device_group_id' => $group->id]);
-        }
+            // Asignar solo series dedicadas del establecimiento que no estén en otro grupo.
+            if (! empty($series_ids)) {
+                Series::whereIn('id', $series_ids)
+                    ->where('dedicated', true)
+                    ->where('establishment_id', $group->establishment_id)
+                    ->when($this->resolver->isNrus(), function ($query) {
+                        $query->whereIn('document_type_id', SeriesCodeGenerator::nrusDocumentTypeIds());
+                    })
+                    ->where(function ($query) use ($group) {
+                        $query->whereNull('series_device_group_id')->orWhere('series_device_group_id', $group->id);
+                    })
+                    ->update(['series_device_group_id' => $group->id]);
+            }
 
-        return ['success' => true, 'message' => $id ? 'Grupo actualizado' : 'Grupo creado'];
+            return ['success' => true, 'message' => $id ? 'Grupo actualizado' : 'Grupo creado'];
+
+        });
     }
 
     /**
@@ -177,15 +190,18 @@ class SeriesDeviceGroupController extends Controller
      */
     public function unbind($id)
     {
-        $group = SeriesDeviceGroup::findOrFail($id);
-        $was_this_device = $this->resolver->deviceName() === (string) $group->bound_device_name;
-        $group->unbind();
+        return \App\Services\SeriesAdministration::transaction(function () use ($id) {
+            $group = SeriesDeviceGroup::lockForUpdate()->findOrFail($id);
+            $was_this_device = $this->resolver->deviceName() === (string) $group->bound_device_name;
+            $group->unbind();
 
-        if ($was_this_device) {
-            $this->resolver->forgetDevice();
-        }
+            if ($was_this_device) {
+                $this->resolver->forgetDevice();
+            }
 
-        return ['success' => true, 'message' => 'Equipo desvinculado'];
+            return ['success' => true, 'message' => 'Equipo desvinculado'];
+
+        });
     }
 
     /**
@@ -196,18 +212,21 @@ class SeriesDeviceGroupController extends Controller
      */
     public function destroy($id)
     {
-        $group = SeriesDeviceGroup::findOrFail($id);
-        $was_this_device = $this->resolver->deviceName() === (string) $group->bound_device_name;
+        return \App\Services\SeriesAdministration::transaction(function () use ($id) {
+            $group = SeriesDeviceGroup::lockForUpdate()->findOrFail($id);
+            $was_this_device = $this->resolver->deviceName() === (string) $group->bound_device_name;
 
-        Series::where('series_device_group_id', $group->id)->update(['series_device_group_id' => null]);
+            Series::where('series_device_group_id', $group->id)->update(['series_device_group_id' => null]);
 
-        if ($was_this_device) {
-            $this->resolver->forgetDevice();
-        }
+            if ($was_this_device) {
+                $this->resolver->forgetDevice();
+            }
 
-        $group->delete();
+            $group->delete();
 
-        return ['success' => true, 'message' => 'Grupo eliminado'];
+            return ['success' => true, 'message' => 'Grupo eliminado'];
+
+        });
     }
 
     /**
@@ -253,50 +272,54 @@ class SeriesDeviceGroupController extends Controller
      */
     public function bind(Request $request)
     {
-        $request->validate([
-            'group_id'    => 'required',
-            'device_name' => 'required|string|max:255',
-        ]);
+        return (new \App\Models\Tenant\Company())->getConnection()->transaction(function () use ($request) {
+            \App\Models\Tenant\Company::lockForUpdate()->firstOrFail();
+            $request->validate([
+                'group_id'    => 'required',
+                'device_name' => 'required|string|max:255',
+            ]);
 
-        if (! $this->resolver->dedicatedEnabled()) {
-            return ['success' => false, 'message' => 'La función dedicada no está habilitada.'];
-        }
+            if (! $this->resolver->dedicatedEnabled()) {
+                return ['success' => false, 'message' => 'La función dedicada no está habilitada.'];
+            }
 
-        $user = auth()->user();
-        $device_name = trim($request->input('device_name'));
+            $user = auth()->user();
+            $device_name = trim($request->input('device_name'));
 
-        $group = SeriesDeviceGroup::where('establishment_id', $user->establishment_id)
-            ->find($request->input('group_id'));
+            $group = SeriesDeviceGroup::lockForUpdate()->where('establishment_id', $user->establishment_id)
+                ->find($request->input('group_id'));
 
-        if (! $group) {
-            return ['success' => false, 'message' => 'Grupo no encontrado.'];
-        }
+            if (! $group) {
+                return ['success' => false, 'message' => 'Grupo no encontrado.'];
+            }
 
-        if ($group->bound_device_name && $group->bound_device_name !== $device_name) {
-            return ['success' => false, 'message' => 'El grupo ya está en uso por el equipo "' . $group->bound_device_name . '".'];
-        }
+            if ($group->bound_device_name && $group->bound_device_name !== $device_name) {
+                return ['success' => false, 'message' => 'El grupo ya está en uso por el equipo "' . $group->bound_device_name . '".'];
+            }
 
-        // Punto 9: si el usuario tiene series predefinidas, requiere confirmación para eliminarlas.
-        if ($this->userHasPredefinedSeries($user) && ! $request->boolean('remove_predefined')) {
+            // Punto 9: si el usuario tiene series predefinidas, requiere confirmación para eliminarlas.
+            if ($this->userHasPredefinedSeries($user) && ! $request->boolean('remove_predefined')) {
+                return [
+                    'success'               => false,
+                    'requires_confirmation' => true,
+                    'message'               => 'Tu usuario tiene series predefinidas. Para activar un grupo dedicado se eliminarán esas relaciones.',
+                ];
+            }
+
+            if ($request->boolean('remove_predefined')) {
+                $this->removeUserPredefinedSeries($user);
+            }
+
+            $group->bindToDevice($device_name, $user->id);
+            $this->resolver->rememberDevice($device_name);
+
             return [
-                'success'               => false,
-                'requires_confirmation' => true,
-                'message'               => 'Tu usuario tiene series predefinidas. Para activar un grupo dedicado se eliminarán esas relaciones.',
+                'success'     => true,
+                'message'     => 'Grupo dedicado activado en este equipo.',
+                'bound_group' => $this->presentWithBinding($group->fresh('series')),
             ];
-        }
 
-        if ($request->boolean('remove_predefined')) {
-            $this->removeUserPredefinedSeries($user);
-        }
-
-        $group->bindToDevice($device_name, $user->id);
-        $this->resolver->rememberDevice($device_name);
-
-        return [
-            'success'     => true,
-            'message'     => 'Grupo dedicado activado en este equipo.',
-            'bound_group' => $this->presentWithBinding($group->fresh('series')),
-        ];
+        });
     }
 
     /**

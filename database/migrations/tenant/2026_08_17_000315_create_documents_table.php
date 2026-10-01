@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\DB;
  * - `ubl_version` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `group_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `document_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
+ * - `control_number` varchar(32) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `series` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `number` bigint unsigned NOT NULL
  * - `date_of_issue` date NOT NULL
@@ -120,6 +121,7 @@ CREATE TABLE `documents` (
   `group_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL,
   `document_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   -- ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+  `control_number` varchar(32) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `series` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL,
   `number` bigint unsigned NOT NULL,
   -- ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
@@ -205,6 +207,7 @@ CREATE TABLE `documents` (
   `user_rel_subscription_plan_id` int(10) unsigned DEFAULT '0' COMMENT 'Relacion con suscripciones',
   `collect_api_state_id` int(10) unsigned NOT NULL DEFAULT '99' COMMENT 'estado de api en global factoring',
   PRIMARY KEY (`id`),
+  UNIQUE KEY `documents_environment_type_series_number_unique` (`fiscal_environment`,`document_type_id`,`series`,`number`),
   UNIQUE KEY `documents_unique_filename_unique` (`unique_filename`),
   KEY `documents_user_id_foreign` (`user_id`),
   KEY `documents_establishment_id_foreign` (`establishment_id`),

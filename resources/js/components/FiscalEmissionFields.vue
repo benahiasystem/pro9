@@ -5,10 +5,7 @@
             <div class="col-md-6 form-group">
                 <label>Modalidad de emisión fiscal *</label>
                 <el-select v-model="form.fiscal_emission_mode" placeholder="Seleccione una modalidad" @change="changeMode">
-                    <el-option v-for="(label, key) in modes" :key="key"
-                               :label="key === 'free_form' || (key === 'digital' && enableHka) ? label : `${label} (en desarrollo)`"
-                               :value="key"
-                               :disabled="key !== 'free_form' && !(key === 'digital' && enableHka) && form.fiscal_emission_mode !== key" />
+                    <el-option v-for="(label, key) in modes" :key="key" :label="label" :value="key" />
                 </el-select>
                 <small class="text-danger">{{ error('fiscal_emission_mode') }}</small>
             </div>
@@ -21,8 +18,6 @@
                 <small class="text-danger">{{ error('fiscal_environment') }}</small>
             </div>
         </div>
-        <el-alert class="mb-3" :title="enableHka ? 'HKA permite verificar la conexión. La emisión digital de documentos permanece en desarrollo.' : 'Esta etapa opera con forma libre preimpresa. Impresora fiscal e imprenta digital permanecen en desarrollo.'"
-                  type="info" :closable="false" show-icon />
         <p v-if="form.fiscal_environment_locked" class="text-muted">Este tenant tiene operaciones. Para cambiar de ambiente cree otro tenant limpio.</p>
         <div class="row" v-if="form.fiscal_configuration">
             <div v-for="field in fields" :key="field.key" class="col-md-6 form-group">
@@ -61,7 +56,7 @@
             <small class="text-danger">{{ error('fiscal_credentials') }}</small>
         </div>
         <small class="text-danger">{{ error('fiscal_configuration') }}</small>
-        <p class="text-muted mb-0">La configuración operativa se completa por establecimiento, canal, numeración y lote preimpreso. La conexión HKA no activa la emisión digital.</p>
+        <p class="text-muted mb-0">Configuración progresiva: puede completar los parámetros después. Pro9 registra los documentos localmente; esta selección no conecta una máquina ni activa envíos a un proveedor fiscal.</p>
         <!-- ######## FIN MODALIDAD DE EMISIÓN FISCAL ######## -->
     </div>
 </template>

@@ -123,14 +123,6 @@ class Handler extends ExceptionHandler
             return $this->errorResponse('', '', $exception);
         }
 
-        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
-        // Fiscal controllers use Symfony HTTP exceptions; their status is not the PHP exception code.
-        if ($exception instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface && $request->expectsJson()) {
-            return $this->errorResponse($exception->getMessage(), $exception->getStatusCode(), $exception)
-                ->withHeaders($exception->getHeaders());
-        }
-        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
-
 
         if(!$this->isFrontend($request))
         {

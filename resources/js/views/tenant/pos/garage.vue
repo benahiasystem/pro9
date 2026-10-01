@@ -1003,9 +1003,6 @@
 </style>
 
 <script>
-// ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
-import { newFiscalOperationKey } from "@helpers/fiscal-operation";
-// ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
 import Keypress from "vue-keypress";
 import { calculateRowItem } from "../../../helpers/functions";
 import FastPayment from "./partials/fast_payment_garage.vue";
@@ -1445,8 +1442,6 @@ export default {
             form_pos = JSON.parse(form_pos);
             if (form_pos) {
                 this.form = form_pos;
-                if (!this.form.operation_key) this.$set(this.form, "operation_key", newFiscalOperationKey());
-                this.setFormPosLocalStorage();
                 this.initDateTimeIssue();
                 // this.calculateTotal()
             }
@@ -1826,7 +1821,6 @@ export default {
         },
         initForm() {
             this.form = {
-                operation_key: newFiscalOperationKey(),
                 establishment_id: null,
                 // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
                 document_type_id: "01",

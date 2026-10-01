@@ -24,6 +24,7 @@ class SeriesController extends Controller
      */
     public function records($establishmentId, $document_type = null)
     {
+        \App\Services\SeriesAdministration::authorize((int) $establishmentId);
         $query = Series::where('establishment_id', $establishmentId)
             ->with(['series_configurations', 'device_group']);
 
@@ -46,7 +47,7 @@ class SeriesController extends Controller
                 'number'                   => $serie->number,
                 'contingency'              => (bool) $serie->contingency,
                 'dedicated'                => (bool) $serie->dedicated,
-                'in_use'                   => (bool) $serie->in_use,
+                'in_use'                   => \App\Services\SeriesNumbering::used($serie),
                 'series_device_group_id'   => $serie->series_device_group_id,
                 'group_name'               => optional($serie->device_group)->name,
                 'category'                 => $type['category'] ?? SeriesCodeGenerator::categoryForDocumentType($serie->document_type_id),
@@ -64,6 +65,7 @@ class SeriesController extends Controller
      */
     public function tables()
     {
+        \App\Services\SeriesAdministration::authorize();
         $document_types          = DocumentType::OnlyAvaibleDocuments()->get();
         $is_nrus                 = $this->isNrus();
         $series_types            = SeriesCodeGenerator::availableTypes($is_nrus);
@@ -83,29 +85,38 @@ class SeriesController extends Controller
      */
     public function store(SeriesRequest $request)
     {
-        $validate_series = $this->validateSeries($request);
-        if (!$validate_series['success']) return $validate_series;
+        return \App\Services\SeriesAdministration::transaction(function () use ($request) {
+            $validate_series = $this->validateSeries($request);
+            if (!$validate_series['success']) return $validate_series;
 
-        $id = $request->input('id');
-        $series = Series::firstOrNew(['id' => $id]);
+            $id = $request->input('id');
+            \App\Services\SeriesAdministration::authorize((int) $request->input('establishment_id'));
+            $series = $id ? Series::lockForUpdate()->findOrFail($id) : new Series();
+            if ($id && ((int) $series->establishment_id !== (int) $request->input('establishment_id') || \App\Services\SeriesNumbering::used($series))) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['series' => 'La serie utilizada no se puede modificar ni mover de sucursal.']);
+            }
+            $groupId = $request->input('series_device_group_id');
+            if ($groupId && (! $request->boolean('dedicated') || ! \App\Models\Tenant\SeriesDeviceGroup::where('establishment_id', $request->input('establishment_id'))->where('id', $groupId)->exists())) abort(422, 'Grupo de series incompatible.');
 
-        $series->establishment_id       = $request->input('establishment_id');
-        $series->document_type_id       = $request->input('document_type_id');
-        $series->number                 = $request->input('number');
-        $series->contingency            = (bool) $request->input('contingency', false);
-        $series->dedicated              = (bool) $request->input('dedicated', false);
-        $series->series_device_group_id = $request->input('series_device_group_id');
-        $series->save();
+            $series->establishment_id       = $request->input('establishment_id');
+            $series->document_type_id       = $request->input('document_type_id');
+            $series->number                 = $request->input('number');
+            $series->contingency            = (bool) $request->input('contingency', false);
+            $series->dedicated              = (bool) $request->input('dedicated', false);
+            $series->series_device_group_id = $request->input('series_device_group_id');
+            $series->save();
 
-        // Correlativo inicial: solo configurable mientras la serie no tenga comprobantes.
-        if (!$series->in_use) {
-            $this->saveCorrelative($series, (int) $request->input('correlative', 1));
-        }
+            // Correlativo inicial: solo configurable mientras la serie no tenga comprobantes.
+            if (!$series->in_use) {
+                $this->saveCorrelative($series, (int) $request->input('correlative', 1));
+            }
 
-        return [
-            'success' => true,
-            'message' => ($id) ? 'Serie editada con éxito' : 'Serie registrada con éxito',
-        ];
+            return [
+                'success' => true,
+                'message' => ($id) ? 'Serie editada con éxito' : 'Serie registrada con éxito',
+            ];
+
+        });
     }
 
     /**
@@ -113,15 +124,19 @@ class SeriesController extends Controller
      */
     public function updateCorrelative(Request $request, $id)
     {
-        $series = Series::findOrFail($id);
+        return \App\Services\SeriesAdministration::transaction(function () use ($request, $id) {
+            $series = Series::lockForUpdate()->findOrFail($id);
 
-        if ($series->in_use) {
-            return ['success' => false, 'message' => 'La serie ya tiene comprobantes: no se puede cambiar el correlativo.'];
-        }
+            if (\App\Services\SeriesNumbering::used($series)) {
+                return ['success' => false, 'message' => 'La serie ya tiene comprobantes: no se puede cambiar el correlativo.'];
+            }
 
-        $this->saveCorrelative($series, (int) $request->input('correlative', 1));
+            $request->validate(['correlative' => 'required|integer|min:1|max:2147483647']);
+            $this->saveCorrelative($series, (int) $request->input('correlative', 1));
 
-        return ['success' => true, 'message' => 'Correlativo actualizado'];
+            return ['success' => true, 'message' => 'Correlativo actualizado'];
+
+        });
     }
 
     /**
@@ -147,6 +162,7 @@ class SeriesController extends Controller
      */
     public function nextCode(Request $request)
     {
+        \App\Services\SeriesAdministration::authorize();
         $prefix = (string) $request->input('prefix', '');
 
         return ['number' => $prefix === '' ? '' : app(SeriesCodeGenerator::class)->nextCode($prefix)];
@@ -157,16 +173,20 @@ class SeriesController extends Controller
      */
     public function toggleDedicated(Request $request)
     {
-        $enable = (bool) $request->input('enable', false);
-        $config = Configuration::first();
-        $config->enable_dedicated_series = $enable;
-        $config->save();
+        return \App\Services\SeriesAdministration::transaction(function () use ($request) {
+            \App\Services\SeriesAdministration::authorize();
+            $enable = (bool) $request->input('enable', false);
+            $config = Configuration::first();
+            $config->enable_dedicated_series = $enable;
+            $config->save();
 
-        return [
-            'success'                 => true,
-            'enable_dedicated_series' => $enable,
-            'message'                 => $enable ? 'Modo dedicado activado' : 'Modo dedicado desactivado',
-        ];
+            return [
+                'success'                 => true,
+                'enable_dedicated_series' => $enable,
+                'message'                 => $enable ? 'Modo dedicado activado' : 'Modo dedicado desactivado',
+            ];
+
+        });
     }
 
     /**
@@ -223,15 +243,18 @@ class SeriesController extends Controller
      */
     public function destroy($id)
     {
-        $item = Series::findOrFail($id);
+        return \App\Services\SeriesAdministration::transaction(function () use ($id) {
+            $item = Series::lockForUpdate()->findOrFail($id);
 
-        if ($item->in_use) {
-            return ['success' => false, 'message' => 'No se puede eliminar: la serie ya tiene comprobantes emitidos.'];
-        }
+            if (\App\Services\SeriesNumbering::used($item)) {
+                return ['success' => false, 'message' => 'No se puede eliminar: la serie ya tiene comprobantes emitidos.'];
+            }
 
-        SeriesConfiguration::where('series_id', $item->id)->delete();
-        $item->delete();
+            SeriesConfiguration::where('series_id', $item->id)->delete();
+            $item->delete();
 
-        return ['success' => true, 'message' => 'Serie eliminada con éxito'];
+            return ['success' => true, 'message' => 'Serie eliminada con éxito'];
+
+        });
     }
 }

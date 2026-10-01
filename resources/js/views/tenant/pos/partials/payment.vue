@@ -151,14 +151,13 @@
                     </div>
 
                     <div class="pos-field pos-field--series">
-                        <el-select v-if="form.document_type_id === '80'" v-model="form.series_id" placeholder="Serie">
+                        <el-select v-model="form.series_id" placeholder="Serie">
                             <el-option v-for="option in series"
                                        :key="option.id"
                                        :label="option.number"
                                        :value="option.id">
                             </el-option>
                         </el-select>
-                <fiscal-profile-summary v-else :profile="fiscalProfile" />
                     </div>
                 </div>
             </section>
@@ -376,9 +375,6 @@
 </template>
 
 <script>
-// ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
-import { fiscalSale } from "@mixins/fiscal-sale";
-// ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
 import Keypress from 'vue-keypress'
 
 import CardBrandsForm from '../../card_brands/form.vue'
@@ -394,7 +390,7 @@ import SearchAgent from '@components/SearchAgent.vue'
 
 export default {
     components: {OptionsForm, CardBrandsForm, SaleNotesOptions, MultiplePaymentForm, Keypress, DiscountPermissionForm, SearchAgent},
-    mixins: [fiscalSale, pointSystemFunctions, buhoprinter],
+    mixins: [pointSystemFunctions, buhoprinter],
 
     props: [
         'form',
@@ -1246,7 +1242,7 @@ export default {
             this.series = _.filter(this.all_series, {'document_type_id': this.form.document_type_id});
             this.form.series_id = (this.series.length > 0) ? this.series[0].id : null
 
-            if (this.form.document_type_id === '80' && !this.form.series_id) {
+            if (!this.form.series_id) {
                 return this.$message.warning('El sucursal no tiene series disponibles para el comprobante');
             }
         },
@@ -1398,7 +1394,7 @@ export default {
                 return this.$message.error('La fecha de emisión no coincide con la del día actual');
             }
 
-            if (this.form.document_type_id === '80' && !this.form.series_id) {
+            if (!this.form.series_id) {
                 return this.$message.warning('El sucursal no tiene series disponibles para el comprobante');
             }
 
@@ -1603,7 +1599,6 @@ export default {
             this.$http.get(`/${this.resource}/payment_tables`)
                 .then(response => {
                     this.all_series = response.data.series
-                    this.fiscalProfiles = response.data.fiscal_profiles || []
                     this.payment_method_types = response.data.payment_method_types
                     this.cards_brand = response.data.cards_brand
                     this.global_discount_types = response.data.global_discount_types

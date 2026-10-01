@@ -10,7 +10,7 @@ El control de cambios de la p. 2 registra: 1.00 (manual original); 1.01 (arquite
 
 ## 1. Límite entre Pro9 y HKA
 
-Pro9 conserva sus tipos, números, series, controles, reservas, secuencias, validaciones e identidad fiscal. Los códigos HKA pertenecen **sólo** al adaptador de la imprenta: construir solicitudes, interpretar respuestas y hacer consultas al proveedor. La traducción se efectúa por **significado del documento**, nunca por igualdad numérica, y no renombra `document_type_id` ni cambia `FiscalProfileService::TYPES`.
+Pro9 utiliza sus tipos, series, correlativos y números de control propios. La configuración vigente usa `series`, `series_configurations` y `series_device_groups`; el módulo de perfiles, secuencias y reservas fiscales fue retirado para instalaciones nuevas. Los códigos HKA pertenecen **sólo** al adaptador de la imprenta: construir solicitudes, interpretar respuestas y hacer consultas al proveedor. La traducción se efectúa por **significado del documento**, nunca por igualdad numérica, y no renombra `document_type_id` ni modifica el catálogo documental de Pro9.
 
 | Documento | Código Pro9 actual | Código HKA, catálogo 1 | Regla |
 |---|---:|---:|---|
@@ -303,7 +303,7 @@ El requisito Bearer global aparece también sobre `Autenticacion` en la definici
 
 ### 10.1 Datos de respuesta que conviene persistir y conciliar
 
-`SendResponseDTO.resultado` publica `imprentaDigital`, `autorizado`, `serie`, `tipoDocumento`, `numeroDocumento`, `numeroControl`, fechas/horas de asignación y del control, `rangoAsignado`, `transaccionId`, `urlConsulta`. `AsignacionResponseDTO` publica además `rangosAsignados[]` y `detallesReserva[]` con números/control inicial y final, serie, fecha de reservación, `counterfoilId` y `rangoMaestro`. Los DTO de respuesta no marcan estas propiedades como `required`: aceptar ausencias y validar los datos indispensables antes de pasar una reserva Pro9 a estado confirmado. [Fuente: esquemas `SendResponseDTO`, `Resultado`, `AsignacionResponseDTO`, `DetalleReserva` del Swagger.]
+`SendResponseDTO.resultado` publica `imprentaDigital`, `autorizado`, `serie`, `tipoDocumento`, `numeroDocumento`, `numeroControl`, fechas/horas de asignación y del control, `rangoAsignado`, `transaccionId`, `urlConsulta`. `AsignacionResponseDTO` publica además `rangosAsignados[]` y `detallesReserva[]` con números/control inicial y final, serie, fecha de reservación, `counterfoilId` y `rangoMaestro`. Los DTO de respuesta no marcan estas propiedades como `required`: aceptar ausencias y validar los datos indispensables antes de confirmar un resultado local en una integración futura. [Fuente: esquemas `SendResponseDTO`, `Resultado`, `AsignacionResponseDTO`, `DetalleReserva` del Swagger.]
 
 ## 11. Swagger DEMO: estructura JSON y diferencias frente al PDF
 
@@ -345,4 +345,4 @@ En los DTO ordinarios, `numeroDocumento` suele restringirse a **1–19 dígitos*
 1. Usar Swagger DEMO como contrato **publicado** para rutas, casing y estructuras; conservar el PDF como contexto de reglas y límites. Si divergen, registrar ambos y verificar con credenciales DEMO antes de activar una ruta. El `required` de OpenAPI sólo valida forma, no completa condiciones fiscales.
 2. En `GET /api/AplicarRetencion` e ISLR, Swagger publica un cuerpo JSON; probar que cliente, proxy y servidor lo acepten. `GET /api/Documentos/Relacionar` y `GET /api/FacturacionLote/Estado` sí usan query parameters.
 3. Confirmar formatos de `serie` vacía, `archivo` de descarga, aceptación de moneda `VES`, códigos IVA `X/F`, estado de duplicado, idempotencia por `transaccionId`, límites de lotes y correspondencia entre asignación y emisión.
-4. Los nuevos endpoints ARC, DNF, ISLR, relaciones, lotes y contingencia son capacidad **documentada del proveedor**, no habilitación funcional de Pro9. La futura integración necesita sus propias decisiones de producto, permisos y pruebas; ningún código HKA pasa a `FiscalProfileService::TYPES` ni a secuencias internas.
+4. Los nuevos endpoints ARC, DNF, ISLR, relaciones, lotes y contingencia son capacidad **documentada del proveedor**, no habilitación funcional de Pro9. La futura integración necesita sus propias decisiones de producto, permisos y pruebas; ningún código HKA modifica el catálogo ni la numeración documental interna.

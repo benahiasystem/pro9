@@ -26,19 +26,8 @@ class InventoryTransferObserver
 
     private function getNumberDocument($inventory_transfer)
     {
-        if ($inventory_transfer->number === '#') {
-            $record = InventoryTransfer::query()
-                ->select('number')
-                ->where('fiscal_environment', $inventory_transfer->fiscal_environment)
-                ->where('document_type_id', $inventory_transfer->document_type_id)
-                ->where('series', $inventory_transfer->series)
-                ->orderBy('number', 'desc')
-                ->first();
+        return \App\Services\SeriesNumbering::next($inventory_transfer, $inventory_transfer->document_type_id, $inventory_transfer->series, $inventory_transfer->number, auth()->user()->establishment_id);
 
-            return ($record) ? $record->number + 1 : 1;
-        }
-
-        return $inventory_transfer->number;
     }
 }
 // ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

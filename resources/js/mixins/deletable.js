@@ -29,7 +29,6 @@ export const deletable = {
                 });
             })
         },
-        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
         async anular(url, method = 'get') {
             try {
                 await this.$confirm('¿Desea anular el registro?', 'Anular', {
@@ -50,7 +49,6 @@ export const deletable = {
             }
             return false;
         },
-        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
         delete(url) {
             return new Promise((resolve) => {
                 this.$confirm('¿Desea eliminar permanentemente el registro?', 'Anular', {

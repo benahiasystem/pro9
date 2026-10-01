@@ -28,7 +28,7 @@
                             <tbody>
                             <tr v-for="(row, index) in records" :key="index">
                                 <template v-if="row.id">
-                                    <td>PAGO-{{ row.id }}<small v-if="row.is_source_allocation" class="d-block">Cobro aplicado de NV #{{ row.source_sale_note_id }}</small></td>
+                                    <td>PAGO-{{ row.id }}</td>
                                     <td>{{ row.date_of_payment }}</td>
                                     <td>{{ row.payment_method_type_description }}</td>
                                     <td>{{ row.destination_description }}</td>
@@ -41,7 +41,7 @@
                                         <template v-if="row.payment_received === null">
 
                                             <span class="d-block" v-if="row.reference"><b>Referencia:</b> {{ row.reference }}</span>
-                                            <button  type="button" v-if="row.filename" class="btn waves-effect waves-light btn-xs btn-primary mb-2  mt-2" @click.prevent="clickDownloadFile(row.filename, row.file_type)">
+                                            <button  type="button" v-if="row.filename" class="btn waves-effect waves-light btn-xs btn-primary mb-2  mt-2" @click.prevent="clickDownloadFile(row.filename)">
                                                 <i class="fas fa-fw fa-file-download"></i>
                                                 Descargar voucher
                                             </button>
@@ -56,7 +56,7 @@
                                             <template v-if="row.payment_received">
 
                                                 <span class="d-block" v-if="row.reference"><b>Referencia:</b> {{ row.reference }}</span>
-                                                <button  type="button" v-if="row.filename" class="btn btn-sm btn-primary mb-2  mt-2" @click.prevent="clickDownloadFile(row.filename, row.file_type)">
+                                                <button  type="button" v-if="row.filename" class="btn btn-sm btn-primary mb-2  mt-2" @click.prevent="clickDownloadFile(row.filename)">
                                                     <i class="fas fa-fw fa-file-download"></i>
                                                     Descargar voucher
                                                 </button>
@@ -81,7 +81,7 @@
 
                                     <td class="series-table-actions text-right">
 
-                                        <template v-if="permissions.delete_payment && !row.is_source_allocation">
+                                        <template v-if="permissions.delete_payment">
                                             <button type="button" class="btn waves-effect waves-light btn-xs btn-danger" @click.prevent="clickDelete(row.id)">Eliminar</button>
                                         </template>
 
@@ -341,9 +341,9 @@
                 this.documentPayment.document_id = this.documentId
 
             },
-            clickDownloadFile(filename, fileType = 'documents') {
+            clickDownloadFile(filename) {
                 window.open(
-                    `/finances/payment-file/download-file/${filename}/${fileType}`,
+                    `/finances/payment-file/download-file/${filename}/documents`,
                     "_blank"
                 );
             },

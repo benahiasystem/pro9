@@ -134,7 +134,6 @@
 
 
             $document->payments->each(function($payment) use($cash,$isDocument,$cashDocument){
-                if ($isDocument && $payment->source_sale_note_payment_id) return;
                 CashDocumentPayment::updateOrCreate([
                     'cash_id' => $cash->id,
                     $isDocument ? 'document_payment_id' : 'sale_note_payment_id' => $payment->id,
@@ -146,7 +145,6 @@
 
         public function createGlobalPayment($model, $row)
         {
-            if ($model instanceof DocumentPayment && $model->source_sale_note_payment_id) return;
             $destination = $this->getDestinationRecord($row);
             $company = Company::active();
 
@@ -187,7 +185,6 @@
 
         public function createCashDocumentPayment($payment, $isDocument = true)
         {
-            if ($isDocument && $payment->source_sale_note_payment_id) return;
 
             $cash = Cash::where([
                 ['user_id', auth()->user()->id],
@@ -826,7 +823,6 @@
 
         public function createGlobalPaymentTransaction($model, $row)
         {
-            if ($model instanceof DocumentPayment && $model->source_sale_note_payment_id) return;
 
             $destination = $this->getDestinationRecordTransaction($row);
             $company = Company::active();

@@ -29,51 +29,51 @@ use Exception, DB;
 class Dispatch2Controller extends Controller
 {
     use StorageDocument;
-    
+
     public function __construct() {
         $this->middleware('input.request:dispatch,web', ['only' => ['store']]);
     }
-    
+
     public function index() {
         return view('tenant.dispatches.index');
     }
-    
+
     public function columns() {
         return [
             'number' => 'Número'
         ];
     }
-    
+
     public function records(Request $request) {
         $records = Dispatch::where($request->column, 'like', "%{$request->value}%")
             ->orderBy('series')
             ->orderBy('number', 'desc');
-        
+
         return new DispatchCollection($records->paginate(config('tenant.items_per_page')));
     }
-    
+
     public function create() {
         return view('tenant.dispatches.form');
     }
-    
+
     public function store(Request $request) {
-        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
-        $data = $request->all();
-        $fact = (new Facturalo())->saveFiscal($data, (int) $data['fiscal_profile_id'], $data['operation_key'], $data['fiscal_fingerprint'], $data['fiscal_channel'], $data['fiscal_group_id']);
+        $fact = DB::connection('tenant')->transaction(function () use($request) {
+            $facturalo = new Facturalo();
+            $facturalo->save($request->all());
+            $facturalo->createPdf();
+
+            return $facturalo;
+        });
+
         $document = $fact->getDocument();
-        $db = $document->getConnection();
-        $reservation = $db->table('fiscal_number_reservations')->where('dispatch_id', $document->id)->first();
-        (new \App\Services\Fiscal\FiscalEmissionService($db))->process((int) $reservation->id);
-        $fact->createPdf();
-        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
         return [
             'success' => true,
             // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
-            'message' => "Se creó la orden de entrega {$document->number_full}",
+            'message' => "Se creó la orden de entrega {$document->series}-{$document->number}",
             // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
         ];
     }
-    
+
     /**
      * Tables
      * @param  Request $request
@@ -86,7 +86,7 @@ class Dispatch2Controller extends Controller
             ->get()
             ->transform(function($row) {
                 $full_description = ($row->internal_id) ? $row->internal_id.' - '.$row->description : $row->description;
-                
+
                 return [
                     'id' => $row->id,
                     'full_description' => $full_description,
@@ -101,7 +101,7 @@ class Dispatch2Controller extends Controller
                     'purchase_affectation_igv_type_id' => $row->purchase_affectation_igv_type_id
                 ];
             });
-        
+
         $customers = Person::query()
             ->whereIn('identity_document_type_id', [6])
             ->whereType('customers')
@@ -123,7 +123,7 @@ class Dispatch2Controller extends Controller
                     'identity_document_type_code' => $row->identity_document_type->code
                 ];
             });
-        
+
         $identityDocumentTypes = IdentityDocumentType::whereActive()->get();
         $transferReasonTypes = TransferReasonType::whereContractActive()->get();
         $transportModeTypes = TransportModeType::whereActive()->get();
@@ -134,17 +134,17 @@ class Dispatch2Controller extends Controller
         $districts = District::whereActive()->get();
         $establishments = Establishment::all();
         $series = app(SeriesResolver::class)->applyContext(Series::query())->get();
-        
+
         return compact('establishments', 'customers', 'series', 'transportModeTypes', 'transferReasonTypes', 'unitTypes', 'countries', 'departments', 'provinces', 'districts', 'identityDocumentTypes', 'items');
     }
-    
+
     public function downloadExternal($type, $external_id) {
         $retention = Dispatch::where('external_id', $external_id)->first();
-        
+
         if (!$retention) {
             throw new Exception("El código {$external_id} es inválido, no se encontro documento relacionado");
         }
-        
+
         switch ($type) {
             case 'pdf':
                 $folder = 'pdf';
@@ -158,7 +158,7 @@ class Dispatch2Controller extends Controller
             default:
                 throw new Exception('Tipo de archivo a descargar es inválido');
         }
-        
+
         return $this->downloadStorage($retention->filename, $folder);
     }
 }

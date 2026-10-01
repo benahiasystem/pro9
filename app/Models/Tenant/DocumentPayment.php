@@ -13,7 +13,7 @@ use App\Traits\PaymentModelHelperTrait;
 class DocumentPayment extends ModelTenant
 {
     use PaymentModelHelperTrait;
-    
+
     protected $with = ['payment_method_type', 'card_brand'];
     public $timestamps = false;
 
@@ -34,25 +34,6 @@ class DocumentPayment extends ModelTenant
         'payment_received' => 'bool',
     ];
 
-    // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
-    protected static function boot()
-    {
-        parent::boot();
-        $protectAllocation = function (self $payment): void {
-            if ($payment->exists && $payment->getOriginal('source_sale_note_payment_id')) {
-                throw \Illuminate\Validation\ValidationException::withMessages(['payment' => 'Este importe aplica un cobro de la nota de venta y no puede editarse ni eliminarse.']);
-            }
-        };
-        static::saving($protectAllocation);
-        static::deleting($protectAllocation);
-    }
-
-    public function sourceSaleNotePayment()
-    {
-        return $this->belongsTo(SaleNotePayment::class, 'source_sale_note_payment_id');
-    }
-    // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
-
     public function payment_method_type()
     {
         return $this->belongsTo(PaymentMethodType::class);
@@ -68,7 +49,7 @@ class DocumentPayment extends ModelTenant
         return $this->belongsTo(Document::class, 'document_id');
     }
 
-    
+
     public function global_payment()
     {
         return $this->morphOne(GlobalPayment::class, 'payment');
@@ -88,7 +69,7 @@ class DocumentPayment extends ModelTenant
     {
         return $this->hasMany(CashDocumentPayment::class, 'document_payment_id', 'id');
     }
-        
+
     /**
      * 
      * Filtros para obtener pagos en efectivo y con destino caja
@@ -104,7 +85,7 @@ class DocumentPayment extends ModelTenant
                     });
     }
 
-    
+
     /**
      * 
      * Obtener informacion del pago y registro origen relacionado
@@ -127,14 +108,14 @@ class DocumentPayment extends ModelTenant
             'payment' => $this->associated_record_payment->isVoidedOrRejected() ? 0 : $this->payment,
         ];
     }
-    
+
 
     public function payment_links()
     {
         return $this->morphMany(PaymentLink::class, 'payment');
     }
 
-    
+
     /**
      * 
      * Retornar descripcion del pago
@@ -152,7 +133,7 @@ class DocumentPayment extends ModelTenant
 
         return $description;
     }
-    
+
 
     /**
      * 
@@ -183,10 +164,10 @@ class DocumentPayment extends ModelTenant
      */
     public function scopeFilterCashPaymentWithoutDestination($query)
     {
-        return $query->whereNull('source_sale_note_payment_id')->where('payment_method_type_id', PaymentMethodType::CASH_PAYMENT_ID);
+        return $query->where('payment_method_type_id', PaymentMethodType::CASH_PAYMENT_ID);
     }
 
-    
+
     /**
      * 
      * Filtros para obtener pagos con transferencia
@@ -196,10 +177,10 @@ class DocumentPayment extends ModelTenant
      */
     public function scopeFilterTransferPayment($query)
     {
-        return $query->whereNull('source_sale_note_payment_id')->where('payment_method_type_id', PaymentMethodType::TRANSFER_PAYMENT_ID);
+        return $query->where('payment_method_type_id', PaymentMethodType::TRANSFER_PAYMENT_ID);
     }
 
-    
+
     /**
      * 
      * Filtros para obtener pagos en efectivo de un documento aceptado (facturas y boletas)
@@ -216,7 +197,7 @@ class DocumentPayment extends ModelTenant
                     ->filterCashPaymentWithoutDestination();
     }
 
-    
+
     /**
      * 
      * Filtros para obtener pagos al contado de un documento aceptado (facturas y boletas)
@@ -250,7 +231,7 @@ class DocumentPayment extends ModelTenant
         return array_merge($this->getRowResourceCashPayment(), $data);
     }
 
-    
+
     /**
      * 
      * Obtener informacion del pago y registro origen relacionado para reporte de ingresos

@@ -26,44 +26,14 @@ class DocumentObserver
     {
         $company = Company::active();
 
-        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
-        if ($document->fiscalReservationId() !== null) {
-            $document->filename = Functions::filename($company, $document->document_type_id, $document->series, $document->number);
-            $document->unique_filename = $document->filename;
-            return;
-        }
-        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
-
-        // Serializa la asignaci├│n de correlativo por serie (evita duplicados en pagos concurrentes).
-        Series::where('document_type_id', $document->document_type_id)
-            ->where('number', $document->series)
-            ->lockForUpdate()
-            ->first();
-
-        $seed = $document->number;
         $number = Functions::newNumber(
-            $document->fiscal_environment,
-            $document->document_type_id,
-            $document->series,
-            $seed,
-            Document::class
+            $document->fiscal_environment, $document->document_type_id,
+            $document->series, $document->number, Document::class, $document->establishment_id
         );
-
-        // Si el n├║mero ya est├í tomado (carrera residual), buscar el siguiente libre.
-        if ($seed === '#' || $seed === null || $seed === '') {
-            while (
-                Document::where('document_type_id', $document->document_type_id)
-                    ->where('series', $document->series)
-                    ->where('number', $number)
-                    ->exists()
-            ) {
-                $number++;
-            }
-        }
 
         $document->number = $number;
         $document->filename = Functions::filename($company, $document->document_type_id, $document->series, $number);
-        $document->unique_filename = $document->filename; //campo ├║nico para evitar duplicados
+        $document->unique_filename = $document->fiscal_environment . '-' . $document->filename; //campo ├║nico para evitar duplicados
     }
 
     /**

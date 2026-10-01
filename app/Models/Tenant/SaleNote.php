@@ -284,6 +284,9 @@ use Modules\Sale\Models\Agent;
         {
             parent::boot();
             static::creating(function (self $model) {
+                $model->number = \App\Services\SeriesNumbering::next(
+                    $model, '80', $model->series, $model->getAttributes()['number'] ?? '#', $model->establishment_id
+                );
                 self::adjustSellerIdField($model);
             });
 
@@ -313,20 +316,12 @@ use Modules\Sale\Models\Agent;
          */
         public static function getLastNumberByModel(SaleNote $model)
         {
-            $sn = SaleNote::where(
-                [
-                    'series' => $model->series,
-                    'prefix' => $model->prefix,
-                    // 'number',
-                ])
-                ->select('number')
-                ->orderBy('number', 'desc')
-                ->first();
-            $return = 0;
-            if ( !empty($sn)) {
-                $return += $sn->number;
-            }
-            return $return + 1;
+            // Read-only suggestion; insertion always validates under the issuer lock.
+            $max = self::where('series', $model->series)
+                ->where('fiscal_environment', $model->fiscal_environment)->max('number');
+            if ($max !== null) return (int) $max + 1;
+            $seriesId = \App\Models\Tenant\Series::where('document_type_id', '80')->where('number', $model->series)->value('id');
+            return (int) (\Modules\Document\Models\SeriesConfiguration::where('series_id', $seriesId)->value('number') ?? 1);
         }
 
         /**

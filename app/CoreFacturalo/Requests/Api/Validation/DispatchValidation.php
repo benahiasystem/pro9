@@ -2,18 +2,17 @@
 
 namespace App\CoreFacturalo\Requests\Api\Validation;
 
+use App\Models\Tenant\Item;
 use App\Models\Tenant\Catalogs\TransferReasonType;
+use Exception;
 
 class DispatchValidation
 {
     public static function validation($inputs)
     {
-        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
-        if (($inputs['document_type_id'] ?? null) !== '09') throw new \DomainException('Tipo de orden de entrega no admitido.');
-        if (!empty($inputs['establishment'])) $inputs['establishment_id'] = Functions::establishment($inputs['establishment']);
+        $inputs['establishment_id'] = Functions::establishment($inputs['establishment']);
         unset($inputs['establishment']);
-        $inputs = \App\Services\Fiscal\FiscalApiDocumentContext::prepareFor($inputs, auth()->user(),
-            \App\Models\Tenant\Company::active()->getConnection(), app(\App\Services\SeriesResolver::class)->activeGroupId());
+
         if (($inputs['transfer_reason_type_id'] ?? null) !== TransferReasonType::OTHER) {
             $inputs['transfer_reason_description'] = null;
         }
@@ -61,12 +60,8 @@ class DispatchValidation
         }
         \App\Models\Tenant\Catalogs\UnitType::requireActiveCode($inputs['unit_type_id'] ?? null);
         foreach ($inputs['items'] as $item) \App\Models\Tenant\Catalogs\UnitType::requireActiveCode($item['unit_type_id'] ?? null);
-        return $inputs;
-        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
-    }
+        Functions::validateSeries($inputs);
 
-    public static function materialize(array $inputs): array
-    {
         $inputs['customer_id'] = Functions::person($inputs['customer'], 'customers');
         unset($inputs['customer']);
 
@@ -82,6 +77,15 @@ class DispatchValidation
         {
 
             $id = Functions::item2($row);
+
+            /*$item = Item::where('internal_id', $row['internal_id'])->first();
+
+            if(!$item) {
+                //throw new Exception("El código interno {$row['internal_id']} no fue encontrado.");
+            }
+            else{
+                $id = $item->id;
+            }*/
 
             $items[] = [
                 'item_id' => $id,

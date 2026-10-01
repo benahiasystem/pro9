@@ -128,13 +128,8 @@
                 </li>
                 @php
                     $environment = \App\Services\FiscalEmissionSettings::MODES[$vc_company->fiscal_emission_mode] ?? 'Modalidad pendiente';
-                    // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
-                    $fiscalModeStatus = $vc_company->fiscal_emission_mode === 'free_form'
-                        ? 'Impresión manual por establecimiento'
-                        : 'Integración no verificada';
-                    // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
-                    $productionClass = 'btn-primary';
-                @endphp
+                $productionClass = 'btn-primary';
+            @endphp
                 @if($vc_company->fiscal_environment == 'demo')
                     <li>
                         <a href="@if(in_array('configuration', $vc_modules)){{route('tenant.companies.create')}}@else # @endif"
@@ -146,9 +141,7 @@
                                 <i class="fas fa-2x fa-toggle-off me-2" style="font-size: 20px;"></i>
                                 <span class="ms-2" style="display: flex; flex-direction: column;">
                                     <span>DEMO</span>
-                                    {{-- ######## INICIO NUMERACIÓN FISCAL VENEZUELA ######## --}}
-                                    <span>Fiscal · {{ $environment }}</span>
-                                    {{-- ######## FIN NUMERACIÓN FISCAL VENEZUELA ######## --}}
+                                    <span>SUNAT Entorno de Demostración</span>
                                 </span>
                             </span>
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
@@ -170,9 +163,7 @@
                                     style="font-size: 20px; color: #28a745 !important"></i>
                                 <span class="ms-2" style="display: flex; flex-direction: column;">
                                     <span>PROD</span>
-                                    {{-- ######## INICIO NUMERACIÓN FISCAL VENEZUELA ######## --}}
-                                    <span>Fiscal · {{ $environment }}</span>
-                                    {{-- ######## FIN NUMERACIÓN FISCAL VENEZUELA ######## --}}
+                                    <span>SUNAT Entorno de Demostración</span>
                                 </span>
                             </span>
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
@@ -193,9 +184,7 @@
                                     style="font-size: 20px; color: #398bf7!important;"></i>
                                 <span class="ms-2" style="display: flex; flex-direction: column;">
                                     <span>INT</span>
-                                    {{-- ######## INICIO NUMERACIÓN FISCAL VENEZUELA ######## --}}
-                                    <span>Operación interna</span>
-                                    {{-- ######## FIN NUMERACIÓN FISCAL VENEZUELA ######## --}}
+                                    <span>SUNAT Entorno de Demostración</span>
                                 </span>
                             </span>
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
@@ -258,11 +247,6 @@
         <ul class="notifications mx-2">
             @php
                 $environment = \App\Services\FiscalEmissionSettings::MODES[$vc_company->fiscal_emission_mode] ?? 'Modalidad pendiente';
-                // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
-                $fiscalModeStatus = $vc_company->fiscal_emission_mode === 'free_form'
-                    ? 'Impresión manual por establecimiento'
-                    : 'Integración no verificada';
-                // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
                 $productionClass = 'btn-primary';
             @endphp
             @if($vc_company->fiscal_environment == 'demo')
@@ -271,10 +255,7 @@
                         class="btn-sunat btn-danger" data-toggle="tooltip" data-placement="bottom"
                         title="Clic para ver o cambiar la configuración del entorno y el tipo de conexión">
                         <span class="btn-title">Modo: DEMO</span>
-                        {{-- ######## INICIO NUMERACIÓN FISCAL VENEZUELA ######## --}}
-                        <span style="font-size: 12px;">Modalidad: {{ $environment }}</span>
-                        <span style="font-size: 12px;">{{ $fiscalModeStatus }}</span>
-                        {{-- ######## FIN NUMERACIÓN FISCAL VENEZUELA ######## --}}
+                        <span style="font-size: 12px;">Conectado a {{ $environment }}</span>
                     </a>
                 </li>
             @elseif($vc_company->fiscal_environment == 'production')
@@ -283,10 +264,7 @@
                         class="btn-sunat {{ $productionClass }}" data-toggle="tooltip" data-placement="bottom"
                         title="Clic para ver o cambiar la configuración del entorno y el tipo de conexión">
                         <span class="btn-title">PRODUCCIÓN</span>
-                        {{-- ######## INICIO NUMERACIÓN FISCAL VENEZUELA ######## --}}
-                        <span style="font-size: 12px;">Modalidad: {{ $environment }}</span>
-                        <span style="font-size: 12px;">{{ $fiscalModeStatus }}</span>
-                        {{-- ######## FIN NUMERACIÓN FISCAL VENEZUELA ######## --}}
+                        <span style="font-size: 12px;">Conectado a {{ $environment }}</span>
                     </a>
                 </li>
             @else

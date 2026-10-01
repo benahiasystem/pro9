@@ -24,7 +24,9 @@ class DispatchValidation
             }
         }
         // ######### FIN RETIRO TRASLADO M1/L1 #########
-        return \App\Services\Fiscal\FiscalWebDocumentContext::prepare($inputs);
+        $series = Functions::findSeries($inputs);
+        if (!$series) throw new Exception("La serie no fue encontrada.");
+        return $inputs;
         // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
     }
 }

@@ -13,7 +13,7 @@ class SeriesRequest extends FormRequest
 
     public function authorize()
     {
-        return true;
+        return $this->user() && $this->user()->type === 'admin';
     }
 
     public function rules()
@@ -23,9 +23,11 @@ class SeriesRequest extends FormRequest
         $validate_number = $this->advancedValidationNumber();
 
         return [
-            'document_type_id' => [
-                'required',
-            ],
+            'establishment_id' => 'required|integer|exists:tenant.establishments,id',
+            'correlative' => 'sometimes|integer|min:1|max:2147483647',
+            'dedicated' => 'sometimes|boolean',
+            'contingency' => 'sometimes|boolean',
+            'document_type_id' => ['required', \Illuminate\Validation\Rule::in(array_unique(array_column(\App\Services\SeriesCodeGenerator::availableTypes(false), 'document_type_id')))],
             'number' => $validate_number,
         ];
     }
@@ -40,7 +42,7 @@ class SeriesRequest extends FormRequest
     public function advancedValidationNumber()
     {
 
-        $general_validations = ['required'];
+        $general_validations = ['required', 'string', 'size:4', 'regex:/^[A-Z0-9]{4}$/'];
         $advanced_validations = [];
         $document_type_id = $this->input('document_type_id');
         $contingency = $this->input('contingency');

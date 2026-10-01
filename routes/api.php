@@ -52,14 +52,6 @@ if ($hostname) {
             Route::get('report', 'Tenant\Api\MobileController@report');
 
             Route::post('documents', 'Tenant\Api\DocumentController@store');
-            // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
-            Route::get('documents/{document}/fiscal', 'Tenant\FiscalDocumentEmissionController@record');
-            Route::post('documents/{document}/fiscal/process', 'Tenant\FiscalDocumentEmissionController@process');
-            Route::post('documents/{document}/fiscal/confirm-print', 'Tenant\FiscalDocumentEmissionController@confirmPrint');
-            Route::post('documents/{document}/fiscal/invalidate-print', 'Tenant\FiscalDocumentEmissionController@invalidatePrint');
-            Route::post('documents/{document}/fiscal/replace-print', 'Tenant\FiscalDocumentEmissionController@replacePrint');
-            Route::post('documents/{document}/fiscal/contingency', 'Tenant\FiscalDocumentEmissionController@contingency');
-            // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
             Route::get('documents/lists', 'Tenant\Api\DocumentController@lists');
             Route::get('documents/lists/{startDate}/{endDate}', 'Tenant\Api\DocumentController@lists');
             // "documents/record/{id}" ya lo registra el modulo MobileApp, que gana por
@@ -75,15 +67,6 @@ if ($hostname) {
             Route::post('voided', 'Tenant\Api\VoidedController@store');
             Route::post('retentions', 'Tenant\Api\RetentionController@store');
             Route::post('dispatches', 'Tenant\Api\DispatchController@store');
-            // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
-            Route::get('dispatches/{document}/fiscal', 'Tenant\FiscalDispatchEmissionController@record');
-            Route::post('dispatches/{document}/fiscal/process', 'Tenant\FiscalDispatchEmissionController@process');
-            Route::post('dispatches/{document}/fiscal/confirm-print', 'Tenant\FiscalDispatchEmissionController@confirmPrint');
-            Route::post('dispatches/{document}/fiscal/invalidate-print', 'Tenant\FiscalDispatchEmissionController@invalidatePrint');
-            Route::post('dispatches/{document}/fiscal/replace-print', 'Tenant\FiscalDispatchEmissionController@replacePrint');
-            Route::post('dispatches/{document}/fiscal/contingency', 'Tenant\FiscalDispatchEmissionController@contingency');
-            // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
-
             Route::get('services/ruc/{number}', 'Tenant\Api\ServiceController@ruc');
             Route::get('services/dni/{number}', 'Tenant\Api\ServiceController@dni');
             Route::post('perceptions', 'Tenant\Api\PerceptionController@store');

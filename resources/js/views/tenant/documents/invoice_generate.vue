@@ -24,18 +24,6 @@
             :class="{ 'layout-editing-active': editingLayout }"
             @submit.prevent="submit"
             >
-                <!-- ######## INICIO NUMERACIÓN FISCAL VENEZUELA ######## -->
-                <div v-if="hasSourceSaleNoteEconomics" class="alert alert-info col-12">
-                    Los importes de las notas de origen se conservan en esta conversión.
-                    <div v-for="(discount, index) in sourceSaleNoteEconomics.discounts" :key="'source-discount-' + index">
-                        Descuento: {{ discount.description }} · {{ form.currency_type_id }} {{ discount.amount }}
-                    </div>
-                    <div v-for="(charge, index) in sourceSaleNoteEconomics.charges" :key="'source-charge-' + index">
-                        Cargo: {{ charge.description }} · {{ form.currency_type_id }} {{ charge.amount }}
-                    </div>
-                </div>
-                <!-- ######## FIN NUMERACIÓN FISCAL VENEZUELA ######## -->
-
             <div class="col-xl-12 col-md-12 col-12 px-0">
                 <header class="clearfix clearfix-default py-2 px-0 px-md-2 border-0">
                     <div
@@ -88,19 +76,7 @@
                                     ></small>
                                 </div>
                             </div>
-                            <!-- ######## INICIO NUMERACIÓN FISCAL VENEZUELA ######## -->
-                            <div v-if="!isUpdate" class="align-self-end col-md-3">
-                                <label class="control-label">Numeración y emisión</label>
-                                <div v-if="currentFiscalProfile">
-                                    <strong>{{ currentFiscalProfile.name }}</strong>
-                                    <small class="d-block">{{ fiscalModeLabel(currentFiscalProfile.mode) }} · Serie: {{ currentFiscalProfile.series_code || 'Sin serie' }}</small>
-                                    <small class="d-block">Próximo estimado: {{ currentFiscalProfile.next_number }}. Se asigna al guardar.</small>
-                                </div>
-                                <div v-else class="text-danger">Configure un perfil fiscal para esta sucursal y punto de emisión.</div>
-                                <small v-if="errors.operation_key" class="text-danger">{{ errors.operation_key[0] }}</small>
-                            </div>
-                            <!-- ######## FIN NUMERACIÓN FISCAL VENEZUELA ######## -->
-                            <div v-if="isUpdate" class="align-self-end serie-input col-2">
+                            <div class="align-self-end serie-input col-2">
                                 <div
                                     :class="{ 'has-danger': errors.series_id }"
                                     class="form-group"
@@ -2625,12 +2601,8 @@
 </style>
     <!-- ######## FIN CAMBIO GEOPOLITICO VENEZUELA -->
 <script>
-import { fiscalSaleNoteEconomics } from '../../../mixins/fiscal-sale-note-economics';
 // ######## INICIO SCRIPT GEOPOLITICO VENEZUELA
 import DocumentFormItem from "./partials/item.vue";
-// ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
-import { newFiscalOperationKey, updateFiscalProfileEstimate } from '../../../helpers/fiscal-operation';
-// ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
 import PersonForm from "../persons/form.vue";
 import DocumentOptions from "../documents/partials/options.vue";
 import {
@@ -2732,7 +2704,7 @@ export default {
         RemoteSlot,
         MiniTour,
     },
-    mixins: [fiscalSaleNoteEconomics,
+    mixins: [
         functions,
         exchangeRate,
         pointSystemFunctions,
@@ -2743,9 +2715,6 @@ export default {
     ],
     data() {
         return {
-            // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
-            fiscalProfiles: [],
-            // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
             miniTourSteps: [
                 {
                     target: ".edit-layout-btn",
@@ -3070,11 +3039,6 @@ export default {
             return this.configuration.global_discount_type_id === "02" ;
         },
         ...mapState(["config", "series", "all_series"]),
-        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
-        currentFiscalProfile() {
-            return (this.fiscalProfiles || []).find(profile => profile.document_type_id === this.form.document_type_id);
-        },
-        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
         isNrus() {
             return !!(this.config && this.config.is_nrus);
         },
@@ -3267,19 +3231,6 @@ export default {
          * #830
          */
 
-        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
-        // Load source currency before preparing prices and stored item snapshots.
-        const sourceNotes = JSON.parse(localStorage.getItem('notes') || '[]');
-        this.form.sale_notes_relateds = sourceNotes;
-        this.loadSaleNoteEconomics(sourceNotes, JSON.parse(localStorage.getItem('saleNoteEconomics') || 'null'));
-        localStorage.removeItem('saleNoteEconomics');
-        if (sourceNotes.length && sourceNotes[0].currency_type_id) {
-            this.form.currency_type_id = sourceNotes[0].currency_type_id;
-            this.form.exchange_rate_sale = Number(sourceNotes[0].exchange_rate_sale);
-            this.currency_type = _.find(this.currency_types, {id: this.form.currency_type_id});
-        }
-        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
-
         const itemsFromDispatches = localStorage.getItem("items");
         if (itemsFromDispatches) {
             const itemsParsed = JSON.parse(itemsFromDispatches);
@@ -3331,7 +3282,7 @@ export default {
         }
 
         //parse items from multiple sale notes not group
-        await this.processItemsForNotesNotGroup();
+        this.processItemsForNotesNotGroup();
 
         const lotsItems = localStorage.getItem("lotsItems");
         if (lotsItems) {
@@ -3359,7 +3310,7 @@ export default {
             this.changeEstablishment();
             this.filterSeries();
             this.filterCustomers();
-            if (!sourceNotes.length) this.changeCurrencyType();
+            this.changeCurrencyType();
             localStorage.removeItem("client");
         }
         const dispatchesNumbersFromDispatches = localStorage.getItem(
@@ -3374,12 +3325,6 @@ export default {
         const notesNumbersFromNotes = localStorage.getItem("notes");
         if (notesNumbersFromNotes) {
             this.form.sale_notes_relateds = JSON.parse(notesNumbersFromNotes);
-            const source = this.form.sale_notes_relateds[0];
-            if (source && source.currency_type_id) {
-                this.form.currency_type_id = source.currency_type_id;
-                this.form.exchange_rate_sale = Number(source.exchange_rate_sale);
-            }
-            this.calculatePayments();
             localStorage.removeItem("notes");
         }
 
@@ -3412,12 +3357,6 @@ export default {
         }
     },
     methods: {
-        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
-        fiscalModeLabel(mode) {
-            const label = { free_form: 'Forma libre', digital: 'Medios digitales', fiscal_machine: 'Máquina fiscal' }[mode] || mode;
-            return mode === 'free_form' ? label : `${label} (en desarrollo)`;
-        },
-        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
         normalizeAddressText(address) {
             return (address || '').trim().toLowerCase();
         },
@@ -3583,7 +3522,6 @@ export default {
             await this.initForm();
             await this.$http.get(`/${this.resource}/tables`).then(response => {
                 this.document_types = response.data.document_types_invoice;
-                this.fiscalProfiles = response.data.fiscal_profiles || [];
                 this.document_types_guide = response.data.document_types_guide;
                 this.currency_types = response.data.currency_types;
                 this.business_turns = response.data.business_turns;
@@ -3801,9 +3739,6 @@ export default {
         initForm() {
             this.errors = {};
             this.form = {
-                // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
-                operation_key: newFiscalOperationKey(),
-                // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
                 establishment_id: null,
                 document_type_id: null,
                 series_id: null,
@@ -5503,14 +5438,6 @@ export default {
             this.calculateTotal();
         },
         calculateTotal() {
-            // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
-            if (this.applySaleNoteEconomics()) {
-                this.setTotalDefaultPayment();
-                this.setPendingAmount();
-                this.calculateFee();
-                return;
-            }
-            // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
             // Restaurar ítems ANTES de sumar: si no, el descuento global se acumula
             // en cada recalculo y SUNAT rechaza con error 3271 (LineExtensionAmount).
             if (this.enabled_discount_global) {
@@ -6808,13 +6735,6 @@ export default {
             };
         },
         async submit() {
-            // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
-            if (this.loading_submit) return;
-            if (!this.isUpdate && !this.currentFiscalProfile) {
-                this.$message.error('Configure la numeración y emisión fiscal de la sucursal antes de guardar.');
-                return;
-            }
-            // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
             let customer = _.find(this.customers, {
                 id: this.form.customer_id
             });
@@ -6954,9 +6874,6 @@ export default {
                 .post(path, this.form)
                 .then(async (response) => {
                     if (response.data.success) {
-                        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
-                        this.fiscalProfiles = updateFiscalProfileEstimate(this.fiscalProfiles, response.data.data.fiscal);
-                        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
                         this.documentNewId = response.data.data.id;
                         this.printTicketUrl = response.data?.links?.print_ticket ?? null;
 
@@ -7005,7 +6922,8 @@ export default {
                 .finally(() => {
                     this.loading_submit = false;
                     this.customerCurrent = null;
-                    // Preserve the same payload and operation key after a failed response.
+                    this.setDefaultDocumentType();
+                    this.selectDefaultCustomer()
                 });
         },
         showOptionsDialog(response) {
@@ -7329,7 +7247,6 @@ export default {
             });
         },
         getTotal() {
-            const sourcePaid = (this.form.sale_notes_relateds || []).reduce((sum, note) => sum + Number(note.source_paid || 0), 0);
             let total_pay = this.form.total;
             if (this.form.has_retention && this.amountRetentionValidate) {
                 total_pay -= this.form.retention.amount;
@@ -7344,11 +7261,11 @@ export default {
                 this.form.total_pending_payment > 0
             ) {
                 // console.log('1');
-                return Math.max(0, this.form.total_pending_payment - sourcePaid);
+                return this.form.total_pending_payment;
             }
 
             // console.log('2');
-            return Math.max(0, total_pay - sourcePaid);
+            return total_pay;
         },
         setDescriptionOfItem(item) {
             return showNamePdfOfDescription(item, this.config.show_pdf_name);

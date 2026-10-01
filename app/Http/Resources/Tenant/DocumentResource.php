@@ -62,7 +62,6 @@ class DocumentResource extends JsonResource
 
         $identityDocumentType = optional($person)->identity_document_type;
 
-        $document->loadMissing('fiscalReservation');
         $data = [
             'id' => $document->id,
             'fiscal_environment' => $document->fiscal_environment,

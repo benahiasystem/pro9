@@ -14,7 +14,6 @@ use App\Models\Tenant\Catalogs\UnitType;
 use App\Services\SeriesCodeGenerator;
 use App\Services\SalesCustomerIdentityPolicy;
 use App\Support\Venezuela\IdentityDocument;
-use App\Support\Venezuela\PersonLocation;
 use Exception;
 
 class Functions
@@ -32,26 +31,16 @@ class Functions
 
     public static function validateSeries($inputs)
     {
-        $series = Series::query()
-            ->where('number', $inputs['series'])
-            ->where('document_type_id', $inputs['document_type_id'])
-            ->where('establishment_id', $inputs['establishment_id'])
-            ->first();
-
-        if (!$series) {
-            throw new Exception("La serie ingresada {$inputs['series']}, es incorrecta.");
-        }
-
-        self::validateNrusSeries($series);
+        return \App\Services\SeriesNumbering::resolve($inputs['document_type_id'], $inputs['series'], (int) $inputs['establishment_id']);
     }
 
     public static function person($inputs, $type)
     {
         if (isset($inputs['id'])) return Person::find($inputs['id'])->id;
 
-        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
-        $location = PersonLocation::resolve((new Person())->getConnection(), $inputs['country_id'], $inputs['district_id'] ?? null);
-        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
+        $district_id = $inputs['district_id'];
+        $province_id = ($district_id) ? substr($district_id, 0, 4) : null;
+        $department_id = ($district_id) ? substr($district_id, 0, 2) : null;
 
         $person = Person::updateOrCreate([
             'type' => $type,
@@ -61,9 +50,9 @@ class Functions
             'name' => $inputs['name'],
             'trade_name' => $inputs['trade_name'],
             'country_id' => $inputs['country_id'],
-            'department_id' => $location['department_id'],
-            'province_id' => $location['province_id'],
-            'district_id' => $location['district_id'],
+            'department_id' => $department_id,
+            'province_id' => $province_id,
+            'district_id' => $district_id,
             'address' => $inputs['address'],
             'email' => $inputs['email'],
             'telephone' => $inputs['telephone'],
@@ -105,47 +94,13 @@ class Functions
 
     public static function findSeries($inputs)
     {
-        if (array_key_exists('series_id', $inputs)) {
-            $series = Series::find($inputs['series_id']);
-            self::validateNrusSeries($series);
-            return $series;
+        $code = $inputs['series'] ?? null;
+        if (!empty($inputs['series_id'])) {
+            $series = Series::findOrFail($inputs['series_id']);
+            $code = $series->number;
         }
-        if (key_exists('series', $inputs)) {
-            // si es string se busca directamente
-            if(is_string($inputs['series'])) {
-                // dd($inputs['series']);
-                $series = Series::query()
-                    ->where('number', $inputs['series'])
-                    ->where('document_type_id', $inputs['document_type_id'])
-                    ->where('establishment_id', $inputs['establishment_id'])
-                    ->first();
-                self::validateNrusSeries($series);
-                return $series;
-            }
-            // si es array debe existir series_id para ser seleccionada
-            if(is_array($inputs['series'])) {
-                if (key_exists('series_id', $inputs)) {
-                    $series = Series::find($inputs['series_id']);
-                    self::validateNrusSeries($series);
-                    return $series;
-                }
-                // si no, se utiliza la primera iteración (no debería llegar a este caso)
-                $series = Series::find($inputs['series'][0]['id']);
-                self::validateNrusSeries($series);
-                return $series;
-            }
-        }
-        throw new Exception("Problemas para identificar la serie para el documento");
-        // if (key_exists('series', $inputs)) {
-        //     return Series::query()
-        //         ->where('number', $inputs['series'])
-        //         ->where('document_type_id', $inputs['document_type_id'])
-        //         ->where('establishment_id', $inputs['establishment_id'])
-        //         ->first();
-        // } else {
-        //     if (!$inputs['series_id']) throw new Exception("La serie no existe");
-        //     return Series::find($inputs['series_id']);
-        // }
+        if (!is_string($code)) throw new Exception('Seleccione explícitamente una serie.');
+        return \App\Services\SeriesNumbering::resolve($inputs['document_type_id'], $code, (int) $inputs['establishment_id']);
     }
 
     private static function validateNrusSeries($series): void

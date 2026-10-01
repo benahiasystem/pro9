@@ -35,6 +35,7 @@ CREATE TABLE `series` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
+  UNIQUE KEY `series_document_type_number_unique` (`document_type_id`,`number`),
   KEY `series_establishment_id_foreign` (`establishment_id`),
   KEY `series_document_type_id_foreign` (`document_type_id`),
   KEY `series_series_device_group_id_foreign` (`series_device_group_id`)

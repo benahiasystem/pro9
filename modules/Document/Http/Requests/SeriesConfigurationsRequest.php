@@ -9,7 +9,7 @@ class SeriesConfigurationsRequest extends FormRequest
 {
     public function authorize()
     {
-        return true;
+        return $this->user() && $this->user()->type === 'admin';
     }
 
     public function rules()
@@ -31,7 +31,7 @@ class SeriesConfigurationsRequest extends FormRequest
                 'required',
                 'numeric',
                 'integer',
-                'min:1'
+                'min:1', 'max:2147483647'
             ],
         ];
     }

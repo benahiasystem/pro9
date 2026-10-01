@@ -799,9 +799,9 @@ export default {
                 .then(() => {});
         },
         clickVoided(id) {
-            this.anular(`/${this.resource}/anulate/${id}`, 'post').then(() =>
-                this.$eventHub.$emit("reloadData")
-            );
+            this.anular(`/${this.resource}/anulate/${id}`, 'post').then(success => {
+                if (success) this.$eventHub.$emit("reloadData");
+            });
         },
         clickDispatchStatus(recordId, status) {
             this.recordId = recordId;

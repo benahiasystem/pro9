@@ -11,41 +11,11 @@ use Modules\Document\Models\SeriesConfiguration;
 
 class Functions
 {
-    public static function newNumber($fiscal_environment, $document_type_id, $series, $number, $model)
+    public static function newNumber($fiscal_environment, $document_type_id, $series, $number, $model, $establishment_id = null)
     {
-        // Marca la serie como en uso al asignarle n├║mero en emisi├│n (┬º4.7).
-        Series::markInUse($document_type_id, $series);
-
-        // if ($number === '#') {
-        //     // max() num├®rico evita saltos/duplicados frente a orderBy string.
-        //     $max = $model::where('document_type_id', $document_type_id)
-        //         ->where('series', $series)
-        //         ->max(\Illuminate\Support\Facades\DB::raw('CAST(number AS UNSIGNED)'));
-
-        //     if ($max !== null) {
-        //         return (int) $max + 1;
-        //     }
-
-        //     $series_configuration = SeriesConfiguration::where([
-        //         ['document_type_id', $document_type_id],
-        //         ['series', $series],
-        //     ])->first();
-
-        //     return ($series_configuration) ? (int) $series_configuration->number : 1;
-        // }
-
-        // return $number;
-
-        if ($number === '#') {
-            $document = $model::select('number')
-                                ->where('fiscal_environment', $fiscal_environment)
-                                ->where('document_type_id', $document_type_id)
-                                ->where('series', $series)
-                                ->orderBy('number', 'desc')
-                                ->first();
-            return ($document)?(int)$document->number+1:1;
-        }
-        return $number;
+        $subject = new $model();
+        $subject->fiscal_environment = $fiscal_environment;
+        return \App\Services\SeriesNumbering::next($subject, $document_type_id, $series, $number, $establishment_id);
     }
 
     public static function filename($company, $document_type_id, $series, $number)
@@ -55,7 +25,7 @@ class Functions
 
     public static function validateUniqueDocument($fiscal_environment, $document_type_id, $series, $number, $model)
     {
-        $document = $model::where('document_type_id', $document_type_id)
+        $document = $model::where('fiscal_environment', $fiscal_environment)->where('document_type_id', $document_type_id)
                         ->where('series', $series)
                         ->where('number', $number)
                         ->first();

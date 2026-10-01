@@ -118,11 +118,42 @@ class DocumentController extends Controller
     // TODO: refactorizar para usar el mismo método en el controller de sale notes
     public function records(Request $request)
     {
-        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
-        // Fiscal replacement changes identifiers and filter membership without updating the sale.
-        // Query current rows instead of serving a five-minute cached page of the original numbers.
-        return new DocumentCollection($this->getRecords($request)->paginate(config('tenant.items_per_page')));
-        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
+        $auth_id = auth()->user()->id;
+        $cacheParams = [
+            'category_id' => $request->category_id,
+            'page' => $request->page,
+            'customer_id' => $request->customer_id,
+            'd_end' => $request->d_end,
+            'd_start' => $request->d_start,
+            'date_of_issue' => $request->date_of_issue,
+            'document_type_id' => $request->document_type_id,
+            'item_id' => $request->item_id,
+            'number' => $request->number,
+            'control_number' => $request->control_number,
+            'observations' => $request->observations,
+            'pending_payment' => $request->pending_payment,
+            'series' => $request->series,
+            'state_type_id' => $request->state_type_id,
+            'purchase_order' => $request->purchase_order,
+            'guides' => $request->guides,
+            'plate_numbers' => $request->plate_numbers,
+        ];
+        $cacheKey = 'document_list_' . "user-$auth_id" . "_" . md5(json_encode($cacheParams));
+        if ($this->pingCache()) {
+            return $this->cacheWithTagKey(
+                $cacheKey,
+                ['document_list'], // Etiqueta para el detalle del item
+                300, // 1 hora (el detalle cambia menos frecuentemente que las listas)
+                fn () => new DocumentCollection($this->getRecords($request)->paginate(config('tenant.items_per_page'))),
+                [ 'section' => 'Document List', 'filters' => $cacheParams ] // Contexto adicional para logging
+            );
+        } else {
+            return new DocumentCollection($this->getRecords($request)->paginate(config('tenant.items_per_page')));
+        }
+        // $records = $this->getRecords($request);
+
+
+        // return new DocumentCollection($records->paginate(config('tenant.items_per_page')));
     }
 
     /**
@@ -378,11 +409,6 @@ class DocumentController extends Controller
         $userId = $user->id;
         $userType = $user->type;
         $series = $user->getSeries();
-        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
-        $groupId = app(SeriesResolver::class)->activeGroupId();
-        $fiscal_profiles = (new \App\Services\FiscalProfileService(Company::active()->getConnection()))
-            ->forSelection((int) $establishment_id, 'presential', $groupId);
-        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
         // $prepayment_documents = $this->table('prepayment_documents');
         $establishments = Establishment::where('id', $establishment_id)->get();// Establishment::all();
         // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
@@ -443,7 +469,6 @@ class DocumentController extends Controller
         $enable_consigned = Configuration::first()->enable_consigned;
 
         return compact(
-            'fiscal_profiles',
             'document_id',
             'series_id',
             'customers',
@@ -769,16 +794,6 @@ class DocumentController extends Controller
     {
         try
         {
-            // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
-            if ($request->fiscal_profile_id && Company::active()->getConnection()->table('fiscal_number_reservations')
-                ->where('operation_key', $request->operation_key)->where('payload_fingerprint', $request->fiscal_fingerprint)
-                ->whereNotNull('document_id')->exists()) {
-                $res = $this->storeWithData($request->all());
-                $this->associateDispatchesToDocument($request, $res['data']['id']);
-                $this->associateSaleNoteToDocument($request, $res['data']['id']);
-                return $res;
-            }
-            // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
             // Validar restricciones de plan ANTES de crear el documento
             $exceed_limit = (new DocumentHelper)->exceedLimitDocuments();
             if($exceed_limit['success']) {
@@ -816,7 +831,6 @@ class DocumentController extends Controller
     public function validationOpenCash($request)
     {
         // busca una caja chica en el array de pagos
-        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
         $find_cash = array_search('cash', array_column($request->payments,'payment_destination_id'), true);
         // si ha seleccionado una caja chica
         if($find_cash !== false) {
@@ -826,7 +840,6 @@ class DocumentController extends Controller
                 return false;
             }
         }
-        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
         return true;
     }
 
@@ -912,48 +925,25 @@ class DocumentController extends Controller
      * @return array
      * @throws \Throwable
      */
-        public function storeWithData($data, ?array $orderSource = null)
+        public function storeWithData($data)
         {
             $this->aplicarItineranciaSiCorresponde($data);
             self::setChildrenToData($data);
-            $fact = DB::connection('tenant')->transaction(function () use ($data, $orderSource) {
+            $fact = DB::connection('tenant')->transaction(function () use ($data) {
                 $facturalo = new Facturalo();
-                // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
-                if (!empty($data['fiscal_profile_id'])) {
-                    $facturalo->saveFiscal($data, (int) $data['fiscal_profile_id'], $data['operation_key'], $data['fiscal_fingerprint'], $data['fiscal_channel'], $data['fiscal_group_id'], $orderSource);
-                } else {
-                    $facturalo->save($data);
-                }
-                // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
-                if (empty($data['fiscal_profile_id'])) {
-                    $facturalo->createPdf();
-                }
+                $facturalo->save($data);
+                $facturalo->createPdf();
                 return $facturalo;
             });
 
             $document = $fact->getDocument();
             $response = $fact->getResponse();
-            // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
-            $fiscal = null;
-            if (!empty($data['fiscal_profile_id'])) {
-                $connection = $document->getConnection();
-                $reservation = $connection->table('fiscal_number_reservations')->where('document_id', $document->id)->first();
-                if ($connection->transactionLevel() === 0) {
-                    $reservation = (new \App\Services\Fiscal\FiscalEmissionService($connection))->process((int) $reservation->id);
-                    $fact->createPdf();
-                }
-                $fiscal = ['reservation_id' => $reservation->id, 'status' => $reservation->status, 'control_number' => $reservation->control_number,
-                    'profile_id' => (int) $reservation->profile_id,
-                    'next_number' => (int) $connection->table('fiscal_sequences')->where('id', $reservation->sequence_id)->value('next_number')];
-            }
-            // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
             return [
                 'success' => true,
                 'data' => [
                     'id' => $document->id,
                     'number_full' => $document->number_full,
                     'response' => $response,
-                    'fiscal' => $fiscal,
                 ],
                 'links' => [
                     'print_ticket' => url('')."/print/document/{$document->external_id}/ticket"
@@ -963,10 +953,6 @@ class DocumentController extends Controller
 
     private function associateSaleNoteToDocument(Request $request, int $documentId)
     {
-        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
-        // La conversión fiscal ya enlazó los orígenes dentro de la reserva.
-        if ($request->fiscal_profile_id) return;
-        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
         if ($request->sale_note_id) {
             SaleNote::where('id', $request->sale_note_id)
                 ->update(['document_id' => $documentId]);
@@ -1387,10 +1373,10 @@ class DocumentController extends Controller
         $categories = Category::orderBy('name')->get();
         $state_types = StateType::get();
         $document_types = DocumentType::whereIn('id', ['01', '03', '07', '08'])->get();
-        $series = \App\Models\Tenant\FiscalSequence::query()->whereIn('document_type_id', ['01', '07', '08'])
-            ->where('series_code', '<>', '')->where(function ($query) {
-                $query->whereNull('establishment_id')->orWhere('establishment_id', auth()->user()->establishment_id);
-            })->select('document_type_id', 'series_code as number')->distinct()->get();
+        // Series filtradas por contexto (oculta dedicadas / restringe al grupo activo). Ver SeriesResolver.
+        $series = app(SeriesResolver::class)
+            ->applyContext(Series::whereIn('document_type_id', ['01', '03', '07', '08']))
+            ->get();
         $establishments = Establishment::where('id', auth()->user()->establishment_id)->get();// Establishment::all();
 
         return compact('customers', 'document_types', 'series', 'establishments', 'state_types', 'items', 'categories');

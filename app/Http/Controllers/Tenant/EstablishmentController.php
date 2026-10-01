@@ -71,9 +71,7 @@ class EstablishmentController extends Controller
         try
         {
             $id = $request->input('id');
-            // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
-            // Se aplica exclusivamente el contrato de IVA venezolano.
-            // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
+            $has_igv_31556 = ($request->input('has_igv_31556') === 'true');
             $addresses = ($request->input('addresses'))??[];
             $establishment = Establishment::firstOrNew(['id' => $id]);
             $originalCode = $establishment->exists ? $establishment->code : null;
@@ -114,12 +112,10 @@ class EstablishmentController extends Controller
             if ($id) {
                 $establishment->code = $originalCode;
             }
-            // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
-            // Se aplica exclusivamente el contrato de IVA venezolano.
-            // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
+            $establishment->has_igv_31556 = $has_igv_31556;
             $establishment->email = $request->email;
             $establishment->save();
-            
+
             if(!$id) {
                 $warehouse = new Warehouse();
                 $warehouse->establishment_id = $establishment->id;

@@ -25,19 +25,8 @@ class GuideObserver
 
     private function getNumberDocument($guide)
     {
-        if ($guide->number === '#') {
-            $record = Guide::query()
-                ->select('number')
-                ->where('fiscal_environment', $guide->fiscal_environment)
-                ->where('document_type_id', $guide->document_type_id)
-                ->where('series', $guide->series)
-                ->orderBy('number', 'desc')
-                ->first();
+        return \App\Services\SeriesNumbering::next($guide, $guide->document_type_id, $guide->series, $guide->number, auth()->user()->establishment_id);
 
-            return ($record) ? $record->number + 1 : 1;
-        }
-
-        return $guide->number;
     }
 }
 // ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

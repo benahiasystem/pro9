@@ -23,12 +23,15 @@
                             </div>
                         </div>
                         <div class="col-lg-2">
-                            <!-- ######## INICIO NUMERACIÓN FISCAL VENEZUELA ######## -->
-                            <div class="form-group">
-                                <label class="control-label">Numeración y emisión</label>
-                                <fiscal-profile-summary :profile="fiscalProfile" />
+                            <div :class="{'has-danger': errors.series_id}" class="form-group">
+                                <label class="control-label">Serie<span class="text-danger"> *</span></label>
+                                <el-select v-model="form.series_id" :disabled="generalDisabledSeries()">
+                                    <el-option v-for="option in series" :key="option.id" :label="option.number"
+                                               :value="option.id"></el-option>
+                                </el-select>
+                                <small v-if="errors.series_id" class="form-control-feedback"
+                                       v-text="errors.series_id[0]"></small>
                             </div>
-                            <!-- ######## FIN NUMERACIÓN FISCAL VENEZUELA ######## -->
                         </div>
                         <div class="col-lg-2">
                             <div :class="{'has-danger': errors.date_of_issue}" class="form-group">
@@ -455,7 +458,6 @@
 <script>
 // ######## INICIO SCRIPT GEOPOLITICO VENEZUELA
 import PersonForm from '../persons/form.vue';
-import { fiscalSale } from '@mixins/fiscal-sale';
 import Items from './items.vue';
 import DispatchOptions from './partials/options.vue'
 import {mapActions, mapState} from "vuex";
@@ -477,7 +479,7 @@ export default {
         Items,
         DispatchOptions
     },
-    mixins: [setDefaultSeriesByMultipleDocumentTypes, fiscalSale],
+    mixins: [setDefaultSeriesByMultipleDocumentTypes],
     data() {
         return {
             showDialogOptions: false,
@@ -539,7 +541,6 @@ export default {
             this.countries = response.data.countries;
             this.locations = response.data.locations;
             this.all_series = response.data.series;
-            this.fiscalProfiles = response.data.fiscal_profiles || [];
             this.drivers = response.data.drivers;
             this.dispachers = response.data.dispachers;
             this.related_document_types = response.data.related_document_types
@@ -765,7 +766,6 @@ export default {
             this.form.items.splice(index, 1);
         },
         submit() {
-            if (this.loading_submit || !this.prepareFiscalSale()) return;
 
             if (this.config.affect_all_documents) {
                 this.form.terms_condition = this.config.terms_condition_sale;

@@ -36,10 +36,7 @@
                 $company = Company::query()->lockForUpdate()->first();
                 // Seeders may create catalog opening stock before the company is inserted.
                 if ($company) {
-                    // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
-                    if (($this instanceof Document || $this instanceof Dispatch) && $this->fiscalReservationId() !== null) {
-                        \App\Services\Fiscal\FiscalDocumentBinding::apply($this, $company);
-                    } elseif ($this->getTable() === 'documents') {
+                    if ($this->getTable() === 'documents') {
                         if (!array_key_exists($company->fiscal_emission_mode ?? '', \App\Services\FiscalEmissionSettings::MODES)) {
                             throw \Illuminate\Validation\ValidationException::withMessages([
                                 'fiscal_emission_mode' => 'Seleccione la modalidad de emisión fiscal en la configuración de la empresa antes de registrar facturas.',
@@ -47,12 +44,15 @@
                         }
                         $this->setAttribute('fiscal_emission_mode', $company->fiscal_emission_mode);
                     }
-                    // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
                     if ($this->isFillable('fiscal_environment')) {
                         $this->setAttribute('fiscal_environment', $company->fiscal_environment);
                     }
                     $company->fiscal_environment_locked = true;
                     $company->save();
+                }
+                if ($this->getTable() === 'dispatches') {
+                    $this->number = \App\Services\SeriesNumbering::next($this, $this->document_type_id, $this->series, $this->number, $this->establishment_id);
+                    $this->filename = \App\CoreFacturalo\Requests\Inputs\Functions::filename($company, $this->document_type_id, $this->series, $this->number);
                 }
                 return parent::save($options);
             });

@@ -16,9 +16,7 @@
                             </div>
                             <div class="col-md-4">
                                 <div class="form-group" :class="{'has-danger': errors.code}">
-                                    <!-- ######## INICIO NUMERACIÓN FISCAL VENEZUELA ######## -->
-                                <label class="control-label">Código interno de sucursal</label>
-                                <!-- ######## FIN NUMERACIÓN FISCAL VENEZUELA ######## -->
+                                    <label class="control-label">Código Domicilio Fiscal</label>
                                     <el-input v-model="form.code" :maxlength="4" :disabled="!!recordId"></el-input>
                                     <small class="form-control-feedback" v-if="errors.code" v-text="errors.code[0]"></small>
                                 </div>
@@ -139,9 +137,13 @@
                                 <span class="text-muted">Se recomienda resoluciones 700x300</span>
                                 <el-button class="btn-add-logo" @click="onOpenFileLogo">Cambiar logo del sucursal</el-button>
                             </div>
-                            <!-- ######## INICIO NUMERACIÓN FISCAL VENEZUELA ######## -->
-                            <!-- La sucursal utiliza el contrato de IVA venezolano. -->
-                            <!-- ######## FIN NUMERACIÓN FISCAL VENEZUELA ######## -->
+                            <div class="col-12">
+                                <div class="form-comtrol">
+                                    <el-checkbox v-model="form.has_igv_31556">
+                                        Sujeto al IGV - Ley 31556
+                                    </el-checkbox>
+                                </div>
+                            </div>
                         </div>
                     </el-tab-pane>
                     <el-tab-pane class name="second">
@@ -217,7 +219,7 @@
                                             v-text="errors.establishment_code[0]"></small>
                                     </div>
                                 </div>
-                                
+
                             </div>
                     </el-tab-pane>
                 </el-tabs>
@@ -333,9 +335,7 @@
                     web_address: null,
                     aditional_information: null,
                     customer_id: null,
-                    // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
-                    // Sin régimen tributario peruano por sucursal.
-                    // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
+                    has_igv_31556: false,
                 }
                 this.file = null;
                 this.preview = null;
@@ -367,13 +367,13 @@
             // },
             // validateCodeUniqueness() {
             //     if (!this.form.code) return;
-                
+
             //     this.codeExists = false;
-                
+
             //     const exists = this.existingCodes.find(item => 
             //         item.code === this.form.code && item.id !== this.form.id
             //     );
-                
+
             //     this.codeExists = !!exists;
             // },
             submit() {
@@ -473,7 +473,7 @@
                 this.form.addresses.splice(index, 1);
             },
             validateNumericInput(field) {
-                
+
                 if (this.form[field]) {
                     this.form[field] = this.form[field].replace(/[^\d-]/g, '');
                 }

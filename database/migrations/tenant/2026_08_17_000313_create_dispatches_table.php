@@ -21,6 +21,7 @@ use Illuminate\Support\Facades\DB;
  * - `reference_quotation_id` int(10) unsigned DEFAULT NULL
  * - `reference_order_form_id` int(10) unsigned DEFAULT NULL
  * - `reference_order_note_id` int(10) unsigned DEFAULT NULL
+ * - `control_number` varchar(32) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `series` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `number` bigint unsigned NOT NULL
  * - `date_of_issue` date NOT NULL
@@ -103,6 +104,7 @@ CREATE TABLE `dispatches` (
   `reference_order_form_id` int(10) unsigned DEFAULT NULL,
   `reference_order_note_id` int(10) unsigned DEFAULT NULL,
   -- ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+  `control_number` varchar(32) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `series` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL,
   `number` bigint unsigned NOT NULL,
   -- ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
@@ -167,6 +169,7 @@ CREATE TABLE `dispatches` (
   `reference_documents` json DEFAULT NULL,
   `custom_fields_data` json DEFAULT NULL,
   PRIMARY KEY (`id`),
+  UNIQUE KEY `dispatches_environment_type_series_number_unique` (`fiscal_environment`,`document_type_id`,`series`,`number`),
   KEY `dispatches_user_id_foreign` (`user_id`),
   KEY `dispatches_establishment_id_foreign` (`establishment_id`),
   KEY `dispatches_fiscal_environment_foreign` (`fiscal_environment`),

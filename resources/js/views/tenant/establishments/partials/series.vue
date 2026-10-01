@@ -1,9 +1,7 @@
 <template>
-    <el-dialog :visible="showDialog" @close="close" @open="onOpen" :close-on-click-modal="false" width="880px">
+    <el-dialog :visible="showDialog" :append-to-body="true" @close="close" @open="onOpen" :close-on-click-modal="false" width="min(880px, calc(100vw - 32px))">
         <div slot="title" class="series-title">
-            <!-- ######## INICIO NUMERACIÓN FISCAL VENEZUELA ######## -->
-            <span class="font-weight-bold">{{ internalOnly ? 'Documentos internos y grupos' : 'Series' }}</span>
-            <!-- ######## FIN NUMERACIÓN FISCAL VENEZUELA ######## -->
+            <span class="font-weight-bold">Series</span>
             <span class="text-muted" v-if="establishment" style="font-size:13px">
                 Sucursal <b>{{ establishment.description }}</b> · {{ establishment.code }}
             </span>
@@ -20,16 +18,12 @@
         <!-- Filtros (estilo maqueta) + toggle Dedicado a la altura de los tabs -->
         <div class="series-filters d-flex align-items-center flex-wrap mb-3">
             <button type="button" class="chip" :class="{active: filter === 'all'}" @click="setFilter('all')">Todos</button>
-            <!-- ######## INICIO NUMERACIÓN FISCAL VENEZUELA ######## -->
-            <button v-if="!internalOnly" type="button" class="chip" :class="{active: filter === 'basic'}" @click="setFilter('basic')">Facturas y notas</button>
-            <!-- ######## FIN NUMERACIÓN FISCAL VENEZUELA ######## -->
-            <!-- ######## INICIO NUMERACIÓN FISCAL VENEZUELA ######## -->
-            <button v-if="!internalOnly" type="button" class="chip" :class="{active: filter === 'advanced'}" @click="setFilter('advanced')">Órdenes de entrega</button>
-            <!-- ######## FIN NUMERACIÓN FISCAL VENEZUELA ######## -->
+            <button type="button" class="chip" :class="{active: filter === 'basic'}" @click="setFilter('basic')">Básico</button>
+            <button type="button" class="chip" :class="{active: filter === 'advanced'}" @click="setFilter('advanced')">Avanzado</button>
             <button type="button" class="chip" :class="{active: filter === 'internal'}" @click="setFilter('internal')">Interno</button>
             <span class="fdiv" v-if="enableDedicatedSeries || hasContingency"></span>
             <button type="button" v-if="enableDedicatedSeries" class="chip ded" :class="{active: filter === 'dedicated'}" @click="setFilter('dedicated')"><span class="dot"></span>Dedicado</button>
-            <button type="button" v-if="hasContingency" class="chip cont" :class="{active: filter === 'contingency'}" @click="setFilter('contingency')"><span class="dot"></span>Contingencia</button>
+            <button type="button" class="chip cont" :class="{active: filter === 'contingency'}" @click="setFilter('contingency')"><span class="dot"></span>Contingencia</button>
         </div>
 
         <!-- Grupos de dispositivo (solo en el tab Dedicado) -->
@@ -46,16 +40,16 @@
                     <el-tooltip v-if="group.is_bound" :content="'En uso por ' + group.bound_device_name" placement="top">
                         <i class="el-icon-lock text-warning"></i>
                     </el-tooltip>
-                    <i class="el-icon-edit-outline action" title="Editar" @click="editGroup(group)"></i>
-                    <i v-if="group.is_bound" class="el-icon-unlock action" title="Desvincular equipo" @click="unbindGroup(group)"></i>
-                    <i class="el-icon-close action" title="Eliminar" @click="deleteGroup(group)"></i>
+                    <button type="button" class="group-action" aria-label="Editar grupo" @click="editGroup(group)"><i class="el-icon-edit-outline" aria-hidden="true"></i></button>
+                    <button v-if="group.is_bound" type="button" class="group-action" aria-label="Desvincular equipo" @click="unbindGroup(group)"><i class="el-icon-unlock" aria-hidden="true"></i></button>
+                    <button type="button" class="group-action" aria-label="Eliminar grupo" @click="deleteGroup(group)"><i class="el-icon-close" aria-hidden="true"></i></button>
                 </span>
                 <span v-if="!groups.length" class="text-muted" style="font-size:12.5px">aún no hay grupos de dispositivo</span>
                 <el-button size="mini" icon="el-icon-plus" @click="openGroupForm">Crear grupo</el-button>
             </div>
 
             <!-- Form de grupo -->
-            <div v-if="creatingGroup" class="series-create p-3 mt-2">
+            <div v-if="creatingGroup" ref="groupEditor" class="series-create p-3 mt-2">
                 <div class="d-flex flex-wrap align-items-center mb-2" style="gap:10px">
                     <el-input v-model="groupForm.name" size="small" placeholder="Nombre del grupo · ej. Caja 1" style="width:280px"></el-input>
                     <!-- Selector de módulo (restaurant/ecommerce/hoteles) oculto de momento; lógica intacta.
@@ -110,7 +104,7 @@
                     </td>
                     <td class="text-end">
                         <small v-if="row.in_use" class="text-muted" title="La serie ya tiene comprobantes">en uso</small>
-                        <button v-else class="btn waves-effect waves-light btn-xs btn-danger ms-1" type="button" @click="clickDelete(row)">
+                        <button v-else class="btn waves-effect waves-light btn-xs btn-danger ms-1" type="button" aria-label="Eliminar serie" @click="clickDelete(row)">
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-trash"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 7l16 0" /><path d="M10 11l0 6" /><path d="M14 11l0 6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg>
                         </button>
                     </td>
@@ -123,7 +117,7 @@
         </div>
 
         <!-- Fila de creación -->
-        <div v-if="creating" class="series-create p-2 mt-2">
+        <div v-if="creating" ref="seriesEditor" class="series-create p-2 mt-2">
             <!-- Línea 1: tipo de documento + tipo de serie -->
             <div class="row no-gutters mb-2">
                 <div class="col-5">
@@ -155,16 +149,14 @@
                     <el-radio-group v-model="form.emission" size="small" @change="onEmissionChange">
                         <el-radio-button label="normal">Normal</el-radio-button>
                         <el-radio-button v-if="enableDedicatedSeries" label="dedicated">Dedicado</el-radio-button>
-                        <!-- ######## INICIO NUMERACIÓN FISCAL VENEZUELA ######## -->
-                        <el-radio-button v-if="!internalOnly" label="contingency">Contingencia</el-radio-button>
-                        <!-- ######## FIN NUMERACIÓN FISCAL VENEZUELA ######## -->
+                        <el-radio-button label="contingency">Contingencia</el-radio-button>
                     </el-radio-group>
                 </div>
                 <div class="col-8 text-end">
-                    <button class="btn waves-effect waves-light btn-xs btn-primary" :disabled="saving" type="button" @click="confirmCreate">
+                    <button class="btn waves-effect waves-light btn-xs btn-primary" :disabled="saving" type="button" aria-label="Guardar serie" @click="confirmCreate">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-check"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l5 5l10 -10" /></svg>
                     </button>
-                    <button class="btn waves-effect waves-light btn-xs btn-danger ms-2" type="button" @click="cancelCreate">
+                    <button class="btn waves-effect waves-light btn-xs btn-danger ms-2" type="button" aria-label="Cancelar nueva serie" @click="cancelCreate">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-x"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M18 6l-12 12" /><path d="M6 6l12 12" /></svg>
                     </button>
                 </div>
@@ -182,9 +174,7 @@
 
 <script>
     export default {
-        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
-        props: ['showDialog', 'establishmentId', 'establishment', 'internalOnly'],
-        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
+        props: ['showDialog', 'establishmentId', 'establishment'],
         data() {
             return {
                 resource: 'series',
@@ -209,9 +199,7 @@
                 return this.records.some(row => row.contingency)
             },
             visibleRecords() {
-                // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
-                let items = this.records.filter(row => !this.internalOnly || row.category === 'internal')
-                // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
+                let items = this.records.slice()
                 if (this.filter === 'dedicated') items = items.filter(row => row.dedicated)
                 else if (this.filter === 'contingency') items = items.filter(row => row.contingency)
                 else if (this.filter !== 'all') items = items.filter(row => row.category === this.filter && !row.dedicated)
@@ -223,8 +211,8 @@
             },
             groupedTypes() {
                 const groups = [
-                    {value: 'basic', label: 'Facturas y notas'},
-                    {value: 'advanced', label: 'Órdenes de entrega'},
+                    {value: 'basic', label: 'Básico'},
+                    {value: 'advanced', label: 'Avanzado'},
                     {value: 'internal', label: 'Interno'},
                 ]
                 return groups
@@ -254,10 +242,9 @@
         },
         // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
         async created() {
+            // Load shared catalog once; establishment records are refreshed when opened.
             await this.getTables()
-            // El componente interno se monta con showDialog=true desde el padre (v-if).
-            // En ese primer montaje Element UI puede no emitir @open, así que carga
-            // los registros aquí también para que el listado no dependa de crear una serie.
+            // Preserve callers that mount the component with an already visible dialog.
             if (this.showDialog) await this.getData()
         },
         // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
@@ -267,9 +254,7 @@
             },
             async getTables() {
                 const {data} = await this.$http.get(`/${this.resource}/tables`)
-                // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
-                this.seriesTypes = (data.series_types || []).filter(type => !this.internalOnly || type.category === 'internal')
-                // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
+                this.seriesTypes = data.series_types || []
                 this.enableDedicatedSeries = !!data.enable_dedicated_series
             },
             async getData() {
@@ -277,10 +262,11 @@
                 const {data} = await this.$http.get(`/${this.resource}/records/${this.establishmentId}`)
                 this.records = (data && data.data) ? data.data : []
             },
-            onOpen() {
+            async onOpen() {
                 this.creating = false
                 this.filter = 'all'
-                this.getData()
+                await this.getTables()
+                await this.getData()
             },
             setFilter(key) {
                 this.filter = key
@@ -307,6 +293,7 @@
                 this.editingGroupSeries = []
                 this.creatingGroup = true
                 this.getGroupTables()
+                this.showEditor('groupEditor')
             },
             editGroup(group) {
                 this.groupForm = {
@@ -318,6 +305,7 @@
                 this.editingGroupSeries = group.series.slice()
                 this.creatingGroup = true
                 this.getGroupTables()
+                this.showEditor('groupEditor')
             },
             cancelGroupForm() {
                 this.creatingGroup = false
@@ -378,12 +366,12 @@
                 await Promise.all([this.getGroups(), this.getGroupTables(), this.getData()])
             },
             categoryLabel(category) {
-                return {basic: 'Facturas y notas', advanced: 'Órdenes de entrega', internal: 'Interno'}[category] || category
+                return {basic: 'Básico', advanced: 'Avanzado', internal: 'Interno'}[category] || category
             },
             optionsByCategory(category) {
                 let list = this.seriesTypes.filter(type => type.category === category)
                 if (this.form.emission === 'contingency') {
-                    list = list.filter(type => ['01', '03', '07', '08', '09'].includes(type.document_type_id))
+                    list = list.filter(type => ['01', '07', '08', '09'].includes(type.document_type_id))
                 }
                 return list
             },
@@ -401,6 +389,13 @@
                 else if (this.filter === 'contingency') this.form.emission = 'contingency'
                 this.creating = true
                 this.$nextTick(() => this.pickFirstType())
+                this.showEditor('seriesEditor')
+            },
+            showEditor(ref) {
+                this.$nextTick(() => {
+                    const editor = this.$refs[ref]
+                    if (editor) editor.scrollIntoView({block: 'nearest'})
+                })
             },
             firstAvailableType() {
                 for (const category of ['basic', 'advanced', 'internal']) {
@@ -538,8 +533,8 @@
     /* Grupos de dispositivo */
     .series-group-chip { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; background: #ECECFB; border: 1px solid #C9C7F4; color: #4F46E5; border-radius: 99px; padding: 4px 10px; }
     .series-group-chip .count { background: #4F46E5; color: #fff; border-radius: 99px; padding: 0 7px; font-size: 11px; }
-    .series-group-chip .action { cursor: pointer; opacity: .65; }
-    .series-group-chip .action:hover { opacity: 1; }
+    .series-group-chip .group-action { cursor: pointer; color: inherit; background: transparent; border: 0; padding: 0; opacity: .65; }
+    .series-group-chip .group-action:hover, .series-group-chip .group-action:focus { opacity: 1; }
 
     /* Radio-group del formulario de creación: color principal del sistema, plano y sin salto.
        El "salto" venía de `border: none` en el estado activo: al quitar el borde, el botón
@@ -555,5 +550,11 @@
         background-color: var(--black-primary) !important;
         border-color: var(--black-primary) !important;
         box-shadow: -1px 0 0 0 var(--black-primary) !important;
+    }
+    @media (max-width: 767px) {
+        .series-title { flex-wrap: wrap; }
+        .series-create .row > div { flex: 0 0 100%; max-width: 100%; margin-bottom: 8px; }
+        .series-create ::v-deep .el-select { min-width: 0 !important; width: 100%; }
+        .series-create ::v-deep .el-input { max-width: 100%; }
     }
 </style>

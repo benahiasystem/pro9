@@ -29,9 +29,7 @@
                                 <!-- <th>#</th> -->
                                 <th>Descripción</th>
                                 <th class="text-start">Código</th>
-                                <!-- ######## INICIO NUMERACIÓN FISCAL VENEZUELA ######## -->
-                                <th class="text-center">Numeración y emisión</th>
-                                <!-- ######## FIN NUMERACIÓN FISCAL VENEZUELA ######## -->
+                                <th class="text-center">Series</th>
                                 <th class="text-end">Acciones</th>
                             </tr>
                             </thead>
@@ -40,10 +38,8 @@
                                 <!-- <td>{{ index + 1 }}</td> -->
                                 <td>{{ row.description }}</td>
                                 <td class="text-start">{{ row.code }}</td>
-                                <!-- ######## INICIO NUMERACIÓN FISCAL VENEZUELA ######## -->
                                 <td class="text-center"><button type="button" class="btn waves-effect waves-light btn-xs btn-warning"
-                                    @click.prevent="clickSeries(row)">Numeración y emisión</button></td>
-                                <!-- ######## FIN NUMERACIÓN FISCAL VENEZUELA ######## -->
+                                    @click.prevent="clickSeries(row)">Series</button></td>
                                 <td class="text-end">
                                     <button type="button" class="btn btn-xs btn-info btn-shad me-1" @click.prevent="clickCreate(row.id)">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-edit"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" /><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415" /><path d="M16 5l3 3" /></svg>
@@ -76,9 +72,7 @@
 
     import EstablishmentsForm from './form1.vue'
     import {deletable} from '../../../mixins/deletable'
-    // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
-    import EstablishmentSeries from './partials/fiscal-numbering.vue'
-    // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
+    import EstablishmentSeries from './partials/series.vue'
 
     export default {
         props:['typeUser'],

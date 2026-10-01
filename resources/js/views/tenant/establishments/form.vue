@@ -17,9 +17,7 @@
                         </div>
                         <div class="col-md-4">
                             <div class="form-group" :class="{'has-danger': errors.code}">
-                                <!-- ######## INICIO NUMERACIÓN FISCAL VENEZUELA ######## -->
-                                <label class="control-label">Código interno de sucursal</label>
-                                <!-- ######## FIN NUMERACIÓN FISCAL VENEZUELA ######## -->
+                                <label class="control-label">Código Domicilio Fiscal</label>
                                 <el-input v-model="form.code" :maxlength="4" :disabled="!!form.id"></el-input>
                                 <small class="form-control-feedback" v-if="errors.code" v-text="errors.code[0]"></small>
                             </div>

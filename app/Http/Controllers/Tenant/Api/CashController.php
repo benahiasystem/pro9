@@ -112,7 +112,6 @@ class CashController extends Controller
         ]);
 
         $document->payments->each(function($payment) use($cash,$isDocument,$cashDocument){
-            if ($isDocument && $payment->source_sale_note_payment_id) return;
             CashDocumentPayment::create([
                 'cash_id' => $cash->id,
                 $isDocument ? 'document_payment_id' : 'sale_note_payment_id' => $payment->id,
@@ -198,11 +197,7 @@ class CashController extends Controller
             if($cash_document->sale_note){
 
                 if(in_array($cash_document->sale_note->state_type_id, ['01','03','05','07','13'])){
-                    // Sumar cobros asociados a esta caja, no el total de ventas convertidas.
-                    $received = $cash_document->sale_note->payments()->whereHas('cashDocumentPayments', function ($query) use ($cash) {
-                        $query->where('cash_id', $cash->id);
-                    })->sum('payment');
-                    $final_balance += $cash_document->sale_note->currency_type_id === 'VES' ? $received : $received * $cash_document->sale_note->exchange_rate_sale;
+                    $final_balance += ($cash_document->sale_note->currency_type_id == 'VES') ? $cash_document->sale_note->total : ($cash_document->sale_note->total * $cash_document->sale_note->exchange_rate_sale);
                 }
 
                 // $final_balance += $cash_document->sale_note->total;
@@ -211,10 +206,7 @@ class CashController extends Controller
             else if($cash_document->document){
 
                 if(in_array($cash_document->document->state_type_id, ['01','03','05','07','13'])){
-                    $received = $cash_document->document->payments()->whereNull('source_sale_note_payment_id')->whereHas('cashDocumentPayments', function ($query) use ($cash) {
-                        $query->where('cash_id', $cash->id);
-                    })->sum('payment');
-                    $final_balance += $cash_document->document->currency_type_id === 'VES' ? $received : $received * $cash_document->document->exchange_rate_sale;
+                    $final_balance += ($cash_document->document->currency_type_id == 'VES') ? $cash_document->document->total : ($cash_document->document->total * $cash_document->document->exchange_rate_sale);
                 }
 
                 // $final_balance += $cash_document->document->total;

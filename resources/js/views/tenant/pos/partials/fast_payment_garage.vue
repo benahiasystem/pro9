@@ -18,7 +18,6 @@
     ></table-items>
 
     <div class="col-12 p-0 fp-payment-panel">
-        <fiscal-profile-summary v-if="form.document_type_id !== '80'" class="px-3 pt-2" :profile="fiscalProfile" />
 
         <!-- Botones de acción (arriba del monto) -->
         <div class="fp-action-row px-3 pt-2 pb-1 d-flex" style="gap:8px">
@@ -238,9 +237,6 @@
 </style>
 
 <script>
-// ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
-import { fiscalSale } from "@mixins/fiscal-sale";
-// ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
 import Keypress from 'vue-keypress'
 
 import CardBrandsForm from '../../card_brands/form.vue'
@@ -252,7 +248,7 @@ import { buhoprinter } from '@mixins/buhoprinter'
 
 export default {
     components: {OptionsForm, CardBrandsForm, SaleNotesOptions, MultiplePaymentForm, Keypress, PersonForm},
-    mixins: [fiscalSale, buhoprinter],
+    mixins: [buhoprinter],
 
     props: [
         'form',
@@ -980,7 +976,7 @@ export default {
             this.series = _.filter(this.all_series, {'document_type_id': this.form.document_type_id});
             this.form.series_id = (this.series.length > 0) ? this.series[0].id : null
 
-            if (this.form.document_type_id === '80' && !this.form.series_id) {
+            if (!this.form.series_id) {
                 return this.$message.warning('El sucursal no tiene series disponibles para el comprobante');
             }
         },
@@ -1091,9 +1087,6 @@ export default {
             });
         },
         async clickPayment() {
-            // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
-            if (this.loading_submit || this.locked_submit || !this.prepareFiscalSale()) return;
-            // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
             // if(this.has_card && !this.form_payment.card_brand_id) return this.$message.error('Seleccione una tarjeta');
 
             if (this.rowsItems < 1) {
@@ -1147,7 +1140,7 @@ export default {
                 return this.$message.error('La fecha de emisión no coincide con la del día actual');
             }
 
-            if (this.form.document_type_id === '80' && !this.form.series_id) {
+            if (!this.form.series_id) {
                 return this.$message.warning('El sucursal no tiene series disponibles para el comprobante');
             }
 
@@ -1295,7 +1288,6 @@ export default {
             await this.$http.get(`/${this.resource}/payment_tables`)
                 .then(response => {
                     this.all_series = response.data.series
-                    this.fiscalProfiles = response.data.fiscal_profiles || []
                     this.payment_method_types = response.data.payment_method_types
                     this.cards_brand = response.data.cards_brand
                     this.filterSeries()

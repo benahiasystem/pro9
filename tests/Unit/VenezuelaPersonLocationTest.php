@@ -4,10 +4,10 @@ namespace Tests\Unit;
 
 use App\Support\Venezuela\PersonLocation;
 use Illuminate\Validation\ValidationException;
-use Tests\Support\FiscalDatabaseTestCase;
+use Tests\Support\SeriesDatabaseTestCase;
 
 // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
-class VenezuelaPersonLocationTest extends FiscalDatabaseTestCase
+class VenezuelaPersonLocationTest extends SeriesDatabaseTestCase
 {
     protected function setUp(): void
     {

@@ -19,31 +19,20 @@ class InputRequest
     public function handle($request, Closure $next, $type, $service)
     {
         try {
-            $inputs = $request->all();
-            if ($service === 'api') {
-                $inputs = $this->transformInputs($inputs, $type);
-            }
-            $inputs = $this->validationInputs($inputs, $type, $service);
-            // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
-            // API delivery orders materialize catalogs atomically with their fiscal reservation.
-            $request->replace($service === 'api' && $type === 'dispatch' ? $inputs : $this->setInputs($inputs, $type, $service));
-            // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
-        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json(['success' => false, 'message' => 'Revise los datos del comprobante.', 'errors' => $e->errors()], 422);
-        } catch (\Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 403);
-        } catch (\DomainException $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
-        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 400);
+            return \Illuminate\Support\Facades\DB::connection('tenant')->transaction(function () use ($request, $next, $type, $service) {
+                $inputs = $request->all();
+                if ($service === 'api') $inputs = $this->transformInputs($inputs, $type);
+                $inputs = $this->validationInputs($inputs, $type, $service);
+                $request->replace($this->setInputs($inputs, $type, $service));
+                return $next($request);
+            });
+        } catch (\Illuminate\Validation\ValidationException $exception) {
+            throw $exception;
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpExceptionInterface $exception) {
+            throw $exception;
+        } catch (\Exception $exception) {
+            return response()->json(['success' => false, 'message' => 'No se pudo registrar el documento. Revise los datos y la serie seleccionada.'], 400);
         }
-
-        return $next($request);
     }
 
     private function transformInputs($inputs, $type)
@@ -55,9 +44,6 @@ class InputRequest
     private function validationInputs($inputs, $type, $service)
     {
         $class = "App\\CoreFacturalo\\Requests\\".ucfirst($service)."\\Validation\\".ucfirst($type)."Validation";
-        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
-        if ($service === 'api' && $type === 'document') return $class::validation($inputs, true);
-        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
         return $class::validation($inputs);
     }
 

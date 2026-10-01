@@ -29,20 +29,6 @@ class SaleNotePayment extends ModelTenant
         'date_of_payment' => 'date',
     ];
 
-    // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
-    protected static function boot()
-    {
-        parent::boot();
-        $protectAppliedReceipt = function (self $payment): void {
-            if ($payment->exists && $payment->getConnection()->table('document_payments')->where('source_sale_note_payment_id', $payment->id)->exists()) {
-                throw \Illuminate\Validation\ValidationException::withMessages(['payment' => 'El cobro está aplicado a una factura y su origen no puede alterarse.']);
-            }
-        };
-        static::saving($protectAppliedReceipt);
-        static::deleting($protectAppliedReceipt);
-    }
-    // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
-
     public function payment_method_type()
     {
         return $this->belongsTo(PaymentMethodType::class);
@@ -73,7 +59,7 @@ class SaleNotePayment extends ModelTenant
         return $this->belongsTo(SaleNote::class);
     }
 
-    
+
     /**
      * 
      * Filtros para obtener pagos en efectivo y con destino caja
@@ -89,7 +75,7 @@ class SaleNotePayment extends ModelTenant
                     });
     }
 
-    
+
     /**
      * 
      * Obtener informacion del pago y registro origen relacionado
@@ -133,7 +119,7 @@ class SaleNotePayment extends ModelTenant
                     ]);
     }
 
-    
+
     /**
      * 
      * Total de pagos filtrado por id de la nota de venta
@@ -162,8 +148,8 @@ class SaleNotePayment extends ModelTenant
     {
         return $query->where('payment_method_type_id', PaymentMethodType::CASH_PAYMENT_ID);
     }
-    
-    
+
+
     /**
      * 
      * Filtros para obtener pagos con transferencia
@@ -176,7 +162,7 @@ class SaleNotePayment extends ModelTenant
         return $query->where('payment_method_type_id', PaymentMethodType::TRANSFER_PAYMENT_ID);
     }
 
-    
+
     /**
      * 
      * Filtros para obtener pagos en efectivo de un registro aceptado
@@ -193,7 +179,7 @@ class SaleNotePayment extends ModelTenant
                     ->filterCashPaymentWithoutDestination();
     }
 
-    
+
     /**
      * 
      * Filtros para obtener pagos al contado de un documento aceptado
@@ -227,7 +213,7 @@ class SaleNotePayment extends ModelTenant
         return array_merge($this->getRowResourceCashPayment(), $data);
     }
 
-    
+
     /**
      * 
      * Obtener informacion del pago y registro origen relacionado para reporte de ingresos

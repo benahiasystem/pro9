@@ -25,11 +25,6 @@ class Kernel extends ConsoleKernel
      * @return void
      */
     protected function schedule(Schedule $schedule) {
-        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
-        $schedule->command('tenancy:run fiscal:recover')
-            ->everyMinute()->withoutOverlapping()
-            ->appendOutputTo(storage_path('logs/fiscal_recovery.log'));
-        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
         $schedule->command('tenant:run')
             ->everyMinute();
         // Se ejecutara por hora guardando estado de cpu y memoria (windows/linux)
@@ -56,7 +51,7 @@ class Kernel extends ConsoleKernel
         $schedule->command('vendeya:sync')->everyThirtyMinutes()->sendOutputTo(storage_path('logs/vendeya_sync.log'));
         // Llena las tablas para libro mayor - Se desactiva CMAR - buscar opcion de url
         // $schedule->command('account_ledger:fill')->hourly();
-        
+
         //restaurar base de datos demo para restaurant
         // $schedule->command('database:restoredemo')->dailyAt('23:50');
     }

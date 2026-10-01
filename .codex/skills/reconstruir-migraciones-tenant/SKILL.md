@@ -58,3 +58,9 @@ Documentar las tablas y datos que cambiaron, elementos retirados, funciones cons
 - `companies` no crea credenciales SIRE (`sire_client_id`, `sire_client_secret`, `sire_username`, `sire_password`) y el módulo `Sire` no forma parte de la instalación.
 - Los niveles centrales/tenant no incluyen `document_not_sent` ni `regularize_shipping`. `FiscalEmissionSchemaTest` debe verificar columnas y niveles ausentes además de la igualdad de los dos ciclos limpios.
 - La política de instalación nueva también alcanza las migraciones del sistema relacionadas: `massive_invoices` se define completa en su migración creadora, conserva el módulo y usa `estado_emision`/`mensaje_emision`, sin migraciones incrementales ni columnas SUNAT/XML/CDR.
+
+## Series y correlativos recuperados
+
+- El esquema inicial vigente utiliza `series`, `series_configurations` y `series_device_groups`. Se retiraron las tablas y relaciones exclusivas del módulo de secuencias, perfiles, reservas fiscales y asignaciones anticipadas HKA. No generar una conversión ni modificar tenants existentes para reproducir esta retirada.
+- `documents.control_number` y `dispatches.control_number` son texto nullable independiente de serie/número. Las claves únicas documentales incluyen ambiente, tipo, serie y número; las series tienen unicidad de tipo y código.
+- `FiscalEmissionSchemaTest` verifica ausencia de estructuras retiradas, instalación/seeding/rollback/repetición y persistencia comercial. Ver [series y correlativos](../mantener-numeracion-fiscal-venezuela-pro9/SKILL.md).

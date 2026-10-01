@@ -30,14 +30,12 @@ class Establishment extends ModelTenant
         'logo',
         'template_pdf',
         'template_ticket_pdf',
-        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
-        // Se aplica exclusivamente el contrato de IVA venezolano.
-        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
+        'has_igv_31556'
     ];
 
-    // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
-    // Sin configuración tributaria peruana por establecimiento.
-    // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
+    protected $casts = [
+        'has_igv_31556' => 'boolean'
+    ];
 
     public function country()
     {
@@ -121,8 +119,8 @@ class Establishment extends ModelTenant
     {
         return $query->withOut(['country', 'department', 'province', 'district']);
     }
-    
-    
+
+
     /**
      * 
      * Obtener id del almacén

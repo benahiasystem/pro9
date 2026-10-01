@@ -339,33 +339,13 @@ class SaleNoteController extends Controller
     }
 
 
-    public function storeWithData($inputs, ?array $orderSource = null)
+    public function storeWithData($inputs)
     {
         // ######## INICIO POLITICA IDENTIDAD ACTIVA EN VENTAS ########
         SalesCustomerIdentityPolicy::assertCustomerAllowed($inputs['customer_id'] ?? null);
         // ######## FIN POLITICA IDENTIDAD ACTIVA EN VENTAS ########
         DB::connection('tenant')->beginTransaction();
         try {
-            // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
-            if (!empty($inputs['id'])) {
-                $source = \App\Services\Fiscal\FiscalSaleNoteMutationGuard::lockEditable(DB::connection('tenant'), (int) $inputs['id'], auth()->user());
-                abort_unless((int) $inputs['establishment_id'] === (int) $source->establishment_id, 403);
-            }
-            unset($inputs['document_id'], $inputs['changed']);
-            // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
-
-            // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
-            if ($orderSource !== null) {
-                $context = \App\Services\Fiscal\FiscalOrderSalesNoteContext::prepare(DB::connection('tenant'), $orderSource, $inputs);
-                $inputs = $context['inputs'];
-                if ($context['existing_id'] !== null) {
-                    $existing = SaleNote::findOrFail($context['existing_id']);
-                    DB::connection('tenant')->commit();
-                    return ['success' => true, 'data' => ['id' => $existing->id, 'number_full' => $existing->number_full], 'replayed' => true,
-                        'links' => ['print_ticket' => url('')."/sale-notes/print/{$existing->external_id}/ticket"]];
-                }
-            }
-            // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
             $isUpdate = true;
             if (!isset($inputs['id'])) {
                 $inputs['id'] = false;
@@ -373,12 +353,6 @@ class SaleNoteController extends Controller
             }
             $data = $this->mergeData($inputs, $isUpdate);
 
-            // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
-            if ($orderSource !== null) {
-                $data['user_id'] = $inputs['user_id'];
-                $data['seller_id'] = $inputs['seller_id'];
-            }
-            // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
             $this->sale_note =  SaleNote::query()->updateOrCreate(['id' => $inputs['id']], $data);
 
             $this->deleteAllPayments($this->sale_note->payments);
@@ -391,8 +365,8 @@ class SaleNoteController extends Controller
             {
 
                 // $item_id = isset($row['id']) ? $row['id'] : null;
-                // La sustitución crea filas propias; record_id no autoriza editar ítems de otra nota.
-                $sale_note_item = new SaleNoteItem();
+                $item_id = isset($row['record_id']) ? $row['record_id'] : null;
+                $sale_note_item = SaleNoteItem::query()->firstOrNew(['id' => $item_id]);
 
                 if(isset($row['item']['lots'])){
                     $row['item']['lots'] = isset($row['lots']) ? $row['lots']:$row['item']['lots'];
@@ -565,25 +539,20 @@ class SaleNoteController extends Controller
 
     public function destroy_sale_note_item($id)
     {
-        DB::connection('tenant')->transaction(function () use ($id) {
-            $item = SaleNoteItem::findOrFail($id);
-            \App\Services\Fiscal\FiscalSaleNoteMutationGuard::lockEditable(DB::connection('tenant'), (int) $item->sale_note_id, auth()->user());
-            $item = SaleNoteItem::where('id', $id)->where('sale_note_id', $item->sale_note_id)->lockForUpdate()->firstOrFail();
+        $item = SaleNoteItem::findOrFail($id);
 
-            if(isset($item->item->lots)){
+        if(isset($item->item->lots)){
 
-                foreach($item->item->lots as $lot) {
-                    // dd($lot->id);
-                    $record_lot = ItemLot::findOrFail($lot->id);
-                    $record_lot->has_sale = false;
-                    $record_lot->update();
-                }
-
+            foreach($item->item->lots as $lot) {
+                // dd($lot->id);
+                $record_lot = ItemLot::findOrFail($lot->id);
+                $record_lot->has_sale = false;
+                $record_lot->update();
             }
 
-            $item->delete();
+        }
 
-        });
+        $item->delete();
 
         return [
             'success' => true,
@@ -626,16 +595,7 @@ class SaleNoteController extends Controller
         }
         else{
 
-            $document = SaleNote::query()
-                                ->select('number')->where('fiscal_environment', $this->company->fiscal_environment)
-                                ->where('series', $series)
-                                ->orderBy('number', 'desc')
-                                ->first();
-
-            $number = ($document) ? $document->number + 1 : 1;
-
-            // Marca la serie (NV) como en uso al emitir (§4.7).
-            Series::markInUse('80', $series);
+            $number = '#';
 
         }
         $seller_id = isset($inputs['seller_id'])?(int)$inputs['seller_id']:0;
@@ -720,7 +680,7 @@ class SaleNoteController extends Controller
         $name = [$this->sale_note->series,$this->sale_note->number,date('Ymd')];
         $this->sale_note->filename = join('-', $name);
 
-        $this->sale_note->unique_filename = $this->sale_note->filename; //campo único para evitar duplicados
+        $this->sale_note->unique_filename = $this->sale_note->fiscal_environment . '-' . $this->sale_note->filename; //campo único para evitar duplicados
 
         $this->sale_note->save();
     }
@@ -1339,9 +1299,6 @@ class SaleNoteController extends Controller
     public function option_tables()
     {
         $establishment = Establishment::where('id', auth()->user()->establishment_id)->first();
-        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
-        $fiscal_profiles = (new \App\Services\FiscalProfileService(Company::active()->getConnection()))->forSelection((int) $establishment->id, 'presential', app(SeriesResolver::class)->activeGroupId());
-        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
         // Series filtradas por contexto (oculta dedicadas / restringe al grupo activo). Ver SeriesResolver.
         $series = app(SeriesResolver::class)->applyContext(Series::where('establishment_id', $establishment->id))->get();
         // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
@@ -1353,7 +1310,7 @@ class SaleNoteController extends Controller
         $configuration = Configuration::select(['restrict_sale_items_cpe', 'global_discount_type_id','restrict_receipt_date', 'shipping_time_days'])->first();
         $global_discount_types = ChargeDiscountType::getGlobalDiscounts();
 
-        return compact('fiscal_profiles', 'series', 'document_types_invoice', 'payment_method_types', 'payment_destinations','sellers', 'configuration', 'global_discount_types');
+        return compact('series', 'document_types_invoice', 'payment_method_types', 'payment_destinations','sellers', 'configuration', 'global_discount_types');
     }
 
     public function email(Request $request)
@@ -1418,8 +1375,8 @@ class SaleNoteController extends Controller
     {
 
         DB::connection('tenant')->transaction(function () use ($id) {
-            \App\Services\Fiscal\FiscalSaleNoteMutationGuard::lockEditable(DB::connection('tenant'), (int) $id, auth()->user());
-            $obj = SaleNote::findOrFail($id);
+
+            $obj =  SaleNote::find($id);
             $obj->state_type_id = 11;
             $obj->save();
 
@@ -1632,29 +1589,14 @@ class SaleNoteController extends Controller
         }
     }
 
-    // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
-    private function convertibleSaleNotes()
-    {
-        $actor = auth()->user();
-        abort_unless($actor && in_array($actor->type, ['admin', 'seller', 'integrator'], true) && $actor->establishment_id, 403);
-        $query = SaleNote::where('establishment_id', $actor->establishment_id)
-            ->where('fiscal_environment', Company::active()->fiscal_environment)
-            ->whereNull('document_id')->where('changed', false)->whereIn('state_type_id', ['01', '03', '05'])
-            ->whereDoesntHave('documents');
-        if ($actor->type !== 'admin') $query->where('user_id', $actor->id);
-        return $query;
-    }
-    // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
-
     public function saleNotesByClient(Request $request)
     {
         $request->validate([
             'client_id' => 'required|numeric|min:1',
         ]);
         $clientId = $request->client_id;
-        $records = $this->convertibleSaleNotes()->without(['user', 'fiscal_environment_type', 'state_type', 'currency_type', 'payments'])
-                            ->select('series', 'number', 'id', 'date_of_issue', 'total', 'currency_type_id', 'exchange_rate_sale')
-                            ->withSum('payments as source_paid', 'payment')
+        $records = SaleNote::without(['user', 'fiscal_environment_type', 'state_type', 'currency_type', 'payments'])
+                            ->select('series', 'number', 'id', 'date_of_issue', 'total')
                             ->where('customer_id', $clientId)
                             ->whereNull('document_id')
                             ->whereIn('state_type_id', ['01', '03', '05'])
@@ -1683,19 +1625,10 @@ class SaleNoteController extends Controller
     public function getItemsFromNotes(Request $request)
     {
         $request->validate([
-            'notes_id' => 'required|array|min:1',
-            'notes_id.*' => 'required|integer|min:1|distinct',
+            'notes_id' => 'required|array',
         ]);
 
-        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
-        $sources = $this->convertibleSaleNotes()->whereIn('id', $request->notes_id)->get();
-        abort_unless($sources->count() === count($request->notes_id), 403, 'Una nota seleccionada no está disponible para este usuario.');
-        if ($sources->pluck('customer_id')->unique()->count() !== 1 || $sources->pluck('currency_type_id')->unique()->count() !== 1) {
-            throw \Illuminate\Validation\ValidationException::withMessages(['notes_id' => 'Las notas deben corresponder al mismo cliente y moneda.']);
-        }
-        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
-
-        if($request->select_all || $request->boolean('group_items')){
+        if($request->select_all){
 
             $items = SaleNoteItem::whereIn('sale_note_id', $request->notes_id)->get();
 
@@ -1707,15 +1640,9 @@ class SaleNoteController extends Controller
         }
 
 
-        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
-        if ($request->boolean('group_items')) {
-            $items = \App\Services\Fiscal\FiscalSaleNoteItems::group($items->toArray());
-        }
-        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
         return response()->json([
             'success' => true,
             'data' => $items,
-            'economics' => \App\Services\Fiscal\FiscalSaleNoteEconomics::capture($sources),
         ], 200);
     }
 
@@ -1741,7 +1668,7 @@ class SaleNoteController extends Controller
         $this->sale_note = $obj->replicate();
         $this->sale_note->external_id = Str::uuid()->toString();
         $this->sale_note->state_type_id = '01' ;
-        $this->sale_note->number = SaleNote::getLastNumberByModel($obj) ;
+        $this->sale_note->number = '#' ;
         $this->sale_note->unique_filename = null;
         $this->sale_note->date_of_issue = now()->toDateTimeString();
         $this->sale_note->due_date = now()->toDateTimeString();
@@ -1879,17 +1806,30 @@ class SaleNoteController extends Controller
             'message' => 'Despacho eliminado con exito'
         ];
     }
-    // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
-    public function deleteRelationInvoice(Request $request)
-    {
-        $request->validate(['id' => 'required|integer|min:1']);
-        return DB::connection('tenant')->transaction(function () use ($request) {
-            // La reparación antigua no puede liberar un origen consumido por una factura.
-            \App\Services\Fiscal\FiscalSaleNoteMutationGuard::lockEditable(DB::connection('tenant'), (int) $request->id, auth()->user());
-            return ['success' => true]; // Sin vínculo: no hay nada que eliminar.
-        });
+    /**
+     * Elimina la relación con factura (problema antiguo respecto un nuevo campo en notas de venta que se envía de forma incorrecta a la factura siendo esta rechazada)
+     * No se previene el error en este metodo
+     *
+     *
+     */
+    public function deleteRelationInvoice(Request $request) {
+        // dd($request->all());
+        try {
+            $sale_note = SaleNote::find($request->id);
+
+            $document = Document::find($sale_note->document_id);
+            $document->sale_note_id = null;
+            $document->save();
+
+            $sale_note->changed = 0;
+            $sale_note->document_id = null;
+            $sale_note->save();
+        }catch(RequestException $e){
+            return ['success' => false];
+        }
+
+        return ['success' => true];
     }
-    // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
 
 
     /**

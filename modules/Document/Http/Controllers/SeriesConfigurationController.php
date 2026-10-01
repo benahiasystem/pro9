@@ -36,7 +36,7 @@ class SeriesConfigurationController extends Controller
         $records = SeriesConfiguration::get()->transform(function($row, $key) {
 
           if($row->document_type_id == '09') {
-            $quantity_documents = Dispatch::where('number', $row->number)->count();
+            $quantity_documents = Dispatch::where('series', $row->series)->where('document_type_id', '09')->count();
           } else{
             $quantity_documents = $this->getQuantityDocuments($row->document_type_id, $row->series);
           }
@@ -62,7 +62,7 @@ class SeriesConfigurationController extends Controller
     {
 
         $establishmentId = auth()->user()->establishment_id;
-        $document_type_ids = ['01', '03', '07', '08','09'];
+        $document_type_ids = ['01', '07', '08', '09', '80'];
 
         if ((bool) optional(Configuration::first())->isNrus()) {
             $document_type_ids = array_values(array_intersect($document_type_ids, SeriesCodeGenerator::nrusDocumentTypeIds()));
@@ -88,56 +88,24 @@ class SeriesConfigurationController extends Controller
 
     public function store(SeriesConfigurationsRequest $request)
     {
-
-      if($request->document_type_id == '09'){
-        $number = Dispatch::max('number');
-        if($request->number <= $number){
-          return [
-              'success' => false,
-              'message' => 'Ya inicializó el número correlativo de la serie'
-          ];
+        \App\Services\SeriesAdministration::authorize();
+        $series = Series::findOrFail($request->series_id);
+        if ($series->number !== strtoupper($request->series) || $series->document_type_id !== $request->document_type_id) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['series' => 'La configuración no corresponde a la serie seleccionada.']);
         }
-      }
-
-        $quantity_document = $this->getQuantityDocuments($request->document_type_id, $request->series);
-
-        if($quantity_document > 0){
-            return [
-                'success' => false,
-                'message' => 'Ya inicializó el número correlativo de la serie'
-            ];
-        }
-
-        $id = $request->input('id');
-        $record = SeriesConfiguration::firstOrNew(['id' => $id]);
-        $record->fill($request->all());
-        $record->save();
-
-        return [
-            'success' => true,
-            'message' => ($id)?'Configuración editada con éxito':'Configuración registrada con éxito'
-        ];
+        return app(\App\Http\Controllers\Tenant\SeriesController::class)->updateCorrelative(
+            Request::create('/', 'POST', ['correlative' => $request->number]), $series->id
+        );
     }
 
     public function destroy($id)
     {
-        try {
-
+        return \App\Services\SeriesAdministration::transaction(function () use ($id) {
             $record = SeriesConfiguration::findOrFail($id);
+            $series = Series::lockForUpdate()->findOrFail($record->series_id);
+            if (\App\Services\SeriesNumbering::used($series)) return ['success' => false, 'message' => 'La serie ya tiene documentos registrados.'];
             $record->delete();
-
-            return [
-                'success' => true,
-                'message' => 'Configuración de serie eliminada con éxito'
-            ];
-
-        } catch (Exception $e) {
-
-            return ($e->getCode() == '23000') ? ['success' => false,'message' => 'La Configuración de serie esta siendo usada por otros registros, no puede eliminar'] : ['success' => false,'message' => 'Error inesperado, no se pudo eliminar la Configuración de serie'];
-
-        }
-
-
+            return ['success' => true, 'message' => 'Configuración de serie eliminada con éxito'];
+        });
     }
-
 }
