@@ -167,9 +167,7 @@ $document_types=DocumentType::OnlyAvaibleDocuments()->get();
 
                                     $serie_affec = '';
                                     $acum_total_exonerado=0;
-                                    $acum_total_inafecto=0;
 
-                                    $acum_total_free=0;
 
                                     $acum_total_taxed_usd = 0;
                                     $acum_total_igv_usd = 0;
@@ -252,12 +250,8 @@ $document_types=DocumentType::OnlyAvaibleDocuments()->get();
                         @if ($columns->total_exonerated->visible)
                             <th>Total Exonerado</th>
                         @endif
-                        @if ($columns->total_unaffected->visible)
-                            <th>Total Inafecto</th>
-                        @endif
-                        @if ($columns->total_free->visible)
-                            <th>Total Gratuito</th>
-                        @endif
+
+
                         @if ($columns->total_taxed->visible)
                             <th>Total Gravado</th>
                         @endif
@@ -450,14 +444,7 @@ $document_types=DocumentType::OnlyAvaibleDocuments()->get();
                             </td>
                             @endif
 
-                        <!-- <td class="celda">{{($signal == '07' || ($signal!='07' && $state =='11')) ? "-" : ""  }}{{$value->total_exonerated}} </td>
-                                    <td class="celda">{{($signal == '07' || ($signal!='07' && $state =='11')) ? "-" : ""  }}{{$value->total_unaffected}}</td>
-                                    <td class="celda">{{($signal == '07' || ($signal!='07' && $state =='11')) ? "-" : ""  }}{{$value->total_free}}</td>
 
-                                    <td class="celda">{{($signal == '07' || ($signal!='07' && $state =='11')) ? "-" : ""  }}{{$value->total_taxed}}</td>
-
-                                    <td class="celda">{{($signal == '07' || ($signal!='07' && $state =='11')) ? "-" : ""  }}{{$value->total_igv}}</td>
-                                    <td class="celda">{{($signal == '07' || ($signal!='07' && $state =='11')) ? "-" : ""  }}{{$value->total}}</td> -->
 
                             @if($signal == '07')
 
@@ -482,12 +469,8 @@ $document_types=DocumentType::OnlyAvaibleDocuments()->get();
                                     @if ($columns->total_exonerated->visible)
                                         <td class="celda">{{$signal == '07' ? "-" : ""  }}{{$value->total_exonerated}}</td>
                                     @endif
-                                    @if ($columns->total_unaffected->visible)
-                                        <td class="celda">{{$signal == '07' ? "-" : ""  }}{{$value->total_unaffected}}</td>
-                                    @endif
-                                    @if ($columns->total_free->visible)
-                                        <td class="celda">{{$signal == '07' ? "-" : ""  }}{{$value->total_free}}</td>
-                                    @endif
+
+
                                     @if ($columns->total_taxed->visible)
                                         <td class="celda">{{$signal == '07' ? "-" : ""  }}{{$value->total_taxed}}</td>
                                     @endif
@@ -513,13 +496,9 @@ $document_types=DocumentType::OnlyAvaibleDocuments()->get();
                                     <td class="celda">{{ (in_array($document_type->id,['01','03']) && in_array($value->state_type_id,['09','11'])) ? 0 : $value->total_exonerated}}</td>
                                 @endif
 
-                                @if ($columns->total_unaffected->visible)
-                                    <td class="celda">{{ (in_array($document_type->id,['01','03']) && in_array($value->state_type_id,['09','11'])) ? 0 : $value->total_unaffected}}</td>
-                                @endif
 
-                                @if ($columns->total_free->visible)
-                                    <td class="celda">{{ (in_array($document_type->id,['01','03']) && in_array($value->state_type_id,['09','11'])) ? 0 : $value->total_free}}</td>
-                                @endif
+
+
 
                                 @if ($columns->total_taxed->visible)
                                     <td class="celda">{{ (in_array($document_type->id,['01','03']) && in_array($value->state_type_id,['09','11'])) ? 0 : $value->total_taxed}}</td>
@@ -589,8 +568,6 @@ $document_types=DocumentType::OnlyAvaibleDocuments()->get();
                             @php
 
                                 $value->total_exonerated = (in_array($document_type->id,['01','03', '07']) && in_array($value->state_type_id,['09','11'])) ? 0 : $value->total_exonerated;
-                                $value->total_unaffected = (in_array($document_type->id,['01','03', '07']) && in_array($value->state_type_id,['09','11'])) ? 0 : $value->total_unaffected;
-                                $value->total_free = (in_array($document_type->id,['01','03', '07']) && in_array($value->state_type_id,['09','11'])) ? 0 : $value->total_free;
 
                                 $value->total_taxed = (in_array($document_type->id,['01','03', '07']) && in_array($value->state_type_id,['09','11'])) ? 0 : $value->total_taxed;
                                 $value->total_igv = (in_array($document_type->id,['01','03', '07']) && in_array($value->state_type_id,['09','11'])) ? 0 : $value->total_igv;
@@ -612,9 +589,7 @@ $document_types=DocumentType::OnlyAvaibleDocuments()->get();
                                 $acum_total_igv +=  $signal != '07' ? $value->total_igv : -$value->total_igv ;
                                 $acum_total += $signal != '07' ? $value->total : -$value->total ;*/
 
-                                /*$acum_total_exonerado += $signal != '07' ? $value->total_exonerated : -$value->total_exonerated ;
-                                $acum_total_inafecto += $signal != '07' ? $value->total_unaffected : -$value->total_unaffected ;
-                                $acum_total_free += $signal != '07' ? $value->total_free : -$value->total_free ;*/
+
 
 
                                 if(($signal == '07' && $state !== '11')){
@@ -625,8 +600,6 @@ $document_types=DocumentType::OnlyAvaibleDocuments()->get();
 
                                     $acum_total_charges += -$value->total_charge;
                                     $acum_total_exonerado += -$value->total_exonerated;
-                                    $acum_total_inafecto += -$value->total_unaffected;
-                                    $acum_total_free += -$value->total_free;
 
 
                                 }elseif($signal != '07' && $state == '11'){
@@ -637,8 +610,6 @@ $document_types=DocumentType::OnlyAvaibleDocuments()->get();
 
                                     $acum_total_charges += 0;
                                     $acum_total_exonerado += 0;
-                                    $acum_total_inafecto += 0;
-                                    $acum_total_free += 0;
 
                                 }else{
 
@@ -648,8 +619,6 @@ $document_types=DocumentType::OnlyAvaibleDocuments()->get();
 
                                     $acum_total_charges += $value->total_charge;
                                     $acum_total_exonerado += $value->total_exonerated;
-                                    $acum_total_inafecto += $value->total_unaffected;
-                                    $acum_total_free += $value->total_free;
                                 }
 
 
@@ -693,10 +662,7 @@ $document_types=DocumentType::OnlyAvaibleDocuments()->get();
                             //array_push($acum_series,['total'=>$acum_total]);
                         @endphp
                         <td colspan="{{$col_num}}"></td>
-                    <!-- <td >Totales</td>
-                                    <td>{{$acum_total_exonerado}}</td>
-                                    <td>{{$acum_total_inafecto}}</td>
-                                    <td>{{$acum_total_free}}</td> -->
+
                         <td>Totales VES</td>
                         @if ($columns->total_charge->visible)
                         <td>{{number_format($acum_total_charges, 2)}}</td>
@@ -705,13 +671,9 @@ $document_types=DocumentType::OnlyAvaibleDocuments()->get();
                         <td>{{number_format($acum_total_exonerado, 2)}}</td>
                         @endif
 
-                        @if ($columns->total_unaffected->visible)
-                        <td>{{number_format ($acum_total_inafecto, 2 )}}</td>
-                        @endif
 
-                        @if ($columns->total_free->visible)
-                        <td>{{number_format($acum_total_free, 2)}}</td>
-                        @endif
+
+
 
                         @if ($columns->total_taxed->visible)
                         <td>{{$acum_total_taxed}}</td>
@@ -738,12 +700,8 @@ $document_types=DocumentType::OnlyAvaibleDocuments()->get();
                         @if ($columns->total_exonerated->visible)
                         <td></td>
                         @endif
-                        @if ($columns->total_unaffected->visible)
-                        <td></td>
-                        @endif
-                        @if ($columns->total_free->visible)
-                        <td></td>
-                        @endif
+
+
                         @if ($columns->total_taxed->visible)
                         <td>{{$acum_total_taxed_usd}}</td>
                         @endif

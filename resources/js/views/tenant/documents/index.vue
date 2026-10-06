@@ -188,8 +188,8 @@
                         <th v-if="col.visible && col.key === 'guides'" :key="col.key" class="text-end">Orden de entrega</th>
                         <th v-if="col.visible && col.key === 'plate_numbers'" :key="col.key" class="text-center">Placa</th>
                         <th v-if="col.visible && col.key === 'total_exportation'" :key="col.key" class="text-end">T.Exportación</th>
-                        <th v-if="col.visible && col.key === 'total_free'" :key="col.key" class="text-end">T.Gratuita</th>
-                        <th v-if="col.visible && col.key === 'total_unaffected'" :key="col.key" class="text-end">T.Inafecta</th>
+
+
                         <th v-if="col.visible && col.key === 'total_exonerated'" :key="col.key" class="text-end">T.Exonerado</th>
                         <th v-if="col.visible && col.key === 'total_charge'" :key="col.key" class="text-end">{{ columns.total_charge.title }}</th>
                         <th v-if="col.visible && col.key === 'total_taxed'" :key="col.key" class="text-end">T.Gravado</th>
@@ -301,8 +301,8 @@
                             <span v-for="(item, i) in row.plate_numbers" :key="i">{{ item.description }} <br /></span>
                         </td>
                         <td v-if="col.visible && col.key === 'total_exportation'" :key="col.key" class="text-end">{{ row.currency_type_symbol }} {{ formatDecimal(row.total_exportation) }}</td>
-                        <td v-if="col.visible && col.key === 'total_free'" :key="col.key" class="text-end">{{ row.currency_type_symbol }} {{ formatDecimal(row.total_free) }}</td>
-                        <td v-if="col.visible && col.key === 'total_unaffected'" :key="col.key" class="text-end">{{ row.currency_type_symbol }} {{ formatDecimal(row.total_unaffected) }}</td>
+
+
                         <td v-if="col.visible && col.key === 'total_exonerated'" :key="col.key" class="text-end">{{ row.currency_type_symbol }} {{ formatDecimal(row.total_exonerated) }}</td>
                         <td v-if="col.visible && col.key === 'total_charge'" :key="col.key" class="text-end">{{ row.currency_type_symbol }} {{ formatDecimal(row.total_charge) }}</td>
                         <td v-if="col.visible && col.key === 'total_taxed'" :key="col.key" class="text-end">{{ row.currency_type_symbol }} {{ formatDecimal(row.total_taxed) }}</td>
@@ -736,8 +736,8 @@ export default {
                 guides:             { title: "Órdenes de entrega",                          visible: false, order: 17 },
                 plate_numbers:      { title: "Placa",                          visible: false, order: 18 },
                 total_exportation:  { title: "T.Exportación",                  visible: false, order: 19 },
-                total_free:         { title: "T.Gratuito",                     visible: false, order: 20 },
-                total_unaffected:   { title: "T.Inafecto",                     visible: false, order: 21 },
+
+
                 total_exonerated:   { title: "T.Exonerado",                    visible: false, order: 22 },
                 total_charge:       { title: "T.Cargos",                       visible: false, order: 23 },
                 total_taxed:        { title: "T.Gravado",                      visible: true,  order: 24 },

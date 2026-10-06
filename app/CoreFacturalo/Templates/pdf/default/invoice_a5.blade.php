@@ -1,3 +1,4 @@
+{{-- ######## INICIO PERSISTENCIA FISCAL VENEZUELA ######## --}}
 {{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 @php
     use Modules\Template\Helpers\TemplatePdf;
@@ -34,7 +35,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
     $document->load('reference_guides');
 
     $total_payment = $document->payments->sum('payment');
-    $balance = ($document->total - $total_payment) - $document->payments->sum('change');
+    $balance = $document instanceof \App\Models\Tenant\Document ? $document->balance : (($document->total - $total_payment) - $document->payments->sum('change'));
     $configuration_decimal_quantity = App\CoreFacturalo\Helpers\Template\TemplateHelper::getConfigurationDecimalQuantity();
 
     $paymentCondition = \App\CoreFacturalo\Helpers\Template\TemplateHelper::getDocumentPaymentCondition($document);
@@ -543,18 +544,8 @@ foreach ($document->items as $row) {
             <td class="text-right font-bold">{{ number_format($document->total_exportation, 2) }}</td>
         </tr>
     @endif
-    @if($document->total_free > 0)
-        <tr>
-            <td colspan="{{ $colspan_total }}" class="text-right font-bold pr-2">OP. GRATUITAS: {{ $document->currency_type->symbol }}</td>
-            <td class="text-right font-bold">{{ number_format($document->total_free, 2) }}</td>
-        </tr>
-    @endif
-    @if($document->total_unaffected > 0)
-        <tr>
-            <td colspan="{{ $colspan_total }}" class="text-right font-bold pr-2">OP. INAFECTAS: {{ $document->currency_type->symbol }}</td>
-            <td class="text-right font-bold">{{ number_format($document->total_unaffected, 2) }}</td>
-        </tr>
-    @endif
+
+
     @if($document->total_exonerated > 0)
         <tr>
             <td colspan="{{ $colspan_total }}" class="text-right font-bold pr-2">OP. EXONERADAS: {{ $document->currency_type->symbol }}</td>
@@ -634,12 +625,7 @@ foreach ($document->items as $row) {
         <td class="text-right font-bold">{{ number_format($document->total, 2) }}</td>
     </tr>
 
-    @if(($document->retention) && $document->total_pending_payment > 0)
-        <tr>
-            <td colspan="{{ $colspan_total }}" class="text-right font-bold pr-2">M. PENDIENTE: {{ $document->currency_type->symbol }}</td>
-            <td class="text-right font-bold">{{ number_format($document->total_pending_payment, 2) }}</td>
-        </tr>
-    @endif
+
 
     @if($balance < 0)
         <tr>
@@ -780,16 +766,7 @@ foreach ($document->items as $row) {
                         @endforeach
                     @endif
                 @endif
-                @if ($document->retention)
-                    <tr>
-                        <td colspan="2">
-                            <p class="font-bold">Información de la retención</p>
-                            <p>Base imponible de la retención: Bs. {{ $document->getRetentionTaxBase() }}</p>
-                            <p>Porcentaje de la retención: {{ $document->retention->percentage * 100 }}%</p>
-                            <p>Monto de la retención: Bs. {{ $document->retention->amount_pen }}</p>
-                        </td>
-                    </tr>
-                @endif
+
             </table>
         </td>
         <td width="18%" class="text-right">
@@ -800,3 +777,5 @@ foreach ($document->items as $row) {
 </html>
 
 {{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}
+
+{{-- ######## FIN PERSISTENCIA FISCAL VENEZUELA ######## --}}

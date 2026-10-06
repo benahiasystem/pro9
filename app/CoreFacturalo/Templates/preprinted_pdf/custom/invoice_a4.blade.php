@@ -1,3 +1,4 @@
+{{-- ######## INICIO PERSISTENCIA FISCAL VENEZUELA ######## --}}
 {{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 @php
     $establishment = $document->establishment;
@@ -23,7 +24,7 @@
     $document->load('reference_guides');
 
     $total_payment = $document->payments->sum('payment');
-    $balance = ($document->total - $total_payment) - $document->payments->sum('change');
+    $balance = $document instanceof \App\Models\Tenant\Document ? $document->balance : (($document->total - $total_payment) - $document->payments->sum('change'));
 
 @endphp
 <html>
@@ -379,18 +380,8 @@
                 <td class="text-right font-bold">{{ number_format($document->total_exportation, 2) }}</td>
             </tr>
         @endif
-        @if($document->total_free > 0)
-            <tr>
-                <td colspan="7" class="text-right font-bold">OP. GRATUITAS: {{ $document->currency_type->symbol }}</td>
-                <td class="text-right font-bold">{{ number_format($document->total_free, 2) }}</td>
-            </tr>
-        @endif
-        @if($document->total_unaffected > 0)
-            <tr>
-                <td colspan="7" class="text-right font-bold">OP. INAFECTAS: {{ $document->currency_type->symbol }}</td>
-                <td class="text-right font-bold">{{ number_format($document->total_unaffected, 2) }}</td>
-            </tr>
-        @endif
+
+
         @if($document->total_exonerated > 0)
             <tr>
                 <td colspan="7" class="text-right font-bold">OP. EXONERADAS: {{ $document->currency_type->symbol }}</td>
@@ -417,25 +408,12 @@
             <td class="text-right font-bold">{{ number_format($document->total_igv, 2) }}</td>
         </tr>
 
-        @if($document->perception)
-            <tr>
-                <td colspan="7" class="text-right font-bold"> IMPORTE TOTAL: {{ $document->currency_type->symbol }}</td>
-                <td class="text-right font-bold">{{ number_format($document->total, 2) }}</td>
-            </tr>
-            <tr>
-                <td colspan="7" class="text-right font-bold">PERCEPCIÓN: {{ $document->currency_type->symbol }}</td>
-                <td class="text-right font-bold">{{ number_format($document->perception->amount, 2) }}</td>
-            </tr>
-            <tr>
-                <td colspan="7" class="text-right font-bold">TOTAL A PAGAR: {{ $document->currency_type->symbol }}</td>
-                <td class="text-right font-bold">{{ number_format(($document->total + $document->perception->amount), 2) }}</td>
-            </tr>
-        @else
+
             <tr>
                 <td colspan="7" class="text-right font-bold">TOTAL A PAGAR: {{ $document->currency_type->symbol }}</td>
                 <td class="text-right font-bold">{{ number_format($document->total, 2) }}</td>
             </tr>
-        @endif
+
 
         @if($balance < 0)
 
@@ -543,3 +521,5 @@
 </html>
 
 {{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}
+
+{{-- ######## FIN PERSISTENCIA FISCAL VENEZUELA ######## --}}

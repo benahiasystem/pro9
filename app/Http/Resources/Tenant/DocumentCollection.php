@@ -80,11 +80,7 @@ class DocumentCollection extends ResourceCollection
 
             $total_payment = $row->payments->sum('payment');
 
-            if ($row->retention) {
-                $balance = number_format($row->total - $row->retention->amount - $total_payment, 2, ".", "");
-            } else {
-                $balance = number_format($row->total - $total_payment, 2, ".", "");
-            }
+            $balance = number_format($row->balance, 2, '.', '');
 
             $nvs = $row->getNvCollection();
 
@@ -114,7 +110,7 @@ class DocumentCollection extends ResourceCollection
                 }
             }
 
-            $btn_retention = !is_null($row->retention);
+            $btn_retention = $row->document_type_id === '01';
             $custom_fields_data = $row->custom_fields_data;
 
             return [
@@ -139,8 +135,6 @@ class DocumentCollection extends ResourceCollection
                 // ######## FIN MIGRACIÓN MONEDA VENEZUELA ########
                 'exchange_rate_sale' => $row->exchange_rate_sale,
                 'total_exportation' => $row->total_exportation,
-                'total_free' => $row->total_free,
-                'total_unaffected' => $row->total_unaffected,
                 'total_exonerated' => $row->total_exonerated,
                 'total_taxed' => $row->total_taxed,
                 'total_igv' => $row->total_igv,

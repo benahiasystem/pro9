@@ -33,7 +33,7 @@
                                     <td>{{ row.payment_method_type_description }}</td>
                                     <td>{{ row.destination_description }}</td>
                                     <!-- <td>{{ row.reference }}</td> -->
-                                    <td class="text-center">{{ row.payment }}</td>
+                                    <td class="text-center">{{ row.payment }} aplicado<br><small>{{ row.currency_type_id }} {{ row.original_amount }} recibido; IGTF {{ row.tax_amount }}</small><br><small v-if="row.reversed_at">Revertido</small></td>
 
                                     <td class="text-left">
 
@@ -81,8 +81,8 @@
 
                                     <td class="series-table-actions text-right">
 
-                                        <template v-if="permissions.delete_payment">
-                                            <button type="button" class="btn waves-effect waves-light btn-xs btn-danger" @click.prevent="clickDelete(row.id)">Eliminar</button>
+                                        <template v-if="permissions.delete_payment && !row.reversed_at">
+                                            <button type="button" class="btn waves-effect waves-light btn-xs btn-danger" @click.prevent="clickDelete(row.id)">Revertir</button>
                                         </template>
 
                                         <!--<el-button type="danger" icon="el-icon-delete" plain @click.prevent="clickDelete(row.id)"></el-button>-->
@@ -102,6 +102,14 @@
                                     </td>
                                     <td>
                                         <div class="form-group mb-0" :class="{'has-danger': row.errors.payment_method_type_id}">
+                                            <!-- ######## INICIO PERSISTENCIA FISCAL VENEZUELA ######## -->
+                                            <el-select v-model="row.igtf_status" placeholder="IGTF">
+                                                <el-option label="No aplica IGTF" value="not_applicable"/>
+                                                <el-option label="Sujeto a IGTF" value="subject"/>
+                                                <el-option label="Exento de IGTF" value="exempt"/>
+                                            </el-select>
+                                            <el-input v-if="row.igtf_status === 'exempt'" v-model="row.exemption_reason" placeholder="Motivo de exención"/>
+                                            <!-- ######## FIN PERSISTENCIA FISCAL VENEZUELA ######## -->
                                             <el-select v-model="row.payment_method_type_id">
                                                 <el-option v-for="option in payment_method_types" v-show="option.id != '09'" :key="option.id" :value="option.id" :label="option.description"></el-option>
                                             </el-select>
@@ -436,6 +444,8 @@
                     reference: null,
                     filename: null,
                     temp_path: null,
+                    igtf_status: 'not_applicable', exemption_reason: null,
+                    operation_key: (window.crypto && window.crypto.randomUUID) ? window.crypto.randomUUID() : undefined,
                     payment: parseFloat(this.document.total_difference),
                     // payment: 0,
                     errors: {},

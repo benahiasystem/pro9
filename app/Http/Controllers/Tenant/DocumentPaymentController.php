@@ -24,7 +24,8 @@ class DocumentPaymentController extends Controller
 
     public function records($document_id)
     {
-        $records = DocumentPayment::where('document_id', $document_id)->get();
+        DocumentFiscalController::authorizeDocument(Document::findOrFail($document_id));
+        $records = DocumentPayment::where('document_id', $document_id)->whereNull('receipt_parent_id')->get();
 
         return new DocumentPaymentCollection($records);
     }
@@ -42,13 +43,10 @@ class DocumentPaymentController extends Controller
     {
         $document = Document::find($document_id);
 
-        if ($document->retention) {
-            $total = $document->total - $document->retention->amount;
-        } else {
-            $total = $document->total;
-        }
+        DocumentFiscalController::authorizeDocument($document);
+        $total = $document->total - $document->retention_amount - $document->guarantee_amount;
 
-        $total_paid = collect($document->payments)->sum('payment');
+        $total_paid = $document->payments()->whereNull('reversed_at')->sum('payment');
 
         // $credit_notes_total = $document->getCreditNotesTotal();
 
@@ -72,19 +70,25 @@ class DocumentPaymentController extends Controller
     {
         // dd($request->all());
 
+        abort_unless(auth()->user()->type==='admin' || auth()->user()->create_payment,403);
         $id = $request->input('id');
 
         $data = DB::connection('tenant')->transaction(function () use ($id, $request) {
 
-            $record = DocumentPayment::firstOrNew(['id' => $id]);
-            $record->fill($request->all());
-            $record->save();
-            $this->createGlobalPayment($record, $request->all());
-            $this->saveFiles($record, $request, 'documents');
-            $this->createCashDocumentPayment($record,true);
+            $document = Document::findOrFail($request->input('document_id'));
+            DocumentFiscalController::authorizeDocument($document);
+            $record = \App\Services\Fiscal\FiscalDocumentPersistence::payment($document, $request->all());
+            if (!$record->global_payment && $request->filled('payment_destination_id')) {
+                $this->createGlobalPayment($record, $request->all());
+                $this->saveFiles($record, $request, 'documents');
+                $this->createCashDocumentPayment($record,true);
+            }
             return $record;
         });
 
+        $adjustment = \App\Models\Tenant\DocumentTax::where('document_payment_id',$data->id)->where('document_id','!=',$data->document_id)->first();
+        $adjustmentDocument = $adjustment ? Document::findOrFail($adjustment->document_id) : null;
+        if ($adjustmentDocument && !$adjustmentDocument->isVoidedOrRejected()) (new \App\CoreFacturalo\Facturalo())->createPdf($adjustmentDocument,'debit','a4');
         $document_balance = (object)$this->document($request->document_id);
 
         if ($document_balance->total_difference < 1) {
@@ -102,7 +106,7 @@ class DocumentPaymentController extends Controller
                 ])->first();
 
                 $credit->status = 'PROCESSED';
-                $credit->cash_id_processed = $cash->id;
+                $credit->cash_id_processed = optional($cash)->id;
                 $credit->save();
 
                 // $req = [
@@ -120,19 +124,21 @@ class DocumentPaymentController extends Controller
             'success' => true,
             'message' => ($id) ? 'Pago editado con éxito' : 'Pago registrado con éxito',
             'id' => $data->id,
+            'igtf_adjustment' => $adjustmentDocument ? ['id'=>$adjustmentDocument->id,'number'=>$adjustmentDocument->number_full,'external_id'=>$adjustmentDocument->external_id] : null,
         ];
     }
 
 
-    public function destroy($id)
+    public function destroy($id, \Illuminate\Http\Request $request)
     {
+        abort_unless(auth()->user()->type==='admin' || auth()->user()->delete_payment,403);
         $item = DocumentPayment::findOrFail($id);
-        $item->cashDocumentPayments()->delete();
-        $item->delete();
+        DocumentFiscalController::authorizeDocument($item->document);
+        \App\Services\Fiscal\FiscalDocumentPersistence::reverse($item, $request->input('reason', 'Reversión solicitada por el operador'));
 
         return [
             'success' => true,
-            'message' => 'Pago eliminado con éxito'
+            'message' => 'Pago revertido con éxito'
         ];
     }
 
@@ -147,7 +153,7 @@ class DocumentPaymentController extends Controller
 
                 $total_payments = $document->payments->sum('payment');
 
-                $balance = $document->total - $total_payments;
+                $balance = $document->balance;
 
                 if ($balance <= 0) {
 
@@ -181,7 +187,9 @@ class DocumentPaymentController extends Controller
                 'payment_method_type_description' => $row->payment_method_type->description,
                 'destination_description' => ($row->global_payment) ? $row->global_payment->destination_description : null,
                 'change' => $row->change,
-                'payment' => $row->payment,
+                'payment' => $row->reversed_at ? 0 : $row->cash_received_amount,
+                'currency_type_id' => $row->currency_type_id,
+                'applied_payment' => $row->payment,
                 'reference' => $row->reference,
                 'customer' => $row->document->customer->name,
                 'number' => $row->document->number_full,

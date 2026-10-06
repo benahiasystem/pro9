@@ -70,7 +70,7 @@ class DashboardView
          * Documents
          */
         $document_payments = DB::table('document_payments')
-            ->select('document_id', DB::raw('SUM(payment) as total_payment'))
+            ->whereNull('reversed_at')->select('document_id', DB::raw('SUM(payment) as total_payment'))
             ->groupBy('document_id');
 
         if($d_start && $d_end){
@@ -171,7 +171,7 @@ class DashboardView
         $records = $documents->union($sale_notes)->get();
 
         return collect($records)->transform(function($row) {
-                $total_to_pay = (float)$row->total - (float)$row->total_payment;
+                $total_to_pay = $row->type === 'document' ? Document::findOrFail($row->id)->balance : (float)$row->total - (float)$row->total_payment;
                 $delay_payment = null;
                 $date_of_due = null;
 
@@ -288,10 +288,10 @@ class DashboardView
          * Documents
          */
         $document_payments = DB::connection('tenant')->table('document_payments')
-            ->select('document_id', DB::raw('SUM(payment) as total_payment'))
+            ->whereNull('reversed_at')->select('document_id', DB::raw('SUM(payment) as total_payment'))
             ->groupBy('document_id');
 
-        $retention_amount = "IFNULL(JSON_EXTRACT(`retention`, '$.amount'), 0)";
+        $retention_amount = "(SELECT COALESCE(SUM(applied_amount),0) FROM document_received_retentions WHERE document_id=documents.id) + (SELECT COALESCE(SUM(amount),0) FROM document_guarantee_funds WHERE document_id=documents.id)";
 
         $document_select = "documents.id as id, " .
             "DATE_FORMAT(documents.date_of_issue, '%Y/%m/%d') as date_of_issue, " .

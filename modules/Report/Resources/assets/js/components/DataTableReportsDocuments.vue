@@ -553,8 +553,8 @@ export default {
             return [
                 'total_charge',
                 'total_exonerated',
-                'total_unaffected',
-                'total_free',
+
+
                 'total_taxed',
                 'total_igv',
                 'total'

@@ -27,7 +27,7 @@ class TestDocumentsDeletionContractTest extends TestCase
         self::assertStringContainsString("DB::connection('tenant')->transaction", $controller);
         self::assertStringContainsString("Document::where('fiscal_environment', 'demo')->get()", $controller);
         self::assertStringContainsString('$document->items()->delete();', $controller);
-        self::assertStringContainsString('$document->payments()->each', $controller);
+        self::assertStringContainsString('DocumentPayment::where(\'document_id\',$document->id)->each', $controller);
         self::assertStringContainsString('$document->items()->delete();', $controller);
         self::assertStringContainsString('$document->inventory_kardex()->delete();', $controller);
         self::assertLessThan(

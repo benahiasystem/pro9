@@ -25,6 +25,7 @@
                                     <el-select v-model="row.payment_method_type_id" @change="changePaymentMethodType(index)">
                                         <el-option v-for="option in payment_method_types" :key="option.id" :value="option.id" :label="option.description"></el-option>
                                     </el-select>
+<igtf-payment-fields :payment="row" />
                                 </div>
                             </td>
                             <template v-if="enabled_payments">
@@ -84,7 +85,10 @@
 </style>
 
 <script>
+import IgtfPaymentFields from "./../../documents/partials/igtf_fields.vue"
+
     export default {
+ components: { IgtfPaymentFields, IgtfPaymentFields },
         props: ['showDialog', 'payments', 'total'],
         data() {
             return {

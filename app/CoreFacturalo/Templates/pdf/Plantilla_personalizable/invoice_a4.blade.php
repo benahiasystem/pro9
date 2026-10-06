@@ -1,3 +1,4 @@
+{{-- ######## INICIO PERSISTENCIA FISCAL VENEZUELA ######## --}}
 {{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 @php
 use Modules\Template\Helpers\TemplatePdf;
@@ -33,7 +34,7 @@ $payments = $document->payments;
 $document->load('reference_guides');
 
 $total_payment = $document->payments->sum('payment');
-$balance = ($document->total - $total_payment) - $document->payments->sum('change');
+$balance = $document instanceof \App\Models\Tenant\Document ? $document->balance : (($document->total - $total_payment) - $document->payments->sum('change'));
 
 $logo = "storage/uploads/logos/{$company->logo}";
 if($establishment->logo) {
@@ -325,7 +326,7 @@ $showColumns = $columnsConfig ? $columnsConfig->columns_config : [
     </table>
 
 
-    {{--@if ($document->retention)--}}
+
     {{-- <table class="full-width mt-3">--}}
     {{-- <tr>--}}
     {{-- <td colspan="3">--}}
@@ -335,16 +336,16 @@ $showColumns = $columnsConfig ? $columnsConfig->columns_config : [
     {{-- <tr>--}}
     {{-- <td width="120px">Base imponible</td>--}}
     {{-- <td width="8px">:</td>--}}
-    {{-- <td>{{ $document->currency_type->symbol}} {{ $document->retention->base }}</td>--}}
+
 
     {{-- <td width="80px">Porcentaje</td>--}}
     {{-- <td width="8px">:</td>--}}
-    {{-- <td>{{ $document->retention->percentage * 100 }}%</td>--}}
+
     {{-- </tr>--}}
     {{-- <tr>--}}
     {{-- <td width="120px">Monto</td>--}}
     {{-- <td width="8px">:</td>--}}
-    {{-- <td>{{ $document->currency_type->symbol}} {{ $document->retention->amount }}</td>--}}
+
     {{-- </tr>--}}
     {{-- </table>--}}
     {{--@endif--}}
@@ -810,18 +811,8 @@ $showColumns = $columnsConfig ? $columnsConfig->columns_config : [
                 <td class="text-right font-bold">{{ number_format($document->total_exportation, 2) }}</td>
             </tr>
             @endif
-            @if($document->total_free > 0)
-            <tr>
-                <td colspan="{{ $colspan_total - 1 }}" class="text-right font-bold pr-2">OP. GRATUITAS: {{ $document->currency_type->symbol }}</td>
-                <td class="text-right font-bold">{{ number_format($document->total_free, 2) }}</td>
-            </tr>
-            @endif
-            @if($document->total_unaffected > 0)
-            <tr>
-                <td colspan="{{ $colspan_total - 1 }}" class="text-right font-bold pr-2">OP. INAFECTAS: {{ $document->currency_type->symbol }}</td>
-                <td class="text-right font-bold">{{ number_format($document->total_unaffected, 2) }}</td>
-            </tr>
-            @endif
+
+
             @if($document->total_exonerated > 0)
             <tr>
                 <td colspan="{{ $colspan_total - 1 }}" class="text-right font-bold pr-2">OP. EXONERADAS: {{ $document->currency_type->symbol }}</td>
@@ -895,49 +886,15 @@ $showColumns = $columnsConfig ? $columnsConfig->columns_config : [
             @endif
             @endif
 
-            @if($document->perception)
-            <tr>
-                <td colspan="{{ $colspan_total - 1 }}" class="text-right font-bold pr-2">IMPORTE TOTAL: {{ $document->currency_type->symbol }}</td>
-                <td class="text-right font-bold">{{ number_format($document->total, 2) }}</td>
-            </tr>
-            <tr>
-                <td colspan="{{ $colspan_total - 1 }}" class="text-right font-bold pr-2">PERCEPCIÓN: {{ $document->currency_type->symbol }}</td>
-                <td class="text-right font-bold">{{ number_format($document->perception->amount, 2) }}</td>
-            </tr>
-            <tr>
-                <td colspan="{{ max(1, ceil($colspan_total / 2) - 1) }}" class="text-left font-bold" style="white-space: nowrap;">Productos: {{ rtrim(rtrim(number_format(collect($document->items)->sum(function ($item) { return (float) data_get($item, 'quantity', 0); }), 2, '.', ''), '0'), '.') }}</td>
-                <td colspan="{{ max(1, floor($colspan_total / 2)) }}" class="text-right font-bold pr-2">TOTAL A PAGAR: {{ $document->currency_type->symbol }}</td>
-                <td class="text-right font-bold">{{ number_format(($document->total + $document->perception->amount), 2) }}</td>
-            </tr>
-            @elseif($document->retention)
-            <tr>
-                <td colspan="{{ $colspan_total - 1 }}" class="text-right font-bold pr-2"
-                    style="font-size: 16px;">IMPORTE TOTAL: {{ $document->currency_type->symbol }}</td>
-                <td class="text-right font-bold" style="font-size: 16px;">{{ number_format($document->total, 2) }}</td>
-            </tr>
-            <tr>
-                <td colspan="{{ $colspan_total - 1 }}" class="text-right pr-2">TOTAL RETENCIÓN ({{ $document->retention->percentage * 100 }}
-                    %): {{ $document->currency_type->symbol }}</td>
-                <td class="text-right">{{ number_format($document->retention->amount, 2) }}</td>
-            </tr>
-            <tr>
-                <td colspan="{{ $colspan_total - 1 }}" class="text-right pr-2">IMPORTE NETO: {{ $document->currency_type->symbol }}</td>
-                <td class="text-right">{{ number_format(($document->total - $document->retention->amount), 2) }}</td>
-            </tr>
-            @else
-            <tr>
-                <td colspan="{{ max(1, ceil($colspan_total / 2) - 1) }}" class="text-left font-bold" style="white-space: nowrap;">Productos: {{ rtrim(rtrim(number_format(collect($document->items)->sum(function ($item) { return (float) data_get($item, 'quantity', 0); }), 2, '.', ''), '0'), '.') }}</td>
-                <td colspan="{{ max(1, floor($colspan_total / 2)) }}" class="text-right font-bold pr-2">TOTAL A PAGAR: {{ $document->currency_type->symbol }}</td>
-                <td class="text-right font-bold">{{ number_format($document->total, 2) }}</td>
-            </tr>
-            @endif
 
-            @if(($document->retention) && $document->total_pending_payment > 0)
             <tr>
-                <td colspan="{{ $colspan_total - 1 }}" class="text-right font-bold pr-2">M. PENDIENTE: {{ $document->currency_type->symbol }}</td>
-                <td class="text-right font-bold">{{ number_format($document->total_pending_payment, 2) }}</td>
+                <td colspan="{{ max(1, ceil($colspan_total / 2) - 1) }}" class="text-left font-bold" style="white-space: nowrap;">Productos: {{ rtrim(rtrim(number_format(collect($document->items)->sum(function ($item) { return (float) data_get($item, 'quantity', 0); }), 2, '.', ''), '0'), '.') }}</td>
+                <td colspan="{{ max(1, floor($colspan_total / 2)) }}" class="text-right font-bold pr-2">TOTAL A PAGAR: {{ $document->currency_type->symbol }}</td>
+                <td class="text-right font-bold">{{ number_format($document->total, 2) }}</td>
             </tr>
-            @endif
+
+
+
 
             @if($balance < 0)
             <tr>
@@ -1065,39 +1022,7 @@ $showColumns = $columnsConfig ? $columnsConfig->columns_config : [
     </table>
     @endif
 
-    @if($document->retention)
-    <br>
-    <table class="full-width">
-        <tr>
-            <td>
-                <strong>Información de la retención:</strong>
-            </td>
-        </tr>
-        <tr>
-            <td>Valor total del comprobante:
-                {{$document->currency_type->symbol}}
-                {{ $document->currency_type->id == 'USD' ? number_format(($document->getRetentionTaxBase()/$document->exchange_rate_sale), 2) : $document->getRetentionTaxBase() }}
-                {{-- Bs. {{ round($document->retention->amount_pen / $document->retention->percentage, 2) }} --}}
-            </td>
-        </tr>
-        <tr>
-            <td>Porcentaje de la retención: {{ $document->retention->percentage * 100 }}%</td>
-        </tr>
-        <tr>
-            <td>Monto de la retención {{ $document->currency_type->id == 'USD' ? 'bolívares' : '' }}:
-                Bs. {{ $document->retention->amount_pen}}
-            </td>
-        </tr>
-        @if ($document->currency_type->id == 'USD')
-        <tr>
-            <td>Monto de la retención dólares:
-                {{$document->currency_type->symbol}} {{ number_format(($document->retention->amount_pen/$document->exchange_rate_sale), 2)}}
-            </td>
-        </tr>
 
-        @endif
-    </table>
-    @endif
 
     @if(isset($configurationInPdf) && $configurationInPdf->show_seller_in_pdf)
     <br>
@@ -1136,3 +1061,5 @@ $showColumns = $columnsConfig ? $columnsConfig->columns_config : [
 
 </html>
 {{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}
+
+{{-- ######## FIN PERSISTENCIA FISCAL VENEZUELA ######## --}}

@@ -147,7 +147,14 @@
         {
             $destination = $this->getDestinationRecord($row);
             $company = Company::active();
-
+            // ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
+            if ($model instanceof DocumentPayment && $destination['destination_type'] === BankAccount::class) {
+                $account = BankAccount::findOrFail($destination['destination_id']);
+                if ($account->currency_type_id !== $model->currency_type_id) {
+                    \App\Services\Fiscal\FiscalAmounts::error('payment_destination_id','La moneda del pago debe coincidir con la cuenta bancaria.');
+                }
+            }
+            // ######## FIN PERSISTENCIA FISCAL VENEZUELA ########
             $model->global_payment()->create([
                 'user_id' => auth()->id(),
                 'fiscal_environment' => $company->fiscal_environment,
@@ -191,6 +198,7 @@
                 ['state', true],
             ])->first();
 
+            if (!$cash) return;
             $cashDocument = ($isDocument)
                 ?CashDocument::where('document_id',$payment->document_id)->first()
                 :CashDocument::where('sale_note_id',$payment->sale_note_id)->first();
@@ -385,6 +393,11 @@
             return $record->where('payment_type', $model)->sum(function ($row) use($model, $requestCurrencyTipeId) {
 
 
+                if ($row->payment instanceof \App\Models\Tenant\DocumentPayment) {
+                    $receipt = $row->payment;
+                    if ($receipt->reversed_at) return 0;
+                    return \App\Services\Fiscal\FiscalAmounts::convert($receipt->cash_received_amount, $receipt->currency_type_id, $requestCurrencyTipeId, $receipt->exchange_rate);
+                }
                 // se dispara un error cuando no hay relacion de paymeny y associated_record_payment
                 try{
                     $total_credit_notes = ($row->instance_type == 'document') ? $this->getTotalCreditNotes($row->payment->associated_record_payment, $requestCurrencyTipeId) : 0;
@@ -706,6 +719,7 @@
 
             return $records->sum(function ($row) use ($include_credit_notes) {
 
+                if ($row instanceof DocumentPayment) return $row->reversed_at ? 0 : \App\Services\Fiscal\FiscalAmounts::convert($row->cash_received_amount, $row->currency_type_id, 'VES', $row->exchange_rate);
                 $total_credit_notes = ($include_credit_notes) ? $this->getTotalCreditNotes($row->associated_record_payment) : 0;
                 $total_currency_type = $this->calculateTotalCurrencyType($row->associated_record_payment, $row->payment);
 

@@ -1370,9 +1370,9 @@ export default {
                 total_charge: 0,
                 total_discount: 0,
                 total_exportation: 0,
-                total_free: 0,
+
                 total_taxed: 0,
-                total_unaffected: 0,
+
                 total_exonerated: 0,
                 total_igv: 0,
 
@@ -1659,8 +1659,8 @@ export default {
             let total_exportation = 0;
             let total_taxed = 0;
             let total_exonerated = 0;
-            let total_unaffected = 0;
-            let total_free = 0;
+
+
             let total_igv = 0;
             let total_value = 0;
             let total = 0;
@@ -1676,19 +1676,11 @@ export default {
                 if (row.affectation_igv_type_id === "20") {
                     total_exonerated += parseFloat(row.total_value);
                 }
-                if (row.affectation_igv_type_id === "30") {
-                    total_unaffected += parseFloat(row.total_value);
-                }
+                ;
                 if (row.affectation_igv_type_id === "40") {
                     total_exportation += parseFloat(row.total_value);
                 }
-                if (
-                    ["10", "20", "30", "40"].indexOf(
-                        row.affectation_igv_type_id
-                    ) < 0
-                ) {
-                    total_free += parseFloat(row.total_value);
-                }
+                ;
                 if (
                     ["10", "20", "30", "40"].indexOf(
                         row.affectation_igv_type_id
@@ -1710,8 +1702,8 @@ export default {
             // this.form.total_taxed =
             //   _.round(total_taxed, 2) + this.form.total_exonerated;
             // this.form.total_exonerated = _.round(total_exonerated, 2)
-            this.form.total_unaffected = _.round(total_unaffected, 2);
-            this.form.total_free = _.round(total_free, 2);
+
+
             this.form.total_igv = _.round(total_igv, 2);
             this.form.total_value = _.round(total_value, 2);
             this.form.total_taxes = _.round(total_igv, 2);

@@ -32,6 +32,8 @@ class DocumentRequest extends FormRequest
     {
         $id = $this->input('id');
         return [
+            'control_number' => 'prohibited',
+            'issuer' => 'prohibited',
             // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
             'document_type_id' => [
                 'required',

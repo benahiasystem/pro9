@@ -1,0 +1,104 @@
+{
+  "document_type_id": "01",
+  "series": "FF01",
+  "number": 1,
+  "date_of_issue": "2026-10-01",
+  "time_of_issue": "12:00:00",
+  "currency_type_id": "USD",
+  "exchange_rate_sale": 10.123,
+  "operation_key": "3a2d6a18-45a3-46bf-b94b-832e7bcd0bbc",
+  "establishment": {
+    "code": "0001"
+  },
+  "customer": {
+    "number": "J-12345678-9",
+    "name": "Cliente de prueba",
+    "address": "Caracas",
+    "country_id": "VE",
+    "hka_identity_code": "J"
+  },
+  "invoice": {
+    "operation_type_id": "0101",
+    "date_of_due": "2026-10-01"
+  },
+  "fiscal_data": {
+    "transaction_type_id": "01"
+  },
+  "total_exportation": 0,
+  "total_taxed": 100,
+  "total_exonerated": 0,
+  "total_value": 100,
+  "total_igv": 16,
+  "total": 116,
+  "total_discount": 0,
+  "total_charge": 0,
+  "items": [
+    {
+      "item": {
+        "description": "Producto",
+        "unit_type_id": "UND",
+        "hka_unit_code": "C62",
+        "internal_id": "TEST"
+      },
+      "iva_rate": {
+        "code": "G",
+        "percentage": 16
+      },
+      "quantity": 1,
+      "unit_value": 100,
+      "total_value": 100,
+      "total_igv": 16,
+      "percentage_igv": 16,
+      "total": 116
+    }
+  ],
+  "taxes": [
+    {
+      "tax_kind": "IVA",
+      "code": "G",
+      "percentage": 16,
+      "base": 100,
+      "amount": 16,
+      "base_ves": 1012.3,
+      "amount_ves": 161.97
+    }
+  ],
+  "payments": [
+    {
+      "payment_method_snapshot": {
+        "hka_code": "09"
+      },
+      "currency_type_id": "USD",
+      "original_amount": 116,
+      "tax_amount": 0,
+      "exchange_rate": 10.123,
+      "date_of_payment": "2026-10-01"
+    }
+  ],
+  "currency_totals": {
+    "taxed": 1012.3,
+    "exempt": 0,
+    "discount": 0,
+    "charge": 0,
+    "iva": 161.97,
+    "total": 1174.27,
+    "tax_breakdown": [
+      {
+        "tax_kind": "IVA",
+        "code": "G",
+        "percentage": 16,
+        "base_ves": 1012.3,
+        "amount_ves": 161.97
+      }
+    ]
+  },
+  "issuer": {
+    "number": "J-12345678-9",
+    "name": "Empresa de prueba",
+    "trade_name": "Comercio de prueba",
+    "address": "Avenida de prueba, Caracas",
+    "country_id": "VE",
+    "email": "emisor@example.test",
+    "telephone": "04121234567"
+  }
+}

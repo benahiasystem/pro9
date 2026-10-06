@@ -156,11 +156,17 @@ class OptionController extends Controller
     private function deleteDocumentRelations($documents): void
     {
         $documentIds = $documents->pluck('id');
+        // ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
+        foreach (['document_taxes','document_currency_totals','document_received_retentions','document_guarantee_funds','document_fiscal_data','document_emissions'] as $table) {
+            \DB::connection('tenant')->table($table)->whereIn('document_id',$documentIds)->delete();
+        }
+        \DB::connection('tenant')->table('document_payments')->whereIn('document_id',$documentIds)->update(['receipt_parent_id'=>null]);
+        // ######## FIN PERSISTENCIA FISCAL VENEZUELA ########
 
         foreach ($documents as $document) {
             $document->items()->delete();
             $document->inventory_kardex()->delete();
-            $document->payments()->each(function ($payment) {
+            \App\Models\Tenant\DocumentPayment::where('document_id',$document->id)->each(function ($payment) {
                 $payment->cashDocumentPayments()->delete();
                 $payment->global_payment()->delete();
                 $payment->delete();

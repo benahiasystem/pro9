@@ -1,4 +1,4 @@
 interface:
   display_name: "Moneda venezolana"
-  short_description: "Adaptar VES, bolívares, POS y reportes"
-  default_prompt: "Usa $migrar-venezuela-moneda para reemplazar PEN o VED por VES y adaptar POS, caja, compras y reportes a bolívares."
+  short_description: "Mantener VES/USD, conversiones, caja y cobros"
+  default_prompt: "Usa $migrar-venezuela-moneda para mantener VES/USD, tipos de cambio y la distinción entre importes recibidos y aplicados en Pro9."

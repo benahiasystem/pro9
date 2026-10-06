@@ -1,3 +1,4 @@
+{{-- ######## INICIO PERSISTENCIA FISCAL VENEZUELA ######## --}}
 @php
     $establishment = $document->establishment;
     $payments = $document->payments;
@@ -6,7 +7,7 @@
     $tittle_unpaid = str_pad($payments->count(), 8, '0', STR_PAD_LEFT);
     $configuration_decimal_quantity = App\CoreFacturalo\Helpers\Template\TemplateHelper::getConfigurationDecimalQuantity();
     $total_payment = $document->payments->sum('payment');
-    $balance = ($document->total - $total_payment) - $document->payments->sum('change');
+    $balance = $document instanceof \App\Models\Tenant\Document ? $document->balance : (($document->total - $total_payment) - $document->payments->sum('change'));
     //dd($tittle_unpaid);
 @endphp
 <html>
@@ -192,20 +193,8 @@
         <td colspan="2" class="text-right desc-ticket text-uppercase">{{ number_format($document->total_exportation, 2) }}</td>
     </tr>
         @endif
-        @if($document->total_free > 0)
-            <tr>
-                <td colspan="3" class="desc-ticket text-uppercase">OP. GRATUITAS:
-                    {{ $document->currency_type->symbol }}</td>
-                <td colspan="2" class="text-right desc-ticket text-uppercase">{{ number_format($document->total_free, 2) }}</td>
-            </tr>
-        @endif
-        @if($document->total_unaffected > 0)
-            <tr>
-                <td colspan="3" class="desc-ticket text-uppercase">OP. INAFECTAS:
-                    {{ $document->currency_type->symbol }}</td>
-                <td colspan="2" class="text-right desc-ticket text-uppercase">{{ number_format($document->total_unaffected, 2) }}</td>
-            </tr>
-        @endif
+
+
         @if($document->total_exonerated > 0)
             <tr>
                 <td colspan="3" class="desc-ticket text-uppercase">OP. EXONERADAS:
@@ -281,13 +270,7 @@
             <td colspan="2" class="text-right desc-ticket text-uppercase">{{ number_format($document->total, 2) }}</td>
         </tr>
 
-        @if(($document->retention) && $document->total_pending_payment > 0)
-            <tr>
-                <td colspan="3" class="desc-ticket text-uppercase">M. PENDIENTE:
-                    {{ $document->currency_type->symbol }}</td>
-                <td colspan="2" class="text-right desc-ticket text-uppercase">{{ number_format($document->total_pending_payment, 2) }}</td>
-            </tr>
-        @endif
+
 
         @if($balance < 0)
            <tr>
@@ -339,3 +322,5 @@
 
 </body>
 </html>
+
+{{-- ######## FIN PERSISTENCIA FISCAL VENEZUELA ######## --}}

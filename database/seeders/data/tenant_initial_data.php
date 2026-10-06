@@ -1362,6 +1362,7 @@ return array (
         ),
       ),
     ),
+    // ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
     'cat_note_debit_types' =>
     array (
       'key_columns' =>
@@ -1370,6 +1371,7 @@ return array (
       ),
       'rows' =>
       array (
+        'igtf' => array ('id' => 'IGTF', 'active' => 1, 'description' => 'IGTF sobre pago posterior'),
         0 =>
         array (
           'id' => '02',
@@ -1391,6 +1393,7 @@ return array (
       ),
     ),
     // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+    // ######## FIN PERSISTENCIA FISCAL VENEZUELA ########
     'cat_operation_types' =>
     array (
       'key_columns' =>

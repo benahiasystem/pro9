@@ -94,7 +94,13 @@ class Facturalo
         return $this->response;
     }
 
+    // ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
     public function save($inputs)
+    {
+        return \Illuminate\Support\Facades\DB::connection('tenant')->transaction(fn () => $this->saveWithinTransaction($inputs));
+    }
+    // ######## FIN PERSISTENCIA FISCAL VENEZUELA ########
+    private function saveWithinTransaction($inputs)
     {
         $this->actions = array_key_exists('actions', $inputs)?$inputs['actions']:[];
         $this->type = $inputs['type'];
@@ -108,6 +114,7 @@ class Facturalo
         // ######## INICIO POLITICA IDENTIDAD ACTIVA EN VENTAS ########
         if (in_array($this->type, ['invoice', 'credit', 'debit'], true)) {
             SalesCustomerIdentityPolicy::assertCustomerAllowed($inputs['customer_id'] ?? null);
+            if (($inputs['total_other_taxes'] ?? 0) > 0 && empty($inputs['taxes'])) \App\Services\Fiscal\FiscalAmounts::error('taxes','Los impuestos adicionales requieren un detalle identificable.');
         }
         // ######## FIN POLITICA IDENTIDAD ACTIVA EN VENTAS ########
 
@@ -117,27 +124,41 @@ class Facturalo
                 $document = Document::create($inputs);
                 $document->note()->create($inputs['note']);
                 foreach ($inputs['items'] as $row) {
-                    $document->items()->create($row);
+                    $document->items()->create(in_array($this->type, ['invoice','credit','debit'], true) ? \App\Services\Fiscal\FiscalDocumentPersistence::line($row) : $row);
                 }
                 if($this->type === 'credit') $this->saveFee($document, $inputs['fee']);
+                // ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
+                \App\Services\Fiscal\FiscalDocumentPersistence::fiscalData($document, $inputs['fiscal_data'] ?? []);
+                \App\Services\Fiscal\FiscalDocumentPersistence::otherTaxes($document, $inputs['taxes'] ?? []);
+                \App\Services\Fiscal\FiscalDocumentPersistence::summarize($document);
+                \App\Services\Fiscal\FiscalDocumentPersistence::applySettlements($document, $inputs);
+                // ######## FIN PERSISTENCIA FISCAL VENEZUELA ########
                 $this->document = Document::find($document->id);
                 break;
             case 'invoice':
                 $document = Document::create($inputs);
-                $this->savePayments($document, $inputs['payments']);
                 $this->saveFee($document, $inputs['fee']);
                 foreach ($inputs['items'] as $row) {
 //                    $purchase_unit_price = $row['purchase_unit_price'];
 //                    $row['item']['purchase_unit_price'] = $purchase_unit_price;
-                    $document->items()->create($row);
+                    $document->items()->create(in_array($this->type, ['invoice','credit','debit'], true) ? \App\Services\Fiscal\FiscalDocumentPersistence::line($row) : $row);
                     // $row['document_id']=  $document->id;
                     // $item = new DocumentItem($row);
                     // $item->push();
                 }
+                \App\Services\Fiscal\FiscalDocumentPersistence::otherTaxes($document, $inputs['taxes'] ?? []);
+                \App\Services\Fiscal\FiscalDocumentPersistence::summarize($document);
+                $this->savePayments($document, $inputs['payments']);
                 $this->updatePrepaymentDocuments($inputs);
                 if($inputs['hotel']) $document->hotel()->create($inputs['hotel']);
                 if($inputs['transport']) $document->transport()->create($inputs['transport']);
                 $document->invoice()->create($inputs['invoice']);
+                // ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
+                \App\Services\Fiscal\FiscalDocumentPersistence::fiscalData($document, $inputs['fiscal_data'] ?? []);
+                \App\Services\Fiscal\FiscalDocumentPersistence::otherTaxes($document, $inputs['taxes'] ?? []);
+                \App\Services\Fiscal\FiscalDocumentPersistence::summarize($document);
+                \App\Services\Fiscal\FiscalDocumentPersistence::applySettlements($document, $inputs);
+                // ######## FIN PERSISTENCIA FISCAL VENEZUELA ########
                 $this->document = Document::find($document->id);
                 break;
             case 'voided':
@@ -164,7 +185,7 @@ class Facturalo
             case 'purchase_settlement':
                 $document = PurchaseSettlement::create($inputs);
                 foreach ($inputs['items'] as $row) {
-                    $document->items()->create($row);
+                    $document->items()->create(in_array($this->type, ['invoice','credit','debit'], true) ? \App\Services\Fiscal\FiscalDocumentPersistence::line($row) : $row);
                 }
                 $this->document = PurchaseSettlement::find($document->id);
                 break;
@@ -174,7 +195,7 @@ class Facturalo
                     'id' => $inputs['id']
                 ], $inputs);
                 foreach ($inputs['items'] as $row) {
-                    $document->items()->create($row);
+                    $document->items()->create(in_array($this->type, ['invoice','credit','debit'], true) ? \App\Services\Fiscal\FiscalDocumentPersistence::line($row) : $row);
                 }
                 $this->document = Dispatch::find($document->id);
                 break;
@@ -329,15 +350,13 @@ class Facturalo
             $was_deducted_prepayment = $this->document->was_deducted_prepayment ? '10' : '0';
 
             $total_exportation = $this->document->total_exportation != '' ? '10' : '0';
-            $total_free        = $this->document->total_free != '' ? '10' : '0';
-            $total_unaffected  = $this->document->total_unaffected != '' ? '10' : '0';
             $total_exonerated  = $this->document->total_exonerated != '' ? '10' : '0';
             $total_taxed       = $this->document->total_taxed != '' ? '10' : '0';
-            $perception       = $this->document->perception != '' ? '10' : '0';
+
             $quantity_rows     = count($this->document->items) + $was_deducted_prepayment;
             $document_payments     = count($this->document->payments ?? []);
             $document_transport     = ($this->document->transport) ? 30 : 0;
-            $document_retention     = ($this->document->retention) ? 10 : 0;
+            $document_retention     = ($this->document instanceof Document && $this->document->retention_amount > 0) ? 10 : 0;
 
             $extra_by_item_additional_information = 0;
             $extra_by_item_description = 0;
@@ -405,10 +424,8 @@ class Facturalo
                     $p_order +
                     $legends +
                     $total_exportation +
-                    $total_free +
-                    $total_unaffected +
                     $total_exonerated +
-                    $perception +
+
                     $total_taxed+
                     $total_prepayment +
                     $total_discount +
@@ -437,8 +454,6 @@ class Facturalo
             $p_order           = $this->document->purchase_order != '' ? '10' : '0';
 
             $total_exportation = $this->document->total_exportation != '' ? '10' : '0';
-            $total_free        = $this->document->total_free != '' ? '10' : '0';
-            $total_unaffected  = $this->document->total_unaffected != '' ? '10' : '0';
             $total_exonerated  = $this->document->total_exonerated != '' ? '10' : '0';
             $total_taxed       = $this->document->total_taxed != '' ? '10' : '0';
             $quantity_rows     = count($this->document->items);
@@ -466,8 +481,6 @@ class Facturalo
                     $p_order +
                     $legends +
                     $total_exportation +
-                    $total_free +
-                    $total_unaffected +
                     $total_exonerated +
                     $total_taxed;
             $diferencia = 148 - (float)$height;
@@ -856,77 +869,47 @@ class Facturalo
         }
     }
 
+    // ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
     private function savePayments($document, $payments, $isUpdate = false)
     {
-        // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
-        foreach ($payments as $payment) {
-            PaymentMethodType::assertActiveForPayment($payment['payment_method_type_id'] ?? null);
-        }
-        // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
-        $total = $document->total;
-        $balance = $total - collect($payments)->sum('payment');
-
-        $search_cash = ($balance < 0) ? collect($payments)->firstWhere('payment_method_type_id', '01') : null;
-        $this->apply_change = false;
-
-        if($balance < 0 && $search_cash){
-
-            $payments = collect($payments)->map(function($row) use($balance){
-
-                $change = null;
-                $payment = $row['payment'];
-
-                if($row['payment_method_type_id'] == '01' && !$this->apply_change){
-                    $change = abs($balance);
-                    $payment = $row['payment'] - abs($balance);
-                    $this->apply_change = true;
-
-                }
-
-                return [
-                    "id" => null,
-                    "document_id" => null,
-                    "sale_note_id" => null,
-                    "date_of_payment" => $row['date_of_payment'],
-                    "payment_method_type_id" => $row['payment_method_type_id'],
-                    "reference" => $row['reference'],
-                    "payment_destination_id" => isset($row['payment_destination_id']) ? $row['payment_destination_id'] : null,
-                    "change" => $change,
-                    "payment" => $payment,
-                    "payment_received" => isset($row['payment_received']) ? $row['payment_received'] : null,
-                ];
-
-            });
-        }
-
+        $company = Company::firstOrFail();
+        $normalized = [];
         foreach ($payments as $row) {
-            if($balance < 0 && !$this->apply_change){
-                $row['change'] = abs($balance);
-                $row['payment'] = $row['payment'] - abs($balance);
-                $this->apply_change = true;
-            }
-
-            $record = $document->payments()->create($row);
-
-            // para carga de voucher
+            $values = \App\Services\Fiscal\FiscalAmounts::payment($row, $document->currency_type_id, $document->exchange_rate_sale, (bool)$company->igtf_enabled, $company->igtf_rate);
+            $normalized[] = array_merge($row, $values);
+        }
+        $excess = round(array_sum(array_column($normalized, 'payment')) - $document->total, 2);
+        if ($excess > 0) {
+            $index = 0;
+            foreach ($normalized as $i => $row) if ($row['payment_method_type_id'] === '01') { $index = $i; break; }
+            $row = $normalized[$index];
+            if ($row['payment'] <= $excess) \App\Services\Fiscal\FiscalAmounts::error('payments','El exceso supera el pago seleccionado para vuelto.');
+            $row['change'] = \App\Services\Fiscal\FiscalAmounts::convert($excess, $document->currency_type_id, $row['currency_type_id'], $row['exchange_rate']);
+            $row['original_amount'] = round($row['original_amount'] - $row['change'], 2);
+            $normalized[$index] = $row;
+        }
+        foreach ($normalized as $row) {
+            $record = \App\Services\Fiscal\FiscalDocumentPersistence::payment($document, $row, true);
             $this->saveFilesFromPayments($row, $record, 'documents');
-
-            //considerar la creacion de una caja chica cuando recien se crea el cliente
-            if(isset($row['payment_destination_id'])){
+            if (isset($row['payment_destination_id']) && !$record->global_payment) {
                 $this->createGlobalPayment($record, $row);
-                if($isUpdate){
-                    $this->createCashDocumentPayment($record,true);
-                }
+                if ($isUpdate) $this->createCashDocumentPayment($record, true);
             }
-
         }
     }
+    // ######## FIN PERSISTENCIA FISCAL VENEZUELA ########
 
     /**
      * @param array $inputs
      * @param int   $id
      */
+    // ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
     public function update($inputs,$id)
+    {
+        return \Illuminate\Support\Facades\DB::connection('tenant')->transaction(fn () => $this->updateWithinTransaction($inputs, $id));
+    }
+    // ######## FIN PERSISTENCIA FISCAL VENEZUELA ########
+    private function updateWithinTransaction($inputs,$id)
     {
 
         $this->actions = array_key_exists('actions', $inputs)?$inputs['actions']:[];
@@ -934,22 +917,26 @@ class Facturalo
         // dd($inputs);
         switch ($this->type) {
             case 'invoice':
-                $document = Document::find($id);
+                Company::query()->lockForUpdate()->firstOrFail();
+                $document = Document::query()->lockForUpdate()->findOrFail($id);
+                \App\Services\Fiscal\FiscalDocumentPersistence::assertMutable($document);
+                if (\App\Models\Tenant\DocumentPayment::where('document_id',$document->id)->exists() || $document->received_retentions()->exists()) {
+                    \App\Services\Fiscal\FiscalAmounts::error('document', 'No se puede editar una factura con historial de cobros o retenciones contabilizados.');
+                }
                 $inputs['series'] = \App\Services\SeriesNumbering::normalizeCode($inputs['series'] ?? null);
                 if ($inputs['series'] !== $document->series || $inputs['document_type_id'] !== $document->document_type_id || (isset($inputs['number']) && (string) $inputs['number'] !== (string) $document->number) || (isset($inputs['establishment_id']) && (int) $inputs['establishment_id'] !== (int) $document->establishment_id)) {
                     throw \Illuminate\Validation\ValidationException::withMessages(['series' => 'No se puede cambiar la identidad de un documento registrado.']);
                 }
                 $this->document = $document;
+                $inputs['external_id'] = $document->external_id;
+                $inputs['issuer'] = $document->issuer;
+                $inputs['establishment'] = (array)$document->establishment;
+                SalesCustomerIdentityPolicy::assertCustomerAllowed($inputs['customer_id']);
+                if ((int)$inputs['customer_id']===(int)$document->customer_id) $inputs['customer'] = (array)$document->customer;
+                else $inputs['customer'] = \App\CoreFacturalo\Requests\Inputs\Common\PersonInput::set($inputs['customer_id']);
+                $inputs['exchange_rate_sale'] = round((float)$inputs['exchange_rate_sale'],3);
                 $document->fill($inputs);
                 $document->save();
-
-                $document->payments()->each(function ($payment) {
-                    if (method_exists($payment, 'cashDocumentPayments')) {
-                        $payment->cashDocumentPayments()->delete();
-                    }
-                });
-                $document->payments()->delete();
-                $this->savePayments($document, $inputs['payments'],true);
 
                 $document->fee()->delete();
                 $this->saveFee($document, $inputs['fee']);
@@ -971,9 +958,12 @@ class Facturalo
                 // $document->items()->delete();
 
                 foreach ($inputs['items'] as $row) {
-                    $document->items()->create($row);
+                    $document->items()->create(in_array($this->type, ['invoice','credit','debit'], true) ? \App\Services\Fiscal\FiscalDocumentPersistence::line($row) : $row);
                 }
 
+                \App\Services\Fiscal\FiscalDocumentPersistence::otherTaxes($document, $inputs['taxes'] ?? []);
+                \App\Services\Fiscal\FiscalDocumentPersistence::summarize($document);
+                $this->savePayments($document, $inputs['payments'],true);
                 $this->updatePrepaymentDocuments($inputs);
 
                 if($inputs['hotel']){
@@ -981,6 +971,12 @@ class Facturalo
                 }
 
                 $document->invoice()->update($inputs['invoice']);
+                // ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
+                \App\Services\Fiscal\FiscalDocumentPersistence::fiscalData($document, $inputs['fiscal_data'] ?? []);
+                \App\Services\Fiscal\FiscalDocumentPersistence::otherTaxes($document, $inputs['taxes'] ?? []);
+                \App\Services\Fiscal\FiscalDocumentPersistence::summarize($document);
+                \App\Services\Fiscal\FiscalDocumentPersistence::applySettlements($document, $inputs);
+                // ######## FIN PERSISTENCIA FISCAL VENEZUELA ########
                 $this->document = Document::find($document->id);
                 break;
         }
@@ -1114,15 +1110,15 @@ class Facturalo
             $was_deducted_prepayment = $this->document->was_deducted_prepayment ? '10' : '0';
 
             $total_exportation = (object)$this->document->total_exportation != '' ? '10' : '0';
-            $total_free        = (object)$this->document->total_free != '' ? '10' : '0';
-            $total_unaffected  = (object)$this->document->total_unaffected != '' ? '10' : '0';
+
+
             $total_exonerated  = (object)$this->document->total_exonerated != '' ? '10' : '0';
             $total_taxed       = (object)$this->document->total_taxed != '' ? '10' : '0';
-            $perception       = $this->document->perception != '' ? '10' : '0';
+
             $quantity_rows     = count($this->document->items) + $was_deducted_prepayment;
             $document_payments     = count($this->document->payments ?? []);
             $document_transport     = ($this->document->transport) ? 30 : 0;
-            $document_retention     = ($this->document->retention) ? 10 : 0;
+            $document_retention     = ($this->document instanceof Document && $this->document->retention_amount > 0) ? 10 : 0;
 
             // Calcular el height sobre terminos y condiciones
             $terms_condition = preg_replace('/<\/[a-zA-Z0-9]+>/', "\n", $this->document->terms_condition);
@@ -1187,10 +1183,8 @@ class Facturalo
                     $p_order +
                     $legends +
                     $total_exportation +
-                    $total_free +
-                    $total_unaffected +
                     $total_exonerated +
-                    $perception +
+
                     $total_taxed+
                     $total_prepayment +
                     $total_discount +
@@ -1219,8 +1213,8 @@ class Facturalo
             $p_order           = $this->document->purchase_order != '' ? '10' : '0';
 
             $total_exportation = (object)$this->document->total_exportation != '' ? '10' : '0';
-            $total_free        = (object)$this->document->total_free != '' ? '10' : '0';
-            $total_unaffected  = (object)$this->document->total_unaffected != '' ? '10' : '0';
+
+
             $total_exonerated  = (object)$this->document->total_exonerated != '' ? '10' : '0';
             $total_taxed       = (object)$this->document->total_taxed != '' ? '10' : '0';
             $quantity_rows     = count($this->document->items);
@@ -1248,8 +1242,6 @@ class Facturalo
                     $p_order +
                     $legends +
                     $total_exportation +
-                    $total_free +
-                    $total_unaffected +
                     $total_exonerated +
                     $total_taxed;
             $diferencia = 148 - (float)$height;
@@ -1448,7 +1440,7 @@ class Facturalo
                     $this->apply_change = true;
                 }
 
-                return [
+                return array_merge($row, [
                     "id" => null,
                     "document_id" => null,
                     "sale_note_id" => null,
@@ -1459,7 +1451,7 @@ class Facturalo
                     "change" => $change,
                     "payment" => $payment,
                     "payment_received" => isset($row['payment_received']) ? $row['payment_received'] : null,
-                ];
+                ]);
             });
         }
 
@@ -1467,6 +1459,7 @@ class Facturalo
             if ($balance < 0 && !$this->apply_change) {
                 $row['change'] = abs($balance);
                 $row['payment'] = $row['payment'] - abs($balance);
+                unset($row['original_amount']);
                 $this->apply_change = true;
             }
 

@@ -117,12 +117,9 @@ class TemplateData
         $model->total_charge = $record->document->total_charge;
         $model->total_discount = $record->document->total_discount;
         $model->total_exportation = $record->document->total_exportation;
-        $model->total_free = $record->document->total_free;
         $model->total_taxed = $record->document->total_taxed;
-        $model->total_unaffected = $record->document->total_unaffected;
         $model->total_exonerated = $record->document->total_exonerated;
         $model->total_igv = $record->document->total_igv;
-        $model->total_igv_free = $record->document->total_igv_free;
         $model->total_base_other_taxes = $record->document->total_base_other_taxes;
         $model->total_other_taxes = $record->document->total_other_taxes;
         $model->total_icbper = $record->document->total_icbper;

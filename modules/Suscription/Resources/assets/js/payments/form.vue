@@ -599,12 +599,12 @@ export default {
                 currency_type_id: null,
                 items: [],
                 start_date: moment().format('YYYY-MM-DD'),
-                total_igv_free: 0,
+
                 total_exportation: 0,
                 total_taxed: 0,
                 total_exonerated: 0,
-                total_unaffected: 0,
-                total_free: 0,
+
+
                 total_igv: 0,
                 total_value: 0,
                 total_taxes: 0,
@@ -692,12 +692,12 @@ export default {
                 start_date: moment().format('YYYY-MM-DD'),
                 grade: null,
                 section: null,
-                total_igv_free: 0,
+
                 total_exportation: 0,
                 total_taxed: 0,
                 total_exonerated: 0,
-                total_unaffected: 0,
-                total_free: 0,
+
+
                 total_igv: 0,
                 total_value: 0,
                 total_taxes: 0,
@@ -930,12 +930,12 @@ export default {
             let total_exportation = 0
             let total_taxed = 0
             let total_exonerated = 0
-            let total_unaffected = 0
-            let total_free = 0
+
+
             let total_igv = 0
             let total_value = 0
             let total = 0
-            let total_igv_free = 0
+
             this.form.items.forEach((row) => {
                 total_discount += parseFloat(row.total_discount)
                 total_charge += parseFloat(row.total_charge)
@@ -946,15 +946,11 @@ export default {
                 if (row.affectation_igv_type_id === '20') {
                     total_exonerated += parseFloat(row.total_value)
                 }
-                if (row.affectation_igv_type_id === '30') {
-                    total_unaffected += parseFloat(row.total_value)
-                }
+                ;
                 if (row.affectation_igv_type_id === '40') {
                     total_exportation += parseFloat(row.total_value)
                 }
-                if (['10', '20', '30', '40'].indexOf(row.affectation_igv_type_id) < 0) {
-                    total_free += parseFloat(row.total_value)
-                }
+                ;
                 if (['10', '20', '30', '40'].indexOf(row.affectation_igv_type_id) > -1) {
                     total_igv += parseFloat(row.total_igv)
                     total += parseFloat(row.total)
@@ -962,26 +958,16 @@ export default {
                 total_value += parseFloat(row.total_value)
 
 
-                if (['11', '12', '13', '14', '15', '16'].includes(row.affectation_igv_type_id)) {
-
-                    let unit_value = row.total_value / row.quantity
-                    let total_value_partial = unit_value * row.quantity
-                    row.total_taxes = row.total_value - total_value_partial
-                    row.total_igv = total_value_partial * (row.percentage_igv / 100)
-                    row.total_base_igv = total_value_partial
-                    total_value -= row.total_value
-                    total_igv_free += row.total_igv
-
-                }
+                ;
 
             });
 
-            this.form.total_igv_free = _.round(total_igv_free, 2)
+
             this.form.total_exportation = _.round(total_exportation, 2)
             this.form.total_taxed = _.round(total_taxed, 2)
             this.form.total_exonerated = _.round(total_exonerated, 2)
-            this.form.total_unaffected = _.round(total_unaffected, 2)
-            this.form.total_free = _.round(total_free, 2)
+
+
             this.form.total_igv = _.round(total_igv, 2)
             this.form.total_value = _.round(total_value, 2)
             this.form.total_taxes = _.round(total_igv, 2)
@@ -1186,12 +1172,12 @@ export default {
             this.form.total_charge = 0;
             this.form.total_discount = 0;
             this.form.total_exportation = 0;
-            this.form.total_free = 0;
+
             this.form.total_taxed = 0;
-            this.form.total_unaffected = 0;
+
             this.form.total_exonerated = 0;
             this.form.total_igv = 0;
-            this.form.total_igv_free = 0;
+
 
 
             this.form.total_base_other_taxes = 0;
@@ -1199,26 +1185,7 @@ export default {
             this.form.total_taxes = 0;
             this.form.total_value = 0;
             this.form.total = 0;
-            if (plan !== undefined && plan.items !== undefined && plan.items.length > 0) {
-                this.form.items = plan.items;
-                this.form.total_prepayment = plan.total_prepayment
-                this.form.total_charge = plan.total_charge
-                this.form.total_discount = plan.total_discount
-                this.form.total_exportation = plan.total_exportation
-                this.form.total_free = plan.total_free
-                this.form.total_taxed = plan.total_taxed
-                this.form.total_unaffected = plan.total_unaffected
-                this.form.total_exonerated = plan.total_exonerated
-                this.form.total_igv = plan.total_igv
-                this.form.total_igv_free = plan.total_igv_free
-
-
-                this.form.total_base_other_taxes = plan.total_base_other_taxes
-                this.form.total_other_taxes = plan.total_other_taxes
-                this.form.total_taxes = plan.total_taxes
-                this.form.total_value = plan.total_value
-                this.form.total = plan.total
-            }
+            ;
 
 
             this.changeStartDate();

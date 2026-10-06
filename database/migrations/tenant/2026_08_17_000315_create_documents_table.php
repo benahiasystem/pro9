@@ -12,10 +12,12 @@ use Illuminate\Support\Facades\DB;
  * - `external_id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `establishment_id` int(10) unsigned NOT NULL
  * - `establishment` json NOT NULL
+ * - `issuer` json NOT NULL
+ * - `exchange_rate_source` varchar(255) DEFAULT NULL
+ * - `exchange_rate_date` date DEFAULT NULL
  * - `fiscal_environment` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `fiscal_emission_mode` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `state_type_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `ubl_version` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `group_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `document_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `control_number` varchar(32) COLLATE utf8mb4_unicode_ci DEFAULT NULL
@@ -49,12 +51,9 @@ use Illuminate\Support\Facades\DB;
  * - `total_charge` decimal(12,2) NOT NULL DEFAULT '0.00'
  * - `total_discount` decimal(12,2) NOT NULL DEFAULT '0.00'
  * - `total_exportation` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `total_free` decimal(12,2) NOT NULL DEFAULT '0.00'
  * - `total_taxed` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `total_unaffected` decimal(12,2) NOT NULL DEFAULT '0.00'
  * - `total_exonerated` decimal(12,2) NOT NULL DEFAULT '0.00'
  * - `total_igv` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `total_igv_free` decimal(12,2) NOT NULL DEFAULT '0.00'
  * - `total_base_other_taxes` decimal(12,2) NOT NULL DEFAULT '0.00'
  * - `total_other_taxes` decimal(12,2) NOT NULL DEFAULT '0.00'
  * - `total_taxes` decimal(12,2) NOT NULL DEFAULT '0.00'
@@ -72,8 +71,6 @@ use Illuminate\Support\Facades\DB;
  * - `prepayments` json DEFAULT NULL
  * - `guides` json DEFAULT NULL
  * - `related` json DEFAULT NULL
- * - `perception` json DEFAULT NULL
- * - `retention` json DEFAULT NULL
  * - `legends` json DEFAULT NULL
  * - `additional_information` text COLLATE utf8mb4_unicode_ci
  * - `additional_data` json DEFAULT NULL
@@ -100,7 +97,6 @@ use Illuminate\Support\Facades\DB;
  * - `consigned_address` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `consigned_ubigeo` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `custom_fields_data` json DEFAULT NULL
- * - `user_rel_subscription_plan_id` int(10) unsigned DEFAULT '0' COMMENT 'Relacion con suscripciones'
  * - `collect_api_state_id` int(10) unsigned NOT NULL DEFAULT '99' COMMENT 'estado de api en global factoring'
  */
 return new class extends Migration
@@ -114,10 +110,14 @@ CREATE TABLE `documents` (
   `external_id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
   `establishment_id` int(10) unsigned NOT NULL,
   `establishment` json NOT NULL,
+  -- ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
+  `issuer` json NOT NULL,
+  `exchange_rate_source` varchar(255) DEFAULT NULL,
+  `exchange_rate_date` date DEFAULT NULL,
+  -- ######## FIN PERSISTENCIA FISCAL VENEZUELA ########
   `fiscal_environment` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL,
   `fiscal_emission_mode` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL,
   `state_type_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `ubl_version` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `group_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL,
   `document_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   -- ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
@@ -153,12 +153,9 @@ CREATE TABLE `documents` (
   `total_charge` decimal(12,2) NOT NULL DEFAULT '0.00',
   `total_discount` decimal(12,2) NOT NULL DEFAULT '0.00',
   `total_exportation` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `total_free` decimal(12,2) NOT NULL DEFAULT '0.00',
   `total_taxed` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `total_unaffected` decimal(12,2) NOT NULL DEFAULT '0.00',
   `total_exonerated` decimal(12,2) NOT NULL DEFAULT '0.00',
   `total_igv` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `total_igv_free` decimal(12,2) NOT NULL DEFAULT '0.00',
   `total_base_other_taxes` decimal(12,2) NOT NULL DEFAULT '0.00',
   `total_other_taxes` decimal(12,2) NOT NULL DEFAULT '0.00',
   `total_taxes` decimal(12,2) NOT NULL DEFAULT '0.00',
@@ -176,8 +173,6 @@ CREATE TABLE `documents` (
   `prepayments` json DEFAULT NULL,
   `guides` json DEFAULT NULL,
   `related` json DEFAULT NULL,
-  `perception` json DEFAULT NULL,
-  `retention` json DEFAULT NULL,
   `legends` json DEFAULT NULL,
   `additional_information` text COLLATE utf8mb4_unicode_ci,
   `additional_data` json DEFAULT NULL,
@@ -204,7 +199,6 @@ CREATE TABLE `documents` (
   `consigned_address` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `consigned_ubigeo` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `custom_fields_data` json DEFAULT NULL,
-  `user_rel_subscription_plan_id` int(10) unsigned DEFAULT '0' COMMENT 'Relacion con suscripciones',
   `collect_api_state_id` int(10) unsigned NOT NULL DEFAULT '99' COMMENT 'estado de api en global factoring',
   PRIMARY KEY (`id`),
   UNIQUE KEY `documents_environment_type_series_number_unique` (`establishment_id`,`fiscal_environment`,`document_type_id`,`series`,`number`),

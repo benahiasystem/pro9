@@ -320,8 +320,8 @@ use Illuminate\Support\Str;
                 $p_order = $this->document->purchase_order != '' ? '10' : '0';
 
                 $total_exportation = $this->document->total_exportation != '' ? '10' : '0';
-                $total_free = $this->document->total_free != '' ? '10' : '0';
-                $total_unaffected = $this->document->total_unaffected != '' ? '10' : '0';
+
+
                 $total_exonerated = $this->document->total_exonerated != '' ? '10' : '0';
                 $total_taxed = $this->document->total_taxed != '' ? '10' : '0';
                 $quantity_rows = count($this->document->items);
@@ -358,8 +358,8 @@ use Illuminate\Support\Str;
                         $legends +
                         $bank_accounts +
                         $total_exportation +
-                        $total_free +
-                        $total_unaffected +
+
+
                         $total_exonerated +
                         $total_taxed],
                     'margin_top' => 0,
@@ -377,8 +377,8 @@ use Illuminate\Support\Str;
                 $p_order = $this->document->purchase_order != '' ? '10' : '0';
 
                 $total_exportation = $this->document->total_exportation != '' ? '10' : '0';
-                $total_free = $this->document->total_free != '' ? '10' : '0';
-                $total_unaffected = $this->document->total_unaffected != '' ? '10' : '0';
+
+
                 $total_exonerated = $this->document->total_exonerated != '' ? '10' : '0';
                 $total_taxed = $this->document->total_taxed != '' ? '10' : '0';
                 $quantity_rows = count($this->document->items);
@@ -401,8 +401,8 @@ use Illuminate\Support\Str;
                     $p_order +
                     $legends +
                     $total_exportation +
-                    $total_free +
-                    $total_unaffected +
+
+
                     $total_exonerated +
                     $total_taxed;
                 $diferencia = 148 - (float)$alto;
@@ -818,8 +818,8 @@ use Illuminate\Support\Str;
             $discount_global *= 3;
             $legends = $document->legends != '' ? 10 : 0;
             $total_exportation = $document->total_exportation != '' ? 10 : 0;
-            $total_free = $document->total_free != '' ? 10 : 0;
-            $total_unaffected = $document->total_unaffected != '' ? 10 : 0;
+
+
             $total_exonerated = $document->total_exonerated != '' ? 10 : 0;
             $total_taxed = $document->total_taxed != '' ? 10 : 0;
             $bank_accounts = BankAccount::count() * 6;
@@ -840,8 +840,8 @@ use Illuminate\Support\Str;
                 + $p_order
                 + $legends
                 + $total_exportation
-                + $total_free
-                + $total_unaffected
+
+
                 + $total_exonerated
                 + $total_taxed;
 

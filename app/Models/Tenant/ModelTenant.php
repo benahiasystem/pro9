@@ -46,6 +46,9 @@
                             ]);
                         }
                         $this->setAttribute('fiscal_emission_mode', $company->fiscal_emission_mode);
+                        // ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
+                        if ($this instanceof Document) \App\Services\Fiscal\FiscalDocumentPersistence::initialize($this, $company);
+                        // ######## FIN PERSISTENCIA FISCAL VENEZUELA ########
                     }
                     if ($this->isFillable('fiscal_environment')) {
                         $this->setAttribute('fiscal_environment', $company->fiscal_environment);

@@ -1,3 +1,4 @@
+{{-- ######## INICIO PERSISTENCIA FISCAL VENEZUELA ######## --}}
 {{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 @php
     use Modules\Template\Helpers\TemplatePdf;
@@ -27,7 +28,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
 
     $document->load('reference_guides');
     $total_payment = $document->payments->sum('payment');
-    $balance = ($document->total - $total_payment) - $document->payments->sum('change');
+    $balance = $document instanceof \App\Models\Tenant\Document ? $document->balance : (($document->total - $total_payment) - $document->payments->sum('change'));
 
     $logo = "storage/uploads/logos/{$company->logo}";
     if($establishment->logo) {
@@ -141,30 +142,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
     @endif
 
 
-    @if ($document->retention)
-        <br>
-        <tr>
-            <td colspan="2">
-                <p class="desc-ticket text-uppercase"><span>Información de la retención</span></p>
-            </td>
-        </tr>
-        <tr>
-            <td><p class="desc-ticket text-uppercase">Base imponible de la retención: </p></td>
-            <td>
-                <p class="desc-ticket text-uppercase">Bs. {{ $document->getRetentionTaxBase() }} </p>
-            </td>
-        </tr>
-        <tr>
-            <td><p class="desc-ticket text-uppercase">Porcentaje de la retención:</p></td>
-            <td><p class="desc-ticket text-uppercase">{{ $document->retention->percentage * 100 }}%</p></td>
-        </tr>
-        <tr>
-            <td><p class="desc-ticket text-uppercase">Monto de la retención:</p></td>
-            <td>
-                <p class="desc-ticket text-uppercase">Bs. {{ $document->retention->amount_pen }}</p>
-            </td>
-        </tr>
-    @endif
+
 
     @if ($document->purchase_order)
         <tr>
@@ -370,22 +348,8 @@ $affected_document_number = $document_base->affected_document ? $document_base->
                 class="text-right desc-ticket text-uppercase">{{ number_format($document->total_exportation, 2) }}</td>
         </tr>
     @endif
-    @if($document->total_free > 0)
-        <tr>
-            <td colspan="3" class="desc-ticket text-uppercase">OP. GRATUITAS:
-                {{ $document->currency_type->symbol }}</td>
-            <td colspan="2"
-                class="text-right desc-ticket text-uppercase">{{ number_format($document->total_free, 2) }}</td>
-        </tr>
-    @endif
-    @if($document->total_unaffected > 0)
-        <tr>
-            <td colspan="3" class="desc-ticket text-uppercase">OP. INAFECTAS:
-                {{ $document->currency_type->symbol }}</td>
-            <td colspan="2"
-                class="text-right desc-ticket text-uppercase">{{ number_format($document->total_unaffected, 2) }}</td>
-        </tr>
-    @endif
+
+
     @if($document->total_exonerated > 0)
         <tr>
             <td colspan="3" class="desc-ticket text-uppercase">OP. EXONERADAS:
@@ -469,14 +433,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
         <td colspan="2" class="text-right desc-ticket text-uppercase">{{ number_format($document->total, 2) }}</td>
     </tr>
 
-    @if(($document->retention) && $document->total_pending_payment > 0)
-        <tr>
-            <td colspan="3" class="desc-ticket text-uppercase">M. PENDIENTE:
-                {{ $document->currency_type->symbol }}</td>
-            <td colspan="2"
-                class="text-right desc-ticket text-uppercase">{{ number_format($document->total_pending_payment, 2) }}</td>
-        </tr>
-    @endif
+
 
     @if($balance < 0)
         <tr>
@@ -583,26 +540,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
                         </tr>
                 </table>
             @endif
-            {{-- @if($document->retention)
-                <br>
-                <table class="full-width">
-                    <tr>
-                        <td>
-                            <strong>Información de la retención:</strong>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>Base imponible de la retención:
-                            Bs. {{ round($document->retention->amount_pen / $document->retention->percentage, 2) }}</td>
-                    </tr>
-                    <tr>
-                        <td>Porcentaje de la retención {{ $document->retention->percentage * 100 }}%</td>
-                    </tr>
-                    <tr>
-                        <td>Monto de la retención Bs. {{ $document->retention->amount_pen }}</td>
-                    </tr>
-                </table>
-            @endif --}}
+
             @if ($document->terms_condition)
                 <tr>
                     <td class="desc-ticket text-uppercase">
@@ -662,3 +600,5 @@ $affected_document_number = $document_base->affected_document ? $document_base->
 </html>
 
 {{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}
+
+{{-- ######## FIN PERSISTENCIA FISCAL VENEZUELA ######## --}}

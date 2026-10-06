@@ -109,6 +109,67 @@ class CurrentPdfRenderingTest extends TestCase
         self::assertFileExists($path);
     }
 
+    public function test_issuer_igtf_retentions_and_ves_totals_use_persisted_snapshots(): void
+    {
+        $fixture=$this->documentFixture();
+        $document=new CurrentFiscalPdfDocumentFixture();
+        $relations=['person','invoice','note','currency_type','document_type','state_type','items','payments','fee','reference_guides','dispatch','transport','quotation','seller'];
+        foreach ($fixture->getAttributes() as $key=>$value) {
+            if (in_array($key,$relations,true)) $document->setRelation($key,$value);
+            elseif ($key==='additional_information') $document->forceFill([$key=>'']);
+            else $document->forceFill([$key=>$value]);
+        }
+        $document->forceFill(['issuer'=>['name'=>'Emisor conservado','trade_name'=>'Snapshot','number'=>'J-12345678-9','logo'=>null],
+            'currency_type_id'=>'USD','total'=>119.48,'legends'=>[['code'=>'1000','value'=>\App\CoreFacturalo\Helpers\Number\NumberLetter::convertToLetter(119.48)]],'exchange_rate_sale'=>10.123,'exchange_rate_source'=>'manual','exchange_rate_date'=>'2026-09-10']);
+        $document->setRelation('currency_type',new Fluent(['id'=>'USD','symbol'=>'$','description'=>'Dólares']));
+        $document->setRelation('taxes',new Collection([new Fluent(['tax_kind'=>'IGTF','percentage'=>3,'amount'=>3.48])]));
+        $document->setRelation('received_retentions',new Collection([new Fluent(['tax_kind'=>'IVA','voucher_number'=>'IVA-TEST-1','applied_amount'=>12])]));
+        $document->setRelation('guarantee_fund',new Fluent(['amount'=>5]));
+        $document->setRelation('currency_totals',new Fluent(['iva'=>161.97,'total'=>1209.50]));
+        $receipt=new \App\Models\Tenant\DocumentPayment(['currency_type_id'=>'VES','exchange_rate'=>10.123,'original_amount'=>100,'payment'=>9.88,'tax_amount'=>0,'change'=>0]);
+        $receipt->setRelation('payment_method_type',new Fluent(['description'=>'Efectivo']));
+        $document->setRelation('payments',new Collection([$receipt]));
+        $company=new Fluent(['name'=>'Nombre actual cambiado','number'=>'J-99999999-9','trade_name'=>'Actual','logo'=>null]);
+        $html=(new Template())->pdf('default','invoice',$company,$document,'a4',['is_preview'=>false,'enabled_price_items_dispatch'=>false]);
+        self::assertStringContainsString('Emisor conservado',$html);self::assertStringNotContainsString('Nombre actual cambiado',$html);
+        self::assertStringContainsString('IGTF 3.00%',$html);self::assertStringContainsString('IVA-TEST-1',$html);self::assertStringContainsString('Fondo de garantía',$html);
+        self::assertStringContainsString('1,209.50',$html);
+        self::assertStringContainsString('Cobro recibido (VES)',$html);self::assertStringContainsString('Principal aplicado (USD)',$html);
+        $pdf=new Mpdf(['tempDir'=>sys_get_temp_dir(),'default_font'=>'arial']);
+        $pdf->WriteHTML(file_get_contents(app_path('CoreFacturalo/Templates/pdf/default/style.css')),HTMLParserMode::HEADER_CSS);
+        $pdf->WriteHTML($html,HTMLParserMode::HTML_BODY);
+        $path=getenv('PRO9_FISCAL_PDF_FIXTURE_PATH') ?: sys_get_temp_dir().'/pro9-fiscal-snapshot.pdf';
+        file_put_contents($path,$pdf->Output('','S'));self::assertFileExists($path);
+    }
+
+    public function test_an_igtf_debit_note_renders_without_articles_or_iva(): void
+    {
+        $fixture=$this->documentFixture();$document=new CurrentFiscalPdfDocumentFixture();
+        $relations=['person','invoice','note','currency_type','document_type','state_type','items','payments','fee','reference_guides','dispatch','transport','quotation','seller'];
+        foreach ($fixture->getAttributes() as $key=>$value) {
+            if (in_array($key,$relations,true)) $document->setRelation($key,$value);
+            elseif ($key==='additional_information') $document->forceFill([$key=>'']);
+            else $document->forceFill([$key=>$value]);
+        }
+        $document->forceFill(['document_type_id'=>'08','series'=>'FD01','number'=>1,'total'=>3.48,'total_value'=>0,'total_taxed'=>0,'total_igv'=>0,
+            'total_other_taxes'=>3.48,'subtotal'=>0,'issuer'=>['name'=>'Emisor conservado','number'=>'J-12345678-9','logo'=>null],
+            'legends'=>[['code'=>'1000','value'=>\App\CoreFacturalo\Helpers\Number\NumberLetter::convertToLetter(3.48)]]]);
+        $document->setRelation('document_type',new Fluent(['id'=>'08','description'=>'Nota de débito']));
+        $document->setRelation('note',new Fluent(['affected_document'=>null,'data_affected_document'=>(object)['series'=>'FF01','number'=>1],
+            'note_type'=>'debit','note_debit_type'=>new Fluent(['description'=>'IGTF']),'note_description'=>'IGTF sobre pago posterior']));
+        $document->setRelation('items',new Collection());
+        $document->setRelation('taxes',new Collection([new Fluent(['tax_kind'=>'IGTF','percentage'=>3,'amount'=>3.48])]));
+        $document->setRelation('received_retentions',new Collection());$document->setRelation('guarantee_fund',null);
+        $company=new Fluent(['name'=>'Emisor actual','number'=>'J-99999999-9','logo'=>null]);
+        $html=(new Template())->pdf('default','debit',$company,$document,'a4');
+        self::assertStringContainsString('IGTF sobre pago posterior',$html);self::assertStringContainsString('FF01-1',$html);
+        self::assertStringContainsString('IGTF 3.00%',$html);self::assertStringNotContainsString('Producto gravado de prueba',$html);
+        $pdf=new Mpdf(['tempDir'=>sys_get_temp_dir(),'default_font'=>'arial']);
+        $pdf->WriteHTML(file_get_contents(app_path('CoreFacturalo/Templates/pdf/default/style.css')),HTMLParserMode::HEADER_CSS);
+        $pdf->WriteHTML($html,HTMLParserMode::HTML_BODY);
+        $path=sys_get_temp_dir().'/pro9-fiscal-igtf-note.pdf';file_put_contents($path,$pdf->Output('','S'));self::assertFileExists($path);
+    }
+
     public function invoiceSeries(): array
     {
         return [['FF01'], [''], ['AB-CD123456789012345']];
@@ -126,6 +187,7 @@ class CurrentPdfRenderingTest extends TestCase
             'address' => 'Avenida Principal',
             'district_id' => '-',
             'department_id' => '14',
+            'province_id' => '0229',
             'district' => $location,
             'province' => new Fluent(['description' => 'Libertador']),
             'department' => new Fluent(['description' => 'Distrito Capital']),
@@ -256,4 +318,10 @@ class CurrentPdfItemFixture extends Fluent
     {
         return number_format($value, $decimals, '.', '');
     }
+}
+
+class CurrentFiscalPdfDocumentFixture extends \App\Models\Tenant\Document
+{
+    public function load($relations) { return $this; }
+    public function getBalanceAttribute() { return $this->total - $this->payments->sum('payment') - $this->retention_amount - $this->guarantee_amount; }
 }

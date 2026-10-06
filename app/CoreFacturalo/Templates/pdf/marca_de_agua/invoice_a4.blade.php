@@ -1,3 +1,4 @@
+{{-- ######## INICIO PERSISTENCIA FISCAL VENEZUELA ######## --}}
 {{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 @php
     use Modules\Template\Helpers\TemplatePdf;
@@ -31,7 +32,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
     $document->load('reference_guides');
 
     $total_payment = $document->payments->sum('payment');
-    $balance = ($document->total - $total_payment) - $document->payments->sum('change');
+    $balance = $document instanceof \App\Models\Tenant\Document ? $document->balance : (($document->total - $total_payment) - $document->payments->sum('change'));
 
     $totalProductos = count($document->items);
     $totalFilas = 6 + $totalProductos;
@@ -674,27 +675,8 @@ $affected_document_number = $document_base->affected_document ? $document_base->
                         {{ $information }} <br>
                     @endif
                 @endforeach
-                @if ($document->retention)
-                    @php
-                        $value_ob = $document->retention;
-                        $total_pending_payment = $document->total_pending_payment - $value_ob->guarantee_fund;
-                    @endphp
-                @endif
-                @if($document->retention)
-                    <span class="font-bold">Información de la retención</span>
-                    <br><span class="">Valor total del comprobante: </span>{{$document->currency_type->symbol}}
-                    {{ $document->currency_type->id == 'USD' ? number_format(($document->getRetentionTaxBase()/$document->exchange_rate_sale), 2) : $document->getRetentionTaxBase() }}
-                    <br><span class="">Porcentaje de la retención: </span>{{ $document->retention->percentage * 100 }}%
-                    <br><span class="">Monto de la retención {{ $document->currency_type->id == 'USD' ? 'bolívares' : '' }}:</span>
 
-                    Bs. {{ $document->retention->amount_pen}}
-                    @if ($document->currency_type->id == 'USD')
-                        <br><span class="">Monto de la retención dólares:</span>
-                        {{$document->currency_type->symbol}} {{ number_format(($document->retention->amount_pen/$document->exchange_rate_sale), 2)}}
-                    @endif
 
-                    <br><span class=""> Fondo de garantía: </strong>{{ $document->currency_type->symbol }} {{ number_format($value_ob->guarantee_fund, 2) }}</span>
-                @endif
             <td class="p-1 text-center align-top desc cell-solid " rowspan="6">
             </td>
             <td class="p-1 text-right align-top desc cell-solid font-bold" colspan="{{ $colspan_total }}">
@@ -733,14 +715,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
             </td>
             <td class="p-1 text-right align-top desc cell-solid font-bold">{{ number_format($document->total, 2) }}</td>
         </tr>
-        @if(($document->retention) && $document->total_pending_payment > 0)
-            <tr>
-                <td colspan="6" class="p-1 text-right align-top desc cell-solid font-bold">
-                    M. PENDIENTE. {{ $document->currency_type->symbol }}
-                </td>
-                <td class="p-1 text-right align-top desc cell-solid font-bold">{{ number_format($total_pending_payment, 2) }}</td>
-            </tr>
-        @endif
+
     </tbody>
 
 </table>
@@ -825,3 +800,5 @@ $affected_document_number = $document_base->affected_document ? $document_base->
 </body>
 </html>
 {{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}
+
+{{-- ######## FIN PERSISTENCIA FISCAL VENEZUELA ######## --}}

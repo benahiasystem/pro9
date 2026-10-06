@@ -71,7 +71,6 @@ class DocumentUpdateInput
             'establishment' => $establishment,
             'fiscal_environment' => $fiscal_environment,
             'state_type_id' => '01',
-            'ubl_version' => '2.1',
             'document_type_id' => $document_type_id,
             'series' => $series,
             'number' => $number,
@@ -86,21 +85,25 @@ class DocumentUpdateInput
             'sale_note_id' => Functions::valueKeyInArray($inputs, 'sale_note_id'),
             'technical_service_id' => Functions::valueKeyInArray($inputs, 'technical_service_id'),
             'exchange_rate_sale' => $inputs['exchange_rate_sale'],
+            // ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
+            'exchange_rate_source' => $inputs['exchange_rate_source'] ?? 'manual',
+            'exchange_rate_date' => $inputs['exchange_rate_date'] ?? $inputs['date_of_issue'],
+            'taxes' => $inputs['taxes'] ?? [],
+            'fiscal_data' => $inputs['fiscal_data'] ?? [],
+            'received_retentions' => $inputs['received_retentions'] ?? [],
+            'guarantee_fund' => $inputs['guarantee_fund'] ?? null,
+            // ######## FIN PERSISTENCIA FISCAL VENEZUELA ########
             'total_prepayment' => Functions::valueKeyInArray($inputs, 'total_prepayment', 0),
             'total_discount' => Functions::valueKeyInArray($inputs, 'total_discount', 0),
             'total_charge' => Functions::valueKeyInArray($inputs, 'total_charge', 0),
             'total_exportation' => Functions::valueKeyInArray($inputs, 'total_exportation', 0),
-            'total_free' => Functions::valueKeyInArray($inputs, 'total_free', 0),
             'total_taxed' => $inputs['total_taxed'],
-            'total_unaffected' => $inputs['total_unaffected'],
             'total_exonerated' => $inputs['total_exonerated'],
             'total_igv' => $inputs['total_igv'],
-            'total_igv_free' => Functions::valueKeyInArray($inputs, 'total_igv_free', 0),
             'total_base_other_taxes' => Functions::valueKeyInArray($inputs, 'total_base_other_taxes', 0),
             'total_other_taxes' => Functions::valueKeyInArray($inputs, 'total_other_taxes', 0),
             'total_taxes' => $inputs['total_taxes'],
             'total_value' => $inputs['total_value'],
-            'total_perception' => $inputs['total_perception'] ?? 0,
             'subtotal' => (Functions::valueKeyInArray($inputs, 'subtotal')) ? $inputs['subtotal'] : $inputs['total'],
             'total' => $inputs['total'],
             'has_prepayment' => Functions::valueKeyInArray($inputs, 'has_prepayment', 0),
@@ -110,8 +113,6 @@ class DocumentUpdateInput
             'prepayments' => self::prepayments($inputs),
             'guides' => self::guides($inputs),
             'related' => self::related($inputs),
-            'perception' => self::perception($inputs),
-            'retention' => self::retention($inputs),
             'invoice' => $invoice,
             'note' => $note,
             'hotel' => self::hotel($inputs),
@@ -168,7 +169,7 @@ class DocumentUpdateInput
                         'date_of_due' => (!empty($item->date_of_due)) ? $item->date_of_due->format('Y-m-d') : null,
                         'has_igv' => $row['item']['has_igv'] ?? true,
                         'sanitary' => $item->sanitary,
-                        'cod_digemid' => $item->cod_digemid,
+
                         'unit_price' => $row['unit_price'] ?? 0,
                         'purchase_unit_price' => $row['item']['purchase_unit_price'] ?? 0,
 
@@ -385,27 +386,7 @@ class DocumentUpdateInput
         return null;
     }
 
-    private static function perception($inputs)
-    {
-        if (array_key_exists('perception', $inputs)) {
-            if ($inputs['perception']) {
-                $perception = $inputs['perception'];
-                $code = $perception['code'];
-                $percentage = $perception['percentage'];
-                $amount = $perception['amount'];
-                $base = $perception['base'];
 
-                return [
-                    'code' => $code,
-                    'percentage' => $percentage,
-                    'amount' => $amount,
-                    'base' => $base,
-                ];
-            }
-        }
-
-        return null;
-    }
 
 
     private static function hotel($inputs)
@@ -462,53 +443,7 @@ class DocumentUpdateInput
         ];
     }
 
-    private static function retention($inputs)
-    {
-        if (array_key_exists('retention', $inputs)) {
 
-            if ($inputs['retention']) {
-
-                $retention = $inputs['retention'];
-                $code = $retention['code'];
-                $percentage = $retention['percentage'];
-                $amount = $retention['amount'];
-                $base = $retention['base'];
-                $currency_type_id = $retention['currency_type_id'];
-                $exchange_rate = $retention['exchange_rate'];
-                $amount_pen = $retention['amount_pen'];
-                $amount_usd = $retention['amount_usd'];
-
-                $voucher_date_of_issue = Functions::valueKeyInArray($retention, 'voucher_date_of_issue');
-                $voucher_number = Functions::valueKeyInArray($retention, 'voucher_number');
-                $voucher_amount = Functions::valueKeyInArray($retention, 'voucher_amount');
-                $voucher_filename = Functions::valueKeyInArray($retention, 'voucher_filename');
-
-                /*
-                $voucher_date_of_issue = $inputs['voucher_date_of_issue'];
-                $voucher_number = $inputs['voucher_number'];
-                $voucher_amount = $inputs['voucher_amount'];
-                $voucher_filename = $inputs['voucher_filename'];
-                */
-
-                return [
-                    'code' => $code,
-                    'percentage' => $percentage,
-                    'amount' => $amount,
-                    'base' => $base,
-                    'currency_type_id' => $currency_type_id,
-                    'exchange_rate' => $exchange_rate,
-                    'amount_pen' => $amount_pen,
-                    'amount_usd' => $amount_usd,
-                    'voucher_date_of_issue' => $voucher_date_of_issue,
-                    'voucher_number' => $voucher_number,
-                    'voucher_amount' => $voucher_amount,
-                    'voucher_filename' => $voucher_filename,
-                ];
-            }
-        }
-
-        return null;
-    }
 
 }
 // ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

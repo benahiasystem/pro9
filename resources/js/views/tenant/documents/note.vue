@@ -252,11 +252,8 @@
                     <div class="col-md-12">
                         <p class="text-right" v-if="form.total_exportation > 0">OP.EXPORTACIÓN:
                             {{ currency_type.symbol }} {{ form.total_exportation }}</p>
-                        <p class="text-right" v-if="form.total_free > 0">OP.GRATUITAS: {{ currency_type.symbol }}
-                            {{ form.total_free }}</p>
-                        <p class="text-right" v-if="form.total_unaffected > 0">OP.INAFECTAS: {{
-                                currency_type.symbol
-                            }} {{ form.total_unaffected }}</p>
+
+
                         <p class="text-right" v-if="form.total_exonerated > 0">OP.EXONERADAS:
                             {{ currency_type.symbol }} {{ form.total_exonerated }}</p>
                         <p class="text-right" v-if="form.total_taxed > 0">OP.GRAVADA: {{ currency_type.symbol }}
@@ -441,9 +438,9 @@ export default {
             this.form.total_charge = this.document.total_charge
             // this.form.total_discount= this.document.total_discount
             this.form.total_exportation = this.document.total_exportation
-            this.form.total_free = this.document.total_free
+
             this.form.total_taxed = this.document.total_taxed
-            this.form.total_unaffected = this.document.total_unaffected
+
             this.form.total_exonerated = this.document.total_exonerated
             this.form.total_igv = this.document.total_igv
 
@@ -495,9 +492,9 @@ export default {
                 total_charge: this.document.total_charge,
                 // total_discount: this.document.total_discount,
                 total_exportation: this.document.total_exportation,
-                total_free: this.document.total_free,
+
                 total_taxed: this.document.total_taxed,
-                total_unaffected: this.document.total_unaffected,
+
                 total_exonerated: this.document.total_exonerated,
                 total_igv: this.document.total_igv,
 
@@ -675,8 +672,8 @@ export default {
             let total_exportation = 0
             let total_taxed = 0
             let total_exonerated = 0
-            let total_unaffected = 0
-            let total_free = 0
+
+
             let total_igv = 0
             let total_value = 0
             let total = 0
@@ -694,15 +691,11 @@ export default {
                 if (row.affectation_igv_type_id === '20') {
                     total_exonerated += parseFloat(row.total_value)
                 }
-                if (row.affectation_igv_type_id === '30') {
-                    total_unaffected += parseFloat(row.total_value)
-                }
+                ;
                 if (row.affectation_igv_type_id === '40') {
                     total_exportation += parseFloat(row.total_value)
                 }
-                if (['10', '20', '30', '40'].indexOf(row.affectation_igv_type_id) < 0) {
-                    total_free += parseFloat(row.total_value)
-                }
+                ;
                 total_value += parseFloat(row.total_value)
                 total_igv += parseFloat(row.total_igv)
                 total += parseFloat(row.total)
@@ -721,8 +714,8 @@ export default {
             this.form.total_exportation = _.round(total_exportation, 2)
             this.form.total_taxed = _.round(total_taxed, 2)
             this.form.total_exonerated = _.round(total_exonerated, 2)
-            this.form.total_unaffected = _.round(total_unaffected, 2)
-            this.form.total_free = _.round(total_free, 2)
+
+
             this.form.total_igv = _.round(total_igv, 2)
             this.form.total_value = _.round(total_value, 2)
             // this.form.total_taxes = _.round(total_igv, 2)

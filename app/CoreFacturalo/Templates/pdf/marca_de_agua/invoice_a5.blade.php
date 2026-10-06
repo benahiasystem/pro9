@@ -1,3 +1,4 @@
+{{-- ######## INICIO PERSISTENCIA FISCAL VENEZUELA ######## --}}
 {{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 @php
     use Modules\Template\Helpers\TemplatePdf;
@@ -32,7 +33,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
     $document->load('reference_guides');
 
     $total_payment = $document->payments->sum('payment');
-    $balance = ($document->total - $total_payment) - $document->payments->sum('change');
+    $balance = $document instanceof \App\Models\Tenant\Document ? $document->balance : (($document->total - $total_payment) - $document->payments->sum('change'));
     $configuration_decimal_quantity = App\CoreFacturalo\Helpers\Template\TemplateHelper::getConfigurationDecimalQuantity();
     $configurationInPdf= App\CoreFacturalo\Helpers\Template\TemplateHelper::getConfigurationInPdf();
 @endphp
@@ -745,12 +746,7 @@ foreach ($document->items as $row) {
         @endif
     @endif
 
-    @if(($document->retention) && $document->total_pending_payment > 0)
-        <tr>
-            <td class="p-1 text-right align-top desc cell-solid font-bold" colspan="{{ $colspan_total }}">M. PENDIENTE: {{ $document->currency_type->symbol }}</td>
-            <td class="p-1 text-right align-top desc cell-solid font-bold">{{ number_format($document->total_pending_payment, 2) }}</td>
-        </tr>
-    @endif
+
 
     @if($balance < 0)
         <tr>
@@ -806,18 +802,7 @@ foreach ($document->items as $row) {
                 @endif
             @endif
 
-            @if ($document->retention)
-                <p><strong>Información de la retención</strong></p>
-                <p>
-                    Base imponible de la retención: Bs. {{ $document->getRetentionTaxBase() }}
-                </p>
-                <p>
-                    Porcentaje de la retención: {{ $document->retention->percentage * 100 }}%
-                </p>
-                <p>
-                    Monto de la retención: Bs. {{ $document->retention->amount_pen }}
-                </p>
-            @endif
+
 
         </td>
     </tr>
@@ -878,21 +863,7 @@ foreach ($document->items as $row) {
             </tr>
     </table>
 @endif
-{{-- @if($document->retention)
-    <br>
-    <table class="full-width">
-        <tr>
-            <td>
-                <strong>Información de la retención:</strong>
-            </td>
-            <td>Base imponible de la retención:
-                Bs. {{ round($document->retention->amount_pen / $document->retention->percentage, 2) }}
-            </td>
-            <td>Porcentaje de la retención {{ $document->retention->percentage * 100 }}%</td>
-            <td>Monto de la retención Bs. {{ $document->retention->amount_pen }}</td>
-        </tr>
-    </table>
-@endif --}}
+
 @if ($document->terms_condition)
     <br>
     <table class="full-width">
@@ -908,3 +879,5 @@ foreach ($document->items as $row) {
 </html>
 
 {{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}
+
+{{-- ######## FIN PERSISTENCIA FISCAL VENEZUELA ######## --}}

@@ -59,7 +59,6 @@ use Modules\Sale\Models\Agent;
  * @property mixed $legends
  * @property mixed $number_full
  * @property mixed $number_to_letter
- * @property mixed $perception
  * @property mixed $prepayments
  * @property string|null $payment_condition_id
  * @property string|null $payment_method_type_id
@@ -135,13 +134,28 @@ use Modules\Sale\Models\Agent;
  * @method static EloquentBuilder|Document WhereEstablishmentId()
  * @mixin Eloquent
  * @method static EloquentBuilder|Document whereValuedKardexFormatSunat($params)
- * @property mixed $retention
  */
 class Document extends ModelTenant
 {
     use UsesTenantConnection;
     use \App\Models\Tenant\Traits\HasFiscalIdentity;
     use SellerIdTrait;
+
+
+    // ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
+    public function taxes() { return $this->hasMany(DocumentTax::class); }
+    public function currency_totals() { return $this->hasOne(DocumentCurrencyTotal::class); }
+    public function received_retentions() { return $this->hasMany(DocumentReceivedRetention::class); }
+    public function guarantee_fund() { return $this->hasOne(DocumentGuaranteeFund::class); }
+    public function fiscal_data() { return $this->hasOne(DocumentFiscalData::class); }
+    public function emission() { return $this->hasOne(DocumentEmission::class); }
+    public function getRetentionAmountAttribute() { return round($this->received_retentions->sum('applied_amount'), 2); }
+    public function getGuaranteeAmountAttribute() { return (float) optional($this->guarantee_fund)->amount; }
+    public function getBalanceAttribute()
+    {
+        return round($this->total - $this->payments()->whereNull('reversed_at')->sum('payment') - $this->retention_amount - $this->guarantee_amount, 2);
+    }
+    // ######## FIN PERSISTENCIA FISCAL VENEZUELA ########
 
     public const GROUP_INVOICE = '01';
 
@@ -166,7 +180,6 @@ class Document extends ModelTenant
         'establishment',
         'fiscal_environment',
         'state_type_id',
-        'ubl_version',
         'group_id',
         'document_type_id',
         'series',
@@ -181,13 +194,13 @@ class Document extends ModelTenant
         'section',
         'quotation_id',
         'exchange_rate_sale',
+        'exchange_rate_source',
+        'exchange_rate_date',
         'total_prepayment',
         'total_discount',
         'total_charge',
         'total_exportation',
-        'total_free',
         'total_taxed',
-        'total_unaffected',
         'total_exonerated',
         'total_igv',
         'total_base_other_taxes',
@@ -200,7 +213,6 @@ class Document extends ModelTenant
         'prepayments',
         'guides',
         'related',
-        'perception',
         'legends',
         'additional_information',
         'additional_data',
@@ -222,10 +234,8 @@ class Document extends ModelTenant
         'is_editable',
         'dispatch_id',
         'subtotal',
-        'total_igv_free',
         'technical_service_id',
         'total_pending_payment', // Retenciones
-        'retention',
         'user_rel_suscription_plan_id',
         'automatic_date_of_issue',
         'type_period',
@@ -252,6 +262,8 @@ class Document extends ModelTenant
     ];
 
     protected $casts = [
+        'issuer' => 'array',
+        'exchange_rate_date' => 'date',
         'date_of_issue' => 'date',
         'user_rel_suscription_plan_id' => 'int',
         'quantity_period' => 'int',
@@ -400,9 +412,7 @@ class Document extends ModelTenant
             // Operaciones segun su afectacion al IGV.
             'total_taxed'            => round((float) $this->total_taxed, 2),
             'total_exonerated'       => round((float) $this->total_exonerated, 2),
-            'total_unaffected'       => round((float) $this->total_unaffected, 2),
             'total_exportation'      => round((float) $this->total_exportation, 2),
-            'total_free'             => round((float) $this->total_free, 2),
 
             'total_igv'              => round((float) $this->total_igv, 2),
             'subtotal'               => round((float) $this->subtotal, 2),
@@ -590,15 +600,9 @@ class Document extends ModelTenant
         $this->attributes['related'] = (is_null($value)) ? null : json_encode($value);
     }
 
-    public function getPerceptionAttribute($value)
-    {
-        return (is_null($value)) ? null : (object)json_decode($value);
-    }
 
-    public function setPerceptionAttribute($value)
-    {
-        $this->attributes['perception'] = (is_null($value)) ? null : json_encode($value);
-    }
+
+
 
 
 
@@ -624,15 +628,9 @@ class Document extends ModelTenant
 
 
 
-    public function getRetentionAttribute($value)
-    {
-        return (is_null($value)) ? null : (object)json_decode($value);
-    }
 
-    public function setRetentionAttribute($value)
-    {
-        $this->attributes['retention'] = (is_null($value)) ? null : json_encode($value);
-    }
+
+
 
     public function getPointSystemDataAttribute($value)
     {
@@ -794,7 +792,7 @@ class Document extends ModelTenant
      */
     public function payments()
     {
-        return $this->hasMany(DocumentPayment::class);
+        return $this->hasMany(DocumentPayment::class)->whereNull('reversed_at');
     }
 
     /**
@@ -1602,6 +1600,8 @@ class Document extends ModelTenant
                 'currency_type_id',
                 'quotation_id',
                 'exchange_rate_sale',
+        'exchange_rate_source',
+        'exchange_rate_date',
                 'total',
                 'filename',
                 'sale_note_id',
@@ -1831,14 +1831,7 @@ class Document extends ModelTenant
      */
     public function getRetentionTaxBase()
     {
-        $base = 0;
-
-        if($this->retention)
-        {
-            $base = $this->hasNationalCurrency() ? $this->retention->base : $this->generalConvertValueToPen($this->retention->base, $this->retention->exchange_rate);
-        }
-
-        return round($base, 2);
+        return round($this->received_retentions->sum(fn ($r) => $r->currency_type_id === 'USD' ? $r->base * $r->exchange_rate : $r->base), 2);
     }
 
 

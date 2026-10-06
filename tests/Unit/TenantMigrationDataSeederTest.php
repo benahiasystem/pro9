@@ -18,7 +18,7 @@ class TenantMigrationDataSeederTest extends TestCase
 
         // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
         self::assertCount(80, $tables);
-        self::assertSame(955, $totalRows);
+        self::assertSame(956, $totalRows);
         // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
 
         foreach ($tables as $table => $definition) {
@@ -37,9 +37,9 @@ class TenantMigrationDataSeederTest extends TestCase
     {
         $createMigrations = glob(database_path('migrations/tenant/*_create_*_table.php')) ?: [];
         $foreignKeyMigrations = glob(database_path('migrations/tenant/*_add_tenant_foreign_keys.php')) ?: [];
-        self::assertCount(333, $createMigrations);
+        self::assertCount(339, $createMigrations);
         self::assertCount(1, $foreignKeyMigrations);
-        self::assertCount(334, glob(database_path('migrations/tenant/*.php')) ?: []);
+        self::assertCount(340, glob(database_path('migrations/tenant/*.php')) ?: []);
         self::assertSame([], glob(database_path('migrations/tenant/*_migrate_*.php')) ?: []);
 
     }

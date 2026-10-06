@@ -30,6 +30,8 @@ class TestDocumentsDeletionBehaviorTest extends TestCase
         $schema = Schema::connection('tenant');
         foreach ([
             'documents', 'document_items', 'document_payments', 'cash_document_payments',
+            'document_taxes', 'document_currency_totals', 'document_received_retentions',
+            'document_guarantee_funds', 'document_fiscal_data', 'document_emissions',
             'global_payments', 'document_fee', 'document_hotels', 'document_transports',
             'invoices', 'notes', 'kardex', 'cash_documents',
             'payment_method_types', 'card_brands', 'inventory_kardex', 'payment_files', 'payment_links',
@@ -42,6 +44,8 @@ class TestDocumentsDeletionBehaviorTest extends TestCase
                 $table->unsignedInteger('document_id')->nullable();
                 $table->unsignedInteger('affected_document_id')->nullable();
                 $table->unsignedInteger('document_payment_id')->nullable();
+                $table->unsignedInteger('receipt_parent_id')->nullable();
+                $table->dateTime('reversed_at')->nullable();
                 $table->string('payment_type')->nullable();
                 $table->unsignedInteger('payment_id')->nullable();
                 $table->string('payment_method_type_id')->nullable();
@@ -101,6 +105,7 @@ class TestDocumentsDeletionBehaviorTest extends TestCase
     {
         $connection = DB::connection('tenant');
         $connection->table('documents')->insert(['id' => 101]);
+        foreach (['document_taxes','document_currency_totals','document_received_retentions','document_guarantee_funds','document_fiscal_data','document_emissions'] as $table) $connection->table($table)->insert(['document_id'=>101]);
         $connection->table('document_items')->insert(['document_id' => 101]);
         $connection->table('inventory_kardex')->insert([
             'inventory_kardexable_type' => Document::class,
@@ -131,7 +136,8 @@ class TestDocumentsDeletionBehaviorTest extends TestCase
             'document_items', 'document_payments', 'cash_document_payments', 'global_payments',
             'document_fee', 'document_hotels', 'document_transports', 'invoices', 'notes',
             'kardex', 'cash_documents', 'documents',
-            'inventory_kardex',
+            'inventory_kardex', 'document_taxes','document_currency_totals','document_received_retentions',
+            'document_guarantee_funds','document_fiscal_data','document_emissions',
         ] as $table) {
             self::assertSame(0, $connection->table($table)->count(), $table);
         }

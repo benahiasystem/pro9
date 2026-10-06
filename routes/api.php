@@ -23,6 +23,16 @@ if ($hostname) {
         Route::post('login', 'Tenant\Api\MobileController@login');
 
         Route::middleware(['auth:api', 'locked.tenant'])->group(function () {
+            // ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
+            Route::post('document_payments', 'Tenant\DocumentPaymentController@store');
+            Route::get('document_payments/records/{document}', 'Tenant\DocumentPaymentController@records');
+            Route::get('document_payments/document/{document}', 'Tenant\DocumentPaymentController@document');
+            Route::delete('document_payments/{payment}', 'Tenant\DocumentPaymentController@destroy');
+            Route::get('documents/retention/{document}', 'Tenant\DocumentFiscalController@retentions');
+            Route::post('documents/retention', 'Tenant\DocumentFiscalController@retentionStore');
+            Route::post('documents/retention/upload', 'Tenant\DocumentFiscalController@upload');
+            Route::post('documents/{document}/prepare-hka', 'Tenant\DocumentFiscalController@prepare');
+            // ######## FIN PERSISTENCIA FISCAL VENEZUELA ########
             //MOBILE
 
             Route::get('stats/{startDate}/{endDate}', 'Tenant\Api\MobileController@stats');

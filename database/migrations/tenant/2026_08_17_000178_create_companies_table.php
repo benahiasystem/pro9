@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\DB;
 /**
  * Estructura inicial de `companies` para instalaciones nuevas.
  * Inventario de columnas:
+ * - `igtf_enabled` tinyint(1) NOT NULL DEFAULT 0
+ * - `igtf_rate` decimal(12,2) DEFAULT NULL
  * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
  * - `identity_document_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `number` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
@@ -51,6 +53,10 @@ return new class extends Migration
     {
         DB::unprepared(<<<'SQL'
 CREATE TABLE `companies` (
+  -- ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
+  `igtf_enabled` tinyint(1) NOT NULL DEFAULT 0,
+  `igtf_rate` decimal(12,2) DEFAULT NULL,
+  -- ######## FIN PERSISTENCIA FISCAL VENEZUELA ########
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `identity_document_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `number` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,

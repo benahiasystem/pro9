@@ -189,7 +189,7 @@ class AccountController extends Controller
             {
                 $total_exportation = $row->generalApplyNumberFormat($row->total_exportation);
                 $total_taxed = $row->generalApplyNumberFormat($row->total_taxed);
-                $total_unaffected = $row->generalApplyNumberFormat($row->total_unaffected);
+                $total_unaffected = $row->generalApplyNumberFormat(0);
                 $total_exonerated = $row->generalApplyNumberFormat($row->total_exonerated);
                 $total_igv = $row->generalApplyNumberFormat($row->total_igv);
                 $total = $row->generalApplyNumberFormat($row->total);
@@ -236,7 +236,7 @@ class AccountController extends Controller
                 'customer_number' => format_person_identity_document($row->customer),
                 'customer_name' => $row->customer->name,
                 'total_exportation' => number_format($row->total_exportation, 2, ".", ""),
-                'total_unaffected' => number_format($row->total_unaffected, 2, ".", ""),
+                'total_unaffected' => number_format(0, 2, ".", ""),
                 'total_taxed' => number_format($row->total_taxed, 2, ".", ""),
                 'total_igv' => number_format($row->total_igv, 2, ".", ""),
                 'total' => number_format($row->total, 2, ".", ""),
@@ -347,7 +347,7 @@ class AccountController extends Controller
                 'customer_number' => format_person_identity_document($row->customer),
                 'customer_name' => $row->customer->name,
                 'total_exportation' => number_format($row->total_exportation, 2, ".", ""),
-                'total_unaffected' => number_format($row->total_unaffected, 2, ".", ""),
+                'total_unaffected' => number_format(0, 2, ".", ""),
                 'total_taxed' => number_format($row->total_taxed, 2, ".", ""),
                 'total_igv' => number_format($row->total_igv, 2, ".", ""),
                 'total_exonerated' => number_format($row->total_exonerated, 2, ".", ""),
@@ -420,7 +420,7 @@ class AccountController extends Controller
 
             if ($row->hasAcceptedState()) {
                 $total_exportation = $row->generalApplyNumberFormat($row->total_exportation);
-                $total_unaffected = $row->generalApplyNumberFormat($row->total_unaffected);
+                $total_unaffected = $row->generalApplyNumberFormat(0);
                 $total_value = $row->generalApplyNumberFormat($row->total_value);
                 $total_exonerated = $row->generalApplyNumberFormat($row->total_exonerated);
                 $total_igv = $row->generalApplyNumberFormat($row->total_igv);
@@ -1016,53 +1016,7 @@ class AccountController extends Controller
                 }
 
 
-                if($row->total_unaffected > 0){
-                    $rows[] = [
-                        // 'col_A' => '',
-                        'col_B' => ($percentage_igv==10)?'08':'05',
-                        'col_C' => $number_index,
-                        'col_D' => $date_of_issue->format('d/m/Y'),
-                        'col_E' => $currency_type_id,
-                        'col_F' => substr($detail, 0, 40),
-                        // 'col_F' => 'POR VENTA',
-                        'col_G' => 0,
-                        'col_H' => 'V',
-                        'col_I' => 'S',
-                        'col_J' => '',
-                        // 'col_K' => '704101',
-                        'col_K' => $company_account->unaffected,
-                        'col_L' => $row->customer->number,
-                        'col_M' => '',
-                        'col_N' => 'D',
-                        'col_O' => ($row->state_type_id == 11 ||  $row->state_type_id == 9) ? 0 : $row->total_unaffected,
-                        'col_P' => '',
-                        'col_Q' => '',
-                        'col_R' => $document_type_id,
-                        'col_S' => $row->number_full,
-                        'col_T' => $row->date_of_issue->format('d/m/Y'),
-                        'col_U' => $date_of_due,
-                        'col_V' => '',
-                        'col_W' => substr($detail, 0, 30),
-                        'col_X' => '',
-                        'col_Y' => '',
-                        'col_Z' => $reference_document_type_id,
-                        'col_AA' => $reference_number_full,
-                        'col_AB' => $reference_date_of_issue,
-                        'col_AC' => '',
-                        'col_AD' => $reference_total_value,
-                        'col_AE' => $reference_total_igv,
-                        'col_AF' => '',
-                        'col_AG' => '',
-                        'col_AH' => '',
-                        'col_AI' => '',
-                        'col_AJ' => '',
-                        'col_AK' => '',
-                        'col_AL' => '',
-                        'col_AM' => '',
-                        'col_AN' => '',
-                        'col_AO' => $percentage_igv,
-                    ];
-                }
+
 
                 if($row->total_exonerated > 0){
                     $rows[] = [
@@ -1255,53 +1209,7 @@ class AccountController extends Controller
                     ];
                 }
 
-                if($row->total_unaffected > 0){
-                    $rows[] = [
-                        // 'col_A' => '',
-                        'col_B' => ($percentage_igv==10)?'08':'05',
-                        'col_C' => $number_index,
-                        'col_D' => $date_of_issue->format('d/m/Y'),
-                        'col_E' => $currency_type_id,
-                        'col_F' => substr($detail, 0, 40),
-                        // 'col_F' => 'POR VENTA',
-                        'col_G' => 0,
-                        'col_H' => 'V',
-                        'col_I' => 'S',
-                        'col_J' => '',
-                        // 'col_K' => '704101',
-                        'col_K' => $company_account->unaffected,
-                        'col_L' => $row->customer->number,
-                        'col_M' => '',
-                        'col_N' => 'H',
-                        'col_O' => ($row->state_type_id == 11 ||  $row->state_type_id == 9) ? 0 : $row->total_unaffected,
-                        'col_P' => '',
-                        'col_Q' => '',
-                        'col_R' => $document_type_id,
-                        'col_S' => $row->number_full,
-                        'col_T' => $row->date_of_issue->format('d/m/Y'),
-                        'col_U' => $date_of_due,
-                        'col_V' => '',
-                        'col_W' => substr($detail, 0, 30),
-                        'col_X' => '',
-                        'col_Y' => '',
-                        'col_Z' => $reference_document_type_id,
-                        'col_AA' => $reference_number_full,
-                        'col_AB' => $reference_date_of_issue,
-                        'col_AC' => '',
-                        'col_AD' => $reference_total_value,
-                        'col_AE' => $reference_total_igv,
-                        'col_AF' => '',
-                        'col_AG' => '',
-                        'col_AH' => '',
-                        'col_AI' => '',
-                        'col_AJ' => '',
-                        'col_AK' => '',
-                        'col_AL' => '',
-                        'col_AM' => '',
-                        'col_AN' => '',
-                        'col_AO' => $percentage_igv,
-                    ];
-                }
+
 
                 if($row->total_exonerated > 0){
                     $rows[] = [
@@ -1574,7 +1482,7 @@ class AccountController extends Controller
                 'total_exportation' => number_format($row->total_exportation, 2, ".", ""),
                 'total_taxed' => number_format($row->total_taxed, 2, ".", ""),
                 'total_exonerated' => number_format($row->total_exonerated, 2, ".", ""),
-                'total_unaffected' => number_format($row->total_unaffected, 2, ".", ""),
+                'total_unaffected' => number_format(0, 2, ".", ""),
                 'total_igv' => number_format($row->total_igv, 2, ".", ""),
                 'total_other_taxes' => number_format($row->total_total_other_taxes, 2, ".", ""),
                 'total' => number_format($row->total, 2, ".", ""),

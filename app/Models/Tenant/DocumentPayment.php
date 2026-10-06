@@ -27,12 +27,23 @@ class DocumentPayment extends ModelTenant
         'change',
         'payment',
         'payment_received',
+        // ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
+        'currency_type_id', 'exchange_rate', 'exchange_rate_source', 'exchange_rate_date',
+        'original_amount', 'tax_amount', 'payment_method_snapshot', 'igtf_status', 'exemption_reason', 'operation_key', 'receipt_parent_id',
+        // ######## FIN PERSISTENCIA FISCAL VENEZUELA ########
     ];
 
     protected $casts = [
+        'payment_method_snapshot' => 'array',
+        'reversed_at' => 'datetime',
         'date_of_payment' => 'date',
+        'exchange_rate_date' => 'date',
         'payment_received' => 'bool',
     ];
+
+    // ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
+    public function getCashReceivedAmountAttribute() { return $this->receipt_parent_id ? 0 : round($this->original_amount + $this->tax_amount, 2); }
+    // ######## FIN PERSISTENCIA FISCAL VENEZUELA ########
 
     public function payment_method_type()
     {
@@ -102,10 +113,10 @@ class DocumentPayment extends ModelTenant
             'number_full' => $this->associated_record_payment->number_full,
             'acquirer_name' => $this->associated_record_payment->customer->name,
             'acquirer_number' => $this->associated_record_payment->customer->number,
-            'currency_type_id' => $this->associated_record_payment->currency_type_id,
+            'currency_type_id' => $this->currency_type_id,
             'document_type_description' => $this->associated_record_payment->document_type->description,
             'payment_method_type_id' => $this->payment_method_type_id,
-            'payment' => $this->associated_record_payment->isVoidedOrRejected() ? 0 : $this->payment,
+            'payment' => $this->associated_record_payment->isVoidedOrRejected() || $this->reversed_at ? 0 : $this->cash_received_amount,
         ];
     }
 
@@ -249,13 +260,13 @@ class DocumentPayment extends ModelTenant
         {
             $total = $this->associated_record_payment->total;
             $change = $this->change ?? 0;
-            $payment = $this->payment;
+            $payment = $this->reversed_at ? 0 : $this->cash_received_amount;
 
-            $payment_for_calculate = $this->payment;
+            $payment_for_calculate = $payment;
 
-            if(!$this->associated_record_payment->hasNationalCurrency())
+            if($this->currency_type_id !== 'VES')
             {
-                $payment_for_calculate = $this->associated_record_payment->generalConvertValueToPen($this->payment, $this->associated_record_payment->exchange_rate_sale);
+                $payment_for_calculate = $this->associated_record_payment->generalConvertValueToPen($payment, $this->exchange_rate);
             }
         }
 
@@ -263,7 +274,7 @@ class DocumentPayment extends ModelTenant
             'type' => 'document',
             'date_time_of_issue' => "{$this->associated_record_payment->date_of_issue->format('Y-m-d')} {$this->associated_record_payment->time_of_issue}",
             'number_full' => $this->associated_record_payment->number_full,
-            'currency_type_id' => $this->associated_record_payment->currency_type_id,
+            'currency_type_id' => $this->currency_type_id,
             'document_type_description' => $this->associated_record_payment->document_type->description,
             'payment_method_type_description' => $this->payment_method_type->description,
             'total' => $total,

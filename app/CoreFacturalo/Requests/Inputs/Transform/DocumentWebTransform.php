@@ -38,9 +38,7 @@ class DocumentWebTransform
                 'total_descuentos' => Functions::valueKeyInArray($inputs, 'total_discount'),
                 'total_cargos' => Functions::valueKeyInArray($inputs, 'total_charge'),
                 'total_exportacion' => Functions::valueKeyInArray($inputs, 'total_exportation'),
-                'total_operaciones_gratuitas' => Functions::valueKeyInArray($inputs, 'total_free'),
                 'total_operaciones_gravadas' => Functions::valueKeyInArray($inputs, 'total_taxed'),
-                'total_operaciones_inafectas' => Functions::valueKeyInArray($inputs, 'total_unaffected'),
                 'total_operaciones_exoneradas' => Functions::valueKeyInArray($inputs, 'total_exonerated'),
                 'total_igv' => Functions::valueKeyInArray($inputs, 'total_igv'),
                 'total_base_otros_impuestos' => Functions::valueKeyInArray($inputs, 'total_base_other_taxes'),
@@ -54,7 +52,6 @@ class DocumentWebTransform
             'items' => self::items($inputs),
             // 'charges' => self::charges($inputs),
             // 'discounts' => self::discounts($inputs),
-            // 'perception' => self::perception($inputs),
             // 'prepayments' => self::prepayments($inputs),
             // 'guides' => self::guides($inputs),
             // 'related' => self::related($inputs),
@@ -237,20 +234,6 @@ class DocumentWebTransform
     }
 
 
-    private static function perception($inputs)
-    {
-        // if(key_exists('percepcion', $inputs)) {
-        //     $perception = $inputs['percepcion'];
-
-        //     return [
-        //         'code' => $perception['codigo'],
-        //         'percentage' => $perception['porcentaje'],
-        //         'amount' => $perception['monto'],
-        //         'base' => $perception['base'],
-        //     ];
-        // }
-        return null;
-    }
 
     private static function prepayments($inputs)
     {

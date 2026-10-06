@@ -18,6 +18,7 @@ class DocumentController extends Controller
 
     public function store(Request $request)
     {
+        $request->validate(['control_number'=>'prohibited','numero_control'=>'prohibited','issuer'=>'prohibited']);
         // dd($request->all());
         $print_result = ['auto_printed' => false, 'print_order_id' => null, 'reason' => null];
 

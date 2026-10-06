@@ -155,7 +155,7 @@ use App\Models\Tenant\{
                                 $total_taxed = round($row->total_taxed, 2);
                                 $total_igv = round($row->total_igv, 2);
                                 $total_exonerated = $row->total_exonerated;
-                                $total_unaffected = $row->total_unaffected;
+                                $total_unaffected = 0;
                                 $total_exportation = $row->total_exportation;
 
                                 $exchange_rate_sale = $row->exchange_rate_sale;
@@ -269,7 +269,6 @@ use App\Models\Tenant\{
             $row->total_exportation = 0 ;
             $row->total_taxed = 0 ;
             $row->total_exonerated = 0 ;
-            $row->total_unaffected = 0 ;
             $row->total_igv = 0 ;
             $row->total = 0 ;
         }

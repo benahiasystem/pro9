@@ -71,7 +71,7 @@ try {
         'cat_iva_rate_types' => 6,
         'cat_legend_types' => 1,
         'cat_note_credit_types' => 4,
-        'cat_note_debit_types' => 3,
+        'cat_note_debit_types' => 4,
         'cat_operation_types' => 5,
         'cat_product_origins' => 3,
         'cat_product_types' => 2,

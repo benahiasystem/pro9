@@ -62,9 +62,7 @@
 
                         $serie_affec = '';
                         $acum_total_exonerado=0;
-                        $acum_total_inafecto=0;
 
-                        $acum_total_free=0;
 
                         $acum_total_taxed_usd = 0;
                         $acum_total_igv_usd = 0;
@@ -103,8 +101,6 @@
                                 @php
 
                                     $value->total_exonerated = (in_array($value->document_type_id,['01','03']) && in_array($value->state_type_id,['09','11'])) ? 0 : $value->total_exonerated;
-                                    $value->total_unaffected = (in_array($value->document_type_id,['01','03']) && in_array($value->state_type_id,['09','11'])) ? 0 : $value->total_unaffected;
-                                    $value->total_free = (in_array($value->document_type_id,['01','03']) && in_array($value->state_type_id,['09','11'])) ? 0 : $value->total_free;
 
                                     $value->total_taxed = (in_array($value->document_type_id,['01','03']) && in_array($value->state_type_id,['09','11'])) ? 0 : $value->total_taxed;
                                     $value->total_igv = (in_array($value->document_type_id,['01','03']) && in_array($value->state_type_id,['09','11'])) ? 0 : $value->total_igv;
@@ -130,8 +126,6 @@
 
 
                                     $acum_total_exonerado += -$value->total_exonerated;
-                                    $acum_total_inafecto += -$value->total_unaffected;
-                                    $acum_total_free += -$value->total_free;
 
 
                                 }elseif($signal != '07' && $state == '11'){
@@ -141,8 +135,6 @@
                                     $acum_total_igv += 0;
 
                                     $acum_total_exonerado += 0;
-                                    $acum_total_inafecto += 0;
-                                    $acum_total_free += 0;
 
                                 }else{
 
@@ -151,8 +143,6 @@
                                     $acum_total_igv += $value->total_igv;
 
                                     $acum_total_exonerado += $value->total_exonerated;
-                                    $acum_total_inafecto += $value->total_unaffected;
-                                    $acum_total_free += $value->total_free;
                                 }
 
 

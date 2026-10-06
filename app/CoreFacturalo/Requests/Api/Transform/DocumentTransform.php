@@ -46,6 +46,12 @@ class DocumentTransform
             'time_of_issue' => Functions::valueKeyInArray($inputs, 'hora_de_emision'),
             'document_type_id' => Functions::valueKeyInArray($inputs, 'codigo_tipo_documento'),
             'currency_type_id' => Functions::valueKeyInArray($inputs, 'codigo_tipo_moneda'),
+            'taxes' => $inputs['taxes'] ?? [],
+            'fiscal_data' => $inputs['fiscal_data'] ?? [],
+            'received_retentions' => $inputs['received_retentions'] ?? [],
+            'guarantee_fund' => $inputs['guarantee_fund'] ?? null,
+            'exchange_rate_source' => $inputs['exchange_rate_source'] ?? 'manual',
+            'exchange_rate_date' => $inputs['exchange_rate_date'] ?? null,
             'exchange_rate_sale' => Functions::valueKeyInArray($inputs, 'factor_tipo_de_cambio', 1),
             'purchase_order' => Functions::valueKeyInArray($inputs, 'numero_orden_de_compra'),
             'plate_number' => Functions::valueKeyInArray($inputs, 'numero_de_placa'),
@@ -56,12 +62,9 @@ class DocumentTransform
             'total_discount' => Functions::valueKeyInArray($totals, 'total_descuentos'),
             'total_charge' => Functions::valueKeyInArray($totals, 'total_cargos'),
             'total_exportation' => Functions::valueKeyInArray($totals, 'total_exportacion'),
-            'total_free' => Functions::valueKeyInArray($totals, 'total_operaciones_gratuitas'),
             'total_taxed' => Functions::valueKeyInArray($totals, 'total_operaciones_gravadas'),
-            'total_unaffected' => Functions::valueKeyInArray($totals, 'total_operaciones_inafectas'),
             'total_exonerated' => Functions::valueKeyInArray($totals, 'total_operaciones_exoneradas'),
             'total_igv' => Functions::valueKeyInArray($totals, 'total_igv'),
-            'total_igv_free' => Functions::valueKeyInArray($totals, 'total_igv_operaciones_gratuitas'),
             'total_base_other_taxes' => Functions::valueKeyInArray($totals, 'total_base_otros_impuestos'),
             'total_other_taxes' => Functions::valueKeyInArray($totals, 'total_otros_impuestos'),
             'total_taxes' => Functions::valueKeyInArray($totals, 'total_impuestos'),
@@ -74,8 +77,6 @@ class DocumentTransform
             'items' => self::items($inputs),
             'charges' => self::charges($inputs),
             'discounts' => self::discounts($inputs),
-            'retention' => self::retention($inputs),
-            'perception' => self::perception($inputs),
             'prepayments' => self::prepayments($inputs),
             'guides' => self::guides($inputs),
             'related' => self::related($inputs),
@@ -247,78 +248,9 @@ class DocumentTransform
         ];
     }
 
-    private static function perception($inputs)
-    {
-        if(key_exists('percepcion', $inputs)) {
-            $perception = $inputs['percepcion'];
-
-            return [
-                'code' => $perception['codigo'],
-                'percentage' => $perception['porcentaje'],
-                'amount' => $perception['monto'],
-                'base' => $perception['base'],
-            ];
-        }
-        return null;
-    }
-
-    private static function retention($inputs)
-    {
-        // dd($inputs);
-        if(key_exists('retencion', $inputs)) {
-
-            $retention = $inputs['retencion'];
-            $additional_data_retention = self::additionalDataRetention($inputs, $retention);
-
-            return [
-                'code' => $retention['codigo'],
-                'percentage' => $retention['porcentaje'],
-                'amount' => $retention['monto'],
-                'base' => $retention['base'],
-                'currency_type_id' => $additional_data_retention['currency_type_id'],
-                'exchange_rate' => $additional_data_retention['exchange_rate'],
-                'amount_pen' => $additional_data_retention['amount_pen'],
-                'amount_usd' => $additional_data_retention['amount_usd']
-            ];
-
-        }
-
-        return null;
-    }
 
 
-    /**
-     *
-     * Datos adicionales del pago de retencion
-     *
-     * @param  array $inputs
-     * @param  array $retention
-     * @return array
-     */
-    private static function additionalDataRetention($inputs, $retention)
-    {
-        $currency_type_id = $inputs['codigo_tipo_moneda'];
-        $exchange_rate = Functions::valueKeyInArray($inputs, 'factor_tipo_de_cambio', 1);
-        $retention_amount = $retention['monto'];
 
-        if($currency_type_id === 'USD')
-        {
-            $amount_usd = $retention_amount;
-            $amount_pen = $retention_amount * $exchange_rate;
-        }
-        else
-        {
-            $amount_pen = $retention_amount;
-            $amount_usd = $retention_amount / $exchange_rate;
-        }
-
-        return [
-            'currency_type_id' => $currency_type_id,
-            'exchange_rate' => $exchange_rate,
-            'amount_pen' => round($amount_pen, 2),
-            'amount_usd' => round($amount_usd, 2)
-        ];
-    }
 
 
     private static function prepayments($inputs)
@@ -377,7 +309,7 @@ class DocumentTransform
 
     private static function invoice($inputs_transform, $inputs)
     {
-        if(in_array($inputs['codigo_tipo_documento'], ['01', '03'])) {
+        if($inputs['codigo_tipo_documento'] === '01') {
             $inputs_transform['operation_type_id'] = Functions::valueKeyInArray($inputs, 'codigo_tipo_operacion');
             $inputs_transform['date_of_due'] = Functions::valueKeyInArray($inputs, 'fecha_de_vencimiento');
         }
@@ -407,19 +339,33 @@ class DocumentTransform
 
     private static function payments($inputs)
     {
-        if(in_array($inputs['codigo_tipo_documento'], ['01', '03'])) {
+        if($inputs['codigo_tipo_documento'] === '01') {
 
             $payments = [];
 
             if(key_exists('pagos', $inputs)) {
 
                 foreach ($inputs['pagos'] as $row) {
+                    if (isset($row['currency_type_id'])) {
+                        validator($row,['operation_key'=>'required|uuid'])->validate();
+                        if ($row['currency_type_id'] !== $inputs['codigo_tipo_moneda']) {
+                            validator($row,['original_amount'=>'required|numeric|gt:0','exchange_rate'=>'required|numeric|gt:0'])->validate();
+                        }
+                    }
                     $payments[] = [
                         'date_of_payment' => Functions::valueKeyInArray($inputs, 'fecha_de_emision'),
                         'payment_method_type_id' => $row['codigo_metodo_pago'],
                         'payment_destination_id' => $row['codigo_destino_pago'],
                         'reference' => Functions::valueKeyInArray($row, 'referencia'),
                         'payment' => Functions::valueKeyInArray($row, 'monto', 0),
+                        'original_amount' => $row['original_amount'] ?? $row['monto'],
+                        'currency_type_id' => $row['currency_type_id'] ?? $inputs['codigo_tipo_moneda'],
+                        'exchange_rate' => $row['exchange_rate'] ?? $inputs['tipo_cambio_venta'],
+                        'exchange_rate_source' => $row['exchange_rate_source'] ?? 'manual',
+                        'exchange_rate_date' => $row['exchange_rate_date'] ?? $inputs['fecha_de_emision'],
+                        'igtf_status' => $row['igtf_status'] ?? 'not_applicable',
+                        'exemption_reason' => $row['exemption_reason'] ?? null,
+                        'operation_key' => $row['operation_key'] ?? (string) \Illuminate\Support\Str::uuid(),
                         'payment_received' => Functions::valueKeyInArray($row, 'pago_recibido'),
                     ];
                 }

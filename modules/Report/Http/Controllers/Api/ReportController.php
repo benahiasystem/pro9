@@ -188,7 +188,6 @@ class ReportController extends Controller
                 'case' =>'',
                 'currency' => $row->currency_type_id,
                 'total_exportation' => floatval($row->total_exportation),
-                'total_unaffected' => floatval($row->total_unaffected),
                 'total_exonerated' => floatval($row->total_exonerated),
                 'total_taxed' => floatval($row->total_taxed),
                 'total_igv' => floatval($row->total_igv),
@@ -246,10 +245,8 @@ class ReportController extends Controller
                 'exchange_rate_sale' => $row->exchange_rate_sale,
                 'total_charge' => $totals['total_charge'],
                 'total_exonerated' => $totals['total_exonerated'],
-                'total_unaffected' => $totals['total_unaffected'],
                 'total_taxed' => $totals['total_taxed'],
                 'total_discount' => $totals['total_discount'],
-                'total_free' => $totals['total_free'],
                 'total_igv' => $totals['total_igv'],
                 'total' => $totals['total'],
             ];
@@ -261,10 +258,8 @@ class ReportController extends Controller
         $totals = [
             'total_charge' => 0,
             'total_exonerated' => 0,
-            'total_unaffected' => 0,
             'total_taxed' => 0,
             'total_discount' => 0,
-            'total_free' => 0,
             'total_igv' => 0,
             'total' => 0
         ];

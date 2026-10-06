@@ -7,6 +7,14 @@
                 <fiscal-emission-fields :form="form" :errors="errors" :enable-hka="true" />
                 <div class="text-end pt-2"><el-button type="primary" native-type="submit" :loading="loading">Guardar</el-button></div>
             </form>
+            <!-- ######## INICIO PERSISTENCIA FISCAL VENEZUELA ######## -->
+            <form v-if="loaded" @submit.prevent="saveIgtf">
+                <h4>Percepción IGTF</h4>
+                <el-switch v-model="igtf.enabled" active-text="Habilitar IGTF"/>
+                <label>Tasa operativa (%)</label><el-input v-model="igtf.rate"/>
+                <el-button native-type="submit">Guardar IGTF</el-button>
+            </form>
+            <!-- ######## FIN PERSISTENCIA FISCAL VENEZUELA ######## -->
             <p v-else>{{ loadMessage }}</p>
         </div>
         <!-- ######## FIN MODALIDAD DE EMISIÓN FISCAL ######## -->
@@ -17,15 +25,21 @@
 import FiscalEmissionFields from '../../../../components/FiscalEmissionFields.vue'
 export default {
     components: { FiscalEmissionFields },
-    data: () => ({ form: {}, errors: {}, loading: false, loaded: false, loadMessage: 'Cargando configuración…' }),
+    data: () => ({ igtf: { enabled: false, rate: null }, form: {}, errors: {}, loading: false, loaded: false, loadMessage: 'Cargando configuración…' }),
     async created() {
         try {
             const response = await this.$http.get('/companies/fiscal-emission')
             this.setForm(response.data.data)
+            const settings = await this.$http.get('/companies/igtf')
+            this.igtf = settings.data.data
             this.loaded = true
         } catch (error) { this.loadMessage = 'La configuración fiscal está disponible para el administrador del tenant.' }
     },
     methods: {
+        async saveIgtf() {
+            try { const response = await this.$http.post('/companies/igtf', this.igtf); this.$message.success(response.data.message) }
+            catch (error) { this.$message.error('No se pudo guardar IGTF. Verifique la tasa y sus permisos.') }
+        },
         setForm(data) { this.form = { ...data, fiscal_configuration: data.fiscal_configuration || {}, hka_usuario: '', hka_clave: '', clear_fiscal_credentials: false } },
         async submit() {
             this.loading = true

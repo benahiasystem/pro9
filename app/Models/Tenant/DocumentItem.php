@@ -42,6 +42,7 @@
         use AttributePerItems;
 
         public $timestamps = false;
+        protected $casts = ['iva_rate' => 'array'];
         // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
         // ISC se conserva como relación histórica, pero no se precarga en tenants sin su catálogo.
         protected $with = ['affectation_igv_type', 'price_type'];
@@ -50,6 +51,7 @@
             'document_id',
             'item_id',
             'item',
+            'iva_rate',
             'quantity',
             'unit_value',
 

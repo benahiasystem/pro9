@@ -40,11 +40,7 @@ class DocumentResource extends JsonResource
 
 
         $total_payment = $document->payments->sum('payment');
-        if ($document->retention) {
-            $balance = number_format($document->total - $document->retention->amount - $total_payment, 2, '.', '');
-        } else {
-            $balance = number_format($document->total - $total_payment, 2, '.', '');
-        }
+            $balance = number_format($document->balance, 2, '.', '');
 
         $btn_voided = false;
 

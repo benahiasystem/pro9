@@ -101,6 +101,11 @@ if ($hostname) {
             Route::get('companies/tables', 'Tenant\CompanyController@tables');
             Route::get('companies/record', 'Tenant\CompanyController@record');
             // ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
+            // ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
+            Route::get('companies/igtf', 'Tenant\DocumentFiscalController@settings');
+            Route::post('companies/igtf', 'Tenant\DocumentFiscalController@settingsStore');
+            Route::post('documents/{document}/prepare-hka', 'Tenant\DocumentFiscalController@prepare');
+            // ######## FIN PERSISTENCIA FISCAL VENEZUELA ########
             Route::get('companies/fiscal-emission', 'Tenant\FiscalEmissionController@record');
             Route::post('companies/fiscal-emission', 'Tenant\FiscalEmissionController@store');
             // ######## FIN MODALIDAD DE EMISIÓN FISCAL ########
@@ -429,9 +434,9 @@ if ($hostname) {
             Route::delete('documents/delete_document/{document_id}', 'Tenant\DocumentController@destroyDocument');
 
             Route::get('documents/data-table/items', 'Tenant\DocumentController@getDataTableItem');
-            Route::get('documents/retention/{document}', 'Tenant\DocumentController@retention');
-            Route::post('documents/retention', 'Tenant\DocumentController@retentionStore');
-            Route::post('documents/retention/upload', 'Tenant\DocumentController@retentionUpload');
+            Route::get('documents/retention/{document}', 'Tenant\DocumentFiscalController@retentions');
+            Route::post('documents/retention', 'Tenant\DocumentFiscalController@retentionStore');
+            Route::post('documents/retention/upload', 'Tenant\DocumentFiscalController@upload');
 
             //Contingencies
             Route::get('contingencies', 'Tenant\ContingencyController@index')->name('tenant.contingencies.index')->middleware('redirect.level');

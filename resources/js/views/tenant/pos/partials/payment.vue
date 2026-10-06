@@ -88,20 +88,11 @@
                     <span>- {{ currencyTypeActive.symbol }} {{ money(form.total_discount) }}</span>
                 </div>
 
-                <template v-if="showRetentionSummary">
-                    <div class="pos-checkout__total-row">
-                        <span>Importe total</span>
-                        <span>{{ currencyTypeActive.symbol }} {{ money(form.total) }}</span>
-                    </div>
-                    <div class="pos-checkout__total-row">
-                        <span>M. retención</span>
-                        <span>{{ currencyTypeActive.symbol }} {{ money(form.retention.amount) }}</span>
-                    </div>
-                </template>
+
             </div>
 
             <div class="pos-checkout__grand-total">
-                <span>{{ showRetentionSummary ? 'TOTAL A PAGAR' : 'TOTAL' }}</span>
+                <span>TOTAL</span>
                 <span>{{ currencyTypeActive.symbol }} {{ money(getTotal()) }}</span>
             </div>
 
@@ -529,10 +520,7 @@ export default {
         /**
          * El resumen muestra el bloque de retención (importe total + retención).
          */
-        showRetentionSummary()
-        {
-            return !!(this.form.has_retention && this.form.total > 700 && this.form.retention)
-        },
+
         /**
          * true cuando lo entregado por el cliente no cubre el total.
          */
@@ -850,15 +838,15 @@ export default {
             let total_exportation = 0
             let total_taxed = 0
             let total_exonerated = 0
-            let total_unaffected = 0
-            let total_free = 0
+
+
             let total_igv = 0
             let total_value = 0
             let total = 0
 
 
 
-            let total_igv_free = 0
+
 
 
             this.form.items.forEach((row) => {
@@ -873,17 +861,13 @@ export default {
                     total_exonerated += (row.total_value_without_rounding) ? parseFloat(row.total_value_without_rounding) : parseFloat(row.total_value)
                 }
 
-                if (row.affectation_igv_type_id === '30') {
-                    total_unaffected += parseFloat(row.total_value)
-                }
+                ;
 
                 if (row.affectation_igv_type_id === '40') {
                     total_exportation += parseFloat(row.total_value)
                 }
 
-                if (['10', '20', '30', '40'].indexOf(row.affectation_igv_type_id) < 0) {
-                    total_free += parseFloat(row.total_value)
-                }
+                ;
 
                 // if (['10', '20', '30', '40'].indexOf(row.affectation_igv_type_id) > -1) {
                 if (['10', '20', '30', '40', '21'].indexOf(row.affectation_igv_type_id) > -1)
@@ -900,20 +884,7 @@ export default {
 
 
 
-                if (['11', '12', '13', '14', '15', '16'].includes(row.affectation_igv_type_id)) {
-
-                    let unit_value = row.total_value / row.quantity
-                    let total_value_partial = unit_value * row.quantity
-                    row.total_taxes = row.total_value - total_value_partial + parseFloat(0) //sumar icbper al total tributos
-
-                    row.total_igv = total_value_partial * (row.percentage_igv / 100)
-                    row.total_base_igv = total_value_partial
-                    total_value -= row.total_value
-
-                    total_igv_free += row.total_igv
-                    total += parseFloat(row.total) //se agrega suma al total para considerar el icbper
-
-                }
+                ;
 
                 // isc
 
@@ -929,13 +900,13 @@ export default {
                 total_exportation,
                 total_taxed,
                 total_exonerated,
-                total_unaffected,
-                total_free,
+
+
                 total_igv,
                 total_value,
                  total: total_all,
 
-                 total_igv_free,
+
 
 
                  total_taxes
@@ -946,13 +917,13 @@ export default {
 
 
 
-            this.form.total_igv_free = _.round(total_igv_free, 2)
+
 
             this.form.total_exportation = _.round(total_exportation, 2)
             this.form.total_taxed = _.round(total_taxed, 2)
             this.form.total_exonerated = _.round(total_exonerated, 2)
-            this.form.total_unaffected = _.round(total_unaffected, 2)
-            this.form.total_free = _.round(total_free, 2)
+
+
             this.form.total_igv = _.round(total_igv, 2)
             this.form.total_value = _.round(total_value, 2)
             // this.form.total_taxes = _.round(total_igv, 2)
@@ -1004,12 +975,7 @@ export default {
             //     total_pay -= this.form.retention.amount;
             // }
 
-            if (
-                !_.isEmpty(this.form.retention) &&
-                this.form.total_pending_payment > 0
-            ) {
-                return this.form.total_pending_payment;
-            }
+            ;
 
             // console.log('2');
             return _.round(total_pay, 2)
@@ -1419,9 +1385,7 @@ export default {
                 await this.asignPlateNumberToItems()
             }
 
-            if (this.form.has_retention && this.form.total > 700) {
-                this.setTotalPendingAmountRetention(this.form.retention.amount);
-            }
+            ;
 
             this.loading_submit = true
             this.locked_submit = true
@@ -1608,16 +1572,7 @@ export default {
                 })
 
         },
-        setTotalPendingAmountRetention(amount) {
-            //monto neto pendiente aplica si la condicion de pago es credito
-            this.form.total_pending_payment = ["02", "03"].includes(
-                this.form.payments.length == 0 ? '02' : '01'
-            )
-                ? this.form.total - amount
-                : 0;
 
-            // this.calculateAmountToPayments();
-        },
     }
 }
 </script>

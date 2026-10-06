@@ -1,0 +1,4 @@
+interface:
+  display_name: "Persistencia fiscal de Venezuela"
+  short_description: "Facturas, IGTF, retenciones y cobros en Pro9"
+  default_prompt: "Usa $mantener-persistencia-fiscal-venezuela-pro9 para mantener el guardado de facturas, pagos, IGTF y retenciones recibidas en Pro9."

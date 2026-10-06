@@ -47,8 +47,18 @@ class Template
     private function render($view, $company, $document, $configuration = null)
     {
         view()->addLocation(__DIR__.'/Templates');
-
-        return view($view, compact('company', 'document', 'configuration'))->render();
+        // ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
+        if ($document instanceof \App\Models\Tenant\Document && $document->issuer) {
+            $company = clone $company;
+            foreach ($document->issuer as $key => $value) $company->$key = $value;
+        }
+        $html = view($view, compact('company', 'document', 'configuration'))->render();
+        if ($document instanceof \App\Models\Tenant\Document) {
+            $summary = view('pdf.partials.document_fiscal_totals', compact('document'))->render();
+            $html = str_contains($html, '</body>') ? str_replace('</body>', $summary.'</body>', $html) : $html.$summary;
+        }
+        return $html;
+        // ######## FIN PERSISTENCIA FISCAL VENEZUELA ########
     }
 
     private function preprintedrender($view, $company)
@@ -69,6 +79,10 @@ class Template
     {
         view()->addLocation(__DIR__.'/Templates');
 
+        if ($document instanceof \App\Models\Tenant\Document && $document->issuer) {
+            $company = clone $company;
+            foreach ($document->issuer as $key => $value) $company->$key = $value;
+        }
         return view('pdf.'.$base_template.'.partials.header', compact('company', 'document'))->render();
     }
 

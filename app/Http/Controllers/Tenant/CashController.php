@@ -289,38 +289,12 @@ class CashController extends Controller
 
             }
             else if($cash_document->document){
-
-                $note = $cash_document->document->getNotes();
-
-                if (is_null($note) || count($note) === 0) {
-                    if(in_array($cash_document->document->state_type_id, ['01','03','05','07','13'])){
-                        $balance = $cash_document->document->payments()
-                        ->whereHas('cashDocumentPayments', function ($query) use ($id) {
-                            $query->where('cash_id', $id);
-                        })
-                        ->sum('payment');
-                        $final_balance += ($cash_document->document->currency_type_id == 'VES')
-                            ? $balance
-                            : ($balance * $cash_document->document->exchange_rate_sale);
-                    }
-                } else {
-                    foreach ($note as $n) {
-                        $sum = $n->isDebit();
-                        if ($sum) {
-                            $final_balance += ($n->currency_type_id == 'VES')
-                                ? $n->total
-                                : ($n->total * $n->exchange_rate_sale);
-                        } else {
-                            $final_balance -= ($n->currency_type_id == 'VES')
-                                ? $n->total
-                                : ($n->total * $n->exchange_rate_sale);
-                        }
-                    }
-
+                if (in_array($cash_document->document->state_type_id, ['01','03','05','07','13'])) {
+                    $final_balance += $cash_document->document->payments()
+                        ->whereHas('cashDocumentPayments', fn ($query) => $query->where('cash_id', $id))
+                        ->get()->sum(fn ($payment) => \App\Services\Fiscal\FiscalAmounts::convert(
+                            $payment->cash_received_amount, $payment->currency_type_id, 'VES', $payment->exchange_rate));
                 }
-
-
-
             }
             else if($cash_document->expense_payment){
 

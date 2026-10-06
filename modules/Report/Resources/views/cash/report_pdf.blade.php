@@ -87,9 +87,7 @@
                         $serie_affec = '';
 
                         $acum_total_exonerado=0;
-                        $acum_total_inafecto=0;
 
-                        $acum_total_free=0;
 
                         $acum_total_taxed_usd=0;
                         $acum_total_igv_usd=0;
@@ -109,7 +107,7 @@
                                 <th>Estado</th>
                                 <th class="">Moneda</th>
                                 <!-- <th>Total Exonerado</th>
-                                <th>Total Inafecto</th>
+
                                  <th>Total Gratutio</th> -->
                                 <th>Total Gravado</th>
 
@@ -153,9 +151,7 @@
 
 
 
-                                    <!-- <td class="celda">{{$signal == '07' ? "-" : ""  }}{{$value->total_exonerated}}</td>
-                                    <td class="celda">{{$signal == '07' ? "-" : ""  }}{{$value->total_unaffected}}</td>
-                                    <td class="celda">{{$signal == '07' ? "-" : ""  }}{{$value->total_free}}</td> -->
+
 
                                     <!-- <td class="celda">{{$signal == '07' ? "-" : ""  }}{{$value->total_taxed}}</td>
                                     <td class="celda">{{$signal == '07' ? "-" : ""  }}{{$value->total_igv}}</td>
@@ -173,16 +169,7 @@
                                 @endphp
 
 
-                                <!-- <tr>
-                                    <td colspan="7" class="celda"></td>
-                                    <td class="celda">Totales</td>
-                                    <td class="celda">{{$acum_total_exonerado}}</td>
-                                    <td class="celda">{{$acum_total_inafecto}}</td>
-                                    <td class="celda">{{$acum_total_free}}</td>
-                                    <td class="celda">{{$value->total_taxed}}</td>
-                                    <td class="celda">{{$value->total_igv}}</td>
-                                    <td class="celda">{{$value->total}}</td>
-                                </tr> -->
+
                                 @php
 
                                     if($value->currency_type_id == 'VES'){

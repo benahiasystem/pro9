@@ -26,6 +26,8 @@ class DocumentUpdateRequest extends FormRequest
     public function rules()
     {
         return [
+            'control_number' => 'prohibited',
+            'issuer' => 'prohibited',
             'id' => 'required|numeric',
             'customer_id' => [
                 'required',

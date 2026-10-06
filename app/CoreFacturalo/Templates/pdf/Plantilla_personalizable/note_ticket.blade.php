@@ -1,3 +1,4 @@
+{{-- ######## INICIO PERSISTENCIA FISCAL VENEZUELA ######## --}}
 {{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 @php
     $establishment = $document->establishment;
@@ -235,18 +236,8 @@ $affected_document_number = $document_base->affected_document ? $document_base->
                 <td class="text-right font-bold desc">{{ number_format($document->total_exportation, 2) }}</td>
             </tr>
         @endif
-        @if($document->total_free > 0)
-            <tr>
-                <td colspan="{{ $colspan_label }}" class="text-right font-bold desc">OP. GRATUITAS: {{ $document->currency_type->symbol }}</td>
-                <td class="text-right font-bold desc">{{ number_format($document->total_free, 2) }}</td>
-            </tr>
-        @endif
-        @if($document->total_unaffected > 0)
-            <tr>
-                <td colspan="{{ $colspan_label }}" class="text-right font-bold desc">OP. INAFECTAS: {{ $document->currency_type->symbol }}</td>
-                <td class="text-right font-bold desc">{{ number_format($document->total_unaffected, 2) }}</td>
-            </tr>
-        @endif
+
+
         @if($document->total_exonerated > 0)
             <tr>
                 <td colspan="{{ $colspan_label }}" class="text-right font-bold desc">OP. EXONERADAS: {{ $document->currency_type->symbol }}</td>
@@ -326,3 +317,5 @@ $affected_document_number = $document_base->affected_document ? $document_base->
 </html>
 
 {{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}
+
+{{-- ######## FIN PERSISTENCIA FISCAL VENEZUELA ######## --}}

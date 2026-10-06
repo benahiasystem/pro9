@@ -166,12 +166,8 @@
                             <th v-if="columns.total_exonerated.visible">
                                 Total Exonerado
                             </th>
-                            <th v-if="columns.total_unaffected.visible">
-                                Total Inafecto
-                            </th>
-                            <th v-if="columns.total_free.visible">
-                                Total Gratuito
-                            </th>
+
+
                             <th v-if="columns.total_taxed.visible">
                                 Total Gravado
                             </th>
@@ -331,32 +327,8 @@
                                 }}
                             </td>
 
-                            <td v-if="columns.total_unaffected.visible">
-                                {{
-                                    row.document_type_id == "07"
-                                        ? row.total_unaffected == 0
-                                            ? "0.00"
-                                            : "-" + row.total_unaffected
-                                        : row.document_type_id != "07" &&
-                                          (row.state_type_id == "11" ||
-                                              row.state_type_id == "09")
-                                        ? "0.00"
-                                        : row.total_unaffected
-                                }}
-                            </td>
-                            <td v-if="columns.total_free.visible">
-                                {{
-                                    row.document_type_id == "07"
-                                        ? row.total_free == 0
-                                            ? "0.00"
-                                            : "-" + row.total_free
-                                        : row.document_type_id != "07" &&
-                                          (row.state_type_id == "11" ||
-                                              row.state_type_id == "09")
-                                        ? "0.00"
-                                        : row.total_free
-                                }}
-                            </td>
+
+
                             <td v-if="columns.total_taxed.visible">
                                 {{
                                     row.document_type_id == "07"
@@ -407,11 +379,7 @@
 
                             <td v-if="columns.plate.visible">{{ row.plate_number }}</td>
 
-                            <!-- <td>{{ (row.document_type_id == '07') ? -row.total_unaffected : ((row.document_type_id!='07' && (row.state_type_id =='11'||row.state_type_id =='09')) ? '0.00':row.total_unaffected) }}</td>
-                                <td>{{ (row.document_type_id == '07') ? -row.total_free : ((row.document_type_id!='07' && (row.state_type_id =='11'||row.state_type_id =='09')) ? '0.00':row.total_free) }}</td>
-                                <td>{{ (row.document_type_id == '07') ? -row.total_taxed : ((row.document_type_id!='07' && (row.state_type_id =='11'||row.state_type_id =='09')) ? '0.00':row.total_taxed) }}</td>
-                                <td>{{ (row.document_type_id == '07') ? -row.total_igv : ((row.document_type_id!='07' && (row.state_type_id =='11'||row.state_type_id =='09')) ? '0.00':row.total_igv) }}</td>
-                                <td>{{ (row.document_type_id == '07') ? -row.total : ((row.document_type_id!='07' && (row.state_type_id =='11'||row.state_type_id =='09')) ? '0.00':row.total) }}</td>  -->
+
                         </tr>
                     </data-table>
                 </div>
@@ -511,14 +479,8 @@ export default {
                     title: "Total Exonerado",
                     visible: true
                 },
-                total_unaffected: {
-                    title: "Total Inafecto",
-                    visible: true
-                },
-                total_free: {
-                    title: "Total Gratuito",
-                    visible: true
-                },
+
+
                 total_taxed: {
                     title: "Total Gravado",
                     visible: true
@@ -624,8 +586,8 @@ export default {
           { key: "payment_method", visible: this.columns.payment_method.visible },
           { key: "total_charge", visible: this.columns.total_charge.visible },
           { key: "total_exonerated", visible: this.columns.total_exonerated.visible },
-          { key: "total_unaffected", visible: this.columns.total_unaffected.visible },
-          { key: "total_free", visible: this.columns.total_free.visible },
+
+
           { key: "total_taxed", visible: this.columns.total_taxed.visible },
           { key: "total_igv", visible: this.columns.total_igv.visible },
           { key: "total", visible: this.columns.total.visible },

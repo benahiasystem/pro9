@@ -54,6 +54,7 @@ class VenezuelaInitialCatalogContractTest extends TestCase
                 '09' => 'Corrección de precios o cálculos',
             ],
             'cat_note_debit_types' => [
+                'IGTF' => 'IGTF sobre pago posterior',
                 '02' => 'Ajustes por incremento de precios',
                 '01' => 'Intereses de mora o financiamiento',
                 '03' => 'Gastos de despacho, fletes, seguros o embalaje',

@@ -1,3 +1,4 @@
+{{-- ######## INICIO PERSISTENCIA FISCAL VENEZUELA ######## --}}
 @php
     $establishment = $document->establishment;
     $customer = $document->customer;
@@ -256,18 +257,8 @@ $affected_document_number = $document_base->affected_document ? $document_base->
             <td class="m27-total-value">{{ $document->currency_type->symbol }} {{ number_format($document->total_exportation, 2) }}</td>
         </tr>
     @endif
-    @if($document->total_free > 0)
-        <tr>
-            <td colspan="2" class="m27-total-label">Op. gratuitas:</td>
-            <td class="m27-total-value">{{ $document->currency_type->symbol }} {{ number_format($document->total_free, 2) }}</td>
-        </tr>
-    @endif
-    @if($document->total_unaffected > 0)
-        <tr>
-            <td colspan="2" class="m27-total-label">Op. inafectas:</td>
-            <td class="m27-total-value">{{ $document->currency_type->symbol }} {{ number_format($document->total_unaffected, 2) }}</td>
-        </tr>
-    @endif
+
+
     @if($document->total_exonerated > 0)
         <tr>
             <td colspan="2" class="m27-total-label">Op. exoneradas:</td>
@@ -364,3 +355,5 @@ $affected_document_number = $document_base->affected_document ? $document_base->
 </table>
 </body>
 </html>
+
+{{-- ######## FIN PERSISTENCIA FISCAL VENEZUELA ######## --}}

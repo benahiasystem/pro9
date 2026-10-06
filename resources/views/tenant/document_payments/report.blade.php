@@ -72,7 +72,7 @@
                                 <th>Destino</th>
                                 <th>Referencia</th>
                                 <th>Vuelto</th>
-                                <th>Monto</th>
+                                <th>Moneda recibida</th><th>Importe recibido</th><th>Importe aplicado</th>
                                 <th>Total</th>
                                 <th>Fecha</th>
                             </tr>
@@ -88,7 +88,7 @@
                                     <td class="celda">{{ $item['destination_description'] }}</td>
                                     <td class="celda">{{ $item['reference'] }}</td>
                                     <td class="celda">{{ $item['change'] }}</td>
-                                    <td class="celda">{{ $item['payment'] }}</td>
+                                    <td class="celda">{{ $item['currency_type_id'] }}</td><td class="celda">{{ $item['payment'] }}</td><td class="celda">{{ $item['applied_payment'] }}</td>
                                     <td class="celda">{{ $item['total'] }}</td>
                                     <td class="celda">{{ $item['date_of_payment'] }}</td>
                                 </tr>

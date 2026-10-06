@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\DB;
  * - `document_id` int(10) unsigned NOT NULL
  * - `item_id` int(10) unsigned NOT NULL
  * - `item` json NOT NULL
+ * - `iva_rate` json NOT NULL
  * - `quantity` decimal(12,4) NOT NULL
  * - `unit_value` decimal(16,6) NOT NULL
  * - `affectation_igv_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
@@ -46,6 +47,9 @@ CREATE TABLE `document_items` (
   `document_id` int(10) unsigned NOT NULL,
   `item_id` int(10) unsigned NOT NULL,
   `item` json NOT NULL,
+  -- ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
+  `iva_rate` json NOT NULL,
+  -- ######## FIN PERSISTENCIA FISCAL VENEZUELA ########
   `quantity` decimal(12,4) NOT NULL,
   `unit_value` decimal(16,6) NOT NULL,
   `affectation_igv_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,

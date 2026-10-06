@@ -40,6 +40,10 @@ class DocumentPaymentProvider extends ServiceProvider
             $this->transaction_payment($document_payment);
         });
 
+        DocumentPayment::updated(function ($document_payment) {
+            $this->transaction_payment($document_payment);
+        });
+
         DocumentPayment::deleted(function ($document_payment) {
             $this->transaction_payment($document_payment);
         });
@@ -49,9 +53,7 @@ class DocumentPaymentProvider extends ServiceProvider
     private function transaction_payment($document_payment){
 
         $document = $document_payment->document;
-        $total_payments = $document->payments->sum('payment');
-
-        $balance = $document->total - $total_payments;
+        $balance = $document->fresh()->balance;
 
         if($balance <= 0){
 

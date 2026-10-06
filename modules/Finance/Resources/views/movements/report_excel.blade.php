@@ -93,10 +93,14 @@
                                         }else{
                                             $payment_method_type_description = $value->payment->expense_method_type->description;
                                         }
-                                        $balance =  ($value->type_movement == 'input') ?  $balance + $value->payment->payment : $balance - $value->payment->payment;
+                                        $receipt = $value->payment;
+                                        $movement_amount = $receipt instanceof \App\Models\Tenant\DocumentPayment
+                                            ? ($receipt->reversed_at ? 0 : \App\Services\Fiscal\FiscalAmounts::convert($receipt->cash_received_amount,$receipt->currency_type_id,'VES',$receipt->exchange_rate))
+                                            : $receipt->payment;
+                                        $balance =  ($value->type_movement == 'input') ?  $balance + $movement_amount : $balance - $movement_amount;
 
-                                        $total_input += ($value->type_movement == 'input') ? $value->payment->payment : 0;
-                                        $total_output += ($value->type_movement == 'output') ? $value->payment->payment : 0;
+                                        $total_input += ($value->type_movement == 'input') ? $movement_amount : 0;
+                                        $total_output += ($value->type_movement == 'output') ? $movement_amount : 0;
 
                                         if(in_array($value->instance_type, ['expense', 'income'])){
 
@@ -122,8 +126,8 @@
                                     <td class="celda">{{$value->payment->associated_record_payment->currency_type_id}}</td>
                                     <td class="celda">{{$value->instance_type_description}}</td>
 
-                                    <td class="celda"> {{ ($value->type_movement == 'input') ? "Bs.".number_format($value->payment->payment, 2, ".", "") : '-' }}</td>
-                                    <td class="celda"> {{ ($value->type_movement == 'output') ? "Bs.".number_format($value->payment->payment, 2, ".", "") : '-' }}</td>
+                                    <td class="celda"> {{ ($value->type_movement == 'input') ? "Bs.".number_format($movement_amount, 2, ".", "") : '-' }}</td>
+                                    <td class="celda"> {{ ($value->type_movement == 'output') ? "Bs.".number_format($movement_amount, 2, ".", "") : '-' }}</td>
                                     <td class="celda">Bs.{{ $balance }}</td>
                                 </tr>
 

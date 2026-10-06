@@ -40,4 +40,22 @@ class CurrentPdfTemplateContractTest extends TestCase
         self::assertGreaterThan(0, $count);
         self::assertSame([], $errors, implode("\n", $errors));
     }
+    public function test_document_report_templates_compile_after_retiring_old_totals(): void
+    {
+        $compiler = new BladeCompiler(new Filesystem(), sys_get_temp_dir());
+        $parser = (new ParserFactory())->createForNewestSupportedVersion();
+        foreach (['documents','state_account','cash','status_client','customers','commercial_analysis','document_hotels'] as $directory) {
+            foreach (glob(base_path('modules/Report/Resources/views/'.$directory.'/*.blade.php')) as $path) {
+                $source=file_get_contents($path);
+                self::assertDoesNotMatchRegularExpression('/total_free|total_unaffected|total_igv_free/',$source,$path);
+                $parser->parse($compiler->compileString($source));
+            }
+        }
+        foreach (['modules/Finance/Resources/views/global_payments/*.blade.php','modules/Finance/Resources/views/movements/*.blade.php','resources/views/pdf/partials/*.blade.php','resources/views/tenant/document_payments/report.blade.php'] as $pattern) {
+            foreach (glob(base_path($pattern)) as $path) {
+                self::assertNotNull($parser->parse($compiler->compileString(file_get_contents($path))),$path);
+            }
+        }
+    }
+
 }

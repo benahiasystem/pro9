@@ -24,10 +24,17 @@ class FinanceMovementCollection extends ResourceCollection
             $amount = (float) ($is_transfer ? $payment->amount : $payment->payment);
             $document = $payment->associated_record_payment ?? null;
 
+            $receiptCurrency = $document->currency_type_id ?? 'VES';
+            $receiptRate = $document->exchange_rate_sale ?? 1;
+            if ($payment instanceof \App\Models\Tenant\DocumentPayment) {
+                $amount = $payment->reversed_at ? 0 : $payment->cash_received_amount;
+                $receiptCurrency = $payment->currency_type_id;
+                $receiptRate = $payment->exchange_rate;
+            }
             $amount_pen = abs($amount);
             // ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
-            if ($document && ($document->currency_type_id ?? 'VES') === 'USD') {
-                $amount_pen = round(abs($amount) * (float) $document->exchange_rate_sale, 2);
+            if ($receiptCurrency === 'USD') {
+                $amount_pen = round(abs($amount) * (float) $receiptRate, 2);
             }
             // ######## FIN MIGRACIÓN MONEDA VENEZUELA ########
 
@@ -120,7 +127,7 @@ class FinanceMovementCollection extends ResourceCollection
                     'id' => $row->destination_id,
                     'name' => $row->destination_description,
                 ],
-                'currency_type_id' => $document->currency_type_id ?? 'VES',
+                'currency_type_id' => $receiptCurrency,
                 'amount' => round(abs($amount), 2),
                 'amount_pen' => $amount_pen,
                 'reference' => $payment->reference ?? null,

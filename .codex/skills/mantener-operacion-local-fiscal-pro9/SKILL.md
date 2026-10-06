@@ -7,7 +7,7 @@ description: Mantener la operación comercial local de Pro9 para instalaciones n
 
 ## Evolución aprobada
 
-Para la implementación de numeración y emisión de SCRUM-39, aplicar [el contrato de numeración fiscal](../mantener-numeracion-fiscal-venezuela-pro9/SKILL.md). Sustituye la limitación de emisión exclusivamente local por estados separados de registro comercial y resultado fiscal. No restaura XML/CDR/SUNAT/PSE. Los adaptadores simulados sólo acreditan pruebas demo; consultar el informe de numeración antes de afirmar que un flujo está integrado.
+Mantener separados registro comercial y resultado fiscal. El guardado local y la preparación HKA están implementados; envío, consulta, conciliación y descarga HKA siguen pendientes. Aplicar [numeración fiscal](../mantener-numeracion-fiscal-venezuela-pro9/SKILL.md) para series/controles, [persistencia fiscal y cobros](../mantener-persistencia-fiscal-venezuela-pro9/SKILL.md) para guardado/IGTF/retenciones y [facturas y notas HKA](../emitir-facturas-notas-hka/SKILL.md) para el payload congelado. `prepared` no acredita emisión ni homologación. No restaurar XML/CDR/SUNAT/PSE ni perfiles/reservas/asignaciones anticipadas.
 
 ## Objetivo
 
@@ -26,7 +26,7 @@ Sostener conjuntamente los contratos de SCRUM-19, SCRUM-22, SCRUM-41, SCRUM-53 y
 ## Detracciones retiradas
 
 - El sistema venezolano no usa detracciones y no existen históricos que conservar: retirar el módulo completo, sus campos, constancias y `cat_payment_method_types`. No confundir con `payment_method_types`, que permanece operativo.
-- Ignorar los campos antiguos de detracción recibidos por API, sin validarlos, persistirlos ni devolverlos. Conservar retenciones, fondos de garantía y pagos comerciales.
+- Ignorar los campos antiguos de detracción recibidos por API, sin validarlos, persistirlos ni devolverlos. En facturas, conservar comprobantes reales IVA/ISLR en `document_received_retentions`, fondos en `document_guarantee_funds` y pagos comerciales; no conservar el JSON peruano `documents.retention` ni estimar retenciones automáticamente.
 - Modificar migraciones consolidadas y `tenant_initial_data.php`; no crear migraciones incrementales ni ejecutar reconstrucciones sobre tenants reales.
 
 ## Instalación sin compatibilidad histórica
@@ -45,12 +45,15 @@ Sostener conjuntamente los contratos de SCRUM-19, SCRUM-22, SCRUM-41, SCRUM-53 y
 - Conservar el módulo de facturación masiva, sus rutas de carga/proceso/listado/exportación y su descarga PDF. Sustituir `estado_sunat`/`mensaje_sunat` por `estado_emision`/`mensaje_emision`; no crear enlaces XML/CDR ni estados de aceptación externa. La respuesta HTTP correcta se presenta como `Registrado localmente`.
 - Consolidar `massive_invoices` en su migración creadora. No agregar migraciones incrementales para instalaciones o registros anteriores y no conservar la ruta `massive-invoice/config` si el controlador no implementa esa acción.
 - Retirar de `configurations` los selectores `send_auto`, `sunat_alternate_server`, `auto_send_dispatchs_to_sunat` y `send_data_to_other_server`. La interfaz y las respuestas no deben publicar controles inertes de transporte.
-- Retirar comandos de consulta, validación, reenvío y regularización masiva. Los controladores de documentos, anulaciones, percepciones, retenciones, liquidaciones y órdenes de entrega sólo guardan el registro local y generan PDF cuando corresponde.
+- Retirar comandos peruanos de consulta, validación, reenvío y regularización masiva. Los controladores comerciales guardan localmente y generan PDF cuando corresponde. La preparación HKA usa `HkaEmissionPreparation`, sin HTTP; no retirar esa ruta vigente por confundirla con el transporte peruano eliminado.
 - Mantener series, correlativos, items, inventario, pagos, notas, PDF y correo comercial.
 - Conservar `OfflineTrait` en controladores que todavía llaman `getIsClient()`. Retirar métodos de envío entre servidores no autoriza quitar esa dependencia: `documents/index`, `documents/tables` y `documents/item/tables` publican `is_client` para el modo offline vigente.
 - El bot consulta `local_state`: registrado localmente, anulado o por anular. No ofrecer estados de aceptación SUNAT ni campos XML/CDR en `QueryDocumentStatusTool`. Su prompt y definición describen operación local; las pruebas no deben enviar mensajes reales.
 
 ## Cambios de interfaz y reportes
+
+- Reimpresiones de facturas/notas usan emisor, cliente, sucursal, artículos y alícuotas conservados. Retirar productores, validadores y consumidores de `documents.perception`, `total_unaffected`, `total_free`, `total_igv_free`, `ubl_version`, `retention` y `cod_digemid` del JSON de artículo; otros modelos comerciales mantienen sus contratos propios.
+- En saldos/caja/PDF/reportes distinguir importe documental aplicado de moneda/importe recibido, IGTF y recibos derivados; las retenciones/fondos reducen saldo sin cambiar venta ni producir efectivo. Para dashboard no asumir que los nuevos campos de pagos tenant existen en los contratos de datos del superadministrador.
 
 - En listas de documentos, percepciones, retenciones, liquidaciones y contingencias mostrar PDF, pero no XML/CDR ni reenvío fiscal.
 - El tablero no registra rutas, fuentes, componentes ni widgets de estado SUNAT. Los webhooks sólo publican eventos del ciclo local: creación, anulación y compras; no aceptación, observación o rechazo de una autoridad externa.

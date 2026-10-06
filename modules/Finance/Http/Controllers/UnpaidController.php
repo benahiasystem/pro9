@@ -192,8 +192,6 @@ class UnpaidController extends Controller
             $p_order           = $this->document->purchase_order != '' ? '10' : '0';
 
             $total_exportation = $this->document->total_exportation != '' ? '10' : '0';
-            $total_free        = $this->document->total_free != '' ? '10' : '0';
-            $total_unaffected  = $this->document->total_unaffected != '' ? '10' : '0';
             $total_exonerated  = $this->document->total_exonerated != '' ? '10' : '0';
             $total_taxed       = $this->document->total_taxed != '' ? '10' : '0';
             $quantity_rows     = count($this->document->items);
@@ -229,8 +227,6 @@ class UnpaidController extends Controller
                     $legends +
                     $bank_accounts +
                     $total_exportation +
-                    $total_free +
-                    $total_unaffected +
                     $total_exonerated +
                     $extra_by_item_description +
                     $total_taxed],
@@ -293,6 +289,7 @@ class UnpaidController extends Controller
     {
         try {
             $model = $request->query('model');
+            if (!in_array($model,['document','sale_note'],true)) return response()->json(['error'=>'Modelo no soportado'],400);
             $model_plural = Str::plural($model);
             // Pagos realizados por documento
             $document_payments = \DB::connection('tenant')
@@ -300,6 +297,7 @@ class UnpaidController extends Controller
                 ->select($model.'_id', \DB::raw('SUM(payment) as total_payment'))
                 ->groupBy($model.'_id');
 
+            if ($model==='document') $document_payments->whereNull('reversed_at');
             // Comprobantes con saldo pendiente, uniendo con invoices para obtener date_of_due
 
             $comprobantes = \DB::connection('tenant')
@@ -320,7 +318,7 @@ class UnpaidController extends Controller
                                 'invoices.date_of_due',
                                 \DB::raw('IFNULL(payments.total_payment, 0) as total_payment')
                             )
-                            ->whereRaw($model_plural. '.total - IFNULL(payments.total_payment, 0) > 0');
+                            ->whereRaw($model_plural. '.total - IFNULL(payments.total_payment, 0) - (SELECT COALESCE(SUM(applied_amount),0) FROM document_received_retentions WHERE document_id=documents.id) - (SELECT COALESCE(SUM(amount),0) FROM document_guarantee_funds WHERE document_id=documents.id) > 0');
             } else if ($model === 'sale_note') {
                 $comprobantes = $comprobantes
                             ->select(

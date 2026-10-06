@@ -52,9 +52,7 @@
 
                         $serie_affec = '';
                         $acum_total_exonerado=0;
-                        $acum_total_inafecto=0;
 
-                        $acum_total_free=0;
 
                         $acum_total_taxed_usd = 0;
                         $acum_total_igv_usd = 0;
@@ -73,8 +71,8 @@
                                 <th>Estado</th>
                                 <th class="">Moneda</th>
                                 <th>Total Exonerado</th>
-                                <th>Total Inafecto</th>
-                                <th>Total Gratuito</th>
+
+
                                 <th>Total Gravado</th>
                                 {{-- ########## INICIO CAMBIO IGV A IVA --}}
                                 <th>Total IVA</th>
@@ -112,18 +110,13 @@
 
                                 <td class="celda">{{$value->currency_type_id}}</td>
 
-                                <!-- <td class="celda">{{$signal == '07' ? "-" : ""  }}{{$value->total_exonerated}}</td>
-                                <td class="celda">{{$signal == '07' ? "-" : ""  }}{{$value->total_unaffected}}</td>
-                                <td class="celda">{{$signal == '07' ? "-" : ""  }}{{$value->total_free}}</td>
-                                <td class="celda">{{$signal == '07' ? "-" : ""  }}{{$value->total_taxed}}</td>
-                                <td class="celda">{{$signal == '07' ? "-" : ""  }}{{$value->total_igv}}</td>
-                                <td class="celda">{{$signal == '07' ? "-" : ""  }}{{$value->total}}</td> -->
+
 
 
 
                                 <td class="celda">{{($signal == '07' || ($signal!='07' && $state =='11')) ? "-" : ""  }}{{$value->total_exonerated}} </td>
-                                <td class="celda">{{($signal == '07' || ($signal!='07' && $state =='11')) ? "-" : ""  }}{{$value->total_unaffected}}</td>
-                                <td class="celda">{{($signal == '07' || ($signal!='07' && $state =='11')) ? "-" : ""  }}{{$value->total_free}}</td>
+
+
 
                                 <td class="celda">{{($signal == '07' || ($signal!='07' && $state =='11')) ? "-" : ""  }}{{$value->total_taxed}}</td>
 
@@ -142,9 +135,7 @@
                                 $acum_total_igv +=  $signal != '07' ? $value->total_igv : -$value->total_igv ;
                                 $acum_total += $signal != '07' ? $value->total : -$value->total ;*/
 
-                                /*$acum_total_exonerado += $signal != '07' ? $value->total_exonerated : -$value->total_exonerated ;
-                                $acum_total_inafecto += $signal != '07' ? $value->total_unaffected : -$value->total_unaffected ;
-                                $acum_total_free += $signal != '07' ? $value->total_free : -$value->total_free ;*/
+
 
 
                                 if(($signal == '07' && $state !== '11')){
@@ -155,8 +146,6 @@
 
 
                                     $acum_total_exonerado += -$value->total_exonerated;
-                                    $acum_total_inafecto += -$value->total_unaffected;
-                                    $acum_total_free += -$value->total_free;
 
 
                                 }elseif($signal != '07' && $state == '11'){
@@ -166,8 +155,6 @@
                                     $acum_total_igv += 0;
 
                                     $acum_total_exonerado += 0;
-                                    $acum_total_inafecto += 0;
-                                    $acum_total_free += 0;
 
                                 }else{
 
@@ -176,8 +163,6 @@
                                     $acum_total_igv += $value->total_igv;
 
                                     $acum_total_exonerado += $value->total_exonerated;
-                                    $acum_total_inafecto += $value->total_unaffected;
-                                    $acum_total_free += $value->total_free;
                                 }
 
 
@@ -212,15 +197,12 @@
                             @endforeach
                             <tr>
                                 <td colspan="8"></td>
-                                <!-- <td >Totales</td>
-                                <td>{{$acum_total_exonerado}}</td>
-                                <td>{{$acum_total_inafecto}}</td>
-                                <td>{{$acum_total_free}}</td> -->
+
                                 <td >Totales VES</td>
 
                                 <td>{{number_format($acum_total_exonerado, 2)}}</td>
-                                <td>{{number_format ($acum_total_inafecto, 2 )}}</td>
-                                <td>{{number_format($acum_total_free, 2)}}</td>
+
+
 
                                 <td>{{$acum_total_taxed}}</td>
                                 <td>{{$acum_total_igv}}</td>

@@ -1,0 +1,6288 @@
+{
+  "openapi": "3.0.4",
+  "info": {
+    "title": "Imprenta Digital VE - Demo",
+    "description": "Aquí encontrarás la descripción de cada API de ID Venezuela.",
+    "termsOfService": "https://imprenta.thefactoryhka.com.ve/clientes/#comoacceder",
+    "contact": {
+      "name": "THE FACTORY HKA VENEZUELA, C.A.",
+      "url": "https://imprenta.thefactoryhka.com.ve/"
+    },
+    "version": "v1"
+  },
+  "paths": {
+    "/api/Anular": {
+      "post": {
+        "tags": [
+          "Anular"
+        ],
+        "summary": "Anulación de documento electrónico",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.AnnulmentRequestDTO"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.AnnulmentRequestDTO"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.AnnulmentRequestDTO"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Application.DTO.Response.AnnulmentResponseDTO"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/AplicarRetencion": {
+      "post": {
+        "tags": [
+          "AplicarRetencion"
+        ],
+        "summary": "Aplicar o actualizar Retención a documento electrónico",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.ApplyRetentionRequestDTO"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.ApplyRetentionRequestDTO"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.ApplyRetentionRequestDTO"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Application.DTO.Response.ApplyRetentionResponseDTO"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "AplicarRetencion"
+        ],
+        "summary": "Eliminar Retención a documento electrónico",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.RetentionRequestDTO"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.RetentionRequestDTO"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.RetentionRequestDTO"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Application.DTO.Response.ApplyRetentionResponseDTO"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "AplicarRetencion"
+        ],
+        "summary": "Obtener datos de Retención a documento electrónico",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.RetentionRequestDTO"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.RetentionRequestDTO"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.RetentionRequestDTO"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Application.DTO.Response.RetentionResponseDTO"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/AplicarRetencionISLR": {
+      "post": {
+        "tags": [
+          "AplicarRetencionISLR"
+        ],
+        "summary": "Aplicar o actualizar Retención ISLR a documento electrónico",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.ApplyRetentionISLRRequestDTO"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.ApplyRetentionISLRRequestDTO"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.ApplyRetentionISLRRequestDTO"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Application.DTO.Response.ApplyRetentionISLRResponseDTO"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "AplicarRetencionISLR"
+        ],
+        "summary": "Eliminar retención ISLR registrada sobre un documento electrónico",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.RetentionISLRRequestDTO"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.RetentionISLRRequestDTO"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.RetentionISLRRequestDTO"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Application.DTO.Response.ApplyRetentionISLRResponseDTO"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "AplicarRetencionISLR"
+        ],
+        "summary": "Consultar retención ISLR registrada sobre un documento electrónico",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.RetentionISLRRequestDTO"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.RetentionISLRRequestDTO"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.RetentionISLRRequestDTO"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Application.DTO.Response.RetentionISLRResponseDTO"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/AsignarNumeraciones": {
+      "post": {
+        "tags": [
+          "Asignacion"
+        ],
+        "summary": "Asignación de Números de Control por Rangos",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.AsignacionRequestDTO"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.AsignacionRequestDTO"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.AsignacionRequestDTO"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Application.DTO.Response.AsignacionResponseDTO"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Autenticacion": {
+      "post": {
+        "tags": [
+          "Autenticacion"
+        ],
+        "summary": "Método para generacion de Token JWT (Autenticación)",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.LoginRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.LoginRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.LoginRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Application.DTO.Response.LoginResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ConsultaNumeraciones": {
+      "post": {
+        "tags": [
+          "ConsultaNumeraciones"
+        ],
+        "summary": "Consultar rangos de numeraciones asignados de la empresa",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.NumerationsListRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.NumerationsListRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.NumerationsListRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Application.DTO.Response.NumerationsListResponseDTO"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ConsultaReservaciones": {
+      "post": {
+        "tags": [
+          "ConsultaReservaciones"
+        ],
+        "summary": "Consulta paginada de Reservaciones de Números de Control por Tipo de Documento y Serie",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.ConsultaReservacionesRequestDTO"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.ConsultaReservacionesRequestDTO"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.ConsultaReservacionesRequestDTO"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Application.DTO.Response.ConsultaReservacionesResponseDTO"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Contingencia/Registrar": {
+      "post": {
+        "tags": [
+          "Contingencia"
+        ],
+        "summary": "Registra un documento de contingencia con su respaldo (PDF/imagen).",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.ContingenciaRequestDTO"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.ContingenciaRequestDTO"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.ContingenciaRequestDTO"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Application.DTO.Response.ContingenciaResponseDTO"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Contingencia/Listado": {
+      "post": {
+        "tags": [
+          "Contingencia"
+        ],
+        "summary": "Obtiene el listado de documentos de contingencia en un rango de fechas.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.ContingenciaListRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.ContingenciaListRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.ContingenciaListRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Application.DTO.Response.ContingenciaListResponseDTO"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Contingencia/Descargar": {
+      "post": {
+        "tags": [
+          "Contingencia"
+        ],
+        "summary": "Descarga el archivo de respaldo de un documento de contingencia (Base64).",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.ContingenciaDownloadRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.ContingenciaDownloadRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.ContingenciaDownloadRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Application.DTO.Response.ContingenciaFileResponseDTO"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Contingencia/ExportarCSV": {
+      "post": {
+        "tags": [
+          "Contingencia"
+        ],
+        "summary": "Exporta a CSV (Base64) los documentos de contingencia en un rango de fechas.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.ContingenciaListRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.ContingenciaListRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.ContingenciaListRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Application.DTO.Response.ContingenciaFileResponseDTO"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Correo/Enviar": {
+      "post": {
+        "tags": [
+          "Correo"
+        ],
+        "summary": "Envio de documento (PDF) vía correo electrónico",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.MailRequestDTO"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.MailRequestDTO"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.MailRequestDTO"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Application.DTO.Response.MailResponseDTO"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Correo/Rastreo": {
+      "post": {
+        "tags": [
+          "Correo"
+        ],
+        "summary": "Rastreo de documento electrónico",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.RequestBase"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.RequestBase"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.RequestBase"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Application.DTO.Response.RastreoResponseDTO"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Correo/EnviaOrden": {
+      "post": {
+        "tags": [
+          "Correo"
+        ],
+        "summary": "Envio de Orden (Conjunto de PDF) vía correo electrónico",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.OrdenRequestDTO"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.OrdenRequestDTO"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.OrdenRequestDTO"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Application.DTO.Response.MailResponseDTO"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Correo/RastreoOrden": {
+      "post": {
+        "tags": [
+          "Correo"
+        ],
+        "summary": "Rastreo de ordenes",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.RequestOrder"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.RequestOrder"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.RequestOrder"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Application.DTO.Response.RastreoResponseDTO"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/DescargaArchivo": {
+      "post": {
+        "tags": [
+          "DescargaArchivo"
+        ],
+        "summary": "Descarga de documento (PDF)",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.DownloadRequestDTO"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.DownloadRequestDTO"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.DownloadRequestDTO"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Application.DTO.Response.DownloadResponseDTO"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Emision": {
+      "post": {
+        "tags": [
+          "Emision"
+        ],
+        "summary": "Emisión de documento electrónico",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.SendRequestDTO"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.SendRequestDTO"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.SendRequestDTO"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Application.DTO.Response.SendResponseDTO"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/EmisionARC": {
+      "post": {
+        "tags": [
+          "Emision"
+        ],
+        "summary": "Emisión de comprobante ARC",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.SendARCRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.SendARCRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.SendARCRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Application.DTO.Response.SendResponseDTO"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/EmisionDNF/constanciaRecepcion": {
+      "post": {
+        "tags": [
+          "EmisionDNF"
+        ],
+        "summary": "Emision de Constancia de Recepcion de Mercancia",
+        "requestBody": {
+          "description": "Documento de constancia de recepcion",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.SendDNFRequestDTO"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.SendDNFRequestDTO"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.SendDNFRequestDTO"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Application.DTO.Response.SendResponseDTO"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/EstadoDocumento": {
+      "post": {
+        "tags": [
+          "EstadoDocumento"
+        ],
+        "summary": "Consultar Estado de documento electrónico",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.StatusRequestDTO"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.StatusRequestDTO"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.StatusRequestDTO"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Application.DTO.Response.StatusResponseDTO"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/EstadoLote": {
+      "post": {
+        "tags": [
+          "EstadoLote"
+        ],
+        "summary": "Consultar Estado de Lote de documentos electrónicos",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.StatusBatchRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.StatusBatchRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.StatusBatchRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Application.DTO.Response.StatusBatchResponseDTO"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/FacturacionLote/Enviar": {
+      "post": {
+        "tags": [
+          "FacturacionLote"
+        ],
+        "summary": "Recibe una Facturación por Lote (JSON con lista de Compradores)",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.UploadInvoiceBatchRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.UploadInvoiceBatchRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.UploadInvoiceBatchRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Application.DTO.Response.UploadInvoiceBatchResponseDTO"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/FacturacionLote/Estado": {
+      "get": {
+        "tags": [
+          "FacturacionLote"
+        ],
+        "summary": "Consulta el estado de una Facturación por Lote (JSON)",
+        "parameters": [
+          {
+            "name": "NombreLote",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "maxLength": 100,
+              "minLength": 0,
+              "pattern": "^([J|G|V|E|P][0-9]{5,9})[-](((19|20|21)\\d\\d)(0[1-9]|1[012])(0[1-9]|[012][0-9]|3[01]))[-](\\d{1,10})(.json|.JSON)?$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Application.DTO.Response.StatusInvoiceBatchResponseDTO"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ListadoDocumentos": {
+      "post": {
+        "tags": [
+          "ListadoDocumentos"
+        ],
+        "summary": "Obtener el listado de documentos anulados",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.DocumentsListRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.DocumentsListRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.DocumentsListRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Application.DTO.Response.DocumentsListResponseDTO"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ListadoAsignaciones": {
+      "post": {
+        "tags": [
+          "ListadoDocumentos"
+        ],
+        "summary": "Consulta de Asignaciones de Números de Control por Rangos de Fecha/NumDocumentos",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.ConsultaAsignacionRequestDTO"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.ConsultaAsignacionRequestDTO"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.ConsultaAsignacionRequestDTO"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Application.DTO.Response.AssignmentListResponseDTO"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Documentos/Relacionar": {
+      "get": {
+        "tags": [
+          "Relacionar"
+        ],
+        "summary": "Obtener información de Relación del documento informado (Factura o Guía/Nota Entrega)",
+        "parameters": [
+          {
+            "name": "Serie",
+            "in": "query",
+            "schema": {
+              "maxLength": 20,
+              "minLength": 0,
+              "type": "string"
+            }
+          },
+          {
+            "name": "TipoDocumento",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "pattern": "^(01|04)$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "NumeroDocumento",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "pattern": "^([0-9]{1,19})$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Application.DTO.Response.GetRelationResponseDTO"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Relacionar"
+        ],
+        "summary": "Aplicar o actualizar Retención a documento electrónico",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.ApplyRelationRequestDTO"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.ApplyRelationRequestDTO"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.ApplyRelationRequestDTO"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Application.DTO.Response.ApplyRelationResponseDTO"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Relacionar"
+        ],
+        "summary": "Eliminar toda Relación del documento informado (Factura o Guía/Nota Entrega)",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.RelationRequestDTO"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.RelationRequestDTO"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.RelationRequestDTO"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Application.DTO.Response.ApplyRelationResponseDTO"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ResultadoLote": {
+      "post": {
+        "tags": [
+          "ResultadoLote"
+        ],
+        "summary": "Devuelve el archivo de resultados (CSV en base64) de un lote procesado",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.ResultBatchRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.ResultBatchRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.ResultBatchRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Application.DTO.Response.ResultBatchResponseDTO"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/SubirLote": {
+      "post": {
+        "tags": [
+          "SubirLote"
+        ],
+        "summary": "Recibe un lote (.zip en base64) y lo deposita en el SFTP para su procesamiento",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.UploadBatchRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.UploadBatchRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.UploadBatchRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Application.DTO.Response.UploadBatchResponseDTO"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/UltimoDocumento": {
+      "post": {
+        "tags": [
+          "UltimoDocumento"
+        ],
+        "summary": "Consultar Último documento electrónico Emitido",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.LastDocRequestDTO"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.LastDocRequestDTO"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/Application.DTO.Request.LastDocRequestDTO"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Application.DTO.Response.LastDocResponseDTO"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Application.DTO.Request.AnnulmentRequestDTO": {
+        "required": [
+          "motivoAnulacion",
+          "numeroDocumento",
+          "tipoDocumento"
+        ],
+        "type": "object",
+        "properties": {
+          "serie": {
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "tipoDocumento": {
+            "minLength": 1,
+            "pattern": "^(01|02|03|04|05|06|07)$",
+            "type": "string"
+          },
+          "numeroDocumento": {
+            "minLength": 1,
+            "pattern": "^([0-9]{1,19})$",
+            "type": "string"
+          },
+          "motivoAnulacion": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string"
+          },
+          "fechaAnulacion": {
+            "maxLength": 10,
+            "minLength": 10,
+            "pattern": "^((0[1-9]|[12][0-9]|3[01])[/](0[1-9]|1[012])[/](19|20)\\d\\d)$",
+            "type": "string",
+            "nullable": true
+          },
+          "horaAnulacion": {
+            "maxLength": 11,
+            "minLength": 11,
+            "pattern": "^((0[1-9]|1[012]):[0-5][0-9]:[0-5][0-9]\\s([ap][m]))$",
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Request.ApplyRelationRequestDTO": {
+        "required": [
+          "numeroDocumento",
+          "relacionados",
+          "tipoDocumento"
+        ],
+        "type": "object",
+        "properties": {
+          "serie": {
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "tipoDocumento": {
+            "minLength": 1,
+            "pattern": "^(01|04)$",
+            "type": "string"
+          },
+          "numeroDocumento": {
+            "minLength": 1,
+            "pattern": "^([0-9]{1,19})$",
+            "type": "string"
+          },
+          "relacionados": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Application.DTO.Request.Relacionados"
+            }
+          },
+          "comentario": {
+            "maxLength": 1000,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Request.ApplyRetentionISLRRequestDTO": {
+        "required": [
+          "detallesRetencionISLR",
+          "numeroControl",
+          "numeroDocumento",
+          "tipoDocumento"
+        ],
+        "type": "object",
+        "properties": {
+          "serie": {
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "tipoDocumento": {
+            "minLength": 1,
+            "pattern": "^(01|02|03)$",
+            "type": "string"
+          },
+          "numeroDocumento": {
+            "minLength": 1,
+            "pattern": "^([0-9]{1,19})$",
+            "type": "string"
+          },
+          "numeroControl": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "detallesRetencionISLR": {
+            "$ref": "#/components/schemas/Common.Models.Documento.DetallesRetencionISLR"
+          },
+          "fechaAplicacion": {
+            "pattern": "^((0[1-9]|[12][0-9]|3[01])[/](0[1-9]|1[012])[/](19|20)\\d\\d)$",
+            "type": "string",
+            "nullable": true
+          },
+          "horaAplicacion": {
+            "pattern": "^((0[1-9]|1[012]):[0-5][0-9]:[0-5][0-9]\\s([ap][m]))$",
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Request.ApplyRetentionRequestDTO": {
+        "required": [
+          "numeroControl",
+          "numeroDocumento",
+          "tipoDocumento",
+          "totalRetencion"
+        ],
+        "type": "object",
+        "properties": {
+          "serie": {
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "tipoDocumento": {
+            "minLength": 1,
+            "pattern": "^(01|02|03)$",
+            "type": "string"
+          },
+          "numeroDocumento": {
+            "minLength": 1,
+            "pattern": "^([0-9]{1,19})$",
+            "type": "string"
+          },
+          "numeroControl": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "totalRetencion": {
+            "$ref": "#/components/schemas/Common.Models.Documento.TotalRetencion"
+          },
+          "fechaAplicacion": {
+            "pattern": "^((0[1-9]|[12][0-9]|3[01])[/](0[1-9]|1[012])[/](19|20)\\d\\d)$",
+            "type": "string",
+            "nullable": true
+          },
+          "horaAplicacion": {
+            "pattern": "^((0[1-9]|1[012]):[0-5][0-9]:[0-5][0-9]\\s([ap][m]))$",
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Request.Asignacion": {
+        "required": [
+          "numeroDocumentoFin",
+          "numeroDocumentoInicio",
+          "tipoDocumento"
+        ],
+        "type": "object",
+        "properties": {
+          "serie": {
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "tipoDocumento": {
+            "minLength": 1,
+            "pattern": "^(01|02|03|04|05|06|07)$",
+            "type": "string"
+          },
+          "numeroDocumentoInicio": {
+            "minLength": 1,
+            "pattern": "^([0-9]{1,19})$",
+            "type": "string"
+          },
+          "numeroDocumentoFin": {
+            "minLength": 1,
+            "pattern": "^([0-9]{1,19})$",
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Request.AsignacionRequestDTO": {
+        "required": [
+          "detalleAsignacion"
+        ],
+        "type": "object",
+        "properties": {
+          "detalleAsignacion": {
+            "maxItems": 1,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Application.DTO.Request.Asignacion"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Request.ConsultaAsignacionRequestDTO": {
+        "type": "object",
+        "properties": {
+          "serie": {
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "tipoDocumento": {
+            "pattern": "^(01|02|03|04|05|06|07)$",
+            "type": "string",
+            "nullable": true
+          },
+          "numeroDocumentoInicio": {
+            "pattern": "^([0-9]{1,19})$",
+            "type": "string",
+            "nullable": true
+          },
+          "numeroDocumentoFin": {
+            "pattern": "^([0-9]{1,19})$",
+            "type": "string",
+            "nullable": true
+          },
+          "fechaInicio": {
+            "pattern": "^((0[1-9]|[12][0-9]|3[01])[/](0[1-9]|1[012])[/](19|20)\\d\\d)$",
+            "type": "string",
+            "nullable": true
+          },
+          "fechaFin": {
+            "pattern": "^((0[1-9]|[12][0-9]|3[01])[/](0[1-9]|1[012])[/](19|20)\\d\\d)$",
+            "type": "string",
+            "nullable": true
+          },
+          "numPagina": {
+            "pattern": "^([1-9]\\d*)$",
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Request.ConsultaReservacionesRequestDTO": {
+        "required": [
+          "tipoDocumento"
+        ],
+        "type": "object",
+        "properties": {
+          "tipoDocumento": {
+            "minLength": 1,
+            "pattern": "^(01|02|03|04|05|06|07)$",
+            "type": "string"
+          },
+          "serie": {
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "pagina": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "cantidad": {
+            "maximum": 100,
+            "minimum": 1,
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Request.ContingenciaDownloadRequest": {
+        "required": [
+          "id"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "minLength": 1,
+            "pattern": "^([0-9]{1,19})$",
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Request.ContingenciaListRequest": {
+        "required": [
+          "fechaFin",
+          "fechaInicio"
+        ],
+        "type": "object",
+        "properties": {
+          "fechaInicio": {
+            "minLength": 1,
+            "pattern": "^((0[1-9]|[12][0-9]|3[01])[/](0[1-9]|1[012])[/](19|20)\\d\\d)$",
+            "type": "string"
+          },
+          "fechaFin": {
+            "minLength": 1,
+            "pattern": "^((0[1-9]|[12][0-9]|3[01])[/](0[1-9]|1[012])[/](19|20)\\d\\d)$",
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Request.ContingenciaRequestDTO": {
+        "required": [
+          "documentoContingencia"
+        ],
+        "type": "object",
+        "properties": {
+          "documentoContingencia": {
+            "$ref": "#/components/schemas/Common.Models.Contingencia.DocumentoContingencia"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Request.DocumentoComprador": {
+        "required": [
+          "comprador"
+        ],
+        "type": "object",
+        "properties": {
+          "comprador": {
+            "$ref": "#/components/schemas/Common.Models.Documento.Comprador"
+          },
+          "numeroDocumento": {
+            "pattern": "^([0-9]{1,19})$",
+            "type": "string",
+            "nullable": true
+          },
+          "serie": {
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "transaccionId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Request.DocumentsListRequest": {
+        "required": [
+          "fechaFin",
+          "fechaInicio",
+          "tipoDocumento"
+        ],
+        "type": "object",
+        "properties": {
+          "serie": {
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "tipoDocumento": {
+            "minLength": 1,
+            "pattern": "^(01|02|03|04|05|06|07)$",
+            "type": "string"
+          },
+          "fechaInicio": {
+            "minLength": 1,
+            "pattern": "^((0[1-9]|[12][0-9]|3[01])[/](0[1-9]|1[012])[/](19|20)\\d\\d)$",
+            "type": "string"
+          },
+          "fechaFin": {
+            "minLength": 1,
+            "pattern": "^((0[1-9]|[12][0-9]|3[01])[/](0[1-9]|1[012])[/](19|20)\\d\\d)$",
+            "type": "string"
+          },
+          "numPagina": {
+            "pattern": "^([1-9]\\d*)$",
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Request.DownloadRequestDTO": {
+        "required": [
+          "numeroDocumento",
+          "tipoDocumento"
+        ],
+        "type": "object",
+        "properties": {
+          "serie": {
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "tipoDocumento": {
+            "minLength": 1,
+            "pattern": "^(01|02|03|04|05|06|07)$",
+            "type": "string"
+          },
+          "numeroDocumento": {
+            "minLength": 1,
+            "pattern": "^([0-9]{1,19})$",
+            "type": "string"
+          },
+          "tipoArchivo": {
+            "pattern": "^(pdf|PDF|xml|XML|json|JSON)$",
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Request.EncabezadoLote": {
+        "required": [
+          "identificacionDocumento"
+        ],
+        "type": "object",
+        "properties": {
+          "identificacionDocumento": {
+            "$ref": "#/components/schemas/Common.Models.Documento.IdentificacionDocumento"
+          },
+          "facturaGuia": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Common.Models.Documento.FacturaGuiaItem"
+            },
+            "nullable": true
+          },
+          "vendedor": {
+            "$ref": "#/components/schemas/Common.Models.Documento.Vendedor"
+          },
+          "sujetoRetenido": {
+            "$ref": "#/components/schemas/Common.Models.Documento.SujetoRetenido"
+          },
+          "tercero": {
+            "$ref": "#/components/schemas/Common.Models.Documento.Tercero"
+          },
+          "otrosTercero": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Common.Models.Documento.OtrosTercero"
+            },
+            "nullable": true
+          },
+          "totales": {
+            "$ref": "#/components/schemas/Common.Models.Documento.Totales"
+          },
+          "totalesRetencion": {
+            "$ref": "#/components/schemas/Common.Models.Documento.TotalesRetencion"
+          },
+          "totalesOtraMoneda": {
+            "$ref": "#/components/schemas/Common.Models.Documento.TotalesOtraMoneda"
+          },
+          "orden": {
+            "$ref": "#/components/schemas/Common.Models.Documento.Orden"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Request.LastDocRequestDTO": {
+        "required": [
+          "tipoDocumento"
+        ],
+        "type": "object",
+        "properties": {
+          "serie": {
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "tipoDocumento": {
+            "minLength": 1,
+            "pattern": "^(01|02|03|04|05|06|07)$",
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Request.LoginRequest": {
+        "required": [
+          "clave",
+          "usuario"
+        ],
+        "type": "object",
+        "properties": {
+          "usuario": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "clave": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Request.MailRequestDTO": {
+        "required": [
+          "correos",
+          "numeroDocumento",
+          "tipoDocumento"
+        ],
+        "type": "object",
+        "properties": {
+          "serie": {
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "tipoDocumento": {
+            "minLength": 1,
+            "pattern": "^(01|02|03|04|05|06|07)$",
+            "type": "string"
+          },
+          "numeroDocumento": {
+            "minLength": 1,
+            "pattern": "^([0-9]{1,19})$",
+            "type": "string"
+          },
+          "correos": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Request.NumerationsListRequest": {
+        "type": "object",
+        "properties": {
+          "serie": {
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "tipoDocumento": {
+            "pattern": "^(01|02|03|04|05|06|07)$",
+            "type": "string",
+            "nullable": true
+          },
+          "prefix": {
+            "maxLength": 10,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Request.OrdenRequestDTO": {
+        "required": [
+          "correos",
+          "orden"
+        ],
+        "type": "object",
+        "properties": {
+          "orden": {
+            "minLength": 1,
+            "pattern": "^([a-zA-Z0-9._-]{1,20})$",
+            "type": "string"
+          },
+          "correos": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Request.Relacionados": {
+        "required": [
+          "numeroDocumento",
+          "tipoDocumento"
+        ],
+        "type": "object",
+        "properties": {
+          "serie": {
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "tipoDocumento": {
+            "minLength": 1,
+            "pattern": "^(01|04)$",
+            "type": "string"
+          },
+          "numeroDocumento": {
+            "minLength": 1,
+            "pattern": "^([0-9]{1,19})$",
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Request.RelationRequestDTO": {
+        "required": [
+          "numeroDocumento",
+          "tipoDocumento"
+        ],
+        "type": "object",
+        "properties": {
+          "serie": {
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "tipoDocumento": {
+            "minLength": 1,
+            "pattern": "^(01|04)$",
+            "type": "string"
+          },
+          "numeroDocumento": {
+            "minLength": 1,
+            "pattern": "^([0-9]{1,19})$",
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Request.RequestBase": {
+        "required": [
+          "numeroDocumento",
+          "tipoDocumento"
+        ],
+        "type": "object",
+        "properties": {
+          "serie": {
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "tipoDocumento": {
+            "minLength": 1,
+            "pattern": "^(01|02|03|04|05|06|07)$",
+            "type": "string"
+          },
+          "numeroDocumento": {
+            "minLength": 1,
+            "pattern": "^([0-9]{1,19})$",
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Request.RequestOrder": {
+        "required": [
+          "orden"
+        ],
+        "type": "object",
+        "properties": {
+          "orden": {
+            "minLength": 1,
+            "pattern": "^([a-zA-Z0-9._-]{1,20})$",
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Request.ResultBatchRequest": {
+        "required": [
+          "nombreArchivo"
+        ],
+        "type": "object",
+        "properties": {
+          "nombreArchivo": {
+            "maxLength": 100,
+            "minLength": 0,
+            "pattern": "^([J|G|V|E|P][0-9]{5,9})[-](((19|20|21)\\d\\d)(0[1-9]|1[012])(0[1-9]|[012][0-9]|3[01]))[-](\\d{1,10})(.zip|.ZIP)$",
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Request.RetentionISLRRequestDTO": {
+        "required": [
+          "numeroControl",
+          "numeroDocumento",
+          "tipoDocumento"
+        ],
+        "type": "object",
+        "properties": {
+          "serie": {
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "tipoDocumento": {
+            "minLength": 1,
+            "pattern": "^(01|02|03)$",
+            "type": "string"
+          },
+          "numeroDocumento": {
+            "minLength": 1,
+            "pattern": "^([0-9]{1,19})$",
+            "type": "string"
+          },
+          "numeroControl": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Request.RetentionRequestDTO": {
+        "required": [
+          "numeroControl",
+          "numeroDocumento",
+          "tipoDocumento"
+        ],
+        "type": "object",
+        "properties": {
+          "serie": {
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "tipoDocumento": {
+            "minLength": 1,
+            "pattern": "^(01|02|03)$",
+            "type": "string"
+          },
+          "numeroDocumento": {
+            "minLength": 1,
+            "pattern": "^([0-9]{1,19})$",
+            "type": "string"
+          },
+          "numeroControl": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Request.SendARCRequest": {
+        "required": [
+          "documentoElectronico"
+        ],
+        "type": "object",
+        "properties": {
+          "documentoElectronico": {
+            "$ref": "#/components/schemas/Common.Models.DocumentoARC.DocumentoARC"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Request.SendDNFRequestDTO": {
+        "required": [
+          "documentoElectronico"
+        ],
+        "type": "object",
+        "properties": {
+          "documentoElectronico": {
+            "$ref": "#/components/schemas/Common.Models.DocumentoDNF.DocumentoNF"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Request.SendRequestDTO": {
+        "required": [
+          "documentoElectronico"
+        ],
+        "type": "object",
+        "properties": {
+          "documentoElectronico": {
+            "$ref": "#/components/schemas/Common.Models.Documento.DocumentoElectronico"
+          },
+          "adjuntos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Common.Models.Adjuntos.Adjunto"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Request.StatusBatchRequest": {
+        "type": "object",
+        "properties": {
+          "nombreArchivo": {
+            "maxLength": 100,
+            "minLength": 0,
+            "pattern": "^([J|G|V|E|P][0-9]{5,9})[-](((19|20|21)\\d\\d)(0[1-9]|1[012])(0[1-9]|[012][0-9]|3[01]))[-](\\d{1,10})(.zip|.rar|.csv|.json|.ZIP|.RAR|.CSV|.JSON)$",
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Request.StatusRequestDTO": {
+        "required": [
+          "tipoDocumento"
+        ],
+        "type": "object",
+        "properties": {
+          "serie": {
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "tipoDocumento": {
+            "minLength": 1,
+            "pattern": "^(01|02|03|04|05|06|07)$",
+            "type": "string"
+          },
+          "numeroDocumento": {
+            "pattern": "^([0-9]{1,19})$",
+            "type": "string",
+            "nullable": true
+          },
+          "transaccionId": {
+            "maxLength": 50,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Request.UploadBatchRequest": {
+        "required": [
+          "archivoBase64",
+          "nombreArchivo"
+        ],
+        "type": "object",
+        "properties": {
+          "nombreArchivo": {
+            "maxLength": 100,
+            "minLength": 0,
+            "pattern": "^([J|G|V|E|P][0-9]{5,9})[-](((19|20|21)\\d\\d)(0[1-9]|1[012])(0[1-9]|[012][0-9]|3[01]))[-](\\d{1,10})(.zip|.ZIP)$",
+            "type": "string"
+          },
+          "archivoBase64": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Request.UploadInvoiceBatchRequest": {
+        "required": [
+          "compradores",
+          "encabezado"
+        ],
+        "type": "object",
+        "properties": {
+          "encabezado": {
+            "$ref": "#/components/schemas/Application.DTO.Request.EncabezadoLote"
+          },
+          "compradores": {
+            "maxItems": 100,
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Application.DTO.Request.DocumentoComprador"
+            }
+          },
+          "detallesItems": {
+            "maxItems": 300,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Common.Models.Documento.Detalles"
+            },
+            "nullable": true
+          },
+          "detallesRetencion": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Common.Models.Documento.DetallesRetencion"
+            },
+            "nullable": true
+          },
+          "viajes": {
+            "$ref": "#/components/schemas/Common.Models.Documento.Viajes"
+          },
+          "infoAdicional": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Common.Models.Documento.InfoAdicional"
+            },
+            "nullable": true
+          },
+          "guiaDespacho": {
+            "$ref": "#/components/schemas/Common.Models.Documento.GuiaDespacho"
+          },
+          "transporte": {
+            "$ref": "#/components/schemas/Common.Models.Documento.Transporte"
+          },
+          "esLote": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "esMinimo": {
+            "type": "boolean",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Response.AnnulmentResponseDTO": {
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "mensaje": {
+            "type": "string",
+            "nullable": true
+          },
+          "validaciones": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Response.ApplyRelationResponseDTO": {
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "mensaje": {
+            "type": "string",
+            "nullable": true
+          },
+          "validaciones": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Response.ApplyRetentionISLRResponseDTO": {
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "mensaje": {
+            "type": "string",
+            "nullable": true
+          },
+          "validaciones": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Response.ApplyRetentionResponseDTO": {
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "mensaje": {
+            "type": "string",
+            "nullable": true
+          },
+          "validaciones": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Response.Asignacion": {
+        "type": "object",
+        "properties": {
+          "serie": {
+            "type": "string",
+            "nullable": true
+          },
+          "tipoDocumento": {
+            "type": "string",
+            "nullable": true
+          },
+          "numeroDocumento": {
+            "type": "string",
+            "nullable": true
+          },
+          "numeroControl": {
+            "type": "string",
+            "nullable": true
+          },
+          "fechaAsignacion": {
+            "type": "string",
+            "nullable": true
+          },
+          "horaAsignacion": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Response.AsignacionResponseDTO": {
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "mensaje": {
+            "type": "string",
+            "nullable": true
+          },
+          "validaciones": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "fechaAsignacion": {
+            "type": "string",
+            "nullable": true
+          },
+          "rangosAsignados": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Common.Models.Documento.NumerosControl"
+            },
+            "nullable": true
+          },
+          "detallesReserva": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Application.DTO.Response.DetalleReserva"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Response.AssignmentListResponseDTO": {
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "mensaje": {
+            "type": "string",
+            "nullable": true
+          },
+          "totalAsignaciones": {
+            "type": "string",
+            "nullable": true
+          },
+          "totalPaginas": {
+            "type": "string",
+            "nullable": true
+          },
+          "numeroPagina": {
+            "type": "string",
+            "nullable": true
+          },
+          "totalAsignacionesPagina": {
+            "type": "string",
+            "nullable": true
+          },
+          "asignaciones": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Application.DTO.Response.Asignacion"
+            },
+            "nullable": true
+          },
+          "validaciones": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Response.ConsultaReservacionesResponseDTO": {
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "mensaje": {
+            "type": "string",
+            "nullable": true
+          },
+          "cantidadReservas": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalPaginas": {
+            "type": "string",
+            "nullable": true
+          },
+          "numeroPagina": {
+            "type": "string",
+            "nullable": true
+          },
+          "totalReservasPagina": {
+            "type": "string",
+            "nullable": true
+          },
+          "reservas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Application.DTO.Response.ReservaConsulta"
+            },
+            "nullable": true
+          },
+          "validaciones": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Response.ContingenciaFileResponseDTO": {
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "mensaje": {
+            "type": "string",
+            "nullable": true
+          },
+          "nombreArchivo": {
+            "type": "string",
+            "nullable": true
+          },
+          "tipoContenido": {
+            "type": "string",
+            "nullable": true
+          },
+          "contenidoBase64": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Response.ContingenciaItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "nullable": true
+          },
+          "tipoDocumento": {
+            "type": "string",
+            "nullable": true
+          },
+          "serie": {
+            "type": "string",
+            "nullable": true
+          },
+          "numeroDocumento": {
+            "type": "string",
+            "nullable": true
+          },
+          "numeroControl": {
+            "type": "string",
+            "nullable": true
+          },
+          "fechaDocumento": {
+            "type": "string",
+            "nullable": true
+          },
+          "rifAdquiriente": {
+            "type": "string",
+            "nullable": true
+          },
+          "razonSocialAdquiriente": {
+            "type": "string",
+            "nullable": true
+          },
+          "nombreArchivo": {
+            "type": "string",
+            "nullable": true
+          },
+          "urlArchivo": {
+            "type": "string",
+            "nullable": true
+          },
+          "usuarioRegistro": {
+            "type": "string",
+            "nullable": true
+          },
+          "fechaCarga": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Response.ContingenciaListResponseDTO": {
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "mensaje": {
+            "type": "string",
+            "nullable": true
+          },
+          "totalDocumentos": {
+            "type": "string",
+            "nullable": true
+          },
+          "documentos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Application.DTO.Response.ContingenciaItem"
+            },
+            "nullable": true
+          },
+          "validaciones": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Response.ContingenciaResponseDTO": {
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "mensaje": {
+            "type": "string",
+            "nullable": true
+          },
+          "validaciones": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "resultado": {
+            "$ref": "#/components/schemas/Application.DTO.Response.ResultadoContingencia"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Response.DetalleReserva": {
+        "type": "object",
+        "properties": {
+          "numeroDocumentoInicio": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "numeroDocumentoFin": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "numeroControlInicio": {
+            "type": "string",
+            "nullable": true
+          },
+          "numeroControlFin": {
+            "type": "string",
+            "nullable": true
+          },
+          "serie": {
+            "type": "string",
+            "nullable": true
+          },
+          "fechaReservacion": {
+            "type": "string",
+            "nullable": true
+          },
+          "counterfoilId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "rangoMaestro": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Response.DocumentsListResponseDTO": {
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "mensaje": {
+            "type": "string",
+            "nullable": true
+          },
+          "totalDocumentos": {
+            "type": "string",
+            "nullable": true
+          },
+          "totalPaginas": {
+            "type": "string",
+            "nullable": true
+          },
+          "numeroPagina": {
+            "type": "string",
+            "nullable": true
+          },
+          "totalDocumentosPagina": {
+            "type": "string",
+            "nullable": true
+          },
+          "documentos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Application.DTO.Response.Estado"
+            },
+            "nullable": true
+          },
+          "validaciones": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Response.DownloadResponseDTO": {
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "mensaje": {
+            "type": "string",
+            "nullable": true
+          },
+          "archivo": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Response.Estado": {
+        "type": "object",
+        "properties": {
+          "estadoDocumento": {
+            "type": "string",
+            "nullable": true
+          },
+          "rif": {
+            "type": "string",
+            "nullable": true
+          },
+          "serie": {
+            "type": "string",
+            "nullable": true
+          },
+          "tipoDocumento": {
+            "type": "string",
+            "nullable": true
+          },
+          "numeroDocumento": {
+            "type": "string",
+            "nullable": true
+          },
+          "numeroControl": {
+            "type": "string",
+            "nullable": true
+          },
+          "fechaAnulacion": {
+            "type": "string",
+            "nullable": true
+          },
+          "motivo": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Response.GetRelationResponseDTO": {
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "mensaje": {
+            "type": "string",
+            "nullable": true
+          },
+          "relacionados": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Application.DTO.Request.Relacionados"
+            },
+            "nullable": true
+          },
+          "validaciones": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Response.LastDocResponseDTO": {
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "mensaje": {
+            "type": "string",
+            "nullable": true
+          },
+          "numeroDocumento": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "validaciones": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Response.LoginResponse": {
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "mensaje": {
+            "type": "string",
+            "nullable": true
+          },
+          "token": {
+            "type": "string",
+            "nullable": true
+          },
+          "expiracion": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Response.MailResponseDTO": {
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "mensaje": {
+            "type": "string",
+            "nullable": true
+          },
+          "validaciones": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Response.Numeracion": {
+        "type": "object",
+        "properties": {
+          "titulo": {
+            "type": "string",
+            "nullable": true
+          },
+          "serie": {
+            "type": "string",
+            "nullable": true
+          },
+          "tipoDocumento": {
+            "type": "string",
+            "nullable": true
+          },
+          "prefijo": {
+            "type": "string",
+            "nullable": true
+          },
+          "desde": {
+            "type": "string",
+            "nullable": true
+          },
+          "hasta": {
+            "type": "string",
+            "nullable": true
+          },
+          "correlativo": {
+            "type": "string",
+            "nullable": true
+          },
+          "estado": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Response.NumerationsListResponseDTO": {
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "mensaje": {
+            "type": "string",
+            "nullable": true
+          },
+          "numeraciones": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Application.DTO.Response.Numeracion"
+            },
+            "nullable": true
+          },
+          "validaciones": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Response.RastreoResponseDTO": {
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "mensaje": {
+            "type": "string",
+            "nullable": true
+          },
+          "rastreos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Application.DTO.Response.Tracking"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Response.ReservaConsulta": {
+        "type": "object",
+        "properties": {
+          "numeroDocumentoFin": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "numeroControlFin": {
+            "type": "string",
+            "nullable": true
+          },
+          "serie": {
+            "type": "string",
+            "nullable": true
+          },
+          "fechaReservacion": {
+            "type": "string",
+            "nullable": true
+          },
+          "rangoMaestro": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Response.ResultBatchResponseDTO": {
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "mensaje": {
+            "type": "string",
+            "nullable": true
+          },
+          "estadoLote": {
+            "type": "string",
+            "nullable": true
+          },
+          "nombreArchivoResultado": {
+            "type": "string",
+            "nullable": true
+          },
+          "archivoBase64": {
+            "type": "string",
+            "nullable": true
+          },
+          "validaciones": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Response.Resultado": {
+        "type": "object",
+        "properties": {
+          "imprentaDigital": {
+            "type": "string",
+            "nullable": true
+          },
+          "autorizado": {
+            "type": "string",
+            "nullable": true
+          },
+          "serie": {
+            "type": "string",
+            "nullable": true
+          },
+          "tipoDocumento": {
+            "type": "string",
+            "nullable": true
+          },
+          "numeroDocumento": {
+            "type": "string",
+            "nullable": true
+          },
+          "numeroControl": {
+            "type": "string",
+            "nullable": true
+          },
+          "fechaAsignacion": {
+            "type": "string",
+            "nullable": true
+          },
+          "horaAsignacion": {
+            "type": "string",
+            "nullable": true
+          },
+          "fechaAsignacionNumeroControl": {
+            "type": "string",
+            "nullable": true
+          },
+          "horaAsignacionNumeroControl": {
+            "type": "string",
+            "nullable": true
+          },
+          "rangoAsignado": {
+            "type": "string",
+            "nullable": true
+          },
+          "transaccionId": {
+            "type": "string",
+            "nullable": true
+          },
+          "urlConsulta": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Response.ResultadoContingencia": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "nullable": true
+          },
+          "tipoDocumento": {
+            "type": "string",
+            "nullable": true
+          },
+          "serie": {
+            "type": "string",
+            "nullable": true
+          },
+          "numeroDocumento": {
+            "type": "string",
+            "nullable": true
+          },
+          "numeroControl": {
+            "type": "string",
+            "nullable": true
+          },
+          "nombreArchivo": {
+            "type": "string",
+            "nullable": true
+          },
+          "urlArchivo": {
+            "type": "string",
+            "nullable": true
+          },
+          "fechaCarga": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Response.Retention": {
+        "type": "object",
+        "properties": {
+          "serie": {
+            "type": "string",
+            "nullable": true
+          },
+          "tipoDocumento": {
+            "type": "string",
+            "nullable": true
+          },
+          "numeroDocumento": {
+            "type": "string",
+            "nullable": true
+          },
+          "numeroControl": {
+            "type": "string",
+            "nullable": true
+          },
+          "totalesRetencion": {
+            "$ref": "#/components/schemas/Common.Models.Documento.TotalRetencionConsulta"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Response.RetentionISLRInfo": {
+        "type": "object",
+        "properties": {
+          "serie": {
+            "type": "string",
+            "nullable": true
+          },
+          "tipoDocumento": {
+            "type": "string",
+            "nullable": true
+          },
+          "numeroDocumento": {
+            "type": "string",
+            "nullable": true
+          },
+          "numeroControl": {
+            "type": "string",
+            "nullable": true
+          },
+          "numeroCompRetencion": {
+            "type": "string",
+            "nullable": true
+          },
+          "fechaEmisionCR": {
+            "type": "string",
+            "nullable": true
+          },
+          "impuestoRetenido": {
+            "type": "string",
+            "nullable": true
+          },
+          "fechaAplicacion": {
+            "type": "string",
+            "nullable": true
+          },
+          "horaAplicacion": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Response.RetentionISLRResponseDTO": {
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "mensaje": {
+            "type": "string",
+            "nullable": true
+          },
+          "validaciones": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "infoRetencionISLR": {
+            "$ref": "#/components/schemas/Application.DTO.Response.RetentionISLRInfo"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Response.RetentionResponseDTO": {
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "mensaje": {
+            "type": "string",
+            "nullable": true
+          },
+          "validaciones": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "infoRetencion": {
+            "$ref": "#/components/schemas/Application.DTO.Response.Retention"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Response.SendResponseDTO": {
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "mensaje": {
+            "type": "string",
+            "nullable": true
+          },
+          "validaciones": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "resultado": {
+            "$ref": "#/components/schemas/Application.DTO.Response.Resultado"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Response.Status": {
+        "type": "object",
+        "properties": {
+          "estadoDocumento": {
+            "type": "string",
+            "nullable": true
+          },
+          "tipoDocumento": {
+            "type": "string",
+            "nullable": true
+          },
+          "numeroDocumento": {
+            "type": "string",
+            "nullable": true
+          },
+          "numeroControl": {
+            "type": "string",
+            "nullable": true
+          },
+          "fechaAsignacion": {
+            "type": "string",
+            "nullable": true
+          },
+          "horaAsignacion": {
+            "type": "string",
+            "nullable": true
+          },
+          "transaccionId": {
+            "type": "string",
+            "nullable": true
+          },
+          "urlConsulta": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Response.StatusBatch": {
+        "type": "object",
+        "properties": {
+          "estadoLote": {
+            "type": "string",
+            "nullable": true
+          },
+          "fechaProcesamiento": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Response.StatusBatchResponseDTO": {
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "mensaje": {
+            "type": "string",
+            "nullable": true
+          },
+          "estado": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Application.DTO.Response.StatusBatch"
+            },
+            "nullable": true
+          },
+          "validaciones": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Response.StatusInvoiceBatchResponseDTO": {
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "mensaje": {
+            "type": "string",
+            "nullable": true
+          },
+          "nombreLote": {
+            "type": "string",
+            "nullable": true
+          },
+          "estado": {
+            "type": "string",
+            "nullable": true
+          },
+          "totalDocumentos": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "aceptados": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "rechazados": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "validaciones": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Response.StatusResponseDTO": {
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "mensaje": {
+            "type": "string",
+            "nullable": true
+          },
+          "estado": {
+            "$ref": "#/components/schemas/Application.DTO.Response.Status"
+          },
+          "validaciones": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Response.Tracking": {
+        "type": "object",
+        "properties": {
+          "messageId": {
+            "type": "string",
+            "nullable": true
+          },
+          "correo": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          },
+          "fecha": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Response.UploadBatchResponseDTO": {
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "mensaje": {
+            "type": "string",
+            "nullable": true
+          },
+          "nombreArchivo": {
+            "type": "string",
+            "nullable": true
+          },
+          "validaciones": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Application.DTO.Response.UploadInvoiceBatchResponseDTO": {
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "mensaje": {
+            "type": "string",
+            "nullable": true
+          },
+          "nombreLote": {
+            "type": "string",
+            "nullable": true
+          },
+          "loteId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "estado": {
+            "type": "string",
+            "nullable": true
+          },
+          "validaciones": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Common.Models.Adjuntos.Adjunto": {
+        "type": "object",
+        "properties": {
+          "nombreArchivo": {
+            "type": "string",
+            "nullable": true
+          },
+          "extension": {
+            "type": "string",
+            "nullable": true
+          },
+          "archivo": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Common.Models.Contingencia.ArchivoContingencia": {
+        "required": [
+          "contenidoBase64",
+          "extension"
+        ],
+        "type": "object",
+        "properties": {
+          "extension": {
+            "minLength": 1,
+            "pattern": "^(pdf|PDF|png|PNG|jpg|JPG|jpeg|JPEG)$",
+            "type": "string"
+          },
+          "contenidoBase64": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Common.Models.Contingencia.DocumentoContingencia": {
+        "required": [
+          "archivo",
+          "encabezado",
+          "totales"
+        ],
+        "type": "object",
+        "properties": {
+          "encabezado": {
+            "$ref": "#/components/schemas/Common.Models.Contingencia.EncabezadoContingencia"
+          },
+          "totales": {
+            "$ref": "#/components/schemas/Common.Models.Contingencia.TotalesContingencia"
+          },
+          "archivo": {
+            "$ref": "#/components/schemas/Common.Models.Contingencia.ArchivoContingencia"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Common.Models.Contingencia.EncabezadoContingencia": {
+        "required": [
+          "fechaDocumento",
+          "numeroControl",
+          "numeroDocumento",
+          "razonSocialAdquiriente",
+          "rifAdquiriente",
+          "tipoDocumento"
+        ],
+        "type": "object",
+        "properties": {
+          "tipoDocumento": {
+            "minLength": 1,
+            "pattern": "^(01|02|03)$",
+            "type": "string"
+          },
+          "numeroDocumento": {
+            "maxLength": 50,
+            "minLength": 0,
+            "type": "string"
+          },
+          "numeroControl": {
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string"
+          },
+          "fechaDocumento": {
+            "minLength": 1,
+            "pattern": "^((0[1-9]|[12][0-9]|3[01])[/](0[1-9]|1[012])[/](19|20)\\d\\d)$",
+            "type": "string"
+          },
+          "serie": {
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "rifAdquiriente": {
+            "maxLength": 15,
+            "minLength": 0,
+            "type": "string"
+          },
+          "razonSocialAdquiriente": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string"
+          },
+          "rifTercero": {
+            "maxLength": 15,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "razonSocialTercero": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Common.Models.Contingencia.TotalesContingencia": {
+        "type": "object",
+        "properties": {
+          "totalVentasConIVA": {
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          },
+          "ventasInternasNoGravadas": {
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          },
+          "baseImponibleG": {
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          },
+          "impuestoIvaG": {
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          },
+          "baseImponibleR": {
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          },
+          "impuestoIvaR": {
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          },
+          "baseImponibleA": {
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          },
+          "impuestoIvaA": {
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          },
+          "baseImponibleExportacion": {
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          },
+          "ivaRetenido": {
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          },
+          "igtf": {
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          },
+          "baseImponibleIGTF": {
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          },
+          "ivaCtaTercero": {
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          },
+          "totalBaseIGTFUSD": {
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          },
+          "tasaBCV": {
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,8})?)$",
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Common.Models.Documento.Comprador": {
+        "required": [
+          "direccion",
+          "numeroIdentificacion",
+          "pais",
+          "razonSocial",
+          "tipoIdentificacion"
+        ],
+        "type": "object",
+        "properties": {
+          "tipoIdentificacion": {
+            "minLength": 1,
+            "pattern": "^([VGCJEP]|.{2,4})$",
+            "type": "string"
+          },
+          "numeroIdentificacion": {
+            "maxLength": 45,
+            "minLength": 0,
+            "type": "string"
+          },
+          "razonSocial": {
+            "maxLength": 255,
+            "minLength": 0,
+            "pattern": "^[\\p{L}\\p{N}\\p{P}\\p{S} ]+$",
+            "type": "string"
+          },
+          "direccion": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string"
+          },
+          "ubigeo": {
+            "pattern": "^((\\d\\d-\\d\\d)|(\\d\\d-\\d\\d-\\d\\d))$",
+            "type": "string",
+            "nullable": true
+          },
+          "pais": {
+            "maxLength": 2,
+            "minLength": 0,
+            "type": "string"
+          },
+          "notificar": {
+            "pattern": "^(Si|No)$",
+            "type": "string",
+            "nullable": true
+          },
+          "telefono": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "correo": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "otrosEnvios": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Common.Models.Documento.OtrosEnvios"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Common.Models.Documento.Conductor": {
+        "type": "object",
+        "properties": {
+          "nombreCompleto": {
+            "maxLength": 100,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "tipoIdentificacion": {
+            "pattern": "^([VGCJEP]|.{2,4})$",
+            "type": "string",
+            "nullable": true
+          },
+          "numeroIdentificacion": {
+            "maxLength": 45,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "tipoLicencia": {
+            "maxLength": 55,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "infoContacto": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Common.Models.Documento.Detalles": {
+        "required": [
+          "cantidad",
+          "numeroLinea"
+        ],
+        "type": "object",
+        "properties": {
+          "numeroLinea": {
+            "maxLength": 4,
+            "minLength": 0,
+            "type": "string"
+          },
+          "codigoCIIU": {
+            "maxLength": 6,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "codigoPLU": {
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "indicadorBienoServicio": {
+            "pattern": "^(1|2)$",
+            "type": "string",
+            "nullable": true
+          },
+          "descripcion": {
+            "maxLength": 1000,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "cantidad": {
+            "minLength": 1,
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,4})?)$",
+            "type": "string"
+          },
+          "unidadMedida": {
+            "maxLength": 3,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "precioUnitario": {
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,4})?)$",
+            "type": "string",
+            "nullable": true
+          },
+          "precioUnitarioDescuento": {
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          },
+          "montoBonificacion": {
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          },
+          "descripcionBonificacion": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "descuentoMonto": {
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          },
+          "recargoMonto": {
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          },
+          "precioItem": {
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          },
+          "precioAntesDescuento": {
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          },
+          "codigoImpuesto": {
+            "pattern": "^(R|G|A|E|P|X|F|IGTF)$",
+            "type": "string",
+            "nullable": true
+          },
+          "tasaIVA": {
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          },
+          "valorIVA": {
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          },
+          "valorTotalItem": {
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          },
+          "infoAdicionalItem": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Common.Models.Documento.InfoAdicionalItem"
+            },
+            "nullable": true
+          },
+          "listaItemOTI": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Common.Models.Documento.ListaItemOTI"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Common.Models.Documento.DetallesRetencion": {
+        "required": [
+          "fechaDocumento",
+          "moneda",
+          "numeroLinea",
+          "retenido",
+          "tipoDocumento"
+        ],
+        "type": "object",
+        "properties": {
+          "numeroLinea": {
+            "maxLength": 4,
+            "minLength": 0,
+            "type": "string"
+          },
+          "fechaDocumento": {
+            "minLength": 1,
+            "pattern": "^((0[1-9]|[12][0-9]|3[01])[/](0[1-9]|1[012])[/](19|20)\\d\\d)$",
+            "type": "string"
+          },
+          "serieDocumento": {
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "tipoDocumento": {
+            "minLength": 1,
+            "pattern": "^(01|02|03|04|05|06)$",
+            "type": "string"
+          },
+          "numeroDocumento": {
+            "maxLength": 30,
+            "minLength": 0,
+            "pattern": "^[A-Za-z0-9-]{1,30}$",
+            "type": "string",
+            "nullable": true
+          },
+          "numeroControl": {
+            "maxLength": 15,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "tipoTransaccion": {
+            "pattern": "^(01|02|03|04|98|99)$",
+            "type": "string",
+            "nullable": true
+          },
+          "montoTotal": {
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          },
+          "montoExento": {
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,4})?)$",
+            "type": "string",
+            "nullable": true
+          },
+          "baseImponible": {
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          },
+          "porcentaje": {
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,4})?)$",
+            "type": "string",
+            "nullable": true
+          },
+          "porcentajeRetencion": {
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,4})?)$",
+            "type": "string",
+            "nullable": true
+          },
+          "sustraendo": {
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          },
+          "montoIVA": {
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          },
+          "retenido": {
+            "minLength": 1,
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string"
+          },
+          "percibido": {
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          },
+          "codigoConcepto": {
+            "pattern": "^(\\d{3,4})$",
+            "type": "string",
+            "nullable": true
+          },
+          "moneda": {
+            "maxLength": 3,
+            "minLength": 0,
+            "type": "string"
+          },
+          "infoAdicionalItem": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Common.Models.Documento.InfoAdicionalItem"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Common.Models.Documento.DetallesRetencionISLR": {
+        "required": [
+          "fechaEmisionCR",
+          "impuestoRetenido",
+          "numeroCompRetencion"
+        ],
+        "type": "object",
+        "properties": {
+          "numeroCompRetencion": {
+            "maxLength": 50,
+            "minLength": 0,
+            "type": "string"
+          },
+          "fechaEmisionCR": {
+            "minLength": 1,
+            "pattern": "^((0[1-9]|[12][0-9]|3[01])[/](0[1-9]|1[012])[/](19|20)\\d\\d)$",
+            "type": "string"
+          },
+          "impuestoRetenido": {
+            "minLength": 1,
+            "pattern": "^([0-9]{1,20}(\\.[0-9]{1,2})?)$",
+            "type": "string"
+          },
+          "rifAgenteRetencion": {
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "porcentaje": {
+            "pattern": "^([0-9]{1,20}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          },
+          "codigoOperacion": {
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Common.Models.Documento.DocumentoElectronico": {
+        "required": [
+          "encabezado"
+        ],
+        "type": "object",
+        "properties": {
+          "encabezado": {
+            "$ref": "#/components/schemas/Common.Models.Documento.Encabezado"
+          },
+          "detallesItems": {
+            "maxItems": 300,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Common.Models.Documento.Detalles"
+            },
+            "nullable": true
+          },
+          "detallesRetencion": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Common.Models.Documento.DetallesRetencion"
+            },
+            "nullable": true
+          },
+          "viajes": {
+            "$ref": "#/components/schemas/Common.Models.Documento.Viajes"
+          },
+          "infoAdicional": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Common.Models.Documento.InfoAdicional"
+            },
+            "nullable": true
+          },
+          "guiaDespacho": {
+            "$ref": "#/components/schemas/Common.Models.Documento.GuiaDespacho"
+          },
+          "transporte": {
+            "$ref": "#/components/schemas/Common.Models.Documento.Transporte"
+          },
+          "esLote": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "esMinimo": {
+            "type": "boolean",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Common.Models.Documento.Encabezado": {
+        "required": [
+          "identificacionDocumento"
+        ],
+        "type": "object",
+        "properties": {
+          "identificacionDocumento": {
+            "$ref": "#/components/schemas/Common.Models.Documento.IdentificacionDocumento"
+          },
+          "facturaGuia": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Common.Models.Documento.FacturaGuiaItem"
+            },
+            "nullable": true
+          },
+          "vendedor": {
+            "$ref": "#/components/schemas/Common.Models.Documento.Vendedor"
+          },
+          "comprador": {
+            "$ref": "#/components/schemas/Common.Models.Documento.Comprador"
+          },
+          "sujetoRetenido": {
+            "$ref": "#/components/schemas/Common.Models.Documento.SujetoRetenido"
+          },
+          "tercero": {
+            "$ref": "#/components/schemas/Common.Models.Documento.Tercero"
+          },
+          "otrosTercero": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Common.Models.Documento.OtrosTercero"
+            },
+            "nullable": true
+          },
+          "totales": {
+            "$ref": "#/components/schemas/Common.Models.Documento.Totales"
+          },
+          "totalesRetencion": {
+            "$ref": "#/components/schemas/Common.Models.Documento.TotalesRetencion"
+          },
+          "totalesOtraMoneda": {
+            "$ref": "#/components/schemas/Common.Models.Documento.TotalesOtraMoneda"
+          },
+          "orden": {
+            "$ref": "#/components/schemas/Common.Models.Documento.Orden"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Common.Models.Documento.FacturaGuiaItem": {
+        "required": [
+          "numeroDocumento",
+          "tipoDocumento"
+        ],
+        "type": "object",
+        "properties": {
+          "tipoDocumento": {
+            "minLength": 1,
+            "pattern": "^(01|04)$",
+            "type": "string"
+          },
+          "serie": {
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "numeroDocumento": {
+            "minLength": 1,
+            "pattern": "^([0-9]{1,19})$",
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Common.Models.Documento.FormasPago": {
+        "required": [
+          "forma",
+          "moneda",
+          "monto"
+        ],
+        "type": "object",
+        "properties": {
+          "descripcion": {
+            "maxLength": 100,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "fecha": {
+            "pattern": "^((0[1-9]|[12][0-9]|3[01])[/](0[1-9]|1[012])[/](19|20)\\d\\d)$",
+            "type": "string",
+            "nullable": true
+          },
+          "forma": {
+            "minLength": 1,
+            "pattern": "^(01|02|03|04|05|06|07|08|09|10|11|12|13|14|15|16|17|18|99)$",
+            "type": "string"
+          },
+          "monto": {
+            "minLength": 1,
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string"
+          },
+          "moneda": {
+            "maxLength": 3,
+            "minLength": 0,
+            "type": "string"
+          },
+          "tipoCambio": {
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,8})?)$",
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Common.Models.Documento.GuiaDespacho": {
+        "required": [
+          "esGuiaDespacho"
+        ],
+        "type": "object",
+        "properties": {
+          "esGuiaDespacho": {
+            "minLength": 1,
+            "pattern": "^(0|1)$",
+            "type": "string"
+          },
+          "motivoTraslado": {
+            "maxLength": 55,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "descripcionServicio": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "tipoProducto": {
+            "maxLength": 55,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "origenProducto": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "pesoOVolumenTotal": {
+            "maxLength": 55,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "destinoProducto": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "conductor": {
+            "$ref": "#/components/schemas/Common.Models.Documento.Conductor"
+          },
+          "vehiculo": {
+            "$ref": "#/components/schemas/Common.Models.Documento.Vehiculo"
+          },
+          "transportista": {
+            "$ref": "#/components/schemas/Common.Models.Documento.Transportista"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Common.Models.Documento.IdentificacionDocumento": {
+        "required": [
+          "serie",
+          "tipoDocumento"
+        ],
+        "type": "object",
+        "properties": {
+          "tipoDocumento": {
+            "minLength": 1,
+            "pattern": "^(01|02|03|04|05|06)$",
+            "type": "string"
+          },
+          "numeroDocumento": {
+            "pattern": "^([0-9]{1,19})$",
+            "type": "string",
+            "nullable": true
+          },
+          "tipoProveedor": {
+            "pattern": "^(SR|NR|ND)$",
+            "type": "string",
+            "nullable": true
+          },
+          "tipoTransaccion": {
+            "pattern": "^(01|02|03|04|98|99)$",
+            "type": "string",
+            "nullable": true
+          },
+          "numeroPlanillaImportacion": {
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "numeroExpedienteImportacion": {
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "serieFacturaAfectada": {
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "numeroFacturaAfectada": {
+            "pattern": "^([0-9]{1,19})$",
+            "type": "string",
+            "nullable": true
+          },
+          "fechaFacturaAfectada": {
+            "pattern": "^((0[1-9]|[12][0-9]|3[01])[/](0[1-9]|1[012])[/](19|20)\\d\\d)$",
+            "type": "string",
+            "nullable": true
+          },
+          "montoFacturaAfectada": {
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          },
+          "comentarioFacturaAfectada": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "regimenEspTributacion": {
+            "maxLength": 55,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "fechaEmision": {
+            "pattern": "^((0[1-9]|[12][0-9]|3[01])[/](0[1-9]|1[012])[/](19|20)\\d\\d)$",
+            "type": "string",
+            "nullable": true
+          },
+          "fechaVencimiento": {
+            "pattern": "^((0[1-9]|[12][0-9]|3[01])[/](0[1-9]|1[012])[/](19|20)\\d\\d)$",
+            "type": "string",
+            "nullable": true
+          },
+          "horaEmision": {
+            "pattern": "^((0[1-9]|1[012]):[0-5][0-9]:[0-5][0-9]\\s([ap][m]))$",
+            "type": "string",
+            "nullable": true
+          },
+          "anulado": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "tipoDePago": {
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "serie": {
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string"
+          },
+          "sucursal": {
+            "maxLength": 6,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "tipoDeVenta": {
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "moneda": {
+            "maxLength": 3,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "transaccionId": {
+            "maxLength": 50,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "urlPdf": {
+            "maxLength": 250,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Common.Models.Documento.ImpuestosSubtotal": {
+        "required": [
+          "codigoTotalImp"
+        ],
+        "type": "object",
+        "properties": {
+          "codigoTotalImp": {
+            "minLength": 1,
+            "pattern": "^(R|G|A|E|P|X|F|IGTF)$",
+            "type": "string"
+          },
+          "alicuotaImp": {
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          },
+          "baseImponibleImp": {
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          },
+          "valorTotalImp": {
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Common.Models.Documento.InfoAdicional": {
+        "type": "object",
+        "properties": {
+          "campo": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "valor": {
+            "maxLength": 1000,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Common.Models.Documento.InfoAdicionalItem": {
+        "type": "object",
+        "properties": {
+          "campo": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "valor": {
+            "maxLength": 1000,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Common.Models.Documento.ListaDescBonificacion": {
+        "type": "object",
+        "properties": {
+          "descDescuento": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "montoDescuento": {
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Common.Models.Documento.ListaItemOTI": {
+        "type": "object",
+        "properties": {
+          "tasaOTI": {
+            "pattern": "^([1-9][0-9]{0,2}(\\.[0-9]{1,2})?|0(\\.([1-9]|[0-9][1-9]|[1-9][0-9])))$",
+            "type": "string",
+            "nullable": true
+          },
+          "codigoOTI": {
+            "maxLength": 4,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "valorOTI": {
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Common.Models.Documento.ListaRecargo": {
+        "type": "object",
+        "properties": {
+          "descRecargo": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "montoRecargo": {
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Common.Models.Documento.NumerosControl": {
+        "type": "object",
+        "properties": {
+          "asignado": {
+            "type": "string",
+            "nullable": true
+          },
+          "global": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Common.Models.Documento.Orden": {
+        "required": [
+          "numero"
+        ],
+        "type": "object",
+        "properties": {
+          "numero": {
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string"
+          },
+          "correo": {
+            "maxItems": 5,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Common.Models.Documento.OtrosEnvios": {
+        "type": "object",
+        "properties": {
+          "tipo": {
+            "pattern": "^(sms|SMS|whatsapp|WhatsApp)$",
+            "type": "string",
+            "nullable": true
+          },
+          "destino": {
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Common.Models.Documento.OtrosImpuestosSubtotal": {
+        "required": [
+          "codigoOTI"
+        ],
+        "type": "object",
+        "properties": {
+          "codigoOTI": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "porcentajeOTI": {
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          },
+          "baseImponibleOTI": {
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          },
+          "montoOTI": {
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Common.Models.Documento.OtrosTercero": {
+        "required": [
+          "direccion",
+          "numeroIdentificacion",
+          "razonSocial",
+          "tipo",
+          "tipoIdentificacion"
+        ],
+        "type": "object",
+        "properties": {
+          "tipoIdentificacion": {
+            "maxLength": 3,
+            "minLength": 0,
+            "type": "string"
+          },
+          "numeroIdentificacion": {
+            "maxLength": 45,
+            "minLength": 0,
+            "type": "string"
+          },
+          "razonSocial": {
+            "maxLength": 255,
+            "minLength": 0,
+            "pattern": "^[\\p{L}\\p{N}\\p{P}\\p{S} ]+$",
+            "type": "string"
+          },
+          "direccion": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string"
+          },
+          "tipo": {
+            "maxLength": 100,
+            "minLength": 0,
+            "type": "string"
+          },
+          "correo": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "itemNro": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Common.Models.Documento.SujetoRetenido": {
+        "required": [
+          "direccion",
+          "numeroIdentificacion",
+          "pais",
+          "razonSocial",
+          "tipoIdentificacion"
+        ],
+        "type": "object",
+        "properties": {
+          "tipoIdentificacion": {
+            "minLength": 1,
+            "pattern": "^([VGCJEP]|.{2,4})$",
+            "type": "string"
+          },
+          "numeroIdentificacion": {
+            "maxLength": 45,
+            "minLength": 0,
+            "type": "string"
+          },
+          "razonSocial": {
+            "maxLength": 255,
+            "minLength": 0,
+            "pattern": "^[\\p{L}\\p{N}\\p{P}\\p{S} ]+$",
+            "type": "string"
+          },
+          "direccion": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string"
+          },
+          "ubigeo": {
+            "pattern": "^((\\d\\d-\\d\\d)|(\\d\\d-\\d\\d-\\d\\d))$",
+            "type": "string",
+            "nullable": true
+          },
+          "pais": {
+            "maxLength": 2,
+            "minLength": 0,
+            "type": "string"
+          },
+          "notificar": {
+            "pattern": "^(Si|No)$",
+            "type": "string",
+            "nullable": true
+          },
+          "telefono": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "correo": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "otrosEnvios": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Common.Models.Documento.OtrosEnvios"
+            },
+            "nullable": true
+          },
+          "tipoPerceptor": {
+            "pattern": "^(\\d{2})$",
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Common.Models.Documento.Tercero": {
+        "required": [
+          "direccion",
+          "numeroIdentificacion",
+          "razonSocial",
+          "tipo",
+          "tipoIdentificacion"
+        ],
+        "type": "object",
+        "properties": {
+          "tipoIdentificacion": {
+            "maxLength": 3,
+            "minLength": 0,
+            "type": "string"
+          },
+          "numeroIdentificacion": {
+            "maxLength": 45,
+            "minLength": 0,
+            "type": "string"
+          },
+          "razonSocial": {
+            "maxLength": 255,
+            "minLength": 0,
+            "pattern": "^[\\p{L}\\p{N}\\p{P}\\p{S} ]+$",
+            "type": "string"
+          },
+          "direccion": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string"
+          },
+          "tipo": {
+            "maxLength": 100,
+            "minLength": 0,
+            "type": "string"
+          },
+          "correo": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Common.Models.Documento.TotalRetencion": {
+        "required": [
+          "fechaEmisionCR",
+          "numeroCompRetencion",
+          "totalBaseImponible"
+        ],
+        "type": "object",
+        "properties": {
+          "totalBaseImponible": {
+            "minLength": 1,
+            "pattern": "^([0-9]{1,20}(\\.[0-9]{1,2})?)$",
+            "type": "string"
+          },
+          "numeroCompRetencion": {
+            "maxLength": 50,
+            "minLength": 0,
+            "pattern": "^[a-zA-Z0-9]+$",
+            "type": "string"
+          },
+          "fechaEmisionCR": {
+            "minLength": 1,
+            "pattern": "^((0[1-9]|[12][0-9]|3[01])[/](0[1-9]|1[012])[/](19|20)\\d\\d)$",
+            "type": "string"
+          },
+          "totalIVA": {
+            "pattern": "^([0-9]{1,20}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          },
+          "totalRetenido": {
+            "pattern": "^([0-9]{1,20}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Common.Models.Documento.TotalRetencionConsulta": {
+        "required": [
+          "fechaEmisionCR",
+          "numeroCompRetencion",
+          "totalBaseImponible"
+        ],
+        "type": "object",
+        "properties": {
+          "totalBaseImponible": {
+            "minLength": 1,
+            "pattern": "^([0-9]{1,20}(\\.[0-9]{1,2})?)$",
+            "type": "string"
+          },
+          "numeroCompRetencion": {
+            "maxLength": 50,
+            "minLength": 0,
+            "pattern": "^[a-zA-Z0-9]+$",
+            "type": "string"
+          },
+          "fechaEmisionCR": {
+            "minLength": 1,
+            "pattern": "^((0[1-9]|[12][0-9]|3[01])[/](0[1-9]|1[012])[/](19|20)\\d\\d)$",
+            "type": "string"
+          },
+          "totalIVA": {
+            "pattern": "^([0-9]{1,20}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          },
+          "totalRetenido": {
+            "pattern": "^([0-9]{1,20}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          },
+          "fechaAplicacion": {
+            "type": "string",
+            "nullable": true
+          },
+          "horaAplicacion": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Common.Models.Documento.Totales": {
+        "required": [
+          "montoGravadoTotal",
+          "montoTotalConIVA",
+          "nroItems",
+          "subtotal",
+          "totalAPagar",
+          "totalIVA"
+        ],
+        "type": "object",
+        "properties": {
+          "nroItems": {
+            "maxLength": 4,
+            "minLength": 0,
+            "type": "string"
+          },
+          "montoGravadoTotal": {
+            "minLength": 1,
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string"
+          },
+          "montoExentoTotal": {
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          },
+          "montoPercibidoTotal": {
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          },
+          "subtotalAntesDescuento": {
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          },
+          "totalDescuento": {
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          },
+          "totalRecargos": {
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          },
+          "subtotal": {
+            "minLength": 1,
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string"
+          },
+          "totalIVA": {
+            "minLength": 1,
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string"
+          },
+          "montoTotalConIVA": {
+            "minLength": 1,
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string"
+          },
+          "totalAPagar": {
+            "minLength": 1,
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string"
+          },
+          "montoEnLetras": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "listaRecargo": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Common.Models.Documento.ListaRecargo"
+            },
+            "nullable": true
+          },
+          "listaDescBonificacion": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Common.Models.Documento.ListaDescBonificacion"
+            },
+            "nullable": true
+          },
+          "impuestosSubtotal": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Common.Models.Documento.ImpuestosSubtotal"
+            },
+            "nullable": true
+          },
+          "otrosImpuestosSubtotal": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Common.Models.Documento.OtrosImpuestosSubtotal"
+            },
+            "nullable": true
+          },
+          "formasPago": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Common.Models.Documento.FormasPago"
+            },
+            "nullable": true
+          },
+          "totalIGTF": {
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          },
+          "totalIGTF_VES": {
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          },
+          "montoTotalOTI": {
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          },
+          "montoTotalIVAyOTI": {
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Common.Models.Documento.TotalesOtraMoneda": {
+        "required": [
+          "moneda",
+          "montoGravadoTotal",
+          "montoTotalConIVA",
+          "subtotal",
+          "tipoCambio",
+          "totalAPagar",
+          "totalIVA"
+        ],
+        "type": "object",
+        "properties": {
+          "moneda": {
+            "maxLength": 100,
+            "minLength": 0,
+            "type": "string"
+          },
+          "tipoCambio": {
+            "minLength": 1,
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,8})?)$",
+            "type": "string"
+          },
+          "montoGravadoTotal": {
+            "minLength": 1,
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string"
+          },
+          "montoPercibidoTotal": {
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          },
+          "montoExentoTotal": {
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          },
+          "subtotal": {
+            "minLength": 1,
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string"
+          },
+          "totalAPagar": {
+            "minLength": 1,
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string"
+          },
+          "totalIVA": {
+            "minLength": 1,
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string"
+          },
+          "montoTotalConIVA": {
+            "minLength": 1,
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string"
+          },
+          "montoEnLetras": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "subtotalAntesDescuento": {
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          },
+          "totalDescuento": {
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          },
+          "totalRecargos": {
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          },
+          "listaRecargo": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Common.Models.Documento.ListaRecargo"
+            },
+            "nullable": true
+          },
+          "listaDescBonificacion": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Common.Models.Documento.ListaDescBonificacion"
+            },
+            "nullable": true
+          },
+          "impuestosSubtotal": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Common.Models.Documento.ImpuestosSubtotal"
+            },
+            "nullable": true
+          },
+          "otrosImpuestosSubtotal": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Common.Models.Documento.OtrosImpuestosSubtotal"
+            },
+            "nullable": true
+          },
+          "montoTotalOTI": {
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          },
+          "montoTotalIVAyOTI": {
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Common.Models.Documento.TotalesRetencion": {
+        "required": [
+          "fechaEmisionCR",
+          "numeroCompRetencion",
+          "totalBaseImponible"
+        ],
+        "type": "object",
+        "properties": {
+          "totalBaseImponible": {
+            "minLength": 1,
+            "pattern": "^([0-9]{1,20}(\\.[0-9]{1,2})?)$",
+            "type": "string"
+          },
+          "numeroCompRetencion": {
+            "maxLength": 50,
+            "minLength": 0,
+            "pattern": "^[a-zA-Z0-9]+$",
+            "type": "string"
+          },
+          "fechaEmisionCR": {
+            "minLength": 1,
+            "pattern": "^((0[1-9]|[12][0-9]|3[01])[/](0[1-9]|1[012])[/](19|20)\\d\\d)$",
+            "type": "string"
+          },
+          "totalIVA": {
+            "pattern": "^([0-9]{1,20}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          },
+          "totalRetenido": {
+            "pattern": "^([0-9]{1,20}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          },
+          "totalISRL": {
+            "pattern": "^([0-9]{1,20}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          },
+          "totalIGTF": {
+            "pattern": "^([0-9]{1,20}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          },
+          "tipoComprobante": {
+            "pattern": "^[1-9]\\d?$",
+            "type": "string",
+            "nullable": true
+          },
+          "esNegativo": {
+            "type": "boolean",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Common.Models.Documento.Transporte": {
+        "type": "object",
+        "properties": {
+          "tipo": {
+            "maxLength": 100,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "descripcion": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "codigo": {
+            "maxLength": 100,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "origen": {
+            "maxLength": 100,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "destino": {
+            "maxLength": 100,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "fechaEntrada": {
+            "pattern": "^((0[1-9]|[12][0-9]|3[01])[/](0[1-9]|1[012])[/](19|20)\\d\\d)$",
+            "type": "string",
+            "nullable": true
+          },
+          "fechaSalida": {
+            "pattern": "^((0[1-9]|[12][0-9]|3[01])[/](0[1-9]|1[012])[/](19|20)\\d\\d)$",
+            "type": "string",
+            "nullable": true
+          },
+          "lugarEntrega": {
+            "maxLength": 100,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "lugarRecepcion": {
+            "maxLength": 100,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "placa": {
+            "maxLength": 100,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Common.Models.Documento.Transportista": {
+        "type": "object",
+        "properties": {
+          "razonSocial": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "numeroIdentificacion": {
+            "maxLength": 45,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "domicilioFiscal": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Common.Models.Documento.Vehiculo": {
+        "type": "object",
+        "properties": {
+          "tipoVehiculo": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "numeroTransporte": {
+            "maxLength": 55,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "numeroPlaca": {
+            "maxLength": 12,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Common.Models.Documento.Vendedor": {
+        "required": [
+          "nombre"
+        ],
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "nombre": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string"
+          },
+          "numCajero": {
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Common.Models.Documento.Viajes": {
+        "type": "object",
+        "properties": {
+          "nombreApellidoPasajero": {
+            "maxLength": 100,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "tipoIdentificacion": {
+            "maxLength": 4,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "numeroIdentificacion": {
+            "maxLength": 45,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "domicilioFiscalPasajero": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "numeroTelePasajero": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "razonSocialServTransporte": {
+            "maxLength": 100,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "numeroBoleto": {
+            "maxLength": 14,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "fechaSalida": {
+            "maxLength": 10,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "horaSalida": {
+            "maxLength": 10,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "fechaLlegada": {
+            "maxLength": 10,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "horaLlegada": {
+            "maxLength": 10,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "unidadVolumen": {
+            "maxLength": 3,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "nombrePuertoEmbarque": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "condicionesEntrega": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "puntoSalida": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "puntoDestino": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Common.Models.DocumentoARC.Beneficiario": {
+        "required": [
+          "constituidaPais",
+          "direccion",
+          "domiciliadaPais",
+          "fechaPago",
+          "nacionalidad",
+          "numeroIdentificacion",
+          "razonSocial",
+          "tipoIdentificacion"
+        ],
+        "type": "object",
+        "properties": {
+          "tipoIdentificacion": {
+            "minLength": 1,
+            "pattern": "^([VGCJEP]|.{2,4})$",
+            "type": "string"
+          },
+          "numeroIdentificacion": {
+            "maxLength": 45,
+            "minLength": 0,
+            "type": "string"
+          },
+          "razonSocial": {
+            "maxLength": 255,
+            "minLength": 0,
+            "pattern": "^[\\p{L}\\p{N}\\p{P}\\p{S} ]+$",
+            "type": "string"
+          },
+          "nacionalidad": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string"
+          },
+          "constituidaPais": {
+            "type": "boolean"
+          },
+          "domiciliadaPais": {
+            "type": "boolean"
+          },
+          "direccion": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string"
+          },
+          "fechaPago": {
+            "minLength": 1,
+            "pattern": "^((0[1-9]|[12][0-9]|3[01])[/](0[1-9]|1[012])[/](19|20)\\d\\d)$",
+            "type": "string"
+          },
+          "notificar": {
+            "pattern": "^(Si|No)$",
+            "type": "string",
+            "nullable": true
+          },
+          "telefono": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "correo": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Common.Models.DocumentoARC.DetallesRetencion": {
+        "required": [
+          "impuestoRetenido",
+          "mes",
+          "montoObjetoRet",
+          "montoPagado"
+        ],
+        "type": "object",
+        "properties": {
+          "mes": {
+            "minLength": 1,
+            "pattern": "^(0[1-9]|1[012])$",
+            "type": "string"
+          },
+          "codigoRetencion": {
+            "maxLength": 3,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "montoPagado": {
+            "minLength": 1,
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string"
+          },
+          "montoObjetoRet": {
+            "minLength": 1,
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string"
+          },
+          "porcentajeOTarifa": {
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          },
+          "impuestoRetenido": {
+            "minLength": 1,
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string"
+          },
+          "objetoRetAcumulado": {
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          },
+          "impuestoRetAcumulado": {
+            "pattern": "^([0-9]{1,16}(\\.[0-9]{1,2})?)$",
+            "type": "string",
+            "nullable": true
+          },
+          "impuestoEnterado": {
+            "$ref": "#/components/schemas/Common.Models.DocumentoARC.ImpuestoEnterado"
+          },
+          "infoAdicional": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Common.Models.DocumentoARC.InfoAdicional"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Common.Models.DocumentoARC.DocumentoARC": {
+        "required": [
+          "encabezado"
+        ],
+        "type": "object",
+        "properties": {
+          "encabezado": {
+            "$ref": "#/components/schemas/Common.Models.DocumentoARC.Encabezado"
+          },
+          "infoAdicional": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Common.Models.DocumentoARC.InfoAdicional"
+            },
+            "nullable": true
+          },
+          "detallesRetencion": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Common.Models.DocumentoARC.DetallesRetencion"
+            },
+            "nullable": true
+          },
+          "esLote": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "esMinimo": {
+            "type": "boolean",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Common.Models.DocumentoARC.Encabezado": {
+        "required": [
+          "identificacionDocumento"
+        ],
+        "type": "object",
+        "properties": {
+          "identificacionDocumento": {
+            "$ref": "#/components/schemas/Common.Models.DocumentoARC.IdentificacionDocumento"
+          },
+          "beneficiario": {
+            "$ref": "#/components/schemas/Common.Models.DocumentoARC.Beneficiario"
+          },
+          "totalesRetencion": {
+            "$ref": "#/components/schemas/Common.Models.DocumentoARC.TotalesRetencion"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Common.Models.DocumentoARC.IdentificacionDocumento": {
+        "required": [
+          "serie",
+          "tipoDocumento"
+        ],
+        "type": "object",
+        "properties": {
+          "tipoDocumento": {
+            "minLength": 1,
+            "pattern": "^(07)$",
+            "type": "string"
+          },
+          "numeroDocumento": {
+            "pattern": "^([0-9]{1,19})$",
+            "type": "string",
+            "nullable": true
+          },
+          "serie": {
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string"
+          },
+          "tipoAgente": {
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "fechaCierreEjercicio": {
+            "pattern": "^((0[1-9]|[12][0-9]|3[01])[/](0[1-9]|1[012])[/](19|20)\\d\\d)$",
+            "type": "string",
+            "nullable": true
+          },
+          "horaCierreEjercicio": {
+            "pattern": "^((0[1-9]|1[012]):[0-5][0-9]:[0-5][0-9]\\s([ap][m]))$",
+            "type": "string",
+            "nullable": true
+          },
+          "periodoRetencion": {
+            "$ref": "#/components/schemas/Common.Models.DocumentoARC.PeriodoRetencion"
+          },
+          "observaciones": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "sucursal": {
+            "maxLength": 6,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "moneda": {
+            "maxLength": 3,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "transaccionId": {
+            "maxLength": 50,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Common.Models.DocumentoARC.ImpuestoEnterado": {
+        "required": [
+          "banco",
+          "fecha"
+        ],
+        "type": "object",
+        "properties": {
+          "fecha": {
+            "minLength": 1,
+            "pattern": "^((0[1-9]|[12][0-9]|3[01])[/](0[1-9]|1[012])[/](19|20)\\d\\d)$",
+            "type": "string"
+          },
+          "banco": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Common.Models.DocumentoARC.InfoAdicional": {
+        "type": "object",
+        "properties": {
+          "campo": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "valor": {
+            "maxLength": 1000,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Common.Models.DocumentoARC.PeriodoRetencion": {
+        "required": [
+          "desde",
+          "hasta"
+        ],
+        "type": "object",
+        "properties": {
+          "desde": {
+            "minLength": 1,
+            "pattern": "^((0[1-9]|[12][0-9]|3[01])[/](0[1-9]|1[012])[/](19|20)\\d\\d)$",
+            "type": "string"
+          },
+          "hasta": {
+            "minLength": 1,
+            "pattern": "^((0[1-9]|[12][0-9]|3[01])[/](0[1-9]|1[012])[/](19|20)\\d\\d)$",
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Common.Models.DocumentoARC.TotalesRetencion": {
+        "required": [
+          "totalCantidadObjetoRet",
+          "totalCantidadPagada",
+          "totalImpuestoRetAcumulado",
+          "totalImpuestoRetenido",
+          "totalObjetoRetAcumulado"
+        ],
+        "type": "object",
+        "properties": {
+          "totalCantidadPagada": {
+            "minLength": 1,
+            "pattern": "^([0-9]{1,20}(\\.[0-9]{1,2})?)$",
+            "type": "string"
+          },
+          "totalCantidadObjetoRet": {
+            "minLength": 1,
+            "pattern": "^([0-9]{1,20}(\\.[0-9]{1,2})?)$",
+            "type": "string"
+          },
+          "totalImpuestoRetenido": {
+            "minLength": 1,
+            "pattern": "^([0-9]{1,20}(\\.[0-9]{1,2})?)$",
+            "type": "string"
+          },
+          "totalObjetoRetAcumulado": {
+            "minLength": 1,
+            "pattern": "^([0-9]{1,20}(\\.[0-9]{1,2})?)$",
+            "type": "string"
+          },
+          "totalImpuestoRetAcumulado": {
+            "minLength": 1,
+            "pattern": "^([0-9]{1,20}(\\.[0-9]{1,2})?)$",
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Common.Models.DocumentoDNF.CompradorDNF": {
+        "required": [
+          "direccion",
+          "numeroIdentificacion",
+          "pais",
+          "razonSocial",
+          "tipoIdentificacion"
+        ],
+        "type": "object",
+        "properties": {
+          "tipoIdentificacion": {
+            "maxLength": 3,
+            "minLength": 0,
+            "type": "string"
+          },
+          "numeroIdentificacion": {
+            "maxLength": 12,
+            "minLength": 0,
+            "type": "string"
+          },
+          "razonSocial": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string"
+          },
+          "direccion": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string"
+          },
+          "pais": {
+            "maxLength": 2,
+            "minLength": 0,
+            "type": "string"
+          },
+          "notificar": {
+            "maxLength": 3,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "telefono": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "correos": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Common.Models.DocumentoDNF.DetallesItemDNF": {
+        "required": [
+          "cantidad",
+          "codigoImpuesto",
+          "descripcion",
+          "numeroLinea",
+          "precioUnitario",
+          "valorTotalItem"
+        ],
+        "type": "object",
+        "properties": {
+          "numeroLinea": {
+            "maxLength": 4,
+            "minLength": 0,
+            "type": "string"
+          },
+          "codigoPLU": {
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "descripcion": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string"
+          },
+          "cantidad": {
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string"
+          },
+          "unidadMedida": {
+            "maxLength": 3,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "precioUnitario": {
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string"
+          },
+          "precioItem": {
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "codigoImpuesto": {
+            "maxLength": 10,
+            "minLength": 0,
+            "type": "string"
+          },
+          "valorIVA": {
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "valorTotalItem": {
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string"
+          },
+          "infoAdicionalItem": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Common.Models.Documento.InfoAdicionalItem"
+            },
+            "nullable": true
+          },
+          "mermas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Common.Models.DocumentoDNF.MermaItem"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Common.Models.DocumentoDNF.DocumentoNF": {
+        "required": [
+          "detallesItems",
+          "encabezado"
+        ],
+        "type": "object",
+        "properties": {
+          "encabezado": {
+            "$ref": "#/components/schemas/Common.Models.DocumentoDNF.EncabezadoDNF"
+          },
+          "detallesItems": {
+            "maxItems": 300,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Common.Models.DocumentoDNF.DetallesItemDNF"
+            }
+          },
+          "infoAdicional": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Common.Models.Documento.InfoAdicional"
+            },
+            "nullable": true
+          },
+          "guiaDespacho": {
+            "$ref": "#/components/schemas/Common.Models.Documento.GuiaDespacho"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Common.Models.DocumentoDNF.DocumentoRelacionado": {
+        "required": [
+          "numero",
+          "tipo"
+        ],
+        "type": "object",
+        "properties": {
+          "serie": {
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "tipo": {
+            "maxLength": 10,
+            "minLength": 0,
+            "type": "string"
+          },
+          "numero": {
+            "maxLength": 50,
+            "minLength": 0,
+            "type": "string"
+          },
+          "fechaEmision": {
+            "maxLength": 30,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "monto": {
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "comentario": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Common.Models.DocumentoDNF.EncabezadoDNF": {
+        "required": [
+          "comprador",
+          "identificacionDocumento"
+        ],
+        "type": "object",
+        "properties": {
+          "identificacionDocumento": {
+            "$ref": "#/components/schemas/Common.Models.DocumentoDNF.IdentificacionDocumentoDNF"
+          },
+          "comprador": {
+            "$ref": "#/components/schemas/Common.Models.DocumentoDNF.CompradorDNF"
+          },
+          "totales": {
+            "$ref": "#/components/schemas/Common.Models.DocumentoDNF.TotalesDNF"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Common.Models.DocumentoDNF.IdentificacionDocumentoDNF": {
+        "required": [
+          "documentoRelacionado",
+          "fechaEmision",
+          "numeroDocumento",
+          "tipoDocumento"
+        ],
+        "type": "object",
+        "properties": {
+          "tipoDocumento": {
+            "maxLength": 10,
+            "minLength": 0,
+            "pattern": "^(99)$",
+            "type": "string"
+          },
+          "numeroDocumento": {
+            "maxLength": 50,
+            "minLength": 0,
+            "type": "string"
+          },
+          "documentoRelacionado": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Common.Models.DocumentoDNF.DocumentoRelacionado"
+            }
+          },
+          "fechaEmision": {
+            "maxLength": 20,
+            "minLength": 0,
+            "pattern": "^((0[1-9]|[12][0-9]|3[01])[/](0[1-9]|1[012])[/](19|20)\\d\\d)$",
+            "type": "string"
+          },
+          "horaEmision": {
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "serie": {
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "sucursal": {
+            "maxLength": 6,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "moneda": {
+            "maxLength": 3,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Common.Models.DocumentoDNF.MermaItem": {
+        "type": "object",
+        "properties": {
+          "descripcionMerma": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "cantidadPerdida": {
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "montoEstimadoPerdido": {
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Common.Models.DocumentoDNF.MermaTotal": {
+        "type": "object",
+        "properties": {
+          "item": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "cantidad": {
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "descripcion": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Common.Models.DocumentoDNF.TotalesDNF": {
+        "type": "object",
+        "properties": {
+          "nroItems": {
+            "maxLength": 4,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "totalIVA": {
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "montoTotalConIVA": {
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "totalAPagar": {
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "mensaje": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "listaMermas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Common.Models.DocumentoDNF.MermaTotal"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "Bearer": {
+        "type": "apiKey",
+        "description": "Por favor, ingrese en el campo la palabra 'Bearer' seguido de un espacio y el Token JWT",
+        "name": "Authorization",
+        "in": "header"
+      }
+    }
+  },
+  "security": [
+    {
+      "Bearer": [ ]
+    }
+  ],
+  "tags": [
+    {
+      "name": "Anular"
+    },
+    {
+      "name": "AplicarRetencion"
+    },
+    {
+      "name": "AplicarRetencionISLR"
+    },
+    {
+      "name": "Asignacion"
+    },
+    {
+      "name": "Autenticacion"
+    },
+    {
+      "name": "ConsultaNumeraciones"
+    },
+    {
+      "name": "ConsultaReservaciones"
+    },
+    {
+      "name": "Contingencia"
+    },
+    {
+      "name": "Correo"
+    },
+    {
+      "name": "DescargaArchivo"
+    },
+    {
+      "name": "Emision"
+    },
+    {
+      "name": "EmisionDNF"
+    },
+    {
+      "name": "EstadoDocumento"
+    },
+    {
+      "name": "EstadoLote"
+    },
+    {
+      "name": "FacturacionLote"
+    },
+    {
+      "name": "ListadoDocumentos"
+    },
+    {
+      "name": "Relacionar"
+    },
+    {
+      "name": "ResultadoLote"
+    },
+    {
+      "name": "SubirLote"
+    },
+    {
+      "name": "UltimoDocumento"
+    }
+  ]
+}

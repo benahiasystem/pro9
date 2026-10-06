@@ -86,7 +86,7 @@
                                 <th>Estado</th>
                                 <th class="text-center">Moneda</th>
                                 <th class="text-right" >T.Exportación</th>
-                                <th class="text-right" >T.Inafecta</th>
+
                                 <th class="text-right" >T.Exonerado</th>
                                 <th class="text-right">T.Gravado</th>
                                 {{-- ########## INICIO CAMBIO IGV A IVA --}}
@@ -106,7 +106,7 @@
                                     <td>{{$value->state_type->description}}</td>
                                     <td>{{$value->currency_type_id}}</td>
                                     <td >{{ $value->total_exportation }}</td>
-                                    <td >{{ $value->total_unaffected }}</td>
+
                                     <td >{{ $value->total_exonerated }}</td>
                                     <td>{{ $value->total_taxed}}</td>
                                     <td>{{ $value->total_igv}}</td>

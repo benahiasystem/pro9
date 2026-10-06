@@ -8,6 +8,27 @@ return new class extends Migration
 {
     public function up(): void
     {
+        DB::unprepared("ALTER TABLE `document_payments` ADD CONSTRAINT `document_payments_reversed_by_foreign` FOREIGN KEY (`reversed_by`) REFERENCES `users` (`id`)");
+        DB::unprepared("ALTER TABLE `document_received_retentions` ADD CONSTRAINT `received_retention_concept_foreign` FOREIGN KEY (`concept_id`) REFERENCES `cat_retention_concept` (`id`)");
+        DB::unprepared("ALTER TABLE `document_payments` ADD CONSTRAINT `document_payments_receipt_parent_foreign` FOREIGN KEY (`receipt_parent_id`) REFERENCES `document_payments` (`id`)");
+        // ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
+        DB::unprepared("ALTER TABLE `document_taxes` ADD CONSTRAINT `document_taxes_document_id_foreign` FOREIGN KEY (`document_id`) REFERENCES `documents` (`id`)");
+        DB::unprepared("ALTER TABLE `document_currency_totals` ADD CONSTRAINT `document_currency_totals_document_id_foreign` FOREIGN KEY (`document_id`) REFERENCES `documents` (`id`)");
+        DB::unprepared("ALTER TABLE `document_received_retentions` ADD CONSTRAINT `document_received_retentions_document_id_foreign` FOREIGN KEY (`document_id`) REFERENCES `documents` (`id`)");
+        DB::unprepared("ALTER TABLE `document_guarantee_funds` ADD CONSTRAINT `document_guarantee_funds_document_id_foreign` FOREIGN KEY (`document_id`) REFERENCES `documents` (`id`)");
+        DB::unprepared("ALTER TABLE `document_fiscal_data` ADD CONSTRAINT `document_fiscal_data_document_id_foreign` FOREIGN KEY (`document_id`) REFERENCES `documents` (`id`)");
+        DB::unprepared("ALTER TABLE `document_emissions` ADD CONSTRAINT `document_emissions_document_id_foreign` FOREIGN KEY (`document_id`) REFERENCES `documents` (`id`)");
+        DB::unprepared("ALTER TABLE `document_taxes` ADD CONSTRAINT `document_taxes_document_payment_id_foreign` FOREIGN KEY (`document_payment_id`) REFERENCES `document_payments` (`id`)");
+        DB::unprepared("ALTER TABLE `document_payments` ADD CONSTRAINT `document_payments_currency_type_id_foreign` FOREIGN KEY (`currency_type_id`) REFERENCES `cat_currency_types` (`id`)");
+        DB::unprepared("ALTER TABLE `document_currency_totals` ADD CONSTRAINT `document_currency_totals_currency_type_id_foreign` FOREIGN KEY (`currency_type_id`) REFERENCES `cat_currency_types` (`id`)");
+        DB::unprepared("ALTER TABLE `document_received_retentions` ADD CONSTRAINT `document_received_retentions_currency_type_id_foreign` FOREIGN KEY (`currency_type_id`) REFERENCES `cat_currency_types` (`id`)");
+        DB::unprepared("ALTER TABLE `document_received_retentions` ADD CONSTRAINT `document_received_retentions_agent_id_foreign` FOREIGN KEY (`agent_id`) REFERENCES `persons` (`id`)");
+        DB::unprepared("ALTER TABLE `document_fiscal_data` ADD CONSTRAINT `document_fiscal_data_provider_type_id_foreign` FOREIGN KEY (`provider_type_id`) REFERENCES `cat_providers_types` (`id`)");
+        DB::unprepared("ALTER TABLE `document_fiscal_data` ADD CONSTRAINT `document_fiscal_data_transaction_type_id_foreign` FOREIGN KEY (`transaction_type_id`) REFERENCES `cat_transactions_types` (`id`)");
+        DB::unprepared("ALTER TABLE `document_fiscal_data` ADD CONSTRAINT `document_fiscal_data_special_tax_regime_id_foreign` FOREIGN KEY (`special_tax_regime_id`) REFERENCES `cat_special_tax_regime` (`id`)");
+        DB::unprepared("ALTER TABLE `document_emissions` ADD CONSTRAINT `document_emissions_fiscal_environment_foreign` FOREIGN KEY (`fiscal_environment`) REFERENCES `fiscal_environments` (`id`)");
+        // ######## FIN PERSISTENCIA FISCAL VENEZUELA ########
+
         DB::unprepared("ALTER TABLE `authorized_discount_users` ADD CONSTRAINT `authorized_discount_users_seller_id_foreign` FOREIGN KEY (`seller_id`) REFERENCES `users` (`id`)");
         DB::unprepared("ALTER TABLE `authorized_discount_users` ADD CONSTRAINT `authorized_discount_users_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)");
         DB::unprepared("ALTER TABLE `bank_accounts` ADD CONSTRAINT `bank_accounts_bank_id_foreign` FOREIGN KEY (`bank_id`) REFERENCES `banks` (`id`)");
@@ -507,6 +528,27 @@ return new class extends Migration
 
     public function down(): void
     {
+        DB::unprepared("ALTER TABLE `document_payments` DROP FOREIGN KEY `document_payments_reversed_by_foreign`");
+        DB::unprepared("ALTER TABLE `document_received_retentions` DROP FOREIGN KEY `received_retention_concept_foreign`");
+        DB::unprepared("ALTER TABLE `document_payments` DROP FOREIGN KEY `document_payments_receipt_parent_foreign`");
+        // ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
+        DB::unprepared("ALTER TABLE `document_emissions` DROP FOREIGN KEY `document_emissions_fiscal_environment_foreign`");
+        DB::unprepared("ALTER TABLE `document_fiscal_data` DROP FOREIGN KEY `document_fiscal_data_special_tax_regime_id_foreign`");
+        DB::unprepared("ALTER TABLE `document_fiscal_data` DROP FOREIGN KEY `document_fiscal_data_transaction_type_id_foreign`");
+        DB::unprepared("ALTER TABLE `document_fiscal_data` DROP FOREIGN KEY `document_fiscal_data_provider_type_id_foreign`");
+        DB::unprepared("ALTER TABLE `document_received_retentions` DROP FOREIGN KEY `document_received_retentions_agent_id_foreign`");
+        DB::unprepared("ALTER TABLE `document_received_retentions` DROP FOREIGN KEY `document_received_retentions_currency_type_id_foreign`");
+        DB::unprepared("ALTER TABLE `document_currency_totals` DROP FOREIGN KEY `document_currency_totals_currency_type_id_foreign`");
+        DB::unprepared("ALTER TABLE `document_payments` DROP FOREIGN KEY `document_payments_currency_type_id_foreign`");
+        DB::unprepared("ALTER TABLE `document_taxes` DROP FOREIGN KEY `document_taxes_document_payment_id_foreign`");
+        DB::unprepared("ALTER TABLE `document_emissions` DROP FOREIGN KEY `document_emissions_document_id_foreign`");
+        DB::unprepared("ALTER TABLE `document_fiscal_data` DROP FOREIGN KEY `document_fiscal_data_document_id_foreign`");
+        DB::unprepared("ALTER TABLE `document_guarantee_funds` DROP FOREIGN KEY `document_guarantee_funds_document_id_foreign`");
+        DB::unprepared("ALTER TABLE `document_received_retentions` DROP FOREIGN KEY `document_received_retentions_document_id_foreign`");
+        DB::unprepared("ALTER TABLE `document_currency_totals` DROP FOREIGN KEY `document_currency_totals_document_id_foreign`");
+        DB::unprepared("ALTER TABLE `document_taxes` DROP FOREIGN KEY `document_taxes_document_id_foreign`");
+        // ######## FIN PERSISTENCIA FISCAL VENEZUELA ########
+
         DB::unprepared("ALTER TABLE `workers` DROP FOREIGN KEY `workers_identity_document_type_id_foreign`");
         DB::unprepared("ALTER TABLE `weighted_average_costs` DROP FOREIGN KEY `weighted_average_costs_item_id_foreign`");
         DB::unprepared("ALTER TABLE `webhook_deliveries` DROP FOREIGN KEY `webhook_deliveries_webhook_subscription_id_foreign`");

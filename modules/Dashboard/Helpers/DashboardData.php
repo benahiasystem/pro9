@@ -1077,7 +1077,7 @@ class DashboardData
      */
     public function document_totals_globals($start_date = null, $end_date = null)
     {
-        $documents_query = Document::without(['user', 'fiscal_environment_type', 'state_type', 'document_type', 'currency_type', 'group', 'items', 'invoice', 'note'])
+        $documents_query = Document::query()->setEagerLoads([])
                                     ->select('id', 'state_type_id', 'document_type_id', 'currency_type_id', 'total', 'exchange_rate_sale');
 
 
@@ -1090,7 +1090,6 @@ class DashboardData
 
         //VES
         $document_total_pen = 0;
-        $document_total_payment_pen = 0;
         $document_total_note_credit_pen = 0;
 
         $document_total_pen = collect($documents->whereIn('state_type_id', ['01','03','05','07','13'])->whereIn('document_type_id', ['01','08']))->where('currency_type_id', 'VES')->sum('total');
@@ -1099,7 +1098,6 @@ class DashboardData
         //USD
         $document_total_usd = 0;
         $document_total_note_credit_usd = 0;
-        $document_total_payment_usd = 0;
 
         $documents_usd = $documents->whereIn('state_type_id', ['01','03','05','07','13'])
                                     ->whereIn('document_type_id', ['01','08'])
@@ -1117,7 +1115,6 @@ class DashboardData
 
                 if(in_array($document->state_type_id,['01','03','05','07','13'])){
 
-                    $document_total_payment_pen += collect($document->payments)->sum('payment');
                     $document_total_note_credit_pen += ($document->document_type_id == '07') ? $document->total:0; //nota de credito
 
                 }
@@ -1127,7 +1124,6 @@ class DashboardData
 
                 if(in_array($document->state_type_id,['01','03','05','07','13'])){
 
-                    $document_total_payment_usd += collect($document->payments)->sum('payment') * $document->exchange_rate_sale;
                     $document_total_note_credit_usd += ($document->document_type_id == '07') ? $document->total * $document->exchange_rate_sale:0; //nota de credito
 
                 }

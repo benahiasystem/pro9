@@ -995,14 +995,8 @@
                         <span>Op. exoneradas</span>
                         <span>{{ currency_type.symbol }} {{ money(form.total_exonerated) }}</span>
                     </div>
-                    <div v-if="form.total_free > 0" class="pos-cart__total-row">
-                        <span>Op. gratuitas</span>
-                        <span>{{ currency_type.symbol }} {{ money(form.total_free) }}</span>
-                    </div>
-                    <div v-if="form.total_unaffected > 0" class="pos-cart__total-row">
-                        <span>Op. inafectas</span>
-                        <span>{{ currency_type.symbol }} {{ money(form.total_unaffected) }}</span>
-                    </div>
+
+
                     <div v-if="form.total_taxed > 0 && !isNrus" class="pos-cart__total-row">
                         <span>Op. gravada</span>
                         <span>{{ currency_type.symbol }} {{ money(form.total_taxed) }}</span>
@@ -1013,15 +1007,7 @@
                         <!-- ######### FIN CAMBIO IGV A IVA -->
                         <span>{{ currency_type.symbol }} {{ money(form.total_igv) }}</span>
                     </div>
-                    <template v-if="form.has_retention && !isNrus">
-                        <div
-                            v-if="form.retention && form.retention.amount > 0"
-                            class="pos-cart__total-row"
-                        >
-                            <span>M. retención ({{ configuration.igv_retention_percentage }}%)</span>
-                            <span>{{ currency_type.symbol }} {{ money(form.retention.amount) }}</span>
-                        </div>
-                    </template>
+
                     <!-- ########## INICIO SIN DETRACCIONES E ISC -->
                     <!-- ISC e impuesto a bolsas se conservan en datos históricos, sin presentación activa. -->
                     <!-- ######### FIN SIN DETRACCIONES E ISC -->
@@ -2376,9 +2362,9 @@ export default {
             }
 
             this.customer = customer;
-            this.form.has_retention = customer.is_agent_retention
 
-            this.validateCustomerRetention(customer.identity_document_type_id);
+
+
 
             // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
             if (this.configuration.default_document_type_80) {
@@ -2388,72 +2374,14 @@ export default {
             }
             // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
 
-            if (this.form.has_retention && this.form.total > 700) {
-                this.changeRetention();
-            }
+            ;
 
             this.setLocalStorageIndex("customer", this.customer);
             this.setFormPosLocalStorage();
         },
-        changeRetention() {
-            if (this.form.has_retention) {
-                let base = this.form.total;
-                let percentage = _.round(
-                    parseFloat(this.configuration.igv_retention_percentage) / 100,
-                    5
-                );
-                let amount = _.round(base * percentage, 2);
 
-                let amount_pen = amount;
-                let amount_usd = _.round(
-                    amount / this.form.exchange_rate_sale,
-                    2
-                );
-                if (this.form.currency_type_id === "USD") {
-                    amount_usd = amount;
-                    amount_pen = _.round(
-                        amount * this.form.exchange_rate_sale,
-                        2
-                    );
-                }
-                this.form.retention = {
-                    base: base,
-                    code: "62", //Código de Retención del IVA
-                    amount: amount,
-                    percentage: percentage,
-                    currency_type_id: this.form.currency_type_id,
-                    exchange_rate: this.form.exchange_rate_sale,
-                    amount_pen: amount_pen,
-                    amount_usd: amount_usd
-                };
 
-                this.setDataVoucherRetention();
-            } else {
-                this.form.retention = {};
-                this.form.total_pending_payment = 0;
 
-            }
-        },
-        setDataVoucherRetention() {
-            if (this.isUpdateDocument && this.retention_query_data) {
-                this.form.retention.voucher_date_of_issue = this.retention_query_data.voucher_date_of_issue;
-                this.form.retention.voucher_number = this.retention_query_data.voucher_number;
-                this.form.retention.voucher_amount = this.retention_query_data.voucher_amount;
-                this.form.retention.voucher_filename = this.retention_query_data.voucher_filename;
-            }
-        },
-        validateCustomerRetention(identity_document_type_id) {
-
-            if (identity_document_type_id != "6" || !this.form.has_retention) {
-                if (this.form.has_retention) {
-                    this.form.has_retention = false;
-                    this.changeRetention();
-                }
-                this.show_has_retention = false;
-            } else {
-                this.show_has_retention = true;
-            }
-        },
         getLocalStorageIndex(key, re_default = null) {
             let ls_obj = localStorage.getItem(key);
             ls_obj = JSON.parse(ls_obj);
@@ -2541,9 +2469,9 @@ export default {
                 total_charge: 0,
                 total_discount: 0,
                 total_exportation: 0,
-                total_free: 0,
+
                 total_taxed: 0,
-                total_unaffected: 0,
+
                 total_exonerated: 0,
                 total_igv: 0,
 
@@ -2555,7 +2483,7 @@ export default {
                 total_value: 0,
                 total: 0,
                 subtotal: 0,
-                total_igv_free: 0,
+
                 operation_type_id: "0101",
                 date_of_due: moment().format("YYYY-MM-DD"),
                 items: [],
@@ -2678,9 +2606,7 @@ export default {
                 return
             }
 
-            if (this.form.has_retention && this.form.total > 700) {
-                this.changeRetention();
-            }
+            ;
 
             if (flag > 0)
                 return this.$message.error("Cantidad negativa o incorrecta");
@@ -3139,15 +3065,15 @@ export default {
             let total_exportation = 0;
             let total_taxed = 0;
             let total_exonerated = 0;
-            let total_unaffected = 0;
-            let total_free = 0;
+
+
             let total_igv = 0;
             let total_value = 0;
             let total = 0;
 
 
 
-            let total_igv_free = 0;
+
 
             this.form.items.forEach(row => {
                 total_discount += parseFloat(row.total_discount);
@@ -3167,21 +3093,13 @@ export default {
                         : parseFloat(row.total_value);
                 }
 
-                if (row.affectation_igv_type_id === "30") {
-                    total_unaffected += parseFloat(row.total_value);
-                }
+                ;
 
                 if (row.affectation_igv_type_id === "40") {
                     total_exportation += parseFloat(row.total_value);
                 }
 
-                if (
-                    ["10", "20", "30", "40"].indexOf(
-                        row.affectation_igv_type_id
-                    ) < 0
-                ) {
-                    total_free += parseFloat(row.total_value);
-                }
+                ;
 
                 // if (["10", "20", "30", "40"].indexOf(row.affectation_igv_type_id) > -1)
                 if (
@@ -3209,26 +3127,7 @@ export default {
 
 
 
-                if (
-                    ["11", "12", "13", "14", "15", "16"].includes(
-                        row.affectation_igv_type_id
-                    )
-                ) {
-                    let unit_value = row.total_value / row.quantity;
-                    let total_value_partial = unit_value * row.quantity;
-                    row.total_taxes =
-                        row.total_value -
-                        total_value_partial +
-                        parseFloat(0); //sumar icbper al total tributos
-
-                    row.total_igv =
-                        total_value_partial * (row.percentage_igv / 100);
-                    row.total_base_igv = total_value_partial;
-                    total_value -= row.total_value;
-
-                    total_igv_free += row.total_igv;
-                    total += parseFloat(row.total); //se agrega suma al total para considerar el icbper
-                }
+                ;
 
                 // isc
 
@@ -3239,7 +3138,7 @@ export default {
 
 
 
-            this.form.total_igv_free = _.round(total_igv_free, 2);
+
 
             this.form.total_exportation = _.round(total_exportation, 2);
             this.form.total_exonerated = _.round(total_exonerated, 2);
@@ -3249,8 +3148,8 @@ export default {
             // this.form.total_taxed =
             //   _.round(total_taxed, 2) + this.form.total_exonerated;
             // this.form.total_exonerated = _.round(total_exonerated, 2)
-            this.form.total_unaffected = _.round(total_unaffected, 2);
-            this.form.total_free = _.round(total_free, 2);
+
+
             this.form.total_igv = _.round(total_igv, 2);
             this.form.total_value = _.round(total_value, 2);
             // this.form.total_taxes = _.round(total_igv, 2);
@@ -3278,8 +3177,8 @@ export default {
         },
         verifyRecalculateTotalTaxed() {
             const keysToCheck = [
-                 'total_igv_free', 'total_discount', 'total_exportation',
-                'total_exonerated', 'total_unaffected', 'total_free',
+                  'total_discount', 'total_exportation',
+                'total_exonerated',
             ];
             return !keysToCheck.some(key => this.form[key] > 0);
         },

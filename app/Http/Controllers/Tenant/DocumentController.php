@@ -255,9 +255,9 @@ class DocumentController extends Controller
             ->where('total_canceled', false)
             ->with(['invoice:id,document_id,date_of_due'])
             ->withSum('payments as payments_sum', 'payment')
-            ->get(['id', 'document_type_id', 'currency_type_id', 'exchange_rate_sale', 'total', 'retention'])
+            ->get(['id', 'document_type_id', 'currency_type_id', 'exchange_rate_sale', 'total'])
             ->each(function ($row) use (&$receivable_total, &$por_cobrar_30, &$vencidas, $today, $due_limit_30) {
-                $retention = $row->retention ? $row->retention->amount : 0;
+                $retention = $row->retention_amount + $row->guarantee_amount;
                 $balance = $row->total - $retention - ($row->payments_sum ?? 0);
 
                 if ($balance <= 0) {
@@ -1034,6 +1034,7 @@ class DocumentController extends Controller
     public function update(DocumentUpdateRequest $request, $id)
     {
 
+        DocumentFiscalController::authorizeDocument(Document::findOrFail($id));
         $validate = $this->validateDocument($request);
         if (!$validate['success']) return $validate;
 
@@ -1589,120 +1590,6 @@ class DocumentController extends Controller
             'document_types' => $document_types,
             'series' => $series,
         ];
-    }
-
-    public function retention($document_id)
-    {
-        $document = Document::query()
-            ->select('id', 'series', 'number', 'retention')
-            ->where('id', $document_id)->first();
-
-        if ($document->retention) {
-            $retention = $document->retention;
-            $amount = $retention->amount;
-            if ($retention->currency_type_id === 'USD') {
-                $amount = $amount * $retention->exchange_rate;
-            }
-            $amount = round($amount, 0);
-            return [
-                'success' => true,
-                'form' => [
-                    'document_id' => $document_id,
-                    'document_number' => $document->number_full,
-                    'amount' => $amount,
-                    'voucher_date_of_issue' => $retention->voucher_date_of_issue ?: null,
-                    'voucher_number' => $retention->voucher_number ?: null,
-                    'voucher_amount' => $retention->voucher_amount ?: $amount,
-                    'voucher_filename' => $retention->voucher_filename ?: null,
-                ]
-            ];
-        }
-
-        return [
-            'success' => false,
-            'message' => 'No existe retención'
-        ];
-    }
-
-    public function retentionStore(Request $request)
-    {
-        try {
-            $voucher_filename = $request->input('voucher_filename');
-            $temp_path = $request->input('temp_path');
-
-            if($temp_path) {
-                $allowed_mimes = 'jpg,jpeg,png,gif,svg,webp,pdf';
-                $extension = UploadFileHelper::resolveExtensionFromFile($voucher_filename, $temp_path, $allowed_mimes);
-                $base_name = pathinfo($voucher_filename, PATHINFO_FILENAME);
-                $file_content = file_get_contents($temp_path);
-                $voucher_filename = Str::slug('r_'.$base_name).'_'.date('YmdHis').'.'.$extension;
-
-                $allowed_file_types_images = ['image/jpg', 'image/jpeg', 'image/png', 'image/gif', 'image/svg', 'image/webp'];
-                $is_image = UploadFileHelper::getIsImage($temp_path, $allowed_file_types_images);
-                $allowed_file_types = ['image/jpg', 'image/jpeg', 'image/png', 'image/gif', 'image/svg', 'image/webp', 'application/pdf'];
-                UploadFileHelper::checkIfValidFile($voucher_filename, $temp_path, $is_image, $allowed_mimes, $allowed_file_types);
-
-                Storage::disk('tenant')->put('document_payment'.DIRECTORY_SEPARATOR.$voucher_filename, $file_content);
-            }
-
-            $document_id = $request->input('document_id');
-            $voucher_number = $request->input('voucher_number');
-            $voucher_date_of_issue = $request->input('voucher_date_of_issue');
-            $voucher_amount = $request->input('voucher_amount');
-
-            Document::query()
-                ->where('id', $document_id)->update([
-                    'retention->voucher_date_of_issue' => $voucher_date_of_issue,
-                    'retention->voucher_number' => $voucher_number,
-                    'retention->voucher_amount' => $voucher_amount,
-                    'retention->voucher_filename' => $voucher_filename
-                ]);
-
-            return [
-                'success' => true,
-                'message' => 'Retención actualizada satisfactoriamente',
-            ];
-        } catch (Exception $e) {
-            return [
-                'success' => false,
-                'message' => $e->getMessage(),
-            ];
-
-        }
-    }
-
-    public function retentionUpload(Request $request)
-    {
-        try {
-            $validate_upload = UploadFileHelper::validateUploadFile($request, 'file');
-
-            if (!$validate_upload['success']) {
-                return $validate_upload;
-            }
-
-            if ($request->hasFile('file')) {
-                $file = $request->file('file');
-                $temp = tempnam(sys_get_temp_dir(), 'document_retention');
-                file_put_contents($temp, file_get_contents($file));
-
-                return [
-                    'success' => true,
-                    'data' => [
-                        'filename' => $file->getClientOriginalName(),
-                        'temp_path' => $temp,
-                    ]
-                ];
-            }
-            return [
-                'success' => false,
-                'message' => __('app.actions.upload.error'),
-            ];
-        } catch (Exception $e) {
-            return [
-                'success' => false,
-                'message' => $e->getMessage(),
-            ];
-        }
     }
 
     public function preview(DocumentRequest $request)

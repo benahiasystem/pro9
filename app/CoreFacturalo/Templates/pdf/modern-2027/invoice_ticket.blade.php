@@ -1,3 +1,4 @@
+{{-- ######## INICIO PERSISTENCIA FISCAL VENEZUELA ######## --}}
 @php
     use Modules\Template\Helpers\TemplatePdf;
 
@@ -26,7 +27,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
     $document->load('reference_guides');
 
     $total_payment = $document->payments->sum('payment');
-    $balance = ($document->total - $total_payment) - $document->payments->sum('change');
+    $balance = $document instanceof \App\Models\Tenant\Document ? $document->balance : (($document->total - $total_payment) - $document->payments->sum('change'));
 
 
     $logo = "storage/uploads/logos/{$company->logo}";
@@ -266,26 +267,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
 
 
 
-    @if ($document->retention)
-        <br>
-        <tr>
-            <td colspan="2">
-                <p class="m27-value"><strong>Información de la retención</strong></p>
-            </td>
-        </tr>
-        <tr>
-            <td><p class="m27-value">Base imponible de la retención: </p></td>
-            <td><p class="m27-value">Bs. {{ $document->getRetentionTaxBase() }} </p></td>
-        </tr>
-        <tr>
-            <td><p class="m27-label">Porcentaje de la retención:</p></td>
-            <td><p class="m27-value">{{ $document->retention->percentage * 100 }}%</p></td>
-        </tr>
-        <tr>
-            <td><p class="m27-label">Monto de la retención:</p></td>
-            <td><p class="m27-value">Bs. {{ $document->retention->amount_pen }}</p></td>
-        </tr>
-    @endif
+
 
 
     @if ($document->prepayments)
@@ -664,18 +646,8 @@ $affected_document_number = $document_base->affected_document ? $document_base->
             <td class="m27-total-value">{{ $document->currency_type->symbol }} {{ number_format($document->total_exportation, 2) }}</td>
         </tr>
     @endif
-    @if($document->total_free > 0)
-        <tr>
-            <td colspan="2" class="m27-total-label">Op. gratuitas:</td>
-            <td class="m27-total-value">{{ $document->currency_type->symbol }} {{ number_format($document->total_free, 2) }}</td>
-        </tr>
-    @endif
-    @if($document->total_unaffected > 0)
-        <tr>
-            <td colspan="2" class="m27-total-label">Op. inafectas:</td>
-            <td class="m27-total-value">{{ $document->currency_type->symbol }} {{ number_format($document->total_unaffected, 2) }}</td>
-        </tr>
-    @endif
+
+
     @if($document->total_exonerated > 0)
         <tr>
             <td colspan="2" class="m27-total-label">Op. exoneradas:</td>
@@ -755,29 +727,15 @@ $affected_document_number = $document_base->affected_document ? $document_base->
         <td class="m27-colspec" width="28%"></td>
     </tr>
 
-    @if ($document->retention)
-        <tr>
-            <td colspan="2" class="m27-grand-label">IMPORTE TOTAL:</td>
-            <td class="m27-grand-value">{{ $document->currency_type->symbol }} {{ number_format($document->total, 2) }}</td>
-        </tr>
-        <tr>
-            <td colspan="2" class="m27-total-label">Importe neto:</td>
-            <td class="m27-total-value">{{ $document->currency_type->symbol }} {{ number_format($document->total - $document->retention->amount_pen, 2) }}</td>
-        </tr>
-    @else
+
         <tr>
             <td class="m27-item-sub align-bottom" style="white-space: nowrap;">{{ $m27_total_products }} und.</td>
             <td class="m27-grand-label">TOTAL:</td>
             <td class="m27-grand-value">{{ $document->currency_type->symbol }} {{ number_format($document->total, 2) }}</td>
         </tr>
-    @endif
 
-    @if(($document->retention) && $document->total_pending_payment > 0)
-        <tr>
-            <td colspan="2" class="m27-total-label">M. pendiente:</td>
-            <td class="m27-total-value">{{ $document->currency_type->symbol }} {{ number_format($document->total_pending_payment, 2) }}</td>
-        </tr>
-    @endif
+
+
     </tbody>
 </table>
 @include('pdf.modern-2027.partials.rule')
@@ -939,3 +897,5 @@ $affected_document_number = $document_base->affected_document ? $document_base->
     @endif
 </table>
 </body>
+
+{{-- ######## FIN PERSISTENCIA FISCAL VENEZUELA ######## --}}

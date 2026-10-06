@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\DB;
  * - `company_id` int(10) unsigned NOT NULL
  * - `actor_type` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `actor_id` int(10) unsigned NOT NULL
+ * - `changed_values` json DEFAULT NULL
  * - `changed_fields` text COLLATE utf8mb4_unicode_ci NOT NULL
  * - `fiscal_emission_mode` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `fiscal_environment` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL
@@ -26,6 +27,7 @@ CREATE TABLE `fiscal_configuration_audits` (
   `company_id` int(10) unsigned NOT NULL,
   `actor_type` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL,
   `actor_id` int(10) unsigned NOT NULL,
+  `changed_values` json DEFAULT NULL,
   `changed_fields` text COLLATE utf8mb4_unicode_ci NOT NULL,
   `fiscal_emission_mode` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL,
   `fiscal_environment` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL,

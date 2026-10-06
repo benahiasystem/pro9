@@ -1,3 +1,4 @@
+{{-- ######## INICIO PERSISTENCIA FISCAL VENEZUELA ######## --}}
 @php
     $establishment = $document->establishment;
     $payments = $document->payments;
@@ -6,7 +7,7 @@
     $tittle_unpaid = str_pad($payments->count(), 8, '0', STR_PAD_LEFT);
     $configuration_decimal_quantity = App\CoreFacturalo\Helpers\Template\TemplateHelper::getConfigurationDecimalQuantity();
     $total_payment = $document->payments->sum('payment');
-    $balance = ($document->total - $total_payment) - $document->payments->sum('change');
+    $balance = $document instanceof \App\Models\Tenant\Document ? $document->balance : (($document->total - $total_payment) - $document->payments->sum('change'));
     //dd($tittle_unpaid);
 @endphp
 <html>
@@ -206,18 +207,8 @@
                 <td class="text-right font-bold">{{ number_format($document->total_exportation, 2) }}</td>
             </tr>
         @endif
-        @if($document->total_free > 0)
-            <tr>
-                <td colspan="4" class="text-right font-bold desc">OP. GRATUITAS: {{ $document->currency_type->symbol }}</td>
-                <td class="text-right font-bold">{{ number_format($document->total_free, 2) }}</td>
-            </tr>
-        @endif
-        @if($document->total_unaffected > 0)
-            <tr>
-                <td colspan="4" class="text-right font-bold desc">OP. INAFECTAS: {{ $document->currency_type->symbol }}</td>
-                <td class="text-right font-bold">{{ number_format($document->total_unaffected, 2) }}</td>
-            </tr>
-        @endif
+
+
         @if($document->total_exonerated > 0)
             <tr>
                 <td colspan="4" class="text-right font-bold desc">OP. EXONERADAS: {{ $document->currency_type->symbol }}</td>
@@ -286,34 +277,15 @@
             @endif
         @endif
 
-        @if($document->perception)
-            <tr>
-                <td colspan="4" class="text-right font-bold desc"> IMPORTE TOTAL: {{ $document->currency_type->symbol }}</td>
-                <td class="text-right font-bold">{{ number_format($document->total, 2) }}</td>
-            </tr>
-            <tr>
-                <td colspan="4" class="text-right font-bold desc">PERCEPCIÓN: {{ $document->currency_type->symbol }}</td>
-                <td class="text-right font-bold">{{ number_format($document->perception->amount, 2) }}</td>
-            </tr>
-            <tr>
-                <td class="text-left font-bold desc"><span style="white-space: nowrap;">Productos: {{ rtrim(rtrim(number_format(collect($document->items)->sum(function ($item) { return (float) data_get($item, 'quantity', 0); }), 2, '.', ''), '0'), '.') }}</span></td>
-                <td colspan="3" class="text-right font-bold desc">TOTAL A PAGAR: {{ $document->currency_type->symbol }}</td>
-                <td class="text-right font-bold">{{ number_format(($document->total + $document->perception->amount), 2) }}</td>
-            </tr>
-        @else
+
             <tr>
                 <td class="text-left font-bold desc" style="white-space: nowrap;">Productos: {{ rtrim(rtrim(number_format(collect($document->items)->sum(function ($item) { return (float) data_get($item, 'quantity', 0); }), 2, '.', ''), '0'), '.') }}</td>
                 <td colspan="3" class="text-right font-bold desc">TOTAL A PAGAR: {{ $document->currency_type->symbol }}</td>
                 <td class="text-right font-bold">{{ number_format($document->total, 2) }}</td>
             </tr>
-        @endif
 
-        @if(($document->retention) && $document->total_pending_payment > 0)
-            <tr>
-                <td colspan="4" class="text-right font-bold desc">M. PENDIENTE: {{ $document->currency_type->symbol }}</td>
-                <td class="text-right font-bold">{{ number_format($document->total_pending_payment, 2) }}</td>
-            </tr>
-        @endif
+
+
 
         @if($balance < 0)
 
@@ -364,3 +336,5 @@
 
 </body>
 </html>
+
+{{-- ######## FIN PERSISTENCIA FISCAL VENEZUELA ######## --}}

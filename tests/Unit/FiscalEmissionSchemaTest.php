@@ -140,6 +140,7 @@ class FiscalEmissionSchemaTest extends TestCase
             self::assertSame(0, $methods->where('id', '26')->first()->is_active);
             self::assertSame(9, \App\Models\Tenant\PaymentMethodType::getPaymentMethodTypes()->count());
             $paymentRules = (new \App\Http\Requests\Tenant\DocumentPaymentRequest())->rules();
+            unset($paymentRules['document_id']); // This assertion isolates payment-method eligibility.
             $validator = Container::getInstance()->make('validator');
             $paymentInput = [
                 'date_of_payment' => '2026-09-13', 'payment_method_type_id' => '14',
@@ -399,7 +400,7 @@ class FiscalEmissionSchemaTest extends TestCase
             $input = [
                 'type' => 'invoice', 'user_id' => $userId, 'external_id' => \Illuminate\Support\Str::uuid()->toString(),
                 'establishment_id' => $establishment, 'establishment' => (array) $db->table('establishments')->find($establishment),
-                'state_type_id' => '01', 'ubl_version' => '2.1', 'group_id' => '01', 'document_type_id' => '01',
+                'state_type_id' => '01', 'group_id' => '01', 'document_type_id' => '01',
                 'series' => 'FF01', 'number' => '#', 'date_of_issue' => '2026-09-10', 'time_of_issue' => '12:00:00',
                 'customer_id' => $customer->id, 'customer' => $customer->toArray(), 'currency_type_id' => 'VES',
                 'exchange_rate_sale' => 1, 'total_taxed' => 200, 'total_igv' => 32, 'total_taxes' => 32, 'total_value' => 200, 'total' => 232, 'additional_information' => '',
@@ -430,7 +431,7 @@ class FiscalEmissionSchemaTest extends TestCase
                 self::assertSame($code . '-100', $document->number_full);
                 self::assertSame($first->id, $document->note->affected_document_id);
             }
-            $order = array_replace($input, ['external_id' => \Illuminate\Support\Str::uuid()->toString(), 'type' => 'dispatch', 'document_type_id' => '09', 'series' => 'TT01', 'id' => null,
+            $order = array_replace($input, ['external_id' => \Illuminate\Support\Str::uuid()->toString(), 'type' => 'dispatch', 'ubl_version' => '2.0', 'document_type_id' => '09', 'series' => 'TT01', 'id' => null,
                 'date_of_shipping' => '2026-09-10', 'transshipment_indicator' => false, 'unit_type_id' => 'KG', 'total_weight' => 1, 'discount_stock' => true]);
             $dispatch = (new \App\CoreFacturalo\Facturalo())->save($order)->getDocument();
             self::assertSame('TT01-100', $dispatch->number_full);
@@ -526,12 +527,210 @@ class FiscalEmissionSchemaTest extends TestCase
             self::assertSame($longCode.'-1', $longDocument->number_full);
             self::assertStringContainsString($longCode, $longDocument->filename);
             self::assertSame($longDocument->id, \App\Models\Tenant\Document::where('establishment_id', $establishment)->where('series', $longCode)->where('number', 1)->value('id'));
+            $this->assertVenezuelaFiscalPersistence($db, $input);
 
         } finally {
             $db->rollBack();
             \Illuminate\Database\Eloquent\Model::setEventDispatcher($previousDispatcher);
             \Illuminate\Database\Eloquent\Model::clearBootedModels();
             app()->instance('auth', $previousAuth);
+        }
+    }
+
+    // ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
+    private function assertVenezuelaFiscalPersistence(Connection $db, array $input): void
+    {
+        $service = \App\Services\Fiscal\FiscalDocumentPersistence::class;
+        $customer = \App\Models\Tenant\Person::findOrFail($input['customer_id']);
+        $customer->number = 'V-12345678'; $customer->save();
+        $input['customer'] = $customer->toArray();
+        $input['external_id'] = (string) \Illuminate\Support\Str::uuid();
+        $input['payments'] = [];
+        $document = (new \App\CoreFacturalo\Facturalo())->save($input)->getDocument();
+        self::assertEquals(232, $document->balance);
+        self::assertSame('Test fiscal', $document->issuer['name']);
+        self::assertSame('G', $document->items->first()->iva_rate['code']);
+        self::assertEquals(32, $document->taxes()->where('tax_kind','IVA')->sum('amount'));
+        $document->guarantee_fund()->create(['amount'=>10,'base'=>200,'percentage'=>5]);
+        $retention = ['tax_kind'=>'IVA','voucher_number'=>'TEST-IVA-1','voucher_date'=>'2026-09-10','agent_id'=>$customer->id,
+            'base'=>32,'percentage'=>75,'amount'=>24,'currency_type_id'=>'VES','exchange_rate'=>1];
+        $service::retention($document,$retention);
+        $service::retention($document,array_replace($retention,['tax_kind'=>'ISLR','voucher_number'=>'TEST-ISLR-1',
+            'concept_id'=>$db->table('cat_retention_concept')->value('id'),'base'=>200,'percentage'=>2,'amount'=>4]));
+        self::assertEquals(194,$document->fresh()->balance);
+        self::assertCount(2,$document->fresh()->received_retentions);
+        try { $service::retention($document,$retention);self::fail('Duplicate voucher accepted'); }
+        catch (\Illuminate\Validation\ValidationException $e) { self::assertArrayHasKey('voucher_number',$e->errors()); }
+        $company=\App\Models\Tenant\Company::firstOrFail();
+        $company->forceFill(['igtf_enabled'=>true,'igtf_rate'=>3])->save();
+        $key=(string)\Illuminate\Support\Str::uuid();
+        $paymentInput=['date_of_payment'=>'2026-09-11','payment_method_type_id'=>'01','original_amount'=>5,
+            'currency_type_id'=>'USD','exchange_rate'=>10,'igtf_status'=>'subject','operation_key'=>$key];
+        $payment=$service::payment($document,$paymentInput);
+        self::assertEquals(50,$payment->payment);self::assertEquals(0.15,$payment->tax_amount);
+        self::assertEquals(5.15,$payment->cash_received_amount);
+        $tax=\App\Models\Tenant\DocumentTax::where('document_payment_id',$payment->id)->firstOrFail();
+        $note=\App\Models\Tenant\Document::findOrFail($tax->document_id);
+        self::assertSame('08',$note->document_type_id);self::assertSame('IGTF',$note->note->note_debit_type_id);
+        self::assertSame('98',$note->fiscal_data->transaction_type_id);
+        self::assertCount(0,$note->items);self::assertEquals(0,$note->total_igv);
+        self::assertEquals(1.5,$note->total);self::assertEquals(0,$note->balance);
+        self::assertEquals(0,$note->payments->first()->cash_received_amount);
+        self::assertEquals(144,$document->fresh()->balance);
+        self::assertSame($payment->id,$service::payment($document,$paymentInput)->id);
+        self::assertSame(1,\App\Models\Tenant\DocumentTax::where('document_payment_id',$payment->id)->count());
+        $service::reverse($payment,'Prueba de reversión');
+        self::assertEquals(194,$document->fresh()->balance);
+        self::assertNotNull($payment->fresh()->reversed_at);
+        self::assertSame('11',$note->fresh()->state_type_id);
+        $fx=array_replace($input,['external_id'=>(string)\Illuminate\Support\Str::uuid(),'currency_type_id'=>'USD',
+            'exchange_rate_sale'=>10.123,'payments'=>[['date_of_payment'=>'2026-09-10','payment_method_type_id'=>'01','payment'=>232,'igtf_status'=>'subject']]]);
+        $paid=(new \App\CoreFacturalo\Facturalo())->save($fx)->getDocument();
+        self::assertEquals(238.96,$paid->total);self::assertTrue((bool)$paid->total_canceled);self::assertEquals(238.96,$paid->payments->sum('payment'));self::assertEquals(0,$paid->balance);
+        self::assertEquals(6.96,$paid->taxes()->where('tax_kind','IGTF')->sum('amount'));
+        self::assertEquals(round(238.96*10.123,2),$paid->currency_totals->total);
+        self::assertEquals(232,$paid->payments->whereNull('receipt_parent_id')->first()->payment);
+        $company->forceFill(['igtf_enabled'=>false])->save();
+        self::assertSame($paid->payments->whereNull('receipt_parent_id')->first()->id,$service::payment($paid,[
+            'date_of_payment'=>'2026-09-10','payment_method_type_id'=>'01','payment'=>232,'igtf_status'=>'subject',
+            'operation_key'=>$paid->payments->whereNull('receipt_parent_id')->first()->operation_key],true)->id);
+        $company->forceFill(['igtf_enabled'=>true])->save();
+        $discounted=(new \App\CoreFacturalo\Facturalo())->save(array_replace($input,[
+            'external_id'=>(string)\Illuminate\Support\Str::uuid(),
+            'discounts'=>[['discount_type_id'=>'02','amount'=>20,'factor'=>0.1]],
+        ]))->getDocument();
+        self::assertEquals(180,$discounted->total_taxed);self::assertEquals(28.8,$discounted->total_igv);self::assertEquals(208.8,$discounted->total);
+        $edit=array_replace($input,['id'=>$discounted->id,'series'=>$discounted->series,'number'=>$discounted->number,'issuer'=>['name'=>'Untrusted issuer'],'currency_type_id'=>'USD','exchange_rate_sale'=>10.1234]);
+        $edit['items'][0]['quantity']=3;
+        (new \App\CoreFacturalo\Facturalo())->update($edit,$discounted->id);
+        self::assertEquals(324.8,$discounted->fresh()->total);
+        self::assertEquals(20,$discounted->fresh()->total_discount);
+        self::assertEquals(10.123,$discounted->fresh()->exchange_rate_sale);
+        self::assertEquals(round(324.8*10.123,2),$discounted->fresh()->currency_totals->total);
+        self::assertSame('Test fiscal',$discounted->fresh()->issuer['name']);
+        self::assertSame($discounted->external_id,$discounted->fresh()->external_id);
+
+        $withChange=(new \App\CoreFacturalo\Facturalo())->save(array_replace($input,[
+            'external_id'=>(string)\Illuminate\Support\Str::uuid(),
+            'payments'=>[['date_of_payment'=>'2026-09-10','payment_method_type_id'=>'01','payment'=>250]],
+        ]))->getDocument();
+        self::assertEquals(0,$withChange->balance);self::assertEquals(18,$withChange->payments->first()->change);
+        self::assertEquals(232,$withChange->payments->first()->cash_received_amount);
+        $other=(new \App\CoreFacturalo\Facturalo())->save(array_replace($input,[
+            'external_id'=>(string)\Illuminate\Support\Str::uuid(),
+            'taxes'=>[['code'=>'TEST_OTHER','base'=>200,'percentage'=>2]],
+        ]))->getDocument();
+        self::assertEquals(4,$other->taxes()->where('tax_kind','OTI')->sum('amount'));self::assertEquals(236,$other->total);
+        $prepare=new \App\Services\Fiscal\HkaEmissionPreparation();
+        $prepared=$prepare->prepare($paid);
+        self::assertSame('prepared',$prepared->status);
+        self::assertSame('01',$prepared->payload['documentoElectronico']['encabezado']['identificacionDocumento']['tipoDocumento']);
+        $payload=$prepared->payload;
+        $company->name='Changed company';$company->save();
+        $customer->name='Changed customer';$customer->save();
+        $db->table('cat_iva_rate_types')->where('id','G')->update(['percentage'=>17]);
+        self::assertSame($payload,$prepare->prepare($paid->fresh())->payload);
+        self::assertSame('Test fiscal',$paid->fresh()->issuer['name']);
+        self::assertNotSame('Changed customer',$paid->fresh()->customer->name);
+        self::assertEquals(16,$paid->items->first()->percentage_igv);
+        try {$service::assertMutable($paid);self::fail('Prepared document editable');}
+        catch (\Illuminate\Validation\ValidationException $e) { self::assertArrayHasKey('document',$e->errors()); }
+        try {$prepare->setControl($paid,'00-21');self::fail('Duplicate control accepted');}
+        catch (\Illuminate\Validation\ValidationException $e) {self::assertArrayHasKey('control_number',$e->errors());}
+        $prepare->setControl($paid,'00-22');self::assertSame('00-00000022',$paid->fresh()->control_number);
+        $service::reverse($paid->payments->whereNull('receipt_parent_id')->first(),'Reversión del cobro inicial');
+        self::assertEquals(238.96,$paid->fresh()->balance);self::assertFalse((bool)$paid->fresh()->total_canceled);
+        self::assertEquals(6.96,$paid->taxes()->where('tax_kind','IGTF')->sum('amount'));
+        self::assertSame($payload,$prepare->prepare($paid->fresh())->payload);
+        // Whole persistence rolls back when a post-collection validation fails.
+        $count=$db->table('documents')->count();
+        try {(new \App\CoreFacturalo\Facturalo())->save(array_replace($input,['external_id'=>(string)\Illuminate\Support\Str::uuid(),
+            'received_retentions'=>[array_replace($retention,['amount'=>999])]]));self::fail('Invalid retention persisted');}
+        catch (\Illuminate\Validation\ValidationException $e) { self::assertSame($count,$db->table('documents')->count()); }
+        foreach (['total','total_igv','total_discount'] as $column) {
+            self::assertSame('decimal(12,2)',$db->selectOne('SHOW COLUMNS FROM documents WHERE Field = ?',[$column])->Type);
+        }
+        self::assertSame('decimal(13,3)',$db->selectOne("SHOW COLUMNS FROM documents WHERE Field = 'exchange_rate_sale'")->Type);
+        foreach (['ubl_version','perception','total_unaffected','total_free','total_igv_free','retention','user_rel_subscription_plan_id'] as $column) {
+            self::assertFalse($db->getSchemaBuilder()->hasColumn('documents',$column));
+        }
+    }
+    // ######## FIN PERSISTENCIA FISCAL VENEZUELA ########
+
+    public function test_concurrent_payments_igtf_and_retention_applications_are_serialized(): void
+    {
+        $db=$this->capsule->getConnection('tenant');
+        foreach ($this->migrations('migrations/tenant/*.php') as $migration) $migration->up();
+        (new \Database\Seeders\TenancyDatabaseSeeder())->setContainer(Container::getInstance())->run();
+        $db->table('companies')->insert(['id'=>1,'identity_document_type_id'=>'6','number'=>'J-12345678-9','name'=>'Fiscal concurrency',
+            'fiscal_environment'=>'demo','fiscal_emission_mode'=>'digital','igtf_enabled'=>1,'igtf_rate'=>3]);
+        $db->table('configurations')->insert(['id'=>1,'quantity_documents'=>0,'quantity_sales_notes'=>0]);
+        $db->table('establishments')->insert(['id'=>1,'description'=>'Concurrent','country_id'=>'VE','department_id'=>'14','province_id'=>'0229','district_id'=>'000619','address'=>'Test','telephone'=>'04121234567','code'=>'0000']);
+        $db->table('users')->insert(['id'=>1,'name'=>'Admin','email'=>'concurrency@example.test','password'=>'not-a-login-hash','type'=>'admin','establishment_id'=>1]);
+        $customer=$db->table('persons')->where('number','MOCK-CLIENTE-VE')->first();
+        $db->table('persons')->where('id',$customer->id)->update(['identity_document_type_id'=>'6','number'=>'J-23456789-0']);
+        $customer=$db->table('persons')->find($customer->id);
+        $db->table('series')->insert(['establishment_id'=>1,'document_type_id'=>'08','number'=>'FD01']);
+        $id=$db->table('documents')->insertGetId(['user_id'=>1,'external_id'=>(string)\Illuminate\Support\Str::uuid(),'establishment_id'=>1,
+            'establishment'=>json_encode(['address'=>'Test','code'=>'0000']),'issuer'=>json_encode(['name'=>'Fiscal concurrency','number'=>'J-12345678-9']),
+            'fiscal_environment'=>'demo','fiscal_emission_mode'=>'digital','group_id'=>'01','state_type_id'=>'01','document_type_id'=>'01','series'=>'FF01','number'=>1,
+            'date_of_issue'=>'2026-09-10','time_of_issue'=>'12:00:00','customer_id'=>$customer->id,'customer'=>json_encode((array)$customer),
+            'currency_type_id'=>'VES','exchange_rate_sale'=>1,'total_value'=>100,'total'=>100]);
+        $key=(string)\Illuminate\Support\Str::uuid();
+        $payment=['date_of_payment'=>'2026-09-10','payment_method_type_id'=>'01','currency_type_id'=>'USD','exchange_rate'=>10,
+            'original_amount'=>8,'igtf_status'=>'subject','operation_key'=>$key];
+        $result=$this->runFiscalWorkers($id,'payment',[$payment,$payment]);
+        self::assertArrayHasKey('id',$result[0],json_encode($result));
+        self::assertArrayHasKey('id',$result[1],json_encode($result));
+        self::assertSame($result[0]['id'],$result[1]['id']);
+        self::assertSame(1,$db->table('document_payments')->where('document_id',$id)->whereNull('receipt_parent_id')->count());
+        self::assertSame(1,$db->table('document_taxes')->whereNotNull('document_payment_id')->count());
+        self::assertSame(1,$db->table('documents')->where('document_type_id','08')->count());
+        $p1=array_replace($payment,['operation_key'=>(string)\Illuminate\Support\Str::uuid(),'original_amount'=>1.5]);
+        $p2=array_replace($p1,['operation_key'=>(string)\Illuminate\Support\Str::uuid()]);
+        $result=$this->runFiscalWorkers($id,'payment',[$p1,$p2]);
+        self::assertCount(1,array_filter($result,fn ($r)=>isset($r['id'])));
+        self::assertEquals(95,$db->table('document_payments')->where('document_id',$id)->sum('payment'));
+        self::assertSame(2,$db->table('documents')->where('document_type_id','08')->count());
+        $retention=['tax_kind'=>'ISLR','voucher_number'=>'CONCURRENT-1','voucher_date'=>'2026-09-10','agent_id'=>$customer->id,
+            'concept_id'=>'001','base'=>100,'percentage'=>4,'amount'=>4,'currency_type_id'=>'VES','exchange_rate'=>1];
+        $result=$this->runFiscalWorkers($id,'retention',[$retention,array_replace($retention,['voucher_number'=>'CONCURRENT-2'])]);
+        self::assertCount(1,array_filter($result,fn ($r)=>isset($r['id'])));
+        self::assertEquals(4,$db->table('document_received_retentions')->where('document_id',$id)->sum('applied_amount'));
+        $retention=array_replace($retention,['voucher_number'=>'CONCURRENT-DUPLICATE','percentage'=>1,'amount'=>1]);
+        $result=$this->runFiscalWorkers($id,'retention',[$retention,$retention]);
+        self::assertCount(1,array_filter($result,fn ($r)=>isset($r['id'])));
+        self::assertSame(2,$db->table('document_received_retentions')->where('document_id',$id)->count());
+    }
+
+    private function runFiscalWorkers(int $documentId,string $operation,array $data): array
+    {
+        $db=$this->capsule->getConnection('tenant');$processes=[];
+        $db->beginTransaction();
+        try {
+            $db->table('companies')->where('id',1)->lockForUpdate()->first();
+            foreach ($data as $input) {
+                $p=new \Symfony\Component\Process\Process([PHP_BINARY,dirname(__DIR__).'/Support/fiscal_payment_concurrency_worker.php']);
+                $p->setInput(json_encode(['connection'=>$db->getConfig(),'document_id'=>$documentId,'operation'=>$operation,'data'=>$input],JSON_THROW_ON_ERROR));
+                $p->setTimeout(30);$p->start();$processes[]=$p;
+            }
+            $deadline=microtime(true)+10;
+            foreach ($processes as $p) {
+                while (!str_contains($p->getOutput(),"READY\n")) {
+                    if (!$p->isRunning() || microtime(true)>$deadline) self::fail('Fiscal worker did not reach the lock barrier: '.$p->getErrorOutput());
+                    usleep(10000);
+                }
+                self::assertTrue($p->isRunning());
+            }
+            $db->commit();$results=[];
+            foreach ($processes as $p) {
+                self::assertSame(0,$p->wait(),$p->getErrorOutput().$p->getOutput());
+                $results[]=json_decode(substr($p->getOutput(),strlen("READY\n")),true,512,JSON_THROW_ON_ERROR);
+            }
+            return $results;
+        } finally {
+            if ($db->transactionLevel()) $db->rollBack();
+            foreach ($processes as $p) if ($p->isRunning()) $p->stop();
         }
     }
 

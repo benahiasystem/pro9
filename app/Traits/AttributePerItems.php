@@ -136,6 +136,12 @@
 
 
             $movement = ItemMovement::where($toSearch)->first();
+            // A deleted invoice line no longer has a parent relation to resolve.
+            // Keep its movement trace but exclude it from counted stock.
+            if ($evento === 'deleted' && $model instanceof DocumentItem) {
+                if ($movement) $movement->setQuantity(0)->setCountable(false)->save();
+                return $movement;
+            }
             if ($movement == null) {
                 $movement = new ItemMovement($toSearch);
             }

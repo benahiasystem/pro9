@@ -89,7 +89,6 @@ class DocumentInput
             'establishment' => $establishment,
             'fiscal_environment' => $fiscal_environment,
             'state_type_id' => '01',
-            'ubl_version' => '2.1',
             'filename' => '',//$filename,
             'document_type_id' => $document_type_id,
             'series' => $series,
@@ -108,16 +107,21 @@ class DocumentInput
             'technical_service_id' => Functions::valueKeyInArray($inputs, 'technical_service_id'),
             'dispatch_id' => Functions::valueKeyInArray($inputs, 'dispatch_id'),
             'exchange_rate_sale' => $inputs['exchange_rate_sale'],
+            // ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
+            'exchange_rate_source' => $inputs['exchange_rate_source'] ?? 'manual',
+            'exchange_rate_date' => $inputs['exchange_rate_date'] ?? $inputs['date_of_issue'],
+            'taxes' => $inputs['taxes'] ?? [],
+            'fiscal_data' => $inputs['fiscal_data'] ?? [],
+            'received_retentions' => $inputs['received_retentions'] ?? [],
+            'guarantee_fund' => $inputs['guarantee_fund'] ?? null,
+            // ######## FIN PERSISTENCIA FISCAL VENEZUELA ########
             'total_prepayment' => Functions::valueKeyInArray($inputs, 'total_prepayment', 0),
             'total_discount' => Functions::valueKeyInArray($inputs, 'total_discount', 0),
             'total_charge' => Functions::valueKeyInArray($inputs, 'total_charge', 0),
             'total_exportation' => Functions::valueKeyInArray($inputs, 'total_exportation', 0),
-            'total_free' => Functions::valueKeyInArray($inputs, 'total_free', 0),
             'total_taxed' => $inputs['total_taxed'],
-            'total_unaffected' => Functions::valueKeyInArray($inputs, 'total_unaffected', 0),
             'total_exonerated' => Functions::valueKeyInArray($inputs, 'total_exonerated', 0),
             'total_igv' => $inputs['total_igv'],
-            'total_igv_free' => Functions::valueKeyInArray($inputs, 'total_igv_free', 0),
             'total_base_other_taxes' => Functions::valueKeyInArray($inputs, 'total_base_other_taxes', 0),
             'total_other_taxes' => Functions::valueKeyInArray($inputs, 'total_other_taxes', 0),
             'total_taxes' => $inputs['total_taxes'],
@@ -134,8 +138,6 @@ class DocumentInput
             'prepayments' => self::prepayments($inputs),
             'guides' => self::guides($inputs),
             'related' => self::related($inputs),
-            'perception' => self::perception($inputs),
-            'retention' => self::retention($inputs),
             'invoice' => $invoice,
             'note' => $note,
             'hotel' => self::hotel($inputs),
@@ -225,7 +227,7 @@ class DocumentInput
                         'IdLoteSelected' => (isset($row['IdLoteSelected']) ? $row['IdLoteSelected'] : null),
                         'model' => $item->model,
                         'sanitary' => $item->sanitary,
-                        'cod_digemid' => $item->cod_digemid,
+
                         'date_of_due' => (!empty($item->date_of_due)) ? $item->date_of_due->format('Y-m-d') : null,
                         'has_igv' => $row['item']['has_igv'] ?? true,
                         'unit_price' => $row['item']['unit_price'] ?? 0,
@@ -492,65 +494,9 @@ class DocumentInput
         return null;
     }
 
-    private static function perception($inputs)
-    {
-        if (array_key_exists('perception', $inputs)) {
-            if ($inputs['perception']) {
-                $perception = $inputs['perception'];
-                $code = $perception['code'];
-                $percentage = $perception['percentage'];
-                $amount = $perception['amount'];
-                $base = $perception['base'];
 
-                return [
-                    'code' => $code,
-                    'percentage' => $percentage,
-                    'amount' => $amount,
-                    'base' => $base,
-                ];
-            }
-        }
-        return null;
-    }
 
-    private static function retention($inputs)
-    {
 
-        if (array_key_exists('retention', $inputs)) {
-
-            if ($inputs['retention']) {
-
-                $retention = $inputs['retention'];
-                $code = $retention['code'];
-                $percentage = $retention['percentage'];
-                $amount = $retention['amount'];
-                $base = $retention['base'];
-                $currency_type_id = $retention['currency_type_id'];
-                $exchange_rate = $retention['exchange_rate'];
-                $amount_pen = $retention['amount_pen'];
-                $amount_usd = $retention['amount_usd'];
-                $guarantee_fund = isset($retention['guarantee_fund']) ? $retention['guarantee_fund'] : 0;
-
-                return [
-                    'code' => $code,
-                    'percentage' => $percentage,
-                    'amount' => $amount,
-                    'base' => $base,
-                    'currency_type_id' => $currency_type_id,
-                    'exchange_rate' => $exchange_rate,
-                    'amount_pen' => $amount_pen,
-                    'amount_usd' => $amount_usd,
-                    'voucher_date_of_issue' => null,
-                    'voucher_number' => null,
-                    'voucher_amount' => null,
-                    'voucher_filename' => null,
-                    'guarantee_fund' => $guarantee_fund
-                ];
-            }
-        }
-
-        return null;
-    }
 
 
     private static function hotel($inputs)

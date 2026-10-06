@@ -1,266 +1,59 @@
-<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
-    <el-dialog :title="title"
-               :visible="showDialog"
-               @close="clickClose"
-               @open="handleOpen"
-               width="600px">
-        <div class="form-body">
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="form-group" :class="{'has-danger': errors.voucher_date_of_issue}">
-                        <label class="control-label">Fecha de emisón</label>
-                        <el-date-picker v-model="form.voucher_date_of_issue"
-                                        type="date"
-                                        :clearable="false"
-                                        format="dd/MM/yyyy"
-                                        value-format="yyyy-MM-dd"></el-date-picker>
-                        <small class="form-control-feedback" v-if="errors.voucher_date_of_issue"
-                               v-text="errors.voucher_date_of_issue[0]"></small>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="form-group mb-0" :class="{'has-danger': errors.voucher_number}">
-                        <label class="control-label">Número de comprobante</label>
-                        <el-input v-model="form.voucher_number"></el-input>
-                        <small class="form-control-feedback" v-if="errors.voucher_number"
-                               v-text="errors.voucher_number[0]"></small>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="form-group mb-0" :class="{'has-danger': errors.amount}">
-                        <label class="control-label">Monto de retención (VES)</label>
-                        <el-input v-model="form.amount"
-                                  :readonly="true"></el-input>
-                        <small class="form-control-feedback" v-if="errors.amount"
-                               v-text="errors.amount[0]"></small>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="form-group mb-0" :class="{'has-danger': errors.voucher_amount}">
-                        <label class="control-label">Monto pagado (VES)</label>
-                        <el-input v-model="form.voucher_amount"></el-input>
-                        <small class="form-control-feedback" v-if="errors.voucher_amount"
-                               v-text="errors.voucher_amount[0]"></small>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="form-group mb-0" :class="{'has-danger': errors.voucher_filename}">
-                        <label class="control-label">Archivo</label>
-                        <template v-if="form.voucher_filename">
-                            <div>{{ form.voucher_filename }}</div>
-                        </template>
-                        <el-upload
-                            :data="{}"
-                            :headers="headers"
-                            :multiple="false"
-                            :on-remove="handleRemove"
-                            :action="`/documents/retention/upload`"
-                            :show-file-list="true"
-                            :file-list="fileList"
-                            :on-success="onSuccess"
-                            :on-error="onUploadError"
-                            :limit="1"
-                            style="width: 100%;"
-                            v-else>
-                            <button type="button" class="btn btn-sm btn-primary"
-                                    slot="trigger">
-                                <i class="fas fa-fw fa-upload"></i>
-                                Cargar comprobante
-                            </button>
-                        </el-upload>
-                    </div>
-                </div>
-                <div class="col-md-12 text-right">
-                    <el-button @click.prevent="clickClose"
-                               style="margin-right: 4px">Cancelar
-                    </el-button>
-                    <el-button :loading="loadingSubmit"
-                               @click="onSubmit"
-                               type="primary">Guardar
-                    </el-button>
-                </div>
-            </div>
-        </div>
+    <!-- ######## INICIO PERSISTENCIA FISCAL VENEZUELA ######## -->
+    <el-dialog title="Retenciones recibidas IVA / ISLR" :visible="showDialog" @close="close">
+        <table class="table"><thead><tr><th>Tipo</th><th>Comprobante</th><th>Importe aplicado</th></tr></thead>
+            <tbody><tr v-for="row in records" :key="row.id"><td>{{ row.tax_kind }}</td><td>{{ row.voucher_number }}</td><td>{{ row.applied_amount }}</td></tr></tbody>
+        </table>
+        <form @submit.prevent="submit">
+            <label>Tipo</label><el-select v-model="form.tax_kind"><el-option label="IVA" value="IVA"/><el-option label="ISLR" value="ISLR"/></el-select>
+            <label>Número de comprobante</label><el-input v-model="form.voucher_number"/>
+            <label>Fecha</label><el-date-picker v-model="form.voucher_date" value-format="yyyy-MM-dd"/>
+            <template v-if="form.tax_kind === 'ISLR'"><label>Código de concepto ISLR</label><el-input v-model="form.concept_id"/></template>
+            <label>Moneda del comprobante</label><el-select v-model="form.currency_type_id"><el-option label="Bs. / VES" value="VES"/><el-option label="USD" value="USD"/></el-select>
+            <label>Tasa VES por USD</label><el-input v-model="form.exchange_rate"/>
+            <label>Base retenida</label><el-input v-model="form.base"/>
+            <label>Porcentaje</label><el-input v-model="form.percentage"/>
+            <label>Sustraendo</label><el-input v-model="form.subtrahend"/>
+            <label>Importe retenido</label><el-input v-model="form.amount"/>
+            <label>Adjunto PDF o imagen</label><input type="file" accept="application/pdf,image/png,image/jpeg" @change="upload"/>
+            <p v-if="error" class="text-danger">{{ error }}</p>
+            <el-button native-type="submit" type="primary" :loading="loading">Registrar comprobante</el-button>
+            <el-button @click="close">Cerrar</el-button>
+        </form>
     </el-dialog>
+    <!-- ######## FIN PERSISTENCIA FISCAL VENEZUELA ######## -->
 </template>
-
 <script>
-
-import {deletable} from '../../../../mixins/deletable'
-import DialogLinkPayment from './dialog_link_payment.vue'
-
+// ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
 export default {
     props: ['showDialog', 'documentId'],
-    mixins: [deletable],
-    components: {
-        DialogLinkPayment,
-    },
-    data() {
-        return {
-            loadingSubmit: false,
-            title: null,
-            resource: 'documents',
-            errors: {},
-            form: {},
-            records: [],
-            payment_destinations: [],
-            headers: headers_token,
-            fileList: [],
-            payment_method_types: [],
-            showAddButton: true,
-            document: {},
-            permissions: {},
-            index_file: null,
-        }
-    },
-    async created() {
-        await this.initForm();
-        // await this.$http.get(`/${this.resource}/tables`)
-        //     .then(response => {
-        //         this.payment_method_types = response.data.payment_method_types;
-        //         this.payment_destinations = response.data.payment_destinations
-        //         this.permissions = response.data.permissions
-        //         //this.initDocumentTypes()
-        //     })
-        // await this.events();
-
-    },
+    data: () => ({ records: [], form: {}, loading: false, error: '' }),
+    watch: { showDialog(value) { if (value) this.load() } },
     methods: {
-        initForm() {
-            this.title = null;
-            this.errors = {};
-            this.form = {
-                'document_id': null,
-                'document_number': null,
-                'voucher_date_of_issue': null,
-                'voucher_number': null,
-                'amount': 0,
-                'voucher_amount': 0,
-                'voucher_filename': null,
-                'temp_path': null,
-            }
-            this.fileList = [];
-            this.showAddButton = true;
+        async load() {
+            try {
+                const { data } = await this.$http.get(`/documents/retention/${this.documentId}`)
+                this.records = data.data
+                this.form = { document_id: this.documentId, agent_id: data.document.customer_id, tax_kind: 'IVA', voucher_number: '',
+                    voucher_date: new Date().toLocaleDateString('en-CA', { timeZone: 'America/Caracas' }), currency_type_id: data.document.currency_type_id,
+                    exchange_rate: data.document.exchange_rate_sale, base: '', percentage: '', subtrahend: 0, amount: '', concept_id: null, attachment: null }
+            } catch (e) { this.error = 'No se pudieron cargar las retenciones.' }
         },
-        async handleOpen() {
-            this.initForm();
-            await this.$http.get(`/${this.resource}/retention/${this.documentId}`)
-                .then(response => {
-                    if (response.data.success) {
-                        this.form = response.data.form
-                    } else {
-                        this.clickClose();
-                    }
-                });
-            this.title = 'Retención (' + this.form.document_number + ')';
+        async upload(event) {
+            const file = event.target.files[0]
+            if (!file) return
+            const body = new FormData(); body.append('file', file); body.append('document_id', this.documentId)
+            try { const { data } = await this.$http.post('/documents/retention/upload', body); this.form.attachment = data.attachment }
+            catch (e) { this.error = 'No se pudo adjuntar el comprobante.' }
         },
-        // events() {
-        //     // this.$eventHub.$on('reloadDataPayments', () => {
-        //     //     this.getData()
-        //     // })
-        // },
-        getObjectResponse(success, message = null) {
-            return {
-                success: success,
-                message: message,
-            }
+        async submit() {
+            this.loading = true; this.error = ''
+            try { await this.$http.post('/documents/retention', this.form); await this.load(); this.$eventHub.$emit('reloadData') }
+            catch (e) { const errors = e.response && e.response.data && e.response.data.errors; this.error = errors ? Object.values(errors).flat().join(' ') : 'No se pudo registrar el comprobante.' }
+            finally { this.loading = false }
         },
-        validateDataPayment(row) {
-            if (!row.payment_destination_id) return this.getObjectResponse(false, 'El campo destino es obligatorio.')
-            if (!row.payment_method_type_id) return this.getObjectResponse(false, 'El campo método de pago es obligatorio.')
-            if (!row.payment || row.payment <= 0 || isNaN(row.payment)) return this.getObjectResponse(false, 'El campo monto es obligatorio y debe ser mayor que 0.')
-            return this.getObjectResponse(true)
-        },
-        clickDownloadFile(filename) {
-            window.open(
-                `/finances/payment-file/download-file/${filename}/documents`,
-                "_blank"
-            );
-        },
-        onSuccess(response, file, fileList) {
-            this.fileList = fileList
-            if (response.success) {
-                this.form.voucher_filename = response.data.filename
-                this.form.temp_path = response.data.temp_path
-            } else {
-                this.cleanFileList()
-                this.$message.error(response.message || 'No se pudo cargar el archivo.')
-            }
-        },
-        onUploadError(error, file, fileList) {
-            this.cleanFileList()
-            this.$message.error(this.getRequestErrorMessage(error))
-        },
-        getRequestErrorMessage(error) {
-            const data = error && error.response ? error.response.data : null
-
-            if (typeof data === 'string' && data.trim()) {
-                return data
-            }
-
-            if (data && data.message) {
-                return data.message
-            }
-
-            if (error && error.message) {
-                return error.message
-            }
-
-            return 'Ocurrió un error al procesar la solicitud.'
-        },
-        cleanFileList() {
-            this.fileList = []
-        },
-        handleRemove(file, fileList) {
-            this.form.filename = null
-            this.form.temp_path = null
-        },
-        async onSubmit(index) {
-            if (_.isNull(this.form.voucher_number) || (this.form.voucher_number === '')) {
-                this.$message.error('El número del comprobante es requerido.');
-                return;
-            }
-            if (_.isNull(this.form.voucher_date_of_issue) || (this.form.voucher_date_of_issue === '')) {
-                this.$message.error('La fecha de emisión es requerida.');
-                return;
-            }
-            if (_.isNull(this.form.voucher_amount) || (this.form.voucher_date_of_issue === '')) {
-                this.$message.error('El monto pagado es requerido.');
-                return;
-            }
-            if (parseFloat(this.form.voucher_amount) !== parseFloat(this.form.amount)) {
-                this.$message.error('El monto pagado y el monto son diferentes.');
-                return;
-            }
-
-            this.loadingSubmit = true;
-            await this.$http.post(`/${this.resource}/retention`, this.form)
-                .then(response => {
-                    if (response.data.success) {
-                        this.$message.success(response.data.message);
-                        this.clickClose();
-                    } else {
-                        this.$message.error(response.data.message);
-                    }
-                })
-                .catch(error => {
-                    this.$message.error(this.getRequestErrorMessage(error))
-                })
-            this.loadingSubmit = false;
-        },
-        clickDelete(id) {
-            this.destroy(`/${this.resource}/${id}`).then(() => {
-                    this.getData()
-                    this.$eventHub.$emit('reloadData')
-                }
-            )
-        },
-        clickClose() {
-            this.$emit('update:showDialog', false);
-        },
+        close() { this.$emit('update:showDialog', false) }
     }
 }
+// ######## FIN PERSISTENCIA FISCAL VENEZUELA ########
 </script>
-
-<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->
