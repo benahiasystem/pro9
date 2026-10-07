@@ -1,5 +1,6 @@
 <?php
-
+// ######## INICIO TASAS OCHO DECIMALES: CONVERSIONES EXACTAS ########
+// ######## FIN TASAS OCHO DECIMALES: CONVERSIONES EXACTAS ########
 // ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
 
     namespace App\Models\Tenant;
@@ -594,12 +595,12 @@
             if($isPreview)
             {
                 if ($document->currency_type_id === $currency_type_id) return $unit_price;
-                if($document->currency_type_id === 'VES' && $currency_type_id === 'USD') return $unit_price * $document->exchange_rate_sale;
-                return  ($document->currency_type_id === 'USD') ? $unit_price / $document->exchange_rate_sale : $unit_price;
+                if($document->currency_type_id === 'VES' && $currency_type_id === 'USD') return (float) \App\Services\ExchangeRates\ExchangeRateMath::finalAmount(\App\Services\ExchangeRates\ExchangeRateMath::rational($unit_price)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($document->exchange_rate_sale)), 6);
+                return  ($document->currency_type_id === 'USD') ? (float) \App\Services\ExchangeRates\ExchangeRateMath::finalAmount(\App\Services\ExchangeRates\ExchangeRateMath::rational($unit_price)->dividedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($document->exchange_rate_sale)), 6) : $unit_price;
             } else {
                 if ($this->document->currency_type_id === $currency_type_id) return $unit_price;
-                if ($this->document->currency_type_id === 'VES' && $currency_type_id === 'USD') return $unit_price * $this->document->exchange_rate_sale ;
-                return $this->isCurrencyTypeUsd() ? $unit_price / $this->document->exchange_rate_sale : $unit_price;
+                if ($this->document->currency_type_id === 'VES' && $currency_type_id === 'USD') return (float) \App\Services\ExchangeRates\ExchangeRateMath::finalAmount(\App\Services\ExchangeRates\ExchangeRateMath::rational($unit_price)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($this->document->exchange_rate_sale)), 6) ;
+                return $this->isCurrencyTypeUsd() ? (float) \App\Services\ExchangeRates\ExchangeRateMath::finalAmount(\App\Services\ExchangeRates\ExchangeRateMath::rational($unit_price)->dividedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($this->document->exchange_rate_sale)), 6) : $unit_price;
             }
 
         }

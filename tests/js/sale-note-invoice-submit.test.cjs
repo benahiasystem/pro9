@@ -23,7 +23,7 @@ const component = loadScript(parsed.script.content, name => {
     if (name.endsWith('.vue')) return {};
     if (name === '@mixins/functions') return {fnRestrictSaleItemsCpe: {}};
     if (name.startsWith('.')) {
-        return loadScript(fs.readFileSync(path.resolve(path.dirname(filename), name + '.js'), 'utf8'));
+        return require('./helpers/load-module.cjs')(path.resolve(path.dirname(filename), name + '.js'));
     }
     return require(name);
 }).default;
@@ -67,7 +67,7 @@ for (const currency of ['VES', 'USD']) {
         const post = requests.find(request => request.method === 'post');
         assert.ok(post, 'Conversion must reach the document endpoint');
         assert.equal(post.url, '/documents');
-        assert.equal(post.document.exchange_rate_sale, 40);
+        assert.equal(post.document.exchange_rate_sale, '40.00000000');
         assert.equal(post.document.sale_note_id, 9);
         assert.equal(post.document.currency_type_id, currency);
         assert.equal(ctx.documentNewId, 10);
@@ -81,14 +81,14 @@ test('conversion obtains a missing exchange rate and sends it without replacing 
     await ctx.submit();
     assert.deepEqual(errors, []);
     assert.equal(requests[0].url, '/services/exchange/2026-10-01');
-    assert.equal(requests.find(request => request.method === 'post').document.exchange_rate_sale, 42.5);
+    assert.equal(requests.find(request => request.method === 'post').document.exchange_rate_sale, '42.50000000');
 });
 
 test('invalid exchange rate blocks conversion before saving or marking the note converted', async () => {
     const {ctx, requests, errors} = conversion('VES', 0, 0);
     await ctx.submit();
     assert.equal(errors.length, 1);
-    assert.match(errors[0], /tipo de cambio válido/);
+    assert.match(errors[0], /Tasa fuera de rango/);
     assert.equal(requests.length, 1);
     assert.equal(requests[0].url, '/services/exchange/2026-10-01');
     assert.equal(ctx.documentNewId, null);

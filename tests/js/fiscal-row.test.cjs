@@ -8,7 +8,9 @@ let calculateRowItem, resolveSelectableAffectationType
 before(async () => {
     globalThis._ = require('lodash')
     const source = fs.readFileSync(path.join(__dirname, '../../resources/js/helpers/functions.js'), 'utf8')
-    const helpers = await import(`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`)
+    const exactSource = fs.readFileSync(path.join(__dirname, '../../resources/js/helpers/exchange-rate-math.js'), 'utf8')
+    const exactUrl = `data:text/javascript;base64,${Buffer.from(exactSource).toString('base64')}`
+    const helpers = await import(`data:text/javascript;base64,${Buffer.from(source.replace('./exchange-rate-math', exactUrl)).toString('base64')}`)
     ;({calculateRowItem, resolveSelectableAffectationType} = helpers)
 })
 

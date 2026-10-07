@@ -1,5 +1,6 @@
 <?php
-
+// ######## INICIO TASAS OCHO DECIMALES: CONVERSIONES EXACTAS ########
+// ######## FIN TASAS OCHO DECIMALES: CONVERSIONES EXACTAS ########
 // ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
 
 namespace Modules\Dashboard\Helpers;
@@ -443,7 +444,7 @@ class DashboardSalePurchase
     {
         if($currency_type_id == 'USD')
         {
-            return $total * $exchange_rate_sale;
+            return (float) \App\Services\ExchangeRates\ExchangeRateMath::finalAmount(\App\Services\ExchangeRates\ExchangeRateMath::rational($total)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($exchange_rate_sale)), 2);
         }
         else{
             return $total;

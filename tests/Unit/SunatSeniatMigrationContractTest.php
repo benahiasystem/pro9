@@ -57,7 +57,8 @@ class SunatSeniatMigrationContractTest extends TestCase
         }
 
         $service = $this->source('modules/ApiPeruDev/Data/ServiceData.php');
-        self::assertStringContainsString("request('POST', '/api/tipo_de_cambio'", $service);
+        self::assertStringNotContainsString('/api/tipo_de_cambio', $service);
+        self::assertStringContainsString('TenantExchangeRateService::class', $service);
     }
 
     /** @test */

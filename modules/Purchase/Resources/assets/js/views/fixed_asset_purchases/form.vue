@@ -289,6 +289,10 @@
 </template>
 
 <script>
+// ######## INICIO TASAS OCHO DECIMALES ########
+import { normalizeExchangeRate } from "../../../../../../../resources/js/helpers/exchange-rate-math"
+// ######## FIN TASAS OCHO DECIMALES ########
+
 
 import FaPurchaseFormItem from './partials/item.vue'
 import PersonForm from '@views/persons/form.vue'
@@ -423,7 +427,7 @@ export default {
                 await this.$http.get(`/${this.resource}/record/${this.id}`)
                     .then(response => {
                         this.form = response.data.data.fa_purchase;
-                        this.form.exchange_rate_sale = parseFloat(this.form.exchange_rate_sale)
+                        this.form.exchange_rate_sale = normalizeExchangeRate(this.form.exchange_rate_sale)
                         this.form.items.forEach(row => row.quantity = parseInt(row.quantity))
                     })
             }

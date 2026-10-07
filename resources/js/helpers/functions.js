@@ -1,3 +1,7 @@
+
+// ######## INICIO TASAS OCHO DECIMALES ########
+import { exactAmount } from "./exchange-rate-math"
+// ######## FIN TASAS OCHO DECIMALES ########
 // ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
 // ########## INICIO CAMBIO AFECTACIÓN IVA
 function calculateRowItem(row_old, currency_type_id_new, exchange_rate_sale, pigv = 0.16) {
@@ -19,11 +23,11 @@ function calculateRowItem(row_old, currency_type_id_new, exchange_rate_sale, pig
     // console.log(row_old)
 
     if (currency_type_id_old === 'VES' && currency_type_id_old !== currency_type_id_new) {
-        unit_price = unit_price / exchange_rate_sale;
+        unit_price = exactAmount(unit_price).dividedBy(exactAmount(exchange_rate_sale)).final(6);
     }
 
     if (currency_type_id_new === 'VES' && currency_type_id_old !== currency_type_id_new) {
-        unit_price = unit_price * exchange_rate_sale;
+        unit_price = exactAmount(unit_price).times(exactAmount(exchange_rate_sale)).final(6);
     }
 
     // unit_price = _.round(unit_price, 4);

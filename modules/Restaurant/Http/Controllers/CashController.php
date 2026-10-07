@@ -1,5 +1,6 @@
 <?php
-
+// ######## INICIO TASAS OCHO DECIMALES: CONVERSIONES EXACTAS ########
+// ######## FIN TASAS OCHO DECIMALES: CONVERSIONES EXACTAS ########
 // ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
 namespace Modules\Restaurant\Http\Controllers;
 
@@ -170,7 +171,7 @@ class CashController extends Controller
             if($cash_document->sale_note){
 
                 if(in_array($cash_document->sale_note->state_type_id, ['01','03','05','07','13'])){
-                    $final_balance += ($cash_document->sale_note->currency_type_id == 'VES') ? $cash_document->sale_note->total : ($cash_document->sale_note->total * $cash_document->sale_note->exchange_rate_sale);
+                    $final_balance = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($final_balance)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational(($cash_document->sale_note->currency_type_id == 'VES') ? $cash_document->sale_note->total : ((\App\Services\ExchangeRates\ExchangeRateMath::rational($cash_document->sale_note->total)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($cash_document->sale_note->exchange_rate_sale)))->toBigDecimal())))->toBigDecimal();
                 }
 
                 // $final_balance += $cash_document->sale_note->total;
@@ -179,7 +180,7 @@ class CashController extends Controller
             else if($cash_document->document){
 
                 if(in_array($cash_document->document->state_type_id, ['01','03','05','07','13'])){
-                    $final_balance += ($cash_document->document->currency_type_id == 'VES') ? $cash_document->document->total : ($cash_document->document->total * $cash_document->document->exchange_rate_sale);
+                    $final_balance = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($final_balance)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational(($cash_document->document->currency_type_id == 'VES') ? $cash_document->document->total : ((\App\Services\ExchangeRates\ExchangeRateMath::rational($cash_document->document->total)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($cash_document->document->exchange_rate_sale)))->toBigDecimal())))->toBigDecimal();
                 }
 
                 // $final_balance += $cash_document->document->total;
@@ -188,7 +189,7 @@ class CashController extends Controller
             else if($cash_document->expense_payment){
 
                 if($cash_document->expense_payment->expense->state_type_id == '05'){
-                    $final_balance -= ($cash_document->expense_payment->expense->currency_type_id == 'VES') ? $cash_document->expense_payment->payment:($cash_document->expense_payment->payment  * $cash_document->expense_payment->expense->exchange_rate_sale);
+                    $final_balance = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($final_balance)->minus(\App\Services\ExchangeRates\ExchangeRateMath::rational(($cash_document->expense_payment->expense->currency_type_id == 'VES') ? $cash_document->expense_payment->payment:((\App\Services\ExchangeRates\ExchangeRateMath::rational($cash_document->expense_payment->payment)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($cash_document->expense_payment->expense->exchange_rate_sale)))->toBigDecimal())))->toBigDecimal();
                 }
 
                 // $final_balance -= $cash_document->expense_payment->payment;
@@ -197,7 +198,7 @@ class CashController extends Controller
             else if($cash_document->purchase){
                 if(in_array($cash_document->purchase->state_type_id, ['01','03','05','07','13'])){
                     if($cash_document->purchase->total_canceled == 1) {
-                        $final_balance -= ($cash_document->purchase->currency_type_id == 'VES') ? $cash_document->purchase->total : ($cash_document->purchase->total * $cash_document->purchase->exchange_rate_sale);
+                        $final_balance = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($final_balance)->minus(\App\Services\ExchangeRates\ExchangeRateMath::rational(($cash_document->purchase->currency_type_id == 'VES') ? $cash_document->purchase->total : ((\App\Services\ExchangeRates\ExchangeRateMath::rational($cash_document->purchase->total)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($cash_document->purchase->exchange_rate_sale)))->toBigDecimal())))->toBigDecimal();
                     }
 
                 }
@@ -212,8 +213,8 @@ class CashController extends Controller
 
         }
 
-        $cash->final_balance = round($final_balance + $cash->beginning_balance, 2);
-        $cash->income = round($final_balance, 2);
+        $cash->final_balance = (float) \App\Services\ExchangeRates\ExchangeRateMath::finalAmount(\App\Services\ExchangeRates\ExchangeRateMath::rational($final_balance)->plus($cash->beginning_balance), 2);
+        $cash->income = round((float) \App\Services\ExchangeRates\ExchangeRateMath::finalAmount($final_balance, 2), 2);
         $cash->state = false;
         $cash->save();
 

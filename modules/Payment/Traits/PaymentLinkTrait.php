@@ -1,5 +1,6 @@
 <?php
-
+// ######## INICIO TASAS OCHO DECIMALES: CONVERSIONES EXACTAS ########
+// ######## FIN TASAS OCHO DECIMALES: CONVERSIONES EXACTAS ########
 // ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
 
 namespace Modules\Payment\Traits;
@@ -49,7 +50,7 @@ trait PaymentLinkTrait
 
             $apply_conversion = true;
 
-            return round($payment_link['total'] * $associated_record_payment['exchange_rate_sale'], 2);
+            return round((float) \App\Services\ExchangeRates\ExchangeRateMath::finalAmount(\App\Services\ExchangeRates\ExchangeRateMath::rational($payment_link['total'])->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($associated_record_payment['exchange_rate_sale'])), 2), 2);
         }
 
         // el monto a cobrar lo define el link, no la url

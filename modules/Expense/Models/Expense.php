@@ -34,7 +34,7 @@
      * @property Carbon                           $date_of_issue
      * @property Carbon                           $time_of_issue
      * @property string                           $supplier
-     * @property float                            $exchange_rate_sale
+     * @property string                            $exchange_rate_sale
      * @property float                            $total
      * @property Carbon|null                      $created_at
      * @property Carbon|null                      $updated_at
@@ -95,7 +95,7 @@
             'establishment_id' => 'int',
             'supplier_id' => 'int',
             'expense_reason_id' => 'int',
-            'exchange_rate_sale' => 'float',
+            'exchange_rate_sale' => 'decimal:8',
             'total' => 'float'
         ];
 

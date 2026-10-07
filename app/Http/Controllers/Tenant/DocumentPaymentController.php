@@ -59,7 +59,7 @@ class DocumentPaymentController extends Controller
             'total' => $total,
             'total_difference' => $total_difference,
             'currency_type_id' => $document->currency_type_id,
-            'exchange_rate_sale' => (float) $document->exchange_rate_sale,
+            'exchange_rate_sale' => \App\Services\ExchangeRates\ExchangeRateMath::rate($document->exchange_rate_sale),
             // 'credit_notes_total' => $credit_notes_total,
             'external_id' => $document->external_id,
         ];

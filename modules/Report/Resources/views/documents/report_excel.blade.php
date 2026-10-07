@@ -1,3 +1,4 @@
+{{-- ######## INICIO TASAS OCHO DECIMALES ######## --}}
 {{-- ######## INICIO NUMERACIÓN FISCAL VENEZUELA ######## --}}
 @php \App\Services\Fiscal\FiscalIdentity::preload($records); @endphp
 {{-- ######## FIN NUMERACIÓN FISCAL VENEZUELA ######## --}}
@@ -765,7 +766,7 @@ $document_types=DocumentType::OnlyAvaibleDocuments()->get();
                                     <td>{{$serie['total_usd']}}</td>
                                 </tr>
                                 @php
-                                    $total_general=$total_general+$serie['total_pen'] + $serie['total_usd'] * $serie['exchange_rate'];
+                                    $total_general=$total_general+$serie['total_pen'] + \App\Services\ExchangeRates\ExchangeRateMath::multiply($serie['total_usd'], $serie['exchange_rate'], 2);
                                 @endphp
                             @endif
                         @endforeach
@@ -788,3 +789,5 @@ $document_types=DocumentType::OnlyAvaibleDocuments()->get();
 </html>
 
 {{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}
+
+{{-- ######## FIN TASAS OCHO DECIMALES ######## --}}

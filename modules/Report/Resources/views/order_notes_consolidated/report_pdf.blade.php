@@ -1,3 +1,4 @@
+{{-- ######## INICIO TASAS OCHO DECIMALES ######## --}}
 {{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 <!DOCTYPE html>
 <html lang="en">
@@ -101,7 +102,7 @@
                         <tbody>
                             @foreach($records as $key => $value)
                                 @php
-                                    $total_item = ($value->order_note->currency_type_id === 'USD') ? $value->total * $value->order_note->exchange_rate_sale : $value->total;
+                                    $total_item = ($value->order_note->currency_type_id === 'USD') ? \App\Services\ExchangeRates\ExchangeRateMath::multiply($value->total, $value->order_note->exchange_rate_sale, 2) : $value->total;
                                 @endphp
                                 <tr>
                                     <td class="celda">{{$loop->iteration}}</td>
@@ -136,3 +137,5 @@
 </html>
 
 {{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}
+
+{{-- ######## FIN TASAS OCHO DECIMALES ######## --}}

@@ -1,5 +1,6 @@
 <?php
-
+// ######## INICIO TASAS OCHO DECIMALES: CONVERSIONES EXACTAS ########
+// ######## FIN TASAS OCHO DECIMALES: CONVERSIONES EXACTAS ########
 // ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
 
 namespace Modules\Report\Http\Resources;
@@ -143,16 +144,16 @@ class GeneralItemCollection extends ResourceCollection
 
             $purchase_unit_price = $purchase_item->unit_price;
             $purchase = Purchase::find($purchase_item->purchase_id);
-            $exchange_rate_sale = $purchase->exchange_rate_sale * 1;
+            $exchange_rate_sale = \App\Services\ExchangeRates\ExchangeRateMath::rate($purchase->exchange_rate_sale);
             // Si la venta es en bolívares, y la compra del producto es en dolares, se hace la transformcaion
             if ($currency_type_id === 'VES') {
                 if ($purchase->currency_type_id !== $currency_type_id) {
-                    $purchase_unit_price = $purchase_unit_price * $exchange_rate_sale;
+                    $purchase_unit_price = (float) \App\Services\ExchangeRates\ExchangeRateMath::finalAmount(\App\Services\ExchangeRates\ExchangeRateMath::rational($purchase_unit_price)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($exchange_rate_sale)), 6);
                 }
             } else {
                 // Si la venta es en dolares, y la compra del producto es en bolívares, se hace la transformcaion
                 if ($purchase->currency_type_id !== $currency_type_id && $exchange_rate_sale !== 0) {
-                    $purchase_unit_price = $purchase_unit_price / $exchange_rate_sale;
+                    $purchase_unit_price = (float) \App\Services\ExchangeRates\ExchangeRateMath::finalAmount(\App\Services\ExchangeRates\ExchangeRateMath::rational($purchase_unit_price)->dividedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($exchange_rate_sale)), 6);
                 }
             }
         }

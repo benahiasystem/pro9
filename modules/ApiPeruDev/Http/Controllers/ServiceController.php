@@ -19,6 +19,8 @@ class ServiceController extends Controller
 
     public function exchange($date)
     {
-        return (new ServiceData)->exchange($date);
+        // ######## INICIO API BCV ########
+        return app(\App\Services\ExchangeRates\TenantExchangeRateService::class)->exchange($date);
+        // ######## FIN API BCV ########
     }
 }

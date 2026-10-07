@@ -32,7 +32,7 @@ class PurchaseCollection extends ResourceCollection
                 'date_of_due'               => $purchase->date_of_due?->format('Y-m-d'),
                 'time_of_issue'             => $purchase->time_of_issue,
                 'currency_type_id'          => $purchase->currency_type_id,
-                'exchange_rate_sale'        => (float) $purchase->exchange_rate_sale,
+                'exchange_rate_sale'        => \App\Services\ExchangeRates\ExchangeRateMath::rate($purchase->exchange_rate_sale),
                 'total_taxed'               => (float) $purchase->total_taxed,
                 'total_exonerated'          => (float) $purchase->total_exonerated,
                 'total_unaffected'          => (float) $purchase->total_unaffected,

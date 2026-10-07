@@ -1689,6 +1689,10 @@
 </style>
 
 <script>
+// ######## INICIO TASAS OCHO DECIMALES ########
+import { normalizeExchangeRate, exactAmount } from "../../../helpers/exchange-rate-math"
+// ######## FIN TASAS OCHO DECIMALES ########
+
 import TermsCondition from "./partials/terms_condition.vue";
 import QuotationFormItem from "./partials/item.vue";
 import PersonForm from "../persons/form.vue";
@@ -2259,7 +2263,7 @@ export default {
                         this.form.date_of_due = this.normalizeDate(dato.date_of_due);
                         this.form.date_of_issue = this.normalizeDate(dato.date_of_issue) || moment().format('YYYY-MM-DD');
                         this.form.delivery_date = this.normalizeDate(dato.delivery_date);
-                        this.form.exchange_rate_sale = Number(dato.exchange_rate_sale) || this.form.exchange_rate_sale || 1;
+                        this.form.exchange_rate_sale = normalizeExchangeRate(dato.exchange_rate_sale || this.form.exchange_rate_sale || '1');
                         this.form.description = dato.description;
                         this.form.shipping_address = dato.shipping_address;
                         this.form.account_number = dato.account_number;
@@ -2590,9 +2594,9 @@ export default {
             this.form.items = items;
 
             if (this.form.currency_type_id === 'VES') {
-                this.total_global_discount = _.round( this.total_global_discount* this.form.exchange_rate_sale,2)
+                this.total_global_discount = exactAmount(this.total_global_discount).times(exactAmount(this.form.exchange_rate_sale)).final(2)
             } else {
-                this.total_global_discount = _.round(this.total_global_discount / this.form.exchange_rate_sale,2)
+                this.total_global_discount = exactAmount(this.total_global_discount).dividedBy(exactAmount(this.form.exchange_rate_sale)).final(2)
             }
             this.calculateTotal();
         },

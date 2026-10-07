@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\DB;
  * - `change` decimal(12,2) DEFAULT NULL
  * - `payment` decimal(12,2) NOT NULL
  * - `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `exchange_rate` decimal(13,3) NOT NULL
+ * - `exchange_rate` decimal(18,8) NOT NULL
  * - `exchange_rate_source` varchar(255) DEFAULT NULL
  * - `exchange_rate_date` date DEFAULT NULL
  * - `original_amount` decimal(12,2) NOT NULL
@@ -50,7 +50,7 @@ CREATE TABLE `document_payments` (
   `payment` decimal(12,2) NOT NULL,
   -- ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
   `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `exchange_rate` decimal(13,3) NOT NULL,
+  `exchange_rate` decimal(18,8) NOT NULL,
   `exchange_rate_source` varchar(255) DEFAULT NULL,
   `exchange_rate_date` date DEFAULT NULL,
   `original_amount` decimal(12,2) NOT NULL,

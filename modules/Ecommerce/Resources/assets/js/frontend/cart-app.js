@@ -1,3 +1,7 @@
+
+// ######## INICIO TASAS OCHO DECIMALES ########
+import { exactAmount, normalizeExchangeRate } from "../../../../../../resources/js/helpers/exchange-rate-math"
+// ######## FIN TASAS OCHO DECIMALES ########
 // Cart Application - Ecommerce Module
 // Main Vue instance for shopping cart detail page
 
@@ -839,7 +843,7 @@ var app_cart = new Vue({
             let row = contex.records.find(x => x.id == id)
 
             if(row.currency_type_id === 'USD') {
-                row.sub_total = ((parseFloat(row.sale_unit_price) * value) * exchange_rate_sale).toFixed(2)
+                row.sub_total = exactAmount(parseFloat(row.sale_unit_price)).times(exactAmount(value)).times(exactAmount(exchange_rate_sale)).final(2)
             } else {
                 row.sub_total = (parseFloat(row.sale_unit_price) * value).toFixed(2)
             }
@@ -850,7 +854,7 @@ var app_cart = new Vue({
 
         this.records.forEach(function (item) {
             if(item.currency_type_id === 'USD') {
-                item.sub_total = (parseFloat(item.sub_total) * exchange_rate_sale).toFixed(2)
+                item.sub_total = exactAmount(parseFloat(item.sub_total)).times(exactAmount(exchange_rate_sale)).final(2)
                 item.exchange_rate_sale = exchange_rate_sale
             }
             item.sale_unit_price = parseFloat(item.sale_unit_price).toFixed(2)
@@ -2357,7 +2361,7 @@ var app_cart = new Vue({
         updateRowSubtotal(row) {
             let exchange_rate_sale = this.exchange_rate_sale;
             if(row.currency_type_id === 'USD') {
-                row.sub_total = ((parseFloat(row.sale_unit_price) * row.cantidad) * exchange_rate_sale).toFixed(2);
+                row.sub_total = exactAmount(parseFloat(row.sale_unit_price)).times(exactAmount(row.cantidad)).times(exactAmount(exchange_rate_sale)).final(2);
             } else {
                 row.sub_total = (parseFloat(row.sale_unit_price) * row.cantidad).toFixed(2);
             }
@@ -2403,7 +2407,7 @@ var app_cart = new Vue({
         },
         async changeExchangeRate(exchange_rate_date){
             var response = await axios.get(`/exchange_rate/ecommence/${exchange_rate_date}`)
-            this.exchange_rate_sale = parseFloat(response.data.sale)
+            this.exchange_rate_sale = normalizeExchangeRate(response.data.sale)
         },
         optionDocument() {
             this.typeDocumentList = []
@@ -4867,7 +4871,7 @@ var app_cart = new Vue({
 
                 if (item.sale_affectation_igv_type_id === '10') {
                     if(item.currency_type_id === 'USD') {
-                        sale_unit_price = (parseFloat(item.sale_unit_price) * this.exchange_rate_sale).toFixed(2)
+                        sale_unit_price = exactAmount(parseFloat(item.sale_unit_price)).times(exactAmount(this.exchange_rate_sale)).final(2)
                     } else {
                         sale_unit_price = item.sale_unit_price
                     }
@@ -4900,7 +4904,7 @@ var app_cart = new Vue({
 
                 if (item.sale_affectation_igv_type_id === '20') {
                     if(item.currency_type_id === 'USD') {
-                        sale_unit_price = (parseFloat(item.sale_unit_price) * this.exchange_rate_sale).toFixed(2)
+                        sale_unit_price = exactAmount(parseFloat(item.sale_unit_price)).times(exactAmount(this.exchange_rate_sale)).final(2)
                     } else {
                         sale_unit_price = item.sale_unit_price
                     }

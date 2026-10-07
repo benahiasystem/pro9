@@ -185,7 +185,7 @@ class FinanceController extends Controller
                 if ($payment instanceof \App\Models\Tenant\DocumentPayment) {
                     $amount = $payment->reversed_at ? 0 : \App\Services\Fiscal\FiscalAmounts::convert($payment->cash_received_amount,$payment->currency_type_id,'VES',$payment->exchange_rate);
                 } elseif ($document && ($document->currency_type_id ?? 'VES') === 'USD') {
-                    $amount *= (float) $document->exchange_rate_sale;
+                    $amount = (float) \App\Services\ExchangeRates\ExchangeRateMath::multiply($amount, $document->exchange_rate_sale, 2);
                 }
                 // ######## FIN MIGRACIÓN MONEDA VENEZUELA ########
 

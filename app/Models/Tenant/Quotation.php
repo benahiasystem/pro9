@@ -1,5 +1,6 @@
 <?php
-
+// ######## INICIO TASAS OCHO DECIMALES: CONVERSIONES EXACTAS ########
+// ######## FIN TASAS OCHO DECIMALES: CONVERSIONES EXACTAS ########
 // ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
 
 namespace App\Models\Tenant;
@@ -628,7 +629,7 @@ class Quotation extends ModelTenant
      */
     public function getTransformTotal()
     {
-        return ($this->currency_type_id === 'VES') ? $this->total : ($this->total * $this->exchange_rate_sale);
+        return ($this->currency_type_id === 'VES') ? $this->total : ((float) \App\Services\ExchangeRates\ExchangeRateMath::finalAmount(\App\Services\ExchangeRates\ExchangeRateMath::rational($this->total)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($this->exchange_rate_sale)), 2));
     }
 
 

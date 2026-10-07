@@ -20,7 +20,7 @@ use Illuminate\Support\Facades\DB;
  * - `number` int(11) NOT NULL
  * - `date_of_issue` date NOT NULL
  * - `time_of_issue` time NOT NULL
- * - `exchange_rate_sale` decimal(13,3) NOT NULL
+ * - `exchange_rate_sale` decimal(18,8) NOT NULL
  * - `total` decimal(12,2) NOT NULL
  * - `filename` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `created_at` timestamp NULL DEFAULT NULL
@@ -45,7 +45,7 @@ CREATE TABLE `income` (
   `number` int(11) NOT NULL,
   `date_of_issue` date NOT NULL,
   `time_of_issue` time NOT NULL,
-  `exchange_rate_sale` decimal(13,3) NOT NULL,
+  `exchange_rate_sale` decimal(18,8) NOT NULL,
   `total` decimal(12,2) NOT NULL,
   `filename` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,

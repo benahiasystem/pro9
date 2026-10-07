@@ -27,8 +27,30 @@
         use UsesTenantConnection;
 
         // ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
+        // ######## INICIO TASAS OCHO DECIMALES ########
+        public function getCasts()
+        {
+            $casts = parent::getCasts();
+            foreach (['exchange_rate_sale', 'exchange_rate'] as $column) {
+                if (in_array($column, $this->getFillable(), true) && !$this->hasGetMutator($column) && (!isset($casts[$column]) || $casts[$column] === 'float' || str_starts_with($casts[$column], 'decimal:'))) {
+                    $casts[$column] = 'decimal:8';
+                }
+            }
+            return $casts;
+        }
+        // ######## FIN TASAS OCHO DECIMALES ########
+
         public function save(array $options = [])
         {
+            // ######## INICIO TASAS OCHO DECIMALES ########
+            foreach (['exchange_rate_sale', 'exchange_rate'] as $column) {
+                if (array_key_exists($column, $this->attributes) && ($this->getCasts()[$column] ?? '') === 'decimal:8') {
+                    $value = $this->attributes[$column];
+                    if ($value !== null) $this->attributes[$column] = is_numeric($value) && $value == 0
+                        ? '0.00000000' : \App\Services\ExchangeRates\ExchangeRateMath::rate($value, $column);
+                }
+            }
+            // ######## FIN TASAS OCHO DECIMALES ########
             if ($this->exists || !in_array($this->getTable(), config('fiscal_emission.operation_tables', []), true)) {
                 return parent::save($options);
             }
@@ -131,7 +153,7 @@
          */
         public function generalConvertValueToPen($value, $exchange_rate_sale)
         {
-            return $value * $exchange_rate_sale;
+            return (float) \App\Services\ExchangeRates\ExchangeRateMath::multiply($value, $exchange_rate_sale, 2);
         }
 
 

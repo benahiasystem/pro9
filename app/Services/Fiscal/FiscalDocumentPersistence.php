@@ -31,7 +31,7 @@ final class FiscalDocumentPersistence
         $document->issuer = self::issuer($company, (array) $document->establishment);
         $document->exchange_rate_date = $document->exchange_rate_date ?? $document->date_of_issue;
         $document->exchange_rate_source = $document->exchange_rate_source ?? 'manual';
-        $document->exchange_rate_sale = round((float)$document->exchange_rate_sale,3);
+        $document->exchange_rate_sale = \App\Services\ExchangeRates\ExchangeRateMath::rate($document->exchange_rate_sale, 'exchange_rate_sale');
         FiscalAmounts::convert(1, $document->currency_type_id, 'VES', $document->exchange_rate_sale);
     }
 
@@ -245,7 +245,7 @@ final class FiscalDocumentPersistence
             if ($existing) {
                 if ($existing->document_id !== $document->id || $existing->reversed_at ||
                     (float) $existing->original_amount !== $values['original_amount'] || $existing->currency_type_id !== $values['currency_type_id'] ||
-                    (float)$existing->exchange_rate !== $values['exchange_rate'] || $existing->exemption_reason !== $values['exemption_reason'] ||
+                    \App\Services\ExchangeRates\ExchangeRateMath::rate($existing->exchange_rate) !== $values['exchange_rate'] || $existing->exemption_reason !== $values['exemption_reason'] ||
                     $existing->date_of_payment->format('Y-m-d') !== ($input['date_of_payment'] ?? '') ||
                     $existing->reference !== ($input['reference'] ?? null) ||
                     $existing->exchange_rate_source !== $values['exchange_rate_source'] ||
@@ -323,7 +323,7 @@ final class FiscalDocumentPersistence
             ])->validate();
             if ($document->received_retentions()->where('tax_kind',$data['tax_kind'])->where('agent_id',$data['agent_id'])->where('voucher_number',$data['voucher_number'])->exists()) FiscalAmounts::error('voucher_number','El comprobante ya está registrado.');
             foreach (['base','percentage','subtrahend','amount'] as $field) $data[$field] = round((float)($data[$field] ?? 0),2);
-            $data['exchange_rate'] = round((float)$data['exchange_rate'],3);
+            $data['exchange_rate'] = \App\Services\ExchangeRates\ExchangeRateMath::rate($data['exchange_rate']);
             if ($data['amount']<=0 || $data['base']<=0 || $data['exchange_rate']<=0) FiscalAmounts::error('amount','Importes y tasa deben ser positivos con la precisión del sistema.');
             $agent = Person::findOrFail($data['agent_id']);
             if ($agent->id !== $document->customer_id) FiscalAmounts::error('agent_id', 'El agente debe ser el cliente de la factura.');

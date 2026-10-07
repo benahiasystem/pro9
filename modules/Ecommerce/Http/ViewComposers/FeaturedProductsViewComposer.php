@@ -1,5 +1,6 @@
 <?php
-
+// ######## INICIO TASAS OCHO DECIMALES: CONVERSIONES EXACTAS ########
+// ######## FIN TASAS OCHO DECIMALES: CONVERSIONES EXACTAS ########
 // ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
 
 namespace Modules\Ecommerce\Http\ViewComposers;
@@ -37,7 +38,7 @@ class FeaturedProductsViewComposer
                 'category_id' => $row->category_id,
                 'name' => $row->name,
                 'second_name' => $row->second_name,
-                'sale_unit_price' => ($row->currency_type_id === 'VES') ? $sale_unit_price : $sale_unit_price * $exchange_rate_sale,
+                'sale_unit_price' => ($row->currency_type_id === 'VES') ? $sale_unit_price : (float) \App\Services\ExchangeRates\ExchangeRateMath::finalAmount(\App\Services\ExchangeRates\ExchangeRateMath::rational($sale_unit_price)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($exchange_rate_sale)), 6),
                 'sale_unit' => $sale_unit_price,
                 'currency_type_id' => $row->currency_type_id,
                 'has_igv' => (bool) $row->has_igv,

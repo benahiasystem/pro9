@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\DB;
  * - `date_of_issue` date NOT NULL
  * - `time_of_issue` time NOT NULL
  * - `bank` json NOT NULL
- * - `exchange_rate_sale` decimal(12,2) DEFAULT '0.00'
+ * - `exchange_rate_sale` decimal(18,8) DEFAULT '0.00'
  * - `total` decimal(12,2) DEFAULT '0.00'
  * - `total_interest` decimal(12,2) DEFAULT '0.00'
  * - `total_ingress` decimal(12,2) DEFAULT '0.00'
@@ -46,7 +46,7 @@ CREATE TABLE `bank_loans` (
   `date_of_issue` date NOT NULL,
   `time_of_issue` time NOT NULL,
   `bank` json NOT NULL,
-  `exchange_rate_sale` decimal(12,2) DEFAULT '0.00',
+  `exchange_rate_sale` decimal(18,8) DEFAULT '0.00',
   `total` decimal(12,2) DEFAULT '0.00',
   `total_interest` decimal(12,2) DEFAULT '0.00',
   `total_ingress` decimal(12,2) DEFAULT '0.00',

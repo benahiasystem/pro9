@@ -126,6 +126,10 @@
 </template>
 
 <script>
+// ######## INICIO TASAS OCHO DECIMALES ########
+import { exactAmount } from "../../../../../../../resources/js/helpers/exchange-rate-math"
+// ######## FIN TASAS OCHO DECIMALES ########
+
 import {mapActions, mapState} from "vuex/dist/vuex.mjs";
 
 export default {
@@ -292,9 +296,9 @@ export default {
                 if (coinIn !== coinOut) {
                     if (coinIn === 'VES') {
                         // si la moneda de ingreso es Bolívares, se divide
-                        total = total / this.exchange_rate_sale;
+                        total = exactAmount(total).dividedBy(exactAmount(this.exchange_rate_sale)).final(2);
                     } else {
-                        total = total * this.exchange_rate_sale;
+                        total = exactAmount(total).times(exactAmount(this.exchange_rate_sale)).final(2);
 
                     }
                 }

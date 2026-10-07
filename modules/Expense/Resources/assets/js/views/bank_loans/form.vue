@@ -383,6 +383,10 @@
 </template>
 
 <script>
+// ######## INICIO TASAS OCHO DECIMALES ########
+import { exactAmount } from "../../../../../../../resources/js/helpers/exchange-rate-math"
+// ######## FIN TASAS OCHO DECIMALES ########
+
 
 import LoanFormItem from './partials/item.vue'
 // import PersonForm from '../../../../../../../resources/js/views/tenant/persons/form.vue'
@@ -643,11 +647,11 @@ export default {
             row.total = row.total_original
 
             if (currency_type_id_old === 'VES' && currency_type_id_old !== currency_type_id) {
-                row.total = row.total_original / exchange_rate_sale;
+                row.total = exactAmount(row.total_original).dividedBy(exactAmount(exchange_rate_sale)).final(2);
             }
 
             if (currency_type_id === 'VES' && currency_type_id_old !== currency_type_id) {
-                row.total = row.total_original * exchange_rate_sale;
+                row.total = exactAmount(row.total_original).times(exactAmount(exchange_rate_sale)).final(2);
             }
 
             row.total = _.round(row.total, 2)

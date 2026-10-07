@@ -1,6 +1,22 @@
 name: pro9
 
 services:
+  # ######## INICIO API BCV ########
+  api-bcv:
+    build:
+      context: ../api-bcv
+    image: pro9-api-bcv
+    container_name: pro9-api-bcv
+    env_file:
+      - ../api-bcv/.env
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+    networks:
+      - bcv
+    restart: unless-stopped
+  # ######## FIN API BCV ########
+
   nginx:
     container_name: pro9-nginx
     image: nginx:stable-alpine
@@ -19,6 +35,11 @@ services:
     image: pruebas-php
     container_name: pro9-php
     working_dir: /var/www/pro9
+    # ######## INICIO RED PRIVADA BCV ########
+    networks:
+      - default
+      - bcv
+    # ######## FIN RED PRIVADA BCV ########
     environment:
       DB_HOST: mysql
       DB_PORT: 3306
@@ -62,3 +83,10 @@ services:
 volumes:
   mysql_data:
   redis_data:
+
+# ######## INICIO RED PRIVADA BCV ########
+networks:
+  default:
+  bcv:
+    driver: bridge
+# ######## FIN RED PRIVADA BCV ########

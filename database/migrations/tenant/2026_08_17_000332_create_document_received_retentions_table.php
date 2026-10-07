@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\DB;
  * - `subtrahend` decimal(12,2) NOT NULL DEFAULT 0
  * - `amount` decimal(12,2) NOT NULL DEFAULT 0
  * - `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `exchange_rate` decimal(13,3) NOT NULL
+ * - `exchange_rate` decimal(18,8) NOT NULL
  * - `applied_amount` decimal(12,2) NOT NULL DEFAULT 0
  * - `attachment` varchar(255) DEFAULT NULL
  * - `created_at` timestamp NULL DEFAULT NULL
@@ -42,7 +42,7 @@ CREATE TABLE `document_received_retentions` (
   `subtrahend` decimal(12,2) NOT NULL DEFAULT 0,
   `amount` decimal(12,2) NOT NULL DEFAULT 0,
   `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `exchange_rate` decimal(13,3) NOT NULL,
+  `exchange_rate` decimal(18,8) NOT NULL,
   `applied_amount` decimal(12,2) NOT NULL DEFAULT 0,
   `attachment` varchar(255) DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,

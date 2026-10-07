@@ -402,6 +402,10 @@ header .head-notes > div{
 }
 </style>
 <script>
+// ######## INICIO TASAS OCHO DECIMALES ########
+import { normalizeExchangeRate } from "../../../../../../../resources/js/helpers/exchange-rate-math"
+// ######## FIN TASAS OCHO DECIMALES ########
+
 
 import PurchaseFormItem from './partials/item.vue'
 import PurchaseOptions from './partials/options.vue'
@@ -578,7 +582,7 @@ export default {
                 this.form.attached = response.data.filename
                 this.form.image_url = response.data.temp_image
                 this.form.attached_temp_path = response.data.temp_path
-                this.form.exchange_rate_sale = parseFloat(this.form.exchange_rate_sale)
+                this.form.exchange_rate_sale = normalizeExchangeRate(this.form.exchange_rate_sale)
             } else {
                 this.cleanFileList()
                 this.$message.error(response.message)

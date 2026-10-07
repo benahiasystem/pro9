@@ -1,5 +1,6 @@
 <?php
-
+// ######## INICIO TASAS OCHO DECIMALES: CONVERSIONES EXACTAS ########
+// ######## FIN TASAS OCHO DECIMALES: CONVERSIONES EXACTAS ########
 // ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
 
 namespace Modules\Dashboard\Helpers;
@@ -436,8 +437,8 @@ class DashboardData
         };
 
         foreach ($documents->concat($sale_notes) as $row) {
-            $factor = ($row->currency_type_id == 'USD') ? (float) $row->exchange_rate_sale : 1;
-            $balance = ((float) $row->total - (float) $row->total_credit_notes - (float) $row->total_payment) * $factor;
+            $factor = ($row->currency_type_id == 'USD') ? $row->exchange_rate_sale : '1.00000000';
+            $balance = (float) \App\Services\ExchangeRates\ExchangeRateMath::finalAmount(\App\Services\ExchangeRates\ExchangeRateMath::rational($row->total)->minus($row->total_credit_notes ?? 0)->minus($row->total_payment ?? 0)->multipliedBy($factor), 2);
 
             if ($balance <= 0.005) {
                 continue;
@@ -863,8 +864,8 @@ class DashboardData
 
             }else{
 
-                $sale_note_total_usd += $sale_note->total * $sale_note->exchange_rate_sale;
-                $sale_note_total_payment_usd += collect($sale_note->payments)->sum('payment') * $sale_note->exchange_rate_sale;
+                $sale_note_total_usd = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($sale_note_total_usd)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational($sale_note->total)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($sale_note->exchange_rate_sale)))->toBigDecimal();
+                $sale_note_total_payment_usd = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($sale_note_total_payment_usd)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational(collect($sale_note->payments)->sum('payment'))->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($sale_note->exchange_rate_sale)))->toBigDecimal();
 
             }
         }
@@ -947,8 +948,8 @@ class DashboardData
 
             }else{
 
-                $sale_note_total_usd += $sale_note->total * $sale_note->exchange_rate_sale;
-                $sale_note_total_payment_usd += collect($sale_note->payments)->sum('payment') * $sale_note->exchange_rate_sale;
+                $sale_note_total_usd = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($sale_note_total_usd)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational($sale_note->total)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($sale_note->exchange_rate_sale)))->toBigDecimal();
+                $sale_note_total_payment_usd = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($sale_note_total_payment_usd)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational(collect($sale_note->payments)->sum('payment'))->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($sale_note->exchange_rate_sale)))->toBigDecimal();
 
             }
         }
@@ -996,7 +997,7 @@ class DashboardData
                                     ->where('currency_type_id', 'USD');
 
         foreach ($documents_usd as $dusd) {
-            $document_total_usd += $dusd->total * $dusd->exchange_rate_sale;
+            $document_total_usd = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($document_total_usd)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational($dusd->total)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($dusd->exchange_rate_sale)))->toBigDecimal();
         }
 
         //TWO CURRENCY
@@ -1017,8 +1018,8 @@ class DashboardData
 
                 if(in_array($document->state_type_id,['01','03','05','07','13'])){
 
-                    $document_total_payment_usd += collect($document->payments)->sum('payment') * $document->exchange_rate_sale;
-                    $document_total_note_credit_usd += ($document->document_type_id == '07') ? $document->total * $document->exchange_rate_sale:0; //nota de credito
+                    $document_total_payment_usd = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($document_total_payment_usd)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational(collect($document->payments)->sum('payment'))->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($document->exchange_rate_sale)))->toBigDecimal();
+                    $document_total_note_credit_usd = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($document_total_note_credit_usd)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational(($document->document_type_id == '07') ? (\App\Services\ExchangeRates\ExchangeRateMath::rational($document->total)->multipliedBy($document->exchange_rate_sale))->toBigDecimal():0))->toBigDecimal(); //nota de credito
 
                 }
 
@@ -1104,7 +1105,7 @@ class DashboardData
                                     ->where('currency_type_id', 'USD');
 
         foreach ($documents_usd as $dusd) {
-            $document_total_usd += $dusd->total * $dusd->exchange_rate_sale;
+            $document_total_usd = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($document_total_usd)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational($dusd->total)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($dusd->exchange_rate_sale)))->toBigDecimal();
         }
 
         //TWO CURRENCY
@@ -1124,7 +1125,7 @@ class DashboardData
 
                 if(in_array($document->state_type_id,['01','03','05','07','13'])){
 
-                    $document_total_note_credit_usd += ($document->document_type_id == '07') ? $document->total * $document->exchange_rate_sale:0; //nota de credito
+                    $document_total_note_credit_usd = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($document_total_note_credit_usd)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational(($document->document_type_id == '07') ? (\App\Services\ExchangeRates\ExchangeRateMath::rational($document->total)->multipliedBy($document->exchange_rate_sale))->toBigDecimal():0))->toBigDecimal(); //nota de credito
 
                 }
 
@@ -1247,7 +1248,7 @@ class DashboardData
                                     ->where('currency_type_id', 'USD');
 
         foreach ($documents_usd as $dusd) {
-            $document_total_usd += $dusd->total * $dusd->exchange_rate_sale;
+            $document_total_usd = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($document_total_usd)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational($dusd->total)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($dusd->exchange_rate_sale)))->toBigDecimal();
         }
 
         //TWO CURRENCY
@@ -1260,7 +1261,7 @@ class DashboardData
                 if($document->currency_type_id == 'VES'){
                     $document_total_note_credit_pen += ($document->document_type_id == '07') ? $document->total:0; //nota de credito
                 }else{
-                    $document_total_note_credit_usd += ($document->document_type_id == '07') ? $document->total * $document->exchange_rate_sale:0; //nota de credito
+                    $document_total_note_credit_usd = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($document_total_note_credit_usd)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational(($document->document_type_id == '07') ? (\App\Services\ExchangeRates\ExchangeRateMath::rational($document->total)->multipliedBy($document->exchange_rate_sale))->toBigDecimal():0))->toBigDecimal(); //nota de credito
                 }
             }
 
@@ -1289,7 +1290,7 @@ class DashboardData
         foreach ($sale_notes as $sale_note)
         {
             if($sale_note->currency_type_id == 'USD'){
-                $sale_note_total_usd += $sale_note->total * $sale_note->exchange_rate_sale;
+                $sale_note_total_usd = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($sale_note_total_usd)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational($sale_note->total)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($sale_note->exchange_rate_sale)))->toBigDecimal();
             }
         }
 
@@ -1405,7 +1406,7 @@ class DashboardData
             })->where('currency_type_id', 'USD');
 
             foreach ($sale_note_total_col_usd as $sn) {
-                $sale_note_total_usd += $sn->total * $sn->exchange_rate_sale;
+                $sale_note_total_usd = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($sale_note_total_usd)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational($sn->total)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($sn->exchange_rate_sale)))->toBigDecimal();
             }
 
             $sale_note_total = $sale_note_total_pen + $sale_note_total_usd;
@@ -1430,7 +1431,7 @@ class DashboardData
             })->whereIn('state_type_id', ['01','03','05','07','13'])->where('currency_type_id', 'USD')->whereIn('document_type_id', ['01','08']);
 
             foreach ($document_total_col_usd as $doc) {
-                $document_total_usd += $doc->total * $doc->exchange_rate_sale;
+                $document_total_usd = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($document_total_usd)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational($doc->total)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($doc->exchange_rate_sale)))->toBigDecimal();
             }
 
             //NC
@@ -1443,7 +1444,7 @@ class DashboardData
             })->whereIn('state_type_id', ['01','03','05','07','13'])->where('document_type_id', '07')->where('currency_type_id', 'USD');
 
             foreach ($document_total_nc_col_usd as $docnc) {
-                $document_total_note_credit_usd += $docnc->total * $docnc->exchange_rate_sale;
+                $document_total_note_credit_usd = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($document_total_note_credit_usd)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational($docnc->total)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($docnc->exchange_rate_sale)))->toBigDecimal();
             }
 
             $d_total = $document_total_pen + $document_total_usd;
@@ -1478,7 +1479,7 @@ class DashboardData
             $sale_note_total_pen = collect($sale_notes->where('currency_type_id', 'VES'))->where('date_of_issue', $d_start)->sum('total');
 
             $sale_note_total_usd = collect($sale_notes->where('currency_type_id', 'USD'))->where('date_of_issue', $d_start)->map(function ($item, $key) {
-                return $item->total * $item->exchange_rate_sale;
+                return (float) \App\Services\ExchangeRates\ExchangeRateMath::finalAmount(\App\Services\ExchangeRates\ExchangeRateMath::rational($item->total)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($item->exchange_rate_sale)), 2);
             })->sum();
 
             $sale_note_total = round($sale_note_total_pen + $sale_note_total_usd, 2);
@@ -1495,7 +1496,7 @@ class DashboardData
                                                  ->where('currency_type_id', 'USD')
                                                  ->where('date_of_issue', $d_start)
                                                  ->map(function ($item, $key) {
-                                                    return $item->total * $item->exchange_rate_sale;
+                                                    return (float) \App\Services\ExchangeRates\ExchangeRateMath::finalAmount(\App\Services\ExchangeRates\ExchangeRateMath::rational($item->total)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($item->exchange_rate_sale)), 2);
                                                  })->sum();
 
             $document_total_note_credit_pen = collect($documents)->where('document_type_id', '07')
@@ -1509,7 +1510,7 @@ class DashboardData
                                                             ->where('currency_type_id', 'USD')
                                                             ->where('date_of_issue', $d_start)
                                                             ->map(function ($item, $key) {
-                                                                return $item->total * $item->exchange_rate_sale;
+                                                                return (float) \App\Services\ExchangeRates\ExchangeRateMath::finalAmount(\App\Services\ExchangeRates\ExchangeRateMath::rational($item->total)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($item->exchange_rate_sale)), 2);
                                                             })->sum();
 
 
@@ -1557,7 +1558,7 @@ class DashboardData
             })->where('currency_type_id', 'USD');
 
             foreach ($sale_note_total_col_usd as $sn) {
-                $sale_note_total_usd += $sn->total * $sn->exchange_rate_sale;
+                $sale_note_total_usd = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($sale_note_total_usd)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational($sn->total)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($sn->exchange_rate_sale)))->toBigDecimal();
             }
 
             $sale_note_total = round($sale_note_total_pen + $sale_note_total_usd, 2);
@@ -1582,7 +1583,7 @@ class DashboardData
             })->whereIn('state_type_id', ['01','03','05','07','13'])->where('currency_type_id', 'USD')->whereIn('document_type_id', ['01','08']);
 
             foreach ($document_total_col_usd as $doc) {
-                $document_total_usd += $doc->total * $doc->exchange_rate_sale;
+                $document_total_usd = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($document_total_usd)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational($doc->total)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($doc->exchange_rate_sale)))->toBigDecimal();
             }
 
             //NC
@@ -1595,7 +1596,7 @@ class DashboardData
             })->whereIn('state_type_id', ['01','03','05','07','13'])->where('document_type_id', '07')->where('currency_type_id', 'USD');
 
             foreach ($document_total_nc_col_usd as $docnc) {
-                $document_total_note_credit_usd += $docnc->total * $docnc->exchange_rate_sale;
+                $document_total_note_credit_usd = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($document_total_note_credit_usd)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational($docnc->total)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($docnc->exchange_rate_sale)))->toBigDecimal();
             }
 
             $d_total = $document_total_pen + $document_total_usd;

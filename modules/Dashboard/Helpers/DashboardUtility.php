@@ -1,5 +1,6 @@
 <?php
-
+// ######## INICIO TASAS OCHO DECIMALES: CONVERSIONES EXACTAS ########
+// ######## FIN TASAS OCHO DECIMALES: CONVERSIONES EXACTAS ########
 namespace Modules\Dashboard\Helpers;
 
 use App\Models\Tenant\DocumentItem;
@@ -150,12 +151,12 @@ class DashboardUtility
         $total = 0.0;
 
         foreach ($expenses as $expense) {
-            $total += ($expense->currency_type_id == 'USD')
-                ? $expense->total * $expense->exchange_rate_sale
-                : $expense->total;
+            $total = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($total)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational(($expense->currency_type_id == 'USD')
+                ? (\App\Services\ExchangeRates\ExchangeRateMath::rational($expense->total)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($expense->exchange_rate_sale)))->toBigDecimal()
+                : $expense->total))->toBigDecimal();
         }
 
-        return round($total, 2);
+        return round((float) \App\Services\ExchangeRates\ExchangeRateMath::finalAmount($total, 2), 2);
     }
 
     private function getPurchaseUnitPrice($record)
@@ -192,10 +193,10 @@ class DashboardUtility
 
         foreach ($sale_note_items as $sale_note_item) {
             $factor = ($sale_note_item->sale_note->currency_type_id === 'USD')
-                ? (float) $sale_note_item->sale_note->exchange_rate_sale
+                ? $sale_note_item->sale_note->exchange_rate_sale
                 : 1.0;
 
-            $sale_note_sale_total += (float) $sale_note_item->total * $factor;
+            $sale_note_sale_total = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($sale_note_sale_total)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational($sale_note_item->total)->multipliedBy($factor))->toBigDecimal();
 
             $purchase_unit_price = $this->getPurchaseUnitPrice($sale_note_item);
             $presentation_quantity = $this->getQuantityUnitPresentation($sale_note_item);
@@ -203,7 +204,7 @@ class DashboardUtility
         }
 
         return [
-            'sale_note_sale_total' => round($sale_note_sale_total, 2),
+            'sale_note_sale_total' => (float) \App\Services\ExchangeRates\ExchangeRateMath::finalAmount($sale_note_sale_total, 2),
             'sale_note_purchase_total' => round($sale_note_purchase_total, 2),
         ];
     }
@@ -215,13 +216,13 @@ class DashboardUtility
 
         foreach ($document_items as $document_item) {
             $factor = ($document_item->document->currency_type_id === 'USD')
-                ? (float) $document_item->document->exchange_rate_sale
+                ? $document_item->document->exchange_rate_sale
                 : 1.0;
 
             $is_sale = in_array($document_item->document->document_type_id, ['01', '08'], true);
             $sign = $is_sale ? 1 : -1;
 
-            $document_sale_total += (float) $document_item->total * $factor * $sign;
+            $document_sale_total = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($document_sale_total)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational($document_item->total)->multipliedBy($factor)->multipliedBy($sign))->toBigDecimal();
 
             $purchase_unit_price = $this->getPurchaseUnitPrice($document_item);
             $presentation_quantity = $this->getQuantityUnitPresentation($document_item);
@@ -229,7 +230,7 @@ class DashboardUtility
         }
 
         return [
-            'document_sale_total' => round($document_sale_total, 2),
+            'document_sale_total' => (float) \App\Services\ExchangeRates\ExchangeRateMath::finalAmount($document_sale_total, 2),
             'document_purchase_total' => round($document_purchase_total, 2),
         ];
     }

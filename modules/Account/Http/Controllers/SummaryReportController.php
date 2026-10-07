@@ -1,5 +1,6 @@
 <?php
-
+// ######## INICIO TASAS OCHO DECIMALES: CONVERSIONES EXACTAS ########
+// ######## FIN TASAS OCHO DECIMALES: CONVERSIONES EXACTAS ########
 // ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
 
 namespace Modules\Account\Http\Controllers;
@@ -120,23 +121,23 @@ class SummaryReportController extends Controller
                         $start_number = $series->documents->min('number') ?? 0;
                         $end_number = $series->documents->max('number') ?? 0;
 
-                        $total_igv +=  $series->documents->where('currency_type_id', 'VES')->sum('total_igv');
+                        $total_igv = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($total_igv)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational($series->documents->where('currency_type_id', 'VES')->sum('total_igv')))->toBigDecimal();
 
                         $doc_dollar = collect($series->documents->where('currency_type_id', 'USD'));
                         foreach ($doc_dollar as $doc) {
-                            $total_igv +=  $doc->total_igv * $doc->exchange_rate_sale;
+                            $total_igv = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($total_igv)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational($doc->total_igv)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($doc->exchange_rate_sale)))->toBigDecimal();
                         }
 
 
 
-                        $total_value +=  $series->documents->where('currency_type_id', 'VES')->sum('total_value');
+                        $total_value = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($total_value)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational($series->documents->where('currency_type_id', 'VES')->sum('total_value')))->toBigDecimal();
                         foreach ($doc_dollar as $doc) {
-                            $total_value +=  $doc->total_value * $doc->exchange_rate_sale;
+                            $total_value = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($total_value)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational($doc->total_value)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($doc->exchange_rate_sale)))->toBigDecimal();
                         }
 
-                        $total +=  $series->documents->where('currency_type_id', 'VES')->sum('total');
+                        $total = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($total)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational($series->documents->where('currency_type_id', 'VES')->sum('total')))->toBigDecimal();
                         foreach ($doc_dollar as $doc) {
-                            $total +=  $doc->total * $doc->exchange_rate_sale;
+                            $total = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($total)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational($doc->total)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($doc->exchange_rate_sale)))->toBigDecimal();
                         }
 
                         return [
@@ -145,9 +146,9 @@ class SummaryReportController extends Controller
                             'series' => $series->number,
                             'start_number' => $start_number,
                             'end_number' => $end_number,
-                            'total_igv' => number_format($total_igv, 2, ".", ""),
-                            'total_value' => number_format( $total_value, 2, ".", ""),
-                            'total' => number_format( $total, 2, ".", ""),
+                            'total_igv' => number_format((float) \App\Services\ExchangeRates\ExchangeRateMath::finalAmount($total_igv, 2), 2, ".", ""),
+                            'total_value' => number_format( (float) \App\Services\ExchangeRates\ExchangeRateMath::finalAmount($total_value, 2), 2, ".", ""),
+                            'total' => number_format( (float) \App\Services\ExchangeRates\ExchangeRateMath::finalAmount($total, 2), 2, ".", ""),
                         ];
                     });
 
@@ -181,17 +182,17 @@ class SummaryReportController extends Controller
                 // Eliminando esta linea porque esta volviendo a llamar a la base de datos y no esta filtrando por fechas
                 // $voided = (count($series->documents) > 0) ? $series->documents()->where('state_type_id', '11')->pluck('number')->toArray() : [];
                 $voided = $series->documents->pluck('number')->toArray();
-                $total +=  $series->documents->where('currency_type_id', 'VES')->sum('total');
+                $total = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($total)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational($series->documents->where('currency_type_id', 'VES')->sum('total')))->toBigDecimal();
                 $doc_dollar = collect($series->documents->where('currency_type_id', 'USD'));
                 foreach ($doc_dollar as $doc) {
-                    $total +=  $doc->total * $doc->exchange_rate_sale;
+                    $total = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($total)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational($doc->total)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($doc->exchange_rate_sale)))->toBigDecimal();
                 }
 
                 return [
                     'document_type_description' => ($series->document_type_id == '01') ? 'FAC':'BV',
                     'series' => $series->number,
                     'voided' => join('; ', $voided),
-                    'total' => number_format($total, 2, ".", ""),
+                    'total' => number_format((float) \App\Services\ExchangeRates\ExchangeRateMath::finalAmount($total, 2), 2, ".", ""),
                 ];
             });
         return $voided_documents;

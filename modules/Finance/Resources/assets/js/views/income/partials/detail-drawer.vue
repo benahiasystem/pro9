@@ -141,6 +141,10 @@
 </template>
 
 <script>
+// ######## INICIO TASAS OCHO DECIMALES ########
+import { normalizeExchangeRate } from "../../../../../../../../resources/js/helpers/exchange-rate-math"
+// ######## FIN TASAS OCHO DECIMALES ########
+
 import { deletable } from '@mixins/deletable';
 
 export default {
@@ -246,10 +250,7 @@ export default {
                 return '—';
             }
 
-            return Number(this.record.exchange_rate_sale).toLocaleString('es-VE', {
-                minimumFractionDigits: 3,
-                maximumFractionDigits: 4
-            });
+            return normalizeExchangeRate(this.record.exchange_rate_sale);
         },
         distributionRows() {
             return Array.isArray(this.record?.payments) ? this.record.payments : [];

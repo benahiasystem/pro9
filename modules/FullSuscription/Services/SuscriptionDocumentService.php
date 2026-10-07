@@ -14,7 +14,7 @@ use App\Models\Tenant\Item;
 use App\Models\Tenant\Series;
 use App\Services\SeriesResolver;
 use Illuminate\Support\Str;
-use Modules\ApiPeruDev\Data\ServiceData;
+use App\Services\ExchangeRates\TenantExchangeRateService;
 use Modules\FullSuscription\Models\Tenant\UserRelSuscriptionPlan;
 
 trait SuscriptionDocumentService
@@ -58,7 +58,9 @@ trait SuscriptionDocumentService
             'document_type_id' => $document_type_id,
         ]), null)->first();
 
-        $service = (new ServiceData())->exchange(now()->format('Y-m-d'));
+        // ######## INICIO API BCV ########
+        $service = app(TenantExchangeRateService::class)->exchange(now()->format('Y-m-d'));
+        // ######## FIN API BCV ########
 
         return [
             'actions' => ActionInput::set([

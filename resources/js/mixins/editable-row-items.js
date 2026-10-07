@@ -1,3 +1,7 @@
+
+// ######## INICIO TASAS OCHO DECIMALES ########
+import { exactAmount } from "../helpers/exchange-rate-math"
+// ######## FIN TASAS OCHO DECIMALES ########
 import { checkPermissionEditPrices } from '@mixins/check-permission-edit-prices'
 
 export const editableRowItems = {
@@ -136,11 +140,11 @@ export const editableRowItems = {
                 {
                     if (row.item.currency_type_id === 'VES' && this.form.currency_type_id === 'USD')
                     {
-                        row.item.unit_price = this.getFormatUnitPriceRow(row.unit_price * this.form.exchange_rate_sale, row)
+                        row.item.unit_price = this.getFormatUnitPriceRow(exactAmount(row.unit_price).times(exactAmount(this.form.exchange_rate_sale)).final(6), row)
                     }
                     else
                     {
-                        row.item.unit_price = this.getFormatUnitPriceRow(row.unit_price / this.form.exchange_rate_sale, row)
+                        row.item.unit_price = this.getFormatUnitPriceRow(exactAmount(row.unit_price).dividedBy(exactAmount(this.form.exchange_rate_sale)).final(6), row)
                     }
 
                     return

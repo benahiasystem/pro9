@@ -8,10 +8,10 @@ use Illuminate\Support\Facades\DB;
  * Estructura inicial de `exchange_rates` para instalaciones nuevas.
  * Inventario de columnas:
  * - `date` date NOT NULL
- * - `sale_original` decimal(13,3) NOT NULL
- * - `purchase_original` decimal(13,3) NOT NULL
- * - `purchase` decimal(13,3) NOT NULL
- * - `sale` decimal(13,3) NOT NULL
+ * - `sale_original` decimal(18,8) NOT NULL
+ * - `purchase_original` decimal(18,8) NOT NULL
+ * - `purchase` decimal(18,8) NOT NULL
+ * - `sale` decimal(18,8) NOT NULL
  * - `date_original` date NOT NULL
  * - `created_at` timestamp NULL DEFAULT NULL
  * - `updated_at` timestamp NULL DEFAULT NULL
@@ -23,10 +23,10 @@ return new class extends Migration
         DB::unprepared(<<<'SQL'
 CREATE TABLE `exchange_rates` (
   `date` date NOT NULL,
-  `sale_original` decimal(13,3) NOT NULL,
-  `purchase_original` decimal(13,3) NOT NULL,
-  `purchase` decimal(13,3) NOT NULL,
-  `sale` decimal(13,3) NOT NULL,
+  `sale_original` decimal(18,8) NOT NULL,
+  `purchase_original` decimal(18,8) NOT NULL,
+  `purchase` decimal(18,8) NOT NULL,
+  `sale` decimal(18,8) NOT NULL,
   `date_original` date NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,

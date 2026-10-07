@@ -62,7 +62,7 @@ use App\Http\Controllers\Tenant\SaleNoteController;
      * @property float|null           $total
      * @property string|null          $currency_type_id
      * @property string|null          $payment_method_type_id
-     * @property float|null           $exchange_rate_sale
+     * @property string|null           $exchange_rate_sale
      * @property float|null           $total_prepayment
      * @property float|null           $total_charge
      * @property float|null           $total_discount
@@ -119,7 +119,7 @@ use App\Http\Controllers\Tenant\SaleNoteController;
             'trial_start_date' => 'date',
             'trial_days' => 'int',
             'automatic_date_of_issue' => 'date',
-            'exchange_rate_sale' => 'float',
+            'exchange_rate_sale' => 'decimal:8',
             'total_prepayment' => 'float',
             'total_charge' => 'float',
             'total_discount' => 'float',

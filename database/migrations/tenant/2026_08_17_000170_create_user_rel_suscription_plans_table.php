@@ -35,7 +35,7 @@ use Illuminate\Support\Facades\DB;
  * - `enabled_concurrency` int(10) unsigned NOT NULL DEFAULT '1' COMMENT 'Se pasará a nota de ventas como activo'
  * - `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `payment_method_type_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `exchange_rate_sale` double(13,3) DEFAULT '0.000'
+ * - `exchange_rate_sale` decimal(18,8) DEFAULT '0.000'
  * - `total_prepayment` double(12,2) DEFAULT '0.00'
  * - `total_charge` double(12,2) DEFAULT '0.00'
  * - `total_discount` double(12,2) DEFAULT '0.00'
@@ -99,7 +99,7 @@ CREATE TABLE `user_rel_suscription_plans` (
   `enabled_concurrency` int(10) unsigned NOT NULL DEFAULT '1' COMMENT 'Se pasará a nota de ventas como activo',
   `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `payment_method_type_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `exchange_rate_sale` double(13,3) DEFAULT '0.000',
+  `exchange_rate_sale` decimal(18,8) DEFAULT '0.000',
   `total_prepayment` double(12,2) DEFAULT '0.00',
   `total_charge` double(12,2) DEFAULT '0.00',
   `total_discount` double(12,2) DEFAULT '0.00',

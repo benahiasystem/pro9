@@ -1,5 +1,6 @@
 <?php
-
+// ######## INICIO TASAS OCHO DECIMALES: CONVERSIONES EXACTAS ########
+// ######## FIN TASAS OCHO DECIMALES: CONVERSIONES EXACTAS ########
 namespace Modules\Report\Http\Resources;
 
 use Illuminate\Http\Resources\Json\ResourceCollection;
@@ -32,7 +33,7 @@ class OrderNoteConsolidatedCollection extends ResourceCollection
     
     public static function calculateTotalCurrencyType($record, $total)
     {
-        return ($record->currency_type_id === 'USD') ? $total * $record->exchange_rate_sale : $total;
+        return ($record->currency_type_id === 'USD') ? (float) \App\Services\ExchangeRates\ExchangeRateMath::finalAmount(\App\Services\ExchangeRates\ExchangeRateMath::rational($total)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($record->exchange_rate_sale)), 2) : $total;
     }
     
 }

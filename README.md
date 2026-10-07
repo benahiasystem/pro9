@@ -16,6 +16,50 @@
 
 ## Manuales de Instalación
 
+<!-- ######## INICIO API BCV EN DOCKER ######## -->
+### API BCV exclusiva para Pro9
+
+El Compose construye `api-bcv` desde el proyecto hermano `../api-bcv`. La API usa
+un token fijo de 64 caracteres hexadecimales minúsculos: `API_TOKEN` en su `.env`
+y el mismo valor en `BCV_API_TOKEN` del `.env` de Pro9. No existe inicio de sesión
+por usuario/clave. Los secretos se mantienen fuera de Git y del navegador.
+
+Pro9 configura `BCV_API_URL=http://api-bcv:3000`, `BCV_API_TIMEOUT=15` y
+`BCV_API_CONNECT_TIMEOUT=5`. PHP envía `Authorization: Bearer <token>` desde el backend.
+Para rotar el token, actualizar ambos archivos `.env`, recrear API BCV y limpiar la
+configuración de Pro9. No imprimir el Compose expandido ni los archivos de secretos.
+
+Sólo PHP y API BCV comparten la red `bcv`; PHP conserva también la red predeterminada.
+La API no publica puertos en el host ni tiene proxy público. Mantiene salida HTTPS
+al banco con verificación TLS. El administrador de Docker conserva control del despliegue.
+`GET /health` comprueba el proceso; `GET /` exige token y devuelve `{ euro, dolar }`.
+
+Desde la carpeta de Pro9:
+
+```bash
+docker compose config --quiet
+docker compose up -d --build --no-deps api-bcv php
+docker compose exec -T php php artisan config:clear
+# Nginx debe volver a resolver PHP si cambió su IP al recrearlo:
+docker compose exec -T nginx nginx -s reload
+docker compose ps api-bcv php
+node docker/test-api-bcv.cjs
+```
+
+La prueba consulta desde PHP, sin mostrar el token; comprueba salud, rechazos `401`,
+retirada de `/login` y tasas reales. No modifica tablas de tenants.
+
+`GET /services/exchange/{date}` guarda la primera tasa de hoy en `exchange_rates`
+del tenant solicitante. Consultas posteriores y el botón **Obtener** reutilizan esa fila.
+`purchase`, `sale` y sus originales contienen la misma tasa BCV VES por USD a ocho
+decimales. `date_original` es la fecha de consulta en Caracas: la API no proporciona
+fecha oficial de vigencia. El euro no se almacena en esas columnas.
+
+Las fechas anteriores requieren una fila local; las futuras se rechazan (`422`).
+Fallos de API o guardado no inventan una tasa (`503`). No hay tareas programadas,
+actualizaciones masivas ni cambios en snapshots de documentos.
+<!-- ######## FIN API BCV EN DOCKER ######## -->
+
 [Windows ](https://manual.pro8.uio.la/devs/despliegue/plataformas/windows "Clic")
 <br>
 [Docker - Linux](https://git.buho.la/-/snippets/79 "Clic")
@@ -150,3 +194,24 @@ Validador documentos: [Guía](https://manual.pro8.uio.la/devs/devops/Manuales-ad
 [facturaloperu.com](http://facturaloperu.com "Clic")<br>
 soporte@facturaloperu.com<br>
 wsapp: 930 973 902<br>
+
+<!-- ######## INICIO TASAS OCHO DECIMALES ######## -->
+### Precisión exacta de tasas
+
+API BCV y Pro9 devuelven las tasas como cadenas, por ejemplo `"873.86700000"`.
+Las columnas de tasas de 19 tablas usan `DECIMAL(18,8)`; los importes conservan su
+precisión monetaria. `ExchangeRateMath` (PHP) y `exchange-rate-math` (JS) operan con
+racionales exactos antes del redondeo del importe final. No convertir tasas a float
+ni aplicar `toFixed`, `round` o formatos de importes sobre la propia tasa.
+
+Para ampliar tenants existentes, sin borrar filas ni reconstruir históricos:
+
+```bash
+docker compose exec -T php php artisan exchange-rates:upgrade-precision --all-tenants --dry-run
+docker compose exec -T php php artisan exchange-rates:upgrade-precision --all-tenants
+```
+
+El comando es idempotente y preserva nulabilidad y defaults. Las tasas antiguas reciben
+ceros finales; los decimales perdidos no se recuperan. Probar primero en MySQL temporal.
+Los cambios de fuentes frontend requieren la compilación que ejecuta el usuario.
+<!-- ######## FIN TASAS OCHO DECIMALES ######## -->

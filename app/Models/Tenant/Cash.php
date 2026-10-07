@@ -1,5 +1,6 @@
 <?php
-
+// ######## INICIO TASAS OCHO DECIMALES: CONVERSIONES EXACTAS ########
+// ######## FIN TASAS OCHO DECIMALES: CONVERSIONES EXACTAS ########
 // ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
 
 namespace App\Models\Tenant;
@@ -287,27 +288,27 @@ class Cash extends ModelTenant
                         })
                         ->sum('payment');
 
-                    $final_balance += ($cash_document->sale_note->currency_type_id == 'VES')
+                    $final_balance = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($final_balance)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational(($cash_document->sale_note->currency_type_id == 'VES')
                         ? $balance
-                        : ($balance * $cash_document->sale_note->exchange_rate_sale);
+                        : ((\App\Services\ExchangeRates\ExchangeRateMath::rational($balance)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($cash_document->sale_note->exchange_rate_sale)))->toBigDecimal())))->toBigDecimal();
                 }
 
             }
             else if ($cash_document->document) {
                 if (in_array($cash_document->document->state_type_id, ['01','03','05','07','13'])) {
-                    $final_balance += $cash_document->document->payments()
+                    $final_balance = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($final_balance)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational($cash_document->document->payments()
                         ->whereHas('cashDocumentPayments', fn ($query) => $query->where('cash_id', $id))
                         ->get()->sum(fn ($payment) => \App\Services\Fiscal\FiscalAmounts::convert(
-                            $payment->cash_received_amount, $payment->currency_type_id, 'VES', $payment->exchange_rate));
+                            $payment->cash_received_amount, $payment->currency_type_id, 'VES', $payment->exchange_rate))))->toBigDecimal();
                 }
             }
             else if ($cash_document->expense_payment) {
 
                 $expense = $cash_document->expense_payment->expense;
                 if ($expense->state_type_id == '05') {
-                    $final_balance -= ($expense->currency_type_id == 'VES')
+                    $final_balance = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($final_balance)->minus(\App\Services\ExchangeRates\ExchangeRateMath::rational(($expense->currency_type_id == 'VES')
                         ? $cash_document->expense_payment->payment
-                        : ($cash_document->expense_payment->payment * $expense->exchange_rate_sale);
+                        : ((\App\Services\ExchangeRates\ExchangeRateMath::rational($cash_document->expense_payment->payment)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($expense->exchange_rate_sale)))->toBigDecimal())))->toBigDecimal();
                 }
 
             }
@@ -315,18 +316,18 @@ class Cash extends ModelTenant
 
                 if (in_array($cash_document->purchase->state_type_id, $valid_states)) {
                     if ($cash_document->purchase->total_canceled == 1) {
-                        $final_balance -= ($cash_document->purchase->currency_type_id == 'VES')
+                        $final_balance = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($final_balance)->minus(\App\Services\ExchangeRates\ExchangeRateMath::rational(($cash_document->purchase->currency_type_id == 'VES')
                             ? $cash_document->purchase->total
-                            : ($cash_document->purchase->total * $cash_document->purchase->exchange_rate_sale);
+                            : ((\App\Services\ExchangeRates\ExchangeRateMath::rational($cash_document->purchase->total)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($cash_document->purchase->exchange_rate_sale)))->toBigDecimal())))->toBigDecimal();
                     }
                 }
 
             }
             else if ($cash_document->quotation) {
 
-                $final_balance += ($cash_document->quotation->applyQuotationToCash())
+                $final_balance = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($final_balance)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational(($cash_document->quotation->applyQuotationToCash())
                     ? $cash_document->quotation->getTransformTotal()
-                    : 0;
+                    : 0))->toBigDecimal();
 
             }
 
@@ -344,14 +345,14 @@ class Cash extends ModelTenant
 
         foreach ($incomes as $income) {
             if (in_array($income->state_type_id, $valid_states)) {
-                $final_balance += ($income->currency_type_id == 'VES')
+                $final_balance = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($final_balance)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational(($income->currency_type_id == 'VES')
                     ? $income->total
-                    : ($income->total * $income->exchange_rate_sale);
+                    : ((\App\Services\ExchangeRates\ExchangeRateMath::rational($income->total)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($income->exchange_rate_sale)))->toBigDecimal())))->toBigDecimal();
             }
         }
 
         return [
-            'income' => round($final_balance, 2),
+            'income' => round((float) \App\Services\ExchangeRates\ExchangeRateMath::finalAmount($final_balance, 2), 2),
             'final_balance' => round($final_balance + $this->beginning_balance, 2),
         ];
     }

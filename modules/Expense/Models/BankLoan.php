@@ -34,7 +34,7 @@
      * @property Carbon                       $date_of_issue
      * @property Carbon                       $time_of_issue
      * @property string|null                  $bank
-     * @property float|null                   $exchange_rate_sale
+     * @property string|null                   $exchange_rate_sale
      * @property float|null                   $total
      * @property float|null                   $total_interest
      * @property float|null                   $total_ingress
@@ -72,7 +72,7 @@
             'bank_id' => 'int',
             'bank_account_id' => 'int',
             'number' => 'int',
-            'exchange_rate_sale' => 'float',
+            'exchange_rate_sale' => 'decimal:8',
             'total' => 'float',
             'total_interest' => 'float',
             'total_ingress' => 'float',
@@ -454,7 +454,7 @@
         /**
          * @return float
          */
-        public function getExchangeRateSale(): float
+        public function getExchangeRateSale(): string
         {
             return $this->exchange_rate_sale;
         }
@@ -464,9 +464,9 @@
          *
          * @return BankLoan
          */
-        public function setExchangeRateSale(float $exchange_rate_sale): BankLoan
+        public function setExchangeRateSale($exchange_rate_sale): BankLoan
         {
-            $this->exchange_rate_sale = $exchange_rate_sale;
+            $this->exchange_rate_sale = $exchange_rate_sale === null ? null : \App\Services\ExchangeRates\ExchangeRateMath::rate($exchange_rate_sale);
             return $this;
         }
 

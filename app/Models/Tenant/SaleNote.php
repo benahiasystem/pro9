@@ -1,5 +1,6 @@
 <?php
-
+// ######## INICIO TASAS OCHO DECIMALES: CONVERSIONES EXACTAS ########
+// ######## FIN TASAS OCHO DECIMALES: CONVERSIONES EXACTAS ########
 // ######## INICIO ADAPTACIÓN VENEZUELA
 
     namespace App\Models\Tenant;
@@ -74,7 +75,7 @@ use Modules\Sale\Models\Agent;
      * @property int                                            $customer_id
      * @property string                                         $currency_type_id
      * @property string|null                                    $payment_method_type_id
-     * @property float                                          $exchange_rate_sale
+     * @property string                                          $exchange_rate_sale
      * @property bool                                           $apply_concurrency
      * @property bool                                           $enabled_concurrency
      * @property Carbon|null                                    $automatic_date_of_issue
@@ -240,7 +241,7 @@ use Modules\Sale\Models\Agent;
             'establishment_id' => 'int',
             'number' => 'int',
             'customer_id' => 'int',
-            'exchange_rate_sale' => 'float',
+            'exchange_rate_sale' => 'decimal:8',
             'apply_concurrency' => 'bool',
             'enabled_concurrency' => 'bool',
             'quantity_period' => 'int',
@@ -1592,7 +1593,7 @@ use Modules\Sale\Models\Agent;
          */
         public function getTransformTotal()
         {
-            return ($this->currency_type_id === 'VES') ? $this->total : ($this->total * $this->exchange_rate_sale);
+            return ($this->currency_type_id === 'VES') ? $this->total : ((float) \App\Services\ExchangeRates\ExchangeRateMath::finalAmount(\App\Services\ExchangeRates\ExchangeRateMath::rational($this->total)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($this->exchange_rate_sale)), 2));
         }
 
 

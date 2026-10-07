@@ -145,6 +145,9 @@
 </template>
 
 <script>
+// ######## INICIO TASAS OCHO DECIMALES ########
+import { normalizeExchangeRate } from '../../../../helpers/exchange-rate-math'
+// ######## FIN TASAS OCHO DECIMALES ########
 
     import {exchangeRate} from '../../../../mixins/functions'
 
@@ -228,7 +231,7 @@
             changeDateOfIssue() {
                 this.form.exchange_rate.date_of_exchange_rate = this.form.date_of_issue
                 this.searchExchangeRateByDate(this.form.date_of_issue).then(response => {
-                    this.form.exchange_rate_sale = parseFloat(response)
+                    this.form.exchange_rate_sale = normalizeExchangeRate(response)
                 })
             },
             changeCurrencyType() {

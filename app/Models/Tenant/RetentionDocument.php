@@ -48,7 +48,15 @@ class RetentionDocument extends ModelTenant
 
     public function setExchangeRateAttribute($value)
     {
-        $this->attributes['exchange_rate'] = (is_null($value))?null:json_encode($value);
+        // ######## INICIO TASAS OCHO DECIMALES ########
+        if ($value !== null) {
+            $value = (array) $value;
+            foreach (['purchase', 'sale', 'buy', 'sell'] as $key) {
+                if (isset($value[$key])) $value[$key] = \App\Services\ExchangeRates\ExchangeRateMath::rate($value[$key]);
+            }
+        }
+        $this->attributes['exchange_rate'] = $value === null ? null : json_encode($value);
+        // ######## FIN TASAS OCHO DECIMALES ########
     }
 
     public function document_type()

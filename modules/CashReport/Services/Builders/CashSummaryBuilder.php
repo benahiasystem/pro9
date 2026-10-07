@@ -1,5 +1,6 @@
 <?php
-
+// ######## INICIO TASAS OCHO DECIMALES: CONVERSIONES EXACTAS ########
+// ######## FIN TASAS OCHO DECIMALES: CONVERSIONES EXACTAS ########
 namespace Modules\CashReport\Services\Builders;
 
 use App\CoreFacturalo\Helpers\Template\ReportHelper;
@@ -929,7 +930,7 @@ class CashSummaryBuilder implements CashReportBuilderInterface
         $exchange_rate_sale = 1
     ) {
         if ($currency_type_id !== 'VES') {
-            $total = $total * $exchange_rate_sale;
+            $total = (float) \App\Services\ExchangeRates\ExchangeRateMath::finalAmount(\App\Services\ExchangeRates\ExchangeRateMath::rational($total)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($exchange_rate_sale)), 2);
         }
         return $total;
     }

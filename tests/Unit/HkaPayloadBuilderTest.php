@@ -32,7 +32,7 @@ class HkaPayloadBuilderTest extends TestCase
     public function test_payment_currency_and_tax_use_received_amount_and_current_precision(): void
     {
         $p=FiscalAmounts::payment(['payment'=>999,'original_amount'=>100,'currency_type_id'=>'USD','exchange_rate'=>10.1234,'igtf_status'=>'subject'], 'VES',1,true,3);
-        self::assertSame(10.123,$p['exchange_rate']);self::assertSame(1012.30,$p['payment']);self::assertSame(3.0,$p['tax_amount']);
+        self::assertSame('10.12340000',$p['exchange_rate']);self::assertSame(1012.34,$p['payment']);self::assertSame(3.0,$p['tax_amount']);
         self::assertSame(100.0,$p['original_amount']);
     }
     public function test_exempt_and_not_applicable_payments_do_not_collect_igtf(): void
@@ -41,9 +41,9 @@ class HkaPayloadBuilderTest extends TestCase
         self::assertSame(0,$exempt['tax_amount']);self::assertSame('Comprobante de exención',$exempt['exemption_reason']);
         $local=FiscalAmounts::payment(['payment'=>100],'VES',1,false,null);self::assertSame('not_applicable',$local['igtf_status']);self::assertSame(0,$local['tax_amount']);
     }
-    public function test_rates_below_current_precision_cannot_be_used_for_conversion(): void
+    public function test_rates_needing_more_than_eight_decimals_cannot_be_used_for_conversion(): void
     {
-        $this->expectException(ValidationException::class);FiscalAmounts::payment(['original_amount'=>100,'currency_type_id'=>'USD','exchange_rate'=>0.0004],'VES',1,false,null);
+        $this->expectException(ValidationException::class);FiscalAmounts::payment(['original_amount'=>100,'currency_type_id'=>'USD','exchange_rate'=>'0.000000001'],'VES',1,false,null);
     }
     public function test_disabled_igtf_does_not_use_hka_catalog_rate(): void
     {

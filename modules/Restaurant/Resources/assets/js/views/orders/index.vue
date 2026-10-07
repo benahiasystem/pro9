@@ -313,6 +313,10 @@
 }
 </style>
 <script>
+// ######## INICIO TASAS OCHO DECIMALES ########
+import { normalizeExchangeRate, exactAmount } from "../../../../../../../resources/js/helpers/exchange-rate-math"
+// ######## FIN TASAS OCHO DECIMALES ########
+
 import DataTable from "../../components/Datatable.vue";
 import OptionsForm from "@views/pos/partials/options.vue";
 import DocumentForm from "@views/orders/partials/document_form.vue";
@@ -382,11 +386,7 @@ export default {
         subtotal(item) {
             var subtotal;
             if (item.currency_type_id === "USD") {
-                subtotal = Number(
-                    item.cantidad *
-                        item.exchange_rate_sale *
-                        parseFloat(item.sale_unit_price)
-                ).toFixed(2);
+                subtotal = exactAmount(item.cantidad).times(item.exchange_rate_sale).times(item.sale_unit_price).final(2);
                 if (isNaN(subtotal)) {
                     return "-";
                 } else {

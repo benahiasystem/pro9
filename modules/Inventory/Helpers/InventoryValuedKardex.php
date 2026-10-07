@@ -1,5 +1,6 @@
 <?php
-
+// ######## INICIO TASAS OCHO DECIMALES: CONVERSIONES EXACTAS ########
+// ######## FIN TASAS OCHO DECIMALES: CONVERSIONES EXACTAS ########
 namespace Modules\Inventory\Helpers;
 
 
@@ -126,7 +127,7 @@ class InventoryValuedKardex
 
     public static function calculateTotalCurrencyType($record, $amount)
     {
-        return ($record->currency_type_id === 'USD') ? $amount * $record->exchange_rate_sale : $amount;
+        return ($record->currency_type_id === 'USD') ? (float) \App\Services\ExchangeRates\ExchangeRateMath::finalAmount(\App\Services\ExchangeRates\ExchangeRateMath::rational($amount)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($record->exchange_rate_sale)), 2) : $amount;
     }
 
 

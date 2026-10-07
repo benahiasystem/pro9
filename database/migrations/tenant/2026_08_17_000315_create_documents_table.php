@@ -39,7 +39,7 @@ use Illuminate\Support\Facades\DB;
  * - `order_note_id` int(10) unsigned DEFAULT NULL
  * - `dispatch_id` int(10) unsigned DEFAULT NULL
  * - `seller_id` int(10) unsigned DEFAULT NULL
- * - `exchange_rate_sale` decimal(13,3) NOT NULL
+ * - `exchange_rate_sale` decimal(18,8) NOT NULL
  * - `point_system` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'indica si el documento se uso en sistema por puntos'
  * - `point_system_data` json DEFAULT NULL COMMENT 'datos de sistema por puntos'
  * - `automatic_date_of_issue` date DEFAULT NULL
@@ -141,7 +141,7 @@ CREATE TABLE `documents` (
   `order_note_id` int(10) unsigned DEFAULT NULL,
   `dispatch_id` int(10) unsigned DEFAULT NULL,
   `seller_id` int(10) unsigned DEFAULT NULL,
-  `exchange_rate_sale` decimal(13,3) NOT NULL,
+  `exchange_rate_sale` decimal(18,8) NOT NULL,
   `point_system` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'indica si el documento se uso en sistema por puntos',
   `point_system_data` json DEFAULT NULL COMMENT 'datos de sistema por puntos',
   `automatic_date_of_issue` date DEFAULT NULL,

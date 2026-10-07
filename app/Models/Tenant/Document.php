@@ -1,5 +1,6 @@
 <?php
-
+// ######## INICIO TASAS OCHO DECIMALES: CONVERSIONES EXACTAS ########
+// ######## FIN TASAS OCHO DECIMALES: CONVERSIONES EXACTAS ########
 // ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
 
 namespace App\Models\Tenant;
@@ -71,7 +72,7 @@ use Modules\Sale\Models\Agent;
  * @property int|null $order_note_id
  * @property int|null $dispatch_id
  * @property int|null $seller_id
- * @property float $exchange_rate_sale
+ * @property string $exchange_rate_sale
  * @property Carbon|null $automatic_date_of_issue
  * @property string|null $type_period
  * @property int|null $quantity_period
@@ -1831,7 +1832,12 @@ class Document extends ModelTenant
      */
     public function getRetentionTaxBase()
     {
-        return round($this->received_retentions->sum(fn ($r) => $r->currency_type_id === 'USD' ? $r->base * $r->exchange_rate : $r->base), 2);
+        $total = \App\Services\ExchangeRates\ExchangeRateMath::rational('0');
+        foreach ($this->received_retentions as $retention) {
+            $base = \App\Services\ExchangeRates\ExchangeRateMath::rational($retention->base);
+            $total = $total->plus($retention->currency_type_id === 'USD' ? $base->multipliedBy($retention->exchange_rate) : $base);
+        }
+        return (float) \App\Services\ExchangeRates\ExchangeRateMath::finalAmount($total, 2);
     }
 
 

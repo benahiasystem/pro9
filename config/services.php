@@ -14,6 +14,15 @@ return [
     |
     */
 
+    // ######## INICIO API BCV ########
+    'bcv' => [
+        'url' => env('BCV_API_URL', 'http://api-bcv:3000'),
+        'token' => env('BCV_API_TOKEN'),
+        'timeout' => (int) env('BCV_API_TIMEOUT', 15),
+        'connect_timeout' => (int) env('BCV_API_CONNECT_TIMEOUT', 5),
+    ],
+    // ######## FIN API BCV ########
+
     'mailgun' => [
         'domain' => env('MAILGUN_DOMAIN'),
         'secret' => env('MAILGUN_SECRET'),

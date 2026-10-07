@@ -38,7 +38,7 @@
      * @property string|null                          $payment_condition_id
      * @property string|null                          $payment_method_type_id
      * @property int|null                             $seller_id
-     * @property float|null                           $exchange_rate_sale
+     * @property string|null                           $exchange_rate_sale
      * @property float|null                           $total_prepayment
      * @property float|null                           $total_charge
      * @property float|null                           $total_discount
@@ -146,7 +146,7 @@
             'establishment_id' => 'int',
             'customer_id' => 'int',
             'seller_id' => 'int',
-            'exchange_rate_sale' => 'float',
+            'exchange_rate_sale' => 'decimal:8',
             'total_prepayment' => 'float',
             'total_charge' => 'float',
             'total_discount' => 'float',
@@ -677,7 +677,7 @@
         /**
          * @return float|null
          */
-        public function getExchangeRateSale(): ?float
+        public function getExchangeRateSale(): ?string
         {
             return $this->exchange_rate_sale;
         }
@@ -687,9 +687,9 @@
          *
          * @return TechnicalService
          */
-        public function setExchangeRateSale(?float $exchange_rate_sale): TechnicalService
+        public function setExchangeRateSale($exchange_rate_sale): TechnicalService
         {
-            $this->exchange_rate_sale = $exchange_rate_sale;
+            $this->exchange_rate_sale = $exchange_rate_sale === null ? null : \App\Services\ExchangeRates\ExchangeRateMath::rate($exchange_rate_sale);
             return $this;
         }
 

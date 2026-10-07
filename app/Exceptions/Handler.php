@@ -61,6 +61,21 @@ class Handler extends ExceptionHandler
     */
     public function render($request, Throwable $exception)
     {
+        // ######## INICIO API BCV ########
+        if ($request->is('services/exchange/*', 'services/exchange_rate', 'services/exchange_rate/*',
+            'services/search_exchange_rate', 'service/exchange/*', 'exchange_rate/ecommence/*')) {
+            if ($exception instanceof ValidationException) {
+                return response()->json(['success' => false, 'message' => 'No se puede obtener la tasa solicitada.',
+                    'errors' => $exception->errors()], 422);
+            }
+            if ($exception instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+                return response()->json(['success' => false, 'message' => $exception->getMessage()], $exception->getStatusCode());
+            }
+            if ($exception instanceof \Illuminate\Database\QueryException) {
+                return response()->json(['success' => false, 'message' => 'No se pudo acceder a las tasas del tenant.'], 503);
+            }
+        }
+        // ######## FIN API BCV ########
         if ($exception instanceof AuthenticationException)
         {
             if ($request->expectsJson())

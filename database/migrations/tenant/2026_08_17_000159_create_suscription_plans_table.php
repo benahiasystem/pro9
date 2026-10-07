@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\DB;
  * - `unlimited` tinyint(1) NOT NULL DEFAULT '0'
  * - `trial_days` int(11) DEFAULT NULL
  * - `status` tinyint(1) NOT NULL DEFAULT '1'
- * - `exchange_rate_sale` double(13,3) DEFAULT '0.000'
+ * - `exchange_rate_sale` decimal(18,8) DEFAULT '0.000'
  * - `total_prepayment` double(12,2) DEFAULT '0.00'
  * - `total_charge` double(12,2) DEFAULT '0.00'
  * - `total_discount` double(12,2) DEFAULT '0.00'
@@ -61,7 +61,7 @@ CREATE TABLE `suscription_plans` (
   `unlimited` tinyint(1) NOT NULL DEFAULT '0',
   `trial_days` int(11) DEFAULT NULL,
   `status` tinyint(1) NOT NULL DEFAULT '1',
-  `exchange_rate_sale` double(13,3) DEFAULT '0.000',
+  `exchange_rate_sale` decimal(18,8) DEFAULT '0.000',
   `total_prepayment` double(12,2) DEFAULT '0.00',
   `total_charge` double(12,2) DEFAULT '0.00',
   `total_discount` double(12,2) DEFAULT '0.00',

@@ -1,5 +1,6 @@
 <?php
-
+// ######## INICIO TASAS OCHO DECIMALES: CONVERSIONES EXACTAS ########
+// ######## FIN TASAS OCHO DECIMALES: CONVERSIONES EXACTAS ########
 // ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
 
     namespace Modules\Order\Models;
@@ -50,7 +51,7 @@
      * @property string|null                                                $shipping_address
      * @property string                                                     $currency_type_id
      * @property string|null                                                $payment_method_type_id
-     * @property float                                                      $exchange_rate_sale
+     * @property string                                                      $exchange_rate_sale
      * @property float                                                      $total_prepayment
      * @property float                                                      $total_charge
      * @property float                                                      $total_discount
@@ -177,7 +178,7 @@
             'user_id' => 'int',
             'establishment_id' => 'int',
             'customer_id' => 'int',
-            'exchange_rate_sale' => 'float',
+            'exchange_rate_sale' => 'decimal:8',
             'total_prepayment' => 'float',
             'total_charge' => 'float',
             'total_discount' => 'float',
@@ -876,7 +877,7 @@
          */
         public function getTransformTotal()
         {
-            return ($this->currency_type_id === 'VES') ? $this->total : ($this->total * $this->exchange_rate_sale);
+            return ($this->currency_type_id === 'VES') ? $this->total : ((float) \App\Services\ExchangeRates\ExchangeRateMath::finalAmount(\App\Services\ExchangeRates\ExchangeRateMath::rational($this->total)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($this->exchange_rate_sale)), 2));
         }
 
 

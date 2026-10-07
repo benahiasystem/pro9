@@ -1,5 +1,6 @@
 <?php
-
+// ######## INICIO TASAS OCHO DECIMALES: CONVERSIONES EXACTAS ########
+// ######## FIN TASAS OCHO DECIMALES: CONVERSIONES EXACTAS ########
 // ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
 
     namespace Modules\Finance\Traits;
@@ -439,10 +440,10 @@
         public function calculateTotalCurrencyType($record, $payment, $requestCurrencyTipeId = 'VES')
         {
             if($requestCurrencyTipeId == 'VES') {
-                return ($record->currency_type_id === 'USD') ? $payment * $record->exchange_rate_sale : $payment;
+                return ($record->currency_type_id === 'USD') ? (float) \App\Services\ExchangeRates\ExchangeRateMath::finalAmount(\App\Services\ExchangeRates\ExchangeRateMath::rational($payment)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($record->exchange_rate_sale)), 2) : $payment;
             }
             else {
-                return ($record->currency_type_id === 'USD') ? $payment : ($payment / $record->exchange_rate_sale);
+                return ($record->currency_type_id === 'USD') ? $payment : ((float) \App\Services\ExchangeRates\ExchangeRateMath::finalAmount(\App\Services\ExchangeRates\ExchangeRateMath::rational($payment)->dividedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($record->exchange_rate_sale)), 2));
             }
         }
 

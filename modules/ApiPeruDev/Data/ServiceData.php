@@ -3,7 +3,6 @@
 namespace Modules\ApiPeruDev\Data;
 
 use App\Models\Tenant\Company;
-use App\Models\Tenant\ExchangeRate;
 use GuzzleHttp\Client;
 use App\Models\System\Configuration as SystemConfiguration;
 use App\Models\Tenant\Configuration as TenantConfig;
@@ -480,63 +479,12 @@ class ServiceData
         return json_decode($res->getBody()->getContents(), true);
     }
 
+    // ######## INICIO API BCV ########
     public function exchange($date)
     {
-        $exchange = ExchangeRate::query()->where('date', $date)->first();
-        if ($exchange) {
-            return [
-                'date' => $date,
-                'purchase' => $exchange->purchase,
-                'sale' => $exchange->sale
-            ];
-        }
-        $form_params = [
-            'fecha' => $date,
-        ];
-
-        $this->parameters['form_params'] = $form_params;
-
-        try {
-            $res = $this->client->request('POST', '/api/tipo_de_cambio', $this->parameters);
-            $response = json_decode($res->getBody()->getContents(), true);
-
-            if (!empty($response['success'])) {
-                $data = $response['data'];
-                ExchangeRate::query()->create([
-                    'date' => $data['fecha_busqueda'],
-                    'date_original' => $data['fecha_sunat'],
-                    'sale_original' => $data['venta'],
-                    'sale' => $data['venta'],
-                    'purchase_original' => $data['compra'],
-                    'purchase' => $data['compra'],
-                ]);
-
-                return [
-                    'date' => $data['fecha_busqueda'],
-                    'purchase' => $data['compra'],
-                    'sale' => $data['venta']
-                ];
-            }
-        } catch (\Throwable $e) {
-            // Si apiperu no responde, no tumbar la tienda: usar último tipo de cambio local.
-            $latest = ExchangeRate::query()->orderByDesc('date')->first();
-            if ($latest) {
-                return [
-                    'date' => $date,
-                    'purchase' => $latest->purchase,
-                    'sale' => $latest->sale,
-                ];
-            }
-        }
-
-        $this->saveService(4);
-
-        return [
-            'date' => $date,
-            'purchase' => 1,
-            'sale' => 1,
-        ];
+        return app(\App\Services\ExchangeRates\TenantExchangeRateService::class)->exchange($date);
     }
+    // ######## FIN API BCV ########
 
     public function printer_ticket($data)
     {

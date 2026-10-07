@@ -605,8 +605,8 @@ class FiscalEmissionSchemaTest extends TestCase
         (new \App\CoreFacturalo\Facturalo())->update($edit,$discounted->id);
         self::assertEquals(324.8,$discounted->fresh()->total);
         self::assertEquals(20,$discounted->fresh()->total_discount);
-        self::assertEquals(10.123,$discounted->fresh()->exchange_rate_sale);
-        self::assertEquals(round(324.8*10.123,2),$discounted->fresh()->currency_totals->total);
+        self::assertSame('10.12340000',$discounted->fresh()->exchange_rate_sale);
+        self::assertEquals((float) \App\Services\ExchangeRates\ExchangeRateMath::multiply('324.8', '10.12340000', 2),$discounted->fresh()->currency_totals->total);
         self::assertSame('Test fiscal',$discounted->fresh()->issuer['name']);
         self::assertSame($discounted->external_id,$discounted->fresh()->external_id);
 
@@ -650,7 +650,7 @@ class FiscalEmissionSchemaTest extends TestCase
         foreach (['total','total_igv','total_discount'] as $column) {
             self::assertSame('decimal(12,2)',$db->selectOne('SHOW COLUMNS FROM documents WHERE Field = ?',[$column])->Type);
         }
-        self::assertSame('decimal(13,3)',$db->selectOne("SHOW COLUMNS FROM documents WHERE Field = 'exchange_rate_sale'")->Type);
+        self::assertSame('decimal(18,8)',$db->selectOne("SHOW COLUMNS FROM documents WHERE Field = 'exchange_rate_sale'")->Type);
         foreach (['ubl_version','perception','total_unaffected','total_free','total_igv_free','retention','user_rel_subscription_plan_id'] as $column) {
             self::assertFalse($db->getSchemaBuilder()->hasColumn('documents',$column));
         }

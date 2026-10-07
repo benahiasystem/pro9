@@ -1,3 +1,4 @@
+{{-- ######## INICIO TASAS OCHO DECIMALES ######## --}}
 {{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 @php
 
@@ -20,8 +21,8 @@ foreach ($cash_documents as $cash_document) {
 
             if(in_array($cash_document->sale_note->state_type_id, ['01','03','05','07','13'])){
 
-                $cash_income += $cash_document->sale_note->total;
-                $final_balance += $cash_document->sale_note->total;
+                $cash_income = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($cash_income)->plus($cash_document->sale_note->total)->toBigDecimal();
+                $final_balance = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($final_balance)->plus($cash_document->sale_note->total)->toBigDecimal();
 
             }
 
@@ -30,8 +31,8 @@ foreach ($cash_documents as $cash_document) {
 
             if(in_array($cash_document->sale_note->state_type_id, ['01','03','05','07','13'])){
 
-                $cash_income += $cash_document->sale_note->total * $cash_document->sale_note->exchange_rate_sale;
-                $final_balance += $cash_document->sale_note->total * $cash_document->sale_note->exchange_rate_sale;
+                $cash_income = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($cash_income)->plus(\App\Services\ExchangeRates\ExchangeRateMath::multiply($cash_document->sale_note->total, $cash_document->sale_note->exchange_rate_sale))->toBigDecimal();
+                $final_balance = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($final_balance)->plus(\App\Services\ExchangeRates\ExchangeRateMath::multiply($cash_document->sale_note->total, $cash_document->sale_note->exchange_rate_sale))->toBigDecimal();
 
             }
 
@@ -58,8 +59,8 @@ foreach ($cash_documents as $cash_document) {
 
             if(in_array($cash_document->document->state_type_id, ['01','03','05','07','13'])){
 
-                $cash_income += $cash_document->document->total;
-                $final_balance += $cash_document->document->total;
+                $cash_income = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($cash_income)->plus($cash_document->document->total)->toBigDecimal();
+                $final_balance = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($final_balance)->plus($cash_document->document->total)->toBigDecimal();
 
             }
 
@@ -67,8 +68,8 @@ foreach ($cash_documents as $cash_document) {
 
             if(in_array($cash_document->document->state_type_id, ['01','03','05','07','13'])){
 
-                $cash_income += $cash_document->document->total * $cash_document->document->exchange_rate_sale;
-                $final_balance += $cash_document->document->total * $cash_document->document->exchange_rate_sale;
+                $cash_income = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($cash_income)->plus(\App\Services\ExchangeRates\ExchangeRateMath::multiply($cash_document->document->total, $cash_document->document->exchange_rate_sale))->toBigDecimal();
+                $final_balance = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($final_balance)->plus(\App\Services\ExchangeRates\ExchangeRateMath::multiply($cash_document->document->total, $cash_document->document->exchange_rate_sale))->toBigDecimal();
 
             }
 
@@ -101,13 +102,13 @@ foreach ($cash_documents as $cash_document) {
 
             if($cash_document->expense_payment->expense->currency_type_id == 'VES'){
 
-                $cash_egress += $cash_document->expense_payment->payment;
-                $final_balance -= $cash_document->expense_payment->payment;
+                $cash_egress = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($cash_egress)->plus($cash_document->expense_payment->payment)->toBigDecimal();
+                $final_balance = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($final_balance)->minus($cash_document->expense_payment->payment)->toBigDecimal();
 
             }else{
 
-                $cash_egress += $cash_document->expense_payment->payment  * $cash_document->expense_payment->expense->exchange_rate_sale;
-                $final_balance -= $cash_document->expense_payment->payment  * $cash_document->expense_payment->expense->exchange_rate_sale;
+                $cash_egress = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($cash_egress)->plus(\App\Services\ExchangeRates\ExchangeRateMath::multiply($cash_document->expense_payment->payment, $cash_document->expense_payment->expense->exchange_rate_sale))->toBigDecimal();
+                $final_balance = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($final_balance)->minus(\App\Services\ExchangeRates\ExchangeRateMath::multiply($cash_document->expense_payment->payment, $cash_document->expense_payment->expense->exchange_rate_sale))->toBigDecimal();
             }
 
         }
@@ -115,7 +116,7 @@ foreach ($cash_documents as $cash_document) {
 
 }
 
-$cash_final_balance = $final_balance + $cash->beginning_balance;
+$cash_final_balance = \App\Services\ExchangeRates\ExchangeRateMath::finalAmount(\App\Services\ExchangeRates\ExchangeRateMath::rational($final_balance)->plus($cash->beginning_balance), 2);
 //$cash_income = ($final_balance > 0) ? ($cash_final_balance - $cash->beginning_balance) : 0;
 
 @endphp
@@ -388,3 +389,5 @@ $cash_final_balance = $final_balance + $cash->beginning_balance;
 </html>
 
 {{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}
+
+{{-- ######## FIN TASAS OCHO DECIMALES ######## --}}

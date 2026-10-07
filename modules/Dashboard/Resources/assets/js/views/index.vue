@@ -789,6 +789,10 @@
 }
 </style>
 <script>
+// ######## INICIO TASAS OCHO DECIMALES ########
+import { exactAmount } from "../../../../../../resources/js/helpers/exchange-rate-math"
+// ######## FIN TASAS OCHO DECIMALES ########
+
 import DashboardStock from "./partials/dashboard_stock.vue";
 import queryString from "query-string";
 import LoaderGraph from "../components/loaders/l-graph.vue";
@@ -1416,7 +1420,7 @@ export default {
     },
     calculateTotalCurrency(currency_type_id, exchange_rate_sale, total) {
       if (currency_type_id == "USD") {
-        return parseFloat(total) * exchange_rate_sale;
+        return exactAmount(parseFloat(total)).times(exactAmount(exchange_rate_sale)).final(2);
       } else {
         return parseFloat(total);
       }

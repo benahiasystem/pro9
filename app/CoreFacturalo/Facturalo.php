@@ -934,7 +934,7 @@ class Facturalo
                 SalesCustomerIdentityPolicy::assertCustomerAllowed($inputs['customer_id']);
                 if ((int)$inputs['customer_id']===(int)$document->customer_id) $inputs['customer'] = (array)$document->customer;
                 else $inputs['customer'] = \App\CoreFacturalo\Requests\Inputs\Common\PersonInput::set($inputs['customer_id']);
-                $inputs['exchange_rate_sale'] = round((float)$inputs['exchange_rate_sale'],3);
+                $inputs['exchange_rate_sale'] = \App\Services\ExchangeRates\ExchangeRateMath::rate($inputs['exchange_rate_sale'], 'exchange_rate_sale');
                 $document->fill($inputs);
                 $document->save();
 

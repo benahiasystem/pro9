@@ -93,9 +93,9 @@ class ExpenseTotalsSource extends WidgetSource
 
         $by_date = [];
         foreach ($expenses as $expense) {
-            $factor = $expense->currency_type_id === 'USD' ? (float) $expense->exchange_rate_sale : 1;
+            $factor = $expense->currency_type_id === 'USD' ? $expense->exchange_rate_sale : '1.00000000';
             $key = Carbon::parse($expense->date_of_issue)->format('Y-m-d');
-            $by_date[$key] = ($by_date[$key] ?? 0) + $expense->total * $factor;
+            $by_date[$key] = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($by_date[$key] ?? 0)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational($expense->total)->multipliedBy($factor))->toBigDecimal();
         }
 
         $labels = [];

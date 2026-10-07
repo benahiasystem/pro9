@@ -1,5 +1,6 @@
 <?php
-
+// ######## INICIO TASAS OCHO DECIMALES: CONVERSIONES EXACTAS ########
+// ######## FIN TASAS OCHO DECIMALES: CONVERSIONES EXACTAS ########
 // ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
 
 namespace Modules\Dashboard\Traits;
@@ -68,8 +69,8 @@ trait TotalsTrait
                 $purchase_total_payment += collect($purchase->purchase_payments)->sum('payment');
 
             }else{
-                $purchases_total_usd += $purchase->total * $purchase->exchange_rate_sale +  $purchases->sum('total_perception');;
-                $purchase_total_payment_usd += collect($purchase->purchase_payments)->sum('payment') * $purchase->exchange_rate_sale;
+                $purchases_total_usd = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($purchases_total_usd)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational($purchase->total)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($purchase->exchange_rate_sale))->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational($purchases->sum('total_perception'))))->toBigDecimal();
+                $purchase_total_payment_usd = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($purchase_total_payment_usd)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational(collect($purchase->purchase_payments)->sum('payment'))->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($purchase->exchange_rate_sale)))->toBigDecimal();
             }
         }
 
@@ -108,7 +109,7 @@ trait TotalsTrait
         $expense_dolla = $expenses->where('currency_type_id', 'USD');
 
         foreach ($expense_dolla as $exp) {
-            $expenses_total += $exp->total * $exp->exchange_rate_sale;
+            $expenses_total = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($expenses_total)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational($exp->total)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($exp->exchange_rate_sale)))->toBigDecimal();
         }
 
         $expense_total_payment = 0;
@@ -121,7 +122,7 @@ trait TotalsTrait
         return [
             'totals' => [
                 'total_payment' => round($expense_total_payment,2),
-                'total' => round($expenses_total,2),
+                'total' => round((float) \App\Services\ExchangeRates\ExchangeRateMath::finalAmount($expenses_total, 2),2),
             ]
         ];
 
@@ -161,8 +162,8 @@ trait TotalsTrait
 
             }else{
 
-                $sale_note_total_usd += $sale_note->total * $sale_note->exchange_rate_sale;
-                $sale_note_total_payment_usd += collect($sale_note->payments)->sum('payment') * $sale_note->exchange_rate_sale;
+                $sale_note_total_usd = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($sale_note_total_usd)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational($sale_note->total)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($sale_note->exchange_rate_sale)))->toBigDecimal();
+                $sale_note_total_payment_usd = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($sale_note_total_payment_usd)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational(collect($sale_note->payments)->sum('payment'))->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($sale_note->exchange_rate_sale)))->toBigDecimal();
 
             }
         }
@@ -207,7 +208,7 @@ trait TotalsTrait
                                     ->where('currency_type_id', 'USD');
 
         foreach ($documents_usd as $dusd) {
-            $document_total_usd += $dusd->total * $dusd->exchange_rate_sale;
+            $document_total_usd = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($document_total_usd)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational($dusd->total)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($dusd->exchange_rate_sale)))->toBigDecimal();
         }
 
         //TWO CURRENCY
@@ -228,8 +229,8 @@ trait TotalsTrait
 
                 if(in_array($document->state_type_id,['01','03','05','07','13'])){
 
-                    $document_total_payment_usd += collect($document->payments)->sum('payment') * $document->exchange_rate_sale;
-                    $document_total_note_credit_usd += ($document->document_type_id == '07') ? $document->total * $document->exchange_rate_sale:0; //nota de credito
+                    $document_total_payment_usd = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($document_total_payment_usd)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational(collect($document->payments)->sum('payment'))->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($document->exchange_rate_sale)))->toBigDecimal();
+                    $document_total_note_credit_usd = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($document_total_note_credit_usd)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational(($document->document_type_id == '07') ? (\App\Services\ExchangeRates\ExchangeRateMath::rational($document->total)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($document->exchange_rate_sale)))->toBigDecimal():0))->toBigDecimal(); //nota de credito
 
                 }
 

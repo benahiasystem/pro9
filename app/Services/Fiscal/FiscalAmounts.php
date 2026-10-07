@@ -19,7 +19,9 @@ final class FiscalAmounts
         }
         if ($from === $to) return round((float) $amount, 2);
         if (!is_numeric($rate) || $rate <= 0) self::error('exchange_rate', 'Indique una tasa positiva en VES por USD.');
-        return round($from === 'USD' ? $amount * $rate : $amount / $rate, 2);
+        return (float) ($from === 'USD'
+            ? \App\Services\ExchangeRates\ExchangeRateMath::multiply($amount, $rate, 2)
+            : \App\Services\ExchangeRates\ExchangeRateMath::divide($amount, $rate, 2));
     }
 
     public static function payment(array $input, string $documentCurrency, $documentRate, bool $igtfEnabled, $igtfRate): array
@@ -28,7 +30,7 @@ final class FiscalAmounts
         $explicit = array_key_exists('currency_type_id', $input);
         $rate = $input['exchange_rate'] ?? ($explicit && $currency !== $documentCurrency ? null : $documentRate);
         if (!is_numeric($rate) || $rate <= 0) self::error('exchange_rate', 'Indique una tasa positiva en VES por USD.');
-        $rate = round((float) $rate, 3);
+        $rate = \App\Services\ExchangeRates\ExchangeRateMath::rate($rate);
         if ($rate <= 0) self::error('exchange_rate', 'La tasa debe ser positiva con la precisión del sistema.');
         if ($explicit && $currency !== $documentCurrency && !isset($input['original_amount'])) {
             self::error('original_amount', 'Indique el importe en la moneda recibida.');

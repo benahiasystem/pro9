@@ -234,6 +234,9 @@
 @push('scripts')
 
 
+{{-- ######## INICIO TASAS OCHO DECIMALES ######## --}}
+@include('partials.exchange_rate_math')
+{{-- ######## FIN TASAS OCHO DECIMALES ######## --}}
 <script type="text/javascript">
     var app_cart = new Vue({
         el: '#app',
@@ -306,7 +309,7 @@
             let row = contex.records.find(x => x.id == id)
 
             if(row.currency_type_id === 'USD') {
-              row.sub_total = ((parseFloat(row.sale_unit_price) * value) * exchange_rate_sale).toFixed(2)
+              row.sub_total = window.Pro9ExchangeRateMath.exactAmount(row.sale_unit_price).times(value).times(exchange_rate_sale).final(2)
             } else {
               row.sub_total = (parseFloat(row.sale_unit_price) * value).toFixed(2)
             }
@@ -317,7 +320,7 @@
 
           this.records.forEach(function (item) {
             if(item.currency_type_id === 'USD') {
-              item.sub_total = (parseFloat(item.sub_total) * exchange_rate_sale).toFixed(2)
+              item.sub_total = window.Pro9ExchangeRateMath.rateMultiply(item.sub_total, exchange_rate_sale)
               item.exchange_rate_sale = exchange_rate_sale
             }
             item.sale_unit_price = parseFloat(item.sale_unit_price).toFixed(2)
@@ -377,7 +380,7 @@
             },
             async changeExchangeRate(exchange_rate_date){
                 var response = await axios.get(`/exchange_rate/ecommence/${exchange_rate_date}`)
-                this.exchange_rate_sale = parseFloat(response.data.sale)
+                this.exchange_rate_sale = window.Pro9ExchangeRateMath.normalizeExchangeRate(response.data.sale)
             },
             optionDocument() {
                 this.typeDocumentList = []
@@ -544,7 +547,7 @@
                     if (item.sale_affectation_igv_type_id === '10') {
 
                         if(item.currency_type_id === 'USD') {
-                            sale_unit_price = (parseFloat(item.sale_unit_price) * this.exchange_rate_sale).toFixed(2)
+                            sale_unit_price = window.Pro9ExchangeRateMath.rateMultiply(item.sale_unit_price, this.exchange_rate_sale)
                         } else {
                             sale_unit_price = item.sale_unit_price
                         }
@@ -580,7 +583,7 @@
                     if (item.sale_affectation_igv_type_id === '20') {
 
                         if(item.currency_type_id === 'USD') {
-                            sale_unit_price = (parseFloat(item.sale_unit_price) * this.exchange_rate_sale).toFixed(2)
+                            sale_unit_price = window.Pro9ExchangeRateMath.rateMultiply(item.sale_unit_price, this.exchange_rate_sale)
                         } else {
                             sale_unit_price = item.sale_unit_price
                         }

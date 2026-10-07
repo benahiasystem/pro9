@@ -2532,6 +2532,10 @@
 </style>
     <!-- ######## FIN CAMBIO GEOPOLITICO VENEZUELA -->
 <script>
+// ######## INICIO TASAS OCHO DECIMALES ########
+import { exactAmount, normalizeExchangeRate } from "../../../helpers/exchange-rate-math"
+// ######## FIN TASAS OCHO DECIMALES ########
+
 import IgtfPaymentFields from "./partials/igtf_fields.vue"
 
 // ######## INICIO SCRIPT GEOPOLITICO VENEZUELA
@@ -3049,7 +3053,7 @@ export default {
         amountRetentionValidate() {
             let amount = 700;
             if (this.form.currency_type_id === "USD") {
-                amount = 700 / this.form.exchange_rate_sale;
+                amount = exactAmount(700).dividedBy(exactAmount(this.form.exchange_rate_sale)).final(2);
             }
             return this.form.total > amount;
         },
@@ -4492,7 +4496,7 @@ export default {
             // Si el comprobante está en Dólares (USD) se convierte usando el tipo de cambio.
             let price = parseFloat(unit_price) || 0;
             const exchange_rate =
-                    parseFloat(this.form.exchange_rate_sale) || 0;
+                    normalizeExchangeRate(this.form.exchange_rate_sale) || 0;
 
 
             if (this.form.currency_type_id === row.item.currency_type_id) return price
@@ -4500,10 +4504,10 @@ export default {
             if (this.form.currency_type_id === "USD" ) {
 
                 if (exchange_rate > 0) {
-                    price = price / exchange_rate;
+                    price = exactAmount(price).dividedBy(exactAmount(exchange_rate)).final(2);
                 }
             } else if (this.form.currency_type_id === 'VES' && row.item.currency_type_id === 'USD') {
-                price = price * exchange_rate;
+                price = exactAmount(price).times(exactAmount(exchange_rate)).final(2);
             }
 
             return _.round(price, 2);
@@ -5266,9 +5270,9 @@ export default {
             this.form.items = items;
 
             if (this.form.currency_type_id === 'VES') {
-                this.total_global_discount = _.round(this.total_global_discount  * this.form.exchange_rate_sale,2)
+                this.total_global_discount = exactAmount(this.total_global_discount).times(exactAmount(this.form.exchange_rate_sale)).final(2)
             } else {
-                this.total_global_discount = _.round(this.total_global_discount / this.form.exchange_rate_sale,2)
+                this.total_global_discount = exactAmount(this.total_global_discount).dividedBy(exactAmount(this.form.exchange_rate_sale)).final(2)
             }
             this.calculateTotal();
         },

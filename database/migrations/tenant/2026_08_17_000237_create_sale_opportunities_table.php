@@ -20,7 +20,7 @@ use Illuminate\Support\Facades\DB;
  * - `customer_id` int(10) unsigned NOT NULL
  * - `customer` json NOT NULL
  * - `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `exchange_rate_sale` decimal(13,3) NOT NULL
+ * - `exchange_rate_sale` decimal(18,8) NOT NULL
  * - `total_exportation` decimal(12,2) NOT NULL DEFAULT '0.00'
  * - `total_free` decimal(12,2) NOT NULL DEFAULT '0.00'
  * - `total_taxed` decimal(12,2) NOT NULL DEFAULT '0.00'
@@ -55,7 +55,7 @@ CREATE TABLE `sale_opportunities` (
   `customer_id` int(10) unsigned NOT NULL,
   `customer` json NOT NULL,
   `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `exchange_rate_sale` decimal(13,3) NOT NULL,
+  `exchange_rate_sale` decimal(18,8) NOT NULL,
   `total_exportation` decimal(12,2) NOT NULL DEFAULT '0.00',
   `total_free` decimal(12,2) NOT NULL DEFAULT '0.00',
   `total_taxed` decimal(12,2) NOT NULL DEFAULT '0.00',

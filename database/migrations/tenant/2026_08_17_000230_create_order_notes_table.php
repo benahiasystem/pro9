@@ -24,7 +24,7 @@ use Illuminate\Support\Facades\DB;
  * - `shipping_address` text COLLATE utf8mb4_unicode_ci
  * - `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `payment_method_type_id` char(2) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `exchange_rate_sale` decimal(13,3) NOT NULL
+ * - `exchange_rate_sale` decimal(18,8) NOT NULL
  * - `total_prepayment` decimal(12,2) NOT NULL DEFAULT '0.00'
  * - `total_charge` decimal(12,2) NOT NULL DEFAULT '0.00'
  * - `total_discount` decimal(12,2) NOT NULL DEFAULT '0.00'
@@ -84,7 +84,7 @@ CREATE TABLE `order_notes` (
   `shipping_address` text COLLATE utf8mb4_unicode_ci,
   `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `payment_method_type_id` char(2) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `exchange_rate_sale` decimal(13,3) NOT NULL,
+  `exchange_rate_sale` decimal(18,8) NOT NULL,
   `total_prepayment` decimal(12,2) NOT NULL DEFAULT '0.00',
   `total_charge` decimal(12,2) NOT NULL DEFAULT '0.00',
   `total_discount` decimal(12,2) NOT NULL DEFAULT '0.00',

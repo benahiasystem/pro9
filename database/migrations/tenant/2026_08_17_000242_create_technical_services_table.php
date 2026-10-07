@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\DB;
  * - `payment_condition_id` text COLLATE utf8mb4_unicode_ci
  * - `payment_method_type_id` text COLLATE utf8mb4_unicode_ci
  * - `seller_id` int(10) unsigned DEFAULT '0'
- * - `exchange_rate_sale` decimal(13,3) DEFAULT '0.000'
+ * - `exchange_rate_sale` decimal(18,8) DEFAULT '0.000'
  * - `total_prepayment` decimal(12,2) DEFAULT '0.00'
  * - `total_charge` decimal(12,2) DEFAULT '0.00'
  * - `total_discount` decimal(12,2) DEFAULT '0.00'
@@ -74,7 +74,7 @@ CREATE TABLE `technical_services` (
   `payment_condition_id` text COLLATE utf8mb4_unicode_ci,
   `payment_method_type_id` text COLLATE utf8mb4_unicode_ci,
   `seller_id` int(10) unsigned DEFAULT '0',
-  `exchange_rate_sale` decimal(13,3) DEFAULT '0.000',
+  `exchange_rate_sale` decimal(18,8) DEFAULT '0.000',
   `total_prepayment` decimal(12,2) DEFAULT '0.00',
   `total_charge` decimal(12,2) DEFAULT '0.00',
   `total_discount` decimal(12,2) DEFAULT '0.00',

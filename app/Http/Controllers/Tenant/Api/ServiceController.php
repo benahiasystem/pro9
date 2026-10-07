@@ -4,7 +4,6 @@
 
     use App\CoreFacturalo\Helpers\Storage\StorageDocument;
     use App\CoreFacturalo\Services\Dni\Dni;
-    use App\CoreFacturalo\Services\Extras\ExchangeRate;
     use App\CoreFacturalo\Services\Ruc\Sunat;
     use App\Http\Controllers\Controller;
     use App\Http\Requests\Tenant\ServiceRequest;
@@ -14,7 +13,6 @@
     use App\Models\Tenant\Document;
     use Exception;
     use Illuminate\Http\Request;
-    use Modules\ApiPeruDev\Data\ServiceData;
 
 
     class ServiceController extends Controller
@@ -90,52 +88,24 @@
             return $res;
         }
 
+        // ######## INICIO API BCV ########
         public function exchangeRateTest($date)
         {
-            return (new ServiceData())->exchange($date);
-//            $sale = 1;
-//            $purchase = 1;
-//            if ($date <= now()->format('Y-m-d')) {
-//                /**
-//                 * @var \App\Models\Tenant\ExchangeRate $ex_rate
-//                 * @var \App\Models\Tenant\ExchangeRate $last_ex_rate
-//                 */
-//                $ex_rate = \App\Models\Tenant\ExchangeRate::where('date', $date)->first();
-//                if ($ex_rate) {
-//                    $sale = $ex_rate->sale;
-//                    $purchase = $ex_rate->purchase;
-//                } else {
-//                    $exchange_rate = new ExchangeRate();
-//                    $res = $exchange_rate->searchDate($date);
-//                    if ($res) {
-//                        $ex_rate = \App\Models\Tenant\ExchangeRate::create([
-//                            'date' => $date,
-//                            'date_original' => $res['date_data'],
-//                            'purchase' => $res['data']['purchase'],
-//                            'purchase_original' => $res['data']['purchase'],
-//                            'sale' => $res['data']['sale'],
-//                            'sale_original' => $res['data']['sale']
-//                        ]);
-//                        $sale = $ex_rate->sale;
-//                        $purchase = $ex_rate->purchase;
-//                    } else {
-//                        $last_ex_rate = \App\Models\Tenant\ExchangeRate::orderBy('date', 'desc')->first();
-//                        if ($last_ex_rate) {
-//                            $sale = $last_ex_rate->sale;
-//                            $purchase = $last_ex_rate->purchase;
-//                        } else {
-//                            $sale = 0;
-//                            $purchase = 0;
-//                        }
-//                    }
-//                }
-//            }
-//            return [
-//                'date' => $date,
-//                'sale' => $sale,
-//                'purchase' => $purchase,
-//            ];
+            return app(\App\Services\ExchangeRates\TenantExchangeRateService::class)->exchange($date);
         }
+
+        public function exchange_rate(Request $request)
+        {
+            $rate = $this->exchangeRateTest($request->input('cur_date'));
+            return ['success' => true, 'message' => 'Tipo de cambio disponible.',
+                'data' => [$rate['date'] => ['buy' => $rate['purchase'], 'sell' => $rate['sale']]]];
+        }
+
+        public function searchExchangeRateByDate(Request $request)
+        {
+            return $this->exchangeRateTest($request->input('date', $request->input('cur_date')));
+        }
+        // ######## FIN API BCV ########
 
         public function documentStatus(Request $request)
         {

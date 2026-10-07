@@ -23,7 +23,7 @@ use Illuminate\Support\Facades\DB;
  * - `customer` json NOT NULL
  * - `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `payment_method_type_id` char(2) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `exchange_rate_sale` decimal(13,3) NOT NULL
+ * - `exchange_rate_sale` decimal(18,8) NOT NULL
  * - `point_system` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'indica si se uso en sistema por puntos'
  * - `point_system_data` json DEFAULT NULL COMMENT 'datos de sistema por puntos'
  * - `created_from_pos` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'indica si se registro desde pos'
@@ -115,7 +115,7 @@ CREATE TABLE `sale_notes` (
   `customer` json NOT NULL,
   `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `payment_method_type_id` char(2) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `exchange_rate_sale` decimal(13,3) NOT NULL,
+  `exchange_rate_sale` decimal(18,8) NOT NULL,
   `point_system` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'indica si se uso en sistema por puntos',
   `point_system_data` json DEFAULT NULL COMMENT 'datos de sistema por puntos',
   `created_from_pos` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'indica si se registro desde pos',

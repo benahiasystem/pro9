@@ -24,6 +24,9 @@
       "__plugin-vue2_normalizer-2bbd088e.js"
     ]
   },
+  "_exchange-rate-math-4d7193b2.js": {
+    "file": "assets/exchange-rate-math-4d7193b2.js"
+  },
   "_index-3744837a.js": {
     "assets": [
       "assets/element-icons-ab40a589.woff",
@@ -41,16 +44,17 @@
   "_index-e849b4f5.js": {
     "file": "assets/index-e849b4f5.js"
   },
-  "_vue-clipboard-a547573a.js": {
+  "_vue-clipboard-86f3e8e6.js": {
     "css": [
       "assets/vue-clipboard-a067d18e.css"
     ],
-    "file": "assets/vue-clipboard-a547573a.js",
+    "file": "assets/vue-clipboard-86f3e8e6.js",
     "imports": [
       "_vue.esm-340a2d96.js",
       "_index-3744837a.js",
       "_index-e849b4f5.js",
-      "__plugin-vue2_normalizer-2bbd088e.js"
+      "__plugin-vue2_normalizer-2bbd088e.js",
+      "_exchange-rate-math-4d7193b2.js"
     ]
   },
   "_vue.esm-340a2d96.js": {
@@ -77,8 +81,9 @@
     "src": "modules/ClaimsBook/Resources/assets/js/app.js"
   },
   "modules/Ecommerce/Resources/assets/js/frontend/cart-app.js": {
-    "file": "assets/cart-app-e24bbe61.js",
+    "file": "assets/cart-app-5dfe4401.js",
     "imports": [
+      "_exchange-rate-math-4d7193b2.js",
       "_FrequentlyBoughtTogether-418e6ba7.js",
       "__plugin-vue2_normalizer-2bbd088e.js"
     ],
@@ -170,7 +175,7 @@
     "src": "node_modules/element-ui/lib/theme-chalk/fonts/element-icons.woff"
   },
   "resources/js/app.css": {
-    "file": "assets/app-ca2a51d3.css",
+    "file": "assets/app-848f9b4a.css",
     "src": "resources/js/app.css"
   },
   "resources/js/app.js": {
@@ -180,14 +185,15 @@
       "assets/tabler-icons-9920d986.ttf"
     ],
     "css": [
-      "assets/app-ca2a51d3.css"
+      "assets/app-848f9b4a.css"
     ],
-    "file": "assets/app-9fd38b04.js",
+    "file": "assets/app-1eefe031.js",
     "imports": [
-      "_vue-clipboard-a547573a.js",
+      "_vue-clipboard-86f3e8e6.js",
       "_vue.esm-340a2d96.js",
       "_index-3744837a.js",
       "__plugin-vue2_normalizer-2bbd088e.js",
+      "_exchange-rate-math-4d7193b2.js",
       "_index-e849b4f5.js",
       "_claim_form-e14cd897.js"
     ],
@@ -202,13 +208,14 @@
     "css": [
       "assets/system-c930884c.css"
     ],
-    "file": "assets/system-c70d2cba.js",
+    "file": "assets/system-5c632a71.js",
     "imports": [
-      "_vue-clipboard-a547573a.js",
+      "_vue-clipboard-86f3e8e6.js",
       "_vue.esm-340a2d96.js",
       "_index-3744837a.js",
       "__plugin-vue2_normalizer-2bbd088e.js",
-      "_index-e849b4f5.js"
+      "_index-e849b4f5.js",
+      "_exchange-rate-math-4d7193b2.js"
     ],
     "isEntry": true,
     "src": "resources/js/system.js"

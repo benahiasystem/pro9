@@ -230,7 +230,7 @@ class DashboardView
                     'delay_payment' => $delay_payment,
                     'date_of_due' =>  $date_of_due,
                     'currency_type_id' => $row->currency_type_id,
-                    'exchange_rate_sale' => (float)$row->exchange_rate_sale
+                    'exchange_rate_sale' => \App\Services\ExchangeRates\ExchangeRateMath::rate($row->exchange_rate_sale)
                 ];
 //            }
         });

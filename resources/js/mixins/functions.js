@@ -1,3 +1,6 @@
+// ######## INICIO TASAS OCHO DECIMALES ########
+import { normalizeExchangeRate } from '../helpers/exchange-rate-math'
+// ######## FIN TASAS OCHO DECIMALES ########
 export const functions = {
     data() {
         return {
@@ -9,32 +12,29 @@ export const functions = {
         }
     },
     methods: {
-        searchExchangeRate() {
-            return new Promise((resolve) => {
-                this.loading_search_exchange_rate = true
-                this.$http.post(`/services/exchange_rate`, this.form)
-                    .then(response => {
-                        let res = response.data
-                        if (res.success) {
-                            this.data = res.data;
-                            this.form.buy = res.data[this.form.cur_date].buy;
-                            this.form.sell = res.data[this.form.cur_date].sell;
-                            this.$message.success(res.message)
-                        } else {
-                            this.$message.error(res.message)
-                            this.loading_search_exchange_rate = false
-                        }
-                        resolve()
-                    })
-                    .catch(error => {
-                        console.log(error.response)
-                        this.loading_search_exchange_rate = false
-                    })
-                    .then(() => {
-                        this.loading_search_exchange_rate = false
-                    })
-            })
+        // ######## INICIO API BCV ########
+        async searchExchangeRate() {
+            this.loading_search_exchange_rate = true
+            try {
+                const {data: res} = await this.$http.post(`/services/exchange_rate`, this.form)
+                if (res.success) {
+                    this.data = res.data
+                    this.form.buy = res.data[this.form.cur_date].buy
+                    this.form.sell = res.data[this.form.cur_date].sell
+                    this.$message.success(res.message)
+                } else {
+                    this.$message.error(res.message)
+                }
+            } catch (error) {
+                const response = error.response && error.response.data
+                const dateErrors = response && response.errors && response.errors.date
+                this.$message.error(dateErrors ? dateErrors[0] :
+                    (response && response.message) || 'No se pudo obtener la tasa de cambio.')
+            } finally {
+                this.loading_search_exchange_rate = false
+            }
         },
+        // ######## FIN API BCV ########
 
         searchServiceNumber() {
             return new Promise((resolve) => {
@@ -106,7 +106,7 @@ export const exchangeRate = {
     methods: {
         async searchExchangeRateByDate(exchange_rate_date) {
             let response = await this.$http.get(`/services/exchange/${exchange_rate_date}`)
-            return parseFloat(response.data.sale)
+            return normalizeExchangeRate(response.data.sale)
         }
     }
 };

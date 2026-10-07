@@ -1,5 +1,6 @@
 <?php
-
+// ######## INICIO TASAS OCHO DECIMALES: CONVERSIONES EXACTAS ########
+// ######## FIN TASAS OCHO DECIMALES: CONVERSIONES EXACTAS ########
 // ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
 
 namespace App\Http\Controllers\Tenant;
@@ -266,7 +267,7 @@ class DocumentController extends Controller
 
                 $balance_pen = ($row->currency_type_id === 'VES')
                     ? $balance
-                    : $balance * $row->exchange_rate_sale;
+                    : (float) \App\Services\ExchangeRates\ExchangeRateMath::finalAmount(\App\Services\ExchangeRates\ExchangeRateMath::rational($balance)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($row->exchange_rate_sale)), 2);
 
                 $receivable_total += $balance_pen;
 

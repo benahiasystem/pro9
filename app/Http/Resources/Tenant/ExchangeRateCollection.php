@@ -17,8 +17,10 @@ class ExchangeRateCollection extends ResourceCollection
         return $this->collection->transform(function($row, $key) {
             return [
                 'date' => $row->date,
-                'buy' => $row->buy,
-                'sell' => $row->sell,
+                // ######## INICIO API BCV ########
+                'buy' => $row->purchase,
+                'sell' => $row->sale,
+                // ######## FIN API BCV ########
             ];
         });
     }

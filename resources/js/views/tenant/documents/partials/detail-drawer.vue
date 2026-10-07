@@ -236,6 +236,10 @@
 </template>
 
 <script>
+// ######## INICIO TASAS OCHO DECIMALES ########
+import { normalizeExchangeRate } from "../../../../helpers/exchange-rate-math"
+// ######## FIN TASAS OCHO DECIMALES ########
+
 export default {
     props: {
         showDrawer: {
@@ -447,10 +451,7 @@ export default {
                 return '—';
             }
 
-            return Number(this.record.exchange_rate_sale).toLocaleString('es-VE', {
-                minimumFractionDigits: 3,
-                maximumFractionDigits: 4
-            });
+            return normalizeExchangeRate(this.record.exchange_rate_sale);
         },
         issuanceCurrencyLabel() {
             return this.exchangeRateLabel === '—'

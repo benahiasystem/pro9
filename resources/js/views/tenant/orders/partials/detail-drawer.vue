@@ -151,6 +151,10 @@
 </template>
 
 <script>
+// ######## INICIO TASAS OCHO DECIMALES ########
+import { exactAmount } from "../../../../helpers/exchange-rate-math"
+// ######## FIN TASAS OCHO DECIMALES ########
+
 export default {
     props: {
         showDrawer: {
@@ -276,7 +280,7 @@ export default {
 
                 if (subtotal === null || Number.isNaN(subtotal)) {
                     if (item.currency_type_id === 'USD' && item.exchange_rate_sale) {
-                        subtotal = quantity * Number(item.exchange_rate_sale) * unitPrice;
+                        subtotal = exactAmount(quantity).times(exactAmount(item.exchange_rate_sale)).times(exactAmount(unitPrice)).final(2);
                     } else {
                         subtotal = quantity * unitPrice;
                     }
