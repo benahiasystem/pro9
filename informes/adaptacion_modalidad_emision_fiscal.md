@@ -89,3 +89,10 @@ No se ejecutó Vite ni se editaron bundles: [frontend-build](../.codex/skills/fr
 ## Documentación mantenida
 
 La skill [mantener-modalidad-emision-fiscal-pro9](../.codex/skills/mantener-modalidad-emision-fiscal-pro9/SKILL.md) define el contrato para instalaciones nuevas. Se actualizan `adaptar-sistema-venezuela`, `reconstruir-migraciones-tenant`, `mantener-operacion-local-fiscal-pro9`, `mantener-catalogos-fiscales-venezuela`, `rif-super-admin-pro9`, el inventario de catálogos iniciales y la trazabilidad fiscal local. Sus instrucciones generales sobre tenants históricos quedan explícitamente excluidas para SOAP/PFX.
+
+## Pie de factura digital — 8 de octubre de 2026
+
+La modalidad guardada en el documento controla el pie del PDF: las facturas `digital` omiten `/buscar` y «Representación impresa», mientras las otras modalidades conservan esos textos y todas mantienen el pie libre configurado. Se verifica en las cinco familias de plantillas con `CurrentPdfRenderingTest::test_invoice_footer_uses_the_saved_document_mode` (20 aserciones) y se compilan las plantillas con `CurrentPdfTemplateContractTest`. El detalle y revisión visual del QR debajo del monto en letras se documentan en el informe HKA.
+
+
+Actualización 2026-10-08: las facturas digitales no renderizan ni guardan A4/A5 locales. A4 se obtiene de HKA después de commit/confirmación y A5 se deriva bajo demanda, con copias privadas por operación/formato. La vista previa del formulario anterior a emitir fuerza 80MM local; no se añade al diálogo de comprobante generado. Ver [almacenamiento y evidencia de interfaz](imprenta_digital_hka_api.md). Se verificó el navegador local con assets actualizados por el watcher externo del usuario, sin ejecutar build.

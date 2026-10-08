@@ -37,6 +37,16 @@ final class HkaTransport
         return $this->request($token, 10)->post('https://demoemisionv2.thefactoryhka.com.ve/api/Correo/Rastreo', $identity);
     }
 
+    public function downloadPdf(string $token, array $identity): Response
+    {
+        return $this->request($token, 20)->post('https://demoemisionv2.thefactoryhka.com.ve/api/DescargaArchivo', [
+            'serie' => $identity['serie'],
+            'tipoDocumento' => $identity['tipoDocumento'],
+            'numeroDocumento' => $identity['numeroDocumento'],
+            'tipoArchivo' => 'PDF',
+        ]);
+    }
+
     private function request(string $token, int $timeout)
     {
         return Http::acceptJson()->asJson()->withToken($token)->timeout($timeout)->connectTimeout(5)

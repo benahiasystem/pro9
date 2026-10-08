@@ -26,12 +26,13 @@ class DocumentController extends Controller
             $facturalo = new Facturalo();
             $facturalo->save($request->all());
             $facturalo->createPdf();
-            $print_result = $facturalo->generatePrintOrder();
+
             $facturalo->sendEmail();
 
             return $facturalo;
         });
 
+        $print_result = $fact->generatePrintOrder();
         $document = $fact->getDocument();
         $response = $fact->getResponse();
 
@@ -42,6 +43,7 @@ class DocumentController extends Controller
                 'number' => $document->number_full,
                 'fiscal_emission' => \App\Services\Fiscal\DocumentEmissionView::forDocument($document),
                 'email_delivery' => \App\Services\Fiscal\HkaMail::view($document),
+                'pdf_downloads' => \App\Services\Fiscal\HkaPdf::view($document, true),
                 'filename' => $document->filename,
                 'external_id' => $document->external_id,
                 'state_type_id' => $document->state_type_id,

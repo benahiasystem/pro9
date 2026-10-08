@@ -2342,6 +2342,7 @@
     <document-form-preview
         :showDialog.sync="showDialogPreview"
         :preview="preview"
+        :digital-invoice="company && company.fiscal_emission_mode === 'digital' && form.document_type_id === '01'"
     >
     </document-form-preview>
 
@@ -7283,17 +7284,23 @@ export default {
                 let response = await this.$http.post(path, this.form, {
                     responseType: "blob"
                 });
-                const blob = new Blob([response.data], {
-                    type: "application/pdf"
-                });
+                if (!response.headers?.['content-type']?.includes('application/pdf') || !response.data?.size) {
+                    throw new Error('La vista previa no devolvió un PDF válido.');
+                }
+                const blob = response.data;
                 url = URL.createObjectURL(blob);
                 if (temp === "03") this.form.payment_condition_id = "03";
             } catch (error) {
-                console.log("error", error);
-                if (temp === "03") this.form.payment_condition_id = "03";
+                let body = error.response?.data;
+                if (typeof body?.text === 'function') {
+                    try { body = JSON.parse(await body.text()); } catch (_) { body = null; }
+                }
+                throw new Error(body?.errors?.pdf?.[0] || body?.pdf?.[0] || body?.message
+                    || error.message || 'No se pudo cargar la vista previa.');
             } finally {
                 this.loading_submit = false;
                 this.form.actions.format_pdf = original_format_pdf;
+                this.form.payment_condition_id = temp;
             }
 
             return url;

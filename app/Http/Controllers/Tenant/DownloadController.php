@@ -17,6 +17,16 @@ class DownloadController extends Controller
 {
     use StorageDocument;
 
+    private function digitalPdf($document, string $format, bool $attachment)
+    {
+        $service = app(\App\Services\Fiscal\HkaPdf::class);
+        $bytes = auth()->check() ? $service->download($document, $format) : $service->stored($document, $format);
+        $filename = app(\App\Services\Fiscal\HkaPdfStore::class)->filename($document).($format === 'ticket' ? '-80mm' : '').'.pdf';
+        return response($bytes, 200, ['Content-Type' => 'application/pdf',
+            'Content-Disposition' => \Symfony\Component\HttpFoundation\HeaderUtils::makeDisposition($attachment ? 'attachment' : 'inline', $filename),
+            'Cache-Control' => 'private, no-store', 'X-Content-Type-Options' => 'nosniff']);
+    }
+
     public function downloadExternal($model, $type, $external_id, $format = null) {
         // ########## INICIO CAMBIO SIN XML CDR SUNAT
         if (LocalFiscalDocumentPolicy::enabled() && in_array($type, ['xml', 'cdr', 'cdr_xml'], true)) {
@@ -29,6 +39,10 @@ class DownloadController extends Controller
 
         if (!$document) throw new Exception("El código {$external_id} es inválido, no se encontró documento relacionado");
 
+        if ($document instanceof \App\Models\Tenant\Document && \App\Services\Fiscal\HkaPdf::applies($document)
+            && $type === 'pdf' && in_array($format ?? 'a4', ['a4', 'a5', 'ticket'], true)) {
+            return $this->digitalPdf($document, $format ?? 'a4', true);
+        }
         $type_pdf = $document_type;
         if ($type == 'pdf') {
             if ($document_type == 'document') {
@@ -77,6 +91,9 @@ class DownloadController extends Controller
             abort(404);
         }
         // ######### FIN CAMBIO SIN XML CDR SUNAT
+        if ($type === 'pdf' && $document instanceof \App\Models\Tenant\Document && \App\Services\Fiscal\HkaPdf::applies($document)) {
+            return $this->digitalPdf($document, 'a4', true);
+        }
         switch ($type) {
             case 'pdf':
                 $folder = 'pdf';
@@ -147,6 +164,10 @@ class DownloadController extends Controller
             $saleNote = new SaleNoteController();
             return $saleNote->toPrint($external_id,$format);
         }
+        if ($document instanceof \App\Models\Tenant\Document && \App\Services\Fiscal\HkaPdf::applies($document)
+            && in_array($format ?? 'a4', ['a4', 'a5'], true)) {
+            return $this->digitalPdf($document, $format ?? 'a4', false);
+        }
         $type = 'invoice';
         if ($document_type == 'dispatch') {
             $type = 'dispatch';
@@ -158,6 +179,12 @@ class DownloadController extends Controller
             $type = 'debit';
         }
 
+        if ($document instanceof \App\Models\Tenant\Document && \App\Services\Fiscal\HkaPdf::applies($document)
+            && $format === 'ticket') {
+            $bytes = (new Facturalo)->createPdf($document, $type, 'ticket', 'string');
+            return response($bytes, 200, ['Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'inline; filename="ticket-80mm.pdf"', 'Cache-Control' => 'private, no-store']);
+        }
         $this->reloadPDF($document, $type, $format);
 
         $temp = tempnam(sys_get_temp_dir(), 'pdf');

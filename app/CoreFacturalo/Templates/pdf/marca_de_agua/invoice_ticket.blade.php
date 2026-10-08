@@ -591,18 +591,16 @@ $affected_document_number = $document_base->affected_document ? $document_base->
         <tr>
             @if ($row->code == "1000")
                 <td class="desc pt-3" colspan="2">Son: <span class="font-bold">{{ $row->value }} {{ $document->currency_type->description }}</span></td>
-                @if (count((array) $document->legends)>1)
-                <tr><td class="desc pt-3"><span class="font-bold">Leyendas</span></td></tr>
-                @endif
             @else
                 <td class="desc pt-3" colspan="2">{{$row->code}}: {{ $row->value }}</td>
             @endif
         </tr>
     @endforeach
     <tr>
-        <td class="text-center pt-1">
+        <td class="text-left pt-1 align-top">
+            <!-- HKA_TICKET_QR -->
         </td>
-        <td>
+        <td class="align-top">
             @foreach($document->additional_information as $information)
                 @if ($information)
                     @if ($loop->first)
@@ -690,9 +688,13 @@ $affected_document_number = $document_base->affected_document ? $document_base->
         </tr>
     @endif
     </tr>
-    <tr>
+    {{-- ######## INICIO MODALIDAD DE EMISIÓN FISCAL ######## --}}
+@if(!((string) $document->document_type_id === '01' && $document->fiscal_emission_mode === 'digital'))
+<tr>
         <td class="text-center desc pt-5">Para consultar el comprobante ingresar a {!! url('/buscar') !!}</td>
     </tr>
+@endif
+{{-- ######## FIN MODALIDAD DE EMISIÓN FISCAL ######## --}}
 </table>
 
 </body>

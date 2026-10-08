@@ -7,7 +7,7 @@ const shared = require('./helpers/load-module.cjs')(path.resolve('resources/js/m
 function load(file) {
  const parsed = compiler.parseComponent(fs.readFileSync(file,'utf8')), exports = {};
  vm.runInNewContext(babel.transformSync(parsed.script.content,{configFile:false,babelrc:false,plugins:['@babel/plugin-transform-modules-commonjs']}).code,
- {exports, moment, _, require: name => name === '@mixins/document-email' ? shared : name.includes('vuex') ? {mapActions:()=>({}),mapState:()=>({})} : {}});
+ {exports, moment, _, require: name => name === '@mixins/document-pdf' ? require('./helpers/load-module.cjs')(require('node:path').resolve('resources/js/mixins/document-pdf.js')) : name === '@mixins/document-email' ? shared : name.includes('vuex') ? {mapActions:()=>({}),mapState:()=>({})} : {}});
  assert.deepEqual(compiler.compile(parsed.template.content).errors, []);
  return exports.default;
 }

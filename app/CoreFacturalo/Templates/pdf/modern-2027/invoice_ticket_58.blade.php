@@ -646,10 +646,10 @@ $affected_document_number = $document_base->affected_document ? $document_base->
             @if($configurationInPdf->legend_footer_sale)
                 {!! $configurationInPdf->legend_footer_sale !!}<br/>
             @endif
-            @if($document->document_type)
+            @if($document->document_type && !((string) $document->document_type_id === '01' && $document->fiscal_emission_mode === 'digital'))
                 Representación impresa de la <span style="text-transform: capitalize;">{{ $document->document_type->description }}</span>.<br/>
             @endif
-            @if(!in_array($document->document_type_id, ['09']))
+            @if(!in_array($document->document_type_id, ['09']) && !((string) $document->document_type_id === '01' && $document->fiscal_emission_mode === 'digital'))
                 Consúltela en {!! url('/buscar') !!}
             @endif
         </td>

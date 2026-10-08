@@ -1,4 +1,8 @@
 @php
+    // ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
+    $digitalInvoice = $document && (string) $document->document_type_id === '01'
+        && $document->fiscal_emission_mode === 'digital';
+    // ######## FIN MODALIDAD DE EMISIÓN FISCAL ########
     $path_style = app_path('CoreFacturalo'.DIRECTORY_SEPARATOR.'Templates'.DIRECTORY_SEPARATOR.'pdf'.DIRECTORY_SEPARATOR.'style.css');
     $configurationInPdf= App\CoreFacturalo\Helpers\Template\TemplateHelper::getConfigurationInPdf();
 @endphp
@@ -13,11 +17,11 @@
                 {!! $configurationInPdf->legend_footer_sale !!}
             @endif
             {{-- Condición para omitir la línea de enlace si es Orden de entrega --}}
-            @if(!is_null($document) && !in_array($document->document_type_id, ['09']))
+            @if(!$digitalInvoice && !is_null($document) && !in_array($document->document_type_id, ['09']))
                 Para consultar el comprobante ingresar a {!! url('/buscar') !!}
                 <br>
             @endif          
-            @if($document && $document->document_type)
+            @if(!$digitalInvoice && $document && $document->document_type)
                 Representacion impresa de la <span style="text-transform: capitalize" class="text-capitalize">{{ $document->document_type->description }}</span>
             @endif
         </td>

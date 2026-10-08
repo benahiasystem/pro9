@@ -14,12 +14,14 @@
         />
         -->
         <div v-loading="loading">
+            <p v-if="pdfDownloadMessage" class="text-warning">{{ pdfDownloadMessage }}</p>
 
             <div class="row">
 
                 <div class="col text-center font-weight-bold mt-3">
                     <button class="btn btn-lg btn-info waves-effect waves-light"
                             type="button"
+                            :disabled="pdfDownloadDisabled('a4')"
                             @click="clickPrint('a4')">
                         <i class="fa fa-file-alt"></i>
                     </button>
@@ -31,6 +33,7 @@
 
                     <button class="btn btn-lg btn-info waves-effect waves-light"
                             type="button"
+                            :disabled="pdfDownloadDisabled('ticket')"
                             @click="clickPrint('ticket')">
                         <i class="fa fa-receipt"></i>
                     </button>
@@ -54,6 +57,7 @@
 </template>
 
 <script>
+import {documentPdf} from "@mixins/document-pdf";
 import {mapState, mapActions} from "vuex/dist/vuex.mjs";
 
 export default {
@@ -62,6 +66,7 @@ export default {
     },
     data() {
         return {
+            ...documentPdf.data(),
             titleDialog: null,
             loading: false,
             resource: 'finances/unpaid',
@@ -80,6 +85,7 @@ export default {
         this.initForm()
     },
     computed: {
+        ...documentPdf.computed,
         ...mapState([
             'config',
         ]),
@@ -109,6 +115,7 @@ export default {
         }
     },
     methods: {
+        ...documentPdf.methods,
         ...mapActions(['loadConfiguration']),
         initForm() {
             this.errors = {};
@@ -182,7 +189,7 @@ export default {
                 return;
             }
 
-            window.open(`/${this.resource}/print/${externalId}/${this.type}/${format}`, '_blank');
+            return this.downloadDocumentPdf(format, `/${this.resource}/print/${externalId}/${this.type}/${format}`);
         },
         clickCloseUnpaid() {
             this.$emit('update:showDialogOptions', false)

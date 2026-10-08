@@ -20,6 +20,32 @@ class HkaPayloadBuilderTest extends TestCase
         if($fixture==='igtf-debit') self::assertSame([],$p['detallesItems']);
     }
     public function documents(): array { return [['invoice','01'],['credit','02'],['debit','03'],['igtf-debit','03']]; }
+    /** @dataProvider paymentConditions */
+    public function test_new_payloads_include_frozen_receiver_contacts_and_payment_condition($condition, $label): void
+    {
+        $d = json_decode(file_get_contents(__DIR__.'/../Fixtures/Hka/invoice.json'), true);
+        $d['payment_condition_id'] = $condition;
+        $d['customer']['email'] = ' customer@example.test ';
+        $d['customer']['telephone'] = ' 04121234567 ';
+        $before = $d;
+        $header = (new HkaPayloadBuilder())->build($d)['documentoElectronico']['encabezado'];
+        self::assertSame($label, $header['identificacionDocumento']['tipoDePago']);
+        self::assertSame(['customer@example.test'], $header['comprador']['correo']);
+        self::assertSame(['04121234567'], $header['comprador']['telefono']);
+        self::assertSame('No', $header['comprador']['notificar']);
+        self::assertSame($before, $d, 'The builder cannot mutate frozen sale data.');
+    }
+    public function paymentConditions(): array { return [['01', 'Contado'], ['02', 'Crédito']]; }
+    public function test_missing_optional_contacts_are_not_invented(): void
+    {
+        $d = json_decode(file_get_contents(__DIR__.'/../Fixtures/Hka/invoice.json'), true);
+        $d['customer']['email'] = ' '; $d['customer']['telephone'] = null;
+        $header = (new HkaPayloadBuilder())->build($d)['documentoElectronico']['encabezado'];
+        self::assertArrayNotHasKey('correo', $header['comprador']);
+        self::assertArrayNotHasKey('telefono', $header['comprador']);
+        self::assertArrayNotHasKey('tipoDePago', $header['identificacionDocumento']);
+        self::assertSame('No', $header['comprador']['notificar']);
+    }
     public function test_missing_identity_mapping_blocks_preparation(): void
     {
         $d=json_decode(file_get_contents(__DIR__.'/../Fixtures/Hka/invoice.json'),true);unset($d['customer']['hka_identity_code']);

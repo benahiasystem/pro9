@@ -15,6 +15,7 @@ class DocumentCentralizedCollection extends ResourceCollection
             return [
                 'id'                        => $record->id,
                 'external_id'               => $record->external_id,
+                'pdf_downloads' => $is_sale_note ? null : \App\Services\Fiscal\HkaPdf::view($record, true),
                 'document_type_id'          => $is_sale_note ? '80' : $record->document_type_id,
                 'document_type_description' => $is_sale_note ? 'Nota de Venta' : $record->document_type?->description,
                 'number_full'               => $record->number_full,

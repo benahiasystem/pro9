@@ -24,7 +24,7 @@ class DocumentCollection extends ResourceCollection
         )->all());
         $this->collection->loadMissing('emission');
         \App\Services\Fiscal\FiscalIdentity::preload($this->collection);
-        return $this->collection->transform(function ($row, $key) {
+        return $this->collection->transform(function ($row, $key) use ($request) {
             $edit = \App\Services\Fiscal\DocumentEditPolicy::view($row);
             $has_pdf = true;
             $btn_note = false;
@@ -129,6 +129,7 @@ class DocumentCollection extends ResourceCollection
                 'number' => $row->number_full,
                 'fiscal_identity' => $row->fiscal_identity,
                 'fiscal_emission' => \App\Services\Fiscal\DocumentEmissionView::forDocument($row),
+                'pdf_downloads' => \App\Services\Fiscal\HkaPdf::view($row, $request->is('api/*')),
                 'customer_name' => $row->customer->name,
                 'customer_number' => format_person_identity_document($row->customer),
                 'customer_identity_document_type_description' => optional(optional($row->customer)->identity_document_type)->description,

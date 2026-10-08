@@ -443,11 +443,6 @@ $affected_document_number = $document_base->affected_document ? $document_base->
                     Son: <span class="text-uppercase">{{ $row->value }} {{ $document->currency_type->description }}</span>
                 </div>
             </td>
-        @if (count((array) $document->legends)>1)
-            <tr>
-                <td class="desc-ticket"><span class="">Leyendas</span></td>
-            </tr>
-        @endif
         @else
             <td class="desc-ticket">{{$row->code}}: {{ $row->value }}</td>
             @endif
@@ -572,13 +567,17 @@ $affected_document_number = $document_base->affected_document ? $document_base->
 
                 </td>
             </tr>
-            <tr>
+            {{-- ######## INICIO MODALIDAD DE EMISIÓN FISCAL ######## --}}
+@if(!((string) $document->document_type_id === '01' && $document->fiscal_emission_mode === 'digital'))
+<tr>
                 <td class="text-center desc-9 pt-2">
                     Para consultar el comprobante ingresar a {!! url('/buscar') !!}
                     <br>
                     Representacion impresa de la <span style="text-transform: capitalize" class="text-capitalize">{{ $document->document_type->description }}</span>
                 </td>
             </tr>
+@endif
+{{-- ######## FIN MODALIDAD DE EMISIÓN FISCAL ######## --}}
 </table>
 
 </body>

@@ -45,6 +45,12 @@ final class HkaPayloadBuilder
             'tipoDeVenta'=>'Interna', 'moneda'=>$d['currency_type_id'], 'tipoTransaccion'=>$transaction,
             'transaccionId'=>self::transactionId($d['operation_key']), 'sucursal'=>(string)($d['establishment']['code'] ?? '')];
         if ($provider) $id['tipoProveedor'] = $provider;
+        $conditions = ['01' => 'Contado', '02' => 'Crédito'];
+        $condition = $d['payment_condition_id'] ?? null;
+        if ($condition !== null && $condition !== '') {
+            if (!isset($conditions[$condition])) FiscalAmounts::error('payment_condition_id', 'Condición de pago sin equivalencia HKA.');
+            $id['tipoDePago'] = $conditions[$condition];
+        }
         if (!in_array($d['currency_type_id'],['VES','USD'],true)) FiscalAmounts::error('currency_type_id','Moneda sin equivalencia HKA.');
         if (!empty($d['invoice']['date_of_due'])) $id['fechaVencimiento']=self::date($d['invoice']['date_of_due']);
         if (in_array($d['document_type_id'],['07','08'],true)) {
@@ -93,6 +99,12 @@ final class HkaPayloadBuilder
             'impuestosSubtotal'=>$taxes,'formasPago'=>$forms];
         $header=['identificacionDocumento'=>$id,'comprador'=>['tipoIdentificacion'=>$identity,'numeroIdentificacion'=>$number,
             'razonSocial'=>$buyer['name'],'direccion'=>$buyer['address'],'pais'=>$buyer['country_id']], 'totales'=>$totals];
+        foreach (['email' => 'correo', 'telephone' => 'telefono'] as $local => $remote) {
+            $contact = trim((string) ($buyer[$local] ?? ''));
+            if ($contact !== '') $header['comprador'][$remote] = [$contact];
+        }
+        // These fields populate the fiscal PDF; HkaMail owns the existing automatic email flow.
+        $header['comprador']['notificar'] = 'No';
         if ($d['currency_type_id']==='USD') {
             $v=$d['currency_totals'] ?? [];
             if (!$v) FiscalAmounts::error('currency_totals','Faltan totales persistidos en VES.');

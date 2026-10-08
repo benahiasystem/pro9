@@ -52,7 +52,7 @@ class DocumentCentralizedController extends Controller
 
     private function documentsByScroll(Request $request, int $limit, ?string $cursor, ?string $document_type_id)
     {
-        $query = Document::with(['person', 'user', 'state_type', 'document_type', 'currency_type'])
+        $query = Document::with(['person', 'user', 'state_type', 'document_type', 'currency_type', 'emission'])
             ->whereTypeUser()
             ->orderBy('date_of_issue', 'desc')
             ->orderBy('id', 'desc');

@@ -64,6 +64,8 @@ class FiscalEmissionSchemaTest extends TestCase
         $this->database = 'pro9_fiscal_test_' . bin2hex(random_bytes(6));
         $this->capsule->getConnection('control')->statement('CREATE DATABASE `' . $this->database . '` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
         $connection['database'] = $this->database;
+        config(['filesystems.disks.tenant' => ['driver' => 'local', 'root' => sys_get_temp_dir().'/'.$this->database]]);
+        $app->instance('filesystem', new \Illuminate\Filesystem\FilesystemManager($app));
         $this->capsule->addConnection($connection, 'tenant');
         $this->capsule->addConnection($connection, 'system');
         $this->capsule->getDatabaseManager()->setDefaultConnection('tenant');
@@ -85,6 +87,7 @@ class FiscalEmissionSchemaTest extends TestCase
     {
         if ($this->database && preg_match('/^pro9_fiscal_test_[a-f0-9]{12}$/', $this->database)) {
             $this->capsule->getConnection('control')->statement('DROP DATABASE `' . $this->database . '`');
+            (new \Illuminate\Filesystem\Filesystem())->deleteDirectory(sys_get_temp_dir().'/'.$this->database);
         }
         if ($this->previousContainer) {
             if ($this->previousResolver) {
@@ -803,9 +806,17 @@ class FiscalEmissionSchemaTest extends TestCase
         $company->save();
         $http = new \Illuminate\Http\Client\Factory();
         $app->instance(\Illuminate\Http\Client\Factory::class, $http);
+        $customer->forceFill(['email' => 'receiver@example.test', 'telephone' => '04121234567'])->save();
+        $input['customer'] = $customer->toArray();
+        $input['payment_condition_id'] = '01';
         $mutations = 0; $queries = 0; $mode = 'success'; $active = null;
         $http->fake(function ($request) use ($db, &$mutations, &$queries, &$mode, &$active) {
             self::assertSame(0, $db->transactionLevel(), 'HTTP must occur after the outer commit and outside locks');
+            if (str_ends_with($request->url(), '/DescargaArchivo')) {
+                self::assertSame(0, $db->transactionLevel());
+                $pdf = new \FPDF(); $pdf->AddPage(); $pdf->SetFont('Helvetica', '', 12); $pdf->Text(10, 15, 'HKA confirmed test');
+                return \Illuminate\Support\Facades\Http::response(['codigo' => '200', 'archivo' => base64_encode($pdf->Output('S'))]);
+            }
             if (str_ends_with($request->url(), '/Autenticacion')) return \Illuminate\Support\Facades\Http::response([
                 'token' => 'fake-jwt-private', 'expiracion' => date('c', time() + 3600)], 200);
             if (str_ends_with($request->url(), '/EstadoDocumento')) {
@@ -833,10 +844,18 @@ class FiscalEmissionSchemaTest extends TestCase
         self::assertSame('not_requested', $fact->getDocument()->emission->status);
         $db->commit();
         $document = $fact->getDocument()->fresh();
+        $sentHeader = $document->emission->payload['documentoElectronico']['encabezado'];
+        self::assertSame('Contado', $sentHeader['identificacionDocumento']['tipoDePago']);
+        self::assertSame(['receiver@example.test'], $sentHeader['comprador']['correo']);
+        self::assertSame(['04121234567'], $sentHeader['comprador']['telefono']);
+        self::assertSame('No', $sentHeader['comprador']['notificar']);
         self::assertSame('confirmed', $document->emission->status);
         self::assertTrue($fact->getResponse()['sale_saved']);
         self::assertSame('00-00000100', $document->control_number);
         self::assertFalse($document->is_editable);
+        $store = new \App\Services\Fiscal\HkaPdfStore();
+        self::assertNotNull($store->read($document, 'a4'));
+        self::assertNull($store->read($document, 'a5'));
         self::assertSame(1, $mutations);
         $router = new \Illuminate\Routing\Router(new \Illuminate\Events\Dispatcher($app), $app);
         $router->get('downloads/{model}/{type}/{external_id}/{format?}', fn () => null)->name('tenant.download.external_id');
@@ -846,6 +865,8 @@ class FiscalEmissionSchemaTest extends TestCase
         $listed = (new \App\Http\Resources\Tenant\DocumentCollection(collect([$document])))->resolve();
         self::assertSame('confirmed', $listed[0]['fiscal_emission']['status']);
         self::assertSame($document->control_number, $listed[0]['fiscal_emission']['control_number']);
+        self::assertTrue($listed[0]['pdf_downloads']['a4']['available']);
+        self::assertSame('hka', $listed[0]['pdf_downloads']['a5']['provider']);
         self::assertStringNotContainsString('test-secret', json_encode($listed));
         $counts = [$db->table('documents')->count(), $db->table('document_payments')->count(), $db->table('inventory_kardex')->count()];
         $key = $document->emission->operation_key;
@@ -930,9 +951,15 @@ class FiscalEmissionSchemaTest extends TestCase
         $http = new \Illuminate\Http\Client\Factory();
         \Illuminate\Support\Facades\Http::swap($http);
         $http->preventStrayRequests();
-        $mode = 'success'; $mailMode = 'success'; $sends = 0; $emissions = 0; $active = null; $mailFacts = [];
-        $http->fake(function ($request) use ($db, &$mode, &$mailMode, &$sends, &$emissions, &$active, &$mailFacts) {
+        $mode = 'success'; $mailMode = 'success'; $pdfMode = 'success'; $sends = 0; $emissions = 0; $active = null; $mailFacts = [];
+        $http->fake(function ($request) use ($db, &$mode, &$mailMode, &$pdfMode, &$sends, &$emissions, &$active, &$mailFacts) {
             self::assertSame(0, $db->transactionLevel(), 'Automatic email cannot run inside the sale transaction');
+            if (str_ends_with($request->url(), '/DescargaArchivo')) {
+                self::assertSame(0, $db->transactionLevel());
+                if ($pdfMode === 'failure') return \Illuminate\Support\Facades\Http::response(['codigo' => '203']);
+                $pdf = new \FPDF(); $pdf->AddPage(); $pdf->SetFont('Helvetica', '', 12); $pdf->Text(10, 15, 'HKA confirmed test');
+                return \Illuminate\Support\Facades\Http::response(['codigo' => '200', 'archivo' => base64_encode($pdf->Output('S'))]);
+            }
             if (str_ends_with($request->url(), '/Autenticacion')) return \Illuminate\Support\Facades\Http::response([
                 'token' => 'automatic-private-token', 'expiracion' => date('c', time() + 3600)]);
             if (str_ends_with($request->url(), '/Correo/Rastreo')) return \Illuminate\Support\Facades\Http::response(['codigo' => '200', 'rastreos' => []]);
@@ -1044,6 +1071,20 @@ class FiscalEmissionSchemaTest extends TestCase
                 self::assertSame("mail\n", file_get_contents($log));
                 foreach ($results as $result) self::assertContains($result['status'], ['pending', 'accepted']);
             } finally { unlink($log); }
+            $pdfMode = 'failure';
+            $input['actions']['send_email'] = false;
+            $pdfPending = $save()->getDocument()->fresh();
+            self::assertSame('confirmed', $pdfPending->emission->status, 'PDF failures preserve fiscal confirmation');
+            self::assertNotEmpty($pdfPending->control_number);
+            $store = app(\App\Services\Fiscal\HkaPdfStore::class);
+            self::assertNull($store->read($pdfPending, 'a4'));
+            $emittedBeforeRetry = $emissions;
+            $paymentsBeforeRetry = $db->table('document_payments')->count();
+            $pdfMode = 'success';
+            app(\App\Services\Fiscal\HkaPdf::class)->download($pdfPending, 'a4');
+            self::assertNotNull($store->read($pdfPending, 'a4'));
+            self::assertSame($emittedBeforeRetry, $emissions, 'Downloading a missing PDF never re-emits');
+            self::assertSame($paymentsBeforeRetry, $db->table('document_payments')->count());
         } finally {
             if ($db->transactionLevel()) $db->rollBack();
             $db->table('configurations')->where('id', 1)->update(['auto_send_pdf_email' => false]);
@@ -1129,6 +1170,11 @@ class FiscalEmissionSchemaTest extends TestCase
         $http->preventStrayRequests();
         $http->fake(function ($request) use ($db, &$mode, &$sends, &$tracking, &$inFlight, $mail, $document, $recipients) {
             self::assertSame(0, $db->transactionLevel(), 'Mail HTTP must be outside all database locks');
+            if (str_ends_with($request->url(), '/DescargaArchivo')) {
+                self::assertSame(0, $db->transactionLevel());
+                $pdf = new \FPDF(); $pdf->AddPage(); $pdf->SetFont('Helvetica', '', 12); $pdf->Text(10, 15, 'HKA confirmed test');
+                return \Illuminate\Support\Facades\Http::response(['codigo' => '200', 'archivo' => base64_encode($pdf->Output('S'))]);
+            }
             if (str_ends_with($request->url(), '/Autenticacion')) return \Illuminate\Support\Facades\Http::response(
                 $mode === 'auth-failure' ? [] : ['token' => 'private-mail-token', 'expiracion' => date('c', time() + 3600)]);
             if (str_ends_with($request->url(), '/Correo/Rastreo')) return \Illuminate\Support\Facades\Http::response(['codigo' => '200', 'rastreos' => $tracking]);

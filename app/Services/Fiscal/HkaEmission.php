@@ -139,6 +139,12 @@ final class HkaEmission
             $emission->response = array_replace($emission->response ?? [], $result, ['checked_at' => time()]);
             $emission->save();
         });
+        // PDF availability is independent of the persisted sale and fiscal confirmation.
+        $current = $document->fresh();
+        if (optional($current->emission)->status === 'confirmed') {
+            try { app(\App\CoreFacturalo\Facturalo::class)->createPdf($current, 'invoice', 'a4'); }
+            catch (\Throwable $ignored) { /* An authorized download can retry obtaining the PDF. */ }
+        }
         // Mail failures must never undo or downgrade a confirmed fiscal emission.
         try {
             app(HkaMail::class)->sendAutomatic($document);

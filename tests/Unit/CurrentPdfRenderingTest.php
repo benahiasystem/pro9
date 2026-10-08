@@ -175,6 +175,114 @@ class CurrentPdfRenderingTest extends TestCase
         return [['FF01'], [''], ['AB-CD123456789012345']];
     }
 
+    /** @dataProvider ticketWidths */
+    public function test_download_ticket_preserves_existing_geometry_and_adds_one_qr_without_storage(bool $width80, bool $width70, float $expectedWidth): void
+    {
+        config(['tenant.enabled_template_ticket_80' => $width80, 'tenant.enabled_template_ticket_70' => $width70]);
+        Schema::connection('tenant')->create('establishments', function ($table): void {
+            $table->increments('id'); $table->string('template_pdf'); $table->string('template_ticket_pdf'); $table->string('logo')->nullable();
+        });
+        foreach (['countries', 'departments', 'provinces', 'districts'] as $table) {
+            Schema::connection('tenant')->create($table, function ($table): void { $table->string('id')->primary(); });
+        }
+        DB::connection('tenant')->table('establishments')->insert(['id' => 1, 'template_pdf' => 'default', 'template_ticket_pdf' => 'default']);
+        $fixture = $this->documentFixture();
+        $fixture->items->first()->additional_information = [];
+        $document = new CurrentFiscalPdfDocumentFixture();
+        $relations = ['person', 'invoice', 'note', 'currency_type', 'document_type', 'state_type', 'items', 'payments', 'fee', 'reference_guides', 'dispatch', 'transport', 'quotation', 'seller'];
+        foreach ($fixture->getAttributes() as $key => $value) {
+            if (in_array($key, $relations, true)) $document->setRelation($key, $value);
+            elseif ($key === 'additional_information') $document->forceFill([$key => '']);
+            else $document->forceFill([$key => $value]);
+        }
+        $document->forceFill(['fiscal_emission_mode' => 'digital', 'legends' => [
+            ['code' => '1000', 'value' => 'MONTO ANTERIOR'],
+            ['code' => '1000', 'value' => 'CIENTO DIECISÉIS'],
+        ]]);
+        $document->setRelation('taxes', new Collection());
+        $document->setRelation('received_retentions', new Collection());
+        $document->setRelation('guarantee_fund', null);
+        $company = new Fluent(['name' => 'Empresa Venezolana de Prueba, C.A.', 'trade_name' => 'Pro9 Prueba', 'number' => 'J-12345678-9', 'logo' => null]);
+        $engine = new class($company) extends \App\CoreFacturalo\Facturalo {
+            public function __construct($company) {
+                $this->company = $company; $this->configuration = \App\Models\Tenant\Configuration::first(); $this->actions = [];
+            }
+            public function uploadFile($file_content, $file_type) { throw new \LogicException('Downloads must not overwrite stored PDFs'); }
+        };
+        $this->app->instance(\App\CoreFacturalo\Facturalo::class, $engine);
+        $company->fiscal_emission_mode = 'digital';
+        $document->setRelation('payments', new Collection());
+        $document->exchange_rate_sale = '874.73210000';
+        $engine->setPaymentsPreview($document, [['payment' => $document->total, 'payment_method_type_id' => '01']]);
+        self::assertSame($document->currency_type_id, $document->payments->first()->currency_type_id);
+        self::assertSame('874.73210000', $document->payments->first()->exchange_rate);
+        $document->payments->first()->setRelation('payment_method_type', new Fluent(['description' => 'Efectivo Bolívares']));
+        $response = $engine->previewPdf($document, 'invoice', 'a4');
+        self::assertSame('application/pdf', $response->headers->get('Content-Type'));
+        self::assertStringStartsWith('%PDF-', $response->getContent());
+        $previewReader = new \setasign\Fpdi\Fpdi();
+        $previewReader->setSourceFile(\setasign\Fpdi\PdfParser\StreamReader::createByString($response->getContent()));
+        self::assertLessThan(80, $previewReader->getTemplateSize($previewReader->importPage(1))['width']);
+
+        $url = 'https://democonsulta.thefactoryhka.com.ve/?doc=original+query%2F==';
+        $qr = (new \App\CoreFacturalo\Helpers\QrCode\QrCodeGenerate())->displayPNGBase64($url, 300, 'M');
+        $printHtml = $engine->createPdf($document, 'invoice', 'ticket', 'html', ['hka_ticket_qr' => $qr]);
+        self::assertStringNotContainsString('Consultar factura original en HKA', $printHtml);
+        foreach ([1, 40] as $rows) {
+            $document->setRelation('items', new Collection(array_fill(0, $rows, $fixture->items->first())));
+            $baselineHtml = (new Template())->pdf('default', 'invoice', $company, $document, 'ticket');
+            $downloadHtml = (new Template())->pdf('default', 'invoice', $company, $document, 'ticket', ['hka_ticket_qr' => $qr]);
+            $block = view('pdf.partials.hka_ticket_qr', compact('qr'))->render();
+            self::assertSame(str_replace('<!-- HKA_TICKET_QR -->', '', $baselineHtml), str_replace($block, '', $downloadHtml));
+            self::assertSame(1, substr_count($downloadHtml, 'CIENTO DIECISÉIS'));
+            self::assertStringNotContainsString('MONTO ANTERIOR', $downloadHtml);
+            self::assertStringNotContainsString('Leyendas', $downloadHtml);
+            self::assertStringNotContainsString('/buscar', $downloadHtml);
+            self::assertStringNotContainsString('Representacion impresa', $downloadHtml);
+            self::assertLessThan(strpos($downloadHtml, 'Consultar factura original en HKA'), strpos($downloadHtml, 'Son:'));
+            self::assertLessThan(strpos($downloadHtml, 'CONDICIÓN DE PAGO:'), strpos($downloadHtml, 'Consultar factura original en HKA'));
+            self::assertCount(2, (array) $document->legends);
+            self::assertSame(1, substr_count($downloadHtml, 'Consultar factura original en HKA'));
+            self::assertStringNotContainsString('Consultar factura original en HKA', $baselineHtml);
+            $baseline = $engine->createPdf($document, 'invoice', 'ticket', 'string');
+            $download = (new \App\Services\Fiscal\HkaTicketPdf())->render($document, $url);
+            $reader = new \setasign\Fpdi\Fpdi();
+            $baselinePages = $reader->setSourceFile(\setasign\Fpdi\PdfParser\StreamReader::createByString($baseline));
+            $originalSize = $reader->getTemplateSize($reader->importPage(1));
+            $pages = $reader->setSourceFile(\setasign\Fpdi\PdfParser\StreamReader::createByString($download));
+            self::assertLessThanOrEqual($baselinePages, $pages);
+            for ($page = 1; $page <= $pages; $page++) {
+                $size = $reader->getTemplateSize($reader->importPage($page));
+                self::assertEqualsWithDelta($expectedWidth, $size['width'], .01);
+                self::assertEqualsWithDelta($originalSize['height'] + 42, $size['height'], .01);
+            }
+            if ($directory = getenv('PRO9_HKA_TICKET_FIXTURE_DIR')) {
+                if (!is_dir($directory)) mkdir($directory, 0775, true);
+                file_put_contents($directory.'/ticket-'.$expectedWidth.'mm-'.$rows.'rows.pdf', $download);
+            }
+        }
+    }
+
+    public function test_invoice_footer_uses_the_saved_document_mode(): void
+    {
+        $document = $this->documentFixture();
+        foreach (['default', 'Plantilla_personalizable', 'marca_de_agua', 'modern-2027', 'nrus'] as $template) {
+            $document->fiscal_emission_mode = 'digital';
+            $html = (new Template())->pdfFooter($template, $document);
+            self::assertStringNotContainsString('/buscar', $html);
+            self::assertStringNotContainsString('Representacion impresa', $html);
+            $document->fiscal_emission_mode = 'free_form';
+            $html = (new Template())->pdfFooter($template, $document);
+            self::assertStringContainsString('/buscar', $html);
+            self::assertStringContainsString('Representacion impresa', $html);
+        }
+    }
+
+    public function ticketWidths(): array
+    {
+        return [[false, false, 72], [true, false, 76], [false, true, 70]];
+    }
+
     private function documentFixture(): CurrentPdfDocumentFixture
     {
         $location = new Fluent(['description' => 'Caracas']);

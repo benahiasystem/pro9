@@ -284,16 +284,32 @@ class Facturalo
         }
     }
 
-    public function createPdf($document = null, $type = null, $format = null, $output = 'pdf') {
+    public function createPdf($document = null, $type = null, $format = null, $output = 'pdf', array $downloadOptions = []) {
         ini_set("pcre.backtrack_limit", "5000000");
-        $template = new Template();
-        $pdf = new Mpdf();
-
-        $format_pdf = $this->actions['format_pdf'] ?? null;
+        $format_pdf = $this->actions['format_pdf'] ?? 'a4';
 
         $this->document = ($document != null) ? $document : $this->document;
         $format_pdf = ($format != null) ? $format : $format_pdf;
         $this->type = ($type != null) ? $type : $this->type;
+
+        // ######## INICIO PDF HKA PERSISTENTE ########
+        if ($this->document instanceof Document && \App\Services\Fiscal\HkaPdf::applies($this->document)
+            && in_array($format_pdf, ['a4', 'a5'], true) && $output === 'html') $format_pdf = 'ticket';
+        if ($this->document instanceof Document && \App\Services\Fiscal\HkaPdf::applies($this->document)
+            && in_array($format_pdf, ['a4', 'a5'], true)) {
+            if ($this->document->getConnection()->transactionLevel()) {
+                if ($output === 'string') throw \Illuminate\Validation\ValidationException::withMessages(['pdf' => 'El PDF HKA está pendiente de confirmación.']);
+                return $this;
+            }
+            $service = app(\App\Services\Fiscal\HkaPdf::class);
+            if ($output === 'string') return $service->download($this->document, $format_pdf);
+            if ($format_pdf === 'a4') $service->storeConfirmed($this->document);
+            else $service->download($this->document, $format_pdf);
+            return $this;
+        }
+        // ######## FIN PDF HKA PERSISTENTE ########
+        $template = new Template();
+        $pdf = new Mpdf();
 
         // Usa el logo del establecimiento cuando no esté configurado el logo de la empresa, para que los PDFs de las facturas siempre muestren el logo de la sucursal.
         if (empty($this->company->logo) && $this->document && $this->document->establishment && !empty($this->document->establishment->logo)) {
@@ -346,6 +362,11 @@ class Facturalo
             'enabled_price_items_dispatch' => $this->configuration->enabled_price_items_dispatch,
             'is_preview' => false,
         ];
+        // Only the dedicated 80MM download supplies this option; previews and printing do not.
+        if ($format_pdf === 'ticket' && $output === 'string' && !empty($downloadOptions['hka_ticket_qr'])) {
+            $optional_configuration['hka_ticket_qr'] = $downloadOptions['hka_ticket_qr'];
+            $heightQr += 42;
+        }
 
         $html = $template->pdf($base_pdf_template, $this->type, $this->company, $this->document, $format_pdf, $optional_configuration);
 
@@ -719,9 +740,11 @@ class Facturalo
         }
 
         // echo $html_header.$html.$html_footer; exit();
-        $this->uploadFile($this->renderMpdfSafely(function () use ($pdf) {
+        $pdfBytes = $this->renderMpdfSafely(function () use ($pdf) {
             return $pdf->output('', 'S');
-        }), 'pdf');
+        });
+        if ($output === 'string') return $pdfBytes;
+        $this->uploadFile($pdfBytes, 'pdf');
         return $this;
     }
 
@@ -786,7 +809,16 @@ class Facturalo
             // El PDF ya fue generado por createPdf en el formato que indica el
             // payload (actions.format_pdf). Se reutiliza tal cual, sin regenerar:
             // el formato a imprimir lo decide el cliente desde el JSON.
-            $pdf_b64 = base64_encode($this->getStorage($this->document->filename, 'pdf'));
+            $format = $this->actions['format_pdf'] ?? 'a4';
+            if (\App\Services\Fiscal\HkaPdf::applies($this->document) && in_array($format, ['a4', 'a5'], true)) {
+                if ($this->document->getConnection()->transactionLevel()) {
+                    $result['reason'] = 'pdf_pending';
+                    return $result;
+                }
+                $pdf_b64 = base64_encode(app(\App\Services\Fiscal\HkaPdf::class)->download($this->document, $format));
+            } else {
+                $pdf_b64 = base64_encode($this->getStorage($this->document->filename, 'pdf'));
+            }
 
             $order = \Modules\Restaurant\Models\PrintOrder::create([
                 'name_printer' => $printerName,
@@ -1076,6 +1108,12 @@ class Facturalo
         $this->document = ($document != null) ? $document : $this->document;
         $format_pdf = ($format != null) ? $format : $format_pdf;
         $this->type = ($type != null) ? $type : $this->type;
+        if ($this->document instanceof Document && (string) $this->document->document_type_id === '01') {
+            $mode = $this->document->exists ? $this->document->fiscal_emission_mode : $this->company->fiscal_emission_mode;
+            $this->document->fiscal_emission_mode = $mode;
+            if ($mode === 'digital') $format_pdf = 'ticket';
+        }
+
 
         if($this->document->document_type_id === '09') {
             if($this->document->qr_url) {
@@ -1446,9 +1484,9 @@ class Facturalo
         // echo $html_header.$html.$html_footer; exit();
         // $this->uploadFile($pdf->output('', 'S'), 'pdf');
         // return $this;
-        $this->renderMpdfSafely(function () use ($pdf) {
-            return $pdf->output('test_'.now()->format('Y_m_d').'.pdf', 'I');
-        });
+        $bytes = $this->renderMpdfSafely(fn () => $pdf->output('', 'S'));
+        return response($bytes, 200, ['Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="vista-previa-80mm.pdf"', 'Cache-Control' => 'private, no-store']);
     }
 
     public function setPaymentsPreview($document, $payments)
@@ -1495,6 +1533,9 @@ class Facturalo
                 $this->apply_change = true;
             }
 
+            // Draft payments inherit the invoice currency/rate, like persisted payments.
+            $row['currency_type_id'] = $row['currency_type_id'] ?? $document->currency_type_id;
+            $row['exchange_rate'] = $row['exchange_rate'] ?? $document->exchange_rate_sale;
             $payment = new \App\Models\Tenant\DocumentPayment($row);
             $document->payments[] = $payment;
         }

@@ -538,6 +538,29 @@ use Illuminate\Support\Str;
                 DIRECTORY_SEPARATOR . 'Templates' . DIRECTORY_SEPARATOR . 'pdf' . DIRECTORY_SEPARATOR . $base_pdf_template . DIRECTORY_SEPARATOR . 'style.css');
             $stylesheet = file_get_contents($path_css);
 
+            if ($format_pdf === 'a4' && collect($data['documents_01'] ?? [])->contains(fn ($document) => \App\Services\Fiscal\HkaPdf::applies($document))) {
+                $merged = new Fpdi();
+                foreach (['documents_01' => 'invoice', 'documents_03' => 'invoice', 'dispatches' => 'dispatch', 'sale_notes' => 'sale_note'] as $group => $type) {
+                    foreach ($data[$group] ?? [] as $document) {
+                        $bytes = $document instanceof Document && \App\Services\Fiscal\HkaPdf::applies($document)
+                            ? app(\App\Services\Fiscal\HkaPdf::class)->download($document, 'a4')
+                            : $this->addRecordToPdf($document, 'a4', $base_pdf_template, $type, $stylesheet,
+                                ['margin_top' => $pdf_margin_top, 'margin_right' => $pdf_margin_right,
+                                    'margin_bottom' => $pdf_margin_bottom, 'margin_left' => $pdf_margin_left])->Output('', 'S');
+                        $count = $merged->setSourceFile(\setasign\Fpdi\PdfParser\StreamReader::createByString($bytes));
+                        for ($page = 1; $page <= $count; $page++) {
+                            $id = $merged->importPage($page, 'MediaBox');
+                            $size = $merged->getTemplateSize($id);
+                            $merged->AddPage($size['orientation'], [$size['width'], $size['height']]);
+                            $merged->useImportedPage($id);
+                        }
+                    }
+                }
+                return $merged->Output('S');
+            }
+
+
+
 
             if (($format_pdf === 'ticket') or ($format_pdf === 'ticket_58')) {
                 // $base_pdf_template = $configuration->formats;
@@ -666,6 +689,16 @@ use Illuminate\Support\Str;
                 $pdfj = new Fpdi();
                 foreach ($documents as $document) {
                     /** @var Document $document */
+                    if (\App\Services\Fiscal\HkaPdf::applies($document)) {
+                        $bytes = app(\App\Services\Fiscal\HkaPdf::class)->download($document, 'a5');
+                        $count = $pdfj->setSourceFile(\setasign\Fpdi\PdfParser\StreamReader::createByString($bytes));
+                        for ($page = 1; $page <= $count; $page++) {
+                            $templateId = $pdfj->importPage($page, 'MediaBox');
+                            $pdfj->AddPage('L', [210, 148]);
+                            $pdfj->useImportedPage($templateId);
+                        }
+                        continue;
+                    }
                     $pdf = $this->addRecordToPdf(
                         $document,
                         $format_pdf,

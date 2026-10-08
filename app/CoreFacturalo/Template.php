@@ -10,6 +10,10 @@ class Template
         if($template === 'credit' || $template === 'debit') {
             $template = 'note';
         }
+        if ($document instanceof \App\Models\Tenant\Document && \App\Services\Fiscal\HkaPdf::applies($document)
+            && in_array($format_pdf, ['a4', 'a5'], true)) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['pdf' => 'Las facturas digitales A4/A5 utilizan exclusivamente el PDF HKA.']);
+        }
         $path_template =  $this->validate_template($base_template, $template, $format_pdf);
         // Log::info($document);
         // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
@@ -52,10 +56,33 @@ class Template
             $company = clone $company;
             foreach ($document->issuer as $key => $value) $company->$key = $value;
         }
+        // A submitted amount-in-words legend can coexist with the server-generated one.
+        // Print the last (server-generated) value once without changing stored snapshots.
+        if ($document->legends) {
+            $document = clone $document;
+            $legends = array_reverse((array) $document->legends);
+            $amountPrinted = false;
+            $legends = array_filter($legends, function ($legend) use (&$amountPrinted) {
+                if ((string) data_get($legend, 'code') !== '1000') return true;
+                if ($amountPrinted) return false;
+                return $amountPrinted = true;
+            });
+            $document->legends = array_reverse(array_values($legends));
+        }
         $html = view($view, compact('company', 'document', 'configuration'))->render();
         if ($document instanceof \App\Models\Tenant\Document) {
             $summary = view('pdf.partials.document_fiscal_totals', compact('document'))->render();
             $html = str_contains($html, '</body>') ? str_replace('</body>', $summary.'</body>', $html) : $html.$summary;
+            if (!empty($configuration['hka_ticket_qr'])) {
+                $qr = view('pdf.partials.hka_ticket_qr', ['qr' => $configuration['hka_ticket_qr']])->render();
+                // Ticket templates reserve a cell below the amount in words, beside payments.
+                if (str_contains($html, '<!-- HKA_TICKET_QR -->')) {
+                    $html = preg_replace('/<!-- HKA_TICKET_QR -->/', $qr, $html, 1);
+                } else {
+                    $bodyEnd = strripos($html, '</body>');
+                    $html = $bodyEnd === false ? $html.$qr : substr_replace($html, $qr, $bodyEnd, 0);
+                }
+            }
         }
         return $html;
         // ######## FIN PERSISTENCIA FISCAL VENEZUELA ########

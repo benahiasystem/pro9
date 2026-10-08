@@ -949,6 +949,7 @@ class DocumentController extends Controller
                     'response' => $response,
                     'fiscal_emission' => \App\Services\Fiscal\DocumentEmissionView::forDocument($document),
                     'email_delivery' => \App\Services\Fiscal\HkaMail::view($document),
+                    'pdf_downloads' => \App\Services\Fiscal\HkaPdf::view($document, false),
                 ],
                 'links' => [
                     'print_ticket' => url('')."/print/document/{$document->external_id}/ticket"
@@ -1642,7 +1643,7 @@ class DocumentController extends Controller
         $invoice = new \App\Models\Tenant\Invoice($inputs['invoice']);
         $document->invoice = $invoice;
 
-        $facturalo->previewPdf($document, $inputs['type']);
+        return $facturalo->previewPdf($document, $inputs['type']);
     }
 
 }

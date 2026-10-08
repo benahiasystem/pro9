@@ -33,7 +33,16 @@
         </div>
         <Keypress key-event="keyup" :multiple-keys="multiple" @success="checkKeyWithAlt"/>
         <div v-loading="loading">
-            <div v-if="form.response_message"
+            <div v-if="fiscalEmissionNotice" class="row mb-4" data-testid="invoice-fiscal-result">
+                <div class="col-md-12">
+                    <el-alert :title="fiscalEmissionNotice.title"
+                              :description="fiscalEmissionNotice.description"
+                              :type="fiscalEmissionNotice.type"
+                              :closable="false"
+                              show-icon />
+                </div>
+            </div>
+            <div v-else-if="form.response_message"
                  class="row mb-4">
                 <div class="col-md-12">
                     <el-alert
@@ -67,11 +76,13 @@
 
 
             <span>Formatos disponibles para la descarga del comprobante:</span>
+            <p v-if="pdfDownloadMessage" class="text-warning mt-2">{{ pdfDownloadMessage }}</p>
             <div class="row print-buttons-container">
 
                 <div class="col text-center font-weight-bold mt-3" v-if="!isNrus">
                     <button class="btn btn-lg btn-info waves-effect waves-light w-100"
                             type="button"
+                            :disabled="pdfDownloadDisabled('a4')"
                             @click="clickPrint('a4')">
                         A4
                     </button>
@@ -82,6 +93,7 @@
 
                     <button class="btn btn-lg btn-info waves-effect waves-light w-100"
                             type="button"
+                            :disabled="pdfDownloadDisabled('ticket')"
                             @click="clickPrint('ticket')">
                         80MM
                     </button>
@@ -101,6 +113,7 @@
 
                     <button class="btn btn-lg btn-info waves-effect waves-light w-100"
                             type="button"
+                            :disabled="pdfDownloadDisabled('a5')"
                             @click="clickPrint('a5')">
                         A5
                     </button>
@@ -201,6 +214,7 @@
 </template>
 
 <script>
+import {documentPdf} from "@mixins/document-pdf";
 import {documentEmail} from "@mixins/document-email";
 import {whatsappNumber} from "@helpers/phone";
 import {mapState, mapActions} from "vuex/dist/vuex.mjs";
@@ -217,6 +231,7 @@ export default {
     },
     data() {
         return {
+            ...documentPdf.data(),
             titleDialog: null,
             loading: false,
             resource: 'documents',
@@ -248,10 +263,29 @@ export default {
         this.initForm()
     },
     computed: {
+        ...documentPdf.computed,
         ...mapState([
             'config',
         ]),
         ...documentEmail.computed,
+        fiscalEmissionNotice() {
+            if (this.form.document_type_id !== '01' || this.form.fiscal_emission_mode !== 'digital') return null;
+            const emission = this.form.fiscal_emission || {};
+            const number = this.form.number || '';
+            if (emission.status === 'confirmed') {
+                return {type: 'success', title: `La factura ${number} ha sido aceptada por HKA.`,
+                    description: emission.control_number ? `Número de control: ${emission.control_number}` : ''};
+            }
+            if (emission.status === 'rejected') {
+                return {type: 'error', title: `La factura ${number} ha sido rechazada por HKA.`,
+                    description: emission.diagnostic || 'La venta sigue guardada.'};
+            }
+            const title = emission.status === 'uncertain' ? `Factura ${number}: por conciliar con HKA.`
+                : emission.status === 'cancelled' ? `La factura ${number} está cancelada en HKA.`
+                : `Factura ${number}: pendiente de confirmación HKA.`;
+            return {type: 'warning', title,
+                description: emission.diagnostic || 'La venta está guardada; todavía no hay una confirmación fiscal.'};
+        },
         isNrus: function () {
             return !!(this.config && this.config.is_nrus);
         },
@@ -284,6 +318,7 @@ export default {
         }
     },
     methods: {
+        ...documentPdf.methods,
         ...mapActions(['loadConfiguration']),
         clickSendWhatsapp() {
 
@@ -322,11 +357,8 @@ export default {
             }
         },
         async create() {
-
-            console.error(this.failsInSend);
-            console.error(this.failsMessage);
-
-
+            this.initForm();
+            this.titleDialog = 'Comprobante generado';
             await this.getCompany()
             await this.getRecord()
 
@@ -355,10 +387,10 @@ export default {
             });
         },
         clickPrint(format) {
-            window.open(`/print/document/${this.form.external_id}/${format}`, '_blank');
+            return this.downloadDocumentPdf(format, `/print/document/${this.form.external_id}/${format}`);
         },
         clickDownload(format) {
-            window.open(`${this.form.download_pdf}/${format}`, '_blank');
+            return this.downloadDocumentPdf(format, `${this.form.download_pdf}/${format}`);
         },
         ...documentEmail.methods,
         clickFinalize() {

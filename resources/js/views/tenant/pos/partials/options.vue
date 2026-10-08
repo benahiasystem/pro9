@@ -153,12 +153,14 @@
 
                 <section class="pos-success__block">
                     <h5 class="pos-success__block-title">Imprimir o descargar</h5>
+                    <p v-if="pdfDownloadMessage" class="text-warning">{{ pdfDownloadMessage }}</p>
                     <div class="pos-success__formats">
                         <button
                             v-if="config !== null && config.show_ticket_80"
                             type="button"
                             class="pos-success__format"
-                            @click="clickPrint(form.print_ticket)"
+                            :disabled="pdfDownloadDisabled('ticket')"
+                            @click="downloadDocumentPdf('ticket', form.print_ticket)"
                         >
                             <i class="fa fa-receipt"></i> Ticket 80
                         </button>
@@ -174,7 +176,8 @@
                             v-if="!isNrus"
                             type="button"
                             class="pos-success__format"
-                            @click="clickPrint(form.print_a4)"
+                            :disabled="pdfDownloadDisabled('a4')"
+                            @click="downloadDocumentPdf('a4', form.print_a4)"
                         >
                             <i class="fa fa-file-alt"></i> A4
                         </button>
@@ -182,7 +185,8 @@
                             v-if="!isNrus"
                             type="button"
                             class="pos-success__format"
-                            @click="clickPrint(form.print_a5)"
+                            :disabled="pdfDownloadDisabled('a5')"
+                            @click="downloadDocumentPdf('a5', form.print_a5)"
                         >
                             <i class="fa fa-file-alt"></i> A5
                         </button>
@@ -514,6 +518,7 @@ html.dark .pos-success {
 }
 </style>
 <script>
+import {documentPdf} from "@mixins/document-pdf";
 import {documentEmail} from "@mixins/document-email";
 import {whatsappNumber} from "@helpers/phone";
 import { mapState, mapActions } from "vuex/dist/vuex.mjs";
@@ -532,6 +537,7 @@ export default {
     mixins: [buhoprinter],
     data() {
         return {
+            ...documentPdf.data(),
             titleDialog: null,
             loading: false,
             errors: {},
@@ -555,6 +561,7 @@ export default {
     },
     mounted() {},
     computed: {
+        ...documentPdf.computed,
         ...documentEmail.computed,
         ...mapState(["config"]),
         isNrus() {
@@ -578,6 +585,7 @@ export default {
         }
     },
     methods: {
+        ...documentPdf.methods,
         ...documentEmail.methods,
         hasGeneratedDocument() {
             this.button_convert_cpe_pos = false;
@@ -632,17 +640,7 @@ export default {
                     "_blank"
                 );
             } else if (this.resource == "documents") {
-                if (format == "ticket") {
-                    window.open(
-                        `/downloads/Document/${type}/${external_id}/pdf`,
-                        "_blank"
-                    );
-                } else {
-                    window.open(
-                        `downloads/documents/${type}/${external_id}/${format}`,
-                        "_blank"
-                    );
-                }
+                return this.downloadDocumentPdf(format, `/downloads/document/pdf/${external_id}/${format}`);
             }
         },
         keyupCustomerEmail(e) {
