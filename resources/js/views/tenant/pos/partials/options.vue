@@ -102,10 +102,21 @@
                             slot="append"
                             icon="el-icon-message"
                             @click="clickSendEmail"
-                            :loading="loading"
-                            >Enviar</el-button
+                            :loading="emailBusy"
+                            :disabled="!form.id || emailBusy || (form.email_delivery && !form.email_delivery.can_send)"
+                            >{{ emailSendLabel }}</el-button
                         >
                     </el-input>
+
+                    <small v-if="errors.customer_email" class="form-control-feedback">{{ errors.customer_email[0] }}</small>
+                    <div v-if="form.email_delivery && form.email_delivery.provider === 'hka'" class="mt-2" data-testid="pos-email-delivery">
+                        <small>{{ form.email_delivery.message }}</small>
+                        <div v-for="(entry, index) in form.email_delivery.tracking" :key="index">
+                            <small>{{ entry.recipient }}: {{ entry.description }}</small>
+                        </div>
+                        <el-button v-if="form.email_delivery.can_query" type="text" :loading="emailBusy"
+                                   :disabled="emailBusy" @click="queryHkaEmail">Consultar correo</el-button>
+                    </div>
 
                     <label class="pos-success__label">WhatsApp</label>
                     <div v-if="!config.qr_api_enable_ws">
@@ -503,6 +514,7 @@ html.dark .pos-success {
 }
 </style>
 <script>
+import {documentEmail} from "@mixins/document-email";
 import {whatsappNumber} from "@helpers/phone";
 import { mapState, mapActions } from "vuex/dist/vuex.mjs";
 import QrApi from "@viewsModuleQrApi/QrApiTemplate.vue";
@@ -523,6 +535,7 @@ export default {
             titleDialog: null,
             loading: false,
             errors: {},
+            ...documentEmail.data(),
             form: {},
             company: {},
             configuration: {},
@@ -542,6 +555,7 @@ export default {
     },
     mounted() {},
     computed: {
+        ...documentEmail.computed,
         ...mapState(["config"]),
         isNrus() {
             return !!(this.config && this.config.is_nrus);
@@ -564,6 +578,7 @@ export default {
         }
     },
     methods: {
+        ...documentEmail.methods,
         hasGeneratedDocument() {
             this.button_convert_cpe_pos = false;
         },
@@ -672,7 +687,7 @@ export default {
             this.$http
                 .get(`/${this.resource}/record/${this.recordId}`)
                 .then(response => {
-                    this.form = response.data.data;
+                    this.setEmailDeliveryRecord(response.data.data);
                     this.titleDialog = "Comprobante: " + this.form.number;
 
                     // Si el componente recibió la señal de imprimir automáticamente,
@@ -688,38 +703,6 @@ export default {
         },
         opened() {
             this.initFocus();
-        },
-        clickSendEmail() {
-            if (
-                this.form.customer_email == null ||
-                this.form.customer_email == ""
-            )
-                return this.$message.error("Ingrese el correo");
-            this.loading = true;
-            this.$http
-                .post(`/${this.resource}/email`, {
-                    customer_email: this.form.customer_email,
-                    id: this.form.id
-                })
-                .then(response => {
-                    if (response.data.success) {
-                        this.$message.success(
-                            "El correo fue enviado satisfactoriamente"
-                        );
-                    } else {
-                        this.$message.error("Error al enviar el correo");
-                    }
-                })
-                .catch(error => {
-                    if (error.response.status === 422) {
-                        this.errors = error.response.data.errors;
-                    } else {
-                        this.$message.error(error.response.data.message);
-                    }
-                })
-                .then(() => {
-                    this.loading = false;
-                });
         },
         clickPrint(url) {
             window.open(`${url}`, "_blank");

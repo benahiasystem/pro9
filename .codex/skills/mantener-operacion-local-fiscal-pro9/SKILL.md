@@ -7,7 +7,7 @@ description: Mantener la operación comercial local de Pro9 para instalaciones n
 
 ## Evolución aprobada
 
-Mantener separados registro comercial y resultado fiscal. El guardado local y la preparación HKA están implementados; envío, consulta, conciliación y descarga HKA siguen pendientes. Aplicar [numeración fiscal](../mantener-numeracion-fiscal-venezuela-pro9/SKILL.md) para series/controles, [persistencia fiscal y cobros](../mantener-persistencia-fiscal-venezuela-pro9/SKILL.md) para guardado/IGTF/retenciones y [facturas y notas HKA](../emitir-facturas-notas-hka/SKILL.md) para el payload congelado. `prepared` no acredita emisión ni homologación. No restaurar XML/CDR/SUNAT/PSE ni perfiles/reservas/asignaciones anticipadas.
+Mantener separados registro comercial y resultado fiscal. Están implementados el guardado local, preparación, envío y conciliación de facturas digitales DEMO, además de correo/rastreo HKA. Producción permanece deshabilitada; este alcance no acredita emisión real de notas ni descarga remota. Aplicar [numeración fiscal](../mantener-numeracion-fiscal-venezuela-pro9/SKILL.md) para series/controles, [persistencia fiscal y cobros](../mantener-persistencia-fiscal-venezuela-pro9/SKILL.md) para guardado/edición y [facturas y notas HKA](../emitir-facturas-notas-hka/SKILL.md) para la operación congelada. `prepared` no acredita emisión ni homologación. No restaurar XML/CDR/SUNAT/PSE ni perfiles/reservas/asignaciones anticipadas.
 
 ## Objetivo
 
@@ -21,7 +21,7 @@ Sostener conjuntamente los contratos de SCRUM-19, SCRUM-22, SCRUM-41, SCRUM-53 y
 - Registrar los documentos con estado local `REGISTERED` y respuesta `LOCAL_REGISTERED`.
 - Nunca representar un registro local como enviado, aceptado por SUNAT/SENIAT/PSE ni acompañado de XML, hash o CDR.
 - Eliminar productores, firmadores, lectores, respuestas y plantillas XML/CDR. Mantener barreras explícitas en `StorageDocument` y `DownloadController` para rechazar nombres de archivo o tipos fiscales antiguos, y conservar generación, descarga, impresión y correo del PDF.
-- Desregistrar las rutas de envío, validación, consulta de CDR/ticket y regularización fiscal. No basta con ocultar botones si la ruta sigue activa.
+- Desregistrar las rutas peruanas de envío, validación, consulta de CDR/ticket y regularización fiscal. No basta con ocultar botones si la ruta sigue activa; conservar las rutas HKA vigentes.
 
 ## Detracciones retiradas
 
@@ -45,7 +45,7 @@ Sostener conjuntamente los contratos de SCRUM-19, SCRUM-22, SCRUM-41, SCRUM-53 y
 - Conservar el módulo de facturación masiva, sus rutas de carga/proceso/listado/exportación y su descarga PDF. Sustituir `estado_sunat`/`mensaje_sunat` por `estado_emision`/`mensaje_emision`; no crear enlaces XML/CDR ni estados de aceptación externa. La respuesta HTTP correcta se presenta como `Registrado localmente`.
 - Consolidar `massive_invoices` en su migración creadora. No agregar migraciones incrementales para instalaciones o registros anteriores y no conservar la ruta `massive-invoice/config` si el controlador no implementa esa acción.
 - Retirar de `configurations` los selectores `send_auto`, `sunat_alternate_server`, `auto_send_dispatchs_to_sunat` y `send_data_to_other_server`. La interfaz y las respuestas no deben publicar controles inertes de transporte.
-- Retirar comandos peruanos de consulta, validación, reenvío y regularización masiva. Los controladores comerciales guardan localmente y generan PDF cuando corresponde. La preparación HKA usa `HkaEmissionPreparation`, sin HTTP; no retirar esa ruta vigente por confundirla con el transporte peruano eliminado.
+- Retirar comandos peruanos de consulta, validación, reenvío y regularización masiva. Los controladores comerciales guardan localmente y generan PDF cuando corresponde. `HkaEmissionPreparation` prepara sin HTTP; `HkaEmission` envía facturas elegibles después del commit exterior de `Facturalo::save`. Conservar también envío/consulta HKA explícitos. Un error fiscal posterior al commit conserva venta, cobros e inventario y responde «venta guardada» con su resultado fiscal.
 - Mantener series, correlativos, items, inventario, pagos, notas, PDF y correo comercial.
 - Conservar `OfflineTrait` en controladores que todavía llaman `getIsClient()`. Retirar métodos de envío entre servidores no autoriza quitar esa dependencia: `documents/index`, `documents/tables` y `documents/item/tables` publican `is_client` para el modo offline vigente.
 - El bot consulta `local_state`: registrado localmente, anulado o por anular. No ofrecer estados de aceptación SUNAT ni campos XML/CDR en `QueryDocumentStatusTool`. Su prompt y definición describen operación local; las pruebas no deben enviar mensajes reales.
@@ -55,7 +55,7 @@ Sostener conjuntamente los contratos de SCRUM-19, SCRUM-22, SCRUM-41, SCRUM-53 y
 - Reimpresiones de facturas/notas usan emisor, cliente, sucursal, artículos y alícuotas conservados. Retirar productores, validadores y consumidores de `documents.perception`, `total_unaffected`, `total_free`, `total_igv_free`, `ubl_version`, `retention` y `cod_digemid` del JSON de artículo; otros modelos comerciales mantienen sus contratos propios.
 - En saldos/caja/PDF/reportes distinguir importe documental aplicado de moneda/importe recibido, IGTF y recibos derivados; las retenciones/fondos reducen saldo sin cambiar venta ni producir efectivo. Para dashboard no asumir que los nuevos campos de pagos tenant existen en los contratos de datos del superadministrador.
 
-- En listas de documentos, percepciones, retenciones, liquidaciones y contingencias mostrar PDF, pero no XML/CDR ni reenvío fiscal.
+- En listas de documentos, percepciones, retenciones, liquidaciones y contingencias mostrar PDF, sin XML/CDR ni reenvíos peruanos. Las acciones HKA de documentos elegibles siguen su política fiscal propia.
 - El tablero no registra rutas, fuentes, componentes ni widgets de estado SUNAT. Los webhooks sólo publican eventos del ciclo local: creación, anulación y compras; no aceptación, observación o rechazo de una autoridad externa.
 - Al retirar ayudas fiscales obsoletas, eliminar también sus imports, propiedades y computed de los componentes globales. `GlobalHelpButton.vue` no debe importar el eliminado `help_summaries.json`; conserva tours y apertura del centro de ayuda.
 - Eliminar completamente el reporte exclusivo de detracciones: menú, rutas, controlador, recurso, vista y componente.
@@ -70,6 +70,16 @@ Sostener conjuntamente los contratos de SCRUM-19, SCRUM-22, SCRUM-41, SCRUM-53 y
 - En Hotel, el modal **Agregar Producto o Servicio** no muestra la sección **Agregar Descuentos/Cargos/Atributos especiales**. Mantener la regla vigente del flujo y los descuentos/cargos comerciales que utilice, sin conservar datos exclusivamente históricos.
 
 ## Marcadores y verificación
+
+### Contratos públicos de documentos HKA
+
+El envío, correo fiscal y restricciones por registro HKA se aplican a «Medios digitales». Máquina fiscal y Forma libre conservan sus funciones propias y muestran «No aplica» en el estado HKA; no convertir estas reglas en un bloqueo global por falta de registro en HKA.
+
+- Creación, detalle y listado devuelven `fiscal_emission`: estado, descripción, ambiente, control, diagnóstico saneado y acciones permitidas. Mostrar «No aplica» para documentos ajenos al flujo y distinguir «Preparado» de «Confirmado». Nunca publicar JWT, credenciales, payload completo ni respuestas completas del proveedor.
+- Mantener «Estado HKA» como columna configurable inicialmente visible junto al estado comercial, con control y detalle. Cargar emisiones en lote y aplicar la política común de edición, incluido su motivo de bloqueo.
+- Aislar la caché del listado por tenant y una versión por tenant, compatible con drivers sin etiquetas. Invalidar al cambiar el resultado fiscal y recargar tras envío/consulta; no reutilizar claves documentales entre tenants.
+- Tanto el diálogo posterior al guardado como el listado y POS/Garage deben seguir [distribuir-documentos-hka](../distribuir-documentos-hka/SKILL.md) para correo, rastreo y resultados visibles. Un fallo mantiene el comprobante guardado y la ventana abierta.
+- Manejar errores de creación sin asumir `error.response` existente. Ante resultado de guardado desconocido, indicar que se consulte el listado antes de repetir la venta; no inducir duplicación de venta, pagos o inventario.
 
 - Delimitar cambios con los marcadores exactos documentados en la referencia.
 - Ejecutar `tests/Unit/LocalFiscalDocumentPolicyTest.php` y `tests/Unit/JiraInProgressMigrationContractTest.php` junto con las pruebas de contratos Venezuela afectadas.

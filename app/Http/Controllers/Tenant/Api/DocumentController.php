@@ -37,8 +37,11 @@ class DocumentController extends Controller
 
         return [
             'success' => true,
+            'message' => 'Venta guardada.',
             'data' => [
                 'number' => $document->number_full,
+                'fiscal_emission' => \App\Services\Fiscal\DocumentEmissionView::forDocument($document),
+                'email_delivery' => \App\Services\Fiscal\HkaMail::view($document),
                 'filename' => $document->filename,
                 'external_id' => $document->external_id,
                 'state_type_id' => $document->state_type_id,

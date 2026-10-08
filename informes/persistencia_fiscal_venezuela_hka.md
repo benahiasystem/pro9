@@ -1,8 +1,8 @@
-# Persistencia fiscal de Venezuela y preparación HKA
+# Persistencia fiscal de Venezuela y emisión HKA DEMO
 
 ## Alcance implementado
 
-El esquema tenant consolidado y el guardado común de Facturas, notas de crédito y débito conservan los datos fiscales utilizados. La implementación prepara solicitudes HKA sin enviar documentos ni consultar al proveedor. Los cambios son para instalaciones nuevas; no incluyen migraciones de bases existentes, backfills ni operaciones sobre tenants reales.
+El esquema tenant consolidado y el guardado común de Facturas, notas de crédito y débito conservan los datos fiscales utilizados. La implementación conserva la preparación de facturas/notas y, desde el 7 de octubre de 2026, envía automáticamente las facturas digitales DEMO después del commit comercial. Producción, emisión de notas, anulación remota y descarga HKA quedan fuera. Se reutiliza el esquema existente, sin migraciones ni backfills.
 
 Se conservaron los identificadores, ambiente/modalidad, numeración local, snapshots comerciales, anticipos, descuentos, cargos, vencimientos, cuotas y relaciones. Los nombres internos `igv` continúan representando IVA. `total_exportation` e `invoices.operation_type_id` permanecen disponibles, con preparación de exportaciones bloqueada.
 
@@ -87,7 +87,7 @@ Contrato publicado: https://demoemisionv2.thefactoryhka.com.ve/swagger/v1/swagge
 
 La copia versionada está en `app/Services/Fiscal/contracts/hka-ve-v1.json`, con SHA-256 `f2ddb07c239b04319df1fc9b1e6b4db137f89b51f063fa4989fd1bc836d10f04`. La operación conserva `hka-ve-v1:<hash>`. Los fixtures saneados de Factura, crédito, débito e IGTF están en `tests/Fixtures/Hka`; el validador local comprueba estructura, campos requeridos, listas, límites, patrones y enumeraciones del contrato.
 
-Se almacenan los estados `not_requested`, `prepared`, `pending`, `confirmed`, `rejected`, `uncertain`, `cancelled`; esta etapa sólo produce los dos primeros. Preparar dos veces devuelve la misma operación/payload. Falta de equivalencias, tributos adicionales sin adaptación HKA, exportaciones, regímenes especiales, terceros u otras combinaciones no implementadas generan un error explícito. Sus datos condicionales pueden conservarse para la siguiente etapa, sin inventar códigos.
+Se almacenan los estados `not_requested`, `prepared`, `pending`, `confirmed`, `rejected`, `uncertain`, `cancelled`; la preparación produce los dos primeros; el envío DEMO también produce `pending`, `confirmed`, `rejected` y `uncertain`. Preparar dos veces devuelve la misma operación/payload. Falta de equivalencias, tributos adicionales sin adaptación HKA, exportaciones, regímenes especiales, terceros u otras combinaciones no implementadas generan un error explícito. Sus datos condicionales pueden conservarse para la siguiente etapa, sin inventar códigos.
 
 No se guardan credenciales/JWT en snapshots ni operaciones; se rechazan claves sensibles anidadas en datos fiscales. El Swagger no incluye un nodo de identidad del emisor: su RIF permanece en `documents.issuer`; el transporte posterior debe comprobar que las credenciales utilizadas correspondan al emisor conservado. No se restauraron perfiles, reservas ni asignaciones anticipadas retiradas.
 
@@ -113,3 +113,47 @@ Las pruebas abarcan persistencia de Factura/crédito/débito, pagos/cuotas, nume
 Los PDFs A4 de Factura y nota exclusiva IGTF fueron generados y revisados visualmente. La Factura muestra emisor conservado, IGTF, retención, fondo, recepción/aplicación en monedas distintas y equivalentes VES. Los demás templates se verificaron por compilación Blade y análisis PHP. Las fuentes Vue/JavaScript se verifican sin generar assets.
 
 La compilación frontend queda a cargo del usuario según `frontend-build`. No se modificó `public/build`. Estas verificaciones acreditan persistencia y preparación contractual; no incluyen emisión HKA real, pruebas DEMO de envío, homologación, consultas, descargas, conciliación, Órdenes de entrega ni comprobantes emitidos de retención.
+
+
+## Envío automático DEMO — 7 de octubre de 2026
+
+`Facturalo::save` registra un callback en la conexión tenant que sólo se ejecuta tras el commit exterior. Cubre las facturas `01` digitales DEMO de los consumidores comunes (web, POS y API). Un rollback descarta el callback. La factura, sus pagos y el inventario quedan guardados aunque HKA falle. La respuesta informa «Venta guardada» y añade `fiscal_emission`; no cambia `state_type_id` por el resultado remoto.
+
+`HkaEmission` valida empresa, RIF conservado, modalidad y ambiente, y rechaza identidades serie/número ambiguas entre sucursales. Reutiliza `HkaAuthentication`, `HkaEmissionPreparation` y el payload congelado. Antes de transmitir reclama la operación bajo bloqueo empresa/documento/emisión y persiste `pending`. HTTP se ejecuta fuera de transacciones: autenticación 10 s, emisión 20 s, consulta 10 s, conexión 5 s, TLS verificado, sin redirecciones ni reintentos automáticos. No hay cola ni worker de envío.
+
+`HkaPayloadBuilder::transactionId` transforma el UUID local a 32 caracteres hexadecimales únicamente en el borde HKA. El UUID original sigue en `document_emissions.operation_key`; la consulta y cualquier reenvío usan el identificador conservado en el payload. HKA DEMO rechazó los guiones con validación 1002, aunque Swagger no publica esa restricción.
+
+`HkaResponse` separa HTTP, código de negocio y validaciones; sólo confirma código 200 con identidad y control coherentes. En consultas, exige el `transaccionId` exacto y un estado conocido; `Enviada` fue verificado en DEMO. Las fechas válidas de asignación se conservan en hora de Caracas. Timeout, duplicado sin conciliación, respuesta incompleta, código desconocido o conflicto de control quedan por conciliar. Una consulta fallida no deshace una confirmación previa. Las respuestas persistidas contienen metadatos y diagnósticos locales permitidos, nunca JWT, credenciales ni textos crudos del proveedor.
+
+La consulta DEMO por un UUID nuevo devolvió HTTP 200/código 203, mensaje «Consulta no procesada», estado nulo y una única validación «Documento no encontrado en nuestra base de datos». Sólo ese sobre exacto acredita ausencia para el reintento. Se consulta de nuevo antes de reenviar, se espera al menos 30 s desde el intento y se conserva el payload/UUID. Una operación `pending` interrumpida pasa a consulta después de 40 s. Rechazos definitivos permanecen congelados; su corrección no se implementó.
+
+Las rutas autenticadas web/API `POST documents/{document}/send-hka` y `POST documents/{document}/query-hka` devuelven el DTO fiscal mínimo. Envío manual exige administrador; consulta limita vendedores a su sucursal. `prepare-hka` también devuelve el DTO saneado, sin payload. Creación, detalle y listado incorporan estado, descripción, ambiente, control, código, diagnóstico y permisos `can_send/can_query`.
+
+El listado carga las emisiones en lote incluso cuando Laravel envuelve los modelos en `DocumentResource`. La columna configurable «Estado HKA» distingue Sin solicitar, Preparado, Enviando, Confirmado, Rechazado y Por conciliar; documentos fuera del flujo muestran No aplica. La edición se bloquea tras preparar. Las claves de caché incluyen tenant y versión; documento/emisión cambian la versión después del commit, también con drivers sin etiquetas. Consultar/enviar actualiza la fila y recarga el listado.
+
+### Validación real en bbc.localhost
+
+Se usó exclusivamente el tenant digital DEMO existente y sus credenciales internas, sin imprimirlas. Se registraron pruebas de servicio por 1,16 VES cada una, marcadas en la información adicional:
+
+- ID 11, FF01-8: HKA rechazó con código 203 porque FF01 carece de un rango disponible. La consulta de numeraciones mostró un rango maestro general, serie «NO APLICA», tipo «TODOS», prefijo 00; ese dato no reemplaza las series Pro9 ni autoriza una reserva.
+- ID 12, sin serie, número 1: HKA rechazó el `transaccionId` con guiones (validación 1002). El payload se conserva como evidencia; no se alteró ni se reenvió.
+- ID 13, sin serie, número 2: tras corregir el adaptador, HKA confirmó código 200 y control **00-00000002**. `EstadoDocumento` por el identificador alfanumérico devolvió código 200, estado **Enviada**, número 2 y el mismo control. Pro9 conservó el UUID local y el estado comercial registrado.
+
+Para esa prueba se añadió una configuración local sin serie, inicio 1, en la sucursal 1; FF01 conserva su configuración. No se llamó `AsignarNumeraciones`, no se recrearon perfiles/reservas y no se cambió el ambiente. Las dos pruebas rechazadas y sus pagos permanecen trazables.
+
+La aceptación del listado se comprobó mediante su recurso/controlador con caché activa y en la sesión Chrome existente de bbc.localhost: columna Estado HKA, Confirmado, control 00-00000002 y acción Consultar HKA. Durante la sesión los assets fueron recompilados externamente; el agente no ejecutó build ni editó bundles. La comprobación visual usa esos assets actualizados. Las pruebas incluyen transporte/interpretación simulados, commit/rollback, fallos y recuperación, dos procesos concurrentes con un único envío, permisos y caché por tenant, y comportamiento Vue sin build. Estos casos DEMO no constituyen homologación de notas ni de todos los escenarios fiscales.
+
+
+### Comprobaciones finales de esta etapa
+
+- Suite fiscal/HKA y autorización seleccionada: **98 pruebas PHP, 313 aserciones**; transporte, payloads, interpretación, serialización sin datos internos, identidad/control, configuración y política local.
+- MySQL temporal: esquema inicial/seeding/rollback/repetición y concurrencia de cobros pasaron; prueba específica del envío pasó con **48 aserciones**, incluyendo commit exterior, rollback, recuperación, serialización del listado y dos procesos con una sola transmisión simulada.
+- UI: **5 pruebas JavaScript**; columna inicialmente visible junto al estado comercial, consulta y recarga, clics concurrentes, conservación de la fila ante errores y compatibilidad de pagos. Sintaxis Vue/PHP y `git diff --check` correctos.
+- Navegador: la consulta desde la columna Estado HKA finalizó manteniendo Confirmado y control 00-00000002; el listado recargó mostrando los diagnósticos específicos de las pruebas rechazadas. La evidencia visual quedó en el directorio de visualizaciones de la sesión, sin incorporarla a los bundles.
+
+Se observaron avisos previos del esquema XML de PHPUnit y de parámetros opcionales de `Item`; no provocaron fallos en las pruebas ejecutadas.
+
+
+## Edición antes del registro HKA — 7 de octubre de 2026
+
+La regla anterior que bloqueaba toda factura con cobros queda reemplazada por la [política de edición antes de HKA](edicion_facturas_antes_hka.md). Los cobros se conservan; la edición depende del estado comercial, el control y la conciliación fiscal. Las restricciones de reversión de cobros permanecen en su servicio específico.

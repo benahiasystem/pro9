@@ -21,18 +21,20 @@ final class FiscalDocumentPersistence
         $document->establishment = \App\CoreFacturalo\Requests\Inputs\Common\EstablishmentInput::set($establishment->id);
         $person = Person::findOrFail($document->customer_id);
         $document->customer = array_replace((array)$document->customer, $person->only(['number','name','identity_document_type_id','country_id','email','telephone']));
-        if (isset($document->customer->number)) {
-            $customer = (array) $document->customer;
-            $type = $customer['identity_document_type_id'] ?? '';
-            $code = preg_match('/^([VJEGCR])[-0-9]/i', $customer['number'], $match) ? strtoupper($match[1]) : (['1'=>'V','7'=>'P','E'=>'E','C'=>'C','G'=>'G','R'=>'R'][$type] ?? null);
-            $customer['hka_identity_code'] = $code;
-            $document->customer = $customer;
-        }
+        $document->customer = self::withHkaIdentity((array) $document->customer);
         $document->issuer = self::issuer($company, (array) $document->establishment);
         $document->exchange_rate_date = $document->exchange_rate_date ?? $document->date_of_issue;
         $document->exchange_rate_source = $document->exchange_rate_source ?? 'manual';
         $document->exchange_rate_sale = \App\Services\ExchangeRates\ExchangeRateMath::rate($document->exchange_rate_sale, 'exchange_rate_sale');
         FiscalAmounts::convert(1, $document->currency_type_id, 'VES', $document->exchange_rate_sale);
+    }
+
+    public static function withHkaIdentity(array $customer): array
+    {
+        $type = $customer['identity_document_type_id'] ?? '';
+        $customer['hka_identity_code'] = preg_match('/^([VJEGCR])[-0-9]/i', $customer['number'] ?? '', $match)
+            ? strtoupper($match[1]) : (['1'=>'V','7'=>'P','E'=>'E','C'=>'C','G'=>'G','R'=>'R'][$type] ?? null);
+        return $customer;
     }
 
     public static function line(array $line): array

@@ -67,6 +67,7 @@ class FiscalEmissionSchemaTest extends TestCase
         $this->capsule->addConnection($connection, 'tenant');
         $this->capsule->addConnection($connection, 'system');
         $this->capsule->getDatabaseManager()->setDefaultConnection('tenant');
+        $this->capsule->getConnection('tenant')->setTransactionManager(new \Illuminate\Database\DatabaseTransactionsManager());
         $app->instance('db', $this->capsule->getDatabaseManager());
         $app->instance('cache', new \Illuminate\Cache\Repository(new \Illuminate\Cache\ArrayStore()));
         $app->bind('db.schema', fn () => $this->capsule->getConnection()->getSchemaBuilder());
@@ -559,6 +560,18 @@ class FiscalEmissionSchemaTest extends TestCase
             'concept_id'=>$db->table('cat_retention_concept')->value('id'),'base'=>200,'percentage'=>2,'amount'=>4]));
         self::assertEquals(194,$document->fresh()->balance);
         self::assertCount(2,$document->fresh()->received_retentions);
+        $retainedEdit = array_replace($input, ['id' => $document->id, 'series' => $document->series, 'number' => $document->number, 'payments' => []]);
+        $retentionBefore = $db->table('document_received_retentions')->where('document_id', $document->id)->get()->toArray();
+        $fundBefore = $db->table('document_guarantee_funds')->where('document_id', $document->id)->get()->toArray();
+        (new \App\CoreFacturalo\Facturalo)->update($retainedEdit, $document->id);
+        self::assertEquals(194, $document->fresh()->balance);
+        foreach (['customer' => ['customer_id' => $customer->id + 1], 'iva' => ['items' => [array_replace($input['items'][0], ['quantity' => 1])]]] as $changes) {
+            try { (new \App\CoreFacturalo\Facturalo)->update(array_replace($retainedEdit, $changes), $document->id); self::fail('Existing retention must remain supported'); }
+            catch (\Illuminate\Validation\ValidationException $expected) { self::assertNotEmpty($expected->errors()); }
+        }
+        self::assertEquals($retentionBefore, $db->table('document_received_retentions')->where('document_id', $document->id)->get()->toArray());
+        self::assertEquals($fundBefore, $db->table('document_guarantee_funds')->where('document_id', $document->id)->get()->toArray());
+
         try { $service::retention($document,$retention);self::fail('Duplicate voucher accepted'); }
         catch (\Illuminate\Validation\ValidationException $e) { self::assertArrayHasKey('voucher_number',$e->errors()); }
         $company=\App\Models\Tenant\Company::firstOrFail();
@@ -600,13 +613,13 @@ class FiscalEmissionSchemaTest extends TestCase
             'discounts'=>[['discount_type_id'=>'02','amount'=>20,'factor'=>0.1]],
         ]))->getDocument();
         self::assertEquals(180,$discounted->total_taxed);self::assertEquals(28.8,$discounted->total_igv);self::assertEquals(208.8,$discounted->total);
-        $edit=array_replace($input,['id'=>$discounted->id,'series'=>$discounted->series,'number'=>$discounted->number,'issuer'=>['name'=>'Untrusted issuer'],'currency_type_id'=>'USD','exchange_rate_sale'=>10.1234]);
+        $edit=array_replace($input,['id'=>$discounted->id,'series'=>$discounted->series,'number'=>$discounted->number,'issuer'=>['name'=>'Untrusted issuer'],'currency_type_id'=>'VES','exchange_rate_sale'=>10.1234]);
         $edit['items'][0]['quantity']=3;
         (new \App\CoreFacturalo\Facturalo())->update($edit,$discounted->id);
         self::assertEquals(324.8,$discounted->fresh()->total);
         self::assertEquals(20,$discounted->fresh()->total_discount);
         self::assertSame('10.12340000',$discounted->fresh()->exchange_rate_sale);
-        self::assertEquals((float) \App\Services\ExchangeRates\ExchangeRateMath::multiply('324.8', '10.12340000', 2),$discounted->fresh()->currency_totals->total);
+        self::assertEquals(324.8,$discounted->fresh()->currency_totals->total);
         self::assertSame('Test fiscal',$discounted->fresh()->issuer['name']);
         self::assertSame($discounted->external_id,$discounted->fresh()->external_id);
 
@@ -731,6 +744,485 @@ class FiscalEmissionSchemaTest extends TestCase
         } finally {
             if ($db->transactionLevel()) $db->rollBack();
             foreach ($processes as $p) if ($p->isRunning()) $p->stop();
+        }
+    }
+
+
+    public function test_hka_emission_runs_after_outer_commit_and_recovers_without_duplicate_sales(): void
+    {
+        $db = $this->capsule->getConnection('tenant');
+        foreach ($this->migrations('migrations/tenant/*.php') as $migration) $migration->up();
+        $app = Container::getInstance();
+        (new \Database\Seeders\TenancyDatabaseSeeder())->setContainer($app)->run();
+        $db = $this->capsule->getConnection('tenant');
+        $app->instance('files', new \Illuminate\Filesystem\Filesystem());
+        $db->table('companies')->insert(['id' => 1, 'identity_document_type_id' => '6', 'number' => 'J123456789', 'name' => 'Test fiscal', 'trade_name' => 'Test fiscal', 'fiscal_environment' => 'demo', 'fiscal_emission_mode' => 'digital']);
+        $db->table('configurations')->insert(['id' => 1, 'quantity_documents' => 0, 'quantity_sales_notes' => 0]);
+        $establishment = $db->table('establishments')->insertGetId(['description' => 'Test fiscal', 'country_id' => 'VE', 'department_id' => '14', 'province_id' => '0229', 'district_id' => '000619', 'address' => 'Test', 'telephone' => '04121234567', 'code' => '0000']);
+        $warehouse = $db->table('warehouses')->insertGetId(['establishment_id' => $establishment, 'description' => 'Test warehouse']);
+        $userId = $db->table('users')->insertGetId(['name' => 'Test operator', 'email' => 'fiscal@example.test', 'password' => 'not-a-login-hash', 'type' => 'admin', 'establishment_id' => $establishment]);
+        $user = \App\Models\Tenant\User::findOrFail($userId);
+        $app->instance('auth', new class($user) {
+            private $user;
+            public function __construct($user) { $this->user = $user; }
+            public function user() { return $this->user; }
+            public function id() { return $this->user->id; }
+            public function check() { return true; }
+            public function guard($name = null) { return $this; }
+        });
+        $item = \App\Models\Tenant\Item::where('internal_id', 'MOCK-ITEM-VES-001')->firstOrFail();
+        $db->table('item_warehouse')->insert(['item_id' => $item->id, 'warehouse_id' => $warehouse, 'stock' => 10]);
+        $customer = \App\Models\Tenant\Person::where('number', 'MOCK-CLIENTE-VE')->firstOrFail();
+        foreach (['01' => 'FF01', '07' => 'FC01', '08' => 'FD01', '09' => 'TT01', '80' => 'NV01', 'U2' => 'AI01', 'U3' => 'AS01', 'U4' => 'AT01'] as $type => $code) {
+            $seriesId = $db->table('series')->insertGetId(['establishment_id' => $establishment, 'document_type_id' => $type, 'number' => $code]);
+            $db->table('series_configurations')->insert(['series_id' => $seriesId, 'document_type_id' => $type, 'series' => $code, 'number' => 100]);
+        }
+        $input = [
+            'type' => 'invoice', 'user_id' => $userId, 'external_id' => \Illuminate\Support\Str::uuid()->toString(),
+            'establishment_id' => $establishment, 'establishment' => (array) $db->table('establishments')->find($establishment),
+            'state_type_id' => '01', 'group_id' => '01', 'document_type_id' => '01',
+            'series' => 'FF01', 'number' => '#', 'date_of_issue' => '2026-09-10', 'time_of_issue' => '12:00:00',
+            'customer_id' => $customer->id, 'customer' => $customer->toArray(), 'currency_type_id' => 'VES',
+            'exchange_rate_sale' => 1, 'total_taxed' => 200, 'total_igv' => 32, 'total_taxes' => 32, 'total_value' => 200, 'total' => 232, 'additional_information' => '',
+            'payments' => [['date_of_payment' => '2026-09-10', 'payment_method_type_id' => '01', 'payment' => 232, 'reference' => 'Test payment']],
+            'fee' => [], 'hotel' => null, 'transport' => null, 'invoice' => ['date_of_due' => '2026-09-10', 'operation_type_id' => '0101'],
+            'items' => [[
+                'item_id' => $item->id, 'item' => array_replace($item->toArray(), ['is_set' => false]), 'quantity' => 2, 'warehouse_id' => $warehouse,
+                'unit_value' => 100, 'unit_price' => 116, 'price_type_id' => '01', 'affectation_igv_type_id' => '10', 'additional_information' => '',
+                'total_base_igv' => 200, 'percentage_igv' => 16, 'total_igv' => 32, 'total_taxes' => 32, 'total_value' => 200, 'total' => 232,
+            ]],
+        ];
+        \Illuminate\Database\Eloquent\Model::setEventDispatcher(new \Illuminate\Events\Dispatcher($app));
+        \App\Models\Tenant\Document::observe(\App\Observers\DocumentObserver::class);
+        (new \Modules\Inventory\Providers\InventoryKardexServiceProvider($app))->boot();
+        (new \Modules\Inventory\Providers\InventoryVoidedServiceProvider($app))->boot();
+        $app->instance('encrypter', new \Illuminate\Encryption\Encrypter(str_repeat('k', 32), 'AES-256-CBC'));
+        config(['app.key' => str_repeat('k', 32)]);
+        $company = \App\Models\Tenant\Company::firstOrFail();
+        $company->fiscal_credentials = json_encode(['usuario' => 'test-user', 'clave' => 'test-secret']);
+        $company->save();
+        $http = new \Illuminate\Http\Client\Factory();
+        $app->instance(\Illuminate\Http\Client\Factory::class, $http);
+        $mutations = 0; $queries = 0; $mode = 'success'; $active = null;
+        $http->fake(function ($request) use ($db, &$mutations, &$queries, &$mode, &$active) {
+            self::assertSame(0, $db->transactionLevel(), 'HTTP must occur after the outer commit and outside locks');
+            if (str_ends_with($request->url(), '/Autenticacion')) return \Illuminate\Support\Facades\Http::response([
+                'token' => 'fake-jwt-private', 'expiracion' => date('c', time() + 3600)], 200);
+            if (str_ends_with($request->url(), '/EstadoDocumento')) {
+                $queries++;
+                if (in_array($mode, ['absent', 'resend'], true)) return \Illuminate\Support\Facades\Http::response(['codigo' => '203', 'mensaje' => 'Consulta no procesada',
+                    'validaciones' => ['Documento no encontrado en nuestra base de datos'], 'estado' => null], 200);
+                if ($mode === 'query-failure') return \Illuminate\Support\Facades\Http::response([], 500);
+                return \Illuminate\Support\Facades\Http::response(['codigo' => '200', 'estado' => $active + ['estadoDocumento' => 'Procesado',
+                    'numeroControl' => '00-'.str_pad($active['numeroDocumento'], 8, '0', STR_PAD_LEFT)]], 200);
+            }
+            $mutations++;
+            $active = $request['documentoElectronico']['encabezado']['identificacionDocumento'];
+            if ($mode === 'timeout') throw new \Illuminate\Http\Client\ConnectionException('fake-jwt-private test-secret');
+            if ($mode === 'resend') {
+                $inFlight = \App\Models\Tenant\Document::whereHas('emission', fn ($q) => $q->whereRaw("REPLACE(operation_key, '-', '') = ?", [$active['transaccionId']]))->firstOrFail();
+                self::assertSame('pending', app(\App\Services\Fiscal\HkaEmission::class)->send($inFlight)['status']);
+            }
+            return \Illuminate\Support\Facades\Http::response(['codigo' => '200', 'resultado' => $active + [
+                'numeroControl' => '00-'.str_pad($active['numeroDocumento'], 8, '0', STR_PAD_LEFT)]], 200);
+        });
+        $service = app(\App\Services\Fiscal\HkaEmission::class);
+        $db->beginTransaction();
+        $fact = (new \App\CoreFacturalo\Facturalo())->save($input);
+        self::assertSame(0, $mutations);
+        self::assertSame('not_requested', $fact->getDocument()->emission->status);
+        $db->commit();
+        $document = $fact->getDocument()->fresh();
+        self::assertSame('confirmed', $document->emission->status);
+        self::assertTrue($fact->getResponse()['sale_saved']);
+        self::assertSame('00-00000100', $document->control_number);
+        self::assertFalse($document->is_editable);
+        self::assertSame(1, $mutations);
+        $router = new \Illuminate\Routing\Router(new \Illuminate\Events\Dispatcher($app), $app);
+        $router->get('downloads/{model}/{type}/{external_id}/{format?}', fn () => null)->name('tenant.download.external_id');
+        $router->getRoutes()->refreshNameLookups();
+        $app->instance('url', new \Illuminate\Routing\UrlGenerator($router->getRoutes(), app('request')));
+        // Exercise Laravel's resource wrapping, not only the DTO helper.
+        $listed = (new \App\Http\Resources\Tenant\DocumentCollection(collect([$document])))->resolve();
+        self::assertSame('confirmed', $listed[0]['fiscal_emission']['status']);
+        self::assertSame($document->control_number, $listed[0]['fiscal_emission']['control_number']);
+        self::assertStringNotContainsString('test-secret', json_encode($listed));
+        $counts = [$db->table('documents')->count(), $db->table('document_payments')->count(), $db->table('inventory_kardex')->count()];
+        $key = $document->emission->operation_key;
+        $service->send($document); $service->send($document);
+        self::assertSame(1, $mutations);
+        self::assertSame($key, $document->fresh()->emission->operation_key);
+        $mode = 'query-failure'; $service->query($document);
+        self::assertSame('confirmed', $document->fresh()->emission->status);
+        self::assertSame($counts, [$db->table('documents')->count(), $db->table('document_payments')->count(), $db->table('inventory_kardex')->count()]);
+
+        $this->assertHkaMailDelivery($document, $db, $app, $company, $service);
+
+        $db->beginTransaction();
+        $input['external_id'] = (string) \Illuminate\Support\Str::uuid();
+        (new \App\CoreFacturalo\Facturalo())->save($input);
+        $db->rollBack();
+        self::assertSame(1, $mutations);
+        self::assertSame($counts[0], $db->table('documents')->count());
+
+        $mode = 'timeout'; $input['external_id'] = (string) \Illuminate\Support\Str::uuid();
+        $uncertain = (new \App\CoreFacturalo\Facturalo())->save($input)->getDocument()->fresh();
+        self::assertSame('uncertain', $uncertain->emission->status);
+        self::assertSame(2, $mutations);
+        self::assertEquals(0, $uncertain->balance);
+        self::assertStringNotContainsString('test-secret', json_encode($uncertain->emission->response));
+        $key = $uncertain->emission->operation_key;
+        $response = $uncertain->emission->response; $response['started_at'] = time() - 60;
+        $uncertain->emission->update(['status' => 'pending', 'response' => $response]);
+        $mode = 'absent';
+        self::assertTrue($service->query($uncertain)['can_send']);
+        self::assertSame('uncertain', $uncertain->fresh()->emission->status);
+        $mode = 'resend';
+        $result = $service->send($uncertain);
+        self::assertSame('confirmed', $result['status']);
+        self::assertSame(3, $mutations);
+        self::assertSame($key, $uncertain->fresh()->emission->operation_key);
+        self::assertSame($counts[0] + 1, $db->table('documents')->count());
+        self::assertSame($counts[1] + 1, $db->table('document_payments')->count());
+
+        $revision = \App\Services\Fiscal\DocumentEmissionView::cacheNamespace();
+        $uncertain->fresh()->emission->update(['response' => ['diagnostic' => 'test']]);
+        self::assertNotSame($revision, \App\Services\Fiscal\DocumentEmissionView::cacheNamespace());
+        $company->fiscal_credentials = null; $company->save();
+        $input['external_id'] = (string) \Illuminate\Support\Str::uuid();
+        $notSent = (new \App\CoreFacturalo\Facturalo())->save($input)->getDocument()->fresh();
+        self::assertSame('not_requested', $notSent->emission->status);
+        self::assertSame(3, $mutations);
+        self::assertStringContainsString('credenciales', $notSent->emission->response['diagnostic']);
+        $this->assertPaidInvoiceEditing($notSent, $input, $db, $app);
+        $input['external_id'] = (string) \Illuminate\Support\Str::uuid();
+        $race = (new \App\CoreFacturalo\Facturalo)->save($input)->getDocument()->fresh();
+        $company->fiscal_credentials = json_encode(['usuario' => 'test-user', 'clave' => 'test-secret']); $company->save();
+        $log = tempnam(sys_get_temp_dir(), 'pro9_hka_claim_');
+        try {
+            $results = $this->runFiscalWorkers($notSent->id, 'hka', [['log' => $log], ['log' => $log]]);
+            self::assertSame("emission\n", file_get_contents($log));
+            self::assertSame('confirmed', $notSent->fresh()->emission->status);
+            foreach ($results as $result) self::assertContains($result['status'], ['pending', 'confirmed']);
+        } finally { unlink($log); }
+        $log = tempnam(sys_get_temp_dir(), 'pro9_hka_edit_race_');
+        try {
+            $edit = array_replace($input, ['id' => $race->id, 'series' => $race->series, 'number' => $race->number, 'payments' => []]);
+            $payments = $db->table('document_payments')->where('document_id', $race->id)->get()->toArray();
+            $results = $this->runFiscalWorkers($race->id, 'hka-edit-race', [['action' => 'edit', 'edit' => $edit], ['action' => 'send', 'log' => $log]]);
+            $status = $race->fresh()->emission->status;
+            self::assertContains($status, ['confirmed', 'not_requested']);
+            self::assertSame($status === 'confirmed' ? "emission\n" : '', file_get_contents($log));
+            self::assertTrue(($results[0]['status'] ?? null) === 'edited' || isset($results[0]['rejected']));
+            self::assertSame($status, $results[1]['status']);
+            self::assertEquals($payments, $db->table('document_payments')->where('document_id', $race->id)->get()->toArray());
+        } finally { unlink($log); }
+        $tenantKey = \App\Services\Fiscal\DocumentEmissionView::versionKey();
+        $db->setDatabaseName('another_tenant');
+        self::assertNotSame($tenantKey, \App\Services\Fiscal\DocumentEmissionView::versionKey());
+        $db->setDatabaseName($this->database);
+        $this->assertHkaAutomaticMail($input, $db, $app);
+    }
+
+    private function assertHkaAutomaticMail(array $input, $db, $app): void
+    {
+        $originalHttp = app(\Illuminate\Http\Client\Factory::class);
+        $http = new \Illuminate\Http\Client\Factory();
+        \Illuminate\Support\Facades\Http::swap($http);
+        $http->preventStrayRequests();
+        $mode = 'success'; $mailMode = 'success'; $sends = 0; $emissions = 0; $active = null; $mailFacts = [];
+        $http->fake(function ($request) use ($db, &$mode, &$mailMode, &$sends, &$emissions, &$active, &$mailFacts) {
+            self::assertSame(0, $db->transactionLevel(), 'Automatic email cannot run inside the sale transaction');
+            if (str_ends_with($request->url(), '/Autenticacion')) return \Illuminate\Support\Facades\Http::response([
+                'token' => 'automatic-private-token', 'expiracion' => date('c', time() + 3600)]);
+            if (str_ends_with($request->url(), '/Correo/Rastreo')) return \Illuminate\Support\Facades\Http::response(['codigo' => '200', 'rastreos' => []]);
+            if (str_ends_with($request->url(), '/Correo/Enviar')) {
+                $sends++;
+                $document = \App\Models\Tenant\Document::where('series', $request['serie'])->where('number', $request['numeroDocumento'])->firstOrFail();
+                $mailFacts[] = [$document->emission->status, $document->control_number, $document->emission->control_number,
+                    $request['correos'], $request['tipoDocumento']];
+                if ($mailMode === 'timeout') throw new \Illuminate\Http\Client\ConnectionException('automatic-private-token');
+                return \Illuminate\Support\Facades\Http::response(['codigo' => $mailMode === 'rejected' ? '203' : '200']);
+            }
+            if (str_ends_with($request->url(), '/Emision')) {
+                $emissions++;
+                $active = $request['documentoElectronico']['encabezado']['identificacionDocumento'];
+                if ($mode === 'timeout') throw new \Illuminate\Http\Client\ConnectionException('automatic-private-token');
+            }
+            return \Illuminate\Support\Facades\Http::response(['codigo' => '200',
+                str_ends_with($request->url(), '/EstadoDocumento') ? 'estado' : 'resultado' => $active + [
+                    'estadoDocumento' => 'Procesado', 'numeroControl' => '00-'.str_pad($active['numeroDocumento'], 8, '0', STR_PAD_LEFT)]]);
+        });
+        $input['customer']['email'] = ' CUSTOMER@example.test ; second@example.test,customer@example.test ';
+        $originalEmail = $db->table('persons')->where('id', $input['customer_id'])->value('email');
+        $db->table('persons')->where('id', $input['customer_id'])->update(['email' => $input['customer']['email']]);
+        $input['actions'] = ['send_email' => false];
+        $save = function () use (&$input) {
+            $input['external_id'] = (string) \Illuminate\Support\Str::uuid();
+            return (new \App\CoreFacturalo\Facturalo())->save($input);
+        };
+        try {
+            $db->table('configurations')->where('id', 1)->update(['auto_send_pdf_email' => true]);
+            $db->beginTransaction();
+            $fact = $save();
+            self::assertSame(0, $emissions); self::assertSame(0, $sends);
+            self::assertSame('waiting', $fact->getDocument()->fresh()->emission->response['mail']['automatic']['status']);
+            $db->commit();
+            $document = $fact->getDocument()->fresh();
+            self::assertSame(1, $sends);
+            self::assertSame('accepted', \App\Services\Fiscal\HkaMail::view($document)['status']);
+            self::assertSame(['confirmed', $document->control_number, $document->control_number,
+                ['customer@example.test', 'second@example.test'], '01'], $mailFacts[0]);
+            $state = [$document->control_number, $document->total, $document->balance,
+                $db->table('document_payments')->count(), $db->table('inventory_kardex')->count()];
+            app(\App\Services\Fiscal\HkaEmission::class)->query($document);
+            app(\App\Services\Fiscal\HkaMail::class)->sendAutomatic($document);
+            self::assertSame(1, $sends);
+            $fresh = $document->fresh();
+            self::assertSame($state, [$fresh->control_number, $fresh->total, $fresh->balance,
+                $db->table('document_payments')->count(), $db->table('inventory_kardex')->count()]);
+            $recipients = ['customer@example.test', 'second@example.test'];
+            self::assertSame('accepted', \App\Services\Fiscal\HkaMail::automaticDelivery($fresh, $recipients)['status']);
+            self::assertNull(\App\Services\Fiscal\HkaMail::automaticDelivery($fresh, ['other@example.test']));
+            $request = \App\Http\Requests\Tenant\DocumentEmailRequest::create('/documents/email', 'POST', [
+                'id' => $document->id, 'customer_email' => implode(',', $recipients), 'recipients' => $recipients]);
+            self::assertTrue((new \App\Http\Controllers\Tenant\DocumentController)->email($request)['success']);
+            self::assertSame(1, $sends, 'Existing frontend bundles must not send a second email');
+
+            $db->beginTransaction(); $save(); $db->rollBack();
+            self::assertSame(1, $sends); self::assertSame(1, $emissions);
+            $mode = 'timeout';
+            $pending = $save()->getDocument()->fresh();
+            self::assertSame('uncertain', $pending->emission->status); self::assertSame(1, $sends);
+            $mode = 'success';
+            app(\App\Services\Fiscal\HkaEmission::class)->query($pending);
+            self::assertSame(2, $sends, 'A later confirmation must send the saved automatic request');
+            app(\App\Services\Fiscal\HkaEmission::class)->query($pending);
+            self::assertSame(2, $sends);
+
+            $mailMode = 'timeout';
+            $uncertain = $save()->getDocument()->fresh();
+            self::assertSame('confirmed', $uncertain->emission->status);
+            self::assertSame('uncertain', \App\Services\Fiscal\HkaMail::view($uncertain)['status']);
+            app(\App\Services\Fiscal\HkaEmission::class)->query($uncertain);
+            self::assertSame(3, $sends, 'An uncertain email cannot be automatically retried');
+            $mailMode = 'rejected';
+            $rejected = $save()->getDocument()->fresh();
+            self::assertSame('confirmed', $rejected->emission->status);
+            self::assertSame('rejected', \App\Services\Fiscal\HkaMail::view($rejected)['status']);
+            app(\App\Services\Fiscal\HkaEmission::class)->query($rejected);
+            self::assertSame(4, $sends);
+
+            $mailMode = 'success';
+            foreach ([null, '', 'invalid-email'] as $email) {
+                $input['customer']['email'] = $email;
+                $db->table('persons')->where('id', $input['customer_id'])->update(['email' => $email]);
+                $missing = $save()->getDocument()->fresh();
+                self::assertSame('confirmed', $missing->emission->status);
+                self::assertSame('skipped', $missing->emission->response['mail']['automatic']['status']);
+                self::assertStringContainsString('correo válido', \App\Services\Fiscal\HkaMail::view($missing)['message']);
+            }
+            self::assertSame(4, $sends);
+            $db->table('configurations')->where('id', 1)->update(['auto_send_pdf_email' => false]);
+            $input['customer']['email'] = 'customer@example.test;second@example.test';
+            $db->table('persons')->where('id', $input['customer_id'])->update(['email' => $input['customer']['email']]);
+            $disabled = $save()->getDocument()->fresh();
+            self::assertArrayNotHasKey('mail', $disabled->emission->response);
+            self::assertSame(4, $sends);
+            $input['actions']['send_email'] = true;
+            $explicit = $save(); $explicit->sendEmail();
+            self::assertSame(5, $sends, 'Explicit API email uses HKA without an SMTP duplicate');
+            self::assertStringNotContainsString('automatic-private-token', json_encode(\App\Services\Fiscal\HkaMail::view($explicit->getDocument()->fresh())));
+            $emission = $explicit->getDocument()->fresh()->emission;
+            $response = $emission->response;
+            $response['mail'] = ['automatic' => ['request_id' => (string) \Illuminate\Support\Str::uuid(),
+                'recipients' => $recipients, 'status' => 'waiting']];
+            $emission->update(['response' => $response]);
+            $log = tempnam(sys_get_temp_dir(), 'pro9_hka_auto_mail_');
+            try {
+                $results = $this->runFiscalWorkers($emission->document_id, 'hka-auto-mail', [['log' => $log], ['log' => $log]]);
+                self::assertSame("mail\n", file_get_contents($log));
+                foreach ($results as $result) self::assertContains($result['status'], ['pending', 'accepted']);
+            } finally { unlink($log); }
+        } finally {
+            if ($db->transactionLevel()) $db->rollBack();
+            $db->table('configurations')->where('id', 1)->update(['auto_send_pdf_email' => false]);
+            $db->table('persons')->where('id', $input['customer_id'])->update(['email' => $originalEmail]);
+            \Illuminate\Support\Facades\Http::swap($originalHttp);
+        }
+    }
+
+    private function assertPaidInvoiceEditing($document, array $input, $db, $app): void
+    {
+        $edit = array_replace($input, ['id' => $document->id, 'series' => $document->series, 'number' => $document->number,
+            'payments' => [], 'received_retentions' => [], 'guarantee_fund' => null]);
+        $paymentSnapshot = $db->table('document_payments')->where('document_id', $document->id)->get()->toArray();
+        $identity = [$document->external_id, $document->series, $document->number, $document->issuer];
+        $stock = $db->table('item_warehouse')->where('item_id', $input['items'][0]['item_id'])->value('stock');
+        $db->table('persons')->where('id', $document->customer_id)->update(['address' => 'Dirección actualizada en catálogo']);
+        (new \App\CoreFacturalo\Facturalo)->update($edit, $document->id);
+        $fresh = $document->fresh();
+        self::assertSame('Dirección actualizada en catálogo', $fresh->customer->address);
+        self::assertSame('V', $fresh->customer->hka_identity_code);
+        self::assertSame($identity, [$fresh->external_id, $fresh->series, $fresh->number, $fresh->issuer]);
+        self::assertEquals($stock, $db->table('item_warehouse')->where('item_id', $input['items'][0]['item_id'])->value('stock'));
+        self::assertEquals($paymentSnapshot, $db->table('document_payments')->where('document_id', $document->id)->get()->toArray());
+        self::assertEquals(0, $fresh->balance);
+        foreach (['currency' => ['currency_type_id' => 'USD'], 'number' => ['number' => $document->number + 1],
+            'payment' => ['payments' => [['id' => $fresh->payments->first()->id, 'payment' => 1]]],
+            'new-payment' => ['payments' => [['payment' => 1]]],
+            'total' => ['items' => [array_replace($edit['items'][0], ['quantity' => 1])]]] as $case => $changes) {
+            try { (new \App\CoreFacturalo\Facturalo)->update(array_replace($edit, $changes), $document->id); self::fail('Expected rejection: '.$case); }
+            catch (\Illuminate\Validation\ValidationException $expected) { self::assertNotEmpty($expected->errors()); }
+        }
+        self::assertEquals($paymentSnapshot, $db->table('document_payments')->where('document_id', $document->id)->get()->toArray());
+        foreach (['prepared', 'rejected', 'uncertain'] as $status) {
+            $emission = $document->fresh()->emission;
+            $uuid = $emission->operation_key;
+            $emission->update(['status' => $status, 'payload' => ['old' => 'snapshot'], 'response' => ['retry_allowed' => $status === 'uncertain', 'diagnostic' => 'Diagnóstico saneado']]);
+            (new \App\CoreFacturalo\Facturalo)->update($edit, $document->id);
+            $emission = $document->fresh()->emission;
+            self::assertSame('not_requested', $emission->status);
+            self::assertNotSame($uuid, $emission->operation_key);
+            self::assertNull($emission->payload);
+            $history = $emission->response['edit_history'];
+            self::assertSame($uuid, end($history)['operation_key']);
+            $emission->update(['status' => 'pending', 'response' => array_replace($emission->response, ['attempt_id' => 'new-attempt'])]);
+            $finish = new \ReflectionMethod(\App\Services\Fiscal\HkaEmission::class, 'finish');
+            $finish->setAccessible(true);
+            $finish->invoke(app(\App\Services\Fiscal\HkaEmission::class), $document, 'old-attempt', ['status' => 'confirmed', 'control_number' => '00-99999999']);
+            self::assertSame('pending', $document->fresh()->emission->status);
+            self::assertNull($document->fresh()->control_number);
+            $emission->update(['status' => 'not_requested']);
+            $beforeLateFailure = $emission->fresh()->response;
+            $failure = new \ReflectionMethod(\App\Services\Fiscal\HkaEmission::class, 'failure');
+            $failure->setAccessible(true);
+            $failure->invoke(app(\App\Services\Fiscal\HkaEmission::class), $document, null, new \RuntimeException('old-auth-failure'), $uuid);
+            self::assertSame($beforeLateFailure, $emission->fresh()->response);
+            try { (new \App\Services\Fiscal\HkaEmissionPreparation)->prepare($document, $uuid); self::fail('Stale preparation accepted'); }
+            catch (\Illuminate\Validation\ValidationException $expected) { self::assertNotEmpty($expected->errors()); }
+        }
+        foreach (['pending', 'uncertain', 'confirmed', 'cancelled'] as $status) {
+            $document->fresh()->emission->update(['status' => $status, 'response' => ['retry_allowed' => false]]);
+            try { (new \App\CoreFacturalo\Facturalo)->update($edit, $document->id); self::fail('Expected fiscal block: '.$status); }
+            catch (\Illuminate\Validation\ValidationException $expected) { self::assertNotEmpty($expected->errors()); }
+        }
+        $document->fresh()->emission->update(['status' => 'not_requested', 'response' => []]);
+        $increase = $edit; $increase['items'][0]['unit_price'] = 120;
+        (new \App\CoreFacturalo\Facturalo)->update($increase, $document->id);
+        self::assertEquals(240, $document->fresh()->total);
+        self::assertEquals(8, $document->fresh()->balance);
+        // Edits must never send HTTP even when a digital invoice is eligible.
+        self::assertEquals($paymentSnapshot, $db->table('document_payments')->where('document_id', $document->id)->get()->toArray());
+        (new \App\CoreFacturalo\Facturalo)->update($edit, $document->id);
+        self::assertEquals($stock, $db->table('item_warehouse')->where('item_id', $input['items'][0]['item_id'])->value('stock'));
+    }
+
+    private function assertHkaMailDelivery($document, $db, $app, $company, $emissionService): void
+    {
+        $originalHttp = app(\Illuminate\Http\Client\Factory::class);
+        $http = new \Illuminate\Http\Client\Factory();
+        \Illuminate\Support\Facades\Http::swap($http);
+        $mail = app(\App\Services\Fiscal\HkaMail::class);
+        $mode = 'success'; $sends = 0; $tracking = []; $inFlight = null;
+        $recipients = ['mail-test@example.test'];
+        $http->preventStrayRequests();
+        $http->fake(function ($request) use ($db, &$mode, &$sends, &$tracking, &$inFlight, $mail, $document, $recipients) {
+            self::assertSame(0, $db->transactionLevel(), 'Mail HTTP must be outside all database locks');
+            if (str_ends_with($request->url(), '/Autenticacion')) return \Illuminate\Support\Facades\Http::response(
+                $mode === 'auth-failure' ? [] : ['token' => 'private-mail-token', 'expiracion' => date('c', time() + 3600)]);
+            if (str_ends_with($request->url(), '/Correo/Rastreo')) return \Illuminate\Support\Facades\Http::response(['codigo' => '200', 'rastreos' => $tracking]);
+            if (str_ends_with($request->url(), '/EstadoDocumento')) {
+                $identity = $document->emission->payload['documentoElectronico']['encabezado']['identificacionDocumento'];
+                return \Illuminate\Support\Facades\Http::response(['codigo' => '200', 'estado' => $identity + ['estadoDocumento' => 'Enviada', 'numeroControl' => $document->control_number]]);
+            }
+            self::assertTrue(str_ends_with($request->url(), '/Correo/Enviar'));
+            self::assertSame(['serie' => $document->series, 'tipoDocumento' => '01', 'numeroDocumento' => (string) $document->number, 'correos' => $recipients], $request->data());
+            $sends++;
+            if ($inFlight) {
+                self::assertSame('pending', $mail->send($document, $recipients, $inFlight)['status']);
+                self::assertSame('pending', $mail->send($document, $recipients, (string) \Illuminate\Support\Str::uuid())['status']);
+            }
+            if ($mode === 'timeout') throw new \Illuminate\Http\Client\ConnectionException('private-mail-token test-secret');
+            return \Illuminate\Support\Facades\Http::response($mode === 'rejected' ? ['codigo' => '203', 'mensaje' => 'private-mail-token'] : ['codigo' => '200']);
+        });
+        try {
+            $operator = auth()->user();
+            $oldType = $operator->type; $oldEstablishment = $operator->establishment_id;
+            $operator->type = 'seller'; $operator->establishment_id = $document->establishment_id + 100;
+            $callsBefore = $http->recorded()->count();
+            try {
+                self::assertFalse(\App\Services\Fiscal\HkaMail::view($document)['can_send']);
+                self::assertFalse(\App\Services\Fiscal\HkaMail::view($document)['can_query']);
+                foreach (['query', 'send'] as $action) {
+                    try {
+                        if ($action === 'query') (new \App\Http\Controllers\Tenant\DocumentFiscalController)->queryHkaEmail($document->id);
+                        else (new \App\Http\Controllers\Tenant\DocumentController)->email(\App\Http\Requests\Tenant\DocumentEmailRequest::create('/documents/email', 'POST', ['id' => $document->id]));
+                        self::fail('Another establishment must be forbidden');
+                    } catch (\Symfony\Component\HttpKernel\Exception\HttpException $expected) { self::assertSame(403, $expected->getStatusCode()); }
+                }
+                self::assertSame($callsBefore, $http->recorded()->count());
+            } finally { $operator->type = $oldType; $operator->establishment_id = $oldEstablishment; }
+            $before = [$db->table('documents')->count(), $db->table('document_payments')->count(), $db->table('inventory_kardex')->count(),
+                $document->control_number, $document->emission->operation_key, $document->emission->payload];
+            $inFlight = (string) \Illuminate\Support\Str::uuid();
+            $firstId = $inFlight;
+            $revision = \App\Services\Fiscal\DocumentEmissionView::cacheNamespace();
+            self::assertSame('accepted', $mail->send($document, $recipients, $firstId)['status']);
+            self::assertSame('accepted', $mail->send($document, $recipients, $firstId)['status']);
+            self::assertSame(1, $sends);
+            self::assertNotSame($revision, \App\Services\Fiscal\DocumentEmissionView::cacheNamespace());
+            $inFlight = null;
+            try { $mail->send($document, $recipients, (string) \Illuminate\Support\Str::uuid()); self::fail('Explicit resend must be required'); }
+            catch (\Illuminate\Validation\ValidationException $expected) { self::assertArrayHasKey('customer_email', $expected->errors()); }
+            $mode = 'rejected';
+            self::assertSame('rejected', $mail->send($document, $recipients, (string) \Illuminate\Support\Str::uuid(), true)['status']);
+            $mode = 'auth-failure'; \Illuminate\Support\Facades\Cache::flush();
+            self::assertSame('rejected', $mail->send($document, $recipients, (string) \Illuminate\Support\Str::uuid())['status']);
+            self::assertSame(2, $sends);
+            $mode = 'timeout';
+            $uncertainId = (string) \Illuminate\Support\Str::uuid();
+            self::assertSame('uncertain', $mail->send($document, $recipients, $uncertainId)['status']);
+            self::assertFalse(\App\Services\Fiscal\HkaMail::view($document->fresh())['can_send']);
+            self::assertSame('uncertain', $mail->send($document, $recipients, (string) \Illuminate\Support\Str::uuid())['status']);
+            self::assertSame(3, $sends);
+            $mode = 'success';
+            self::assertSame('uncertain', $mail->query($document)['status']);
+            $tracking = [['messageId' => 'new-mail-id', 'correo' => $recipients[0], 'status' => 'delivered', 'fecha' => date('c')],
+                ['messageId' => 'other-mail-id', 'correo' => 'other@example.test', 'status' => 'delivered', 'fecha' => date('c')]];
+            self::assertSame('accepted', $mail->query($document)['status']);
+            self::assertCount(1, $mail->query($document)['tracking']);
+            $response = $document->fresh()->emission->response;
+            $response['mail']['attempts'][$uncertainId]['status'] = 'pending';
+            $response['mail']['attempts'][$uncertainId]['started_at'] = time() - 60;
+            $document->fresh()->emission->update(['response' => $response]);
+            self::assertSame('accepted', $mail->query($document)['status']);
+            $emissionService->query($document);
+            self::assertSame($uncertainId, $document->fresh()->emission->response['mail']['latest']);
+            self::assertSame('confirmed', $document->fresh()->emission->status);
+            self::assertStringNotContainsString('private-mail-token', json_encode(\App\Services\Fiscal\HkaMail::view($document->fresh())));
+            self::assertStringNotContainsString('test-secret', json_encode($document->fresh()->emission->response));
+            $after = $document->fresh();
+            self::assertSame($before, [$db->table('documents')->count(), $db->table('document_payments')->count(), $db->table('inventory_kardex')->count(),
+                $after->control_number, $after->emission->operation_key, $after->emission->payload]);
+            $fiscalStatus = $after->emission->status;
+            $after->emission->update(['status' => 'prepared']);
+            self::assertFalse(\App\Services\Fiscal\HkaMail::view($after->fresh())['can_send']);
+            try { $mail->send($after, $recipients, (string) \Illuminate\Support\Str::uuid()); self::fail('Unconfirmed invoice must be blocked'); }
+            catch (\Illuminate\Validation\ValidationException $expected) { self::assertArrayHasKey('customer_email', $expected->errors()); }
+            $after->emission->update(['status' => $fiscalStatus]);
+            // Two independent MySQL connections must still produce only one email mutation.
+            $mailResponse = $after->fresh()->emission->response;
+            unset($mailResponse['mail']); $after->fresh()->emission->update(['response' => $mailResponse]);
+            $log = tempnam(sys_get_temp_dir(), 'pro9_hka_mail_');
+            try {
+                $uuid = (string) \Illuminate\Support\Str::uuid();
+                $results = $this->runFiscalWorkers($after->id, 'hka-mail', [['log' => $log, 'uuid' => $uuid], ['log' => $log, 'uuid' => $uuid]]);
+                self::assertSame("mail\n", file_get_contents($log));
+                foreach ($results as $result) self::assertContains($result['status'], ['pending', 'accepted']);
+            } finally { unlink($log); }
+        } finally {
+            \Illuminate\Support\Facades\Http::swap($originalHttp);
         }
     }
 

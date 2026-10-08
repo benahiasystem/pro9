@@ -35,9 +35,8 @@ class DocumentUpdateRequest extends FormRequest
             'establishment_id' => [
                 'required',
             ],
-            'series' => [
-                'required',
-            ],
+            // A configured empty series is a valid fiscal identity.
+            'series' => ['nullable', 'string', 'max:20'],
             'date_of_issue' => [
                 'required',
             ],

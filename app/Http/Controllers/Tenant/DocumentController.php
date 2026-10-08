@@ -139,7 +139,7 @@ class DocumentController extends Controller
             'guides' => $request->guides,
             'plate_numbers' => $request->plate_numbers,
         ];
-        $cacheKey = 'document_list_' . "user-$auth_id" . "_" . md5(json_encode($cacheParams));
+        $cacheKey = \App\Services\Fiscal\DocumentEmissionView::cacheNamespace() . ':document_list_' . "user-$auth_id" . "_" . md5(json_encode($cacheParams));
         if ($this->pingCache()) {
             return $this->cacheWithTagKey(
                 $cacheKey,
@@ -766,6 +766,7 @@ class DocumentController extends Controller
             'person.identity_document_type',
         ])->findOrFail($id);
 
+        DocumentFiscalController::authorizeDocument($document);
         return new DocumentResource($document);
     }
 
@@ -941,10 +942,13 @@ class DocumentController extends Controller
             $response = $fact->getResponse();
             return [
                 'success' => true,
+                'message' => 'Venta guardada.',
                 'data' => [
                     'id' => $document->id,
                     'number_full' => $document->number_full,
                     'response' => $response,
+                    'fiscal_emission' => \App\Services\Fiscal\DocumentEmissionView::forDocument($document),
+                    'email_delivery' => \App\Services\Fiscal\HkaMail::view($document),
                 ],
                 'links' => [
                     'print_ticket' => url('')."/print/document/{$document->external_id}/ticket"
@@ -1016,6 +1020,9 @@ class DocumentController extends Controller
 
     public function edit($documentId)
     {
+        $document = Document::findOrFail($documentId);
+        DocumentFiscalController::authorizeDocument($document);
+        \App\Services\Fiscal\DocumentEditPolicy::assertEditable($document);
         if (auth()->user()->type == 'integrator') {
             return redirect('/documents');
         }
@@ -1049,19 +1056,24 @@ class DocumentController extends Controller
 
         $document = $fact->getDocument();
         $response = $fact->getResponse();
+        $edit = \App\Services\Fiscal\DocumentEditPolicy::view($document);
 
         return [
             'success' => true,
-            'data' => [
+            'message' => 'Factura actualizada. Los cobros registrados se conservaron. El envío HKA se realiza desde Enviar HKA.',
+            'data' => array_merge($edit, [
                 'id' => $document->id,
+                'is_editable' => $edit['can_edit'],
+                'fiscal_emission' => \App\Services\Fiscal\DocumentEmissionView::forDocument($document),
                 'response' => $response,
-            ],
+            ]),
         ];
     }
 
     public function show($documentId)
     {
-        $document = Document::with('items')->findOrFail($documentId);
+        $document = Document::with(['items', 'emission', 'received_retentions', 'guarantee_fund'])->findOrFail($documentId);
+        DocumentFiscalController::authorizeDocument($document);
         foreach ($document->items as &$item) {
             $discounts = [];
             if($item->discounts) {
@@ -1083,7 +1095,7 @@ class DocumentController extends Controller
         }
 
         return response()->json([
-            'data' => $document,
+            'data' => array_merge($document->toArray(), \App\Services\Fiscal\DocumentEditPolicy::view($document), ['fiscal_emission' => \App\Services\Fiscal\DocumentEmissionView::forDocument($document)]),
             'success' => true,
         ], 200);
     }
@@ -1119,28 +1131,22 @@ class DocumentController extends Controller
 
     public function email(DocumentEmailRequest $request)
     {
-        $company = Company::active();
-        $document = Document::find($request->input('id'));
-        $customer_email = $request->input('customer_email');
-        $email = $customer_email;
-        $mailable = new DocumentEmail($company, $document);
-        $id = (int)$request->input('id');
-        $sendIt = EmailController::SendMail($email, $mailable, $id, 1);
-        // Centralizar el envio de correos a Email Controller
-        /*
-        Configuration::setConfigSmtpMail();
-        $array_customer = explode(',', $customer_email);
-        if (count($array_customer) > 1) {
-            foreach ($array_customer as $customer) {
-                Mail::to($customer)->send(new DocumentEmail($company, $document));
+        $document = Document::findOrFail($request->input('id'));
+        DocumentFiscalController::authorizeDocument($document);
+        if (\App\Services\Fiscal\HkaMail::applies($document)) {
+            if (!$request->filled('request_id') && !$request->boolean('resend')
+                && ($delivery = \App\Services\Fiscal\HkaMail::automaticDelivery($document, (array) $request->input('recipients', [])))) {
+                return ['success' => $delivery['status'] === 'accepted', 'message' => $delivery['message'], 'email_delivery' => $delivery];
             }
-        } else {
-            Mail::to($customer_email)->send(new DocumentEmail($company, $document));
+            $request->validate(['request_id' => 'required|uuid']);
+            $delivery = app(\App\Services\Fiscal\HkaMail::class)->send($document,
+                $request->input('recipients'), $request->input('request_id'), $request->boolean('resend'));
+            return ['success' => $delivery['status'] === 'accepted', 'message' => $delivery['message'], 'email_delivery' => $delivery];
         }
-        */
-        return [
-            'success' => true
-        ];
+        $company = Company::active();
+        EmailController::SendMail(implode(',', $request->input('recipients')),
+            new DocumentEmail($company, $document), $document->id, 1);
+        return ['success' => true, 'message' => 'El correo fue enviado satisfactoriamente.'];
     }
 
     public function searchCustomerById($id)

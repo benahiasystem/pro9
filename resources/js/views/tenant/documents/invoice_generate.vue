@@ -84,7 +84,7 @@
                                     <label class="control-label">Serie</label>
                                     <el-select
                                         v-model="form.series_id"
-                                        :disabled="disabledSeries()"
+                                        :disabled="isUpdateDocument || disabledSeries()"
                                     >
                                         <el-option
                                             v-for="option in series"
@@ -361,6 +361,7 @@
                             <label class="control-label">Moneda</label>
                             <el-select
                                 v-model="form.currency_type_id"
+                                :disabled="isUpdateDocument"
                                 @change="changeCurrencyType"
                             >
                                 <el-option
@@ -1615,6 +1616,7 @@
                                             v-model="
                                                 form.payment_condition_id
                                             "
+                                            :disabled="isUpdateDocument"
                                             dusk="document_type_id"
                                             popper-class="el-select-document_type"
                                             style="max-width: 200px;"
@@ -1655,7 +1657,7 @@
                                         <div
                                             v-if="
                                                 form.payment_condition_id ===
-                                                    '03'
+                                                    '03' && !isUpdateDocument
                                             "
                                         >
                                             <table
@@ -1769,7 +1771,7 @@
                                         <div
                                             v-if="
                                                 form.payment_condition_id ===
-                                                    '02'
+                                                    '02' && !isUpdateDocument
                                             "
                                         >
                                             <table
@@ -1853,10 +1855,24 @@
                                                 </tbody>
                                             </table>
                                         </div>
+                                        <div v-if="isUpdateDocument" class="mt-4" data-testid="existing-payments-readonly">
+                                            <p>Los cobros registrados se conservan. Adminístrelos desde Pagos.</p>
+                                            <table class="table"><thead><tr><th>Fecha</th><th>Medio</th><th>Monto aplicado</th></tr></thead>
+                                                <tbody><tr v-for="payment in existingPayments" :key="payment.id">
+                                                    <td>{{ String(payment.date_of_payment || '').slice(0, 10) }}</td>
+                                                    <td>{{ payment.payment_method_type ? payment.payment_method_type.description : payment.payment_method_type_id }}</td>
+                                                    <td>{{ payment.payment }} {{ payment.currency_type_id }}</td>
+                                                </tr></tbody>
+                                            </table>
+                                        </div>
+                                        <div v-if="isUpdateDocument" class="text-muted">
+                                            <p v-for="retention in existingRetentions" :key="retention.id">Retención {{ retention.tax_kind }} {{ retention.voucher_number }}: {{ retention.applied_amount }} {{ form.currency_type_id }}</p>
+                                            <p v-if="existingGuaranteeFund">Fondo de garantía: {{ existingGuaranteeFund.amount }} {{ form.currency_type_id }}</p>
+                                        </div>
                                         <!-- Contado -->
                                         <div
                                             v-if="
-                                                !is_receivable &&
+                                                !isUpdateDocument && !is_receivable &&
                                                     form.payment_condition_id ===
                                                         '01'
                                             "
@@ -2152,6 +2168,7 @@
                     </div>
                     <!-- ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA -->
                 </div>
+                <el-alert v-if="editBlocked" :title="form.edit_block_reason" type="warning" :closable="false" show-icon />
                 <!-- @todo: Mejorar evitando duplicar codigo -->
                 <!-- Ocultar en cel -->
                 <div
@@ -2184,6 +2201,7 @@
                                 slot="reference"
                                 v-if="form.items.length > 0 && this.dateValid"
                                 :loading="loading_submit"
+                                :disabled="editBlocked"
                                 class="submit btn btn-primary"
                                 native-type="submit"
                                 style="min-width: 180px"
@@ -2226,6 +2244,7 @@
                             <el-button
                                 v-if="form.items.length > 0 && dateValid"
                                 :loading="loading_submit"
+                                :disabled="editBlocked"
                                 class="btn btn-primary w-100"
                                 native-type="submit"
                             >
@@ -2762,6 +2781,9 @@ export default {
             payment_destinations: [],
             form_cash_document: {},
             enabled_payments: true,
+            existingPayments: [],
+            existingRetentions: [],
+            existingGuaranteeFund: null,
             readonly_date_of_due: false,
             seller_class: "col-lg-6 pb-2",
             btnText: "Generar",
@@ -2995,6 +3017,9 @@ export default {
         },
         existDiscountsNoBase: function() {
             return this.total_discount_no_base > 0 ? true : false;
+        },
+        editBlocked() {
+            return this.isUpdateDocument && this.form.can_edit === false;
         },
         isUpdateDocument: function() {
             return this.documentId ? true : false;
@@ -3999,6 +4024,11 @@ export default {
                 this.all_customers.push(data.customer)
             }
 
+            this.form.can_edit = data.can_edit;
+            this.form.edit_block_reason = data.edit_block_reason;
+            this.existingPayments = JSON.parse(JSON.stringify(data.payments || []));
+            this.existingRetentions = data.received_retentions || [];
+            this.existingGuaranteeFund = data.guarantee_fund || null;
             this.form.id = data.id;
             this.form.custom_fields_data = data.custom_fields_data;
             this.form.number = data.number;
@@ -6463,7 +6493,11 @@ export default {
                 error_by_item: error_by_item
             };
         },
+        documentSubmission() {
+            return this.isUpdateDocument ? {...this.form, payments: [], received_retentions: [], guarantee_fund: null} : this.form;
+        },
         async submit() {
+            if (this.editBlocked) return this.$message.error(this.form.edit_block_reason);
             let customer = _.find(this.customers, {
                 id: this.form.customer_id
             });
@@ -6522,7 +6556,7 @@ export default {
                     return this.$message.error(error_prepayment.message);
             }
 
-            if (this.is_receivable) {
+            if (this.isUpdateDocument || this.is_receivable) {
                 this.form.payments = [];
             } else {
                 let validate = await this.validate_payments();
@@ -6600,7 +6634,7 @@ export default {
             if (this.form.payment_condition_id === "03")
                 this.form.payment_condition_id = "02";
             this.$http
-                .post(path, this.form)
+                .post(path, this.documentSubmission())
                 .then(async (response) => {
                     if (response.data.success) {
                         this.documentNewId = response.data.data.id;
@@ -6614,7 +6648,7 @@ export default {
                             response.data.data.id;
 
                         // this.savePaymentMethod();
-                        this.saveCashDocument();
+                        if (!this.isUpdateDocument) this.saveCashDocument();
 
                         this.autoPrintDocument();
                         await this.autoSendPdfMail();

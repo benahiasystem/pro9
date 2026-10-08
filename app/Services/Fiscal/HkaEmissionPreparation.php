@@ -4,13 +4,14 @@ use App\Models\Tenant\{Company,Document};
 // ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
 final class HkaEmissionPreparation
 {
-    public function prepare(Document $document)
+    public function prepare(Document $document, ?string $expectedOperationKey = null)
     {
-        return $document->getConnection()->transaction(function () use ($document) {
+        return $document->getConnection()->transaction(function () use ($document, $expectedOperationKey) {
             Company::query()->lockForUpdate()->firstOrFail();
             $document=Document::query()->lockForUpdate()->findOrFail($document->id);
             if($document->fiscal_emission_mode!=='digital' || $document->isVoidedOrRejected()) FiscalAmounts::error('document','El documento debe estar vigente y usar Medios digitales.');
             $emission=$document->emission()->firstOrFail();
+            if ($expectedOperationKey && $emission->operation_key !== $expectedOperationKey) FiscalAmounts::error('emission', 'La factura cambió durante el envío. Solicite Enviar HKA de nuevo.');
             if($emission->status==='prepared') return $emission;
             if($emission->status!=='not_requested') FiscalAmounts::error('emission','La operación fiscal ya está en curso.');
             $document->load(['items','payments','taxes','currency_totals','fiscal_data','note','invoice']);

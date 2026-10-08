@@ -32,6 +32,9 @@ if ($hostname) {
             Route::post('documents/retention', 'Tenant\DocumentFiscalController@retentionStore');
             Route::post('documents/retention/upload', 'Tenant\DocumentFiscalController@upload');
             Route::post('documents/{document}/prepare-hka', 'Tenant\DocumentFiscalController@prepare');
+            Route::post('documents/{document}/send-hka', 'Tenant\DocumentFiscalController@sendHka');
+            Route::post('documents/{document}/query-hka-email', 'Tenant\DocumentFiscalController@queryHkaEmail');
+            Route::post('documents/{document}/query-hka', 'Tenant\DocumentFiscalController@queryHka');
             // ######## FIN PERSISTENCIA FISCAL VENEZUELA ########
             //MOBILE
 

@@ -26,3 +26,5 @@ Si el usuario solicita explícitamente compilar —por ejemplo, “compila”, �
 ## Lectura de bundles
 
 Permitir lectura de `public/build/` para diagnóstico, por ejemplo buscar texto en assets o revisar `manifest.json`. La restricción aplica a compilar o editar, no a inspeccionar.
+
+Si el usuario mantiene un watcher externo, comprobar que el manifiesto y los assets cargados por la pestaña correspondan a las fuentes actuales antes de validar visualmente. Recargar cuando estén disponibles y volver a abrir un comprobante existente, evitando generar otra venta sólo para renovar la ventana. La validación de plantilla/script y las pruebas simuladas no acreditan el comportamiento del bundle cargado ni el envío real desde otra entrada del diálogo.

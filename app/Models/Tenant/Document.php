@@ -138,6 +138,8 @@ use Modules\Sale\Models\Agent;
  */
 class Document extends ModelTenant
 {
+    // Provider operations are internal; public resources expose DocumentEmissionView only.
+    protected $hidden = ['emission'];
     use UsesTenantConnection;
     use \App\Models\Tenant\Traits\HasFiscalIdentity;
     use SellerIdTrait;
@@ -297,11 +299,13 @@ class Document extends ModelTenant
         });
 
         static::deleted(function ($document){
+            \App\Services\Fiscal\DocumentEmissionView::invalidate();
             CacheHelper::flush(['document_list']);
             CacheHelper::flush(['document_detail']);
         });
 
         static::saved(function ($document){
+            \App\Services\Fiscal\DocumentEmissionView::invalidate();
             CacheHelper::flush(['document_list']);
             CacheHelper::flush(['document_detail']);
         });
@@ -1020,7 +1024,7 @@ class Document extends ModelTenant
      */
     public function getIsEditableAttribute($value)
     {
-        return $value ? true : false;
+        return \App\Services\Fiscal\DocumentEditPolicy::reason($this) === null;
     }
 
     /**

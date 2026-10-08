@@ -7,7 +7,7 @@ description: Mantener el guardado transaccional de facturas y notas de Pro9, sna
 
 ## Alcance y fuentes
 
-El contrato vigente conserva la operación comercial y prepara datos para HKA. Preparar una solicitud no acredita emisión, homologación ni aceptación fiscal. Órdenes de entrega y comprobantes emitidos de retención quedan fuera de este flujo.
+El contrato vigente conserva la operación comercial y prepara datos para HKA. Las facturas digitales DEMO pueden enviarse después del commit comercial mediante la habilidad de emisión; preparar una solicitud no acredita aceptación fiscal ni homologación. Órdenes de entrega y comprobantes emitidos de retención quedan fuera de este flujo.
 
 - Consultar [contratos y puntos de intervención](references/contratos.md) al cambiar tablas, endpoints o consumidores.
 - Consultar el [informe de implementación](../../../informes/persistencia_fiscal_venezuela_hka.md) para el esquema detallado y la evidencia histórica. Los resultados registrados no sustituyen las pruebas del cambio actual.
@@ -20,10 +20,21 @@ El contrato vigente conserva la operación comercial y prepara datos para HKA. P
 - Recalcular líneas, bases, impuestos y equivalencias en servidor. Obtener el emisor desde empresa/sucursal del tenant; el navegador no decide la identidad fiscal ni asigna un supuesto control HKA.
 - Conservar `documents.issuer`, cliente/sucursal, artículo/unidad, `document_items.iva_rate`, equivalencias de pago y datos fiscales usados. Reimpresiones y preparación posterior leen esos snapshots; no reconstruirlos desde catálogos actuales ni modificar facturas anteriores al editar empresa o cliente.
 - Conservar tipos internos `01/07/08`, series/correlativos, anticipos, descuentos, cargos, cuotas e inventario. `igv` sigue siendo el nombre interno de IVA. `total_exportation` e `invoices.operation_type_id` permanecen, sin activar exportaciones por la existencia de un catálogo.
-- No editar directamente un documento con pagos/retenciones contabilizados o una emisión preparada. Mantener la validación de mutabilidad del servicio.
+- La edición de facturas antes del registro HKA usa `DocumentEditPolicy`, según la regla autorizada el 7 de octubre de 2026: permitir cobros existentes y operaciones preparadas/rechazadas sin registro remoto, conservar todos los cobros y bloquear pendientes, incertidumbre sin conciliar y confirmaciones. Consultar [la política y evidencia de edición](../../../informes/edicion_facturas_antes_hka.md). Mantener separadas las restricciones de reversión de cobros de `assertMutable`.
 - Mantener tipos y precisiones existentes: importes/bases/porcentajes nuevos usan `decimal(12,2)` y tasas `decimal(18,8)`, conforme a los equivalentes actuales. Conservar ocho decimales de tasa sin redondeo mediante `ExchangeRateMath` y el helper JS `exchange-rate-math`; los importes finales conservan su precisión monetaria.
 
 ## Pagos, IGTF y saldos
+
+### Edición antes del registro HKA
+
+Las reglas de registro, incertidumbre y bloqueo HKA de esta sección corresponden a facturas en modalidad `digital` («Medios digitales»). No extenderlas como integración HKA a Máquina fiscal ni Forma libre; conservar sus reglas comerciales y de control propias.
+
+- Aplicar `DocumentEditPolicy` en servidor, listado, detalle y formulario, incluidos accesos directos. Publicar `can_edit`, `is_editable` y `edit_block_reason` coherentes. Permitir `not_requested`, `prepared` y rechazo definitivo sin registro/control remoto; bloquear `pending`, `confirmed`, canceladas/anuladas e incertidumbre sin conciliación. La ausencia remota acreditada permite recuperar la edición mediante `retry_allowed`.
+- Conservar ID, serie (también vacía), número, moneda, emisor y referencias comerciales. Mantener pagos, recibos, movimientos de caja, retenciones y fondos existentes. Mostrar los cobros como lectura; el guardado de edición no inserta pagos ni acepta su modificación. Los cobros se gestionan mediante sus acciones específicas.
+- Actualizar productos, impuestos, saldo y PDF en una transacción. Aplicar únicamente la diferencia de inventario y rechazar un total inferior al importe ya aplicado. No reaplicar retenciones ni fondos. Con retenciones existentes, conservar al cliente agente y verificar que el nuevo IVA respalde las retenciones.
+- Actualizar el snapshot del comprador desde el cliente y la dirección autorizados, incluso si no cambia el cliente. No inventar una dirección para completar la emisión.
+- Bloquear empresa → documento → emisión, como el envío HKA. Invalidar la operación editable preparada/rechazada o conciliada como ausente: nuevo UUID, payload descartado y estado `not_requested`. Conservar en `response.edit_history` UUID/estado/diagnóstico saneado anteriores, hash del payload, actor y fecha. Las respuestas tardías de otra operación no pueden modificar la nueva.
+- Guardar una edición no transmite automáticamente. Mantener el envío posterior explícito mediante «Enviar HKA». Consultar [la política y evidencia de edición](../../../informes/edicion_facturas_antes_hka.md).
 
 - `payment` es el principal neto aplicado en la moneda documental. `original_amount` es el principal recibido en la moneda del pago, sin vuelto ni IGTF; `tax_amount` es el IGTF recibido en esa moneda. La tasa expresa VES por USD.
 - Conservar UUID `operation_key`, fuente/fecha de tasa y snapshot del medio de pago. La API conserva su comportamiento al omitir moneda propia; una moneda propia exige UUID y una moneda distinta exige importe original y tasa explícitos. Rechazar tasas no positivas o con más de ocho posiciones que requieran redondeo.
@@ -45,6 +56,7 @@ El contrato vigente conserva la operación comercial y prepara datos para HKA. P
 
 - Cálculos/contratos API: `FiscalLineCalculationTest`, `FiscalApiPaymentTransformTest`, `HkaPayloadBuilderTest` y `DocumentFiscalAuthorizationTest` según los consumidores afectados.
 - Persistencia, esquema o concurrencia: `FiscalEmissionSchemaTest` con `PRO9_FISCAL_MYSQL_TESTS=1` en MySQL temporal. Incluye instalación/seeding/FKs, rollback/repetición, pagos, IGTF, retenciones y concurrencia; no ejecutar reconstrucciones sobre tenants reales.
+- Edición: comprobar la política y el request de actualización, conservación de cobros/caja/fondos, restricciones de retenciones, renovación del snapshot y UUID, rollback y concurrencia edición/envío. Cubrir también formulario y visibilidad de acciones Vue.
 - Presentación: revisar PDFs con `CurrentPdfRenderingTest` y `CurrentPdfTemplateContractTest`, y fuentes con `tests/js/fiscal-payment-ui.test.cjs`. Aplicar [frontend-build](../frontend-build/SKILL.md) al tocar Vue/JavaScript y antes de compilar.
 - Ejecutar lint PHP y `git diff --check` para los archivos afectados. Informar qué se verificó y las limitaciones; las pruebas locales no acreditan emisión real en HKA.
 

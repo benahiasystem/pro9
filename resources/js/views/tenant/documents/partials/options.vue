@@ -112,11 +112,20 @@
                 <div class="col-md-12">
                     <el-input v-model="form.customer_email">
                         <el-button slot="append"
-                                   :loading="loading"
+                                   :loading="emailBusy"
+                                   :disabled="emailBusy || (form.email_delivery && !form.email_delivery.can_send)"
                                    icon="el-icon-message"
-                                   @click="clickSendEmail">Enviar
+                                   @click="clickSendEmail">{{ emailSendLabel }}
                         </el-button>
                     </el-input>
+                    <div v-if="form.email_delivery && form.email_delivery.provider === 'hka'" class="mt-2">
+                        <small>{{ form.email_delivery.message }}</small>
+                        <div v-for="(entry, index) in form.email_delivery.tracking" :key="index">
+                            <small>{{ entry.recipient }}: {{ entry.description }}</small>
+                        </div>
+                        <el-button v-if="form.email_delivery.can_query" type="text" :loading="emailBusy"
+                                   :disabled="emailBusy" @click="queryHkaEmail">Consultar correo</el-button>
+                    </div>
                     <small v-if="errors.customer_email"
                            class="form-control-feedback"
                            v-text="errors.customer_email[0]"></small>
@@ -192,6 +201,7 @@
 </template>
 
 <script>
+import {documentEmail} from "@mixins/document-email";
 import {whatsappNumber} from "@helpers/phone";
 import {mapState, mapActions} from "vuex/dist/vuex.mjs";
 import Keypress from "vue-keypress";
@@ -211,6 +221,7 @@ export default {
             loading: false,
             resource: 'documents',
             errors: {},
+            ...documentEmail.data(),
             form: {},
             multiple: [
                 {
@@ -240,6 +251,7 @@ export default {
         ...mapState([
             'config',
         ]),
+        ...documentEmail.computed,
         isNrus: function () {
             return !!(this.config && this.config.is_nrus);
         },
@@ -288,6 +300,7 @@ export default {
         },
         initForm() {
             this.errors = {};
+            this.emailRequestId = null;
             this.form = {
                 customer_email: null,
                 download_pdf: null,
@@ -334,7 +347,7 @@ export default {
         async getRecord() {
             this.loading = true;
             await this.$http.get(`/${this.resource}/record/${this.recordId}`).then(response => {
-                this.form = response.data.data;
+                this.setEmailDeliveryRecord(response.data.data);
                 this.titleDialog = 'Comprobante Generado: ' + this.form.number;
                 if (this.generatDispatch) window.open(`/dispatches/create/${this.form.id}/i/${this.dispatchId}`)
             }).finally(() => {
@@ -347,30 +360,7 @@ export default {
         clickDownload(format) {
             window.open(`${this.form.download_pdf}/${format}`, '_blank');
         },
-        clickSendEmail() {
-            this.loading = true
-            this.$http.post(`/${this.resource}/email`, {
-                customer_email: this.form.customer_email,
-                id: this.form.id
-            })
-                .then(response => {
-                    if (response.data.success) {
-                        this.$message.success('El correo fue enviado satisfactoriamente')
-                    } else {
-                        this.$message.error('Error al enviar el correo')
-                    }
-                })
-                .catch(error => {
-                    if (error.response.status === 422) {
-                        this.errors = error.response.data.errors
-                    } else {
-                        this.$message.error(error.response.data.message)
-                    }
-                })
-                .then(() => {
-                    this.loading = false
-                })
-        },
+        ...documentEmail.methods,
         clickFinalize() {
             if(this.table) {
                 location.href = `/${this.table}`;

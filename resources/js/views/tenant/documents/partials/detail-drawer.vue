@@ -36,6 +36,8 @@
                     <small class="text-muted">#{{ record.id }}</small>
                 </div>
 
+                <el-alert v-if="record.edit_block_reason" :title="record.edit_block_reason" type="info" :closable="false" show-icon />
+
                 <div class="detail-drawer__body document-detail-drawer__body">
                     <el-tabs v-model="activeTab">
                         <el-tab-pane label="Productos / Servicios" name="products">

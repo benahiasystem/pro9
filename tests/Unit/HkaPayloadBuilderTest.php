@@ -13,6 +13,7 @@ class HkaPayloadBuilderTest extends TestCase
         $p=(new HkaPayloadBuilder())->build($d)['documentoElectronico'];
         self::assertSame($type,$p['encabezado']['identificacionDocumento']['tipoDocumento']);
         self::assertSame('VES',$p['encabezado']['totalesOtraMoneda']['moneda']);
+        self::assertSame(str_replace('-', '', $d['operation_key']), $p['encabezado']['identificacionDocumento']['transaccionId']);
         self::assertSame('10.123',$p['encabezado']['totalesOtraMoneda']['tipoCambio']);
         self::assertSame($fixture==='igtf-debit' ? '35.23' : '1174.27',$p['encabezado']['totalesOtraMoneda']['totalAPagar']);
         self::assertArrayNotHasKey('token',$p);

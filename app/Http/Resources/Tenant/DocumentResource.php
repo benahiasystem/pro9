@@ -58,7 +58,11 @@ class DocumentResource extends JsonResource
 
         $identityDocumentType = optional($person)->identity_document_type;
 
+        $edit = \App\Services\Fiscal\DocumentEditPolicy::view($document);
         $data = [
+            'can_edit' => $edit['can_edit'],
+            'edit_block_reason' => $edit['edit_block_reason'],
+            'is_editable' => $edit['can_edit'],
             'id' => $document->id,
             'fiscal_environment' => $document->fiscal_environment,
             'fiscal_emission_mode' => $document->fiscal_identity['mode'] ?? $document->fiscal_emission_mode,
@@ -66,6 +70,8 @@ class DocumentResource extends JsonResource
             'group_id' => $document->group_id,
             'number' => $document->number_full,
             'fiscal_identity' => $document->fiscal_identity,
+            'email_delivery' => \App\Services\Fiscal\HkaMail::view($document),
+            'fiscal_emission' => \App\Services\Fiscal\DocumentEmissionView::forDocument($document),
             'date_of_issue' => $document->date_of_issue->format('Y-m-d'),
             'customer_email' => $customer_email,
             'download_pdf' => $document->download_external_pdf,

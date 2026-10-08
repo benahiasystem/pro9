@@ -68,6 +68,13 @@ Puntos históricos: MultiUserController::changeClient, AutoLoginHelper::getMulti
 
 ## Dependencias y evidencia
 
+### Documentos y operaciones HKA
+
+- Autorizar documento dentro del tenant y sucursal antes de preparar, editar, autenticar o transmitir. El envío fiscal manual exige administrador; las consultas fiscales y de correo y el correo respetan el alcance de sucursal. Los indicadores de acciones de la interfaz no sustituyen autorización en servidor ni protegen accesos directos.
+- Mantener mutaciones HKA en POST autenticados con CSRF para sesión. Validar destinatarios e identificador UUID de solicitud de correo; la repetición no debe producir otra llamada y una misma clave con destinatarios distintos debe rechazarse.
+- Aislar claves/versiones de caché por tenant. Publicar sólo diagnósticos y contratos saneados; no exponer JWT, credenciales, payload fiscal completo ni respuesta cruda del proveedor en recursos o logs.
+- Probar dos tenants con IDs coincidentes, administrador/vendedor, otra sucursal, concurrencia y ausencia de HTTP cuando la autorización falla. Aplicar [emisión HKA](../emitir-facturas-notas-hka/SKILL.md), [distribución HKA](../distribuir-documentos-hka/SKILL.md) y [persistencia fiscal](../mantener-persistencia-fiscal-venezuela-pro9/SKILL.md) para las reglas del flujo.
+
 - Evalúa versiones resueltas del lockfile e instaladas, no solo restricciones del manifiesto. Consulta avisos actuales al remediar.
 - Distingue paquete afectado de explotación alcanzable. Los avisos de Vite dev server/Windows no prueban compromiso de PHP; avisos de PhpSpreadsheet IOFactory requieren comprobar control de entrada y reader.
 - No uses audit fix forzado ni actualizaciones masivas como sustituto de evaluar compatibilidad Laravel/Hyn/Vue, importación, PDF y pagos.
@@ -82,4 +89,3 @@ Un rechazo debe ocurrir **antes** de guardar, firmar, autenticar o abrir una con
 Antes de pruebas Laravel con DB, verifica aislamiento de conexiones central/tenant, queues, mail y red: tests/CreatesApplication.php arranca la aplicación. Se pueden validar componentes con Container/Router y dobles en memoria, dejando explícito que no sustituyen una prueba HTTP integral.
 
 Al finalizar una remediación informa el hallazgo abordado, rutas y controles cambiados, pruebas ejecutadas y limitaciones. Marca un hallazgo como resuelto en el informe solo después de verificar su flujo completo; conserva los que sigan pendientes.
-

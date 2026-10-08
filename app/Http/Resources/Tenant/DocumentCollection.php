@@ -18,8 +18,14 @@ class DocumentCollection extends ResourceCollection
      */
     public function toArray($request)
     {
+        // ResourceCollection may wrap models in DocumentResource and convert to a base Collection.
+        $this->collection = new \Illuminate\Database\Eloquent\Collection($this->collection->map(
+            fn ($row) => $row instanceof \Illuminate\Http\Resources\Json\JsonResource ? $row->resource : $row
+        )->all());
+        $this->collection->loadMissing('emission');
         \App\Services\Fiscal\FiscalIdentity::preload($this->collection);
         return $this->collection->transform(function ($row, $key) {
+            $edit = \App\Services\Fiscal\DocumentEditPolicy::view($row);
             $has_pdf = true;
             $btn_note = false;
             $btn_guide = true; // Boton para generar orden de entrega
@@ -122,6 +128,7 @@ class DocumentCollection extends ResourceCollection
                 'date_of_due' => (in_array($row->document_type_id, ['01'])) ? $row->invoice->date_of_due->format('d-m-Y') : null,
                 'number' => $row->number_full,
                 'fiscal_identity' => $row->fiscal_identity,
+                'fiscal_emission' => \App\Services\Fiscal\DocumentEmissionView::forDocument($row),
                 'customer_name' => $row->customer->name,
                 'customer_number' => format_person_identity_document($row->customer),
                 'customer_identity_document_type_description' => optional(optional($row->customer)->identity_document_type)->description,
@@ -179,7 +186,9 @@ class DocumentCollection extends ResourceCollection
                 'balance' => $balance,
                 'guides' => !empty($row->guides) ? (array) $row->guides : null,
                 'purchase_order' => $row->purchase_order,
-                'is_editable' => $row->is_editable,
+                'is_editable' => $edit['can_edit'],
+                'can_edit' => $edit['can_edit'],
+                'edit_block_reason' => $edit['edit_block_reason'],
                 'dispatches' => $this->getDispatches($row),
                 'fiscal_environment_type' => $row->fiscal_environment_type,
                 'plate_numbers' => $row->getPlateNumbers(),

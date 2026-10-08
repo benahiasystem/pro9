@@ -175,6 +175,7 @@
                         <th v-if="col.visible && col.key === 'order_note'" :key="col.key">Pedidos</th>
                         <th v-if="col.visible && col.key === 'send_it'" :key="col.key">Email Enviado</th>
                         <th v-if="col.visible && col.key === 'state_type'" :key="col.key">Estado</th>
+                        <th v-if="col.visible && col.key === 'hka_status'" :key="col.key">Estado HKA</th>
                         <!-- Campos personalizados: posición configurable vía columna virtual `personalized` (visibilidad la dicta cada field) -->
                         <template v-if="col.key === 'personalized'">
                             <template v-for="field in customFieldColumns">
@@ -265,6 +266,16 @@
                             <span class="badge bg-secondary text-white" :class="{ 'bg-danger': row.state_type_id === '11', 'bg-warning': row.state_type_id === '13', 'bg-secondary': row.state_type_id === '01', 'bg-info': row.state_type_id === '03', 'bg-success': row.state_type_id === '05', 'bg-dark': row.state_type_id === '09' }">{{ row.state_type_description }}</span>
                             <a v-if="row.state_type_id === '13'" href="voided" class="small"><br />Ir a anulaciones</a>
                         </td>
+                        <td v-if="col.visible && col.key === 'hka_status'" :key="col.key" @click.stop>
+                            <template v-if="row.fiscal_emission">
+                                <el-tag size="small" :type="hkaTag(row.fiscal_emission.status)">{{ row.fiscal_emission.description }}</el-tag>
+                                <small v-if="row.fiscal_emission.control_number" class="d-block">Control: {{ row.fiscal_emission.control_number }}</small>
+                                <small v-if="row.fiscal_emission.diagnostic" class="d-block">{{ row.fiscal_emission.diagnostic }}</small>
+                                <el-button v-if="row.fiscal_emission.can_query" size="mini" :loading="hkaBusy[row.id]" @click="hkaAction(row, 'query')">Consultar HKA</el-button>
+                                <el-button v-if="row.fiscal_emission.can_send" size="mini" :loading="hkaBusy[row.id]" @click="hkaAction(row, 'send')">Enviar HKA</el-button>
+                            </template>
+                            <span v-else>No aplica</span>
+                        </td>
                         <!-- Campos personalizados: posición configurable vía columna virtual `personalized` (visibilidad la dicta cada field) -->
                         <template v-if="col.key === 'personalized'">
                             <template v-for="field in customFieldColumns">
@@ -348,7 +359,7 @@
 
 
                               <el-dropdown-item
-                                v-if="configuration.permission_to_edit_cpe && row.state_type_id === '01' && userPermissionEditCpe && row.is_editable"
+                                v-if="configuration.permission_to_edit_cpe && row.state_type_id === '01' && userPermissionEditCpe && row.can_edit"
                                 @click.native="go(`/documents/${row.id}/edit`)"
                               >
                                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-edit me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" /><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z" /><path d="M16 5l3 3" /></svg>
@@ -356,11 +367,15 @@
                               </el-dropdown-item>
 
                               <el-dropdown-item
-                                v-else-if="row.state_type_id === '01' && userId == row.user_id && row.is_editable"
+                                v-else-if="row.state_type_id === '01' && userId == row.user_id && row.can_edit"
                                 @click.native="go(`/documents/${row.id}/edit`)"
                               >
                                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-edit me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" /><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z" /><path d="M16 5l3 3" /></svg>
                                   Editar
+                              </el-dropdown-item>
+
+                              <el-dropdown-item v-if="!row.can_edit && row.edit_block_reason" disabled>
+                                <span :title="row.edit_block_reason">Edición bloqueada: {{ row.edit_block_reason }}</span>
                               </el-dropdown-item>
 
                               <!-- ########## INICIO CAMBIO SIN XML CDR SUNAT -->
@@ -392,12 +407,12 @@
                                           configuration.permission_to_edit_cpe &&
                                           row.state_type_id === '01' &&
                                           userPermissionEditCpe &&
-                                          row.is_editable
+                                          row.can_edit
                                       ) ||
                                       (
                                           row.state_type_id === '01' &&
                                           userId == row.user_id &&
-                                          row.is_editable
+                                          row.can_edit
                                       )
                                   "
                               ></el-dropdown-item>
@@ -707,6 +722,7 @@ export default {
             showImportExcelDialog: false,
             showDialogRetention: false,
             showDetailDrawer: false,
+            hkaBusy: {},
             detailRecordId: null,
             detailInitialRow: null,
             resource: "documents",
@@ -728,6 +744,7 @@ export default {
                 order_note:         { title: "Pedidos",                        visible: false, order: 9  },
                 send_it:            { title: "Correo enviado al destinatario", visible: false, order: 10 },
                 state_type:         { title: "Estado",                         visible: true,  order: 11 },
+                hka_status:         { title: "Estado HKA",                     visible: true,  order: 11.5 },
                 personalized:       { title: "Personalizados",                 visible: true,  order: 12 },
                 user_name:          { title: "Usuario",                        visible: false, order: 13 },
                 source_module:      { title: "Origen",                         visible: false, order: 14 },
@@ -797,6 +814,21 @@ export default {
                     this.kpis = response.data;
                 }
             }).catch(() => {});
+        },
+        hkaTag(status) {
+            return { confirmed: 'success', rejected: 'danger', uncertain: 'warning', pending: 'warning' }[status] || 'info';
+        },
+        async hkaAction(row, action) {
+            if (this.hkaBusy[row.id]) return;
+            this.$set(this.hkaBusy, row.id, true);
+            try {
+                const response = await this.$http.post(`/documents/${row.id}/${action}-hka`);
+                this.$set(row, 'fiscal_emission', response.data.fiscal_emission);
+                this.$message.info(response.data.fiscal_emission.diagnostic || response.data.fiscal_emission.description);
+                this.$eventHub.$emit('reloadData');
+            } catch (error) {
+                this.$message.error('La venta está guardada. No se pudo actualizar el estado HKA.');
+            } finally { this.$set(this.hkaBusy, row.id, false); }
         },
         formatDecimal(value) {
             if (value === undefined || value === null || isNaN(value)) return '';

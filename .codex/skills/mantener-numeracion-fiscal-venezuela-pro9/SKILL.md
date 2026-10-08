@@ -26,7 +26,7 @@ description: Mantener series, correlativos y grupos de dispositivos de Pro9 para
 - La etiqueta «Número» sólo cambia la presentación; conservar `number` (serie) y `correlative` (inicio) en la API. Búsquedas y referencias admiten los 20 caracteres; los códigos sembrados se conservan. La generación automática de inventario ignora sufijos manuales largos.
 - Dedicado permite crear/editar grupos, seleccionar sus series y desvincular equipos; el vínculo/recuperación del equipo también permanece en el perfil de usuario.
 - Conservar el catálogo venezolano vigente, sin Boletas ni nombres fiscales peruanos. No habilitar una operación fiscal sólo porque figure en el catálogo.
-- No mostrar editores de perfiles fiscales ni asignaciones anticipadas, consulta de numeraciones o conciliación HKA. Guardar series no llama a HKA. Mantener la conexión cifrada HKA de la empresa para una integración posterior.
+- En este diálogo no mostrar editores de perfiles fiscales, asignaciones anticipadas ni consultas de numeraciones/conciliación HKA. Guardar series no llama a HKA. La consulta fiscal de una factura se realiza desde sus acciones propias, con la conexión cifrada de la empresa.
 
 ## Identificadores y esquema
 
@@ -41,7 +41,7 @@ description: Mantener series, correlativos y grupos de dispositivos de Pro9 para
 - Guardado, conversiones, consultas, reportes e impresión utilizan esos identificadores propios. El correlativo no se obtiene de controles HKA.
 - En Vende Ya (`pos/garage`), conservar el `series_id` elegido al cambiar cliente o recargar las opciones de pago. Al filtrar por tipo documental, seleccionar la primera serie sólo si la selección ya no figura entre las opciones autorizadas recibidas del servidor; nunca reemplazar una selección válida por `FF01`.
 - La retirada de tablas fiscales se aplica sólo al consolidado para instalaciones nuevas. No crear conversiones/backfills, importar historia, modificar ni borrar tablas de tenants existentes. Aplicar [reconstruir-migraciones-tenant](../reconstruir-migraciones-tenant/SKILL.md).
-- La emisión automática HKA queda pendiente y requiere una implementación posterior explícita. Leer [conectar-api-hka](../conectar-api-hka/SKILL.md) y [numeración HKA](../gestionar-numeracion-documentos-hka/SKILL.md) cuando corresponda.
+- La emisión de facturas digitales DEMO usa [emitir-facturas-notas-hka](../emitir-facturas-notas-hka/SKILL.md). Persistir control con `setControl` sólo después de éxito de negocio e identidad coherente, conservando prefijos y ceros. Mantener serie/correlativo y UUID durante consultas/reintentos; un rechazo por numeración remota no autoriza cambiar la serie, recrear la venta ni inventar controles. Las asignaciones/rangos remotos siguen el alcance de [numeración HKA](../gestionar-numeracion-documentos-hka/SKILL.md).
 
 ## Verificación
 

@@ -72,7 +72,7 @@ class FiscalEmissionController extends Controller
         return [
             'success' => true,
             'message' => $data['fiscal_integration_status'] === 'authenticated'
-                ? 'Conexión HKA verificada. La emisión de documentos sigue pendiente.'
+                ? 'Conexión HKA verificada. Las facturas digitales DEMO se envían al guardar; producción está deshabilitada.'
                 : 'Modalidad de emisión fiscal guardada. La conexión HKA está pendiente.',
             'data' => $data,
         ];

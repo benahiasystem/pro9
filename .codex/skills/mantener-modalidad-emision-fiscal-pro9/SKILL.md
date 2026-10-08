@@ -5,11 +5,11 @@ description: Mantener la modalidad de emisión fiscal y el ambiente de Pro9, el 
 
 # Modalidad de emisión fiscal de Pro9
 
-La autenticación HKA se configura en el tenant según [configurar-conexion-hka-pro9](../configurar-conexion-hka-pro9/SKILL.md) y [conexión API HKA](../conectar-api-hka/SKILL.md). Esta etapa verifica credenciales en el ambiente elegido; no habilita emisión de documentos.
+La autenticación HKA se configura en el tenant según [configurar-conexion-hka-pro9](../configurar-conexion-hka-pro9/SKILL.md) y [conexión API HKA](../conectar-api-hka/SKILL.md). Verificar credenciales no transmite documentos ni asigna control. El envío y correo de facturas digitales DEMO se implementan por separado; producción permanece deshabilitada aunque la autenticación sea válida.
 
 ## Evolución de numeración fiscal
 
-El plan aprobado de SCRUM-39 sustituye la modalidad única por perfiles de establecimiento/canal y añade emisión fiscal con responsabilidades separadas. Para ese trabajo aplicar [mantener-numeracion-fiscal-venezuela-pro9](../mantener-numeracion-fiscal-venezuela-pro9/SKILL.md); las restricciones de modalidad única y ausencia absoluta de controles que siguen abajo describen la etapa anterior. Consultar el informe de numeración para distinguir el contrato objetivo del estado implementado. El bloqueo de ambiente, cifrado, auditoría y retirada de transporte peruano permanecen vigentes.
+El contrato vigente conserva una modalidad por tenant y el modelo original de series, configuraciones y grupos de dispositivos, sin perfiles ni reservas/asignaciones anticipadas. Aplicar [mantener-numeracion-fiscal-venezuela-pro9](../mantener-numeracion-fiscal-venezuela-pro9/SKILL.md). La operación fiscal por documento y el control confirmado se gestionan mediante [emitir-facturas-notas-hka](../emitir-facturas-notas-hka/SKILL.md); no sustituyen el correlativo local. El bloqueo de ambiente, cifrado, auditoría y retirada de transporte peruano permanecen vigentes.
 
 ## Decisiones del producto
 
@@ -19,6 +19,7 @@ El plan aprobado de SCRUM-39 sustituye la modalidad única por perfiles de estab
 - Este contrato parte de una instalación nueva sin tenants ni datos anteriores. No crear conversiones, backfills ni migraciones incrementales SOAP/PFX. Cada tenant nace con modalidad y ambiente obligatorios.
 - El administrador tenant y el superadmin pueden configurar modalidad y ambiente. Después de cualquier operación el ambiente queda bloqueado, incluso si posteriormente se eliminan los movimientos. Producción requiere otro tenant limpio; no copiar operaciones ni correlativos demo.
 - La operación comercial sigue siendo local y genera PDF. La verificación de autenticación HKA no transmite documentos, firma XML ni asigna números de control fiscales.
+- Envío, correo fiscal y bloqueo por registro HKA corresponden a «Medios digitales»; no extenderlos a Máquina fiscal ni Forma libre. El transporte actual sólo permite DEMO, aunque se pueda configurar o autenticar otro ambiente.
 
 ## Puntos de implementación
 

@@ -1,13 +1,13 @@
 ---
 name: emitir-facturas-notas-hka
-description: Mantener la preparación de payloads HKA de facturas y notas de Pro9 desde snapshots, con Swagger versionado, validación y operación congelada. Usar al modificar HkaPayloadBuilder, HkaEmissionPreparation, referencias de notas o su futura emisión; el transporte y la autenticación tienen habilidades propias.
+description: Mantener payloads HKA de facturas y notas desde snapshots y la emisión y conciliación DEMO de facturas Pro9. Usar al modificar HkaPayloadBuilder, HkaEmissionPreparation, HkaEmission, estados fiscales o referencias de notas; autenticación y correo tienen habilidades propias.
 ---
 
 # Facturas y notas HKA
 
 ## Estado y fuentes
 
-`HkaPayloadBuilder`, `HkaSchemaValidator` y `HkaEmissionPreparation` implementan preparación local, sin llamadas HTTP. Leer el [informe de persistencia/preparación](../../../informes/persistencia_fiscal_venezuela_hka.md) y aplicar [persistencia fiscal y cobros](../mantener-persistencia-fiscal-venezuela-pro9/SKILL.md) cuando cambien sus datos de entrada. Envío, consultas, conciliación, descarga y homologación siguen pendientes.
+`HkaPayloadBuilder`, `HkaSchemaValidator` y `HkaEmissionPreparation` preparan localmente, sin HTTP. `HkaEmission` implementa envío y conciliación de facturas digitales DEMO del guardado común web, POS y API. Producción permanece deshabilitada; la preparación de notas no acredita aceptación real de NC/ND, descarga ni homologación. Leer el [informe de persistencia/preparación](../../../informes/persistencia_fiscal_venezuela_hka.md), la [integración y evidencia HKA](../../../informes/imprenta_digital_hka_api.md) y aplicar [persistencia fiscal y cobros](../mantener-persistencia-fiscal-venezuela-pro9/SKILL.md) al cambiar sus entradas.
 
 Para condiciones HKA consultar [referencia HKA, secciones 1, 4.1–4.4, 5, 7 y 10–12](../../../informes/imprenta_digital_hka_api.md). La copia contractual utilizada está en `app/Services/Fiscal/contracts/hka-ve-v1.json`; `HkaPayloadBuilder::contractVersion()` identifica versión y hash. Al actualizar el contrato, contrastar con el [Swagger publicado](https://demoemisionv2.thefactoryhka.com.ve/swagger/v1/swagger.json) y revisar reglas condicionales, adaptador y fixtures juntos. No consultar el proveedor durante la construcción ni sustituir silenciosamente la versión de una operación preparada.
 
@@ -24,14 +24,26 @@ Para condiciones HKA consultar [referencia HKA, secciones 1, 4.1–4.4, 5, 7 y 1
 ## Operación preparada y control
 
 - `HkaEmissionPreparation::prepare` bloquea empresa/documento en la conexión tenant, exige documento vigente en modalidad digital y mantiene una única relación de emisión. Preparar nuevamente devuelve el mismo payload y UUID; no recalcularlo con una empresa, catálogo o tasa vigente diferente.
-- Estados previstos: `not_requested`, `prepared`, `pending`, `confirmed`, `rejected`, `uncertain`, `cancelled`. La preparación actual sólo produce los dos primeros; no usar `prepared` como sinónimo de enviado o aceptado ni alterar el estado comercial por él.
+- Estados vigentes: `not_requested`, `prepared`, `pending`, `confirmed`, `rejected`, `uncertain`, `cancelled`. Preparar sólo produce los dos primeros; `prepared` no equivale a enviado o aceptado. Cancelación remota no está implementada.
 - `control_number` es texto nullable independiente de serie/número. Asignarlo únicamente mediante el servicio interno validado `setControl`, que comprueba formato, inmutabilidad y duplicidad; no exponer asignación por endpoints comerciales. Aplicar [numeración fiscal](../mantener-numeracion-fiscal-venezuela-pro9/SKILL.md).
-- No guardar JWT/credenciales en payloads, snapshots, respuestas ni emisión. El Swagger no tiene nodo de identidad del emisor; mantener su RIF en `documents.issuer`. El transporte futuro deberá verificar que sus credenciales correspondan al emisor conservado; aplicar [conectar-api-hka](../conectar-api-hka/SKILL.md) cuando se implemente ese transporte.
+- No guardar JWT/credenciales en payloads, snapshots, respuestas ni emisión. El Swagger no tiene nodo de identidad del emisor; mantener su RIF en `documents.issuer`. Antes de transmitir, verificar tenant, modalidad, ambiente, RIF y configuración contra la operación conservada; aplicar [conectar-api-hka](../conectar-api-hka/SKILL.md).
+
+## Envío, recuperación y edición
+
+Este comportamiento HKA corresponde a «Medios digitales» (`digital`), con envío habilitado sólo en DEMO. Máquina fiscal y Forma libre conservan su operación propia; no exigirles confirmación HKA ni transmitirlas por este flujo.
+
+- Registrar el callback desde `Facturalo::save` con `afterCommit` de la conexión tenant, posterior al commit exterior. Un rollback comercial no llama a HKA. Capturar el fallo fiscal después del commit y devolver venta guardada junto con `fiscal_emission`, conservando pagos e inventario.
+- Reclamar atómicamente bajo bloqueos empresa → documento → emisión y persistir `pending` antes del HTTP. Autenticación, emisión y consulta se ejecutan fuera de transacciones/bloqueos. Vincular preparación, intentos y respuestas al UUID vigente; una respuesta tardía no modifica una operación invalidada por edición.
+- Conservar UUID, serie y número durante consultas/reintentos. `HkaPayloadBuilder::transactionId` representa el UUID interno como 32 caracteres hexadecimales sin guiones; no generar otra identidad al reintentar ni modificar payloads ya preparados para cambiar su formato.
+- Confirmar sólo con éxito de negocio, identidad coherente y control válido. `HkaResponse` clasifica rechazos definitivos; timeout, duplicado no conciliado, respuesta incompleta o identidad/control contradictorios quedan `uncertain`. Fallos anteriores a transmisión conservan `not_requested`/`prepared` con diagnóstico saneado.
+- `POST documents/{document}/send-hka` es administrativo; `query-hka` respeta tenant/sucursal. Ante envío previo posible, consultar por `transaccionId`; reenviar sólo con ausencia acreditada y al menos 30 segundos desde el intento anterior. No convertir cualquier 203 o rastreo vacío en permiso de reenvío.
+- La congelación impide transmitir un payload cambiado. Una edición comercial autorizada antes del registro remoto invalida la operación según `DocumentEditPolicy`: nuevo UUID, estado `not_requested`, historial interno saneado; guardar la edición exige después «Enviar HKA» explícito. Leer [política de edición](../../../informes/edicion_facturas_antes_hka.md).
 
 ## Validación
 
 - Mantener fixtures saneados de Factura, crédito, débito e IGTF en `tests/Fixtures/Hka`; ejecutar `HkaPayloadBuilderTest` para esquema, traducciones y rechazos.
 - Para idempotencia, referencias conservadas, control, autorización y congelación, ejecutar las pruebas afectadas de `FiscalEmissionSchemaTest` en MySQL temporal y `DocumentFiscalAuthorizationTest`.
-- Una etapa futura de envío debe probar en DEMO serie vacía, respuesta, NC/ND y resultados inciertos. El validador de esquema y los simuladores locales sólo acreditan preparación contractual.
+- En envío/conciliación ejecutar `HkaTransportTest`, `HkaResponseTest` y las pruebas MySQL de commit exterior, rollback, concurrencia y recuperación de `FiscalEmissionSchemaTest`. Para presentación, `tests/js/hka-emission-ui.test.cjs`; para edición, `DocumentEditPolicyTest`, `DocumentUpdateRequestTest` y `tests/js/document-edit-ui.test.cjs`.
+- Las facturas sin serie tienen aceptación DEMO documentada en los informes. Probar NC/ND antes de declarar aceptada su emisión real. Las pruebas simuladas no acreditan producción ni homologación.
 
-La configuración usa series originales y sólo fija el inicio documental. La emisión HKA con asignación automática de control aún no está implementada; requiere una tarea posterior explícita. No recrear el módulo retirado de perfiles y asignaciones anticipadas.
+La configuración usa series originales y fija el inicio documental; HKA devuelve el control al confirmar. No recrear perfiles ni asignaciones anticipadas. Un rango remoto ausente es un rechazo de configuración: conservar la venta y su serie, sin cambiarla automáticamente.

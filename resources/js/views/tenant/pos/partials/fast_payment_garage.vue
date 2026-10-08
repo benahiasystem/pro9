@@ -573,11 +573,13 @@ export default {
         },
         async setInitialAmount() {
             this.enter_amount = this.form.total
-            // this.form.payments = this.payments
-            // this.$eventHub.$emit('eventSetFormPosLocalStorage', this.form)
-            await this.$refs.enter_amount.$el.getElementsByTagName('input')[0].focus()
-            await this.$refs.enter_amount.$el.getElementsByTagName('input')[0].select()
-            // console.log(this.$refs.enter_amount.$el.getElementsByTagName('input')[0])
+            await this.$nextTick();
+            const amountField = this.$refs.enter_amount;
+            const input = amountField && amountField.$el.querySelector('input');
+            if (input) {
+                input.focus();
+                input.select();
+            }
         },
         changeEnabledDiscount() {
             if (!this.enabled_discount) {
@@ -1066,8 +1068,10 @@ export default {
             this.cleanPayments()
             // this.filterSeries()
         },
-        async autoSendPdfMail() {
-            if (!this.config.auto_send_pdf_email) return;
+        async autoSendPdfMail(document = {}) {
+            // Digital invoices send through the shared dialog with an explicit attempt UUID.
+            if (document.fiscal_emission && document.fiscal_emission.status !== null) return;
+            if (!(this.config || this.configuration || {}).auto_send_pdf_email) return;
 
             if (!this.customer_email) {
                 this.$message.warning('El cliente no tiene correo registrado.');
@@ -1190,7 +1194,7 @@ export default {
 
                     // Almacena la URL del PDF de ticket para impresión con BuhoPrinter
                     this.printTicketUrl = response.data?.links?.print_ticket ?? null;
-                    this.autoSendPdfMail();
+                    this.autoSendPdfMail(response.data.data);
                     this.showDialogOptions = true;
 
                     // this.savePaymentMethod();
@@ -1209,10 +1213,10 @@ export default {
                     this.$message.error(response.data.message);
                 }
             }).catch(error => {
-                if (error.response.status === 422) {
+                if (error.response && error.response.status === 422) {
                     this.errors = error.response.data;
                 } else {
-                    this.$message.error(error.response.data.message);
+                    this.$message.error(error.response && error.response.data && error.response.data.message || 'No se pudo confirmar el guardado. Consulte el listado antes de crear nuevamente la factura.');
                 }
             }).then(() => {
                 this.loading_submit = false;
@@ -1278,7 +1282,7 @@ export default {
                     }
                 })
                 .catch(error => {
-                    if (error.response.status === 422) {
+                    if (error.response && error.response.status === 422) {
                         this.records[index].errors = error.response.data;
                     } else {
                         console.log(error);

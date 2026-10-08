@@ -37,7 +37,31 @@ class DocumentFiscalController extends Controller
     {
         $document=Document::findOrFail($id);self::authorizeDocument($document);
         abort_unless(auth()->user()->type==='admin',403);
-        return ['success'=>true,'data'=>(new HkaEmissionPreparation())->prepare($document)];
+        (new HkaEmissionPreparation())->prepare($document);
+        $view = \App\Services\Fiscal\DocumentEmissionView::forDocument($document->fresh());
+        return ['success' => true, 'data' => $view, 'fiscal_emission' => $view];
+    }
+    public function sendHka($id)
+    {
+        $document = Document::findOrFail($id);
+        self::authorizeDocument($document);
+        abort_unless(auth()->user()->type === 'admin', 403);
+        return ['success' => true, 'message' => 'Venta guardada.',
+            'fiscal_emission' => app(\App\Services\Fiscal\HkaEmission::class)->send($document)];
+    }
+    public function queryHka($id)
+    {
+        $document = Document::findOrFail($id);
+        self::authorizeDocument($document);
+        return ['success' => true,
+            'fiscal_emission' => app(\App\Services\Fiscal\HkaEmission::class)->query($document)];
+    }
+    public function queryHkaEmail($id)
+    {
+        $document = Document::findOrFail($id);
+        self::authorizeDocument($document);
+        $delivery = app(\App\Services\Fiscal\HkaMail::class)->query($document);
+        return ['success' => true, 'message' => $delivery['message'], 'email_delivery' => $delivery];
     }
     public function settings()
     {

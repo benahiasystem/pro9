@@ -105,6 +105,9 @@ if ($hostname) {
             Route::get('companies/igtf', 'Tenant\DocumentFiscalController@settings');
             Route::post('companies/igtf', 'Tenant\DocumentFiscalController@settingsStore');
             Route::post('documents/{document}/prepare-hka', 'Tenant\DocumentFiscalController@prepare');
+            Route::post('documents/{document}/send-hka', 'Tenant\DocumentFiscalController@sendHka');
+            Route::post('documents/{document}/query-hka-email', 'Tenant\DocumentFiscalController@queryHkaEmail');
+            Route::post('documents/{document}/query-hka', 'Tenant\DocumentFiscalController@queryHka');
             // ######## FIN PERSISTENCIA FISCAL VENEZUELA ########
             Route::get('companies/fiscal-emission', 'Tenant\FiscalEmissionController@record');
             Route::post('companies/fiscal-emission', 'Tenant\FiscalEmissionController@store');

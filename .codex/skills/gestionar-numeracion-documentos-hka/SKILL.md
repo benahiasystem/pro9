@@ -1,13 +1,13 @@
 ---
 name: gestionar-numeracion-documentos-hka
-description: Consultar contratos HKA de numeraciones, controles, documentos y anulación para una integración posterior. Usar al trabajar con AsignarNumeraciones, ConsultaNumeraciones, ConsultaReservaciones, ListadoAsignaciones, UltimoDocumento, EstadoDocumento o Anular.
+description: Consultar contratos HKA de numeraciones, controles y anulación todavía no integrados, y delimitar la consulta vigente EstadoDocumento. Usar al trabajar con AsignarNumeraciones, ConsultaNumeraciones, ConsultaReservaciones, ListadoAsignaciones, UltimoDocumento, EstadoDocumento o Anular.
 ---
 
 # Contratos de numeración HKA
 
 ## Estado de Pro9
 
-El módulo de asignación anticipada y sus perfiles/secuencias/reservas fue retirado del código y del esquema inicial. La configuración vigente usa series y correlativos originales: leer [numeración Pro9](../mantener-numeracion-fiscal-venezuela-pro9/SKILL.md). La autenticación de empresa se conserva. No recrear endpoints locales de asignación ni importar/conciliar historia por ejecutar esta skill. La emisión automática HKA requiere una tarea posterior explícita.
+El módulo de asignación anticipada y sus perfiles/secuencias/reservas fue retirado del código y del esquema inicial. La configuración vigente usa series y correlativos originales: leer [numeración Pro9](../mantener-numeracion-fiscal-venezuela-pro9/SKILL.md). La emisión y conciliación por `EstadoDocumento` de facturas en «Medios digitales» DEMO están implementadas mediante [emitir-facturas-notas-hka](../emitir-facturas-notas-hka/SKILL.md). Eso no implementa asignaciones, importación histórica ni anulación remota; no recrear sus endpoints locales por ejecutar esta skill.
 
 ## Referencias del proveedor
 

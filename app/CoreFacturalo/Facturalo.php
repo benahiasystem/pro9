@@ -200,11 +200,37 @@ class Facturalo
                 $this->document = Dispatch::find($document->id);
                 break;
         }
+        // ######## INICIO EMISION HKA DEMO ########
+        if ($this->document instanceof Document) {
+            app(\App\Services\Fiscal\HkaMail::class)->registerAutomatic($this->document,
+                (bool) optional($this->configuration)->auto_send_pdf_email || ($this->actions['send_email'] ?? false) === true);
+        }
+        if ($this->type === 'invoice' && $this->document->fiscal_emission_mode === 'digital'
+            && $this->document->fiscal_environment === 'demo') {
+            $id = $this->document->id;
+            $database = $this->document->getConnection()->getDatabaseName();
+            $this->document->getConnection()->afterCommit(function () use ($id, $database) {
+                try {
+                    if ((new Document)->getConnection()->getDatabaseName() !== $database) return;
+                    $document = Document::findOrFail($id);
+                    $this->response['fiscal_emission'] = app(\App\Services\Fiscal\HkaEmission::class)->send($document);
+                    $this->response['sale_saved'] = true;
+                    $this->response['message'] = 'Venta guardada. '.$this->response['fiscal_emission']['description'];
+                    $this->document = $document->fresh();
+                } catch (\Throwable $exception) {
+                    $this->response['sale_saved'] = true;
+                    $this->response['message'] = 'Venta guardada. El resultado fiscal requiere consulta.';
+                }
+            });
+        }
+        // ######## FIN EMISION HKA DEMO ########
         return $this;
     }
 
     public function sendEmail()
     {
+        // Digital invoices are sent once by HKA after their fiscal confirmation.
+        if ($this->document instanceof Document && \App\Services\Fiscal\HkaMail::applies($this->document)) return;
         $send_email = ($this->actions['send_email'] === true) ? true : false;
 
         if($send_email){
@@ -919,10 +945,11 @@ class Facturalo
             case 'invoice':
                 Company::query()->lockForUpdate()->firstOrFail();
                 $document = Document::query()->lockForUpdate()->findOrFail($id);
-                \App\Services\Fiscal\FiscalDocumentPersistence::assertMutable($document);
-                if (\App\Models\Tenant\DocumentPayment::where('document_id',$document->id)->exists() || $document->received_retentions()->exists()) {
-                    \App\Services\Fiscal\FiscalAmounts::error('document', 'No se puede editar una factura con historial de cobros o retenciones contabilizados.');
-                }
+                $emission = $document->emission()->lockForUpdate()->first();
+                $document->setRelation('emission', $emission);
+                \App\Services\Fiscal\DocumentEditPolicy::assertEditable($document);
+                \App\Services\Fiscal\DocumentEditSettlements::validateInput($document, $inputs);
+                \App\Services\Fiscal\DocumentEditPolicy::invalidate($document);
                 $inputs['series'] = \App\Services\SeriesNumbering::normalizeCode($inputs['series'] ?? null);
                 if ($inputs['series'] !== $document->series || $inputs['document_type_id'] !== $document->document_type_id || (isset($inputs['number']) && (string) $inputs['number'] !== (string) $document->number) || (isset($inputs['establishment_id']) && (int) $inputs['establishment_id'] !== (int) $document->establishment_id)) {
                     throw \Illuminate\Validation\ValidationException::withMessages(['series' => 'No se puede cambiar la identidad de un documento registrado.']);
@@ -932,14 +959,20 @@ class Facturalo
                 $inputs['issuer'] = $document->issuer;
                 $inputs['establishment'] = (array)$document->establishment;
                 SalesCustomerIdentityPolicy::assertCustomerAllowed($inputs['customer_id']);
-                if ((int)$inputs['customer_id']===(int)$document->customer_id) $inputs['customer'] = (array)$document->customer;
-                else $inputs['customer'] = \App\CoreFacturalo\Requests\Inputs\Common\PersonInput::set($inputs['customer_id']);
+                $addressId = $inputs['customer_address_id'] ?? ($inputs['customer']['address_id'] ?? null);
+                if ($addressId && !\App\Models\Tenant\PersonAddress::where('person_id', $inputs['customer_id'])->where('id', $addressId)->exists()) {
+                    \App\Services\Fiscal\FiscalAmounts::error('customer_address_id', 'La dirección no pertenece al cliente seleccionado.');
+                }
+                $inputs['customer'] = \App\Services\Fiscal\FiscalDocumentPersistence::withHkaIdentity(\App\CoreFacturalo\Requests\Inputs\Common\PersonInput::set($inputs['customer_id'], $addressId));
+                foreach (['user_id', 'payment_condition_id', 'fiscal_environment', 'state_type_id', 'is_editable', 'quotation_id', 'sale_note_id', 'technical_service_id', 'source_module', 'receipt_parent_id'] as $field) {
+                    if (array_key_exists($field, $document->getAttributes())) $inputs[$field] = $document->getAttributes()[$field];
+                }
+                $inputs['payments'] = [];
                 $inputs['exchange_rate_sale'] = \App\Services\ExchangeRates\ExchangeRateMath::rate($inputs['exchange_rate_sale'], 'exchange_rate_sale');
                 $document->fill($inputs);
                 $document->save();
 
-                $document->fee()->delete();
-                $this->saveFee($document, $inputs['fee']);
+                // Existing collection schedules and receipt references remain intact.
 
                 $warehouse = Warehouse::where('establishment_id', auth()->user()->establishment_id)->first();
 
@@ -963,7 +996,6 @@ class Facturalo
 
                 \App\Services\Fiscal\FiscalDocumentPersistence::otherTaxes($document, $inputs['taxes'] ?? []);
                 \App\Services\Fiscal\FiscalDocumentPersistence::summarize($document);
-                $this->savePayments($document, $inputs['payments'],true);
                 $this->updatePrepaymentDocuments($inputs);
 
                 if($inputs['hotel']){
@@ -975,7 +1007,7 @@ class Facturalo
                 \App\Services\Fiscal\FiscalDocumentPersistence::fiscalData($document, $inputs['fiscal_data'] ?? []);
                 \App\Services\Fiscal\FiscalDocumentPersistence::otherTaxes($document, $inputs['taxes'] ?? []);
                 \App\Services\Fiscal\FiscalDocumentPersistence::summarize($document);
-                \App\Services\Fiscal\FiscalDocumentPersistence::applySettlements($document, $inputs);
+                \App\Services\Fiscal\DocumentEditSettlements::validateTotals($document);
                 // ######## FIN PERSISTENCIA FISCAL VENEZUELA ########
                 $this->document = Document::find($document->id);
                 break;

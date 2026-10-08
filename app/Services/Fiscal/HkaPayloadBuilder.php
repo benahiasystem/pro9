@@ -9,6 +9,14 @@ final class HkaPayloadBuilder
     {
         return 'hka-ve-v1:'.hash_file('sha256', __DIR__.'/contracts/hka-ve-v1.json');
     }
+    /** DEMO rejects UUID separators (validation 1002). Preserve the local UUID and map only at the HKA boundary. */
+    public static function transactionId(string $operationKey): string
+    {
+        if (!preg_match('/\A[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}\z/i', $operationKey)) {
+            FiscalAmounts::error('operation_key', 'La operación fiscal requiere un UUID válido.');
+        }
+        return strtolower(str_replace('-', '', $operationKey));
+    }
     private static function money($value): string { return number_format((float) $value, 2, '.', ''); }
     private static function date($value): string { return \Carbon\Carbon::parse($value)->format('d/m/Y'); }
 
@@ -35,7 +43,7 @@ final class HkaPayloadBuilder
             'serie'=>$d['series'], 'fechaEmision'=>self::date($d['date_of_issue']),
             'horaEmision'=>\Carbon\Carbon::parse($d['time_of_issue'])->format('h:i:s a'),
             'tipoDeVenta'=>'Interna', 'moneda'=>$d['currency_type_id'], 'tipoTransaccion'=>$transaction,
-            'transaccionId'=>$d['operation_key'], 'sucursal'=>(string)($d['establishment']['code'] ?? '')];
+            'transaccionId'=>self::transactionId($d['operation_key']), 'sucursal'=>(string)($d['establishment']['code'] ?? '')];
         if ($provider) $id['tipoProveedor'] = $provider;
         if (!in_array($d['currency_type_id'],['VES','USD'],true)) FiscalAmounts::error('currency_type_id','Moneda sin equivalencia HKA.');
         if (!empty($d['invoice']['date_of_due'])) $id['fechaVencimiento']=self::date($d['invoice']['date_of_due']);
