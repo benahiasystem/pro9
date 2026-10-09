@@ -40,6 +40,10 @@
                               :type="fiscalEmissionNotice.type"
                               :closable="false"
                               show-icon />
+                    <el-button v-if="form.fiscal_emission && form.fiscal_emission.can_send"
+                               class="mt-2" type="primary" icon="el-icon-upload2"
+                               :loading="fiscalActionBusy" :disabled="loading || fiscalActionBusy"
+                               @click="runFiscalAction('send')">Enviar HKA</el-button>
                 </div>
             </div>
             <div v-else-if="form.response_message"
@@ -216,6 +220,7 @@
 <script>
 import {documentPdf} from "@mixins/document-pdf";
 import {documentEmail} from "@mixins/document-email";
+import {documentFiscal} from "@mixins/document-fiscal";
 import {whatsappNumber} from "@helpers/phone";
 import {mapState, mapActions} from "vuex/dist/vuex.mjs";
 import Keypress from "vue-keypress";
@@ -232,6 +237,8 @@ export default {
     data() {
         return {
             ...documentPdf.data(),
+            ...documentFiscal.data(),
+            recordRequestSequence: 0,
             titleDialog: null,
             loading: false,
             resource: 'documents',
@@ -263,6 +270,12 @@ export default {
         this.initForm()
     },
     computed: {
+        fiscalRecord() {
+            return this.form;
+        },
+        fiscalActionVisible() {
+            return this.showDialog;
+        },
         ...documentPdf.computed,
         ...mapState([
             'config',
@@ -317,8 +330,25 @@ export default {
             return !this.config.qrchat_enable && !this.config.qr_api_enable_ws
         }
     },
+    watch: {
+        showDialog(value) {
+            if (!value) {
+                this.resetFiscalAction();
+                this.recordRequestSequence += 1;
+                this.loading = false;
+            }
+        },
+        recordId() {
+            this.resetFiscalAction();
+            this.recordRequestSequence += 1;
+        },
+    },
     methods: {
         ...documentPdf.methods,
+        ...documentFiscal.methods,
+        refreshFiscalDocument() {
+            return this.getRecord(false);
+        },
         ...mapActions(['loadConfiguration']),
         clickSendWhatsapp() {
 
@@ -334,6 +364,8 @@ export default {
 
         },
         initForm() {
+            this.resetFiscalAction();
+            this.recordRequestSequence += 1;
             this.errors = {};
             this.emailRequestId = null;
             this.form = {
@@ -358,14 +390,19 @@ export default {
         },
         async create() {
             this.initForm();
+            const id = this.recordId;
+            const session = this.fiscalActionSession;
+            const isCurrent = () => this.showDialog && session === this.fiscalActionSession && String(id) === String(this.recordId);
             this.titleDialog = 'Comprobante generado';
             await this.getCompany()
+            if (!isCurrent()) return;
             await this.getRecord()
+            if (!isCurrent()) return;
 
             this.loading = true;
             await this.$http.get(`/${this.resource}/locked_emission`).then(response => {
-                this.locked_emission = response.data
-            }).finally(() => this.loading = false);
+                if (isCurrent()) this.locked_emission = response.data
+            }).finally(() => { if (isCurrent()) this.loading = false; });
         },
         async getCompany() {
             this.loading = true;
@@ -376,14 +413,20 @@ export default {
                     }
                 }).finally(() => this.loading = false);
         },
-        async getRecord() {
+        async getRecord(openDispatch = true) {
+            const id = this.recordId;
+            const session = this.fiscalActionSession;
+            const sequence = ++this.recordRequestSequence;
+            const isCurrent = () => this.showDialog && session === this.fiscalActionSession
+                && sequence === this.recordRequestSequence && String(id) === String(this.recordId);
             this.loading = true;
-            await this.$http.get(`/${this.resource}/record/${this.recordId}`).then(response => {
+            await this.$http.get(`/${this.resource}/record/${id}`).then(response => {
+                if (!isCurrent()) return;
                 this.setEmailDeliveryRecord(response.data.data);
                 this.titleDialog = 'Comprobante Generado: ' + this.form.number;
-                if (this.generatDispatch) window.open(`/dispatches/create/${this.form.id}/i/${this.dispatchId}`)
+                if (openDispatch && this.generatDispatch) window.open(`/dispatches/create/${this.form.id}/i/${this.dispatchId}`)
             }).finally(() => {
-                this.loading = false
+                if (isCurrent()) this.loading = false
             });
         },
         clickPrint(format) {

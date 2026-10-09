@@ -8,7 +8,7 @@ const parsed = compiler.parseComponent(fs.readFileSync('resources/js/views/tenan
 const exportsObject = {};
 vm.runInNewContext(babel.transformSync(parsed.script.content, {
     configFile: false, babelrc: false, plugins: ['@babel/plugin-transform-modules-commonjs']
-}).code, { exports: exportsObject, require: name => name === '@mixins/document-pdf' ? require('./helpers/load-module.cjs')(require('node:path').resolve('resources/js/mixins/document-pdf.js')) : name === '@mixins/document-email' ? require('./helpers/load-module.cjs')(require('node:path').resolve('resources/js/mixins/document-email.js')) : name.includes('vuex') ? { mapActions: () => ({}), mapState: () => ({}) } : {}, Uint8Array });
+}).code, { exports: exportsObject, require: name => ['@mixins/document-pdf', '@mixins/document-email', '@mixins/document-fiscal'].includes(name) ? require('./helpers/load-module.cjs')(require('node:path').resolve('resources/js/mixins/' + name.split('/').pop() + '.js')) : name.includes('vuex') ? { mapActions: () => ({}), mapState: () => ({}) } : {}, Uint8Array });
 const component = exportsObject.default;
 function context(post, delivery = { provider: 'hka', status: null, can_send: true }) {
     const messages = [];
@@ -57,10 +57,11 @@ test('other modalities and document types retain their existing response message
 });
 test('reopening the dialog clears the previous invoice result before loading another record', async () => {
     let resolve;
-    const ctx={...component.data(),form:{number:'OLD',document_type_id:'01',fiscal_emission_mode:'digital',fiscal_emission:{status:'confirmed'}},
+    const ctx={...component.data(),showDialog:true,recordId:13,form:{number:'OLD',document_type_id:'01',fiscal_emission_mode:'digital',fiscal_emission:{status:'confirmed'}},
         getCompany:()=>new Promise(r=>resolve=r),getRecord:async()=>{ctx.form={number:'NEW'};},
         $http:{get:async()=>({data:{success:true}})}};
     ctx.initForm=component.methods.initForm.bind(ctx);
+    ctx.resetFiscalAction=component.methods.resetFiscalAction.bind(ctx);
     const loading=component.methods.create.call(ctx);
     assert.equal(ctx.form.number,null);assert.equal(component.computed.fiscalEmissionNotice.call(ctx),null);
     resolve();await loading;assert.equal(ctx.form.number,'NEW');

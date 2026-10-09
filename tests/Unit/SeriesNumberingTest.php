@@ -14,6 +14,29 @@ use Tests\Support\SeriesDatabaseTestCase;
 
 class SeriesNumberingTest extends SeriesDatabaseTestCase
 {
+    public function test_new_tenant_defaults_list_blank_basic_series_and_keep_internal_codes_starting_at_one(): void
+    {
+        $this->db->table('series')->insert(\App\Services\SeriesCodeGenerator::defaultTenantSeries(1));
+
+        $rows = (new SeriesController())->records(1)['data'];
+        self::assertCount(8, $rows);
+        $codes = ['01' => '', 'FE' => '', '07' => '', '08' => '', '80' => 'NV01',
+            'U2' => 'AI01', 'U3' => 'AS01', 'U4' => 'AT01'];
+        foreach ($rows as $row) {
+            self::assertSame($codes[$row['document_type_id']], $row['number']);
+            self::assertSame(1, $row['correlative']);
+            self::assertFalse($row['in_use']);
+            self::assertFalse($row['dedicated']);
+            self::assertFalse($row['contingency']);
+        }
+
+        foreach (['01' => 'documents', '07' => 'documents', '08' => 'documents',
+            '80' => 'sale_notes', 'U2' => 'guides', 'U3' => 'guides', 'U4' => 'inventories_transfer'] as $type => $table) {
+            self::assertSame(1, $this->emit((string) $type, $codes[$type], $table));
+            self::assertSame(2, $this->emit((string) $type, $codes[$type], $table));
+        }
+    }
+
     private function createSeries(string $type = '01', string $code = 'FF01', int $start = 100, int $branch = 1, bool $dedicated = false, bool $contingency = false): int
     {
         $request = SeriesRequest::create('/', 'POST', ['establishment_id' => $branch, 'document_type_id' => $type, 'number' => $code, 'correlative' => $start, 'dedicated' => $dedicated, 'contingency' => $contingency]);

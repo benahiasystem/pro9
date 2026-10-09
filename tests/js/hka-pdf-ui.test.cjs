@@ -16,11 +16,12 @@ function evaluate(source, requireFn = () => ({})) {
 }
 const pdf = evaluate(fs.readFileSync('resources/js/mixins/document-pdf.js', 'utf8')).documentPdf;
 const email = require('./helpers/load-module.cjs')(require('node:path').resolve('resources/js/mixins/document-email.js'));
+const fiscal = require('./helpers/load-module.cjs')(require('node:path').resolve('resources/js/mixins/document-fiscal.js'));
 function load(file) {
  const parsed = compiler.parseComponent(fs.readFileSync(file, 'utf8'));
  assert.deepEqual(compiler.compile(parsed.template.content).errors, []);
  return evaluate(parsed.script.content, name => name === '@mixins/document-pdf' ? {documentPdf: pdf}
-  : name === '@mixins/document-email' ? email : name.includes('vuex') ? {mapActions:()=>({}),mapState:()=>({})} : {}).default;
+  : name === '@mixins/document-email' ? email : name === '@mixins/document-fiscal' ? fiscal : name.includes('vuex') ? {mapActions:()=>({}),mapState:()=>({})} : {}).default;
 }
 const web = load('resources/js/views/tenant/documents/partials/options.vue');
 const pos = load('resources/js/views/tenant/pos/partials/options.vue');

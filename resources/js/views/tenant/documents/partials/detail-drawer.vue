@@ -37,6 +37,10 @@
                 </div>
 
                 <el-alert v-if="record.edit_block_reason" :title="record.edit_block_reason" type="info" :closable="false" show-icon />
+                <el-alert v-if="record.fiscal_emission && record.fiscal_emission.status && record.fiscal_emission.diagnostic"
+                          :title="record.fiscal_emission.diagnostic"
+                          :type="record.fiscal_emission.status === 'confirmed' ? 'success' : record.fiscal_emission.status === 'rejected' ? 'error' : 'warning'"
+                          :closable="false" show-icon />
 
                 <div class="detail-drawer__body document-detail-drawer__body">
                     <el-tabs v-model="activeTab">
@@ -195,6 +199,17 @@
 
                 <div class="detail-drawer__footer detail-drawer__footer--actions detail-drawer__footer--wrap document-detail-drawer__footer">
                     <button
+                        v-if="record.fiscal_emission && record.fiscal_emission.can_query"
+                        type="button"
+                        class="btn btn-outline-info btn-sm"
+                        :disabled="loading || fiscalActionBusy"
+                        @click="runFiscalAction('query')"
+                    >
+                        <i v-if="fiscalActionBusy" class="el-icon-loading" aria-hidden="true"></i>
+                        <svg v-else xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-search" aria-hidden="true"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0"/><path d="M21 21l-6 -6"/></svg>
+                        Consultar comprobante
+                    </button>
+                    <button
                         v-if="record.has_pdf && record.download_pdf"
                         type="button"
                         class="btn btn-outline-info btn-sm"
@@ -241,6 +256,9 @@
 // ######## INICIO TASAS OCHO DECIMALES ########
 import { normalizeExchangeRate } from "../../../../helpers/exchange-rate-math"
 // ######## FIN TASAS OCHO DECIMALES ########
+import { documentStatus } from "../../../../helpers/document-status";
+import { documentFiscal } from "../../../../mixins/document-fiscal";
+import moment from "moment";
 
 export default {
     props: {
@@ -263,12 +281,20 @@ export default {
     },
     data() {
         return {
+            ...documentFiscal.data(),
             loading: false,
+            detailRequestSequence: 0,
             record: null,
             activeTab: 'products'
         };
     },
     computed: {
+        fiscalRecord() {
+            return this.record;
+        },
+        fiscalActionVisible() {
+            return this.showDrawer;
+        },
         visibleDrawer: {
             get() {
                 return this.showDrawer;
@@ -303,32 +329,10 @@ export default {
             return 'detail-drawer__doc-badge--default document-detail-drawer__doc-badge--default';
         },
         stateLabel() {
-            return this.record?.state_type_description || '—';
+            return documentStatus(this.record || {}).label;
         },
         stateBadgeClass() {
-            const stateId = String(this.record?.state_type_id || '');
-
-            if (stateId === '11') {
-                return 'badge-danger';
-            }
-
-            if (stateId === '05') {
-                return 'badge-success';
-            }
-
-            if (stateId === '13' || stateId === '07') {
-                return 'badge-warning';
-            }
-
-            if (stateId === '03') {
-                return 'badge-primary';
-            }
-
-            if (stateId === '09') {
-                return 'badge-dark';
-            }
-
-            return 'badge-secondary';
+            return documentStatus(this.record || {}).badgeClass;
         },
         issueDateLabel() {
             return this.formatDisplayDate(this.record?.date_of_issue);
@@ -512,6 +516,10 @@ export default {
         showDrawer(value) {
             if (value && this.recordId) {
                 this.openDrawer();
+            } else if (!value) {
+                this.resetFiscalAction();
+                this.detailRequestSequence += 1;
+                this.loading = false;
             }
         },
         recordId(value) {
@@ -521,11 +529,16 @@ export default {
         }
     },
     methods: {
+        ...documentFiscal.methods,
+        refreshFiscalDocument() {
+            return this.loadRecord();
+        },
         hasDisplayValue(value) {
             const normalized = String(value ?? '').trim();
             return normalized !== '' && normalized !== '-' && normalized !== '—';
         },
         openDrawer() {
+            this.resetFiscalAction();
             this.activeTab = 'products';
             this.applyInitialSnapshot();
             this.loadRecord();
@@ -540,15 +553,18 @@ export default {
         },
         loadRecord() {
             const requestedId = this.recordId;
-            if (!requestedId) {
+            if (!requestedId || !this.showDrawer) {
                 return;
             }
+            const sequence = ++this.detailRequestSequence;
+            const isCurrent = () => this.showDrawer && sequence === this.detailRequestSequence
+                && String(requestedId) === String(this.recordId);
 
             this.loading = true;
 
-            this.$http.get(`/${this.resource}/record/${requestedId}`)
+            return this.$http.get(`/${this.resource}/record/${requestedId}`)
                 .then(async (response) => {
-                    if (String(requestedId) !== String(this.recordId)) {
+                    if (!isCurrent()) {
                         return;
                     }
 
@@ -565,6 +581,7 @@ export default {
                     if (!items.length) {
                         items = await this.fetchDocumentItemsFallback(requestedId);
                     }
+                    if (!isCurrent()) return;
 
                     this.record = {
                         ...snapshot,
@@ -597,17 +614,17 @@ export default {
                     };
                 })
                 .catch(() => {
-                    if (String(requestedId) !== String(this.recordId)) {
+                    if (!isCurrent()) {
                         return;
                     }
 
+                    this.$message.error('No se pudo cargar el detalle del comprobante.');
                     if (!this.record) {
-                        this.$message.error('No se pudo cargar el detalle del comprobante.');
                         this.visibleDrawer = false;
                     }
                 })
                 .finally(() => {
-                    if (String(requestedId) === String(this.recordId)) {
+                    if (isCurrent()) {
                         this.loading = false;
                     }
                 });
@@ -713,6 +730,9 @@ export default {
             return date.isValid() ? date.format('DD-MM-YYYY') : value;
         },
         handleClosed() {
+            if (this.showDrawer) return;
+            this.resetFiscalAction();
+            this.detailRequestSequence += 1;
             this.record = null;
             this.loading = false;
             this.activeTab = 'products';

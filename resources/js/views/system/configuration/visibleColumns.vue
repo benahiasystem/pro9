@@ -90,6 +90,7 @@
                                 :key="col.key"
                                 class="dp-item dp-item--toggle"
                                 :class="{ 'dp-item--checked': isActive(col.key) }"
+                                :aria-disabled="isPermanentColumn(col.key)"
                                 @click="toggleColumn(col.key)"
                             >
                                 <span class="dp-item__title">
@@ -148,7 +149,7 @@
                                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="5" r="1" fill="currentColor" stroke="none"/><circle cx="9" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="9" cy="19" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="5" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="19" r="1" fill="currentColor" stroke="none"/></svg>
                                     </span>
                                     <span class="dp-item__title">{{ col.title }}</span>
-                                    <button class="dp-item__remove" @click.stop="deactivateColumn(col.key)">
+                                    <button v-if="!isPermanentColumn(col.key)" class="dp-item__remove" @click.stop="deactivateColumn(col.key)">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
                                     </button>
                                 </div>
@@ -202,6 +203,7 @@
 
 <script>
 import draggable from 'vuedraggable'
+import { mergeDocumentColumns } from '../../../helpers/document-list-columns'
 
 const SAMPLE_BY_TYPE = {
     id:       [1, 2, 3],
@@ -378,13 +380,14 @@ const MODULES = {
         },
     },
     document_index: {
-        label: 'Boleta / Factura',
+        label: 'Comprobantes',
         columns: {
             fiscal_environment_type:         { title: 'Ambiente',                       visible: false, type: 'text'     },
             date_of_issue:     { title: 'Emisión',                    visible: true,  type: 'date'     },
             date_payment:      { title: 'Fecha de pago',              visible: false, type: 'date'     },
             date_of_due:       { title: 'F. Vencimiento',             visible: false, type: 'date'     },
             customer:          { title: 'Cliente',                    visible: true,  type: 'customer' },
+            document_type:     { title: 'Tipo de documento',          visible: true,  type: 'text'     },
             number:            { title: 'Número',                     visible: true,  type: 'document' },
             notes:             { title: 'Notas C/D',                  visible: false, type: 'document' },
             // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
@@ -409,10 +412,9 @@ const MODULES = {
             // ########## INICIO CAMBIO IGV A IVA
             total_igv:         { title: 'T.IVA',                      visible: true,  type: 'price'    },
             // ######### FIN CAMBIO IGV A IVA
-            total:             { title: 'Total',                      visible: false, type: 'price'    },
+            total:             { title: 'Total',                      visible: true, type: 'price'    },
             balance:           { title: 'Saldo',                      visible: true,  type: 'price'    },
             purchase_order:    { title: 'Orden de Compra',            visible: false, type: 'document' },
-            downloads:         { title: 'Descargas PDF',               visible: true,  type: 'action'   },
             actions:           { title: 'Acciones',                   visible: true,  type: 'action'   },
         },
     },
@@ -577,7 +579,7 @@ export default {
             this.searchActive = '';
 
             // Construir array con order y defaultOrder (posición fija del MODULES, nunca cambia)
-            const allCols = Object.entries(mod.columns).map(([key, col], idx) => ({
+            let allCols = Object.entries(mod.columns).map(([key, col], idx) => ({
                 key,
                 title: col.title,
                 type: col.type,
@@ -598,6 +600,13 @@ export default {
                 });
             }
 
+            if (moduleKey === 'document_index') {
+                const defaults = Object.fromEntries(Object.entries(mod.columns)
+                    .map(([key, col], idx) => [key, { ...col, order: idx, defaultOrder: idx }]));
+                allCols = Object.entries(mergeDocumentColumns(defaults, saved ? saved.columns : {}))
+                    .map(([key, col]) => ({ key, ...col }));
+            }
+
             allCols.sort((a, b) => a.order - b.order);
             this.allColumns = allCols;
 
@@ -607,11 +616,16 @@ export default {
             const col = this.allColumns.find(c => c.key === key);
             return col ? col.visible : false;
         },
+        isPermanentColumn(key) {
+            return this.editingModuleKey === 'document_index' && key === 'total';
+        },
         toggleColumn(key) {
+            if (this.isPermanentColumn(key)) return;
             const col = this.allColumns.find(c => c.key === key);
             if (col) this.$set(col, 'visible', !col.visible);
         },
         deactivateColumn(key) {
+            if (this.isPermanentColumn(key)) return;
             const col = this.allColumns.find(c => c.key === key);
             if (col) this.$set(col, 'visible', false);
         },

@@ -51,7 +51,8 @@ class SeriesCodeGenerator
     ];
 
     /**
-     * Series que se siembran al crear un tenant: básicas, nota de venta y movimientos internos.
+     * Configuraciones que se siembran sólo al crear un tenant: básicas sin serie,
+     * nota de venta y movimientos internos con sus códigos. El inicio por defecto es 1.
      *
      * @param  int $establishment_id
      * @return array<int, array<string, mixed>>
@@ -70,7 +71,7 @@ class SeriesCodeGenerator
             $rows[] = [
                 'establishment_id' => $establishment_id,
                 'document_type_id' => $type['document_type_id'],
-                'number'           => $type['prefix'] . '01',
+                'number'           => $type['category'] === 'basic' ? '' : $type['prefix'] . '01',
             ];
         }
 

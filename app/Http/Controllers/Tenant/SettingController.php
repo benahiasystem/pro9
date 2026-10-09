@@ -202,6 +202,10 @@
                 $cols->push();
                 $return['saved'] = 1;
             }
+            if ($report === 'document_index') {
+                $return['columns'] = \App\Support\DocumentListColumns::merge((array) $columns, (array) $cols->columns);
+                return $return;
+            }
             $currencCol = $cols->columns;
             $currencColDeb = (array)$cols->columns;
             $orgCOls = $request->columns;

@@ -153,7 +153,7 @@
                                     <strong>Seleccionar columnas</strong>
                                 </el-dropdown-item>
                                 <el-dropdown-item v-for="col in tenantSelectableColumns" :key="col.key">
-                                    <el-checkbox @change="getColumnsToShow(1)" v-model="columns[col.key].visible">{{ col.title }}</el-checkbox>
+                                    <el-checkbox :disabled="col.key === 'total'" @change="getColumnsToShow(1)" v-model="columns[col.key].visible">{{ col.title }}</el-checkbox>
                                 </el-dropdown-item>
                             </div>
                         </el-dropdown-menu>
@@ -166,7 +166,8 @@
                         <th v-if="col.visible && col.key === 'date_payment'" :key="col.key" class="text-center" style="min-width: 95px;">Fecha de pago</th>
                         <th v-if="col.visible && col.key === 'date_of_due'" :key="col.key" class="text-center">Fecha Vencimiento</th>
                         <th v-if="col.visible && col.key === 'customer'" :key="col.key">Cliente</th>
-                        <th v-if="col.visible && col.key === 'number'" :key="col.key">Número</th>
+                        <th v-if="col.visible && col.key === 'document_type'" :key="col.key" class="document-column-compact document-column-type">Tipo de documento</th>
+                        <th v-if="col.visible && col.key === 'number'" :key="col.key" class="document-column-compact document-column-number">Número</th>
                         <th v-if="col.visible && col.key === 'notes'" :key="col.key">Notas C/D</th>
                         <!-- ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES -->
                         <th v-if="col.visible && col.key === 'dispatch'" :key="col.key">Orden de entrega</th>
@@ -174,8 +175,7 @@
                         <th v-if="col.visible && col.key === 'sales_note'" :key="col.key">Nota de venta</th>
                         <th v-if="col.visible && col.key === 'order_note'" :key="col.key">Pedidos</th>
                         <th v-if="col.visible && col.key === 'send_it'" :key="col.key">Email Enviado</th>
-                        <th v-if="col.visible && col.key === 'state_type'" :key="col.key">Estado</th>
-                        <th v-if="col.visible && col.key === 'hka_status'" :key="col.key">Estado HKA</th>
+                        <th v-if="col.visible && col.key === 'state_type'" :key="col.key" class="document-column-compact">Estado</th>
                         <!-- Campos personalizados: posición configurable vía columna virtual `personalized` (visibilidad la dicta cada field) -->
                         <template v-if="col.key === 'personalized'">
                             <template v-for="field in customFieldColumns">
@@ -200,7 +200,6 @@
                         <th v-if="col.visible && col.key === 'total'" :key="col.key" class="text-end">Total</th>
                         <th v-if="col.visible && col.key === 'balance'" :key="col.key" class="text-end">Saldo</th>
                         <th v-if="col.visible && col.key === 'purchase_order'" :key="col.key" class="text-center" style="min-width: 95px;">Orden de compra</th>
-                        <th v-if="col.visible && col.key === 'downloads'" :key="col.key" class="text-center col-downloads"></th>
                         <th v-if="col.visible && col.key === 'actions' && typeUser != 'integrator'" :key="col.key" class="text-end"></th>
                     </template>
                 </tr>
@@ -233,7 +232,8 @@
                             >{{ row.customer_name }}</feSpecularLighting>
                             <br /><small class="text-muted"><template v-if="row.customer_identity_document_type_description">{{ row.customer_identity_document_type_description }}: </template>{{ row.customer_number }}</small>
                         </td>
-                        <td v-if="col.visible && col.key === 'number'" :key="col.key">
+                        <td v-if="col.visible && col.key === 'document_type'" :key="col.key" class="document-column-compact document-column-type">{{ row.document_type_description }}</td>
+                        <td v-if="col.visible && col.key === 'number'" :key="col.key" class="document-column-compact document-column-number">
                             <span class="badge" :class="{ 'bg-invoices': row.document_type_id === '01', 'bg-tickets': row.document_type_id === '03', 'bg-credit-notes': row.document_type_id === '07' }" style="font-size: 11px; cursor: pointer;" @click="clickDetail(row)">
                                 <svg data-v-e4dd5c75="" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-list-details" style="margin-top: -4px;"><path data-v-e4dd5c75="" stroke="none" d="M0 0h24v24H0z" fill="none"></path><path data-v-e4dd5c75="" d="M13 5h8"></path><path data-v-e4dd5c75="" d="M13 9h5"></path><path data-v-e4dd5c75="" d="M13 15h8"></path><path data-v-e4dd5c75="" d="M13 19h5"></path><path data-v-e4dd5c75="" d="M3 5a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4"></path><path data-v-e4dd5c75="" d="M3 15a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4"></path></svg>
                                 {{ row.number }}
@@ -262,19 +262,14 @@
                                 <i class="fas fa-lg" :class="{ 'fa-minus': row.email_send_it === false, 'fa-check': row.email_send_it === true }"></i>
                             </span>
                         </td>
-                        <td v-if="col.visible && col.key === 'state_type'" :key="col.key">
-                            <span class="badge bg-secondary text-white" :class="{ 'bg-danger': row.state_type_id === '11', 'bg-warning': row.state_type_id === '13', 'bg-secondary': row.state_type_id === '01', 'bg-info': row.state_type_id === '03', 'bg-success': row.state_type_id === '05', 'bg-dark': row.state_type_id === '09' }">{{ row.state_type_description }}</span>
+                        <td v-if="col.visible && col.key === 'state_type'" :key="col.key" class="document-column-compact">
+                            <el-popover placement="top" trigger="hover">
+                                <div>N° de control: {{ documentStatus(row).controlNumber }}</div>
+                                <div v-if="documentStatus(row).rejected" class="document-status-reason">Motivo de rechazo: {{ documentStatus(row).rejectionReason }}</div>
+                                <div v-else>Estado: {{ documentStatus(row).label }}</div>
+                                <span slot="reference" class="badge" :class="documentStatus(row).badgeClass" tabindex="0">{{ documentStatus(row).label }}</span>
+                            </el-popover>
                             <a v-if="row.state_type_id === '13'" href="voided" class="small"><br />Ir a anulaciones</a>
-                        </td>
-                        <td v-if="col.visible && col.key === 'hka_status'" :key="col.key" @click.stop>
-                            <template v-if="row.fiscal_emission">
-                                <el-tag size="small" :type="hkaTag(row.fiscal_emission.status)">{{ row.fiscal_emission.description }}</el-tag>
-                                <small v-if="row.fiscal_emission.control_number" class="d-block">Control: {{ row.fiscal_emission.control_number }}</small>
-                                <small v-if="row.fiscal_emission.diagnostic" class="d-block">{{ row.fiscal_emission.diagnostic }}</small>
-                                <el-button v-if="row.fiscal_emission.can_query" size="mini" :loading="hkaBusy[row.id]" @click="hkaAction(row, 'query')">Consultar HKA</el-button>
-                                <el-button v-if="row.fiscal_emission.can_send" size="mini" :loading="hkaBusy[row.id]" @click="hkaAction(row, 'send')">Enviar HKA</el-button>
-                            </template>
-                            <span v-else>No aplica</span>
                         </td>
                         <!-- Campos personalizados: posición configurable vía columna virtual `personalized` (visibilidad la dicta cada field) -->
                         <template v-if="col.key === 'personalized'">
@@ -323,12 +318,6 @@
                         <!-- ######### FIN CAMBIO IGV A IVA -->
                         <td v-if="col.visible && col.key === 'balance'" :key="col.key" class="text-end" :class="{ 'text-warning': row.balance > 0, 'text-success': row.balance == 0 }">{{ row.currency_type_symbol }} {{ formatDecimal(row.balance) }}</td>
                         <td v-if="col.visible && col.key === 'purchase_order'" :key="col.key">{{ row.purchase_order }}</td>
-                        <td v-if="col.visible && col.key === 'downloads'" :key="col.key" class="text-center col-downloads" @click.stop>
-                            <!-- ########## INICIO CAMBIO SIN XML CDR SUNAT -->
-                            <!-- XML y CDR se omiten; PDF permanece disponible. -->
-                            <!-- ######### FIN CAMBIO SIN XML CDR SUNAT -->
-                            <button v-if="row.has_pdf" type="button" style="min-width: 41px" class="btn waves-effect waves-light btn-xs btn-info m-1__2 me-2" @click.prevent="clickDownload(row.download_pdf)">PDF</button>
-                        </td>
                         <td v-if="col.visible && col.key === 'actions' && typeUser != 'integrator'" :key="col.key" class="text-end" @click.stop>
                         <el-dropdown trigger="click" size="small">
                             <el-button class="btn-dropdown">
@@ -342,8 +331,7 @@
                               </el-dropdown-item>
 
                               <el-dropdown-item divided />
-                              <!-- Descargas: en celular la columna XML/PDF/CDR se oculta
-                                   (hacía filas de ~300px) y sus acciones viven aquí -->
+                              <!-- La descarga PDF móvil permanece en el menú de la fila. -->
                               <!-- ########## INICIO CAMBIO SIN XML CDR SUNAT -->
                               <!-- El menú móvil tampoco ofrece XML ni CDR. -->
                               <!-- ######### FIN CAMBIO SIN XML CDR SUNAT -->
@@ -372,10 +360,6 @@
                               >
                                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-edit me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" /><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z" /><path d="M16 5l3 3" /></svg>
                                   Editar
-                              </el-dropdown-item>
-
-                              <el-dropdown-item v-if="!row.can_edit && row.edit_block_reason" disabled>
-                                <span :title="row.edit_block_reason">Edición bloqueada: {{ row.edit_block_reason }}</span>
                               </el-dropdown-item>
 
                               <!-- ########## INICIO CAMBIO SIN XML CDR SUNAT -->
@@ -539,6 +523,7 @@
             :recordId="recordId"
             :showClose="true"
             :configuration="configuration"
+            @fiscal-updated="onFiscalUpdated"
         ></document-options>
 
         <document-payments
@@ -578,6 +563,7 @@
             @voided="openVoidedFromDrawer"
             @payments="openPaymentsFromDrawer"
             @options="openOptionsFromDrawer"
+            @fiscal-updated="onFiscalUpdated"
         ></document-detail-drawer>
     </div>
 </div>
@@ -633,6 +619,21 @@
 }
 </style>
 <style scoped>
+.document-column-compact {
+    padding-right: 4px;
+}
+.document-column-type,
+.document-column-number {
+    padding-right: 16px;
+    width: 1%;
+    white-space: nowrap;
+}
+.document-status-reason {
+    max-width: 320px;
+    word-break: normal;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
 .document-customer-link {
     color: inherit;
     cursor: pointer;
@@ -665,6 +666,8 @@ import { mapActions, mapState } from "vuex/dist/vuex.mjs";
 import DocumentRetention from "./partials/retention.vue";
 import DocumentDetailDrawer from "./partials/detail-drawer.vue";
 import moment from "moment";
+import { documentStatus } from "../../../helpers/document-status";
+import { mergeDocumentColumns } from "../../../helpers/document-list-columns";
 
 export default {
     mixins: [deletable],
@@ -722,7 +725,6 @@ export default {
             showImportExcelDialog: false,
             showDialogRetention: false,
             showDetailDrawer: false,
-            hkaBusy: {},
             detailRecordId: null,
             detailInitialRow: null,
             resource: "documents",
@@ -735,6 +737,7 @@ export default {
                 date_payment:       { title: "Fecha de pago",                  visible: false, order: 2  },
                 date_of_due:        { title: "F. Vencimiento",                 visible: false, order: 3  },
                 customer:           { title: "Cliente",                        visible: true,  order: 4  },
+                document_type:      { title: "Tipo de documento",              visible: true,  order: 4.5 },
                 number:             { title: "Número",                         visible: true,  order: 5  },
                 notes:              { title: "Notas C/D",                      visible: false, order: 6  },
                 // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
@@ -744,7 +747,6 @@ export default {
                 order_note:         { title: "Pedidos",                        visible: false, order: 9  },
                 send_it:            { title: "Correo enviado al destinatario", visible: false, order: 10 },
                 state_type:         { title: "Estado",                         visible: true,  order: 11 },
-                hka_status:         { title: "Estado HKA",                     visible: true,  order: 11.5 },
                 personalized:       { title: "Personalizados",                 visible: true,  order: 12 },
                 user_name:          { title: "Usuario",                        visible: false, order: 13 },
                 source_module:      { title: "Origen",                         visible: false, order: 14 },
@@ -761,10 +763,9 @@ export default {
                 // ########## INICIO CAMBIO IGV A IVA
                 total_igv:          { title: "T.IVA",                          visible: true,  order: 25 },
                 // ######### FIN CAMBIO IGV A IVA
-                total:              { title: "Total",                          visible: false, order: 26 },
+                total:              { title: "Total",                          visible: true, order: 26 },
                 balance:            { title: "Saldo",                          visible: true,  order: 27 },
                 purchase_order:     { title: "Orden de Compra",                visible: false, order: 28 },
-                downloads:          { title: "Descargas PDF",                  visible: true,  order: 29 },
                 actions:            { title: "Acciones",                       visible: true,  order: 30 },
             },
             customFieldColumns: [],
@@ -815,20 +816,18 @@ export default {
                 }
             }).catch(() => {});
         },
-        hkaTag(status) {
-            return { confirmed: 'success', rejected: 'danger', uncertain: 'warning', pending: 'warning' }[status] || 'info';
+        documentStatus,
+        onFiscalUpdated({ id, fiscal_emission }) {
+            if (this.detailInitialRow && String(this.detailInitialRow.id) === String(id)) {
+                this.$set(this.detailInitialRow, 'fiscal_emission', fiscal_emission);
+            }
+            this.$eventHub.$emit('reloadData');
         },
-        async hkaAction(row, action) {
-            if (this.hkaBusy[row.id]) return;
-            this.$set(this.hkaBusy, row.id, true);
-            try {
-                const response = await this.$http.post(`/documents/${row.id}/${action}-hka`);
-                this.$set(row, 'fiscal_emission', response.data.fiscal_emission);
-                this.$message.info(response.data.fiscal_emission.diagnostic || response.data.fiscal_emission.description);
-                this.$eventHub.$emit('reloadData');
-            } catch (error) {
-                this.$message.error('La venta está guardada. No se pudo actualizar el estado HKA.');
-            } finally { this.$set(this.hkaBusy, row.id, false); }
+        applyColumnPreferences(saved) {
+            this.columns = mergeDocumentColumns(this.columns, saved);
+            if (saved.personalized && saved.personalized.fields) {
+                this.savedCustomFieldVisibilities = saved.personalized.fields;
+            }
         },
         formatDecimal(value) {
             if (value === undefined || value === null || isNaN(value)) return '';
@@ -870,31 +869,11 @@ export default {
                     if (updated === undefined) {
                         let currentCols = response.data.columns;
                         if (currentCols !== undefined) {
-                            Object.keys(currentCols).forEach(key => {
-                                if (this.columns[key] !== undefined) {
-                                    this.columns[key].visible = currentCols[key].visible;
-                                    if (currentCols[key].order !== undefined) {
-                                        this.columns[key].order = currentCols[key].order;
-                                    }
-                                }
-                            });
-                            if (currentCols.personalized && currentCols.personalized.fields) {
-                                this.savedCustomFieldVisibilities = currentCols.personalized.fields;
-                            }
+                            this.applyColumnPreferences(currentCols);
                         } else {
                             this.$http.get('/column-visibility/documents').then(res => {
                                 if (res.data.success && res.data.data) {
-                                    Object.keys(res.data.data).forEach(key => {
-                                        if (this.columns[key] !== undefined) {
-                                            this.columns[key].visible = res.data.data[key].visible;
-                                            if (res.data.data[key].order !== undefined) {
-                                                this.columns[key].order = res.data.data[key].order;
-                                            }
-                                        }
-                                    });
-                                    if (res.data.data.personalized && res.data.data.personalized.fields) {
-                                        this.savedCustomFieldVisibilities = res.data.data.personalized.fields;
-                                    }
+                                    this.applyColumnPreferences(res.data.data);
                                 }
                             }).catch(() => {});
                         }

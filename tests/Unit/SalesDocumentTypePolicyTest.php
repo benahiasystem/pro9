@@ -68,16 +68,16 @@ class SalesDocumentTypePolicyTest extends TestCase
     }
 
     /** @test */
-    public function new_tenants_receive_sales_and_warehouse_internal_series(): void
+    public function new_tenants_receive_blank_basic_series_and_keep_internal_series_codes(): void
     {
         $series = SeriesCodeGenerator::defaultTenantSeries(7);
 
         self::assertSame(
             [
-                ['establishment_id' => 7, 'document_type_id' => '01', 'number' => 'FF01'],
-                ['establishment_id' => 7, 'document_type_id' => 'FE', 'number' => 'FE01'],
-                ['establishment_id' => 7, 'document_type_id' => '07', 'number' => 'FC01'],
-                ['establishment_id' => 7, 'document_type_id' => '08', 'number' => 'FD01'],
+                ['establishment_id' => 7, 'document_type_id' => '01', 'number' => ''],
+                ['establishment_id' => 7, 'document_type_id' => 'FE', 'number' => ''],
+                ['establishment_id' => 7, 'document_type_id' => '07', 'number' => ''],
+                ['establishment_id' => 7, 'document_type_id' => '08', 'number' => ''],
                 ['establishment_id' => 7, 'document_type_id' => '80', 'number' => 'NV01'],
                 ['establishment_id' => 7, 'document_type_id' => 'U2', 'number' => 'AI01'],
                 ['establishment_id' => 7, 'document_type_id' => 'U3', 'number' => 'AS01'],
