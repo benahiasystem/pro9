@@ -549,7 +549,7 @@ class PaymentLink extends ModelTenant
      */
     public function getNumberFullAttribute()
     {
-        return 'PG-'.str_pad($this->id, 6, '0', STR_PAD_LEFT);
+        return \App\Services\Fiscal\FiscalIdentity::numberFull('PG', $this->id);
     }
 
 

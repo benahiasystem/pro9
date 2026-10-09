@@ -25,9 +25,29 @@ final class FiscalIdentity
         return collect($series)->map(fn ($code) => ['number' => $code]);
     }
 
+    /** Presentation only: never use this value as a stored/provider identifier. */
+    public static function displayNumber($number): string
+    {
+        $value = (string) $number;
+        return preg_match('/\A[0-9]+\z/', $value)
+            ? str_pad($value, 8, '0', STR_PAD_LEFT) : $value;
+    }
+
     public static function numberFull($series, $number): string
     {
-        return ($series === null || $series === '') ? (string) $number : $series . '-' . $number;
+        $number = self::displayNumber($number);
+        return ($series === null || $series === '') ? $number : $series . '-' . $number;
+    }
+
+    /** Format a display reference returned by a report query, without changing its source. */
+    public static function displayReference($reference): string
+    {
+        $value = (string) $reference;
+        if (preg_match('/\ASIN_SERIE_S[0-9]+-([0-9]+)(?:-[0-9]{8})?\z/', $value, $legacy)) {
+            return self::displayNumber($legacy[1]);
+        }
+        $parts = self::parseNumberFull($value);
+        return $parts === null ? $value : self::numberFull($parts[0], $parts[1]);
     }
 
     /** The final separator precedes the number; earlier hyphens belong to the series. */

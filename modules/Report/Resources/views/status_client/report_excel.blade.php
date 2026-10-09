@@ -150,7 +150,7 @@
                             @endif
                         </td>
                         <td class="celda">{{$document_type->id}}</td>
-                        <td class="celda">{{$value->series}}-{{$value->number}}</td>
+                        <td class="celda">{{ \App\Services\Fiscal\FiscalIdentity::numberFull($value->series, $value->number) }}</td>
                         <td class="celda">{{$value->date_of_issue->format('Y-m-d')}}</td>
                         <td class="celda">{{$value->person->name}}</td>
                         <td class="celda"></td>

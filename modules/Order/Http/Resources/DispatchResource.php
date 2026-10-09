@@ -40,7 +40,7 @@ class DispatchResource extends JsonResource
             'pdf_a4_filename' => url('')."/print/dispatch/{$this->external_id}/a4/{$this->filename}.pdf",
             'print_ticket' => url('')."/print/dispatch/{$this->external_id}/ticket",
             'pdf_a4_data' => [
-                'filename_only' => $this->filename,
+                'filename_only' => \App\Services\Fiscal\DocumentFileName::visible($this->filename),
                 'extension_only' => 'pdf'
             ],
             'reference_documents' => $this->reference_documents,

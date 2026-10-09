@@ -179,7 +179,7 @@ class Contract extends ModelTenant
 
     public function getIdentifierAttribute()
     {
-        return $this->prefix.'-'.$this->id;
+        return \App\Services\Fiscal\FiscalIdentity::numberFull($this->prefix, $this->id);
     }
 
     public function user()
@@ -247,7 +247,7 @@ class Contract extends ModelTenant
 
     public function getNumberFullAttribute()
     {
-        return $this->prefix.'-'.$this->id;
+        return \App\Services\Fiscal\FiscalIdentity::numberFull($this->prefix, $this->id);
     }
 
     public function scopeWhereStateTypeAccepted($query)

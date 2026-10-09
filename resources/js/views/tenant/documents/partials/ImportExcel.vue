@@ -32,7 +32,7 @@
                                 <el-option
                                     v-for="option in series"
                                     :key="option.number"
-                                    :label="option.number || 'Sin serie'"
+                                    :label="option.number || '\u00a0'"
                                     :value="option.number"
                                 ></el-option>
                             </el-select>

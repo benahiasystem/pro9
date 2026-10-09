@@ -360,7 +360,7 @@
          */
         public function getNumberFullAttribute()
         {
-            return "TS-{$this->id}";
+            return \App\Services\Fiscal\FiscalIdentity::numberFull('TS', $this->id);
         }
 
         /**

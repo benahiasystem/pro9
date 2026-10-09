@@ -11,12 +11,12 @@
             </svg>
         </a></h2>
         <ol class="breadcrumbs">
-            <li class="active"><span> Nueva Nota ({{ document.series }}-{{ document.number }}) </span></li>
+            <li class="active"><span> Nueva Nota ({{ documentNumberFull(document.series, document.number) }}) </span></li>
         </ol>
     </div>
     <div class="card tab-content-default row-new mb-0 pt-2 pt-md-0 mt-4" v-loading="loading">
     <!-- <div class="card-header bg-info">
-        Nueva Nota ({{ document.series }}-{{ document.number }})
+        Nueva Nota ({{ documentNumberFull(document.series, document.number) }})
     </div> -->
     <div class="tab-content tab-content-default card-body">
         <div class="invoice">
@@ -46,7 +46,7 @@
                             <label class="control-label">Serie</label>
                             <el-select v-model="form.series_id">
                                 <el-option v-for="option in series" :key="option.id" :value="option.id"
-                                           :label="option.number || 'Sin serie'"></el-option>
+                                           :label="option.number || '\u00a0'"></el-option>
                             </el-select>
                             <small class="form-control-feedback" v-if="errors.series_id"
                                    v-text="errors.series_id[0]"></small>
@@ -317,6 +317,7 @@
 </template>
 
 <script>
+import { documentNumberFull } from "../../../helpers/document-number";
 
 import DocumentFormItem from './partials/item.vue'
 import DocumentOptions from '../documents/partials/options.vue'
@@ -407,6 +408,7 @@ export default {
 
     },
     methods: {
+        documentNumberFull,
 
 
 
@@ -600,7 +602,7 @@ export default {
 
                         this.affected_documents = response.data.data
 
-                        let message = `<strong>El CPE ${this.document.series}-${this.document.number} ya tiene notas generadas</strong><br/>`
+                        let message = `<strong>El CPE ${documentNumberFull(this.document.series, this.document.number)} ya tiene notas generadas</strong><br/>`
 
                         this.affected_documents.forEach(document => {
                             message += `${document.document_type_description}: ${document.description}<br/>`

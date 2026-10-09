@@ -11,6 +11,7 @@ description: Mantener en Pro9 el módulo y la presentación de Órdenes de entre
 - Aplicar la denominación a menús, títulos, botones, formularios, mensajes, correos, reportes, exportaciones y PDF.
 - El módulo vigente utiliza el código `09`; no ofrecer documentos retirados del transportista.
 - No presentar al usuario las denominaciones históricas `Guía de Remisión`, `G.R. Remitente` o `G.R. Transportista`.
+- Aplicar [numeración fiscal](../mantener-numeracion-fiscal-venezuela-pro9/SKILL.md) a encabezados y referencias: mínimo ocho dígitos, serie con sus guiones cuando exista y campo vacío cuando falte. Usar los helpers compartidos en listado, PDF, correo y reportes; no presentar `Sin serie`, marcadores técnicos ni IDs internos. Los nombres públicos de descarga y adjuntos siguen [distribución documental](../distribuir-documentos-hka/SKILL.md#nombres-visibles-de-archivos), conservando los prefijos propios de la orden.
 
 ## Contrato de catálogos y datos
 
@@ -34,6 +35,7 @@ description: Mantener en Pro9 el módulo y la presentación de Órdenes de entre
 2. Probar con `DeliveryOrderNamingContractTest` que el catálogo inicial contiene `09 = ORDEN DE ENTREGA`, excluye 31/71/72 y conserva los identificadores técnicos actuales de módulo y permiso.
 3. Verificar menú, listado, creación, mensajes, correo, reportes y PDF.
 4. Ejecutar las pruebas de contrato relacionadas. Aplicar `frontend-build`; no compilar por iniciativa propia.
+5. Si cambia presentación documental, ejecutar `DocumentNumberDisplayTest`, `DocumentFileNameTest` y `tests/js/empty-series-display.test.cjs`; revisar referencias de factura/orden, serie vacía y nombres de PDF y adjuntos, además de las pruebas de autorización afectadas.
 
 ## Permisos centrales de instalación nueva
 

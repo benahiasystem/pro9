@@ -307,7 +307,7 @@ class UserCommissionHelper
                         'pago'            => $payment->payment,
                         'comision'        => $comision,
                         'tipo_comision'   => $commission_type,
-                        'document' => $document->document_type_id.' - '.$document->series.'-'.$document->number,
+                        'document' => $document->document_type_id.' - '.$document->number_full,
                         'condicion_pago'  => $document->payment_condition_id,
                         'estado_doc'      => $document->state_type_id,
                         'estado_valido'   => $estado_valido,

@@ -12,7 +12,7 @@ class FiscalPdfDataTest extends TestCase
         $document->setRawAttributes(['id' => 1, 'series' => '', 'number' => 457, 'control_number' => '00-00001234', 'establishment_id' => 2, 'fiscal_environment' => 'demo']);
         $document->exists = true;
         $data = FiscalPdfData::forDocument($document);
-        self::assertSame('457', $data['number_full']);
+        self::assertSame('00000457', $data['number_full']);
         self::assertSame('00-00001234', $data['control_number']);
     }
 

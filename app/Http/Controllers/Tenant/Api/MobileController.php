@@ -790,7 +790,7 @@ class MobileController extends Controller
                     ],
                     'document_type_id' => $document->document_type_id,
                     'serie' => $document->series,
-                    'numero' => $document->series.'-'.$document->number,
+                    'numero' => $document->number_full,
                     'empresa' => $company->name,
                     'ruc' => $company->number
                 ]

@@ -96,7 +96,7 @@
                                     <tr>
                                         <td>{{$loop->iteration}}</td>
                                         <td>{{$value->document_type->id}}</td>
-                                        <td>{{$value->series}}-{{$value->number}}</td>
+                                        <td>{{$value->number_full}}</td>
                                         <td>{{$value->date_of_issue->format('Y-m-d')}}</td>
 
 

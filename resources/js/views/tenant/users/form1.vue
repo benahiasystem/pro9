@@ -565,7 +565,7 @@
                                             <td>
                                                 <div class="form-group mb-2 me-2">
                                                     <el-select v-model="row.series_id" filterable >
-                                                        <el-option v-for="option in row.default_series" :key="option.id" :value="option.id" :label="option.number || 'Sin serie'"></el-option>
+                                                        <el-option v-for="option in row.default_series" :key="option.id" :value="option.id" :label="option.number || '\u00a0'"></el-option>
                                                     </el-select>
 
                                                     <template v-if="errors[`default_document_types.${index}.series_id`]">
@@ -623,7 +623,7 @@
                                         <el-option
                                             v-for="option in series"
                                             :key="option.id"
-                                            :label="option.number || 'Sin serie'"
+                                            :label="option.number || '\u00a0'"
                                             :value="option.id"
                                         ></el-option>
                                     </el-select>

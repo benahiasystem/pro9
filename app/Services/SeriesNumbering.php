@@ -47,7 +47,7 @@ final class SeriesNumbering
     {
         $code = self::normalizeCode($code);
         if ($code === '' && $establishmentId === null) {
-            throw ValidationException::withMessages(['establishment_id' => 'Indique la sucursal para la numeración sin serie.']);
+            throw ValidationException::withMessages(['establishment_id' => 'Indique la sucursal para la numeración.']);
         }
         $query = Series::where('document_type_id', $type)->where('number', $code);
         if ($establishmentId !== null) $query->where('establishment_id', $establishmentId);

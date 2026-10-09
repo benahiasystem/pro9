@@ -33,6 +33,6 @@ class QuotationEmail extends Mailable
         return $this->subject('Envio de Cotización')
                     ->from(config('mail.username'), 'Cotización')
                     ->view('tenant.templates.email.quotation')
-                    ->attachData($pdf, $this->quotation->filename.'.pdf');
+                    ->attachData($pdf, \App\Services\Fiscal\DocumentFileName::visible($this->quotation->filename).'.pdf');
     }
 }

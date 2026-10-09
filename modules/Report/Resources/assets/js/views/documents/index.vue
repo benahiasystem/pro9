@@ -195,7 +195,7 @@
                             </td>
                             <td>{{ row.document_type_description }}</td>
                             <td>{{ row.serie }}</td>
-                            <td>{{ row.number }}</td>
+                            <td>{{ documentNumberFull('', row.number) }}</td>
                             <td>{{ formatDate(row.date_of_issue) }}</td>
                             <td>{{ formatDate(row.date_of_due) }}</td>
                             <td
@@ -401,6 +401,7 @@
 
     <!-- ######## FIN CAMBIO GEOPOLITICO VENEZUELA -->
 <script>
+import { documentNumberFull } from "../../../../../../../resources/js/helpers/document-number";
 // ######## INICIO SCRIPT GEOPOLITICO VENEZUELA
 import DataTable from "@componentsModuleReport/DataTableReportsDocuments.vue";
 import DocumentOptions from "@views/documents/partials/options.vue";
@@ -607,6 +608,7 @@ export default {
       // ######### FIN CAMBIO IGV A IVA
     },
     methods: {
+        documentNumberFull,
         formatDate(date) {
             if (!date) return null;
             const parsedDate = moment(date);

@@ -36,12 +36,13 @@ class FiscalIdentityTest extends SeriesDatabaseTestCase
         $rows = SeriesIdentitySubject::all();
         $this->db->enableQueryLog();
         FiscalIdentity::preload($rows);
-        self::assertSame('FC01-16', $rows[0]->fiscal_identity['number_full']);
+        self::assertSame('FC01-00000016', $rows[0]->fiscal_identity['number_full']);
         self::assertSame('00-00000021', $rows[0]->fiscal_identity['control_number']);
         self::assertSame([1], SeriesIdentitySubject::whereFiscalIdentifiers('FC01', 16, '00-21')->pluck('id')->all());
+        self::assertSame([1], SeriesIdentitySubject::whereFiscalIdentifiers('FC01', '00000016')->pluck('id')->all());
         self::assertSame([], SeriesIdentitySubject::whereFiscalIdentifiers('FC01', 21, '00-21')->pluck('id')->all());
         self::assertNull((new \App\Models\Tenant\Document(['series' => 'FF01', 'number' => 100]))->fiscal_identity['control_number']);
-        self::assertSame('FF01-100', (new \App\Models\Tenant\Document(['series' => 'FF01', 'number' => 100]))->number_full);
+        self::assertSame('FF01-00000100', (new \App\Models\Tenant\Document(['series' => 'FF01', 'number' => 100]))->number_full);
     }
 
     public function test_blank_series_keeps_number_control_and_branch_identity_independent(): void
@@ -49,7 +50,7 @@ class FiscalIdentityTest extends SeriesDatabaseTestCase
         foreach ([\App\Models\Tenant\Document::class, \App\Models\Tenant\Dispatch::class, \App\Models\Tenant\SaleNote::class, \Modules\Inventory\Models\Guide::class, \Modules\Inventory\Models\InventoryTransfer::class] as $class) {
             $document = new $class();
             $document->setRawAttributes(['series' => '', 'number' => 1, 'establishment_id' => 2, 'control_number' => '00-00000021']);
-            self::assertSame('1', $document->number_full);
+            self::assertSame('00000001', $document->number_full);
         }
         $company = (object) ['number' => 'J123456789'];
         $first = \App\CoreFacturalo\Requests\Inputs\Functions::filename($company, '01', '', 1, 1);
@@ -58,7 +59,7 @@ class FiscalIdentityTest extends SeriesDatabaseTestCase
         self::assertSame('J123456789-01-FF01-1', \App\CoreFacturalo\Requests\Inputs\Functions::filename($company, '01', 'FF01', 1, 1));
         $this->db->table('documents')->insert(['series' => '', 'number' => 1, 'document_type_id' => '01', 'establishment_id' => 1, 'fiscal_environment' => 'demo']);
         \App\CoreFacturalo\Requests\Inputs\Functions::validateUniqueDocument('demo', '01', null, 1, SeriesIdentitySubject::class, 2);
-        self::assertSame('1', \App\Services\Fiscal\FiscalIdentity::forDocument($document)['number_full']);
+        self::assertSame('00000001', \App\Services\Fiscal\FiscalIdentity::forDocument($document)['number_full']);
     }
 
     public function test_invalid_control_filter_is_rejected(): void

@@ -2,7 +2,7 @@
     $establishment = $document->establishment;
     $supplier = $document->supplier;
     $payments = $document->payments;
-    $tittle = $document->number ? str_pad($document->number, 8, '0', STR_PAD_LEFT) : '-';
+    $tittle = $document->number ? \App\Services\Fiscal\FiscalIdentity::displayNumber($document->number) : '-';
 @endphp
 <html>
 <head>

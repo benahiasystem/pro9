@@ -124,7 +124,7 @@
                                 <tr>
                                     <td class="celda">{{$loop->iteration}}</td>
                                     <td class="celda">{{$value->document_type->id}}</td>
-                                    <td class="celda">{{$value->series}}-{{$value->number}}</td>
+                                    <td class="celda">{{$value->number_full}}</td>
                                     <td class="celda">{{$value->date_of_issue->format('Y-m-d')}}</td>
 
                                         @if(in_array($value->document_type_id,["07","08"]) && $value->note)

@@ -112,7 +112,7 @@ test('blank series saves normally, labels explain internal numbering, and nullab
     assert.ok(source.includes(':maxlength="20"'));
     assert.ok(source.includes('numeración interna del sistema'));
     assert.ok(source.includes('@focus=') && source.includes('@click="$refs.tableNumberHelp.doShow()"'));
-    assert.ok(source.includes("row.number || 'Sin serie'"));
+    assert.ok(source.includes("row.number || ''"));
 });
 
 test('document references accept 20 characters and reject longer or malformed series', () => {

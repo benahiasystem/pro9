@@ -183,7 +183,7 @@ class OrderForm extends ModelTenant
 
     public function getNumberFullAttribute()
     {
-        return $this->prefix.'-'.$this->id;
+        return \App\Services\Fiscal\FiscalIdentity::numberFull($this->prefix, $this->id);
     }
 
     public function driver()

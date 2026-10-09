@@ -421,10 +421,10 @@ class FiscalEmissionSchemaTest extends TestCase
             (new \Modules\Inventory\Providers\InventoryKardexServiceProvider($app))->boot();
             (new \Modules\Inventory\Providers\InventoryVoidedServiceProvider($app))->boot();
             $first = (new \App\CoreFacturalo\Facturalo())->save($input)->getDocument();
-            self::assertSame('FF01-100', $first->number_full);
+            self::assertSame('FF01-00000100', $first->number_full);
             $input['external_id'] = \Illuminate\Support\Str::uuid()->toString();
             $second = (new \App\CoreFacturalo\Facturalo())->save($input)->getDocument();
-            self::assertSame('FF01-101', $second->number_full);
+            self::assertSame('FF01-00000101', $second->number_full);
             self::assertSame(2, $db->table('document_payments')->count());
             self::assertEquals(464, $db->table('document_payments')->sum('payment'));
             self::assertEquals(6, $db->table('item_warehouse')->where('item_id', $item->id)->where('warehouse_id', $warehouse)->value('stock'));
@@ -444,7 +444,7 @@ class FiscalEmissionSchemaTest extends TestCase
             $first->setAttribute('control_number', '00-00000021');
             $first->save();
             self::assertSame('00-00000021', \App\Services\Fiscal\FiscalPdfData::forDocument($first)['control_number']);
-            self::assertSame('FF01-100', $first->number_full);
+            self::assertSame('FF01-00000100', $first->number_full);
             $db->table('cash')->insert(['user_id' => $userId, 'date_opening' => '2026-09-10', 'time_opening' => '12:00:00', 'state' => true]);
             // Exercise the commercial NV input path, not a fake counter subject.
             $saleInput = array_replace($input, ['id' => null, 'series' => 'NV01', 'document_type_id' => '80', 'prefix' => 'NV']);

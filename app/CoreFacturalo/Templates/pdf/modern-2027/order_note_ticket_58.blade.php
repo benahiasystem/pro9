@@ -3,7 +3,7 @@
     $customer = $document->customer;
     $invoice = $document->invoice;
     $accounts = \App\Models\Tenant\BankAccount::all();
-    $tittle = $document->prefix.'-'.str_pad($document->id, 8, '0', STR_PAD_LEFT);
+    $tittle = $document->prefix.'-'.\App\Services\Fiscal\FiscalIdentity::displayNumber($document->id);
 
     /* ------------------------------------------------------------------
      | modern-2027: variables propias del diseño del ticket

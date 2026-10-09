@@ -12,6 +12,8 @@ class HkaPayloadBuilderTest extends TestCase
         $d=json_decode(file_get_contents(__DIR__.'/../Fixtures/Hka/'.$fixture.'.json'),true);
         $p=(new HkaPayloadBuilder())->build($d)['documentoElectronico'];
         self::assertSame($type,$p['encabezado']['identificacionDocumento']['tipoDocumento']);
+        self::assertSame((string) $d['number'], $p['encabezado']['identificacionDocumento']['numeroDocumento']);
+        if (isset($d['reference'])) self::assertSame((string) $d['reference']['number'], $p['encabezado']['identificacionDocumento']['numeroFacturaAfectada']);
         self::assertSame('VES',$p['encabezado']['totalesOtraMoneda']['moneda']);
         self::assertSame(str_replace('-', '', $d['operation_key']), $p['encabezado']['identificacionDocumento']['transaccionId']);
         self::assertSame('10.123',$p['encabezado']['totalesOtraMoneda']['tipoCambio']);

@@ -93,7 +93,7 @@ class UnpaidCollection extends ResourceCollection
                 'date_of_issue' => Carbon::parse($row->date_of_issue)->format('d-m-Y'),
                 'customer_name' => $row->customer_name,
                 'customer_id' => $row->customer_id,
-                'number_full' => $row->number_full,
+                'number_full' => \App\Services\Fiscal\FiscalIdentity::displayReference($row->number_full),
                 'total' => number_format((float) $row->total, 2, ".", ""),
                 'total_to_pay' => number_format($total_to_pay, 2, ".", ""),
                 'type' => $row->type,

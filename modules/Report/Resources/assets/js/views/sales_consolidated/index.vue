@@ -27,7 +27,7 @@
                             <tr>
                             <tr slot-scope="{ index, row }">
                                 <td>{{ index }}</td>
-                                <td  class="text-start">{{row.series}}-{{row.number}}</td>
+                                <td  class="text-start">{{ documentNumberFull(row.series, row.number) }}</td>
                                 <td  class="text-center">{{row.item_internal_id}}</td>
                                 <td  class="text-center">{{row.item_unit_type_id}}</td>
                                 <!-- <td  class="text-center">{{ (row.category)?row.category.name:''}}</td> -->
@@ -46,6 +46,7 @@
 </template>
 
 <script>
+import { documentNumberFull } from "../../../../../../../resources/js/helpers/document-number";
 
     import DataTable from '../../components/DataTableSalesConsolidated.vue'
 
@@ -61,6 +62,7 @@
         async created() {
         },
         methods: {
+        documentNumberFull,
 
 
         }

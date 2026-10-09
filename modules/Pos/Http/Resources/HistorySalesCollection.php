@@ -18,7 +18,7 @@ class HistorySalesCollection extends ResourceCollection
             
             return [
                 'id' => $row->id,
-                'number_full' => "{$row->series}-{$row->number}",
+                'number_full' => $row->number_full,
                 'series' => $row->series,
                 'number' => $row->number,
                 'date_of_issue' => $row->date_of_issue,

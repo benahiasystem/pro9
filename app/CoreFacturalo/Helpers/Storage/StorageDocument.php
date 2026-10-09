@@ -37,7 +37,8 @@ trait StorageDocument
     public function downloadStorage($filename, $file_type, $root = null)
     {
         $this->setData($filename, $file_type, $root);
-        return Storage::disk('tenant')->download($this->_folder.DIRECTORY_SEPARATOR.$this->_filename);
+        return Storage::disk('tenant')->download($this->_folder.DIRECTORY_SEPARATOR.$this->_filename,
+            str_ends_with($this->_filename, '.pdf') ? \App\Services\Fiscal\DocumentFileName::visible($this->_filename) : $this->_filename);
     }
 
     public function getStorage($filename, $file_type, $root = null)

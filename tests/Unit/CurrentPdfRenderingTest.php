@@ -75,7 +75,9 @@ class CurrentPdfRenderingTest extends TestCase
         ]);
 
         self::assertStringContainsString('FACTURA', $html);
-        self::assertStringContainsString('<h3>'.($series === '' ? '457' : $series.'-457').'</h3>', $html);
+        self::assertStringNotContainsStringIgnoringCase('Sin serie', $html);
+        self::assertStringNotContainsString('SIN_SERIE', $html);
+        self::assertStringContainsString('<h3>'.($series === '' ? '00000457' : $series.'-00000457').'</h3>', $html);
         if ($series === '') self::assertStringNotContainsString('-457', $html);
         self::assertStringContainsString('J-12345678-9', $html);
         self::assertStringContainsString('IVA:', $html);
@@ -162,7 +164,7 @@ class CurrentPdfRenderingTest extends TestCase
         $document->setRelation('received_retentions',new Collection());$document->setRelation('guarantee_fund',null);
         $company=new Fluent(['name'=>'Emisor actual','number'=>'J-99999999-9','logo'=>null]);
         $html=(new Template())->pdf('default','debit',$company,$document,'a4');
-        self::assertStringContainsString('IGTF sobre pago posterior',$html);self::assertStringContainsString('FF01-1',$html);
+        self::assertStringContainsString('IGTF sobre pago posterior',$html);self::assertStringContainsString('FF01-00000001',$html);
         self::assertStringContainsString('IGTF 3.00%',$html);self::assertStringNotContainsString('Producto gravado de prueba',$html);
         $pdf=new Mpdf(['tempDir'=>sys_get_temp_dir(),'default_font'=>'arial']);
         $pdf->WriteHTML(file_get_contents(app_path('CoreFacturalo/Templates/pdf/default/style.css')),HTMLParserMode::HEADER_CSS);

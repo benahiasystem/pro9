@@ -95,7 +95,9 @@ class HkaPdfTest extends TestCase
         $before = $this->snapshot(); $this->fakeDownload();
         $response = (new DocumentPdfController())->download('invoice-pdf', 'a4');
         self::assertSame($this->original, $response->getContent());
+        self::assertStringContainsString('J123456789-01-00000016', $response->headers->get('Content-Disposition'));
         self::assertStringContainsString('attachment;', $response->headers->get('Content-Disposition'));
+        self::assertStringNotContainsString('SIN_SERIE', $response->headers->get('Content-Disposition'));
         self::assertStringContainsString('no-store', $response->headers->get('Cache-Control'));
         self::assertSame($before, $this->snapshot());
     }
@@ -311,6 +313,7 @@ class HkaPdfTest extends TestCase
         Http::assertSentCount(2);
         $response = (new \App\Http\Controllers\Tenant\DownloadController())->toPrint('document', 'invoice-pdf', 'a4');
         self::assertSame($this->original, $response->getContent());
+        self::assertStringContainsString('J123456789-01-00000016', $response->headers->get('Content-Disposition'));
         self::assertStringContainsString('inline;', $response->headers->get('Content-Disposition'));
     }
 
@@ -418,8 +421,10 @@ class HkaPdfTest extends TestCase
         self::assertStringEndsWith('/api/documents/invoice-pdf/download-pdf/ticket', $entry['url']);
         $response = (new DocumentPdfController())->download('invoice-pdf', 'ticket');
         self::assertSame($this->original, $response->getContent());
-        self::assertStringContainsString('factura-1-80mm.pdf', $response->headers->get('Content-Disposition'));
+        self::assertStringContainsString('J123456789-01-00000016', $response->headers->get('Content-Disposition'));
+        self::assertStringContainsString('J123456789-01-00000016-80mm.pdf', $response->headers->get('Content-Disposition'));
         self::assertStringContainsString('attachment;', $response->headers->get('Content-Disposition'));
+        self::assertStringNotContainsString('SIN_SERIE', $response->headers->get('Content-Disposition'));
         self::assertStringContainsString('no-store', $response->headers->get('Cache-Control'));
         self::assertSame($before, $this->snapshot());
         Http::assertNothingSent();

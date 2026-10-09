@@ -201,7 +201,7 @@ class Quotation extends ModelTenant
 
     public function getIdentifierAttribute()
     {
-        return $this->prefix.'-'.$this->id;
+        return \App\Services\Fiscal\FiscalIdentity::numberFull($this->prefix, $this->id);
     }
 
     public function user()
@@ -335,7 +335,7 @@ class Quotation extends ModelTenant
 
     public function getNumberFullAttribute()
     {
-        return $this->prefix.'-'.$this->id;
+        return \App\Services\Fiscal\FiscalIdentity::numberFull($this->prefix, $this->id);
     }
 
     /**
@@ -351,7 +351,7 @@ class Quotation extends ModelTenant
      */
     public function getPdfTitleAttribute(): string
     {
-        return $this->prefix.'-'.str_pad((string) $this->id, 8, '0', STR_PAD_LEFT);
+        return $this->number_full;
     }
 
     /**

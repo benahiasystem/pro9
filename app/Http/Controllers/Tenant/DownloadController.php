@@ -21,7 +21,7 @@ class DownloadController extends Controller
     {
         $service = app(\App\Services\Fiscal\HkaPdf::class);
         $bytes = auth()->check() ? $service->download($document, $format) : $service->stored($document, $format);
-        $filename = app(\App\Services\Fiscal\HkaPdfStore::class)->filename($document).($format === 'ticket' ? '-80mm' : '').'.pdf';
+        $filename = \App\Services\Fiscal\DocumentFileName::visible(app(\App\Services\Fiscal\HkaPdfStore::class)->filename($document)).($format === 'ticket' ? '-80mm' : '').'.pdf';
         return response($bytes, 200, ['Content-Type' => 'application/pdf',
             'Content-Disposition' => \Symfony\Component\HttpFoundation\HeaderUtils::makeDisposition($attachment ? 'attachment' : 'inline', $filename),
             'Cache-Control' => 'private, no-store', 'X-Content-Type-Options' => 'nosniff']);

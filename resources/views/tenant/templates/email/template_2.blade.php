@@ -22,7 +22,7 @@
         {{ $document->supplier->name }}
     @endif
     ,</p>
-<p>Te enviamos tu comprobante de pago código: {{ $document->series.'-'.$document->number }}</p>
+<p>Te enviamos tu comprobante de pago código: {{ $document->number_full }}</p>
 <p>con número de folio: {{ $document->folio }}</p>
 <p>Ante cualquier duda o inconveniente con tu comprobante, comunícate a: contabilidad@ccgroupperu.com</p>
 <p>Gracias por tu compra.</p>

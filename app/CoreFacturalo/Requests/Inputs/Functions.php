@@ -22,7 +22,7 @@ class Functions
     {
         $series = \App\Services\SeriesNumbering::normalizeCode($series);
         if ($series === '') {
-            if (!$establishment_id) throw new \InvalidArgumentException('La numeración sin serie requiere sucursal.');
+            if (!$establishment_id) throw new \InvalidArgumentException('La numeración requiere sucursal.');
             return join('-', [$company->number, $document_type_id, 'SIN_SERIE_S' . $establishment_id, $number]);
         }
         return join('-', [$company->number, $document_type_id, $series, $number]);
@@ -35,7 +35,7 @@ class Functions
                         ->where('series', $series)
                         ->where('number', $number);
         if ($establishment_id !== null) $query->where('establishment_id', $establishment_id);
-        if ($series === '' && !$establishment_id) throw new \InvalidArgumentException('La numeración sin serie requiere sucursal.');
+        if ($series === '' && !$establishment_id) throw new \InvalidArgumentException('La numeración requiere sucursal.');
         $document = $query->first();
         if($document) {
             throw new Exception("El documento: {$document_type_id} {$series}-{$number} ya se encuentra registrado.");

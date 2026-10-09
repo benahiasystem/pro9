@@ -751,7 +751,7 @@ use Modules\Sale\Models\Agent;
          */
         public function getNumberFullAttribute()
         {
-            $number_full = $this->number ? \App\Services\Fiscal\FiscalIdentity::numberFull($this->series, $this->number) : $this->prefix . '-' . $this->id;
+            $number_full = $this->number ? \App\Services\Fiscal\FiscalIdentity::numberFull($this->series, $this->number) : \App\Services\Fiscal\FiscalIdentity::numberFull($this->prefix, $this->id);
 
             return $number_full;
         }
@@ -996,9 +996,9 @@ use Modules\Sale\Models\Agent;
                     ? $this->quotation->sale_opportunity->number_full : '',
                 'number_full' => $this->number_full,
                 'print_a4' => url('') . "/sale-notes/print/{$this->external_id}/a4",
-                'pdf_a4_filename' => url('')."/print/salenote/{$this->external_id}/a4/{$this->filename}.pdf",
+                'pdf_a4_filename' => url('')."/print/salenote/{$this->external_id}/a4/".\App\Services\Fiscal\DocumentFileName::visible($this->filename).".pdf",
                 'pdf_a4_data' => [
-                    "filename_only" => "{$this->filename}",
+                    "filename_only" => \App\Services\Fiscal\DocumentFileName::visible($this->filename),
                     "extension_only" => "pdf"
                 ],
                 'print_ticket' => url('') . "/sale-notes/print/{$this->external_id}/ticket",

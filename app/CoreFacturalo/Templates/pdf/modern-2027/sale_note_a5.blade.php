@@ -5,7 +5,7 @@
     $customer = $document->customer;
     //$path_style = app_path('CoreFacturalo'.DIRECTORY_SEPARATOR.'Templates'.DIRECTORY_SEPARATOR.'pdf'.DIRECTORY_SEPARATOR.'style.css');
     $left = $document->series;
-    $tittle = \App\Services\Fiscal\FiscalIdentity::numberFull($left, str_pad($document->number, 8, '0', STR_PAD_LEFT));
+    $tittle = \App\Services\Fiscal\FiscalIdentity::numberFull($left, $document->number);
     $payments = $document->payments;
     // $accounts = \App\Models\Tenant\BankAccount::all();
     $accounts = (new TemplatePdf)->getBankAccountsForPdf($document->establishment_id);

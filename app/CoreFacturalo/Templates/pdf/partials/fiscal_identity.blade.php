@@ -2,7 +2,7 @@
     @if($fiscal['environment'] === 'demo')
         <div style="font-weight: bold; text-align: center;">DEMO — SIN VALIDEZ FISCAL</div>
     @endif
-    <div>N° de documento: <strong>{{ $fiscal['document_number'] }}</strong></div>
+    <div>N° de documento: <strong>{{ \App\Services\Fiscal\FiscalIdentity::displayNumber($fiscal['document_number']) }}</strong></div>
     @if($fiscal['series'] !== '')<div>Serie: {{ $fiscal['series'] }}</div>@endif
     <div>N° de control: <strong>{{ $fiscal['control_number'] ?: 'No asignado' }}</strong></div>
 </div>

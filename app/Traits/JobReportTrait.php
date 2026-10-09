@@ -235,9 +235,11 @@ trait JobReportTrait
         Log::info('Creating final zip at path: ' . $pathZip);
 
         if ($zip->open($pathZip, ZipArchive::CREATE | ZipArchive::OVERWRITE) === true) {
+            $entryNames = [];
             foreach ($files->get() as $file) {
                 $ouput = $disk->get(DIRECTORY_SEPARATOR.$this->getReportPath($format).DIRECTORY_SEPARATOR.$file->generated_filename);
-                $zip->addFromString($file->generated_filename, $ouput);
+                $entry = \App\Services\Fiscal\DocumentFileName::archiveEntry($file->generated_filename, $entryNames);
+                $zip->addFromString($entry, $ouput);
             }
             $zip->close();
         }

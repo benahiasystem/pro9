@@ -285,7 +285,7 @@ $document_types=DocumentType::OnlyAvaibleDocuments()->get();
                                 @endif
                                 <td style="padding: 5px; text-align: center;" class="celda">{{$document_type->id}}</td>
                                 <td style="padding: 5px; text-align: center;" class="celda">{{\App\Services\Fiscal\FiscalIdentity::forDocument($value)['series']}}</td>
-                                <td style="padding: 5px; text-align: center;" class="celda">{{\App\Services\Fiscal\FiscalIdentity::forDocument($value)['document_number']}}@include('partials.fiscal_report_control', ['value' => $value])</td>
+                                <td style="padding: 5px; text-align: center;" class="celda">{{\App\Services\Fiscal\FiscalIdentity::displayNumber($value->number)}}@include('partials.fiscal_report_control', ['value' => $value])</td>
                                 <td style="padding: 5px; text-align: center;" class="celda">{{$value->date_of_issue->format('Y-m-d')}}</td>
                                 <td style="padding: 5px; text-align: center;" class="celda">{{isset($value->invoice) ? $value->invoice->date_of_due->format('Y-m-d'):''}}</td>
                                 @if(in_array($document_type->id,["07","08"]) && $value->note)

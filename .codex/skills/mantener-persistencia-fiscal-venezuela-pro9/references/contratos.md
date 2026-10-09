@@ -19,6 +19,9 @@ Rutas relativas a la raíz de Pro9:
 | `app/Services/Fiscal/HkaMail.php` | Intentos idempotentes y rastreo de correo, independientes del estado fiscal. |
 | `app/Services/Fiscal/HkaPdf.php` | Autorización y validación compartidas de descargas; Copias HKA reutilizables y conversión A5 en memoria antes de guardar. |
 | `app/Services/Fiscal/HkaPdfStore.php` | Validación y escritura atómica privada por operación y formato, filename fiscal, reutilización y recuperación de copias. |
+| `app/Services/Fiscal/FiscalIdentity.php` | `displayNumber`, `numberFull` y `displayReference` para presentación; `parseNumberFull` para descomponer referencias y consultar el número con alcance de sucursal. |
+| `resources/js/helpers/document-number.js` | Presentación equivalente de números y referencias en Vue, sin modificar datos de emisión. |
+| `app/Services/Fiscal/DocumentFileName.php` | Nombre público mediante `visible` y entradas ZIP sin colisiones mediante `archiveEntry`; no resuelve rutas ni permisos. |
 | `app/Services/Fiscal/HkaTicketPdf.php` | Ticket existente con QR desde la URL conservada, sin HTTP ni sobrescritura del PDF local. |
 | `app/Http/Controllers/Tenant/DocumentPdfController.php` | Descarga autenticada web/API y respuesta PDF adjunta sin caché. |
 | `app/Services/Fiscal/DocumentEditPolicy.php` | Permiso/motivo de edición e invalidación trazable de la operación anterior. |
@@ -28,6 +31,14 @@ Rutas relativas a la raíz de Pro9:
 | `app/Models/Tenant/Document.php` | Relaciones y saldo documental. |
 
 Al modificar un importe, seguir también sus consumidores en caja, `modules/Finance`, `modules/Report`, `modules/Dashboard` y templates PDF. No asumir que el importe aplicado equivale a efectivo recibido.
+
+## Identidad y presentación documental
+
+- Número persistido: correlativo numérico usado para numeración, asociaciones y snapshots fiscales. El formato de ocho dígitos no modifica ese valor ni el número de control.
+- Referencia visible: `number_full` y referencias de reportes presentan `FF01-00000025` o `00000025` con serie vacía. Usar los helpers PHP/JavaScript; para buscar o asociar, descomponer la referencia y consultar columnas con autorización por sucursal.
+- Clave de almacenamiento: identifica los bytes dentro del disco tenant y, para HKA, la operación y formato. Se resuelve desde el documento autorizado, nunca desde su nombre visible.
+- Nombre público: `DocumentFileName` prepara Content-Disposition, adjuntos comerciales y entradas ZIP. Puede repetirse entre sucursales; no es clave de identidad ni permiso de acceso. Aplicar [distribución HKA](../../distribuir-documentos-hka/SKILL.md) para ejemplos, sufijos y colisiones.
+- La consulta HKA utiliza la identidad del payload congelado; no toma ninguna de las representaciones anteriores como identificador remoto. El contrato de presentación pertenece a [numeración fiscal](../../mantener-numeracion-fiscal-venezuela-pro9/SKILL.md).
 
 ## Tablas y relaciones
 
@@ -79,6 +90,7 @@ Las reglas completas pertenecen a [emisión HKA](../../emitir-facturas-notas-hka
 
 ## Verificaciones
 
+- `tests/Unit/DocumentNumberDisplayTest.php`, `DocumentFileNameTest.php` y `tests/js/document-number-display.test.cjs`/`empty-series-display.test.cjs`: ocho dígitos, serie vacía, referencias, nombres públicos, adjuntos y colisiones ZIP. `HkaPayloadBuilderTest` comprueba que la presentación no altera números fiscales del snapshot.
 - `tests/Unit/FiscalEmissionSchemaTest.php`: MySQL temporal, instalación/persistencia y concurrencia real con `tests/Support/fiscal_payment_concurrency_worker.php`.
 - `tests/Unit/FiscalApiPaymentTransformTest.php`: compatibilidad del pago original, moneda propia, UUID y conversión con tasa explícita.
 - `tests/Unit/FiscalLineCalculationTest.php`: cálculo de líneas en servidor.

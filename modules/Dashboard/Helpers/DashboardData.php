@@ -454,7 +454,7 @@ class DashboardData
             $due_data = $formatDebtDue($row->date_of_due);
             $customers[$cid]['debts'][] = [
                 'id' => $row->id,
-                'number' => $row->number_full,
+                'number' => \App\Services\Fiscal\FiscalIdentity::displayReference($row->number_full),
                 'total_to_pay' => round($balance, 2),
                 'due_days' => $due_data['due_days'],
                 'due_text' => $due_data['due_text'],

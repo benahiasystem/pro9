@@ -62,7 +62,7 @@
                 <small class="text-muted d-block mb-1">Series dedicadas disponibles</small>
                 <el-checkbox-group v-if="selectableSeries.length" v-model="groupForm.series_ids">
                     <el-checkbox v-for="serie in selectableSeries" :key="serie.id" :label="serie.id" border size="small" class="mb-1 me-1">
-                        <span class="series-number">{{ serie.number || 'Sin serie' }}</span>
+                        <span class="series-number">{{ serie.number || '' }}</span>
                     </el-checkbox>
                 </el-checkbox-group>
                 <small v-else class="text-muted">No hay series dedicadas sin agrupar. Crea series con emisión "Dedicado" y luego agrúpalas.</small>
@@ -94,7 +94,7 @@
                     <td><span class="badge badge-light text-dark border">{{ categoryLabel(row.category) }}</span></td>
                     <td>{{ row.document_type_description }}</td>
                     <td>
-                        <span class="series-number">{{ row.number || 'Sin serie' }}</span>
+                        <span class="series-number">{{ row.number || '' }}</span>
                         <span class="badge badge-success mx-1" v-if="row.dedicated">DEDICADO</span>
                         <span class="badge badge-warning mx-1" v-else-if="row.contingency">CONTINGENCIA</span>
                         <span class="badge badge-info mx-1" v-if="row.dedicated && row.group_name">{{ row.group_name }}</span>
@@ -229,7 +229,7 @@
                 if (this.filter === 'contingency') return 'No hay series de contingencia.'
                 if (this.filter === 'dedicated') return 'No hay series dedicadas.'
                 if (this.filter === 'advanced') return 'Aún no agregaste series avanzadas.'
-                return 'Sin series.'
+                return 'No hay configuraciones de numeración.'
             },
             selectableSeries() {
                 // Series dedicadas sin agrupar + (al editar) las que ya pertenecen al grupo.
@@ -474,7 +474,7 @@
                     this.$message.warning('La serie ya tiene comprobantes: no se puede eliminar.')
                     return
                 }
-                this.$confirm('¿Eliminar la serie ' + (row.number || 'Sin serie') + '?', 'Confirmar', {
+                this.$confirm(row.number ? '¿Eliminar la serie ' + row.number + '?' : '¿Eliminar esta configuración de numeración?', 'Confirmar', {
                     confirmButtonText: 'Eliminar', cancelButtonText: 'Cancelar', type: 'warning',
                 }).then(async () => {
                     const {data} = await this.$http.delete(`/${this.resource}/${row.id}`)

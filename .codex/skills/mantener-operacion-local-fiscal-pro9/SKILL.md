@@ -52,6 +52,7 @@ Sostener conjuntamente los contratos de SCRUM-19, SCRUM-22, SCRUM-41, SCRUM-53 y
 
 ## Cambios de interfaz y reportes
 
+- Aplicar [numeración fiscal](../mantener-numeracion-fiscal-venezuela-pro9/SKILL.md) a todos los documentos internos: mínimo ocho dígitos, series y prefijos conservados, serie vacía sin texto sustituto y referencias mediante helpers compartidos. Compras y comprobantes externos recibidos mantienen su numeración. Para nombres de descargas, adjuntos e impresión, aplicar [nombres visibles de archivos](../distribuir-documentos-hka/SKILL.md#nombres-visibles-de-archivos); no concatenar etiquetas sustitutas ni usar el nombre público para localizar archivos.
 - Reimpresiones de facturas/notas usan emisor, cliente, sucursal, artículos y alícuotas conservados. Retirar productores, validadores y consumidores de `documents.perception`, `total_unaffected`, `total_free`, `total_igv_free`, `ubl_version`, `retention` y `cod_digemid` del JSON de artículo; otros modelos comerciales mantienen sus contratos propios.
 - En saldos/caja/PDF/reportes distinguir importe documental aplicado de moneda/importe recibido, IGTF y recibos derivados; las retenciones/fondos reducen saldo sin cambiar venta ni producir efectivo. Para dashboard no asumir que los nuevos campos de pagos tenant existen en los contratos de datos del superadministrador.
 
@@ -87,6 +88,7 @@ El envío, correo fiscal y restricciones por registro HKA se aplican a «Medios 
 - Ejecutar validación de sintaxis PHP y `git diff --check`.
 - Si se modifican Vue o JavaScript, aplicar `frontend-build` antes de compilar. No ejecutar una compilación por iniciativa propia cuando ese skill la prohíba; informar que el bundle queda pendiente.
 - `CurrentPdfRenderingTest` renderiza la plantilla real `default/invoice_a4` con mPDF y los tickets existentes de 70/72/76 mm, cortos y extensos, con/sin QR HKA. Permite exportar muestras mediante `PRO9_PDF_FIXTURE_PATH` y `PRO9_HKA_TICKET_FIXTURE_DIR`. Complementar con `pdfinfo`, extracción de texto, render PNG y decodificación del QR según [distribución HKA](../distribuir-documentos-hka/SKILL.md); revisar todas las páginas y comprobar que la descarga no sobrescribe el PDF local.
+- Para números, series y nombres visibles, ejecutar `DocumentNumberDisplayTest`, `DocumentFileNameTest` y `tests/js/document-number-display.test.cjs`/`empty-series-display.test.cjs`. Revisar encabezados y referencias en PDF, correos y reportes, y la vista previa 80MM del formulario con assets actualizados por el usuario según [frontend-build](../frontend-build/SKILL.md).
 - Analizar las fuentes Vue modificadas con `vue-template-compiler` y `@babel/parser` cuando no se haya autorizado compilar. Esta comprobación detecta errores de plantilla/script, pero no reemplaza el bundle de producción.
 
 ## Resolución de anulaciones locales

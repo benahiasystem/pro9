@@ -10,7 +10,7 @@ $document_number = $document->number_full;
 /* ######## FIN NUMERACIÓN FISCAL VENEZUELA ######## */
 
     /* ######## INICIO NUMERACIÓN FISCAL VENEZUELA ######## */
-$affected_document_number = $document_base->affected_document ? $document_base->affected_document->number_full : (($document_base->data_affected_document->series ?? '') !== '' ? $document_base->data_affected_document->series.'-' : '').$document_base->data_affected_document->number;
+$affected_document_number = $document_base->affected_document ? $document_base->affected_document->number_full : \App\Services\Fiscal\FiscalIdentity::numberFull($document_base->data_affected_document->series ?? '', $document_base->data_affected_document->number);
 /* ######## FIN NUMERACIÓN FISCAL VENEZUELA ######## */
 
     //$affected_document_number = \App\Services\Fiscal\FiscalIdentity::numberFull($document_base->affected_document->series, str_pad($document_base->affected_document->number, 8, '0', STR_PAD_LEFT));

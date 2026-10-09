@@ -33,7 +33,7 @@
                         use App\CoreFacturalo\Helpers\CompanyDocumentDisplay as EmailDocCompany;
                         $establishment = App\Models\Tenant\Establishment::find($document->establishment_id);
                     @endphp
-                    Su comprobante {{ $document->series }}-{{ $document->number }} ha sido emitido exitosamente
+                    Su comprobante {{ $document->number_full }} ha sido emitido exitosamente
                 </span>
 
                 <table class="wrap" cellspacing="0" cellpadding="0" role="presentation" style="width:640px;max-width:640px;">
@@ -51,7 +51,7 @@
                                                 Comprobante Emitido
                                             </p>
                                             <h1 style="margin:8px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:700;color:#ffffff;">
-                                                {{ $document->series }}-{{ $document->number }}
+                                                {{ $document->number_full }}
                                             </h1>
                                         </td>
                                     </tr>
@@ -121,7 +121,7 @@
                                                         Nro. comprobante
                                                     </td>
                                                     <td style="padding:10px 16px;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#232e3c;font-weight:700;border-top:1px solid #f0f1f3;">
-                                                        {{ $document->series }}-{{ $document->number }}
+                                                        {{ $document->number_full }}
                                                     </td>
                                                 </tr>
 

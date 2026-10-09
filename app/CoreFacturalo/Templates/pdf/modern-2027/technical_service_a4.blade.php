@@ -1,7 +1,7 @@
 @php
     $establishment = $document->user->establishment;
     $customer = $document->customer;
-    $tittle = str_pad($document->id, 8, '0', STR_PAD_LEFT);
+    $tittle = \App\Services\Fiscal\FiscalIdentity::displayNumber($document->id);
 @endphp
 <html>
 <head>

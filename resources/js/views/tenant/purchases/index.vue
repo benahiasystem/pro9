@@ -134,7 +134,7 @@
                                 <span v-for="(item, i) in row.guides" :key="i">{{ item.number }} <br /></span>
                             </td>
                             <td v-if="col.visible && col.key === 'purchase_order'" :key="col.key" class="text-end">
-                                <span v-if="row.purchase_order">{{ row.purchase_order.prefix }}-{{ row.purchase_order.id }}</span>
+                                <span v-if="row.purchase_order">{{ documentNumberFull(row.purchase_order.prefix, row.purchase_order.id) }}</span>
                             </td>
                             <td v-if="col.visible && col.key === 'total_free'" :key="col.key" class="text-end">{{ row.currency_type_id === 'VES' ? 'Bs.' : '$' }} {{ formatDecimal(row.total_free) }}</td>
                             <td v-if="col.visible && col.key === 'total_unaffected'" :key="col.key" class="text-end">{{ row.currency_type_id === 'VES' ? 'Bs.' : '$' }} {{ formatDecimal(row.total_unaffected) }}</td>
@@ -249,6 +249,7 @@
 </style>
 
 <script>
+import { documentNumberFull } from "../../../helpers/document-number";
 import { mapActions, mapState } from "vuex";
 
 // import DocumentsVoided from './partials/voided.vue'
@@ -329,6 +330,7 @@ export default {
         this.loadDecimalQuantity();
     },
     methods: {
+        documentNumberFull,
         loadDecimalQuantity() {
             // Obtener la configuracion general para los decimales
             this.$http ? this.$http.get('/configurations/record').then(response => {

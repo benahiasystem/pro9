@@ -34,7 +34,7 @@ class StateAccountCollection extends ResourceCollection
 
                     $series = ($row->note->affected_document) ? $row->note->affected_document->series : $row->note->data_affected_document->series;
                     $number = ($row->note->affected_document) ? $row->note->affected_document->number : $row->note->data_affected_document->number;
-                    $affected_document = $series . ' - ' . $number;
+                    $affected_document = \App\Services\Fiscal\FiscalIdentity::numberFull($series, $number);
                 }
                 $pays = DocumentPayment::where('document_id', $row->id)->whereNull('reversed_at');
 
@@ -63,7 +63,7 @@ class StateAccountCollection extends ResourceCollection
 
                     $series = ($row->note->affected_document) ? $row->note->affected_document->series : $row->note->data_affected_document->series;
                     $number = ($row->note->affected_document) ? $row->note->affected_document->number : $row->note->data_affected_document->number;
-                    $affected_document = $series . ' - ' . $number;
+                    $affected_document = \App\Services\Fiscal\FiscalIdentity::numberFull($series, $number);
                 }
 
                 $pays = SalenotePayment::where('sale_note_id', $row->id);

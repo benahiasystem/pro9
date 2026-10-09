@@ -301,12 +301,12 @@
 
         public function getIdentifierAttribute()
         {
-            return $this->prefix . '-' . $this->id;
+            return \App\Services\Fiscal\FiscalIdentity::numberFull($this->prefix, $this->id);
         }
 
         public function getNumberFullAttribute()
         {
-            return $this->prefix . '-' . $this->id;
+            return \App\Services\Fiscal\FiscalIdentity::numberFull($this->prefix, $this->id);
         }
 
         /**

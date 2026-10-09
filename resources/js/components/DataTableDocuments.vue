@@ -51,7 +51,7 @@
                         <div class="form-group"  >
                             <label class="control-label">Serie</label>
                             <el-select v-model="search.series" filterable clearable>
-                                <el-option v-for="option in series" :key="option.number" :value="option.number || '__without_series__'" :label="option.number || 'Sin serie'"></el-option>
+                                <el-option v-for="option in series" :key="option.number" :value="option.number || '__without_series__'" :label="option.number || '\u00a0'"></el-option>
                             </el-select>
                         </div>
                     </div>

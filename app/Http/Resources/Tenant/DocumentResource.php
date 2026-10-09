@@ -80,9 +80,9 @@ class DocumentResource extends JsonResource
             'print_ticket_58' => url('')."/print/document/{$document->external_id}/ticket_58",
             'print_a4' => url('')."/print/document/{$document->external_id}/a4",
             'print_a5' => url('')."/print/document/{$document->external_id}/a5",
-            'pdf_a4_filename' => url('')."/print/document/{$document->external_id}/a4/{$document->filename}.pdf",
+            'pdf_a4_filename' => url('')."/print/document/{$document->external_id}/a4/".\App\Services\Fiscal\DocumentFileName::visible($document->filename).".pdf",
             'pdf_a4_data' => [
-                "filename_only" => $document->filename,
+                "filename_only" => \App\Services\Fiscal\DocumentFileName::visible($document->filename),
                 "extension_only" => "pdf"
             ],
             'response_message' => $response_message,

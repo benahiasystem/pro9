@@ -525,7 +525,7 @@ class Document extends ModelTenant
     public static function getLastNumberBySerie($serie, $establishmentId = null)
     {
         $serie = \App\Services\SeriesNumbering::normalizeCode($serie);
-        if ($serie === '' && !$establishmentId) throw new \InvalidArgumentException('La numeración sin serie requiere sucursal.');
+        if ($serie === '' && !$establishmentId) throw new \InvalidArgumentException('La numeración requiere sucursal.');
         $query = Document::where('series', $serie);
         if ($establishmentId !== null) $query->where('establishment_id', $establishmentId);
         $t = $query->select('number')->orderby('number', 'DESC')->first();

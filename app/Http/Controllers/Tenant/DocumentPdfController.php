@@ -18,8 +18,8 @@ class DocumentPdfController extends Controller
             return app(DownloadController::class)->toPrint('document', $external_id, $format);
         }
         $pdf = app(HkaPdf::class)->download($document, $format);
-        $filename = $format === 'ticket' ? 'factura-'.$document->id.'-80mm.pdf'
-            : app(\App\Services\Fiscal\HkaPdfStore::class)->filename($document).'.pdf';
+        $filename = \App\Services\Fiscal\DocumentFileName::visible(app(\App\Services\Fiscal\HkaPdfStore::class)->filename($document))
+            .($format === 'ticket' ? '-80mm' : '').'.pdf';
         return response($pdf, 200, [
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => HeaderUtils::makeDisposition('attachment', $filename),

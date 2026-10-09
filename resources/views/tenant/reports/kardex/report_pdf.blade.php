@@ -111,7 +111,7 @@
                                     <td class="celda">
                                         @switch($value->type)
                                             @case('sale')
-                                                {{($value->document_id) ? "{$value->document->series}-{$value->document->number}" : "{$value->sale_note->prefix}-{$value->sale_note->id}"}}
+                                                {{($value->document_id) ? $value->document->number_full : $value->sale_note->number_full}}
                                                 @break
                                             @case('purchase')
                                                 {{"{$value->purchase->series}-{$value->purchase->number}"}}                                                    

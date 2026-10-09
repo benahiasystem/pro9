@@ -158,7 +158,7 @@
                         if(isset($dispatches['order_notes'])){
                             $order_note_id = $dispatches['order_notes']['id'];
                             $order_note_prefix = $dispatches['order_notes']['prefix'];
-                            $order_note=$order_note_prefix.'-'.$order_note_id;
+                            $order_note=\App\Services\Fiscal\FiscalIdentity::numberFull($order_note_prefix, $order_note_id);
                         }
                         $transfer_reason=$dispatches['transfer_reason_label'] ?? '';
                         $type_doc=isset($dispatches['type_disparcher'][0]) ? $dispatches['type_disparcher'][0]['description'] : '';

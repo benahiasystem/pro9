@@ -121,7 +121,7 @@
                     $query->where('series', $serie)->where('number', $parts[1]);
                     if ($serie === '' && !$external_id) {
                         $branch = $request->input('establishment_id') ?? optional(auth()->user())->establishment_id;
-                        if (!$branch) throw new Exception('Indique la sucursal de la factura sin serie.');
+                        if (!$branch) throw new Exception('Indique la sucursal de la factura.');
                         $query->where('establishment_id', $branch)->where('document_type_id', $request->input('document_type_id', '01'));
                     }
                 }

@@ -221,7 +221,7 @@ class DashboardView
                     'date_of_issue' => $row->date_of_issue,
                     'customer_name' => $row->customer_name,
                     'customer_id' => $row->customer_id,
-                    'number_full' => $row->number_full,
+                    'number_full' => \App\Services\Fiscal\FiscalIdentity::displayReference($row->number_full),
                     'total' => number_format((float) $row->total,2, ".", ""),
                     'total_to_pay' => number_format($total_to_pay,2, ".", ""),
                     'type' => $row->type,

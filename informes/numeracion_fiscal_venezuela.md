@@ -16,7 +16,7 @@ Existe una configuración sin serie por sucursal y tipo de documento, compartida
 
 Guías y transferencias de inventario persisten la sucursal del almacén de origen. La comprobación de uso de las configuraciones también incluye sucursal y tipo.
 
-Sin serie, la identificación visible muestra únicamente el número, sin guion inicial. Los nombres de archivos incorporan `SIN_SERIE_S{id_sucursal}` para evitar colisiones; los archivos con serie conservan sus nombres. Se adaptaron selectores, conversiones, búsquedas, anticipos, recursos, reportes y plantillas PDF. En reportes, `__without_series__` distingue seleccionar «Sin serie» de limpiar el filtro; no se persiste como código de serie. Las consultas de un documento sin serie requieren sucursal o un identificador interno/externo inequívoco; la búsqueda pública devuelve sus coincidencias identificadas por sucursal.
+Sin serie, la identificación visible muestra únicamente el número con un mínimo de ocho dígitos, sin guion inicial (25 → `00000025`). Con serie se muestra, por ejemplo, `FF01-00000025`. Los nombres de archivos incorporan `SIN_SERIE_S{id_sucursal}` para evitar colisiones; los archivos con serie conservan sus nombres. Se adaptaron selectores, conversiones, búsquedas, anticipos, recursos, reportes y plantillas PDF. En reportes, `__without_series__` distingue seleccionar la opción de serie vacía de limpiar el filtro; no se persiste como código de serie. Las consultas de un documento sin serie requieren sucursal o un identificador interno/externo inequívoco; la búsqueda pública devuelve sus coincidencias identificadas por sucursal.
 
 El número de control de imprenta sigue siendo texto independiente y nullable. No se integra emisión HKA ni numeración de máquinas fiscales.
 
@@ -62,3 +62,11 @@ Las referencias completas separan serie y correlativo por el último guion, cons
 No se modifican columnas ni datos reales por esta validación y no se compilan assets.
 
 Verificación final de guiones: 459 pruebas unitarias y 13361 aserciones sin fallos (9 casos MySQL omitidos en esa ejecución); `FiscalEmissionSchemaTest` ejecutado aparte en bases temporales: 2 pruebas y 1616 aserciones, con emisión y archivo de una serie de 20 caracteres con guion; JavaScript: 28 pruebas sin fallos. Sintaxis PHP, fuentes Vue/JavaScript y `git diff --check` válidos. La comprobación visual del diálogo sigue pendiente del build solicitado al usuario.
+
+## Presentación actualizada — 9 de octubre de 2026
+
+El formato visible se centraliza en `FiscalIdentity` y `helpers/document-number.js`, incluyendo documentos internos, correos, referencias y reportes. El correlativo guardado, las búsquedas numéricas, filenames y payloads HKA no cambian; los PDF originales HKA y comprobantes externos conservan su numeración. Detalle y validación en [numeracion_visible_ocho_digitos.md](numeracion_visible_ocho_digitos.md).
+
+## Serie vacía — 9 de octubre de 2026
+
+Las series vacías se muestran sin etiqueta sustituta en formularios, selectores, reportes y PDF. Los filtros conservan `__without_series__` como valor interno distinto de limpiar el filtro. Las descargas, impresión y adjuntos comerciales usan un nombre visible sin `SIN_SERIE`, con el correlativo de ocho dígitos; las rutas privadas y archivos registrados conservan sus claves por sucursal. Detalle en [serie_vacia_presentacion.md](serie_vacia_presentacion.md).

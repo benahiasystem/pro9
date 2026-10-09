@@ -57,7 +57,7 @@ class QueryDocumentStatusTool implements ToolInterface
             if ($parts !== null) {
                 [$series, $number] = $parts;
                 $branch = $arguments['establishment_id'] ?? optional(auth()->user())->establishment_id;
-                if ($series === '' && !$branch) return ['status' => 'error', 'error' => 'Indique la sucursal del comprobante sin serie.'];
+                if ($series === '' && !$branch) return ['status' => 'error', 'error' => 'Indique la sucursal del comprobante.'];
                 $query = Document::where('series', $series)->where('number', (int) ltrim($number, '0'));
                 if ($series === '') $query->where('establishment_id', $branch)->where('document_type_id', $arguments['document_type_id'] ?? '01');
                 $document = $query->first();

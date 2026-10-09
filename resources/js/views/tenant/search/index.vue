@@ -30,7 +30,7 @@
                         <div class="col-md-6">
                             <div class="form-group" :class="{'has-danger': errors.series}">
                                 <label class="control-label mt-2">Serie</label>
-                                <el-input v-model="form.series" :maxlength="20" placeholder="Sin serie"></el-input>
+                                <el-input v-model="form.series" :maxlength="20" placeholder=""></el-input>
                                 <small class="form-control-feedback" v-if="errors.series" v-text="errors.series[0]"></small>
                             </div>
                         </div>

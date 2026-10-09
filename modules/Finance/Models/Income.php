@@ -104,7 +104,7 @@ class Income extends ModelTenant
 
     public function getNumberFullAttribute()
     {
-        return $this->number;
+        return \App\Services\Fiscal\FiscalIdentity::displayNumber($this->number);
     }
 
     public function document_type()

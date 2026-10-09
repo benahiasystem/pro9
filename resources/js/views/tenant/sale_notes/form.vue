@@ -234,7 +234,7 @@
                                             v-for="option in series"
                                             :key="option.id"
                                             :value="option.id"
-                                            :label="option.number || 'Sin serie'"
+                                            :label="option.number || '\u00a0'"
                                         ></el-option>
                                     </el-select>
                                     <small

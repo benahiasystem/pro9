@@ -2,7 +2,7 @@
     $establishment = $document->establishment;
     $customer = $document->customer;
 
-    $document_number = $document->prefix.'-'.str_pad($document->id, 8, '0', STR_PAD_LEFT);
+    $document_number = $document->prefix.'-'.\App\Services\Fiscal\FiscalIdentity::displayNumber($document->id);
     $document_type_driver = App\Models\Tenant\Catalogs\IdentityDocumentType::findOrFail($document->driver->identity_document_type_id);
 
     $address_full_delivery = Modules\Order\Services\AddressFullService::getDescription($document->delivery->location_id[2]);

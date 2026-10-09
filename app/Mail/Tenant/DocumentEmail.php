@@ -45,7 +45,7 @@ class DocumentEmail extends Mailable
         $email = $this->subject($subject)
                     ->from(config('mail.username'), 'Facturación')
                     ->view($template_document_mail_view)
-                    ->attachData($pdf, $this->document->filename.'.pdf');
+                    ->attachData($pdf, \App\Services\Fiscal\DocumentFileName::visible($this->document->filename).'.pdf');
 
         // ######## FIN MODALIDAD DE EMISIÓN FISCAL ########
 

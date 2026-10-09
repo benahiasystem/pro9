@@ -3,7 +3,7 @@
     $customer = $document->customer;
     $invoice = $document->invoice;
     $left = $document->series;
-    $tittle = \App\Services\Fiscal\FiscalIdentity::numberFull($left, str_pad($document->number, 8, '0', STR_PAD_LEFT));
+    $tittle = \App\Services\Fiscal\FiscalIdentity::numberFull($left, $document->number);
     $payments = $document->payments;
 
     $logo = "storage/uploads/logos/{$company->logo}";

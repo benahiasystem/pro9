@@ -43,7 +43,7 @@ class SearchController extends Controller
         $user = auth()->user();
         if ($user && $user->type !== 'admin') $branch = $user->establishment_id;
         if ($series === '' && !$branch) {
-            return ['success' => false, 'message' => 'Indique la sucursal para buscar una factura sin serie.'];
+            return ['success' => false, 'message' => 'Indique la sucursal para buscar la factura.'];
         }
         $query = Document::where('date_of_issue', $request->input('date_of_issue'))
                             ->where('document_type_id', $request->input('document_type_id'))

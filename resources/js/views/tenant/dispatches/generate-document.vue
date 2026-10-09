@@ -140,7 +140,7 @@
                             <el-option
                                 v-for="option in series"
                                 :key="option.id"
-                                :label="option.number || 'Sin serie'"
+                                :label="option.number || '\u00a0'"
                                 :value="option.id"
                             ></el-option>
                         </el-select>
@@ -427,6 +427,7 @@
 </template>
 
 <script>
+import { documentNumberFull } from "../../../helpers/document-number";
 
 import DocumentOptions from "@views/documents/partials/options.vue";
 import SaleNoteOptions from "@views/sale_notes/partials/options.vue";
@@ -492,6 +493,7 @@ export default {
         this.initDocument();
     },
     methods: {
+        documentNumberFull,
         clickRemoveFee(index) {
             this.document.fee.splice(index, 1)
             this.calculateFee()
@@ -1016,7 +1018,7 @@ export default {
                 this.document.exchange_rate_sale = res;
             });
             this.document.items = this.items;
-            this.titleDialog = `Orden de entrega ${this.form.dispatch.series}-${this.form.dispatch.number}: Crear comprobante`;
+            this.titleDialog = `Orden de entrega ${documentNumberFull(this.form.dispatch.series, this.form.dispatch.number)}: Crear comprobante`;
 
             await this.onCalculateTotals();
 

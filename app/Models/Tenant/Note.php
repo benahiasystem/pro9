@@ -134,10 +134,10 @@ class Note extends ModelTenant
     {
         if($this->affected_document)
         {
-            return $this->affected_document->series.'-'.str_pad($this->affected_document->number, 8, '0', STR_PAD_LEFT);
+            return $this->affected_document->number_full;
         }
         
-        return $this->data_affected_document->series.'-'.str_pad($this->data_affected_document->number, 8, '0', STR_PAD_LEFT);
+        return \App\Services\Fiscal\FiscalIdentity::numberFull($this->data_affected_document->series, $this->data_affected_document->number);
     }
 
     

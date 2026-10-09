@@ -3,7 +3,7 @@
     $establishment = $document->establishment;
     $payments = $document->payments;
     $left = $document->series;
-    $tittle = \App\Services\Fiscal\FiscalIdentity::numberFull($left, str_pad($document->number, 8, '0', STR_PAD_LEFT));
+    $tittle = \App\Services\Fiscal\FiscalIdentity::numberFull($left, $document->number);
     $tittle_unpaid = str_pad($payments->count(), 8, '0', STR_PAD_LEFT);
     $configuration_decimal_quantity = App\CoreFacturalo\Helpers\Template\TemplateHelper::getConfigurationDecimalQuantity();
     $total_payment = $document->payments->sum('payment');

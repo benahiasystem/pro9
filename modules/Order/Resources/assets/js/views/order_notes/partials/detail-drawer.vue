@@ -203,6 +203,7 @@
 </template>
 
 <script>
+import { documentNumberFull } from "../../../../../../../../resources/js/helpers/document-number";
 import { deletable } from '@mixins/deletable';
 
 const EDITABLE_STATE_IDS = ['01'];
@@ -256,7 +257,7 @@ export default {
         },
         orderIdentifier() {
             return this.record?.identifier
-                || (this.record?.prefix && this.record?.id ? `${this.record.prefix}-${this.record.id}` : null)
+                || (this.record?.prefix && this.record?.id ? documentNumberFull(this.record.prefix, this.record.id) : null)
                 || `#${this.record?.id || ''}`;
         },
         stateLabel() {
@@ -539,6 +540,7 @@ export default {
         }
     },
     methods: {
+        documentNumberFull,
         hasDisplayValue(value) {
             const normalized = String(value ?? '').trim();
             return normalized !== '' && normalized !== '-' && normalized !== '—';
@@ -597,7 +599,7 @@ export default {
                         ...snapshot,
                         ...orderNote,
                         identifier: orderNote.prefix && orderNote.id
-                            ? `${orderNote.prefix}-${orderNote.id}`
+                            ? documentNumberFull(orderNote.prefix, orderNote.id)
                             : (snapshot.identifier || orderNote.identifier),
                         state_type_description: orderNote.state_type?.description
                             || snapshot.state_type_description,

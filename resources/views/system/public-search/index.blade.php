@@ -770,7 +770,7 @@
                             <div class="field-wrap">
                                 <input type="text" name="series" id="series" maxlength="20"
                                     value="{{ old('series', $form['series']) }}"
-                                    placeholder="Sin serie">
+                                    placeholder="">
                             </div>
                             @error('series')
                                 <div class="invalid-msg">{{ $message }}</div>

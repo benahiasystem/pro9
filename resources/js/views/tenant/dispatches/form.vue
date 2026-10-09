@@ -26,7 +26,7 @@
                             <div :class="{'has-danger': errors.series_id}" class="form-group">
                                 <label class="control-label">Serie<span class="text-danger"> *</span></label>
                                 <el-select v-model="form.series_id" :disabled="generalDisabledSeries()">
-                                    <el-option v-for="option in series" :key="option.id" :label="option.number || 'Sin serie'"
+                                    <el-option v-for="option in series" :key="option.id" :label="option.number || '\u00a0'"
                                                :value="option.id"></el-option>
                                 </el-select>
                                 <small v-if="errors.series_id" class="form-control-feedback"

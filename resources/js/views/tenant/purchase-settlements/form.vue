@@ -54,7 +54,7 @@
                                 <el-select v-model="form.series_id">
                                     <el-option v-for="option in series"
                                                 :key="option.id"
-                                                :label="option.number || 'Sin serie'"
+                                                :label="option.number || '\u00a0'"
                                                 :disabled="option.disabled"
                                                 :value="option.id"></el-option>
                                 </el-select>

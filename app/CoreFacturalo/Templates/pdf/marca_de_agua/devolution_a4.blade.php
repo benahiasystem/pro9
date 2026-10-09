@@ -1,7 +1,7 @@
 @php
     $establishment = $document->establishment;
 
-    $document_number = $document->prefix.'-'.str_pad($document->id, 8, '0', STR_PAD_LEFT);
+    $document_number = $document->prefix.'-'.\App\Services\Fiscal\FiscalIdentity::displayNumber($document->id);
 
 @endphp
 <html>

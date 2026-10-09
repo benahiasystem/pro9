@@ -122,6 +122,7 @@
 </template>
 
 <script>
+import { documentNumberFull } from "../../../helpers/document-number";
 export default {
   props: {
     show: {
@@ -149,9 +150,10 @@ export default {
     };
   },
   methods: {
+        documentNumberFull,
     getObjectForNote(data){
       return {
-        number_full : data.series ? `${data.series}-${data.number}` : String(data.number),
+        number_full : documentNumberFull(data.series, data.number),
         id : data.id,
         items : data.items,
       }

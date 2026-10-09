@@ -167,7 +167,7 @@
                                     ?>
                                 <tr>
                                     <td class="celda">{{$loop->iteration}}</td>
-                                    <td class="celda">{{$value->series}}-{{$value->number}}</td>
+                                    <td class="celda">{{ \App\Services\Fiscal\FiscalIdentity::numberFull($value->series, $value->number) }}</td>
                                     <td class="celda">{{$value->relation_item->internal_id}}</td>
                                     <td class="celda">{{ (property_exists( $value->item,'presentation') && $value->item->presentation) ? $value->item->presentation->unit_type_id : $value->relation_item->unit_type_id}}</td>
                                     <td class="celda">{{ optional($value->relation_item->category)->name }}</td>
