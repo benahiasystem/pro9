@@ -11,7 +11,7 @@ class PersonRequest extends FormRequest
 {
     // ########### INICIO CAMBIO CLIENTES VENEZUELA
     private const FOREIGN_DOCUMENT_TYPE_ID = 'E';
-    private const LOCATION_EXEMPT_DOCUMENT_TYPE_IDS = ['E', '7'];
+    private const LOCATION_EXEMPT_DOCUMENT_TYPE_IDS = ['E', '7', 'ND'];
 
     public function authorize()
     {
@@ -24,8 +24,9 @@ class PersonRequest extends FormRequest
             return;
         }
 
-        $countryId = Localization::countryId();
         $identityDocumentTypeId = (string) $this->input('identity_document_type_id');
+        $isNonDomiciled = $identityDocumentTypeId === 'ND';
+        $countryId = $isNonDomiciled ? $this->input('country_id') : Localization::countryId();
         // ######## INICIO CORRECCION GUARDADO CLIENTES VENEZUELA
         $addresses = $this->input('addresses');
         if ($this->isLocationExemptDocument($identityDocumentTypeId)) {
@@ -34,7 +35,7 @@ class PersonRequest extends FormRequest
         $addresses = $this->normalizeCustomerAddresses($addresses);
 
         foreach ($addresses as &$address) {
-            $address['country_id'] = $countryId;
+            $address['country_id'] = $isNonDomiciled ? ($address['country_id'] ?? $countryId) : $countryId;
         }
         unset($address);
         // ######## FIN CORRECCION GUARDADO CLIENTES VENEZUELA
@@ -45,6 +46,7 @@ class PersonRequest extends FormRequest
             // El formulario de clientes recibe únicamente dígitos; el prefijo
             // corresponde a la presentación y no debe normalizar entradas inválidas.
             'number' => (string) $this->input('number'),
+            'external_identity_type' => $isNonDomiciled ? $this->input('external_identity_type') : null,
         ];
 
         if ($this->isLocationExemptDocument($identityDocumentTypeId)) {
@@ -56,7 +58,9 @@ class PersonRequest extends FormRequest
             ]);
         }
 
-        if ($identityDocumentTypeId !== self::FOREIGN_DOCUMENT_TYPE_ID) {
+        if ($isNonDomiciled) {
+            $normalized['nationality_id'] = null;
+        } elseif ($identityDocumentTypeId !== self::FOREIGN_DOCUMENT_TYPE_ID) {
             $normalized['nationality_id'] = $countryId;
         }
 
@@ -129,15 +133,25 @@ class PersonRequest extends FormRequest
         $email = $this->input('email');
         $isForeignCustomer = $type === 'customers'
             && (string) $this->input('identity_document_type_id') === self::FOREIGN_DOCUMENT_TYPE_ID;
+        $isNonDomiciled = $type === 'customers' && $this->input('identity_document_type_id') === 'ND';
         $numberRules = [
             'required',
-            Rule::unique('tenant.persons', 'number')->where(function ($query) use($id, $type) {
+            Rule::unique('tenant.persons', 'number')->where(function ($query) use($id, $type, $isNonDomiciled) {
                 $query->where('type', $type);
+                if ($isNonDomiciled) {
+                    $query->where('identity_document_type_id', 'ND')
+                        ->where('country_id', $this->input('country_id'))
+                        ->where('external_identity_type', $this->input('external_identity_type'));
+                } else {
+                    $query->where('identity_document_type_id', '<>', 'ND');
+                }
             })->ignore($id, 'id'),
         ];
 
         if ($type === 'customers') {
-            if ((string) $this->input('identity_document_type_id') === '1') {
+            if ($isNonDomiciled) {
+                $numberRules[] = 'regex:/^[A-Za-z0-9][A-Za-z0-9.-]{0,44}$/D';
+            } elseif ((string) $this->input('identity_document_type_id') === '1') {
                 $numberRules[] = 'regex:/^[0-9]{6,8}$/';
             } else {
                 $numberRules[] = 'regex:/^[0-9]{1,20}$/';
@@ -154,12 +168,15 @@ class PersonRequest extends FormRequest
             ],
             'identity_document_type_id' => [
                 'required',
-                Rule::in(IdentityDocument::ids()),
+                Rule::in($type === 'customers' ? IdentityDocument::ids() : array_diff(IdentityDocument::ids(), ['ND'])),
             ],
+            'external_identity_type' => $isNonDomiciled ? ['required', 'string', 'regex:/^[A-Z]{2,4}$/D', 'not_in:ND'] : ['nullable'],
             'country_id' => [
                 'required',
                 Rule::exists('tenant.countries', 'id'),
+                Rule::notIn($isNonDomiciled ? ['VE'] : []),
             ],
+            'addresses.*.country_id' => $isNonDomiciled ? ['required', Rule::exists('tenant.countries', 'id'), 'not_in:VE'] : [],
             'nationality_id' => [
                 Rule::requiredIf($isForeignCustomer),
                 'nullable',
@@ -179,6 +196,8 @@ class PersonRequest extends FormRequest
                 'required_if:identity_document_type_id,"066"',
             ],
             'address' => [
+                Rule::requiredIf($isNonDomiciled),
+                'max:255',
                 'required_if:identity_document_type_id,"066"',
             ],
             'email' => [
@@ -196,7 +215,7 @@ class PersonRequest extends FormRequest
         return [
             'nationality_id.required' => 'La nacionalidad es obligatoria para un cliente extranjero.',
             'nationality_id.not_in' => 'Seleccione una nacionalidad extranjera.',
-            'number.regex' => 'El campo número debe contener solo números.',
+            'number.regex' => $this->input('identity_document_type_id') === 'ND' ? 'El identificador extranjero admite letras, números, punto y guion, hasta 45 caracteres.' : 'El campo número debe contener solo números.',
         ];
     }
     // ########### FIN CAMBIO CLIENTES VENEZUELA

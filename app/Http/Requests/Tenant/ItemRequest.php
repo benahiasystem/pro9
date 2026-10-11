@@ -75,10 +75,12 @@ class ItemRequest extends FormRequest
                 // 'gt:0'
             ],
             'sale_affectation_igv_type_id' => [
-                'required'
+                'required',
+                Rule::in(\App\Support\Venezuela\Localization::selectableAffectationIds()),
             ],
             'purchase_affectation_igv_type_id' => [
-                'required'
+                'required',
+                Rule::in(\App\Support\Venezuela\Localization::selectableAffectationIds()),
             ],
             // 'category_id' => [
             //     'required_if:is_set,false',

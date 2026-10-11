@@ -1,0 +1,233 @@
+{
+  "verified_at_utc": "2026-10-09T18:10:40.475088+00:00",
+  "environment": "HKA DEMO",
+  "scope": "bienes / Comprobantes web / contado",
+  "local_data": "base MySQL temporal; tenant de referencia sin DDL ni ventas escritas",
+  "exchange_rate_ves_per_usd": "40.12345678",
+  "contract_sha256": "f2ddb07c239b04319df1fc9b1e6b4db137f89b51f063fa4989fd1bc836d10f04",
+  "final_builder_sha256": "3c2ad60f0a7be8a995ff870062b10fdeb41a6a4c0224bad53faa09a2131e7bb4",
+  "pdf_evidence_directory": "/tmp/pro9-export-demo-evidence",
+  "notes": [
+    "Las credenciales y URLs firmadas de consulta no se incluyen en este registro.",
+    "EXW USD: bruto 100, descuento global 10 y cargo global 5; HKA recibe ajustes distribuidos en líneas.",
+    "El PDF A4 original presenta rótulos genéricos y recorta parte de la tasa al pie.",
+    "FOB/CIF/EXW VES y FOB/CIF USD: tickets regenerados localmente con controles y URLs ya aceptados, HTTP denegado y transacción revertida; EXW USD fue generado tras su confirmación real."
+  ],
+  "cases": [
+    {
+      "incoterm": "FOB",
+      "currency": "VES",
+      "number": 1027,
+      "control": "00-00000038",
+      "status": "confirmed",
+      "total": 1,
+      "exportation": 1,
+      "iva": 0,
+      "exportation_ves": 1,
+      "mail_attempts": 0,
+      "series": "",
+      "provider_code": "200",
+      "files": [
+        {
+          "format": "a4",
+          "name": "FOB-VES-a4.pdf",
+          "bytes": 69340,
+          "sha256": "f9eaf2574dbd98c209a8e7766d13289766b733d6cf4384cc1b2f3f9c4f5e627d"
+        },
+        {
+          "format": "a5",
+          "name": "FOB-VES-a5.pdf",
+          "bytes": 80409,
+          "sha256": "85c878eb22be87ef4e464493e3df1520a17fe4841a9387421cab3a059327fa71"
+        },
+        {
+          "format": "80mm",
+          "name": "FOB-VES-80mm.pdf",
+          "bytes": 308833,
+          "sha256": "4d0578a163a1acb245850156da3fa89ebce07a4dc08aaa583e1c2ee7fd2b5854",
+          "replayed_locally_without_http": true
+        }
+      ]
+    },
+    {
+      "incoterm": "FOB",
+      "currency": "USD",
+      "number": 1028,
+      "control": "00-00000039",
+      "status": "confirmed",
+      "total": 1,
+      "exportation": "1.00",
+      "iva": "0.00",
+      "exportation_ves": "40.12",
+      "mail_attempts": 0,
+      "series": "",
+      "provider_code": "200",
+      "files": [
+        {
+          "format": "a4",
+          "name": "FOB-USD-a4.pdf",
+          "bytes": 71343,
+          "sha256": "342610f507e8d3d3bd23a144658ef7fb723e47f230ed29080756732eb945c578"
+        },
+        {
+          "format": "a5",
+          "name": "FOB-USD-a5.pdf",
+          "bytes": 87474,
+          "sha256": "fd08829bad41857b0f5cdac8b504180e534f445bb99fae173ba17833e5b5dd3c"
+        },
+        {
+          "format": "80mm",
+          "name": "FOB-USD-80mm.pdf",
+          "bytes": 308947,
+          "sha256": "1dcbae20be7294ca28417439181be5fd8b400dee48428de8e6c91c0b31baae43",
+          "replayed_locally_without_http": true
+        }
+      ],
+      "accepted_payload_sha256": "9b86bd78996a9f586d4f956b39b213bb6be848cb4c74ae95bed6d33857a9c62e"
+    },
+    {
+      "incoterm": "CIF",
+      "currency": "VES",
+      "number": 1029,
+      "control": "00-00000040",
+      "status": "confirmed",
+      "total": 1,
+      "exportation": "1.00",
+      "iva": "0.00",
+      "exportation_ves": "1.00",
+      "mail_attempts": 0,
+      "series": "",
+      "provider_code": "200",
+      "files": [
+        {
+          "format": "a4",
+          "name": "CIF-VES-a4.pdf",
+          "bytes": 69084,
+          "sha256": "cb3d701260f919306ee7508b44ef63c23a793ac410a98bde63d8d30c86822686"
+        },
+        {
+          "format": "a5",
+          "name": "CIF-VES-a5.pdf",
+          "bytes": 80152,
+          "sha256": "11d3a5cda7c5a4c9e7444d90d4e8c3328115f76f211d4924b806b48a71d96742"
+        },
+        {
+          "format": "80mm",
+          "name": "CIF-VES-80mm.pdf",
+          "bytes": 308832,
+          "sha256": "0241e67302704d8d4341c0f08749a85f244919b167749400b9b50cc9e8bef674",
+          "replayed_locally_without_http": true
+        }
+      ],
+      "accepted_payload_sha256": "4f4e6c13a3dd16e419cac5d9be708ed98b8e225d3d67089215f8c541c13cbfaa"
+    },
+    {
+      "incoterm": "CIF",
+      "currency": "USD",
+      "number": 1030,
+      "control": "00-00000041",
+      "status": "confirmed",
+      "total": 1,
+      "exportation": "1.00",
+      "iva": "0.00",
+      "exportation_ves": "40.12",
+      "mail_attempts": 0,
+      "series": "",
+      "provider_code": "200",
+      "files": [
+        {
+          "format": "a4",
+          "name": "CIF-USD-a4.pdf",
+          "bytes": 70884,
+          "sha256": "7479309977b713c17d7a38792a59171940c0aa3359b9405c30f27b35c29e1bdd"
+        },
+        {
+          "format": "a5",
+          "name": "CIF-USD-a5.pdf",
+          "bytes": 87017,
+          "sha256": "c48b9d53d11e333f8a5cdeb32f80b95e41211991e4be1dd5b95bbd01217a8b7e"
+        },
+        {
+          "format": "80mm",
+          "name": "CIF-USD-80mm.pdf",
+          "bytes": 308950,
+          "sha256": "e4b73812caa154b6f1d433901a34999a9917a3819a1c2edcd41347b46f9d74e6",
+          "replayed_locally_without_http": true
+        }
+      ],
+      "accepted_payload_sha256": "404fd47565556a3728f2a97cdfda877872c580ff24e32412ff4a3184ea6c60a8"
+    },
+    {
+      "incoterm": "EXW",
+      "currency": "VES",
+      "number": 1031,
+      "control": "00-00000042",
+      "status": "confirmed",
+      "total": 1,
+      "exportation": "1.00",
+      "iva": "0.00",
+      "exportation_ves": "1.00",
+      "mail_attempts": 0,
+      "series": "",
+      "provider_code": "200",
+      "files": [
+        {
+          "format": "a4",
+          "name": "EXW-VES-a4.pdf",
+          "bytes": 69056,
+          "sha256": "7a64bb8e4ac9025e789e8ebac496d10a724a6860075e06656563ab4905006a32"
+        },
+        {
+          "format": "a5",
+          "name": "EXW-VES-a5.pdf",
+          "bytes": 80121,
+          "sha256": "f8f3947356b6c3c365c75d86337b1230642efb651eebac50edff08aefe5901da"
+        },
+        {
+          "format": "80mm",
+          "name": "EXW-VES-80mm.pdf",
+          "bytes": 308836,
+          "sha256": "6d2b523cc4bfe07ababb78eed14c68ec31ec88d18aeffea93a91720dbf86e16b",
+          "replayed_locally_without_http": true
+        }
+      ],
+      "accepted_payload_sha256": "fd5547d08c2c8df93e8beeeccc7a2beac1005c784c2508fec94cca0fec606f52"
+    },
+    {
+      "incoterm": "EXW",
+      "currency": "USD",
+      "number": 1032,
+      "control": "00-00000043",
+      "status": "confirmed",
+      "total": 95,
+      "exportation": "95.00",
+      "iva": "0.00",
+      "exportation_ves": "3811.73",
+      "mail_attempts": 0,
+      "series": "",
+      "provider_code": "200",
+      "files": [
+        {
+          "format": "a4",
+          "name": "EXW-USD-a4.pdf",
+          "bytes": 71429,
+          "sha256": "1fb09d22b01eb361ea6a3eea219881181b31f6f1f778905acea8cac0cb3bb8f1"
+        },
+        {
+          "format": "a5",
+          "name": "EXW-USD-a5.pdf",
+          "bytes": 87594,
+          "sha256": "f254e99d98c81f4d8f06e92a0de7dd869dbf66333f7315e901485173a3d4aa0f"
+        },
+        {
+          "format": "80mm",
+          "name": "EXW-USD-80mm.pdf",
+          "bytes": 309049,
+          "sha256": "fb139b69d8d07b8509a24a6ca140d945da91dd6a6c64e5b9c614d1f071168f2c",
+          "replayed_locally_without_http": false
+        }
+      ],
+      "accepted_payload_sha256": "690d5fa03c68a09fbe6231a4b13673db46ec61d27d9ec1ed685a1d583bd6caea"
+    }
+  ]
+}

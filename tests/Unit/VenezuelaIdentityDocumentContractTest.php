@@ -22,6 +22,7 @@ class VenezuelaIdentityDocumentContractTest extends TestCase
             ['id' => 'C', 'active' => 1, 'description' => 'Comuna'],
             ['id' => 'G', 'active' => 1, 'description' => 'Gubernamental'],
             ['id' => 'R', 'active' => 1, 'description' => 'Firma Personal'],
+            ['id' => 'ND', 'active' => 1, 'description' => 'No Domiciliado'],
         ];
 
         self::assertSame($expected, array_map(static function (array $type): array {
@@ -30,28 +31,30 @@ class VenezuelaIdentityDocumentContractTest extends TestCase
 
         $payload = require database_path('seeders/data/tenant_initial_data.php');
         $seedRows = $payload['tables']['cat_identity_document_types']['rows'];
-        self::assertSame(array_map(static fn (array $row): array => $row + ['external_document_examples' => null], $expected), array_slice($seedRows, 0, 8));
+        self::assertSame(array_map(static fn (array $row): array => $row + ['external_document_examples' => null], array_slice($expected, 0, 8)), array_slice($seedRows, 0, 8));
         self::assertSame([
             'id' => 'ND',
-            'active' => 0,
+            'active' => 1,
             'description' => 'No Domiciliado',
             'external_document_examples' => 'RUT, NIT',
         ], $seedRows[8]);
         self::assertCount(9, $seedRows);
-        self::assertSame(['0', '1', '6', '7', 'E', 'C', 'G', 'R'], IdentityDocument::activeIds());
-        self::assertNotContains('ND', IdentityDocument::ids());
+        self::assertSame(['0', '1', '6', '7', 'E', 'C', 'G', 'R', 'ND'], IdentityDocument::activeIds());
+        self::assertContains('ND', IdentityDocument::ids());
     }
 
     /** @test */
-    public function nondomiciled_reference_is_not_accepted_by_customer_validation(): void
+    public function nondomiciled_identity_is_accepted_for_customers_and_excluded_for_suppliers(): void
     {
         $request = PersonRequest::create('/', 'POST', ['type' => 'customers', 'identity_document_type_id' => 'ND']);
         $rules = $request->rules();
 
-        self::assertTrue(Validator::make(
+        self::assertFalse(Validator::make(
             ['identity_document_type_id' => 'ND'],
             ['identity_document_type_id' => $rules['identity_document_type_id']]
         )->fails());
+        $supplier = PersonRequest::create('/', 'POST', ['type' => 'suppliers', 'identity_document_type_id' => 'ND']);
+        self::assertTrue(Validator::make(['identity_document_type_id' => 'ND'], ['identity_document_type_id' => $supplier->rules()['identity_document_type_id']])->fails());
     }
 
     /** @test */
@@ -112,7 +115,7 @@ class VenezuelaIdentityDocumentContractTest extends TestCase
         self::assertStringContainsString("'formatted_number' => \$this->formatted_number", $person);
         self::assertStringContainsString("'number' => (string) \$this->input('number')", $request);
         self::assertStringNotContainsString("'number' => IdentityDocument::normalizeNumber", $request);
-        self::assertStringContainsString('Rule::in(IdentityDocument::ids())', $request);
+        self::assertStringContainsString("array_diff(IdentityDocument::ids(), ['ND'])", $request);
         self::assertStringContainsString("if (this.type !== 'customers')", $form);
         self::assertStringContainsString('const patternNumber = /^[0-9]+$/', $form);
     }

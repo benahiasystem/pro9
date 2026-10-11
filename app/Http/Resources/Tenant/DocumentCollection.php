@@ -132,7 +132,7 @@ class DocumentCollection extends ResourceCollection
                 'pdf_downloads' => \App\Services\Fiscal\HkaPdf::view($row, $request->is('api/*')),
                 'customer_name' => $row->customer->name,
                 'customer_number' => format_person_identity_document($row->customer),
-                'customer_identity_document_type_description' => optional(optional($row->customer)->identity_document_type)->description,
+                'customer_identity_document_type_description' => ($row->customer->identity_document_type_id ?? '') === 'ND' ? $row->customer->external_identity_type : optional(optional($row->customer)->identity_document_type)->description,
                 'customer_telephone' => $row->customer->telephone,
                 'customer_email' => optional($row->customer)->email,
                 'custom_fields_data' => $custom_fields_data,
@@ -143,6 +143,8 @@ class DocumentCollection extends ResourceCollection
                 // ######## FIN MIGRACIÓN MONEDA VENEZUELA ########
                 'exchange_rate_sale' => $row->exchange_rate_sale,
                 'total_exportation' => $row->total_exportation,
+                'exportation' => \App\Services\ExportInvoicePolicy::isExport($row->invoice->operation_type_id ?? ''),
+                'incoterm' => \App\Services\ExportInvoicePolicy::INCOTERMS[$row->invoice->operation_type_id ?? ''] ?? null,
                 'total_exonerated' => $row->total_exonerated,
                 'total_taxed' => $row->total_taxed,
                 'total_igv' => $row->total_igv,

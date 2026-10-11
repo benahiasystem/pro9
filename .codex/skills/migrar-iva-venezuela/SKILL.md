@@ -11,7 +11,7 @@ description: Mantener y verificar el IVA venezolano para instalaciones nuevas de
 - Conservar los nombres internos `igv`, `has_igv`, `purchase_has_igv`, `total_igv`, `percentage_igv` y `affectation_igv_type_id`; son contratos vigentes de esquema, API y componentes.
 - Usar `config/venezuela.php` y `App\Support\Venezuela\Localization` como fuente de verdad: tasa `0.16`, porcentaje `16` y multiplicador `1.16`.
 - Los flujos gravados preparan el porcentaje y calculan `total_igv` con la tasa de `Localization` antes de guardar: por defecto 16 %; una tasa configurada debe prevalecer. Los modelos conservan esos campos para persistir los valores.
-- Ofrecer en nuevas selecciones únicamente `10 = Gravado` y `20 = Exento`.
+- Ofrecer en ventas internas y compras únicamente `10 = Gravado` y `20 = Exento`. Comprobantes web digitales DEMO de exportación 0201/0202/0203 usan exclusivamente `EXP = Exportación — IVA 0 %`, sin mezclar afectaciones.
 - No conservar códigos de afectación retirados, remapeos de instalaciones anteriores ni cálculos de ISC/bolsas. El esquema y los datos iniciales utilizan el contrato vigente.
 - Mantener exportaciones o integraciones externas con encabezados contractuales IGV cuando el consumidor los exija literalmente; documentar cada excepción.
 - No presentar esta personalización como certificación normativa ni como integración oficial con SENIAT.
@@ -20,7 +20,7 @@ description: Mantener y verificar el IVA venezolano para instalaciones nuevas de
 
 1. Verificar el catálogo y los consumidores actuales.
 2. Modificar el consolidado y los datos iniciales, sin migraciones incrementales ni bases reales.
-3. Sembrar únicamente `10` y `20`, activos, no gratuitos y no exportación.
+3. Sembrar `10` y `20` domésticos, y `EXP` activo/exportación/no gratuito. EXP tiene IVA 0 % y se habilita sólo en el contexto de exportación web; no es un remapeo de códigos retirados.
 4. Validar las entradas contra esos códigos; no traducir silenciosamente códigos retirados.
 5. Verificar todas las claves foráneas del seeding. El servicio PENALIDAD asociado al motivo retirado `13` no se siembra ni se expone por un endpoint especial.
 
@@ -48,11 +48,13 @@ description: Mantener y verificar el IVA venezolano para instalaciones nuevas de
 
 ## Retirada de compatibilidad anterior
 
-- El catálogo inicial contiene exactamente `10 = Gravado` y `20 = Exento`; comprobar también las afectaciones de compra y venta de los productos semilla. No ejecutar la migración retirada `2026_08_18_000331_configure_venezuela_iva.php`.
+- El catálogo inicial contiene `10 = Gravado`, `20 = Exento` y `EXP = Exportación — IVA 0 %`; comprobar también las afectaciones de compra y venta de los productos semilla. No ejecutar la migración retirada `2026_08_18_000331_configure_venezuela_iva.php`.
 - `VendeyaDocumentPayloadNormalizer` admite VES/USD y rechaza monedas retiradas o ausentes. Rechaza afectaciones distintas de 10/20; calcula líneas gravadas y exentas y suma sus importes usando la tasa configurada. No conserva una rama de cálculo para afectaciones inafectas retiradas.
 - En el pago del estacionamiento hay un único resumen de IVA con porcentaje dinámico. Se retira la duplicación que existía para el impuesto a bolsas, conservando subtotal, descuento, total y monto del IVA.
 - Las plantillas UBL de emisión están retiradas; las pruebas no deben exigir XML SUNAT. Conservar la validación sintáctica de las plantillas PDF y reportes vigentes.
 - Verificar Vende Ya con base 100/IVA 16/total 116, mezcla de gravado y exento en USD, una tasa configurada distinta de la predeterminada y rechazo explícito de PEN/VED y afectaciones retiradas.
-- `resolveSelectableAffectationType` resuelve sólo el ID solicitado 10/20 cuando existe en el catálogo recibido; devuelve null para códigos desconocidos o ausentes. Nunca elegir otro tratamiento como fallback. Los formularios de Factura, cotización y Nota de venta muestran un error antes de añadir una línea inválida.
-- `calculateRowItem` rechaza afectaciones fuera de 10/20 y no mantiene ramas de inafectas ni gratuidad de catálogos retirados. Ejecutar `node --test tests/js/fiscal-row.test.cjs`: carga la fuente en memoria, sin build, y comprueba gravado, exento, tasa configurable, VES/USD, descuento sobre base y rechazo de códigos retirados.
+- `resolveSelectableAffectationType` resuelve sólo el ID solicitado 10/20 por defecto, o EXP con contexto explícito de exportación cuando existe en el catálogo recibido; devuelve null para códigos desconocidos o ausentes. Nunca elegir otro tratamiento como fallback. Los formularios de Factura, cotización y Nota de venta muestran un error antes de añadir una línea inválida.
+- `calculateRowItem` rechaza afectaciones fuera de 10/20 por defecto y admite sólo EXP con su quinto argumento de contexto; EXP tiene porcentaje e importe IVA cero y no mantiene ramas de inafectas ni gratuidad de catálogos retirados. Ejecutar `node --test tests/js/fiscal-row.test.cjs`: carga la fuente en memoria, sin build, y comprueba gravado, exento, tasa configurable, VES/USD, descuento sobre base y rechazo de códigos retirados.
 - El selector de ítems de documentos no conserva `presetItemId`/`hasPresetItem` para el servicio de penalidad retirado ni `isCreditNoteAndType03`/`isNoteErrorDescription` para permitir precio cero en el motivo retirado 03. Mantener precio unitario mayor a cero y la edición normal de una línea existente.
+
+Las exportaciones mantienen `total_exportation` separado de `total_exonerated`, también en `document_currency_totals.exportation`. HKA recibe código E/0 en ítems y el valor exportado en montoExentoTotal, junto al INCOTERM; esto no convierte localmente la operación en Exento. Ver [contrato y evidencia](../../../informes/facturas_exportacion_hka.md).

@@ -23,13 +23,25 @@ class PersonInput
         $customer_address = null;
         if($address_id)
         {
-            $customer_address = PersonAddress::find($address_id) ?? null;
+            $customer_address = PersonAddress::where('person_id', $person->id)->find($address_id);
+            if (!$customer_address) {
+                \App\Services\Fiscal\FiscalAmounts::error('customer_address_id', 'La dirección seleccionada no pertenece al cliente.');
+            }
         } else if($itinerant) {
             $customer_address = ((object) $itinerant )?? null;
         }
 
+        if ($person->identity_document_type_id === 'ND') {
+            $country = $customer_address ? $customer_address->country_id : $person->country_id;
+            $address = $customer_address ? $customer_address->address : $person->address;
+            if (!$country || $country === 'VE' || !trim((string) $address)) {
+                \App\Services\Fiscal\FiscalAmounts::error('customer_address_id', 'Seleccione una dirección extranjera completa.');
+            }
+        }
+
         return [
             'identity_document_type_id' => $person->identity_document_type_id,
+            'external_identity_type' => $person->external_identity_type,
             'identity_document_type' => [
                 'id' => $person->identity_document_type_id,
                 'description' => $person->identity_document_type->description,
@@ -37,7 +49,7 @@ class PersonInput
             'number' => $person->number,
             'name' => $person->name,
             'trade_name' => $person->trade_name,
-            'country_id' => $person->country_id,
+            'country_id' => ($customer_address) ? $customer_address->country_id : $person->country_id,
             'country' => [
                 'id' => ($customer_address) ? $customer_address->country_id : $person->country_id,
                 'description' => ($itinerant) == true ?  optional($customer_address->country)->description :  optional($person->country)->description,

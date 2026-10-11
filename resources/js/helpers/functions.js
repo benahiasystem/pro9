@@ -4,9 +4,9 @@ import { exactAmount } from "./exchange-rate-math"
 // ######## FIN TASAS OCHO DECIMALES ########
 // ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
 // ########## INICIO CAMBIO AFECTACIÓN IVA
-function calculateRowItem(row_old, currency_type_id_new, exchange_rate_sale, pigv = 0.16) {
+function calculateRowItem(row_old, currency_type_id_new, exchange_rate_sale, pigv = 0.16, exportation = false) {
 // ######### FIN CAMBIO AFECTACIÓN IVA
-    if (!['10', '20'].includes(row_old.affectation_igv_type_id)) {
+    if (!(exportation ? ['EXP'] : ['10', '20']).includes(row_old.affectation_igv_type_id)) {
         throw new Error('Seleccione una afectación de IVA vigente: Gravado o Exento.')
     }
     // console.log(currency_type_id_new, exchange_rate_sale)
@@ -50,7 +50,7 @@ function calculateRowItem(row_old, currency_type_id_new, exchange_rate_sale, pig
         affectation_igv_type_id: row_old.affectation_igv_type_id,
         affectation_igv_type: row_old.affectation_igv_type,
         total_base_igv: 0,
-        percentage_igv: pigv * 100,
+        percentage_igv: exportation ? 0 : pigv * 100,
         total_igv: 0,
 
 
@@ -93,7 +93,7 @@ function calculateRowItem(row_old, currency_type_id_new, exchange_rate_sale, pig
 
     // console.log(row)
 
-    let percentage_igv = pigv * 100
+    let percentage_igv = exportation ? 0 : pigv * 100
     let unit_value = row.unit_price
 
     if (row.affectation_igv_type_id === '10') {
@@ -484,9 +484,9 @@ const getQuantityPrecisionByUnitType = (unit_type_id, fallback = 0) => {
  * Resuelve la afectación permitida para una línea nueva en Venezuela.
  * No sustituye un código desconocido por otro tratamiento fiscal.
  */
-const resolveSelectableAffectationType = (requestedId, affectationTypes = []) => {
+const resolveSelectableAffectationType = (requestedId, affectationTypes = [], exportation = false) => {
     const requested = String(requestedId || '')
-    if (!['10', '20'].includes(requested)) return null
+    if (!(exportation ? ['EXP'] : ['10', '20']).includes(requested)) return null
     return affectationTypes.find(type => String(type.id) === requested) || null
 }
 // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES

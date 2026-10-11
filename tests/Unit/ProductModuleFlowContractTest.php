@@ -62,7 +62,7 @@ class ProductModuleFlowContractTest extends TestCase
         $helpers = $this->source('resources/js/helpers/functions.js');
         self::assertStringContainsString('resolveSelectableAffectationType', $helpers);
         self::assertStringNotContainsString('const fallbackId', $helpers);
-        self::assertStringContainsString("if (!['10', '20'].includes(requested)) return null", $helpers);
+        self::assertStringContainsString("if (!(exportation ? ['EXP'] : ['10', '20']).includes(requested)) return null", $helpers);
 
         foreach ([
             'resources/js/views/tenant/documents/partials/item.vue',

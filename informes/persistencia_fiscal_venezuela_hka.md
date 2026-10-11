@@ -4,7 +4,7 @@
 
 El esquema tenant consolidado y el guardado común de Facturas, notas de crédito y débito conservan los datos fiscales utilizados. La implementación conserva la preparación de facturas/notas y, desde el 7 de octubre de 2026, envía automáticamente las facturas digitales DEMO después del commit comercial. Producción, emisión de notas, anulación remota y descarga HKA quedan fuera. Se reutiliza el esquema existente, sin migraciones ni backfills.
 
-Se conservaron los identificadores, ambiente/modalidad, numeración local, snapshots comerciales, anticipos, descuentos, cargos, vencimientos, cuotas y relaciones. Los nombres internos `igv` continúan representando IVA. `total_exportation` e `invoices.operation_type_id` permanecen disponibles, con preparación de exportaciones bloqueada.
+Se conservaron los identificadores, ambiente/modalidad, numeración local, snapshots comerciales, anticipos, descuentos, cargos, vencimientos, cuotas y relaciones. Los nombres internos `igv` continúan representando IVA. `total_exportation` e `invoices.operation_type_id` distinguen la exportación de bienes web digital DEMO, ampliada el 9 de octubre de 2026; ver el contrato de exportación al final de este informe.
 
 ## Esquema final
 
@@ -87,7 +87,7 @@ Contrato publicado: https://demoemisionv2.thefactoryhka.com.ve/swagger/v1/swagge
 
 La copia versionada está en `app/Services/Fiscal/contracts/hka-ve-v1.json`, con SHA-256 `f2ddb07c239b04319df1fc9b1e6b4db137f89b51f063fa4989fd1bc836d10f04`. La operación conserva `hka-ve-v1:<hash>`. Los fixtures saneados de Factura, crédito, débito e IGTF están en `tests/Fixtures/Hka`; el validador local comprueba estructura, campos requeridos, listas, límites, patrones y enumeraciones del contrato.
 
-Se almacenan los estados `not_requested`, `prepared`, `pending`, `confirmed`, `rejected`, `uncertain`, `cancelled`; la preparación produce los dos primeros; el envío DEMO también produce `pending`, `confirmed`, `rejected` y `uncertain`. Preparar dos veces devuelve la misma operación/payload. Falta de equivalencias, tributos adicionales sin adaptación HKA, exportaciones, regímenes especiales, terceros u otras combinaciones no implementadas generan un error explícito. Sus datos condicionales pueden conservarse para la siguiente etapa, sin inventar códigos.
+Se almacenan los estados `not_requested`, `prepared`, `pending`, `confirmed`, `rejected`, `uncertain`, `cancelled`; la preparación produce los dos primeros; el envío DEMO también produce `pending`, `confirmed`, `rejected` y `uncertain`. Preparar dos veces devuelve la misma operación/payload. Falta de equivalencias, tributos adicionales sin adaptación HKA, exportaciones fuera del alcance web de bienes digital DEMO, regímenes especiales, terceros u otras combinaciones no implementadas generan un error explícito. Sus datos condicionales pueden conservarse para la siguiente etapa, sin inventar códigos.
 
 No se guardan credenciales/JWT en snapshots ni operaciones; se rechazan claves sensibles anidadas en datos fiscales. El Swagger no incluye un nodo de identidad del emisor: su RIF permanece en `documents.issuer`; el transporte posterior debe comprobar que las credenciales utilizadas correspondan al emisor conservado. No se restauraron perfiles, reservas ni asignaciones anticipadas retiradas.
 
@@ -157,3 +157,7 @@ Se observaron avisos previos del esquema XML de PHPUnit y de parámetros opciona
 ## Edición antes del registro HKA — 7 de octubre de 2026
 
 La regla anterior que bloqueaba toda factura con cobros queda reemplazada por la [política de edición antes de HKA](edicion_facturas_antes_hka.md). Los cobros se conservan; la edición depende del estado comercial, el control y la conciliación fiscal. Las restricciones de reversión de cobros permanecen en su servicio específico.
+
+## Exportación de bienes — 9 de octubre de 2026
+
+La nueva implementación web DEMO, identidad ND/tipo externo, afectación EXP, INCOTERM y totales separados se documentan en [facturas de exportación HKA](facturas_exportacion_hka.md). Las descripciones anteriores de exportación bloqueada representan el estado histórico previo a esta ampliación. Producción y notas de exportación siguen deshabilitadas.

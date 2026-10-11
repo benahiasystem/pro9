@@ -1,0 +1,123 @@
+{
+  "verified_at_utc": "2026-10-11T23:19:16.352149+00:00",
+  "scope": "Instalación temporal nueva; Comprobantes web / bienes / HKA DEMO",
+  "bundle_loaded_in_browser": "assets/app-abad4d02.js",
+  "bundle_sha256": "7cb4a0aff6de8b30b5a4193b752594738c15f3e19848f567046a97a96152875d",
+  "source_sha256": {
+    "resources/js/views/tenant/documents/invoice_generate.vue": "4d5ca2cecae4d5e4bb7e45aa0290bda7bd618df904771324d9db8ba5ae157cbe",
+    "resources/js/mixins/document-pdf.js": "29299dbcbad4c611ee332aed04873aa8c04e6b80fd849de0b707f5cb303ffce9",
+    "app/Http/Controllers/Tenant/DocumentController.php": "7c71a4649f748f73eb6d984da7316beeea50fd3aa3e319fb59339af12d726ddb",
+    "app/Models/Tenant/Catalogs/IdentityDocumentType.php": "061be0ace74bc60d44fb599c27cd0a7afa593b0ae802866e9b28bc47b6161bb7",
+    "app/Services/Fiscal/HkaPayloadBuilder.php": "3c2ad60f0a7be8a995ff870062b10fdeb41a6a4c0224bad53faa09a2131e7bb4"
+  },
+  "web_sale_after_edit": {
+    "id": 1,
+    "series": "FF01",
+    "number": 100,
+    "currency": "USD",
+    "exchange_rate": "40.12345678",
+    "exportation": "95.00",
+    "exportation_ves": "3811.73",
+    "discount": "10.00",
+    "charge": "5.00",
+    "total": "95",
+    "iva": "0.00",
+    "balance": "0",
+    "operation": "0202",
+    "prepared_uuid_renewed": true,
+    "fiscal_status": "not_requested",
+    "payments": [
+      {
+        "id": 1,
+        "currency": "USD",
+        "payment": "95.00"
+      }
+    ],
+    "stock": "99.0000"
+  },
+  "foreign_buyer_created_and_edited_in_browser": {
+    "identity": "ND",
+    "external_type": "RUT",
+    "number": "UI-RUT-001.9",
+    "country": "CL",
+    "venezuelan_geography_cleared": true
+  },
+  "confirmed_download_case": {
+    "id": 3,
+    "number": 1032,
+    "control": "00-00000043",
+    "restored_from_previous_demo_acceptance": true,
+    "new_provider_emissions": 0,
+    "new_email_attempts": 0,
+    "files": [
+      {
+        "format": "a4",
+        "bytes": 71429,
+        "sha256": "1fb09d22b01eb361ea6a3eea219881181b31f6f1f778905acea8cac0cb3bb8f1",
+        "downloaded_at_utc": "2026-10-11T23:15:31.289941+00:00",
+        "matches_original_acceptance_bytes": true
+      },
+      {
+        "format": "a5",
+        "bytes": 87594,
+        "sha256": "f254e99d98c81f4d8f06e92a0de7dd869dbf66333f7315e901485173a3d4aa0f",
+        "downloaded_at_utc": "2026-10-11T23:16:06.679550+00:00",
+        "matches_original_acceptance_bytes": true
+      },
+      {
+        "format": "80mm",
+        "bytes": 309144,
+        "sha256": "fa38209a5bb25e1f1e1a587dea937785fc71219c1f07aa9595e15853fec28bb0",
+        "downloaded_at_utc": "2026-10-11T23:16:13.863672+00:00",
+        "qr_matches_preserved_consulta_url": true
+      }
+    ]
+  },
+  "ui_observations": {
+    "formats_disabled_before_record_load": true,
+    "formats_disabled_until_hka_confirmation": true,
+    "confirmed_control_displayed": true,
+    "buyer_snapshot_not_changed_by_master_edit": true,
+    "existing_invoice_category_preserved": true
+  },
+  "tests": {
+    "javascript": {
+      "tests": 117,
+      "passed": 117
+    },
+    "focused_php": {
+      "tests": 99,
+      "assertions": 1222,
+      "passed": 99
+    },
+    "full_php": {
+      "tests": 634,
+      "assertions": 14863,
+      "failures": 2,
+      "skipped": 15,
+      "known_failures": "QuotationStorefrontCorrelativeTest: COT-12 frente a COT-00000012; archivos idénticos a HEAD"
+    },
+    "mysql_on_2026_10_09": {
+      "tests": 3,
+      "assertions": 444,
+      "passed": 3
+    }
+  },
+  "screenshots": [
+    "exportacion_ui_2026_10_11.png",
+    "exportacion_descargas_ui_2026_10_11.png"
+  ],
+  "temporary_fixture_cleanup": {
+    "database_removed": true,
+    "database_user_removed": true,
+    "client_removed": true,
+    "hostname_removed": true,
+    "website_removed": true,
+    "tenant_files_removed": true
+  },
+  "notes": [
+    "No se incluyen credenciales, cookies ni URLs firmadas.",
+    "Las descargas se comprobaron con archivos recibidos por Chrome; el evento automatizado de descarga no devolvió una ruta.",
+    "A4/A5 conservan los bytes de la aceptación DEMO del 9 de octubre; el ticket se generó localmente con el mismo control y URL de consulta."
+  ]
+}

@@ -137,6 +137,11 @@ class CurrentPdfRenderingTest extends TestCase
         self::assertStringContainsString('IGTF 3.00%',$html);self::assertStringContainsString('IVA-TEST-1',$html);self::assertStringContainsString('Fondo de garantía',$html);
         self::assertStringContainsString('1,209.50',$html);
         self::assertStringContainsString('Cobro recibido (VES)',$html);self::assertStringContainsString('Principal aplicado (USD)',$html);
+        $document->items->first()->additional_information = [];
+        $ticket = (new Template())->pdf('default', 'invoice', $company, $document, 'ticket', ['is_preview'=>false]);
+        self::assertSame(1, substr_count($ticket, 'Tasa VES/USD'));
+        self::assertSame(1, substr_count($ticket, 'Total en VES'));
+        self::assertSame(1, substr_count($ticket, 'IGTF 3.00%'));
         $pdf=new Mpdf(['tempDir'=>sys_get_temp_dir(),'default_font'=>'arial']);
         $pdf->WriteHTML(file_get_contents(app_path('CoreFacturalo/Templates/pdf/default/style.css')),HTMLParserMode::HEADER_CSS);
         $pdf->WriteHTML($html,HTMLParserMode::HTML_BODY);

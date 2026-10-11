@@ -39,7 +39,7 @@ class CatalogNamesMigrationContractTest extends TestCase
     }
 
     /** @test */
-    public function only_gravado_and_exento_are_selectable_affectations(): void
+    public function domestic_affectations_remain_separate_from_exportation(): void
     {
         $affectations = $this->rowsById('cat_affectation_igv_types');
         $activeIds = array_map('strval', array_keys(array_filter($affectations, static function (array $row): bool {
@@ -48,9 +48,10 @@ class CatalogNamesMigrationContractTest extends TestCase
 
         sort($activeIds);
 
-        self::assertSame(['10', '20'], $activeIds);
+        self::assertSame(['10', '20', 'EXP'], $activeIds);
         self::assertSame('Gravado', $affectations['10']['description']);
         self::assertSame('Exento', $affectations['20']['description']);
+        self::assertSame(1, $affectations['EXP']['exportation']);
         self::assertSame(['10', '20'], config('venezuela.tax.selectable_affectation_ids'));
     }
 

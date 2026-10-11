@@ -17,9 +17,11 @@ export const documentPdf = {
                 || (this.form.document_type_id === '01' && this.form.fiscal_emission_mode === 'digital');
         },
         pdfDownloadDisabled(format) {
-            return this.pdfDownloadBusy || (this.usesHkaPdf(format) && !this.form.pdf_downloads?.[format]?.available);
+            return this.loading || !this.form.id || this.pdfDownloadBusy
+                || (this.usesHkaPdf(format) && !this.form.pdf_downloads?.[format]?.available);
         },
         async downloadDocumentPdf(format, localUrl) {
+            if (this.loading || !this.form.id) return;
             if (!['a4', 'a5', 'ticket'].includes(format) || !this.usesHkaPdf(format)) {
                 if (localUrl) window.open(localUrl, '_blank');
                 return;

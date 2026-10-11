@@ -35,3 +35,5 @@ No elimines `withCount('variations')` ni el agrupamiento por `parent_item_id` pa
 ## Afectaciones de productos
 
 Resolver 10/20 exactamente, sin convertir códigos desconocidos a Gravado o Exento. El formulario debe exigir una selección vigente antes de añadir la línea. Comprobar el cálculo real con `node --test tests/js/fiscal-row.test.cjs`, sin generar bundles.
+
+La exportación web digital DEMO constituye un contexto de factura separado: bienes con EXP e IVA cero, sin cambiar la afectación 10/20 del producto ni de sus compras/importaciones. No habilitar EXP en otros módulos por estar activo en el catálogo. Ver [el contrato HKA](../../../../informes/facturas_exportacion_hka.md).

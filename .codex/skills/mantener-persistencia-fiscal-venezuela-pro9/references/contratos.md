@@ -102,3 +102,7 @@ Las reglas completas pertenecen a [emisión HKA](../../emitir-facturas-notas-hka
 - `tests/js/hka-mail-ui.test.cjs` y `pos-hka-email.test.cjs`: entradas compartidas, validaciones, doble clic, bloqueo y errores visibles.
 
 Los datos ficticios `MOCK-` y los resultados históricos del informe no equivalen a pruebas de producción ni a homologación.
+
+## Exportación de bienes web DEMO
+
+Factura 01 conserva invoices.operation_type_id 0201/0202/0203 y catalog_snapshot.operation_type con INCOTERM. Persons agrega external_identity_type y el índice compuesto de identidad extranjera; document_currency_totals agrega exportation, separado de exempt. Todo ello pertenece al DDL inicial de instalaciones nuevas. Véase [el contrato y evidencia](../../../../informes/facturas_exportacion_hka.md).

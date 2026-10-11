@@ -126,7 +126,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
         <td class="text-center pt-3 border-top"><h3>{{ 'R.I.F. '.$company->number }}</h3></td>
     </tr>
     <tr>
-        <td class="text-center"><h4>{{ $document->document_type->description }}</h4></td>
+        <td class="text-center"><h4>{{ \App\Services\ExportInvoicePolicy::isExport($invoice->operation_type_id ?? '') ? 'FACTURA DE EXPORTACIÓN · '.\App\Services\ExportInvoicePolicy::INCOTERMS[$invoice->operation_type_id] : $document->document_type->description }}</h4></td>
     </tr>
     <tr>
         <td class="text-center pb-3 border-bottom"><h3>{{ $document_number }}</h3></td>
@@ -153,7 +153,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
         <td><p class="desc">{{ $customer->name }}</p></td>
     </tr>
     <tr>
-        <td><p class="desc">{{ $customer->identity_document_type->description }}:</p></td>
+        <td><p class="desc">{{ ($customer->identity_document_type_id ?? '') === 'ND' ? $customer->external_identity_type : $customer->identity_document_type->description }}:</p></td>
         <td><p class="desc">{{ format_identity_document($customer->identity_document_type_id ?? null, $customer->number) }}</p></td>
     </tr>
     @if ($customer->address !== '')
@@ -162,9 +162,13 @@ $affected_document_number = $document_base->affected_document ? $document_base->
             <td>
                 <p class="desc">
                     {{ $customer->address }}
-                    {{ ($customer->district_id !== '-')? ', '.$customer->district->description : '' }}
-                    {{ ($customer->province_id !== '-')? ', '.$customer->province->description : '' }}
-                    {{ ($customer->department_id !== '-')? '- '.$customer->department->description : '' }}
+                    @if(($customer->identity_document_type_id ?? '') === 'ND')
+                        {{ ', '.$customer->country->description }}
+                    @else
+                        {{ ($customer->district_id !== '-')? ', '.$customer->district->description : '' }}
+                        {{ ($customer->province_id !== '-')? ', '.$customer->province->description : '' }}
+                        {{ ($customer->department_id !== '-')? '- '.$customer->department->description : '' }}
+                    @endif
                 </p>
             </td>
         </tr>

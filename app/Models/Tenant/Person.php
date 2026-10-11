@@ -129,6 +129,7 @@ use Illuminate\Support\Facades\DB;
         protected $fillable = [
             'type',
             'identity_document_type_id',
+            'external_identity_type',
             'number',
             'name',
             'trade_name',
@@ -321,8 +322,9 @@ use Illuminate\Support\Facades\DB;
         }
 
         // ######## INICIO POLITICA IDENTIDAD ACTIVA EN VENTAS ########
-        public function scopeWhereSalesIdentityActive($query)
+        public function scopeWhereSalesIdentityActive($query, bool $exportation = false)
         {
+            $query->where($this->qualifyColumn('identity_document_type_id'), $exportation ? '=' : '<>', 'ND');
             return $query->whereHas('identity_document_type', static function (Builder $identityQuery): void {
                 $identityQuery->whereSalesEmissionActive();
             });
@@ -624,6 +626,7 @@ use Illuminate\Support\Facades\DB;
                 'number' => $this->number,
                 'formatted_number' => $this->formatted_number,
                 'identity_document_type_id' => $this->identity_document_type_id,
+                'external_identity_type' => $this->external_identity_type,
                 'identity_document_type_code' => $this->identity_document_type->code,
                 'address' => $this->address,
                 'internal_code' => $this->internal_code,
@@ -893,6 +896,7 @@ use Illuminate\Support\Facades\DB;
                 'formatted_number' => $this->formatted_number,
                 'addresses' => $addresses,
                 'identity_document_type_id' => $this->identity_document_type_id,
+                'external_identity_type' => $this->external_identity_type,
                 'identity_document_type_code' => $this->identity_document_type->code,
                 'address' => $this->address,
                 'telephone' => $this->telephone,
@@ -1096,6 +1100,7 @@ use Illuminate\Support\Facades\DB;
                 'id' => $this->id,
                 'search_full_name' => $this->search_full_name,
                 'identity_document_type_id' => $this->identity_document_type_id,
+                'external_identity_type' => $this->external_identity_type,
             ];
         }
 

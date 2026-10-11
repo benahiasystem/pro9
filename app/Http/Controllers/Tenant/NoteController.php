@@ -10,6 +10,7 @@ class NoteController extends Controller
     public function create($document_id)
     {
         $document_affected = Document::find($document_id);
+        if (\App\Services\ExportInvoicePolicy::isExport($document_affected->invoice->operation_type_id ?? '')) \App\Services\Fiscal\FiscalAmounts::error('note', 'Las notas de exportación todavía no están habilitadas.');
         $configuration = Configuration::first();
 
         return view('tenant.documents.note', compact('document_affected', 'configuration'));

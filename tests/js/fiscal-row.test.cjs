@@ -73,3 +73,18 @@ test('unknown affectations are never converted or calculated', () => {
     assert.equal(resolveSelectableAffectationType('20', catalog), catalog[1])
     assert.equal(resolveSelectableAffectationType('20', [{id: '10'}]), null)
 })
+
+test('export context calculates goods at zero IVA and preserves currency conversion', () => {
+    const input = row('EXP', 100, 2, 'USD')
+    input.discounts = [{discount_type_id: '00', percentage: 10, is_amount: false}]
+    const result = calculateRowItem(input, 'USD', '40.12345678', 0.16, true)
+    assert.equal(result.total_value, 180)
+    assert.equal(result.total_igv, 0)
+    assert.equal(result.percentage_igv, 0)
+    assert.equal(result.total, 180)
+    assert.equal(calculateRowItem(row('EXP', 100, 2, 'USD'), 'VES', '40.12345678', 0.16, true).total, 8024.691356)
+    assert.equal(resolveSelectableAffectationType('EXP', [{id: 'EXP'}], true).id, 'EXP')
+    assert.equal(resolveSelectableAffectationType('EXP', [{id: 'EXP'}]), null)
+    assert.throws(() => calculateRowItem(row('EXP'), 'VES', 1), /Gravado o Exento/)
+    assert.throws(() => calculateRowItem(row('20'), 'VES', 1, 0.16, true))
+})

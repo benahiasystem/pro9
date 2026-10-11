@@ -361,7 +361,7 @@
                             class="form-group"
                         >
                             <label class="control-label">
-                                Precio Unitario
+                                {{ isExportation ? 'Precio sin IVA' : 'Precio Unitario' }}
 
                                 <el-tooltip
                                     v-if="itemLastPrice"
@@ -1235,6 +1235,9 @@ export default {
         this.canCreateProduct();
     },
     computed: {
+        isExportation() {
+            return ['0201', '0202', '0203'].includes(this.operationTypeId);
+        },
         ...mapState([
             "colors",
             "CatItemUnitsPerPackage",
@@ -2089,12 +2092,13 @@ export default {
 
             this.lots = this.form.item.lots;
 
-            this.form.has_igv = this.form.item.has_igv;
+            this.form.has_igv = this.isExportation ? false : this.form.item.has_igv;
 
             // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
             const selectableAffectation = resolveSelectableAffectationType(
-                this.form.item.sale_affectation_igv_type_id,
-                this.affectation_igv_types
+                this.isExportation ? "EXP" : this.form.item.sale_affectation_igv_type_id,
+                this.affectation_igv_types,
+                this.isExportation
             );
             this.form.affectation_igv_type_id = selectableAffectation
                 ? selectableAffectation.id
@@ -2213,7 +2217,11 @@ export default {
             );
         },
         async clickAddItem() {
-            if (!resolveSelectableAffectationType(this.form.affectation_igv_type_id, this.affectation_igv_types)) {
+            if (this.isExportation && this.form.item.unit_type_id === 'SERV') {
+                this.$message.error('La exportación de servicios todavía no está habilitada.');
+                return false;
+            }
+            if (!resolveSelectableAffectationType(this.form.affectation_igv_type_id, this.affectation_igv_types, this.isExportation)) {
                 this.$message.error('Seleccione una afectación de IVA vigente: Gravado o Exento.');
                 return false;
             }
@@ -2270,7 +2278,7 @@ export default {
                 if (
                     affectation_igv_type_id === "20" ||
                     affectation_igv_type_id === "21" ||
-                    affectation_igv_type_id === "40"
+                    affectation_igv_type_id === "EXP"
                 ) {
                     // do nothing
                     // exonerado de igv
@@ -2308,7 +2316,7 @@ export default {
             if (operation_type.exportation) {
                this.form.affectation_igv_type = _.find(
                     this.affectation_igv_types,
-                    { id: "40" }
+                    { id: "EXP" }
                )
                this.form.affectation_igv_type_id = this.form.affectation_igv_type.id
             } else {
@@ -2393,7 +2401,8 @@ export default {
                 this.form,
                 this.currencyTypeIdActive,
                 this.exchangeRateSale,
-                this.percentageIgv
+                this.percentageIgv,
+                this.isExportation
             );
 
             this.row.item.name_product_pdf = this.row.name_product_pdf || "";

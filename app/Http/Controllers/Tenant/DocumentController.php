@@ -306,7 +306,7 @@ class DocumentController extends Controller
                 ->orWhere('name', 'like', "%{$request->input}%");
         })
             ->whereType('customers')
-            ->whereSalesIdentityActive()
+            ->whereSalesIdentityActive(\App\Services\ExportInvoicePolicy::isExport($request->operation_type_id))
             ->orderBy('name')
             ->whereIn('identity_document_type_id', $identity_document_type_id)
             ->whereIsEnabled()
@@ -419,7 +419,7 @@ class DocumentController extends Controller
         $note_credit_types = NoteCreditType::whereActive()->orderByDescription()->get();
         $note_debit_types = NoteDebitType::whereActive()->orderByDescription()->get();
         $currency_types = CurrencyType::whereActive()->get();
-        $operation_types = OperationType::whereActive()->get();
+        $operation_types = OperationType::whereActive(\App\Services\ExportInvoicePolicy::available(Company::firstOrFail()))->get();
         $discount_types = ChargeDiscountType::whereType('discount')->whereLevel('item')->get();
         $charge_types = ChargeDiscountType::whereType('charge')->whereLevel('item')->get();
         $company = Company::active();
@@ -462,7 +462,7 @@ class DocumentController extends Controller
         //                'discount_types', 'charge_types', 'company', 'document_type_03_filter');
 
         $payment_destinations = $this->getPaymentDestinations();
-        $affectation_igv_types = AffectationIgvType::whereActive()->get();
+        $affectation_igv_types = AffectationIgvType::whereActive(\App\Services\ExportInvoicePolicy::available(Company::firstOrFail()))->get();
         $user = $userType;
         // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
         $global_discount_types = ChargeDiscountType::getGlobalDiscounts();
@@ -509,9 +509,9 @@ class DocumentController extends Controller
         // $items = $this->table('items');
         $items = SearchItemController::getItemsToDocuments();
         $categories = [];
-        $affectation_igv_types = AffectationIgvType::whereActive()->get();
+        $affectation_igv_types = AffectationIgvType::whereActive(\App\Services\ExportInvoicePolicy::available(Company::firstOrFail()))->get();
         $price_types = PriceType::whereActive()->get();
-        $operation_types = OperationType::whereActive()->get();
+        $operation_types = OperationType::whereActive(\App\Services\ExportInvoicePolicy::available(Company::firstOrFail()))->get();
         $discount_types = ChargeDiscountType::whereType('discount')->whereLevel('item')->get();
         $charge_types = ChargeDiscountType::whereType('charge')->whereLevel('item')->get();
         $attribute_types = AttributeType::whereActive()->orderByDescription()->get();
@@ -815,7 +815,7 @@ class DocumentController extends Controller
                 $data['source_module'] = 'WEB';
             }
 
-            $res = $this->storeWithData($data);
+            $res = $this->storeWithData($data, true);
             $document_id = $res['data']['id'];
             $this->associateDispatchesToDocument($request, $document_id);
             $this->associateSaleNoteToDocument($request, $document_id);
@@ -927,12 +927,13 @@ class DocumentController extends Controller
      * @return array
      * @throws \Throwable
      */
-        public function storeWithData($data)
+        public function storeWithData($data, bool $webExportInvoices = false)
         {
             $this->aplicarItineranciaSiCorresponde($data);
             self::setChildrenToData($data);
-            $fact = DB::connection('tenant')->transaction(function () use ($data) {
+            $fact = DB::connection('tenant')->transaction(function () use ($data, $webExportInvoices) {
                 $facturalo = new Facturalo();
+                if ($webExportInvoices) $facturalo->forWebDocuments();
                 $facturalo->save($data);
                 $facturalo->createPdf();
                 return $facturalo;
@@ -1048,7 +1049,7 @@ class DocumentController extends Controller
         if (!$validate['success']) return $validate;
 
         $fact = DB::connection('tenant')->transaction(function () use ($request, $id) {
-            $facturalo = new Facturalo();
+            $facturalo = (new Facturalo())->forWebDocuments();
             $facturalo->update($request->all(), $id);
             $facturalo->createPdf();
 
@@ -1150,11 +1151,11 @@ class DocumentController extends Controller
         return ['success' => true, 'message' => 'El correo fue enviado satisfactoriamente.'];
     }
 
-    public function searchCustomerById($id)
+    public function searchCustomerById(Request $request, $id)
     {
 
         $customers = Person::with('addresses')->whereType('customers')
-            ->whereSalesIdentityActive()
+            ->whereSalesIdentityActive(\App\Services\ExportInvoicePolicy::isExport($request->operation_type_id))
             ->where('id', $id)
             ->get()->transform(function ($row) {
                 /** @var  Person $row */
@@ -1178,7 +1179,7 @@ class DocumentController extends Controller
     public function getIdentityDocumentTypeId($document_type_id, $operation_type_id)
     {
         // ######## INICIO POLITICA IDENTIDAD ACTIVA EN VENTAS ########
-        return \App\Services\SalesCustomerIdentityPolicy::activeIdentityTypeIds();
+        return \App\Services\SalesCustomerIdentityPolicy::activeIdentityTypeIds(\App\Services\ExportInvoicePolicy::isExport($operation_type_id));
         // ######## FIN POLITICA IDENTIDAD ACTIVA EN VENTAS ########
     }
 

@@ -36,6 +36,8 @@ class SalesCustomerIdentityPolicyTest extends TestCase
             $table->string('number');
             $table->string('name');
             $table->string('country_id')->nullable();
+            $table->string('external_identity_type')->nullable();
+            $table->string('address')->nullable();
             $table->string('department_id')->nullable();
             $table->string('province_id')->nullable();
             $table->string('district_id')->nullable();
@@ -46,13 +48,8 @@ class SalesCustomerIdentityPolicyTest extends TestCase
             static fn (array $type): array => ['id' => $type['id'], 'active' => $type['active'], 'description' => $type['description']],
             IdentityDocument::TYPES
         ));
-        DB::connection('tenant')->table('cat_identity_document_types')->insert([
-            'id' => 'ND', 'active' => 0, 'description' => 'No Domiciliado',
-            'external_document_examples' => 'RUT, NIT',
-        ]);
-
         $id = 1;
-        foreach (IdentityDocument::ids() as $identityTypeId) {
+        foreach (array_diff(IdentityDocument::ids(), ['ND']) as $identityTypeId) {
             DB::connection('tenant')->table('persons')->insert([
                 'id' => $id,
                 'type' => 'customers',
@@ -65,6 +62,7 @@ class SalesCustomerIdentityPolicyTest extends TestCase
         DB::connection('tenant')->table('persons')->insert([
             'id' => 9, 'type' => 'customers', 'identity_document_type_id' => 'ND',
             'number' => 'FOREIGN-123', 'name' => 'Cliente no domiciliado',
+            'country_id' => 'CO', 'external_identity_type' => 'NIT', 'address' => 'Bogotá',
         ]);
         DB::connection('tenant')->table('persons')->insert([
             'id' => 99, 'type' => 'suppliers', 'identity_document_type_id' => '6',
@@ -125,9 +123,53 @@ class SalesCustomerIdentityPolicyTest extends TestCase
     }
 
     /** @test */
+    public function routed_customer_lookup_receives_the_export_operation_from_the_current_request(): void
+    {
+        Schema::connection('tenant')->create('person_addresses', function ($table): void {
+            $table->increments('id');
+            $table->unsignedInteger('person_id');
+        });
+        Schema::connection('tenant')->create('users', function ($table): void {
+            $table->increments('id');
+        });
+        Schema::connection('tenant')->create('zones', function ($table): void {
+            $table->increments('id');
+        });
+        $router = new \Illuminate\Routing\Router($this->app->make('events'), $this->app);
+        $router->get('/export-customer/{id}', [\App\Http\Controllers\Tenant\DocumentController::class, 'searchCustomerById']);
+
+        foreach (['0201', '0202', '0203', '0101'] as $operation) {
+            $request = \Illuminate\Http\Request::create('/export-customer/9?operation_type_id='.$operation, 'GET');
+            $this->app->instance('request', $request);
+            $response = $router->dispatch($request);
+            self::assertSame(200, $response->getStatusCode(), substr($response->getContent(), 0, 2000));
+            $data = json_decode($response->getContent(), true, 512, JSON_THROW_ON_ERROR);
+            self::assertCount($operation === '0101' ? 0 : 1, $data['customers']);
+            if ($operation !== '0101') {
+                self::assertSame(9, $data['customers'][0]['id']);
+                self::assertSame('NIT', $data['customers'][0]['external_identity_type']);
+                self::assertSame('CO', $data['customers'][0]['country_id']);
+            }
+        }
+        $request = \Illuminate\Http\Request::create('/export-customer/1?operation_type_id=0101', 'GET');
+        $this->app->instance('request', $request);
+        $data = json_decode($router->dispatch($request)->getContent(), true, 512, JSON_THROW_ON_ERROR);
+        self::assertSame(1, $data['customers'][0]['id']);
+    }
+
+    /** @test */
+    public function eager_loading_preserves_numeric_and_alphabetic_identity_catalog_keys(): void
+    {
+        foreach (\App\Models\Tenant\Person::whereType('customers')->get() as $customer) {
+            self::assertNotNull($customer->identity_document_type);
+            self::assertSame($customer->identity_document_type_id, $customer->identity_document_type->id);
+        }
+    }
+
+    /** @test */
     public function each_active_identity_can_be_combined_with_every_current_sales_receipt(): void
     {
-        foreach (IdentityDocument::activeIds() as $identityTypeId) {
+        foreach (array_diff(IdentityDocument::activeIds(), ['ND']) as $identityTypeId) {
             SalesCustomerIdentityPolicy::assertIdentityTypeAllowed($identityTypeId);
             foreach (['01', '80', 'nv', '07', '08'] as $documentTypeId) {
                 if (in_array($documentTypeId, ['01', '07', '08'], true)) {
@@ -164,7 +206,7 @@ class SalesCustomerIdentityPolicyTest extends TestCase
 
         try {
             SalesCustomerIdentityPolicy::assertIdentityTypeAllowed('ND');
-            self::fail('La referencia ND inactiva debe rechazarse.');
+            self::fail('ND debe excluirse de las ventas internas.');
         } catch (ValidationException $exception) {
             self::assertArrayHasKey('identity_document_type_id', $exception->errors());
         }

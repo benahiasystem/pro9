@@ -126,7 +126,7 @@ class Functions
     public static function identityDocumentTypeInvoice($inputs)
     {
         // ######## INICIO POLITICA IDENTIDAD ACTIVA EN VENTAS ########
-        SalesCustomerIdentityPolicy::assertCustomerAllowed($inputs['customer_id'] ?? null);
+        SalesCustomerIdentityPolicy::assertCustomerAllowed($inputs['customer_id'] ?? null, \App\Services\ExportInvoicePolicy::isExport(\App\Services\ExportInvoicePolicy::operation($inputs)));
         // ######## FIN POLITICA IDENTIDAD ACTIVA EN VENTAS ########
     }
 

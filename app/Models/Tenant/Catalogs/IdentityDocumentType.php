@@ -47,6 +47,7 @@
         use UsesTenantConnection;
 
         public $incrementing = false;
+        protected $keyType = 'string';
         protected $table = "cat_identity_document_types";
         protected $casts = [
             'active' => 'bool'

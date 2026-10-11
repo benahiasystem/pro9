@@ -41,6 +41,13 @@ use Modules\Finance\Traits\FilePaymentTrait;
  */
 class Facturalo
 {
+    private bool $webExportInvoices = false;
+
+    public function forWebDocuments(): self
+    {
+        $this->webExportInvoices = true;
+        return $this;
+    }
     use StorageDocument, FinanceTrait, KardexTrait, FilePaymentTrait;
 
     const REGISTERED = '01';
@@ -113,7 +120,8 @@ class Facturalo
 
         // ######## INICIO POLITICA IDENTIDAD ACTIVA EN VENTAS ########
         if (in_array($this->type, ['invoice', 'credit', 'debit'], true)) {
-            SalesCustomerIdentityPolicy::assertCustomerAllowed($inputs['customer_id'] ?? null);
+            \App\Services\ExportInvoicePolicy::assertInput($inputs, $this->webExportInvoices);
+            SalesCustomerIdentityPolicy::assertCustomerAllowed($inputs['customer_id'] ?? null, \App\Services\ExportInvoicePolicy::isExport(\App\Services\ExportInvoicePolicy::operation($inputs)));
             if (($inputs['total_other_taxes'] ?? 0) > 0 && empty($inputs['taxes'])) \App\Services\Fiscal\FiscalAmounts::error('taxes','Los impuestos adicionales requieren un detalle identificable.');
         }
         // ######## FIN POLITICA IDENTIDAD ACTIVA EN VENTAS ########
@@ -124,7 +132,7 @@ class Facturalo
                 $document = Document::create($inputs);
                 $document->note()->create($inputs['note']);
                 foreach ($inputs['items'] as $row) {
-                    $document->items()->create(in_array($this->type, ['invoice','credit','debit'], true) ? \App\Services\Fiscal\FiscalDocumentPersistence::line($row) : $row);
+                    $document->items()->create(in_array($this->type, ['invoice','credit','debit'], true) ? \App\Services\Fiscal\FiscalDocumentPersistence::line($row, \App\Services\ExportInvoicePolicy::isExport(\App\Services\ExportInvoicePolicy::operation($inputs))) : $row);
                 }
                 if($this->type === 'credit') $this->saveFee($document, $inputs['fee']);
                 // ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
@@ -137,11 +145,12 @@ class Facturalo
                 break;
             case 'invoice':
                 $document = Document::create($inputs);
+                $document->invoice()->create($inputs['invoice']);
                 $this->saveFee($document, $inputs['fee']);
                 foreach ($inputs['items'] as $row) {
 //                    $purchase_unit_price = $row['purchase_unit_price'];
 //                    $row['item']['purchase_unit_price'] = $purchase_unit_price;
-                    $document->items()->create(in_array($this->type, ['invoice','credit','debit'], true) ? \App\Services\Fiscal\FiscalDocumentPersistence::line($row) : $row);
+                    $document->items()->create(in_array($this->type, ['invoice','credit','debit'], true) ? \App\Services\Fiscal\FiscalDocumentPersistence::line($row, \App\Services\ExportInvoicePolicy::isExport(\App\Services\ExportInvoicePolicy::operation($inputs))) : $row);
                     // $row['document_id']=  $document->id;
                     // $item = new DocumentItem($row);
                     // $item->push();
@@ -152,7 +161,6 @@ class Facturalo
                 $this->updatePrepaymentDocuments($inputs);
                 if($inputs['hotel']) $document->hotel()->create($inputs['hotel']);
                 if($inputs['transport']) $document->transport()->create($inputs['transport']);
-                $document->invoice()->create($inputs['invoice']);
                 // ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
                 \App\Services\Fiscal\FiscalDocumentPersistence::fiscalData($document, $inputs['fiscal_data'] ?? []);
                 \App\Services\Fiscal\FiscalDocumentPersistence::otherTaxes($document, $inputs['taxes'] ?? []);
@@ -185,7 +193,7 @@ class Facturalo
             case 'purchase_settlement':
                 $document = PurchaseSettlement::create($inputs);
                 foreach ($inputs['items'] as $row) {
-                    $document->items()->create(in_array($this->type, ['invoice','credit','debit'], true) ? \App\Services\Fiscal\FiscalDocumentPersistence::line($row) : $row);
+                    $document->items()->create(in_array($this->type, ['invoice','credit','debit'], true) ? \App\Services\Fiscal\FiscalDocumentPersistence::line($row, \App\Services\ExportInvoicePolicy::isExport(\App\Services\ExportInvoicePolicy::operation($inputs))) : $row);
                 }
                 $this->document = PurchaseSettlement::find($document->id);
                 break;
@@ -195,7 +203,7 @@ class Facturalo
                     'id' => $inputs['id']
                 ], $inputs);
                 foreach ($inputs['items'] as $row) {
-                    $document->items()->create(in_array($this->type, ['invoice','credit','debit'], true) ? \App\Services\Fiscal\FiscalDocumentPersistence::line($row) : $row);
+                    $document->items()->create(in_array($this->type, ['invoice','credit','debit'], true) ? \App\Services\Fiscal\FiscalDocumentPersistence::line($row, \App\Services\ExportInvoicePolicy::isExport(\App\Services\ExportInvoicePolicy::operation($inputs))) : $row);
                 }
                 $this->document = Dispatch::find($document->id);
                 break;
@@ -980,6 +988,8 @@ class Facturalo
                 $emission = $document->emission()->lockForUpdate()->first();
                 $document->setRelation('emission', $emission);
                 \App\Services\Fiscal\DocumentEditPolicy::assertEditable($document);
+                \App\Services\ExportInvoicePolicy::assertInput($inputs, $this->webExportInvoices);
+                \App\Services\ExportInvoicePolicy::assertSameCategory($document, $inputs);
                 \App\Services\Fiscal\DocumentEditSettlements::validateInput($document, $inputs);
                 \App\Services\Fiscal\DocumentEditPolicy::invalidate($document);
                 $inputs['series'] = \App\Services\SeriesNumbering::normalizeCode($inputs['series'] ?? null);
@@ -990,7 +1000,7 @@ class Facturalo
                 $inputs['external_id'] = $document->external_id;
                 $inputs['issuer'] = $document->issuer;
                 $inputs['establishment'] = (array)$document->establishment;
-                SalesCustomerIdentityPolicy::assertCustomerAllowed($inputs['customer_id']);
+                SalesCustomerIdentityPolicy::assertCustomerAllowed($inputs['customer_id'], \App\Services\ExportInvoicePolicy::isExport(\App\Services\ExportInvoicePolicy::operation($inputs)));
                 $addressId = $inputs['customer_address_id'] ?? ($inputs['customer']['address_id'] ?? null);
                 if ($addressId && !\App\Models\Tenant\PersonAddress::where('person_id', $inputs['customer_id'])->where('id', $addressId)->exists()) {
                     \App\Services\Fiscal\FiscalAmounts::error('customer_address_id', 'La dirección no pertenece al cliente seleccionado.');
@@ -1023,7 +1033,7 @@ class Facturalo
                 // $document->items()->delete();
 
                 foreach ($inputs['items'] as $row) {
-                    $document->items()->create(in_array($this->type, ['invoice','credit','debit'], true) ? \App\Services\Fiscal\FiscalDocumentPersistence::line($row) : $row);
+                    $document->items()->create(in_array($this->type, ['invoice','credit','debit'], true) ? \App\Services\Fiscal\FiscalDocumentPersistence::line($row, \App\Services\ExportInvoicePolicy::isExport(\App\Services\ExportInvoicePolicy::operation($inputs))) : $row);
                 }
 
                 \App\Services\Fiscal\FiscalDocumentPersistence::otherTaxes($document, $inputs['taxes'] ?? []);
@@ -1035,6 +1045,7 @@ class Facturalo
                 }
 
                 $document->invoice()->update($inputs['invoice']);
+                $document->load('invoice');
                 // ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
                 \App\Services\Fiscal\FiscalDocumentPersistence::fiscalData($document, $inputs['fiscal_data'] ?? []);
                 \App\Services\Fiscal\FiscalDocumentPersistence::otherTaxes($document, $inputs['taxes'] ?? []);

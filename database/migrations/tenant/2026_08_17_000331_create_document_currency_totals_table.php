@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
  * - `document_id` int(10) unsigned NOT NULL
  * - `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `taxed` decimal(12,2) NOT NULL DEFAULT 0
+ * - `exportation` decimal(12,2) NOT NULL DEFAULT 0
  * - `exempt` decimal(12,2) NOT NULL DEFAULT 0
  * - `discount` decimal(12,2) NOT NULL DEFAULT 0
  * - `charge` decimal(12,2) NOT NULL DEFAULT 0
@@ -26,6 +27,7 @@ CREATE TABLE `document_currency_totals` (
   `document_id` int(10) unsigned NOT NULL,
   `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `taxed` decimal(12,2) NOT NULL DEFAULT 0,
+  `exportation` decimal(12,2) NOT NULL DEFAULT 0,
   `exempt` decimal(12,2) NOT NULL DEFAULT 0,
   `discount` decimal(12,2) NOT NULL DEFAULT 0,
   `charge` decimal(12,2) NOT NULL DEFAULT 0,

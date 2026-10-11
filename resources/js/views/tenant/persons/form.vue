@@ -64,7 +64,8 @@
                                      class="form-group">
                                     <label class="control-label">Número <span class="text-danger">*</span></label>
 
-                                    <x-input-service v-model="form.number"
+                                    <el-input v-if="isNonDomiciled" v-model="form.number" maxlength="45"></el-input>
+                                    <x-input-service v-else v-model="form.number"
                                                      :identity_document_type_id="form.identity_document_type_id"
                                                      @search="searchNumber"></x-input-service>
 
@@ -74,6 +75,11 @@
                                 </div>
                             </div>
                             <!-- ######## FIN CLIENTES VENEZUELA ######## -->
+                            <div v-if="isNonDomiciled" class="col-md-4">
+                                <label class="control-label">Tipo de identificación extranjera *</label>
+                                <el-input v-model="form.external_identity_type" maxlength="4" placeholder="RUT, NIT, EIN"></el-input>
+                                <small v-if="errors.external_identity_type" class="form-control-feedback" v-text="errors.external_identity_type[0]"></small>
+                            </div>
                         </div>
 
                         <!-- Establecimientos SUNAT (solo con token ApiPeru y RIF consultado) -->
@@ -889,7 +895,7 @@ export default {
                 this.all_departments = response.data.departments;
                 this.all_provinces = response.data.provinces;
                 this.all_districts = response.data.districts;
-                this.identity_document_types = response.data.identity_document_types;
+                this.identity_document_types = response.data.identity_document_types.filter(option => this.type === 'customers' || option.id !== 'ND');
                 this.locations = response.data.locations;
                 this.person_types = response.data.person_types;
                 this.discount_types = response.data.discount_types;
@@ -922,9 +928,12 @@ export default {
         isForeignDocument() {
             return this.form.identity_document_type_id === 'E'
         },
+        isNonDomiciled() {
+            return this.type === 'customers' && this.form.identity_document_type_id === 'ND'
+        },
         isLocationExemptDocument() {
             return this.type === 'customers'
-                && ['E', '7'].includes(this.form.identity_document_type_id)
+                && ['E', '7', 'ND'].includes(this.form.identity_document_type_id)
         },
         establishmentsNote() {
             const selected = this.establishments.filter(e => e.selected).length
@@ -1009,6 +1018,7 @@ export default {
                 type: this.type,
                 credit_days: 0,
                 identity_document_type_id: '6',
+                external_identity_type: null,
                 number: '',
                 name: null,
                 trade_name: null,
@@ -1175,7 +1185,7 @@ export default {
         buildDefaultAddressRow(main = false) {
             return {
                 'id': null,
-                'country_id': 'VE',
+                'country_id': this.isNonDomiciled ? this.form.country_id : 'VE',
                 'location_id': [],
                 'address': null,
                 'email': null,
@@ -1217,7 +1227,7 @@ export default {
             const rowLocation = Array.isArray(row.location_id) ? row.location_id : []
 
             // ######## INICIO CAMBIO GEOPOLITICO VENEZUELA
-            this.form.country_id = row.country_id || this.form.country_id || 'VE'
+            this.form.country_id = row.country_id || this.form.country_id || (this.isNonDomiciled ? null : 'VE')
             // ######## FIN CAMBIO GEOPOLITICO VENEZUELA
             if (this.hasAddressValue(rowLocation)) {
                 this.form.location_id = [...rowLocation]
@@ -1315,7 +1325,7 @@ export default {
             // La vista rotula addresses[0] como "Direccion principal": va al inicio.
             this.form.addresses.unshift({
                 'id': null,
-                'country_id': 'VE',
+                'country_id': this.isNonDomiciled ? this.form.country_id : 'VE',
                 'location_id': [],
                 'address': null,
                 'email': null,
@@ -1402,6 +1412,12 @@ export default {
             }
 
             const number = String(this.form.number || '')
+            if (this.isNonDomiciled) {
+                if (!/^[A-Za-z0-9][A-Za-z0-9.-]{0,44}$/.test(number)) return {success: false, message: 'Indique una identificación extranjera de hasta 45 caracteres, con letras, números, puntos o guiones.'}
+                if (!/^[A-Z]{2,4}$/.test(this.form.external_identity_type || '') || this.form.external_identity_type === 'ND') return {success: false, message: 'Indique el tipo real de identificación extranjera, como RUT, NIT o EIN.'}
+                if (!this.form.country_id || this.form.country_id === 'VE') return {success: false, message: 'Seleccione el país del comprador del exterior.'}
+                return {success: true}
+            }
             const patternNumber = /^[0-9]+$/
 
             if (!patternNumber.test(number)) {
@@ -1559,7 +1575,16 @@ export default {
                 })
         },
         changeIdentityDocType() {
-            if (!this.isForeignDocument) {
+            if (this.isNonDomiciled) {
+                this.form.country_id = null
+                this.form.nationality_id = null
+                ;(this.form.addresses || []).forEach(row => { row.country_id = null })
+            } else {
+                this.form.country_id = 'VE'
+                this.form.external_identity_type = null
+                ;(this.form.addresses || []).forEach(row => { row.country_id = 'VE' })
+            }
+            if (!this.isForeignDocument && !this.isNonDomiciled) {
                 this.form.nationality_id = 'VE'
             }
             this.clearLocationForExemptDocument()

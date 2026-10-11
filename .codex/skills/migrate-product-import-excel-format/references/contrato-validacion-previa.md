@@ -89,6 +89,8 @@ Aceptar valores numéricos solo cuando quepan en la precisión y escala efectiva
 
 Leer solamente identificadores activos de `cat_unit_types`, `cat_currency_types` y `cat_affectation_igv_types` del tenant. Leer todos los valores no vacíos de `items.internal_id` para detectar actualizaciones y códigos repetidos. Comparar identificadores como cadenas sin espacios exteriores.
 
+La afectación de IVA del producto queda limitada al catálogo doméstico 10/20 mediante `AffectationIgvType::whereActive()`. EXP, aunque esté activo para facturas web de exportación digital DEMO, no es una afectación admisible en las columnas de venta/compra del Excel.
+
 Para Venezuela, `UND` y `SERV` son los códigos canónicos. `NIU` y `ZZ` no forman parte del catálogo activo y deben producir un error de validación, sin conversión automática.
 
 ## Reporte de errores

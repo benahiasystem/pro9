@@ -42,8 +42,8 @@ class VenezuelaIvaContractTest extends TestCase
     {
         $seed = require database_path('seeders/data/tenant_initial_data.php');
         $affectations = $seed['tables']['cat_affectation_igv_types']['rows'];
-        self::assertSame(['10', '20'], array_column($affectations, 'id'));
-        self::assertSame(['Gravado', 'Exento'], array_column($affectations, 'description'));
+        self::assertSame(['10', '20', 'EXP'], array_column($affectations, 'id'));
+        self::assertSame(['Gravado', 'Exento', 'Exportación — IVA 0 %'], array_column($affectations, 'description'));
         foreach ($seed['tables']['items']['rows'] as $item) {
             self::assertContains($item['sale_affectation_igv_type_id'], ['10', '20']);
             self::assertContains($item['purchase_affectation_igv_type_id'], ['10', '20']);
@@ -82,7 +82,7 @@ class VenezuelaIvaContractTest extends TestCase
     {
         $calculator = (string) file_get_contents(resource_path('js/helpers/functions.js'));
         self::assertStringContainsString('pigv = 0.16', $calculator);
-        self::assertStringContainsString('percentage_igv: pigv * 100', $calculator);
+        self::assertStringContainsString('percentage_igv: exportation ? 0 : pigv * 100', $calculator);
 
         $quotation = (string) file_get_contents(app_path('Http/Controllers/Tenant/QuotationController.php'));
         self::assertStringContainsString('Localization::taxPercentage()', $quotation);

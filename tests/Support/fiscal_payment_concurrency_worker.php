@@ -1,4 +1,6 @@
 <?php
+// Keep PHP diagnostics separate from the READY/JSON protocol consumed by the parent.
+ini_set('display_errors', 'stderr');
 require dirname(__DIR__,2).'/vendor/autoload.php';
 $input=json_decode(stream_get_contents(STDIN),true,512,JSON_THROW_ON_ERROR);
 if (!preg_match('/\Apro9_fiscal_test_[a-f0-9]{12}\z/',$input['connection']['database'] ?? '')) exit(2);
@@ -32,13 +34,17 @@ $app->instance('auth',new class($user) {
     public function check() {return true;}
 });
 App\Models\Tenant\Document::observe(App\Observers\DocumentObserver::class);
+(new Modules\Inventory\Providers\InventoryKardexServiceProvider($app))->boot();
+(new Modules\Inventory\Providers\InventoryVoidedServiceProvider($app))->boot();
 $manager->getConnection('tenant')->getPdo();
 fwrite(STDOUT,"READY\n");fflush(STDOUT);
 try {
     $document=App\Models\Tenant\Document::findOrFail($input['document_id']);
     $service=App\Services\Fiscal\FiscalDocumentPersistence::class;
     if (($input['operation'] ?? '') === 'hka-edit-race' && ($input['data']['action'] ?? '') === 'edit') {
-        (new App\CoreFacturalo\Facturalo)->update($input['data']['edit'], $document->id);
+        $engine = new App\CoreFacturalo\Facturalo;
+        if (!empty($input['data']['web_export'])) $engine->forWebDocuments();
+        $engine->update($input['data']['edit'], $document->id);
         $output = ['status' => 'edited'];
     } elseif (in_array($input['operation'] ?? '', ['hka', 'hka-mail', 'hka-auto-mail', 'hka-edit-race'], true)) {
         $app->instance('encrypter',new Illuminate\Encryption\Encrypter(str_repeat('k',32),'AES-256-CBC'));

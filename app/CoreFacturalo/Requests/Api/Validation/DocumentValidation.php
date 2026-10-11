@@ -10,6 +10,7 @@ use App\Services\SalesCustomerIdentityPolicy;
 class DocumentValidation
 {
     public static function validation($inputs) {
+        \App\Services\ExportInvoicePolicy::assertInput($inputs, false);
         // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
         SalesDocumentTypePolicy::assertNewFiscalDocumentAllowed($inputs['document_type_id'] ?? null);
         // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
@@ -48,6 +49,7 @@ class DocumentValidation
             }
 
             unset($inputs['affected_document_external_id']);
+            \App\Services\ExportInvoicePolicy::assertInput($inputs, false);
         }
 
         $inputs['customer_id'] = Functions::person($inputs['customer'], 'customers');

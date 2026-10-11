@@ -19,11 +19,11 @@ description: Mantener el alta, edición, catálogo, persistencia y presentación
 | 6 | `C` | `1` | `Comuna` | `C` |
 | 7 | `G` | `1` | `Gubernamental` | `G` |
 | 8 | `R` | `1` | `Firma Personal` | `R` |
-| 9 | `ND` | `0` | `No Domiciliado` | Sin prefijo; referencia HKA `RUT, NIT` |
+| 9 | `ND` | `1` | `No Domiciliado` | Sin prefijo; referencia HKA `RUT, NIT` |
 
 - No agregar, quitar, renombrar, reordenar ni cambiar `active` en estos registros durante otras modificaciones. `ND` es un ID local de referencia, no un código HKA.
 - Mantener la misma lista y orden en `database/seeders/data/tenant_initial_data.php`.
-- Los ocho tipos canónicos nacen con `active = 1` y permanecen disponibles tanto para mantener clientes como para emitir ventas. `ND` nace inactivo y queda fuera de `IdentityDocument::TYPES`, de la validación de clientes y de los selectores. `RUT, NIT` son ejemplos externos, no un código único. La tabla sigue siendo autoritativa para emisión: si un tipo operativo se desactiva directamente, debe dejar de emitirse sin requerir cambios de código.
+- Los ocho tipos canónicos nacen con `active = 1` y permanecen disponibles tanto para mantener clientes como para emitir ventas. `ND` nace activo y pertenece a `IdentityDocument::TYPES` y al alta/edición de clientes; se selecciona en ventas únicamente para exportación de bienes desde Comprobantes web DEMO. `RUT, NIT` son ejemplos externos, no un código único. La tabla sigue siendo autoritativa para emisión: si un tipo operativo se desactiva directamente, debe dejar de emitirse sin requerir cambios de código.
 - Sembrar directamente las nueve filas. No usar `IdentityDocumentCatalogMigrator` ni transformar números o tipos de instalaciones anteriores; la validación vigente sigue siendo obligatoria.
 
 ## Selección y persistencia
@@ -31,22 +31,23 @@ description: Mantener el alta, edición, catálogo, persistencia y presentación
 - El tipo de documento debe mostrarse siempre sólo con su descripción: `Venezolano`, `Extranjero`, `Pasaporte`, `Juridico`, `Comuna`, `Gubernamental`, `Firma Personal` o `Doc.sin.rif`.
 - No concatenar la letra del documento al nombre del tipo en selectores, tablas, formularios, reportes, PDFs ni respuestas de presentación. Son incorrectas etiquetas como `Venezolano V`, `Juridico J` o `Pasaporte P`.
 - Guardar en `persons.identity_document_type_id` el `id` del registro elegido, no la letra visible salvo cuando ambos coinciden. Por tanto: Venezolano=`1`, Extranjero=`E`, Pasaporte=`7`, Juridico=`6`, Comuna=`C`, Gubernamental=`G`, Firma Personal=`R` y Doc.sin.rif=`0`.
-- En el alta y la edición de clientes, aceptar y guardar en `persons.number` únicamente dígitos ASCII (`0-9`). Rechazar letras, espacios, signos, guiones y cualquier otro carácter especial tanto en `PersonRequest` como en el formulario Vue; no eliminar ni normalizar silenciosamente esos caracteres antes de validar.
+- Mantener `IdentityDocumentType::$keyType = 'string'`: Eloquent no debe convertir IDs como E/C/G/R/ND a enteros al precargar la relación de identidad. Verificar los nueve IDs y la búsqueda de cliente por ID con contexto de exportación mediante el enrutador Laravel.
+- En el alta y la edición de clientes domiciliados (todos los tipos salvo `ND`), aceptar y guardar en `persons.number` únicamente dígitos ASCII (`0-9`). Rechazar letras, espacios, signos, guiones y cualquier otro carácter especial tanto en `PersonRequest` como en el formulario Vue; no eliminar ni normalizar silenciosamente esos caracteres antes de validar.
 - Mantener los prefijos `V-`, `J-`, `P-`, `E-`, `C-`, `G-` y `R-` fuera del campo editable. Añadirlos únicamente al presentar el documento mediante el formateador centralizado.
 - Validar en backend que `identity_document_type_id` pertenezca al catálogo contractual; no confiar sólo en el selector Vue.
-- No admitir `ND` en el alta o edición de clientes hasta definir formato, validación, presentación y mapeo de documentos extranjeros. No enviar `ND` al proveedor HKA.
+- Para `ND`, exigir país distinto de VE y dirección. Guardar `external_identity_type` (2–4 letras ASCII mayúsculas, distinto de ND: NIT/RUT/EIN), número de 1–45 caracteres ASCII alfanuméricos, punto o guion, empezando por alfanumérico. Conservar el número literalmente, sin prefijo ni normalización. La unicidad incluye tipo de persona, ND, país, tipo externo y número; el índice compuesto impide duplicados concurrentes. Enviar a HKA el tipo externo, nunca ND. No admitir ND como proveedor.
 
 ## Política de identidad en ventas
 
 - Para Factura (`01`), Nota de venta (`80` o `nv`) y notas de crédito/débito (`07`/`08`), obtener siempre los tipos elegibles desde `cat_identity_document_types.active = 1`; no mantener listas locales como fuente de verdad.
 - Aplicar `App\Services\SalesCustomerIdentityPolicy` como barrera backend antes de persistir o ejecutar efectos laterales, incluso cuando el cliente llegue precargado, por API, importación, ecommerce, restaurante, POS, Hotel, pedidos, tienda o servicio técnico.
-- Filtrar buscadores y selectores de ventas con el mismo criterio. El catálogo inicial muestra los ocho tipos; cualquier desactivación posterior debe excluir sólo el tipo afectado de la emisión.
-- No emparejar tipos de identidad con tipos de comprobante ni con montos: todo tipo activo puede emitir cualquiera de los comprobantes de venta vigentes. No restaurar reglas como “sólo Juridico para Factura” o límites para `Doc.sin.rif`.
+- Filtrar buscadores y selectores de ventas con el mismo criterio y contexto: ventas internas excluyen ND; exportaciones 0201/0202/0203 aceptan exclusivamente ND. Un activo no habilita exportación desde POS, API ni otros módulos. El catálogo inicial muestra los ocho tipos; cualquier desactivación posterior debe excluir sólo el tipo afectado de la emisión.
+- No emparejar tipos de identidad con tipos de comprobante ni con montos: todo tipo doméstico activo puede emitir cualquiera de los comprobantes de venta vigentes. No restaurar reglas como “sólo Juridico para Factura” o límites para `Doc.sin.rif`.
 
 ## Presentación global
 
 - Separar la etiqueta del tipo y el formato del número: la descripción visible no lleva letra, mientras que el número presentado sí conserva el prefijo contractual cuando corresponde.
-- En todo el sistema donde se presente el documento del cliente, usar `<letra>-<persons.number>`.
+- En todo el sistema donde se presente el documento del cliente domiciliado, usar `<letra>-<persons.number>`. Para ND mostrar el tipo externo por separado y el número literalmente, sin añadir ND ni prefijos.
 - Ejemplos obligatorios: Venezolano `V-persons.number`, Extranjero `E-persons.number`, Pasaporte `P-persons.number`, Juridico `J-persons.number`, Comuna `C-persons.number`, Gubernamental `G-persons.number` y Firma Personal `R-persons.number`.
 - Aplicar el formato en listados, buscadores, selecciones, comprobantes, PDFs, reportes, módulos y respuestas de presentación. Mantener además el número crudo cuando una integración, consulta o validación necesite `persons.number` sin prefijo.
 - Centralizar la relación id/letra y el formateo; no inferir la letra desde la descripción ni duplicar mapas divergentes en componentes.
@@ -55,9 +56,9 @@ description: Mantener el alta, edición, catálogo, persistencia y presentación
 ## Reglas del formulario de clientes
 
 - Trabajar en el formulario real `resources/js/views/tenant/persons/form.vue` y en cualquier otro alta de cliente que comparta el catálogo.
-- Tratar a todo cliente como domiciliado en Venezuela y persistir `country_id = VE`.
-- Mostrar y exigir una nacionalidad distinta de `VE` sólo cuando `identity_document_type_id = E`; para los demás documentos persistir `nationality_id = VE` y mantener Nacionalidad fuera del DOM.
-- Mostrar Estado / Municipio / Parroquia para la jerarquía territorial heredada, excepto en clientes con documento Extranjero (`E`) o Pasaporte (`7`).
+- Para tipos domésticos persistir `country_id = VE`. ND conserva su país real; las direcciones secundarias también requieren países extranjeros y una dirección seleccionada debe pertenecer al comprador.
+- Mostrar y exigir una nacionalidad distinta de `VE` sólo cuando `identity_document_type_id = E`; para los demás documentos domésticos persistir `nationality_id = VE`; para ND limpiar nacionalidad y territorio venezolano y mantener Nacionalidad fuera del DOM.
+- Mostrar Estado / Municipio / Parroquia para la jerarquía territorial heredada, excepto en clientes con documento Extranjero (`E`), Pasaporte (`7`) o No Domiciliado (`ND`).
 - Al crear o editar un cliente Extranjero (`E`) o con Pasaporte (`7`), no exigir ni persistir Estado, Municipio o Parroquia. Ocultar esos controles y limpiar de forma autoritativa en backend `location_id`, `department_id`, `province_id` y `district_id`, tanto en `persons` como en cada fila de `addresses`, para que valores antiguos o manipulados queden vacíos o nulos.
 - Conservar `website` y `observation` como campos opcionales.
 - Tratar `addresses` ausente como `[]` y descartar filas vacías o inválidas antes de validar o persistir.
@@ -74,3 +75,7 @@ description: Mantener el alta, edición, catálogo, persistencia y presentación
 - Verificar el catálogo y todas sus referencias en una instalación nueva temporal, sin modificar bases reales.
 - Seguir la skill `frontend-build` para cambios en fuentes Vue/JavaScript; no compilar salvo petición explícita del usuario.
 - Al generar una Factura desde una o varias Notas de venta, conservar y resolver el cliente de origen si su tipo de identidad continúa activo. Un tipo inactivo debe bloquear la emisión también en conversiones y clientes precargados.
+
+## Exportación de bienes
+
+El contrato y las restricciones se describen en [facturas de exportación HKA](../../../informes/facturas_exportacion_hka.md). Ejecutar `ExportInvoiceTest`, `SalesCustomerIdentityPolicyTest` y `tests/js/export-invoice-ui.test.cjs`. No convertir ni actualizar tenants existentes para añadir los campos.

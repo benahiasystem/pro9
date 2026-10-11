@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\DB;
  * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
  * - `type` enum('customers','suppliers') COLLATE utf8mb4_unicode_ci NOT NULL
  * - `identity_document_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
+ * - `external_identity_type` varchar(4) DEFAULT NULL
+ * - Unique external identity: type, identity_document_type_id, country_id, external_identity_type, number
  * - `number` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `trade_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
@@ -62,6 +64,7 @@ CREATE TABLE `persons` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `type` enum('customers','suppliers') COLLATE utf8mb4_unicode_ci NOT NULL,
   `identity_document_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `external_identity_type` varchar(4) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `number` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `trade_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
@@ -105,6 +108,7 @@ CREATE TABLE `persons` (
   `discount_amount` decimal(12,2) NOT NULL DEFAULT '0.00',
   `text_filter` longtext COLLATE utf8mb4_unicode_ci,
   PRIMARY KEY (`id`),
+  UNIQUE KEY `persons_external_identity_unique` (`type`,`identity_document_type_id`,`country_id`,`external_identity_type`,`number`),
   KEY `persons_identity_document_type_id_foreign` (`identity_document_type_id`),
   KEY `persons_country_id_foreign` (`country_id`),
   KEY `persons_department_id_foreign` (`department_id`),

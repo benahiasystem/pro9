@@ -289,7 +289,7 @@ class PersonController extends Controller
      */
     private function hasOptionalLocation($identityDocumentTypeId): bool
     {
-        return in_array((string) $identityDocumentTypeId, ['E', '7'], true);
+        return in_array((string) $identityDocumentTypeId, ['E', '7', 'ND'], true);
     }
 
     /**

@@ -14,6 +14,9 @@ final class IdentityDocument
         ['id' => 'C', 'active' => 1, 'description' => 'Comuna', 'code' => 'C'],
         ['id' => 'G', 'active' => 1, 'description' => 'Gubernamental', 'code' => 'G'],
         ['id' => 'R', 'active' => 1, 'description' => 'Firma Personal', 'code' => 'R'],
+        // ######## INICIO EXPORTACIÓN DE BIENES ########
+        ['id' => 'ND', 'active' => 1, 'description' => 'No Domiciliado', 'code' => null],
+        // ######## FIN EXPORTACIÓN DE BIENES ########
         // ######## FIN CATÁLOGO IDENTIDADES ACTIVAS VENEZUELA ########
     ];
 
@@ -61,6 +64,7 @@ final class IdentityDocument
 
     public static function normalizeNumber($id, $number): string
     {
+        if ((string) $id === 'ND') return (string) $number;
         $number = strtoupper(trim((string) $number));
         $code = self::code($id);
 

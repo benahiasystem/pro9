@@ -20,13 +20,14 @@ use App\Models\Tenant\Configuration;
 
 class DocumentInput
 {
-    public static function set($inputs)
+    public static function set($inputs, $service = 'web')
     {
         $inputs = \App\Support\Venezuela\RetiredDetractionFields::discard($inputs);
         $document_type_id = $inputs['document_type_id'];
         SalesDocumentTypePolicy::assertNewFiscalDocumentAllowed($document_type_id);
         // ######## INICIO POLITICA IDENTIDAD ACTIVA EN VENTAS ########
-        SalesCustomerIdentityPolicy::assertCustomerAllowed($inputs['customer_id'] ?? null);
+        \App\Services\ExportInvoicePolicy::assertInput($inputs, $service === 'web');
+        SalesCustomerIdentityPolicy::assertCustomerAllowed($inputs['customer_id'] ?? null, \App\Services\ExportInvoicePolicy::isExport(\App\Services\ExportInvoicePolicy::operation($inputs)));
         // ######## FIN POLITICA IDENTIDAD ACTIVA EN VENTAS ########
         $series = \App\Services\SeriesNumbering::normalizeCode($inputs['series'] ?? null);
         $number = $inputs['number'];

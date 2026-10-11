@@ -28,8 +28,30 @@ final class HkaPayloadBuilder
             if (empty($d['issuer'][$field])) FiscalAmounts::error('issuer.'.$field,'Falta el snapshot fiscal del emisor.');
         }
         $fiscal = $d['fiscal_data'] ?? [];
-        if (($d['invoice']['operation_type_id'] ?? '0101') !== '0101' || ($d['total_exportation'] ?? 0) > 0 || !empty($fiscal['special_tax_regime_id']) || !empty($fiscal['third_party']) || !empty($fiscal['conditional_data'])) {
-            FiscalAmounts::error('fiscal_data','Exportaciones, regímenes y operaciones especiales aún no están implementados.');
+        $operation = $d['invoice']['operation_type_id'] ?? '0101';
+        $exportation = \App\Services\ExportInvoicePolicy::isExport($operation);
+        if ((!$exportation && ($operation !== '0101' || ($d['total_exportation'] ?? 0) > 0)) || !empty($fiscal['special_tax_regime_id']) || !empty($fiscal['third_party']) || !empty($fiscal['conditional_data'])) {
+            FiscalAmounts::error('fiscal_data','La operación, régimen o condición fiscal seleccionada no está habilitada.');
+        }
+        if ($exportation) {
+            $term = \App\Services\ExportInvoicePolicy::INCOTERMS[$operation];
+            if (empty($d['items'])) FiscalAmounts::error('items', 'La exportación requiere líneas de bienes.');
+            if ($d['document_type_id'] !== '01' || ($fiscal['transaction_type_id'] ?? '01') !== '01') FiscalAmounts::error('document_type_id', 'Las notas y operaciones especiales de exportación no están habilitadas.');
+            $saved = $fiscal['catalog_snapshot']['operation_type'] ?? [];
+            if (($saved['id'] ?? null) !== $operation || ($saved['incoterm'] ?? null) !== $term) FiscalAmounts::error('fiscal_data', 'Falta el INCOTERM conservado de la exportación.');
+            $buyer = $d['customer'];
+            if (($buyer['identity_document_type_id'] ?? null) !== 'ND' || ($buyer['country_id'] ?? 'VE') === 'VE' || !preg_match('/^[A-Z]{2,4}$/D', $buyer['external_identity_type'] ?? '') || ($buyer['external_identity_type'] ?? '') === 'ND' || ($buyer['hka_identity_code'] ?? null) !== $buyer['external_identity_type']) FiscalAmounts::error('customer', 'La exportación requiere identificación y domicilio del comprador no domiciliado.');
+            if ((float) $d['total_taxed'] !== 0.0 || (float) $d['total_exonerated'] !== 0.0 || (float) $d['total_igv'] !== 0.0 || abs(($d['total_exportation'] ?? 0) - $d['total_value']) > 0.005) FiscalAmounts::error('total_exportation', 'Los totales de exportación no corresponden a una operación con IVA 0 %.');
+        }
+        // Distribute global export adjustments on a copy so HKA receives each net E line once.
+        // Its global-discount validations differ from the local export subtotal convention.
+        if ($exportation) $d = self::exportAdjustmentsOnLines($d);
+        $usdExport = $exportation && $d['currency_type_id'] === 'USD' ? $d : null;
+        if ($usdExport) {
+            $v = $d['currency_totals'] ?? [];
+            if (!isset($v['exportation']) || abs($v['exportation'] - FiscalAmounts::convert($d['total_exportation'], 'USD', 'VES', $d['exchange_rate_sale'])) > 0.005 || (float) ($v['taxed'] ?? -1) !== 0.0 || (float) ($v['exempt'] ?? -1) !== 0.0 || (float) ($v['iva'] ?? -1) !== 0.0) FiscalAmounts::error('currency_totals', 'Faltan los totales de exportación conservados en VES.');
+            // HKA validates its principal amounts in VES and divides by the VES/USD rate for OtraMoneda.
+            $d = self::exportAmountsInVes($d);
         }
         $transaction = $fiscal['transaction_type_id'] ?? '01';
         $provider = $fiscal['catalog_snapshot']['provider_type_id']['code'] ?? null;
@@ -42,7 +64,7 @@ final class HkaPayloadBuilder
         $id = ['tipoDocumento'=>$types[$d['document_type_id']], 'numeroDocumento'=>(string)$d['number'],
             'serie'=>$d['series'], 'fechaEmision'=>self::date($d['date_of_issue']),
             'horaEmision'=>\Carbon\Carbon::parse($d['time_of_issue'])->format('h:i:s a'),
-            'tipoDeVenta'=>'Interna', 'moneda'=>$d['currency_type_id'], 'tipoTransaccion'=>$transaction,
+            'tipoDeVenta'=>$exportation ? $term : 'Interna', 'moneda'=>$d['currency_type_id'], 'tipoTransaccion'=>$transaction,
             'transaccionId'=>self::transactionId($d['operation_key']), 'sucursal'=>(string)($d['establishment']['code'] ?? '')];
         if ($provider) $id['tipoProveedor'] = $provider;
         $conditions = ['01' => 'Contado', '02' => 'Crédito'];
@@ -62,6 +84,7 @@ final class HkaPayloadBuilder
         }
         $lines=[];
         foreach ($d['items'] as $i=>$line) {
+            if ($exportation && (($line['affectation_igv_type_id'] ?? null) !== 'EXP' || ($line['item']['unit_type_id'] ?? '') === 'SERV' || (float) $line['total_igv'] !== 0.0 || (float) $line['percentage_igv'] !== 0.0 || ($line['iva_rate']['code'] ?? '') !== 'E')) FiscalAmounts::error('items', 'La exportación exige bienes con afectación Exportación y IVA 0 %.');
             $unit=$line['item']['hka_unit_code'] ?? null;
             if (!$unit) FiscalAmounts::error('items','Falta equivalencia HKA de unidad de medida.');
             $code=$line['iva_rate']['code'] ?? null;
@@ -73,6 +96,11 @@ final class HkaPayloadBuilder
                 'precioItem'=>self::money($line['total_value']), 'codigoImpuesto'=>$code,
                 'tasaIVA'=>self::money($line['percentage_igv']), 'valorIVA'=>self::money($line['total_igv']),
                 'valorTotalItem'=>self::money($line['total'])];
+            if ($exportation && (($line['total_discount'] ?? 0) > 0 || ($line['total_charge'] ?? 0) > 0)) {
+                $lines[$i]['precioAntesDescuento'] = \App\Services\ExchangeRates\ExchangeRateMath::finalAmount(
+                    \App\Services\ExchangeRates\ExchangeRateMath::rational($line['unit_value'])->multipliedBy($line['quantity'])
+                );
+            }
         }
         if (!$lines && $transaction!=='98') FiscalAmounts::error('items','El documento requiere líneas.');
         $taxes=[];$igtf=0;$igtfVes=0;
@@ -92,10 +120,11 @@ final class HkaPayloadBuilder
                 'fecha'=>self::date($p['date_of_payment']),'tipoCambio'=>(string)$p['exchange_rate']];
         }
         $totals=['nroItems'=>(string)count($lines),'montoGravadoTotal'=>self::money($d['total_taxed']),
-            'montoExentoTotal'=>self::money($d['total_exonerated']),'subtotal'=>self::money($d['total_value']),
+            'montoExentoTotal'=>self::money($exportation ? $d['total_exportation'] : $d['total_exonerated']),
+            'subtotal'=>self::money($d['total_value']),
             'totalIVA'=>self::money($d['total_igv']),'montoTotalConIVA'=>self::money($d['total']-$igtf),
-            'totalAPagar'=>self::money($d['total']),'totalDescuento'=>self::money($d['total_discount']),
-            'totalRecargos'=>self::money($d['total_charge']),'totalIGTF'=>self::money($igtf),'totalIGTF_VES'=>self::money($igtfVes),
+            'totalAPagar'=>self::money($d['total']),'totalDescuento'=>self::money($exportation ? 0 : $d['total_discount']),
+            'totalRecargos'=>self::money($exportation ? 0 : $d['total_charge']),'totalIGTF'=>self::money($igtf),'totalIGTF_VES'=>self::money($igtfVes),
             'impuestosSubtotal'=>$taxes,'formasPago'=>$forms];
         $header=['identificacionDocumento'=>$id,'comprador'=>['tipoIdentificacion'=>$identity,'numeroIdentificacion'=>$number,
             'razonSocial'=>$buyer['name'],'direccion'=>$buyer['address'],'pais'=>$buyer['country_id']], 'totales'=>$totals];
@@ -105,6 +134,21 @@ final class HkaPayloadBuilder
         }
         // These fields populate the fiscal PDF; HkaMail owns the existing automatic email flow.
         $header['comprador']['notificar'] = 'No';
+        if ($usdExport) {
+            $u = $usdExport;
+            $usdTaxes = [];
+            $usdIgtf = 0;
+            foreach ($u['taxes'] as $t) {
+                if ($t['tax_kind'] === 'IGTF') $usdIgtf += $t['amount'];
+                if ($t['tax_kind'] === 'IVA') $usdTaxes[] = ['codigoTotalImp'=>$t['code'], 'alicuotaImp'=>self::money($t['percentage']), 'baseImponibleImp'=>self::money($t['base']), 'valorTotalImp'=>self::money($t['amount'])];
+            }
+            $header['totalesOtraMoneda'] = ['moneda'=>'USD', 'tipoCambio'=>(string) $u['exchange_rate_sale'],
+                'montoGravadoTotal'=>'0.00', 'montoExentoTotal'=>self::money(array_sum(array_column($u['items'], 'total_value'))),
+                'subtotal'=>self::money($u['total_value']), 'totalIVA'=>'0.00', 'totalAPagar'=>self::money($u['total']),
+                'montoTotalConIVA'=>self::money($u['total']-$usdIgtf),
+                'totalDescuento'=>self::money(array_sum(array_column($u['discounts'] ?? [], 'amount'))),
+                'totalRecargos'=>self::money(array_sum(array_column($u['charges'] ?? [], 'amount'))), 'impuestosSubtotal'=>$usdTaxes];
+        }
         if ($d['currency_type_id']==='USD') {
             $v=$d['currency_totals'] ?? [];
             if (!$v) FiscalAmounts::error('currency_totals','Faltan totales persistidos en VES.');
@@ -119,6 +163,65 @@ final class HkaPayloadBuilder
         $payload=['documentoElectronico'=>['encabezado'=>$header,'detallesItems'=>$lines]];
         (new HkaSchemaValidator())->validate($payload);
         return $payload;
+    }
+
+    /** Translate a copy; document currency, receipts and frozen local amounts remain unchanged. */
+    private static function exportAmountsInVes(array $d): array
+    {
+        $rate = $d['exchange_rate_sale'];
+        foreach (['total_taxed','total_exonerated','total_exportation','total_value','total_igv','total','total_discount','total_charge'] as $field) $d[$field] = FiscalAmounts::convert($d[$field], 'USD', 'VES', $rate);
+        foreach ($d['items'] as &$line) {
+            foreach (['unit_value','unit_price'] as $field) $line[$field] = \App\Services\ExchangeRates\ExchangeRateMath::multiply($line[$field], $rate, 4);
+            foreach (['total_base_igv','total_value','total_igv','total_taxes','total','total_discount','total_charge'] as $field) $line[$field] = FiscalAmounts::convert($line[$field] ?? 0, 'USD', 'VES', $rate);
+            foreach ($line['discounts'] ?? [] as $i => $discount) $line['discounts'][$i]['amount'] = FiscalAmounts::convert($discount['amount'], 'USD', 'VES', $rate);
+        }
+        unset($line);
+        // Converting each line can leave cent residuals against the frozen document total.
+        $residual = round($d['total_value'] - array_sum(array_column($d['items'], 'total_value')), 2);
+        if ($residual != 0) {
+            $last = array_key_last($d['items']);
+            while ($last > 0 && ($d['items'][$last]['total_value'] <= 0 || $d['items'][$last]['total_value'] + $residual < 0)) $last--;
+            if ($d['items'][$last]['total_value'] + $residual < 0) FiscalAmounts::error('currency_totals', 'No se puede conciliar el redondeo de las líneas exportadas.');
+            foreach (['total_base_igv','total_value','total'] as $field) $d['items'][$last][$field] = round($d['items'][$last][$field] + $residual, 2);
+            $field = $residual > 0 ? 'total_charge' : 'total_discount';
+            $d['items'][$last][$field] = round($d['items'][$last][$field] + abs($residual), 2);
+        }
+        foreach ($d['taxes'] as &$tax) foreach (['base','amount'] as $field) $tax[$field] = FiscalAmounts::convert($tax[$field], 'USD', 'VES', $rate);
+        unset($tax);
+        foreach (['discounts','charges'] as $field) foreach ($d[$field] ?? [] as $i => $adjustment) $d[$field][$i]['amount'] = FiscalAmounts::convert($adjustment['amount'], 'USD', 'VES', $rate);
+        $d['currency_type_id'] = 'VES';
+        return $d;
+    }
+
+    /** Preserve total adjustments exactly in cents, including already distributed discounts. */
+    private static function exportAdjustmentsOnLines(array $d): array
+    {
+        $discount = array_sum(array_column($d['discounts'] ?? [], 'amount'));
+        foreach ($d['items'] as $line) foreach ($line['discounts'] ?? [] as $row) if (!empty($row['from_global_distribution'])) $discount -= $row['amount'];
+        $discount = max(0, (int) round($discount * 100));
+        $charge = (int) round(array_sum(array_column($d['charges'] ?? [], 'amount')) * 100);
+        if ($discount || $charge) {
+            $weights = array_map(fn ($line) => (int) round($line['total_value'] * 100), $d['items']);
+            $base = array_sum($weights);
+            if ($discount > $base) FiscalAmounts::error('discounts', 'El descuento supera el valor exportado.');
+            if (!$base) { $weights = array_fill(0, count($d['items']), 1); $base = count($weights); }
+            $cumulative = $priorDiscount = $priorCharge = 0;
+            foreach ($d['items'] as $i => &$line) {
+                $cumulative += $weights[$i];
+                $math = \App\Services\ExchangeRates\ExchangeRateMath::rational($cumulative)->dividedBy($base);
+                $toDiscount = (int) (string) $math->multipliedBy($discount)->toScale(0, \Brick\Math\RoundingMode::HALF_UP);
+                $toCharge = (int) (string) $math->multipliedBy($charge)->toScale(0, \Brick\Math\RoundingMode::HALF_UP);
+                $lineDiscount = ($toDiscount - $priorDiscount) / 100;
+                $lineCharge = ($toCharge - $priorCharge) / 100;
+                $line['total_discount'] = round(($line['total_discount'] ?? 0) + $lineDiscount, 2);
+                $line['total_charge'] = round(($line['total_charge'] ?? 0) + $lineCharge, 2);
+                foreach (['total_base_igv','total_value','total'] as $field) $line[$field] = round($line[$field] - $lineDiscount + $lineCharge, 2);
+                $priorDiscount = $toDiscount; $priorCharge = $toCharge;
+            }
+            unset($line);
+        }
+        $d['discounts'] = $d['charges'] = [];
+        return $d;
     }
 }
 // ######## FIN PERSISTENCIA FISCAL VENEZUELA ########

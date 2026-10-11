@@ -21,7 +21,7 @@ class VenezuelaInitialCatalogContractTest extends TestCase
     public function initial_catalog_ids_and_descriptions_match_the_venezuelan_contract(): void
     {
         $expected = [
-            'cat_affectation_igv_types' => ['10' => 'Gravado', '20' => 'Exento'],
+            'cat_affectation_igv_types' => ['10' => 'Gravado', '20' => 'Exento', 'EXP' => 'Exportación — IVA 0 %'],
             'cat_document_types' => [
                 '01' => 'FACTURA', 'FE' => 'FACTURA DE EXPORTACIÓN',
                 '07' => 'NOTA DE CRÉDITO', '08' => 'NOTA DE DÉBITO',
@@ -121,9 +121,9 @@ class VenezuelaInitialCatalogContractTest extends TestCase
         self::assertSame([
             ['0101', 1, 0, null],
             ['0200', 0, 1, null],
-            ['0201', 0, 1, 'FOB'],
-            ['0202', 0, 1, 'CIF'],
-            ['0203', 0, 1, 'EXW'],
+            ['0201', 1, 1, 'FOB'],
+            ['0202', 1, 1, 'CIF'],
+            ['0203', 1, 1, 'EXW'],
         ], array_map(static fn (array $row): array => [
             $row['id'], $row['active'], $row['exportation'], $row['incoterm'],
         ], $this->rows('cat_operation_types')));
@@ -242,11 +242,11 @@ class VenezuelaInitialCatalogContractTest extends TestCase
     }
 
     /** @test */
-    public function incoterm_export_types_cannot_be_activated_before_the_export_flow_exists(): void
+    public function generic_export_without_incoterm_cannot_be_activated(): void
     {
         $controller = new \App\Http\Controllers\Tenant\OperationTypeController();
 
-        foreach (['0201', '0202', '0203'] as $id) {
+        foreach (['0200'] as $id) {
             $response = $controller->changeActive($id, '1');
             self::assertSame(409, $response->getStatusCode());
             self::assertSame('EXPORT_OPERATION_DISABLED', json_decode($response->getContent(), true)['code']);

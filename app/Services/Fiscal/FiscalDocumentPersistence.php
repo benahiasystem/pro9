@@ -20,7 +20,7 @@ final class FiscalDocumentPersistence
         $establishment = Establishment::findOrFail($document->establishment_id);
         $document->establishment = \App\CoreFacturalo\Requests\Inputs\Common\EstablishmentInput::set($establishment->id);
         $person = Person::findOrFail($document->customer_id);
-        $document->customer = array_replace((array)$document->customer, $person->only(['number','name','identity_document_type_id','country_id','email','telephone']));
+        $document->customer = array_replace((array)$document->customer, $person->only(['number','name','identity_document_type_id','external_identity_type','email','telephone']));
         $document->customer = self::withHkaIdentity((array) $document->customer);
         $document->issuer = self::issuer($company, (array) $document->establishment);
         $document->exchange_rate_date = $document->exchange_rate_date ?? $document->date_of_issue;
@@ -32,15 +32,20 @@ final class FiscalDocumentPersistence
     public static function withHkaIdentity(array $customer): array
     {
         $type = $customer['identity_document_type_id'] ?? '';
+        if ($type === 'ND') {
+            $customer['hka_identity_code'] = $customer['external_identity_type'] ?? null;
+            return $customer;
+        }
         $customer['hka_identity_code'] = preg_match('/^([VJEGCR])[-0-9]/i', $customer['number'] ?? '', $match)
             ? strtoupper($match[1]) : (['1'=>'V','7'=>'P','E'=>'E','C'=>'C','G'=>'G','R'=>'R'][$type] ?? null);
         return $customer;
     }
 
-    public static function line(array $line): array
+    public static function line(array $line, bool $exportation = false): array
     {
         $affectation = $line['affectation_igv_type_id'] ?? null;
-        if (!in_array($affectation, ['10','20'], true)) FiscalAmounts::error('items', 'Seleccione Gravado o Exento.');
+        if (!in_array($affectation, $exportation ? ['EXP'] : ['10','20'], true)) FiscalAmounts::error('items', $exportation ? 'Seleccione Exportación — IVA 0 %.' : 'Seleccione Gravado o Exento.');
+        if ($exportation && ($line['item']['unit_type_id'] ?? '') === 'SERV') FiscalAmounts::error('items', 'La exportación de servicios no está habilitada.');
         validator($line, ['quantity'=>'required|numeric|gt:0', 'unit_price'=>'required|numeric|min:0'])->validate();
         $percentage = $affectation === '10' ? \App\Support\Venezuela\Localization::taxPercentage() : 0;
         $unit = $affectation === '10' ? $line['unit_price'] / (1 + $percentage / 100) : $line['unit_price'];
@@ -83,7 +88,7 @@ final class FiscalDocumentPersistence
         $line['total_igv'] = round($base * $percentage / 100, 2);
         $line['total_taxes'] = round($line['total_igv'] + ($line['total_other_taxes'] ?? 0), 2);
         $line['total'] = round($line['total_value'] + $line['total_taxes'], 2);
-        $rateCode = $affectation === '20' ? 'E' : (['8'=>'R','16'=>'G','31'=>'A'][(string)$percentage] ?? null);
+        $rateCode = in_array($affectation, ['20', 'EXP'], true) ? 'E' : (['8'=>'R','16'=>'G','31'=>'A'][(string)$percentage] ?? null);
         $line['iva_rate'] = ['code'=>$rateCode,'percentage'=>$percentage];
         unset($line['item']['cod_digemid']);
         $line['item']['hka_unit_code'] = DB::connection('tenant')->table('cat_unit_types')->where('id', $line['item']['unit_type_id'])->where('active',1)->value('hka_code');
@@ -96,12 +101,18 @@ final class FiscalDocumentPersistence
         $db = $document->getConnection();
         if ($document->note && $document->note->affected_document_id) {
             $affected = Document::findOrFail($document->note->affected_document_id);
+            if (\App\Services\ExportInvoicePolicy::isExport($affected->invoice->operation_type_id ?? '')) FiscalAmounts::error('note', 'Las notas de exportación todavía no están habilitadas.');
             if ($affected->document_type_id !== '01' || $affected->customer_id !== $document->customer_id || $affected->establishment_id !== $document->establishment_id || $affected->fiscal_environment !== $document->fiscal_environment || $affected->currency_type_id !== $document->currency_type_id) FiscalAmounts::error('note','La factura afectada debe corresponder al cliente, sucursal, ambiente y moneda de la nota.');
             $document->note->data_affected_document = $affected->only(['document_type_id','series','number','date_of_issue','total','control_number']);
             $document->note->save();
         }
         self::assertNoSecrets($input);
         $snapshot = [];
+        $operation = $document->invoice->operation_type_id ?? '0101';
+        if (\App\Services\ExportInvoicePolicy::isExport($operation)) {
+            $snapshot['operation_type'] = (array) $db->table('cat_operation_types')->where('id', $operation)->where('active', 1)->first();
+            if (empty($snapshot['operation_type'])) FiscalAmounts::error('operation_type_id', 'Seleccione un INCOTERM activo.');
+        }
         foreach (['provider_type_id' => 'cat_providers_types', 'transaction_type_id' => 'cat_transactions_types', 'special_tax_regime_id' => 'cat_special_tax_regime'] as $key => $table) {
             $id = $input[$key] ?? ($key === 'transaction_type_id' ? '01' : null);
             if ($id !== null) {
@@ -169,6 +180,7 @@ final class FiscalDocumentPersistence
 
     public static function summarize(Document $document): void
     {
+        $exportation = \App\Services\ExportInvoicePolicy::isExport($document->invoice->operation_type_id ?? '');
         $document->taxes()->whereNull('document_payment_id')->where('tax_kind', 'IVA')->delete();
         $items = $document->items()->get();
         $discounts = collect((array)$document->discounts)->map(fn ($r) => (array)$r);
@@ -183,9 +195,11 @@ final class FiscalDocumentPersistence
         $globalCharge = $charges->sum('amount');
         $taxedOriginal = $items->where('affectation_igv_type_id','10')->sum('total_base_igv');
         $exemptOriginal = $items->where('affectation_igv_type_id','20')->sum('total_base_igv');
-        if ($taxedDiscount > $taxedOriginal || $exemptDiscount > $exemptOriginal) FiscalAmounts::error('discounts','El descuento supera su base imponible.');
+        if (!$exportation && ($taxedDiscount > $taxedOriginal || $exemptDiscount > $exemptOriginal)) FiscalAmounts::error('discounts','El descuento supera su base imponible.');
+        if ($exportation && $globalDiscount > $items->sum('total_value')) FiscalAmounts::error('discounts', 'El descuento supera el valor exportado.');
         $taxed = $exempt = $iva = 0;
         foreach ($items->groupBy(fn ($line) => ($line->iva_rate['code'] ?? '').':'.$line->percentage_igv) as $group) {
+            if ($exportation) continue;
             $line = $group->first();
             $base = round($group->sum('total_base_igv'), 2);
             $deduction = $line->affectation_igv_type_id === '10'
@@ -206,6 +220,11 @@ final class FiscalDocumentPersistence
             $document->total_exonerated = round($exempt, 2);
             $document->total_igv = round($iva, 2);
             $document->total_value = round($items->sum('total_value') - $globalDiscount + $globalCharge, 2);
+            $document->total_exportation = $exportation ? $document->total_value : 0;
+            if ($exportation) {
+                $document->taxes()->create(['tax_kind'=>'IVA', 'code'=>'E', 'percentage'=>0, 'base'=>$document->total_exportation, 'amount'=>0,
+                    'base_ves'=>FiscalAmounts::convert($document->total_exportation, $document->currency_type_id, 'VES', $document->exchange_rate_sale), 'amount_ves'=>0]);
+            }
             $document->total_discount = round($items->sum('total_discount') + $globalDiscount, 2);
             $document->total_charge = round($items->sum('total_charge') + $globalCharge, 2);
         }
@@ -224,7 +243,7 @@ final class FiscalDocumentPersistence
         $document->legends = $legends;
         $document->save();
         $breakdown = $document->taxes()->get(['tax_kind','code','percentage','base_ves','amount_ves'])->toArray();
-        $values = ['taxed'=>$document->total_taxed,'exempt'=>$document->total_exonerated,
+        $values = ['taxed'=>$document->total_taxed,'exempt'=>$document->total_exonerated,'exportation'=>$document->total_exportation,
             'discount'=>$document->total_discount,'charge'=>$document->total_charge,
             'iva'=>$document->total_igv,'other_taxes'=>$document->total_other_taxes,'total'=>$document->total];
         foreach ($values as &$v) $v = FiscalAmounts::convert($v,$document->currency_type_id,'VES',$document->exchange_rate_sale);
@@ -263,6 +282,9 @@ final class FiscalDocumentPersistence
                 return $existing;
             }
             PaymentMethodType::assertActiveForPayment($input['payment_method_type_id'] ?? null);
+            if (!$initial && $values['tax_amount'] > 0 && \App\Services\ExportInvoicePolicy::isExport($document->invoice->operation_type_id ?? '')) {
+                FiscalAmounts::error('payment', 'El IGTF de un cobro posterior requiere una nota de exportación; ese flujo todavía no está habilitado.');
+            }
             $method = PaymentMethodType::findOrFail($input['payment_method_type_id']);
             if (!$initial && $values['payment'] > $document->balance + 0.005) FiscalAmounts::error('payment', 'El pago supera el saldo disponible.');
             if ($initial && $document->emission()->where('status', '!=', 'not_requested')->exists()) FiscalAmounts::error('emission','No se modifican los pagos de una operación preparada.');

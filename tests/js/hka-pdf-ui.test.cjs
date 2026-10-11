@@ -68,6 +68,22 @@ test('pending invoices block buttons and direct methods without downloading loca
   assert.equal(ctx.requests.length,0);assert.equal(actions.length,0);assert.equal(ctx.messages[0],'Confirme la factura');
  }
 });
+test('an unloaded or loading dialog cannot open a null print URL or download another record', async () => {
+ for (const component of [web,pos,finance]) {
+  const ctx=context(component);
+  ctx.loading=true;
+  for(const format of ['a4','a5','ticket']) {
+   assert.equal(ctx.pdfDownloadDisabled(format),true);
+   await ctx.downloadDocumentPdf(format,'/print/document/null/'+format);
+  }
+  ctx.loading=false;ctx.form={external_id:null};
+  for(const format of ['a4','a5','ticket']) {
+   assert.equal(ctx.pdfDownloadDisabled(format),true);
+   await ctx.downloadDocumentPdf(format,'/print/document/null/'+format);
+  }
+  assert.equal(ctx.requests.length,0);assert.equal(actions.length,0);assert.equal(downloads.length,0);
+ }
+});
 test('double clicks share the busy state and release it when download finishes', async () => {
  let resolve;const ctx=context(web,()=>new Promise(r=>resolve=r));
  const first=ctx.clickPrint('a4');await ctx.clickPrint('a5');assert.equal(ctx.requests.length,1);assert.equal(ctx.pdfDownloadDisabled('a5'),true);

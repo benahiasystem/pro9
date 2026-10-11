@@ -28,6 +28,7 @@ Fuente histórica: `../pro6/database/migrations/tenant/2018_01_00_000001_tenant_
 
 - `10`: Gravado
 - `20`: Exento
+- `EXP`: Exportación — IVA 0 %, sólo en exportación de bienes web digital DEMO
 
 Se retiraron las 17 filas que tenían `active = 0`.
 
@@ -48,7 +49,7 @@ Los IDs locales `14`–`26` cubren, en orden, los códigos HKA `01`, `04`, `07`,
 | `P` | Percibido | 0,00 % | IVA |
 | `IGTF` | Impuesto a las Grandes Transacciones Financieras | 3,00 % | IGTF |
 
-Esta tabla reproduce el catálogo 10 del manual HKA como referencia histórica; `IGTF` es otro tributo y por eso se distingue en `tax_kind`. Sus porcentajes no configuran el IVA operativo de Pro9 ni habilitan IGTF. Los únicos tratamientos seleccionables continúan en `cat_affectation_igv_types` (`10` Gravado, `20` Exento); el IVA operativo se obtiene de `Localization`.
+Esta tabla reproduce el catálogo 10 del manual HKA como referencia histórica; `IGTF` es otro tributo y por eso se distingue en `tax_kind`. Sus porcentajes no configuran el IVA operativo de Pro9 ni habilitan IGTF. Los tratamientos domésticos seleccionables continúan en `cat_affectation_igv_types` (`10` Gravado, `20` Exento); EXP se selecciona exclusivamente en exportación web digital DEMO; el IVA operativo se obtiene de `Localization`.
 
 ### Atributos (`cat_attribute_types`)
 
@@ -83,7 +84,7 @@ Se retiraron `02` Recibo por honorarios, `03` Boleta de venta electrónica, `04`
 ### Identidad (`cat_identity_document_types`)
 
 - `0` Doc.sin.rif; `1` Venezolano; `6` Juridico; `7` Pasaporte; `E` Extranjero; `C` Comuna; `G` Gubernamental; `R` Firma Personal. Los ocho registros operativos tienen `active = 1` y `external_document_examples = null`.
-- `ND` No Domiciliado tiene `active = 0` y `external_document_examples = 'RUT, NIT'`. Su ID es local; el manual HKA sólo presenta esos valores como ejemplos de identificación de terceros compradores. Esta novena fila es referencia y no habilita altas de clientes, ventas ni un código para enviar a HKA.
+- `ND` No Domiciliado tiene `active = 1` y `external_document_examples = 'RUT, NIT'`. Su ID es local; el manual HKA sólo presenta esos valores como ejemplos de identificación de terceros compradores. Esta novena fila habilita clientes extranjeros para exportación web DEMO; exige tipo externo y país/dirección extranjera. ND nunca es el código enviado a HKA.
 
 Ya no forman parte del consolidado Ced. Diplomática, TIN, IN ni TAM.
 
@@ -110,11 +111,11 @@ Se retiraron todas las leyendas peruanas de transferencia gratuita, percepción,
 
 - `0101`: Venta interna; activa; `incoterm = null`.
 - `0200`: Exportación de Bienes; inactiva; `incoterm = null`.
-- `0201`: Exportación FOB; inactiva; `incoterm = FOB`.
-- `0202`: Exportación CIF; inactiva; `incoterm = CIF`.
-- `0203`: Exportación EXW; inactiva; `incoterm = EXW`.
+- `0201`: Exportación FOB; activa; `incoterm = FOB`.
+- `0202`: Exportación CIF; activa; `incoterm = CIF`.
+- `0203`: Exportación EXW; activa; `incoterm = EXW`.
 
-`0201`–`0203` son identificadores locales de Pro9; el catálogo 5 del manual HKA no publica códigos para estas opciones. Permanecen inactivas y no se pueden habilitar desde la pantalla de tipos de operación hasta implementar y validar el flujo de exportación. No enviarlas como códigos HKA.
+`0201`–`0203` son identificadores locales de Pro9; el catálogo 5 del manual HKA no publica códigos para estas opciones. Nacen activas y se exponen sólo en Comprobantes web digital DEMO. 0200 no puede activarse desde la pantalla de tipos de operación. No enviarlas como códigos HKA.
 
 ### Orígenes de producto HKA (`cat_product_origins`)
 
@@ -261,3 +262,7 @@ El seeder no crea los tipos de auditoría `companies_certificate`, `companies_so
 La instalación nueva define directamente los trece estados actuales de ecommerce en `status_orders`, sin convertir cuatro estados anteriores ni volver a sembrarlos desde el alta del tenant. No incluye el servicio PENALIDAD asociado al motivo retirado de nota de débito 13; conserva DELIVERY-ECOM. Los cambios de conteo incluyen estas decisiones y la configuración inicial consolidada.
 
 Consultar también [mantener-modalidad-emision-fiscal-pro9](../../mantener-modalidad-emision-fiscal-pro9/SKILL.md). Las instalaciones nuevas crean directamente el esquema fiscal final, sin columnas SOAP/PFX/PSE ni migraciones de conversión.
+
+## Exportación de bienes (9 de octubre de 2026)
+
+El consolidado incorpora EXP (activo, exportación, no gratuito, IVA 0 %) y activa ND/0201/0202/0203 para el alcance definido en [facturas de exportación](../../../../informes/facturas_exportacion_hka.md). 0200 continúa inactivo. Las selecciones domésticas conservan 10/20 y excluyen ND; únicamente Comprobantes web digital DEMO expone los INCOTERM y EXP. El catálogo FE sigue como referencia: las exportaciones emitidas conservan Factura 01. No aplicar estos datos sobre tenants existentes.

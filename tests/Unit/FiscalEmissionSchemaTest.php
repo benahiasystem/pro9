@@ -18,6 +18,7 @@ class FiscalEmissionSchemaTest extends TestCase
     private $capsule;
     private $database;
     private $previousResolver;
+    private $previousDispatcher;
 
     protected function setUp(): void
     {
@@ -27,6 +28,8 @@ class FiscalEmissionSchemaTest extends TestCase
         $this->previousContainer = Container::getInstance();
         $this->previousFacade = Facade::getFacadeApplication();
         $this->previousResolver = \Illuminate\Database\Eloquent\Model::getConnectionResolver();
+        $this->previousDispatcher = \Illuminate\Database\Eloquent\Model::getEventDispatcher();
+        \Illuminate\Database\Eloquent\Model::clearBootedModels();
         $root = dirname(__DIR__, 2);
         $app = new Application($root);
         Container::setInstance($app);
@@ -90,6 +93,9 @@ class FiscalEmissionSchemaTest extends TestCase
             (new \Illuminate\Filesystem\Filesystem())->deleteDirectory(sys_get_temp_dir().'/'.$this->database);
         }
         if ($this->previousContainer) {
+            \Illuminate\Database\Eloquent\Model::clearBootedModels();
+            if ($this->previousDispatcher) \Illuminate\Database\Eloquent\Model::setEventDispatcher($this->previousDispatcher);
+            else \Illuminate\Database\Eloquent\Model::unsetEventDispatcher();
             if ($this->previousResolver) {
                 \Illuminate\Database\Eloquent\Model::setConnectionResolver($this->previousResolver);
             } else {
@@ -187,22 +193,22 @@ class FiscalEmissionSchemaTest extends TestCase
             // ######### FIN CAMBIO AFECTACIÓN IVA
             self::assertTrue($db->getSchemaBuilder()->hasColumn('cat_identity_document_types', 'external_document_examples'));
             self::assertSame(9, $db->table('cat_identity_document_types')->count());
-            self::assertSame(8, $db->table('cat_identity_document_types')->where('active', 1)->count());
+            self::assertSame(9, $db->table('cat_identity_document_types')->where('active', 1)->count());
             self::assertSame(1, $db->table('cat_identity_document_types')->whereNotNull('external_document_examples')->count());
             $nondomiciled = $db->table('cat_identity_document_types')->where('id', 'ND')->first(['active', 'description', 'external_document_examples']);
-            self::assertSame(0, (int) $nondomiciled->active);
+            self::assertSame(1, (int) $nondomiciled->active);
             self::assertSame('No Domiciliado', $nondomiciled->description);
             self::assertSame('RUT, NIT', $nondomiciled->external_document_examples);
             self::assertTrue($db->getSchemaBuilder()->hasColumn('cat_operation_types', 'incoterm'));
             self::assertSame([
                 ['0101', 'Venta interna', 1, 0, null],
                 ['0200', 'Exportación de Bienes', 0, 1, null],
-                ['0201', 'Exportación FOB', 0, 1, 'FOB'],
-                ['0202', 'Exportación CIF', 0, 1, 'CIF'],
-                ['0203', 'Exportación EXW', 0, 1, 'EXW'],
+                ['0201', 'Exportación FOB', 1, 1, 'FOB'],
+                ['0202', 'Exportación CIF', 1, 1, 'CIF'],
+                ['0203', 'Exportación EXW', 1, 1, 'EXW'],
             ], $db->table('cat_operation_types')->orderBy('id')->get(['id', 'description', 'active', 'exportation', 'incoterm'])
                 ->map(static fn ($row): array => [$row->id, $row->description, (int) $row->active, (int) $row->exportation, $row->incoterm])->all());
-            self::assertSame(['0101'], $db->table('cat_operation_types')->where('active', 1)->pluck('id')->all());
+            self::assertSame(['0101', '0201', '0202', '0203'], $db->table('cat_operation_types')->where('active', 1)->pluck('id')->all());
             $concepts = $db->table('cat_retention_concept')->orderBy('id')->get(['id', 'percentage_label']);
             self::assertCount(86, $concepts);
             self::assertSame('001', $concepts[0]->id);
@@ -432,13 +438,13 @@ class FiscalEmissionSchemaTest extends TestCase
                 $note = array_replace($input, ['external_id' => \Illuminate\Support\Str::uuid()->toString(), 'document_type_id' => $type, 'type' => $kind, 'series' => $code,
                     'note' => ['affected_document_id' => $first->id, 'note_type_id' => '01', 'note_description' => 'Nota de prueba']]);
                 $document = (new \App\CoreFacturalo\Facturalo())->save($note)->getDocument();
-                self::assertSame($code . '-100', $document->number_full);
+                self::assertSame($code . '-00000100', $document->number_full);
                 self::assertSame($first->id, $document->note->affected_document_id);
             }
             $order = array_replace($input, ['external_id' => \Illuminate\Support\Str::uuid()->toString(), 'type' => 'dispatch', 'ubl_version' => '2.0', 'document_type_id' => '09', 'series' => 'TT01', 'id' => null,
                 'date_of_shipping' => '2026-09-10', 'transshipment_indicator' => false, 'unit_type_id' => 'KG', 'total_weight' => 1, 'discount_stock' => true]);
             $dispatch = (new \App\CoreFacturalo\Facturalo())->save($order)->getDocument();
-            self::assertSame('TT01-100', $dispatch->number_full);
+            self::assertSame('TT01-00000100', $dispatch->number_full);
             self::assertNull($dispatch->fiscal_identity['control_number']);
             self::assertNull($first->fiscal_identity['control_number']);
             $first->setAttribute('control_number', '00-00000021');
@@ -450,10 +456,10 @@ class FiscalEmissionSchemaTest extends TestCase
             $saleInput = array_replace($input, ['id' => null, 'series' => 'NV01', 'document_type_id' => '80', 'prefix' => 'NV']);
             $saleController = new \App\Http\Controllers\Tenant\SaleNoteController();
             $saleNote = \App\Models\Tenant\SaleNote::create($saleController->mergeData($saleInput));
-            self::assertSame('NV01-100', $saleNote->number_full);
+            self::assertSame('NV01-00000100', $saleNote->number_full);
             foreach ($input['items'] as $row) $saleNote->items()->create($row);
             $saleNext = \App\Models\Tenant\SaleNote::create($saleController->mergeData($saleInput));
-            self::assertSame('NV01-101', $saleNext->number_full);
+            self::assertSame('NV01-00000101', $saleNext->number_full);
             $stock = $db->table('item_warehouse')->where('item_id', $item->id)->where('warehouse_id', $warehouse)->value('stock');
             foreach (['sale_note_id' => $saleNote->id, 'dispatch_id' => $dispatch->id] as $source => $sourceId) {
                 $convertedInput = array_replace($input, ['external_id' => \Illuminate\Support\Str::uuid()->toString(), $source => $sourceId]);
@@ -494,8 +500,8 @@ class FiscalEmissionSchemaTest extends TestCase
                 $blankFirst = (new \App\CoreFacturalo\Facturalo())->save($blankInput)->getDocument();
                 $blankInput['external_id'] = \Illuminate\Support\Str::uuid()->toString();
                 $blankSecond = (new \App\CoreFacturalo\Facturalo())->save($blankInput)->getDocument();
-                self::assertSame('1', $blankFirst->number_full);
-                self::assertSame('2', $blankSecond->number_full);
+                self::assertSame('00000001', $blankFirst->number_full);
+                self::assertSame('00000002', $blankSecond->number_full);
                 self::assertSame('', $blankFirst->series);
                 self::assertNull($blankFirst->control_number);
                 $filenames[] = $blankFirst->filename;
@@ -503,32 +509,32 @@ class FiscalEmissionSchemaTest extends TestCase
                     $blankNote = array_replace($blankInput, ['external_id' => \Illuminate\Support\Str::uuid()->toString(), 'document_type_id' => $type, 'type' => $kind,
                         'note' => ['affected_document_id' => $blankFirst->id, 'note_type_id' => '01', 'note_description' => 'Blank series note']]);
                     $savedNote = (new \App\CoreFacturalo\Facturalo())->save($blankNote)->getDocument();
-                    self::assertSame('1', $savedNote->number_full);
+                    self::assertSame('00000001', $savedNote->number_full);
                     self::assertSame($blankFirst->id, $savedNote->note->affected_document_id);
                 }
                 $blankOrder = array_replace($order, ['establishment_id' => $branch, 'series' => '', 'external_id' => \Illuminate\Support\Str::uuid()->toString(), 'discount_stock' => false]);
                 $blankOrder['items'][0]['warehouse_id'] = $originWarehouse;
-                self::assertSame('1', (new \App\CoreFacturalo\Facturalo())->save($blankOrder)->getDocument()->number_full);
+                self::assertSame('00000001', (new \App\CoreFacturalo\Facturalo())->save($blankOrder)->getDocument()->number_full);
                 $blankSale = array_replace($saleInput, ['establishment_id' => $branch, 'series' => '']);
-                self::assertSame('1', \App\Models\Tenant\SaleNote::create($saleController->mergeData($blankSale))->number_full);
+                self::assertSame('00000001', \App\Models\Tenant\SaleNote::create($saleController->mergeData($blankSale))->number_full);
                 foreach (['U2', 'U3'] as $type) {
                     $transactionId = $db->table('inventory_transactions')->where('type', $type === 'U2' ? 'input' : 'output')->value('id');
                     $blankGuide = \Modules\Inventory\Models\Guide::create(['document_type_id' => $type, 'series' => '', 'number' => '#',
                         'warehouse_id' => $originWarehouse, 'date_of_issue' => '2026-09-10', 'time_of_issue' => '12:00:00', 'inventory_transaction_id' => $transactionId]);
                     self::assertSame($branch, (int) $blankGuide->establishment_id);
-                    self::assertSame('1', $blankGuide->number_full);
+                    self::assertSame('00000001', $blankGuide->number_full);
                 }
                 $blankTransfer = \Modules\Inventory\Models\InventoryTransfer::create(['document_type_id' => 'U4', 'series' => '', 'number' => '#',
                     'warehouse_id' => $originWarehouse, 'warehouse_destination_id' => $originWarehouse, 'quantity' => 1]);
                 self::assertSame($branch, (int) $blankTransfer->establishment_id);
-                self::assertSame('1', $blankTransfer->number_full);
+                self::assertSame('00000001', $blankTransfer->number_full);
             }
             self::assertCount(2, array_unique($filenames));
             $longCode = 'AB-CD123456789012345';
             $db->table('series')->insert(['establishment_id' => $establishment, 'document_type_id' => '01', 'number' => $longCode]);
             $longInput = array_replace($input, ['series' => $longCode, 'external_id' => \Illuminate\Support\Str::uuid()->toString()]);
             $longDocument = (new \App\CoreFacturalo\Facturalo())->save($longInput)->getDocument();
-            self::assertSame($longCode.'-1', $longDocument->number_full);
+            self::assertSame($longCode.'-00000001', $longDocument->number_full);
             self::assertStringContainsString($longCode, $longDocument->filename);
             self::assertSame($longDocument->id, \App\Models\Tenant\Document::where('establishment_id', $establishment)->where('series', $longCode)->where('number', 1)->value('id'));
             $this->assertVenezuelaFiscalPersistence($db, $input);
@@ -751,7 +757,161 @@ class FiscalEmissionSchemaTest extends TestCase
     }
 
 
-    public function test_hka_emission_runs_after_outer_commit_and_recovers_without_duplicate_sales(): void
+    public function test_export_invoices_persist_freeze_edit_and_emit_after_commit(): void
+    {
+        [$db, $app, $input] = $this->bootHkaFixture();
+        $foreign = \App\Models\Tenant\Person::create(['type'=>'customers', 'identity_document_type_id'=>'ND', 'external_identity_type'=>'NIT',
+            'number'=>'900123-4', 'name'=>'Foreign buyer', 'country_id'=>'CO', 'address'=>'Bogotá, Colombia', 'email'=>'export@example.test', 'telephone'=>'+57123456789']);
+        $input = array_replace($input, ['customer_id'=>$foreign->id, 'customer'=>\App\CoreFacturalo\Requests\Inputs\Common\PersonInput::set($foreign->id),
+            'source_module'=>'WEB', 'payments'=>[], 'payment_condition_id'=>'02', 'exchange_rate_sale'=>'40.12345678',
+            'discounts'=>[['discount_type_id'=>'03', 'factor'=>0.05, 'amount'=>10, 'base'=>200]],
+            'charges'=>[['charge_type_id'=>'62', 'factor'=>0.025, 'amount'=>5, 'base'=>200]], 'actions'=>['send_email'=>false]]);
+        $input['items'][0] = array_replace($input['items'][0], ['affectation_igv_type_id'=>'EXP', 'unit_price'=>100]);
+        $ordinaryCustomer = $db->table('persons')->where('number','MOCK-CLIENTE-VE')->value('id');
+        $exportInput = array_replace_recursive($input,['invoice'=>['operation_type_id'=>'0201']]);
+        foreach (['API'=>['web'=>false], 'POS'=>['changes'=>['source_module'=>'POS']], 'Domestic buyer'=>['changes'=>['customer_id'=>$ordinaryCustomer]],
+            'Mixed tax'=>['changes'=>['items'=>[0=>['affectation_igv_type_id'=>'20']]]]] as $label=>$case) {
+            $invalid = array_replace_recursive($exportInput,$case['changes']??[]);
+            try {
+                $engine = new \App\CoreFacturalo\Facturalo;
+                if ($case['web']??true) $engine->forWebDocuments();
+                $engine->save($invalid); self::fail($label.' must reject before persistence');
+            } catch (\Illuminate\Validation\ValidationException $expected) { self::assertNotEmpty($expected->errors()); }
+            self::assertSame(0,$db->table('documents')->count());
+        }
+        try {
+            $db->table('persons')->insert($foreign->only(['type','identity_document_type_id','external_identity_type','number','name','country_id','address']));
+            self::fail('Duplicate foreign identity must be rejected by MySQL');
+        } catch (\Illuminate\Database\QueryException $expected) { self::assertSame('23000',$expected->getCode()); }
+        $transmissions = 0;
+        $http = $app->make(\Illuminate\Http\Client\Factory::class);
+        $http->fake(function ($request) use ($db, &$transmissions) {
+            self::assertSame(0, $db->transactionLevel());
+            if (str_ends_with($request->url(), '/Autenticacion')) return \Illuminate\Support\Facades\Http::response(['token'=>'private-test-token', 'expiracion'=>date('c', time()+3600)]);
+            if (str_ends_with($request->url(), '/DescargaArchivo')) {
+                $pdf = new \FPDF(); $pdf->AddPage(); $pdf->SetFont('Helvetica','',12); $pdf->Text(10,15,'Export invoice DEMO');
+                return \Illuminate\Support\Facades\Http::response(['codigo'=>'200', 'archivo'=>base64_encode($pdf->Output('S'))]);
+            }
+            self::assertStringEndsWith('/Emision', $request->url());
+            $transmissions++;
+            $id = $request->data()['documentoElectronico']['encabezado']['identificacionDocumento'];
+            return \Illuminate\Support\Facades\Http::response(['codigo'=>'200', 'resultado'=>$id+['numeroControl'=>'00-'.str_pad($id['numeroDocumento'],8,'0',STR_PAD_LEFT)]]);
+        });
+        $db->beginTransaction();
+        $rolledBack = array_replace_recursive($input, ['invoice'=>['operation_type_id'=>'0201']]);
+        (new \App\CoreFacturalo\Facturalo)->forWebDocuments()->save($rolledBack);
+        self::assertSame(0, $transmissions);
+        $db->rollBack();
+        self::assertSame(0, $db->table('documents')->count());
+        foreach (\App\Services\ExportInvoicePolicy::INCOTERMS as $operation=>$term) foreach (['USD','VES'] as $currency) {
+            $case = array_replace_recursive($input, ['invoice'=>['operation_type_id'=>$operation], 'currency_type_id'=>$currency,
+                'external_id'=>(string) \Illuminate\Support\Str::uuid()]);
+            $db->beginTransaction();
+            $document = (new \App\CoreFacturalo\Facturalo)->forWebDocuments()->save($case)->getDocument()->fresh();
+            self::assertEquals(195, $document->total_exportation);
+            self::assertEquals(0, $document->total_exonerated);
+            self::assertEquals(0, $document->total_igv);
+            self::assertEquals(195, $document->total);
+            self::assertEquals($currency==='USD' ? 7824.07 : 195, $document->currency_totals->exportation);
+            self::assertSame('CO', $document->customer->country_id);
+            self::assertSame('NIT', $document->customer->hka_identity_code);
+            $before = $transmissions;
+            $db->commit();
+            $document = $document->fresh();
+            self::assertSame($before+1, $transmissions);
+            self::assertSame('confirmed', $document->emission->status, json_encode($document->emission->response));
+            self::assertNotEmpty($document->control_number);
+            self::assertSame($term, $document->emission->payload['documentoElectronico']['encabezado']['identificacionDocumento']['tipoDeVenta']);
+            $payload = $document->emission->payload;
+            $foreign->update(['address'=>'Changed in master data']);
+            $db->table('cat_operation_types')->where('id',$operation)->update(['description'=>'Changed catalogue']);
+            self::assertSame($payload, $document->fresh()->emission->payload);
+            app(\App\Services\Fiscal\HkaEmission::class)->send($document);
+            self::assertSame($before+1, $transmissions);
+            self::assertFalse(isset($document->emission->response['mail']));
+        }
+        foreach (['07','08'] as $noteType) {
+            try {
+                \App\Services\ExportInvoicePolicy::assertInput(['document_type_id'=>$noteType,'affected_document_id'=>$document->id]);
+                self::fail('Export notes remain disabled');
+            } catch (\Illuminate\Validation\ValidationException $expected) { self::assertArrayHasKey('note',$expected->errors()); }
+        }
+        $company = \App\Models\Tenant\Company::firstOrFail();
+        foreach ([['fiscal_environment'=>'production'],['fiscal_emission_mode'=>'free_form']] as $unavailable) {
+            $company->forceFill($unavailable)->save();
+            try {
+                \App\Services\ExportInvoicePolicy::assertInput($exportInput,true); self::fail('Only digital DEMO supports export');
+            } catch (\Illuminate\Validation\ValidationException $expected) { self::assertArrayHasKey('operation_type_id',$expected->errors()); }
+            $company->forceFill(['fiscal_environment'=>'demo','fiscal_emission_mode'=>'digital'])->save();
+        }
+        $company->forceFill(['igtf_enabled'=>true,'igtf_rate'=>3])->save();
+        $paymentCount=$db->table('document_payments')->count();
+        try {
+            \App\Services\Fiscal\FiscalDocumentPersistence::payment($document,['date_of_payment'=>'2026-09-10','payment_method_type_id'=>'01',
+                'currency_type_id'=>'USD','original_amount'=>1,'exchange_rate'=>'40.12345678','igtf_status'=>'subject']);
+            self::fail('A post-emission export IGTF note is outside this stage');
+        } catch (\Illuminate\Validation\ValidationException $expected) { self::assertArrayHasKey('payment',$expected->errors()); }
+        self::assertSame($paymentCount,$db->table('document_payments')->count());
+        $company->forceFill(['igtf_enabled'=>false])->save();
+        // Before transmission an edit keeps collections but refreshes the frozen operation.
+        $company = \App\Models\Tenant\Company::firstOrFail(); $credentials = $company->fiscal_credentials;
+        $company->fiscal_credentials = null; $company->save();
+        $case = array_replace_recursive($input, ['invoice'=>['operation_type_id'=>'0201'], 'external_id'=>(string) \Illuminate\Support\Str::uuid(),
+            'discounts'=>[], 'charges'=>[], 'payments'=>[['date_of_payment'=>'2026-09-10','payment_method_type_id'=>'01','payment'=>100,'reference'=>'Part payment']]]);
+        $case['discounts']=[]; $case['charges']=[];
+        $document = (new \App\CoreFacturalo\Facturalo)->forWebDocuments()->save($case)->getDocument()->fresh();
+        $payments = $document->payments->toArray();
+        (new \App\Services\Fiscal\HkaEmissionPreparation)->prepare($document);
+        $key = $document->fresh()->emission->operation_key;
+        $edit = array_replace_recursive($case, ['id'=>$document->id,'series'=>$document->series,'number'=>$document->number,
+            'invoice'=>['operation_type_id'=>'0202'], 'items'=>[0=>['quantity'=>3]]]); $edit['payments']=[];
+        (new \App\CoreFacturalo\Facturalo)->forWebDocuments()->update($edit,$document->id);
+        $fresh = $document->fresh();
+        self::assertNotSame($key,$fresh->emission->operation_key);
+        self::assertSame('not_requested',$fresh->emission->status);
+        self::assertEquals($payments,$fresh->payments->toArray());
+        self::assertEquals(300,$fresh->total_exportation);
+        self::assertSame('CIF',$fresh->fiscal_data->catalog_snapshot['operation_type']['incoterm']);
+        $company->fiscal_credentials=$credentials; $company->save();
+        $before=$transmissions; app(\App\Services\Fiscal\HkaEmission::class)->send($fresh);
+        self::assertSame($before+1,$transmissions);
+        self::assertSame('confirmed',$fresh->fresh()->emission->status);
+
+        // Race the actual web export edit against sending, using two isolated PHP processes.
+        $company->fiscal_credentials = null; $company->save();
+        $case['external_id'] = (string) \Illuminate\Support\Str::uuid();
+        $race = (new \App\CoreFacturalo\Facturalo)->forWebDocuments()->save($case)->getDocument()->fresh();
+        (new \App\Services\Fiscal\HkaEmissionPreparation)->prepare($race);
+        $company->fiscal_credentials = $credentials; $company->save();
+        $raceEdit = array_replace_recursive($case, ['id'=>$race->id, 'series'=>$race->series, 'number'=>$race->number,
+            'invoice'=>['operation_type_id'=>'0202'], 'items'=>[0=>['quantity'=>3]], 'payments'=>[]]);
+        $raceEdit['payments'] = [];
+        $payments = $db->table('document_payments')->where('document_id',$race->id)->get()->toArray();
+        $stockBefore = (float) $db->table('item_warehouse')->where('item_id',$case['items'][0]['item_id'])->value('stock');
+        $documentsBefore = $db->table('documents')->count();
+        $log = tempnam(sys_get_temp_dir(),'pro9_export_edit_race_');
+        try {
+            $results = $this->runFiscalWorkers($race->id,'hka-edit-race',[
+                ['action'=>'edit','edit'=>$raceEdit,'web_export'=>true], ['action'=>'send','log'=>$log]]);
+            $after = $race->fresh();
+            self::assertTrue(($results[0]['status'] ?? null)==='edited' || isset($results[0]['rejected']));
+            self::assertContains($after->emission->status,['confirmed','not_requested']);
+            self::assertEquals($payments,$db->table('document_payments')->where('document_id',$race->id)->get()->toArray());
+            self::assertSame($documentsBefore,$db->table('documents')->count());
+            self::assertEquals($stockBefore-($after->items->sum('quantity')-2),$db->table('item_warehouse')->where('item_id',$case['items'][0]['item_id'])->value('stock'));
+            self::assertEquals($after->items->sum('total_value'),$after->total_exportation);
+            self::assertSame($after->emission->status==='confirmed' ? "emission\n" : '',file_get_contents($log));
+            if ($after->emission->status==='not_requested') app(\App\Services\Fiscal\HkaEmission::class)->send($after);
+            $after = $after->fresh();
+            self::assertSame('confirmed',$after->emission->status);
+            $header = $after->emission->payload['documentoElectronico']['encabezado'];
+            self::assertSame(\App\Services\ExportInvoicePolicy::INCOTERMS[$after->invoice->operation_type_id],$header['identificacionDocumento']['tipoDeVenta']);
+            self::assertEquals($after->total,$header['totales']['totalAPagar']);
+            self::assertEquals($payments,$db->table('document_payments')->where('document_id',$race->id)->get()->toArray());
+        } finally { unlink($log); }
+    }
+
+    private function bootHkaFixture(): array
     {
         $db = $this->capsule->getConnection('tenant');
         foreach ($this->migrations('migrations/tenant/*.php') as $migration) $migration->up();
@@ -795,6 +955,7 @@ class FiscalEmissionSchemaTest extends TestCase
                 'total_base_igv' => 200, 'percentage_igv' => 16, 'total_igv' => 32, 'total_taxes' => 32, 'total_value' => 200, 'total' => 232,
             ]],
         ];
+        \Illuminate\Database\Eloquent\Model::clearBootedModels();
         \Illuminate\Database\Eloquent\Model::setEventDispatcher(new \Illuminate\Events\Dispatcher($app));
         \App\Models\Tenant\Document::observe(\App\Observers\DocumentObserver::class);
         (new \Modules\Inventory\Providers\InventoryKardexServiceProvider($app))->boot();
@@ -809,6 +970,19 @@ class FiscalEmissionSchemaTest extends TestCase
         $customer->forceFill(['email' => 'receiver@example.test', 'telephone' => '04121234567'])->save();
         $input['customer'] = $customer->toArray();
         $input['payment_condition_id'] = '01';
+        return [$db, $app, $input];
+    }
+
+    public function test_hka_emission_runs_after_outer_commit_and_recovers_without_duplicate_sales(): void
+    {
+        [$db, $app, $input] = $this->bootHkaFixture();
+        $customer = \App\Models\Tenant\Person::findOrFail($input['customer_id']);
+        $item = \App\Models\Tenant\Item::findOrFail($input['items'][0]['item_id']);
+        $warehouse = $input['items'][0]['warehouse_id'];
+        $establishment = $input['establishment_id'];
+        $userId = $input['user_id'];
+        $company = \App\Models\Tenant\Company::firstOrFail();
+        $http = $app->make(\Illuminate\Http\Client\Factory::class);
         $mutations = 0; $queries = 0; $mode = 'success'; $active = null;
         $http->fake(function ($request) use ($db, &$mutations, &$queries, &$mode, &$active) {
             self::assertSame(0, $db->transactionLevel(), 'HTTP must occur after the outer commit and outside locks');

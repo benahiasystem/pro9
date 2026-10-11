@@ -72,7 +72,9 @@ class Template
         $html = view($view, compact('company', 'document', 'configuration'))->render();
         if ($document instanceof \App\Models\Tenant\Document) {
             $summary = view('pdf.partials.document_fiscal_totals', compact('document'))->render();
-            $html = str_contains($html, '</body>') ? str_replace('</body>', $summary.'</body>', $html) : $html.$summary;
+            // Some ticket footers contain their own body: append the fiscal summary once.
+            $bodyEnd = strripos($html, '</body>');
+            $html = $bodyEnd === false ? $html.$summary : substr_replace($html, $summary, $bodyEnd, 0);
             if (!empty($configuration['hka_ticket_qr'])) {
                 $qr = view('pdf.partials.hka_ticket_qr', ['qr' => $configuration['hka_ticket_qr']])->render();
                 // Ticket templates reserve a cell below the amount in words, beside payments.

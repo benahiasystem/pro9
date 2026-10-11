@@ -1518,7 +1518,7 @@
 
 
                                 <tr v-if="form.total_exportation > 0 && !isNrus">
-                                    <td>OP.EXPORTACIÓN:</td>
+                                    <td>EXPORTACIÓN (IVA 0 %):</td>
                                     <td>
                                         {{ currency_type.symbol }}
                                         {{ form.total_exportation }}
@@ -1588,7 +1588,7 @@
                                         <el-input-number
                                             v-model="total_global_charge"
                                             :disabled="
-                                                config.active_allowance_charge ==
+                                                !isExportInvoice && config.active_allowance_charge ==
                                                 true
                                                     ? true
                                                     : false
@@ -2831,7 +2831,6 @@ export default {
             consigneds:[],
             consigned_addresses:[],
             customerSearchTerm: '',
-            operation_types_filter: [],
             is_itinerant_operation: false
         };
     },
@@ -2902,6 +2901,18 @@ export default {
                 return this.form.operation_type_id;
             },
             set(val) {
+                const nextExport = ['0201', '0202', '0203'].includes(val);
+                const changedCategory = nextExport !== this.isExportInvoice;
+                if (changedCategory && (this.isUpdateDocument || this.form.items.length > 0)) {
+                    this.$message.error('Cambie entre venta interna y exportación antes de agregar productos. Las facturas registradas conservan su categoría.');
+                    return;
+                }
+                if (changedCategory) {
+                    this.form.customer_id = null;
+                    this.form.customer_address_id = null;
+                    this.preloadedCustomerId = null;
+                    this.preloadedCustomer = null;
+                }
                 if (val === "0101_itinerant") {
                     this.is_itinerant_operation = true;
                     this.form.operation_type_id = "0101";
@@ -2915,10 +2926,16 @@ export default {
                 }
             }
         },
+        operation_types_filter() {
+            return this.operation_types;
+        },
         showOperationTypeField() {
             // Mantener visible el tipo seleccionado, incluso cuando el tenant
             // solo tenga una operación disponible.
             return this.operation_types_filter.length > 0;
+        },
+        isExportInvoice() {
+            return ['0201', '0202', '0203'].includes(this.form.operation_type_id);
         },
         showCurrencyExchangeFields() {
             return this.currency_types.length > 1;
@@ -3174,7 +3191,7 @@ export default {
             await this.$http
                 .get(`/documents/${this.documentId}/show`)
                 .then(response => {
-                    this.onSetFormData(response.data.data);
+                    return this.onSetFormData(response.data.data);
                 })
                 .finally(() => (this.loading_submit = false));
         }
@@ -3186,7 +3203,7 @@ export default {
             await this.$http
                 .get(`/store/record/${this.table}/${this.tableId}`)
                 .then(response => {
-                    this.onSetFormData(response.data.data);
+                    return this.onSetFormData(response.data.data);
                 })
                 .finally(() => (this.loading_submit = false));
         }
@@ -3213,7 +3230,7 @@ export default {
                             i,
                             this.form.currency_type_id,
                             this.form.exchange_rate_sale,
-                            this.percentage_igv
+                            this.percentage_igv, this.isExportInvoice
                         );
                     });
                 });
@@ -3238,7 +3255,7 @@ export default {
                             i,
                             this.form.currency_type_id,
                             this.form.exchange_rate_sale,
-                            this.percentage_igv
+                            this.percentage_igv, this.isExportInvoice
                         );
                     });
                 });
@@ -3843,7 +3860,7 @@ export default {
                 row,
                 this.form.currency_type_id,
                 this.form.exchange_rate_sale,
-                this.percentage_igv
+                this.percentage_igv, this.isExportInvoice
             );
             await this.calculateTotal();
         },
@@ -4036,6 +4053,7 @@ export default {
             this.form.date_of_issue = moment(data.date_of_issue).format(
                 "YYYY-MM-DD"
             );
+            this.form.date_of_due = moment((data.invoice && data.invoice.date_of_due) || data.date_of_due || data.date_of_issue).format("YYYY-MM-DD");
             this.form.time_of_issue = data.time_of_issue;
             this.form.customer_id = data.customer_id;
 
@@ -4064,7 +4082,7 @@ export default {
             this.form.pending_amount_prepayment =
                 data.pending_amount_prepayment || 0;
             this.form.payment_method_type_id = data.payment_method_type_id;
-            this.form.charges = data.charges || [];
+            this.form.charges = Object.values(data.charges || []);
             // this.form.discounts = this.prepareDataGlobalDiscount(data);
             // this.form.discounts = data.discounts || [];
             this.form.seller_id = data.seller_id;
@@ -4095,6 +4113,9 @@ export default {
             this.form.operation_type_id = data.invoice
                 ? data.invoice.operation_type_id
                 : data.operation_type_id;
+            if (this.isExportInvoice) {
+                this.total_global_charge = _.round(_.sumBy(this.form.charges, charge => Number(charge.amount || 0)), 2);
+            }
             this.form.terms_condition = data.terms_condition || "";
             this.form.guides = data.guides || [];
             this.form.show_terms_condition = data.terms_condition
@@ -4134,8 +4155,12 @@ export default {
             if (data.discounts && data.discounts[0]) {
                 this.recordDiscountsGlobal = data.discounts[0]
                 let discount_type_id = data.discounts[0].discount_type_id
-                this.total_global_discount = discount_type_id !== "02" ? data.total_discount :
-                    _.round(data.total_discount * (1 + this.percentage_igv), 2);
+                if (this.isExportInvoice) {
+                    this.prepareDataGlobalDiscount(data);
+                } else {
+                    this.total_global_discount = discount_type_id !== "02" ? data.total_discount :
+                        _.round(data.total_discount * (1 + this.percentage_igv), 2);
+                }
             }
 
 
@@ -4173,7 +4198,7 @@ export default {
 
             this.establishment = data.establishment;
 
-            this.changeDateOfIssue();
+            await this.changeDateOfIssue();
             // await this.filterCustomers();
             this.updateChangeDestinationSale();
 
@@ -4207,7 +4232,7 @@ export default {
                         row,
                         this.form.currency_type_id,
                         this.form.exchange_rate_sale,
-                        this.percentage_igv
+                        this.percentage_igv, this.isExportInvoice
                     )
                 );
             });
@@ -5103,15 +5128,17 @@ export default {
         async changeDateOfIssue() {
             this.validateDateOfIssue();
 
-            if (!this.form.quotation_id) {
+            if (!this.form.quotation_id && !this.isUpdateDocument) {
                 this.form.date_of_due = this.form.date_of_issue;
             }
-            // if (! this.isUpdate) {
-            await this.searchExchangeRateByDate(this.form.date_of_issue).then(
-                response => {
-                    this.form.exchange_rate_sale = response
-                }
-            );
+            if (!this.isUpdateDocument) {
+                const requestedDate = this.form.date_of_issue;
+                await this.searchExchangeRateByDate(requestedDate).then(response => {
+                    if (this.form.date_of_issue === requestedDate && !this.isUpdateDocument) {
+                        this.form.exchange_rate_sale = response;
+                    }
+                });
+            }
             await this.getPercentageIgv();
             // this.changeCurrencyType(); //
             // }
@@ -5149,9 +5176,16 @@ export default {
                     this.series.length > 0 ? this.series[0].id : null;
             }
         },
-        filterCustomers() {
+        async filterCustomers() {
             // ######## INICIO POLITICA IDENTIDAD ACTIVA EN VENTAS ########
-            this.customers = this.all_customers;
+            if (this.isExportInvoice) {
+                const operation = this.form.operation_type_id;
+                const response = await this.$http.get(`/${this.resource}/search/customers`, {params: {input: '', document_type_id: '01', operation_type_id: operation}});
+                if (this.form.operation_type_id !== operation) return;
+                this.customers = response.data.customers;
+            } else {
+                this.customers = this.all_customers.filter(customer => customer.identity_document_type_id !== 'ND');
+            }
             // ######## FIN POLITICA IDENTIDAD ACTIVA EN VENTAS ########
 
             this.ensurePreloadedCustomerInList();
@@ -5215,7 +5249,7 @@ export default {
                         newItem,
                         row.item.currency_type_id,
                         this.form.exchange_rate_sale,
-                        row.percentage_igv
+                        row.percentage_igv, this.isExportInvoice
                     );
 
                     this.form.items[index] = unifiedRow;
@@ -5233,7 +5267,7 @@ export default {
                         newItem,
                         row.item.currency_type_id,
                         this.form.exchange_rate_sale,
-                        row.percentage_igv
+                        row.percentage_igv, this.isExportInvoice
                     );
                     this.form.items[index] = newRow;
                 } else {
@@ -5294,7 +5328,7 @@ export default {
                         row,
                         this.form.currency_type_id,
                         this.form.exchange_rate_sale,
-                        this.percentage_igv
+                        this.percentage_igv, this.isExportInvoice
                     )
                 );
             });
@@ -5362,7 +5396,7 @@ export default {
 
                 ;
 
-                if (row.affectation_igv_type_id === "40") {
+                if (row.affectation_igv_type_id === "EXP") {
                     total_exportation += parseFloat(row.total_value);
                 }
 
@@ -5380,7 +5414,7 @@ export default {
                         "34",
                         "35",
                         "36",
-                        "40"
+                        "EXP"
                     ].indexOf(row.affectation_igv_type_id) > -1
                 ) {
                     // total_igv += parseFloat(row.total_igv)
@@ -5464,6 +5498,7 @@ export default {
 
             this.form.total_discount_item = _.round(total_discount, 2);
             this.form.total_discount = _.round(total_discount, 2);
+            if (this.isExportInvoice) this.form.total_charge = _.round(total_charge, 2);
             this.form.total_exportation = _.round(total_exportation, 2);
             this.form.total_taxed = _.round(total_taxed, 2);
             this.form.total_exonerated = _.round(total_exonerated, 2);
@@ -5496,10 +5531,12 @@ export default {
 
 
 
-            if (this.enabled_discount_global)
+            if (this.enabled_discount_global || (this.isExportInvoice && this.recordDiscountsGlobal))
                 this.discountGlobalItems(totals_without_rounding);
 
             if (this.prepayment_deduction) this.discountGlobalPrepayment();
+
+            if (this.isExportInvoice) this.applyExportGlobalCharge();
 
 
             let customer = _.find(this.customers, {
@@ -5513,7 +5550,7 @@ export default {
 
             this.calculateFee();
 
-            this.chargeGlobal();
+            if (!this.isExportInvoice) this.chargeGlobal();
 
             this.setTotalPointsBySale(this.config);
         },
@@ -5556,6 +5593,31 @@ export default {
             //     this.form.payments[0].payment = this.form.total
             // }
             this.calculatePayments();
+        },
+        applyExportGlobalCharge() {
+            const amount = _.round(Number(this.total_global_charge || 0), 2);
+            const base = Number(this.form.total_value);
+            if (amount > 0) {
+                const charges = this.form.charges.length ? this.form.charges : [{
+                    charge_type_id: '50', description: 'Cargos globales que no afectan la base imponible del IVA', amount: 0
+                }];
+                const original = _.sumBy(charges, charge => Number(charge.amount || 0));
+                let cumulative = 0, allocated = 0;
+                this.form.charges = charges.map((charge, index) => {
+                    cumulative += original > 0 ? Number(charge.amount || 0) : 1;
+                    const next = index === charges.length - 1 ? amount : _.round(amount * cumulative / (original > 0 ? original : charges.length), 2);
+                    const share = _.round(next - allocated, 2);
+                    allocated = next;
+                    return Object.assign({}, charge, {amount: share, base, factor: base > 0 ? _.round(share / base, 5) : 0});
+                }).filter(charge => charge.amount > 0);
+            } else {
+                this.form.charges = [];
+            }
+            this.form.total_charge = _.round(this.form.total_charge + amount, 2);
+            this.form.total_exportation = _.round(this.form.total_exportation + amount, 2);
+            this.form.total_value = _.round(this.form.total_value + amount, 2);
+            this.form.total = _.round(this.form.total + amount, 2);
+            this.form.subtotal = this.form.total;
         },
         chargeGlobal() {
             let base = parseFloat(this.form.total);
@@ -5681,7 +5743,7 @@ export default {
         },
         deleteDiscountGlobal() {
             let discount = _.find(this.form.discounts, {
-                discount_type_id: this.configuration.global_discount_type_id
+                discount_type_id: this.isExportInvoice && this.recordDiscountsGlobal ? this.recordDiscountsGlobal.discount_type_id : this.configuration.global_discount_type_id
             });
             // let discount = _.find(this.form.discounts, {'discount_type_id': '03'})
             let index = this.form.discounts.indexOf(discount);
@@ -5844,7 +5906,7 @@ export default {
                             item,
                             this.form.currency_type_id,
                             this.form.exchange_rate_sale,
-                            this.percentage_igv
+                            this.percentage_igv, this.isExportInvoice
                         )
                     );
                 }
@@ -5891,7 +5953,7 @@ export default {
                 "34", // Inafecta - Retiro por Convenio Colectivo
                 "35", // Inafecta - Retiro por Premio
                 "36", // Inafecta - Retiro por Publicidad
-                "40"  // Exportacion
+                "EXP"  // Exportacion
             ].includes(item.affectation_igv_type_id);
         },
         /**
@@ -6029,7 +6091,7 @@ export default {
                     item,
                     this.form.currency_type_id,
                     this.form.exchange_rate_sale,
-                    this.percentage_igv
+                    this.percentage_igv, this.isExportInvoice
                 );
 
                 // Object.assign conserva los campos propios de la fila que
@@ -6119,6 +6181,22 @@ export default {
             this.calculateTotal();
         },
         discountGlobalItems(ctx) {
+            if (this.isExportInvoice) {
+                this.deleteDiscountGlobal();
+                const base = Number(ctx.total_exportation);
+                const amount = this.is_amount ? Number(this.total_global_discount || 0) : _.round(base * Number(this.total_global_discount || 0) / 100, 2);
+                if (amount < 0 || amount > base) {
+                    this.$message.error('El descuento supera el valor exportado.');
+                    return;
+                }
+                if (amount > 0 && base > 0) this.setGlobalDiscount(_.round(amount / base, 5), _.round(amount, 2), _.round(base, 2), amount);
+                this.form.total_exportation = _.round(base - amount, 2);
+                this.form.total_value = this.form.total_exportation;
+                this.form.total = this.form.total_exportation;
+                this.form.subtotal = this.form.total;
+                this.form.total_discount += _.round(amount, 2);
+                return;
+            }
              let total_discounts_item = 0;
              // Seguridad: no acumular si calculateTotal no restauró antes
              this.clearGlobalDistributionDiscounts();
@@ -6234,7 +6312,7 @@ export default {
                     case "20": // Exonerada
                         discount_by_affectation.exonerated += item_discount_amount;
                         break;
-                    case "40": // Exportacion
+                    case "EXP": // Exportacion
                         discount_by_affectation.exportation += item_discount_amount;
                         break;
                     default: // Inafecta (30 a 36)
@@ -6353,7 +6431,7 @@ export default {
                 case '34': // Inafecta - Retiro por Convenio Colectivo
                 case '35': // Inafecta - Retiro por Premio
                 case '36': // Inafecta - Retiro por Publicidad
-                case '40': // Exportación
+                case 'EXP': // Exportación
                 case '21': // Exonerada - Transferencia Gratuita
                 case '37': // Inafecta - Transferencia Gratuita
                 default:
@@ -6781,7 +6859,7 @@ export default {
             const preloadedCustomer = _.find(this.customers, { id: customer_id });
 
             await this.$http
-                .get(`/${this.resource}/search/customer/${customer_id}`)
+                .get(`/${this.resource}/search/customer/${customer_id}`, {params: {operation_type_id: this.form.operation_type_id}})
                 .then(response => {
                     if (response.data.customers && response.data.customers.length > 0) {
                         this.customers = response.data.customers;

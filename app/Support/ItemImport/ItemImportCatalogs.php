@@ -15,7 +15,7 @@ class ItemImportCatalogs
         return [
             'unit_type_ids' => $this->activeIds(UnitType::query()),
             'currency_type_ids' => $this->activeIds(CurrencyType::query()),
-            'affectation_igv_type_ids' => $this->activeIds(AffectationIgvType::query()),
+            'affectation_igv_type_ids' => $this->activeIds(AffectationIgvType::whereActive()),
             'existing_internal_ids' => Item::query()
                 ->whereNotNull('internal_id')
                 ->pluck('internal_id')

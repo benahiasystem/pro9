@@ -837,6 +837,7 @@ return array (
           'free' => 0,
           'description' => 'Exento',
         ),
+        2 => array ('id' => 'EXP', 'active' => 1, 'exportation' => 1, 'free' => 0, 'description' => 'Exportación — IVA 0 %'),
       ),
     ),
     'cat_attribute_types' =>
@@ -1291,7 +1292,7 @@ return array (
         8 =>
         array (
           'id' => 'ND',
-          'active' => 0,
+          'active' => 1,
           'description' => 'No Domiciliado',
           'external_document_examples' => 'RUT, NIT',
         ),
@@ -1421,7 +1422,7 @@ return array (
         2 =>
         array (
           'id' => '0201',
-          'active' => 0,
+          'active' => 1,
           'exportation' => 1,
           'description' => 'Exportación FOB',
           'incoterm' => 'FOB',
@@ -1429,7 +1430,7 @@ return array (
         3 =>
         array (
           'id' => '0202',
-          'active' => 0,
+          'active' => 1,
           'exportation' => 1,
           'description' => 'Exportación CIF',
           'incoterm' => 'CIF',
@@ -1437,7 +1438,7 @@ return array (
         4 =>
         array (
           'id' => '0203',
-          'active' => 0,
+          'active' => 1,
           'exportation' => 1,
           'description' => 'Exportación EXW',
           'incoterm' => 'EXW',
@@ -7840,6 +7841,7 @@ return array (
         array (
           'id' => 1,
           'type' => 'customers',
+          'external_identity_type' => NULL,
           'identity_document_type_id' => '0',
           'number' => '99999999',
           'name' => 'Clientes - Varios',

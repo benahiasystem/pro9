@@ -26,7 +26,7 @@ class OperationTypeController extends Controller
             return response()->json([
                 'success' => false,
                 'code' => 'EXPORT_OPERATION_DISABLED',
-                'message' => 'La exportación por INCOTERM estará disponible al habilitar su flujo fiscal.',
+                'message' => 'Seleccione una exportación con INCOTERM FOB, CIF o EXW.',
             ], 409);
         }
         // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES

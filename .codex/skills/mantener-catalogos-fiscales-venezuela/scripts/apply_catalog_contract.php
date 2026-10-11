@@ -95,7 +95,7 @@ $desiredRows = [
         $identityCatalogRow('C', 'Comuna'),
         $identityCatalogRow('G', 'Gubernamental'),
         $identityCatalogRow('R', 'Firma Personal'),
-        $identityCatalogRow('ND', 'No Domiciliado', 0, 'RUT, NIT'),
+        $identityCatalogRow('ND', 'No Domiciliado', 1, 'RUT, NIT'),
     ],
     // ######### FIN CATÁLOGO IDENTIDADES ACTIVAS VENEZUELA #########
     // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
