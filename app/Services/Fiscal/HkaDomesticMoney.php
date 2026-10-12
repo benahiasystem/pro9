@@ -91,6 +91,12 @@ final class HkaDomesticMoney
             if (!isset($frozen[$ves]) || abs((float) $frozen[$ves] - FiscalAmounts::convert($snapshot[$local], 'USD', 'VES', $rate)) > 0.005) FiscalAmounts::error('currency_totals', 'Los totales VES de la factura con terceros o régimen especial no corresponden al snapshot documental.');
         }
         $doc = &$payload['documentoElectronico']; $header = &$doc['encabezado']; $usdTotals = $header['totales'];
+        if (isset($header['identificacionDocumento']['montoFacturaAfectada'])) {
+            $reference = $snapshot['reference'] ?? [];
+            if (($reference['currency_type_id'] ?? $snapshot['currency_type_id']) === 'USD') {
+                $header['identificacionDocumento']['montoFacturaAfectada'] = ExchangeRateMath::multiply($reference['total'], $reference['exchange_rate_sale'] ?? $snapshot['exchange_rate_sale'], 2);
+            }
+        }
         $otherFields = ['montoGravadoTotal','montoExentoTotal','subtotal','subtotalAntesDescuento','totalIVA','montoTotalConIVA','totalAPagar','totalDescuento','totalRecargos','impuestosSubtotal'];
         $header['totalesOtraMoneda'] = array_intersect_key($usdTotals, array_flip($otherFields));
         $header['totalesOtraMoneda']['moneda'] = 'USD'; $header['totalesOtraMoneda']['tipoCambio'] = (string) $rate;

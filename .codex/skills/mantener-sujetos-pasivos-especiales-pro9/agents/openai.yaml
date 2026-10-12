@@ -1,0 +1,4 @@
+interface:
+  display_name: "Sujetos Pasivos Especiales de Pro9"
+  short_description: "Perfiles SPE, cobros IGTF y retenciones recibidas"
+  default_prompt: "Usa $mantener-sujetos-pasivos-especiales-pro9 para mantener el contrato SPE de Pro9 y verificar sus perfiles, cobros y retenciones."

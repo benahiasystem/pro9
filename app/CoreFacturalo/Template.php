@@ -37,6 +37,13 @@ class Template
                 : $regimeIdentity.$html;
         }
         if ($fiscal) {
+            $profiles = \App\Services\Fiscal\SpecialTaxpayerPolicy::forPrint($document);
+            if ($profiles) {
+                $profileHtml = view('pdf.partials.fiscal_profiles', compact('profiles'))->render();
+                $html = preg_match('/<body\b[^>]*>/i', $html)
+                    ? preg_replace_callback('/<body\b[^>]*>/i', fn ($match) => $match[0].$profileHtml, $html, 1)
+                    : $profileHtml.$html;
+            }
             $identity = view('pdf.partials.fiscal_identity', compact('fiscal'))->render();
             if (preg_match('/<body\b[^>]*>/i', $html)) {
                 $html = preg_replace_callback('/<body\b[^>]*>/i', fn ($match) => $match[0] . $identity, $html, 1);

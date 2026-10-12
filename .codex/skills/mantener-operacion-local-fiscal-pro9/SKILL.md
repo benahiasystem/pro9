@@ -7,7 +7,7 @@ description: Mantener la operación comercial local de Pro9 para instalaciones n
 
 ## Evolución aprobada
 
-Mantener separados registro comercial y resultado fiscal. Están implementados el guardado local, preparación, envío y conciliación de facturas digitales DEMO, además de correo/rastreo HKA, descargas A4/A5 desde HKA y descarga del ticket 80MM local con QR de consulta HKA. Producción permanece deshabilitada; este alcance no acredita emisión real de notas ni homologación. Aplicar [numeración fiscal](../mantener-numeracion-fiscal-venezuela-pro9/SKILL.md) para series/controles, [persistencia fiscal y cobros](../mantener-persistencia-fiscal-venezuela-pro9/SKILL.md) para guardado/edición, [facturas y notas HKA](../emitir-facturas-notas-hka/SKILL.md) para la operación congelada y [distribución HKA](../distribuir-documentos-hka/SKILL.md) para correo y descargas. `prepared` no acredita emisión ni homologación. No restaurar XML/CDR/SUNAT/PSE ni perfiles/reservas/asignaciones anticipadas.
+Mantener separados registro comercial y resultado fiscal. Están implementados el guardado local, preparación, envío y conciliación de facturas digitales DEMO, además de correo/rastreo HKA, descargas A4/A5 desde HKA y descarga del ticket 80MM local con QR de consulta HKA. Producción permanece deshabilitada; este alcance no acredita emisión real de notas ni homologación. Aplicar [numeración fiscal](../mantener-numeracion-fiscal-venezuela-pro9/SKILL.md) para series/controles, [persistencia fiscal y cobros](../mantener-persistencia-fiscal-venezuela-pro9/SKILL.md) para guardado/edición, [facturas y notas HKA](../emitir-facturas-notas-hka/SKILL.md) para la operación congelada y [distribución HKA](../distribuir-documentos-hka/SKILL.md) para correo y descargas. `prepared` no acredita emisión ni homologación. No restaurar XML/CDR/SUNAT/PSE ni perfiles de numeración/reservas/asignaciones anticipadas.
 
 ## Objetivo
 
@@ -105,3 +105,9 @@ El envío, correo fiscal y restricciones por registro HKA se aplican a «Medios 
 
 - `Functions::voidedDocuments` no recibe un selector de resumen fiscal: su único consumidor es `VoidedValidation` y consulta directamente el grupo 01, por código externo y fecha. No reintroducir una alternativa de grupo 02 para Boletas.
 - `CurrentLocalDocumentReferenceTest` ejecuta consultas Eloquent en SQLite en memoria: conserva la referencia de Factura para notas, rechaza documentos no admitidos o inexistentes y verifica grupo/fecha de anulaciones. No acredita la persistencia completa ni efectos de una anulación.
+
+## Perfiles SPE y cobros reales
+
+Aplicar [perfiles SPE](../mantener-sujetos-pasivos-especiales-pro9/SKILL.md) para historial tributario, RIF adicional, vigencia y facultades. La retirada de perfiles de numeración no retira estos perfiles. Las representaciones locales/ticket leen snapshots, sin reemplazar A4/A5 originales HKA. SPE no convierte automáticamente IVA, retenciones previstas o saldo a crédito en efectivo.
+
+La operación implementada incluye el despacho DEMO limitado de notas exclusivas IGTF 08/98 derivadas de cobros reales, sin certificar su aceptación remota ni ampliar notas generales. Conservar las fronteras de exportación/terceros/regímenes, producción y cancelación remota. En POS/Garage, comprobar Crédito al cambiar condición, abrir/cancelar Pagos y recargar borrador, además de las pruebas de métodos.

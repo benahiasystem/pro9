@@ -58,3 +58,7 @@ description: Mantener y verificar el IVA venezolano para instalaciones nuevas de
 - El selector de ítems de documentos no conserva `presetItemId`/`hasPresetItem` para el servicio de penalidad retirado ni `isCreditNoteAndType03`/`isNoteErrorDescription` para permitir precio cero en el motivo retirado 03. Mantener precio unitario mayor a cero y la edición normal de una línea existente.
 
 Las exportaciones mantienen `total_exportation` separado de `total_exonerated`, también en `document_currency_totals.exportation`. HKA recibe código E/0 en ítems y el valor exportado en montoExentoTotal, junto al INCOTERM; esto no convierte localmente la operación en Exento. Ver [contrato y evidencia](../../../informes/facturas_exportacion_hka.md).
+
+## IVA de factura frente a retenciones recibidas SPE
+
+La condición SPE no cambia afectación o tasa IVA de los productos. Aplicar [perfiles SPE](../mantener-sujetos-pasivos-especiales-pro9/SKILL.md) y [persistencia fiscal](../mantener-persistencia-fiscal-venezuela-pro9/SKILL.md) para propuestas y comprobantes recibidos: 75/100 sobre IVA, causal/evidencia para 100, facultad del comprador por fecha y operación pública documentada. Proveedor formal/no sujeto o excluido no acredita retención IVA. El comprobante recibido aplica saldo sin reducir IVA/total de venta ni generar efectivo; no convertir la propuesta en pago automático. El IGTF se evalúa separadamente sobre cobro real, no sobre IVA retenido. Verificar política y casos MySQL de retenciones junto al cálculo de líneas afectado.

@@ -61,3 +61,9 @@ Al modificar cobros o saldos, aplicar [persistencia fiscal y cobros](../mantener
 - Pro9 conserva tasas como cadenas decimales de ocho posiciones en `DECIMAL(18,8)`, incluidos ceros finales. La API BCV devuelve cadenas y mantiene token fijo.
 - Calcular conversiones con `Brick\Math\BigRational` en PHP y `ExactAmount`/`BigInt` en JavaScript. No redondear la tasa; redondear sólo el importe final a su precisión vigente.
 - Excepción autorizada para tenants existentes: `exchange-rates:upgrade-precision --all-tenants --dry-run` y luego sin `--dry-run`, tras pruebas en MySQL temporal. El comando amplía únicamente las columnas inventariadas en `config/exchange_rate_precision.php`; no reconstruye bases ni recupera decimales históricos.
+
+## Cobro SPE y presentación doméstica HKA
+
+Seguir [perfiles SPE](../mantener-sujetos-pasivos-especiales-pro9/SKILL.md): la clasificación usa perfil vigente del emisor, moneda realmente recibida e intermediación explícita; no inferir IGTF de moneda documental o comprador. Mantener `original_amount`/`payment`/`tax_amount` y tasa exacta en el contexto congelado del cobro. Crédito y recuperación de borradores sólo conservan abonos introducidos, sin proponer/distribuir el total.
+
+`HkaDomesticMoney` adapta una copia para factura doméstica USD o con IGTF y nota exclusiva 98: principales VES/OtraMoneda USD sin modificar dinero local o payloads preparados. La nota utiliza tasa/fecha del cobro y conserva moneda/tasa original del padre para `montoFacturaAfectada`. Comprobar conversiones, saldos, caja/recibos derivados y regresiones de terceros/regímenes/exportación.

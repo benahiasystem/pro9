@@ -103,12 +103,7 @@
                                     <td>
                                         <div class="form-group mb-0" :class="{'has-danger': row.errors.payment_method_type_id}">
                                             <!-- ######## INICIO PERSISTENCIA FISCAL VENEZUELA ######## -->
-                                            <el-select v-model="row.igtf_status" placeholder="IGTF">
-                                                <el-option label="No aplica IGTF" value="not_applicable"/>
-                                                <el-option label="Sujeto a IGTF" value="subject"/>
-                                                <el-option label="Exento de IGTF" value="exempt"/>
-                                            </el-select>
-                                            <el-input v-if="row.igtf_status === 'exempt'" v-model="row.exemption_reason" placeholder="Motivo de exención"/>
+                                            <igtf-payment-fields :payment="row" :document-currency="document.currency_type_id" :document-rate="document.exchange_rate_sale" :document-id="documentId" />
                                             <!-- ######## FIN PERSISTENCIA FISCAL VENEZUELA ######## -->
                                             <el-select v-model="row.payment_method_type_id">
                                                 <el-option v-for="option in payment_method_types" v-show="option.id != '09'" :key="option.id" :value="option.id" :label="option.description"></el-option>
@@ -261,6 +256,7 @@
 </template>
 
 <script>
+import IgtfPaymentFields from "./igtf_fields.vue"
 
     import {deletable} from '../../../../mixins/deletable'
     import DialogLinkPayment from './dialog_link_payment.vue'
@@ -268,7 +264,7 @@
     export default {
         props: ['showDialog', 'documentId', 'external','configuration'],
         mixins: [deletable],
-        components: {
+        components: {IgtfPaymentFields,
             DialogLinkPayment,
             DocumentOptions
         },

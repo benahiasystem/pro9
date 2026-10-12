@@ -1,5 +1,6 @@
 <template>
 <div class="row col-lg-12 m-0 p-0">
+    <div v-if="form.document_type_id === '01'" class="col-12"><label>Condición de pago</label><el-select :value="form.payment_condition_id || '01'" @change="changeFiscalPaymentCondition"><el-option value="01" label="Contado"/><el-option value="02" label="Crédito (registrar sólo abonos reales)"/></el-select></div>
     <Keypress :key-code="113"
               key-event="keyup"
               @success="handleFn113"/>
@@ -140,7 +141,7 @@
                 </div>
                 <div class="row m-0 p-0 h-25 d-flex align-items-center bg-white">
                     <div class="col-lg-6">
-                        <button :disabled="button_payment"
+                        <button :disabled="button_payment && form.payment_condition_id !== '02'"
                                 class="btn btn-block btn-primary"
                                 @click="clickPayment">PAGAR
                         </button>
@@ -161,8 +162,10 @@
         :statusDocument="statusDocument"
     ></options-form>
 
-    <multiple-payment-form
+    <igtf-payment-fields v-for="(row, fiscalIndex) in form.payments" :key="'fiscal-' + fiscalIndex" :payment="row" :document-currency="form.currency_type_id" :document-rate="form.exchange_rate_sale" :customer-id="form.customer_id" />
+        <multiple-payment-form
         :payments="payments"
+        :currency-type-id="form.currency_type_id" :exchange-rate-sale="form.exchange_rate_sale" :customer-id="form.customer_id" :payment-condition-id="form.payment_condition_id"
         :showDialog.sync="showDialogMultiplePayment"
         :total="form.total"
         @add="addRow"
@@ -212,6 +215,7 @@
 </style>
 
 <script>
+import IgtfPaymentFields from "../../documents/partials/igtf_fields.vue"
 import Keypress from 'vue-keypress'
 
 import CardBrandsForm from '../../card_brands/form.vue'
@@ -221,7 +225,7 @@ import MultiplePaymentForm from './multiple_payment.vue'
 import { buhoprinter } from '@mixins/buhoprinter'
 
 export default {
-    components: {OptionsForm, CardBrandsForm, SaleNotesOptions, MultiplePaymentForm, Keypress},
+    components: {IgtfPaymentFields,OptionsForm, CardBrandsForm, SaleNotesOptions, MultiplePaymentForm, Keypress},
     mixins: [buhoprinter],
 
     props: ['form', 'customer', 'configuration', 'config', 'currencyTypeActive', 'exchangeRateSale', 'is_payment', 'companyEnvironment', 'businessTurns', 'isPrint', 'rowsItems'],
@@ -296,6 +300,14 @@ export default {
         },
     },
     methods: {
+        changeFiscalPaymentCondition(value) {
+            this.$set(this.form, 'payment_condition_id', value)
+            if (value === '02') {
+                this.form.payments = []; this.payments = [];
+                this.amount = 0; this.enter_amount = 0;
+            }
+            this.inputAmount()
+        },
         handleFn113() {
             const code = this.form.document_type_id
             // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
@@ -500,6 +512,12 @@ export default {
             form_pos = JSON.parse(form_pos)
             if (form_pos) {
                 this.form.payments = form_pos.payments
+                if (form_pos.payment_condition_id === '02') {
+                    this.$set(this.form, 'payment_condition_id', '02')
+                    this.amount = (this.form.payments || []).reduce((sum, row) => sum + (Number(row.payment) || 0), 0)
+                    this.enter_amount = this.amount
+                    this.inputAmount()
+                }
             }
 
         },
@@ -560,6 +578,7 @@ export default {
 
         },
         async enterAmount() {
+            if (!this.form.payments.length) return
 
             let r_item = await _.last(this.payments, {'payment_method_type_id': '01'})
             r_item.payment = await parseFloat(this.enter_amount)
@@ -583,13 +602,13 @@ export default {
             this.difference = this.amount - this.form.total
 
             if (isNaN(this.difference)) {
-                this.button_payment = true
+                this.button_payment = this.form.payment_condition_id !== '02'
                 this.difference = "-"
             } else if (this.difference >= 0) {
                 this.button_payment = false
                 this.difference = this.amount - this.form.total
             } else {
-                this.button_payment = true
+                this.button_payment = this.form.payment_condition_id !== '02'
             }
             this.difference = _.round(this.difference, 2)
 
@@ -617,13 +636,13 @@ export default {
             this.difference = this.amount - this.form.total
 
             if (isNaN(this.difference)) {
-                this.button_payment = true
+                this.button_payment = this.form.payment_condition_id !== '02'
                 this.difference = "-"
             } else if (this.difference >= 0) {
                 this.button_payment = false
                 this.difference = this.amount - this.form.total
             } else {
-                this.button_payment = true
+                this.button_payment = this.form.payment_condition_id !== '02'
             }
             this.difference = _.round(this.difference, 2)
             // this.form_payment.payment = this.amount

@@ -365,6 +365,7 @@
                                    type="primary">Guardar
                         </el-button>
                     </div>
+                <fiscal-profile-editor kind="company" :entity-id="form.id" />
                 </form>
             </div>
         </div>
@@ -420,6 +421,7 @@
 </template>
 
 <script>
+import FiscalProfileEditor from "../fiscal_profiles/editor.vue"
 import {mapActions, mapState} from "vuex";
 import TokenRucDni from './token_ruc_dni.vue'
 
@@ -428,7 +430,7 @@ const PLACEHOLDER_IMAGE_DATA_URI = `data:image/svg+xml;charset=UTF-8,${encodeURI
 
 
 export default {
-    components: {
+    components: {FiscalProfileEditor,
         TokenRucDni,
     },
     computed: {
@@ -656,7 +658,7 @@ export default {
                 section = 'company'
             }
             this.loading_submit[section] = true
-            this.$http.post(`/${this.resource}`, this.form)
+            this.$http.post(`/${this.resource}`, Object.fromEntries(Object.entries(this.form).filter(([key]) => key !== 'fiscal_profile')))
                 .then(response => {
                     if (response.data.success) {
                         this.$message.success(response.data.message)

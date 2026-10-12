@@ -24,8 +24,8 @@
       "__plugin-vue2_normalizer-2bbd088e.js"
     ]
   },
-  "_exchange-rate-math-4d7193b2.js": {
-    "file": "assets/exchange-rate-math-4d7193b2.js"
+  "_exchange-rate-math-b13cb0df.js": {
+    "file": "assets/exchange-rate-math-b13cb0df.js"
   },
   "_index-3744837a.js": {
     "assets": [
@@ -41,20 +41,74 @@
       "_vue.esm-340a2d96.js"
     ]
   },
+  "_index-49ee4bbd.js": {
+    "assets": [
+      "assets/element-icons-ab40a589.woff",
+      "assets/element-icons-a30f5b3b.ttf"
+    ],
+    "css": [
+      "assets/index-fd3e0cf7.css"
+    ],
+    "file": "assets/index-49ee4bbd.js",
+    "imports": [
+      "_index-e849b4f5.js",
+      "_vue.esm-340a2d96.js"
+    ]
+  },
   "_index-e849b4f5.js": {
     "file": "assets/index-e849b4f5.js"
   },
-  "_vue-clipboard-8378a479.js": {
+  "_index-f428bc3c.js": {
+    "assets": [
+      "assets/element-icons-ab40a589.woff",
+      "assets/element-icons-a30f5b3b.ttf"
+    ],
+    "css": [
+      "assets/index-fd3e0cf7.css"
+    ],
+    "file": "assets/index-f428bc3c.js",
+    "imports": [
+      "_index-e849b4f5.js",
+      "_vue.esm-340a2d96.js"
+    ]
+  },
+  "_vue-clipboard-2e6a814d.js": {
     "css": [
       "assets/vue-clipboard-a067d18e.css"
     ],
-    "file": "assets/vue-clipboard-8378a479.js",
+    "file": "assets/vue-clipboard-2e6a814d.js",
+    "imports": [
+      "_vue.esm-340a2d96.js",
+      "_index-f428bc3c.js",
+      "_index-e849b4f5.js",
+      "__plugin-vue2_normalizer-2bbd088e.js",
+      "_exchange-rate-math-b13cb0df.js"
+    ]
+  },
+  "_vue-clipboard-5682f53f.js": {
+    "css": [
+      "assets/vue-clipboard-a067d18e.css"
+    ],
+    "file": "assets/vue-clipboard-5682f53f.js",
+    "imports": [
+      "_vue.esm-340a2d96.js",
+      "_index-49ee4bbd.js",
+      "_index-e849b4f5.js",
+      "__plugin-vue2_normalizer-2bbd088e.js",
+      "_exchange-rate-math-b13cb0df.js"
+    ]
+  },
+  "_vue-clipboard-ee7e2883.js": {
+    "css": [
+      "assets/vue-clipboard-a067d18e.css"
+    ],
+    "file": "assets/vue-clipboard-ee7e2883.js",
     "imports": [
       "_vue.esm-340a2d96.js",
       "_index-3744837a.js",
       "_index-e849b4f5.js",
       "__plugin-vue2_normalizer-2bbd088e.js",
-      "_exchange-rate-math-4d7193b2.js"
+      "_exchange-rate-math-b13cb0df.js"
     ]
   },
   "_vue.esm-340a2d96.js": {
@@ -64,16 +118,48 @@
     "file": "assets/claim_form-934f24c8.css",
     "src": "claim_form.css"
   },
+  "element-icons.ttf": {
+    "file": "assets/element-icons-a30f5b3b.ttf",
+    "src": "element-icons.ttf"
+  },
+  "element-icons.woff": {
+    "file": "assets/element-icons-ab40a589.woff",
+    "src": "element-icons.woff"
+  },
+  "figtree-italic-latin-ext.woff2": {
+    "file": "assets/figtree-italic-latin-ext-a0cc105b.woff2",
+    "src": "figtree-italic-latin-ext.woff2"
+  },
+  "figtree-italic-latin.woff2": {
+    "file": "assets/figtree-italic-latin-7242fa62.woff2",
+    "src": "figtree-italic-latin.woff2"
+  },
+  "figtree-latin-ext.woff2": {
+    "file": "assets/figtree-latin-ext-bf7828e2.woff2",
+    "src": "figtree-latin-ext.woff2"
+  },
+  "figtree-latin.woff2": {
+    "file": "assets/figtree-latin-4ba7d3d0.woff2",
+    "src": "figtree-latin.woff2"
+  },
   "index.css": {
     "file": "assets/index-fd3e0cf7.css",
     "src": "index.css"
   },
+  "jetbrains-mono-latin-ext.woff2": {
+    "file": "assets/jetbrains-mono-latin-ext-db5ff4db.woff2",
+    "src": "jetbrains-mono-latin-ext.woff2"
+  },
+  "jetbrains-mono-latin.woff2": {
+    "file": "assets/jetbrains-mono-latin-83c005d4.woff2",
+    "src": "jetbrains-mono-latin.woff2"
+  },
   "modules/ClaimsBook/Resources/assets/js/app.js": {
-    "file": "assets/app-018e713d.js",
+    "file": "assets/app-8ecf237b.js",
     "imports": [
       "_vue.esm-340a2d96.js",
       "_index-e849b4f5.js",
-      "_index-3744837a.js",
+      "_index-49ee4bbd.js",
       "_claim_form-e14cd897.js",
       "__plugin-vue2_normalizer-2bbd088e.js"
     ],
@@ -81,9 +167,9 @@
     "src": "modules/ClaimsBook/Resources/assets/js/app.js"
   },
   "modules/Ecommerce/Resources/assets/js/frontend/cart-app.js": {
-    "file": "assets/cart-app-5dfe4401.js",
+    "file": "assets/cart-app-be617ba9.js",
     "imports": [
-      "_exchange-rate-math-4d7193b2.js",
+      "_exchange-rate-math-b13cb0df.js",
       "_FrequentlyBoughtTogether-418e6ba7.js",
       "__plugin-vue2_normalizer-2bbd088e.js"
     ],
@@ -175,7 +261,7 @@
     "src": "node_modules/element-ui/lib/theme-chalk/fonts/element-icons.woff"
   },
   "resources/js/app.css": {
-    "file": "assets/app-a311a93d.css",
+    "file": "assets/app-43b7e80e.css",
     "src": "resources/js/app.css"
   },
   "resources/js/app.js": {
@@ -185,15 +271,15 @@
       "assets/tabler-icons-9920d986.ttf"
     ],
     "css": [
-      "assets/app-a311a93d.css"
+      "assets/app-43b7e80e.css"
     ],
-    "file": "assets/app-0d3d7497.js",
+    "file": "assets/app-7ac5ddb6.js",
     "imports": [
-      "_vue-clipboard-8378a479.js",
+      "_vue-clipboard-5682f53f.js",
       "_vue.esm-340a2d96.js",
-      "_index-3744837a.js",
+      "_index-49ee4bbd.js",
       "__plugin-vue2_normalizer-2bbd088e.js",
-      "_exchange-rate-math-4d7193b2.js",
+      "_exchange-rate-math-b13cb0df.js",
       "_index-e849b4f5.js",
       "_claim_form-e14cd897.js"
     ],
@@ -208,17 +294,29 @@
     "css": [
       "assets/system-6865b2e5.css"
     ],
-    "file": "assets/system-722a3823.js",
+    "file": "assets/system-1fac266c.js",
     "imports": [
-      "_vue-clipboard-8378a479.js",
+      "_vue-clipboard-5682f53f.js",
       "_vue.esm-340a2d96.js",
-      "_index-3744837a.js",
+      "_index-49ee4bbd.js",
       "__plugin-vue2_normalizer-2bbd088e.js",
       "_index-e849b4f5.js",
-      "_exchange-rate-math-4d7193b2.js"
+      "_exchange-rate-math-b13cb0df.js"
     ],
     "isEntry": true,
     "src": "resources/js/system.js"
+  },
+  "tabler-icons.ttf": {
+    "file": "assets/tabler-icons-9920d986.ttf",
+    "src": "tabler-icons.ttf"
+  },
+  "tabler-icons.woff": {
+    "file": "assets/tabler-icons-ed0c7bc9.woff",
+    "src": "tabler-icons.woff"
+  },
+  "tabler-icons.woff2": {
+    "file": "assets/tabler-icons-c9df3377.woff2",
+    "src": "tabler-icons.woff2"
   },
   "vue-clipboard.css": {
     "file": "assets/vue-clipboard-a067d18e.css",

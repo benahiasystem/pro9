@@ -12,6 +12,8 @@ $app->instance('config',new Illuminate\Config\Repository(['fiscal_emission'=>req
 $app->instance('validator',new Illuminate\Validation\Factory(new Illuminate\Translation\Translator(new Illuminate\Translation\ArrayLoader(),'es'),$app));
 $app->instance('request',Illuminate\Http\Request::create('/'));
 $app->instance('files',new Illuminate\Filesystem\Filesystem());
+config(['filesystems.disks.tenant'=>['driver'=>'local','root'=>sys_get_temp_dir().'/'.$input['connection']['database']]]);
+$app->instance('filesystem',new Illuminate\Filesystem\FilesystemManager($app));
 $app->instance('cache',new Illuminate\Cache\Repository(new Illuminate\Cache\ArrayStore()));
 $app->instance(Hyn\Tenancy\Database\Connection::class,new class extends Hyn\Tenancy\Database\Connection {
     public function __construct() {}
@@ -55,6 +57,7 @@ try {
         $http->fake(function ($request) use ($input) {
             if (str_ends_with($request->url(),'/Autenticacion')) return Illuminate\Support\Facades\Http::response([
                 'token'=>'fake-worker-jwt','expiracion'=>date('c',time()+3600)],200);
+            if (str_ends_with($request->url(),'/DescargaArchivo')) { $pdf=new \FPDF();$pdf->AddPage();$pdf->SetFont('Helvetica','',12);$pdf->Text(10,15,'Concurrent test PDF');return Illuminate\Support\Facades\Http::response(['codigo'=>'200','archivo'=>base64_encode($pdf->Output('S'))]); }
             if (str_ends_with($request->url(),'/EstadoDocumento')) return Illuminate\Support\Facades\Http::response([],500);
             if (str_ends_with($request->url(), '/Correo/Rastreo')) return Illuminate\Support\Facades\Http::response(['codigo'=>'200','rastreos'=>[]]);
             if (str_ends_with($request->url(), '/Correo/Enviar')) {

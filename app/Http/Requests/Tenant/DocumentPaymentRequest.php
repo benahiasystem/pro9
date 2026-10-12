@@ -25,6 +25,8 @@ class DocumentPaymentRequest extends FormRequest
             'operation_key' => ['required_with:currency_type_id','uuid'],
             'igtf_status' => ['sometimes', Rule::in(['subject','exempt','not_applicable'])],
             'exemption_reason' => ['nullable','string','max:255'],
+            'exception_basis' => ['nullable','string','max:255'],
+            'financial_intermediation' => ['nullable',Rule::in(['none','financial_institution'])],
             'date_of_payment' => [
                 'date',
                 'required',

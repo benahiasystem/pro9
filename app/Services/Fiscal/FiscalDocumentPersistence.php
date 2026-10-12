@@ -5,6 +5,7 @@ use App\Models\Tenant\{Company, Document, DocumentPayment, Establishment, Person
 use App\Services\SalesCustomerIdentityPolicy;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 // ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
 final class FiscalDocumentPersistence
@@ -23,6 +24,10 @@ final class FiscalDocumentPersistence
         $document->customer = array_replace((array)$document->customer, $person->only(['number','name','identity_document_type_id','external_identity_type','email','telephone']));
         $document->customer = self::withHkaIdentity((array) $document->customer);
         $document->issuer = self::issuer($company, (array) $document->establishment);
+        $date = \Carbon\Carbon::parse($document->date_of_issue)->format('Y-m-d');
+        $document->issuer = array_replace($document->issuer, ['fiscal_profile'=>FiscalProfileService::at($company, $date)]);
+        $document->customer = self::withHkaIdentity(array_replace((array)$document->customer, ['fiscal_profile'=>FiscalProfileService::at($person, $date)]));
+        if (!empty($document->issuer['fiscal_profile']) && !$document->issuer['fiscal_profile']['commercial_activity']) FiscalAmounts::error('issuer', 'El emisor no tiene actividad comercial habilitada.');
         $document->exchange_rate_date = $document->exchange_rate_date ?? $document->date_of_issue;
         $document->exchange_rate_source = $document->exchange_rate_source ?? 'manual';
         $document->exchange_rate_sale = \App\Services\ExchangeRates\ExchangeRateMath::rate($document->exchange_rate_sale, 'exchange_rate_sale');
@@ -33,7 +38,14 @@ final class FiscalDocumentPersistence
     {
         $type = $customer['identity_document_type_id'] ?? '';
         if ($type === 'ND') {
+            $customer['fiscal_profile'] = [];
             $customer['hka_identity_code'] = $customer['external_identity_type'] ?? null;
+            return $customer;
+        }
+        $profile = (array)($customer['fiscal_profile'] ?? []);
+        if (!empty($profile['rif'])) {
+            $customer['fiscal_profile'] = $profile;
+            $customer['hka_identity_code'] = substr($profile['rif'], 0, 1);
             return $customer;
         }
         $customer['hka_identity_code'] = preg_match('/^([VJEGCR])[-0-9]/i', $customer['number'] ?? '', $match)
@@ -258,12 +270,24 @@ final class FiscalDocumentPersistence
     public static function payment(Document $document, array $input, bool $initial = false): DocumentPayment
     {
         return $document->getConnection()->transaction(function () use ($document, $input, $initial) {
+            validator($input, ['date_of_payment'=>'required|date_format:Y-m-d', 'exception_basis'=>'nullable|string|max:255', 'financial_intermediation'=>'nullable|in:none,financial_institution'])->validate();
             $company = Company::query()->lockForUpdate()->firstOrFail();
             $document = Document::query()->lockForUpdate()->findOrFail($document->id);
             if ($document->isVoidedOrRejected() || $document->document_type_id !== '01') FiscalAmounts::error('document','Sólo se cobran facturas vigentes.');
             $key = $input['operation_key'] ?? (string) Str::uuid();
             if (!Str::isUuid($key)) FiscalAmounts::error('operation_key', 'Use un UUID válido.');
             $existing = DocumentPayment::where('operation_key', $key)->first();
+            $date = \Carbon\Carbon::parse($input['date_of_payment'] ?? now())->format('Y-m-d');
+            $issuer = $existing->fiscal_context['issuer'] ?? FiscalProfileService::at($company, $date);
+            $buyer = $existing->fiscal_context['buyer'] ?? FiscalProfileService::at(Person::findOrFail($document->customer_id), $date);
+            if ($existing) {
+                $decision = $existing->fiscal_context['decision'] ?? [];
+                if (($input['financial_intermediation'] ?? null) !== ($decision['financial_intermediation'] ?? null)
+                    || ($input['exception_basis'] ?? null) !== ($decision['exception_basis'] ?? null)) FiscalAmounts::error('operation_key', 'La operación ya existe con otro contexto fiscal.');
+            } else {
+                $decision = SpecialTaxpayerPolicy::payment($issuer, $input, $input['currency_type_id'] ?? $document->currency_type_id, $date);
+            }
+            $input['igtf_status'] = $input['igtf_status'] ?? ($decision['igtf_status'] ?? 'not_applicable');
             $storedRate = $existing ? \App\Models\Tenant\DocumentTax::where('document_payment_id',$existing->id)->value('percentage') : null;
             $values = FiscalAmounts::payment($input, $document->currency_type_id, $document->exchange_rate_sale,
                 $existing ? $existing->igtf_status === 'subject' : (bool)$company->igtf_enabled, $existing ? $storedRate : $company->igtf_rate);
@@ -298,8 +322,11 @@ final class FiscalDocumentPersistence
             validator($input, ['date_of_payment'=>'required|date','exchange_rate_source'=>'nullable|string|max:255','exchange_rate_date'=>'nullable|date','exemption_reason'=>'nullable|string|max:255'])->validate();
             $fields = array_intersect_key($input, array_flip(['date_of_payment','payment_method_type_id','has_card','card_brand_id','reference','payment_received','change']));
 
-            $payment = $document->payments()->create($values + $fields + [
-                'operation_key' => $key, 'payment_method_snapshot' => $method->only(['id','description','hka_code'])]);
+            $context = $document->getConnection()->getSchemaBuilder()->hasColumn('document_payments', 'fiscal_context')
+                ? ['fiscal_context'=>['issuer'=>$issuer, 'buyer'=>$buyer, 'decision'=>$decision, 'date'=>$date]] : [];
+            $payment = $document->payments()->create($values + $fields + $context + [
+                'operation_key' => $key, 'payment_method_snapshot' => $method->only(['id','description','hka_code']),
+                ]);
             if ($values['tax_amount'] > 0) {
                 $target = $initial ? $document : self::igtfNote($document, $payment);
                 $base = FiscalAmounts::convert($values['original_amount'], $values['currency_type_id'], $target->currency_type_id, $values['exchange_rate']);
@@ -314,6 +341,7 @@ final class FiscalDocumentPersistence
                         'original_amount'=>$payment->tax_amount,'payment'=>$tax,'tax_amount'=>0,'receipt_parent_id'=>$payment->id,
                         'operation_key'=>(string) Str::uuid(),'payment_method_snapshot'=>$payment->payment_method_snapshot]);
                 self::updateSettlementState($target);
+                if (!$initial && HkaIgtfNote::applies($target)) HkaIgtfNote::afterCommit($target);
             }
             self::updateSettlementState($document);
             return $payment;
@@ -327,14 +355,21 @@ final class FiscalDocumentPersistence
         SalesCustomerIdentityPolicy::assertCustomerAllowed($invoice->customer_id);
         $note = new Document($invoice->only(['user_id','establishment_id','establishment','customer_id','customer','currency_type_id','exchange_rate_sale','exchange_rate_source','exchange_rate_date','seller_id']));
         $note->forceFill(['external_id' => (string) Str::uuid(), 'fiscal_environment' => $invoice->fiscal_environment,
+            'fiscal_emission_mode'=>$invoice->fiscal_emission_mode, 'payment_condition_id'=>'01',
+            'exchange_rate_sale'=>$payment->exchange_rate, 'exchange_rate_source'=>$payment->exchange_rate_source,
+            'exchange_rate_date'=>$payment->exchange_rate_date ?? $payment->date_of_payment,
             'group_id' => '01', 'document_type_id' => '08', 'series' => $series->number, 'number' => '#',
             'date_of_issue' => $payment->date_of_payment->format('Y-m-d'), 'time_of_issue' => now()->format('H:i:s'),
             'state_type_id' => '01', 'total' => 0, 'total_value' => 0, 'total_igv' => 0,
             'additional_information' => 'IGTF del pago '.$payment->operation_key]);
         $note->save();
-        $note->issuer = $invoice->issuer; $note->save();
+        // New-document initialization uses current settings; this adjustment belongs to the frozen invoice.
+        $note->forceFill(['fiscal_emission_mode'=>$invoice->fiscal_emission_mode, 'fiscal_environment'=>$invoice->fiscal_environment]);
+        $note->issuer = array_replace($invoice->issuer, ['fiscal_profile'=>$payment->fiscal_context['issuer'] ?? []]);
+        $note->customer = self::withHkaIdentity(array_replace((array)$invoice->customer, ['fiscal_profile'=>$payment->fiscal_context['buyer'] ?? []]));
+        $note->save();
         $note->note()->create(['note_type' => 'debit', 'note_debit_type_id' => 'IGTF', 'note_description' => 'IGTF sobre pago posterior',
-            'affected_document_id' => $invoice->id, 'data_affected_document' => array_merge($invoice->only(['series','number','date_of_issue','total','control_number']), ['document_type_id'=>'01'])]);
+            'affected_document_id' => $invoice->id, 'data_affected_document' => array_merge($invoice->only(['series','number','date_of_issue','total','control_number','currency_type_id','exchange_rate_sale']), ['document_type_id'=>'01'])]);
         self::fiscalData($note, ['transaction_type_id' => '98']);
         return $note;
     }
@@ -349,7 +384,9 @@ final class FiscalDocumentPersistence
                 'agent_id'=>'required|integer', 'concept_id'=>'nullable|string|max:4', 'base'=>'required|numeric|gt:0',
                 'percentage'=>'required|numeric|gt:0|max:100', 'subtrahend'=>'nullable|numeric|min:0',
                 'amount'=>'required|numeric|gt:0', 'currency_type_id'=>'required|in:VES,USD', 'exchange_rate'=>'required|numeric|gt:0',
-                'attachment'=>'nullable|string|max:255',
+                'attachment'=>'required|string|max:255', 'agent_rif'=>'required|string|max:12',
+                'invoice_control'=>'required|string|max:32', 'invoice_number'=>'required|string|max:40',
+                'fiscal_context'=>'nullable|array',
             ])->validate();
             if ($document->received_retentions()->where('tax_kind',$data['tax_kind'])->where('agent_id',$data['agent_id'])->where('voucher_number',$data['voucher_number'])->exists()) FiscalAmounts::error('voucher_number','El comprobante ya está registrado.');
             foreach (['base','percentage','subtrahend','amount'] as $field) $data[$field] = round((float)($data[$field] ?? 0),2);
@@ -357,8 +394,33 @@ final class FiscalDocumentPersistence
             if ($data['amount']<=0 || $data['base']<=0 || $data['exchange_rate']<=0) FiscalAmounts::error('amount','Importes y tasa deben ser positivos con la precisión del sistema.');
             $agent = Person::findOrFail($data['agent_id']);
             if ($agent->id !== $document->customer_id) FiscalAmounts::error('agent_id', 'El agente debe ser el cliente de la factura.');
+            $date = \Carbon\Carbon::parse($data['voucher_date'])->format('Y-m-d');
+            if ($date < $document->date_of_issue->format('Y-m-d') || $date > now()->format('Y-m-d')) FiscalAmounts::error('voucher_date', 'El comprobante debe ser posterior o igual a la factura y no futuro.');
+            $buyer = FiscalProfileService::at($agent, $date);
+            $issuer = FiscalProfileService::at(Company::firstOrFail(), $date);
+            if (($buyer['rif'] ?? '') !== $data['agent_rif']) FiscalAmounts::error('agent_rif', 'El RIF del comprobante debe corresponder al perfil vigente del agente.');
+            if (!$document->control_number || $data['invoice_control'] !== $document->control_number || $data['invoice_number'] !== $document->number_full) FiscalAmounts::error('invoice_control', 'El comprobante debe referir al número y control fiscal real de la factura.');
+            $context = validator($input['fiscal_context'] ?? [], [
+                'iva_100_basis'=>'nullable|in:'.implode(',', SpecialTaxpayerPolicy::FULL_IVA),
+                'evidence_reference'=>'nullable|string|max:255', 'exclusion'=>'nullable|string|max:255',
+                'concept_basis'=>'nullable|string|max:255',
+                'public_operation_scope'=>'nullable|in:subject,excluded', 'public_scope_reference'=>'nullable|string|max:255',
+            ])->validate();
+            $proposal = SpecialTaxpayerPolicy::retention($issuer, $buyer, $date, $context);
+            if ($data['tax_kind'] === 'IVA') {
+                if (!$proposal['eligible']) FiscalAmounts::error('agent_id', 'El perfil o la operación no acreditan retención IVA.');
+                if ($data['percentage'] !== (float)$proposal['percentage'] || $data['subtrahend'] != 0) FiscalAmounts::error('percentage', 'La retención IVA debe usar 75 % o 100 % según su fundamento, sin sustraendo.');
+                if ($proposal['percentage'] === 100 && empty($context['evidence_reference']) && empty($issuer['evidence_reference'])) FiscalAmounts::error('fiscal_context', 'El 100 % requiere referencia de evidencia.');
+                if (!preg_match('/^[0-9]{14}$/D', $data['voucher_number']) || substr($data['voucher_number'],0,6) !== str_replace('-', '', substr($date,0,7))) FiscalAmounts::error('voucher_number', 'El comprobante IVA requiere AAAAMM y ocho dígitos consecutivos.');
+            } elseif (!$proposal['islr_eligible']) FiscalAmounts::error('agent_id', 'El perfil no acredita facultad ISLR para el concepto aplicable.');
             if ($data['tax_kind'] === 'ISLR' && empty($data['concept_id'])) FiscalAmounts::error('concept_id', 'Indique el concepto ISLR.');
             if (!empty($data['concept_id']) && !DB::connection('tenant')->table('cat_retention_concept')->where('id',$data['concept_id'])->exists()) FiscalAmounts::error('concept_id', 'Concepto ISLR inválido.');
+            $concept = null;
+            if ($data['tax_kind'] === 'ISLR') {
+                if ($data['concept_id'] === '001') FiscalAmounts::error('concept_id', 'Las retenciones salariales no corresponden a una factura de venta propia.');
+                if (empty($context['concept_basis']) || empty($context['evidence_reference'])) FiscalAmounts::error('fiscal_context', 'Indique el fundamento del concepto ISLR aplicable y su evidencia; SPE no determina ISLR.');
+                $concept = (array) DB::connection('tenant')->table('cat_retention_concept')->where('id',$data['concept_id'])->first();
+            }
             $expected = round(max(0, $data['base'] * $data['percentage'] / 100 - ($data['subtrahend'] ?? 0)), 2);
             if (abs($data['amount'] - $expected) > 0.01) FiscalAmounts::error('amount','El importe no coincide con base, porcentaje y sustraendo.');
             $applied = FiscalAmounts::convert($data['amount'], $data['currency_type_id'], $document->currency_type_id, $data['exchange_rate']);
@@ -366,14 +428,19 @@ final class FiscalDocumentPersistence
             if ($applied > $document->balance + 0.005) FiscalAmounts::error('amount','La retención supera el saldo disponible.');
             if ($data['tax_kind']==='IVA') {
                 $alreadyRetained = $document->received_retentions()->where('tax_kind','IVA')->sum('applied_amount');
-                $available = FiscalAmounts::convert($document->total_igv - $alreadyRetained, $document->currency_type_id, $data['currency_type_id'], $data['exchange_rate']);
+                $available = FiscalAmounts::convert(round($document->total_igv * $proposal['percentage'] / 100, 2) - $alreadyRetained, $document->currency_type_id, $data['currency_type_id'], $data['exchange_rate']);
                 if ($data['base'] > FiscalAmounts::convert($document->total_igv, $document->currency_type_id, $data['currency_type_id'], $data['exchange_rate']) + 0.01 || $data['amount'] > $available + 0.01) FiscalAmounts::error('base','La base de retención IVA supera el IVA de la factura.');
             }
+            if ($data['tax_kind'] === 'ISLR' && $data['base'] > FiscalAmounts::convert($document->total_value, $document->currency_type_id, $data['currency_type_id'], $data['exchange_rate']) + 0.01) FiscalAmounts::error('base', 'La base ISLR supera el valor neto facturado.');
             if (!empty($data['attachment'])) {
                 $prefix = 'received_retentions/'.$document->id.'/';
-                if (!str_starts_with($data['attachment'], $prefix) || str_contains($data['attachment'],'..') || !\Storage::disk('tenant')->exists($data['attachment'])) FiscalAmounts::error('attachment','Adjunto inválido para esta factura y tenant.');
+                if (!str_starts_with($data['attachment'], $prefix) || str_contains($data['attachment'],'..') || !Storage::disk('tenant')->exists($data['attachment'])) FiscalAmounts::error('attachment','Adjunto inválido para esta factura y tenant.');
             }
-            $retention=$document->received_retentions()->create($data + ['agent' => $agent->only(['number','name','identity_document_type_id','address']), 'agent_number'=>$agent->number,'applied_amount'=>$applied]);
+            unset($data['agent_rif'], $data['invoice_control'], $data['invoice_number'], $data['fiscal_context']);
+            $data['fiscal_context'] = ['issuer'=>$issuer,'buyer'=>$buyer,'proposal'=>$proposal,'operation'=>$context,
+                'concept'=>$concept,
+                'invoice_control'=>$document->control_number,'invoice_number'=>$document->number_full,'actor_id'=>auth()->id()];
+            $retention=$document->received_retentions()->create($data + ['agent' => $agent->only(['number','name','identity_document_type_id','address']) + ['fiscal_profile'=>$buyer], 'agent_number'=>$buyer['rif'],'applied_amount'=>$applied]);
             self::updateSettlementState($document);
             return $retention;
         });

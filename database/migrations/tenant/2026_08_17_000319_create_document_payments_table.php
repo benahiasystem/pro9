@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\DB;
 /**
  * Estructura inicial de `document_payments` para instalaciones nuevas.
  * Inventario de columnas:
+ * - `fiscal_context` json DEFAULT NULL (dated profiles, decision and administrative evidence)
  * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
  * - `document_id` int(10) unsigned NOT NULL
  * - `date_of_payment` date NOT NULL
@@ -38,6 +39,7 @@ return new class extends Migration
     {
         DB::unprepared(<<<'SQL'
 CREATE TABLE `document_payments` (
+  `fiscal_context` json DEFAULT NULL,
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `document_id` int(10) unsigned NOT NULL,
   `date_of_payment` date NOT NULL,

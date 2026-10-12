@@ -17,7 +17,9 @@ class DocumentFiscalController extends Controller
         $document=Document::findOrFail($id);self::authorizeDocument($document);
         return ['success'=>true,'data'=>$document->received_retentions,'document'=>[
             'id'=>$document->id,'customer_id'=>$document->customer_id,'currency_type_id'=>$document->currency_type_id,
-            'exchange_rate_sale'=>$document->exchange_rate_sale,'balance'=>$document->balance]];
+            'exchange_rate_sale'=>$document->exchange_rate_sale,'balance'=>$document->balance,
+            'control_number'=>$document->control_number,'number_full'=>$document->number_full,
+            'total_igv'=>$document->total_igv]];
     }
     public function retentionStore(Request $request)
     {

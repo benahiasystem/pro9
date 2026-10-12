@@ -29,6 +29,7 @@ class DocumentPaymentCollection extends ResourceCollection
                 'reversed_at' => $row->reversed_at,
                 'operation_key' => $row->operation_key,
                 'igtf_status' => $row->igtf_status,
+                'fiscal_context' => $row->fiscal_context,
                 'payment_received' => $row->payment_received,
                 'payment_received_description' => $row->getPaymentReceivedDescription(),
             ];

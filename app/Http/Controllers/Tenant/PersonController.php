@@ -166,6 +166,7 @@ class PersonController extends Controller
             }
         }
 
+        if ($request->has('fiscal_profile')) \App\Services\Fiscal\FiscalAmounts::error('fiscal_profile', 'Guarde el perfil mediante su acción administrativa con historial.');
         $id = $request->input('id');
         $person = Person::firstOrNew(['id' => $id]);
         $data = $request->all();

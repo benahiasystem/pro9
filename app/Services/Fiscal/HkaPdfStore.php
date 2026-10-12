@@ -11,7 +11,7 @@ final class HkaPdfStore
     public function filename(Document $document): string
     {
         $name = \App\CoreFacturalo\Requests\Inputs\Functions::filename(
-            (object) ['number' => $document->issuer['number'] ?? ''], '01',
+            (object) ['number' => $document->issuer['number'] ?? ''], $document->document_type_id,
             $document->series, $document->number, $document->establishment_id
         );
         if (!$name || preg_match('/[\\\\\/\x00-\x1f]/', $name) || strlen($name) > 200) {

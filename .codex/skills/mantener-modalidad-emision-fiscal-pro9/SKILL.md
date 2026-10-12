@@ -9,7 +9,7 @@ La autenticación HKA se configura en el tenant según [configurar-conexion-hka-
 
 ## Evolución de numeración fiscal
 
-El contrato vigente conserva una modalidad por tenant y el modelo original de series, configuraciones y grupos de dispositivos, sin perfiles ni reservas/asignaciones anticipadas. Aplicar [mantener-numeracion-fiscal-venezuela-pro9](../mantener-numeracion-fiscal-venezuela-pro9/SKILL.md). La operación fiscal por documento y el control confirmado se gestionan mediante [emitir-facturas-notas-hka](../emitir-facturas-notas-hka/SKILL.md); no sustituyen el correlativo local. El bloqueo de ambiente, cifrado, auditoría y retirada de transporte peruano permanecen vigentes.
+El contrato vigente conserva una modalidad por tenant y el modelo original de series, configuraciones y grupos de dispositivos, sin perfiles de numeración ni reservas/asignaciones anticipadas. Aplicar [mantener-numeracion-fiscal-venezuela-pro9](../mantener-numeracion-fiscal-venezuela-pro9/SKILL.md). La operación fiscal por documento y el control confirmado se gestionan mediante [emitir-facturas-notas-hka](../emitir-facturas-notas-hka/SKILL.md); no sustituyen el correlativo local. El bloqueo de ambiente, cifrado, auditoría y retirada de transporte peruano permanecen vigentes.
 
 ## Decisiones del producto
 
@@ -48,3 +48,7 @@ Esta decisión sustituye las instrucciones de conservar o convertir SOAP/PFX. Po
 ## Informe y revisión
 
 La implementación, comandos de prueba y límites de verificación se documentan en [el informe de adaptación](../../../informes/adaptacion_modalidad_emision_fiscal.md). Actualizarlo cuando cambie el alcance o la evidencia. No declarar probada una integración fiscal real, una aplicación en producción o el navegador basándose sólo en pruebas de servicio y esquema.
+
+## Perfiles tributarios y nota IGTF
+
+Los perfiles tributarios versionados SPE son independientes de modalidad/ambiente y grupos de dispositivos; seguir [perfiles SPE](../mantener-sujetos-pasivos-especiales-pro9/SKILL.md). No retirar `fiscal_profile_versions` por confundirlo con los perfiles de numeración eliminados. La nota exclusiva IGTF hereda modalidad/ambiente de la factura, aunque la configuración actual haya cambiado; una discrepancia de configuración bloquea su envío HKA y conserva el cobro. No cambiar la clasificación remota de una cuenta FORMAL para simular SPE ni habilitar producción a partir de pruebas DEMO.

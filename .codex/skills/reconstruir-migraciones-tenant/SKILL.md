@@ -76,7 +76,7 @@ Al tocar documentos, pagos o relaciones fiscales, aplicar [persistencia fiscal y
 - Nuevos importes/bases/porcentajes siguen `decimal(12,2)` y tasas `decimal(18,8)`, como sus equivalentes actuales. Las columnas de tasas usan ocho decimales exactos.
 - `companies.igtf_enabled` inicia deshabilitado y `igtf_rate` nullable; conservar auditoría de cambios operativos en `fiscal_configuration_audits`. No sembrar una tasa habilitada desde el catálogo HKA.
 - `documents` no crea `ubl_version`, `perception`, `total_unaffected`, `total_free`, `total_igv_free`, `retention` ni `user_rel_subscription_plan_id`. Conservar `user_rel_suscription_plan_id` para suscripciones. `cod_digemid` se retira del JSON de artículo en sus productores; no es una columna adicional que recrear. Mantener `total_exportation` e `invoices.operation_type_id`; las exportaciones de bienes web digital DEMO usan EXP/0201–0203 y snapshots. Añadir en el DDL inicial persons.external_identity_type y su índice de identidad extranjera, y document_currency_totals.exportation, sin migración de tenants existentes. Ver [contrato de exportación](../../../informes/facturas_exportacion_hka.md).
-- Los estados de emisión admiten `not_requested`, `prepared`, `pending`, `confirmed`, `rejected`, `uncertain`, `cancelled`, pero el flujo implementado sólo produce los dos primeros. No confundir columnas previstas para una respuesta HKA con integración de envío ya terminada.
+- Los estados de emisión admiten `not_requested`, `prepared`, `pending`, `confirmed`, `rejected`, `uncertain`, `cancelled`. Envío/conciliación DEMO implementan la máquina de estados de la habilidad de emisión; preparación no acredita envío ni aceptación. Cancelación remota continúa sin implementar.
 - Verificar precisiones, FKs/índices, instalación/rollback/repetición y persistencia/concurrencia con `FiscalEmissionSchemaTest` en MySQL temporal. Comprobar además que la eliminación de documentos demo limpia las relaciones nuevas con las pruebas de eliminación vigentes.
 
 ## Precisión de tasas BCV — instrucción de 7 de octubre de 2026
@@ -88,3 +88,9 @@ Al tocar documentos, pagos o relaciones fiscales, aplicar [persistencia fiscal y
 ## Titulares de facturas por terceros
 
 El consolidado de persons incluye is_third_party=false, third_party_rif nullable varchar(10) único por tenant y third_party_activity nullable varchar(100). document_fiscal_data incluye third_party_person_id nullable y third_party JSON; agregar la FK a persons con ON DELETE RESTRICT en 000999 y retirarla en orden inverso. No convertir tenants existentes. Ver [implementación](../../../informes/facturas_cuenta_terceros_hka.md) y la prueba MySQL de terceros en FiscalEmissionSchemaTest, además de instalación/seeding/rollback/repetición.
+
+## Esquema inicial de perfiles SPE
+
+Aplicar [perfiles SPE](../mantener-sujetos-pasivos-especiales-pro9/SKILL.md). Agregar JSON nullable `fiscal_profile` a creaciones de companies/persons y `fiscal_context` a document_payments/document_received_retentions. La nueva tabla `fiscal_profile_versions` tiene creadora 000336, empresa/persona, fecha de vigencia, JSON, actor/registro e índices entidad-fecha; FKs restrictivas a companies/persons/users en 000999 y down inverso. No confundir esta tabla tributaria con los perfiles de numeración retirados.
+
+No sembrar SPE, notificaciones, facultades o perfiles ficticios como datos iniciales reales, ni añadir conversión/backfill. La evidencia del 12/10/2026 tiene 340 tablas/341 archivos tenant; actualizar los conteos de prueba sólo cuando el inventario cambie intencionalmente. Verificar `TenantMigrationDataSeederTest` y creación/seeding/FKs/rollback/repetición de `FiscalEmissionSchemaTest` en bases propias temporales.

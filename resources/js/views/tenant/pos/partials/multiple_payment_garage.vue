@@ -45,6 +45,7 @@
                                               @click.native="valueInputSelect"></el-input>
                                 </div>
                             </td>
+                            <td><igtf-payment-fields :payment="row" :document-currency="currencyTypeId || 'VES'" :document-rate="exchangeRateSale || '1'" :customer-id="customerId" /></td>
                             <td class="series-table-actions text-center">
                                 <button  type="button" class="btn waves-effect waves-light btn-xs btn-danger" @click.prevent="clickCancel(index)">
                                     <i class="fa fa-trash"></i>
@@ -78,8 +79,10 @@
 </style>
 
 <script>
+import IgtfPaymentFields from "../../documents/partials/igtf_fields.vue"
     export default {
-        props: ['showDialog', 'payments', 'total'],
+        components: {IgtfPaymentFields},
+        props: ['showDialog', 'payments', 'total', 'currencyTypeId', 'exchangeRateSale', 'customerId', 'paymentConditionId'],
         data() {
             return {
                 titleDialog: 'Pagos',
@@ -116,6 +119,7 @@
                 let form_pos = localStorage.getItem('form_pos_garage');
                 form_pos = JSON.parse(form_pos)
                 if (form_pos) {
+                    if (form_pos.payment_condition_id === '02') return;
 
                     if(form_pos.payments.length == 0){
 
@@ -133,7 +137,7 @@
                 this.paymentsSnapshot = this.clonePayments(this.payments)
                 this.draftPayments = this.clonePayments(this.payments)
 
-                if (this.draftPayments.length === 0) {
+                if (this.draftPayments.length === 0 && this.paymentConditionId !== '02') {
                     this.pushDraftPayment(this.total)
                 }
             },
@@ -173,6 +177,7 @@
                 this.$emit('add', this.payments)
             },
             calculatePayments(list = null) {
+                if (this.paymentConditionId === '02') return
                 const payments = list || (this.showDialog ? this.draftPayments : this.payments)
                 let payment_count = payments.length;
                 if (payment_count === 0) return;

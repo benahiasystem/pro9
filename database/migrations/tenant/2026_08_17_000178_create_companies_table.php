@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
  * Inventario de columnas:
  * - `igtf_enabled` tinyint(1) NOT NULL DEFAULT 0
  * - `igtf_rate` decimal(12,2) DEFAULT NULL
+ * - `fiscal_profile` json DEFAULT NULL (current version; history is immutable)
  * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
  * - `identity_document_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `number` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
@@ -57,6 +58,7 @@ CREATE TABLE `companies` (
   `igtf_enabled` tinyint(1) NOT NULL DEFAULT 0,
   `igtf_rate` decimal(12,2) DEFAULT NULL,
   -- ######## FIN PERSISTENCIA FISCAL VENEZUELA ########
+  `fiscal_profile` json DEFAULT NULL,
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `identity_document_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `number` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,

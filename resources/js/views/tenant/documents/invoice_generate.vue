@@ -2103,7 +2103,7 @@
                                                                     "
                                                                 ></el-option>
                                                             </el-select>
-<igtf-payment-fields :payment="row" />
+<igtf-payment-fields :payment="row" :document-currency="form.currency_type_id" :document-rate="form.exchange_rate_sale" :customer-id="form.customer_id" />
                                                         </td>
                                                         <template
                                                             v-if="

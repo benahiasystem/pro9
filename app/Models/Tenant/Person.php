@@ -174,6 +174,7 @@ use Illuminate\Support\Facades\DB;
         ];
 
         protected $casts = [
+            'fiscal_profile' => 'array',
             'is_third_party' => 'bool',
             'perception_agent' => 'bool',
             'person_type_id' => 'int',
@@ -681,6 +682,7 @@ use Illuminate\Support\Facades\DB;
                 'location_id' => $location_id,
                 'establishment_code' => $this->establishment_code,
                 'is_agent_retention' => $this->is_agent_retention,
+                'fiscal_profile' => $this->fiscal_profile,
                 'is_third_party' => (bool) $this->is_third_party,
                 'third_party_rif' => $this->third_party_rif,
                 'third_party_activity' => $this->third_party_activity,

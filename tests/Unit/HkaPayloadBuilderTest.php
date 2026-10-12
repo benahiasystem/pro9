@@ -14,10 +14,14 @@ class HkaPayloadBuilderTest extends TestCase
         self::assertSame($type,$p['encabezado']['identificacionDocumento']['tipoDocumento']);
         self::assertSame((string) $d['number'], $p['encabezado']['identificacionDocumento']['numeroDocumento']);
         if (isset($d['reference'])) self::assertSame((string) $d['reference']['number'], $p['encabezado']['identificacionDocumento']['numeroFacturaAfectada']);
-        self::assertSame('VES',$p['encabezado']['totalesOtraMoneda']['moneda']);
+        self::assertSame(in_array($fixture,['invoice','igtf-debit'],true)?'USD':'VES',$p['encabezado']['totalesOtraMoneda']['moneda']);
         self::assertSame(str_replace('-', '', $d['operation_key']), $p['encabezado']['identificacionDocumento']['transaccionId']);
         self::assertSame('10.123',$p['encabezado']['totalesOtraMoneda']['tipoCambio']);
-        self::assertSame($fixture==='igtf-debit' ? '35.23' : '1174.27',$p['encabezado']['totalesOtraMoneda']['totalAPagar']);
+        self::assertSame($fixture==='igtf-debit' ? '3.48' : ($fixture==='invoice'?'116.00':'1174.27'),$p['encabezado']['totalesOtraMoneda']['totalAPagar']);
+        if(in_array($fixture,['invoice','igtf-debit'],true)){
+            self::assertSame('VES',$p['encabezado']['identificacionDocumento']['moneda']);
+            self::assertSame($fixture==='igtf-debit'?'35.23':'1174.27',$p['encabezado']['totales']['totalAPagar']);
+        }
         self::assertArrayNotHasKey('token',$p);
         if($fixture==='igtf-debit') self::assertSame([],$p['detallesItems']);
     }

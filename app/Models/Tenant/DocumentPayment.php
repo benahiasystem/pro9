@@ -29,11 +29,11 @@ class DocumentPayment extends ModelTenant
         'payment_received',
         // ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
         'currency_type_id', 'exchange_rate', 'exchange_rate_source', 'exchange_rate_date',
-        'original_amount', 'tax_amount', 'payment_method_snapshot', 'igtf_status', 'exemption_reason', 'operation_key', 'receipt_parent_id',
+        'fiscal_context', 'original_amount', 'tax_amount', 'payment_method_snapshot', 'igtf_status', 'exemption_reason', 'operation_key', 'receipt_parent_id',
         // ######## FIN PERSISTENCIA FISCAL VENEZUELA ########
     ];
 
-    protected $casts = [
+    protected $casts = ['fiscal_context' => 'array',
         'payment_method_snapshot' => 'array',
         'reversed_at' => 'datetime',
         'date_of_payment' => 'date',

@@ -8,6 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        DB::unprepared("ALTER TABLE `fiscal_profile_versions` ADD CONSTRAINT `fiscal_profile_company_fk` FOREIGN KEY (`company_id`) REFERENCES `companies` (`id`) ON DELETE RESTRICT");
+        DB::unprepared("ALTER TABLE `fiscal_profile_versions` ADD CONSTRAINT `fiscal_profile_person_fk` FOREIGN KEY (`person_id`) REFERENCES `persons` (`id`) ON DELETE RESTRICT");
+        DB::unprepared("ALTER TABLE `fiscal_profile_versions` ADD CONSTRAINT `fiscal_profile_actor_fk` FOREIGN KEY (`actor_id`) REFERENCES `users` (`id`) ON DELETE RESTRICT");
+
         DB::unprepared("ALTER TABLE `document_payments` ADD CONSTRAINT `document_payments_reversed_by_foreign` FOREIGN KEY (`reversed_by`) REFERENCES `users` (`id`)");
         DB::unprepared("ALTER TABLE `document_received_retentions` ADD CONSTRAINT `received_retention_concept_foreign` FOREIGN KEY (`concept_id`) REFERENCES `cat_retention_concept` (`id`)");
         DB::unprepared("ALTER TABLE `document_payments` ADD CONSTRAINT `document_payments_receipt_parent_foreign` FOREIGN KEY (`receipt_parent_id`) REFERENCES `document_payments` (`id`)");
@@ -529,6 +533,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        DB::unprepared("ALTER TABLE `fiscal_profile_versions` DROP FOREIGN KEY `fiscal_profile_actor_fk`");
+        DB::unprepared("ALTER TABLE `fiscal_profile_versions` DROP FOREIGN KEY `fiscal_profile_person_fk`");
+        DB::unprepared("ALTER TABLE `fiscal_profile_versions` DROP FOREIGN KEY `fiscal_profile_company_fk`");
+
         DB::unprepared("ALTER TABLE `document_payments` DROP FOREIGN KEY `document_payments_reversed_by_foreign`");
         DB::unprepared("ALTER TABLE `document_received_retentions` DROP FOREIGN KEY `received_retention_concept_foreign`");
         DB::unprepared("ALTER TABLE `document_payments` DROP FOREIGN KEY `document_payments_receipt_parent_foreign`");

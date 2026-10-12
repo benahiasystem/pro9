@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\DB;
 // ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
 /**
  * document_received_retentions: esquema inicial para instalaciones nuevas.
+ * - `fiscal_context` json DEFAULT NULL (dated profiles, decision and administrative evidence)
  * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
  * - `document_id` int(10) unsigned NOT NULL
  * - `tax_kind` varchar(4) NOT NULL
@@ -28,6 +29,7 @@ return new class extends Migration {
     public function up(): void {
         DB::unprepared(<<<'SQL'
 CREATE TABLE `document_received_retentions` (
+  `fiscal_context` json DEFAULT NULL,
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `document_id` int(10) unsigned NOT NULL,
   `tax_kind` varchar(4) NOT NULL,

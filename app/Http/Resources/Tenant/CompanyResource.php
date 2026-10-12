@@ -27,6 +27,7 @@ class CompanyResource extends JsonResource
         return [
             'id' => $this->id,
             'number' => $this->number,
+            'fiscal_profile' => $this->fiscal_profile,
             'name' => $this->name,
             'trade_name' => $this->trade_name,
             ...\App\Services\FiscalEmissionSettings::publicData($this->resource),

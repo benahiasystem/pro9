@@ -29,7 +29,7 @@ final class DocumentEmissionView
 
     public static function forDocument(Document $document): array
     {
-        $applies = $document->document_type_id === '01' && $document->fiscal_emission_mode === 'digital';
+        $applies = ($document->document_type_id === '01' || HkaIgtfNote::applies($document)) && $document->fiscal_emission_mode === 'digital';
         $emission = $document->emission;
         $status = $applies ? ($emission->status ?? 'not_requested') : null;
         $response = $emission->response ?? [];

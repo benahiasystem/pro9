@@ -344,8 +344,10 @@
         :isPrint="isPrint"
     ></options-form>
 
-    <multiple-payment-form
+    <div v-if="form.document_type_id === '01'"><label>Condición de pago</label><el-select :value="form.payment_condition_id || '01'" @change="changeFiscalPaymentCondition"><el-option value="01" label="Contado"/><el-option value="02" label="Crédito (registrar sólo abonos reales)"/></el-select></div>
+        <multiple-payment-form
         :payments="payments"
+        :currency-type-id="form.currency_type_id" :exchange-rate-sale="form.exchange_rate_sale" :customer-id="form.customer_id" :payment-condition-id="form.payment_condition_id"
         :showDialog.sync="showDialogMultiplePayment"
         :total="getTotal()"
         @add="addRow"
@@ -543,6 +545,17 @@ export default {
     },
     methods:
     {
+        changeFiscalPaymentCondition(value) {
+            this.$set(this.form, 'payment_condition_id', value)
+            if (value === '02') {
+                this.form.payments = []
+                this.payments = []
+                this.amount = 0
+                this.enter_amount = 0
+            }
+            this.setDifference(this.amount - this.getTotal())
+            this.$eventHub.$emit('eventSetFormPosLocalStorage', this.form)
+        },
         setDefaultDocumentType(from_function) {
             this.default_series_type = this.authUser.serie;
             this.default_document_type = this.authUser.document_id;
@@ -1011,6 +1024,12 @@ export default {
             form_pos = JSON.parse(form_pos)
             if (form_pos) {
                 this.form.payments = form_pos.payments
+                if (form_pos.payment_condition_id === '02') {
+                    this.$set(this.form, 'payment_condition_id', '02')
+                    this.amount = (this.form.payments || []).reduce((sum, row) => sum + (Number(row.payment) || 0), 0)
+                    this.enter_amount = this.amount
+                    this.inputAmount()
+                }
             }
 
         },
@@ -1144,7 +1163,7 @@ export default {
                 return
             }
 
-            this.button_payment = (this.difference < 0)
+            this.button_payment = this.form.payment_condition_id !== '02' && (this.difference < 0)
         },
         getLocalStoragePayment(key, re_default = null) {
 

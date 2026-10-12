@@ -4,10 +4,10 @@ const fs = require('node:fs'), vm = require('node:vm'), path = require('node:pat
 const compiler = require('vue-template-compiler'), babel = require('@babel/core');
 const moment = require('moment'), _ = require('lodash');
 const shared = require('./helpers/load-module.cjs')(path.resolve('resources/js/mixins/document-email.js'));
-function load(file) {
+function load(file, globals = {}) {
  const parsed = compiler.parseComponent(fs.readFileSync(file,'utf8')), exports = {};
  vm.runInNewContext(babel.transformSync(parsed.script.content,{configFile:false,babelrc:false,plugins:['@babel/plugin-transform-modules-commonjs']}).code,
- {exports, moment, _, require: name => name === '@mixins/document-pdf' ? require('./helpers/load-module.cjs')(require('node:path').resolve('resources/js/mixins/document-pdf.js')) : name === '@mixins/document-email' ? shared : name.includes('vuex') ? {mapActions:()=>({}),mapState:()=>({})} : {}});
+ {exports, moment, _, require: name => name === '@mixins/document-pdf' ? require('./helpers/load-module.cjs')(require('node:path').resolve('resources/js/mixins/document-pdf.js')) : name === '@mixins/document-email' ? shared : name.includes('vuex') ? {mapActions:()=>({}),mapState:()=>({})} : {}, ...globals});
  assert.deepEqual(compiler.compile(parsed.template.content).errors, []);
  return exports.default;
 }
@@ -88,5 +88,47 @@ for(const file of ['payment.vue','fast_payment_garage.vue']) {
   for(const[name,fn]of Object.entries(payment.methods))ctx[name]=fn.bind(ctx);
   ctx.validateRestrictSaleItemsCpe=ctx.validateRestrictSellerDiscount=()=>({success:true});ctx.asignPlateNumberToItems=()=>{};
   await ctx.clickPayment();assert.match(messages[0],/Consulte el listado/);assert.equal(ctx.loading_submit,false);
+ });
+}
+test('POS credit clears suggested cash and keeps partial real collections enabled',()=>{
+ const payment=load('resources/js/views/tenant/pos/partials/payment.vue');
+ const events=[],ctx={form:{payment_condition_id:'01',payments:[{payment:100}]},payments:[{payment:100}],amount:100,enter_amount:100,payment_method_type_id:'01',
+  $set:(o,k,v)=>o[k]=v,$eventHub:{$emit:(...args)=>events.push(args)},getTotal:()=>100};
+ for(const[name,fn]of Object.entries(payment.methods))ctx[name]=fn.bind(ctx);
+ ctx.getTotal=()=>100;
+ ctx.changeFiscalPaymentCondition('02');
+ assert.equal(ctx.form.payment_condition_id,'02');assert.equal(ctx.form.payments.length,0);assert.equal(ctx.payments.length,0);assert.equal(ctx.enter_amount,0);assert.equal(ctx.button_payment,false);
+ ctx.form.payments=[{payment:20}];ctx.setDifference(-80);assert.equal(ctx.button_payment,false);assert.equal(ctx.form.payments[0].payment,20);
+ ctx.changeFiscalPaymentCondition('01');assert.equal(ctx.button_payment,true);assert.equal(events.length,2);
+});
+for(const file of ['fast_payment.vue','fast_payment_garage.vue']) {
+ test(`${file} preserves credit when reopening payments and changing real amounts`,async()=>{
+  const payment=load('resources/js/views/tenant/pos/partials/'+file),events=[];
+  const ctx={form:{payment_condition_id:'01',payments:[{payment:100}],total:100},payments:[{payment:100}],amount:100,enter_amount:100,
+   $set:(o,k,v)=>o[k]=v,$eventHub:{$emit:(...args)=>events.push(args)},lStoPayment:()=>{}};
+  for(const name of ['changeFiscalPaymentCondition','inputAmount','enterAmount'])ctx[name]=payment.methods[name].bind(ctx);
+  ctx.changeFiscalPaymentCondition('02');assert.equal(ctx.enter_amount,0);assert.equal(ctx.form.payments.length,0);assert.equal(ctx.button_payment,false);
+  await ctx.enterAmount();assert.equal(ctx.form.payments.length,0);
+  ctx.amount=20;ctx.inputAmount();assert.equal(ctx.button_payment,false);assert.equal(events.at(-1)[1].payment_condition_id,'02');
+  ctx.changeFiscalPaymentCondition('01');assert.equal(ctx.button_payment,true);
+ });
+}
+for(const file of ['multiple_payment.vue','multiple_payment_garage.vue']) {
+ test(`${file} opens unpaid credit without inventing payments and preserves real partial amounts`,()=>{
+  const component=load('resources/js/views/tenant/pos/partials/'+file);
+  const ctx={...component.data(),payments:[],showDialog:true,total:100,paymentConditionId:'02',$set:(o,k,v)=>o[k]=v,$emit:()=>{}};
+  for(const[name,fn]of Object.entries(component.methods))ctx[name]=fn.bind(ctx);
+  ctx.create();assert.equal(ctx.draftPayments.length,0);
+  ctx.pushDraftPayment(20);ctx.pushDraftPayment(0);assert.equal(ctx.draftPayments[0].payment,20);assert.equal(ctx.draftPayments[1].payment,0);
+  ctx.payments=[{payment:30}];ctx.create();assert.equal(ctx.draftPayments[0].payment,30);ctx.clickCancel(0);ctx.close();assert.equal(ctx.payments[0].payment,30);
+ });
+}
+for(const file of ['payment.vue','fast_payment.vue','fast_payment_garage.vue']) {
+ test(`${file} restores credit amounts from actual draft receipts instead of the invoice total`,()=>{
+  const draft={payment_condition_id:'02',payments:[{payment:20}]};
+  const component=load('resources/js/views/tenant/pos/partials/'+file,{localStorage:{getItem:()=>JSON.stringify(draft)}});
+  const ctx={form:{total:100},amount:100,enter_amount:100,$set:(o,k,v)=>o[k]=v,inputAmount:()=>{}};
+  component.methods.getFormPosLocalStorage.call(ctx);
+  assert.equal(ctx.form.payment_condition_id,'02');assert.equal(ctx.amount,20);assert.equal(ctx.enter_amount,20);assert.equal(ctx.form.payments[0].payment,20);
  });
 }

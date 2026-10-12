@@ -491,7 +491,7 @@ class Facturalo
                     $company_number +
                     $customer_name +
                     $customer_address +
-                    $third_party_height + $regime_height +
+                    $third_party_height + $regime_height + (count(\App\Services\Fiscal\SpecialTaxpayerPolicy::forPrint($this->document)) * 12) +
                     $p_order +
                     $legends +
                     $total_exportation +
@@ -957,6 +957,10 @@ class Facturalo
         $company = Company::firstOrFail();
         $normalized = [];
         foreach ($payments as $row) {
+            validator($row, ['date_of_payment'=>'required|date_format:Y-m-d'])->validate();
+            $profile = \App\Services\Fiscal\FiscalProfileService::at($company, $row['date_of_payment']);
+            $decision = \App\Services\Fiscal\SpecialTaxpayerPolicy::payment($profile, $row, $row['currency_type_id'] ?? $document->currency_type_id, $row['date_of_payment']);
+            $row['igtf_status'] = $decision['igtf_status'];
             $values = \App\Services\Fiscal\FiscalAmounts::payment($row, $document->currency_type_id, $document->exchange_rate_sale, (bool)$company->igtf_enabled, $company->igtf_rate);
             $normalized[] = array_merge($row, $values);
         }
@@ -1025,7 +1029,7 @@ class Facturalo
                 if ($addressId && !\App\Models\Tenant\PersonAddress::where('person_id', $inputs['customer_id'])->where('id', $addressId)->exists()) {
                     \App\Services\Fiscal\FiscalAmounts::error('customer_address_id', 'La dirección no pertenece al cliente seleccionado.');
                 }
-                $inputs['customer'] = \App\Services\Fiscal\FiscalDocumentPersistence::withHkaIdentity(\App\CoreFacturalo\Requests\Inputs\Common\PersonInput::set($inputs['customer_id'], $addressId));
+                $inputs['customer'] = \App\Services\Fiscal\FiscalDocumentPersistence::withHkaIdentity(array_replace(\App\CoreFacturalo\Requests\Inputs\Common\PersonInput::set($inputs['customer_id'], $addressId), ['fiscal_profile'=>\App\Services\Fiscal\FiscalProfileService::at(\App\Models\Tenant\Person::findOrFail($inputs['customer_id']), $document->date_of_issue->format('Y-m-d'))]));
                 foreach (['user_id', 'payment_condition_id', 'fiscal_environment', 'state_type_id', 'is_editable', 'quotation_id', 'sale_note_id', 'technical_service_id', 'source_module', 'receipt_parent_id'] as $field) {
                     if (array_key_exists($field, $document->getAttributes())) $inputs[$field] = $document->getAttributes()[$field];
                 }

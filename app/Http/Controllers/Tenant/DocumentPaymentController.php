@@ -88,7 +88,7 @@ class DocumentPaymentController extends Controller
 
         $adjustment = \App\Models\Tenant\DocumentTax::where('document_payment_id',$data->id)->where('document_id','!=',$data->document_id)->first();
         $adjustmentDocument = $adjustment ? Document::findOrFail($adjustment->document_id) : null;
-        if ($adjustmentDocument && !$adjustmentDocument->isVoidedOrRejected()) (new \App\CoreFacturalo\Facturalo())->createPdf($adjustmentDocument,'debit','a4');
+        if ($adjustmentDocument && !\App\Services\Fiscal\HkaIgtfNote::applies($adjustmentDocument) && !$adjustmentDocument->isVoidedOrRejected()) (new \App\CoreFacturalo\Facturalo())->createPdf($adjustmentDocument,'debit','a4');
         $document_balance = (object)$this->document($request->document_id);
 
         if ($document_balance->total_difference < 1) {
@@ -124,7 +124,7 @@ class DocumentPaymentController extends Controller
             'success' => true,
             'message' => ($id) ? 'Pago editado con éxito' : 'Pago registrado con éxito',
             'id' => $data->id,
-            'igtf_adjustment' => $adjustmentDocument ? ['id'=>$adjustmentDocument->id,'number'=>$adjustmentDocument->number_full,'external_id'=>$adjustmentDocument->external_id] : null,
+            'igtf_adjustment' => $adjustmentDocument ? ['id'=>$adjustmentDocument->id,'number'=>$adjustmentDocument->number_full,'external_id'=>$adjustmentDocument->external_id,'fiscal_emission'=>\App\Services\Fiscal\DocumentEmissionView::forDocument($adjustmentDocument)] : null,
         ];
     }
 

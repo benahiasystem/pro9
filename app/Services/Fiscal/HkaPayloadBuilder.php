@@ -65,8 +65,8 @@ final class HkaPayloadBuilder
         $provider = $fiscal['catalog_snapshot']['provider_type_id']['code'] ?? null;
         if (!in_array($transaction,['01','98','99'],true) || ($transaction==='98' && $d['document_type_id']!=='08')) FiscalAmounts::error('fiscal_data','Transacción HKA no soportada.');
         $buyer = $d['customer'];
-        $number = $buyer['number'] ?? '';
-        $identity = $buyer['hka_identity_code'] ?? null;
+        $number = $buyer['fiscal_profile']['rif'] ?? ($buyer['number'] ?? '');
+        $identity = !empty($buyer['fiscal_profile']['rif']) ? substr($buyer['fiscal_profile']['rif'], 0, 1) : ($buyer['hka_identity_code'] ?? null);
         if (!$identity) FiscalAmounts::error('customer','Falta una equivalencia de identidad HKA.');
         foreach (['name','address','country_id','number'] as $key) if (empty($buyer[$key])) FiscalAmounts::error('customer.'.$key,'Dato del comprador requerido para HKA.');
         $id = ['tipoDocumento'=>$types[$d['document_type_id']], 'numeroDocumento'=>(string)$d['number'],
@@ -171,7 +171,13 @@ final class HkaPayloadBuilder
                 'totalDescuento'=>self::money($v['discount']),'totalRecargos'=>self::money($v['charge']),'impuestosSubtotal'=>$vesTaxes];
         }
         $payload=['documentoElectronico'=>['encabezado'=>$header,'detallesItems'=>$lines]];
-        if ($thirdParty || $specialRegime) $payload = HkaDomesticMoney::adapt($payload, $d);
+        foreach (['issuer'=>'Emisor', 'customer'=>'Comprador'] as $role=>$label) {
+            $profile = $d[$role]['fiscal_profile'] ?? [];
+            if (SpecialTaxpayerPolicy::spe($profile, \Carbon\Carbon::parse($d['date_of_issue'])->format('Y-m-d'))) {
+                $payload['documentoElectronico']['infoAdicional'][] = ['campo'=>'Condición fiscal '.$label,'valor'=>'Sujeto Pasivo Especial'];
+            }
+        }
+        if ($thirdParty || $specialRegime || (!$exportation && ($d['document_type_id'] === '01' || $transaction === '98') && ($d['currency_type_id'] === 'USD' || $igtf > 0))) $payload = HkaDomesticMoney::adapt($payload, $d);
         (new HkaSchemaValidator())->validate($payload);
         return $payload;
     }

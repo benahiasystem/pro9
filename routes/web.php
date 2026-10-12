@@ -103,6 +103,9 @@ if ($hostname) {
             // ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
             // ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
             Route::get('companies/igtf', 'Tenant\DocumentFiscalController@settings');
+            Route::get('fiscal-profiles/{kind}/{id}', 'Tenant\FiscalProfileController@record')->where('kind', 'company|customer')->where('id', '[0-9]+');
+            Route::post('fiscal-profiles/{kind}/{id}', 'Tenant\FiscalProfileController@store')->where('kind', 'company|customer')->where('id', '[0-9]+');
+            Route::post('fiscal-profiles/evaluate', 'Tenant\FiscalProfileController@evaluate');
             Route::post('companies/igtf', 'Tenant\DocumentFiscalController@settingsStore');
             Route::post('documents/{document}/prepare-hka', 'Tenant\DocumentFiscalController@prepare');
             Route::post('documents/{document}/send-hka', 'Tenant\DocumentFiscalController@sendHka');

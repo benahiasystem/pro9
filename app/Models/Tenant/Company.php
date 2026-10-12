@@ -39,6 +39,7 @@ class Company extends ModelTenant
     ];
 
     protected $casts = [
+            'fiscal_profile' => 'array',
         // ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
         'fiscal_configuration' => 'array',
         'fiscal_credentials' => 'encrypted',

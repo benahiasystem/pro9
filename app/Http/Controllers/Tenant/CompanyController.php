@@ -45,6 +45,7 @@ class CompanyController extends Controller
 
     public function store(CompanyRequest $request)
     {
+        if ($request->has('fiscal_profile')) \App\Services\Fiscal\FiscalAmounts::error('fiscal_profile', 'Guarde el perfil mediante su acción administrativa con historial.');
         $id = $request->input('id');
         $company = Company::firstOrFail();
         abort_unless((int) $id === (int) $company->id, 404);

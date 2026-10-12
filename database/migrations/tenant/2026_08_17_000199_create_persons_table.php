@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\DB;
 /**
  * Estructura inicial de `persons` para instalaciones nuevas.
  * Inventario de columnas:
+ * - `fiscal_profile` json DEFAULT NULL (current version; history is immutable)
  * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
  * - `type` enum('customers','suppliers') COLLATE utf8mb4_unicode_ci NOT NULL
  * - `identity_document_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
@@ -64,6 +65,7 @@ return new class extends Migration
     {
         DB::unprepared(<<<'SQL'
 CREATE TABLE `persons` (
+  `fiscal_profile` json DEFAULT NULL,
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `type` enum('customers','suppliers') COLLATE utf8mb4_unicode_ci NOT NULL,
   `identity_document_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,

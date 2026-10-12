@@ -19,6 +19,9 @@ final class HkaEmission
             $emission = $document->emission;
             $operationKey = $emission->operation_key;
             $company = $this->company($document);
+            if (HkaIgtfNote::applies($document) && !HkaIgtfNote::parentReady($document)) {
+                FiscalAmounts::error('reference', 'Cobro conservado. La nota IGTF espera la confirmación y el control real de la factura original.');
+            }
             if (in_array($emission->status, ['confirmed', 'rejected', 'cancelled'], true)) return DocumentEmissionView::forDocument($document);
             if (in_array($emission->status, ['pending', 'uncertain'], true)) {
                 $this->query($document);
@@ -92,7 +95,8 @@ final class HkaEmission
     private function company(Document $document): Company
     {
         $company = Company::firstOrFail();
-        if ($document->document_type_id !== '01' || $document->fiscal_emission_mode !== 'digital'
+        if (HkaIgtfNote::applies($document)) HkaIgtfNote::assertCollection($document);
+        if (($document->document_type_id !== '01' && !HkaIgtfNote::applies($document)) || $document->fiscal_emission_mode !== 'digital'
             || $document->fiscal_environment !== 'demo' || $company->fiscal_environment !== 'demo'
             || $company->fiscal_emission_mode !== 'digital' || $document->isVoidedOrRejected()) {
             FiscalAmounts::error('emission', 'El envío HKA está habilitado únicamente para facturas vigentes en Medios digitales y DEMO.');
@@ -102,7 +106,7 @@ final class HkaEmission
             FiscalAmounts::error('emission', 'El RIF del emisor conservado no corresponde a la empresa configurada.');
         }
         if (!HkaAuthentication::credentials($company)) FiscalAmounts::error('emission', 'Configure las credenciales HKA de este tenant antes de enviar.');
-        if (Document::where('document_type_id', '01')->where('fiscal_environment', 'demo')->where('fiscal_emission_mode', 'digital')
+        if (Document::where('document_type_id', $document->document_type_id)->where('fiscal_environment', 'demo')->where('fiscal_emission_mode', 'digital')
             ->where('series', $document->series)->where('number', $document->number)->where('id', '!=', $document->id)->exists()) {
             FiscalAmounts::error('emission', 'La identidad serie/número es ambigua entre sucursales para HKA.');
         }
@@ -149,6 +153,7 @@ final class HkaEmission
         try {
             app(HkaMail::class)->sendAutomatic($document);
         } catch (\Throwable $ignored) { /* The sale and its fiscal confirmation remain persisted. */ }
+        if (optional($current->emission)->status === 'confirmed') HkaIgtfNote::resume($current);
     }
 
     private function failure(Document $document, ?string $attempt, \Throwable $exception, ?string $operationKey = null): void

@@ -832,6 +832,7 @@
                            type="primary">Guardar
                 </el-button>
             </div>
+        <fiscal-profile-editor v-if="type === 'customers'" kind="customer" :entity-id="form.id || recordId" />
         </form>
     <consigned-form
         :recordId="recordId"
@@ -843,6 +844,7 @@
 </template>
 
 <script>
+import FiscalProfileEditor from "../fiscal_profiles/editor.vue"
 import {mapActions, mapState} from "vuex/dist/vuex.mjs";
 
 import {serviceNumber} from '../../../mixins/functions'
@@ -861,7 +863,7 @@ export default {
         'parentId',
         'is_dispatch'
     ],
-    components: {ConsignedForm},
+    components: {FiscalProfileEditor,ConsignedForm},
     data() {
         return {
             form_zone: {add: false, name: null, id: null},
@@ -1574,6 +1576,7 @@ export default {
                 addresses: (this.form.addresses || []).filter(row => !this.isEmptyAddressRow(row)),
             }
 
+            delete payload.fiscal_profile
             await this.$http.post(`/${this.resource}`, payload)
                 .then(response => {
                     if (response.data.success) {

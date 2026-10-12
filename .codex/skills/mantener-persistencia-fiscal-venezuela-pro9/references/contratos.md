@@ -8,7 +8,10 @@ Rutas relativas a la raíz de Pro9:
 |---|---|
 | `app/CoreFacturalo/Facturalo.php` | Guardado/actualización comercial común y transacción tenant; emisión elegible después del commit exterior al crear, sin emisión automática al editar. |
 | `app/Services/Fiscal/FiscalDocumentPersistence.php` | Emisor, líneas, resumen, relaciones fiscales, pagos, IGTF, retenciones y reversión. |
-| `app/Services/Fiscal/FiscalAmounts.php` | Conversión USD/VES, precisión vigente y clasificación IGTF. |
+| `app/Services/Fiscal/SpecialTaxpayerPolicy.php` | Perfil, vigencia, intermediación y facultades IVA/ISLR; propuestas sin efectos comerciales. |
+| `app/Services/Fiscal/FiscalProfileService.php` | Versiones administrativas y resolución por fecha; snapshots inmutables. |
+| `app/Services/Fiscal/HkaIgtfNote.php` | Nota digital exclusiva IGTF, validación del cobro, padre confirmado y recuperación. |
+| `app/Services/Fiscal/FiscalAmounts.php` | Conversión USD/VES, precisión e importes IGTF; clasificación por hechos en SpecialTaxpayerPolicy. |
 | `app/CoreFacturalo/Requests/Api/Transform/DocumentTransform.php` | Traducción de pagos de la API de creación. |
 | `app/Http/Controllers/Tenant/DocumentPaymentController.php` | Cobros posteriores y reversión. |
 | `app/Http/Controllers/Tenant/DocumentFiscalController.php` | Autorización de ajustes, retenciones, adjuntos, preparación, envío/consulta fiscal y rastreo de correo HKA. |
@@ -44,17 +47,19 @@ Al modificar un importe, seguir también sus consumidores en caja, `modules/Fina
 
 | Tabla | Datos conservados |
 |---|---|
-| `documents` | Emisor obligatorio; moneda, tasa/fuente/fecha; cliente/sucursal; total y numeración local. |
+| `documents` | Perfiles tributarios congelados en emisor/comprador; emisor obligatorio; moneda, tasa/fuente/fecha; cliente/sucursal; total y numeración local. |
 | `document_items` | Snapshot del artículo/unidad y `iva_rate`; base, porcentaje e IVA existentes. |
-| `document_payments` | Principal aplicado/recibido, moneda/tasa/fuente/fecha, impuesto, clasificación/exención, UUID, medio, recibo derivado y reversión. |
+| `companies` / `persons` | JSON fiscal_profile independiente de identidad comercial y del módulo retirado de numeración. |
+| `fiscal_profile_versions` | Perfil validado, entidad, vigencia, actor/fecha e índices; referencias restrictivas. |
+| `document_payments` | fiscal_context de emisor/comprador/decisión/fecha; principal aplicado/recibido, moneda/tasa/fuente/fecha, impuesto, clasificación/exención, UUID, medio, recibo derivado y reversión. |
 | `document_taxes` | Tributo, base/porcentaje/importe documental y VES; vínculo IGTF al pago. |
 | `document_currency_totals` | Totales VES y desglose de impuestos por alícuota. |
-| `document_received_retentions` | Comprobante IVA/ISLR, agente/snapshot, concepto, base/porcentaje/sustraendo, moneda/tasa, aplicación y adjunto. |
+| `document_received_retentions` | fiscal_context de perfiles/propuesta/operación/concepto/control/actor; comprobante IVA/ISLR, agente/snapshot, concepto, base/porcentaje/sustraendo, moneda/tasa, aplicación y adjunto. |
 | `document_guarantee_funds` | Fondo comercial separado y aplicación al saldo. |
 | `document_fiscal_data` | Catálogos/snapshots de proveedor/transacción/régimen, tercero y datos condicionales. |
 | `document_emissions` | Operación única, contrato/payload congelado, estado, respuesta/control/autorización y `consulta_url` opcional procedente de HKA; `response.mail` para distribución y `response.edit_history` para trazabilidad de edición, sin nuevas tablas; PDF HKA separado en disco privado por operación/formato. |
 
-Las relaciones nuevas se crean en `000330`–`000335`; las FKs están en `2026_08_17_000999_add_tenant_foreign_keys.php`. Mantener las restricciones de unicidad de pagos, cargo IGTF, recibo derivado, retenciones y relaciones únicas documentales.
+Las relaciones documentales se crean en `000330`–`000335`, y fiscal_profile_versions en `000336`; las FKs están en `2026_08_17_000999_add_tenant_foreign_keys.php`. Mantener las restricciones de unicidad de pagos, cargo IGTF, recibo derivado, retenciones y relaciones únicas documentales.
 
 Campos retirados de `documents`: `ubl_version`, `perception`, `total_unaffected`, `total_free`, `total_igv_free`, `retention`, `user_rel_subscription_plan_id`. Conservar `user_rel_suscription_plan_id`, utilizado por suscripciones. El snapshot del artículo no contiene `cod_digemid`. No restaurar las claves heredadas `amount_pen`/`amount_usd` del JSON de retenciones ni sus productores/consumidores.
 
@@ -66,14 +71,14 @@ Verificar el contrato vigente en `routes/web.php`, `routes/api.php`, requests y 
 - `GET /documents/retention/{id}`, `POST /documents/retention`, `POST /documents/retention/upload`: comprobantes recibidos; adjuntos PDF/JPG/PNG de hasta 5 MB.
 - `POST /documents/{id}/prepare-hka`: preparación administrativa, sin HTTP al proveedor.
 - `POST /documents/{id}/send-hka`: envío fiscal administrativo; `POST /documents/{id}/query-hka`: conciliación dentro del tenant/sucursal.
-- `POST /documents/email`: conserva `id` y `customer_email`; para HKA añade UUID `request_id` y `resend` explícito. Facturas digitales requieren confirmación/control y DEMO, sin fallback SMTP; los demás documentos conservan correo comercial.
+- `POST /documents/email`: conserva `id` y `customer_email`; para HKA añade UUID `request_id` y `resend` explícito. Facturas digitales y notas exclusivas IGTF reconocidas por HkaIgtfNote requieren confirmación/control y DEMO, sin fallback SMTP; los demás documentos conservan correo comercial.
 - `POST /documents/{id}/query-hka-email`: rastreo de destinatarios del intento, autorizado por tenant/sucursal.
 - Web/API `GET /documents/{external_id}/download-pdf/{format}`: descarga autenticada por tenant/sucursal, limitada a `a4|a5|ticket`; `ticket` representa 80MM. Aplicar [distribución HKA](../../distribuir-documentos-hka/SKILL.md) para disponibilidad, validación y respuesta en memoria.
 - Web `GET/POST /companies/igtf`: configuración operativa; escritura administrativa auditada.
 
-El pago posterior utiliza `document_id`, `date_of_payment`, `payment_method_type_id`, `payment_destination_id`, `currency_type_id`, `original_amount`, `exchange_rate`, `exchange_rate_source`, `exchange_rate_date`, `operation_key`, `igtf_status` y `exemption_reason` cuando corresponde. En la API de creación, `pagos` conserva `monto`, `codigo_metodo_pago` y `codigo_destino_pago`, con traducción de los datos fiscales nuevos. No confundir el POST web del formulario con el contrato externo de creación por API.
+El pago posterior utiliza `document_id`, `date_of_payment`, `payment_method_type_id`, `payment_destination_id`, `currency_type_id`, `original_amount`, `exchange_rate`, `exchange_rate_source`, `exchange_rate_date`, `operation_key`, `igtf_status`, `exemption_reason`, `exception_basis` y `financial_intermediation` cuando corresponde. En la API de creación, `pagos` conserva `monto`, `codigo_metodo_pago` y `codigo_destino_pago`, con traducción de los datos fiscales nuevos. No confundir el POST web del formulario con el contrato externo de creación por API.
 
-La creación admite `received_retentions`, `guarantee_fund`, `taxes` identificados y `fiscal_data`. Las pantallas incorporan clasificación IGTF y comprobantes recibidos; los selectores de moneda propia/cobro mixto no se implementaron en esta etapa.
+La creación admite `received_retentions`, `guarantee_fund`, `taxes` identificados y `fiscal_data`. Las pantallas Web/POS/Garage y cobros posteriores comparten selector de moneda efectivamente recibida, conversión, intermediación y propuesta fiscal. Crédito conserva sólo abonos introducidos al abrir/reabrir Pagos o recuperar borradores, sin distribuir el total. Los comprobantes recibidos requieren RIF/control/número reales y soporte privado. Seguir [perfiles SPE](../../mantener-sujetos-pasivos-especiales-pro9/SKILL.md) y [sus contratos](../../mantener-sujetos-pasivos-especiales-pro9/references/contratos.md).
 
 ## Resultado fiscal, correo y edición
 

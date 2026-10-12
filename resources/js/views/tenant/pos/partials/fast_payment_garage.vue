@@ -86,6 +86,7 @@
         </div>
 
         <!-- Totales -->
+        <div v-if="form.document_type_id === '01'"><label>Condición de pago</label><el-select :value="form.payment_condition_id || '01'" @change="changeFiscalPaymentCondition"><el-option value="01" label="Contado"/><el-option value="02" label="Crédito (registrar sólo abonos reales)"/></el-select></div>
         <div class="fp-totals px-3 pt-2">
 
             <template>
@@ -112,10 +113,11 @@
             </div>
         </div>
 
+        <igtf-payment-fields v-for="(row, fiscalIndex) in form.payments" :key="'fiscal-' + fiscalIndex" :payment="row" :document-currency="form.currency_type_id" :document-rate="form.exchange_rate_sale" :customer-id="form.customer_id" />
         <!-- Botón Pagar -->
         <div class="px-1 pt-1 pb-1">
             <el-button
-                :disabled="button_payment"
+                :disabled="button_payment && form.payment_condition_id !== '02'"
                 :loading="loading_submit"
                 class="fp-pay-btn w-100"
                 @click="clickPayment"
@@ -192,6 +194,7 @@
 
     <multiple-payment-form
         :payments="payments"
+        :currency-type-id="form.currency_type_id" :exchange-rate-sale="form.exchange_rate_sale" :customer-id="form.customer_id" :payment-condition-id="form.payment_condition_id"
         :showDialog.sync="showDialogMultiplePayment"
         :total="form.total"
         @add="addRow"
@@ -237,6 +240,7 @@
 </style>
 
 <script>
+import IgtfPaymentFields from "../../documents/partials/igtf_fields.vue"
 import Keypress from 'vue-keypress'
 
 import CardBrandsForm from '../../card_brands/form.vue'
@@ -247,7 +251,7 @@ import PersonForm from '../../../tenant/persons/form.vue'
 import { buhoprinter } from '@mixins/buhoprinter'
 
 export default {
-    components: {OptionsForm, CardBrandsForm, SaleNotesOptions, MultiplePaymentForm, Keypress, PersonForm},
+    components: {IgtfPaymentFields,OptionsForm, CardBrandsForm, SaleNotesOptions, MultiplePaymentForm, Keypress, PersonForm},
     mixins: [buhoprinter],
 
     props: [
@@ -396,6 +400,14 @@ export default {
         }
     },
     methods: {
+        changeFiscalPaymentCondition(value) {
+            this.$set(this.form, 'payment_condition_id', value)
+            if (value === '02') {
+                this.form.payments = []; this.payments = [];
+                this.amount = 0; this.enter_amount = 0;
+            }
+            this.inputAmount()
+        },
         openPlateNumberDialog() {
             this.showDialogPlateNumber = true;
             let customer = _.find(this.all_customers, {
@@ -562,7 +574,7 @@ export default {
         },
         keyupEnterAmount() {
 
-            if (this.button_payment) {
+            if (this.button_payment && this.form.payment_condition_id !== '02') {
                 return this.$message.warning("El monto a pagar es menor al total")
             }
 
@@ -779,6 +791,12 @@ export default {
             form_pos = JSON.parse(form_pos)
             if (form_pos) {
                 this.form.payments = form_pos.payments
+                if (form_pos.payment_condition_id === '02') {
+                    this.$set(this.form, 'payment_condition_id', '02')
+                    this.amount = (this.form.payments || []).reduce((sum, row) => sum + (Number(row.payment) || 0), 0)
+                    this.enter_amount = this.amount
+                    this.inputAmount()
+                }
             }
 
         },
@@ -858,6 +876,7 @@ export default {
             }
         },
         async enterAmount() {
+            if (!this.form.payments.length) return
 
             let r_item = await _.last(this.payments, {'payment_method_type_id': '01'})
             r_item.payment = await parseFloat(this.enter_amount)
@@ -881,13 +900,13 @@ export default {
             this.difference = this.amount - this.form.total
 
             if (isNaN(this.difference)) {
-                this.button_payment = true
+                this.button_payment = this.form.payment_condition_id !== '02'
                 this.difference = "-"
             } else if (this.difference >= 0) {
                 this.button_payment = false
                 this.difference = this.amount - this.form.total
             } else {
-                this.button_payment = true
+                this.button_payment = this.form.payment_condition_id !== '02'
             }
             this.difference = _.round(this.difference, 2)
 
@@ -916,13 +935,13 @@ export default {
             this.difference = this.amount - this.form.total
 
             if (isNaN(this.difference)) {
-                this.button_payment = true
+                this.button_payment = this.form.payment_condition_id !== '02'
                 this.difference = "-"
             } else if (this.difference >= 0) {
                 this.button_payment = false
                 this.difference = this.amount - this.form.total
             } else {
-                this.button_payment = true
+                this.button_payment = this.form.payment_condition_id !== '02'
             }
             this.difference = _.round(this.difference, 2)
             // this.form_payment.payment = this.amount
@@ -1109,7 +1128,7 @@ export default {
                 }
             }
 
-            if (this.button_payment) {
+            if (this.button_payment && this.form.payment_condition_id !== '02') {
                 return this.$message.warning('El monto a pagar es menor al total');
             }
 
@@ -1356,6 +1375,7 @@ export default {
                 return;
             }
 
+            if (this.form.payment_condition_id === '02') return;
             if (this.form.payments.length == 0) {
                 this.$refs.componentMultiplePaymentGarage.clickAddPayment(amount)
                 this.setAmount(this.form.total)

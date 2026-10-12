@@ -365,6 +365,8 @@ class DocumentTransform
                         'exchange_rate_date' => $row['exchange_rate_date'] ?? $inputs['fecha_de_emision'],
                         'igtf_status' => $row['igtf_status'] ?? 'not_applicable',
                         'exemption_reason' => $row['exemption_reason'] ?? null,
+                        'exception_basis' => $row['exception_basis'] ?? null,
+                        'financial_intermediation' => $row['financial_intermediation'] ?? null,
                         'operation_key' => $row['operation_key'] ?? (string) \Illuminate\Support\Str::uuid(),
                         'payment_received' => Functions::valueKeyInArray($row, 'pago_recibido'),
                     ];

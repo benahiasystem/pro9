@@ -288,6 +288,13 @@ class Document extends ModelTenant
 
     protected static function booted()
     {
+        static::updating(function ($document) {
+            if ($document->isDirty('state_type_id') && in_array((string)$document->state_type_id, ['09','11'], true)
+                && \App\Services\Fiscal\HkaIgtfNote::applies($document)) \App\Services\Fiscal\FiscalDocumentPersistence::assertMutable($document);
+        });
+        static::deleting(function ($document) {
+            if (\App\Services\Fiscal\HkaIgtfNote::applies($document)) \App\Services\Fiscal\FiscalDocumentPersistence::assertMutable($document);
+        });
         static::created(function ($document){
             CacheHelper::flush(['document_list']);
             CacheHelper::flush(['document_detail']);
