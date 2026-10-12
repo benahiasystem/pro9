@@ -1,0 +1,627 @@
+{
+  "date_local": "2026-10-11T21:33:14-04:00",
+  "environment": "DEMO",
+  "endpoint": "POST /api/Emision",
+  "contract_sha256": "f2ddb07c239b04319df1fc9b1e6b4db137f89b51f063fa4989fd1bc836d10f04",
+  "automatic_email_disabled": true,
+  "invoices": [
+    {
+      "number": 2032,
+      "control": "00-00000044",
+      "currency": "VES",
+      "total": 261.29,
+      "balance": 0,
+      "status": "confirmed",
+      "type": "01",
+      "transaction": "99",
+      "titular_rif": "J509990016",
+      "buyer_preserved": true,
+      "buyer_and_titular_separate": true,
+      "mail_notification": "No",
+      "titular_fields": [
+        "tipo",
+        "direccion",
+        "razonSocial",
+        "tipoIdentificacion",
+        "numeroIdentificacion"
+      ],
+      "active_payments_sum": 261.29,
+      "payload_sha256": "7430ca36d8e060b4d5e4a823a866ec7498f1dc51be230c4129d1e4cd0ff40e29",
+      "pdf_sha256": {
+        "a4": "9af5a90ec76de6eea5b2c2f30ff2c87a34431d93b8bb085a0b3f1f7ee2d50513",
+        "a5": "8ba2cceff1af6b67e07dd6520d68a71ec3fa9df83c02e8c3bd4bfb2279ce3082",
+        "ticket": "f6f40c62b7ff1663359098f46b9882a442ce24554fb2e8a712a0f0b424326ddf"
+      },
+      "pdf_checks": {
+        "a4": {
+          "pages": 1,
+          "titular_name": true,
+          "titular_rif": true,
+          "buyer_name": true,
+          "pdf_sha256": "9af5a90ec76de6eea5b2c2f30ff2c87a34431d93b8bb085a0b3f1f7ee2d50513"
+        },
+        "a5": {
+          "pages": 1,
+          "titular_name": true,
+          "titular_rif": true,
+          "buyer_name": true,
+          "pdf_sha256": "8ba2cceff1af6b67e07dd6520d68a71ec3fa9df83c02e8c3bd4bfb2279ce3082"
+        },
+        "ticket": {
+          "pages": 1,
+          "titular_name": true,
+          "titular_rif": true,
+          "buyer_name": true,
+          "pdf_sha256": "f6f40c62b7ff1663359098f46b9882a442ce24554fb2e8a712a0f0b424326ddf",
+          "qr_matches_saved_hka_url": true
+        }
+      }
+    },
+    {
+      "number": 2033,
+      "control": "00-00000045",
+      "currency": "USD",
+      "total": 261.29,
+      "balance": 0,
+      "status": "confirmed",
+      "type": "01",
+      "transaction": "99",
+      "titular_rif": "J509990016",
+      "buyer_preserved": true,
+      "buyer_and_titular_separate": true,
+      "mail_notification": "No",
+      "titular_fields": [
+        "tipo",
+        "direccion",
+        "razonSocial",
+        "tipoIdentificacion",
+        "numeroIdentificacion"
+      ],
+      "active_payments_sum": 261.29,
+      "payload_sha256": "c9986aea4f54a543512661e3e438a2d056b0fb4fc85be76c688f73a59d05a94a",
+      "pdf_sha256": {
+        "a4": "52cc6120c4116351c6af008b4aeb39fde5016c9156098892c7a07f9d60ad09a7",
+        "a5": "91da098167d7f0e0651e093eda22ac10b7ef93848e2a6ea164a67c504fb37ff9",
+        "ticket": "ea74b575d3c6f12a88bce7886a3ce8b12c07acd2d2c349fd38706d646a2428b2"
+      },
+      "pdf_checks": {
+        "a4": {
+          "pages": 1,
+          "titular_name": true,
+          "titular_rif": true,
+          "buyer_name": true,
+          "pdf_sha256": "52cc6120c4116351c6af008b4aeb39fde5016c9156098892c7a07f9d60ad09a7"
+        },
+        "a5": {
+          "pages": 1,
+          "titular_name": true,
+          "titular_rif": true,
+          "buyer_name": true,
+          "pdf_sha256": "91da098167d7f0e0651e093eda22ac10b7ef93848e2a6ea164a67c504fb37ff9"
+        },
+        "ticket": {
+          "pages": 1,
+          "titular_name": true,
+          "titular_rif": true,
+          "buyer_name": true,
+          "pdf_sha256": "ea74b575d3c6f12a88bce7886a3ce8b12c07acd2d2c349fd38706d646a2428b2",
+          "qr_matches_saved_hka_url": true
+        }
+      }
+    },
+    {
+      "number": 2034,
+      "control": "00-00000046",
+      "currency": "VES",
+      "total": 261.29,
+      "balance": 0,
+      "status": "confirmed",
+      "type": "01",
+      "transaction": "99",
+      "titular_rif": "V234567891",
+      "buyer_preserved": true,
+      "buyer_and_titular_separate": true,
+      "mail_notification": "No",
+      "titular_fields": [
+        "tipo",
+        "direccion",
+        "razonSocial",
+        "tipoIdentificacion",
+        "numeroIdentificacion"
+      ],
+      "active_payments_sum": 261.29,
+      "payload_sha256": "e06b375de2bd7c0515fa417708a7150b88f992aeb0179799e1cb051e60f48b5d",
+      "pdf_sha256": {
+        "a4": "e4de38ffd69aebb127a54ebf84600dc719ff4caf2504bc6b67be3b23effb0cd3",
+        "a5": "97e3e8f48a1e16a4d3ccd0ee1591bcd842216e779ca49688f10c2d02c783bf69",
+        "ticket": "6d8de335b34832d32737c3f2bdb33fb9380e3f5986a7c9befff489978570788c"
+      },
+      "pdf_checks": {
+        "a4": {
+          "pages": 1,
+          "titular_name": true,
+          "titular_rif": true,
+          "buyer_name": true,
+          "pdf_sha256": "e4de38ffd69aebb127a54ebf84600dc719ff4caf2504bc6b67be3b23effb0cd3"
+        },
+        "a5": {
+          "pages": 1,
+          "titular_name": true,
+          "titular_rif": true,
+          "buyer_name": true,
+          "pdf_sha256": "97e3e8f48a1e16a4d3ccd0ee1591bcd842216e779ca49688f10c2d02c783bf69"
+        },
+        "ticket": {
+          "pages": 1,
+          "titular_name": true,
+          "titular_rif": true,
+          "buyer_name": true,
+          "pdf_sha256": "6d8de335b34832d32737c3f2bdb33fb9380e3f5986a7c9befff489978570788c",
+          "qr_matches_saved_hka_url": true
+        }
+      }
+    },
+    {
+      "number": 2035,
+      "control": "00-00000047",
+      "currency": "USD",
+      "total": 261.29,
+      "balance": 0,
+      "status": "confirmed",
+      "type": "01",
+      "transaction": "99",
+      "titular_rif": "V234567891",
+      "buyer_preserved": true,
+      "buyer_and_titular_separate": true,
+      "mail_notification": "No",
+      "titular_fields": [
+        "tipo",
+        "direccion",
+        "razonSocial",
+        "tipoIdentificacion",
+        "numeroIdentificacion"
+      ],
+      "active_payments_sum": 261.29,
+      "payload_sha256": "f3b10d79b2e4030b01a761f8d162db0322ad9c95524940892ef52a05aabfe673",
+      "pdf_sha256": {
+        "a4": "3a3bf61a26d31e4d38d3768028042a98cc44eb58d2a280f0d8ff2360a444a2da",
+        "a5": "d350f971504bb889dbb6341c039d58c018d82bb3063de95a9ba67aec2ebb42c7",
+        "ticket": "03530d509fc79a802aff718ab7142e14d597daba188041b6a1c25f9863905b27"
+      },
+      "pdf_checks": {
+        "a4": {
+          "pages": 1,
+          "titular_name": true,
+          "titular_rif": true,
+          "buyer_name": true,
+          "pdf_sha256": "3a3bf61a26d31e4d38d3768028042a98cc44eb58d2a280f0d8ff2360a444a2da"
+        },
+        "a5": {
+          "pages": 1,
+          "titular_name": true,
+          "titular_rif": true,
+          "buyer_name": true,
+          "pdf_sha256": "d350f971504bb889dbb6341c039d58c018d82bb3063de95a9ba67aec2ebb42c7"
+        },
+        "ticket": {
+          "pages": 1,
+          "titular_name": true,
+          "titular_rif": true,
+          "buyer_name": true,
+          "pdf_sha256": "03530d509fc79a802aff718ab7142e14d597daba188041b6a1c25f9863905b27",
+          "qr_matches_saved_hka_url": true
+        }
+      }
+    },
+    {
+      "number": 2036,
+      "control": "00-00000049",
+      "currency": "VES",
+      "total": 237.45,
+      "balance": 0,
+      "status": "confirmed",
+      "type": "01",
+      "transaction": "99",
+      "titular_rif": "J509990016",
+      "buyer_preserved": true,
+      "buyer_and_titular_separate": true,
+      "mail_notification": "No",
+      "titular_fields": [
+        "tipo",
+        "direccion",
+        "razonSocial",
+        "tipoIdentificacion",
+        "numeroIdentificacion"
+      ],
+      "active_payments_sum": 237.45,
+      "payload_sha256": "7bb22716f5fc887f10b0e15505f6c375e14aca43c414febe13fab5d9a705f9f8",
+      "pdf_sha256": {
+        "a4": "1feb1bc7ebbbe747dbbb3d6428ce653d034b769e844d0c789756ab6a9650d0a4",
+        "a5": "601c09fc78f86d345638c0e157f2c865ee560a60559f64eca047a714738c9d44",
+        "ticket": "84f5c0f0e5808db48ec3544e98c391d7fcee963837c8399746d99f8f0d325e79"
+      },
+      "pdf_checks": {
+        "a4": {
+          "pages": 1,
+          "titular_name": true,
+          "titular_rif": true,
+          "buyer_name": true,
+          "pdf_sha256": "1feb1bc7ebbbe747dbbb3d6428ce653d034b769e844d0c789756ab6a9650d0a4"
+        },
+        "a5": {
+          "pages": 1,
+          "titular_name": true,
+          "titular_rif": true,
+          "buyer_name": true,
+          "pdf_sha256": "601c09fc78f86d345638c0e157f2c865ee560a60559f64eca047a714738c9d44"
+        },
+        "ticket": {
+          "pages": 1,
+          "titular_name": true,
+          "titular_rif": true,
+          "buyer_name": true,
+          "pdf_sha256": "84f5c0f0e5808db48ec3544e98c391d7fcee963837c8399746d99f8f0d325e79",
+          "qr_matches_saved_hka_url": true
+        }
+      }
+    },
+    {
+      "number": 2037,
+      "control": "00-00000050",
+      "currency": "USD",
+      "total": 244.57,
+      "balance": 0,
+      "status": "confirmed",
+      "type": "01",
+      "transaction": "99",
+      "titular_rif": "J509990016",
+      "buyer_preserved": true,
+      "buyer_and_titular_separate": true,
+      "mail_notification": "No",
+      "titular_fields": [
+        "tipo",
+        "direccion",
+        "razonSocial",
+        "tipoIdentificacion",
+        "numeroIdentificacion"
+      ],
+      "active_payments_sum": 244.57,
+      "payload_sha256": "cb46ee6809cb83fc5216c86e30718c977602c463222d16da2dc40a62e2acabc2",
+      "pdf_sha256": {
+        "a4": "1b1f3be7f69f6de7dd183bdf8f0e63bb2f303d380c4fa8e59dde0ff2c922ab42",
+        "a5": "e946f4a5b439057f3a0330c6cbed1b79bf9884f0b83652a2541a1265db1bafab",
+        "ticket": "7668c612e15bd5307215405ce07043cfda4626d956d0a0cb4c612bd916b34944"
+      },
+      "pdf_checks": {
+        "a4": {
+          "pages": 1,
+          "titular_name": true,
+          "titular_rif": true,
+          "buyer_name": true,
+          "pdf_sha256": "1b1f3be7f69f6de7dd183bdf8f0e63bb2f303d380c4fa8e59dde0ff2c922ab42"
+        },
+        "a5": {
+          "pages": 1,
+          "titular_name": true,
+          "titular_rif": true,
+          "buyer_name": true,
+          "pdf_sha256": "e946f4a5b439057f3a0330c6cbed1b79bf9884f0b83652a2541a1265db1bafab"
+        },
+        "ticket": {
+          "pages": 1,
+          "titular_name": true,
+          "titular_rif": true,
+          "buyer_name": true,
+          "pdf_sha256": "7668c612e15bd5307215405ce07043cfda4626d956d0a0cb4c612bd916b34944",
+          "qr_matches_saved_hka_url": true
+        }
+      }
+    },
+    {
+      "number": 2038,
+      "control": "00-00000048",
+      "currency": "VES",
+      "total": 100,
+      "balance": 0,
+      "status": "confirmed",
+      "type": "01",
+      "transaction": "99",
+      "titular_rif": "V234567891",
+      "buyer_preserved": true,
+      "buyer_and_titular_separate": true,
+      "mail_notification": "No",
+      "titular_fields": [
+        "tipo",
+        "direccion",
+        "razonSocial",
+        "tipoIdentificacion",
+        "numeroIdentificacion"
+      ],
+      "active_payments_sum": 100,
+      "payload_sha256": "8df677093f9ee98b291e880fa19875c25a6ee62820794d81c7afbd7cb99bd164",
+      "pdf_sha256": {
+        "a4": "d9dd9d71d9bb464d44dea2ade18e86d2e2d0a06db970251c51ad50c7014f1ce9",
+        "a5": "2f7dede7fa4b0832d1dafb89df0e1d4fc5cdfea64d7ea75554d386cd16e306e0",
+        "ticket": "9ce6d35f777fe4b3dc58ba0bb7e455f138d114a8c7cad22ad2a1375f74ecdd82"
+      },
+      "pdf_checks": {
+        "a4": {
+          "pages": 1,
+          "titular_name": true,
+          "titular_rif": true,
+          "buyer_name": true,
+          "pdf_sha256": "d9dd9d71d9bb464d44dea2ade18e86d2e2d0a06db970251c51ad50c7014f1ce9"
+        },
+        "a5": {
+          "pages": 1,
+          "titular_name": true,
+          "titular_rif": true,
+          "buyer_name": true,
+          "pdf_sha256": "2f7dede7fa4b0832d1dafb89df0e1d4fc5cdfea64d7ea75554d386cd16e306e0"
+        },
+        "ticket": {
+          "pages": 1,
+          "titular_name": true,
+          "titular_rif": true,
+          "buyer_name": true,
+          "pdf_sha256": "9ce6d35f777fe4b3dc58ba0bb7e455f138d114a8c7cad22ad2a1375f74ecdd82",
+          "qr_matches_saved_hka_url": true
+        }
+      }
+    },
+    {
+      "number": 2039,
+      "control": "00-00000051",
+      "currency": "VES",
+      "total": 261.29,
+      "balance": 0,
+      "status": "confirmed",
+      "type": "01",
+      "transaction": "99",
+      "titular_rif": "V234567891",
+      "buyer_preserved": true,
+      "buyer_and_titular_separate": true,
+      "mail_notification": "No",
+      "titular_fields": [
+        "tipo",
+        "direccion",
+        "razonSocial",
+        "tipoIdentificacion",
+        "numeroIdentificacion"
+      ],
+      "active_payments_sum": 261.29,
+      "payload_sha256": "1b04088c3a261b6c4c213cd4668f47323b457a43233b9acbb8116196f2771c69",
+      "pdf_sha256": {
+        "a4": "f6a8555e892b5cb551d568c7babf5162b1222a4122557dc0a212459b97b2d702",
+        "a5": "25f1e959514c7fa062f1bfb183e68a9c0e45982119ef616c97c03aeb225025a4",
+        "ticket": "526aebdf0d66881d20713ea75a5b1da5404bdb0cf530386dd9048c95791df344"
+      },
+      "pdf_checks": {
+        "a4": {
+          "pages": 1,
+          "titular_name": true,
+          "titular_rif": true,
+          "buyer_name": true,
+          "pdf_sha256": "f6a8555e892b5cb551d568c7babf5162b1222a4122557dc0a212459b97b2d702"
+        },
+        "a5": {
+          "pages": 1,
+          "titular_name": true,
+          "titular_rif": true,
+          "buyer_name": true,
+          "pdf_sha256": "25f1e959514c7fa062f1bfb183e68a9c0e45982119ef616c97c03aeb225025a4"
+        },
+        "ticket": {
+          "pages": 1,
+          "titular_name": true,
+          "titular_rif": true,
+          "buyer_name": true,
+          "pdf_sha256": "526aebdf0d66881d20713ea75a5b1da5404bdb0cf530386dd9048c95791df344",
+          "qr_matches_saved_hka_url": true
+        }
+      }
+    }
+  ],
+  "goods_stock": 85,
+  "browser_edit": {
+    "number": 2039,
+    "number_preserved": true,
+    "uuid_renewed": true,
+    "payments_preserved": true,
+    "total_preserved": true,
+    "zero_balance": true,
+    "explicit_send_required": true,
+    "old_titular_rif": "J509990016",
+    "new_titular_rif": "V234567891"
+  },
+  "tests": {
+    "javascript": {
+      "tests": 125,
+      "passed": 125
+    },
+    "php_focused": {
+      "tests": 98,
+      "assertions": 1432,
+      "passed": 98
+    },
+    "php_unit": {
+      "tests": 667,
+      "assertions": 15058,
+      "preexisting_failures": 2,
+      "skipped": 15
+    },
+    "mysql_third_party": {
+      "tests": 1,
+      "assertions": 105,
+      "passed": 1
+    },
+    "mysql_installation_and_regressions": {
+      "tests": 4,
+      "assertions": 1986,
+      "passed": 4
+    }
+  },
+  "provider_observation": "Los originales DEMO anteponen otra vez la letra al RIF completo del tercero; se conservan sus bytes.",
+  "original_pdfs_kept_private": true,
+  "schema_comparison": {
+    "complete_schema_compared": true,
+    "tables": 339,
+    "columns": 4076,
+    "indexes_rows": 1104,
+    "foreign_key_rows": 514,
+    "intentional_differences": {
+      "tables": {
+        "removed": [],
+        "added": []
+      },
+      "columns": {
+        "removed": [],
+        "added": [
+          {
+            "TABLE_NAME": "document_fiscal_data",
+            "COLUMN_NAME": "third_party_person_id",
+            "COLUMN_DEFAULT": null,
+            "IS_NULLABLE": "YES",
+            "COLUMN_TYPE": "int(10) unsigned",
+            "CHARACTER_SET_NAME": null,
+            "COLLATION_NAME": null,
+            "EXTRA": "",
+            "COLUMN_COMMENT": ""
+          },
+          {
+            "TABLE_NAME": "persons",
+            "COLUMN_NAME": "is_third_party",
+            "COLUMN_DEFAULT": "0",
+            "IS_NULLABLE": "NO",
+            "COLUMN_TYPE": "tinyint(1)",
+            "CHARACTER_SET_NAME": null,
+            "COLLATION_NAME": null,
+            "EXTRA": "",
+            "COLUMN_COMMENT": ""
+          },
+          {
+            "TABLE_NAME": "persons",
+            "COLUMN_NAME": "third_party_activity",
+            "COLUMN_DEFAULT": null,
+            "IS_NULLABLE": "YES",
+            "COLUMN_TYPE": "varchar(100)",
+            "CHARACTER_SET_NAME": "utf8mb4",
+            "COLLATION_NAME": "utf8mb4_unicode_ci",
+            "EXTRA": "",
+            "COLUMN_COMMENT": ""
+          },
+          {
+            "TABLE_NAME": "persons",
+            "COLUMN_NAME": "third_party_rif",
+            "COLUMN_DEFAULT": null,
+            "IS_NULLABLE": "YES",
+            "COLUMN_TYPE": "varchar(10)",
+            "CHARACTER_SET_NAME": "utf8mb4",
+            "COLLATION_NAME": "utf8mb4_unicode_ci",
+            "EXTRA": "",
+            "COLUMN_COMMENT": ""
+          }
+        ]
+      },
+      "indexes": {
+        "removed": [],
+        "added": [
+          {
+            "TABLE_NAME": "document_fiscal_data",
+            "INDEX_NAME": "document_fiscal_data_third_party_person_id_foreign",
+            "NON_UNIQUE": 1,
+            "SEQ_IN_INDEX": 1,
+            "COLUMN_NAME": "third_party_person_id",
+            "COLLATION": "A",
+            "SUB_PART": null,
+            "INDEX_TYPE": "BTREE",
+            "INDEX_COMMENT": ""
+          },
+          {
+            "TABLE_NAME": "persons",
+            "INDEX_NAME": "persons_third_party_enabled_index",
+            "NON_UNIQUE": 1,
+            "SEQ_IN_INDEX": 1,
+            "COLUMN_NAME": "type",
+            "COLLATION": "A",
+            "SUB_PART": null,
+            "INDEX_TYPE": "BTREE",
+            "INDEX_COMMENT": ""
+          },
+          {
+            "TABLE_NAME": "persons",
+            "INDEX_NAME": "persons_third_party_enabled_index",
+            "NON_UNIQUE": 1,
+            "SEQ_IN_INDEX": 2,
+            "COLUMN_NAME": "is_third_party",
+            "COLLATION": "A",
+            "SUB_PART": null,
+            "INDEX_TYPE": "BTREE",
+            "INDEX_COMMENT": ""
+          },
+          {
+            "TABLE_NAME": "persons",
+            "INDEX_NAME": "persons_third_party_enabled_index",
+            "NON_UNIQUE": 1,
+            "SEQ_IN_INDEX": 3,
+            "COLUMN_NAME": "enabled",
+            "COLLATION": "A",
+            "SUB_PART": null,
+            "INDEX_TYPE": "BTREE",
+            "INDEX_COMMENT": ""
+          },
+          {
+            "TABLE_NAME": "persons",
+            "INDEX_NAME": "persons_third_party_rif_unique",
+            "NON_UNIQUE": 0,
+            "SEQ_IN_INDEX": 1,
+            "COLUMN_NAME": "third_party_rif",
+            "COLLATION": "A",
+            "SUB_PART": null,
+            "INDEX_TYPE": "BTREE",
+            "INDEX_COMMENT": ""
+          }
+        ]
+      },
+      "foreign_keys": {
+        "removed": [],
+        "added": [
+          {
+            "TABLE_NAME": "document_fiscal_data",
+            "CONSTRAINT_NAME": "document_fiscal_data_third_party_person_id_foreign",
+            "ORDINAL_POSITION": 1,
+            "COLUMN_NAME": "third_party_person_id",
+            "REFERENCED_TABLE_NAME": "persons",
+            "REFERENCED_COLUMN_NAME": "id",
+            "UPDATE_RULE": "RESTRICT",
+            "DELETE_RULE": "RESTRICT"
+          }
+        ]
+      }
+    }
+  },
+  "cleanup": {
+    "database_removed": true,
+    "database_user_removed": true,
+    "central_client_removed": true,
+    "central_hostname_removed": true,
+    "central_website_removed": true,
+    "tenant_storage_removed": true,
+    "tenant_cache_keys_removed": true,
+    "private_evidence_preserved": true,
+    "browser_tab_closed": true,
+    "test_downloads_archived_and_removed": true
+  },
+  "browser_final": {
+    "asset": "assets/app-f3731006.js",
+    "required_rif_error_visible": true,
+    "required_activity_error_visible": true,
+    "errors_displayed_in_separate_red_lines": true,
+    "titular_save_preserves_buyer": true,
+    "validation_screenshot": "terceros_validaciones_2026_10_11.png"
+  },
+  "php_syntax": {
+    "files": 31,
+    "failures": 0
+  }
+}

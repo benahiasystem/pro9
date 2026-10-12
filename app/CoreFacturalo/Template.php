@@ -20,6 +20,15 @@ class Template
         $fiscal = \App\Services\Fiscal\FiscalPdfData::forDocument($document);
         $company = \App\Services\Fiscal\FiscalPdfData::issuerForPrint($company, $fiscal);
         $html = self::render($path_template, $company, $document, $configuration);
+        if (($document->document_type_id ?? null) === '01' && \App\Services\ThirdPartyInvoicePolicy::isThirdParty($document)) {
+            $third = (array) $document->fiscal_data->third_party;
+            $thirdIdentity = view('pdf.partials.third_party_identity', compact('third'))->render();
+            if (preg_match('/<body\b[^>]*>/i', $html)) {
+                $html = preg_replace_callback('/<body\b[^>]*>/i', fn ($match) => $match[0].$thirdIdentity, $html, 1);
+            } else {
+                $html = $thirdIdentity.$html;
+            }
+        }
         if ($fiscal) {
             $identity = view('pdf.partials.fiscal_identity', compact('fiscal'))->render();
             if (preg_match('/<body\b[^>]*>/i', $html)) {

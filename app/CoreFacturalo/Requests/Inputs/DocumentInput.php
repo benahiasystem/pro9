@@ -113,6 +113,7 @@ class DocumentInput
             'exchange_rate_date' => $inputs['exchange_rate_date'] ?? $inputs['date_of_issue'],
             'taxes' => $inputs['taxes'] ?? [],
             'fiscal_data' => $inputs['fiscal_data'] ?? [],
+            'third_party_id' => $inputs['third_party_id'] ?? null,
             'received_retentions' => $inputs['received_retentions'] ?? [],
             'guarantee_fund' => $inputs['guarantee_fund'] ?? null,
             // ######## FIN PERSISTENCIA FISCAL VENEZUELA ########

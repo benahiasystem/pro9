@@ -290,6 +290,27 @@ class CurrentPdfRenderingTest extends TestCase
         return [[false, false, 72], [true, false, 76], [false, true, 70]];
     }
 
+    public function test_third_party_ticket_identifies_the_frozen_titular_and_balances_adjustments_and_igtf(): void
+    {
+        $document=$this->documentFixture();
+        $document->items->first()->additional_information=[];
+        $document->fiscal_data=new Fluent(['transaction_type_id'=>'99','third_party'=>[
+            'rif'=>'V234567891','name'=>'TITULAR CONSERVADO','address'=>'DOMICILIO CONSERVADO']]);
+        $document->total_discount=30;$document->total_discount_with_igv=23.2;$document->total_charge=15;
+        $document->subtotal=237.45;$document->total=244.57;
+        $document->taxes=new Collection([new Fluent(['tax_kind'=>'IGTF','amount'=>7.12])]);
+        $company=new Fluent(['name'=>'Emisor de prueba','number'=>'J123456789','logo'=>null]);
+        $html=(new Template())->pdf('default','invoice',$company,$document,'ticket');
+        self::assertStringContainsString('VENTA POR CUENTA DE TERCEROS',$html);
+        self::assertStringContainsString('V234567891 · TITULAR CONSERVADO',$html);
+        self::assertStringContainsString('DOMICILIO CONSERVADO',$html);
+        self::assertStringContainsString('252.45</td>',$html);
+        self::assertStringContainsString('30.00</td>',$html);
+        self::assertStringContainsString('7.12</td>',$html);
+        self::assertStringContainsString('244.57</td>',$html);
+        self::assertStringNotContainsString('260.65</td>',$html);
+    }
+
     private function documentFixture(): CurrentPdfDocumentFixture
     {
         $location = new Fluent(['description' => 'Caracas']);

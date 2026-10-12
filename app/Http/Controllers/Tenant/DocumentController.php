@@ -946,6 +946,7 @@ class DocumentController extends Controller
                 'message' => 'Venta guardada.',
                 'data' => [
                     'id' => $document->id,
+                    ...\App\Services\ThirdPartyInvoicePolicy::view($document),
                     'number_full' => $document->number_full,
                     'response' => $response,
                     'fiscal_emission' => \App\Services\Fiscal\DocumentEmissionView::forDocument($document),
@@ -1063,7 +1064,7 @@ class DocumentController extends Controller
         return [
             'success' => true,
             'message' => 'Factura actualizada. Los cobros registrados se conservaron. El envío HKA se realiza desde Enviar HKA.',
-            'data' => array_merge($edit, [
+            'data' => array_merge($edit, \App\Services\ThirdPartyInvoicePolicy::view($document), [
                 'id' => $document->id,
                 'is_editable' => $edit['can_edit'],
                 'fiscal_emission' => \App\Services\Fiscal\DocumentEmissionView::forDocument($document),
@@ -1097,7 +1098,7 @@ class DocumentController extends Controller
         }
 
         return response()->json([
-            'data' => array_merge($document->toArray(), \App\Services\Fiscal\DocumentEditPolicy::view($document), ['fiscal_emission' => \App\Services\Fiscal\DocumentEmissionView::forDocument($document)]),
+            'data' => array_merge($document->toArray(), \App\Services\Fiscal\DocumentEditPolicy::view($document), \App\Services\ThirdPartyInvoicePolicy::view($document), ['fiscal_emission' => \App\Services\Fiscal\DocumentEmissionView::forDocument($document)]),
             'success' => true,
         ], 200);
     }
@@ -1181,6 +1182,20 @@ class DocumentController extends Controller
         // ######## INICIO POLITICA IDENTIDAD ACTIVA EN VENTAS ########
         return \App\Services\SalesCustomerIdentityPolicy::activeIdentityTypeIds(\App\Services\ExportInvoicePolicy::isExport($operation_type_id));
         // ######## FIN POLITICA IDENTIDAD ACTIVA EN VENTAS ########
+    }
+
+    public function searchThirdParties(Request $request)
+    {
+        $request->validate(['input' => 'nullable|string|max:100']);
+        if (!\App\Services\ExportInvoicePolicy::available(Company::firstOrFail())) {
+            \App\Services\Fiscal\FiscalAmounts::error('third_party_id', 'La facturación por terceros requiere Medios digitales y DEMO.');
+        }
+        $input = trim((string) $request->input('input', ''));
+        $customers = Person::whereType('customers')->where('enabled', true)->where('is_third_party', true)
+            ->where('country_id', 'VE')->whereFilterCustomerBySeller('customers')
+            ->when($input !== '', fn ($query) => $query->where(fn ($q) => $q->where('name', 'like', '%'.$input.'%')->orWhere('third_party_rif', 'like', '%'.\App\Support\System\Rif::normalize($input).'%')))
+            ->orderBy('name')->limit(20)->get()->map(fn ($person) => $person->only(['id','name','third_party_rif','third_party_activity','address','email']));
+        return compact('customers');
     }
 
     public function changeToRegisteredStatus($document_id)
@@ -1366,7 +1381,7 @@ class DocumentController extends Controller
             $records = $records->where('additional_information', 'like', '%' . $observations . '%');
         }
 
-        return $records;
+        return $records->with('fiscal_data');
     }
 
     public function data_table()

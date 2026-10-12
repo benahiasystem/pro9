@@ -24,6 +24,22 @@ class PersonRequest extends FormRequest
             return;
         }
 
+        // Omitted fields on an existing client must not remove its classification.
+        $personId = $this->input('id');
+        $existing = (is_int($personId) || (is_string($personId) && ctype_digit($personId))) ? \App\Models\Tenant\Person::query()->setEagerLoads([])->whereType('customers')->find($personId) : null;
+        $thirdParty = $this->has('is_third_party') ? $this->boolean('is_third_party') : (bool) optional($existing)->is_third_party;
+        $thirdRif = $this->input('third_party_rif', optional($existing)->third_party_rif);
+        $activity = $this->input('third_party_activity', optional($existing)->third_party_activity);
+        if (!$thirdParty && $existing) {
+            $thirdRif = $existing->third_party_rif;
+            $activity = $existing->third_party_activity;
+        }
+        $this->merge([
+            'is_third_party' => $this->input('is_third_party', $thirdParty),
+            'third_party_rif' => is_string($thirdRif) ? (\App\Support\System\Rif::normalize($thirdRif) ?: null) : $thirdRif,
+            'third_party_activity' => is_string($activity) ? trim($activity) : $activity,
+        ]);
+
         $identityDocumentTypeId = (string) $this->input('identity_document_type_id');
         $isNonDomiciled = $identityDocumentTypeId === 'ND';
         $countryId = $isNonDomiciled ? $this->input('country_id') : Localization::countryId();
@@ -134,6 +150,7 @@ class PersonRequest extends FormRequest
         $isForeignCustomer = $type === 'customers'
             && (string) $this->input('identity_document_type_id') === self::FOREIGN_DOCUMENT_TYPE_ID;
         $isNonDomiciled = $type === 'customers' && $this->input('identity_document_type_id') === 'ND';
+        $isThirdParty = $type === 'customers' && $this->boolean('is_third_party');
         $numberRules = [
             'required',
             Rule::unique('tenant.persons', 'number')->where(function ($query) use($id, $type, $isNonDomiciled) {
@@ -162,6 +179,7 @@ class PersonRequest extends FormRequest
             'number' => $numberRules,
             'name' => [
                 'required',
+                'max:'.($isThirdParty ? 100 : 255),
                 Rule::unique('tenant.persons', 'name')->where(function ($query) use($id, $type) {
                     $query->where('type', $type);
                 })->ignore($id, 'id')
@@ -169,12 +187,17 @@ class PersonRequest extends FormRequest
             'identity_document_type_id' => [
                 'required',
                 Rule::in($type === 'customers' ? IdentityDocument::ids() : array_diff(IdentityDocument::ids(), ['ND'])),
+                Rule::notIn($isThirdParty ? ['ND'] : []),
             ],
+            'is_third_party' => $type === 'customers' ? ['sometimes', 'boolean'] : ['sometimes', 'boolean', Rule::in([false, 0, '0'])],
+            'third_party_rif' => $type === 'customers' ? [Rule::requiredIf($isThirdParty), 'nullable', 'string', 'regex:/^[VEJPG][0-9]{9}$/D', Rule::unique('tenant.persons', 'third_party_rif')->ignore($id)] : ['prohibited'],
+            'third_party_activity' => $type === 'customers' ? [Rule::requiredIf($isThirdParty), 'nullable', 'string', 'max:100'] : ['prohibited'],
             'external_identity_type' => $isNonDomiciled ? ['required', 'string', 'regex:/^[A-Z]{2,4}$/D', 'not_in:ND'] : ['nullable'],
             'country_id' => [
                 'required',
                 Rule::exists('tenant.countries', 'id'),
                 Rule::notIn($isNonDomiciled ? ['VE'] : []),
+                ...($isThirdParty ? [Rule::in(['VE'])] : []),
             ],
             'addresses.*.country_id' => $isNonDomiciled ? ['required', Rule::exists('tenant.countries', 'id'), 'not_in:VE'] : [],
             'nationality_id' => [
@@ -196,13 +219,14 @@ class PersonRequest extends FormRequest
                 'required_if:identity_document_type_id,"066"',
             ],
             'address' => [
-                Rule::requiredIf($isNonDomiciled),
+                Rule::requiredIf($isNonDomiciled || $isThirdParty),
                 'max:255',
                 'required_if:identity_document_type_id,"066"',
             ],
             'email' => [
                 isset($email) ? 'required' : 'nullable',
                 'email',
+                'max:'.($isThirdParty ? 50 : 255),
                 Rule::unique('tenant.persons', 'email')->ignore($id, 'id')
             ]
             ,
@@ -213,6 +237,11 @@ class PersonRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'is_third_party.in' => 'La clasificación como tercero pertenece únicamente a Clientes.',
+            'third_party_rif.required' => 'El tercero requiere su RIF fiscal completo.',
+            'third_party_rif.regex' => 'Ingrese un RIF completo: letra V, E, J, P o G seguida de nueve dígitos.',
+            'third_party_rif.unique' => 'Este RIF fiscal ya pertenece a otro cliente tercero.',
+            'third_party_activity.required' => 'La actividad comercial es obligatoria para el tercero.',
             'nationality_id.required' => 'La nacionalidad es obligatoria para un cliente extranjero.',
             'nationality_id.not_in' => 'Seleccione una nacionalidad extranjera.',
             'number.regex' => $this->input('identity_document_type_id') === 'ND' ? 'El identificador extranjero admite letras, números, punto y guion, hasta 45 caracteres.' : 'El campo número debe contener solo números.',

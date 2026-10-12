@@ -130,6 +130,9 @@ use Illuminate\Support\Facades\DB;
             'type',
             'identity_document_type_id',
             'external_identity_type',
+            'is_third_party',
+            'third_party_rif',
+            'third_party_activity',
             'number',
             'name',
             'trade_name',
@@ -171,6 +174,7 @@ use Illuminate\Support\Facades\DB;
         ];
 
         protected $casts = [
+            'is_third_party' => 'bool',
             'perception_agent' => 'bool',
             'person_type_id' => 'int',
             'percentage_perception' => 'float',
@@ -677,6 +681,9 @@ use Illuminate\Support\Facades\DB;
                 'location_id' => $location_id,
                 'establishment_code' => $this->establishment_code,
                 'is_agent_retention' => $this->is_agent_retention,
+                'is_third_party' => (bool) $this->is_third_party,
+                'third_party_rif' => $this->third_party_rif,
+                'third_party_activity' => $this->third_party_activity,
             ];
             if ($childrens == true) {
                 $child = $this->children_person->transform(function ($row) {

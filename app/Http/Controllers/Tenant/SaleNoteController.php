@@ -343,6 +343,7 @@ class SaleNoteController extends Controller
 
     public function storeWithData($inputs)
     {
+        \App\Services\ThirdPartyInvoicePolicy::assertInput($inputs);
         // ######## INICIO POLITICA IDENTIDAD ACTIVA EN VENTAS ########
         SalesCustomerIdentityPolicy::assertCustomerAllowed($inputs['customer_id'] ?? null);
         // ######## FIN POLITICA IDENTIDAD ACTIVA EN VENTAS ########

@@ -34,6 +34,11 @@ class DocumentRequest extends FormRequest
         return [
             'control_number' => 'prohibited',
             'issuer' => 'prohibited',
+            'third_party_id' => 'nullable|integer|min:1',
+            'third_party' => 'prohibited',
+            'fiscal_data' => 'nullable|array',
+            'fiscal_data.third_party' => 'prohibited',
+            'fiscal_data.third_party_person_id' => 'prohibited',
             // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
             'document_type_id' => [
                 'required',

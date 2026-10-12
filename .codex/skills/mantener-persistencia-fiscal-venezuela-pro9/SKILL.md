@@ -68,3 +68,7 @@ Las reglas de registro, incertidumbre y bloqueo HKA de esta sección corresponde
 - Pro9 conserva tasas como cadenas decimales de ocho posiciones en `DECIMAL(18,8)`, incluidos ceros finales. La API BCV devuelve cadenas y mantiene token fijo.
 - Calcular conversiones con `Brick\Math\BigRational` en PHP y `ExactAmount`/`BigInt` en JavaScript. No redondear la tasa; redondear sólo el importe final a su precisión vigente.
 - Excepción autorizada para tenants existentes: `exchange-rates:upgrade-precision --all-tenants --dry-run` y luego sin `--dry-run`, tras pruebas en MySQL temporal. El comando amplía únicamente las columnas inventariadas en `config/exchange_rate_precision.php`; no reconstruye bases ni recupera decimales históricos.
+
+## Persistencia de ventas por terceros
+
+Aplicar [contrato y evidencia](../../../informes/facturas_cuenta_terceros_hka.md). Resolver third_party_id bajo bloqueo dentro del tenant antes de efectos comerciales; conservar la referencia restrictiva y el snapshot en document_fiscal_data, con transacción 99. Exigir contado, saldo cero y pagos reales completos antes del commit. Una edición mantiene la categoría, cobros y numeración, renueva snapshot/UUID y requiere envío explícito. Desmarcar clientes no modifica históricos. Bloquear notas vinculadas y el IGTF posterior que genere una nota; conservar IGTF inicial, recibos derivados e inventario actuales. No permitir el flujo desde API, POS, Garage ni notas de venta.

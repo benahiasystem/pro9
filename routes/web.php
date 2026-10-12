@@ -382,6 +382,7 @@ if ($hostname) {
             Route::post('documents/categories', 'Tenant\DocumentController@storeCategories');
             Route::post('documents/brands', 'Tenant\DocumentController@storeBrands');
             Route::get('documents/search/customers', 'Tenant\DocumentController@searchCustomers');
+            Route::get('documents/search/third-parties', 'Tenant\DocumentController@searchThirdParties');
             Route::get('documents/search/customer/{id}', 'Tenant\DocumentController@searchCustomerById');
             Route::get('documents/search/externalId/{external_id}', 'Tenant\DocumentController@searchExternalId');
 

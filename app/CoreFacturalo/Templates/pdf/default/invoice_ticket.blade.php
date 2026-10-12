@@ -16,6 +16,9 @@ $document_number = $document->number_full;
 
     $document_base = ($document->note) ? $document->note : null;
     $payments = $document->payments;
+    $third_party_sale = \App\Services\ThirdPartyInvoicePolicy::isThirdParty($document);
+    $discount_for_totals = $third_party_sale ? (float) $document->total_discount : (float) $document->total_discount_with_igv;
+    $igtf_for_totals = $third_party_sale ? collect($document->taxes ?? [])->where('tax_kind', 'IGTF')->sum('amount') : 0;
 
     if($document_base) {
         /* ######## INICIO NUMERACIÓN FISCAL VENEZUELA ######## */
@@ -126,7 +129,8 @@ $affected_document_number = $document_base->affected_document ? $document_base->
         <td class="text-center pt-3 border-top"><h3>{{ 'R.I.F. '.$company->number }}</h3></td>
     </tr>
     <tr>
-        <td class="text-center"><h4>{{ \App\Services\ExportInvoicePolicy::isExport($invoice->operation_type_id ?? '') ? 'FACTURA DE EXPORTACIÓN · '.\App\Services\ExportInvoicePolicy::INCOTERMS[$invoice->operation_type_id] : $document->document_type->description }}</h4></td>
+        <td class="text-center"><h4>{{ \App\Services\ExportInvoicePolicy::isExport($invoice->operation_type_id ?? '') ? 'FACTURA DE EXPORTACIÓN · '.\App\Services\ExportInvoicePolicy::INCOTERMS[$invoice->operation_type_id] : $document->document_type->description }}</h4>
+        </td>
     </tr>
     <tr>
         <td class="text-center pb-3 border-bottom"><h3>{{ $document_number }}</h3></td>
@@ -165,9 +169,9 @@ $affected_document_number = $document_base->affected_document ? $document_base->
                     @if(($customer->identity_document_type_id ?? '') === 'ND')
                         {{ ', '.$customer->country->description }}
                     @else
-                        {{ ($customer->district_id !== '-')? ', '.$customer->district->description : '' }}
-                        {{ ($customer->province_id !== '-')? ', '.$customer->province->description : '' }}
-                        {{ ($customer->department_id !== '-')? '- '.$customer->department->description : '' }}
+                        {{ ($customer->district->description ?? '') !== '' ? ', '.$customer->district->description : '' }}
+                        {{ ($customer->province->description ?? '') !== '' ? ', '.$customer->province->description : '' }}
+                        {{ ($customer->department->description ?? '') !== '' ? '- '.$customer->department->description : '' }}
                     @endif
                 </p>
             </td>
@@ -500,7 +504,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
                     @if($row->discounts)
                         @foreach($row->discounts as $dtos)
                             @if(!($dtos->from_global_distribution ?? false))
-                                <br/><small>{{ ($dtos->is_amount ?? false) ? '' : ($dtos->factor * 100).'%' }} {{$dtos->description }}</small>
+                                <br/><small>{{ ($dtos->is_amount ?? false) ? '' : ($dtos->factor * 100).'%' }} {{$dtos->description ?? 'Descuento' }}</small>
                             @endif
                         @endforeach
                     @endif
@@ -508,7 +512,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
                     @if($row->charges)
                         @foreach($row->charges as $charge)
                             <br/><small>{{ $document->currency_type->symbol}} {{ $charge->amount}}
-                                ({{ $charge->factor * 100 }}%) {{$charge->description }}</small>
+                                ({{ $charge->factor * 100 }}%) {{$charge->description ?? 'Cargo' }}</small>
                         @endforeach
                     @endif
 
@@ -637,8 +641,8 @@ $affected_document_number = $document_base->affected_document ? $document_base->
 
     @if($document->subtotal > 0)
         @php
-            $labelSubtotal = $document->total_discount_with_igv > 0 ? 'SUMA DE IMPORTES' : 'SUBTOTAL';
-            $subtotal = $document->total_discount_with_igv > 0 ? $document->subtotal + $document->total_discount_with_igv : $document->subtotal;
+            $labelSubtotal = $discount_for_totals > 0 ? 'SUMA DE IMPORTES' : 'SUBTOTAL';
+            $subtotal = $document->subtotal + $discount_for_totals - ($third_party_sale ? $document->total_charge : 0);
         @endphp
         <tr>
             <td colspan="2" class="text-right font-bold desc">{{ $labelSubtotal }}: {{ $document->currency_type->symbol }}</td>
@@ -646,11 +650,11 @@ $affected_document_number = $document_base->affected_document ? $document_base->
         </tr>
     @endif
 
-    @if($document->total_discount_with_igv > 0)
+    @if($discount_for_totals > 0)
         <tr>
             <td colspan="2" class="text-right font-bold desc">DESCUENTO
                 TOTAL: {{ $document->currency_type->symbol }}</td>
-            <td class="text-right font-bold desc">{{ number_format($document->total_discount_with_igv, 2) }}</td>
+            <td class="text-right font-bold desc">{{ number_format($discount_for_totals, 2) }}</td>
         </tr>
     @endif
 
@@ -674,7 +678,12 @@ $affected_document_number = $document_base->affected_document ? $document_base->
             </tr>
         @endif
     @endif
-
+    @if($igtf_for_totals > 0)
+        <tr>
+            <td colspan="2" class="text-right font-bold desc">IGTF: {{ $document->currency_type->symbol }}</td>
+            <td class="text-right font-bold desc">{{ number_format($igtf_for_totals, 2) }}</td>
+        </tr>
+    @endif
 
         <tr>
             <td class="text-left font-bold desc" style="white-space: nowrap;">Productos: {{ rtrim(rtrim(number_format(collect($document->items)->sum(function ($item) { return (float) data_get($item, 'quantity', 0); }), 2, '.', ''), '0'), '.') }}</td>

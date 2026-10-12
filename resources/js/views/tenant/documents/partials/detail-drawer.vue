@@ -43,6 +43,12 @@
                           :closable="false" show-icon />
 
                 <div class="detail-drawer__body document-detail-drawer__body">
+                    <div v-if="record.is_third_party_invoice && record.third_party" class="detail-drawer__section-card mb-3">
+                        <strong>Venta por cuenta de terceros</strong>
+                        <div>{{ record.third_party.rif }} · {{ record.third_party.name }}</div>
+                        <div>{{ record.third_party.address }}</div>
+                        <small>{{ record.third_party.activity }}</small>
+                    </div>
                     <el-tabs v-model="activeTab">
                         <el-tab-pane label="Productos / Servicios" name="products">
                             <div class="detail-drawer__section-card document-detail-drawer__section-card">
@@ -310,6 +316,7 @@ export default {
                 || `#${this.record?.id || ''}`;
         },
         documentTypeLabel() {
+            if (this.record?.is_third_party_invoice) return 'Venta por cuenta de terceros';
             if (this.record?.exportation) return `Factura de exportación · ${this.record.incoterm}`;
             return this.record?.document_type_description || 'Comprobante';
         },
@@ -606,6 +613,9 @@ export default {
                         total_exportation: data.total_exportation ?? snapshot.total_exportation,
                         exportation: data.exportation ?? snapshot.exportation,
                         incoterm: data.incoterm ?? snapshot.incoterm,
+                        is_third_party_invoice: data.is_third_party_invoice ?? snapshot.is_third_party_invoice,
+                        third_party: data.third_party ?? snapshot.third_party,
+                        third_party_id: data.third_party_id ?? snapshot.third_party_id,
                         total_igv: data.total_igv ?? snapshot.total_igv,
                         total: data.total ?? snapshot.total,
                         balance: data.balance ?? snapshot.balance,

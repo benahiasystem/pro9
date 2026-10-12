@@ -43,7 +43,11 @@ final class DocumentEditPolicy
         $emission = $document->emission;
         if (!$emission) return;
         if ($emission->status === 'not_requested') {
-            $emission->update(['response' => ['edit_history' => $emission->response['edit_history'] ?? []]]);
+            $changes = ['response' => ['edit_history' => $emission->response['edit_history'] ?? []]];
+            if (\App\Services\ThirdPartyInvoicePolicy::isThirdParty($document)) {
+                $changes['operation_key'] = (string) Str::uuid();
+            }
+            $emission->update($changes);
             return;
         }
         self::assertEditable($document);

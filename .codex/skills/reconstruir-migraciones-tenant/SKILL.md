@@ -84,3 +84,7 @@ Al tocar documentos, pagos o relaciones fiscales, aplicar [persistencia fiscal y
 - Pro9 conserva tasas como cadenas decimales de ocho posiciones en `DECIMAL(18,8)`, incluidos ceros finales. La API BCV devuelve cadenas y mantiene token fijo.
 - Calcular conversiones con `Brick\Math\BigRational` en PHP y `ExactAmount`/`BigInt` en JavaScript. No redondear la tasa; redondear sólo el importe final a su precisión vigente.
 - Excepción autorizada para tenants existentes: `exchange-rates:upgrade-precision --all-tenants --dry-run` y luego sin `--dry-run`, tras pruebas en MySQL temporal. El comando amplía únicamente las columnas inventariadas en `config/exchange_rate_precision.php`; no reconstruye bases ni recupera decimales históricos.
+
+## Titulares de facturas por terceros
+
+El consolidado de persons incluye is_third_party=false, third_party_rif nullable varchar(10) único por tenant y third_party_activity nullable varchar(100). document_fiscal_data incluye third_party_person_id nullable y third_party JSON; agregar la FK a persons con ON DELETE RESTRICT en 000999 y retirarla en orden inverso. No convertir tenants existentes. Ver [implementación](../../../informes/facturas_cuenta_terceros_hka.md) y la prueba MySQL de terceros en FiscalEmissionSchemaTest, además de instalación/seeding/rollback/repetición.

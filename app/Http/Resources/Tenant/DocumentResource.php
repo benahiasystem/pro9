@@ -60,6 +60,7 @@ class DocumentResource extends JsonResource
 
         $edit = \App\Services\Fiscal\DocumentEditPolicy::view($document);
         $data = [
+            ...\App\Services\ThirdPartyInvoicePolicy::view($document),
             'can_edit' => $edit['can_edit'],
             'edit_block_reason' => $edit['edit_block_reason'],
             'is_editable' => $edit['can_edit'],

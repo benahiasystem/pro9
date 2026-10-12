@@ -7,5 +7,6 @@ class DocumentFiscalData extends ModelTenant
     protected $guarded = ['id'];
     protected $casts = ['catalog_snapshot' => 'array', 'third_party' => 'array', 'conditional_data' => 'array'];
     public function document() { return $this->belongsTo(Document::class); }
+    public function third_party_person() { return $this->belongsTo(Person::class, 'third_party_person_id'); }
 }
 // ######## FIN PERSISTENCIA FISCAL VENEZUELA ########

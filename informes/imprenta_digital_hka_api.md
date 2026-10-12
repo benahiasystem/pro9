@@ -491,3 +491,7 @@ Por petición posterior, **Total** es una columna permanente del listado de comp
 ## Exportación de bienes — 9 de octubre de 2026
 
 La nueva implementación web DEMO, identidad ND/tipo externo, afectación EXP, INCOTERM y totales separados se documentan en [facturas de exportación HKA](facturas_exportacion_hka.md). Las descripciones anteriores de exportación bloqueada representan el estado histórico previo a esta ampliación. Producción y notas de exportación siguen deshabilitadas.
+
+## Facturas por cuenta de terceros — 11 de octubre de 2026
+
+Se implementó la transacción 99 de Factura 01 mediante Emision normal, con titular registrado en Clientes y snapshot independiente del comprador. La matriz real DEMO acredita titulares J/V en VES/USD, más descuentos, cargos, exentos, IGTF y edición/envío desde el navegador. Ver [implementación, restricciones y evidencia](facturas_cuenta_terceros_hka.md). Producción, otros canales y notas vinculadas no se habilitan.

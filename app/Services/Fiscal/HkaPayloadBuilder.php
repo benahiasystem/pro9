@@ -28,10 +28,22 @@ final class HkaPayloadBuilder
             if (empty($d['issuer'][$field])) FiscalAmounts::error('issuer.'.$field,'Falta el snapshot fiscal del emisor.');
         }
         $fiscal = $d['fiscal_data'] ?? [];
+        $thirdParty = ($fiscal['transaction_type_id'] ?? '01') === '99';
         $operation = $d['invoice']['operation_type_id'] ?? '0101';
         $exportation = \App\Services\ExportInvoicePolicy::isExport($operation);
-        if ((!$exportation && ($operation !== '0101' || ($d['total_exportation'] ?? 0) > 0)) || !empty($fiscal['special_tax_regime_id']) || !empty($fiscal['third_party']) || !empty($fiscal['conditional_data'])) {
+        if ((!$exportation && ($operation !== '0101' || ($d['total_exportation'] ?? 0) > 0)) || !empty($fiscal['special_tax_regime_id']) || (!$thirdParty && !empty($fiscal['third_party'])) || !empty($fiscal['conditional_data'])) {
             FiscalAmounts::error('fiscal_data','La operación, régimen o condición fiscal seleccionada no está habilitada.');
+        }
+        if ($thirdParty) {
+            if ($d['document_type_id'] !== '01' || $operation !== '0101' || ($d['payment_condition_id'] ?? null) !== '01') FiscalAmounts::error('fiscal_data', 'La transacción 99 requiere una Factura de venta interna al contado.');
+            \App\Services\ThirdPartyInvoicePolicy::hkaThirdParty($fiscal['third_party'] ?? []);
+            $paid = 0; $real = false;
+            foreach ($d['payments'] ?? [] as $payment) {
+                if (!empty($payment['reversed_at'])) continue;
+                $paid += $payment['payment'] ?? 0;
+                if (empty($payment['receipt_parent_id']) && ($payment['payment'] ?? 0) > 0) $real = true;
+            }
+            if (!$real || abs($paid - $d['total']) > 0.005) FiscalAmounts::error('payments', 'La transacción 99 requiere cobros reales por el importe completo de la factura.');
         }
         if ($exportation) {
             $term = \App\Services\ExportInvoicePolicy::INCOTERMS[$operation];
@@ -55,7 +67,7 @@ final class HkaPayloadBuilder
         }
         $transaction = $fiscal['transaction_type_id'] ?? '01';
         $provider = $fiscal['catalog_snapshot']['provider_type_id']['code'] ?? null;
-        if (!in_array($transaction,['01','98'],true) || ($transaction==='98' && $d['document_type_id']!=='08')) FiscalAmounts::error('fiscal_data','Transacción HKA no soportada.');
+        if (!in_array($transaction,['01','98','99'],true) || ($transaction==='98' && $d['document_type_id']!=='08')) FiscalAmounts::error('fiscal_data','Transacción HKA no soportada.');
         $buyer = $d['customer'];
         $number = $buyer['number'] ?? '';
         $identity = $buyer['hka_identity_code'] ?? null;
@@ -96,7 +108,7 @@ final class HkaPayloadBuilder
                 'precioItem'=>self::money($line['total_value']), 'codigoImpuesto'=>$code,
                 'tasaIVA'=>self::money($line['percentage_igv']), 'valorIVA'=>self::money($line['total_igv']),
                 'valorTotalItem'=>self::money($line['total'])];
-            if ($exportation && (($line['total_discount'] ?? 0) > 0 || ($line['total_charge'] ?? 0) > 0)) {
+            if (($exportation || $thirdParty) && (($line['total_discount'] ?? 0) > 0 || ($line['total_charge'] ?? 0) > 0)) {
                 $lines[$i]['precioAntesDescuento'] = \App\Services\ExchangeRates\ExchangeRateMath::finalAmount(
                     \App\Services\ExchangeRates\ExchangeRateMath::rational($line['unit_value'])->multipliedBy($line['quantity'])
                 );
@@ -134,6 +146,7 @@ final class HkaPayloadBuilder
         }
         // These fields populate the fiscal PDF; HkaMail owns the existing automatic email flow.
         $header['comprador']['notificar'] = 'No';
+        if ($thirdParty) $header['tercero'] = \App\Services\ThirdPartyInvoicePolicy::hkaThirdParty($fiscal['third_party']);
         if ($usdExport) {
             $u = $usdExport;
             $usdTaxes = [];
@@ -161,6 +174,7 @@ final class HkaPayloadBuilder
                 'totalDescuento'=>self::money($v['discount']),'totalRecargos'=>self::money($v['charge']),'impuestosSubtotal'=>$vesTaxes];
         }
         $payload=['documentoElectronico'=>['encabezado'=>$header,'detallesItems'=>$lines]];
+        if ($thirdParty) $payload = HkaThirdPartyMoney::adapt($payload, $d);
         (new HkaSchemaValidator())->validate($payload);
         return $payload;
     }

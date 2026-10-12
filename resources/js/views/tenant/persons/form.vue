@@ -681,6 +681,28 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="row" v-if="type === 'customers'">
+                            <div class="col-md-4 center-el-checkbox">
+                                <div :class="{'has-danger': errors.is_third_party}" class="form-group">
+                                    <el-checkbox v-model="form.is_third_party">Es tercero</el-checkbox>
+                                    <small v-if="errors.is_third_party" class="invalid-feedback" v-text="errors.is_third_party[0]"></small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row" v-if="type === 'customers' && form.is_third_party">
+                            <div class="col-md-6" :class="{'has-danger': errors.third_party_rif}">
+                                <label class="control-label">RIF fiscal completo del tercero</label>
+                                <el-input v-model="form.third_party_rif" placeholder="J-12345678-9" :maxlength="12" />
+                                <small class="text-muted">Se conserva separado de la cédula o identificación habitual del cliente.</small>
+                                <small v-if="errors.third_party_rif" class="form-control-feedback d-block text-danger" v-text="errors.third_party_rif[0]"></small>
+                            </div>
+                            <div class="col-md-6" :class="{'has-danger': errors.third_party_activity}">
+                                <label class="control-label">Actividad comercial del tercero</label>
+                                <el-input v-model="form.third_party_activity" :maxlength="100" />
+                                <small v-if="errors.third_party_activity" class="form-control-feedback d-block text-danger" v-text="errors.third_party_activity[0]"></small>
+                            </div>
+                            <div class="col-12"><small class="text-muted">El tercero requiere domicilio venezolano, dirección y razón social de hasta 100 caracteres.</small></div>
+                        </div>
                         <div class="row" v-if="form.perception_agent && type === 'suppliers'">
                             <div class="col-md-6">
                                 <div class="form-group">
@@ -833,6 +855,7 @@ export default {
         'type',
         'recordId',
         'external',
+        'selection_target',
         'document_type_id',
         'input_person',
         'parentId',
@@ -1045,6 +1068,9 @@ export default {
                 has_discount: false,
                 discount_type: '01',
                 is_agent_retention: false,
+                is_third_party: this.selection_target === 'third_party',
+                third_party_rif: null,
+                third_party_activity: null,
                 discount_amount: 0,
                 establishment_code:'0000',
                 notify_email_on_save: false,
@@ -1552,12 +1578,7 @@ export default {
                 .then(response => {
                     if (response.data.success) {
                         this.$message.success(response.data.message)
-                        if (this.external) {
-                            this.$eventHub.$emit('reloadDataPersons', response.data.id)
-                        } else {
-                            this.$eventHub.$emit('reloadData')
-                        }
-                        this.close()
+                        this.notifySaved(response.data.id)
                     } else {
                         this.$message.error(response.data.message)
                     }
@@ -1565,7 +1586,7 @@ export default {
                 })
                 .catch(error => {
                     if (error.response.status === 422) {
-                        this.errors = error.response.data
+                        this.errors = error.response.data.errors || error.response.data
                     } else {
                         console.log(error)
                     }
@@ -1601,8 +1622,19 @@ export default {
             }
 
         },
+        notifySaved(id) {
+            if (this.selection_target === 'third_party') {
+                const saved = {id, rif: this.form.third_party_rif};
+                this.close();
+                this.$emit('saved', saved);
+                return;
+            }
+            if (this.external) this.$eventHub.$emit('reloadDataPersons', id);
+            else this.$eventHub.$emit('reloadData');
+            this.close();
+        },
         close() {
-            this.$eventHub.$emit('initInputPerson')
+            if (this.selection_target !== 'third_party') this.$eventHub.$emit('initInputPerson')
             this.$emit('update:showDialog', false)
             this.initForm()
         },

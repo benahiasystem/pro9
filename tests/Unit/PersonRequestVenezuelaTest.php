@@ -11,6 +11,19 @@ use Tests\TestCase;
 // ########### INICIO CAMBIO CLIENTES VENEZUELA
 class PersonRequestVenezuelaTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+        config()->set('database.connections.tenant', ['driver'=>'sqlite', 'database'=>':memory:', 'prefix'=>'']);
+        \Illuminate\Support\Facades\Schema::connection('tenant')->create('persons', function ($table) {
+            $table->increments('id');
+            $table->string('type');
+            $table->boolean('is_third_party')->default(false);
+            $table->string('third_party_rif')->nullable();
+            $table->string('third_party_activity')->nullable();
+        });
+    }
+
     /** @test */
     public function it_normalizes_venezuelan_customers_and_their_addresses(): void
     {

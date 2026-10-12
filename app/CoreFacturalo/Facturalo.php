@@ -41,11 +41,11 @@ use Modules\Finance\Traits\FilePaymentTrait;
  */
 class Facturalo
 {
-    private bool $webExportInvoices = false;
+    private bool $webDocuments = false;
 
     public function forWebDocuments(): self
     {
-        $this->webExportInvoices = true;
+        $this->webDocuments = true;
         return $this;
     }
     use StorageDocument, FinanceTrait, KardexTrait, FilePaymentTrait;
@@ -111,6 +111,9 @@ class Facturalo
     {
         $this->actions = array_key_exists('actions', $inputs)?$inputs['actions']:[];
         $this->type = $inputs['type'];
+        if (!in_array($this->type, ['invoice', 'credit', 'debit'], true)) {
+            \App\Services\ThirdPartyInvoicePolicy::assertInput($inputs);
+        }
 
         // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
         if ($this->type === 'invoice') {
@@ -120,7 +123,8 @@ class Facturalo
 
         // ######## INICIO POLITICA IDENTIDAD ACTIVA EN VENTAS ########
         if (in_array($this->type, ['invoice', 'credit', 'debit'], true)) {
-            \App\Services\ExportInvoicePolicy::assertInput($inputs, $this->webExportInvoices);
+            \App\Services\ExportInvoicePolicy::assertInput($inputs, $this->webDocuments);
+            $inputs = \App\Services\ThirdPartyInvoicePolicy::resolveInput($inputs, $this->webDocuments);
             SalesCustomerIdentityPolicy::assertCustomerAllowed($inputs['customer_id'] ?? null, \App\Services\ExportInvoicePolicy::isExport(\App\Services\ExportInvoicePolicy::operation($inputs)));
             if (($inputs['total_other_taxes'] ?? 0) > 0 && empty($inputs['taxes'])) \App\Services\Fiscal\FiscalAmounts::error('taxes','Los impuestos adicionales requieren un detalle identificable.');
         }
@@ -210,6 +214,7 @@ class Facturalo
         }
         // ######## INICIO EMISION HKA DEMO ########
         if ($this->document instanceof Document) {
+            \App\Services\ThirdPartyInvoicePolicy::assertPaid($this->document);
             app(\App\Services\Fiscal\HkaMail::class)->registerAutomatic($this->document,
                 (bool) optional($this->configuration)->auto_send_pdf_email || ($this->actions['send_email'] ?? false) === true);
         }
@@ -400,6 +405,15 @@ class Facturalo
             }
             $p_order           = $this->document->purchase_order != '' ? '10' : '0';
 
+            $third_party_height = 0;
+            if ($this->document instanceof Document && \App\Services\ThirdPartyInvoicePolicy::isThirdParty($this->document)) {
+                $third = (array) $this->document->fiscal_data->third_party;
+                $characters_per_line = $format_pdf === 'ticket_58' ? 26 : 35;
+                $third_party_height = 8 + 4 * (ceil(mb_strlen($third['name'] ?? '') / $characters_per_line)
+                    + ceil(mb_strlen($third['address'] ?? '') / $characters_per_line) + 1);
+                if ($this->document->taxes->where('tax_kind', 'IGTF')->sum('amount') > 0) $third_party_height += 6;
+            }
+
             $total_prepayment = $this->document->total_prepayment != '' ? '10' : '0';
             $total_discount = $this->document->total_discount != '' ? '10' : '0';
             $was_deducted_prepayment = $this->document->was_deducted_prepayment ? '10' : '0';
@@ -476,6 +490,7 @@ class Facturalo
                     $company_number +
                     $customer_name +
                     $customer_address +
+                    $third_party_height +
                     $p_order +
                     $legends +
                     $total_exportation +
@@ -988,8 +1003,10 @@ class Facturalo
                 $emission = $document->emission()->lockForUpdate()->first();
                 $document->setRelation('emission', $emission);
                 \App\Services\Fiscal\DocumentEditPolicy::assertEditable($document);
-                \App\Services\ExportInvoicePolicy::assertInput($inputs, $this->webExportInvoices);
+                \App\Services\ExportInvoicePolicy::assertInput($inputs, $this->webDocuments);
                 \App\Services\ExportInvoicePolicy::assertSameCategory($document, $inputs);
+                \App\Services\ThirdPartyInvoicePolicy::assertSameCategory($document, $inputs);
+                $inputs = \App\Services\ThirdPartyInvoicePolicy::resolveInput($inputs, $this->webDocuments);
                 \App\Services\Fiscal\DocumentEditSettlements::validateInput($document, $inputs);
                 \App\Services\Fiscal\DocumentEditPolicy::invalidate($document);
                 $inputs['series'] = \App\Services\SeriesNumbering::normalizeCode($inputs['series'] ?? null);
@@ -1051,6 +1068,7 @@ class Facturalo
                 \App\Services\Fiscal\FiscalDocumentPersistence::otherTaxes($document, $inputs['taxes'] ?? []);
                 \App\Services\Fiscal\FiscalDocumentPersistence::summarize($document);
                 \App\Services\Fiscal\DocumentEditSettlements::validateTotals($document);
+                \App\Services\ThirdPartyInvoicePolicy::assertPaid($document);
                 // ######## FIN PERSISTENCIA FISCAL VENEZUELA ########
                 $this->document = Document::find($document->id);
                 break;

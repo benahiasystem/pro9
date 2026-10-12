@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\DB;
  * - `special_tax_regime_id` tinyint unsigned DEFAULT NULL
  * - `catalog_snapshot` json NOT NULL
  * - `third_party` json DEFAULT NULL
+ * - `third_party_person_id` int(10) unsigned DEFAULT NULL, FK persons with restricted deletion
  * - `conditional_data` json DEFAULT NULL
  * - `created_at` timestamp NULL DEFAULT NULL
  * - `updated_at` timestamp NULL DEFAULT NULL
@@ -26,11 +27,13 @@ CREATE TABLE `document_fiscal_data` (
   `special_tax_regime_id` tinyint unsigned DEFAULT NULL,
   `catalog_snapshot` json NOT NULL,
   `third_party` json DEFAULT NULL,
+  `third_party_person_id` int(10) unsigned DEFAULT NULL,
   `conditional_data` json DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `document_fiscal_data_document_unique` (`document_id`)
+  UNIQUE KEY `document_fiscal_data_document_unique` (`document_id`),
+  KEY `document_fiscal_data_third_party_person_id_foreign` (`third_party_person_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL);
     }

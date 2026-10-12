@@ -79,3 +79,9 @@ description: Mantener el alta, edición, catálogo, persistencia y presentación
 ## Exportación de bienes
 
 El contrato y las restricciones se describen en [facturas de exportación HKA](../../../informes/facturas_exportacion_hka.md). Ejecutar `ExportInvoiceTest`, `SalesCustomerIdentityPolicyTest` y `tests/js/export-invoice-ui.test.cjs`. No convertir ni actualizar tenants existentes para añadir los campos.
+
+## Clientes titulares de ventas por terceros
+
+Mantener Es tercero en Avanzado → Clasificación, independiente de tipo de cliente y agente de retención. `persons` conserva is_third_party, third_party_rif y third_party_activity; no crear otro catálogo. El RIF complementario no sustituye la cédula. Exigir formato completo único tenant, actividad, domicilio VE, nombre de hasta 100 y dirección de hasta 255; correo opcional válido de hasta 50. No afirmar verificación SENIAT. Desmarcar o inhabilitar conserva datos/historial y bloquea nuevas selecciones; el cliente sigue disponible como comprador.
+
+En el formulario reutilizado por el titular, usar selection_target=third_party y el evento saved. No disparar reloadDataPersons ni initInputPerson: seleccionan o reinicializan al comprador. La FK del snapshot impide borrar un titular utilizado. Consultar [facturas por cuenta de terceros](../../../informes/facturas_cuenta_terceros_hka.md) y ejecutar ThirdPartyInvoiceTest, PersonRequestVenezuelaTest y la prueba JS de terceros.

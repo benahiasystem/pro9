@@ -11,6 +11,9 @@ use Illuminate\Support\Facades\DB;
  * - `type` enum('customers','suppliers') COLLATE utf8mb4_unicode_ci NOT NULL
  * - `identity_document_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `external_identity_type` varchar(4) DEFAULT NULL
+ * - `is_third_party` tinyint(1) NOT NULL DEFAULT '0'
+ * - `third_party_rif` varchar(10) DEFAULT NULL, unique
+ * - `third_party_activity` varchar(100) DEFAULT NULL
  * - Unique external identity: type, identity_document_type_id, country_id, external_identity_type, number
  * - `number` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
@@ -65,6 +68,9 @@ CREATE TABLE `persons` (
   `type` enum('customers','suppliers') COLLATE utf8mb4_unicode_ci NOT NULL,
   `identity_document_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `external_identity_type` varchar(4) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `is_third_party` tinyint(1) NOT NULL DEFAULT '0',
+  `third_party_rif` varchar(10) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `third_party_activity` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `number` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `trade_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
@@ -109,6 +115,8 @@ CREATE TABLE `persons` (
   `text_filter` longtext COLLATE utf8mb4_unicode_ci,
   PRIMARY KEY (`id`),
   UNIQUE KEY `persons_external_identity_unique` (`type`,`identity_document_type_id`,`country_id`,`external_identity_type`,`number`),
+  UNIQUE KEY `persons_third_party_rif_unique` (`third_party_rif`),
+  KEY `persons_third_party_enabled_index` (`type`,`is_third_party`,`enabled`),
   KEY `persons_identity_document_type_id_foreign` (`identity_document_type_id`),
   KEY `persons_country_id_foreign` (`country_id`),
   KEY `persons_department_id_foreign` (`department_id`),

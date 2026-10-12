@@ -321,7 +321,7 @@ class Document extends ModelTenant
                 foreach ($it->discounts as $dis) {
                     // ########## INICIO CAMBIO AFECTACIÓN IVA
                     $amount = $dis->discount_type_id == "00"
-                        ? $dis->amount_without_rounded * \App\Support\Venezuela\Localization::taxMultiplier()
+                        ? ($dis->amount_without_rounded ?? $dis->amount) * \App\Support\Venezuela\Localization::taxMultiplier()
                         : $dis->amount;
                     // ######### FIN CAMBIO AFECTACIÓN IVA
                     if (isset($dis->from_global_distribution) && $dis->from_global_distribution)  {
@@ -375,7 +375,7 @@ class Document extends ModelTenant
                 // ######### FIN CAMBIO IGV A IVA
                 $amount = $discount->discount_type_id == '00'
                     // ########## INICIO CAMBIO AFECTACIÓN IVA
-                    ? $discount->amount_without_rounded * \App\Support\Venezuela\Localization::taxMultiplier()
+                    ? ($discount->amount_without_rounded ?? $discount->amount) * \App\Support\Venezuela\Localization::taxMultiplier()
                     // ######### FIN CAMBIO AFECTACIÓN IVA
                     : $discount->amount;
 

@@ -402,7 +402,7 @@ class FiscalEmissionSchemaTest extends TestCase
             });
             $item = \App\Models\Tenant\Item::where('internal_id', 'MOCK-ITEM-VES-001')->firstOrFail();
             $db->table('item_warehouse')->insert(['item_id' => $item->id, 'warehouse_id' => $warehouse, 'stock' => 10]);
-            $customer = \App\Models\Tenant\Person::where('number', 'MOCK-CLIENTE-VE')->firstOrFail();
+            $customer = \App\Models\Tenant\Person::where('number', '12345678')->where('identity_document_type_id', '1')->firstOrFail();
             foreach (['01' => 'FF01', '07' => 'FC01', '08' => 'FD01', '09' => 'TT01', '80' => 'NV01', 'U2' => 'AI01', 'U3' => 'AS01', 'U4' => 'AT01'] as $type => $code) {
                 $seriesId = $db->table('series')->insertGetId(['establishment_id' => $establishment, 'document_type_id' => $type, 'number' => $code]);
                 $db->table('series_configurations')->insert(['series_id' => $seriesId, 'document_type_id' => $type, 'series' => $code, 'number' => 100]);
@@ -689,7 +689,7 @@ class FiscalEmissionSchemaTest extends TestCase
         $db->table('configurations')->insert(['id'=>1,'quantity_documents'=>0,'quantity_sales_notes'=>0]);
         $db->table('establishments')->insert(['id'=>1,'description'=>'Concurrent','country_id'=>'VE','department_id'=>'14','province_id'=>'0229','district_id'=>'000619','address'=>'Test','telephone'=>'04121234567','code'=>'0000']);
         $db->table('users')->insert(['id'=>1,'name'=>'Admin','email'=>'concurrency@example.test','password'=>'not-a-login-hash','type'=>'admin','establishment_id'=>1]);
-        $customer=$db->table('persons')->where('number','MOCK-CLIENTE-VE')->first();
+        $customer=$db->table('persons')->where('number','12345678')->where('identity_document_type_id','1')->first();
         $db->table('persons')->where('id',$customer->id)->update(['identity_document_type_id'=>'6','number'=>'J-23456789-0']);
         $customer=$db->table('persons')->find($customer->id);
         $db->table('series')->insert(['establishment_id'=>1,'document_type_id'=>'08','number'=>'FD01']);
@@ -757,6 +757,102 @@ class FiscalEmissionSchemaTest extends TestCase
     }
 
 
+    public function test_third_party_invoices_persist_freeze_edit_and_emit_after_commit(): void
+    {
+        [$db,$app,$input]=$this->bootHkaFixture();
+        $parties=[];
+        foreach (['J','V'] as $index=>$letter) {
+            $parties[]=\App\Models\Tenant\Person::create(['type'=>'customers','identity_document_type_id'=>$letter==='J'?'6':'1',
+                'number'=>$letter==='J'?'987654321':'23456789','name'=>'TERCERO '.$letter,'country_id'=>'VE','address'=>'DIRECCION DEL TERCERO '.$letter,
+                'is_third_party'=>true,'third_party_rif'=>$letter.'987654321','third_party_activity'=>'Venta y servicios de prueba','enabled'=>true]);
+        }
+        $transmissions=0;
+        $app->make(\Illuminate\Http\Client\Factory::class)->fake(function($request)use($db,&$transmissions){
+            self::assertSame(0,$db->transactionLevel());
+            if(str_ends_with($request->url(),'/Autenticacion'))return \Illuminate\Support\Facades\Http::response(['token'=>'private-test-token','expiracion'=>date('c',time()+3600)]);
+            if(str_ends_with($request->url(),'/DescargaArchivo')){
+                $pdf=new \FPDF();$pdf->AddPage();$pdf->SetFont('Helvetica','',12);$pdf->Text(10,15,'Third party invoice DEMO');
+                return \Illuminate\Support\Facades\Http::response(['codigo'=>'200','archivo'=>base64_encode($pdf->Output('S'))]);
+            }
+            self::assertStringEndsWith('/Emision',$request->url());$transmissions++;
+            $h=$request->data()['documentoElectronico']['encabezado'];
+            self::assertSame('99',$h['identificacionDocumento']['tipoTransaccion']);
+            self::assertNotSame($h['comprador']['razonSocial'],$h['tercero']['razonSocial']);
+            return \Illuminate\Support\Facades\Http::response(['codigo'=>'200','resultado'=>$h['identificacionDocumento']+['numeroControl'=>'00-'.str_pad($h['identificacionDocumento']['numeroDocumento'],8,'0',STR_PAD_LEFT)]]);
+        });
+        $third=array_replace($input,['third_party_id'=>$parties[0]->id,'exchange_rate_sale'=>'40.12345678']);
+        $beforeStock=$db->table('item_warehouse')->where('item_id',$input['items'][0]['item_id'])->value('stock');
+        $db->beginTransaction();(new \App\CoreFacturalo\Facturalo)->forWebDocuments()->save($third);self::assertSame(0,$transmissions);$db->rollBack();
+        self::assertSame(0,$db->table('documents')->count());
+        self::assertEquals($beforeStock,$db->table('item_warehouse')->where('item_id',$input['items'][0]['item_id'])->value('stock'));
+        foreach($parties as $party)foreach(['VES','USD'] as $currency){
+            $case=array_replace($third,['third_party_id'=>$party->id,'currency_type_id'=>$currency,'external_id'=>(string)\Illuminate\Support\Str::uuid()]);
+            $db->beginTransaction();$doc=(new \App\CoreFacturalo\Facturalo)->forWebDocuments()->save($case)->getDocument()->fresh();
+            $prior=$transmissions;$db->commit();$doc=$doc->fresh();
+            self::assertSame($prior+1,$transmissions);self::assertSame('confirmed',$doc->emission->status);
+            self::assertSame('99',$doc->fiscal_data->transaction_type_id);self::assertSame($party->id,$doc->fiscal_data->third_party_person_id);
+            self::assertEquals(232,$doc->total);self::assertEquals(0,$doc->balance);
+            self::assertSame($input['customer_id'],$doc->customer_id);self::assertSame('01',$doc->document_type_id);
+            $payload=$doc->emission->payload;$saved=$doc->fiscal_data->third_party;
+            $party->update(['address'=>'DIRECCION NUEVA EN FICHA']);
+            self::assertEquals($saved,$doc->fresh()->fiscal_data->third_party);self::assertEquals($payload,$doc->fresh()->emission->payload);
+            try{$db->table('persons')->where('id',$party->id)->delete();self::fail('A used titular cannot be physically deleted');}
+            catch(\Illuminate\Database\QueryException $e){self::assertSame('23000',$e->getCode());}
+        }
+        $frozenParty=$doc->fiscal_data->third_party;$frozenPayload=$doc->emission->payload;
+        foreach([['is_third_party'=>false],['is_third_party'=>true,'enabled'=>false]] as $change){
+            $parties[1]->update($change);
+            try{\App\Services\ThirdPartyInvoicePolicy::resolveInput(array_replace($third,['third_party_id'=>$parties[1]->id]),true);self::fail('An unclassified or disabled titular must not be selected');}
+            catch(\Illuminate\Validation\ValidationException $e){self::assertArrayHasKey('third_party_id',$e->errors());}
+            self::assertEquals($frozenParty,$doc->fresh()->fiscal_data->third_party);self::assertEquals($frozenPayload,$doc->fresh()->emission->payload);
+        }
+        $parties[1]->update(['is_third_party'=>true,'enabled'=>true]);
+        $company=\App\Models\Tenant\Company::firstOrFail();$company->fiscal_credentials=null;$company->save();
+        $doc=(new \App\CoreFacturalo\Facturalo)->forWebDocuments()->save($third)->getDocument()->fresh();
+        (new \App\Services\Fiscal\HkaEmissionPreparation)->prepare($doc);$doc=$doc->fresh();$oldKey=$doc->emission->operation_key;
+        $payments=$db->table('document_payments')->where('document_id',$doc->id)->get()->toArray();
+        $edit=array_replace($third,['id'=>$doc->id,'series'=>$doc->series,'number'=>$doc->number,'third_party_id'=>$parties[1]->id,'payments'=>[]]);
+        (new \App\CoreFacturalo\Facturalo)->forWebDocuments()->update($edit,$doc->id);$doc=$doc->fresh();
+        self::assertSame($parties[1]->id,$doc->fiscal_data->third_party_person_id);self::assertNotSame($oldKey,$doc->emission->operation_key);
+        self::assertSame('not_requested',$doc->emission->status);self::assertEquals($payments,$db->table('document_payments')->where('document_id',$doc->id)->get()->toArray());
+        $unsentKey=$doc->emission->operation_key;
+        (new \App\CoreFacturalo\Facturalo)->forWebDocuments()->update($edit,$doc->id);$doc=$doc->fresh();
+        self::assertNotSame($unsentKey,$doc->emission->operation_key);self::assertSame('not_requested',$doc->emission->status);
+        self::assertEquals($payments,$db->table('document_payments')->where('document_id',$doc->id)->get()->toArray());
+        try{(new \App\CoreFacturalo\Facturalo)->forWebDocuments()->update(array_replace($edit,['third_party_id'=>null]),$doc->id);self::fail('Category conversion must fail');}
+        catch(\Illuminate\Validation\ValidationException $e){self::assertArrayHasKey('third_party_id',$e->errors());}
+        try{\App\Services\ThirdPartyInvoicePolicy::assertInput(['document_type_id'=>'07','affected_document_id'=>$doc->id]);self::fail('Third-party notes must fail');}
+        catch(\Illuminate\Validation\ValidationException $e){self::assertArrayHasKey('note',$e->errors());}
+        $count=$db->table('documents')->count();$stock=$db->table('item_warehouse')->where('item_id',$input['items'][0]['item_id'])->value('stock');
+        $unpaid=$third;$unpaid['payments']=[];
+        try{(new \App\CoreFacturalo\Facturalo)->forWebDocuments()->save($unpaid);self::fail('An unpaid invoice must roll back');}
+        catch(\Illuminate\Validation\ValidationException $e){self::assertArrayHasKey('payments',$e->errors());}
+        self::assertSame($count,$db->table('documents')->count());self::assertEquals($stock,$db->table('item_warehouse')->where('item_id',$input['items'][0]['item_id'])->value('stock'));
+        $company->igtf_enabled=true;$company->igtf_rate=3;$company->save();
+        $igtfInput=array_replace($third,['currency_type_id'=>'USD']);$igtfInput['payments'][0]['igtf_status']='subject';
+        $igtfDoc=(new \App\CoreFacturalo\Facturalo)->forWebDocuments()->save($igtfInput)->getDocument()->fresh();
+        self::assertEquals(238.96,$igtfDoc->total);self::assertEquals(0,$igtfDoc->balance);
+        $prepared=(new \App\Services\Fiscal\HkaEmissionPreparation)->prepare($igtfDoc);
+        self::assertContains('IGTF',array_column($prepared->payload['documentoElectronico']['encabezado']['totales']['impuestosSubtotal'],'codigoTotalImp'));
+        $notesBefore=$db->table('documents')->where('document_type_id','08')->count();
+        try{\App\Services\Fiscal\FiscalDocumentPersistence::payment($igtfDoc,['date_of_payment'=>'2026-09-10','payment_method_type_id'=>'01','original_amount'=>1,'currency_type_id'=>'USD','exchange_rate'=>'40.12345678','igtf_status'=>'subject']);self::fail('A later IGTF debit note is outside this stage');}
+        catch(\Illuminate\Validation\ValidationException $e){self::assertArrayHasKey('payment',$e->errors());}
+        self::assertSame($notesBefore,$db->table('documents')->where('document_type_id','08')->count());
+        (new \App\Services\Fiscal\HkaEmissionPreparation)->prepare($doc);
+        $company->fiscal_credentials=json_encode(['usuario'=>'test-user','clave'=>'test-secret']);$company->save();
+        $raceEdit=array_replace($edit,['third_party_id'=>$parties[0]->id]);$log=tempnam(sys_get_temp_dir(),'pro9_third_party_race_');
+        try{
+            $results=$this->runFiscalWorkers($doc->id,'hka-edit-race',[
+                ['action'=>'edit','edit'=>$raceEdit,'web_export'=>true],['action'=>'send','log'=>$log]]);
+            self::assertTrue(($results[0]['status']??null)==='edited'||isset($results[0]['rejected']));
+            $after=$doc->fresh();if($after->emission->status==='not_requested')app(\App\Services\Fiscal\HkaEmission::class)->send($after);
+            $after=$after->fresh();self::assertSame('confirmed',$after->emission->status);
+            self::assertSame('99',$after->emission->payload['documentoElectronico']['encabezado']['identificacionDocumento']['tipoTransaccion']);
+            self::assertSame($after->fiscal_data->third_party['name'],$after->emission->payload['documentoElectronico']['encabezado']['tercero']['razonSocial']);
+            self::assertEquals($payments,$db->table('document_payments')->where('document_id',$doc->id)->get()->toArray());
+        }finally{unlink($log);}
+    }
+
     public function test_export_invoices_persist_freeze_edit_and_emit_after_commit(): void
     {
         [$db, $app, $input] = $this->bootHkaFixture();
@@ -767,7 +863,7 @@ class FiscalEmissionSchemaTest extends TestCase
             'discounts'=>[['discount_type_id'=>'03', 'factor'=>0.05, 'amount'=>10, 'base'=>200]],
             'charges'=>[['charge_type_id'=>'62', 'factor'=>0.025, 'amount'=>5, 'base'=>200]], 'actions'=>['send_email'=>false]]);
         $input['items'][0] = array_replace($input['items'][0], ['affectation_igv_type_id'=>'EXP', 'unit_price'=>100]);
-        $ordinaryCustomer = $db->table('persons')->where('number','MOCK-CLIENTE-VE')->value('id');
+        $ordinaryCustomer = $db->table('persons')->where('number','12345678')->where('identity_document_type_id','1')->value('id');
         $exportInput = array_replace_recursive($input,['invoice'=>['operation_type_id'=>'0201']]);
         foreach (['API'=>['web'=>false], 'POS'=>['changes'=>['source_module'=>'POS']], 'Domestic buyer'=>['changes'=>['customer_id'=>$ordinaryCustomer]],
             'Mixed tax'=>['changes'=>['items'=>[0=>['affectation_igv_type_id'=>'20']]]]] as $label=>$case) {
@@ -935,7 +1031,7 @@ class FiscalEmissionSchemaTest extends TestCase
         });
         $item = \App\Models\Tenant\Item::where('internal_id', 'MOCK-ITEM-VES-001')->firstOrFail();
         $db->table('item_warehouse')->insert(['item_id' => $item->id, 'warehouse_id' => $warehouse, 'stock' => 10]);
-        $customer = \App\Models\Tenant\Person::where('number', 'MOCK-CLIENTE-VE')->firstOrFail();
+        $customer = \App\Models\Tenant\Person::where('number', '12345678')->where('identity_document_type_id', '1')->firstOrFail();
         foreach (['01' => 'FF01', '07' => 'FC01', '08' => 'FD01', '09' => 'TT01', '80' => 'NV01', 'U2' => 'AI01', 'U3' => 'AS01', 'U4' => 'AT01'] as $type => $code) {
             $seriesId = $db->table('series')->insertGetId(['establishment_id' => $establishment, 'document_type_id' => $type, 'number' => $code]);
             $db->table('series_configurations')->insert(['series_id' => $seriesId, 'document_type_id' => $type, 'series' => $code, 'number' => 100]);

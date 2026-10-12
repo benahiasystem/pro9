@@ -17,6 +17,7 @@ return new class extends Migration
         DB::unprepared("ALTER TABLE `document_received_retentions` ADD CONSTRAINT `document_received_retentions_document_id_foreign` FOREIGN KEY (`document_id`) REFERENCES `documents` (`id`)");
         DB::unprepared("ALTER TABLE `document_guarantee_funds` ADD CONSTRAINT `document_guarantee_funds_document_id_foreign` FOREIGN KEY (`document_id`) REFERENCES `documents` (`id`)");
         DB::unprepared("ALTER TABLE `document_fiscal_data` ADD CONSTRAINT `document_fiscal_data_document_id_foreign` FOREIGN KEY (`document_id`) REFERENCES `documents` (`id`)");
+        DB::unprepared("ALTER TABLE `document_fiscal_data` ADD CONSTRAINT `document_fiscal_data_third_party_person_id_foreign` FOREIGN KEY (`third_party_person_id`) REFERENCES `persons` (`id`) ON DELETE RESTRICT");
         DB::unprepared("ALTER TABLE `document_emissions` ADD CONSTRAINT `document_emissions_document_id_foreign` FOREIGN KEY (`document_id`) REFERENCES `documents` (`id`)");
         DB::unprepared("ALTER TABLE `document_taxes` ADD CONSTRAINT `document_taxes_document_payment_id_foreign` FOREIGN KEY (`document_payment_id`) REFERENCES `document_payments` (`id`)");
         DB::unprepared("ALTER TABLE `document_payments` ADD CONSTRAINT `document_payments_currency_type_id_foreign` FOREIGN KEY (`currency_type_id`) REFERENCES `cat_currency_types` (`id`)");
@@ -542,6 +543,7 @@ return new class extends Migration
         DB::unprepared("ALTER TABLE `document_payments` DROP FOREIGN KEY `document_payments_currency_type_id_foreign`");
         DB::unprepared("ALTER TABLE `document_taxes` DROP FOREIGN KEY `document_taxes_document_payment_id_foreign`");
         DB::unprepared("ALTER TABLE `document_emissions` DROP FOREIGN KEY `document_emissions_document_id_foreign`");
+        DB::unprepared("ALTER TABLE `document_fiscal_data` DROP FOREIGN KEY `document_fiscal_data_third_party_person_id_foreign`");
         DB::unprepared("ALTER TABLE `document_fiscal_data` DROP FOREIGN KEY `document_fiscal_data_document_id_foreign`");
         DB::unprepared("ALTER TABLE `document_guarantee_funds` DROP FOREIGN KEY `document_guarantee_funds_document_id_foreign`");
         DB::unprepared("ALTER TABLE `document_received_retentions` DROP FOREIGN KEY `document_received_retentions_document_id_foreign`");

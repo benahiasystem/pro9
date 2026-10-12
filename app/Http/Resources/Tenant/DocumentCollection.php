@@ -144,6 +144,7 @@ class DocumentCollection extends ResourceCollection
                 'exchange_rate_sale' => $row->exchange_rate_sale,
                 'total_exportation' => $row->total_exportation,
                 'exportation' => \App\Services\ExportInvoicePolicy::isExport($row->invoice->operation_type_id ?? ''),
+                ...\App\Services\ThirdPartyInvoicePolicy::view($row),
                 'incoterm' => \App\Services\ExportInvoicePolicy::INCOTERMS[$row->invoice->operation_type_id ?? ''] ?? null,
                 'total_exonerated' => $row->total_exonerated,
                 'total_taxed' => $row->total_taxed,

@@ -137,6 +137,23 @@
                             </div>
                         </div>
                     </div>
+                    <div class="row px-2" v-if="thirdPartyAvailable || originalThirdPartyInvoice">
+                        <div class="col-12 mb-2">
+                            <el-checkbox v-model="thirdPartyMode" :disabled="isUpdateDocument" @change="changeThirdPartyMode">Facturar por cuenta de terceros</el-checkbox>
+                        </div>
+                        <div v-if="thirdPartyMode" class="col-md-8 mb-3" :class="{'has-danger': errors.third_party_id}">
+                            <label class="control-label">Cliente tercero titular de la venta</label>
+                            <el-select v-model="form.third_party_id" filterable remote :remote-method="loadThirdParties" :loading="loadingThirdParties" placeholder="Buscar por RIF o razón social" @focus="loadThirdParties('')">
+                                <el-option v-for="third in thirdParties" :key="third.id" :value="third.id" :label="third.third_party_rif + ' · ' + third.name" />
+                            </el-select>
+                            <small v-if="errors.third_party_id" class="form-control-feedback d-block text-danger" v-text="errors.third_party_id[0]" />
+                            <small class="text-muted">Un titular por factura, venta interna al contado y completamente pagada.</small>
+                        </div>
+                        <div v-if="thirdPartyMode" class="col-md-4 mb-3 align-self-end">
+                            <el-button @click="thirdPartyRecordId = null; showDialogThirdParty = true">Registrar tercero</el-button>
+                            <el-button :disabled="!form.third_party_id" @click="thirdPartyRecordId = form.third_party_id; showDialogThirdParty = true">Editar tercero</el-button>
+                        </div>
+                    </div>
                     <div class="d-flex align-items-end justify-content-start gap-1 p-0 py-1 py-md-2 px-md-2 mx-1" v-if="editingLayout">
                         <button type="button" class="btn btn-sm second-buton mt-1" @click="cancelLayoutEditFromHeader">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-x" style="margin-top: -2px;"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M18 6l-12 12" /><path d="M6 6l12 12" /></svg>
@@ -2297,6 +2314,8 @@
         type="customers"
     ></person-form>
 
+    <person-form :external="true" selection_target="third_party" :recordId="thirdPartyRecordId" :showDialog.sync="showDialogThirdParty" type="customers" @saved="thirdPartySaved" />
+
     <document-options
         :configuration="config"
         :isContingency="is_contingency"
@@ -2732,6 +2751,14 @@ export default {
             resource: "documents",
             showDialogAddItem: false,
             showDialogNewPerson: false,
+            showDialogThirdParty: false,
+            thirdPartyRecordId: null,
+            thirdPartyMode: false,
+            originalThirdPartyInvoice: false,
+            thirdParties: [],
+            thirdPartySavedOption: null,
+            thirdPartySearchSequence: 0,
+            loadingThirdParties: false,
             editPerson: false,
             showDialogOptions: false,
             failSendDocument: false,
@@ -2901,6 +2928,10 @@ export default {
                 return this.form.operation_type_id;
             },
             set(val) {
+                if (this.thirdPartyMode && val !== '0101') {
+                    this.$message.error('La factura por cuenta de terceros requiere venta interna.');
+                    return;
+                }
                 const nextExport = ['0201', '0202', '0203'].includes(val);
                 const changedCategory = nextExport !== this.isExportInvoice;
                 if (changedCategory && (this.isUpdateDocument || this.form.items.length > 0)) {
@@ -2936,6 +2967,10 @@ export default {
         },
         isExportInvoice() {
             return ['0201', '0202', '0203'].includes(this.form.operation_type_id);
+        },
+        thirdPartyAvailable() {
+            return this.company?.fiscal_emission_mode === 'digital' && this.company?.fiscal_environment === 'demo'
+                && this.form.document_type_id === '01' && this.form.operation_type_id === '0101' && !this.form.is_itinerant;
         },
         showCurrencyExchangeFields() {
             return this.currency_types.length > 1;
@@ -3337,6 +3372,43 @@ export default {
         }
     },
     methods: {
+        async thirdPartySaved(saved) {
+            const options = await this.loadThirdParties(saved.rif || '');
+            if (!options) return;
+            if (options.some(row => row.id === saved.id)) this.form.third_party_id = saved.id;
+            else {
+                if (this.form.third_party_id === saved.id) this.form.third_party_id = null;
+                this.$message.error('El cliente debe estar habilitado y marcado como tercero para seleccionarlo.');
+            }
+        },
+        changeThirdPartyMode(value) {
+            if (this.isUpdateDocument || (value && (!this.thirdPartyAvailable || this.form.payment_condition_id !== '01'))) {
+                this.thirdPartyMode = this.originalThirdPartyInvoice;
+                this.$message.error('Seleccione una Factura de venta interna al contado para facturar por terceros.');
+                return;
+            }
+            this.form.third_party_id = null;
+            this.thirdPartySearchSequence += 1;
+            if (value) this.loadThirdParties('');
+        },
+        async loadThirdParties(input = '') {
+            if (!this.thirdPartyMode) return;
+            const sequence = ++this.thirdPartySearchSequence;
+            this.loadingThirdParties = true;
+            try {
+                const response = await this.$http.get('/documents/search/third-parties', {params: {input}});
+                if (sequence !== this.thirdPartySearchSequence || !this.thirdPartyMode) return;
+                const eligible = response.data.customers || [];
+                const options = [...eligible];
+                if (this.thirdPartySavedOption && !options.some(row => row.id === this.thirdPartySavedOption.id)) options.push(this.thirdPartySavedOption);
+                this.thirdParties = options;
+                return eligible;
+            } catch (_) {
+                if (sequence === this.thirdPartySearchSequence) this.$message.error('No se pudo cargar la lista de clientes terceros.');
+            } finally {
+                if (sequence === this.thirdPartySearchSequence) this.loadingThirdParties = false;
+            }
+        },
         normalizeAddressText(address) {
             return (address || '').trim().toLowerCase();
         },
@@ -3717,6 +3789,12 @@ export default {
             }
         },
         initForm() {
+            this.thirdPartyMode = false;
+            this.originalThirdPartyInvoice = false;
+            this.thirdPartySavedOption = null;
+            this.thirdParties = [];
+            this.thirdPartySearchSequence += 1;
+            this.loadingThirdParties = false;
             this.errors = {};
             this.form = {
                 establishment_id: null,
@@ -3728,6 +3806,7 @@ export default {
                 date_of_issue: moment().format("YYYY-MM-DD"),
                 time_of_issue: moment().format("HH:mm:ss"),
                 customer_id: null,
+                third_party_id: null,
                 currency_type_id: this.config.currency_type_id,
                 purchase_order: null,
                 exchange_rate_sale: 0,
@@ -4069,6 +4148,12 @@ export default {
             this.form.group_id = data.group_id;
 
             this.form.note = data.note;
+            this.originalThirdPartyInvoice = Boolean(data.is_third_party_invoice);
+            this.thirdPartyMode = this.originalThirdPartyInvoice;
+            this.form.third_party_id = data.third_party_id || null;
+            this.thirdPartySavedOption = data.third_party ? {id: data.third_party_id, name: data.third_party.name,
+                third_party_rif: data.third_party.rif, third_party_activity: data.third_party.activity} : null;
+            this.thirdParties = this.thirdPartySavedOption ? [this.thirdPartySavedOption] : [];
             this.form.plate_number = data.plate_number;
             this.form.payments = data.payments || [];
             this.form.prepayments = data.prepayments || [];
@@ -6577,6 +6662,10 @@ export default {
         },
         async submit() {
             if (this.editBlocked) return this.$message.error(this.form.edit_block_reason);
+            if (this.thirdPartyMode && (!this.form.third_party_id || !this.thirdPartyAvailable || this.form.payment_condition_id !== '01')) {
+                return this.$message.error('Seleccione el tercero y mantenga una Factura de venta interna al contado.');
+            }
+            if (!this.thirdPartyMode) this.form.third_party_id = null;
             let customer = _.find(this.customers, {
                 id: this.form.customer_id
             });
