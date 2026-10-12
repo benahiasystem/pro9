@@ -41,7 +41,8 @@ class DocumentController extends Controller
             'message' => 'Venta guardada.',
             'data' => [
                 'number' => $document->number_full,
-                'fiscal_emission' => \App\Services\Fiscal\DocumentEmissionView::forDocument($document),
+                'iva_retention' => \App\Services\Fiscal\IvaRetentionService::view($document),
+                    'fiscal_emission' => \App\Services\Fiscal\DocumentEmissionView::forDocument($document),
                 'email_delivery' => \App\Services\Fiscal\HkaMail::view($document),
                 'pdf_downloads' => \App\Services\Fiscal\HkaPdf::view($document, true),
                 'filename' => $document->filename,

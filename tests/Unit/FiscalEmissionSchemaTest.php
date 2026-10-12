@@ -14,6 +14,7 @@ use PHPUnit\Framework\TestCase;
 class FiscalEmissionSchemaTest extends TestCase
 {
     use \Tests\Support\SpePersistenceCases;
+    use \Tests\Support\IvaRetentionPersistenceCases;
     private $previousContainer;
     private $previousFacade;
     private $capsule;
@@ -569,6 +570,7 @@ class FiscalEmissionSchemaTest extends TestCase
         $retention = ['tax_kind'=>'IVA','voucher_number'=>'20260900000001','voucher_date'=>'2026-09-10','agent_id'=>$customer->id,
             'base'=>32,'percentage'=>75,'amount'=>24,'currency_type_id'=>'VES','exchange_rate'=>1];
         (new \App\Services\Fiscal\HkaEmissionPreparation)->setControl($document, '00-20');
+        $document->emission()->update(['status'=>'confirmed','payload'=>['documentoElectronico'=>['encabezado'=>['identificacionDocumento'=>['tipoDocumento'=>'01','serie'=>$document->series,'numeroDocumento'=>(string)$document->number,'moneda'=>$document->currency_type_id]]]]]);
         $document=$document->fresh();
         $retention += \Tests\Support\SpeProfiles::voucher($document);
         $service::retention($document,$retention);
@@ -589,7 +591,7 @@ class FiscalEmissionSchemaTest extends TestCase
         self::assertEquals($retentionBefore, $db->table('document_received_retentions')->where('document_id', $document->id)->get()->toArray());
         self::assertEquals($fundBefore, $db->table('document_guarantee_funds')->where('document_id', $document->id)->get()->toArray());
 
-        try { $service::retention($document,$retention);self::fail('Duplicate voucher accepted'); }
+        try { $service::retention($document,array_replace($retention,['operation_key'=>(string)\Illuminate\Support\Str::uuid()]));self::fail('Duplicate voucher accepted'); }
         catch (\Illuminate\Validation\ValidationException $e) { self::assertArrayHasKey('voucher_number',$e->errors()); }
         $company=\App\Models\Tenant\Company::firstOrFail();
         $company->forceFill(['igtf_enabled'=>true,'igtf_rate'=>3])->save();

@@ -79,6 +79,9 @@
 
 
 
+            <el-button v-if="form.document_type_id === '01' && form.iva_retention && form.iva_retention.enabled" size="small" @click="showIvaRetention = true">Retención IVA del cliente</el-button>
+            <p v-if="form.iva_retention && form.iva_retention.prevision">Prevista: {{ form.iva_retention.prevision.amount }} {{ form.currency_type_id }}. Saldo pendiente: {{ form.iva_retention.balance }}.</p>
+            <retention-form :show-dialog.sync="showIvaRetention" :document-id="recordId" />
             <span>Formatos disponibles para la descarga del comprobante:</span>
             <p v-if="pdfDownloadMessage" class="text-warning mt-2">{{ pdfDownloadMessage }}</p>
             <div class="row print-buttons-container">
@@ -218,6 +221,7 @@
 </template>
 
 <script>
+import RetentionForm from "./retention.vue"
 import {documentPdf} from "@mixins/document-pdf";
 import {documentEmail} from "@mixins/document-email";
 import {documentFiscal} from "@mixins/document-fiscal";
@@ -229,7 +233,7 @@ import QrChatWsapp from '@viewsModuleQrChatBuho/ButtonSend.vue'
 
 export default {
     props: ['showDialog', 'recordId', 'showClose', 'isContingency', 'generatDispatch', 'dispatchId', 'isUpdate', 'configuration', 'table', 'failsInSend', 'failsMessage'],
-    components: {
+    components: {RetentionForm,
         Keypress,
         QrApi,
         QrChatWsapp
@@ -238,6 +242,7 @@ export default {
         return {
             ...documentPdf.data(),
             ...documentFiscal.data(),
+            showIvaRetention: false,
             recordRequestSequence: 0,
             titleDialog: null,
             loading: false,
@@ -333,12 +338,14 @@ export default {
     watch: {
         showDialog(value) {
             if (!value) {
+                this.showIvaRetention = false;
                 this.resetFiscalAction();
                 this.recordRequestSequence += 1;
                 this.loading = false;
             }
         },
         recordId() {
+            this.showIvaRetention = false;
             this.resetFiscalAction();
             this.recordRequestSequence += 1;
         },

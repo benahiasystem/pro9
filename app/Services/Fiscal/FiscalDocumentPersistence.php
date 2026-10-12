@@ -151,6 +151,7 @@ final class FiscalDocumentPersistence
 
     public static function applySettlements(Document $document,array $input): void
     {
+        IvaRetentionService::savePrevision($document, $input['iva_retention_prevision'] ?? null);
         foreach ($input['received_retentions'] ?? [] as $retention) self::retention($document,$retention);
         if (!empty($input['guarantee_fund'])) {
             $g=validator($input['guarantee_fund'],['amount'=>'required|numeric|min:0','base'=>'required|numeric|min:0','percentage'=>'required|numeric|min:0|max:100'])->validate();
@@ -376,7 +377,13 @@ final class FiscalDocumentPersistence
 
     public static function retention(Document $document, array $input)
     {
-        return $document->getConnection()->transaction(function () use ($document, $input) {
+        if (($input['tax_kind'] ?? '') === 'IVA') return IvaRetentionService::store($document, $input);
+        return self::retentionValidated($document, $input);
+    }
+
+    public static function retentionValidated(Document $document, array $input, ?\App\Models\Tenant\DocumentReceivedRetention $existing = null)
+    {
+        return $document->getConnection()->transaction(function () use ($document, $input, $existing) {
             Company::query()->lockForUpdate()->firstOrFail();
             $document = Document::query()->lockForUpdate()->findOrFail($document->id);
             $data = validator($input, [
@@ -388,7 +395,7 @@ final class FiscalDocumentPersistence
                 'invoice_control'=>'required|string|max:32', 'invoice_number'=>'required|string|max:40',
                 'fiscal_context'=>'nullable|array',
             ])->validate();
-            if ($document->received_retentions()->where('tax_kind',$data['tax_kind'])->where('agent_id',$data['agent_id'])->where('voucher_number',$data['voucher_number'])->exists()) FiscalAmounts::error('voucher_number','El comprobante ya está registrado.');
+            if ($document->received_retentions()->applied()->where('tax_kind',$data['tax_kind'])->where('agent_id',$data['agent_id'])->where('voucher_number',$data['voucher_number'])->when($existing, fn($q) => $q->where('id','!=',$existing->id))->exists()) FiscalAmounts::error('voucher_number','El comprobante ya está registrado.');
             foreach (['base','percentage','subtrahend','amount'] as $field) $data[$field] = round((float)($data[$field] ?? 0),2);
             $data['exchange_rate'] = \App\Services\ExchangeRates\ExchangeRateMath::rate($data['exchange_rate']);
             if ($data['amount']<=0 || $data['base']<=0 || $data['exchange_rate']<=0) FiscalAmounts::error('amount','Importes y tasa deben ser positivos con la precisión del sistema.');
@@ -427,9 +434,11 @@ final class FiscalDocumentPersistence
             if ($document->document_type_id !== '01' || $document->isVoidedOrRejected()) FiscalAmounts::error('document','Sólo se retiene una factura vigente.');
             if ($applied > $document->balance + 0.005) FiscalAmounts::error('amount','La retención supera el saldo disponible.');
             if ($data['tax_kind']==='IVA') {
-                $alreadyRetained = $document->received_retentions()->where('tax_kind','IVA')->sum('applied_amount');
-                $available = FiscalAmounts::convert(round($document->total_igv * $proposal['percentage'] / 100, 2) - $alreadyRetained, $document->currency_type_id, $data['currency_type_id'], $data['exchange_rate']);
-                if ($data['base'] > FiscalAmounts::convert($document->total_igv, $document->currency_type_id, $data['currency_type_id'], $data['exchange_rate']) + 0.01 || $data['amount'] > $available + 0.01) FiscalAmounts::error('base','La base de retención IVA supera el IVA de la factura.');
+                $fiscalIva = FiscalAmounts::convert($document->total_igv,$document->currency_type_id,'VES',$document->exchange_rate_sale);
+                $retainedVes = $document->received_retentions()->where('tax_kind','IVA')->applied()->get()->sum(fn($row)=>FiscalAmounts::convert($row->amount,$row->currency_type_id,'VES',$row->exchange_rate));
+                $available = round($fiscalIva * $proposal['percentage'] / 100,2) - $retainedVes;
+                if (FiscalAmounts::convert($data['base'],$data['currency_type_id'],'VES',$data['exchange_rate']) > $fiscalIva + 0.01
+                    || FiscalAmounts::convert($data['amount'],$data['currency_type_id'],'VES',$data['exchange_rate']) > $available + 0.01) FiscalAmounts::error('base','La retención supera el IVA fiscal conservado de la factura.');
             }
             if ($data['tax_kind'] === 'ISLR' && $data['base'] > FiscalAmounts::convert($document->total_value, $document->currency_type_id, $data['currency_type_id'], $data['exchange_rate']) + 0.01) FiscalAmounts::error('base', 'La base ISLR supera el valor neto facturado.');
             if (!empty($data['attachment'])) {
@@ -439,8 +448,10 @@ final class FiscalDocumentPersistence
             unset($data['agent_rif'], $data['invoice_control'], $data['invoice_number'], $data['fiscal_context']);
             $data['fiscal_context'] = ['issuer'=>$issuer,'buyer'=>$buyer,'proposal'=>$proposal,'operation'=>$context,
                 'concept'=>$concept,
-                'invoice_control'=>$document->control_number,'invoice_number'=>$document->number_full,'actor_id'=>auth()->id()];
-            $retention=$document->received_retentions()->create($data + ['agent' => $agent->only(['number','name','identity_document_type_id','address']) + ['fiscal_profile'=>$buyer], 'agent_number'=>$buyer['rif'],'applied_amount'=>$applied]);
+                'invoice_control'=>$document->control_number,'invoice_number'=>$document->number_full,'actor_id'=>$existing->fiscal_context['actor_id'] ?? auth()->id()];
+            $values = $data + ['agent' => $agent->only(['number','name','identity_document_type_id','address']) + ['fiscal_profile'=>$buyer], 'agent_number'=>$buyer['rif'],'applied_amount'=>$applied];
+            if ($existing) { $existing->fill($values)->save(); $retention = $existing; }
+            else $retention=$document->received_retentions()->create($values);
             self::updateSettlementState($document);
             return $retention;
         });
@@ -475,7 +486,7 @@ final class FiscalDocumentPersistence
         });
     }
 
-    private static function updateSettlementState(Document $document): void
+    public static function updateSettlementState(Document $document): void
     {
         $document=$document->fresh();
         $document->total_canceled=$document->balance<=0.005;

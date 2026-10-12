@@ -29,7 +29,7 @@ final class SpeProfiles
         $attachment = 'received_retentions/'.$document->id.'/demo.pdf';
         \Illuminate\Support\Facades\Storage::disk('tenant')->put($attachment, '%PDF-DEMO-private-support');
         $buyer = \App\Services\Fiscal\FiscalProfileService::at(\App\Models\Tenant\Person::findOrFail($document->customer_id), '2026-09-10');
-        return array_replace(['attachment'=>$attachment,'agent_rif'=>$buyer['rif'] ?? '',
+        return array_replace(['operation_key'=>(string)\Illuminate\Support\Str::uuid(),'attachment'=>$attachment,'agent_rif'=>$buyer['rif'] ?? '',
             'fiscal_context'=>['concept_basis'=>'DEMO revisión de concepto recibido','evidence_reference'=>'DEMO soporte recibido'], 'invoice_control'=>$document->control_number,'invoice_number'=>$document->number_full],$changes);
     }
 }

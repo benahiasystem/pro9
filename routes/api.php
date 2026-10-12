@@ -31,6 +31,12 @@ if ($hostname) {
             Route::get('documents/retention/{document}', 'Tenant\DocumentFiscalController@retentions');
             Route::post('documents/retention', 'Tenant\DocumentFiscalController@retentionStore');
             Route::post('documents/retention/upload', 'Tenant\DocumentFiscalController@upload');
+            Route::post('documents/retention/proposal', 'Tenant\IvaRetentionController@proposal');
+            Route::post('documents/retention/upload-draft', 'Tenant\IvaRetentionController@upload');
+            Route::get('documents/retention/{id}/attachment', 'Tenant\IvaRetentionController@attachment');
+            Route::post('documents/retention/{id}/query-hka', 'Tenant\IvaRetentionController@query');
+            Route::post('documents/retention/{id}/retry-hka', 'Tenant\IvaRetentionController@retry');
+            Route::post('documents/retention/{id}/reverse', 'Tenant\IvaRetentionController@reverse');
             Route::post('documents/{document}/prepare-hka', 'Tenant\DocumentFiscalController@prepare');
             Route::post('documents/{document}/send-hka', 'Tenant\DocumentFiscalController@sendHka');
             Route::post('documents/{document}/query-hka-email', 'Tenant\DocumentFiscalController@queryHkaEmail');

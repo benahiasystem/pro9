@@ -86,7 +86,8 @@
         </div>
 
         <!-- Totales -->
-        <div v-if="form.document_type_id === '01'"><label>Condición de pago</label><el-select :value="form.payment_condition_id || '01'" @change="changeFiscalPaymentCondition"><el-option value="01" label="Contado"/><el-option value="02" label="Crédito (registrar sólo abonos reales)"/></el-select></div>
+        <iva-retention-fields :form="form" @net="applyIvaNetCollection" />
+    <div v-if="form.document_type_id === '01'"><label>Condición de pago</label><el-select :value="form.payment_condition_id || '01'" @change="changeFiscalPaymentCondition"><el-option value="01" label="Contado"/><el-option value="02" label="Crédito (registrar sólo abonos reales)"/></el-select></div>
         <div class="fp-totals px-3 pt-2">
 
             <template>
@@ -196,7 +197,7 @@
         :payments="payments"
         :currency-type-id="form.currency_type_id" :exchange-rate-sale="form.exchange_rate_sale" :customer-id="form.customer_id" :payment-condition-id="form.payment_condition_id"
         :showDialog.sync="showDialogMultiplePayment"
-        :total="form.total"
+        :total="ivaCollectionTarget"
         @add="addRow"
         ref="componentMultiplePaymentGarage"
     ></multiple-payment-form>
@@ -240,6 +241,8 @@
 </style>
 
 <script>
+import IvaRetentionFields from "../../documents/partials/iva_retention_fields.vue"
+import ivaRetentionMixin from "@mixins/iva-retention"
 import IgtfPaymentFields from "../../documents/partials/igtf_fields.vue"
 import Keypress from 'vue-keypress'
 
@@ -251,8 +254,8 @@ import PersonForm from '../../../tenant/persons/form.vue'
 import { buhoprinter } from '@mixins/buhoprinter'
 
 export default {
-    components: {IgtfPaymentFields,OptionsForm, CardBrandsForm, SaleNotesOptions, MultiplePaymentForm, Keypress, PersonForm},
-    mixins: [buhoprinter],
+    components: {IvaRetentionFields,IgtfPaymentFields,OptionsForm, CardBrandsForm, SaleNotesOptions, MultiplePaymentForm, Keypress, PersonForm},
+    mixins: [ivaRetentionMixin,buhoprinter],
 
     props: [
         'form',
@@ -354,7 +357,7 @@ export default {
         await this.getTables()
         this.initFormPayment()
         this.inputAmount()
-        this.form.payments = []
+        if (!Array.isArray(this.form.payments)) this.$set(this.form,'payments',[])
         this.$eventHub.$on('reloadDataCardBrands', (card_brand_id) => {
             this.reloadDataCardBrands(card_brand_id)
         })
@@ -368,6 +371,7 @@ export default {
         await this.setInitialAmount()
 
         await this.getFormPosLocalStorage()
+        this.checkPaymentGarage()
         // console.log(this.form.payments, this.payments)
         // La conexión directa con BuhoPrinter ya no es necesaria desde el frontend.
         // La impresión se centraliza vía PrintOrder → Redis → BuhoPrinter agent.
@@ -377,7 +381,6 @@ export default {
     },
     mounted() {
         // console.log(this.currencyTypeActive)
-        this.checkPaymentGarage()
     },
     computed: {
         // ########## INICIO CAMBIO AFECTACIÓN IVA
@@ -584,7 +587,9 @@ export default {
 
         },
         async setInitialAmount() {
-            this.enter_amount = this.form.total
+            const rows = this.form.payments || []
+            this.enter_amount = rows.length ? rows.reduce((sum,row)=>sum+(Number(row.payment)||0),0) : (this.ivaCollectionTarget ?? this.form.total)
+            if (rows.length) { this.amount = this.enter_amount; this.userTouchedAmount = true }
             await this.$nextTick();
             const amountField = this.$refs.enter_amount;
             const input = amountField && amountField.$el.querySelector('input');
@@ -659,13 +664,13 @@ export default {
 
             }
 
-            if (!this.userTouchedAmount) {
-                this.enter_amount = this.form.total
+            if (!this.userTouchedAmount && !(this.form.payments || []).length) {
+                this.enter_amount = this.ivaCollectionTarget
                 this.syncEnterAmount()
                 return
             }
 
-            this.difference = this.enter_amount - this.form.total
+            this.difference = this.enter_amount - this.ivaCollectionTarget
         },
         syncEnterAmount() {
             const value = parseFloat(this.enter_amount) || 0
@@ -790,9 +795,12 @@ export default {
             let form_pos = localStorage.getItem('form_pos_garage');
             form_pos = JSON.parse(form_pos)
             if (form_pos) {
-                this.form.payments = form_pos.payments
+                if (Array.isArray(form_pos.payments)) this.form.payments = form_pos.payments
                 if (form_pos.payment_condition_id === '02') {
                     this.$set(this.form, 'payment_condition_id', '02')
+                }
+                if ((this.form.payments || []).length || this.form.payment_condition_id === '02') {
+                    this.userTouchedAmount = (this.form.payments || []).length > 0
                     this.amount = (this.form.payments || []).reduce((sum, row) => sum + (Number(row.payment) || 0), 0)
                     this.enter_amount = this.amount
                     this.inputAmount()
@@ -897,14 +905,14 @@ export default {
             this.amount = acum_payment
             // this.amount = this.enter_amount
             // console.log(this.amount)
-            this.difference = this.amount - this.form.total
+            this.difference = this.amount - this.ivaCollectionTarget
 
             if (isNaN(this.difference)) {
                 this.button_payment = this.form.payment_condition_id !== '02'
                 this.difference = "-"
             } else if (this.difference >= 0) {
                 this.button_payment = false
-                this.difference = this.amount - this.form.total
+                this.difference = this.amount - this.ivaCollectionTarget
             } else {
                 this.button_payment = this.form.payment_condition_id !== '02'
             }
@@ -932,14 +940,14 @@ export default {
         },
         inputAmount() {
 
-            this.difference = this.amount - this.form.total
+            this.difference = this.amount - this.ivaCollectionTarget
 
             if (isNaN(this.difference)) {
                 this.button_payment = this.form.payment_condition_id !== '02'
                 this.difference = "-"
             } else if (this.difference >= 0) {
                 this.button_payment = false
-                this.difference = this.amount - this.form.total
+                this.difference = this.amount - this.ivaCollectionTarget
             } else {
                 this.button_payment = this.form.payment_condition_id !== '02'
             }
@@ -960,7 +968,7 @@ export default {
         },
         initFormPayment() {
 
-            this.difference = -this.form.total
+            this.difference = -this.ivaCollectionTarget
 
             this.form_payment = {
                 id: null,
@@ -970,7 +978,7 @@ export default {
                 card_brand_id: null,
                 document_id: null,
                 sale_note_id: null,
-                payment: this.form.total,
+                payment: this.ivaCollectionTarget,
             }
 
             /*
@@ -1359,7 +1367,7 @@ export default {
         // No se expone un método de envío fiscal en el pago de garaje local.
         // ######### FIN CAMBIO SIN XML CDR SUNAT
         checkPaymentGarage(total = null) {
-            let amount = total ? total: this.form.total
+            let amount = this.ivaCollectionTarget
 
             if (!this.form.items || this.form.items.length === 0) {
                 this.userTouchedAmount = false
@@ -1378,19 +1386,12 @@ export default {
             if (this.form.payment_condition_id === '02') return;
             if (this.form.payments.length == 0) {
                 this.$refs.componentMultiplePaymentGarage.clickAddPayment(amount)
-                this.setAmount(this.form.total)
-            } else if (this.form.payments.length == 1) {
-
-                this.form.payments[0].payment = this.form.total
-
-                if (this.payments.length == 0) {
-                    this.payments = this.form.payments
-                }
-
-                this.setAmount(this.form.total)
-
+                this.setAmount(this.ivaCollectionTarget)
             } else {
-                // multiples pagos no controlados
+                // Reopening payment or changing the forecast must preserve receipts already entered.
+                this.payments = this.form.payments
+                this.userTouchedAmount = true
+                this.setAmount(this.form.payments.reduce((sum,row)=>sum+(Number(row.payment)||0),0))
             }
 
         },

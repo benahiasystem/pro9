@@ -1,5 +1,7 @@
 <template>
     <el-dialog :title="title || 'Cargando pagos...'" :visible="showDialog" @close="close" @open="getData" width="80%">
+        <el-button v-if="document.document_type_id === '01' && document.iva_retention && document.iva_retention.enabled" size="small" @click="showIvaRetention = true">Retención IVA del cliente</el-button>
+        <retention-form :show-dialog.sync="showIvaRetention" :document-id="documentId" @changed="getData"/>
         <div class="form-body">
             <div class="row">
                 <div class="col-md-12" v-if="records && records.length >= 0">
@@ -256,6 +258,7 @@
 </template>
 
 <script>
+import RetentionForm from "./retention.vue"
 import IgtfPaymentFields from "./igtf_fields.vue"
 
     import {deletable} from '../../../../mixins/deletable'
@@ -264,7 +267,7 @@ import IgtfPaymentFields from "./igtf_fields.vue"
     export default {
         props: ['showDialog', 'documentId', 'external','configuration'],
         mixins: [deletable],
-        components: {IgtfPaymentFields,
+        components: {RetentionForm,IgtfPaymentFields,
             DialogLinkPayment,
             DocumentOptions
         },
@@ -280,6 +283,7 @@ import IgtfPaymentFields from "./igtf_fields.vue"
                 showAddButton: true,
                 loadingFetch: false, 
                 document: {},
+                showIvaRetention: false,
                 permissions: {},
                 index_file: null,
                 documentPayment: {},

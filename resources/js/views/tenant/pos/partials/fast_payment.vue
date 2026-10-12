@@ -1,5 +1,6 @@
 <template>
 <div class="row col-lg-12 m-0 p-0">
+    <iva-retention-fields :form="form" @net="applyIvaNetCollection" />
     <div v-if="form.document_type_id === '01'" class="col-12"><label>Condición de pago</label><el-select :value="form.payment_condition_id || '01'" @change="changeFiscalPaymentCondition"><el-option value="01" label="Contado"/><el-option value="02" label="Crédito (registrar sólo abonos reales)"/></el-select></div>
     <Keypress :key-code="113"
               key-event="keyup"
@@ -167,7 +168,7 @@
         :payments="payments"
         :currency-type-id="form.currency_type_id" :exchange-rate-sale="form.exchange_rate_sale" :customer-id="form.customer_id" :payment-condition-id="form.payment_condition_id"
         :showDialog.sync="showDialogMultiplePayment"
-        :total="form.total"
+        :total="ivaCollectionTarget"
         @add="addRow"
     ></multiple-payment-form>
 
@@ -215,6 +216,8 @@
 </style>
 
 <script>
+import IvaRetentionFields from "../../documents/partials/iva_retention_fields.vue"
+import ivaRetentionMixin from "@mixins/iva-retention"
 import IgtfPaymentFields from "../../documents/partials/igtf_fields.vue"
 import Keypress from 'vue-keypress'
 
@@ -225,8 +228,8 @@ import MultiplePaymentForm from './multiple_payment.vue'
 import { buhoprinter } from '@mixins/buhoprinter'
 
 export default {
-    components: {IgtfPaymentFields,OptionsForm, CardBrandsForm, SaleNotesOptions, MultiplePaymentForm, Keypress},
-    mixins: [buhoprinter],
+    components: {IvaRetentionFields,IgtfPaymentFields,OptionsForm, CardBrandsForm, SaleNotesOptions, MultiplePaymentForm, Keypress},
+    mixins: [ivaRetentionMixin,buhoprinter],
 
     props: ['form', 'customer', 'configuration', 'config', 'currencyTypeActive', 'exchangeRateSale', 'is_payment', 'companyEnvironment', 'businessTurns', 'isPrint', 'rowsItems'],
     data() {
@@ -269,7 +272,7 @@ export default {
         await this.getTables()
         this.initFormPayment()
         this.inputAmount()
-        this.form.payments = []
+        if (!Array.isArray(this.form.payments)) this.$set(this.form,'payments',[])
         this.$eventHub.$on('reloadDataCardBrands', (card_brand_id) => {
             this.reloadDataCardBrands(card_brand_id)
         })
@@ -328,7 +331,9 @@ export default {
 
         },
         async setInitialAmount() {
-            this.enter_amount = this.form.total
+            const rows = this.form.payments || []
+            this.enter_amount = rows.length ? rows.reduce((sum,row)=>sum+(Number(row.payment)||0),0) : (this.ivaCollectionTarget ?? this.form.total)
+            if (rows.length) this.amount = this.enter_amount
             // this.form.payments = this.payments
             // this.$eventHub.$emit('eventSetFormPosLocalStorage', this.form)
             await this.$refs.enter_amount.$el.getElementsByTagName('input')[0].focus()
@@ -511,9 +516,11 @@ export default {
             let form_pos = localStorage.getItem('form_pos');
             form_pos = JSON.parse(form_pos)
             if (form_pos) {
-                this.form.payments = form_pos.payments
+                if (Array.isArray(form_pos.payments)) this.form.payments = form_pos.payments
                 if (form_pos.payment_condition_id === '02') {
                     this.$set(this.form, 'payment_condition_id', '02')
+                }
+                if ((this.form.payments || []).length || this.form.payment_condition_id === '02') {
                     this.amount = (this.form.payments || []).reduce((sum, row) => sum + (Number(row.payment) || 0), 0)
                     this.enter_amount = this.amount
                     this.inputAmount()
@@ -599,14 +606,14 @@ export default {
             this.amount = acum_payment
             // this.amount = this.enter_amount
             // console.log(this.amount)
-            this.difference = this.amount - this.form.total
+            this.difference = this.amount - this.ivaCollectionTarget
 
             if (isNaN(this.difference)) {
                 this.button_payment = this.form.payment_condition_id !== '02'
                 this.difference = "-"
             } else if (this.difference >= 0) {
                 this.button_payment = false
-                this.difference = this.amount - this.form.total
+                this.difference = this.amount - this.ivaCollectionTarget
             } else {
                 this.button_payment = this.form.payment_condition_id !== '02'
             }
@@ -633,14 +640,14 @@ export default {
         },
         inputAmount() {
 
-            this.difference = this.amount - this.form.total
+            this.difference = this.amount - this.ivaCollectionTarget
 
             if (isNaN(this.difference)) {
                 this.button_payment = this.form.payment_condition_id !== '02'
                 this.difference = "-"
             } else if (this.difference >= 0) {
                 this.button_payment = false
-                this.difference = this.amount - this.form.total
+                this.difference = this.amount - this.ivaCollectionTarget
             } else {
                 this.button_payment = this.form.payment_condition_id !== '02'
             }
@@ -661,7 +668,7 @@ export default {
         },
         initFormPayment() {
 
-            this.difference = -this.form.total
+            this.difference = -this.ivaCollectionTarget
 
             this.form_payment = {
                 id: null,
@@ -671,7 +678,7 @@ export default {
                 card_brand_id: null,
                 document_id: null,
                 sale_note_id: null,
-                payment: this.form.total,
+                payment: this.ivaCollectionTarget,
             }
 
             this.form_cash_document = {

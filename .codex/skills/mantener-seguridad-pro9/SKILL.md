@@ -97,3 +97,9 @@ Al finalizar una remediación informa el hallazgo abordado, rutas y controles ca
 ## Perfiles fiscales SPE
 
 Seguir [perfiles SPE](../mantener-sujetos-pasivos-especiales-pro9/SKILL.md) cuando el cambio afecte esos hechos. Guardar versiones exige usuario tenant administrador y allowlist; `fiscal_profile` no es mass fillable y los POST genéricos empresa/persona lo rechazan. La propuesta es informativa: cobros/retenciones se revalidan bajo bloqueos, con documento autorizado por tenant/sucursal. Una excepción IGTF necesita fundamento, motivo y actor administrativo congelados. El adjunto de retención es privado y pertenece a la factura; no aceptar otra ruta o fichero inexistente. No exponer tokens/credenciales en perfiles/snapshots, DTOs o evidencia pública. Estos controles no declaran resueltos otros hallazgos de la auditoría.
+
+## Soportes y acciones IVA recibida
+
+Aplicar [retenciones IVA recibidas](../mantener-retenciones-iva-recibidas-pro9/SKILL.md). Registro/carga requiere `create_payment`, reversión `delete_payment`, o administrador; retry de eliminación usa permiso de reversión. Consultar/descargar exige alcance tenant/sucursal. Los procesos automáticos o clientes ecommerce no reciben esos permisos por poder generar una factura.
+
+`upload-draft` acepta PDF/JPG/PNG hasta 5 MB, emite token por tenant/usuario con 24 horas y consumo único bloqueado. Consumo/limpieza comparten bloqueo; no eliminar soporte vinculado al vencer el token. Descarga autenticada adjunta, sin caché y con `nosniff`, desde la ruta privada autorizada. UUID/datos de otra solicitud o acción produce 409, sin aplicar nuevamente. Recursos públicos ocultan input/hash, payload/contexto de conexión e intento interno; evidencia DEMO no incluye JWT, credenciales ni RIF reales.

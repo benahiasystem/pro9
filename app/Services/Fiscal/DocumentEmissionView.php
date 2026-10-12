@@ -34,6 +34,7 @@ final class DocumentEmissionView
         $status = $applies ? ($emission->status ?? 'not_requested') : null;
         $response = $emission->response ?? [];
         $enabled = $applies && $document->fiscal_environment === 'demo' && !$document->isVoidedOrRejected();
+        $ivaBlock = in_array($status,['not_requested','prepared'],true) ? HkaIvaRetentionCapability::reason($document) : null;
         $user = auth()->user();
         $scope = $user instanceof \App\Models\Tenant\User
             && ($user->type === 'admin' || (int) $user->establishment_id === (int) $document->establishment_id);
@@ -45,8 +46,8 @@ final class DocumentEmissionView
             'environment' => $document->fiscal_environment,
             'control_number' => $document->control_number,
             'code' => $response['code'] ?? null,
-            'diagnostic' => $response['diagnostic'] ?? ($applies && !$enabled ? 'El envío está habilitado únicamente para facturas vigentes en DEMO.' : null),
-            'can_send' => $enabled && $scope && $user->type === 'admin'
+            'diagnostic' => $ivaBlock ?? $response['diagnostic'] ?? ($applies && !$enabled ? 'El envío está habilitado únicamente para facturas vigentes en DEMO.' : null),
+            'can_send' => !$ivaBlock && $enabled && $scope && $user->type === 'admin'
                 && (in_array($status, ['not_requested', 'prepared'], true)
                     || ($status === 'uncertain' && !empty($response['retry_allowed']) && time() - ($response['started_at'] ?? time()) >= 30)),
             'can_query' => $enabled && $scope && in_array($status, ['pending', 'uncertain', 'confirmed'], true),

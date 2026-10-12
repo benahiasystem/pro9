@@ -1,6 +1,7 @@
 <template>
 <div>
     <el-dialog :visible="showDialog" @open="create" width="30%" :close-on-click-modal="false" :close-on-press-escape="false" :show-close="false">
+<iva-retention-fields :form="document" />
         <span slot="title">
             <div class="widget-summary widget-summary-xs d-flex align-items-center">
                 <div class="">
@@ -394,6 +395,7 @@
 </template>
 
 <script>
+import IvaRetentionFields from "@views/documents/partials/iva_retention_fields.vue"
 import DocumentOptions from "@views/documents/partials/options.vue";
 import SaleNoteOptions from "@views/sale_notes/partials/options.vue";
 import SetTip from '@components/SetTip.vue'
@@ -401,7 +403,7 @@ import ListRestrictItems from '@components/secondary/ListRestrictItems.vue'
 import {fnRestrictSaleItemsCpe} from '@mixins/functions'
 
 export default {
-    components: {
+    components: {IvaRetentionFields,
         DocumentOptions,
         SaleNoteOptions,
         SetTip,
@@ -603,6 +605,14 @@ export default {
         },
         calculatePayments()
         {
+            if (this.document.document_type_id === '01' && this.document.iva_retention_prevision && this.document.iva_retention_prevision.enabled) {
+                const rows=this.document.payments;
+                const last=rows[rows.length-1];
+                const target=Math.max(0,Number(this.document.total)-Number(this.document.iva_retention_prevision.amount || 0));
+                const entered=rows.slice(0,-1).reduce((sum,row)=>sum+(Number(row.payment)||0),0);
+                if (last && !Number(last.payment)) last.payment=_.round(Math.max(0,target-entered),2);
+                return;
+            }
             // const total = this.document.total
             const total = this.form.order_note.total
 

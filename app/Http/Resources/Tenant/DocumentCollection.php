@@ -23,6 +23,7 @@ class DocumentCollection extends ResourceCollection
             fn ($row) => $row instanceof \Illuminate\Http\Resources\Json\JsonResource ? $row->resource : $row
         )->all());
         $this->collection->loadMissing('emission');
+        if (\App\Services\Fiscal\IvaRetentionService::available()) $this->collection->loadMissing(['fiscal_data','received_retentions.operations']);
         \App\Services\Fiscal\FiscalIdentity::preload($this->collection);
         return $this->collection->transform(function ($row, $key) use ($request) {
             $edit = \App\Services\Fiscal\DocumentEditPolicy::view($row);
@@ -129,7 +130,8 @@ class DocumentCollection extends ResourceCollection
                 'date_of_due' => (in_array($row->document_type_id, ['01'])) ? $row->invoice->date_of_due->format('d-m-Y') : null,
                 'number' => $row->number_full,
                 'fiscal_identity' => $row->fiscal_identity,
-                'fiscal_emission' => \App\Services\Fiscal\DocumentEmissionView::forDocument($row),
+                'iva_retention' => \App\Services\Fiscal\IvaRetentionService::view($row),
+                    'fiscal_emission' => \App\Services\Fiscal\DocumentEmissionView::forDocument($row),
                 'pdf_downloads' => \App\Services\Fiscal\HkaPdf::view($row, $request->is('api/*')),
                 'customer_name' => $row->customer->name,
                 'customer_number' => format_person_identity_document($row->customer),

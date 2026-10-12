@@ -94,6 +94,7 @@ class DocumentUpdateInput
             'fiscal_data' => $inputs['fiscal_data'] ?? [],
             'third_party_id' => $inputs['third_party_id'] ?? null,
             'received_retentions' => $inputs['received_retentions'] ?? [],
+            'iva_retention_prevision' => $inputs['iva_retention_prevision'] ?? null,
             'guarantee_fund' => $inputs['guarantee_fund'] ?? null,
             // ######## FIN PERSISTENCIA FISCAL VENEZUELA ########
             'total_prepayment' => Functions::valueKeyInArray($inputs, 'total_prepayment', 0),

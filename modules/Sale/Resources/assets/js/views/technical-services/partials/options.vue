@@ -8,6 +8,7 @@
                    :visible="showDialog"
                    width="30%"
                    @open="create">
+<iva-retention-fields :form="form" />
             <div v-show="!showGenerate"
                  class="row">
                 <div class="col-lg-4 col-md-4 col-sm-4 text-center font-weight-bold">
@@ -249,6 +250,7 @@
 </template>
 
 <script>
+import IvaRetentionFields from "@views/documents/partials/iva_retention_fields.vue"
 
 import DocumentOptions from "@views/documents/partials/options.vue";
 import SaleNoteOptions from "@views/sale_notes/partials/options.vue";
@@ -261,7 +263,7 @@ import {mapActions, mapState} from "vuex/dist/vuex.mjs";
 import {functions} from '@mixins/functions'
 
 export default {
-    components: {DocumentOptions, SaleNoteOptions, SeriesForm},
+    components: {IvaRetentionFields,DocumentOptions, SaleNoteOptions, SeriesForm},
     mixins: [functions],
     computed: {
         ...mapState([

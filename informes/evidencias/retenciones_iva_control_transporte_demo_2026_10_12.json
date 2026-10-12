@@ -1,0 +1,68 @@
+{
+    "date": "2026-10-12",
+    "scope": "DEMO protocol control with full collection; does not validate net collection or issuer fiscal qualification",
+    "cases": [
+        {
+            "currency": "VES",
+            "invoice_total": 232,
+            "real_test_collection": 232,
+            "balance": 0,
+            "emission": "confirmed",
+            "payload_sha256": "3b3f9aa0514c36e6ad790ccd038a8016251970dbc19a326707d1c048574b67e3",
+            "before": {
+                "http": 200,
+                "codigo": "203"
+            },
+            "apply": {
+                "http": 200,
+                "codigo": "200"
+            },
+            "query": {
+                "http": 200,
+                "codigo": "200",
+                "matches": true
+            },
+            "remove": {
+                "http": 200,
+                "codigo": "200"
+            },
+            "after": {
+                "http": 200,
+                "codigo": "203",
+                "message": "Retención no encontrada",
+                "validation_count": 1
+            }
+        },
+        {
+            "currency": "USD",
+            "invoice_total": 232,
+            "real_test_collection": 232,
+            "balance": 0,
+            "emission": "confirmed",
+            "payload_sha256": "8773b0e5fa0a6e754f4703f08851c5f06cc3b4a666bcd9bca238057001ea0635",
+            "before": {
+                "http": 200,
+                "codigo": "203"
+            },
+            "apply": {
+                "http": 200,
+                "codigo": "200"
+            },
+            "query": {
+                "http": 200,
+                "codigo": "200",
+                "matches": true
+            },
+            "remove": {
+                "http": 200,
+                "codigo": "200"
+            },
+            "after": {
+                "http": 200,
+                "codigo": "203",
+                "message": "Retención no encontrada",
+                "validation_count": 1
+            }
+        }
+    ]
+}

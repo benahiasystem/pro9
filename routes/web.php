@@ -445,6 +445,12 @@ if ($hostname) {
             Route::get('documents/retention/{document}', 'Tenant\DocumentFiscalController@retentions');
             Route::post('documents/retention', 'Tenant\DocumentFiscalController@retentionStore');
             Route::post('documents/retention/upload', 'Tenant\DocumentFiscalController@upload');
+            Route::post('documents/retention/proposal', 'Tenant\IvaRetentionController@proposal');
+            Route::post('documents/retention/upload-draft', 'Tenant\IvaRetentionController@upload');
+            Route::get('documents/retention/{id}/attachment', 'Tenant\IvaRetentionController@attachment');
+            Route::post('documents/retention/{id}/query-hka', 'Tenant\IvaRetentionController@query');
+            Route::post('documents/retention/{id}/retry-hka', 'Tenant\IvaRetentionController@retry');
+            Route::post('documents/retention/{id}/reverse', 'Tenant\IvaRetentionController@reverse');
 
             //Contingencies
             Route::get('contingencies', 'Tenant\ContingencyController@index')->name('tenant.contingencies.index')->middleware('redirect.level');

@@ -344,6 +344,7 @@
         :isPrint="isPrint"
     ></options-form>
 
+    <iva-retention-fields :form="form" @net="applyIvaNetCollection" />
     <div v-if="form.document_type_id === '01'"><label>Condición de pago</label><el-select :value="form.payment_condition_id || '01'" @change="changeFiscalPaymentCondition"><el-option value="01" label="Contado"/><el-option value="02" label="Crédito (registrar sólo abonos reales)"/></el-select></div>
         <multiple-payment-form
         :payments="payments"
@@ -368,6 +369,8 @@
 </template>
 
 <script>
+import IvaRetentionFields from "../../documents/partials/iva_retention_fields.vue"
+import ivaRetentionMixin from "@mixins/iva-retention"
 import Keypress from 'vue-keypress'
 
 import CardBrandsForm from '../../card_brands/form.vue'
@@ -382,8 +385,8 @@ import SearchAgent from '@components/SearchAgent.vue'
 
 
 export default {
-    components: {OptionsForm, CardBrandsForm, SaleNotesOptions, MultiplePaymentForm, Keypress, DiscountPermissionForm, SearchAgent},
-    mixins: [pointSystemFunctions, buhoprinter],
+    components: {IvaRetentionFields,OptionsForm, CardBrandsForm, SaleNotesOptions, MultiplePaymentForm, Keypress, DiscountPermissionForm, SearchAgent},
+    mixins: [ivaRetentionMixin,pointSystemFunctions, buhoprinter],
 
     props: [
         'form',
@@ -454,7 +457,7 @@ export default {
         await this.getTables()
         this.initFormPayment()
         this.inputAmount()
-        this.form.payments = []
+        if (!Array.isArray(this.form.payments)) this.$set(this.form,'payments',[])
         this.$eventHub.$on('reloadDataCardBrands', (card_brand_id) => {
             this.reloadDataCardBrands(card_brand_id)
         })
@@ -677,7 +680,9 @@ export default {
             this.enterAmount()
         },
         async setInitialAmount() {
-            this.enter_amount = this.getTotal()
+            const rows = this.form.payments || []
+            this.enter_amount = rows.length ? rows.reduce((sum,row)=>sum+(Number(row.payment)||0),0) : this.getTotal()
+            if (rows.length) this.amount = this.enter_amount
             // this.form.payments = this.payments
             // this.$eventHub.$emit('eventSetFormPosLocalStorage', this.form)
             await this.$refs.enter_amount.$el.getElementsByTagName('input')[0].focus()
@@ -983,7 +988,7 @@ export default {
             // this.calculateFee();
         },
         getTotal() {
-            let total_pay = this.form.total;
+            let total_pay = this.ivaCollectionTarget;
             // if (this.form.has_retention && this.form.total > 700) {
             //     total_pay -= this.form.retention.amount;
             // }
@@ -1023,9 +1028,11 @@ export default {
             let form_pos = localStorage.getItem('form_pos');
             form_pos = JSON.parse(form_pos)
             if (form_pos) {
-                this.form.payments = form_pos.payments
+                if (Array.isArray(form_pos.payments)) this.form.payments = form_pos.payments
                 if (form_pos.payment_condition_id === '02') {
                     this.$set(this.form, 'payment_condition_id', '02')
+                }
+                if ((this.form.payments || []).length || this.form.payment_condition_id === '02') {
                     this.amount = (this.form.payments || []).reduce((sum, row) => sum + (Number(row.payment) || 0), 0)
                     this.enter_amount = this.amount
                     this.inputAmount()
@@ -1137,7 +1144,7 @@ export default {
             // console.log(this.form.payments)
 
             this.amount = acum_payment
-            this.setDifference(this.amount - this.form.total)
+            this.setDifference(this.amount - this.ivaCollectionTarget)
 
             this.$eventHub.$emit('eventSetFormPosLocalStorage', this.form)
 
@@ -1198,7 +1205,7 @@ export default {
         },
         initFormPayment() {
 
-            this.difference = -this.form.total
+            this.difference = -this.ivaCollectionTarget
 
             this.form_payment = {
                 id: null,

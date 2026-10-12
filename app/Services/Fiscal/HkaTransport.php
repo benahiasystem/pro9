@@ -52,4 +52,19 @@ final class HkaTransport
         return Http::acceptJson()->asJson()->withToken($token)->timeout($timeout)->connectTimeout(5)
             ->withOptions(['allow_redirects' => false, 'verify' => true]);
     }
+
+    public function applyIvaRetention(string $token, array $payload): Response
+    {
+        return $this->request($token,20)->post('https://demoemisionv2.thefactoryhka.com.ve/api/AplicarRetencion',$payload);
+    }
+
+    public function queryIvaRetention(string $token, array $identity): Response
+    {
+        return $this->request($token,10)->send('GET','https://demoemisionv2.thefactoryhka.com.ve/api/AplicarRetencion',['json'=>$identity]);
+    }
+
+    public function removeIvaRetention(string $token, array $identity): Response
+    {
+        return $this->request($token,20)->send('DELETE','https://demoemisionv2.thefactoryhka.com.ve/api/AplicarRetencion',['json'=>$identity]);
+    }
 }

@@ -24,6 +24,7 @@
             :class="{ 'layout-editing-active': editingLayout }"
             @submit.prevent="submit"
             >
+<div class="col-12"><iva-retention-fields :form="form" :readonly="isUpdateDocument" @net="applyIvaNetCollection" /></div>
             <div class="col-xl-12 col-md-12 col-12 px-0">
                 <header class="clearfix clearfix-default py-2 px-0 px-md-2 border-0">
                     <div
@@ -2583,6 +2584,8 @@
 </style>
     <!-- ######## FIN CAMBIO GEOPOLITICO VENEZUELA -->
 <script>
+import IvaRetentionFields from "./partials/iva_retention_fields.vue"
+import ivaRetentionMixin from "@mixins/iva-retention"
 // ######## INICIO TASAS OCHO DECIMALES ########
 import { exactAmount, normalizeExchangeRate } from "../../../helpers/exchange-rate-math"
 // ######## FIN TASAS OCHO DECIMALES ########
@@ -2667,7 +2670,7 @@ export default {
         "isUpdate",
         "authUser"
     ],
-    components: { IgtfPaymentFields,
+    components: {IvaRetentionFields, IgtfPaymentFields,
         StoreItemSeriesIndex,
         DocumentFormItem,
         PersonForm,
@@ -2692,7 +2695,7 @@ export default {
         RemoteSlot,
         MiniTour,
     },
-    mixins: [
+    mixins: [ivaRetentionMixin,
         functions,
         exchangeRate,
         pointSystemFunctions,
@@ -7168,9 +7171,10 @@ export default {
             this.setDateOfDue(this.getLastDateFee());
         },
         calculatePayments() {
+            if (this.form.payment_condition_id === "02") return;
             let payment_count = this.form.payments.length;
             // let total = this.form.total;
-            let total = this.getTotal();
+            let total = this.ivaCollectionTarget;
 
             let payment = 0;
             let amount = _.round(total / payment_count, 2);
@@ -7200,7 +7204,7 @@ export default {
             });
         },
         getTotal() {
-            let total_pay = this.form.total;
+            let total_pay = this.ivaCollectionTarget;
             ;
             // console.log(this.form.retention)
             // console.log(this.form.total_pending_payment)

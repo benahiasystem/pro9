@@ -19,13 +19,15 @@ class DocumentFiscalController extends Controller
             'id'=>$document->id,'customer_id'=>$document->customer_id,'currency_type_id'=>$document->currency_type_id,
             'exchange_rate_sale'=>$document->exchange_rate_sale,'balance'=>$document->balance,
             'control_number'=>$document->control_number,'number_full'=>$document->number_full,
+            'iva_retention'=>\App\Services\Fiscal\IvaRetentionService::view($document),
+            'total_taxed'=>$document->total_taxed,
             'total_igv'=>$document->total_igv]];
     }
     public function retentionStore(Request $request)
     {
         $document=Document::findOrFail($request->input('document_id'));self::authorizeDocument($document);
         abort_unless(auth()->user()->type==='admin' || auth()->user()->create_payment,403);
-        return ['success'=>true,'data'=>FiscalDocumentPersistence::retention($document,$request->all()),'message'=>'Comprobante de retención registrado.'];
+        return ['success'=>true,'data'=>FiscalDocumentPersistence::retention($document,$request->all()), 'iva_retention'=>\App\Services\Fiscal\IvaRetentionService::view($document->fresh()),'message'=>'Comprobante de retención registrado.'];
     }
     public function upload(Request $request)
     {

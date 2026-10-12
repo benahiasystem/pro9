@@ -14,8 +14,15 @@
     @endif
     @endforeach
     @foreach($document->received_retentions as $retention)
+    @if($retention->applied_amount > 0)
     <tr><td>Retención {{ $retention->tax_kind }} — {{ $retention->voucher_number }}</td><td style="text-align:right">{{ number_format($retention->applied_amount, 2) }}</td></tr>
+    @endif
     @endforeach
+    @php($prevision = $document->relationLoaded('fiscal_data') ? optional($document->getRelation('fiscal_data'))->iva_retention_prevision : null)
+    @if($prevision)
+    <tr><td>Retención IVA prevista (informativa)</td><td style="text-align:right">{{ number_format($prevision['amount'], 2) }}</td></tr>
+    <tr><td>Saldo pendiente</td><td style="text-align:right">{{ number_format($document->balance, 2) }}</td></tr>
+    @endif
     @if($document->guarantee_amount > 0)
     <tr><td>Fondo de garantía</td><td style="text-align:right">{{ number_format($document->guarantee_amount, 2) }}</td></tr>
     @endif

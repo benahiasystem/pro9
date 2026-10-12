@@ -25,6 +25,7 @@ class Kernel extends ConsoleKernel
      * @return void
      */
     protected function schedule(Schedule $schedule) {
+        $schedule->command('tenancy:run iva-retentions:recover')->everyMinute()->withoutOverlapping();
         $schedule->command('tenant:run')
             ->everyMinute();
         // Se ejecutara por hora guardando estado de cpu y memoria (windows/linux)

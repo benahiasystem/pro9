@@ -28,6 +28,7 @@ final class HkaEmission
                 $document = $document->fresh();
                 if (empty($document->emission->response['retry_allowed'])) return DocumentEmissionView::forDocument($document);
             }
+            if ($reason = HkaIvaRetentionCapability::reason($document)) FiscalAmounts::error('iva_retention',$reason);
             $token = app(HkaTransport::class)->token($company);
             if ($document->emission->status === 'not_requested') (new HkaEmissionPreparation)->prepare($document, $operationKey);
             $attempt = $document->getConnection()->transaction(function () use ($document, $company, $operationKey) {
@@ -153,7 +154,11 @@ final class HkaEmission
         try {
             app(HkaMail::class)->sendAutomatic($document);
         } catch (\Throwable $ignored) { /* The sale and its fiscal confirmation remain persisted. */ }
-        if (optional($current->emission)->status === 'confirmed') HkaIgtfNote::resume($current);
+        if (optional($current->emission)->status === 'confirmed') {
+            HkaIgtfNote::resume($current);
+            try { IvaRetentionService::resume($current); }
+            catch (\Throwable $ignored) { /* Durable pending vouchers are recovered independently. */ }
+        }
     }
 
     private function failure(Document $document, ?string $attempt, \Throwable $exception, ?string $operationKey = null): void

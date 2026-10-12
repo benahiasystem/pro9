@@ -93,4 +93,14 @@ El consolidado de persons incluye is_third_party=false, third_party_rif nullable
 
 Aplicar [perfiles SPE](../mantener-sujetos-pasivos-especiales-pro9/SKILL.md). Agregar JSON nullable `fiscal_profile` a creaciones de companies/persons y `fiscal_context` a document_payments/document_received_retentions. La nueva tabla `fiscal_profile_versions` tiene creadora 000336, empresa/persona, fecha de vigencia, JSON, actor/registro e índices entidad-fecha; FKs restrictivas a companies/persons/users en 000999 y down inverso. No confundir esta tabla tributaria con los perfiles de numeración retirados.
 
-No sembrar SPE, notificaciones, facultades o perfiles ficticios como datos iniciales reales, ni añadir conversión/backfill. La evidencia del 12/10/2026 tiene 340 tablas/341 archivos tenant; actualizar los conteos de prueba sólo cuando el inventario cambie intencionalmente. Verificar `TenantMigrationDataSeederTest` y creación/seeding/FKs/rollback/repetición de `FiscalEmissionSchemaTest` en bases propias temporales.
+No sembrar SPE, notificaciones, facultades o perfiles ficticios como datos iniciales reales, ni añadir conversión/backfill. La evidencia SPE inicial del 12/10/2026 tenía 340 tablas/341 archivos; IVA recibido añadió dos creadoras y el inventario pasó a 342/343. Actualizar conteos de prueba sólo por cambios intencionales. Verificar `TenantMigrationDataSeederTest` y creación/seeding/FKs/rollback/repetición de `FiscalEmissionSchemaTest` en bases propias temporales.
+
+## IVA recibido, operaciones y adjuntos temporales
+
+Aplicar [el contrato IVA recibido](../mantener-retenciones-iva-recibidas-pro9/SKILL.md) y [su esquema](../mantener-retenciones-iva-recibidas-pro9/references/contratos.md#esquema-inicial-y-soporte). Modificar únicamente consolidado de instalaciones nuevas, sin conversiones de tenants anteriores.
+
+- `000332`: estado de aplicación, UUID/hash/solicitud privada, base imponible separada, diagnóstico y reversión auditada. Índice generado nullable único para un IVA pendiente/aplicado por factura; número de comprobante único sólo activo, preservando reemplazos históricos.
+- `000334`: `iva_retention_prevision` JSON nullable fuera de pagos/aplicaciones.
+- `000337`: `document_iva_retention_operations`, UUID único, acción apply/remove única por comprobante, payload/contexto congelados, reclamo, contadores y recuperación.
+- `000338`: `received_retention_uploads`, token único, usuario/vencimiento/ruta/documento consumidor. `000999` agrega FKs restrictivas de operaciones/uploads y `reversed_by`; retirarlas antes de revertir tablas.
+- Mantener precisiones existentes y limpieza demo en orden dependiente: operaciones/uploads antes de retenciones/documentos. Verificar índices generados, FKs, rollback/repetición y `test_iva_*` en MySQL temporal; el servicio no sustituye restricciones de base.

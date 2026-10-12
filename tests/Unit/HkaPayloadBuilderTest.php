@@ -87,5 +87,21 @@ class HkaPayloadBuilderTest extends TestCase
     {
         $this->expectException(ValidationException::class);FiscalAmounts::payment(['payment'=>100,'igtf_status'=>'exempt'],'USD',10,true,3);
     }
+    public function test_unverified_hka_net_retention_blocks_emission_without_fabricating_payments(): void
+    {
+        $snapshot=json_decode(file_get_contents(__DIR__.'/../Fixtures/Hka/invoice.json'),true);
+        $snapshot['fiscal_data']['iva_retention_prevision']=['amount'=>'12.00'];
+        $snapshot['payments'][0]['payment']=104;
+        $snapshot['payments'][0]['original_amount']=104;
+        config(['iva_retention.demo_net_collection_verified'=>false]);
+        try { (new HkaPayloadBuilder)->build($snapshot);self::fail('Unverified net collection transmitted'); }
+        catch (ValidationException $e) { self::assertArrayHasKey('iva_retention',$e->errors()); }
+        config(['iva_retention.demo_net_collection_verified'=>true]);
+        $result=(new HkaPayloadBuilder)->build($snapshot);
+        self::assertCount(1,$result['documentoElectronico']['encabezado']['totales']['formasPago']);
+        self::assertSame('104.00',$result['documentoElectronico']['encabezado']['totales']['formasPago'][0]['monto']);
+        self::assertSame(104,$snapshot['payments'][0]['payment']);
+    }
+
 }
 // ######## FIN PERSISTENCIA FISCAL VENEZUELA ########

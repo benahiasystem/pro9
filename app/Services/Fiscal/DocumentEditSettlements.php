@@ -38,7 +38,7 @@ final class DocumentEditSettlements
         if (!empty($inputs['received_retentions']) || !empty($inputs['guarantee_fund'])) {
             FiscalAmounts::error('document', 'Las retenciones y fondos existentes se conservan; utilice sus acciones específicas.');
         }
-        if ($document->received_retentions()->exists() && (int) ($inputs['customer_id'] ?? $document->customer_id) !== (int) $document->customer_id) {
+        if ($document->received_retentions()->applied()->exists() && (int) ($inputs['customer_id'] ?? $document->customer_id) !== (int) $document->customer_id) {
             FiscalAmounts::error('customer_id', 'Conserve el cliente asociado a las retenciones registradas.');
         }
     }
@@ -46,12 +46,13 @@ final class DocumentEditSettlements
     public static function validateTotals(Document $document): void
     {
         if ($document->fresh()->balance < -0.005) FiscalAmounts::error('total', 'El total no puede ser inferior al importe ya aplicado.');
-        $retentions = $document->received_retentions()->where('tax_kind', 'IVA')->get();
+        $retentions = $document->received_retentions()->where('tax_kind', 'IVA')->applied()->get();
+        $fiscalIva = FiscalAmounts::convert($document->total_igv,$document->currency_type_id,'VES',$document->exchange_rate_sale);
         foreach ($retentions as $retention) {
-            $base = FiscalAmounts::convert($retention->base, $retention->currency_type_id, $document->currency_type_id, $retention->exchange_rate);
-            if ($base > $document->total_igv + 0.005) FiscalAmounts::error('total_igv', 'El nuevo IVA no respalda la base de la retención registrada.');
+            $base = FiscalAmounts::convert($retention->base, $retention->currency_type_id, 'VES', $retention->exchange_rate);
+            if ($base > $fiscalIva + 0.005) FiscalAmounts::error('total_igv', 'El nuevo IVA fiscal no respalda la base de la retención registrada.');
         }
-        if ($retentions->sum('applied_amount') > $document->total_igv + 0.005) FiscalAmounts::error('total_igv', 'El nuevo IVA es inferior a las retenciones aplicadas.');
+        if ($retentions->sum(fn($row)=>FiscalAmounts::convert($row->amount,$row->currency_type_id,'VES',$row->exchange_rate)) > $fiscalIva + 0.005) FiscalAmounts::error('total_igv', 'El nuevo IVA fiscal es inferior a las retenciones aplicadas.');
         $document->forceFill(['total_canceled' => $document->fresh()->balance <= 0.005])->save();
     }
 }

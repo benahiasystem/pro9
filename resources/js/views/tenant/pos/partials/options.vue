@@ -10,6 +10,9 @@
         :close-on-press-escape="false"
         :show-close="false"
     >
+        <el-button v-if="resource === 'documents' && form.iva_retention && form.iva_retention.enabled" size="small" @click="showIvaRetention = true">Retención IVA del cliente</el-button>
+        <retention-form :show-dialog.sync="showIvaRetention" :document-id="recordId"/>
+
         <Keypress key-event="keyup" :key-code="13" @success="someMethod" />
 
         <span slot="title">
@@ -518,6 +521,7 @@ html.dark .pos-success {
 }
 </style>
 <script>
+import RetentionForm from "../../documents/partials/retention.vue"
 import {documentPdf} from "@mixins/document-pdf";
 import {documentEmail} from "@mixins/document-email";
 import {whatsappNumber} from "@helpers/phone";
@@ -529,7 +533,7 @@ import { buhoprinter } from "@mixins/buhoprinter";
 
 export default {
     props: ["showDialog", "recordId", "statusDocument", "resource", "fromPos", "isPrint"],
-    components: {
+    components: {RetentionForm,
         Keypress,
         SaleNoteGenerate,
         QrApi
@@ -543,6 +547,7 @@ export default {
             errors: {},
             ...documentEmail.data(),
             form: {},
+            showIvaRetention: false,
             company: {},
             configuration: {},
             activeName: "first",

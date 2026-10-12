@@ -408,6 +408,7 @@ class Document extends ModelTenant
             'series'                 => $this->series,
             'number'                 => $this->number,
             'fiscal_identity' => $this->fiscal_identity,
+            'iva_retention' => \App\Services\Fiscal\IvaRetentionService::view($this),
             'document_type_id'       => $this->document_type_id,
             'date_of_issue'          => optional($this->date_of_issue)->format('Y-m-d'),
             'time_of_issue'          => $this->time_of_issue,
@@ -1845,7 +1846,9 @@ class Document extends ModelTenant
     {
         $total = \App\Services\ExchangeRates\ExchangeRateMath::rational('0');
         foreach ($this->received_retentions as $retention) {
-            $base = \App\Services\ExchangeRates\ExchangeRateMath::rational($retention->base);
+            if ($retention->applied_amount <= 0) continue;
+            $value = $retention->tax_kind === 'IVA' && $retention->taxable_base > 0 ? $retention->taxable_base : $retention->base;
+            $base = \App\Services\ExchangeRates\ExchangeRateMath::rational($value);
             $total = $total->plus($retention->currency_type_id === 'USD' ? $base->multipliedBy($retention->exchange_rate) : $base);
         }
         return (float) \App\Services\ExchangeRates\ExchangeRateMath::finalAmount($total, 2);

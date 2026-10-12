@@ -25,6 +25,7 @@ trait SpePersistenceCases
                 $identity=$stored->payload['documentoElectronico']['encabezado']['identificacionDocumento'];
                 return Http::response(['codigo'=>'200','estado'=>$identity+['estadoDocumento'=>'Procesado','numeroControl'=>'00-'.str_pad((string)(10000+(int)($identity['numeroDocumento'] ?? '0')+(($identity['tipoDocumento'] ?? '01')==='03'?20000:0)),8,'0',STR_PAD_LEFT)]]);
             }
+            if (str_ends_with($request->url(), '/AplicarRetencion')) return Http::response(['codigo'=>'200','infoRetencion'=>null]);
             $identity=$request['documentoElectronico']['encabezado']['identificacionDocumento'];$sent[]=$identity;
             if ($mode==='timeout') throw new \Illuminate\Http\Client\ConnectionException('private-demo-token');
             if ($mode==='rejected') return Http::response(['codigo'=>'203','validaciones'=>['1015']]);
@@ -94,7 +95,7 @@ trait SpePersistenceCases
         $doc=(new \App\CoreFacturalo\Facturalo)->save($input)->getDocument()->fresh();self::assertEquals(232,$doc->balance);
         $voucher=SpeProfiles::voucher($doc)+['tax_kind'=>'IVA','voucher_number'=>'20260900000001','voucher_date'=>'2026-09-10','agent_id'=>$buyer->id,'base'=>32,'percentage'=>75,'amount'=>24,'currency_type_id'=>'VES','exchange_rate'=>1];
         $retention=FiscalDocumentPersistence::retention($doc,$voucher);self::assertEquals(208,$doc->fresh()->balance);self::assertCount(0,$doc->payments);
-        foreach(['duplicate'=>[], 'wrong_rate'=>['voucher_number'=>'20260900000002','percentage'=>50,'amount'=>16], 'wrong_rif'=>['voucher_number'=>'20260900000003','agent_rif'=>'J-99999999-9'], 'wrong_control'=>['invoice_control'=>'00-00000001'], 'missing_support'=>['attachment'=>null], 'excess_75'=>['voucher_number'=>'20260900000004','base'=>8,'amount'=>6]]as$changes){
+        foreach(['duplicate'=>['operation_key'=>(string)Str::uuid()], 'wrong_rate'=>['voucher_number'=>'20260900000002','percentage'=>50,'amount'=>16], 'wrong_rif'=>['voucher_number'=>'20260900000003','agent_rif'=>'J-99999999-9'], 'wrong_control'=>['invoice_control'=>'00-00000001'], 'missing_support'=>['attachment'=>null], 'excess_75'=>['voucher_number'=>'20260900000004','base'=>8,'amount'=>6]]as$changes){
             try{FiscalDocumentPersistence::retention($doc,array_replace($voucher,$changes));self::fail('Invalid voucher persisted');}catch(ValidationException $e){self::assertNotEmpty($e->errors());}
         }
         $pay=['date_of_payment'=>'2026-09-10','payment_method_type_id'=>'01','currency_type_id'=>'USD','exchange_rate'=>'10.00000001','original_amount'=>5,'financial_intermediation'=>'none','operation_key'=>(string)Str::uuid()];

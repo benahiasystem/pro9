@@ -1,0 +1,26 @@
+{
+    "date": "2026-10-12",
+    "scope": "DEMO technical transport only; no fiscal qualification is inferred",
+    "cases": [
+        {
+            "currency": "VES",
+            "invoice_total": 232,
+            "real_test_collection": 208,
+            "balance": 24,
+            "emission": "rejected",
+            "diagnostic": "HKA rechazó los datos obligatorios o su formato.",
+            "business_code": "203",
+            "validations_sanitized": "[\"Encabezado.Totales.TotalAPagar: [1016] La sumatoria de montos en Formas de Pago debe coincidir con el monto Total a Pagar (Value: '232.00')\"]"
+        },
+        {
+            "currency": "USD",
+            "invoice_total": 232,
+            "real_test_collection": 208,
+            "balance": 24,
+            "emission": "rejected",
+            "diagnostic": "HKA rechazó los datos obligatorios o su formato.",
+            "business_code": "203",
+            "validations_sanitized": "[\"Encabezado.Totales.TotalAPagar: [1016] La sumatoria de montos en Formas de Pago debe coincidir con el monto Total a Pagar (Value: '2348.64')\"]"
+        }
+    ]
+}

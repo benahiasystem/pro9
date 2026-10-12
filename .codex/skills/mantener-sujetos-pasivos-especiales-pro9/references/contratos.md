@@ -42,12 +42,14 @@ Propuesta informativa sin efectos comerciales. Cobro/retención se revalida bajo
 
 ## Retenciones recibidas
 
+- El ciclo IVA pertenece a [mantener-retenciones-iva-recibidas-pro9](../../mantener-retenciones-iva-recibidas-pro9/SKILL.md): previsión sin efecto, un comprobante activo e historial, soporte previo al guardado, activación al cotejar control/confirmación, outbox y reversión conciliada. ISLR mantiene su aplicación local. Los campos de perfil/elegibilidad siguen siendo responsabilidad de esta habilidad.
 - Entrada: IVA/ISLR, agente cliente de factura, RIF vigente exacto, número/fecha del comprobante, número visible y control real de factura, base/porcentaje/sustraendo/importe, moneda/tasa y adjunto obligatorio.
 - Fecha desde emisión hasta hoy. IVA: catorce dígitos `AAAAMM########`, mes concordante, porcentaje 75/100 de propuesta y sustraendo cero. Base sobre IVA, no total de venta.
 - Contexto allowlist: causal 100, evidencia, exclusión, fundamento ISLR, `public_operation_scope=subject/excluded`, `public_scope_reference`. Operación pública específica sólo elegible con ámbito sujeto documentado. Proveedor formal/no sujeto/excluido impide IVA.
 - 100 exige referencia de evidencia en operación o perfil. ISLR exige concepto existente, fundamento y evidencia; rechazar `001` salarial en ventas propias. No inferir tasa/sustraendo por SPE o descripción del concepto.
-- Validar fórmula/saldo/acumulados, unicidad documento/tipo/agente/número y límites: IVA sobre impuesto disponible según porcentaje; base ISLR no superior a valor neto facturado.
+- Validar fórmula/saldo y unicidad activa. IVA separa base imponible (`taxable_base`) de IVA sujeto (`base`) y retenido (`amount`): límites fiscales en VES con importes conservados, liquidación documental con tasa del comprobante. Una base parcial con alícuotas mixtas sin desglose no es inferible. ISLR conserva límite sobre valor neto facturado.
 - Adjunto privado tenant, existente bajo `received_retentions/<document_id>/`, sin rutas ajenas/recorrido. Congelar agente/contexto y reducir saldo sin alterar venta/caja. No confundir recepción local con emisión HKA de comprobantes 05–07.
+- Con soporte temporal, ligar token a usuario/tenant y consumir una sola vez; RIF/contexto se revalida al activar, sin fabricar ni sustituir una referencia fiscal aportada. Repetir UUID IVA conserva resultado; otros datos/acción producen 409.
 
 ## Consumidores
 
@@ -55,10 +57,11 @@ Propuesta informativa sin efectos comerciales. Cobro/retención se revalida bajo
 |---|---|
 | `FiscalProfileController`, `FiscalProfileService`, `SpecialTaxpayerPolicy` | Acceso, historial, fechas, validación y propuestas. |
 | `FiscalDocumentPersistence`, `Facturalo` | Snapshots, cobros/reversión, retenciones y nota derivada. |
+| `IvaRetentionService`, `HkaIvaRetention` | Previsión/validación IVA por fecha, aplicación local/outbox y reversión auditada independientes de factura. |
 | `HkaIgtfNote`, `HkaEmission` | Nota digital exclusiva 08/98, cobro vigente, padre confirmado/coherente, envío fuera de transacción y recuperación. |
 | `HkaPayloadBuilder`, `HkaDomesticMoney` | RIF/`infoAdicional`, copia VES/OtraMoneda USD y referencia afectada con moneda/tasa original. |
 | `fiscal_profiles/editor.vue` | Perfil separado en empresa/cliente, historial y guardado administrativo. |
-| `documents/partials/igtf_fields.vue`, `retention.vue` | Conversión/propuesta compartida y datos/soporte de comprobante recibido. |
+| `documents/partials/igtf_fields.vue`, `iva_retention_fields.vue`, `retention.vue` | Propuestas/conversión, previsión IVA y datos/soporte/gestión compartidos. |
 | `pos/partials/payment.vue`, `fast_payment.vue`, `fast_payment_garage.vue` | Crédito, importes reales, almacenamiento y recuperación del borrador. |
 | `multiple_payment.vue`, `multiple_payment_garage.vue` | `paymentConditionId`; no proponer/distribuir total en crédito; cancelar conserva snapshot. |
 | `Template`, `pdf/partials/fiscal_profiles.blade.php`, `SpecialTaxpayerPolicy::forPrint` | RIF/SPE desde snapshots en representación local; ticket reserva 12 mm por perfil. |

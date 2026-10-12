@@ -74,7 +74,23 @@ try {
         if ($input['operation'] === 'hka-auto-mail') $output = app(App\Services\Fiscal\HkaMail::class)->sendAutomatic($document);
         else $output=$input['operation']==='hka-mail' ? app(App\Services\Fiscal\HkaMail::class)->send($document, ['mail-test@example.test'], $input['data']['uuid']) : app(App\Services\Fiscal\HkaEmission::class)->send($document);
     } else {
-        $result=($input['operation'] ?? 'payment')==='retention' ? $service::retention($document,$input['data']) : $service::payment($document,$input['data']);
+        if (($input['operation'] ?? '') === 'iva-mutations' || (($input['operation'] ?? '') === 'retention' && ($input['data']['tax_kind'] ?? '') === 'IVA')) {
+            $app->instance('encrypter',new \Illuminate\Encryption\Encrypter(str_repeat('k',32),'AES-256-CBC'));
+            config(['app.key'=>str_repeat('k',32)]);
+            $http = new \Illuminate\Http\Client\Factory();
+            $app->instance(\Illuminate\Http\Client\Factory::class,$http);
+            $http->preventStrayRequests();
+            $http->fake(fn($r)=>\Illuminate\Support\Facades\Http::response(str_ends_with($r->url(),'/Autenticacion')
+                ? ['token'=>'fake-worker-jwt','expiracion'=>date('c',time()+3600)] : ['codigo'=>'200','infoRetencion'=>null]));
+        }
+        if (($input['operation'] ?? '') === 'iva-mutations') {
+            $data=$input['data'];
+            if ($data['action'] === 'reverse') {
+                $row=$document->received_retentions()->findOrFail($data['retention_id']);
+                \App\Services\Fiscal\IvaRetentionService::reverse($row,$data['input']);
+                $result=$row->fresh();
+            } else $result=$data['action']==='register' ? $service::retention($document,$data['input']) : $service::payment($document,$data['input']);
+        } else $result=($input['operation'] ?? 'payment')==='retention' ? $service::retention($document,$input['data']) : $service::payment($document,$input['data']);
         $output=['id'=>$result->id];
     }
 } catch (Illuminate\Validation\ValidationException $e) {$output=['rejected'=>array_keys($e->errors())];}

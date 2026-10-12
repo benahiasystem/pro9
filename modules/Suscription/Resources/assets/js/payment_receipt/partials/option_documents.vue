@@ -7,6 +7,7 @@
                    :visible="show"
                    width="50%"
                    @open="create">
+<iva-retention-fields :form="document" />
             <div class="row">
                 <div class="col-lg-8">
                     <div :class="{'has-danger': errors.document_type_id}"
@@ -303,6 +304,7 @@
 </template>
 
 <script>
+import IvaRetentionFields from "@views/documents/partials/iva_retention_fields.vue"
 
 // import DocumentOptions from '../../documents/partials/options.vue'
 import DocumentOptions from '../../../../../../../resources/js/views/tenant/documents/partials/options.vue'
@@ -311,7 +313,7 @@ import DocumentOptions from '../../../../../../../resources/js/views/tenant/docu
 import moment from "moment";
 
 export default {
-    components: {DocumentOptions},
+    components: {IvaRetentionFields,DocumentOptions},
 
     props: [
         'show',

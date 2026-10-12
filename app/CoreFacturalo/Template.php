@@ -94,6 +94,7 @@ class Template
         }
         $html = view($view, compact('company', 'document', 'configuration'))->render();
         if ($document instanceof \App\Models\Tenant\Document) {
+            if ($document->exists && \App\Services\Fiscal\IvaRetentionService::available($document)) $document->loadMissing('fiscal_data');
             $summary = view('pdf.partials.document_fiscal_totals', compact('document'))->render();
             // Some ticket footers contain their own body: append the fiscal summary once.
             $bodyEnd = strripos($html, '</body>');

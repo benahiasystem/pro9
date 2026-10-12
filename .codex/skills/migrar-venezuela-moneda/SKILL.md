@@ -67,3 +67,9 @@ Al modificar cobros o saldos, aplicar [persistencia fiscal y cobros](../mantener
 Seguir [perfiles SPE](../mantener-sujetos-pasivos-especiales-pro9/SKILL.md): la clasificación usa perfil vigente del emisor, moneda realmente recibida e intermediación explícita; no inferir IGTF de moneda documental o comprador. Mantener `original_amount`/`payment`/`tax_amount` y tasa exacta en el contexto congelado del cobro. Crédito y recuperación de borradores sólo conservan abonos introducidos, sin proponer/distribuir el total.
 
 `HkaDomesticMoney` adapta una copia para factura doméstica USD o con IGTF y nota exclusiva 98: principales VES/OtraMoneda USD sin modificar dinero local o payloads preparados. La nota utiliza tasa/fecha del cobro y conserva moneda/tasa original del padre para `montoFacturaAfectada`. Comprobar conversiones, saldos, caja/recibos derivados y regresiones de terceros/regímenes/exportación.
+
+## Dinero de comprobantes IVA recibidos
+
+Aplicar [retenciones IVA recibidas](../mantener-retenciones-iva-recibidas-pro9/SKILL.md). `base` es IVA sujeto, `taxable_base` es base imponible y `amount` importe retenido; `applied_amount` reduce saldo documental con tasa del comprobante. Comparar límites fiscales en VES con los importes/tasa de emisión conservados, sin confundirlos con equivalencia de liquidación.
+
+`HkaIvaRetentionPayload` convierte directamente desde moneda del comprobante a moneda fiscal confirmada; VES→VES permanece exacto aun con factura USD y tasas distintas. No convertir primero al importe aplicado USD y luego usar tasa de emisión. Ejemplo probado: IVA fiscal 320 VES, retención 240 VES, factura USD con tasa 10 y comprobante con tasa 20: aplicar 12 USD y enviar 320/240 VES. El comprobante no crea efectivo ni base IGTF; previsión y estados inactivos aplican cero. Verificar `HkaIvaRetentionPayloadTest` y `test_iva_fiscal_ves*` en MySQL temporal.

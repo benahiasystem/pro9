@@ -1,6 +1,7 @@
 <!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div>
+<iva-retention-fields :form="document" />
         <div class="page-header pe-0">
             <h2>
                 <a href="/hotels/reception">
@@ -415,6 +416,7 @@
 </template>
 
 <script>
+import IvaRetentionFields from "@views/documents/partials/iva_retention_fields.vue"
 import moment from "moment";
 import DocumentOptions from "@views/documents/partials/options.vue";
 import SaleNoteOptions from "@views/sale_notes/partials/options.vue";
@@ -424,7 +426,7 @@ import {exchangeRate, functions} from "@mixins/functions";
 import {mapActions, mapState} from "vuex/dist/vuex.mjs";
 
 export default {
-    components: {
+    components: {IvaRetentionFields,
         DocumentOptions,
         SaleNoteOptions,
     },

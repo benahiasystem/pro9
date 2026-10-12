@@ -954,6 +954,7 @@ class DocumentController extends Controller
                     ...\App\Services\SpecialTaxRegimePolicy::view($document),
                     'number_full' => $document->number_full,
                     'response' => $response,
+                    'iva_retention' => \App\Services\Fiscal\IvaRetentionService::view($document),
                     'fiscal_emission' => \App\Services\Fiscal\DocumentEmissionView::forDocument($document),
                     'email_delivery' => \App\Services\Fiscal\HkaMail::view($document),
                     'pdf_downloads' => \App\Services\Fiscal\HkaPdf::view($document, false),
@@ -1072,7 +1073,8 @@ class DocumentController extends Controller
             'data' => array_merge($edit, \App\Services\ThirdPartyInvoicePolicy::view($document), \App\Services\SpecialTaxRegimePolicy::view($document), [
                 'id' => $document->id,
                 'is_editable' => $edit['can_edit'],
-                'fiscal_emission' => \App\Services\Fiscal\DocumentEmissionView::forDocument($document),
+                'iva_retention' => \App\Services\Fiscal\IvaRetentionService::view($document),
+                    'fiscal_emission' => \App\Services\Fiscal\DocumentEmissionView::forDocument($document),
                 'response' => $response,
             ]),
         ];
@@ -1103,7 +1105,8 @@ class DocumentController extends Controller
         }
 
         return response()->json([
-            'data' => array_merge($document->toArray(), \App\Services\Fiscal\DocumentEditPolicy::view($document), \App\Services\ThirdPartyInvoicePolicy::view($document), \App\Services\SpecialTaxRegimePolicy::view($document), ['fiscal_emission' => \App\Services\Fiscal\DocumentEmissionView::forDocument($document)]),
+            'data' => array_merge($document->toArray(), \App\Services\Fiscal\DocumentEditPolicy::view($document), \App\Services\ThirdPartyInvoicePolicy::view($document), \App\Services\SpecialTaxRegimePolicy::view($document), ['iva_retention' => \App\Services\Fiscal\IvaRetentionService::view($document),
+                    'fiscal_emission' => \App\Services\Fiscal\DocumentEmissionView::forDocument($document)]),
             'success' => true,
         ], 200);
     }

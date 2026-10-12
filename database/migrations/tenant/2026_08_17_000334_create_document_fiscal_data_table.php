@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\DB;
  * - `catalog_snapshot` json NOT NULL
  * - `third_party` json DEFAULT NULL
  * - `third_party_person_id` int(10) unsigned DEFAULT NULL, FK persons with restricted deletion
+ * - `iva_retention_prevision` json DEFAULT NULL (informational, no settlement)
  * - `conditional_data` json DEFAULT NULL
  * - `created_at` timestamp NULL DEFAULT NULL
  * - `updated_at` timestamp NULL DEFAULT NULL
@@ -29,6 +30,7 @@ CREATE TABLE `document_fiscal_data` (
   `third_party` json DEFAULT NULL,
   `third_party_person_id` int(10) unsigned DEFAULT NULL,
   `conditional_data` json DEFAULT NULL,
+  `iva_retention_prevision` json DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),

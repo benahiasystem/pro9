@@ -8,6 +8,9 @@ Rutas relativas a la raíz de Pro9:
 |---|---|
 | `app/CoreFacturalo/Facturalo.php` | Guardado/actualización comercial común y transacción tenant; emisión elegible después del commit exterior al crear, sin emisión automática al editar. |
 | `app/Services/Fiscal/FiscalDocumentPersistence.php` | Emisor, líneas, resumen, relaciones fiscales, pagos, IGTF, retenciones y reversión. |
+| `app/Services/Fiscal/IvaRetentionService.php` | Previsión, IVA recibido único activo, soporte/validación diferida, aplicación y reversión auditada; delegado por persistencia común. |
+| `app/Services/Fiscal/HkaIvaRetention.php` / `HkaIvaRetentionPayload.php` | Outbox IVA, identidad/dinero congelados, lectura previa y aplicación/eliminación conciliadas después del commit. |
+| `app/Services/Fiscal/HkaIvaRetentionCapability.php` | Bloqueo DEMO de cobro neto rechazado 203/1016; conserva venta/abonos y publica diagnóstico. |
 | `app/Services/Fiscal/SpecialTaxpayerPolicy.php` | Perfil, vigencia, intermediación y facultades IVA/ISLR; propuestas sin efectos comerciales. |
 | `app/Services/Fiscal/FiscalProfileService.php` | Versiones administrativas y resolución por fecha; snapshots inmutables. |
 | `app/Services/Fiscal/HkaIgtfNote.php` | Nota digital exclusiva IGTF, validación del cobro, padre confirmado y recuperación. |
@@ -15,9 +18,10 @@ Rutas relativas a la raíz de Pro9:
 | `app/CoreFacturalo/Requests/Api/Transform/DocumentTransform.php` | Traducción de pagos de la API de creación. |
 | `app/Http/Controllers/Tenant/DocumentPaymentController.php` | Cobros posteriores y reversión. |
 | `app/Http/Controllers/Tenant/DocumentFiscalController.php` | Autorización de ajustes, retenciones, adjuntos, preparación, envío/consulta fiscal y rastreo de correo HKA. |
+| `app/Http/Controllers/Tenant/IvaRetentionController.php` | Propuesta, token de soporte previo al guardado, descarga privada y consulta/reintento/reversión IVA. |
 | `app/Services/Fiscal/HkaEmissionPreparation.php` | Operación/payload congelado, sin HTTP. |
 | `app/Services/Fiscal/HkaEmission.php` | Reclamo de emisión, envío, conciliación y persistencia del resultado/control con protección frente a respuestas tardías. |
-| `app/Services/Fiscal/HkaTransport.php` | Transporte DEMO de emisión, consulta, correo, rastreo y `DescargaArchivo` PDF; autenticación, TLS y tiempos acotados. |
+| `app/Services/Fiscal/HkaTransport.php` | Transporte DEMO de emisión, consulta, correo, PDF y POST/GET/DELETE IVA recibido con cuerpo JSON; TLS/tiempos acotados. |
 | `app/Services/Fiscal/HkaResponse.php` | Interpretación de éxito de negocio, identidad/control, rechazo e incertidumbre. |
 | `app/Services/Fiscal/HkaMail.php` | Intentos idempotentes y rastreo de correo, independientes del estado fiscal. |
 | `app/Services/Fiscal/HkaPdf.php` | Autorización y validación compartidas de descargas; Copias HKA reutilizables y conversión A5 en memoria antes de guardar. |
@@ -31,6 +35,7 @@ Rutas relativas a la raíz de Pro9:
 | `app/Services/Fiscal/DocumentEditSettlements.php` | Conservación de cobros y restricciones de importes/retenciones durante la edición. |
 | `resources/js/mixins/document-email.js` | Envío, UUID, validaciones y rastreo compartidos por diálogos web/listado y POS/Garage. |
 | `resources/js/mixins/document-pdf.js` | Descargas explícitas A4/A5/80MM y errores compartidos, sin fallback local para facturas digitales. |
+| `resources/js/mixins/iva-retention.js` / `documents/partials/iva_retention_fields.vue` / `retention.vue` | Objetivo neto/propuesta y ciclo IVA compartidos; conserva total y abonos de borrador. |
 | `app/Models/Tenant/Document.php` | Relaciones y saldo documental. |
 
 Al modificar un importe, seguir también sus consumidores en caja, `modules/Finance`, `modules/Report`, `modules/Dashboard` y templates PDF. No asumir que el importe aplicado equivale a efectivo recibido.
@@ -54,12 +59,14 @@ Al modificar un importe, seguir también sus consumidores en caja, `modules/Fina
 | `document_payments` | fiscal_context de emisor/comprador/decisión/fecha; principal aplicado/recibido, moneda/tasa/fuente/fecha, impuesto, clasificación/exención, UUID, medio, recibo derivado y reversión. |
 | `document_taxes` | Tributo, base/porcentaje/importe documental y VES; vínculo IGTF al pago. |
 | `document_currency_totals` | Totales VES y desglose de impuestos por alícuota. |
-| `document_received_retentions` | fiscal_context de perfiles/propuesta/operación/concepto/control/actor; comprobante IVA/ISLR, agente/snapshot, concepto, base/porcentaje/sustraendo, moneda/tasa, aplicación y adjunto. |
+| `document_received_retentions` | Perfiles/propuesta/control/actor; IVA/ISLR, agente/snapshot, base/porcentaje/sustraendo, moneda/tasa y soporte. IVA agrega estado, UUID/hash/input privados, base imponible separada e historial de reversión/reemplazo. |
+| `document_iva_retention_operations` | Acción apply/remove, UUID/identidad/payload/contexto congelados, reclamo/contadores, resultado/diagnóstico y recuperación. |
+| `received_retention_uploads` | Token privado por usuario/tenant, vencimiento, consumo único y documento vinculado. |
 | `document_guarantee_funds` | Fondo comercial separado y aplicación al saldo. |
-| `document_fiscal_data` | Catálogos/snapshots de proveedor/transacción/régimen, tercero y datos condicionales. |
+| `document_fiscal_data` | Catálogos/snapshots de proveedor/transacción/régimen, tercero, datos condicionales y previsión IVA informativa nullable. |
 | `document_emissions` | Operación única, contrato/payload congelado, estado, respuesta/control/autorización y `consulta_url` opcional procedente de HKA; `response.mail` para distribución y `response.edit_history` para trazabilidad de edición, sin nuevas tablas; PDF HKA separado en disco privado por operación/formato. |
 
-Las relaciones documentales se crean en `000330`–`000335`, y fiscal_profile_versions en `000336`; las FKs están en `2026_08_17_000999_add_tenant_foreign_keys.php`. Mantener las restricciones de unicidad de pagos, cargo IGTF, recibo derivado, retenciones y relaciones únicas documentales.
+Las relaciones documentales se crean en `000330`–`000335`, perfiles en `000336`, operaciones IVA en `000337` y uploads en `000338`; FKs en `2026_08_17_000999_add_tenant_foreign_keys.php`. Mantener índices generados de un IVA activo/número activo, UUID registro/reversión/operación HKA y acción única por comprobante, además de las unicidades de pagos/IGTF/recibos y relaciones documentales.
 
 Campos retirados de `documents`: `ubl_version`, `perception`, `total_unaffected`, `total_free`, `total_igv_free`, `retention`, `user_rel_subscription_plan_id`. Conservar `user_rel_suscription_plan_id`, utilizado por suscripciones. El snapshot del artículo no contiene `cod_digemid`. No restaurar las claves heredadas `amount_pen`/`amount_usd` del JSON de retenciones ni sus productores/consumidores.
 
@@ -69,6 +76,7 @@ Verificar el contrato vigente en `routes/web.php`, `routes/api.php`, requests y 
 
 - `POST /document_payments`: cobro posterior; `GET /document_payments/records/{id}` y `/document_payments/document/{id}`: consulta; `DELETE /document_payments/{id}`: reversión con motivo.
 - `GET /documents/retention/{id}`, `POST /documents/retention`, `POST /documents/retention/upload`: comprobantes recibidos; adjuntos PDF/JPG/PNG de hasta 5 MB.
+- Para previsión, upload previo a creación, descarga y consulta/reintento/reversión IVA: [rutas y estados del contrato IVA](../../mantener-retenciones-iva-recibidas-pro9/references/contratos.md#api-y-estados). Conservar rutas anteriores, autenticación/CSRF, `create_payment`/`delete_payment` y sucursal. UUID/datos incompatibles producen 409; no rehacer operaciones desde el editor.
 - `POST /documents/{id}/prepare-hka`: preparación administrativa, sin HTTP al proveedor.
 - `POST /documents/{id}/send-hka`: envío fiscal administrativo; `POST /documents/{id}/query-hka`: conciliación dentro del tenant/sucursal.
 - `POST /documents/email`: conserva `id` y `customer_email`; para HKA añade UUID `request_id` y `resend` explícito. Facturas digitales y notas exclusivas IGTF reconocidas por HkaIgtfNote requieren confirmación/control y DEMO, sin fallback SMTP; los demás documentos conservan correo comercial.
@@ -78,13 +86,14 @@ Verificar el contrato vigente en `routes/web.php`, `routes/api.php`, requests y 
 
 El pago posterior utiliza `document_id`, `date_of_payment`, `payment_method_type_id`, `payment_destination_id`, `currency_type_id`, `original_amount`, `exchange_rate`, `exchange_rate_source`, `exchange_rate_date`, `operation_key`, `igtf_status`, `exemption_reason`, `exception_basis` y `financial_intermediation` cuando corresponde. En la API de creación, `pagos` conserva `monto`, `codigo_metodo_pago` y `codigo_destino_pago`, con traducción de los datos fiscales nuevos. No confundir el POST web del formulario con el contrato externo de creación por API.
 
-La creación admite `received_retentions`, `guarantee_fund`, `taxes` identificados y `fiscal_data`. Las pantallas Web/POS/Garage y cobros posteriores comparten selector de moneda efectivamente recibida, conversión, intermediación y propuesta fiscal. Crédito conserva sólo abonos introducidos al abrir/reabrir Pagos o recuperar borradores, sin distribuir el total. Los comprobantes recibidos requieren RIF/control/número reales y soporte privado. Seguir [perfiles SPE](../../mantener-sujetos-pasivos-especiales-pro9/SKILL.md) y [sus contratos](../../mantener-sujetos-pasivos-especiales-pro9/references/contratos.md).
+La creación admite `received_retentions`, `iva_retention_prevision`, `guarantee_fund`, `taxes` identificados y `fiscal_data`. Las pantallas Web/POS/Garage y cobros posteriores comparten moneda recibida, conversión, intermediación y propuesta fiscal. Crédito/reapertura conserva abonos, sin distribuir bruto/neto entre los existentes. Un comprobante IVA anterior a control/confirmación queda pendiente sin saldo; al confirmar se coteja referencia real. El flujo de los demás módulos y conversiones delega al guardado común. Seguir [IVA recibido](../../mantener-retenciones-iva-recibidas-pro9/SKILL.md), [perfiles SPE](../../mantener-sujetos-pasivos-especiales-pro9/SKILL.md) y [sus contratos](../../mantener-sujetos-pasivos-especiales-pro9/references/contratos.md).
 
 ## Resultado fiscal, correo y edición
 
 El comportamiento de emisión, distribución y bloqueo por registro HKA corresponde a «Medios digitales» (`digital`), actualmente sólo DEMO. Las otras modalidades conservan su operación propia y no requieren confirmación HKA.
 
 - Creación/detalle/listado incluyen `fiscal_emission` saneado; correo incluye `email_delivery` separado. Ninguno expone JWT, credenciales, payload completo o respuesta cruda HKA. Publicar `can_edit`/`edit_block_reason` y mantener `is_editable` coherente con la política de servidor.
+- `iva_retention` publica previsión/aplicación/saldo, estado local/HKA independiente, diagnóstico y permisos. Neto por IVA mantiene bloqueo DEMO 203/1016 sin revertir la venta. Retención posterior no altera payload/PDF HKA; reversión con presencia remota conserva saldo hasta ausencia y nunca crea movimientos de caja.
 - Creación/detalle/listado web/API, incluidos consumidores MobileApp, publican `pdf_downloads.a4/a5/ticket` con proveedor, URL, disponibilidad y mensaje. Aunque el ticket usa proveedor `local`, conserva los controles de descarga digital. Confirmar después del commit obtiene y guarda A4 HKA; las descargas reutilizan o recuperan copias privadas, A5 se convierte bajo demanda y 80MM continúa en memoria. No generar A4/A5 digitales locales ni modificar datos comerciales/fiscales al descargar.
 - La emisión reclamada queda `pending` antes del HTTP; éxito exige respuesta de negocio e identidad/control coherentes. Rechazo definitivo es `rejected`; timeout, duplicado sin conciliar o respuesta incompleta/contradictoria es `uncertain`. Antes de transmitir se conserva `not_requested`/`prepared`, según corresponda. Consulta previa y ausencia remota acreditada condicionan un reenvío, con al menos 30 segundos desde el intento anterior.
 - Un fallo fiscal posterior al commit responde venta guardada y conserva efectos comerciales. Un rollback no llama a HKA. El bloqueo común es empresa → documento → emisión y el HTTP ocurre fuera de esos bloqueos; respuestas de UUID anteriores no modifican una operación nueva.
@@ -97,6 +106,7 @@ Las reglas completas pertenecen a [emisión HKA](../../emitir-facturas-notas-hka
 
 - `tests/Unit/DocumentNumberDisplayTest.php`, `DocumentFileNameTest.php` y `tests/js/document-number-display.test.cjs`/`empty-series-display.test.cjs`: ocho dígitos, serie vacía, referencias, nombres públicos, adjuntos y colisiones ZIP. `HkaPayloadBuilderTest` comprueba que la presentación no altera números fiscales del snapshot.
 - `tests/Unit/FiscalEmissionSchemaTest.php`: MySQL temporal, instalación/persistencia y concurrencia real con `tests/Support/fiscal_payment_concurrency_worker.php`.
+- `test_iva_*`/`IvaRetentionPersistenceCases`, `HkaIvaRetentionPayloadTest`, `IvaRetentionHttpContractTest` y `tests/js/iva-retention-ui.test.cjs`: previsión, soporte, UUID/409, tasas/alícuotas, recuperación/reversión y cobros concurrentes. La aceptación visual integral de cada módulo en instalación nueva sigue pendiente en la evidencia del chat.
 - `tests/Unit/FiscalApiPaymentTransformTest.php`: compatibilidad del pago original, moneda propia, UUID y conversión con tasa explícita.
 - `tests/Unit/FiscalLineCalculationTest.php`: cálculo de líneas en servidor.
 - `tests/Unit/DocumentFiscalAuthorizationTest.php`: sucursal, administrador y autenticación.

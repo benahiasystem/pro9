@@ -41,4 +41,25 @@ class HkaTransportTest extends TestCase
         ], $requests);
         Http::assertSentCount(2);
     }
+    public function test_received_iva_uses_get_and_delete_json_bodies_and_does_not_emit_type_05(): void
+    {
+        $requests = [];
+        Http::preventStrayRequests();
+        Http::fake(function ($request, $options) use (&$requests) {
+            $requests[] = [$request->method(), $request->data()];
+            self::assertSame(['Bearer test-token'], $request->header('Authorization'));
+            self::assertTrue($options['verify']); self::assertFalse($options['allow_redirects']);
+            self::assertSame(5, $options['connect_timeout']);
+            return Http::response(['codigo'=>'200','infoRetencion'=>null]);
+        });
+        $identity = ['serie'=>'','tipoDocumento'=>'01','numeroDocumento'=>'100','numeroControl'=>'00-00000100'];
+        $payload = $identity+['totalRetencion'=>['numeroCompRetencion'=>'20261000000001','fechaEmisionCR'=>'12/10/2026','totalBaseImponible'=>'100.00','totalIVA'=>'16.00','totalRetenido'=>'12.00']];
+        $transport = new HkaTransport();
+        $transport->applyIvaRetention('test-token',$payload);
+        $transport->queryIvaRetention('test-token',$identity);
+        $transport->removeIvaRetention('test-token',$identity);
+        self::assertSame([['POST',$payload],['GET',$identity],['DELETE',$identity]],$requests);
+        Http::assertSentCount(3);
+    }
+
 }
