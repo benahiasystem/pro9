@@ -28,6 +28,7 @@ final class ThirdPartyInvoicePolicy
 
     public static function assertInput(array $input, bool $web = false): void
     {
+        SpecialTaxRegimePolicy::assertInput($input, $web);
         $fiscal = $input['fiscal_data'] ?? [];
         if (!is_array($fiscal)) FiscalAmounts::error('fiscal_data', 'Los datos fiscales requieren un objeto válido.');
         if (!empty($input['third_party']) || !empty($fiscal['third_party']) || !empty($fiscal['third_party_person_id']) || ($fiscal['transaction_type_id'] ?? '01') === '99') {
@@ -43,7 +44,7 @@ final class ThirdPartyInvoicePolicy
         if (($input['document_type_id'] ?? '') !== '01' || ExportInvoicePolicy::operation($input) !== '0101') FiscalAmounts::error('third_party_id', 'La facturación por cuenta de terceros requiere una Factura de venta interna.');
         if (!ExportInvoicePolicy::available(Company::query()->setEagerLoads([])->firstOrFail())) FiscalAmounts::error('third_party_id', 'La facturación por cuenta de terceros HKA requiere Medios digitales y DEMO.');
         if (($input['payment_condition_id'] ?? '') !== '01') FiscalAmounts::error('payment_condition_id', 'Esta etapa de facturación por terceros admite únicamente Contado.');
-        if (!empty($input['is_itinerant']) || (isset($input['itinerant']['id']) && (string) $input['itinerant']['id'] !== '1') || !empty($fiscal['special_tax_regime_id']) || !empty($fiscal['conditional_data']) || ($fiscal['transaction_type_id'] ?? '01') !== '01') FiscalAmounts::error('fiscal_data', 'La factura por terceros no admite regímenes ni otras operaciones especiales.');
+        if (!empty($input['is_itinerant']) || (isset($input['itinerant']['id']) && (string) $input['itinerant']['id'] !== '1') || !empty($fiscal['conditional_data']) || ($fiscal['transaction_type_id'] ?? '01') !== '01') FiscalAmounts::error('fiscal_data', 'La factura por terceros no admite otras operaciones condicionales.');
     }
 
     public static function assertSameCategory(Document $document, array $input): void
@@ -92,11 +93,6 @@ final class ThirdPartyInvoicePolicy
 
     public static function assertPaid(Document $document): void
     {
-        if (!self::isThirdParty($document)) return;
-        if ($document->payment_condition_id !== '01' || abs((float) $document->fresh()->balance) > 0.005
-            || abs((float) $document->payments()->whereNull('reversed_at')->sum('payment') - (float) $document->total) > 0.005
-            || !$document->payments()->whereNull('reversed_at')->whereNull('receipt_parent_id')->where('payment', '>', 0)->exists()) {
-            FiscalAmounts::error('payments', 'La factura por cuenta de terceros debe estar completamente pagada al contado con cobros reales.');
-        }
+        \App\Services\Fiscal\HkaDomesticInvoicePolicy::assertPaid($document);
     }
 }

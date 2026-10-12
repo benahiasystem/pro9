@@ -419,6 +419,7 @@ class DocumentController extends Controller
         $note_credit_types = NoteCreditType::whereActive()->orderByDescription()->get();
         $note_debit_types = NoteDebitType::whereActive()->orderByDescription()->get();
         $currency_types = CurrencyType::whereActive()->get();
+        $special_tax_regimes = \App\Services\ExportInvoicePolicy::available(Company::firstOrFail()) ? \App\Services\SpecialTaxRegimePolicy::options() : [];
         $operation_types = OperationType::whereActive(\App\Services\ExportInvoicePolicy::available(Company::firstOrFail()))->get();
         $discount_types = ChargeDiscountType::whereType('discount')->whereLevel('item')->get();
         $charge_types = ChargeDiscountType::whereType('charge')->whereLevel('item')->get();
@@ -481,6 +482,7 @@ class DocumentController extends Controller
             'note_debit_types',
             'currency_types',
             'operation_types',
+            'special_tax_regimes',
             'discount_types',
             'charge_types',
             'company',
@@ -511,6 +513,7 @@ class DocumentController extends Controller
         $categories = [];
         $affectation_igv_types = AffectationIgvType::whereActive(\App\Services\ExportInvoicePolicy::available(Company::firstOrFail()))->get();
         $price_types = PriceType::whereActive()->get();
+        $special_tax_regimes = \App\Services\ExportInvoicePolicy::available(Company::firstOrFail()) ? \App\Services\SpecialTaxRegimePolicy::options() : [];
         $operation_types = OperationType::whereActive(\App\Services\ExportInvoicePolicy::available(Company::firstOrFail()))->get();
         $discount_types = ChargeDiscountType::whereType('discount')->whereLevel('item')->get();
         $charge_types = ChargeDiscountType::whereType('charge')->whereLevel('item')->get();
@@ -552,6 +555,7 @@ class DocumentController extends Controller
             'affectation_igv_types',
             'price_types',
             'operation_types',
+            'special_tax_regimes',
             'discount_types',
             'charge_types',
             'attribute_types',
@@ -947,6 +951,7 @@ class DocumentController extends Controller
                 'data' => [
                     'id' => $document->id,
                     ...\App\Services\ThirdPartyInvoicePolicy::view($document),
+                    ...\App\Services\SpecialTaxRegimePolicy::view($document),
                     'number_full' => $document->number_full,
                     'response' => $response,
                     'fiscal_emission' => \App\Services\Fiscal\DocumentEmissionView::forDocument($document),
@@ -1064,7 +1069,7 @@ class DocumentController extends Controller
         return [
             'success' => true,
             'message' => 'Factura actualizada. Los cobros registrados se conservaron. El envío HKA se realiza desde Enviar HKA.',
-            'data' => array_merge($edit, \App\Services\ThirdPartyInvoicePolicy::view($document), [
+            'data' => array_merge($edit, \App\Services\ThirdPartyInvoicePolicy::view($document), \App\Services\SpecialTaxRegimePolicy::view($document), [
                 'id' => $document->id,
                 'is_editable' => $edit['can_edit'],
                 'fiscal_emission' => \App\Services\Fiscal\DocumentEmissionView::forDocument($document),
@@ -1098,7 +1103,7 @@ class DocumentController extends Controller
         }
 
         return response()->json([
-            'data' => array_merge($document->toArray(), \App\Services\Fiscal\DocumentEditPolicy::view($document), \App\Services\ThirdPartyInvoicePolicy::view($document), ['fiscal_emission' => \App\Services\Fiscal\DocumentEmissionView::forDocument($document)]),
+            'data' => array_merge($document->toArray(), \App\Services\Fiscal\DocumentEditPolicy::view($document), \App\Services\ThirdPartyInvoicePolicy::view($document), \App\Services\SpecialTaxRegimePolicy::view($document), ['fiscal_emission' => \App\Services\Fiscal\DocumentEmissionView::forDocument($document)]),
             'success' => true,
         ], 200);
     }

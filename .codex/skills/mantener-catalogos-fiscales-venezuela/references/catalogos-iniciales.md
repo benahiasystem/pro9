@@ -162,7 +162,7 @@ Los seis registros iniciales están activos. Estos códigos corresponden al camp
 6. Puerto libre Estado Nueva Esparta
 7. Dutty Free
 
-Los IDs `1` a `7` son locales y los siete registros están activos. El manual HKA no publica códigos para estos regímenes; no enviar los IDs como códigos al proveedor.
+Los IDs `1` a `7` son locales y los siete registros están activos. El manual HKA no publica códigos para estos regímenes; no enviar los IDs como códigos al proveedor. Desde el 12 de octubre de 2026 se seleccionan opcionalmente por Factura interna web digital DEMO, en VES/USD al contado completamente pagado, propia o por terceros. SpecialTaxRegimePolicy resuelve las opciones activas del tenant y la descripción exacta; el snapshot alimenta regimenEspTributacion sin cambiar IVA. Ver [implementación y límites](../../../../informes/facturas_regimenes_especiales_hka.md).
 
 ### Tributación del producto HKA (`cat_taxation_products`)
 

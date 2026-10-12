@@ -29,6 +29,13 @@ class Template
                 $html = $thirdIdentity.$html;
             }
         }
+        if (\App\Services\SpecialTaxRegimePolicy::applies($document)) {
+            $regime = \App\Services\SpecialTaxRegimePolicy::view($document)['special_tax_regime_description'];
+            $regimeIdentity = view('pdf.partials.special_tax_regime', compact('regime'))->render();
+            $html = preg_match('/<body\b[^>]*>/i', $html)
+                ? preg_replace_callback('/<body\b[^>]*>/i', fn ($match) => $match[0].$regimeIdentity, $html, 1)
+                : $regimeIdentity.$html;
+        }
         if ($fiscal) {
             $identity = view('pdf.partials.fiscal_identity', compact('fiscal'))->render();
             if (preg_match('/<body\b[^>]*>/i', $html)) {

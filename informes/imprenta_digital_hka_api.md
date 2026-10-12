@@ -495,3 +495,7 @@ La nueva implementación web DEMO, identidad ND/tipo externo, afectación EXP, I
 ## Facturas por cuenta de terceros — 11 de octubre de 2026
 
 Se implementó la transacción 99 de Factura 01 mediante Emision normal, con titular registrado en Clientes y snapshot independiente del comprador. La matriz real DEMO acredita titulares J/V en VES/USD, más descuentos, cargos, exentos, IGTF y edición/envío desde el navegador. Ver [implementación, restricciones y evidencia](facturas_cuenta_terceros_hka.md). Producción, otros canales y notas vinculadas no se habilitan.
+
+## Regímenes especiales — 12 de octubre de 2026
+
+Se implementó la selección opcional de los siete regímenes por Factura interna web digital DEMO, al contado completamente pagada, propia o por terceros, en VES/USD. La matriz real acredita 28 controles confirmados (52–79), además de creación y edición/envío web. Los JSON originales descargados de HKA conservan los textos exactos; **los PDF originales A4 no imprimen el régimen**, y A5/correo heredan esa limitación del proveedor. Pro9 muestra el snapshot en edición, listado, detalle y ticket. Ver [implementación, pruebas y evidencia saneada](facturas_regimenes_especiales_hka.md). No se habilitan producción, crédito, exportación combinada, POS/Garage/API ni notas vinculadas.

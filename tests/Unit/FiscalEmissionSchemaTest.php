@@ -89,6 +89,8 @@ class FiscalEmissionSchemaTest extends TestCase
     protected function tearDown(): void
     {
         if ($this->database && preg_match('/^pro9_fiscal_test_[a-f0-9]{12}$/', $this->database)) {
+            $tenant = $this->capsule->getConnection('tenant');
+            while ($tenant->transactionLevel() > 0) $tenant->rollBack();
             $this->capsule->getConnection('control')->statement('DROP DATABASE `' . $this->database . '`');
             (new \Illuminate\Filesystem\Filesystem())->deleteDirectory(sys_get_temp_dir().'/'.$this->database);
         }
@@ -756,6 +758,95 @@ class FiscalEmissionSchemaTest extends TestCase
         }
     }
 
+
+    public function test_special_tax_regimes_persist_settle_edit_freeze_and_emit_after_commit(): void
+    {
+        [$db,$app,$input]=$this->bootHkaFixture();
+        $party=\App\Models\Tenant\Person::create(['type'=>'customers','identity_document_type_id'=>'1','number'=>'98765432',
+            'name'=>'TITULAR SINTETICO','country_id'=>'VE','address'=>'DIRECCION DE PRUEBA','is_third_party'=>true,
+            'third_party_rif'=>'V987654321','third_party_activity'=>'Bienes y servicios','enabled'=>true]);
+        $count=0;$mode='confirmed';
+        $app->make(\Illuminate\Http\Client\Factory::class)->fake(function($request)use($db,&$count,&$mode){
+            self::assertSame(0,$db->transactionLevel());
+            if(str_ends_with($request->url(),'/Autenticacion'))return \Illuminate\Support\Facades\Http::response(['token'=>'test-private','expiracion'=>date('c',time()+3600)]);
+            if(str_ends_with($request->url(),'/DescargaArchivo')){
+                $pdf=new \FPDF();$pdf->AddPage();$pdf->SetFont('Helvetica','',12);$pdf->Text(10,15,'Special regime DEMO');
+                return \Illuminate\Support\Facades\Http::response(['codigo'=>'200','archivo'=>base64_encode($pdf->Output('S'))]);
+            }
+            $count++;
+            if($mode==='timeout')throw new \Illuminate\Http\Client\ConnectionException('Private test message');
+            if($mode==='rejected')return \Illuminate\Support\Facades\Http::response(['codigo'=>'203','validaciones'=>['1015 - Rechazo de prueba']]);
+            $id=$request->data()['documentoElectronico']['encabezado']['identificacionDocumento'];
+            return \Illuminate\Support\Facades\Http::response(['codigo'=>'200','resultado'=>$id+['numeroControl'=>'00-'.str_pad($id['numeroDocumento'],8,'0',STR_PAD_LEFT)]]);
+        });
+        $input=array_replace($input,['source_module'=>'WEB','exchange_rate_sale'=>'40.12345678','actions'=>['send_email'=>false]]);
+        $case=$input+['fiscal_data'=>['special_tax_regime_id'=>1]];
+        $stock=$db->table('item_warehouse')->where('item_id',$input['items'][0]['item_id'])->value('stock');
+        foreach([['source_module'=>'POS'],['source_module'=>'GARAGE'],['payments'=>[]],['payment_condition_id'=>'02']] as $change){
+            try{(new \App\CoreFacturalo\Facturalo)->forWebDocuments()->save(array_replace($case,$change));self::fail('Unsupported regime operation');}
+            catch(\Illuminate\Validation\ValidationException $e){self::assertNotEmpty($e->errors());}
+            self::assertSame(0,$db->table('documents')->count());self::assertSame(0,$count);
+            self::assertEquals($stock,$db->table('item_warehouse')->where('item_id',$input['items'][0]['item_id'])->value('stock'));
+        }
+        $db->beginTransaction();(new \App\CoreFacturalo\Facturalo)->forWebDocuments()->save($case);$db->rollBack();self::assertSame(0,$count);
+        foreach(\App\Services\SpecialTaxRegimePolicy::NAMES as $id=>$name)foreach(['VES','USD'] as $currency)foreach([false,true] as $third){
+            $case=array_replace($input,['fiscal_data'=>['special_tax_regime_id'=>$id],'currency_type_id'=>$currency,'third_party_id'=>$third?$party->id:null,
+                'external_id'=>(string)\Illuminate\Support\Str::uuid()]);
+            $db->beginTransaction();$doc=(new \App\CoreFacturalo\Facturalo)->forWebDocuments()->save($case)->getDocument()->fresh();
+            $prior=$count;self::assertSame('not_requested',$doc->emission->status);$db->commit();$doc=$doc->fresh();
+            self::assertSame($prior+1,$count);self::assertSame('confirmed',$doc->emission->status);self::assertNotEmpty($doc->control_number);
+            self::assertEquals(0,$doc->balance);self::assertEquals(232,$doc->total);self::assertSame($id,$doc->fiscal_data->special_tax_regime_id);
+            $h=$doc->emission->payload['documentoElectronico']['encabezado'];
+            self::assertSame($name,$h['identificacionDocumento']['regimenEspTributacion']);self::assertSame($third?'99':'01',$h['identificacionDocumento']['tipoTransaccion']);
+            self::assertSame($currency,$doc->currency_type_id);self::assertSame($name,$doc->fiscal_data->catalog_snapshot['special_tax_regime_id']['description']);
+            $frozen=$doc->emission->payload;
+            $db->table('cat_special_tax_regime')->where('id',$id)->update(['description'=>'Nombre nuevo','active'=>0]);
+            self::assertSame($frozen,$doc->fresh()->emission->payload);self::assertSame($name,\App\Services\SpecialTaxRegimePolicy::view($doc->fresh())['special_tax_regime_description']);
+            $db->table('cat_special_tax_regime')->where('id',$id)->update(['description'=>$name,'active'=>1]);
+        }
+        self::assertSame(28,$count);
+        foreach(['rejected','timeout'] as $failure){
+            $mode=$failure;$failed=(new \App\CoreFacturalo\Facturalo)->forWebDocuments()->save($case)->getDocument()->fresh();
+            self::assertSame($failure==='timeout'?'uncertain':'rejected',$failed->emission->status);self::assertEquals(0,$failed->balance);self::assertEquals(232,$failed->total);
+        }
+        $company=\App\Models\Tenant\Company::firstOrFail();$company->fiscal_credentials=null;$company->save();
+        $own=array_replace($input,['external_id'=>(string)\Illuminate\Support\Str::uuid()]);
+        $doc=(new \App\CoreFacturalo\Facturalo)->forWebDocuments()->save($own)->getDocument()->fresh();
+        $payments=$db->table('document_payments')->where('document_id',$doc->id)->get()->toArray();$number=$doc->number;
+        $edit=array_replace($own,['id'=>$doc->id,'series'=>$doc->series,'number'=>$number,'payments'=>[]]);
+        foreach([1,2,null] as $regime){
+            $old=$doc->emission->operation_key;$before=$count;$edit['fiscal_data']=['special_tax_regime_id'=>$regime];
+            (new \App\CoreFacturalo\Facturalo)->forWebDocuments()->update($edit,$doc->id);$doc=$doc->fresh();
+            self::assertNotSame($old,$doc->emission->operation_key);self::assertSame('not_requested',$doc->emission->status);self::assertSame($before,$count);
+            self::assertSame($regime,$doc->fiscal_data->special_tax_regime_id);self::assertSame($number,$doc->number);
+            self::assertEquals($payments,$db->table('document_payments')->where('document_id',$doc->id)->get()->toArray());
+        }
+        $edit['fiscal_data']=['special_tax_regime_id'=>3];(new \App\CoreFacturalo\Facturalo)->forWebDocuments()->update($edit,$doc->id);$doc=$doc->fresh();
+        $bad=$edit;$bad['fiscal_data']=['special_tax_regime_id'=>null];$bad['items'][0]['quantity']=3;
+        try{(new \App\CoreFacturalo\Facturalo)->forWebDocuments()->update($bad,$doc->id);self::fail('Removing regime does not bypass settlement');}
+        catch(\Illuminate\Validation\ValidationException $e){self::assertArrayHasKey('payments',$e->errors());}
+        self::assertSame(3,$doc->fresh()->fiscal_data->special_tax_regime_id);
+        try{\App\Services\SpecialTaxRegimePolicy::assertInput(['document_type_id'=>'07','affected_document_id'=>$doc->id]);self::fail('Regime notes are excluded');}
+        catch(\Illuminate\Validation\ValidationException $e){self::assertArrayHasKey('note',$e->errors());}
+        $company->forceFill(['igtf_enabled'=>true,'igtf_rate'=>3])->save();
+        try{\App\Services\Fiscal\FiscalDocumentPersistence::payment($doc,['date_of_payment'=>'2026-09-10','payment_method_type_id'=>'01','original_amount'=>1,'currency_type_id'=>'USD','exchange_rate'=>'40.12345678','igtf_status'=>'subject']);self::fail('Later IGTF requires excluded note');}
+        catch(\Illuminate\Validation\ValidationException $e){self::assertArrayHasKey('payment',$e->errors());}
+        (new \App\Services\Fiscal\HkaEmissionPreparation)->prepare($doc);$doc=$doc->fresh();$preparedKey=$doc->emission->operation_key;
+        $edit['fiscal_data']=['special_tax_regime_id'=>4];(new \App\CoreFacturalo\Facturalo)->forWebDocuments()->update($edit,$doc->id);$doc=$doc->fresh();
+        self::assertNotSame($preparedKey,$doc->emission->operation_key);self::assertNull($doc->emission->payload);
+        $company->fiscal_credentials=json_encode(['usuario'=>'test-user','clave'=>'test-secret']);$company->save();$mode='confirmed';
+        $log=tempnam(sys_get_temp_dir(),'pro9_regime_race_');
+        try{
+            $edit['fiscal_data']=['special_tax_regime_id'=>5];
+            $results=$this->runFiscalWorkers($doc->id,'hka-edit-race',[
+                ['action'=>'edit','edit'=>$edit,'web_export'=>true],['action'=>'send','log'=>$log]]);
+            self::assertTrue(($results[0]['status']??null)==='edited'||isset($results[0]['rejected']));
+            $after=$doc->fresh();if($after->emission->status==='not_requested')app(\App\Services\Fiscal\HkaEmission::class)->send($after);
+            $after=$after->fresh();self::assertSame('confirmed',$after->emission->status);
+            self::assertSame($after->fiscal_data->catalog_snapshot['special_tax_regime_id']['description'],$after->emission->payload['documentoElectronico']['encabezado']['identificacionDocumento']['regimenEspTributacion']);
+            self::assertEquals($payments,$db->table('document_payments')->where('document_id',$doc->id)->get()->toArray());
+        }finally{unlink($log);}
+    }
 
     public function test_third_party_invoices_persist_freeze_edit_and_emit_after_commit(): void
     {

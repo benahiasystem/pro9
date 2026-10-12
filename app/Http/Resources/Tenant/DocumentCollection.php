@@ -60,6 +60,7 @@ class DocumentCollection extends ResourceCollection
             }
 
             $btn_guide = $btn_note;
+            if (\App\Services\SpecialTaxRegimePolicy::applies($row)) $btn_note = false;
             if ($btn_guide === false && ($row->state_type_id === '01')) {
                 // #750
                 $btn_guide = true;
@@ -145,6 +146,7 @@ class DocumentCollection extends ResourceCollection
                 'total_exportation' => $row->total_exportation,
                 'exportation' => \App\Services\ExportInvoicePolicy::isExport($row->invoice->operation_type_id ?? ''),
                 ...\App\Services\ThirdPartyInvoicePolicy::view($row),
+                ...\App\Services\SpecialTaxRegimePolicy::view($row),
                 'incoterm' => \App\Services\ExportInvoicePolicy::INCOTERMS[$row->invoice->operation_type_id ?? ''] ?? null,
                 'total_exonerated' => $row->total_exonerated,
                 'total_taxed' => $row->total_taxed,

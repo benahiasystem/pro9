@@ -43,6 +43,10 @@
                           :closable="false" show-icon />
 
                 <div class="detail-drawer__body document-detail-drawer__body">
+                    <div v-if="record.special_tax_regime_description" class="detail-drawer__section-card mb-3">
+                        <strong>Régimen especial de tributación</strong>
+                        <div>{{ record.special_tax_regime_description }}</div>
+                    </div>
                     <div v-if="record.is_third_party_invoice && record.third_party" class="detail-drawer__section-card mb-3">
                         <strong>Venta por cuenta de terceros</strong>
                         <div>{{ record.third_party.rif }} · {{ record.third_party.name }}</div>
@@ -616,6 +620,8 @@ export default {
                         is_third_party_invoice: data.is_third_party_invoice ?? snapshot.is_third_party_invoice,
                         third_party: data.third_party ?? snapshot.third_party,
                         third_party_id: data.third_party_id ?? snapshot.third_party_id,
+                        special_tax_regime_id: data.special_tax_regime_id ?? snapshot.special_tax_regime_id,
+                        special_tax_regime_description: data.special_tax_regime_description ?? snapshot.special_tax_regime_description,
                         total_igv: data.total_igv ?? snapshot.total_igv,
                         total: data.total ?? snapshot.total,
                         balance: data.balance ?? snapshot.balance,

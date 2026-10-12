@@ -1,0 +1,1183 @@
+{
+  "date": "2026-10-12",
+  "timezone": "America/Caracas",
+  "contract_sha256": "f2ddb07c239b04319df1fc9b1e6b4db137f89b51f063fa4989fd1bc836d10f04",
+  "swagger_matches_versioned_contract": true,
+  "matrix": [
+    {
+      "number": 3100,
+      "regime_id": 1,
+      "regime": "Zonas económicas especiales",
+      "currency": "VES",
+      "transaction": "01",
+      "titular": null,
+      "status": "confirmed",
+      "control": "00-00000052",
+      "total_local": 201.85,
+      "balance": 0,
+      "variant": "descuentos_cargos_mixto",
+      "pdf": {
+        "a4": "bc3606c62af67ffb8ce823104e7d67e2f20ab95d0f1d1669217f010cb4b282bf",
+        "a5": "43e8452119f028067c6e85ed8b9e9c3e8df365da5b762f1ff653e01256d050fd",
+        "ticket": "125c8a0f239f7a0b6b3a1300c9dbc5b79b199d7298d1f73815ecdaab6cef1251"
+      },
+      "remote_json_regime_matches": true,
+      "pdf_checks": {
+        "a4": {
+          "regime_present": false,
+          "buyer_present": true,
+          "third_present": true
+        },
+        "a5": {
+          "regime_present": false,
+          "buyer_present": true,
+          "third_present": true
+        },
+        "ticket": {
+          "regime_present": true,
+          "buyer_present": true,
+          "third_present": true
+        }
+      },
+      "ticket_qr_matches": true
+    },
+    {
+      "number": 3101,
+      "regime_id": 1,
+      "regime": "Zonas económicas especiales",
+      "currency": "VES",
+      "transaction": "99",
+      "titular": "J",
+      "status": "confirmed",
+      "control": "00-00000053",
+      "total_local": 201.85,
+      "balance": 0,
+      "variant": "descuentos_cargos_mixto",
+      "pdf": {
+        "a4": "90cfe9e8ee694a6159a3c2d2413fb25d01067ba75b5630711fed1e55c5ea8477",
+        "a5": "82367e40a2b4a459f71c8b0a62c483462326cfc26122bd857b5fa845e1ac766d",
+        "ticket": "97429df1672cbaf82475e719a74d286a250b17ffe1d79f8f9da5fb4d7390fa1a"
+      },
+      "remote_json_regime_matches": true,
+      "pdf_checks": {
+        "a4": {
+          "regime_present": false,
+          "buyer_present": true,
+          "third_present": true
+        },
+        "a5": {
+          "regime_present": false,
+          "buyer_present": true,
+          "third_present": true
+        },
+        "ticket": {
+          "regime_present": true,
+          "buyer_present": true,
+          "third_present": true
+        }
+      },
+      "ticket_qr_matches": true
+    },
+    {
+      "number": 3102,
+      "regime_id": 1,
+      "regime": "Zonas económicas especiales",
+      "currency": "USD",
+      "transaction": "01",
+      "titular": null,
+      "status": "confirmed",
+      "control": "00-00000054",
+      "total_local": 207.91,
+      "balance": 0,
+      "variant": "descuentos_cargos_mixto_igtf",
+      "pdf": {
+        "a4": "5e839fae39949ac3dfcd314ab214d32a68b5a207a977705b7429c38575b9b9d3",
+        "a5": "cd53dbf0945fef05d848ec6a1782c9ff8d9dcf85c0771801cdb81d239af3a262",
+        "ticket": "baf84f30b38e5d3755b15db9192dab6a7f24623e8dc953efa393c5454527b9ed"
+      },
+      "remote_json_regime_matches": true,
+      "pdf_checks": {
+        "a4": {
+          "regime_present": false,
+          "buyer_present": true,
+          "third_present": true
+        },
+        "a5": {
+          "regime_present": false,
+          "buyer_present": true,
+          "third_present": true
+        },
+        "ticket": {
+          "regime_present": true,
+          "buyer_present": true,
+          "third_present": true
+        }
+      },
+      "ticket_qr_matches": true
+    },
+    {
+      "number": 3103,
+      "regime_id": 1,
+      "regime": "Zonas económicas especiales",
+      "currency": "USD",
+      "transaction": "99",
+      "titular": "J",
+      "status": "confirmed",
+      "control": "00-00000055",
+      "total_local": 207.91,
+      "balance": 0,
+      "variant": "descuentos_cargos_mixto_igtf",
+      "pdf": {
+        "a4": "f48c232c567b5bbaf2e62068530fb7827a7cb482fbd717e060e4da46f0980d35",
+        "a5": "83c14c1272423c4bdd40fbe1b7695424de254bf20c3068f39fd30cfec1af607d",
+        "ticket": "4e9d90e686bcfcf5f225f6e1fff918c3d5845670d108f6d6db78d6e941db185d"
+      },
+      "remote_json_regime_matches": true,
+      "pdf_checks": {
+        "a4": {
+          "regime_present": false,
+          "buyer_present": true,
+          "third_present": true
+        },
+        "a5": {
+          "regime_present": false,
+          "buyer_present": true,
+          "third_present": true
+        },
+        "ticket": {
+          "regime_present": true,
+          "buyer_present": true,
+          "third_present": true
+        }
+      },
+      "ticket_qr_matches": true
+    },
+    {
+      "number": 3104,
+      "regime_id": 2,
+      "regime": "Zona franca de Paraguaná",
+      "currency": "VES",
+      "transaction": "01",
+      "titular": null,
+      "status": "confirmed",
+      "control": "00-00000056",
+      "total_local": 199.25,
+      "balance": 0,
+      "variant": "bienes_servicios_mixto",
+      "pdf": {
+        "a4": "b1ec3164fe46e205a8d5a210683e13d6dab7ad1781ea590d72c27424782b9e54",
+        "a5": "ee6459341d3cb84e5a45af61cdb3928a56070a67d85d3757273c6d456ef331bb",
+        "ticket": "387ea6e92bfb7ef5dac73f43c6139567f5ceabc03a9772c3adb520aec1590110"
+      },
+      "remote_json_regime_matches": true,
+      "pdf_checks": {
+        "a4": {
+          "regime_present": false,
+          "buyer_present": true,
+          "third_present": true
+        },
+        "a5": {
+          "regime_present": false,
+          "buyer_present": true,
+          "third_present": true
+        },
+        "ticket": {
+          "regime_present": true,
+          "buyer_present": true,
+          "third_present": true
+        }
+      },
+      "ticket_qr_matches": true
+    },
+    {
+      "number": 3105,
+      "regime_id": 2,
+      "regime": "Zona franca de Paraguaná",
+      "currency": "VES",
+      "transaction": "99",
+      "titular": "V",
+      "status": "confirmed",
+      "control": "00-00000057",
+      "total_local": 199.25,
+      "balance": 0,
+      "variant": "bienes_servicios_mixto",
+      "pdf": {
+        "a4": "7154f2d3d7cead337e1fa5e96f3627f190a0b4060983aa3cb756c796344450f6",
+        "a5": "6c33d18f93fd8d2c6f2c71a4cc2171e39282bb79105efa19ad6b3dbd67d90366",
+        "ticket": "1f958628046394c667837843829323ff73bd85da3ad281901c55bf7ee020dc75"
+      },
+      "remote_json_regime_matches": true,
+      "pdf_checks": {
+        "a4": {
+          "regime_present": false,
+          "buyer_present": true,
+          "third_present": true
+        },
+        "a5": {
+          "regime_present": false,
+          "buyer_present": true,
+          "third_present": true
+        },
+        "ticket": {
+          "regime_present": true,
+          "buyer_present": true,
+          "third_present": true
+        }
+      },
+      "ticket_qr_matches": true
+    },
+    {
+      "number": 3106,
+      "regime_id": 2,
+      "regime": "Zona franca de Paraguaná",
+      "currency": "USD",
+      "transaction": "01",
+      "titular": null,
+      "status": "confirmed",
+      "control": "00-00000058",
+      "total_local": 199.25,
+      "balance": 0,
+      "variant": "bienes_servicios_mixto",
+      "pdf": {
+        "a4": "10173c12e6f31380ab850926a337e8f599c2f4646ed71239e2ab1c96d51a4b13",
+        "a5": "50263156772880aaedc27481cb310b03e1e14ddae3267f51155e0334feaa4343",
+        "ticket": "edc8bce861fdd8e4e5dd7e257bd8e9b8e09b3e9e20c4e2172c081abacc60309b"
+      },
+      "remote_json_regime_matches": true,
+      "pdf_checks": {
+        "a4": {
+          "regime_present": false,
+          "buyer_present": true,
+          "third_present": true
+        },
+        "a5": {
+          "regime_present": false,
+          "buyer_present": true,
+          "third_present": true
+        },
+        "ticket": {
+          "regime_present": true,
+          "buyer_present": true,
+          "third_present": true
+        }
+      },
+      "ticket_qr_matches": true
+    },
+    {
+      "number": 3107,
+      "regime_id": 2,
+      "regime": "Zona franca de Paraguaná",
+      "currency": "USD",
+      "transaction": "99",
+      "titular": "V",
+      "status": "confirmed",
+      "control": "00-00000059",
+      "total_local": 199.25,
+      "balance": 0,
+      "variant": "bienes_servicios_mixto",
+      "pdf": {
+        "a4": "2d482db0b1218bd02f76ba5e8f7bb6390f7d8ca7246a1cf2fadc265e07148b2c",
+        "a5": "ed8ccb60302c670c317979edf8edef3c3d865b9f230080743cf2e691f05ce2b6",
+        "ticket": "0b417b20de288d8035e319049d744ff8f0500e833089f2ad6fc0148cd38c3ff8"
+      },
+      "remote_json_regime_matches": true,
+      "pdf_checks": {
+        "a4": {
+          "regime_present": false,
+          "buyer_present": true,
+          "third_present": true
+        },
+        "a5": {
+          "regime_present": false,
+          "buyer_present": true,
+          "third_present": true
+        },
+        "ticket": {
+          "regime_present": true,
+          "buyer_present": true,
+          "third_present": true
+        }
+      },
+      "ticket_qr_matches": true
+    },
+    {
+      "number": 3108,
+      "regime_id": 3,
+      "regime": "Zona libre de Paraguaná",
+      "currency": "VES",
+      "transaction": "01",
+      "titular": null,
+      "status": "confirmed",
+      "control": "00-00000060",
+      "total_local": 201.85,
+      "balance": 0,
+      "variant": "descuentos_cargos_mixto",
+      "pdf": {
+        "a4": "4f91e9c7c8dc056ec34b82d2cd9f76e722201dc09e86a0f29b740106deab4220",
+        "a5": "cae8bbcae89eb7c4306bbb228cf075d9993338abd838fb03c7c823dc36c00221",
+        "ticket": "85861b9623d70b78f2397ac2cfc5e49a1333329fa3c38e3fa36007a8d964fb9e"
+      },
+      "remote_json_regime_matches": true,
+      "pdf_checks": {
+        "a4": {
+          "regime_present": false,
+          "buyer_present": true,
+          "third_present": true
+        },
+        "a5": {
+          "regime_present": false,
+          "buyer_present": true,
+          "third_present": true
+        },
+        "ticket": {
+          "regime_present": true,
+          "buyer_present": true,
+          "third_present": true
+        }
+      },
+      "ticket_qr_matches": true
+    },
+    {
+      "number": 3109,
+      "regime_id": 3,
+      "regime": "Zona libre de Paraguaná",
+      "currency": "VES",
+      "transaction": "99",
+      "titular": "J",
+      "status": "confirmed",
+      "control": "00-00000061",
+      "total_local": 201.85,
+      "balance": 0,
+      "variant": "descuentos_cargos_mixto",
+      "pdf": {
+        "a4": "f85cf0fb1d441d01e6e00751d9465f01397199a843156e40070d8993870a2acc",
+        "a5": "f27f91af91ed8851e5a8b4c24d57fb5114ffccae5fb177eb9b654c25e3c9a716",
+        "ticket": "175cd1725ffe526e9a54536a1775783a6608c70c8479b02213b10e208a757ef8"
+      },
+      "remote_json_regime_matches": true,
+      "pdf_checks": {
+        "a4": {
+          "regime_present": false,
+          "buyer_present": true,
+          "third_present": true
+        },
+        "a5": {
+          "regime_present": false,
+          "buyer_present": true,
+          "third_present": true
+        },
+        "ticket": {
+          "regime_present": true,
+          "buyer_present": true,
+          "third_present": true
+        }
+      },
+      "ticket_qr_matches": true
+    },
+    {
+      "number": 3110,
+      "regime_id": 3,
+      "regime": "Zona libre de Paraguaná",
+      "currency": "USD",
+      "transaction": "01",
+      "titular": null,
+      "status": "confirmed",
+      "control": "00-00000062",
+      "total_local": 207.91,
+      "balance": 0,
+      "variant": "descuentos_cargos_mixto_igtf",
+      "pdf": {
+        "a4": "290b9cbf823f3b78ab378ea29a00c1ec0c58323e7a2bc0a6c2d1b24e95151b40",
+        "a5": "5593b03ae283dc2eef179bc2509c19a1e8c468b45d5401625eca6239e589fb59",
+        "ticket": "e2fd1fbed85121a6f6b0211be8f35e99b77d9d825f2de05270aff12e9a118ef3"
+      },
+      "remote_json_regime_matches": true,
+      "pdf_checks": {
+        "a4": {
+          "regime_present": false,
+          "buyer_present": true,
+          "third_present": true
+        },
+        "a5": {
+          "regime_present": false,
+          "buyer_present": true,
+          "third_present": true
+        },
+        "ticket": {
+          "regime_present": true,
+          "buyer_present": true,
+          "third_present": true
+        }
+      },
+      "ticket_qr_matches": true
+    },
+    {
+      "number": 3111,
+      "regime_id": 3,
+      "regime": "Zona libre de Paraguaná",
+      "currency": "USD",
+      "transaction": "99",
+      "titular": "J",
+      "status": "confirmed",
+      "control": "00-00000063",
+      "total_local": 207.91,
+      "balance": 0,
+      "variant": "descuentos_cargos_mixto_igtf",
+      "pdf": {
+        "a4": "ecdef4ee0ca3398256cf5d57c7b577d2b3180641c9695b2a0986a5d8bb448d34",
+        "a5": "cb41eee831fa3b2e35d69d79ef38bb6cc4d4b957662c180c4039a9647b25364a",
+        "ticket": "d6cdd28d0c1cca3e8cd8b49f0a6d73c5dae4b9269964ec24c3674872e6604a7c"
+      },
+      "remote_json_regime_matches": true,
+      "pdf_checks": {
+        "a4": {
+          "regime_present": false,
+          "buyer_present": true,
+          "third_present": true
+        },
+        "a5": {
+          "regime_present": false,
+          "buyer_present": true,
+          "third_present": true
+        },
+        "ticket": {
+          "regime_present": true,
+          "buyer_present": true,
+          "third_present": true
+        }
+      },
+      "ticket_qr_matches": true
+    },
+    {
+      "number": 3112,
+      "regime_id": 4,
+      "regime": "Puerto libre Santa Elena de Uairén",
+      "currency": "VES",
+      "transaction": "01",
+      "titular": null,
+      "status": "confirmed",
+      "control": "00-00000064",
+      "total_local": 199.25,
+      "balance": 0,
+      "variant": "bienes_servicios_mixto",
+      "pdf": {
+        "a4": "e079f26d0c9f0391490896f61fe74299ef609f4b59dca9d649ad0c2e9f3c7762",
+        "a5": "8219a86b1fc294d5b48273b44fbad1fd167c524e55b74c10521aaafc85c58c26",
+        "ticket": "bdacf6936371c288b086a8b932b4bbbf5712a5f56e26b67eb6689d13be962413"
+      },
+      "remote_json_regime_matches": true,
+      "pdf_checks": {
+        "a4": {
+          "regime_present": false,
+          "buyer_present": true,
+          "third_present": true
+        },
+        "a5": {
+          "regime_present": false,
+          "buyer_present": true,
+          "third_present": true
+        },
+        "ticket": {
+          "regime_present": true,
+          "buyer_present": true,
+          "third_present": true
+        }
+      },
+      "ticket_qr_matches": true
+    },
+    {
+      "number": 3113,
+      "regime_id": 4,
+      "regime": "Puerto libre Santa Elena de Uairén",
+      "currency": "VES",
+      "transaction": "99",
+      "titular": "V",
+      "status": "confirmed",
+      "control": "00-00000065",
+      "total_local": 199.25,
+      "balance": 0,
+      "variant": "bienes_servicios_mixto",
+      "pdf": {
+        "a4": "e05f2b07cd445190716113f3e715a062b32730e5d9f3e53c2cca58eeaebc800d",
+        "a5": "c9be56882d2fba9279be38ab07453f65d939cbbd4dc85256d3ef864e31a7a6a6",
+        "ticket": "78aa7e4666aa84beccee2d465bcdbdbbf5be05a6ac14fb44f3c3527f43fe1c07"
+      },
+      "remote_json_regime_matches": true,
+      "pdf_checks": {
+        "a4": {
+          "regime_present": false,
+          "buyer_present": true,
+          "third_present": true
+        },
+        "a5": {
+          "regime_present": false,
+          "buyer_present": true,
+          "third_present": true
+        },
+        "ticket": {
+          "regime_present": true,
+          "buyer_present": true,
+          "third_present": true
+        }
+      },
+      "ticket_qr_matches": true
+    },
+    {
+      "number": 3114,
+      "regime_id": 4,
+      "regime": "Puerto libre Santa Elena de Uairén",
+      "currency": "USD",
+      "transaction": "01",
+      "titular": null,
+      "status": "confirmed",
+      "control": "00-00000066",
+      "total_local": 199.25,
+      "balance": 0,
+      "variant": "bienes_servicios_mixto",
+      "pdf": {
+        "a4": "0364dd991beb8faf88374439fa7d77996ac1782ac5c58d0dea2438138616b976",
+        "a5": "e9e911da1cde3f373c9649a1d5c55aabb9a9711da16b46e1b73fb32503787661",
+        "ticket": "48dc5e08b222b480a341fb908e568124a5acf8c1cc1142ab4632b9bfe2985c8e"
+      },
+      "remote_json_regime_matches": true,
+      "pdf_checks": {
+        "a4": {
+          "regime_present": false,
+          "buyer_present": true,
+          "third_present": true
+        },
+        "a5": {
+          "regime_present": false,
+          "buyer_present": true,
+          "third_present": true
+        },
+        "ticket": {
+          "regime_present": true,
+          "buyer_present": true,
+          "third_present": true
+        }
+      },
+      "ticket_qr_matches": true
+    },
+    {
+      "number": 3115,
+      "regime_id": 4,
+      "regime": "Puerto libre Santa Elena de Uairén",
+      "currency": "USD",
+      "transaction": "99",
+      "titular": "V",
+      "status": "confirmed",
+      "control": "00-00000067",
+      "total_local": 199.25,
+      "balance": 0,
+      "variant": "bienes_servicios_mixto",
+      "pdf": {
+        "a4": "e6a45469009ecbac48adf0151b89fac432b22717bc8f713f1e178bc24d7cc2f3",
+        "a5": "9fd6b5eebfa61fda852b2b4e619e24b034778f22a18a51cd7e3e0d0533190468",
+        "ticket": "3830c57aac7f7b6f3ffc23368762b3b33f0b414ad875b1ad8b34c7144a50aab1"
+      },
+      "remote_json_regime_matches": true,
+      "pdf_checks": {
+        "a4": {
+          "regime_present": false,
+          "buyer_present": true,
+          "third_present": true
+        },
+        "a5": {
+          "regime_present": false,
+          "buyer_present": true,
+          "third_present": true
+        },
+        "ticket": {
+          "regime_present": true,
+          "buyer_present": true,
+          "third_present": true
+        }
+      },
+      "ticket_qr_matches": true
+    },
+    {
+      "number": 3116,
+      "regime_id": 5,
+      "regime": "Zona Libre de Mérida",
+      "currency": "VES",
+      "transaction": "01",
+      "titular": null,
+      "status": "confirmed",
+      "control": "00-00000068",
+      "total_local": 201.85,
+      "balance": 0,
+      "variant": "descuentos_cargos_mixto",
+      "pdf": {
+        "a4": "9a0ccf1dc211f329251412aa36b2fd69e7ae33ef151d32078f49cac16002d534",
+        "a5": "df713598dc5656fbba8a1a06b488c962b86134add75d4164642f4b9dd5a85ccd",
+        "ticket": "fd506c8e51a1f7cdb5f782c39895763f3ca9bd47723f5cce06efa446c0d9bad8"
+      },
+      "remote_json_regime_matches": true,
+      "pdf_checks": {
+        "a4": {
+          "regime_present": false,
+          "buyer_present": true,
+          "third_present": true
+        },
+        "a5": {
+          "regime_present": false,
+          "buyer_present": true,
+          "third_present": true
+        },
+        "ticket": {
+          "regime_present": true,
+          "buyer_present": true,
+          "third_present": true
+        }
+      },
+      "ticket_qr_matches": true
+    },
+    {
+      "number": 3117,
+      "regime_id": 5,
+      "regime": "Zona Libre de Mérida",
+      "currency": "VES",
+      "transaction": "99",
+      "titular": "J",
+      "status": "confirmed",
+      "control": "00-00000069",
+      "total_local": 201.85,
+      "balance": 0,
+      "variant": "descuentos_cargos_mixto",
+      "pdf": {
+        "a4": "f0e13a1236e12397d64b71a0db919fa978df1499ae42d0812096cbb698990d70",
+        "a5": "c28f320dc577337d9660e0eb02d00c168e233578d58b2081b5ee8868c930f953",
+        "ticket": "1386a0bf0f17483e8f67523f0acb4be4bd7c97eb32ce0d43d5017a51fdb76d11"
+      },
+      "remote_json_regime_matches": true,
+      "pdf_checks": {
+        "a4": {
+          "regime_present": false,
+          "buyer_present": true,
+          "third_present": true
+        },
+        "a5": {
+          "regime_present": false,
+          "buyer_present": true,
+          "third_present": true
+        },
+        "ticket": {
+          "regime_present": true,
+          "buyer_present": true,
+          "third_present": true
+        }
+      },
+      "ticket_qr_matches": true
+    },
+    {
+      "number": 3118,
+      "regime_id": 5,
+      "regime": "Zona Libre de Mérida",
+      "currency": "USD",
+      "transaction": "01",
+      "titular": null,
+      "status": "confirmed",
+      "control": "00-00000070",
+      "total_local": 207.91,
+      "balance": 0,
+      "variant": "descuentos_cargos_mixto_igtf",
+      "pdf": {
+        "a4": "4c19e3cd114be2c4097d960d82455a9cef0768bca808d2fd7748cd879da0f052",
+        "a5": "5f7e8bccbd137c63f43a865272a336feef0781a95832643dd2f37fdf963b7f1a",
+        "ticket": "c212f6bba8250db7b2eae37b39f2052c5f120b3e94f0c411a8861bb2a7194b2e"
+      },
+      "remote_json_regime_matches": true,
+      "pdf_checks": {
+        "a4": {
+          "regime_present": false,
+          "buyer_present": true,
+          "third_present": true
+        },
+        "a5": {
+          "regime_present": false,
+          "buyer_present": true,
+          "third_present": true
+        },
+        "ticket": {
+          "regime_present": true,
+          "buyer_present": true,
+          "third_present": true
+        }
+      },
+      "ticket_qr_matches": true
+    },
+    {
+      "number": 3119,
+      "regime_id": 5,
+      "regime": "Zona Libre de Mérida",
+      "currency": "USD",
+      "transaction": "99",
+      "titular": "J",
+      "status": "confirmed",
+      "control": "00-00000071",
+      "total_local": 207.91,
+      "balance": 0,
+      "variant": "descuentos_cargos_mixto_igtf",
+      "pdf": {
+        "a4": "72483e420bd610e989fc60b5bbfdbf20f3e50a4b0b64963a4db613d6b3321bd3",
+        "a5": "df04b373c7dfc8e4e63f6e67a7e9afe93208306e372372a257ee2972333821e7",
+        "ticket": "ec479b5ef2ee868f73fe25076b90670b04a0d35c0e694dcaa3f3216ef0bfdbf8"
+      },
+      "remote_json_regime_matches": true,
+      "pdf_checks": {
+        "a4": {
+          "regime_present": false,
+          "buyer_present": true,
+          "third_present": true
+        },
+        "a5": {
+          "regime_present": false,
+          "buyer_present": true,
+          "third_present": true
+        },
+        "ticket": {
+          "regime_present": true,
+          "buyer_present": true,
+          "third_present": true
+        }
+      },
+      "ticket_qr_matches": true
+    },
+    {
+      "number": 3120,
+      "regime_id": 6,
+      "regime": "Puerto libre Estado Nueva Esparta",
+      "currency": "VES",
+      "transaction": "01",
+      "titular": null,
+      "status": "confirmed",
+      "control": "00-00000072",
+      "total_local": 199.25,
+      "balance": 0,
+      "variant": "bienes_servicios_mixto",
+      "pdf": {
+        "a4": "d767f00545907776d27194658e128e178da1d429ac96de4ab6f0f6984bb66579",
+        "a5": "857dc5ded3f99b3c7bb14c55a1d5fdf8d749bd0c0190892e95946b568e7949fe",
+        "ticket": "f67935d9682ba59abebf513ae1d3f94af5f9c169687036b03e723ba2bab5ca33"
+      },
+      "remote_json_regime_matches": true,
+      "pdf_checks": {
+        "a4": {
+          "regime_present": false,
+          "buyer_present": true,
+          "third_present": true
+        },
+        "a5": {
+          "regime_present": false,
+          "buyer_present": true,
+          "third_present": true
+        },
+        "ticket": {
+          "regime_present": true,
+          "buyer_present": true,
+          "third_present": true
+        }
+      },
+      "ticket_qr_matches": true
+    },
+    {
+      "number": 3121,
+      "regime_id": 6,
+      "regime": "Puerto libre Estado Nueva Esparta",
+      "currency": "VES",
+      "transaction": "99",
+      "titular": "V",
+      "status": "confirmed",
+      "control": "00-00000073",
+      "total_local": 199.25,
+      "balance": 0,
+      "variant": "bienes_servicios_mixto",
+      "pdf": {
+        "a4": "aaf64df43a641f33a43dc131e7e043721429f546ac747ed592e29a450561c3b3",
+        "a5": "3f7df667f5ecec5cd45c00729993dbaba7230440f936525332bda4903035e6b7",
+        "ticket": "4d19c9c71e8e845b2b525d63ceda0ad8f8932a403b57d140947a167ff6734dd4"
+      },
+      "remote_json_regime_matches": true,
+      "pdf_checks": {
+        "a4": {
+          "regime_present": false,
+          "buyer_present": true,
+          "third_present": true
+        },
+        "a5": {
+          "regime_present": false,
+          "buyer_present": true,
+          "third_present": true
+        },
+        "ticket": {
+          "regime_present": true,
+          "buyer_present": true,
+          "third_present": true
+        }
+      },
+      "ticket_qr_matches": true
+    },
+    {
+      "number": 3122,
+      "regime_id": 6,
+      "regime": "Puerto libre Estado Nueva Esparta",
+      "currency": "USD",
+      "transaction": "01",
+      "titular": null,
+      "status": "confirmed",
+      "control": "00-00000074",
+      "total_local": 199.25,
+      "balance": 0,
+      "variant": "bienes_servicios_mixto",
+      "pdf": {
+        "a4": "e5e8e3811f40fa90f07da18498bf39fbae475f60d73da985e2cafe3458e3dcea",
+        "a5": "4d3a2f4e9e4658f3d871f19814f9e7cab73cab0fbec1655cb7a9699dbd912fc1",
+        "ticket": "9bc2312dd4401e97a8891ae82ae11d38b8dbae970dd1a2fbff183920da2648ef"
+      },
+      "remote_json_regime_matches": true,
+      "pdf_checks": {
+        "a4": {
+          "regime_present": false,
+          "buyer_present": true,
+          "third_present": true
+        },
+        "a5": {
+          "regime_present": false,
+          "buyer_present": true,
+          "third_present": true
+        },
+        "ticket": {
+          "regime_present": true,
+          "buyer_present": true,
+          "third_present": true
+        }
+      },
+      "ticket_qr_matches": true
+    },
+    {
+      "number": 3123,
+      "regime_id": 6,
+      "regime": "Puerto libre Estado Nueva Esparta",
+      "currency": "USD",
+      "transaction": "99",
+      "titular": "V",
+      "status": "confirmed",
+      "control": "00-00000075",
+      "total_local": 199.25,
+      "balance": 0,
+      "variant": "bienes_servicios_mixto",
+      "pdf": {
+        "a4": "ab7b4bbbe975de6268453e698174b0f3a9bc65c281306a2f2e1bb12ba2c295ab",
+        "a5": "1cb32232ad7aef54a513e286867ae1dfe8a98659720b14c4c628af325bb4aae6",
+        "ticket": "e311429c760388e82c2f5f86df9ea1c68aa6649583fc7d8e5cc9ab98d146b813"
+      },
+      "remote_json_regime_matches": true,
+      "pdf_checks": {
+        "a4": {
+          "regime_present": false,
+          "buyer_present": true,
+          "third_present": true
+        },
+        "a5": {
+          "regime_present": false,
+          "buyer_present": true,
+          "third_present": true
+        },
+        "ticket": {
+          "regime_present": true,
+          "buyer_present": true,
+          "third_present": true
+        }
+      },
+      "ticket_qr_matches": true
+    },
+    {
+      "number": 3124,
+      "regime_id": 7,
+      "regime": "Dutty Free",
+      "currency": "VES",
+      "transaction": "01",
+      "titular": null,
+      "status": "confirmed",
+      "control": "00-00000076",
+      "total_local": 201.85,
+      "balance": 0,
+      "variant": "descuentos_cargos_mixto",
+      "pdf": {
+        "a4": "768e9066e258d837a3638b910fdfba523099307ba2d8f3fcade4911e99002a85",
+        "a5": "ad07c14bcd80af4e278c9168295e26da903dcc0af6007b2391d28a0f56e940a4",
+        "ticket": "27bd4dd724982a002e899996ea009ff20e1b01065013451ac74dff053e793337"
+      },
+      "remote_json_regime_matches": true,
+      "pdf_checks": {
+        "a4": {
+          "regime_present": false,
+          "buyer_present": true,
+          "third_present": true
+        },
+        "a5": {
+          "regime_present": false,
+          "buyer_present": true,
+          "third_present": true
+        },
+        "ticket": {
+          "regime_present": true,
+          "buyer_present": true,
+          "third_present": true
+        }
+      },
+      "ticket_qr_matches": true
+    },
+    {
+      "number": 3125,
+      "regime_id": 7,
+      "regime": "Dutty Free",
+      "currency": "VES",
+      "transaction": "99",
+      "titular": "J",
+      "status": "confirmed",
+      "control": "00-00000077",
+      "total_local": 201.85,
+      "balance": 0,
+      "variant": "descuentos_cargos_mixto",
+      "pdf": {
+        "a4": "58c0ac61f41b48e123e3997749134f16c482a52efb5714beaf397200cd0a606b",
+        "a5": "c6158949a6607f574177059812b6964c99f149359470af27443b166f956df0b8",
+        "ticket": "262bf332a00bc381add858d00f7a9ff66c457cbe3b1f35e7c387e6083495a48e"
+      },
+      "remote_json_regime_matches": true,
+      "pdf_checks": {
+        "a4": {
+          "regime_present": false,
+          "buyer_present": true,
+          "third_present": true
+        },
+        "a5": {
+          "regime_present": false,
+          "buyer_present": true,
+          "third_present": true
+        },
+        "ticket": {
+          "regime_present": true,
+          "buyer_present": true,
+          "third_present": true
+        }
+      },
+      "ticket_qr_matches": true
+    },
+    {
+      "number": 3126,
+      "regime_id": 7,
+      "regime": "Dutty Free",
+      "currency": "USD",
+      "transaction": "01",
+      "titular": null,
+      "status": "confirmed",
+      "control": "00-00000078",
+      "total_local": 207.91,
+      "balance": 0,
+      "variant": "descuentos_cargos_mixto_igtf",
+      "pdf": {
+        "a4": "0112aa01e970322f40bc5d7196af6a3f4f9ad17f80aca2dad1da52458b8eb023",
+        "a5": "eaa916eb1d22d52a14657b6f4ad6f5a2cfe0857d20e2f4f3a97737b6085317bc",
+        "ticket": "4cbabdc8852eec50f21e8202be125b01253e38491405563abab4bc453837ab7c"
+      },
+      "remote_json_regime_matches": true,
+      "pdf_checks": {
+        "a4": {
+          "regime_present": false,
+          "buyer_present": true,
+          "third_present": true
+        },
+        "a5": {
+          "regime_present": false,
+          "buyer_present": true,
+          "third_present": true
+        },
+        "ticket": {
+          "regime_present": true,
+          "buyer_present": true,
+          "third_present": true
+        }
+      },
+      "ticket_qr_matches": true
+    },
+    {
+      "number": 3127,
+      "regime_id": 7,
+      "regime": "Dutty Free",
+      "currency": "USD",
+      "transaction": "99",
+      "titular": "J",
+      "status": "confirmed",
+      "control": "00-00000079",
+      "total_local": 207.91,
+      "balance": 0,
+      "variant": "descuentos_cargos_mixto_igtf",
+      "pdf": {
+        "a4": "5eb5675387677d60e11cd79f356896d2af25860e6822d1c89f9ae884b17222ce",
+        "a5": "68e984227b78ce941d5c00a057da63c45732b9b807b62a753fce658aeab12149",
+        "ticket": "b8bd8e5175b2e9623f5e97dc20d6896f37e1cd18bf4c4625469bab112c4d2898"
+      },
+      "remote_json_regime_matches": true,
+      "pdf_checks": {
+        "a4": {
+          "regime_present": false,
+          "buyer_present": true,
+          "third_present": true
+        },
+        "a5": {
+          "regime_present": false,
+          "buyer_present": true,
+          "third_present": true
+        },
+        "ticket": {
+          "regime_present": true,
+          "buyer_present": true,
+          "third_present": true
+        }
+      },
+      "ticket_qr_matches": true
+    }
+  ],
+  "matrix_count": 28,
+  "matrix_confirmed": 28,
+  "remote_json_regimes_verified": 28,
+  "pdf_pages_reviewed": 84,
+  "ticket_qr_verified": 28,
+  "provider_limitation": "Los PDF originales A4 HKA omiten el régimen; A5 y correo heredan esa presentación. El JSON fiscal remoto sí conserva los siete nombres exactos.",
+  "web_checks": {
+    "web_invoices": [
+      {
+        "number": 3128,
+        "status": "confirmed",
+        "control": "00-00000080",
+        "regime": "Dutty Free",
+        "total": 116,
+        "balance": 0,
+        "transaction": "99"
+      },
+      {
+        "number": 3129,
+        "status": "confirmed",
+        "control": "00-00000081",
+        "regime": "Zona Libre de Mérida",
+        "total": 116,
+        "balance": 0,
+        "transaction": "99"
+      }
+    ],
+    "document_count": 30,
+    "confirmed": 30,
+    "automatic_email_enabled": false,
+    "mail_attempts": 0,
+    "edit_payments_unchanged": true
+  },
+  "edits": [
+    {
+      "regime_id": 2,
+      "regime_description": "Zona franca de Paraguaná",
+      "status": "not_requested",
+      "uuid_changed": true,
+      "payments_unchanged": true,
+      "number_unchanged": true,
+      "balance": 0
+    },
+    {
+      "regime_id": null,
+      "regime_description": null,
+      "status": "not_requested",
+      "uuid_changed": true,
+      "payments_unchanged": true,
+      "number_unchanged": true,
+      "balance": 0
+    },
+    {
+      "regime_id": 5,
+      "regime_description": "Zona Libre de Mérida",
+      "status": "not_requested",
+      "uuid_changed": true,
+      "payments_unchanged": true,
+      "number_unchanged": true,
+      "balance": 0
+    }
+  ],
+  "browser_downloads": {
+    "a4": true,
+    "a5": true,
+    "ticket": true
+  },
+  "browser_asset": "assets/app-0d3d7497.js",
+  "validation": {
+    "php_focused": {
+      "tests": 179,
+      "assertions": 1680,
+      "passed": true
+    },
+    "javascript": {
+      "tests": 62,
+      "passed": true
+    },
+    "mysql": {
+      "runs_tests": 8,
+      "assertions": 3238,
+      "passed": true
+    },
+    "php_general": {
+      "tests": 701,
+      "assertions": 15489,
+      "failures": 3,
+      "skipped": 16,
+      "existing_failures": [
+        "QuotationStorefrontCorrelativeTest: COT-12 / COT-00000012 (2)",
+        "Feature ExampleTest: base Dusk multifacturalo_dusk ausente (1)"
+      ]
+    },
+    "build": {
+      "command": "npm run build",
+      "passed": true
+    },
+    "php_lint_files": 18,
+    "diff_check": true
+  },
+  "cleanup": {
+    "client_removed": true,
+    "hostname_removed": true,
+    "website_removed": true,
+    "database_removed": true,
+    "database_user_removed": true,
+    "storage_removed": true,
+    "resolution_cache_removed": true,
+    "hka_token_cache_removed": true,
+    "test_databases_remaining": 0,
+    "browser_tab_closed": true,
+    "browser_downloads_archived": true,
+    "private_artifacts_outside_repository": true,
+    "user_files_preserved": true,
+    "no_commits_or_deployment": true
+  },
+  "browser_download_details": [
+    {
+      "format": "ticket",
+      "pages": 1,
+      "width_points": 204.09,
+      "height_points": 819.07,
+      "sha256": "9fb9924c3801b205cce615699fdc1e28198c458665d0a965c6abb7642db25302"
+    },
+    {
+      "format": "a4",
+      "pages": 1,
+      "width_points": 612.28,
+      "height_points": 793.7,
+      "sha256": "2514f15e55c021e722a642dfeff29df14d64c2cc1768464f59fa337de097e54d"
+    },
+    {
+      "format": "a5",
+      "pages": 1,
+      "width_points": 595.28,
+      "height_points": 419.53,
+      "sha256": "2d7472d1140b4ce91ebaabe0fe5a0867c1c71da91d92afa726eb478ad657cc12"
+    }
+  ]
+}

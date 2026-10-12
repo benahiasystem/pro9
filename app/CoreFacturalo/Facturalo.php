@@ -214,7 +214,7 @@ class Facturalo
         }
         // ######## INICIO EMISION HKA DEMO ########
         if ($this->document instanceof Document) {
-            \App\Services\ThirdPartyInvoicePolicy::assertPaid($this->document);
+            \App\Services\Fiscal\HkaDomesticInvoicePolicy::assertPaid($this->document);
             app(\App\Services\Fiscal\HkaMail::class)->registerAutomatic($this->document,
                 (bool) optional($this->configuration)->auto_send_pdf_email || ($this->actions['send_email'] ?? false) === true);
         }
@@ -405,6 +405,7 @@ class Facturalo
             }
             $p_order           = $this->document->purchase_order != '' ? '10' : '0';
 
+            $regime_height = \App\Services\SpecialTaxRegimePolicy::applies($this->document) ? 16 : 0;
             $third_party_height = 0;
             if ($this->document instanceof Document && \App\Services\ThirdPartyInvoicePolicy::isThirdParty($this->document)) {
                 $third = (array) $this->document->fiscal_data->third_party;
@@ -490,7 +491,7 @@ class Facturalo
                     $company_number +
                     $customer_name +
                     $customer_address +
-                    $third_party_height +
+                    $third_party_height + $regime_height +
                     $p_order +
                     $legends +
                     $total_exportation +
@@ -1003,6 +1004,8 @@ class Facturalo
                 $emission = $document->emission()->lockForUpdate()->first();
                 $document->setRelation('emission', $emission);
                 \App\Services\Fiscal\DocumentEditPolicy::assertEditable($document);
+                $requireFullPayment = \App\Services\Fiscal\HkaDomesticInvoicePolicy::applies($document) || \App\Services\SpecialTaxRegimePolicy::requested($inputs);
+                if (\App\Services\SpecialTaxRegimePolicy::applies($document) && !$this->webDocuments) \App\Services\Fiscal\FiscalAmounts::error('fiscal_data.special_tax_regime_id', 'Edite el régimen especial desde Comprobantes web.');
                 \App\Services\ExportInvoicePolicy::assertInput($inputs, $this->webDocuments);
                 \App\Services\ExportInvoicePolicy::assertSameCategory($document, $inputs);
                 \App\Services\ThirdPartyInvoicePolicy::assertSameCategory($document, $inputs);
@@ -1068,7 +1071,7 @@ class Facturalo
                 \App\Services\Fiscal\FiscalDocumentPersistence::otherTaxes($document, $inputs['taxes'] ?? []);
                 \App\Services\Fiscal\FiscalDocumentPersistence::summarize($document);
                 \App\Services\Fiscal\DocumentEditSettlements::validateTotals($document);
-                \App\Services\ThirdPartyInvoicePolicy::assertPaid($document);
+                \App\Services\Fiscal\HkaDomesticInvoicePolicy::assertPaid($document, $requireFullPayment);
                 // ######## FIN PERSISTENCIA FISCAL VENEZUELA ########
                 $this->document = Document::find($document->id);
                 break;

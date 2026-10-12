@@ -102,6 +102,7 @@ final class FiscalDocumentPersistence
         if ($document->note && $document->note->affected_document_id) {
             $affected = Document::findOrFail($document->note->affected_document_id);
             if (\App\Services\ExportInvoicePolicy::isExport($affected->invoice->operation_type_id ?? '')) FiscalAmounts::error('note', 'Las notas de exportación todavía no están habilitadas.');
+            if (\App\Services\SpecialTaxRegimePolicy::applies($affected)) FiscalAmounts::error('note', 'Las notas vinculadas a regímenes especiales todavía no están habilitadas.');
             if (\App\Services\ThirdPartyInvoicePolicy::isThirdParty($affected)) FiscalAmounts::error('note', 'Las notas de facturas por cuenta de terceros todavía no están habilitadas.');
             if ($affected->document_type_id !== '01' || $affected->customer_id !== $document->customer_id || $affected->establishment_id !== $document->establishment_id || $affected->fiscal_environment !== $document->fiscal_environment || $affected->currency_type_id !== $document->currency_type_id) FiscalAmounts::error('note','La factura afectada debe corresponder al cliente, sucursal, ambiente y moneda de la nota.');
             $document->note->data_affected_document = $affected->only(['document_type_id','series','number','date_of_issue','total','control_number']);
@@ -119,6 +120,7 @@ final class FiscalDocumentPersistence
             if ($id !== null) {
                 $row = $db->table($table)->where('id', $id)->where('active', 1)->first();
                 if (!$row) FiscalAmounts::error('fiscal_data.'.$key, 'Seleccione un valor fiscal activo.');
+                if ($key === 'special_tax_regime_id') \App\Services\SpecialTaxRegimePolicy::description($id, (array) $row);
                 $snapshot[$key] = (array) $row;
             }
         }
@@ -287,6 +289,7 @@ final class FiscalDocumentPersistence
             if (!$initial && $values['tax_amount'] > 0 && \App\Services\ExportInvoicePolicy::isExport($document->invoice->operation_type_id ?? '')) {
                 FiscalAmounts::error('payment', 'El IGTF de un cobro posterior requiere una nota de exportación; ese flujo todavía no está habilitado.');
             }
+            if (!$initial && $values['tax_amount'] > 0 && \App\Services\SpecialTaxRegimePolicy::applies($document)) FiscalAmounts::error('payment', 'El IGTF posterior requiere una nota vinculada a régimen especial; ese flujo todavía no está habilitado.');
             if (!$initial && $values['tax_amount'] > 0 && \App\Services\ThirdPartyInvoicePolicy::isThirdParty($document)) FiscalAmounts::error('payment', 'El IGTF de un cobro posterior requiere una nota por cuenta de terceros; ese flujo todavía no está habilitado.');
             $method = PaymentMethodType::findOrFail($input['payment_method_type_id']);
             if (!$initial && $values['payment'] > $document->balance + 0.005) FiscalAmounts::error('payment', 'El pago supera el saldo disponible.');

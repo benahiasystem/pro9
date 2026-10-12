@@ -58,3 +58,7 @@ Leer [referencia HKA, secciones 3, 4.3, 6 y 10–15](../../../informes/imprenta_
 ## Presentación de facturas por terceros
 
 Mantener los originales HKA A4/A5; su encabezado separa Datos de Tercero y Datos de Receptor. No editar el prefijo duplicado que actualmente imprime DEMO. La parcial third_party_identity identifica al titular congelado en las plantillas locales y el ticket reserva altura adicional. La plantilla predeterminada muestra descuentos/cargos/IGTF desde los totales locales conciliados. No añadir al tercero como destinatario de Pro9. Ver [evidencia y alcance](../../../informes/facturas_cuenta_terceros_hka.md); comprobar CurrentPdfRenderingTest, HkaPdfTest, HkaMailTest y las descargas con assets actuales.
+
+## Presentación de regímenes especiales
+
+Leer [evidencia del régimen](../../../informes/facturas_regimenes_especiales_hka.md). La parcial special_tax_regime imprime la descripción congelada del régimen y el ticket reserva 16 mm adicionales. El listado/detalle/editor muestran el snapshot. Usar HkaDomesticInvoicePolicy en el resumen del ticket predeterminado para conservar descuentos/cargos/IGTF locales también en venta propia. Conservar A4 HKA, conversión A5 y QR actual. DEMO almacena el régimen en el JSON fiscal descargable pero sus originales A4 no lo imprimen: A5 y correo heredan esa omisión. No reescribir originales ni remitir otra factura para corregirla.

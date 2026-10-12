@@ -16,7 +16,7 @@ $document_number = $document->number_full;
 
     $document_base = ($document->note) ? $document->note : null;
     $payments = $document->payments;
-    $third_party_sale = \App\Services\ThirdPartyInvoicePolicy::isThirdParty($document);
+    $third_party_sale = \App\Services\Fiscal\HkaDomesticInvoicePolicy::applies($document);
     $discount_for_totals = $third_party_sale ? (float) $document->total_discount : (float) $document->total_discount_with_igv;
     $igtf_for_totals = $third_party_sale ? collect($document->taxes ?? [])->where('tax_kind', 'IGTF')->sum('amount') : 0;
 

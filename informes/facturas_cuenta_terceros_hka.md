@@ -68,3 +68,7 @@ El listado, detalle y ticket identifican la venta por terceros y muestran RIF/ra
 Evidencia saneada y conteos finales: [matriz DEMO](evidencias/terceros_hka_demo_2026_10_11.json). Las capturas muestran [Clientes](evidencias/terceros_clientes_2026_10_11.png), [factura confirmada](evidencias/terceros_factura_2026_10_11.png) y [validaciones obligatorias](evidencias/terceros_validaciones_2026_10_11.png). Los originales y respuestas privadas se conservaron fuera del repositorio; no se publican credenciales, JWT, URLs firmadas ni datos reales del comprador.
 
 Se retiraron la base, usuario MySQL, hostname, cliente y website centrales de la instalación temporal, su almacenamiento y las entradas propias de caché. Se cerró su pestaña y se archivaron fuera del repositorio las tres descargas de navegador antes de retirarlas de Descargas. La matriz registra todas las comprobaciones de limpieza. Los cambios previos del usuario en datos MOCK se conservaron.
+
+## Evolución — 12 de octubre de 2026
+
+Las facturas por terceros admiten ahora el régimen especial opcional dentro del mismo alcance web digital DEMO al contado completamente pagado. HkaDomesticInvoicePolicy y HkaDomesticMoney comparten las validaciones y la adaptación con ventas propias con régimen; HkaThirdPartyMoney delega por compatibilidad. La combinación se adapta una sola vez y conserva transacción 99 y titular separado. Ver [regímenes y evidencia nueva](facturas_regimenes_especiales_hka.md). Los controles y archivos históricos de este informe se conservan.

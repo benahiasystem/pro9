@@ -137,6 +137,18 @@
                             </div>
                         </div>
                     </div>
+                    <div class="row px-2" v-if="specialTaxRegimeAvailable || savedSpecialTaxRegime">
+                        <div class="col-md-8 mb-3" :class="{'has-danger': errors['fiscal_data.special_tax_regime_id']}">
+                            <label class="control-label">Régimen especial de tributación</label>
+                            <el-select v-model="form.fiscal_data.special_tax_regime_id" :disabled="!specialTaxRegimeAvailable" @change="changeSpecialTaxRegime">
+                                <el-option :value="null" label="Sin régimen especial" />
+                                <el-option v-for="regime in specialTaxRegimes" :key="regime.id" :value="regime.id" :label="regime.description" :disabled="regime.inactive" />
+                            </el-select>
+                            <small v-if="savedSpecialTaxRegime" class="d-block">Régimen registrado: {{ savedSpecialTaxRegime }}</small>
+                            <small class="d-block text-muted">Conserva el IVA de cada producto. Requiere Contado y saldo cero.</small>
+                            <small v-if="errors['fiscal_data.special_tax_regime_id']" class="form-control-feedback d-block text-danger" v-text="errors['fiscal_data.special_tax_regime_id'][0]" />
+                        </div>
+                    </div>
                     <div class="row px-2" v-if="thirdPartyAvailable || originalThirdPartyInvoice">
                         <div class="col-12 mb-2">
                             <el-checkbox v-model="thirdPartyMode" :disabled="isUpdateDocument" @change="changeThirdPartyMode">Facturar por cuenta de terceros</el-checkbox>
@@ -2753,6 +2765,8 @@ export default {
             showDialogNewPerson: false,
             showDialogThirdParty: false,
             thirdPartyRecordId: null,
+            specialTaxRegimes: [],
+            savedSpecialTaxRegime: null,
             thirdPartyMode: false,
             originalThirdPartyInvoice: false,
             thirdParties: [],
@@ -2928,8 +2942,8 @@ export default {
                 return this.form.operation_type_id;
             },
             set(val) {
-                if (this.thirdPartyMode && val !== '0101') {
-                    this.$message.error('La factura por cuenta de terceros requiere venta interna.');
+                if ((this.thirdPartyMode || this.form.fiscal_data?.special_tax_regime_id) && val !== '0101') {
+                    this.$message.error('La factura por terceros o con régimen especial requiere venta interna.');
                     return;
                 }
                 const nextExport = ['0201', '0202', '0203'].includes(val);
@@ -2967,6 +2981,10 @@ export default {
         },
         isExportInvoice() {
             return ['0201', '0202', '0203'].includes(this.form.operation_type_id);
+        },
+        specialTaxRegimeAvailable() {
+            return this.company?.fiscal_emission_mode === 'digital' && this.company?.fiscal_environment === 'demo'
+                && this.form.document_type_id === '01' && this.form.operation_type_id === '0101' && !this.form.is_itinerant;
         },
         thirdPartyAvailable() {
             return this.company?.fiscal_emission_mode === 'digital' && this.company?.fiscal_environment === 'demo'
@@ -3372,6 +3390,12 @@ export default {
         }
     },
     methods: {
+        changeSpecialTaxRegime(value) {
+            if (value != null && (!this.specialTaxRegimeAvailable || this.form.payment_condition_id !== '01')) {
+                this.form.fiscal_data.special_tax_regime_id = null;
+                this.$message.error('El régimen especial requiere una Factura interna al contado en Medios digitales DEMO.');
+            }
+        },
         async thirdPartySaved(saved) {
             const options = await this.loadThirdParties(saved.rif || '');
             if (!options) return;
@@ -3593,6 +3617,7 @@ export default {
                 this.enabled_discount_global =
                     response.data.enabled_discount_global;
                 this.company = response.data.company;
+                this.specialTaxRegimes = response.data.special_tax_regimes || [];
                 this.user = response.data.user;
                 this.document_type_03_filter =
                     response.data.document_type_03_filter;
@@ -3789,6 +3814,7 @@ export default {
             }
         },
         initForm() {
+            this.savedSpecialTaxRegime = null;
             this.thirdPartyMode = false;
             this.originalThirdPartyInvoice = false;
             this.thirdPartySavedOption = null;
@@ -3807,6 +3833,7 @@ export default {
                 time_of_issue: moment().format("HH:mm:ss"),
                 customer_id: null,
                 third_party_id: null,
+                fiscal_data: {special_tax_regime_id: null},
                 currency_type_id: this.config.currency_type_id,
                 purchase_order: null,
                 exchange_rate_sale: 0,
@@ -4148,6 +4175,11 @@ export default {
             this.form.group_id = data.group_id;
 
             this.form.note = data.note;
+            this.form.fiscal_data = {special_tax_regime_id: data.special_tax_regime_id ?? null};
+            this.savedSpecialTaxRegime = data.special_tax_regime_description || null;
+            if (data.special_tax_regime_id && !this.specialTaxRegimes.some(row => row.id === data.special_tax_regime_id)) {
+                this.specialTaxRegimes.push({id: data.special_tax_regime_id, description: data.special_tax_regime_description, inactive: true});
+            }
             this.originalThirdPartyInvoice = Boolean(data.is_third_party_invoice);
             this.thirdPartyMode = this.originalThirdPartyInvoice;
             this.form.third_party_id = data.third_party_id || null;
@@ -6662,6 +6694,9 @@ export default {
         },
         async submit() {
             if (this.editBlocked) return this.$message.error(this.form.edit_block_reason);
+            if (this.form.fiscal_data?.special_tax_regime_id && (!this.specialTaxRegimeAvailable || this.form.payment_condition_id !== '01')) {
+                return this.$message.error('El régimen especial requiere una Factura de venta interna al contado.');
+            }
             if (this.thirdPartyMode && (!this.form.third_party_id || !this.thirdPartyAvailable || this.form.payment_condition_id !== '01')) {
                 return this.$message.error('Seleccione el tercero y mantenga una Factura de venta interna al contado.');
             }

@@ -28,23 +28,19 @@ final class HkaPayloadBuilder
             if (empty($d['issuer'][$field])) FiscalAmounts::error('issuer.'.$field,'Falta el snapshot fiscal del emisor.');
         }
         $fiscal = $d['fiscal_data'] ?? [];
+        $specialRegime = isset($fiscal['special_tax_regime_id']);
+        $regimeDescription = $specialRegime ? \App\Services\SpecialTaxRegimePolicy::description($fiscal['special_tax_regime_id'], $fiscal['catalog_snapshot']['special_tax_regime_id'] ?? []) : null;
         $thirdParty = ($fiscal['transaction_type_id'] ?? '01') === '99';
         $operation = $d['invoice']['operation_type_id'] ?? '0101';
         $exportation = \App\Services\ExportInvoicePolicy::isExport($operation);
-        if ((!$exportation && ($operation !== '0101' || ($d['total_exportation'] ?? 0) > 0)) || !empty($fiscal['special_tax_regime_id']) || (!$thirdParty && !empty($fiscal['third_party'])) || !empty($fiscal['conditional_data'])) {
+        if ((!$exportation && ($operation !== '0101' || ($d['total_exportation'] ?? 0) > 0)) || (!$thirdParty && !empty($fiscal['third_party'])) || !empty($fiscal['conditional_data'])) {
             FiscalAmounts::error('fiscal_data','La operación, régimen o condición fiscal seleccionada no está habilitada.');
         }
         if ($thirdParty) {
             if ($d['document_type_id'] !== '01' || $operation !== '0101' || ($d['payment_condition_id'] ?? null) !== '01') FiscalAmounts::error('fiscal_data', 'La transacción 99 requiere una Factura de venta interna al contado.');
             \App\Services\ThirdPartyInvoicePolicy::hkaThirdParty($fiscal['third_party'] ?? []);
-            $paid = 0; $real = false;
-            foreach ($d['payments'] ?? [] as $payment) {
-                if (!empty($payment['reversed_at'])) continue;
-                $paid += $payment['payment'] ?? 0;
-                if (empty($payment['receipt_parent_id']) && ($payment['payment'] ?? 0) > 0) $real = true;
-            }
-            if (!$real || abs($paid - $d['total']) > 0.005) FiscalAmounts::error('payments', 'La transacción 99 requiere cobros reales por el importe completo de la factura.');
         }
+        if ($thirdParty || $specialRegime) HkaDomesticInvoicePolicy::assertSnapshot($d);
         if ($exportation) {
             $term = \App\Services\ExportInvoicePolicy::INCOTERMS[$operation];
             if (empty($d['items'])) FiscalAmounts::error('items', 'La exportación requiere líneas de bienes.');
@@ -78,6 +74,7 @@ final class HkaPayloadBuilder
             'horaEmision'=>\Carbon\Carbon::parse($d['time_of_issue'])->format('h:i:s a'),
             'tipoDeVenta'=>$exportation ? $term : 'Interna', 'moneda'=>$d['currency_type_id'], 'tipoTransaccion'=>$transaction,
             'transaccionId'=>self::transactionId($d['operation_key']), 'sucursal'=>(string)($d['establishment']['code'] ?? '')];
+        if ($regimeDescription !== null) $id['regimenEspTributacion'] = $regimeDescription;
         if ($provider) $id['tipoProveedor'] = $provider;
         $conditions = ['01' => 'Contado', '02' => 'Crédito'];
         $condition = $d['payment_condition_id'] ?? null;
@@ -174,7 +171,7 @@ final class HkaPayloadBuilder
                 'totalDescuento'=>self::money($v['discount']),'totalRecargos'=>self::money($v['charge']),'impuestosSubtotal'=>$vesTaxes];
         }
         $payload=['documentoElectronico'=>['encabezado'=>$header,'detallesItems'=>$lines]];
-        if ($thirdParty) $payload = HkaThirdPartyMoney::adapt($payload, $d);
+        if ($thirdParty || $specialRegime) $payload = HkaDomesticMoney::adapt($payload, $d);
         (new HkaSchemaValidator())->validate($payload);
         return $payload;
     }
