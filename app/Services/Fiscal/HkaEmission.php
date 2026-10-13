@@ -28,6 +28,7 @@ final class HkaEmission
                 $document = $document->fresh();
                 if (empty($document->emission->response['retry_allowed'])) return DocumentEmissionView::forDocument($document);
             }
+            if ($reason = HkaIslrRetentionCapability::reason($document)) FiscalAmounts::error('islr_retention',$reason);
             if ($reason = HkaIvaRetentionCapability::reason($document)) FiscalAmounts::error('iva_retention',$reason);
             $token = app(HkaTransport::class)->token($company);
             if ($document->emission->status === 'not_requested') (new HkaEmissionPreparation)->prepare($document, $operationKey);
@@ -156,7 +157,7 @@ final class HkaEmission
         } catch (\Throwable $ignored) { /* The sale and its fiscal confirmation remain persisted. */ }
         if (optional($current->emission)->status === 'confirmed') {
             HkaIgtfNote::resume($current);
-            try { IvaRetentionService::resume($current); }
+            try { IvaRetentionService::resume($current); IslrRetentionService::resume($current); }
             catch (\Throwable $ignored) { /* Durable pending vouchers are recovered independently. */ }
         }
     }

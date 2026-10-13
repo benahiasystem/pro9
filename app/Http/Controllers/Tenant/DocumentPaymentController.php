@@ -57,6 +57,7 @@ class DocumentPaymentController extends Controller
             'number_full' => $document->number_full,
             'document_type_id' => $document->document_type_id,
             'iva_retention' => \App\Services\Fiscal\IvaRetentionService::view($document),
+            'islr_retention' => \App\Services\Fiscal\IslrRetentionService::view($document),
             'total_paid' => $total_paid,
             'total' => $total,
             'total_difference' => $total_difference,

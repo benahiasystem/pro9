@@ -493,6 +493,7 @@ class Facturalo
                     $customer_address +
                     $third_party_height + $regime_height + (count(\App\Services\Fiscal\SpecialTaxpayerPolicy::forPrint($this->document)) * 12) +
                     (($this->document instanceof Document && $this->document->relationLoaded('fiscal_data') && !empty($this->document->fiscal_data->iva_retention_prevision)) ? 16 : 0) +
+                    (($this->document instanceof Document && $this->document->relationLoaded('fiscal_data') && !empty($this->document->fiscal_data->islr_retention_prevision)) ? 8 : 0) +
                     $p_order +
                     $legends +
                     $total_exportation +
@@ -1065,6 +1066,8 @@ class Facturalo
                 \App\Services\Fiscal\FiscalDocumentPersistence::summarize($document);
                 \App\Services\Fiscal\IvaRetentionService::savePrevision($document, $inputs['iva_retention_prevision'] ?? null);
                 \App\Services\Fiscal\IvaRetentionService::refreshPrevision($document);
+                \App\Services\Fiscal\IslrRetentionService::savePrevision($document, $inputs['islr_retention_prevision'] ?? null);
+                \App\Services\Fiscal\IslrRetentionService::refreshPrevision($document);
                 $this->updatePrepaymentDocuments($inputs);
 
                 if($inputs['hotel']){

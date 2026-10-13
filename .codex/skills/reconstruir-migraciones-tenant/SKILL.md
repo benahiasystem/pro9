@@ -104,3 +104,7 @@ Aplicar [el contrato IVA recibido](../mantener-retenciones-iva-recibidas-pro9/SK
 - `000337`: `document_iva_retention_operations`, UUID único, acción apply/remove única por comprobante, payload/contexto congelados, reclamo, contadores y recuperación.
 - `000338`: `received_retention_uploads`, token único, usuario/vencimiento/ruta/documento consumidor. `000999` agrega FKs restrictivas de operaciones/uploads y `reversed_by`; retirarlas antes de revertir tablas.
 - Mantener precisiones existentes y limpieza demo en orden dependiente: operaciones/uploads antes de retenciones/documentos. Verificar índices generados, FKs, rollback/repetición y `test_iva_*` en MySQL temporal; el servicio no sustituye restricciones de base.
+
+## ISLR recibido
+
+Aplicar [contrato ISLR](../mantener-retenciones-islr-recibidas-pro9/SKILL.md): 000332 añade índice generado único nullable ISLR activo, 000334 previsión JSON separada, 000339 outbox ISLR con resultado privado saneado y FKs factura/comprobante/actor en000999 con retirada inversa. Conservar tabla/outbox IVA y uploads. Inventario actual 343 tablas de aplicación/344 archivos tenant; no convertir instalaciones existentes. Pruebas de coexistencia, idempotencia/concurrencia y rollback/repetición en MySQL temporal.

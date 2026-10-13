@@ -409,6 +409,7 @@ class Document extends ModelTenant
             'number'                 => $this->number,
             'fiscal_identity' => $this->fiscal_identity,
             'iva_retention' => \App\Services\Fiscal\IvaRetentionService::view($this),
+            'islr_retention' => \App\Services\Fiscal\IslrRetentionService::view($this),
             'document_type_id'       => $this->document_type_id,
             'date_of_issue'          => optional($this->date_of_issue)->format('Y-m-d'),
             'time_of_issue'          => $this->time_of_issue,

@@ -23,6 +23,7 @@ class DocumentCollection extends ResourceCollection
             fn ($row) => $row instanceof \Illuminate\Http\Resources\Json\JsonResource ? $row->resource : $row
         )->all());
         $this->collection->loadMissing('emission');
+        if (\App\Services\Fiscal\IslrRetentionService::available()) $this->collection->loadMissing(['received_retentions.islr_operations']);
         if (\App\Services\Fiscal\IvaRetentionService::available()) $this->collection->loadMissing(['fiscal_data','received_retentions.operations']);
         \App\Services\Fiscal\FiscalIdentity::preload($this->collection);
         return $this->collection->transform(function ($row, $key) use ($request) {
@@ -131,6 +132,7 @@ class DocumentCollection extends ResourceCollection
                 'number' => $row->number_full,
                 'fiscal_identity' => $row->fiscal_identity,
                 'iva_retention' => \App\Services\Fiscal\IvaRetentionService::view($row),
+                'islr_retention' => \App\Services\Fiscal\IslrRetentionService::view($row),
                     'fiscal_emission' => \App\Services\Fiscal\DocumentEmissionView::forDocument($row),
                 'pdf_downloads' => \App\Services\Fiscal\HkaPdf::view($row, $request->is('api/*')),
                 'customer_name' => $row->customer->name,

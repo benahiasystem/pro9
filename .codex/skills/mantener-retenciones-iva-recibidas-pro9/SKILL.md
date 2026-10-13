@@ -11,7 +11,9 @@ Contrato implementado el 12 de octubre de 2026 para instalaciones nuevas. Manten
 
 Leer [datos, entradas y recuperación](references/contratos.md) al cambiar esquema, API, componentes o sincronización. El [informe de implementación](../../../informes/retenciones_iva_recibidas_hka.md) mantiene ejemplos API, matriz por módulo y evidencia DEMO saneada. Los resultados históricos no sustituyen las pruebas del cambio actual.
 
-Emisión a proveedores HKA `05`, ISLR/ARC, producción y conversión de tenants existentes tienen alcance separado. Aplicar [perfiles SPE](../mantener-sujetos-pasivos-especiales-pro9/SKILL.md) para elegibilidad, [persistencia fiscal](../mantener-persistencia-fiscal-venezuela-pro9/SKILL.md) para cobros, [esquema inicial](../reconstruir-migraciones-tenant/SKILL.md) para DDL y [frontend-build](../frontend-build/SKILL.md) para assets.
+Para ISLR recibido usar [su contrato independiente](../mantener-retenciones-islr-recibidas-pro9/SKILL.md). Compartir ciclo `ReceivedRetentionService` y reclamo `HkaReceivedRetention`, manteniendo reglas/adaptadores/outboxes separados. Un IVA y un ISLR pueden coexistir; sugerencia neta suma ambas previsiones.
+
+Emisión a proveedores HKA `05`, ARC, producción y conversión de tenants existentes tienen alcance separado. Aplicar [perfiles SPE](../mantener-sujetos-pasivos-especiales-pro9/SKILL.md) para elegibilidad, [persistencia fiscal](../mantener-persistencia-fiscal-venezuela-pro9/SKILL.md) para cobros, [esquema inicial](../reconstruir-migraciones-tenant/SKILL.md) para DDL y [frontend-build](../frontend-build/SKILL.md) para assets.
 
 Al cambiar HTTP/autenticación leer [conexión HKA](../conectar-api-hka/SKILL.md); para autorización y soportes privados, [seguridad Pro9](../mantener-seguridad-pro9/SKILL.md). Aplicar sus controles relevantes al flujo autorizado, sin ampliar la tarea a otras integraciones o hallazgos.
 

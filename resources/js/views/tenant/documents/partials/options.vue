@@ -79,7 +79,8 @@
 
 
 
-            <el-button v-if="form.document_type_id === '01' && form.iva_retention && form.iva_retention.enabled" size="small" @click="showIvaRetention = true">Retención IVA del cliente</el-button>
+            <el-button v-if="form.document_type_id === '01' && ((form.iva_retention && form.iva_retention.enabled) || (form.islr_retention && form.islr_retention.enabled))" size="small" @click="showIvaRetention = true">Retenciones IVA / ISLR</el-button>
+        <p v-if="form.islr_retention && form.islr_retention.prevision">ISLR prevista: {{ form.islr_retention.prevision.amount }} {{ form.currency_type_id }}. Permanece como saldo pendiente.</p>
             <p v-if="form.iva_retention && form.iva_retention.prevision">Prevista: {{ form.iva_retention.prevision.amount }} {{ form.currency_type_id }}. Saldo pendiente: {{ form.iva_retention.balance }}.</p>
             <retention-form :show-dialog.sync="showIvaRetention" :document-id="recordId" />
             <span>Formatos disponibles para la descarga del comprobante:</span>

@@ -15,6 +15,7 @@ class FiscalEmissionSchemaTest extends TestCase
 {
     use \Tests\Support\SpePersistenceCases;
     use \Tests\Support\IvaRetentionPersistenceCases;
+    use \Tests\Support\IslrRetentionPersistenceCases;
     private $previousContainer;
     private $previousFacade;
     private $capsule;
@@ -574,7 +575,7 @@ class FiscalEmissionSchemaTest extends TestCase
         $document=$document->fresh();
         $retention += \Tests\Support\SpeProfiles::voucher($document);
         $service::retention($document,$retention);
-        $service::retention($document,array_replace($retention,['tax_kind'=>'ISLR','voucher_number'=>'TEST-ISLR-1',
+        $service::retention($document,array_replace($retention,['tax_kind'=>'ISLR','operation_key'=>(string)\Illuminate\Support\Str::uuid(),'voucher_number'=>'TEST-ISLR-1',
             'concept_id'=>'055','base'=>200,'percentage'=>2,'amount'=>4]));
         self::assertEquals(194,$document->fresh()->balance);
         self::assertCount(2,$document->fresh()->received_retentions);
@@ -711,6 +712,7 @@ class FiscalEmissionSchemaTest extends TestCase
             'date_of_issue'=>'2026-09-10','time_of_issue'=>'12:00:00','customer_id'=>$customer->id,'customer'=>json_encode((array)$customer),
             'currency_type_id'=>'VES','exchange_rate_sale'=>1,'total_value'=>100,'total'=>100]);
         $db->table('documents')->where('id',$id)->update(['control_number'=>'00-00000999']);
+        $db->table('document_emissions')->insert(['document_id'=>$id,'fiscal_environment'=>'demo','operation_key'=>(string)\Illuminate\Support\Str::uuid(),'status'=>'confirmed','payload'=>json_encode(['documentoElectronico'=>['encabezado'=>['identificacionDocumento'=>['tipoDocumento'=>'01','serie'=>'FF01','numeroDocumento'=>'1','moneda'=>'VES']]]])]);
         $key=(string)\Illuminate\Support\Str::uuid();
         $payment=['date_of_payment'=>'2026-09-10','payment_method_type_id'=>'01','currency_type_id'=>'USD','exchange_rate'=>10,
             'original_amount'=>8,'igtf_status'=>'subject','financial_intermediation'=>'none','operation_key'=>$key];
@@ -735,8 +737,8 @@ class FiscalEmissionSchemaTest extends TestCase
         self::assertEquals(4,$db->table('document_received_retentions')->where('document_id',$id)->sum('applied_amount'));
         $retention=array_replace($retention,['voucher_number'=>'CONCURRENT-DUPLICATE','concept_id'=>'055','base'=>50,'percentage'=>2,'amount'=>1]);
         $result=$this->runFiscalWorkers($id,'retention',[$retention,$retention]);
-        self::assertCount(1,array_filter($result,fn ($r)=>isset($r['id'])));
-        self::assertSame(2,$db->table('document_received_retentions')->where('document_id',$id)->count());
+        self::assertCount(0,array_filter($result,fn ($r)=>isset($r['id'])));
+        self::assertSame(1,$db->table('document_received_retentions')->where('document_id',$id)->count());
     }
 
     private function runFiscalWorkers(int $documentId,string $operation,array $data): array

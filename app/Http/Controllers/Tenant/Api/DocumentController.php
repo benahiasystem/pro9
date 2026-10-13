@@ -42,6 +42,7 @@ class DocumentController extends Controller
             'data' => [
                 'number' => $document->number_full,
                 'iva_retention' => \App\Services\Fiscal\IvaRetentionService::view($document),
+                'islr_retention' => \App\Services\Fiscal\IslrRetentionService::view($document),
                     'fiscal_emission' => \App\Services\Fiscal\DocumentEmissionView::forDocument($document),
                 'email_delivery' => \App\Services\Fiscal\HkaMail::view($document),
                 'pdf_downloads' => \App\Services\Fiscal\HkaPdf::view($document, true),

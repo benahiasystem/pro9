@@ -1,6 +1,7 @@
 <template>
     <el-dialog :title="title || 'Cargando pagos...'" :visible="showDialog" @close="close" @open="getData" width="80%">
-        <el-button v-if="document.document_type_id === '01' && document.iva_retention && document.iva_retention.enabled" size="small" @click="showIvaRetention = true">Retención IVA del cliente</el-button>
+        <el-button v-if="document.document_type_id === '01' && ((document.iva_retention && document.iva_retention.enabled) || (document.islr_retention && document.islr_retention.enabled))" size="small" @click="showIvaRetention = true">Retenciones IVA / ISLR</el-button>
+        <p v-if="document.islr_retention && document.islr_retention.prevision">ISLR prevista: {{ document.islr_retention.prevision.amount }} {{ document.currency_type_id }}. Permanece como saldo pendiente.</p>
         <retention-form :show-dialog.sync="showIvaRetention" :document-id="documentId" @changed="getData"/>
         <div class="form-body">
             <div class="row">

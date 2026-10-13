@@ -18,7 +18,7 @@ class RecoverIvaRetentions extends Command
         $limit = max(1,min(500,(int)$this->option('limit')));
         Document::whereNotNull('control_number')
             ->where(fn($q)=>$q->where('fiscal_emission_mode','!=','digital')->orWhereHas('emission',fn($q)=>$q->where('status','confirmed')))
-            ->whereHas('received_retentions',fn($q)=>$q->where('application_status','pending_validation'))
+            ->whereHas('received_retentions',fn($q)=>$q->where('tax_kind','IVA')->where('application_status','pending_validation'))
             ->limit($limit)->get()->each(fn($doc)=>IvaRetentionService::resume($doc));
         foreach (DocumentIvaRetentionOperation::whereIn('status',['waiting','uncertain','pending'])
             ->where(fn($q)=>$q->whereNull('next_attempt_at')->orWhere('next_attempt_at','<=',now()))->orderBy('id')->limit($limit)->get() as $op) {

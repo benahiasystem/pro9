@@ -23,6 +23,7 @@ final class HkaPayloadBuilder
     public function build(array $d): array
     {
         HkaIvaRetentionCapability::assertSnapshot($d);
+        HkaIslrRetentionCapability::assertSnapshot($d);
         $types = ['01'=>'01','07'=>'02','08'=>'03'];
         if (!isset($types[$d['document_type_id'] ?? ''])) FiscalAmounts::error('document_type_id','Tipo no soportado por esta etapa HKA.');
         foreach (['number','name','address','country_id'] as $field) {

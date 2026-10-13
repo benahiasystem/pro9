@@ -3,7 +3,7 @@ export default {
         ivaCollectionTarget() {
             const forecast = this.form.iva_retention_prevision;
             const amount = this.form.document_type_id === '01' && forecast && forecast.enabled ? Number(forecast.amount || 0) : 0;
-            return Math.round(Math.max(0, Number(this.form.total || 0) - amount) * 100) / 100;
+            return Math.round(Math.max(0, Number(this.form.total || 0) - amount - (this.form.document_type_id === '01' && this.form.islr_retention_prevision && this.form.islr_retention_prevision.enabled ? Number(this.form.islr_retention_prevision.amount || 0) : 0)) * 100) / 100;
         },
     },
     watch: { ivaCollectionTarget() { if (typeof this.inputAmount === 'function') this.inputAmount(); } },

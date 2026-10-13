@@ -605,10 +605,10 @@ export default {
         },
         calculatePayments()
         {
-            if (this.document.document_type_id === '01' && this.document.iva_retention_prevision && this.document.iva_retention_prevision.enabled) {
+            if (this.document.document_type_id === '01' && ((this.document.iva_retention_prevision && this.document.iva_retention_prevision.enabled) || (this.document.islr_retention_prevision && this.document.islr_retention_prevision.enabled))) {
                 const rows=this.document.payments;
                 const last=rows[rows.length-1];
-                const target=Math.max(0,Number(this.document.total)-Number(this.document.iva_retention_prevision.amount || 0));
+                const target=Math.max(0,Number(this.document.total)-Number(this.document.iva_retention_prevision && this.document.iva_retention_prevision.enabled ? this.document.iva_retention_prevision.amount || 0 : 0)-Number(this.document.islr_retention_prevision && this.document.islr_retention_prevision.enabled ? this.document.islr_retention_prevision.amount || 0 : 0));
                 const entered=rows.slice(0,-1).reduce((sum,row)=>sum+(Number(row.payment)||0),0);
                 if (last && !Number(last.payment)) last.payment=_.round(Math.max(0,target-entered),2);
                 return;

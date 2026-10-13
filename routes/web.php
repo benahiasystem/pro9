@@ -442,6 +442,7 @@ if ($hostname) {
             Route::delete('documents/delete_document/{document_id}', 'Tenant\DocumentController@destroyDocument');
 
             Route::get('documents/data-table/items', 'Tenant\DocumentController@getDataTableItem');
+            Route::get('documents/retention/concepts', 'Tenant\IvaRetentionController@concepts');
             Route::get('documents/retention/{document}', 'Tenant\DocumentFiscalController@retentions');
             Route::post('documents/retention', 'Tenant\DocumentFiscalController@retentionStore');
             Route::post('documents/retention/upload', 'Tenant\DocumentFiscalController@upload');

@@ -7,9 +7,9 @@ Rutas relativas a Pro9. Leer el código vigente antes de modificar campos/estado
 | Archivo o componente | Responsabilidad |
 |---|---|
 | `app/Services/Fiscal/IvaRetentionService.php` | Propuesta/previsión, registro idempotente, soporte, validación/activación, reversión, crédito y DTO público. |
-| `app/Services/Fiscal/FiscalDocumentPersistence.php` | Delega IVA al servicio común; mantiene circuito local ISLR. |
+| `app/Services/Fiscal/FiscalDocumentPersistence.php` | Delega IVA e ISLR a políticas separadas con ciclo ReceivedRetentionService. |
 | `app/CoreFacturalo/Facturalo.php` | Creación común, edición/previsión recalculada y transacción exterior. |
-| `app/Services/Fiscal/HkaIvaRetention.php` | Outbox, reclamo, lectura previa, aplicación/eliminación y conciliación por intento. |
+| `app/Services/Fiscal/HkaIvaRetention.php` / `HkaReceivedRetention` | Adaptador IVA separado y ciclo común de outbox/reclamo/conciliación. |
 | `app/Services/Fiscal/HkaIvaRetentionPayload.php` | Identidad congelada tipo 01, dinero del comprobante y comparación exacta. |
 | `HkaIvaRetentionCapability` / `config/iva_retention.php` | Bloqueo del neto no aceptado por HKA. |
 | `HkaEmission` | Tras confirmar factura, reanuda comprobantes pendientes fuera de la transacción. |
@@ -46,7 +46,7 @@ Rutas relativas a Pro9. Leer el código vigente antes de modificar campos/estado
 | `000338 received_retention_uploads` | Token único, usuario, ruta privada, vencimiento y documento consumidor. |
 | `000999` | FKs factura/comprobante/actor/upload/reversión; retirada inversa antes de tablas. |
 
-Importes `decimal(12,2)`; tasas `decimal(18,8)`. Los índices permiten históricos con el mismo número, sólo uno activo. UUID de registro/reversión conserva unicidad y validación bajo bloqueo para impedir reutilización entre acciones. Evidencia de esta versión: 342 tablas de aplicación y 343 migraciones tenant; Laravel administra `migrations`.
+Importes `decimal(12,2)`; tasas `decimal(18,8)`. Los índices permiten históricos con el mismo número, sólo uno activo. UUID de registro/reversión conserva unicidad y validación bajo bloqueo para impedir reutilización entre acciones. Evidencia inicial IVA: 342 tablas/343 archivos; ISLR agregó 000339 y el inventario actual es 343 tablas de aplicación y 344 archivos tenant; Laravel administra `migrations`.
 
 Temporal: `received_retentions/drafts/<uuid>.<ext>`, token por usuario/tenant de 24 horas y consumo único. Soporte vinculado: `received_retentions/<document_id>/`. Copiar preserva temporal ante rollback. Consumo/limpieza toman el mismo bloqueo; vencer un token consumido no elimina su soporte. Copias huérfanas propias se identifican por nombre de ese token y ausencia de referencia persistida.
 

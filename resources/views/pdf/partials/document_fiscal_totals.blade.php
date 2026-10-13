@@ -18,6 +18,10 @@
     <tr><td>Retención {{ $retention->tax_kind }} — {{ $retention->voucher_number }}</td><td style="text-align:right">{{ number_format($retention->applied_amount, 2) }}</td></tr>
     @endif
     @endforeach
+    @php($islrPrevision = $document->relationLoaded('fiscal_data') ? optional($document->getRelation('fiscal_data'))->islr_retention_prevision : null)
+    @if($islrPrevision)
+    <tr><td>Retención ISLR prevista (informativa)</td><td style="text-align:right">{{ number_format($islrPrevision['amount'], 2) }}</td></tr>
+    @endif
     @php($prevision = $document->relationLoaded('fiscal_data') ? optional($document->getRelation('fiscal_data'))->iva_retention_prevision : null)
     @if($prevision)
     <tr><td>Retención IVA prevista (informativa)</td><td style="text-align:right">{{ number_format($prevision['amount'], 2) }}</td></tr>

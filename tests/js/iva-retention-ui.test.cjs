@@ -80,3 +80,18 @@ test('all creation and collection entries compile with the IVA dialogue',()=>{
         const file=compiler.parseComponent(fs.readFileSync(`modules/${path}.vue`,'utf8'));assert.deepEqual(compiler.compile(file.template.content).errors,[],path);
     }
 });
+test('combined IVA and ISLR suggestions preserve invoice taxes and partial receipts',()=>{
+    const form={document_type_id:'01',total:116,currency_type_id:'VES',iva_retention_prevision:{enabled:true,amount:12},islr_retention_prevision:{enabled:true,amount:3},payments:[{payment:116}]};
+    assert.equal(mixin.computed.ivaCollectionTarget.call({form}),101);
+    let amount;fields.methods.useNet.call({form,proposal:{amount:12},$set:(o,k,v)=>o[k]=v,$emit:(event,v)=>amount=v,$message:{info(){}}});assert.equal(amount,101);assert.equal(form.total,116);
+    const islr=load('resources/js/views/tenant/documents/partials/islr_retention_fields.vue');
+    islr.methods.useNet.call({form,proposal:{amount:3},$set:(o,k,v)=>o[k]=v,$emit:(event,v)=>amount=v,$message:{info(){}}});assert.equal(amount,101);
+    form.payments.push({payment:10});amount=null;islr.methods.useNet.call({form,proposal:{amount:3},$set:(o,k,v)=>o[k]=v,$emit:(event,v)=>amount=v,$message:{info(){}}});assert.equal(amount,null);assert.equal(form.payments[1].payment,10);
+});
+test('draft vouchers retain the other tax kind and ISLR templates compile',async()=>{
+    const retention=load('resources/js/views/tenant/documents/partials/retention.vue');
+    const draft={received_retentions:[{tax_kind:'IVA',amount:12}]};let closed=false;
+    await retention.methods.submit.call({draftForm:draft,form:{tax_kind:'ISLR',concept_id:'055',amount:3},$set:(o,k,v)=>o[k]=v,close(){closed=true}});
+    assert.equal(draft.received_retentions.length,2);assert.equal(draft.received_retentions[0].tax_kind,'IVA');assert.equal(draft.received_retentions[1].tax_kind,'ISLR');assert.equal(closed,true);
+    const file=compiler.parseComponent(fs.readFileSync('resources/js/views/tenant/documents/partials/islr_retention_fields.vue','utf8'));assert.deepEqual(compiler.compile(file.template.content).errors,[]);
+});

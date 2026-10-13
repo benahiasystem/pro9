@@ -1,5 +1,6 @@
 <template>
     <div v-if="form.document_type_id === '01'" class="border rounded p-2 my-2" data-testid="iva-retention-fields">
+        <islr-retention-fields :form="form" :document-id="documentId" :readonly="readonly" @net="$emit('net',$event)"/>
         <strong>Retención IVA del cliente</strong>
         <template v-if="!readonly">
             <el-checkbox :value="enabled" @change="toggle">Prever retención IVA</el-checkbox>
@@ -32,8 +33,9 @@
 </template>
 <script>
 import RetentionForm from './retention.vue'
+import IslrRetentionFields from './islr_retention_fields.vue'
 export default {
-    components: {RetentionForm},
+    components: {RetentionForm,IslrRetentionFields},
     props: {form: {type: Object, required: true}, documentId: {default: null}, readonly: {type: Boolean, default: false}},
     data: () => ({proposal: null, error: '', sequence: 0, showVoucher: false, hkaNetBlocked: false,
         context: {iva_100_basis:null,evidence_reference:null,public_operation_scope:null,public_scope_reference:null}}),
@@ -45,7 +47,7 @@ export default {
         evaluationKey() {
             if (this.form.document_type_id !== '01' && !this.documentId && !this.readonly) {
                 this.sequence++; this.proposal=null;
-                this.$set(this.form,'iva_retention_prevision',null); this.$set(this.form,'received_retentions',[]);
+                this.$set(this.form,'iva_retention_prevision',null); this.$set(this.form,'islr_retention_prevision',null); this.$set(this.form,'received_retentions',[]);
             } else if (this.enabled) this.evaluate();
         },
         enabled(value) { if (value) this.evaluate() },
@@ -57,7 +59,7 @@ export default {
     beforeDestroy() { this.sequence++ },
     methods: {
         useNet() {
-            const amount = Math.round(Math.max(0, Number(this.form.total) - Number(this.proposal.amount)) * 100) / 100;
+            const amount = Math.round(Math.max(0, Number(this.form.total) - Number(this.proposal.amount) - Number(this.form.islr_retention_prevision && this.form.islr_retention_prevision.enabled ? this.form.islr_retention_prevision.amount || 0 : 0)) * 100) / 100;
             const rows = this.form.payments || [];
             if (rows.length > 1 || (rows[0] && rows[0].currency_type_id && rows[0].currency_type_id !== this.form.currency_type_id)) {
                 this.$message.info('Conserve los abonos y ajuste el importe en su moneda de recepción.'); return;

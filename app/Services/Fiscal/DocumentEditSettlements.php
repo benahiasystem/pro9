@@ -9,6 +9,7 @@ final class DocumentEditSettlements
     /** Never recreate collections from the editor's serialized rows. */
     public static function validateInput(Document $document, array $inputs): void
     {
+        validator($inputs,['iva_retention_prevision'=>'nullable|array','islr_retention_prevision'=>'nullable|array','received_retentions'=>'nullable|array'])->validate();
         if (($inputs['currency_type_id'] ?? $document->currency_type_id) !== $document->currency_type_id) {
             FiscalAmounts::error('currency_type_id', 'La edición conserva la moneda del comprobante.');
         }
@@ -53,6 +54,10 @@ final class DocumentEditSettlements
             if ($base > $fiscalIva + 0.005) FiscalAmounts::error('total_igv', 'El nuevo IVA fiscal no respalda la base de la retención registrada.');
         }
         if ($retentions->sum(fn($row)=>FiscalAmounts::convert($row->amount,$row->currency_type_id,'VES',$row->exchange_rate)) > $fiscalIva + 0.005) FiscalAmounts::error('total_igv', 'El nuevo IVA fiscal es inferior a las retenciones aplicadas.');
+        $netVes=FiscalAmounts::convert($document->total_value,$document->currency_type_id,'VES',$document->exchange_rate_sale);
+        foreach ($document->received_retentions()->where('tax_kind','ISLR')->applied()->get() as $retention) {
+            if (FiscalAmounts::convert($retention->base,$retention->currency_type_id,'VES',$retention->exchange_rate) > $netVes + 0.005) FiscalAmounts::error('total_value','El nuevo valor neto no respalda la base ISLR registrada.');
+        }
         $document->forceFill(['total_canceled' => $document->fresh()->balance <= 0.005])->save();
     }
 }

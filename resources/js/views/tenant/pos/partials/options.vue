@@ -10,7 +10,8 @@
         :close-on-press-escape="false"
         :show-close="false"
     >
-        <el-button v-if="resource === 'documents' && form.iva_retention && form.iva_retention.enabled" size="small" @click="showIvaRetention = true">Retención IVA del cliente</el-button>
+        <el-button v-if="resource === 'documents' && ((form.iva_retention && form.iva_retention.enabled) || (form.islr_retention && form.islr_retention.enabled))" size="small" @click="showIvaRetention = true">Retenciones IVA / ISLR</el-button>
+        <p v-if="form.islr_retention && form.islr_retention.prevision">ISLR prevista: {{ form.islr_retention.prevision.amount }} {{ form.currency_type_id }}. Permanece como saldo pendiente.</p>
         <retention-form :show-dialog.sync="showIvaRetention" :document-id="recordId"/>
 
         <Keypress key-event="keyup" :key-code="13" @success="someMethod" />

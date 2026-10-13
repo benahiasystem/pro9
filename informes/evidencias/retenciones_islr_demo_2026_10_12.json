@@ -1,0 +1,227 @@
+{
+    "date": "2026-10-12",
+    "environment": "DEMO",
+    "protocol": [
+        {
+            "currency": "VES",
+            "total": 232,
+            "collection": 232,
+            "balance": 0,
+            "emission": "confirmed",
+            "payload_sha256": "38454bdef432dbccdf5a695f852aaba8b6146d145faa9eb8f75612941b7269cd",
+            "absence_before": {
+                "http": 200,
+                "code": "204",
+                "message": "No se ha registrado aún ninguna Retención de ISLR a este documento",
+                "validations": []
+            },
+            "apply": {
+                "http": 200,
+                "code": "200",
+                "message": "Retención ISLR aplicada exitosamente",
+                "validations": []
+            },
+            "query": {
+                "http": 200,
+                "code": "200",
+                "message": "Retención ISLR consultada exitosamente",
+                "validations": [],
+                "classification": "match"
+            },
+            "iva_apply": {
+                "http": 200,
+                "code": "200",
+                "message": "Retención aplicada exitosamente",
+                "validations": []
+            },
+            "iva_before_islr_remove": "match",
+            "remove": {
+                "http": 200,
+                "code": "200",
+                "message": "Retención ISLR eliminada exitosamente",
+                "validations": []
+            },
+            "absence_after": {
+                "http": 200,
+                "code": "204",
+                "message": "No se ha registrado aún ninguna Retención de ISLR a este documento",
+                "validations": []
+            },
+            "iva_after_islr_remove": "match",
+            "iva_cleanup": {
+                "http": 200,
+                "code": "200",
+                "message": "Retención eliminada exitosamente",
+                "validations": []
+            }
+        },
+        {
+            "currency": "USD",
+            "total": 232,
+            "collection": 232,
+            "balance": 0,
+            "emission": "confirmed",
+            "payload_sha256": "522d14973589c72a5e8933a8a4880afb6152bfa6f147ff7f45e9405139f8ef60",
+            "absence_before": {
+                "http": 200,
+                "code": "204",
+                "message": "No se ha registrado aún ninguna Retención de ISLR a este documento",
+                "validations": []
+            },
+            "apply": {
+                "http": 200,
+                "code": "200",
+                "message": "Retención ISLR aplicada exitosamente",
+                "validations": []
+            },
+            "query": {
+                "http": 200,
+                "code": "200",
+                "message": "Retención ISLR consultada exitosamente",
+                "validations": [],
+                "classification": "match"
+            },
+            "iva_apply": {
+                "http": 200,
+                "code": "200",
+                "message": "Retención aplicada exitosamente",
+                "validations": []
+            },
+            "iva_before_islr_remove": "match",
+            "remove": {
+                "http": 200,
+                "code": "200",
+                "message": "Retención ISLR eliminada exitosamente",
+                "validations": []
+            },
+            "absence_after": {
+                "http": 200,
+                "code": "204",
+                "message": "No se ha registrado aún ninguna Retención de ISLR a este documento",
+                "validations": []
+            },
+            "iva_after_islr_remove": "match",
+            "iva_cleanup": {
+                "http": 200,
+                "code": "200",
+                "message": "Retención eliminada exitosamente",
+                "validations": []
+            }
+        }
+    ],
+    "commercial_net": [
+        {
+            "currency": "VES",
+            "combination": "ISLR",
+            "total": 232,
+            "real_collection": 226,
+            "pending_balance": 6,
+            "emission": "confirmed",
+            "hka_payment_forms": [
+                {
+                    "forma": "08",
+                    "monto": "226.00",
+                    "moneda": "VES"
+                }
+            ],
+            "result": {
+                "http": 200,
+                "code": "200",
+                "message": "Documento procesado correctamente",
+                "validations": []
+            }
+        },
+        {
+            "currency": "VES",
+            "combination": "IVA+ISLR",
+            "total": 232,
+            "real_collection": 202,
+            "pending_balance": 30,
+            "emission": "rejected",
+            "hka_payment_forms": [
+                {
+                    "forma": "08",
+                    "monto": "202.00",
+                    "moneda": "VES"
+                }
+            ],
+            "result": {
+                "http": 200,
+                "code": "203",
+                "message": "Documento no procesado",
+                "validations": [
+                    "Encabezado.Totales.TotalAPagar: [1016] La sumatoria de montos en Formas de Pago debe coincidir con el monto Total a Pagar (Value: '232.00')"
+                ]
+            }
+        },
+        {
+            "currency": "USD",
+            "combination": "ISLR",
+            "total": 232,
+            "real_collection": 226,
+            "pending_balance": 6,
+            "emission": "rejected",
+            "hka_payment_forms": [
+                {
+                    "forma": "08",
+                    "monto": "226.00",
+                    "moneda": "USD"
+                }
+            ],
+            "result": {
+                "http": 200,
+                "code": "203",
+                "message": "Documento no procesado",
+                "validations": [
+                    "Encabezado.Totales.TotalAPagar: [1016] La sumatoria de montos en Formas de Pago debe coincidir con el monto Total a Pagar (Value: '2348.64')"
+                ]
+            }
+        },
+        {
+            "currency": "USD",
+            "combination": "IVA+ISLR",
+            "total": 232,
+            "real_collection": 202,
+            "pending_balance": 30,
+            "emission": "rejected",
+            "hka_payment_forms": [
+                {
+                    "forma": "08",
+                    "monto": "202.00",
+                    "moneda": "USD"
+                }
+            ],
+            "result": {
+                "http": 200,
+                "code": "203",
+                "message": "Documento no procesado",
+                "validations": [
+                    "Encabezado.Totales.TotalAPagar: [1016] La sumatoria de montos en Formas de Pago debe coincidir con el monto Total a Pagar (Value: '2348.64')"
+                ]
+            }
+        }
+    ],
+    "net_probe_scope": "First emission only, real collection; no synthetic issuer qualification and no fabricated payment.",
+    "commercial_net_ves_full_cycle": {
+        "currency": "VES",
+        "total": 232,
+        "collection": 226,
+        "balance_before": 6,
+        "prevision": "6.00",
+        "emission": "confirmed",
+        "emission_result": {
+            "http": 200,
+            "code": "200",
+            "message": "Documento procesado correctamente",
+            "validations": []
+        },
+        "local_application": "applied",
+        "balance_after": 0,
+        "hka_apply": "confirmed",
+        "hka_query": "confirmed",
+        "hka_remove": "removed",
+        "local_after_remove": "reversed",
+        "balance_after_remove": 6,
+        "collection_after_remove": 226
+    }
+}

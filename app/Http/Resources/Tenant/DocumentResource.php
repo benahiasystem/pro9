@@ -74,6 +74,7 @@ class DocumentResource extends JsonResource
             'fiscal_identity' => $document->fiscal_identity,
             'email_delivery' => \App\Services\Fiscal\HkaMail::view($document),
             'iva_retention' => \App\Services\Fiscal\IvaRetentionService::view($document),
+            'islr_retention' => \App\Services\Fiscal\IslrRetentionService::view($document),
                     'fiscal_emission' => \App\Services\Fiscal\DocumentEmissionView::forDocument($document),
             'pdf_downloads' => \App\Services\Fiscal\HkaPdf::view($document, $request->is('api/*')),
             'date_of_issue' => $document->date_of_issue->format('Y-m-d'),

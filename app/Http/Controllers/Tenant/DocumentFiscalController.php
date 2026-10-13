@@ -20,6 +20,9 @@ class DocumentFiscalController extends Controller
             'exchange_rate_sale'=>$document->exchange_rate_sale,'balance'=>$document->balance,
             'control_number'=>$document->control_number,'number_full'=>$document->number_full,
             'iva_retention'=>\App\Services\Fiscal\IvaRetentionService::view($document),
+            'islr_retention' => \App\Services\Fiscal\IslrRetentionService::view($document),
+            'total_value'=>$document->total_value,'date_of_issue'=>$document->date_of_issue->format('Y-m-d'),
+            'islr_concepts'=>\App\Services\Fiscal\IslrRetentionService::available($document) ? \App\Services\Fiscal\IslrRetentionService::concepts() : [],
             'total_taxed'=>$document->total_taxed,
             'total_igv'=>$document->total_igv]];
     }
@@ -27,7 +30,7 @@ class DocumentFiscalController extends Controller
     {
         $document=Document::findOrFail($request->input('document_id'));self::authorizeDocument($document);
         abort_unless(auth()->user()->type==='admin' || auth()->user()->create_payment,403);
-        return ['success'=>true,'data'=>FiscalDocumentPersistence::retention($document,$request->all()), 'iva_retention'=>\App\Services\Fiscal\IvaRetentionService::view($document->fresh()),'message'=>'Comprobante de retención registrado.'];
+        return ['success'=>true,'data'=>FiscalDocumentPersistence::retention($document,$request->all()), 'iva_retention'=>\App\Services\Fiscal\IvaRetentionService::view($document->fresh()), 'islr_retention'=>\App\Services\Fiscal\IslrRetentionService::view($document->fresh()),'message'=>'Comprobante de retención registrado.'];
     }
     public function upload(Request $request)
     {

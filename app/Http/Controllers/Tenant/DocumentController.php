@@ -955,6 +955,7 @@ class DocumentController extends Controller
                     'number_full' => $document->number_full,
                     'response' => $response,
                     'iva_retention' => \App\Services\Fiscal\IvaRetentionService::view($document),
+                    'islr_retention' => \App\Services\Fiscal\IslrRetentionService::view($document),
                     'fiscal_emission' => \App\Services\Fiscal\DocumentEmissionView::forDocument($document),
                     'email_delivery' => \App\Services\Fiscal\HkaMail::view($document),
                     'pdf_downloads' => \App\Services\Fiscal\HkaPdf::view($document, false),
@@ -1074,6 +1075,7 @@ class DocumentController extends Controller
                 'id' => $document->id,
                 'is_editable' => $edit['can_edit'],
                 'iva_retention' => \App\Services\Fiscal\IvaRetentionService::view($document),
+                'islr_retention' => \App\Services\Fiscal\IslrRetentionService::view($document),
                     'fiscal_emission' => \App\Services\Fiscal\DocumentEmissionView::forDocument($document),
                 'response' => $response,
             ]),
@@ -1105,7 +1107,7 @@ class DocumentController extends Controller
         }
 
         return response()->json([
-            'data' => array_merge($document->toArray(), \App\Services\Fiscal\DocumentEditPolicy::view($document), \App\Services\ThirdPartyInvoicePolicy::view($document), \App\Services\SpecialTaxRegimePolicy::view($document), ['iva_retention' => \App\Services\Fiscal\IvaRetentionService::view($document),
+            'data' => array_merge($document->toArray(), \App\Services\Fiscal\DocumentEditPolicy::view($document), \App\Services\ThirdPartyInvoicePolicy::view($document), \App\Services\SpecialTaxRegimePolicy::view($document), ['iva_retention' => \App\Services\Fiscal\IvaRetentionService::view($document), 'islr_retention'=>\App\Services\Fiscal\IslrRetentionService::view($document),
                     'fiscal_emission' => \App\Services\Fiscal\DocumentEmissionView::forDocument($document)]),
             'success' => true,
         ], 200);

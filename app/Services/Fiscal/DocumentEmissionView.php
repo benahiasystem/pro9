@@ -34,7 +34,7 @@ final class DocumentEmissionView
         $status = $applies ? ($emission->status ?? 'not_requested') : null;
         $response = $emission->response ?? [];
         $enabled = $applies && $document->fiscal_environment === 'demo' && !$document->isVoidedOrRejected();
-        $ivaBlock = in_array($status,['not_requested','prepared'],true) ? HkaIvaRetentionCapability::reason($document) : null;
+        $ivaBlock = in_array($status,['not_requested','prepared'],true) ? (HkaIvaRetentionCapability::reason($document) ?? HkaIslrRetentionCapability::reason($document)) : null;
         $user = auth()->user();
         $scope = $user instanceof \App\Models\Tenant\User
             && ($user->type === 'admin' || (int) $user->establishment_id === (int) $document->establishment_id);

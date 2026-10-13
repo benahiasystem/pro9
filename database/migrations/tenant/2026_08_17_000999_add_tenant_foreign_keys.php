@@ -8,6 +8,9 @@ return new class extends Migration
 {
     public function up(): void
     {
+        DB::unprepared("ALTER TABLE `document_islr_retention_operations` ADD CONSTRAINT `islr_operation_document_fk` FOREIGN KEY (`document_id`) REFERENCES `documents` (`id`) ON DELETE RESTRICT");
+        DB::unprepared("ALTER TABLE `document_islr_retention_operations` ADD CONSTRAINT `islr_operation_retention_fk` FOREIGN KEY (`retention_id`) REFERENCES `document_received_retentions` (`id`) ON DELETE RESTRICT");
+        DB::unprepared("ALTER TABLE `document_islr_retention_operations` ADD CONSTRAINT `islr_operation_actor_fk` FOREIGN KEY (`actor_id`) REFERENCES `users` (`id`) ON DELETE RESTRICT");
         DB::unprepared("ALTER TABLE `document_iva_retention_operations` ADD CONSTRAINT `iva_operation_document_fk` FOREIGN KEY (`document_id`) REFERENCES `documents` (`id`) ON DELETE RESTRICT");
         DB::unprepared("ALTER TABLE `document_iva_retention_operations` ADD CONSTRAINT `iva_operation_retention_fk` FOREIGN KEY (`retention_id`) REFERENCES `document_received_retentions` (`id`) ON DELETE RESTRICT");
         DB::unprepared("ALTER TABLE `document_iva_retention_operations` ADD CONSTRAINT `iva_operation_actor_fk` FOREIGN KEY (`actor_id`) REFERENCES `users` (`id`) ON DELETE RESTRICT");
@@ -539,6 +542,9 @@ return new class extends Migration
 
     public function down(): void
     {
+        DB::unprepared("ALTER TABLE `document_islr_retention_operations` DROP FOREIGN KEY `islr_operation_actor_fk`");
+        DB::unprepared("ALTER TABLE `document_islr_retention_operations` DROP FOREIGN KEY `islr_operation_retention_fk`");
+        DB::unprepared("ALTER TABLE `document_islr_retention_operations` DROP FOREIGN KEY `islr_operation_document_fk`");
         DB::unprepared("ALTER TABLE `document_received_retentions` DROP FOREIGN KEY `received_retention_reversed_by_fk`");
         DB::unprepared("ALTER TABLE `received_retention_uploads` DROP FOREIGN KEY `retention_upload_document_fk`");
         DB::unprepared("ALTER TABLE `received_retention_uploads` DROP FOREIGN KEY `retention_upload_user_fk`");

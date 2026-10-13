@@ -151,7 +151,9 @@ final class FiscalDocumentPersistence
 
     public static function applySettlements(Document $document,array $input): void
     {
+        validator($input,['iva_retention_prevision'=>'nullable|array','islr_retention_prevision'=>'nullable|array','received_retentions'=>'nullable|array','received_retentions.*'=>'array'])->validate();
         IvaRetentionService::savePrevision($document, $input['iva_retention_prevision'] ?? null);
+        IslrRetentionService::savePrevision($document,$input['islr_retention_prevision'] ?? null);
         foreach ($input['received_retentions'] ?? [] as $retention) self::retention($document,$retention);
         if (!empty($input['guarantee_fund'])) {
             $g=validator($input['guarantee_fund'],['amount'=>'required|numeric|min:0','base'=>'required|numeric|min:0','percentage'=>'required|numeric|min:0|max:100'])->validate();
@@ -378,6 +380,7 @@ final class FiscalDocumentPersistence
     public static function retention(Document $document, array $input)
     {
         if (($input['tax_kind'] ?? '') === 'IVA') return IvaRetentionService::store($document, $input);
+        if (($input['tax_kind'] ?? '') === 'ISLR' && IslrRetentionService::available($document)) return IslrRetentionService::store($document,$input);
         return self::retentionValidated($document, $input);
     }
 
@@ -440,7 +443,7 @@ final class FiscalDocumentPersistence
                 if (FiscalAmounts::convert($data['base'],$data['currency_type_id'],'VES',$data['exchange_rate']) > $fiscalIva + 0.01
                     || FiscalAmounts::convert($data['amount'],$data['currency_type_id'],'VES',$data['exchange_rate']) > $available + 0.01) FiscalAmounts::error('base','La retención supera el IVA fiscal conservado de la factura.');
             }
-            if ($data['tax_kind'] === 'ISLR' && $data['base'] > FiscalAmounts::convert($document->total_value, $document->currency_type_id, $data['currency_type_id'], $data['exchange_rate']) + 0.01) FiscalAmounts::error('base', 'La base ISLR supera el valor neto facturado.');
+            if ($data['tax_kind'] === 'ISLR' && FiscalAmounts::convert($data['base'],$data['currency_type_id'],'VES',$data['exchange_rate']) > FiscalAmounts::convert($document->total_value,$document->currency_type_id,'VES',$document->exchange_rate_sale) + 0.01) FiscalAmounts::error('base', 'La base ISLR supera el valor neto facturado.');
             if (!empty($data['attachment'])) {
                 $prefix = 'received_retentions/'.$document->id.'/';
                 if (!str_starts_with($data['attachment'], $prefix) || str_contains($data['attachment'],'..') || !Storage::disk('tenant')->exists($data['attachment'])) FiscalAmounts::error('attachment','Adjunto inválido para esta factura y tenant.');

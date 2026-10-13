@@ -157,6 +157,7 @@ class OptionController extends Controller
     {
         $documentIds = $documents->pluck('id');
         // ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
+        if (\App\Services\Fiscal\IslrRetentionService::available()) \DB::connection('tenant')->table('document_islr_retention_operations')->whereIn('document_id',$documentIds)->delete();
         if (\App\Services\Fiscal\IvaRetentionService::available()) {
             \DB::connection('tenant')->table('document_iva_retention_operations')->whereIn('document_id',$documentIds)->delete();
             \DB::connection('tenant')->table('received_retention_uploads')->whereIn('document_id',$documentIds)->delete();

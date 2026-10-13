@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
  * - `application_status` varchar(24) NOT NULL DEFAULT 'applied'; pending/invalid/reversed rows settle zero
  * - operation_key/reversal_key nullable UUIDs, input_hash SHA-256 and input_snapshot private JSON
  * - taxable_base decimal(12,2), diagnostic, reversed_at/reversed_by/reversal_reason audit
+ * - active_islr_document_id generated nullable document ID; UNIQUE limits one pending/applied ISLR
  * - active_voucher_number generated varchar(100) nullable; uniqueness applies only to active vouchers
  * - active_iva_document_id generated nullable document ID; UNIQUE limits one pending/applied IVA
  * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
@@ -65,9 +66,11 @@ CREATE TABLE `document_received_retentions` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   `active_iva_document_id` int(10) unsigned GENERATED ALWAYS AS (CASE WHEN tax_kind = 'IVA' AND application_status IN ('pending_validation','applied') THEN document_id ELSE NULL END) STORED,
+  `active_islr_document_id` int(10) unsigned GENERATED ALWAYS AS (CASE WHEN tax_kind = 'ISLR' AND application_status IN ('pending_validation','applied') THEN document_id ELSE NULL END) STORED,
   `active_voucher_number` varchar(100) GENERATED ALWAYS AS (CASE WHEN application_status IN ('pending_validation','applied') THEN voucher_number ELSE NULL END) STORED,
   PRIMARY KEY (`id`),
   UNIQUE KEY `received_iva_active_unique` (`active_iva_document_id`),
+  UNIQUE KEY `received_islr_active_unique` (`active_islr_document_id`),
   UNIQUE KEY `received_retention_operation_unique` (`operation_key`),
   UNIQUE KEY `received_retention_reversal_unique` (`reversal_key`),
   UNIQUE KEY `received_retention_voucher_unique` (`document_id`,`tax_kind`,`agent_number`,`active_voucher_number`)

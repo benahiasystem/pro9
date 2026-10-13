@@ -49,6 +49,7 @@ class DocumentTransform
             'taxes' => $inputs['taxes'] ?? [],
             'fiscal_data' => $inputs['fiscal_data'] ?? [],
             'received_retentions' => $inputs['received_retentions'] ?? [],
+            'islr_retention_prevision' => $inputs['islr_retention_prevision'] ?? null,
             'iva_retention_prevision' => $inputs['iva_retention_prevision'] ?? null,
             'guarantee_fund' => $inputs['guarantee_fund'] ?? null,
             'exchange_rate_source' => $inputs['exchange_rate_source'] ?? 'manual',
