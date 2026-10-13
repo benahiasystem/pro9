@@ -1056,7 +1056,7 @@ class InventoryKardexServiceProvider extends ServiceProvider
      * @param int $item_id
      * @return void
      */
-    private function syncRestaurantStock($item_id)
+    public function syncRestaurantStock($item_id)
     {
         try {
             $stockService = app(\Modules\Restaurant\Services\RestaurantStockService::class);

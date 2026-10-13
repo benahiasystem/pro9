@@ -75,6 +75,7 @@ abstract class ReceivedRetentionService
         $result = $document->getConnection()->transaction(function () use ($document, $data, $hash) {
             Company::query()->lockForUpdate()->firstOrFail();
             $document = Document::query()->lockForUpdate()->findOrFail($document->id);
+            NoteAnnulment::assertNotBusy($document);
             if ($document->document_type_id !== '01' || $document->isVoidedOrRejected()) FiscalAmounts::error('document', 'Sólo se retiene una factura vigente.');
             $existing = DocumentReceivedRetention::where('operation_key', $data['operation_key'])->first();
             if ($existing) {
@@ -143,6 +144,7 @@ abstract class ReceivedRetentionService
             $document->getConnection()->transaction(function () use ($document, $candidate) {
                 Company::query()->lockForUpdate()->firstOrFail();
                 $locked = Document::query()->lockForUpdate()->findOrFail($document->id);
+                NoteAnnulment::assertNotBusy($locked);
                 $retention = DocumentReceivedRetention::query()->lockForUpdate()->findOrFail($candidate->id);
                 if ($retention->application_status !== 'pending_validation' || !static::invoiceReady($locked)) return;
                 try { $locked->getConnection()->transaction(fn()=>static::activate($locked, $retention)); }
@@ -167,6 +169,7 @@ abstract class ReceivedRetentionService
         $retention->getConnection()->transaction(function () use ($retention, $data) {
             Company::query()->lockForUpdate()->firstOrFail();
             $document = Document::query()->lockForUpdate()->findOrFail($retention->document_id);
+            NoteAnnulment::assertNotBusy($document);
             $retention = DocumentReceivedRetention::query()->lockForUpdate()->findOrFail($retention->id);
             if ($retention->reversal_key) {
                 if ($retention->reversal_key !== $data['operation_key'] || $retention->reversal_reason !== $data['reason']) static::operationConflict('La reversión ya tiene otra operación o motivo.');

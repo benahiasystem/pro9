@@ -51,7 +51,7 @@ test('pending and uncertain states cannot be shown as fiscal acceptance or rejec
     assert.match(fiscalNotice('uncertain').title,/por conciliar/);
 });
 test('other modalities and document types retain their existing response message', () => {
-    for(const [type,mode] of [['01','free_form'],['01','fiscal_machine'],['07','digital'],['08','digital']]) {
+    for(const [type,mode] of [['01','free_form'],['01','fiscal_machine'],['09','digital'],['00','digital']]) {
         assert.equal(component.computed.fiscalEmissionNotice.call({form:{document_type_id:type,fiscal_emission_mode:mode,fiscal_emission:{status:'confirmed'}}}),null);
     }
 });

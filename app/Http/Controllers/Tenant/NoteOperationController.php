@@ -8,6 +8,18 @@ use Illuminate\Http\Request;
 
 class NoteOperationController extends Controller
 {
+    public function annul(Request $request,$id)
+    {
+        return ['success'=>true,'fiscal_emission'=>app(\App\Services\Fiscal\NoteAnnulment::class)->request(Document::findOrFail($id),$request->all())];
+    }
+    public function queryAnnulment($id)
+    {
+        return ['success'=>true,'fiscal_emission'=>app(\App\Services\Fiscal\NoteAnnulment::class)->query(Document::findOrFail($id))];
+    }
+    public function completeAnnulment($id)
+    {
+        return ['success'=>true,'fiscal_emission'=>app(\App\Services\Fiscal\NoteAnnulment::class)->complete(Document::findOrFail($id))];
+    }
     public function records($id)
     {
         $note=Document::findOrFail($id); NoteAdjustment::authorize($note);

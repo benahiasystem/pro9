@@ -35,6 +35,10 @@ final class DocumentEmissionView
         $response = $emission->response ?? [];
         $enabled = $applies && $document->fiscal_environment === 'demo' && !$document->isVoidedOrRejected();
         $ivaBlock = in_array($status,['not_requested','prepared'],true) ? (HkaNoteCapability::reason($document) ?? HkaIvaRetentionCapability::reason($document) ?? HkaIslrRetentionCapability::reason($document)) : null;
+        $annulBusy=FiscalNote::ordinary($document) && NoteAnnulment::busy($document);
+        $diagnostic=$response['annulment']['diagnostic'] ?? $ivaBlock ?? $response['diagnostic'] ?? ($applies && !$enabled ? 'El envío está habilitado únicamente para documentos vigentes en DEMO.' : null);
+        if (!$ivaBlock && $status === 'not_requested' && FiscalNote::ordinary($document) && in_array($diagnostic,[HkaNoteCapability::CREDIT_REASON,HkaNoteCapability::DEBIT_REASON],true)) $diagnostic='Nota guardada; puede solicitar su emisión mediante Enviar HKA.';
+        if ($annulBusy && empty($response['annulment'])) $diagnostic='Hay una anulación relacionada pendiente. Concíliela antes de solicitar otra emisión.';
         $user = auth()->user();
         $scope = $user instanceof \App\Models\Tenant\User
             && ($user->type === 'admin' || (int) $user->establishment_id === (int) $document->establishment_id);
@@ -47,11 +51,13 @@ final class DocumentEmissionView
             'control_number' => $document->control_number,
             'code' => $response['code'] ?? null,
             'validation_codes' => $response['validation_codes'] ?? [],
-            'diagnostic' => $ivaBlock ?? $response['diagnostic'] ?? ($applies && !$enabled ? 'El envío está habilitado únicamente para facturas vigentes en DEMO.' : null),
-            'can_send' => !$ivaBlock && $enabled && $scope && $user->type === 'admin'
+            'diagnostic' => $diagnostic,
+            'show_send' => $enabled && $scope && $user->type === 'admin' && in_array($status,['not_requested','prepared','uncertain'],true),
+            'annulment' => NoteAnnulment::view($document),
+            'can_send' => !$annulBusy && !$ivaBlock && $enabled && $scope && $user->type === 'admin'
                 && (in_array($status, ['not_requested', 'prepared'], true)
                     || ($status === 'uncertain' && !empty($response['retry_allowed']) && time() - ($response['started_at'] ?? time()) >= 30)),
-            'can_query' => $enabled && $scope && in_array($status, ['pending', 'uncertain', 'confirmed'], true),
+            'can_query' => !$annulBusy && $enabled && $scope && in_array($status, ['pending', 'uncertain', 'confirmed'], true),
         ];
     }
 }

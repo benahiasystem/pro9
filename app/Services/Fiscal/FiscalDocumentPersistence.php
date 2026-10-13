@@ -286,6 +286,7 @@ final class FiscalDocumentPersistence
             validator($input, ['date_of_payment'=>'required|date_format:Y-m-d', 'exception_basis'=>'nullable|string|max:255', 'financial_intermediation'=>'nullable|in:none,financial_institution'])->validate();
             $company = Company::query()->lockForUpdate()->firstOrFail();
             $document = Document::query()->lockForUpdate()->findOrFail($document->id);
+            NoteAnnulment::assertNotBusy($document);
             if ($document->isVoidedOrRejected() || ($document->document_type_id !== '01' && !($document->document_type_id === '08' && FiscalNote::ordinary($document)))) FiscalAmounts::error('document','Sólo se cobran facturas vigentes.');
             $key = $input['operation_key'] ?? (string) Str::uuid();
             if (!Str::isUuid($key)) FiscalAmounts::error('operation_key', 'Use un UUID válido.');
@@ -386,6 +387,7 @@ final class FiscalDocumentPersistence
         $note->note()->create(['note_type' => 'debit', 'note_debit_type_id' => 'IGTF', 'note_description' => 'IGTF sobre pago posterior',
             'effect_snapshot'=>FiscalNote::ordinary($invoice) ? ['invoice_fiscal_data'=>$invoice->fiscal_data->only(['provider_type_id','special_tax_regime_id','catalog_snapshot','third_party','third_party_person_id'])] : null,
             'affected_document_id' => $reference->id, 'data_affected_document' => array_merge($reference->only(['series','number','date_of_issue','total','control_number','currency_type_id','exchange_rate_sale']), ['document_type_id'=>'01'])]);
+        $note->unsetRelation('note');
         self::fiscalData($note, ['transaction_type_id' => '98']);
         return $note;
     }
@@ -478,6 +480,7 @@ final class FiscalDocumentPersistence
         $payment->getConnection()->transaction(function () use ($payment, $reason) {
             Company::query()->lockForUpdate()->firstOrFail();
             $document = Document::query()->lockForUpdate()->findOrFail($payment->document_id);
+            NoteAnnulment::assertNotBusy($document);
             $payment = DocumentPayment::query()->lockForUpdate()->findOrFail($payment->id);
             if (\App\Models\Tenant\DocumentNoteRefund::where('document_payment_id',$payment->id)->whereNull('reversed_at')->exists()) FiscalAmounts::error('payment','Revierta las devoluciones asociadas antes de revertir este cobro.');
             if ($payment->receipt_parent_id) FiscalAmounts::error('payment','Revierta el pago que originó este cargo IGTF.');

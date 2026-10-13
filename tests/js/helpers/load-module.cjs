@@ -7,7 +7,7 @@ module.exports = function loadModule(filename) {
     const code = babel.transformSync(fs.readFileSync(filename, 'utf8'), {
         configFile: false, babelrc: false, plugins: ['@babel/plugin-transform-modules-commonjs'],
     }).code;
-    vm.runInNewContext(code, {exports, require: name => name.startsWith('.')
+    vm.runInNewContext(code, {exports, window: {crypto: require('node:crypto').webcrypto}, require: name => name.startsWith('.')
         ? module.exports(path.resolve(path.dirname(filename), name.endsWith('.js') ? name : name + '.js'))
         : require(name)});
     return exports;

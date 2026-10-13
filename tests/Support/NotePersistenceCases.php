@@ -40,6 +40,7 @@ trait NotePersistenceCases
         $input['type']=$type === '07' ? 'credit':'debit';$input['document_type_id']=$type;
         $input['series']=$type === '07' ? 'FC01':'FD01';$input['external_id']=(string)Str::uuid();$input['number']='#';
         $input['note_creation_key']=(string)Str::uuid();$input['items']=$rows;$input['payments']=[];
+        $input['payment_condition_id']=$type === '08' ? '02':null;
         $input['note']=['note_type'=>$input['type'],'note_credit_type_id'=>$type==='07' ? $reason:null,
             'note_debit_type_id'=>$type==='08' ? $reason:null,'note_description'=>'Ajuste de prueba','affected_document_id'=>$invoice->id,'data_affected_document'=>null];
         return $input;
@@ -85,7 +86,8 @@ trait NotePersistenceCases
         self::assertSame('03',$note->emission->payload['documentoElectronico']['encabezado']['identificacionDocumento']['tipoDocumento']);
         self::assertSame('02',$note->fiscal_data->transaction_type_id);
         $paid=$data;$paid['note_creation_key']=(string)Str::uuid();$paid['external_id']=(string)Str::uuid();
-        $paid['payments']=[['payment'=>11.60,'date_of_payment'=>'2026-09-10','payment_method_type_id'=>'01']];
+        $bank=$db->table('bank_accounts')->insertGetId(['description'=>'ND test','number'=>'nd','bank_id'=>1,'currency_type_id'=>'VES','establishment_id'=>$invoice->establishment_id]);
+        $paid['payments']=[['operation_key'=>(string)Str::uuid(),'payment_destination_id'=>$bank,'payment'=>11.60,'date_of_payment'=>'2026-09-10','payment_method_type_id'=>'01']];
         $collected=(new Facturalo)->forWebDocuments()->save($paid)->getDocument()->fresh();
         self::assertEquals(0,$collected->balance);self::assertSame('confirmed',$collected->emission->status);
     }
@@ -142,7 +144,7 @@ trait NotePersistenceCases
         $igtf=NoteAdjustment::register($note,['kind'=>'IGTF','source_id'=>$tax->id,'operation_key'=>(string)Str::uuid(),'amount'=>3,'reason'=>'Impuesto del cobro devuelto']);
         self::assertSame('blocked',$igtf->status);self::assertSame($cash,$db->table('global_payments')->count());
         self::assertEquals(3,$tax->fresh()->amount);
-        config(['hka_notes.contract_probe'=>false,'hka_notes.demo_credit_without_payment_verified'=>false]);
+        config(['hka_notes.contract_probe'=>false,'hka_notes.demo_non_cash_notes_verified'=>false]);
         self::assertSame(\App\Services\Fiscal\HkaNoteCapability::CREDIT_REASON,\App\Services\Fiscal\HkaNoteCapability::reason($note));
         self::assertFalse(\App\Services\Fiscal\NoteRefund::view($note)['can_create'] && $note->emission->status !== 'confirmed');
         \Tests\Support\SpeProfiles::versions($db,1,$invoice->customer_id);$db->table('companies')->update(['igtf_enabled'=>1,'igtf_rate'=>3]);
@@ -151,6 +153,7 @@ trait NotePersistenceCases
         $debit=(new Facturalo)->forWebDocuments()->save($debitInput)->getDocument()->fresh();
         $receipt=\App\Services\Fiscal\FiscalDocumentPersistence::payment($debit,['date_of_payment'=>'2026-09-10','payment_method_type_id'=>'01',
             'operation_key'=>(string)Str::uuid(),'currency_type_id'=>'USD','original_amount'=>1.16,'exchange_rate'=>'10.00000000','financial_intermediation'=>'none']);
+        self::assertEquals(7,$debit->fresh()->fiscal_data->special_tax_regime_id,'Ordinary ND snapshot retains regime');
         self::assertEquals(0,$debit->fresh()->balance);self::assertEquals(0.03,$receipt->tax_amount);
         $taxNote=Document::whereHas('taxes',fn ($q)=>$q->where('document_payment_id',$receipt->id)->where('tax_kind','IGTF'))->firstOrFail();
         self::assertSame('98',$taxNote->fiscal_data->transaction_type_id);self::assertEquals(7,$taxNote->fiscal_data->special_tax_regime_id);
@@ -259,9 +262,15 @@ trait NotePersistenceCases
         $original->item=$snapshot;$original->save();
         $stock=$db->table('item_warehouse')->where('item_id',$item->id)->value('stock');
         $returned=$this->noteInput($input,$invoice,'07','07',[['affected_document_item_id'=>$original->id,'quantity'=>1,'serial_ids'=>[$serials[1]['id']]]]);
-        (new Facturalo)->forWebDocuments()->save($returned);
+        $returnedDocument=(new Facturalo)->forWebDocuments()->save($returned)->getDocument()->fresh();
         self::assertEquals($stock+2,$db->table('item_warehouse')->where('item_id',$item->id)->value('stock'));
         self::assertEquals(2,$lot->fresh()->quantity);self::assertFalse(\Modules\Item\Models\ItemLot::find($serials[1]['id'])->has_sale);
+        \Modules\Item\Models\ItemLot::find($serials[1]['id'])->update(['has_sale'=>true]);
+        $beforeCalls=$app->make(\Illuminate\Http\Client\Factory::class)->recorded()->count();
+        try {app(\App\Services\Fiscal\NoteAnnulment::class)->request($returnedDocument,['operation_key'=>(string)Str::uuid(),'reason'=>'Intento con serial ya vendido']);self::fail('Reused serial must block cancellation before HKA');}
+        catch (\Illuminate\Validation\ValidationException $e) {self::assertArrayHasKey('inventory',$e->errors());}
+        self::assertSame($beforeCalls,$app->make(\Illuminate\Http\Client\Factory::class)->recorded()->count());
+        \Modules\Item\Models\ItemLot::find($serials[1]['id'])->update(['has_sale'=>false]);
         $context=FiscalNote::context($invoice->fresh());self::assertSame($serials[0]['id'],$context['items'][0]['serials'][0]['id']);
         self::assertEquals(1,$context['items'][0]['lots'][0]['quantity']);
         $bad=$this->noteInput($input,$invoice,'07','07',[['affected_document_item_id'=>$original->id,'quantity'=>1,'serial_ids'=>[$serials[1]['id']]]]);
@@ -322,5 +331,160 @@ trait NotePersistenceCases
         self::assertEquals(4.65,NoteRefund::available($note->fresh()));
         self::assertEquals(232,$invoice->fresh()->payments->sum('payment'));
         self::assertEquals(0,$note->items->first()->affected_document_item_id === null ? 1:0);
+    }
+
+    public function test_note_annulment_reverses_stock_and_credit_once_and_cancels_unsent_debit_locally(): void
+    {
+        [$db,$app,$input,$invoice]=$this->noteFixture();$line=$invoice->items->first();
+        $stock=$db->table('item_warehouse')->where('item_id',$line->item_id)->value('stock');
+        $data=$this->noteInput($input,$invoice,'07','07',[['affected_document_item_id'=>$line->id,'quantity'=>1]]);
+        $note=(new Facturalo)->forWebDocuments()->save($data)->getDocument()->fresh();
+        $payload=$note->emission->payload;$control=$note->control_number;$calls=0;
+        $app->instance(\Illuminate\Http\Client\Factory::class,new \Illuminate\Http\Client\Factory());\Illuminate\Support\Facades\Facade::clearResolvedInstance(\Illuminate\Http\Client\Factory::class);
+        $app->make(\Illuminate\Http\Client\Factory::class)->fake(function($request) use ($db,&$calls) {
+            self::assertSame(0,$db->transactionLevel());self::assertStringEndsWith('/Anular',$request->url());$calls++;
+            self::assertSame('02',$request['tipoDocumento']);return \Illuminate\Support\Facades\Http::response(['codigo'=>'200','validaciones'=>[]]);
+        });
+        $request=['operation_key'=>(string)Str::uuid(),'reason'=>'Devolución registrada por error'];
+        $service=app(\App\Services\Fiscal\NoteAnnulment::class);$result=$service->request($note,$request);
+        self::assertSame('completed',$result['annulment']['status']);self::assertSame('cancelled',$result['status']);
+        self::assertEquals($stock,$db->table('item_warehouse')->where('item_id',$line->item_id)->value('stock'));self::assertEquals(0,$invoice->fresh()->balance);
+        self::assertEquals(0,FiscalNote::credits($invoice));self::assertSame('11',$note->fresh()->state_type_id);
+        self::assertSame($payload,$note->fresh()->emission->payload);self::assertSame($control,$note->fresh()->control_number);
+        self::assertSame('completed',$service->request($note->fresh(),$request)['annulment']['status']);self::assertSame(1,$calls);
+        self::assertArrayNotHasKey('request_hash',$result['annulment']);self::assertArrayNotHasKey('request',$result['annulment']);
+        try {$service->request($note->fresh(),array_replace($request,['reason'=>'Otro motivo']));self::fail('UUID mismatch');}
+        catch(\Symfony\Component\HttpKernel\Exception\HttpException $e){self::assertSame(409,$e->getStatusCode());}
+        config(['hka_notes.contract_probe'=>false,'hka_notes.demo_non_cash_notes_verified'=>false]);
+        $debit=(new Facturalo)->forWebDocuments()->save($this->noteInput($input,$invoice,'08','02',[['affected_document_item_id'=>$line->id,'adjustment_amount'=>11.60]]))->getDocument()->fresh();
+        self::assertSame('not_requested',$debit->emission->status);
+        self::assertTrue(\App\Services\Fiscal\DocumentEmissionView::forDocument($debit)['show_send']);
+        $result=$service->request($debit,['operation_key'=>(string)Str::uuid(),'reason'=>'Cancelación local del cargo no emitido']);
+        self::assertSame('completed',$result['annulment']['status']);self::assertSame(1,$calls);self::assertEquals(0,$debit->fresh()->balance);
+        $sql=$db->selectOne('SELECT '.\App\Services\Fiscal\FiscalNoteBalance::sql().' AS balance FROM documents WHERE id=?',[$debit->id]);self::assertEquals(0,$sql->balance);
+    }
+
+    public function test_note_annulment_rejection_preserves_effects_and_audits_codes_without_private_text(): void
+    {
+        [$db,$app,$input,$invoice]=$this->noteFixture();$line=$invoice->items->first();
+        $note=(new Facturalo)->forWebDocuments()->save($this->noteInput($input,$invoice,'07','04',[['affected_document_item_id'=>$line->id,'adjustment_amount'=>23.20]]))->getDocument()->fresh();
+        $state=$note->state_type_id;$calls=0;
+        $app->instance(\Illuminate\Http\Client\Factory::class,new \Illuminate\Http\Client\Factory());\Illuminate\Support\Facades\Facade::clearResolvedInstance(\Illuminate\Http\Client\Factory::class);
+        $app->make(\Illuminate\Http\Client\Factory::class)->fake(function($request) use ($db,&$calls) {
+            self::assertSame(0,$db->transactionLevel());self::assertStringEndsWith('/Anular',$request->url());$calls++;
+            return \Illuminate\Support\Facades\Http::response(['codigo'=>$calls===1?'400':'203','validaciones'=>['[4012] private provider data']]);
+        });
+        $service=app(\App\Services\Fiscal\NoteAnnulment::class);$request=['operation_key'=>(string)Str::uuid(),'reason'=>'Rechazo sintético'];
+        $result=$service->request($note,$request);
+        self::assertSame('rejected',$result['annulment']['status']);self::assertSame($state,$note->fresh()->state_type_id);
+        self::assertSame('confirmed',$note->fresh()->emission->status);self::assertEquals(23.20,FiscalNote::credits($invoice));
+        self::assertStringContainsString('4012',$result['annulment']['diagnostic']);self::assertStringNotContainsString('private',$result['annulment']['diagnostic']);
+        $provider=$note->fresh()->emission->response['annulment']['provider_result'];
+        self::assertSame(200,$provider['http_status']);self::assertSame('400',$provider['code']);self::assertSame(['4012'],$provider['validation_codes']);
+        $service->request($note->fresh(),$request);self::assertSame(1,$calls);
+        $request['operation_key']=(string)Str::uuid();$result=$service->request($note->fresh(),$request);
+        self::assertSame('uncertain',$result['annulment']['status']);self::assertSame('13',$note->fresh()->state_type_id);
+        self::assertEquals(23.20,FiscalNote::credits($invoice));
+        $journal=$note->fresh()->emission->response['annulment'];self::assertCount(1,$journal['history']);
+        self::assertSame('400',$journal['history'][0]['provider_result']['code']);self::assertSame('203',$journal['provider_result']['code']);
+        self::assertStringNotContainsString('private',json_encode($journal));
+        $service->request($note->fresh(),$request);self::assertSame(2,$calls);
+    }
+
+    public function test_note_annulment_timeout_preserves_limits_and_uses_paginated_or_uuid_recovery(): void
+    {
+        [$db,$app,$input,$invoice]=$this->noteFixture();$line=$invoice->items->first();
+        $note=(new Facturalo)->forWebDocuments()->save($this->noteInput($input,$invoice,'07','04',[['affected_document_item_id'=>$line->id,'adjustment_amount'=>23.20]]))->getDocument()->fresh();
+        $identity=$note->emission->payload['documentoElectronico']['encabezado']['identificacionDocumento'];$calls=0;$listCalls=0;$allow=false;
+        $app->instance(\Illuminate\Http\Client\Factory::class,new \Illuminate\Http\Client\Factory());\Illuminate\Support\Facades\Facade::clearResolvedInstance(\Illuminate\Http\Client\Factory::class);
+        $app->make(\Illuminate\Http\Client\Factory::class)->fake(function($request) use ($db,$note,$identity,&$calls,&$listCalls,&$allow) {
+            self::assertSame(0,$db->transactionLevel());
+            if(str_ends_with($request->url(),'/Anular')){$calls++;throw new \Illuminate\Http\Client\ConnectionException('private remote body must not escape');}
+            if(str_ends_with($request->url(),'/ListadoDocumentos')) {
+                $listCalls++;$page=$request['numPagina'];
+                return \Illuminate\Support\Facades\Http::response(['codigo'=>'200','validaciones'=>[],'numeroPagina'=>(string)$page,'totalPaginas'=>'2',
+                    'documentos'=>$page===1 ? [['rif'=>'OTHER','serie'=>$note->series,'tipoDocumento'=>'02','numeroDocumento'=>(string)$note->number,'numeroControl'=>$note->control_number,'estadoDocumento'=>'Anulada']] : []]);
+            }
+            self::assertStringEndsWith('/EstadoDocumento',$request->url());
+            return \Illuminate\Support\Facades\Http::response(['codigo'=>'200','estado'=>array_replace($identity,['transaccionId'=>$allow?$identity['transaccionId']:'wrong','estadoDocumento'=>'Anulada','numeroControl'=>$note->control_number])]);
+        });
+        $service=app(\App\Services\Fiscal\NoteAnnulment::class);$request=['operation_key'=>(string)Str::uuid(),'reason'=>'Anulación con respuesta incierta'];
+        $result=$service->request($note,$request);self::assertSame('uncertain',$result['annulment']['status']);self::assertSame('13',$note->fresh()->state_type_id);
+        self::assertEquals(23.20,FiscalNote::credits($invoice));self::assertSame(1,$calls);self::assertStringNotContainsString('private',$result['annulment']['diagnostic']);
+        $service->request($note->fresh(),$request);self::assertSame(1,$calls);
+        try {(new Facturalo)->forWebDocuments()->save($this->noteInput($input,$invoice,'07','04',[['affected_document_item_id'=>$line->id,'adjustment_amount'=>1]]));self::fail('Pending cancellation reserves source');}
+        catch(\Illuminate\Validation\ValidationException $e){self::assertArrayHasKey('annulment',$e->errors());}
+        $result=$service->query($note->fresh());self::assertSame('uncertain',$result['annulment']['status']);self::assertSame(2,$listCalls);
+        $allow=true;$result=$service->query($note->fresh());self::assertSame('completed',$result['annulment']['status']);self::assertSame(4,$listCalls);self::assertSame(1,$calls);
+        self::assertEquals(0,FiscalNote::credits($invoice));
+    }
+
+    public function test_note_annulment_remote_success_can_finish_commercially_after_stock_race(): void
+    {
+        [$db,$app,$input,$invoice]=$this->noteFixture();$line=$invoice->items->first();
+        $stock=$db->table('item_warehouse')->where('item_id',$line->item_id)->value('stock');
+        $note=(new Facturalo)->forWebDocuments()->save($this->noteInput($input,$invoice,'07','07',[['affected_document_item_id'=>$line->id,'quantity'=>1]]))->getDocument()->fresh();
+        $calls=0;
+        $app->instance(\Illuminate\Http\Client\Factory::class,new \Illuminate\Http\Client\Factory());\Illuminate\Support\Facades\Facade::clearResolvedInstance(\Illuminate\Http\Client\Factory::class);
+        $app->make(\Illuminate\Http\Client\Factory::class)->fake(function($request) use ($db,$line,&$calls) {
+            self::assertSame(0,$db->transactionLevel());$calls++;
+            $db->table('item_warehouse')->where('item_id',$line->item_id)->update(['stock'=>0]);
+            return \Illuminate\Support\Facades\Http::response(['codigo'=>'200','validaciones'=>[]]);
+        });
+        $service=app(\App\Services\Fiscal\NoteAnnulment::class);$result=$service->request($note,['operation_key'=>(string)Str::uuid(),'reason'=>'Anulación con consumo concurrente de stock']);
+        self::assertSame('remote_confirmed',$result['annulment']['status']);self::assertSame('cancelled',$result['status']);self::assertSame('13',$note->fresh()->state_type_id);
+        self::assertEquals($note->total,FiscalNote::credits($invoice));self::assertTrue($result['annulment']['can_complete']);
+        $db->table('item_warehouse')->where('item_id',$line->item_id)->update(['stock'=>$stock+1]);
+        $result=$service->complete($note->fresh());self::assertSame('completed',$result['annulment']['status']);self::assertSame(1,$calls);
+        self::assertEquals($stock,$db->table('item_warehouse')->where('item_id',$line->item_id)->value('stock'));self::assertEquals(0,$invoice->fresh()->balance);
+        $service->complete($note->fresh());self::assertSame(1,$calls);
+    }
+
+    public function test_note_cash_debit_requires_real_destination_and_payments_and_blocks_annulment_until_reversed(): void
+    {
+        [$db,$app,$input,$invoice]=$this->noteFixture();$line=$invoice->items->first();
+        $bank=$db->table('bank_accounts')->insertGetId(['description'=>'USD ND','number'=>'cash-nd','bank_id'=>1,'currency_type_id'=>'USD','establishment_id'=>$invoice->establishment_id]);
+        $data=$this->noteInput($input,$invoice,'08','02',[['affected_document_item_id'=>$line->id,'adjustment_amount'=>11.60]]);$data['payment_condition_id']='01';
+        $count=$db->table('documents')->count();$calls=$app->make(\Illuminate\Http\Client\Factory::class)->recorded()->count();
+        try {(new Facturalo)->forWebDocuments()->save($data);self::fail('Cash ND requires collections');}
+        catch(\Illuminate\Validation\ValidationException $e){self::assertArrayHasKey('payments',$e->errors());}
+        self::assertSame($count,$db->table('documents')->count());self::assertSame($calls,$app->make(\Illuminate\Http\Client\Factory::class)->recorded()->count());
+        $data['payments']=[['operation_key'=>(string)Str::uuid(),'payment'=>11.60,'original_amount'=>'5.80','currency_type_id'=>'USD','exchange_rate'=>'2.00000001',
+            'date_of_payment'=>'2026-09-10','payment_method_type_id'=>'01','payment_destination_id'=>$bank,'igtf_status'=>'not_applicable','financial_intermediation'=>'financial_institution']];
+        $bad=$data;$bad['payments'][0]['payment_destination_id']=999999;
+        try {(new Facturalo)->forWebDocuments()->save($bad);self::fail('Foreign or missing destination rejected');}
+        catch(\Illuminate\Validation\ValidationException $e){self::assertArrayHasKey('payment_destination_id',$e->errors());}
+        self::assertSame($count,$db->table('documents')->count());
+        $note=(new Facturalo)->forWebDocuments()->save($data)->getDocument()->fresh();$payment=$note->payments->first();
+        self::assertEquals(0,$note->balance);self::assertSame('confirmed',$note->emission->status);self::assertSame('2.00000001',$payment->exchange_rate);
+        self::assertSame($bank,$payment->global_payment->destination_id);self::assertSame('USD',$payment->currency_type_id);
+        self::assertSame($note->id,(new Facturalo)->forWebDocuments()->save($data)->getDocument()->id);self::assertSame(1,$note->payments()->count());
+        self::assertFalse(\App\Services\Fiscal\NoteAnnulment::view($note)['can_request']);
+        $service=app(\App\Services\Fiscal\NoteAnnulment::class);
+        try {$service->request($note,['operation_key'=>(string)Str::uuid(),'reason'=>'No debe revertir cobros automáticamente']);self::fail('Active collections block cancellation');}
+        catch(\Illuminate\Validation\ValidationException $e){self::assertArrayHasKey('annulment',$e->errors());}
+        \App\Services\Fiscal\FiscalDocumentPersistence::reverse($payment,'Cobro sintético registrado por error');
+        $app->instance(\Illuminate\Http\Client\Factory::class,new \Illuminate\Http\Client\Factory());\Illuminate\Support\Facades\Facade::clearResolvedInstance(\Illuminate\Http\Client\Factory::class);
+        $app->make(\Illuminate\Http\Client\Factory::class)->fake(function($request)use($db){self::assertSame(0,$db->transactionLevel());return \Illuminate\Support\Facades\Http::response(['codigo'=>'200','validaciones'=>[]]);});
+        $result=$service->request($note->fresh(),['operation_key'=>(string)Str::uuid(),'reason'=>'Cargo anulado después de regularizar cobro']);
+        self::assertSame('completed',$result['annulment']['status']);self::assertEquals(0,$note->fresh()->balance);self::assertNotNull($payment->fresh()->reversed_at);
+        $authBefore=$app->make('auth');$foreign=new \App\Models\Tenant\User(['type'=>'seller','establishment_id'=>$invoice->establishment_id+1]);
+        $app->instance('auth',new class($foreign){private $user;public function __construct($u){$this->user=$u;}public function user(){return $this->user;}public function id(){return 1;}public function check(){return true;}});\Illuminate\Support\Facades\Facade::clearResolvedInstance('auth');
+        try {$service->query($note->fresh());self::fail('Other branch or unauthorized user cannot reconcile');}
+        catch(\Symfony\Component\HttpKernel\Exception\HttpException $e){self::assertSame(403,$e->getStatusCode());}finally{$app->instance('auth',$authBefore);\Illuminate\Support\Facades\Facade::clearResolvedInstance('auth');}
+    }
+
+    public function test_note_concurrent_annulment_transmits_and_releases_credit_once(): void
+    {
+        [$db,$app,$input,$invoice]=$this->noteFixture();$line=$invoice->items->first();
+        $note=(new Facturalo)->forWebDocuments()->save($this->noteInput($input,$invoice,'07','04',[['affected_document_item_id'=>$line->id,'adjustment_amount'=>23.20]]))->getDocument()->fresh();
+        $log=tempnam(sys_get_temp_dir(),'pro9-annul-test-');
+        try {
+            $request=['operation_key'=>(string)Str::uuid(),'reason'=>'Anulación concurrente de prueba','log'=>$log];
+            $results=$this->runFiscalWorkers($note->id,'note-annul',[$request,$request]);
+            self::assertSame('completed',\App\Services\Fiscal\NoteAnnulment::journal($note->fresh())['status']);
+            self::assertSame("annul\n",file_get_contents($log));self::assertEquals(0,FiscalNote::credits($invoice));self::assertEquals(0,$invoice->fresh()->balance);
+            self::assertCount(2,$results);self::assertSame($request['operation_key'],\App\Services\Fiscal\NoteAnnulment::journal($note->fresh())['operation_key']);
+        } finally {unlink($log);}
     }
 }

@@ -269,7 +269,8 @@
                                 <div v-else>Estado: {{ documentStatus(row).label }}</div>
                                 <span slot="reference" class="badge" :class="documentStatus(row).badgeClass" tabindex="0">{{ documentStatus(row).label }}</span>
                             </el-popover>
-                            <a v-if="row.state_type_id === '13'" href="voided" class="small"><br />Ir a anulaciones</a>
+                            <a v-if="row.state_type_id === '13' && !(row.fiscal_emission && row.fiscal_emission.annulment && row.fiscal_emission.annulment.status)" href="voided" class="small"><br />Ir a anulaciones</a>
+                            <a v-else-if="row.state_type_id === '13'" href="#" @click.prevent="clickOptions(row.id)" class="small"><br />Ver anulación</a>
                         </td>
                         <!-- Campos personalizados: posición configurable vía columna virtual `personalized` (visibilidad la dicta cada field) -->
                         <template v-if="col.key === 'personalized'">
@@ -461,6 +462,7 @@
                                 Link de pago
                               </el-dropdown-item>
 
+                              <el-dropdown-item v-if="row.fiscal_emission && row.fiscal_emission.annulment && row.fiscal_emission.annulment.available" @click.native="clickOptions(row.id, true)" class="text-danger">Anular</el-dropdown-item>
                               <el-dropdown-item
                                 v-if="row.btn_voided"
                                 @click.native="clickVoided(row.id)"
@@ -525,6 +527,7 @@
             :recordId="recordId"
             :showClose="true"
             :configuration="configuration"
+            :annul-on-open="noteAnnulOnOpen"
             @fiscal-updated="onFiscalUpdated"
         ></document-options>
 
@@ -732,6 +735,7 @@ export default {
             resource: "documents",
             recordId: null,
             showDialogOptions: false,
+            noteAnnulOnOpen: false,
             showDialogPayments: false,
             columns: {
                 fiscal_environment_type:          { title: "Ambiente",                           visible: false, order: 0  },
@@ -894,7 +898,8 @@ export default {
         },
         // ########## INICIO SIN DETRACCIONES E ISC
         // ######### FIN SIN DETRACCIONES E ISC
-        clickOptions(recordId = null) {
+        clickOptions(recordId = null, annul = false) {
+            this.noteAnnulOnOpen = annul;
             this.recordId = recordId;
             this.showDialogOptions = true;
         },

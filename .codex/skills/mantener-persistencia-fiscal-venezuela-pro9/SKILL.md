@@ -103,3 +103,7 @@ Recalcular IVA, bases y valor a partir de la factura y NC anteriores, distribuye
 Esquema inicial:345 tablas de aplicación/346 archivos tenant, sin conversión de instalaciones existentes. Ejecutar casos `test_note_*`, regresiones IVA/ISLR/emisión e instalación/rollback en MySQL temporal. Ver restricciones DEMO y evidencia en el informe.
 
 El cobro posterior de una ND ordinaria puede generar el cargo IGTF98 con tasa/perfiles/recibo y clasificación heredados, sin revertir el cobro. Si combina tercero/régimen, `HkaNoteCapability::RELATED_IGTF_REASON` conserva el pendiente hasta contrato y aceptación específicos; no transmitir esa variante ni usar98 para disminuir IGTF en NC.
+
+## Emisión y anulación de notas — contrato corregido
+
+Aplicar [informe de notas](../../../informes/notas_credito_debito_hka.md). NC y saldos ND a crédito declaran99 fiscal sin insertar recibos. ND Contado requiere cobros reales completos y destino de moneda/sucursal, UUID y permiso; no reinterpretar notas Contado sin cobrar como Crédito. La anulación conserva sus dependencias hasta regularización y sus efectos hasta confirmación. Usar NoteAnnulment para reversión idempotente, stock original y saldo SQL/modelo; nunca los listeners antiguos de anulación. El JSON mantiene actor/UUID/intentos/historial y códigos saneados del proveedor, sin DDL o conversión de tenants. Con incertidumbre o reversión comercial pendiente, no mutar notas/cobros/retenciones/ajustes relacionados.

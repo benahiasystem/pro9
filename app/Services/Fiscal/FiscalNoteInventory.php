@@ -72,7 +72,7 @@ final class FiscalNoteInventory
         return $item;
     }
 
-    public static function apply(DocumentItem $line, int $direction=1): void
+    public static function apply(DocumentItem $line, int $direction=1, bool $checkOnly=false): void
     {
         if ($line->inventory_quantity <= 0 || empty($line->item->inventory_components)) return;
         $document=$line->document;
@@ -83,8 +83,11 @@ final class FiscalNoteInventory
             $quantity=Math::multiply($line->inventory_quantity,$component['quantity'],4)*$direction;
             $stock=ItemWarehouse::where('item_id',$component['item_id'])->where('warehouse_id',$warehouse)->lockForUpdate()->firstOrFail();
             if ($direction < 0 && $stock->stock+$quantity < 0) FiscalAmounts::error('inventory','No hay stock suficiente para revertir la devolución.');
-            $stock->stock+=$quantity; $stock->save();
-            $document->inventory_kardex()->create(['date_of_issue'=>$document->date_of_issue,'item_id'=>$component['item_id'],'warehouse_id'=>$warehouse,'quantity'=>$quantity]);
+            $stock->stock+=$quantity;
+            if (!$checkOnly) {
+                $stock->save();
+                $document->inventory_kardex()->create(['date_of_issue'=>$direction < 0 ? now()->toDateString() : $document->date_of_issue,'item_id'=>$component['item_id'],'warehouse_id'=>$warehouse,'quantity'=>$quantity]);
+            }
         }
         foreach ((array)($line->item->IdLoteSelected ?? []) as $lot) {
             $lot=(array)$lot;
@@ -92,13 +95,14 @@ final class FiscalNoteInventory
             if ($record->item_id != $line->item_id) FiscalAmounts::error('items.lot_returns','El lote no corresponde al producto original.');
             $record->quantity+=Math::multiply($lot['compromise_quantity'],$line->item->presentation->quantity_unit ?? 1,4)*$direction;
             if ($record->quantity < 0) FiscalAmounts::error('inventory','El lote no respalda la reversión.');
-            $record->save();
+            if (!$checkOnly) $record->save();
         }
         foreach ((array)($line->item->lots ?? []) as $serial) {
             $serial=(array)$serial;
             $record=ItemLot::query()->lockForUpdate()->findOrFail($serial['id']);
             if ($record->item_id != $line->item_id || ($record->warehouse_id && $record->warehouse_id != $warehouse) || !$record->has_sale && $direction > 0) FiscalAmounts::error('items.serial_ids','El serial no corresponde al producto y almacén originales o ya fue devuelto.');
-            $record->has_sale=$direction < 0; $record->save();
+            if ($direction < 0 && $record->has_sale) FiscalAmounts::error('inventory','El serial devuelto ya fue vendido nuevamente.');
+            $record->has_sale=$direction < 0; if (!$checkOnly) $record->save();
         }
     }
 }

@@ -46,3 +46,17 @@ test('switching notes clears the previous receipt, adjustment and reversal keys'
     assert.equal(Object.keys(state.refundForm).length,0);assert.equal(Object.keys(state.reverseKeys).length,0);
     assert.equal(state.replacementEndpoint,null);assert.equal(state.showRetention,false);
 });
+
+const cashPayments=component('resources/js/views/tenant/documents/partials/note-payments.vue');
+test('cash debit payment rows start empty and require a permitted explicit collection',()=>{
+    const state=bind(cashPayments,{payments:[],canRegister:false,currency:'VES',rate:'50.12345678',date:'2026-10-13'});
+    state.add();assert.equal(state.payments.length,0);state.canRegister=true;state.add();
+    assert.equal(state.payments.length,1);assert.equal(state.payments[0].payment,'');assert.equal(state.payments[0].payment_destination_id,null);
+    assert.equal(state.payments[0].exchange_rate,'50.12345678');assert.ok(state.payments[0].operation_key);
+    const payment=state.payments[0];payment.payment='10.50';state.setPrincipal(payment);assert.equal(payment.original_amount,'10.50');
+    payment.currency_type_id='USD';payment.original_amount='1.25';state.setPrincipal(payment);assert.equal(payment.original_amount,'1.25');
+});
+test('cash collections exclude credit declarations and changing condition clears unsaved cash rows',()=>{
+    assert.deepEqual(Array.from(cashPayments.computed.realMethods.call({methods:[{id:'09',is_credit:1},{id:'01',is_credit:0}]}),r=>r.id),['01']);
+    const state={form:{payments:[{operation_key:'cash-row'}]}};note.watch['form.payment_condition_id'].call(state,'02','01');assert.equal(state.form.payments.length,0);
+});

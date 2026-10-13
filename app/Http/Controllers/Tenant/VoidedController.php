@@ -51,6 +51,11 @@ class VoidedController extends Controller
 
     public function store(VoidedRequest $request)
     {
+        foreach ($request->documents as $row) {
+            $document = Document::findOrFail($row['document_id']);
+            DocumentFiscalController::authorizeDocument($document);
+            if (\App\Services\Fiscal\FiscalNote::ordinary($document)) \App\Services\Fiscal\FiscalAmounts::error('documents','Utilice la anulación auditada desde las opciones de la nota.');
+        }
         $validate = $this->validateVoided($request);
         if(!$validate['success']) return $validate;
 

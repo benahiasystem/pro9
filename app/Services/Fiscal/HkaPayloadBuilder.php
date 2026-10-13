@@ -126,7 +126,7 @@ final class HkaPayloadBuilder
         if ($transaction==='98' && ($lines || (float)$d['total_igv']!==0.0 || $igtf<=0 || abs($d['total']-$igtf)>0.005)) FiscalAmounts::error('taxes','La transacción 98 requiere exclusivamente un cargo IGTF sin IVA ni artículos.');
         $forms=[];
         foreach ($d['payments'] as $p) {
-            if (!empty($p['reversed_at']) || (!empty($p['receipt_parent_id']) && $d['document_type_id']==='01')) continue;
+            if (!empty($p['reversed_at']) || (!empty($p['receipt_parent_id']) && ($d['document_type_id']==='01' || $ordinaryNote))) continue;
             $method=$p['payment_method_snapshot']['hka_code'] ?? null;
             if (!$method) FiscalAmounts::error('payments','Falta equivalencia HKA de medio de pago.');
             $paymentTax=$p['tax_amount'];
@@ -134,6 +134,7 @@ final class HkaPayloadBuilder
             $forms[]=['forma'=>$method,'moneda'=>$p['currency_type_id'],'monto'=>self::money($p['original_amount']+$paymentTax),
                 'fecha'=>self::date($p['date_of_payment']),'tipoCambio'=>(string)$p['exchange_rate']];
         }
+        $forms=HkaNotePayments::append($d,$forms);
         $totals=['nroItems'=>(string)count($lines),'montoGravadoTotal'=>self::money($d['total_taxed']),
             'montoExentoTotal'=>self::money($exportation ? $d['total_exportation'] : $d['total_exonerated']),
             'subtotal'=>self::money($d['total_value']),
@@ -184,6 +185,7 @@ final class HkaPayloadBuilder
             }
         }
         if ($ordinaryNote || $thirdParty || $specialRegime || (!$exportation && ($d['document_type_id'] === '01' || $transaction === '98') && ($d['currency_type_id'] === 'USD' || $igtf > 0))) $payload = HkaDomesticMoney::adapt($payload, $d);
+        $payload=HkaNotePayments::reconcile($payload,$d);
         (new HkaSchemaValidator())->validate($payload);
         return $payload;
     }

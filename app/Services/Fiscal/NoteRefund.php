@@ -82,6 +82,7 @@ final class NoteRefund
         return $note->getConnection()->transaction(function () use ($note,$data,$hash) {
             Company::query()->lockForUpdate()->firstOrFail();
             $invoice=Document::query()->lockForUpdate()->findOrFail($note->note->affected_document_id);
+            NoteAnnulment::assertNotBusy($invoice);
             $note=Document::query()->lockForUpdate()->findOrFail($note->id); self::eligible($note);
             $existing=DocumentNoteRefund::where('operation_key',$data['operation_key'])->first();
             if ($existing) { if ($existing->document_id !== $note->id || $existing->request_hash !== $hash || $existing->reversed_at) abort(409,'La clave de devolución ya pertenece a otra operación.'); return $existing; }
@@ -127,6 +128,7 @@ final class NoteRefund
         $note->getConnection()->transaction(function () use ($note,$refund,$data) {
             Company::query()->lockForUpdate()->firstOrFail();
             $invoice=Document::query()->lockForUpdate()->findOrFail($note->note->affected_document_id);
+            NoteAnnulment::assertNotBusy($invoice);
             Document::query()->lockForUpdate()->findOrFail($note->id);
             $refund=DocumentNoteRefund::query()->lockForUpdate()->findOrFail($refund->id);
             if ($refund->reversal_key) { if ($refund->reversal_key !== $data['operation_key'] || $refund->reversal_reason !== $data['reason']) abort(409,'La devolución ya tiene otra reversión.'); return; }

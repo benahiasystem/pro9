@@ -24,6 +24,7 @@ final class NoteAdjustment
         $record=$note->getConnection()->transaction(function () use ($note,$data,$hash) {
             Company::query()->lockForUpdate()->firstOrFail();
             $invoice=Document::query()->lockForUpdate()->findOrFail($note->note->affected_document_id);
+            NoteAnnulment::assertNotBusy($invoice);
             Document::query()->lockForUpdate()->findOrFail($note->id);
             $existing=DocumentNoteAdjustment::where('operation_key',$data['operation_key'])->first();
             if ($existing) { if ($existing->document_id !== $note->id || $existing->request_hash !== $hash) abort(409,'La clave de ajuste pertenece a otra solicitud.'); return $existing; }
@@ -91,6 +92,7 @@ final class NoteAdjustment
         $note->getConnection()->transaction(function () use ($note,$adjustment,$input) {
             Company::query()->lockForUpdate()->firstOrFail();
             $invoice=Document::query()->lockForUpdate()->findOrFail($note->note->affected_document_id);
+            NoteAnnulment::assertNotBusy($invoice);
             $adjustment=DocumentNoteAdjustment::query()->lockForUpdate()->findOrFail($adjustment->id);
             $service=$adjustment->kind === 'IVA' ? IvaRetentionService::class : IslrRetentionService::class;
             if ($adjustment->status === 'applied') {

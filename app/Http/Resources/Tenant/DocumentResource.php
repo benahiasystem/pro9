@@ -121,7 +121,7 @@ class DocumentResource extends JsonResource
             'total_paid' => $total_payment,
             'balance' => $balance,
             'has_pdf' => true,
-            'btn_voided' => $btn_voided,
+            'btn_voided' => \App\Services\Fiscal\FiscalNote::digital($document) ? false : $btn_voided,
             'items' => self::mapDocumentItems($document),
             'payments' => $document->payments->map(function ($row) {
                 return [

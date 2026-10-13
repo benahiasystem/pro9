@@ -153,6 +153,7 @@ final class FiscalNote
         $company=Company::query()->lockForUpdate()->firstOrFail();
         $invoice = Document::query()->lockForUpdate()->findOrFail($input['note']['affected_document_id'] ?? 0);
         DocumentFiscalController::authorizeDocument($invoice);
+        NoteAnnulment::assertNotBusy($invoice);
         if ($company->fiscal_emission_mode !== $invoice->fiscal_emission_mode || $company->fiscal_environment !== $invoice->fiscal_environment) FiscalAmounts::error('note','La configuración debe corresponder a la modalidad y ambiente de la factura original.');
         if ($reason=self::reason($invoice)) FiscalAmounts::error('note',$reason);
         validator($input,['note_creation_key'=>'required|uuid','note.note_description'=>'required|string|max:255',
@@ -160,6 +161,25 @@ final class FiscalNote
         if (!empty($input['note']['data_affected_document'])) FiscalAmounts::error('note','Seleccione una factura registrada; la referencia fiscal la determina el servidor.');
         foreach (['customer_id','establishment_id','currency_type_id'] as $field) if ((string)($input[$field] ?? '') !== (string)$invoice->$field) FiscalAmounts::error($field,'Conserve el cliente, sucursal y moneda de la factura afectada.');
         $credit = $input['document_type_id'] === '07';
+        if (!$credit) {
+            $input['payment_condition_id']=$input['payment_condition_id'] ?? '02';
+            validator($input,['payment_condition_id'=>'required|in:01,02'])->validate();
+            if (!empty($input['payments'])) abort_unless(auth()->user()->type === 'admin' || auth()->user()->create_payment,403);
+            foreach ($input['payments'] ?? [] as $payment) {
+                validator($payment,['payment_destination_id'=>'required','operation_key'=>'required|uuid'])->validate();
+                $method=\App\Models\Tenant\PaymentMethodType::where('is_active',1)->find($payment['payment_method_type_id'] ?? '');
+                if (!$method || $method->is_credit) FiscalAmounts::error('payment_method_type_id','Seleccione un medio de cobro real activo.');
+                $currency=$payment['currency_type_id'] ?? $invoice->currency_type_id;
+                if ($payment['payment_destination_id'] === 'cash') {
+                    $cash=\App\Models\Tenant\Cash::where('user_id',auth()->id())->where('state',true)->lockForUpdate()->first();
+                    if (!$cash || $cash->user->establishment_id != $invoice->establishment_id) FiscalAmounts::error('payment_destination_id','Seleccione una caja propia abierta de la sucursal.');
+                } else {
+                    $bank=\App\Models\Tenant\BankAccount::query()->lockForUpdate()->find($payment['payment_destination_id']);
+                    if (!$bank || $bank->establishment_id != $invoice->establishment_id || $bank->currency_type_id !== $currency) FiscalAmounts::error('payment_destination_id','La cuenta debe corresponder a la sucursal y moneda recibida.');
+                }
+            }
+
+        }
         $reasonId = $input['note'][$credit ? 'note_credit_type_id':'note_debit_type_id'] ?? null;
         $reasons = $credit ? self::CREDIT : self::DEBIT;
         $table = $credit ? 'cat_note_credit_types':'cat_note_debit_types';
@@ -253,6 +273,7 @@ final class FiscalNote
         if (!self::ordinary($note)) return;
         $invoice=$note->note->affected_document;
         if ($note->total <= 0) FiscalAmounts::error('total','La nota requiere un importe positivo.');
+        if ($note->document_type_id === '08' && $note->payment_condition_id === '01' && $note->fresh()->balance > 0.005) FiscalAmounts::error('payments','La ND al contado requiere cobros reales completos.');
         if ($note->document_type_id === '07' && self::credits($invoice) > $invoice->total-$invoice->taxes->where('tax_kind','IGTF')->sum('amount')+0.005) FiscalAmounts::error('total','Las NC acumuladas superan el importe comercial de la factura.');
         FiscalDocumentPersistence::updateSettlementState($invoice);
         \App\Models\Tenant\CashDocumentCredit::where('document_id',$invoice->id)->update(['status'=>$invoice->fresh()->balance <= 0.005 ? 'PROCESSED':'PENDING']);

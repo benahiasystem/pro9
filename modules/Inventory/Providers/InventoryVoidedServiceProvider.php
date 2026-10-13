@@ -35,6 +35,7 @@ class InventoryVoidedServiceProvider extends ServiceProvider
             if(in_array($document['document_type_id'], ['01', '08'], true))
             {
                 if (!$document->wasChanged('state_type_id')) return;
+                if (\App\Services\Fiscal\FiscalNote::ordinary($document)) return;
 
                 if(in_array($document['state_type_id'], [ '09', '11' ], true)){
                     // $warehouse = $this->findWarehouse($document['establishment_id']);

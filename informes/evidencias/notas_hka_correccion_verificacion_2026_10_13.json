@@ -1,0 +1,78 @@
+{
+  "date": "2026-10-13",
+  "environment": "demo",
+  "php_unit": {
+    "tests": 751,
+    "assertions": 15679,
+    "skipped": 46,
+    "failures": 0,
+    "excluded_class": "QuotationStorefrontCorrelativeTest",
+    "log": "/tmp/pro9-note-final-regression.log"
+  },
+  "javascript": {
+    "tests": 164,
+    "passed": 164,
+    "failures": 0,
+    "log": "/tmp/pro9-note-js-tests.log"
+  },
+  "mysql_latest_verified": [
+    {
+      "scope": "reject, safe numeric diagnostics, preserved credit, rejected retry history and ambiguous 203",
+      "tests": 1,
+      "assertions": 28,
+      "log": "/tmp/pro9-note-annulment-audit-retest.log"
+    },
+    {
+      "scope": "concurrent annulment, exactly one remote call and credit release",
+      "tests": 1,
+      "assertions": 16,
+      "log": "/tmp/pro9-note-annulment-concurrency.log"
+    },
+    {
+      "scope": "remote confirmation with local stock failure and completion; cash ND collections/destination/rollback/dependencies",
+      "tests": 2,
+      "assertions": 42,
+      "log": "/tmp/pro9-note-final-commercial.log"
+    },
+    {
+      "scope": "linked IGTF/funds without fictitious cash",
+      "tests": 1,
+      "assertions": 30,
+      "log": "/tmp/pro9-note-igtf-retest.log"
+    }
+  ],
+  "mysql_timeout_and_paginated_uuid_recovery": "passed in /tmp/pro9-note-final-annulment-audit.log; rejection test in that run had a JSON object key-order assertion, corrected and passed separately",
+  "php_lint": {
+    "files": 32,
+    "errors": 0
+  },
+  "source_diff_check": "passed",
+  "temporary_mysql_schemas_remaining": 0,
+  "demo_acceptance": "notas_hka_emision_anulacion_2026_10_13.json",
+  "distinct_real_verified_demo_cases": 120,
+  "visual_bbc": {
+    "options_credit_send_enabled": true,
+    "options_debit_send_visible_but_blocked_unpaid_cash": true,
+    "annul_action_visible": true,
+    "cash_debit_form_explicit_ves_usd_receipts": true,
+    "commercial_credit_methods_excluded": true,
+    "eight_decimal_exchange_rate": true,
+    "existing_documents_sent": false,
+    "existing_documents_annulled": false,
+    "existing_documents_changed": false,
+    "new_notes_or_payments_saved": false,
+    "screenshots": [
+      "/tmp/pro9-bbc-nc-hka.jpg",
+      "/tmp/pro9-bbc-nd-hka.jpg",
+      "/tmp/pro9-bbc-nd-cash-form.jpg"
+    ]
+  },
+  "build_executed_by_agent": false,
+  "public_build_changes": "external user process; not edited by agent",
+  "limits": [
+    "DEMO ordinary internal notes only",
+    "Invoice annulment and specialized IGTF excluded",
+    "Original HKA PDF first row overlaps its header; original preserved",
+    "Empty ListadoDocumentos 201 never proves absence; exact UUID EstadoDocumento Anulada verified"
+  ]
+}

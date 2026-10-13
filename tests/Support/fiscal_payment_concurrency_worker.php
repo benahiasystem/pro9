@@ -49,6 +49,18 @@ try {
     } elseif (($input['operation'] ?? '') === 'note-refund') {
         $refund=app(App\Services\Fiscal\NoteRefund::class)->register($document,$input['data']);
         $output=['id'=>$refund->id];
+    } elseif (($input['operation'] ?? '') === 'note-annul') {
+        $app->instance('encrypter',new Illuminate\Encryption\Encrypter(str_repeat('k',32),'AES-256-CBC'));
+        config(['app.key'=>str_repeat('k',32),'hka_notes.contract_probe'=>true]);
+        $http=new Illuminate\Http\Client\Factory();$app->instance(Illuminate\Http\Client\Factory::class,$http);$http->preventStrayRequests();
+        $http->fake(function($request) use($input,$manager) {
+            if ($manager->getConnection('tenant')->transactionLevel()) throw new RuntimeException('HTTP while holding locks');
+            if (str_ends_with($request->url(),'/Autenticacion')) return Illuminate\Support\Facades\Http::response(['token'=>'fake-worker-jwt','expiracion'=>date('c',time()+3600)]);
+            if (!str_ends_with($request->url(),'/Anular')) throw new RuntimeException('Unexpected fiscal request');
+            file_put_contents($input['data']['log'],"annul\n",FILE_APPEND|LOCK_EX);usleep(500000);
+            return Illuminate\Support\Facades\Http::response(['codigo'=>'200','validaciones'=>[]]);
+        });
+        $output=app(App\Services\Fiscal\NoteAnnulment::class)->request($document,$input['data']);
     } elseif (($input['operation'] ?? '') === 'hka-edit-race' && ($input['data']['action'] ?? '') === 'edit') {
         $engine = new App\CoreFacturalo\Facturalo;
         if (!empty($input['data']['web_export'])) $engine->forWebDocuments();

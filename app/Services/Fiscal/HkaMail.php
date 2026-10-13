@@ -75,7 +75,7 @@ final class HkaMail
         $user = auth()->user();
         $scope = $user instanceof \App\Models\Tenant\User && ($user->type === 'admin' || (int) $user->establishment_id === (int) $document->establishment_id);
         return ['provider' => 'hka', 'status' => $status, 'request_id' => $attempt['id'] ?? null,
-            'message' => !$eligible ? ($mail['automatic']['message'] ?? 'El correo HKA requiere una factura vigente confirmada en DEMO.')
+            'message' => !$eligible ? ($mail['automatic']['message'] ?? 'El correo HKA requiere un documento vigente confirmado en DEMO.')
                 : ($attempt['message'] ?? $mail['automatic']['message'] ?? 'HKA enviará el PDF fiscal al correo indicado.'),
             'code' => $attempt['code'] ?? null, 'tracking' => $scope ? ($attempt['tracking'] ?? []) : [],
             'can_send' => $eligible && $scope && !in_array($status, ['pending', 'uncertain'], true),
@@ -246,7 +246,7 @@ final class HkaMail
             || $company->fiscal_emission_mode !== 'digital' || $document->emission->status !== 'confirmed' || !$document->control_number || $document->control_number !== $document->emission->control_number || $document->isVoidedOrRejected()
             || !$normalize($document->issuer['number'] ?? '') || $normalize($document->issuer['number'] ?? '') !== $normalize($company->number)
             || !HkaAuthentication::credentials($company) || ($document->emission->response['context'] ?? null) !== $context) {
-            FiscalAmounts::error('customer_email', 'El correo requiere una factura confirmada en DEMO y su configuración HKA original.');
+            FiscalAmounts::error('customer_email', 'El correo requiere un documento confirmado en DEMO y su configuración HKA original.');
         }
         if (Document::where('document_type_id', $document->document_type_id)->where('fiscal_environment', 'demo')->where('fiscal_emission_mode', 'digital')
             ->where('series', $document->series)->where('number', $document->number)->where('id', '!=', $document->id)->exists()) {

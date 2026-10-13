@@ -503,3 +503,7 @@ Se implementó la selección opcional de los siete regímenes por Factura intern
 ## Actualización de notas del 13/10/2026
 
 El contrato vigente de notas domésticas, devoluciones y ajustes está en [notas de crédito y débito HKA](notas_credito_debito_hka.md). Reemplaza las restricciones históricas de notas vinculadas de esta etapa para el flujo ordinario identificado por UUID de creación. ND cobradas:34 variantes confirmadas/consultadas con PDF real; NC:36 variantes rechazadas por203/1015, con efectos comerciales guardados y capacidad fiscal bloqueada, sin pagos ficticios. Ajustes IGTF sin contrato/aceptación específica conservan pendientes. Esquema sólo para instalaciones nuevas; no se convirtió ningún tenant real.
+
+## Emisión y anulación de notas — corrección del 13/10/2026
+
+El [contrato actualizado de NC/ND](notas_credito_debito_hka.md#corrección-de-envío-y-anulación--13102026) incorpora declaraciones fiscales99 de crédito comercial, cobros reales de ND al contado y anulación ordinaria DEMO con conciliación y reversión local idempotente. Sustituye el bloqueo histórico1015 de notas sin formas de pago; no habilita facturas a crédito, exportaciones, producción ni el circuito especializado IGTF. El esquema existente y los documentos confirmados se conservan. Consultar el informe y su evidencia consolidada para resultados, interfaces y límites.

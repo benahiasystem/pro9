@@ -98,12 +98,13 @@ final class HkaEmission
     private function company(Document $document): Company
     {
         $company = Company::firstOrFail();
+        if (FiscalNote::ordinary($document)) NoteAnnulment::assertNotBusy($document);
         if (HkaIgtfNote::applies($document)) HkaIgtfNote::assertCollection($document);
         if (FiscalNote::ordinary($document) && ($reason=FiscalNote::reason($document->note->affected_document))) FiscalAmounts::error('note',$reason);
         if (($document->document_type_id !== '01' && !HkaIgtfNote::applies($document) && !FiscalNote::ordinary($document)) || $document->fiscal_emission_mode !== 'digital'
             || $document->fiscal_environment !== 'demo' || $company->fiscal_environment !== 'demo'
             || $company->fiscal_emission_mode !== 'digital' || $document->isVoidedOrRejected()) {
-            FiscalAmounts::error('emission', 'El envío HKA está habilitado únicamente para facturas vigentes en Medios digitales y DEMO.');
+            FiscalAmounts::error('emission', 'El envío HKA está habilitado únicamente para documentos vigentes en Medios digitales y DEMO.');
         }
         $normalize = fn ($rif) => preg_replace('/[^A-Z0-9]/', '', strtoupper((string) $rif));
         if (!$normalize($document->issuer['number'] ?? '') || $normalize($document->issuer['number'] ?? '') !== $normalize($company->number)) {

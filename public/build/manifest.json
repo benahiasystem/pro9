@@ -24,9 +24,6 @@
       "__plugin-vue2_normalizer-2bbd088e.js"
     ]
   },
-  "_exchange-rate-math-3682ec12.js": {
-    "file": "assets/exchange-rate-math-3682ec12.js"
-  },
   "_exchange-rate-math-b13cb0df.js": {
     "file": "assets/exchange-rate-math-b13cb0df.js"
   },
@@ -99,19 +96,6 @@
       "_index-e849b4f5.js",
       "__plugin-vue2_normalizer-2bbd088e.js",
       "_exchange-rate-math-b13cb0df.js"
-    ]
-  },
-  "_vue-clipboard-bcd7db3e.js": {
-    "css": [
-      "assets/vue-clipboard-a067d18e.css"
-    ],
-    "file": "assets/vue-clipboard-bcd7db3e.js",
-    "imports": [
-      "_vue.esm-340a2d96.js",
-      "_index-f428bc3c.js",
-      "_index-e849b4f5.js",
-      "__plugin-vue2_normalizer-2bbd088e.js",
-      "_exchange-rate-math-3682ec12.js"
     ]
   },
   "_vue-clipboard-ee7e2883.js": {
@@ -277,7 +261,7 @@
     "src": "node_modules/element-ui/lib/theme-chalk/fonts/element-icons.woff"
   },
   "resources/js/app.css": {
-    "file": "assets/app-64ad3679.css",
+    "file": "assets/app-eaf37f51.css",
     "src": "resources/js/app.css"
   },
   "resources/js/app.js": {
@@ -287,9 +271,9 @@
       "assets/tabler-icons-9920d986.ttf"
     ],
     "css": [
-      "assets/app-64ad3679.css"
+      "assets/app-eaf37f51.css"
     ],
-    "file": "assets/app-69300996.js",
+    "file": "assets/app-8709a46a.js",
     "imports": [
       "_vue-clipboard-5682f53f.js",
       "_vue.esm-340a2d96.js",

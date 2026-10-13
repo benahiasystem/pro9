@@ -1,13 +1,13 @@
 ---
 name: gestionar-numeracion-documentos-hka
-description: Consultar contratos HKA de numeraciones, controles y anulación todavía no integrados, y delimitar la consulta vigente EstadoDocumento. Usar al trabajar con AsignarNumeraciones, ConsultaNumeraciones, ConsultaReservaciones, ListadoAsignaciones, UltimoDocumento, EstadoDocumento o Anular.
+description: Mantener contratos HKA de numeraciones y controles, la consulta EstadoDocumento y la anulación de NC/ND ordinarias digital DEMO; las asignaciones y la anulación de facturas permanecen fuera.
 ---
 
 # Contratos de numeración HKA
 
 ## Estado de Pro9
 
-El módulo de asignación anticipada y sus perfiles/secuencias/reservas fue retirado del código y del esquema inicial. La configuración vigente usa series y correlativos originales: leer [numeración Pro9](../mantener-numeracion-fiscal-venezuela-pro9/SKILL.md). La emisión y conciliación por `EstadoDocumento` de facturas en «Medios digitales» DEMO están implementadas mediante [emitir-facturas-notas-hka](../emitir-facturas-notas-hka/SKILL.md). Eso no implementa asignaciones, importación histórica ni anulación remota; no recrear sus endpoints locales por ejecutar esta skill.
+El módulo de asignación anticipada y sus perfiles/secuencias/reservas fue retirado del código y del esquema inicial. La configuración vigente usa series y correlativos originales: leer [numeración Pro9](../mantener-numeracion-fiscal-venezuela-pro9/SKILL.md). La emisión y conciliación por `EstadoDocumento` de facturas en «Medios digitales» DEMO están implementadas mediante [emitir-facturas-notas-hka](../emitir-facturas-notas-hka/SKILL.md). Eso no implementa asignaciones ni importación histórica; la anulación remota de NC/ND ordinarias digital DEMO usa el contrato descrito abajo; no recrear sus endpoints locales por ejecutar esta skill.
 
 ## Referencias del proveedor
 
@@ -27,3 +27,11 @@ Leer [referencia HKA](../../../informes/imprenta_digital_hka_api.md) y contrasta
 ## Pruebas futuras
 
 Usar HTTP simulado y bases temporales para cualquier nueva integración. La consulta o asignación real necesita autorización correspondiente y credenciales del ambiente. No probar enviando documentos ni alterando configuraciones de tenants reales.
+
+## Anulación de notas ordinarias verificada en DEMO
+
+Leer [contrato y evidencia](../../../informes/notas_credito_debito_hka.md#anulación). `NoteAnnulment` integra Anular para NC02/ND03 ordinarias, con identidad congelada, administrador y motivo; facturas y ND98 siguen fuera. Usa JSON de emisión, sin nuevas tablas. Bloquear cobros, reembolsos y ajustes activos; no revertirlos automáticamente ni utilizar rutas antiguas para cambiar estado.
+
+HKA devuelve200 al aceptar Anular. Ante resultado desconocido conservar efectos y conciliar sin repetir la mutación. ListadoDocumentos201 vacío no prueba ausencia: DEMO no lista algunas notas anuladas. EstadoDocumento200/Anulada con UUID, tipo, número y control exactos verifica el resultado. No convertir estados desconocidos o203 genérico en autorización para otro intento.
+
+La reversión comercial puede quedar pendiente después de confirmar fiscalmente. Conservar estado13 y recursos reservados; Completar reversión comercial no llama a Anular. Comprobar stock/lotes/seriales antes de transmitir y al aplicar; conservar auditoría, PDF y numeración. Toda prueba real requiere el alcance autorizado y datos sintéticos aislados; la evidencia no autoriza anular notas de clientes.

@@ -156,7 +156,7 @@ class Document extends ModelTenant
     public function getGuaranteeAmountAttribute() { return max(0, round((float) optional($this->guarantee_fund)->amount - ($this->exists ? \App\Models\Tenant\DocumentNoteAdjustment::where('affected_document_id',$this->id)->where('kind','fund')->where('status','applied')->sum('amount') : 0),2)); }
     public function getBalanceAttribute()
     {
-        if ($this->document_type_id === '07') return 0.0;
+        if ($this->document_type_id === '07' || ($this->document_type_id === '08' && $this->isVoidedOrRejected())) return 0.0;
         $credits=$this->document_type_id === '01' ? \App\Services\Fiscal\FiscalNote::credits($this) : 0;
         $refunds=$this->document_type_id === '01' ? \App\Services\Fiscal\FiscalNote::refunded($this) : 0;
         return round($this->total - $credits - $this->payments()->whereNull('reversed_at')->sum('payment') - $this->retention_amount - $this->guarantee_amount + $refunds, 2);

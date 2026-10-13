@@ -333,3 +333,38 @@ test('fiscal events refresh the list without applying another document result to
     assert.equal(ctx.detailInitialRow.fiscal_emission.status, 'confirmed');
     assert.deepEqual(events, ['reloadData', 'reloadData']);
 });
+
+test('actual options render credit and debit fiscal notices with a visible send action', () => {
+    const start=options.template.indexOf('<div v-if="fiscalEmissionNotice"');
+    const end=options.template.indexOf('<div v-else-if="form.response_message"',start);
+    const compiled=compiler.compile('<div>'+options.template.slice(start,end)+'</div>');
+    assert.deepEqual(compiled.errors,[]);
+    for(const type of ['07','08']) for(const canSend of [true,false]) {
+        const form={id:4,document_type_id:type,number:'00000004',fiscal_emission_mode:'digital',fiscal_emission:{status:'not_requested',show_send:true,can_send:canSend,diagnostic:'Pendiente'}};
+        const instance=new Vue({data:()=>({form,loading:false,fiscalActionBusy:false}),computed:{fiscalEmissionNotice:options.component.computed.fiscalEmissionNotice},methods:{runFiscalAction(){}},render:new Function(compiled.render)});
+        const tree=instance._render();const nodes=[];
+        (function walk(node){nodes.push(node);for(const child of node.children||[])walk(child);})(tree);
+        const button=nodes.find(node=>node.tag==='el-button');assert.ok(button,'Send exists for notes');assert.equal(button.data.attrs.disabled,!canSend);
+        assert.match(instance.fiscalEmissionNotice.title,type==='07'?/Nota de crédito/:/Nota de débito/);
+    }
+});
+test('annulment requests preserve their UUID and reason after a lost response', async () => {
+    const ctx=context(options.component,async()=>{throw new Error('lost');},{document_type_id:'07',fiscal_emission:result({annulment:{available:true,can_request:true}})});
+    ctx.annulmentDocumentId=13;ctx.annulmentRequest={operation_key:'stable-note-annulment',reason:'Registro incorrecto'};
+    const posted=[];ctx.$http.post=async(url,body)=>{posted.push({url,body});throw new Error('lost');};
+    await ctx.requestNoteAnnulment();await ctx.requestNoteAnnulment();
+    assert.equal(posted.length,2);assert.equal(posted[0].url,'/documents/13/annul');assert.deepEqual(posted[0].body,posted[1].body);
+});
+test('annulment reconciliation updates the note and discards a late result for another note', async () => {
+    const pending=deferred();const ctx=context(options.component,()=>pending.promise,{document_type_id:'08',fiscal_emission:result({annulment:{can_query:true}})});
+    const previous=ctx.form.fiscal_emission;const request=ctx.runFiscalAction('query-annulment');ctx.recordId=14;ctx.resetFiscalAction();
+    pending.resolve({data:{fiscal_emission:result({status:'cancelled',annulment:{status:'completed'}})}});await request;
+    assert.equal(ctx.events.length,0);assert.equal(ctx.form.fiscal_emission,previous);
+});
+test('double click while the annulment confirmation is open shows one prompt and sends once',async()=>{
+    const prompt=deferred();let prompts=0,posts=0;
+    const ctx=context(options.component,async()=>{posts++;return {data:{fiscal_emission:result({status:'cancelled',annulment:{status:'completed'}})}};},{document_type_id:'07',fiscal_emission:result({annulment:{can_request:true}})});
+    ctx.$prompt=()=>{prompts++;return prompt.promise;};
+    const first=ctx.requestNoteAnnulment();await ctx.requestNoteAnnulment();assert.equal(prompts,1);
+    prompt.resolve({value:'Documento incorrecto'});await first;assert.equal(posts,1);assert.equal(ctx.annulmentPromptBusy,false);
+});

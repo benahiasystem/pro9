@@ -41,9 +41,9 @@
                               :type="fiscalEmissionNotice.type"
                               :closable="false"
                               show-icon />
-                    <el-button v-if="form.fiscal_emission && form.fiscal_emission.can_send"
+                    <el-button v-if="form.fiscal_emission && (form.fiscal_emission.show_send || form.fiscal_emission.can_send)"
                                class="mt-2" type="primary" icon="el-icon-upload2"
-                               :loading="fiscalActionBusy" :disabled="loading || fiscalActionBusy"
+                               :loading="fiscalActionBusy" :disabled="loading || fiscalActionBusy || !form.fiscal_emission.can_send"
                                @click="runFiscalAction('send')">Enviar HKA</el-button>
                 </div>
             </div>
@@ -80,6 +80,12 @@
 
 
 
+            <div v-if="form.fiscal_emission && form.fiscal_emission.annulment && form.fiscal_emission.annulment.available" class="mb-3" data-testid="note-annulment">
+                <el-alert v-if="form.fiscal_emission.annulment.diagnostic" :title="form.fiscal_emission.annulment.diagnostic" type="warning" :closable="false" show-icon />
+                <el-button v-if="!form.fiscal_emission.annulment.status || form.fiscal_emission.annulment.status === 'rejected'" type="danger" class="mt-2" :disabled="loading || fiscalActionBusy || annulmentPromptBusy || !form.fiscal_emission.annulment.can_request" :loading="fiscalActionBusy" @click="requestNoteAnnulment">Anular</el-button>
+                <el-button v-if="form.fiscal_emission.annulment.can_query" class="mt-2" :disabled="loading || fiscalActionBusy" :loading="fiscalActionBusy" @click="runFiscalAction('query-annulment')">Consultar anulación HKA</el-button>
+                <el-button v-if="form.fiscal_emission.annulment.can_complete" class="mt-2" :disabled="loading || fiscalActionBusy" :loading="fiscalActionBusy" @click="runFiscalAction('complete-annulment')">Completar reversión comercial</el-button>
+            </div>
             <el-button v-if="form.document_type_id === '01' && ((form.iva_retention && form.iva_retention.enabled) || (form.islr_retention && form.islr_retention.enabled))" size="small" @click="showIvaRetention = true">Retenciones IVA / ISLR</el-button>
         <p v-if="form.islr_retention && form.islr_retention.prevision">ISLR prevista: {{ form.islr_retention.prevision.amount }} {{ form.currency_type_id }}. Permanece como saldo pendiente.</p>
             <p v-if="form.iva_retention && form.iva_retention.prevision">Prevista: {{ form.iva_retention.prevision.amount }} {{ form.currency_type_id }}. Saldo pendiente: {{ form.iva_retention.balance }}.</p>
@@ -236,7 +242,7 @@ import QrApi from '@viewsModuleQrApi/QrApiTemplate.vue'
 import QrChatWsapp from '@viewsModuleQrChatBuho/ButtonSend.vue'
 
 export default {
-    props: ['showDialog', 'recordId', 'showClose', 'isContingency', 'generatDispatch', 'dispatchId', 'isUpdate', 'configuration', 'table', 'failsInSend', 'failsMessage'],
+    props: ['annulOnOpen', 'showDialog', 'recordId', 'showClose', 'isContingency', 'generatDispatch', 'dispatchId', 'isUpdate', 'configuration', 'table', 'failsInSend', 'failsMessage'],
     components: {NoteOperations, RetentionForm,
         Keypress,
         QrApi,
@@ -292,20 +298,23 @@ export default {
         ]),
         ...documentEmail.computed,
         fiscalEmissionNotice() {
-            if (this.form.document_type_id !== '01' || this.form.fiscal_emission_mode !== 'digital') return null;
+            if (!['01','07','08'].includes(this.form.document_type_id) || this.form.fiscal_emission_mode !== 'digital' || (this.form.document_type_id !== '01' && !(this.form.fiscal_emission || {}).status)) return null;
+            const label = {'01':'factura','07':'nota de crédito','08':'nota de débito'}[this.form.document_type_id];
+            const caption = label.charAt(0).toUpperCase() + label.slice(1);
             const emission = this.form.fiscal_emission || {};
             const number = this.form.number || '';
+            if ((emission.annulment || {}).status === 'remote_confirmed') return {type:'warning', title:'Anulación fiscal confirmada; reversión comercial pendiente.', description:emission.annulment.diagnostic};
             if (emission.status === 'confirmed') {
-                return {type: 'success', title: `La factura ${number} ha sido aceptada por HKA.`,
+                return {type: 'success', title: `La ${label} ${number} ha sido aceptada por HKA.`,
                     description: emission.control_number ? `Número de control: ${emission.control_number}` : ''};
             }
             if (emission.status === 'rejected') {
-                return {type: 'error', title: `La factura ${number} ha sido rechazada por HKA.`,
+                return {type: 'error', title: `La ${label} ${number} ha sido rechazada por HKA.`,
                     description: emission.diagnostic || 'La venta sigue guardada.'};
             }
-            const title = emission.status === 'uncertain' ? `Factura ${number}: por conciliar con HKA.`
-                : emission.status === 'cancelled' ? `La factura ${number} está cancelada en HKA.`
-                : `Factura ${number}: pendiente de confirmación HKA.`;
+            const title = emission.status === 'uncertain' ? `${caption} ${number}: por conciliar con HKA.`
+                : emission.status === 'cancelled' ? `La ${label} ${number} está anulada ${(emission.annulment || {}).remote === false ? 'localmente' : 'en HKA'}.`
+                : `${caption} ${number}: pendiente de confirmación HKA.`;
             return {type: 'warning', title,
                 description: emission.diagnostic || 'La venta está guardada; todavía no hay una confirmación fiscal.'};
         },
@@ -416,6 +425,7 @@ export default {
             await this.$http.get(`/${this.resource}/locked_emission`).then(response => {
                 if (isCurrent()) this.locked_emission = response.data
             }).finally(() => { if (isCurrent()) this.loading = false; });
+            if (isCurrent() && this.annulOnOpen) await this.requestNoteAnnulment();
         },
         async getCompany() {
             this.loading = true;

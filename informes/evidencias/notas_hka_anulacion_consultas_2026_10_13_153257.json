@@ -1,0 +1,345 @@
+{
+    "date": "2026-10-13T15:32:57-04:00",
+    "environment": "demo",
+    "read_only": true,
+    "source": "notas_hka_demo_2026_10_13_150531.json",
+    "email_sent": false,
+    "cases": [
+        {
+            "type": "02",
+            "number": "1051979787",
+            "control": "00-00000396",
+            "status": "Anulada",
+            "code": "200",
+            "verified": true
+        },
+        {
+            "type": "02",
+            "number": "1051979788",
+            "control": "00-00000398",
+            "status": "Anulada",
+            "code": "200",
+            "verified": true
+        },
+        {
+            "type": "02",
+            "number": "1051979789",
+            "control": "00-00000400",
+            "status": "Anulada",
+            "code": "200",
+            "verified": true
+        },
+        {
+            "type": "02",
+            "number": "1051979790",
+            "control": "00-00000402",
+            "status": "Anulada",
+            "code": "200",
+            "verified": true
+        },
+        {
+            "type": "03",
+            "number": "1207925971",
+            "control": "00-00000404",
+            "status": "Anulada",
+            "code": "200",
+            "verified": true
+        },
+        {
+            "type": "03",
+            "number": "1207925972",
+            "control": "00-00000406",
+            "status": "Anulada",
+            "code": "200",
+            "verified": true
+        },
+        {
+            "type": "03",
+            "number": "1207925973",
+            "control": "00-00000408",
+            "status": "Anulada",
+            "code": "200",
+            "verified": true
+        },
+        {
+            "type": "03",
+            "number": "1207925974",
+            "control": "00-00000410",
+            "status": "Anulada",
+            "code": "200",
+            "verified": true
+        },
+        {
+            "type": "03",
+            "number": "1207925975",
+            "control": "00-00000412",
+            "status": "Anulada",
+            "code": "200",
+            "verified": true
+        },
+        {
+            "type": "03",
+            "number": "1207925976",
+            "control": "00-00000414",
+            "status": "Anulada",
+            "code": "200",
+            "verified": true
+        },
+        {
+            "type": "02",
+            "number": "1051979791",
+            "control": "00-00000416",
+            "status": "Anulada",
+            "code": "200",
+            "verified": true
+        },
+        {
+            "type": "02",
+            "number": "1051979792",
+            "control": "00-00000418",
+            "status": "Anulada",
+            "code": "200",
+            "verified": true
+        },
+        {
+            "type": "02",
+            "number": "1051979793",
+            "control": "00-00000420",
+            "status": "Anulada",
+            "code": "200",
+            "verified": true
+        },
+        {
+            "type": "02",
+            "number": "1051979794",
+            "control": "00-00000422",
+            "status": "Anulada",
+            "code": "200",
+            "verified": true
+        },
+        {
+            "type": "02",
+            "number": "1051979795",
+            "control": "00-00000424",
+            "status": "Anulada",
+            "code": "200",
+            "verified": true
+        },
+        {
+            "type": "02",
+            "number": "1051979796",
+            "control": "00-00000426",
+            "status": "Anulada",
+            "code": "200",
+            "verified": true
+        },
+        {
+            "type": "02",
+            "number": "1051979797",
+            "control": "00-00000428",
+            "status": "Anulada",
+            "code": "200",
+            "verified": true
+        },
+        {
+            "type": "02",
+            "number": "1051979798",
+            "control": "00-00000430",
+            "status": "Anulada",
+            "code": "200",
+            "verified": true
+        },
+        {
+            "type": "02",
+            "number": "1051979799",
+            "control": "00-00000432",
+            "status": "Anulada",
+            "code": "200",
+            "verified": true
+        },
+        {
+            "type": "02",
+            "number": "1051979800",
+            "control": "00-00000434",
+            "status": "Anulada",
+            "code": "200",
+            "verified": true
+        },
+        {
+            "type": "02",
+            "number": "1051979801",
+            "control": "00-00000436",
+            "status": "Anulada",
+            "code": "200",
+            "verified": true
+        },
+        {
+            "type": "02",
+            "number": "1051979802",
+            "control": "00-00000438",
+            "status": "Anulada",
+            "code": "200",
+            "verified": true
+        },
+        {
+            "type": "02",
+            "number": "1051979803",
+            "control": "00-00000440",
+            "status": "Anulada",
+            "code": "200",
+            "verified": true
+        },
+        {
+            "type": "02",
+            "number": "1051979804",
+            "control": "00-00000442",
+            "status": "Anulada",
+            "code": "200",
+            "verified": true
+        },
+        {
+            "type": "02",
+            "number": "1051979805",
+            "control": "00-00000444",
+            "status": "Anulada",
+            "code": "200",
+            "verified": true
+        },
+        {
+            "type": "02",
+            "number": "1051979806",
+            "control": "00-00000446",
+            "status": "Anulada",
+            "code": "200",
+            "verified": true
+        },
+        {
+            "type": "02",
+            "number": "1051979807",
+            "control": "00-00000448",
+            "status": "Anulada",
+            "code": "200",
+            "verified": true
+        },
+        {
+            "type": "02",
+            "number": "1051979808",
+            "control": "00-00000450",
+            "status": "Anulada",
+            "code": "200",
+            "verified": true
+        },
+        {
+            "type": "02",
+            "number": "1051979809",
+            "control": "00-00000452",
+            "status": "Anulada",
+            "code": "200",
+            "verified": true
+        },
+        {
+            "type": "02",
+            "number": "1051979810",
+            "control": "00-00000454",
+            "status": "Anulada",
+            "code": "200",
+            "verified": true
+        },
+        {
+            "type": "02",
+            "number": "1051979811",
+            "control": "00-00000456",
+            "status": "Anulada",
+            "code": "200",
+            "verified": true
+        },
+        {
+            "type": "02",
+            "number": "1051979812",
+            "control": "00-00000458",
+            "status": "Anulada",
+            "code": "200",
+            "verified": true
+        },
+        {
+            "type": "02",
+            "number": "1051979813",
+            "control": "00-00000460",
+            "status": "Anulada",
+            "code": "200",
+            "verified": true
+        },
+        {
+            "type": "02",
+            "number": "1051979814",
+            "control": "00-00000462",
+            "status": "Anulada",
+            "code": "200",
+            "verified": true
+        },
+        {
+            "type": "02",
+            "number": "1051979815",
+            "control": "00-00000464",
+            "status": "Anulada",
+            "code": "200",
+            "verified": true
+        },
+        {
+            "type": "02",
+            "number": "1051979816",
+            "control": "00-00000466",
+            "status": "Anulada",
+            "code": "200",
+            "verified": true
+        },
+        {
+            "type": "02",
+            "number": "1051979817",
+            "control": "00-00000468",
+            "status": "Anulada",
+            "code": "200",
+            "verified": true
+        },
+        {
+            "type": "02",
+            "number": "1051979818",
+            "control": "00-00000470",
+            "status": "Anulada",
+            "code": "200",
+            "verified": true
+        },
+        {
+            "type": "02",
+            "number": "1051979819",
+            "control": "00-00000472",
+            "status": "Anulada",
+            "code": "200",
+            "verified": true
+        },
+        {
+            "type": "03",
+            "number": "1207925977",
+            "control": "00-00000474",
+            "status": "Anulada",
+            "code": "200",
+            "verified": true
+        },
+        {
+            "type": "02",
+            "number": "1051979820",
+            "control": "00-00000476",
+            "status": "Anulada",
+            "code": "200",
+            "verified": true
+        },
+        {
+            "type": "03",
+            "number": "1207925978",
+            "control": "00-00000478",
+            "status": "Anulada",
+            "code": "200",
+            "verified": true
+        }
+    ]
+}

@@ -162,7 +162,7 @@ class DocumentCollection extends ResourceCollection
                 'document_type_id' => $row->document_type->id,
                 'has_pdf' => $has_pdf,
                 'download_pdf' => $row->download_external_pdf,
-                'btn_voided' => $btn_voided,
+                'btn_voided' => \App\Services\Fiscal\FiscalNote::digital($row) ? false : $btn_voided,
                 'btn_note' => $btn_note,
                 'btn_note_operations' => \App\Services\Fiscal\FiscalNote::ordinary($row) && $row->document_type_id === '07',
                 'btn_guide' => $btn_guide,

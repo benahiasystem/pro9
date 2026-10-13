@@ -407,6 +407,7 @@ class DocumentController extends Controller
         $document_id = $user->document_id;
         $series_id = $user->series_id;
         $establishment_id = $user->establishment_id;
+        $can_create_payment=$user->type === 'admin' || (bool)$user->create_payment;
         $userId = $user->id;
         $userType = $user->type;
         $series = $user->getSeries();
@@ -496,6 +497,7 @@ class DocumentController extends Controller
             'is_client',
             'select_first_document_type_03',
             'payment_destinations',
+            'can_create_payment',
             'payment_conditions',
             'global_discount_types',
             'affectation_igv_types',

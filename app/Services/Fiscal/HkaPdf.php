@@ -44,7 +44,7 @@ final class HkaPdf
     {
         if ($document->fiscal_environment !== 'demo') return 'La descarga HKA está habilitada únicamente en DEMO.';
         if ($document->isVoidedOrRejected()) return 'La factura no está vigente para descargar su PDF HKA.';
-        if (optional($document->emission)->status !== 'confirmed') return 'Confirme la factura en HKA antes de descargar A4, A5 o 80MM.';
+        if (optional($document->emission)->status !== 'confirmed') return 'Confirme el documento en HKA antes de descargar A4, A5 o 80MM.';
         if (!$document->control_number || $document->control_number !== $document->emission->control_number) {
             return 'La factura no tiene un control HKA confirmado y coherente.';
         }

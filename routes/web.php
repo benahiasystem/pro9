@@ -410,6 +410,9 @@ if ($hostname) {
             // debe declararse antes del wildcard documents/note/{document}
             // ######## INICIO NOTAS HKA ########
             Route::get('documents/{note}/refunds', 'Tenant\NoteOperationController@records');
+            Route::post('documents/{note}/annul', 'Tenant\NoteOperationController@annul');
+            Route::post('documents/{note}/query-annulment-hka', 'Tenant\NoteOperationController@queryAnnulment');
+            Route::post('documents/{note}/complete-annulment', 'Tenant\NoteOperationController@completeAnnulment');
             Route::post('documents/{note}/refunds', 'Tenant\NoteOperationController@refund');
             Route::post('documents/{note}/refunds/{refund}/reverse', 'Tenant\NoteOperationController@reverseRefund');
             Route::post('documents/{note}/adjustments', 'Tenant\NoteOperationController@adjustment');
