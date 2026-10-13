@@ -1,6 +1,6 @@
 # Informe final QA: Pro9 Medios digitales
 
-> Plantilla sin ejecutar. Sustituir todos los campos entre corchetes. No conservar cifras de ejemplo como resultados reales.
+> Referencia `87dc6506cf8d94c6e2d3cad1fb512b5b62e5e572`, 12 de octubre de 2026: 1121 casos/35 grupos; 720 anteriores+401 nuevos. Plantilla sin ejecutar. Sustituir todos los campos entre corchetes. No conservar cifras de ejemplo como resultados reales.
 
 ## 1. Identificación y conclusión
 
@@ -26,6 +26,11 @@
 | Correo y WhatsApp | [resultado] | [solicitud vs entrega; receptor QA/doble] |
 | Canales, UI/API e importaciones | [resultado] | [módulos y assets efectivamente probados] |
 | Aislamiento y permisos | [resultado] | [tenant/sucursal/roles/rutas] |
+| Regímenes especiales | [resultado de 28 combinaciones y restricciones] | [RGE/UUID/ticket/original] |
+| Perfiles SPE | [resultado por versión/fecha/rol] | [naturaleza/facultades/IGTF] |
+| IVA recibida | [previsión/aplicación/HKA/presentación] | [flag false/control/soporte/saldo] |
+| ISLR recibida | [declaración/aplicación/HKA/campos verificados] | [flag false/204/independencia] |
+| Coexistencia IVA+ISLR | [resultado por canal/moneda] | [deuda 15/abonos/reversiones] |
 
 ## 2. Alcance ejecutado y exclusiones
 
@@ -73,6 +78,11 @@ Verificación: [T = A+R+B+N+P]. Nivel de conteo: [casos padre / subcasos]. Si ha
 
 | Grupo funcional | Planificadas | Aprobó | Reprobó | Bloqueada | No aplica | Pendiente | Limitación principal |
 |---|---:|---:|---:|---:|---:|---:|---|
+| RGE: 59 planificadas | [T] | [A] | [R] | [B] | [N] | [P] | [limitación] |
+| SPE: 64 planificadas | [T] | [A] | [R] | [B] | [N] | [P] | [limitación] |
+| RIVA: 63 planificadas | [T] | [A] | [R] | [B] | [N] | [P] | [limitación] |
+| RISLR: 135 planificadas | [T] | [A] | [R] | [B] | [N] | [P] | [limitación] |
+| INT: 80 planificadas | [T] | [A] | [R] | [B] | [N] | [P] | [limitación] |
 | [grupo] | [T] | [A] | [R] | [B] | [N] | [P] | [texto] |
 
 ## 5. Resultados detallados de cada prueba
@@ -83,7 +93,7 @@ Completar una fila por ID y por variante ejecutada. Adjuntar registro actualizad
 |---|---|---|---|---|---|---|---|---|
 | [ID] | [contexto] | [Aprobó/Reprobó/Bloqueada/No aplica/Pendiente] | [criterios] | [datos efectivos] | [identificadores QA] | [ruta/enlace] | [ID o motivo] | [dato] |
 
-Para Reprobó, incluir reproducción íntegra en sección6. Para Bloqueada/No aplica, justificar en sección8. Una variante faltante impide Aprobó del caso padre.
+Para Reprobó, incluir reproducción íntegra en sección 6. Para Bloqueada/No aplica, justificar en sección 8. Una variante faltante impide Aprobó del caso padre.
 
 ## 6. Defectos reproducibles
 
@@ -93,9 +103,9 @@ Para Reprobó, incluir reproducción íntegra en sección6. Para Bloqueada/No ap
 - Casos/variantes: [IDs]. Versión/capa/tenant/usuario: [datos].
 - Precondiciones y datos exactos: [fixture/referencia].
 - Reproducción:
-  1. [acción].
-  2. [acción].
-  3. [acción].
+   1. [acción].
+   2. [acción].
+   3. [acción].
 - Esperado: [criterio y cálculo]. Observado: [valor/estado/efecto].
 - Impacto: [venta/saldo/caja/stock/fiscal/permiso/usuario]. Frecuencia: [dato observado].
 - Evidencia: [request/response/captura/lectura antes-después].
@@ -139,7 +149,7 @@ Repetir para cada defecto. Agrupar un fallo raíz compartido sin perder los IDs 
 
 | Documento de la corrida | Categoría/moneda | UUID/serie/número originales | Estado/resultado HKA | Control y consulta atribuibles | A4 hash / A5 páginas / ticket QR | Correo solicitado/entregado | Evidencia |
 |---|---|---|---|---|---|---|---|
-| [ID] | [dato] | [identidad QA] | [dato] | [dato] | [dato] | [distinguir estados; receptorQA sin secretos] | [ruta] |
+| [ID] | [dato] | [identidad QA] | [dato] | [dato] | [dato] | [distinguir estados; receptor QA sin secretos] | [ruta] |
 
 Si no hubo ejecuciones reales, indicar **No ejecutado: sólo proveedor simulado** y su causa. No copiar números de los informes históricos como pruebas de esta corrida. No acreditar notas/producción por una factura DEMO.
 
@@ -151,7 +161,51 @@ Si no hubo ejecuciones reales, indicar **No ejecutado: sólo proveedor simulado*
 
 [Priorizar acciones concretas por impacto. No pedir cambios generales sin relacionarlos con un fallo o límite verificado.]
 
-## 13. Cierre y archivos entregados
+## 13. Regímenes especiales: resultados independientes
+
+Completar 28 filas de matriz RGE-001..028 y el resto de casos RGE, sin agrupar resultados. Registrar guardar/editar/enviar/presentar por capa; todos los valores y monedas tienen conclusión propia.
+
+| Caso/variante | Régimen ID/descripcion | VES/USD y propia/terceros | Base/IVA/exento/desc/cargo/IGTF/total/pago/saldo | UUID antes/después y edición | Registro comercial | HKA/consulta/control | Ticket/snapshot/original hash y omisiones | Veredicto/evidencia/defecto |
+|---|---|---|---|---|---|---|---|---|
+| [ID] | [dato exacto] | [contexto] | [esperado/observado] | [dato] | [resultado] | [resultado/capa] | [dato] | [Aprobó/Reprobó/etc.] |
+
+Conclusión RGE: [matriz ejecutada/faltante, restricciones crédito/exportación/notas/canales, UUID y envío explícito, límites de PDF original].
+
+## 14. SPE: versiones, facultades y clasificación IGTF
+
+| Caso/variante | Empresa/comprador yRIF/cédula separados | Naturaleza/firma/clase pública | version_id/vigencia/notificación/revocación | Fundamento IVA/ISLR independientes | Fecha de factura/pago/comprobante | Decisión IGTF y moneda recibida/intermediación/excepción admin | Snapshot/payload/ticket/original | Veredicto/evidencia |
+|---|---|---|---|---|---|---|---|---|
+| [ID] | [identidad QA] | [datos] | [historial] | [datos] | [fechas/versión] | [esperado/observado] | [datos/hash] | [estado/ruta] |
+
+Detallar 12 combinaciones IGTF, seis clases públicas, permisos y aislamiento, casos 100 %/evidencia y preservación histórica. Si se probó sólo comprador SPE con emisor FORMAL DEMO, indicarlo; no acreditar emisor SPE desde un doble o esa cuenta.
+
+## 15. IVA recibida: cuatro capas y ciclo financiero
+
+| Caso/variante | Factura/control y comprobante/número/fecha/RIF | Porcentaje/fundamento/soporte privado | IVA/base imponible/tasa/cap fiscal VES | Previsión y saldo antes | Estado local/ applied_amount y saldo después | Operación HKA/UUID/intento/estado/GET previo-posterior | Reversión/ausencia/recuperación 90 s | Presentación/diagnóstico/ can_send | Veredicto/evidencia/defecto |
+|---|---|---|---|---|---|---|---|---|---|
+| [ID] | [datos QA] | [75/100 y causa] | [esperado/observado] | [importes] | [datos] | [datos/contadores] | [firma 203 o 200 null] | [datos] | [estado/ruta] |
+
+Describir uno activo por impuesto, reemplazos/historial, alícuotas mixtas, límites, conflictos, adopción sin POST y reversión incierta sin liberar saldo. Registrar flag false y bloqueos netos VES/USD con diagnóstico/ can_send =false. Controles protocolarios pagados y evidencias históricas figuran aparte; no acreditan emisión neta real.
+
+## 16. ISLR recibida: declaración y límites de verificación remota
+
+| Caso/variante/concepto | Fundamento independiente y evidencia | Número/fecha/RIF/soporte | Base/porcentaje/sustraendo/importe/tasa/cap neto fiscal | Previsión/aplicación/saldo | Operación ISLR/UUID/intento/estado | verified_fields realmente comparados | Ausencia 204/200 null, recuperación y reversión | Capacidad false y diagnóstico | Veredicto/evidencia |
+|---|---|---|---|---|---|---|---|---|---|
+| [ID/concepto] | [datos] | [datos QA] | [esperado/observado] | [datos] | [outbox propia] | [sólo 7 campos del contrato] | [prueba propia] | [ can_send false] | [estado/ruta] |
+
+Reportar 85 conceptos no salariales iniciales por ID, exclusión 001, ausencia de mapping codigoOperacion y de tasas/sustraendo automáticos. Precisar qué GET verificó:serie, tipoDocumento, numeroDocumento, numeroControl, numeroCompRetencion, fechaEmisionCR, impuestoRetenido; no afirmar RIF/porcentaje/concepto/sustraendo verificados remotos. La aceptación histórica parcial VES no habilita capacidad; USD/coexistencia tienen resultados independientes.
+
+## 17. Coexistencia, abonos y regresión por canal
+
+| Caso/variante/canal | Perfil/fechas/versiones | Total/pagos reales y monedas | IVA prevista/aplicada | ISLR prevista/aplicada | Sugerencia neta/deuda esperada-observada | Reabrir Pagos/borrador y UUIDs conservados | HKA IVA/ISLR independientes | Caja/CxC/reportes/stock/aislamiento | Veredicto/evidencia |
+|---|---|---|---|---|---|---|---|---|---|
+| [ID] | [datos] | [importes] | [datos/estado] | [datos/estado] | [valores] | [antes/después] | [estados/bloqueos] | [conciliación] | [estado/ruta] |
+
+Reconciliar ejemplo 116−previsión 12−previsión 3=sugerencia 101, pago 101/deuda 15 antes de validar; sólo IVA aplicada→deuda 3, sólo ISLR→deuda 12, ambas→0. Cash 101 inmutable. Incluir casos crédito/abonos 30+20, remanente 51 por acción explícita, monedas propias, conversiones, respuestas propuestas obsoletas, concurrencia y dos entornos tenant/sucursal. Registrar todos los 39 casos canal×impuesto y cualquier módulo bloqueado con causa, más los saldos posteriores a reversión.
+
+Separar las cuatro conclusiones: registro comercial, aplicación local, sincronización HKA y presentación. Evidencia histórica/simulada debe figurar en apartado de soporte con capa explícita; no en tabla de emisiones reales de la corrida. No cerrar Aprobó si falta variante aplicable o caso P0.
+
+## 18. Cierre y archivos entregados
 
 [Repetir conclusión con alcance preciso y las condiciones que faltan. Confirmar que conteos y veredictos están reconciliados.]
 
@@ -160,7 +214,7 @@ Si no hubo ejecuciones reales, indicar **No ejecutado: sólo proveedor simulado*
 - Evidencias saneadas: [índice/carpeta].
 - Cálculos independientes: [ruta].
 - Defectos y retest: [ruta].
-- Estado final de datos/configuracionesQA: [restaurado/conservado y motivo].
+- Estado final de datos/configuraciones QA: [restaurado/conservado y motivo].
 
 **No declarar aprobado un sistema con P0 fallido/bloqueado/pendiente, defectos críticos/altos abiertos o cobertura esencial sin demostrar. Entregar el informe también si el resultado es Inconcluso.**
 
