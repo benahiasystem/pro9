@@ -499,3 +499,7 @@ Se implementó la transacción 99 de Factura 01 mediante Emision normal, con tit
 ## Regímenes especiales — 12 de octubre de 2026
 
 Se implementó la selección opcional de los siete regímenes por Factura interna web digital DEMO, al contado completamente pagada, propia o por terceros, en VES/USD. La matriz real acredita 28 controles confirmados (52–79), además de creación y edición/envío web. Los JSON originales descargados de HKA conservan los textos exactos; **los PDF originales A4 no imprimen el régimen**, y A5/correo heredan esa limitación del proveedor. Pro9 muestra el snapshot en edición, listado, detalle y ticket. Ver [implementación, pruebas y evidencia saneada](facturas_regimenes_especiales_hka.md). No se habilitan producción, crédito, exportación combinada, POS/Garage/API ni notas vinculadas.
+
+## Actualización de notas del 13/10/2026
+
+El contrato vigente de notas domésticas, devoluciones y ajustes está en [notas de crédito y débito HKA](notas_credito_debito_hka.md). Reemplaza las restricciones históricas de notas vinculadas de esta etapa para el flujo ordinario identificado por UUID de creación. ND cobradas:34 variantes confirmadas/consultadas con PDF real; NC:36 variantes rechazadas por203/1015, con efectos comerciales guardados y capacidad fiscal bloqueada, sin pagos ficticios. Ajustes IGTF sin contrato/aceptación específica conservan pendientes. Esquema sólo para instalaciones nuevas; no se convirtió ningún tenant real.

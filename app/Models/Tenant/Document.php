@@ -153,10 +153,13 @@ class Document extends ModelTenant
     public function fiscal_data() { return $this->hasOne(DocumentFiscalData::class); }
     public function emission() { return $this->hasOne(DocumentEmission::class); }
     public function getRetentionAmountAttribute() { return round($this->received_retentions->sum('applied_amount'), 2); }
-    public function getGuaranteeAmountAttribute() { return (float) optional($this->guarantee_fund)->amount; }
+    public function getGuaranteeAmountAttribute() { return max(0, round((float) optional($this->guarantee_fund)->amount - ($this->exists ? \App\Models\Tenant\DocumentNoteAdjustment::where('affected_document_id',$this->id)->where('kind','fund')->where('status','applied')->sum('amount') : 0),2)); }
     public function getBalanceAttribute()
     {
-        return round($this->total - $this->payments()->whereNull('reversed_at')->sum('payment') - $this->retention_amount - $this->guarantee_amount, 2);
+        if ($this->document_type_id === '07') return 0.0;
+        $credits=$this->document_type_id === '01' ? \App\Services\Fiscal\FiscalNote::credits($this) : 0;
+        $refunds=$this->document_type_id === '01' ? \App\Services\Fiscal\FiscalNote::refunded($this) : 0;
+        return round($this->total - $credits - $this->payments()->whereNull('reversed_at')->sum('payment') - $this->retention_amount - $this->guarantee_amount + $refunds, 2);
     }
     // ######## FIN PERSISTENCIA FISCAL VENEZUELA ########
 
@@ -290,9 +293,14 @@ class Document extends ModelTenant
     {
         static::updating(function ($document) {
             if ($document->isDirty('state_type_id') && in_array((string)$document->state_type_id, ['09','11'], true)
+                && \App\Services\Fiscal\FiscalNote::hasRelatedNotes($document)) \App\Services\Fiscal\FiscalAmounts::error('document','La factura tiene notas registradas y conserva sus efectos comerciales originales.');
+            if ($document->isDirty('state_type_id') && \App\Services\Fiscal\FiscalNote::ordinary($document)) \App\Services\Fiscal\FiscalAmounts::error('note','Una nota registrada conserva sus efectos; los ajustes posteriores requieren otra operación auditada.');
+            if ($document->isDirty('state_type_id') && in_array((string)$document->state_type_id, ['09','11'], true)
                 && \App\Services\Fiscal\HkaIgtfNote::applies($document)) \App\Services\Fiscal\FiscalDocumentPersistence::assertMutable($document);
         });
         static::deleting(function ($document) {
+            if (\App\Services\Fiscal\FiscalNote::hasRelatedNotes($document)) \App\Services\Fiscal\FiscalAmounts::error('document','No se permite eliminar una factura con notas registradas.');
+            if (\App\Services\Fiscal\FiscalNote::ordinary($document)) \App\Services\Fiscal\FiscalAmounts::error('note','No se permite eliminar una nota registrada.');
             if (\App\Services\Fiscal\HkaIgtfNote::applies($document)) \App\Services\Fiscal\FiscalDocumentPersistence::assertMutable($document);
         });
         static::created(function ($document){

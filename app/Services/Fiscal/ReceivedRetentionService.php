@@ -12,6 +12,25 @@ use Illuminate\Validation\ValidationException;
 /** Transactional lifecycle shared by received IVA and ISLR; fiscal rules stay in each policy. */
 abstract class ReceivedRetentionService
 {
+    private static array $noteReplacementScope = [];
+
+    /** Only the locked note-adjustment workflow opens this scope, never posted flags. */
+    public static function withNoteReplacement(Document $note, callable $work)
+    {
+        NoteAdjustment::authorize($note);
+        $key=$note->getConnection()->getDatabaseName().':'.$note->note->affected_document_id;
+        self::$noteReplacementScope[$key]=true;
+        try { return $work(); } finally { unset(self::$noteReplacementScope[$key]); }
+    }
+
+    public static function settlementLimit(Document $document): float
+    {
+        $key=$document->getConnection()->getDatabaseName().':'.$document->id;
+        if (empty(self::$noteReplacementScope[$key])) return $document->balance;
+        // A corrected real voucher can coexist with cash pending return after an NC.
+        // Its fiscal/base limits still apply; this does not manufacture a collection.
+        return max(0,$document->total-FiscalNote::credits($document)-$document->retention_amount-$document->guarantee_amount);
+    }
     private static array $schemas = [];
 
     abstract protected static function validationRules(): array;
@@ -175,6 +194,7 @@ abstract class ReceivedRetentionService
         if (!empty($context['prevision'])) $document->fiscal_data()->update([$field=>json_encode($context['prevision'],JSON_THROW_ON_ERROR)]);
         FiscalDocumentPersistence::updateSettlementState($document);
         static::syncCreditBalance($document);
+        $document->getConnection()->afterCommit(fn()=>NoteAdjustment::resumeInvoice($document));
     }
 
     protected static function syncCreditBalance(Document $document): void

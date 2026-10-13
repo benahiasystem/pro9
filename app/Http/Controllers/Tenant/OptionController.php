@@ -162,6 +162,11 @@ class OptionController extends Controller
             \DB::connection('tenant')->table('document_iva_retention_operations')->whereIn('document_id',$documentIds)->delete();
             \DB::connection('tenant')->table('received_retention_uploads')->whereIn('document_id',$documentIds)->delete();
         }
+        $refundIds=\DB::connection('tenant')->table('document_note_refunds')->whereIn('document_id',$documentIds)->pluck('id');
+        \Modules\Finance\Models\GlobalPayment::where('payment_type',\App\Models\Tenant\DocumentNoteRefund::class)->whereIn('payment_id',$refundIds)->delete();
+        \DB::connection('tenant')->table('document_note_refunds')->whereIn('document_id',$documentIds)->delete();
+        \DB::connection('tenant')->table('document_note_adjustments')->whereIn('document_id',$documentIds)->delete();
+        \DB::connection('tenant')->table('document_items')->whereIn('document_id',$documentIds)->update(['affected_document_item_id'=>null]);
         foreach (['document_taxes','document_currency_totals','document_received_retentions','document_guarantee_funds','document_fiscal_data','document_emissions'] as $table) {
             \DB::connection('tenant')->table($table)->whereIn('document_id',$documentIds)->delete();
         }
@@ -181,6 +186,7 @@ class OptionController extends Controller
             $document->transport()->delete();
             $document->invoice()->delete();
             $document->note()->delete();
+            $document->unsetRelation('note');
             $document->affected_documents()->delete();
             Kardex::where('document_id', $document->id)->delete();
         }

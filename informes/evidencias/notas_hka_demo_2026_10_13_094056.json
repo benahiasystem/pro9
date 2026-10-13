@@ -1,0 +1,368 @@
+{
+    "date": "2026-10-13T09:40:56-04:00",
+    "environment": "demo",
+    "run_id": "094056",
+    "contract": "hka-ve-v1:f2ddb07c239b04319df1fc9b1e6b4db137f89b51f063fa4989fd1bc836d10f04",
+    "synthetic_commercial_data": true,
+    "email_sent": false,
+    "cases": [
+        {
+            "currency": "VES",
+            "type": "07",
+            "reason": "01",
+            "paid": false,
+            "regime": null,
+            "third": false,
+            "invoice_status": "confirmed",
+            "invoice_code": "200",
+            "note_status": "rejected",
+            "note_code": "203",
+            "diagnostic": "HKA rechazó los datos obligatorios o su formato.",
+            "number": 1435004685,
+            "control": null,
+            "commercial_total": 232,
+            "reference_number": 1470105307,
+            "validations": [
+                "Encabezado.Totales.FormasPago: [1015] Debe indicar al menos una forma de Pago (Value: 'System.Collections.Generic.List`1[Common.Models.Documento.FormasPago]')"
+            ]
+        },
+        {
+            "currency": "VES",
+            "type": "07",
+            "reason": "07",
+            "paid": false,
+            "regime": null,
+            "third": false,
+            "invoice_status": "confirmed",
+            "invoice_code": "200",
+            "note_status": "rejected",
+            "note_code": "203",
+            "diagnostic": "HKA rechazó los datos obligatorios o su formato.",
+            "number": 1435004686,
+            "control": null,
+            "commercial_total": 116,
+            "reference_number": 1470105308,
+            "validations": [
+                "Encabezado.Totales.FormasPago: [1015] Debe indicar al menos una forma de Pago (Value: 'System.Collections.Generic.List`1[Common.Models.Documento.FormasPago]')"
+            ]
+        },
+        {
+            "currency": "VES",
+            "type": "07",
+            "reason": "04",
+            "paid": false,
+            "regime": null,
+            "third": false,
+            "invoice_status": "confirmed",
+            "invoice_code": "200",
+            "note_status": "rejected",
+            "note_code": "203",
+            "diagnostic": "HKA rechazó los datos obligatorios o su formato.",
+            "number": 1435004687,
+            "control": null,
+            "commercial_total": 11.6,
+            "reference_number": 1470105309,
+            "validations": [
+                "Encabezado.Totales.FormasPago: [1015] Debe indicar al menos una forma de Pago (Value: 'System.Collections.Generic.List`1[Common.Models.Documento.FormasPago]')"
+            ]
+        },
+        {
+            "currency": "VES",
+            "type": "07",
+            "reason": "09",
+            "paid": false,
+            "regime": null,
+            "third": false,
+            "invoice_status": "confirmed",
+            "invoice_code": "200",
+            "note_status": "rejected",
+            "note_code": "203",
+            "diagnostic": "HKA rechazó los datos obligatorios o su formato.",
+            "number": 1435004688,
+            "control": null,
+            "commercial_total": 11.6,
+            "reference_number": 1470105310,
+            "validations": [
+                "Encabezado.Totales.FormasPago: [1015] Debe indicar al menos una forma de Pago (Value: 'System.Collections.Generic.List`1[Common.Models.Documento.FormasPago]')"
+            ]
+        },
+        {
+            "currency": "VES",
+            "type": "08",
+            "reason": "02",
+            "paid": false,
+            "regime": null,
+            "third": false,
+            "invoice_status": "confirmed",
+            "invoice_code": "200",
+            "note_status": "rejected",
+            "note_code": "203",
+            "diagnostic": "HKA rechazó los datos obligatorios o su formato.",
+            "number": 1415312382,
+            "control": null,
+            "commercial_total": 11.6,
+            "reference_number": 1470105311,
+            "validations": [
+                "Encabezado.Totales.FormasPago: [1015] Debe indicar al menos una forma de Pago (Value: 'System.Collections.Generic.List`1[Common.Models.Documento.FormasPago]')"
+            ]
+        },
+        {
+            "currency": "VES",
+            "type": "08",
+            "reason": "02",
+            "paid": true,
+            "regime": null,
+            "third": false,
+            "error_type": "Illuminate\\Validation\\ValidationException",
+            "validation_fields": [
+                "document"
+            ],
+            "validations": []
+        },
+        {
+            "currency": "VES",
+            "type": "08",
+            "reason": "01",
+            "paid": false,
+            "regime": null,
+            "third": false,
+            "invoice_status": "confirmed",
+            "invoice_code": "200",
+            "note_status": "rejected",
+            "note_code": "203",
+            "diagnostic": "HKA rechazó los datos obligatorios o su formato.",
+            "number": 1415312383,
+            "control": null,
+            "commercial_total": 11.6,
+            "reference_number": 1470105313,
+            "validations": [
+                "Encabezado.Totales.FormasPago: [1015] Debe indicar al menos una forma de Pago (Value: 'System.Collections.Generic.List`1[Common.Models.Documento.FormasPago]')"
+            ]
+        },
+        {
+            "currency": "VES",
+            "type": "08",
+            "reason": "01",
+            "paid": true,
+            "regime": null,
+            "third": false,
+            "error_type": "Illuminate\\Validation\\ValidationException",
+            "validation_fields": [
+                "document"
+            ],
+            "validations": []
+        },
+        {
+            "currency": "VES",
+            "type": "08",
+            "reason": "03",
+            "paid": false,
+            "regime": null,
+            "third": false,
+            "invoice_status": "confirmed",
+            "invoice_code": "200",
+            "note_status": "rejected",
+            "note_code": "203",
+            "diagnostic": "HKA rechazó los datos obligatorios o su formato.",
+            "number": 1415312384,
+            "control": null,
+            "commercial_total": 11.6,
+            "reference_number": 1470105315,
+            "validations": [
+                "Encabezado.Totales.FormasPago: [1015] Debe indicar al menos una forma de Pago (Value: 'System.Collections.Generic.List`1[Common.Models.Documento.FormasPago]')"
+            ]
+        },
+        {
+            "currency": "VES",
+            "type": "08",
+            "reason": "03",
+            "paid": true,
+            "regime": null,
+            "third": false,
+            "error_type": "Illuminate\\Validation\\ValidationException",
+            "validation_fields": [
+                "document"
+            ],
+            "validations": []
+        },
+        {
+            "currency": "USD",
+            "type": "07",
+            "reason": "01",
+            "paid": false,
+            "regime": null,
+            "third": false,
+            "invoice_status": "confirmed",
+            "invoice_code": "200",
+            "note_status": "rejected",
+            "note_code": "203",
+            "diagnostic": "HKA rechazó los datos obligatorios o su formato.",
+            "number": 1435004689,
+            "control": null,
+            "commercial_total": 232,
+            "reference_number": 1470105317,
+            "validations": [
+                "Encabezado.Totales.FormasPago: [1015] Debe indicar al menos una forma de Pago (Value: 'System.Collections.Generic.List`1[Common.Models.Documento.FormasPago]')"
+            ]
+        },
+        {
+            "currency": "USD",
+            "type": "07",
+            "reason": "07",
+            "paid": false,
+            "regime": null,
+            "third": false,
+            "invoice_status": "confirmed",
+            "invoice_code": "200",
+            "note_status": "rejected",
+            "note_code": "203",
+            "diagnostic": "HKA rechazó los datos obligatorios o su formato.",
+            "number": 1435004690,
+            "control": null,
+            "commercial_total": 116,
+            "reference_number": 1470105318,
+            "validations": [
+                "Encabezado.Totales.FormasPago: [1015] Debe indicar al menos una forma de Pago (Value: 'System.Collections.Generic.List`1[Common.Models.Documento.FormasPago]')"
+            ]
+        },
+        {
+            "currency": "USD",
+            "type": "07",
+            "reason": "04",
+            "paid": false,
+            "regime": null,
+            "third": false,
+            "invoice_status": "confirmed",
+            "invoice_code": "200",
+            "note_status": "rejected",
+            "note_code": "203",
+            "diagnostic": "HKA rechazó los datos obligatorios o su formato.",
+            "number": 1435004691,
+            "control": null,
+            "commercial_total": 11.6,
+            "reference_number": 1470105319,
+            "validations": [
+                "Encabezado.Totales.FormasPago: [1015] Debe indicar al menos una forma de Pago (Value: 'System.Collections.Generic.List`1[Common.Models.Documento.FormasPago]')"
+            ]
+        },
+        {
+            "currency": "USD",
+            "type": "07",
+            "reason": "09",
+            "paid": false,
+            "regime": null,
+            "third": false,
+            "invoice_status": "confirmed",
+            "invoice_code": "200",
+            "note_status": "rejected",
+            "note_code": "203",
+            "diagnostic": "HKA rechazó los datos obligatorios o su formato.",
+            "number": 1435004692,
+            "control": null,
+            "commercial_total": 11.6,
+            "reference_number": 1470105320,
+            "validations": [
+                "Encabezado.Totales.FormasPago: [1015] Debe indicar al menos una forma de Pago (Value: 'System.Collections.Generic.List`1[Common.Models.Documento.FormasPago]')"
+            ]
+        },
+        {
+            "currency": "USD",
+            "type": "08",
+            "reason": "02",
+            "paid": false,
+            "regime": null,
+            "third": false,
+            "invoice_status": "confirmed",
+            "invoice_code": "200",
+            "note_status": "rejected",
+            "note_code": "203",
+            "diagnostic": "HKA rechazó los datos obligatorios o su formato.",
+            "number": 1415312385,
+            "control": null,
+            "commercial_total": 11.6,
+            "reference_number": 1470105321,
+            "validations": [
+                "Encabezado.Totales.FormasPago: [1015] Debe indicar al menos una forma de Pago (Value: 'System.Collections.Generic.List`1[Common.Models.Documento.FormasPago]')"
+            ]
+        },
+        {
+            "currency": "USD",
+            "type": "08",
+            "reason": "02",
+            "paid": true,
+            "regime": null,
+            "third": false,
+            "error_type": "Illuminate\\Validation\\ValidationException",
+            "validation_fields": [
+                "document"
+            ],
+            "validations": []
+        },
+        {
+            "currency": "USD",
+            "type": "08",
+            "reason": "01",
+            "paid": false,
+            "regime": null,
+            "third": false,
+            "invoice_status": "confirmed",
+            "invoice_code": "200",
+            "note_status": "rejected",
+            "note_code": "203",
+            "diagnostic": "HKA rechazó los datos obligatorios o su formato.",
+            "number": 1415312386,
+            "control": null,
+            "commercial_total": 11.6,
+            "reference_number": 1470105323,
+            "validations": [
+                "Encabezado.Totales.FormasPago: [1015] Debe indicar al menos una forma de Pago (Value: 'System.Collections.Generic.List`1[Common.Models.Documento.FormasPago]')"
+            ]
+        },
+        {
+            "currency": "USD",
+            "type": "08",
+            "reason": "01",
+            "paid": true,
+            "regime": null,
+            "third": false,
+            "error_type": "Illuminate\\Validation\\ValidationException",
+            "validation_fields": [
+                "document"
+            ],
+            "validations": []
+        },
+        {
+            "currency": "USD",
+            "type": "08",
+            "reason": "03",
+            "paid": false,
+            "regime": null,
+            "third": false,
+            "invoice_status": "confirmed",
+            "invoice_code": "200",
+            "note_status": "rejected",
+            "note_code": "203",
+            "diagnostic": "HKA rechazó los datos obligatorios o su formato.",
+            "number": 1415312387,
+            "control": null,
+            "commercial_total": 11.6,
+            "reference_number": 1470105325,
+            "validations": [
+                "Encabezado.Totales.FormasPago: [1015] Debe indicar al menos una forma de Pago (Value: 'System.Collections.Generic.List`1[Common.Models.Documento.FormasPago]')"
+            ]
+        },
+        {
+            "currency": "USD",
+            "type": "08",
+            "reason": "03",
+            "paid": true,
+            "regime": null,
+            "third": false,
+            "error_type": "Illuminate\\Validation\\ValidationException",
+            "validation_fields": [
+                "document"
+            ],
+            "validations": []
+        }
+    ]
+}

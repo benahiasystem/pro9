@@ -34,6 +34,7 @@ class IncomeSummaryBuilder implements CashReportBuilderInterface
         $payments = collect();
         $total_document_payments = 0;
         $total_sale_note_payments = 0;
+        $total_note_refunds = 0;
 
         foreach ($cash->global_destination as $global_payment) 
         {
@@ -44,6 +45,10 @@ class IncomeSummaryBuilder implements CashReportBuilderInterface
             {
                 $total_document_payments += $row['payment_for_calculate'];
             }
+            elseif ($row['type'] === 'note_refund')
+            {
+                $total_note_refunds -= $row['payment_for_calculate'];
+            }
             else
             {
                 $total_sale_note_payments += $row['payment_for_calculate'];
@@ -53,6 +58,7 @@ class IncomeSummaryBuilder implements CashReportBuilderInterface
         return [
             'total_document_payments' => number_format($total_document_payments, 2, '.', ''),
             'total_sale_note_payments' => number_format($total_sale_note_payments, 2, '.', ''),
+            'total_note_refunds' => number_format($total_note_refunds, 2, '.', ''),
             'payments' => $payments,
         ];
     }

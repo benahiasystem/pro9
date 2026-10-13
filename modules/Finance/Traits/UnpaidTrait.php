@@ -114,6 +114,10 @@ trait UnpaidTrait
      */
     public function getTotalToPay($row)
     {
+        if (($row->type ?? '') === 'document') {
+            $document=Document::find($row->id);
+            if ($document) return max(0,(float)$document->balance);
+        }
         return (float)$row->total - (float)$row->total_payment - (float) $this->getTotalCreditNote($row) - (float) $this->getRetentionAmount($row);
     }
 

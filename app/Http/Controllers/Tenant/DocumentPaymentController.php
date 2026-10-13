@@ -44,7 +44,7 @@ class DocumentPaymentController extends Controller
         $document = Document::find($document_id);
 
         DocumentFiscalController::authorizeDocument($document);
-        $total = $document->total - $document->retention_amount - $document->guarantee_amount;
+        $total = $document->total - $document->retention_amount - $document->guarantee_amount - ($document->document_type_id === '01' ? \App\Services\Fiscal\FiscalNote::credits($document) : 0) + ($document->document_type_id === '01' ? \App\Services\Fiscal\FiscalNote::refunded($document) : 0);
 
         $total_paid = $document->payments()->whereNull('reversed_at')->sum('payment');
 

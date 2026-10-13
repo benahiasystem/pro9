@@ -33,6 +33,7 @@
         </div>
         <Keypress key-event="keyup" :multiple-keys="multiple" @success="checkKeyWithAlt"/>
         <div v-loading="loading">
+            <el-button v-if="form.note_refunds && form.note_refunds.available" class="mb-3" @click="showNoteOperations=true">Devoluciones y ajustes</el-button>
             <div v-if="fiscalEmissionNotice" class="row mb-4" data-testid="invoice-fiscal-result">
                 <div class="col-md-12">
                     <el-alert :title="fiscalEmissionNotice.title"
@@ -218,10 +219,12 @@
                 </el-popover>
             </template>
         </span>
+        <note-operations :showDialog.sync="showNoteOperations" :documentId="form.id" @changed="create"/>
     </el-dialog>
 </template>
 
 <script>
+import NoteOperations from './note-operations.vue';
 import RetentionForm from "./retention.vue"
 import {documentPdf} from "@mixins/document-pdf";
 import {documentEmail} from "@mixins/document-email";
@@ -234,13 +237,14 @@ import QrChatWsapp from '@viewsModuleQrChatBuho/ButtonSend.vue'
 
 export default {
     props: ['showDialog', 'recordId', 'showClose', 'isContingency', 'generatDispatch', 'dispatchId', 'isUpdate', 'configuration', 'table', 'failsInSend', 'failsMessage'],
-    components: {RetentionForm,
+    components: {NoteOperations, RetentionForm,
         Keypress,
         QrApi,
         QrChatWsapp
     },
     data() {
         return {
+            showNoteOperations:false,
             ...documentPdf.data(),
             ...documentFiscal.data(),
             showIvaRetention: false,
@@ -346,6 +350,7 @@ export default {
             }
         },
         recordId() {
+            this.showNoteOperations=false;
             this.showIvaRetention = false;
             this.resetFiscalAction();
             this.recordRequestSequence += 1;
@@ -459,6 +464,7 @@ export default {
             }
         },
         clickClose() {
+            this.showNoteOperations=false;
             this.$emit('update:showDialog', false)
             this.initForm()
         },

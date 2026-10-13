@@ -166,7 +166,7 @@ class ProcessMovementsReport implements ShouldQueue
             $payments = $payment->payment;
 
             // Convirtiendo el documento que esta hecho en dolares a bolívares
-            if ($payment instanceof \App\Models\Tenant\DocumentPayment) {
+            if (($payment instanceof \App\Models\Tenant\DocumentPayment || $payment instanceof \App\Models\Tenant\DocumentNoteRefund)) {
                 $payments = $payment->reversed_at ? 0 : $payment->cash_received_amount;
                 $amount = \App\Services\Fiscal\FiscalAmounts::convert($payments,$payment->currency_type_id,'VES',$payment->exchange_rate);
             } elseif ($document) {
@@ -260,7 +260,7 @@ class ProcessMovementsReport implements ShouldQueue
                 'reference' => $payment->reference,
                 'total' => $amount,
                 'number_full' => $numberFull,
-                'currency_type_id' => $payment instanceof \App\Models\Tenant\DocumentPayment ? $payment->currency_type_id : ($payment->associated_record_payment->currency_type_id ?? 'VES'),
+                'currency_type_id' => ($payment instanceof \App\Models\Tenant\DocumentPayment || $payment instanceof \App\Models\Tenant\DocumentNoteRefund) ? $payment->currency_type_id : ($payment->associated_record_payment->currency_type_id ?? 'VES'),
                 // 'document_type_description' => ($payment->associated_record_payment->document_type) ? $payment->associated_record_payment->document_type->description:'NV',
                 'document_type_description' => $this->getDocumentTypeDescription($row),
                 'person_name' => $person_name,

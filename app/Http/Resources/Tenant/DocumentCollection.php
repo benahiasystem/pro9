@@ -62,7 +62,7 @@ class DocumentCollection extends ResourceCollection
             }
 
             $btn_guide = $btn_note;
-            if (\App\Services\SpecialTaxRegimePolicy::applies($row)) $btn_note = false;
+            $btn_note=$row->document_type_id === '01' && \App\Services\Fiscal\FiscalNote::reason($row) === null;
             if ($btn_guide === false && ($row->state_type_id === '01')) {
                 // #750
                 $btn_guide = true;
@@ -71,7 +71,7 @@ class DocumentCollection extends ResourceCollection
             if ($row->affected_documents) {
                 $row->affected_documents->each(function ($note) use (&$btn_note, $row) {
                     if ($row->state_type_id === '05' && ($note->note_credit_type_id === '01' && $note->document->state_type_id === '05')) {
-                        $btn_note = false;
+                        // Credit limits are enforced per original line; ND remains available.
                     }
                 });
             }
@@ -164,6 +164,7 @@ class DocumentCollection extends ResourceCollection
                 'download_pdf' => $row->download_external_pdf,
                 'btn_voided' => $btn_voided,
                 'btn_note' => $btn_note,
+                'btn_note_operations' => \App\Services\Fiscal\FiscalNote::ordinary($row) && $row->document_type_id === '07',
                 'btn_guide' => $btn_guide,
                 //                'btn_ticket' => $btn_ticket,
                 'btn_recreate_document' => $btn_recreate_document,

@@ -108,3 +108,7 @@ Aplicar [el contrato IVA recibido](../mantener-retenciones-iva-recibidas-pro9/SK
 ## ISLR recibido
 
 Aplicar [contrato ISLR](../mantener-retenciones-islr-recibidas-pro9/SKILL.md): 000332 añade índice generado único nullable ISLR activo, 000334 previsión JSON separada, 000339 outbox ISLR con resultado privado saneado y FKs factura/comprobante/actor en000999 con retirada inversa. Conservar tabla/outbox IVA y uploads. Inventario actual 343 tablas de aplicación/344 archivos tenant; no convertir instalaciones existentes. Pruebas de coexistencia, idempotencia/concurrencia y rollback/repetición en MySQL temporal.
+
+## Trazabilidad de notas (13/10/2026)
+
+Inventario vigente:345 tablas de aplicación/346 migraciones tenant. 000318 incorpora partida original restrictiva e inventory_quantity;000323 incorpora UUID/hash/snapshot y unicidad documental;000340 crea devoluciones y000341 ajustes relacionados. Importes DECIMAL(12,2), cantidades(12,4), tasas(18,8); claves UUID únicas y FKs factura/nota/cobro/actor/ajuste en000999, con retirada inversa. Se extiende el consolidado para instalaciones nuevas: sin backfill, conversión ni reconstrucción de tenants reales. Verificar creación, semillas, índices, FKs, rollback y repetición en MySQL temporal junto con `TenantMigrationDataSeederTest` y [contrato de notas](../../../informes/notas_credito_debito_hka.md).

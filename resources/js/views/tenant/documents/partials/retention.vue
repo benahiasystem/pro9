@@ -12,7 +12,7 @@
         </table>
         <p v-if="draftForm">Los datos cargados quedan pendientes hasta cotejar el número y control reales de la factura.</p>
         <form v-if="canCreate" @submit.prevent="submit">
-            <label>Tipo</label><el-select v-model="form.tax_kind" @change="changeKind"><el-option label="IVA" value="IVA"/><el-option label="ISLR" value="ISLR"/></el-select>
+            <label>Tipo</label><el-select v-model="form.tax_kind" :disabled="Boolean(replacementKind)" @change="changeKind"><el-option label="IVA" value="IVA"/><el-option label="ISLR" value="ISLR"/></el-select>
             <label>Número de comprobante</label><el-input v-model="form.voucher_number"/>
             <label>RIF del agente según comprobante</label><el-input v-model="form.agent_rif"/>
             <label>Número de factura</label><el-input v-model="form.invoice_number"/>
@@ -44,7 +44,7 @@
 <script>
 // ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
 export default {
-    props: ['showDialog', 'documentId', 'draftForm'],
+    props: ['showDialog', 'documentId', 'draftForm', 'replacementEndpoint', 'replacementKind'],
     data: () => ({ records: [], form: {}, loading: false, error: '', proposal: null, prevision: null, concepts: [], document: {}, canCreate: true, sequence: 0 }),
     watch: { showDialog(value) { if (value) this.load(); else this.sequence++ }, documentId() { if (this.showDialog) this.load() } },
     methods: {
@@ -69,9 +69,10 @@ export default {
                     this.prevision = draft.iva_retention_prevision;
                     data = {document:{...draft,number_full:'',control_number:'',total_igv:draft.total_igv}};
                 }
+                if (this.replacementEndpoint) data.document={...data.document,total_igv:data.document.effective_total_igv,total_taxed:data.document.effective_total_taxed,total_value:data.document.effective_total_value};
                 this.document=data.document;
                 if (!this.documentId) { const response=await this.$http.get('/documents/retention/concepts'); if(sequence !== this.sequence)return; this.concepts=response.data.data; }
-                this.form = { agent_rif: '', invoice_control: data.document.control_number, invoice_number: data.document.number_full, fiscal_context: {concept_basis:null,iva_100_basis:null,evidence_reference:null,public_operation_scope:null,public_scope_reference:null}, document_id: this.documentId, agent_id: data.document.customer_id, tax_kind: 'IVA', voucher_number: '',
+                this.form = { agent_rif: '', invoice_control: data.document.control_number, invoice_number: data.document.number_full, fiscal_context: {concept_basis:null,iva_100_basis:null,evidence_reference:null,public_operation_scope:null,public_scope_reference:null}, document_id: this.documentId, agent_id: data.document.customer_id, tax_kind: this.replacementKind || 'IVA', voucher_number: '',
                     voucher_date: new Date().toLocaleDateString('en-CA', { timeZone: 'America/Caracas' }), currency_type_id: data.document.currency_type_id,
                     exchange_rate: data.document.exchange_rate_sale, base: data.document.total_igv, percentage: '', subtrahend: 0, amount: '', concept_id: null, attachment: null, operation_key: this.newKey() }
                 if (this.draftForm && this.draftForm.received_retentions && this.draftForm.received_retentions[0]) this.form = {...this.form,...this.draftForm.received_retentions[0]};
@@ -107,7 +108,7 @@ export default {
             this.loading = true; this.error = ''
             try {
                 if (this.draftForm) { this.$set(this.draftForm,'received_retentions',[...(this.draftForm.received_retentions || []).filter(row=>row.tax_kind !== this.form.tax_kind),{...this.form}]); this.close(); return; }
-                await this.$http.post('/documents/retention', this.form); await this.load(); this.$eventHub.$emit('reloadData'); this.$emit('changed')
+                await this.$http.post(this.replacementEndpoint || '/documents/retention', this.form); await this.load(); this.$eventHub.$emit('reloadData'); this.$emit('changed')
             }
             catch (e) { this.error = this.requestError(e,'No se pudo registrar el comprobante.') }
             finally { this.loading = false }

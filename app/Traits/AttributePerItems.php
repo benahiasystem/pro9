@@ -94,6 +94,7 @@
 
             $item = $model->item_id;
             $qty = $model->quantity;
+            if ($model instanceof DocumentItem && \App\Services\Fiscal\FiscalNote::ordinary($model->document)) $qty=$model->inventory_quantity;
 
             $datetime = null;
             if (isset($arrayModel['date_of_issue'])) {

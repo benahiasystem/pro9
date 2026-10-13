@@ -32,6 +32,7 @@ class DocumentRequest extends FormRequest
     {
         $id = $this->input('id');
         return [
+            'note_creation_key' => 'required_if:document_type_id,07,08|nullable|uuid',
             'control_number' => 'prohibited',
             'issuer' => 'prohibited',
             'third_party_id' => 'nullable|integer|min:1',
@@ -94,6 +95,7 @@ class DocumentRequest extends FormRequest
         });
 
         $validator->after(function (Validator $validator) {
+            if (in_array($this->input('document_type_id'),['07','08'],true) && $this->filled('note_creation_key')) return; // Original lots are resolved under locks by FiscalNote.
             $items = $this->input('items', []);
 
             if (!is_array($items) || empty($items)) {

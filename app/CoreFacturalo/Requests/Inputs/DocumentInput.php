@@ -113,6 +113,7 @@ class DocumentInput
             'exchange_rate_date' => $inputs['exchange_rate_date'] ?? $inputs['date_of_issue'],
             'taxes' => $inputs['taxes'] ?? [],
             'fiscal_data' => $inputs['fiscal_data'] ?? [],
+            'note_creation_key' => $inputs['note_creation_key'] ?? null,
             'third_party_id' => $inputs['third_party_id'] ?? null,
             'received_retentions' => $inputs['received_retentions'] ?? [],
             'islr_retention_prevision' => $inputs['islr_retention_prevision'] ?? null,
@@ -205,6 +206,10 @@ class DocumentInput
         if (array_key_exists('items', $inputs)) {
             $items = [];
             foreach ($inputs['items'] as $row) {
+                if (in_array($inputs['document_type_id'], ['07','08'], true) && !empty($inputs['note_creation_key'])) {
+                    $items[] = $row; // The locked original is resolved by FiscalNote before persistence.
+                    continue;
+                }
                 $item = Item::query()->find($row['item_id']);
                 /** @var Item $item */
 

@@ -134,3 +134,7 @@ Resultados registrados: la corrida de esquema inicial y matriz IVA pasó 7 prueb
 El esquema inicial tiene 342 tablas de aplicación y 343 migraciones tenant. No se modificaron ni convirtieron tenants existentes. Todas las bases propias de pruebas se eliminan al finalizar; los registros fiscales de control DEMO permanecen en HKA y sus retenciones de prueba fueron eliminadas/conciliadas. No se enviaron mensajes al proveedor.
 
 La compilación de assets corresponde al usuario según `frontend-build`. Durante la verificación se actualizó externamente el manifiesto y los bundles después de las fuentes finales; el agente no ejecutó build ni editó los generados. La comprobación de fuentes/plantillas no acredita por sí sola la aceptación visual completa ni el circuito fiscal que HKA rechazó. Producción continúa fuera del alcance.
+
+## Actualización de notas del 13/10/2026
+
+El contrato vigente de notas domésticas, devoluciones y ajustes está en [notas de crédito y débito HKA](notas_credito_debito_hka.md). Reemplaza las restricciones históricas de notas vinculadas de esta etapa para el flujo ordinario identificado por UUID de creación. ND cobradas:34 variantes confirmadas/consultadas con PDF real; NC:36 variantes rechazadas por203/1015, con efectos comerciales guardados y capacidad fiscal bloqueada, sin pagos ficticios. Ajustes IGTF sin contrato/aceptación específica conservan pendientes. Esquema sólo para instalaciones nuevas; no se convirtió ningún tenant real.

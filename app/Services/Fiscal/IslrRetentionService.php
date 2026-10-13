@@ -17,8 +17,8 @@ final class IslrRetentionService extends ReceivedRetentionService
     public static function context(array $input): array
     {
         FiscalDocumentPersistence::assertNoSecrets($input);
-        return validator($input, ['concept_basis'=>'required|string|max:255|regex:/\S/',
-            'evidence_reference'=>'required|string|max:255|regex:/\S/'])->validate();
+        return validator($input, ['concept_basis'=>'required|string|max:255|regex:/\S/D',
+            'evidence_reference'=>'required|string|max:255|regex:/\S/D'])->validate();
     }
 
     public static function concepts(): array
@@ -36,7 +36,7 @@ final class IslrRetentionService extends ReceivedRetentionService
 
     protected static function validationRules(): array
     {
-        return ['operation_key'=>'required|uuid','voucher_number'=>'required|string|max:50|regex:/\S/',
+        return ['operation_key'=>'required|uuid','voucher_number'=>'required|string|max:50|regex:/\S/D',
             'voucher_date'=>'required|date_format:Y-m-d','agent_rif'=>'required|string|max:12',
             'invoice_number'=>'required|string|max:40','invoice_control'=>'required|string|max:32',
             'concept_id'=>'required|string|regex:/^[0-9]{3}$/D', 'base'=>'required|numeric|gt:0|max:9999999999.99',
@@ -118,11 +118,11 @@ final class IslrRetentionService extends ReceivedRetentionService
     {
         $date = $input['voucher_date'];
         if ($date < $document->date_of_issue->format('Y-m-d') || $date > now()->format('Y-m-d')) FiscalAmounts::error('voucher_date','El comprobante debe corresponder a la factura y no ser futuro.');
-        $proposal = static::proposal($document->customer_id,$date,$document->total_value,$document->currency_type_id,
+        $proposal = static::proposal($document->customer_id,$date,FiscalNote::remaining($document,'total_value'),$document->currency_type_id,
             $input+['base_mode'=>'declared'],$document->exchange_rate_sale);
         if (!$proposal['eligible'] || $input['agent_rif'] !== $proposal['agent_rif']) FiscalAmounts::error('agent_rif','El agente o la operación no acreditan facultad ISLR vigente.');
         if (!ExchangeRateMath::rational($input['amount'])->isEqualTo(ExchangeRateMath::rational($proposal['voucher_amount']))) FiscalAmounts::error('amount','El importe no coincide con base, porcentaje y sustraendo declarados.');
-        if ((float)$proposal['amount'] > $document->balance + 0.005) FiscalAmounts::error('amount','La retención supera el saldo disponible.');
+        if ((float)$proposal['amount'] > static::settlementLimit($document) + 0.005) FiscalAmounts::error('amount','La retención supera el saldo disponible.');
         static::validateSupport($document,$input);
     }
 

@@ -438,7 +438,8 @@ class DashboardData
 
         foreach ($documents->concat($sale_notes) as $row) {
             $factor = ($row->currency_type_id == 'USD') ? $row->exchange_rate_sale : '1.00000000';
-            $balance = (float) \App\Services\ExchangeRates\ExchangeRateMath::finalAmount(\App\Services\ExchangeRates\ExchangeRateMath::rational($row->total)->minus($row->total_credit_notes ?? 0)->minus($row->total_payment ?? 0)->multipliedBy($factor), 2);
+            $remaining=($row->type ?? '') === 'document' ? max(0,(\App\Models\Tenant\Document::find($row->id)->balance ?? 0)) : $row->total-($row->total_credit_notes ?? 0)-($row->total_payment ?? 0);
+            $balance=(float) \App\Services\ExchangeRates\ExchangeRateMath::multiply($remaining,$factor,2);
 
             if ($balance <= 0.005) {
                 continue;

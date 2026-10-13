@@ -29,20 +29,22 @@ final class HkaPayloadBuilder
         foreach (['number','name','address','country_id'] as $field) {
             if (empty($d['issuer'][$field])) FiscalAmounts::error('issuer.'.$field,'Falta el snapshot fiscal del emisor.');
         }
+        $ordinaryNote=HkaNotePolicy::snapshot($d);
+        if ($ordinaryNote) HkaNotePolicy::assertSnapshot($d);
         $fiscal = $d['fiscal_data'] ?? [];
         $specialRegime = isset($fiscal['special_tax_regime_id']);
         $regimeDescription = $specialRegime ? \App\Services\SpecialTaxRegimePolicy::description($fiscal['special_tax_regime_id'], $fiscal['catalog_snapshot']['special_tax_regime_id'] ?? []) : null;
-        $thirdParty = ($fiscal['transaction_type_id'] ?? '01') === '99';
+        $thirdParty = ($fiscal['transaction_type_id'] ?? '01') === '99' || ($ordinaryNote && !empty($fiscal['third_party']));
         $operation = $d['invoice']['operation_type_id'] ?? '0101';
         $exportation = \App\Services\ExportInvoicePolicy::isExport($operation);
         if ((!$exportation && ($operation !== '0101' || ($d['total_exportation'] ?? 0) > 0)) || (!$thirdParty && !empty($fiscal['third_party'])) || !empty($fiscal['conditional_data'])) {
             FiscalAmounts::error('fiscal_data','La operación, régimen o condición fiscal seleccionada no está habilitada.');
         }
-        if ($thirdParty) {
+        if ($thirdParty && !$ordinaryNote) {
             if ($d['document_type_id'] !== '01' || $operation !== '0101' || ($d['payment_condition_id'] ?? null) !== '01') FiscalAmounts::error('fiscal_data', 'La transacción 99 requiere una Factura de venta interna al contado.');
             \App\Services\ThirdPartyInvoicePolicy::hkaThirdParty($fiscal['third_party'] ?? []);
         }
-        if ($thirdParty || $specialRegime) HkaDomesticInvoicePolicy::assertSnapshot($d);
+        if (($thirdParty || $specialRegime) && !$ordinaryNote) HkaDomesticInvoicePolicy::assertSnapshot($d);
         if ($exportation) {
             $term = \App\Services\ExportInvoicePolicy::INCOTERMS[$operation];
             if (empty($d['items'])) FiscalAmounts::error('items', 'La exportación requiere líneas de bienes.');
@@ -65,7 +67,7 @@ final class HkaPayloadBuilder
         }
         $transaction = $fiscal['transaction_type_id'] ?? '01';
         $provider = $fiscal['catalog_snapshot']['provider_type_id']['code'] ?? null;
-        if (!in_array($transaction,['01','98','99'],true) || ($transaction==='98' && $d['document_type_id']!=='08')) FiscalAmounts::error('fiscal_data','Transacción HKA no soportada.');
+        if (!in_array($transaction,$ordinaryNote ? ['02','03','04'] : ['01','98','99'],true) || ($transaction==='98' && $d['document_type_id']!=='08')) FiscalAmounts::error('fiscal_data','Transacción HKA no soportada.');
         $buyer = $d['customer'];
         $number = $buyer['fiscal_profile']['rif'] ?? ($buyer['number'] ?? '');
         $identity = !empty($buyer['fiscal_profile']['rif']) ? substr($buyer['fiscal_profile']['rif'], 0, 1) : ($buyer['hka_identity_code'] ?? null);
@@ -127,7 +129,9 @@ final class HkaPayloadBuilder
             if (!empty($p['reversed_at']) || (!empty($p['receipt_parent_id']) && $d['document_type_id']==='01')) continue;
             $method=$p['payment_method_snapshot']['hka_code'] ?? null;
             if (!$method) FiscalAmounts::error('payments','Falta equivalencia HKA de medio de pago.');
-            $forms[]=['forma'=>$method,'moneda'=>$p['currency_type_id'],'monto'=>self::money($p['original_amount']+$p['tax_amount']),
+            $paymentTax=$p['tax_amount'];
+            if ($ordinaryNote && $d['document_type_id'] === '08' && !array_filter($d['taxes'],fn ($t)=>$t['tax_kind'] === 'IGTF' && ($t['document_payment_id'] ?? null) === ($p['id'] ?? null))) $paymentTax=0;
+            $forms[]=['forma'=>$method,'moneda'=>$p['currency_type_id'],'monto'=>self::money($p['original_amount']+$paymentTax),
                 'fecha'=>self::date($p['date_of_payment']),'tipoCambio'=>(string)$p['exchange_rate']];
         }
         $totals=['nroItems'=>(string)count($lines),'montoGravadoTotal'=>self::money($d['total_taxed']),
@@ -179,7 +183,7 @@ final class HkaPayloadBuilder
                 $payload['documentoElectronico']['infoAdicional'][] = ['campo'=>'Condición fiscal '.$label,'valor'=>'Sujeto Pasivo Especial'];
             }
         }
-        if ($thirdParty || $specialRegime || (!$exportation && ($d['document_type_id'] === '01' || $transaction === '98') && ($d['currency_type_id'] === 'USD' || $igtf > 0))) $payload = HkaDomesticMoney::adapt($payload, $d);
+        if ($ordinaryNote || $thirdParty || $specialRegime || (!$exportation && ($d['document_type_id'] === '01' || $transaction === '98') && ($d['currency_type_id'] === 'USD' || $igtf > 0))) $payload = HkaDomesticMoney::adapt($payload, $d);
         (new HkaSchemaValidator())->validate($payload);
         return $payload;
     }

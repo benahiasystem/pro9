@@ -105,20 +105,26 @@ final class FiscalDocumentPersistence
         unset($line['item']['cod_digemid']);
         $line['item']['hka_unit_code'] = DB::connection('tenant')->table('cat_unit_types')->where('id', $line['item']['unit_type_id'])->where('active',1)->value('hka_code');
         if (!$line['item']['hka_unit_code']) FiscalAmounts::error('items.unit_type_id','Seleccione una unidad activa con equivalencia HKA.');
-        return $line;
+        return isset($line['item_id']) ? FiscalNoteInventory::capture($line) : $line;
     }
 
     public static function fiscalData(Document $document, array $input = []): void
     {
         $db = $document->getConnection();
+        $relatedIgtf=($document->note->note_debit_type_id ?? null) === 'IGTF' && !empty($document->note->effect_snapshot['invoice_fiscal_data']);
+        $inherits=FiscalNote::ordinary($document) || $relatedIgtf;
         if ($document->note && $document->note->affected_document_id) {
             $affected = Document::findOrFail($document->note->affected_document_id);
             if (\App\Services\ExportInvoicePolicy::isExport($affected->invoice->operation_type_id ?? '')) FiscalAmounts::error('note', 'Las notas de exportación todavía no están habilitadas.');
-            if (\App\Services\SpecialTaxRegimePolicy::applies($affected)) FiscalAmounts::error('note', 'Las notas vinculadas a regímenes especiales todavía no están habilitadas.');
-            if (\App\Services\ThirdPartyInvoicePolicy::isThirdParty($affected)) FiscalAmounts::error('note', 'Las notas de facturas por cuenta de terceros todavía no están habilitadas.');
+            if (!$inherits && \App\Services\SpecialTaxRegimePolicy::applies($affected)) FiscalAmounts::error('note', 'Las notas vinculadas a regímenes especiales todavía no están habilitadas.');
+            if (!$inherits && \App\Services\ThirdPartyInvoicePolicy::isThirdParty($affected)) FiscalAmounts::error('note', 'Las notas de facturas por cuenta de terceros todavía no están habilitadas.');
             if ($affected->document_type_id !== '01' || $affected->customer_id !== $document->customer_id || $affected->establishment_id !== $document->establishment_id || $affected->fiscal_environment !== $document->fiscal_environment || $affected->currency_type_id !== $document->currency_type_id) FiscalAmounts::error('note','La factura afectada debe corresponder al cliente, sucursal, ambiente y moneda de la nota.');
-            $document->note->data_affected_document = $affected->only(['document_type_id','series','number','date_of_issue','total','control_number']);
+            $document->note->data_affected_document = $affected->only(['document_type_id','series','number','date_of_issue','total','control_number','currency_type_id','exchange_rate_sale']);
             $document->note->save();
+        }
+        if ($inherits) {
+            $original=$document->note->effect_snapshot['invoice_fiscal_data'] ?? [];
+            $input=array_replace($original,$input);
         }
         self::assertNoSecrets($input);
         $snapshot = [];
@@ -129,6 +135,10 @@ final class FiscalDocumentPersistence
         }
         foreach (['provider_type_id' => 'cat_providers_types', 'transaction_type_id' => 'cat_transactions_types', 'special_tax_regime_id' => 'cat_special_tax_regime'] as $key => $table) {
             $id = $input[$key] ?? ($key === 'transaction_type_id' ? '01' : null);
+            if ($inherits && $key !== 'transaction_type_id') {
+                if (isset($original['catalog_snapshot'][$key])) $snapshot[$key]=$original['catalog_snapshot'][$key];
+                continue;
+            }
             if ($id !== null) {
                 $row = $db->table($table)->where('id', $id)->where('active', 1)->first();
                 if (!$row) FiscalAmounts::error('fiscal_data.'.$key, 'Seleccione un valor fiscal activo.');
@@ -164,7 +174,7 @@ final class FiscalDocumentPersistence
             if ($g['amount']>$document->balance+$document->guarantee_amount+0.005) FiscalAmounts::error('guarantee_fund','El fondo supera el saldo disponible.');
             $document->guarantee_fund()->updateOrCreate(['document_id'=>$document->id],$g);
         }
-        if ($document->fresh()->balance < -0.005) FiscalAmounts::error('document','Las aplicaciones superan el saldo del documento.');
+        if ($document->document_type_id !== '07' && $document->fresh()->balance < -0.005) FiscalAmounts::error('document','Las aplicaciones superan el saldo del documento.');
         self::updateSettlementState($document);
     }
 
@@ -276,7 +286,7 @@ final class FiscalDocumentPersistence
             validator($input, ['date_of_payment'=>'required|date_format:Y-m-d', 'exception_basis'=>'nullable|string|max:255', 'financial_intermediation'=>'nullable|in:none,financial_institution'])->validate();
             $company = Company::query()->lockForUpdate()->firstOrFail();
             $document = Document::query()->lockForUpdate()->findOrFail($document->id);
-            if ($document->isVoidedOrRejected() || $document->document_type_id !== '01') FiscalAmounts::error('document','Sólo se cobran facturas vigentes.');
+            if ($document->isVoidedOrRejected() || ($document->document_type_id !== '01' && !($document->document_type_id === '08' && FiscalNote::ordinary($document)))) FiscalAmounts::error('document','Sólo se cobran facturas vigentes.');
             $key = $input['operation_key'] ?? (string) Str::uuid();
             if (!Str::isUuid($key)) FiscalAmounts::error('operation_key', 'Use un UUID válido.');
             $existing = DocumentPayment::where('operation_key', $key)->first();
@@ -316,9 +326,10 @@ final class FiscalDocumentPersistence
             if (!$initial && $values['tax_amount'] > 0 && \App\Services\ExportInvoicePolicy::isExport($document->invoice->operation_type_id ?? '')) {
                 FiscalAmounts::error('payment', 'El IGTF de un cobro posterior requiere una nota de exportación; ese flujo todavía no está habilitado.');
             }
-            if (!$initial && $values['tax_amount'] > 0 && \App\Services\SpecialTaxRegimePolicy::applies($document)) FiscalAmounts::error('payment', 'El IGTF posterior requiere una nota vinculada a régimen especial; ese flujo todavía no está habilitado.');
-            if (!$initial && $values['tax_amount'] > 0 && \App\Services\ThirdPartyInvoicePolicy::isThirdParty($document)) FiscalAmounts::error('payment', 'El IGTF de un cobro posterior requiere una nota por cuenta de terceros; ese flujo todavía no está habilitado.');
+            if (!$initial && !FiscalNote::ordinary($document) && $values['tax_amount'] > 0 && \App\Services\SpecialTaxRegimePolicy::applies($document)) FiscalAmounts::error('payment', 'El IGTF posterior requiere una nota vinculada a régimen especial; ese flujo todavía no está habilitado.');
+            if (!$initial && !FiscalNote::ordinary($document) && $values['tax_amount'] > 0 && \App\Services\ThirdPartyInvoicePolicy::isThirdParty($document)) FiscalAmounts::error('payment', 'El IGTF de un cobro posterior requiere una nota por cuenta de terceros; ese flujo todavía no está habilitado.');
             $method = PaymentMethodType::findOrFail($input['payment_method_type_id']);
+            if ($document->document_type_id === '07') FiscalAmounts::error('document','Las NC no reciben cobros; utilice Registrar devolución.');
             if (!$initial && $values['payment'] > $document->balance + 0.005) FiscalAmounts::error('payment', 'El pago supera el saldo disponible.');
             if ($initial && $document->emission()->where('status', '!=', 'not_requested')->exists()) FiscalAmounts::error('emission','No se modifican los pagos de una operación preparada.');
             if (!empty($input['id'])) FiscalAmounts::error('id', 'Revierta el pago y registre uno nuevo; no se editan pagos contabilizados.');
@@ -371,8 +382,10 @@ final class FiscalDocumentPersistence
         $note->issuer = array_replace($invoice->issuer, ['fiscal_profile'=>$payment->fiscal_context['issuer'] ?? []]);
         $note->customer = self::withHkaIdentity(array_replace((array)$invoice->customer, ['fiscal_profile'=>$payment->fiscal_context['buyer'] ?? []]));
         $note->save();
+        $reference=FiscalNote::ordinary($invoice) ? $invoice->note->affected_document : $invoice;
         $note->note()->create(['note_type' => 'debit', 'note_debit_type_id' => 'IGTF', 'note_description' => 'IGTF sobre pago posterior',
-            'affected_document_id' => $invoice->id, 'data_affected_document' => array_merge($invoice->only(['series','number','date_of_issue','total','control_number','currency_type_id','exchange_rate_sale']), ['document_type_id'=>'01'])]);
+            'effect_snapshot'=>FiscalNote::ordinary($invoice) ? ['invoice_fiscal_data'=>$invoice->fiscal_data->only(['provider_type_id','special_tax_regime_id','catalog_snapshot','third_party','third_party_person_id'])] : null,
+            'affected_document_id' => $reference->id, 'data_affected_document' => array_merge($reference->only(['series','number','date_of_issue','total','control_number','currency_type_id','exchange_rate_sale']), ['document_type_id'=>'01'])]);
         self::fiscalData($note, ['transaction_type_id' => '98']);
         return $note;
     }
@@ -435,7 +448,7 @@ final class FiscalDocumentPersistence
             if (abs($data['amount'] - $expected) > 0.01) FiscalAmounts::error('amount','El importe no coincide con base, porcentaje y sustraendo.');
             $applied = FiscalAmounts::convert($data['amount'], $data['currency_type_id'], $document->currency_type_id, $data['exchange_rate']);
             if ($document->document_type_id !== '01' || $document->isVoidedOrRejected()) FiscalAmounts::error('document','Sólo se retiene una factura vigente.');
-            if ($applied > $document->balance + 0.005) FiscalAmounts::error('amount','La retención supera el saldo disponible.');
+            if ($applied > ReceivedRetentionService::settlementLimit($document) + 0.005) FiscalAmounts::error('amount','La retención supera el saldo disponible.');
             if ($data['tax_kind']==='IVA') {
                 $fiscalIva = FiscalAmounts::convert($document->total_igv,$document->currency_type_id,'VES',$document->exchange_rate_sale);
                 $retainedVes = $document->received_retentions()->where('tax_kind','IVA')->applied()->get()->sum(fn($row)=>FiscalAmounts::convert($row->amount,$row->currency_type_id,'VES',$row->exchange_rate));
@@ -466,6 +479,7 @@ final class FiscalDocumentPersistence
             Company::query()->lockForUpdate()->firstOrFail();
             $document = Document::query()->lockForUpdate()->findOrFail($payment->document_id);
             $payment = DocumentPayment::query()->lockForUpdate()->findOrFail($payment->id);
+            if (\App\Models\Tenant\DocumentNoteRefund::where('document_payment_id',$payment->id)->whereNull('reversed_at')->exists()) FiscalAmounts::error('payment','Revierta las devoluciones asociadas antes de revertir este cobro.');
             if ($payment->receipt_parent_id) FiscalAmounts::error('payment','Revierta el pago que originó este cargo IGTF.');
             if ($payment->reversed_at) return;
             if (trim($reason)==='') FiscalAmounts::error('reason','Indique el motivo de reversión.');

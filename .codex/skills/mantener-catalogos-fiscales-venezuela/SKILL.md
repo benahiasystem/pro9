@@ -48,3 +48,7 @@ Antes de cambiar cualquier categoría cubierta por esta skill, leer el inventari
 - Probar el inventario completo, las tablas ausentes, los bancos, los 30 motivos de gasto, métodos de pago, los ocho tipos de identidad activos, códigos de traslado, afectaciones `10/20` y paneles UBL.
 - Verificar en una base tenant nueva que la migración deje `expense_reasons` vacía antes del seeding y que `TenancyDatabaseSeeder` cargue exactamente los 30 motivos contractuales.
 - Ejecutar las pruebas de contrato de catálogos, IVA, ventas sin Boleta, datos tenant y SUNAT/SENIAT, además de `git diff --check` y lint PHP.
+
+## Motivos de notas habilitados (13/10/2026)
+
+Mantener los IDs existentes y selector exclusivo por tipo: NC01 anulación,07 devolución,04 descuento,09 disminución de precios/cálculos; ND02 incremento,01 intereses,03 despacho/fletes/seguros/embalaje. IGTF es exclusivo del flujo especializado, nunca motivo manual ordinario. Mapeos de transacción HKA y capacidades verificadas se documentan en [notas](../../../informes/notas_credito_debito_hka.md); no cambiar códigos ante rechazos1015 ni confundir catálogo local con aceptación fiscal. No se modifican semillas de motivos en esta entrega.

@@ -3,8 +3,7 @@
 @section('content')
 
     <tenant-documents-note
-        :user="{{ json_encode(auth()->user()) }}"
-        :auth-user="{{json_encode(Auth::user()->getDataOnlyAuthUser())}}"
+        :auth-user="{{ json_encode(Auth::user()->only(['id', 'type', 'establishment_id'])) }}"
         :document_affected="{{ json_encode($document_affected) }}"
         :configuration="{{\App\Models\Tenant\Configuration::getPublicConfig()}}"
     ></tenant-documents-note>

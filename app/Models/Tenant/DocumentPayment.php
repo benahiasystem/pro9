@@ -203,7 +203,7 @@ class DocumentPayment extends ModelTenant
     {
         return $query->whereHas('associated_record_payment', function ($document) {
                         $document->whereStateTypeAccepted()
-                            ->filterDocumentTypeInvoice();
+                            ->whereIn('document_type_id',['01','08']);
                     })
                     ->filterCashPaymentWithoutDestination();
     }
@@ -220,7 +220,7 @@ class DocumentPayment extends ModelTenant
     {
         return $query->whereHas('associated_record_payment', function ($document) {
                         $document->whereStateTypeAccepted()
-                            ->filterDocumentTypeInvoice();
+                            ->whereIn('document_type_id',['01','08']);
                     })
                     ->whereCashPaymentMethodType();
     }

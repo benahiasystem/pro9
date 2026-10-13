@@ -346,7 +346,8 @@
                 $income_payment +
                 $cash_pos +
                 $technical_service_payment;
-            $egress = $expense_payment +
+            $refund_payment = $this->getSumPayment($cash, \App\Models\Tenant\DocumentNoteRefund::class, $requestCurrencyTipeId);
+            $egress = $refund_payment + $expense_payment +
                 $purchase_payment;
 
             $balance =
@@ -394,7 +395,7 @@
             return $record->where('payment_type', $model)->sum(function ($row) use($model, $requestCurrencyTipeId) {
 
 
-                if ($row->payment instanceof \App\Models\Tenant\DocumentPayment) {
+                if ($row->payment instanceof \App\Models\Tenant\DocumentPayment || $row->payment instanceof \App\Models\Tenant\DocumentNoteRefund) {
                     $receipt = $row->payment;
                     if ($receipt->reversed_at) return 0;
                     return \App\Services\Fiscal\FiscalAmounts::convert($receipt->cash_received_amount, $receipt->currency_type_id, $requestCurrencyTipeId, $receipt->exchange_rate);
@@ -538,7 +539,8 @@
                 $technical_service_payment +
                 $initial_balance +
                 $transfer_beween_account;
-            $egress = $expense_payment +
+            $refund_payment=$this->getSumPayment($bank_account->global_destination, \App\Models\Tenant\DocumentNoteRefund::class);
+            $egress = $refund_payment + $expense_payment +
                 $purchase_payment;
 
             $balance = $entry -
@@ -608,7 +610,8 @@
                     $bankLoan +
                     $income_payment +
                     $technical_service_payment;
-                $egress = $expense_payment +
+                $refund_payment=$this->getSumPayment($row->global_destination, \App\Models\Tenant\DocumentNoteRefund::class, $requestCurrencyTipeId);
+                $egress = $refund_payment + $expense_payment +
                     $purchase_payment +
                     $bankLoanPayment
                 ;

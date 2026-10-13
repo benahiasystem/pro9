@@ -310,7 +310,7 @@ class UnpaidController extends Controller
 
             if ($model === 'document') {
                 $comprobantes = $comprobantes
-                            ->join('invoices', 'documents.id', '=', 'invoices.document_id')
+                            ->leftJoin('invoices', 'documents.id', '=', 'invoices.document_id')
                             ->whereIn('documents.document_type_id', ['01','08']) // model document
                             ->select(
                                 $model_plural.'.id',
@@ -318,7 +318,7 @@ class UnpaidController extends Controller
                                 'invoices.date_of_due',
                                 \DB::raw('IFNULL(payments.total_payment, 0) as total_payment')
                             )
-                            ->whereRaw($model_plural. '.total - IFNULL(payments.total_payment, 0) - (SELECT COALESCE(SUM(applied_amount),0) FROM document_received_retentions WHERE document_id=documents.id) - (SELECT COALESCE(SUM(amount),0) FROM document_guarantee_funds WHERE document_id=documents.id) > 0');
+                            ->whereRaw(\App\Services\Fiscal\FiscalNoteBalance::sql().' > 0');
             } else if ($model === 'sale_note') {
                 $comprobantes = $comprobantes
                             ->select(

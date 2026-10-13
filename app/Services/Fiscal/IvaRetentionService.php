@@ -100,19 +100,19 @@ final class IvaRetentionService extends ReceivedRetentionService
         if (!ExchangeRateMath::rational($input['amount'])->isEqualTo(ExchangeRateMath::rational($expected))) FiscalAmounts::error('amount', 'El importe debe corresponder al porcentaje del IVA retenido.');
         $base = FiscalAmounts::convert($input['base'], $input['currency_type_id'], $document->currency_type_id, $input['exchange_rate']);
         $applied = FiscalAmounts::convert($input['amount'], $input['currency_type_id'], $document->currency_type_id, $input['exchange_rate']);
-        $fiscalIva = FiscalAmounts::convert($document->total_igv,$document->currency_type_id,'VES',$document->exchange_rate_sale);
+        $fiscalIva = FiscalAmounts::convert(FiscalNote::remaining($document,'total_igv'),$document->currency_type_id,'VES',$document->exchange_rate_sale);
         if ($fiscalIva <= 0) FiscalAmounts::error('base','El IVA fiscal en VES debe ser positivo a dos decimales.');
         $voucherIva = FiscalAmounts::convert($input['base'],$input['currency_type_id'],'VES',$input['exchange_rate']);
         $voucherAmount = FiscalAmounts::convert($input['amount'],$input['currency_type_id'],'VES',$input['exchange_rate']);
         if ($voucherIva > $fiscalIva + 0.01 || $voucherAmount > round($fiscalIva * $proposal['percentage'] / 100,2) + 0.01
-            || $applied > $document->balance + 0.005) FiscalAmounts::error('amount', 'La retención supera el IVA fiscal conservado o el saldo disponible.');
+            || $applied > static::settlementLimit($document) + 0.005) FiscalAmounts::error('amount', 'La retención supera el IVA fiscal conservado o el saldo disponible.');
         static::voucherTaxableBase($document,$input['base'],$input['currency_type_id'],$input['exchange_rate']);
         static::validateSupport($document,$input);
     }
 
     public static function voucherTaxableBase(Document $document, $iva, string $currency, $rate): float
     {
-        $fiscalIva = FiscalAmounts::convert($document->total_igv,$document->currency_type_id,'VES',$document->exchange_rate_sale);
+        $fiscalIva = FiscalAmounts::convert(FiscalNote::remaining($document,'total_igv'),$document->currency_type_id,'VES',$document->exchange_rate_sale);
         if ($fiscalIva <= 0) FiscalAmounts::error('base','La factura no tiene IVA fiscal positivo.');
         $voucherIva = FiscalAmounts::convert($iva,$currency,'VES',$rate);
         $document->loadMissing('taxes');
@@ -120,7 +120,7 @@ final class IvaRetentionService extends ReceivedRetentionService
         if ($rates->count() > 1 && abs($voucherIva-$fiscalIva)>0.01) {
             FiscalAmounts::error('base','Con alícuotas mixtas el comprobante debe cubrir el IVA completo; falta un desglose para determinar una base imponible parcial.');
         }
-        $fiscalBase=FiscalAmounts::convert($document->total_taxed,$document->currency_type_id,'VES',$document->exchange_rate_sale);
+        $fiscalBase=FiscalAmounts::convert(FiscalNote::remaining($document,'total_taxed'),$document->currency_type_id,'VES',$document->exchange_rate_sale);
         $taxable=ExchangeRateMath::rational($fiscalBase)->multipliedBy($voucherIva)->dividedBy($fiscalIva);
         return FiscalAmounts::convert(ExchangeRateMath::finalAmount($taxable),'VES',$currency,$rate);
     }

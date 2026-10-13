@@ -11,7 +11,7 @@ final class ThirdPartyInvoicePolicy
 {
     public static function isThirdParty($document): bool
     {
-        return ($document->fiscal_data->transaction_type_id ?? '01') === '99';
+        return ($document->fiscal_data->transaction_type_id ?? '01') === '99' || (\App\Services\Fiscal\FiscalNote::ordinary($document) && !empty($document->fiscal_data->third_party));
     }
 
     public static function requested(array $input): bool
@@ -36,7 +36,7 @@ final class ThirdPartyInvoicePolicy
         }
         if (in_array((string) ($input['document_type_id'] ?? ''), ['07', '08'], true)) {
             $affected = Document::find($input['note']['affected_document_id'] ?? $input['affected_document_id'] ?? 0);
-            if ($affected && self::isThirdParty($affected)) FiscalAmounts::error('note', 'Las notas de facturas por cuenta de terceros todavía no están habilitadas.');
+            if (empty($input['note_creation_key']) && $affected && self::isThirdParty($affected)) FiscalAmounts::error('note', 'Las notas de facturas por cuenta de terceros todavía no están habilitadas.');
         }
         if (!self::requested($input)) return;
         if (!$web || (isset($input['source_module']) && $input['source_module'] !== 'WEB')) FiscalAmounts::error('third_party_id', 'La facturación por cuenta de terceros está disponible únicamente desde Comprobantes web.');

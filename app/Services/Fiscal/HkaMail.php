@@ -11,7 +11,7 @@ final class HkaMail
 {
     public static function applies(Document $document): bool
     {
-        return ($document->document_type_id === '01' || HkaIgtfNote::applies($document)) && $document->fiscal_emission_mode === 'digital';
+        return ($document->document_type_id === '01' || HkaIgtfNote::applies($document) || FiscalNote::ordinary($document)) && $document->fiscal_emission_mode === 'digital';
     }
 
     /** Capture the automatic request with the sale, before its outer commit. */
@@ -230,11 +230,11 @@ final class HkaMail
     private function identity(Document $document): array
     {
         $frozen = $document->emission->payload['documentoElectronico']['encabezado']['identificacionDocumento'] ?? [];
-        if (($frozen['tipoDocumento'] ?? null) !== ($document->document_type_id === '08' ? '03' : '01') || (string) ($frozen['numeroDocumento'] ?? '') !== (string) $document->number
+        if (($frozen['tipoDocumento'] ?? null) !== (['01'=>'01','07'=>'02','08'=>'03'][$document->document_type_id]) || (string) ($frozen['numeroDocumento'] ?? '') !== (string) $document->number
             || (string) ($frozen['serie'] ?? '') !== (string) $document->series || !preg_match('/^[0-9]{1,19}$/', (string) ($frozen['numeroDocumento'] ?? ''))) {
             FiscalAmounts::error('customer_email', 'La identidad fiscal conservada no corresponde a la factura.');
         }
-        return ['serie' => (string) ($frozen['serie'] ?? ''), 'tipoDocumento' => $document->document_type_id === '08' ? '03' : '01', 'numeroDocumento' => (string) $frozen['numeroDocumento']];
+        return ['serie' => (string) ($frozen['serie'] ?? ''), 'tipoDocumento' => ['01'=>'01','07'=>'02','08'=>'03'][$document->document_type_id], 'numeroDocumento' => (string) $frozen['numeroDocumento']];
     }
 
     private function verify(Document $document, Company $company): void

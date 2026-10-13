@@ -49,6 +49,7 @@
         protected $with = ['affectation_igv_type', 'price_type'];
         // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
         protected $fillable = [
+            'affected_document_item_id', 'inventory_quantity',
             'document_id',
             'item_id',
             'item',

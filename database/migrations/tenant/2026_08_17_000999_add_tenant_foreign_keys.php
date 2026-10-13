@@ -8,6 +8,23 @@ return new class extends Migration
 {
     public function up(): void
     {
+        // ######## INICIO NOTAS HKA ########
+        DB::unprepared("ALTER TABLE `document_items` ADD CONSTRAINT `document_items_affected_document_item_id_foreign` FOREIGN KEY (`affected_document_item_id`) REFERENCES `document_items` (`id`) ON DELETE RESTRICT");
+        DB::unprepared("ALTER TABLE `document_note_refunds` ADD CONSTRAINT `document_note_refunds_document_id_foreign` FOREIGN KEY (`document_id`) REFERENCES `documents` (`id`) ON DELETE RESTRICT");
+        DB::unprepared("ALTER TABLE `document_note_refunds` ADD CONSTRAINT `document_note_refunds_affected_document_id_foreign` FOREIGN KEY (`affected_document_id`) REFERENCES `documents` (`id`) ON DELETE RESTRICT");
+        DB::unprepared("ALTER TABLE `document_note_refunds` ADD CONSTRAINT `document_note_refunds_actor_id_foreign` FOREIGN KEY (`actor_id`) REFERENCES `users` (`id`) ON DELETE RESTRICT");
+        DB::unprepared("ALTER TABLE `document_note_adjustments` ADD CONSTRAINT `document_note_adjustments_document_id_foreign` FOREIGN KEY (`document_id`) REFERENCES `documents` (`id`) ON DELETE RESTRICT");
+        DB::unprepared("ALTER TABLE `document_note_adjustments` ADD CONSTRAINT `document_note_adjustments_affected_document_id_foreign` FOREIGN KEY (`affected_document_id`) REFERENCES `documents` (`id`) ON DELETE RESTRICT");
+        DB::unprepared("ALTER TABLE `document_note_adjustments` ADD CONSTRAINT `document_note_adjustments_actor_id_foreign` FOREIGN KEY (`actor_id`) REFERENCES `users` (`id`) ON DELETE RESTRICT");
+        DB::unprepared("ALTER TABLE `document_note_refunds` ADD CONSTRAINT `document_note_refunds_document_payment_id_foreign` FOREIGN KEY (`document_payment_id`) REFERENCES `document_payments` (`id`) ON DELETE RESTRICT");
+        DB::unprepared("ALTER TABLE `document_note_refunds` ADD CONSTRAINT `document_note_refunds_adjustment_id_foreign` FOREIGN KEY (`adjustment_id`) REFERENCES `document_note_adjustments` (`id`) ON DELETE RESTRICT");
+        DB::unprepared("ALTER TABLE `document_note_refunds` ADD CONSTRAINT `document_note_refunds_reversed_by_foreign` FOREIGN KEY (`reversed_by`) REFERENCES `users` (`id`) ON DELETE RESTRICT");
+        DB::unprepared("ALTER TABLE `document_note_refunds` ADD CONSTRAINT `document_note_refunds_payment_method_type_id_foreign` FOREIGN KEY (`payment_method_type_id`) REFERENCES `payment_method_types` (`id`) ON DELETE RESTRICT");
+        DB::unprepared("ALTER TABLE `document_note_refunds` ADD CONSTRAINT `document_note_refunds_currency_type_id_foreign` FOREIGN KEY (`currency_type_id`) REFERENCES `cat_currency_types` (`id`) ON DELETE RESTRICT");
+        DB::unprepared("ALTER TABLE `document_note_adjustments` ADD CONSTRAINT `document_note_adjustments_retention_id_foreign` FOREIGN KEY (`retention_id`) REFERENCES `document_received_retentions` (`id`) ON DELETE RESTRICT");
+        DB::unprepared("ALTER TABLE `document_note_adjustments` ADD CONSTRAINT `document_note_adjustments_tax_id_foreign` FOREIGN KEY (`tax_id`) REFERENCES `document_taxes` (`id`) ON DELETE RESTRICT");
+        DB::unprepared("ALTER TABLE `document_note_adjustments` ADD CONSTRAINT `document_note_adjustments_guarantee_fund_id_foreign` FOREIGN KEY (`guarantee_fund_id`) REFERENCES `document_guarantee_funds` (`id`) ON DELETE RESTRICT");
+        // ######## FIN NOTAS HKA ########
         DB::unprepared("ALTER TABLE `document_islr_retention_operations` ADD CONSTRAINT `islr_operation_document_fk` FOREIGN KEY (`document_id`) REFERENCES `documents` (`id`) ON DELETE RESTRICT");
         DB::unprepared("ALTER TABLE `document_islr_retention_operations` ADD CONSTRAINT `islr_operation_retention_fk` FOREIGN KEY (`retention_id`) REFERENCES `document_received_retentions` (`id`) ON DELETE RESTRICT");
         DB::unprepared("ALTER TABLE `document_islr_retention_operations` ADD CONSTRAINT `islr_operation_actor_fk` FOREIGN KEY (`actor_id`) REFERENCES `users` (`id`) ON DELETE RESTRICT");
@@ -542,6 +559,23 @@ return new class extends Migration
 
     public function down(): void
     {
+        // ######## INICIO NOTAS HKA ########
+        DB::unprepared("ALTER TABLE `document_note_adjustments` DROP FOREIGN KEY `document_note_adjustments_guarantee_fund_id_foreign`");
+        DB::unprepared("ALTER TABLE `document_note_adjustments` DROP FOREIGN KEY `document_note_adjustments_tax_id_foreign`");
+        DB::unprepared("ALTER TABLE `document_note_adjustments` DROP FOREIGN KEY `document_note_adjustments_retention_id_foreign`");
+        DB::unprepared("ALTER TABLE `document_note_refunds` DROP FOREIGN KEY `document_note_refunds_currency_type_id_foreign`");
+        DB::unprepared("ALTER TABLE `document_note_refunds` DROP FOREIGN KEY `document_note_refunds_payment_method_type_id_foreign`");
+        DB::unprepared("ALTER TABLE `document_note_refunds` DROP FOREIGN KEY `document_note_refunds_reversed_by_foreign`");
+        DB::unprepared("ALTER TABLE `document_note_refunds` DROP FOREIGN KEY `document_note_refunds_adjustment_id_foreign`");
+        DB::unprepared("ALTER TABLE `document_note_refunds` DROP FOREIGN KEY `document_note_refunds_document_payment_id_foreign`");
+        DB::unprepared("ALTER TABLE `document_note_adjustments` DROP FOREIGN KEY `document_note_adjustments_actor_id_foreign`");
+        DB::unprepared("ALTER TABLE `document_note_adjustments` DROP FOREIGN KEY `document_note_adjustments_affected_document_id_foreign`");
+        DB::unprepared("ALTER TABLE `document_note_adjustments` DROP FOREIGN KEY `document_note_adjustments_document_id_foreign`");
+        DB::unprepared("ALTER TABLE `document_note_refunds` DROP FOREIGN KEY `document_note_refunds_actor_id_foreign`");
+        DB::unprepared("ALTER TABLE `document_note_refunds` DROP FOREIGN KEY `document_note_refunds_affected_document_id_foreign`");
+        DB::unprepared("ALTER TABLE `document_note_refunds` DROP FOREIGN KEY `document_note_refunds_document_id_foreign`");
+        DB::unprepared("ALTER TABLE `document_items` DROP FOREIGN KEY `document_items_affected_document_item_id_foreign`");
+        // ######## FIN NOTAS HKA ########
         DB::unprepared("ALTER TABLE `document_islr_retention_operations` DROP FOREIGN KEY `islr_operation_actor_fk`");
         DB::unprepared("ALTER TABLE `document_islr_retention_operations` DROP FOREIGN KEY `islr_operation_retention_fk`");
         DB::unprepared("ALTER TABLE `document_islr_retention_operations` DROP FOREIGN KEY `islr_operation_document_fk`");

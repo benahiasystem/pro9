@@ -25,9 +25,12 @@ class Note extends ModelTenant
         'note_credit_type',
         'note_debit_type'
     ];
+    protected $hidden = ['creation_key','request_hash','effect_snapshot'];
+    protected $casts = ['effect_snapshot'=>'array'];
     public $timestamps = false;
 
     protected $fillable = [
+        'creation_key', 'request_hash', 'effect_snapshot',
         'document_id',
         'note_type',
         'note_credit_type_id',

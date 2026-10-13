@@ -26,6 +26,9 @@ final class HkaIgtfNote
     public static function parentReady(Document $note): bool
     {
         $parent = Document::find($note->note->affected_document_id ?? null);
+        $tax=$note->taxes()->where('tax_kind','IGTF')->whereNotNull('document_payment_id')->first();
+        $receipt=$tax ? \App\Models\Tenant\DocumentPayment::find($tax->document_payment_id):null;
+        if ($receipt && $receipt->document_id !== ($parent->id ?? null) && optional($receipt->document->emission)->status !== 'confirmed') return false;
         return $parent && $parent->document_type_id === '01' && $parent->establishment_id === $note->establishment_id
             && $parent->customer_id === $note->customer_id && $parent->fiscal_environment === $note->fiscal_environment
             && $parent->currency_type_id === $note->currency_type_id && !$parent->isVoidedOrRejected()
@@ -36,8 +39,9 @@ final class HkaIgtfNote
     {
         $tax = $note->taxes()->where('tax_kind', 'IGTF')->whereNotNull('document_payment_id')->first();
         $payment = $tax ? \App\Models\Tenant\DocumentPayment::find($tax->document_payment_id) : null;
-        if (!$payment || $payment->reversed_at || $payment->receipt_parent_id || $payment->tax_amount <= 0
-            || $payment->document_id !== $note->note->affected_document_id || $note->items()->exists()
+        $sourceAllowed=$payment && ($payment->document_id === $note->note->affected_document_id || (FiscalNote::ordinary($payment->document) && $payment->document->document_type_id === '08' && $payment->document->note->affected_document_id === $note->note->affected_document_id));
+        if (!$sourceAllowed || !$payment || $payment->reversed_at || $payment->receipt_parent_id || $payment->tax_amount <= 0
+            || $note->items()->exists()
             || $note->total_igv != 0 || abs($note->total - $tax->amount) > 0.005
             || abs($note->total - FiscalAmounts::convert($payment->tax_amount, $payment->currency_type_id, $note->currency_type_id, $payment->exchange_rate)) > 0.005) {
             FiscalAmounts::error('payment', 'La nota IGTF debe corresponder exclusivamente al impuesto de un cobro real vigente.');
@@ -46,8 +50,8 @@ final class HkaIgtfNote
 
     public static function resume(Document $invoice): void
     {
-        if ($invoice->document_type_id !== '01') return;
-        $notes = Document::whereHas('note', fn ($query) => $query->where('affected_document_id', $invoice->id)->where('note_debit_type_id', 'IGTF'))
+        if ($invoice->document_type_id !== '01' && !FiscalNote::ordinary($invoice)) return;
+        $notes = Document::whereHas('note', fn ($query) => $query->where('affected_document_id', FiscalNote::ordinary($invoice) ? $invoice->note->affected_document_id : $invoice->id)->where('note_debit_type_id', 'IGTF'))
             ->whereHas('emission', fn ($query) => $query->where('status', 'not_requested'))->get();
         foreach ($notes as $note) if (self::applies($note) && !$note->isVoidedOrRejected()) app(HkaEmission::class)->send($note);
     }

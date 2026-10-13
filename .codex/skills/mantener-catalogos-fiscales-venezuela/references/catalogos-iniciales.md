@@ -266,3 +266,7 @@ Consultar también [mantener-modalidad-emision-fiscal-pro9](../../mantener-modal
 ## Exportación de bienes (9 de octubre de 2026)
 
 El consolidado incorpora EXP (activo, exportación, no gratuito, IVA 0 %) y activa ND/0201/0202/0203 para el alcance definido en [facturas de exportación](../../../../informes/facturas_exportacion_hka.md). 0200 continúa inactivo. Las selecciones domésticas conservan 10/20 y excluyen ND; únicamente Comprobantes web digital DEMO expone los INCOTERM y EXP. El catálogo FE sigue como referencia: las exportaciones emitidas conservan Factura 01. No aplicar estos datos sobre tenants existentes.
+
+## Uso de notas del 13/10/2026
+
+Sin alterar filas ni IDs, el formulario y persistencia habilitan NC01/07/04/09 y ND02/01/03; IGTF queda especializado. Las transacciones HKA se asignan en el adaptador/persistencia según [contrato de notas](../../../../informes/notas_credito_debito_hka.md). DEMO1015 mantiene NC pendiente, sin cambiar catálogo ni fabricar pagos.

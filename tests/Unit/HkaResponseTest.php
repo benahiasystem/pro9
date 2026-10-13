@@ -60,6 +60,15 @@ class HkaResponseTest extends TestCase
         self::assertFalse(HkaResponse::interpret(200, $body, $this->identity(), true)['retry_allowed']);
     }
 
+    public function test_note_rejection_preserves_validation_codes_without_provider_values(): void
+    {
+        $identity=array_replace($this->identity(),['tipoDocumento'=>'02']);
+        $result=HkaResponse::interpret(200,['codigo'=>'203','validaciones'=>[
+            'Encabezado.Totales.FormasPago: [1015] Value: token private-value']],$identity);
+        self::assertSame(['1015'],$result['validation_codes']);self::assertSame('rejected',$result['status']);
+        self::assertStringContainsString('1015',$result['diagnostic']);self::assertStringNotContainsString('private-value',json_encode($result));
+    }
+
     public function test_real_demo_state_dates_and_range_rejection_are_understood(): void
     {
         $body = ['codigo' => '200', 'estado' => $this->identity() + ['numeroControl' => '00-00000021',

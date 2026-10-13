@@ -826,6 +826,7 @@ class DocumentController extends Controller
 
             return $res;
         }
+        catch(\Illuminate\Validation\ValidationException | \Symfony\Component\HttpKernel\Exception\HttpException $e) { throw $e; }
         catch(Exception $e)
         {
             $this->generalWriteErrorLog($e);
@@ -837,7 +838,7 @@ class DocumentController extends Controller
     public function validationOpenCash($request)
     {
         // busca una caja chica en el array de pagos
-        $find_cash = array_search('cash', array_column($request->payments,'payment_destination_id'), true);
+        $find_cash = array_search('cash', array_column($request->payments ?? [],'payment_destination_id'), true);
         // si ha seleccionado una caja chica
         if($find_cash !== false) {
             // no hay id de la caja seleccionada por lo que si es abierta una nueva será seleccionada como destino
@@ -952,6 +953,8 @@ class DocumentController extends Controller
                     'id' => $document->id,
                     ...\App\Services\ThirdPartyInvoicePolicy::view($document),
                     ...\App\Services\SpecialTaxRegimePolicy::view($document),
+                    'note_refunds' => \App\Services\Fiscal\NoteRefund::view($document),
+                    'note_adjustments' => \App\Services\Fiscal\NoteAdjustment::view($document),
                     'number_full' => $document->number_full,
                     'response' => $response,
                     'iva_retention' => \App\Services\Fiscal\IvaRetentionService::view($document),

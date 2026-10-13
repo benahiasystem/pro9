@@ -43,7 +43,13 @@ fwrite(STDOUT,"READY\n");fflush(STDOUT);
 try {
     $document=App\Models\Tenant\Document::findOrFail($input['document_id']);
     $service=App\Services\Fiscal\FiscalDocumentPersistence::class;
-    if (($input['operation'] ?? '') === 'hka-edit-race' && ($input['data']['action'] ?? '') === 'edit') {
+    if (($input['operation'] ?? '') === 'note-create') {
+        $note=(new App\CoreFacturalo\Facturalo)->forWebDocuments()->save($input['data'])->getDocument();
+        $output=['id'=>$note->id];
+    } elseif (($input['operation'] ?? '') === 'note-refund') {
+        $refund=app(App\Services\Fiscal\NoteRefund::class)->register($document,$input['data']);
+        $output=['id'=>$refund->id];
+    } elseif (($input['operation'] ?? '') === 'hka-edit-race' && ($input['data']['action'] ?? '') === 'edit') {
         $engine = new App\CoreFacturalo\Facturalo;
         if (!empty($input['data']['web_export'])) $engine->forWebDocuments();
         $engine->update($input['data']['edit'], $document->id);

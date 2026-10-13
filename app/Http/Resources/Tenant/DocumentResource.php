@@ -65,6 +65,8 @@ class DocumentResource extends JsonResource
             'can_edit' => $edit['can_edit'],
             'edit_block_reason' => $edit['edit_block_reason'],
             'is_editable' => $edit['can_edit'],
+            'note_refunds'=>\App\Services\Fiscal\NoteRefund::view($document),
+            'note_adjustments'=>\App\Services\Fiscal\NoteAdjustment::view($document),
             'id' => $document->id,
             'fiscal_environment' => $document->fiscal_environment,
             'fiscal_emission_mode' => $document->fiscal_identity['mode'] ?? $document->fiscal_emission_mode,

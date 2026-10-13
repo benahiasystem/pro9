@@ -68,6 +68,7 @@ table {
                     </td>
                     <td class="td-custom">
                         <p><strong>Total pagos notas de venta: </strong>{{ $currency_symbol }} {{ $cash_data['total_sale_note_payments'] }}</p>
+                        <p><strong>Devoluciones por NC: </strong>{{ $currency_symbol }} {{ $cash_data['total_note_refunds'] ?? '0.00' }}</p>
                     </td>
                 </tr>
             </table>

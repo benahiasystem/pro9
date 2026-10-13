@@ -29,12 +29,12 @@ final class DocumentEmissionView
 
     public static function forDocument(Document $document): array
     {
-        $applies = ($document->document_type_id === '01' || HkaIgtfNote::applies($document)) && $document->fiscal_emission_mode === 'digital';
+        $applies = ($document->document_type_id === '01' || HkaIgtfNote::applies($document) || FiscalNote::ordinary($document)) && $document->fiscal_emission_mode === 'digital';
         $emission = $document->emission;
         $status = $applies ? ($emission->status ?? 'not_requested') : null;
         $response = $emission->response ?? [];
         $enabled = $applies && $document->fiscal_environment === 'demo' && !$document->isVoidedOrRejected();
-        $ivaBlock = in_array($status,['not_requested','prepared'],true) ? (HkaIvaRetentionCapability::reason($document) ?? HkaIslrRetentionCapability::reason($document)) : null;
+        $ivaBlock = in_array($status,['not_requested','prepared'],true) ? (HkaNoteCapability::reason($document) ?? HkaIvaRetentionCapability::reason($document) ?? HkaIslrRetentionCapability::reason($document)) : null;
         $user = auth()->user();
         $scope = $user instanceof \App\Models\Tenant\User
             && ($user->type === 'admin' || (int) $user->establishment_id === (int) $document->establishment_id);
@@ -46,6 +46,7 @@ final class DocumentEmissionView
             'environment' => $document->fiscal_environment,
             'control_number' => $document->control_number,
             'code' => $response['code'] ?? null,
+            'validation_codes' => $response['validation_codes'] ?? [],
             'diagnostic' => $ivaBlock ?? $response['diagnostic'] ?? ($applies && !$enabled ? 'El envío está habilitado únicamente para facturas vigentes en DEMO.' : null),
             'can_send' => !$ivaBlock && $enabled && $scope && $user->type === 'admin'
                 && (in_array($status, ['not_requested', 'prepared'], true)

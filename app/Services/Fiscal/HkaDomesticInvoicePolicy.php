@@ -10,7 +10,7 @@ final class HkaDomesticInvoicePolicy
 {
     public static function applies($document): bool
     {
-        return ThirdPartyInvoicePolicy::isThirdParty($document) || SpecialTaxRegimePolicy::applies($document);
+        return !FiscalNote::ordinary($document) && (ThirdPartyInvoicePolicy::isThirdParty($document) || SpecialTaxRegimePolicy::applies($document));
     }
 
     public static function assertSnapshot(array $snapshot): void

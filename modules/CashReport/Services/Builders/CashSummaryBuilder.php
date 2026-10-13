@@ -620,6 +620,7 @@ class CashSummaryBuilder implements CashReportBuilderInterface
                     $sum = $note->isDebit();
                     $type = ($note->isDebit()) ? 'Nota de debito' : 'Nota de crédito';
                     $document = $note->getDocument();
+                    if (\App\Services\Fiscal\FiscalNote::ordinary($document)) continue; // The note is commercial; actual refunds/collections affect cash separately.
                     if (in_array($document->state_type_id, $status_type_id)) {
                         $record_total = $document->getTotal();
                         /** Si es credito resta */
@@ -741,6 +742,18 @@ class CashSummaryBuilder implements CashReportBuilderInterface
 //        $all_documents = collect($all_documents)->sortBy('date_sort')->all();
         /************************/
         /************************/
+        foreach ($cash->noteRefunds()->get() as $refund) {
+            $amount=\App\Services\Fiscal\FiscalAmounts::convert($refund->original_amount,$refund->currency_type_id,'VES',$refund->exchange_rate);
+            $final_balance-=$amount; $cash_egress+=$amount;
+            if ($refund->payment_method_type_id === '01') $data['total_cash_egress_pmt_01']+=$amount;
+            $row=$refund->getRowResourceCashPayment();
+            $all_documents[]=['type_transaction'=>'Devolución por NC','document_type_description'=>$row['document_type_description'],
+                'number'=>$row['number_full'],'date_of_issue'=>$row['date_of_issue'],'date_sort'=>$refund->date_of_payment,
+                'customer_name'=>$row['acquirer_name'],'customer_number'=>$row['acquirer_number'],'total'=>$refund->original_amount,
+                'total_string'=>self::FormatNumber($refund->original_amount),'total_payments'=>self::FormatNumber($refund->original_amount),
+                'currency_type_id'=>$refund->currency_type_id,'usado'=>'Salida registrada','tipo'=>'note_refund',
+                'type_transaction_prefix'=>'egress','order_number_key'=>'10_'.$refund->created_at->format('YmdHis')];
+        }
         $data['all_documents'] = $all_documents;
         $temp = [];
 

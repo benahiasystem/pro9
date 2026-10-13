@@ -405,7 +405,7 @@
                                 @click.native="go(`/${resource}/note/${row.id}`)"
                               >
                                   <svg xmlns="http://www.w3.org/2000/svg" class="me-2" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M5 4v17l2 -2l2 2l2 -2l2 2l2 -2l2 2l2 -2v-17z"></path><path d="M14 8h-4"></path><path d="M14 12h-4"></path><path d="M14 16h-4"></path></svg>
-                                  Nota
+                                  Nota de crédito / débito
                               </el-dropdown-item>
                               <el-dropdown-item
                                 v-if="row.btn_guide"
@@ -423,12 +423,14 @@
                               <!-- ########## INICIO SIN DETRACCIONES E ISC -->
                               <!-- ######### FIN SIN DETRACCIONES E ISC -->
 
+                              <el-dropdown-item v-if="row.btn_note_operations" @click.native="clickOptions(row.id)">Devoluciones y ajustes de NC</el-dropdown-item>
                               <el-dropdown-item
                                 divided
                                 v-if="row.btn_note || row.btn_guide"
                               />
 
                               <el-dropdown-item
+                                v-if="row.document_type_id !== '07'"
                                 @click.native="clickPayment(row.id)"
                               >
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-cash me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 15h-3a1 1 0 0 1 -1 -1v-8a1 1 0 0 1 1 -1h12a1 1 0 0 1 1 1v3" /><path d="M7 9m0 1a1 1 0 0 1 1 -1h12a1 1 0 0 1 1 1v8a1 1 0 0 1 -1 1h-12a1 1 0 0 1 -1 -1z" /><path d="M12 14a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /></svg>

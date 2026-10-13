@@ -9,6 +9,8 @@ final class DocumentEditPolicy
 {
     public static function reason(Document $document): ?string
     {
+        if (FiscalNote::ordinary($document)) return 'Una nota registrada conserva sus partidas e importes; utilice sus acciones de ajustes y devolución.';
+        if (FiscalNote::hasRelatedNotes($document)) return 'La factura tiene notas registradas y debe conservar sus partidas e importes originales.';
         if ($document->isVoidedOrRejected()) return 'El comprobante está anulado o no está vigente.';
         if ($document->document_type_id !== '01' && !(bool) ($document->getAttributes()['is_editable'] ?? false)) return 'La edición de este comprobante está deshabilitada.';
         $emission = $document->emission;

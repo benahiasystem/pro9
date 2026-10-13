@@ -6,6 +6,7 @@
     use App\Models\Tenant\Bank;
     use App\Models\Tenant\Cash;
     use App\Models\Tenant\DocumentPayment;
+    use App\Models\Tenant\PaymentMethodType;
     use App\Models\Tenant\ModelTenant;
     use App\Models\Tenant\PurchasePayment;
     use App\Models\Tenant\PurchaseSettlementPayment;
@@ -145,6 +146,11 @@
         {
             return $this->belongsTo(ExpensePayment::class, 'payment_id')
                 ->wherePaymentType(ExpensePayment::class);
+        }
+
+        public function note_refund()
+        {
+            return $this->belongsTo(\App\Models\Tenant\DocumentNoteRefund::class,'payment_id')->wherePaymentType(\App\Models\Tenant\DocumentNoteRefund::class);
         }
 
         /**
@@ -388,6 +394,7 @@
         public function getInstanceTypeAttribute()
         {
             $instance_type = [
+                \App\Models\Tenant\DocumentNoteRefund::class => 'note_refund',
                 DocumentPayment::class => 'document',
                 SaleNotePayment::class => 'sale_note',
                 PurchasePayment::class => 'purchase',
@@ -412,6 +419,9 @@
             $description = null;
 
             switch ($this->instance_type) {
+                case 'note_refund':
+                    $description = 'DEVOLUCIÓN POR NC';
+                    break;
                 case 'document':
                     $description = 'CPE';
                     break;
@@ -474,6 +484,7 @@
                 case 'purchase_settlement':
                 case 'bank_loan_payment':
                 case 'expense':
+                case 'note_refund':
                     $type = 'output';
                     break;
 
@@ -491,6 +502,7 @@
 
             switch ($this->instance_type) {
 
+                case 'note_refund':
                 case 'document':
                 case 'sale_note':
                 case 'quotation':
@@ -556,6 +568,12 @@
                 $q->whereHas('associated_record_payment', function ($p) use ( $params ) {
                     $p->whereStateTypeAccepted()->whereTypeUser((array)$params);
                 });
+            });
+            $query->orWhereHasMorph('payment', [\App\Models\Tenant\DocumentNoteRefund::class], function ($q) use ($params) {
+                $q->whereNull('reversed_at');
+                if ($params->date_start) $q->where('date_of_payment','>=',$params->date_start);
+                if ($params->date_end) $q->where('date_of_payment','<=',$params->date_end);
+                $q->whereHas('document', fn ($d)=>$d->whereTypeUser((array)$params));
             });
             $query->OrWhereHas('exp_payment', function ($q) use ($params) {
                 if ($params->date_start) {
@@ -891,7 +909,7 @@
                     ->filterCashPaymentWithoutDestination();
                 });
 
-            return $query;
+            return $query->orWhere(fn ($q)=>$q->whereCashDestination()->whereHas('note_refund',fn ($r)=>$r->whereNull('reversed_at')->where('payment_method_type_id',PaymentMethodType::CASH_PAYMENT_ID)));
         }
 
         
@@ -976,7 +994,7 @@
                 // egresos
                 ->whereCashDestination();
 
-            return $query;
+            return $query->orWhere(fn ($q)=>$q->whereCashDestination()->whereHas('note_refund',fn ($r)=>$r->whereNull('reversed_at')->whereCashPaymentMethodType()));
         }
 
 
@@ -1052,7 +1070,7 @@
                     });
                     // egresos
 
-            return $query;
+            return $query->orWhere(fn ($q)=>$q->whereCashDestination()->whereHas('note_refund',fn ($r)=>$r->whereNull('reversed_at')->where('payment_method_type_id',PaymentMethodType::CASH_PAYMENT_ID)));
         }
 
 
@@ -1072,7 +1090,7 @@
                         })
                         ->orWhereHas('sln_payments', function ($payment) {
                             $payment->destinationCashPaymentDocument();
-                        });
+                        })->orWhere(fn ($q)=>$q->whereCashDestination()->whereHas('note_refund',fn ($r)=>$r->whereNull('reversed_at')->whereCashPaymentMethodType()));
         }
 
     }

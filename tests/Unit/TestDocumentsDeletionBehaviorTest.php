@@ -31,7 +31,7 @@ class TestDocumentsDeletionBehaviorTest extends TestCase
         foreach ([
             'documents', 'document_items', 'document_payments', 'cash_document_payments',
             'document_taxes', 'document_currency_totals', 'document_received_retentions',
-            'document_guarantee_funds', 'document_fiscal_data', 'document_emissions',
+            'document_guarantee_funds', 'document_fiscal_data', 'document_emissions', 'document_note_refunds', 'document_note_adjustments',
             'global_payments', 'document_fee', 'document_hotels', 'document_transports',
             'invoices', 'notes', 'kardex', 'cash_documents',
             'payment_method_types', 'card_brands', 'inventory_kardex', 'payment_files', 'payment_links',
@@ -45,6 +45,7 @@ class TestDocumentsDeletionBehaviorTest extends TestCase
                 $table->unsignedInteger('affected_document_id')->nullable();
                 $table->unsignedInteger('document_payment_id')->nullable();
                 $table->unsignedInteger('receipt_parent_id')->nullable();
+                $table->unsignedInteger('affected_document_item_id')->nullable();
                 $table->dateTime('reversed_at')->nullable();
                 $table->string('payment_type')->nullable();
                 $table->unsignedInteger('payment_id')->nullable();

@@ -98,6 +98,7 @@ class InventoryVoidedServiceProvider extends ServiceProvider
             {
                 // si es nota credito tipo 13, no se asocia a inventario
                 if($document->isCreditNoteAndType13()) return;
+                if (\App\Services\Fiscal\FiscalNote::ordinary($document)) return;
 
                 foreach ($document->items as $document_item)
                 {

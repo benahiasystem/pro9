@@ -15,6 +15,9 @@ final class HkaResponse
         if (!is_array($body) || $http < 200 || $http >= 300) return $result;
         $validations = $body['validaciones'] ?? [];
         if (!is_array($validations)) return $result;
+        $validationCodes=[];
+        foreach ($validations as $validation) if (is_string($validation) && preg_match_all('/\[([0-9]{4})\]/',$validation,$matches)) $validationCodes=array_merge($validationCodes,$matches[1]);
+        $result['validation_codes']=array_values(array_unique($validationCodes));
         // Exact absence envelope verified against DEMO on 2026-10-07 using a fresh UUID.
         if ($query && $code === '203' && ($body['estado'] ?? null) === null
             && ($body['mensaje'] ?? null) === 'Consulta no procesada'
@@ -24,7 +27,8 @@ final class HkaResponse
         }
         if (!$query && in_array($code, ['202', '203', '205', '400', '401'], true)) {
             return array_replace($result, ['status' => 'rejected', 'diagnostic' => ($code === '203' && in_array('No posee rango de numeración disponible', $validations, true))
-                ? 'HKA no tiene un rango de numeración disponible para esta factura. Configure el rango DEMO en HKA.' : self::rejection($code)]);
+                ? 'HKA no tiene un rango de numeración disponible para este comprobante. Configure el rango DEMO en HKA.'
+                : (in_array('1015',$result['validation_codes'],true) ? 'HKA exige al menos una forma de pago (1015). Conserve el documento y revise su contrato; no registre cobros ficticios.' : self::rejection($code))]);
         }
         if ($code !== '200' || count($validations)) return $result;
         $data = $body[$query ? 'estado' : 'resultado'] ?? null;
@@ -43,7 +47,8 @@ final class HkaResponse
         $url = $data['urlConsulta'] ?? null;
         if (!is_string($url) || strlen($url) > 255 || !filter_var($url, FILTER_VALIDATE_URL)
             || parse_url($url, PHP_URL_SCHEME) !== 'https') $url = null;
-        return array_replace($result, ['status' => 'confirmed', 'diagnostic' => 'Factura confirmada por HKA.',
+        $label=['01'=>'Factura','02'=>'Nota de crédito','03'=>'Nota de débito'][$identity['tipoDocumento']] ?? 'Comprobante';
+        return array_replace($result, ['status' => 'confirmed', 'diagnostic' => $label.' confirmada por HKA.',
             'control_number' => $control, 'authorization' => is_string($data['autorizado'] ?? null) ? mb_substr($data['autorizado'], 0, 255) : null,
             'assigned_at' => self::assignmentDate($data['fechaAsignacion'] ?? null, $data['horaAsignacion'] ?? null),
             'control_assigned_at' => self::assignmentDate($data['fechaAsignacionNumeroControl'] ?? null, $data['horaAsignacionNumeroControl'] ?? null),

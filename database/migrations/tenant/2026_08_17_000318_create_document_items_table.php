@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\DB;
 
 // ######## INICIO ESQUEMA INICIAL VENEZUELA ########
 /**
+ * Additional note fields: affected_document_item_id (unsigned nullable, indexed), inventory_quantity DECIMAL(12,4) default 0.
  * Estructura inicial de `document_items` para instalaciones nuevas.
  * Inventario de columnas:
  * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
@@ -74,6 +75,11 @@ CREATE TABLE `document_items` (
   `name_product_pdf` longtext COLLATE utf8mb4_unicode_ci,
   `additional_data` json DEFAULT NULL,
   `quantity_factor` decimal(12,4) NOT NULL DEFAULT '1.0000',
+  /* ######## INICIO NOTAS HKA ######## */
+  `affected_document_item_id` int unsigned DEFAULT NULL,
+  `inventory_quantity` decimal(12,4) NOT NULL DEFAULT 0,
+  KEY `document_items_affected_item_index` (`affected_document_item_id`),
+  /* ######## FIN NOTAS HKA ######## */
   PRIMARY KEY (`id`),
   KEY `document_items_document_id_foreign` (`document_id`),
   KEY `document_items_item_id_foreign` (`item_id`),

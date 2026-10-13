@@ -44,7 +44,7 @@ final class SpecialTaxRegimePolicy
         }
         if (in_array((string) ($input['document_type_id'] ?? ''), ['07', '08'], true)) {
             $affected = Document::find($input['note']['affected_document_id'] ?? $input['affected_document_id'] ?? 0);
-            if ($affected && self::applies($affected)) FiscalAmounts::error('note', 'Las notas vinculadas a regímenes especiales todavía no están habilitadas.');
+            if (empty($input['note_creation_key']) && $affected && self::applies($affected)) FiscalAmounts::error('note', 'Las notas vinculadas a regímenes especiales todavía no están habilitadas.');
         }
         if (!self::requested($input)) return;
         if (!$web || (isset($input['source_module']) && $input['source_module'] !== 'WEB')) FiscalAmounts::error('fiscal_data.special_tax_regime_id', 'El régimen especial está disponible únicamente desde Comprobantes web.');

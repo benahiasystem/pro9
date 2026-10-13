@@ -13,6 +13,7 @@ use PHPUnit\Framework\TestCase;
 // ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 class FiscalEmissionSchemaTest extends TestCase
 {
+    use \Tests\Support\NotePersistenceCases;
     use \Tests\Support\SpePersistenceCases;
     use \Tests\Support\IvaRetentionPersistenceCases;
     use \Tests\Support\IslrRetentionPersistenceCases;
@@ -439,9 +440,14 @@ class FiscalEmissionSchemaTest extends TestCase
             self::assertSame(2, $db->table('document_payments')->count());
             self::assertEquals(464, $db->table('document_payments')->sum('payment'));
             self::assertEquals(6, $db->table('item_warehouse')->where('item_id', $item->id)->where('warehouse_id', $warehouse)->value('stock'));
+            $first->forceFill(['control_number'=>'00-00000100'])->save();
+            $first->emission()->update(['status'=>'confirmed','control_number'=>$first->control_number]);
+            $first->unsetRelation('emission');
             foreach (['07' => ['credit', 'FC01'], '08' => ['debit', 'FD01']] as $type => [$kind, $code]) {
                 $note = array_replace($input, ['external_id' => \Illuminate\Support\Str::uuid()->toString(), 'document_type_id' => $type, 'type' => $kind, 'series' => $code,
-                    'note' => ['affected_document_id' => $first->id, 'note_type_id' => '01', 'note_description' => 'Nota de prueba']]);
+                    'note_creation_key'=>(string) \Illuminate\Support\Str::uuid(), 'payments'=>[],
+                    'items'=>[['affected_document_item_id'=>$first->items->first()->id,'adjustment_amount'=>11.60]],
+                    'note' => ['affected_document_id' => $first->id, 'note_type' => $kind, 'note_credit_type_id'=>$type === '07' ? '09':null, 'note_debit_type_id'=>$type === '08' ? '02':null, 'note_description' => 'Nota de prueba']]);
                 $document = (new \App\CoreFacturalo\Facturalo())->save($note)->getDocument();
                 self::assertSame($code . '-00000100', $document->number_full);
                 self::assertSame($first->id, $document->note->affected_document_id);
@@ -451,10 +457,10 @@ class FiscalEmissionSchemaTest extends TestCase
             $dispatch = (new \App\CoreFacturalo\Facturalo())->save($order)->getDocument();
             self::assertSame('TT01-00000100', $dispatch->number_full);
             self::assertNull($dispatch->fiscal_identity['control_number']);
-            self::assertNull($first->fiscal_identity['control_number']);
-            $first->setAttribute('control_number', '00-00000021');
-            $first->save();
-            self::assertSame('00-00000021', \App\Services\Fiscal\FiscalPdfData::forDocument($first)['control_number']);
+            self::assertSame('00-00000100',$first->fiscal_identity['control_number']);
+            $second->setAttribute('control_number', '00-00000021');
+            $second->save();
+            self::assertSame('00-00000021', \App\Services\Fiscal\FiscalPdfData::forDocument($second)['control_number']);
             self::assertSame('FF01-00000100', $first->number_full);
             $db->table('cash')->insert(['user_id' => $userId, 'date_opening' => '2026-09-10', 'time_opening' => '12:00:00', 'state' => true]);
             // Exercise the commercial NV input path, not a fake counter subject.
@@ -509,10 +515,16 @@ class FiscalEmissionSchemaTest extends TestCase
                 self::assertSame('00000002', $blankSecond->number_full);
                 self::assertSame('', $blankFirst->series);
                 self::assertNull($blankFirst->control_number);
+                $blankFirst->forceFill(['control_number'=>'00-'.str_pad((string)(1000+$blankFirst->id),8,'0',STR_PAD_LEFT)])->save();
+                $blankFirst->emission()->update(['status'=>'confirmed','control_number'=>$blankFirst->control_number]);
+                $blankFirst->unsetRelation('emission');
                 $filenames[] = $blankFirst->filename;
                 foreach (['07' => 'credit', '08' => 'debit'] as $type => $kind) {
                     $blankNote = array_replace($blankInput, ['external_id' => \Illuminate\Support\Str::uuid()->toString(), 'document_type_id' => $type, 'type' => $kind,
-                        'note' => ['affected_document_id' => $blankFirst->id, 'note_type_id' => '01', 'note_description' => 'Blank series note']]);
+                        'note_creation_key'=>(string)\Illuminate\Support\Str::uuid(),'payments'=>[],
+                        'items'=>[['affected_document_item_id'=>$blankFirst->items->first()->id,'adjustment_amount'=>11.60]],
+                        'note' => ['affected_document_id' => $blankFirst->id, 'note_type'=>$kind,
+                            'note_credit_type_id'=>$type === '07' ? '09':null,'note_debit_type_id'=>$type === '08' ? '02':null,'note_description' => 'Blank series note']]);
                     $savedNote = (new \App\CoreFacturalo\Facturalo())->save($blankNote)->getDocument();
                     self::assertSame('00000001', $savedNote->number_full);
                     self::assertSame($blankFirst->id, $savedNote->note->affected_document_id);

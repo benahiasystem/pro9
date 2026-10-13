@@ -13,6 +13,6 @@ class HkaTicketPdf
     {
         // The QR library includes its four-module white border by default.
         $qr = (new QrCodeGenerate())->displayPNGBase64($consultaUrl, 300, 'M');
-        return app(Facturalo::class)->createPdf($document, $document->document_type_id === '08' ? 'debit' : 'invoice', 'ticket', 'string', ['hka_ticket_qr' => $qr]);
+        return app(Facturalo::class)->createPdf($document, ['01'=>'invoice','07'=>'credit','08'=>'debit'][$document->document_type_id], 'ticket', 'string', ['hka_ticket_qr' => $qr]);
     }
 }

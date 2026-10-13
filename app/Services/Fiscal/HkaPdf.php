@@ -13,7 +13,7 @@ final class HkaPdf
 {
     public static function applies(Document $document): bool
     {
-        return ($document->document_type_id === '01' || HkaIgtfNote::applies($document)) && $document->fiscal_emission_mode === 'digital';
+        return ($document->document_type_id === '01' || HkaIgtfNote::applies($document) || FiscalNote::ordinary($document)) && $document->fiscal_emission_mode === 'digital';
     }
 
     public static function view(Document $document, bool $api = false): array
@@ -155,7 +155,7 @@ final class HkaPdf
             self::fail('La descarga requiere la configuración HKA original de la factura confirmada.');
         }
         $frozen = $document->emission->payload['documentoElectronico']['encabezado']['identificacionDocumento'] ?? [];
-        if (($frozen['tipoDocumento'] ?? null) !== ($document->document_type_id === '08' ? '03' : '01')
+        if (($frozen['tipoDocumento'] ?? null) !== (['01'=>'01','07'=>'02','08'=>'03'][$document->document_type_id])
             || (string) ($frozen['numeroDocumento'] ?? '') !== (string) $document->number
             || (string) ($frozen['serie'] ?? '') !== (string) $document->series
             || !preg_match('/^[0-9]{1,19}$/', (string) ($frozen['numeroDocumento'] ?? ''))
@@ -166,7 +166,7 @@ final class HkaPdf
             ->where('series', $document->series)->where('number', $document->number)->where('id', '!=', $document->id)->exists()) {
             self::fail('La identidad fiscal es ambigua entre sucursales.');
         }
-        return ['serie' => (string) ($frozen['serie'] ?? ''), 'tipoDocumento' => $document->document_type_id === '08' ? '03' : '01', 'numeroDocumento' => (string) $frozen['numeroDocumento']];
+        return ['serie' => (string) ($frozen['serie'] ?? ''), 'tipoDocumento' => ['01'=>'01','07'=>'02','08'=>'03'][$document->document_type_id], 'numeroDocumento' => (string) $frozen['numeroDocumento']];
     }
 
     public static function decode(int $httpStatus, $body): string

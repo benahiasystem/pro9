@@ -1,0 +1,129 @@
+{
+  "date": "2026-10-13",
+  "mysql_temporary": {
+    "tests": 15,
+    "assertions": 3204,
+    "cases": [
+      {
+        "test": "test_fresh_tenant_migrations_seed_rollback_and_repeat",
+        "assertions": 1597,
+        "status": "passed",
+        "record": "pro9-notes-final.xml"
+      },
+      {
+        "test": "test_note_credit_limits_inventory_idempotency_and_hka_mapping",
+        "assertions": 25,
+        "status": "passed",
+        "record": "pro9-notes-final.xml"
+      },
+      {
+        "test": "test_note_debit_is_a_separate_receivable_without_inventory",
+        "assertions": 15,
+        "status": "passed",
+        "record": "pro9-notes-mysql.xml"
+      },
+      {
+        "test": "test_note_currency_regime_and_service_matrix",
+        "assertions": 236,
+        "status": "passed",
+        "record": "pro9-notes-mysql.xml"
+      },
+      {
+        "test": "test_note_pending_igtf_and_fund_adjustments_have_no_cash_effect",
+        "assertions": 29,
+        "status": "passed",
+        "record": "pro9-notes-igtf-complete.xml"
+      },
+      {
+        "test": "test_note_iva_replacement_preserves_real_vouchers_without_fake_cash",
+        "assertions": 23,
+        "status": "passed",
+        "record": "pro9-notes-mysql.xml"
+      },
+      {
+        "test": "test_note_refund_preserves_collections_and_reverses_once",
+        "assertions": 25,
+        "status": "passed",
+        "record": "pro9-notes-refunds-final.xml"
+      },
+      {
+        "test": "test_note_concurrent_retention_corrections_preserve_uncertain_effects",
+        "assertions": 31,
+        "status": "passed",
+        "record": "pro9-notes-schema-repeat.xml"
+      },
+      {
+        "test": "test_note_concurrent_creation_and_refunds_use_one_effect_and_real_currency",
+        "assertions": 27,
+        "status": "passed",
+        "record": "pro9-notes-concurrency2.xml"
+      },
+      {
+        "test": "test_special_tax_regimes_persist_settle_edit_freeze_and_emit_after_commit",
+        "assertions": 481,
+        "status": "passed",
+        "record": "pro9-note-regressions.xml"
+      },
+      {
+        "test": "test_third_party_invoices_persist_freeze_edit_and_emit_after_commit",
+        "assertions": 105,
+        "status": "passed",
+        "record": "pro9-note-regressions.xml"
+      },
+      {
+        "test": "test_hka_emission_runs_after_outer_commit_and_recovers_without_duplicate_sales",
+        "assertions": 267,
+        "status": "passed",
+        "record": "pro9-note-regressions.xml"
+      },
+      {
+        "test": "test_iva_ambiguous_write_removal_conflicts_and_definitive_rejections",
+        "assertions": 47,
+        "status": "passed",
+        "record": "pro9-note-regressions.xml"
+      },
+      {
+        "test": "test_islr_coexists_with_iva_idempotence_replacement_cash_and_hka",
+        "assertions": 273,
+        "status": "passed",
+        "record": "pro9-note-regressions.xml"
+      },
+      {
+        "test": "test_note_original_packs_presentations_lots_serials_and_stock_rollback",
+        "assertions": 23,
+        "status": "passed",
+        "record": "pro9-notes-packs-complete.xml"
+      }
+    ]
+  },
+  "javascript": {
+    "tests": 158,
+    "passed": 158,
+    "failed": 0
+  },
+  "unit_regression": {
+    "tests": 739,
+    "assertions": 15655,
+    "skipped": 40,
+    "failed": 0,
+    "excluded_class": "QuotationStorefrontCorrelativeTest (two existing expectation failures)"
+  },
+  "php_lint": {
+    "files": 73,
+    "failed": 0
+  },
+  "build_run": false,
+  "browser_acceptance": "pending on fresh installation with user assets",
+  "real_demo": {
+    "paid_debit_confirmed": 34,
+    "paid_debit_query_pdf_verified": 34,
+    "credit_rejected_203_1015": 36,
+    "email_sent": false
+  },
+  "targeted_final_regression": {
+    "tests": 145,
+    "assertions": 2612,
+    "skipped": 5,
+    "failed": 0
+  }
+}

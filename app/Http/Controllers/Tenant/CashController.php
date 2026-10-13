@@ -346,6 +346,7 @@ class CashController extends Controller
         }
 
 
+        $final_balance -= $cash->noteRefundTotal();
         $cash->final_balance = round($final_balance + $cash->beginning_balance, 2);
         $cash->income = round((float) \App\Services\ExchangeRates\ExchangeRateMath::finalAmount($final_balance, 2), 2);
         $cash->state = false;

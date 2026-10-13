@@ -30,7 +30,7 @@ class AccountsReceivable implements FromView
         /**/
 
         $document_payments = DB::table('document_payments')
-            ->select('document_id', DB::raw('SUM(payment) as total_payment'))
+            ->whereNull('reversed_at')->select('document_id', DB::raw('SUM(payment) as total_payment'))
             ->groupBy('document_id');
 
         $documents = DB::connection('tenant')
@@ -52,7 +52,7 @@ class AccountsReceivable implements FromView
                 "IFNULL(credit_notes.total_credit_notes, 0) as total_credit_notes, " .
                 "IFNULL(payments.total_payment, 0) as total_payment, " .
                 "'document' AS 'type', " . "documents.currency_type_id, " . "documents.exchange_rate_sale", "companies.trade_name"))
-            ->where('total_canceled', 0);
+            ->whereRaw(\App\Services\Fiscal\FiscalNoteBalance::sql().' > 0');
 
         $sale_note_payments = DB::table('sale_note_payments')
             ->select('sale_note_id', DB::raw('SUM(payment) as total_payment'))

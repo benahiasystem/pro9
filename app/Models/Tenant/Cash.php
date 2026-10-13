@@ -351,10 +351,21 @@ class Cash extends ModelTenant
             }
         }
 
+        $final_balance -= $this->noteRefundTotal();
         return [
             'income' => round((float) \App\Services\ExchangeRates\ExchangeRateMath::finalAmount($final_balance, 2), 2),
             'final_balance' => round($final_balance + $this->beginning_balance, 2),
         ];
+    }
+
+    public function noteRefunds()
+    {
+        return DocumentNoteRefund::whereNull('reversed_at')->whereHas('global_payment',fn ($q)=>$q->where('destination_type',self::class)->where('destination_id',$this->id));
+    }
+
+    public function noteRefundTotal(): float
+    {
+        return $this->noteRefunds()->get()->sum(fn ($r)=>\App\Services\Fiscal\FiscalAmounts::convert($r->original_amount,$r->currency_type_id,'VES',$r->exchange_rate));
     }
 
 

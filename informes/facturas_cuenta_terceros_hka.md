@@ -72,3 +72,7 @@ Se retiraron la base, usuario MySQL, hostname, cliente y website centrales de la
 ## Evolución — 12 de octubre de 2026
 
 Las facturas por terceros admiten ahora el régimen especial opcional dentro del mismo alcance web digital DEMO al contado completamente pagado. HkaDomesticInvoicePolicy y HkaDomesticMoney comparten las validaciones y la adaptación con ventas propias con régimen; HkaThirdPartyMoney delega por compatibilidad. La combinación se adapta una sola vez y conserva transacción 99 y titular separado. Ver [regímenes y evidencia nueva](facturas_regimenes_especiales_hka.md). Los controles y archivos históricos de este informe se conservan.
+
+## Actualización de notas del 13/10/2026
+
+El contrato vigente de notas domésticas, devoluciones y ajustes está en [notas de crédito y débito HKA](notas_credito_debito_hka.md). Reemplaza las restricciones históricas de notas vinculadas de esta etapa para el flujo ordinario identificado por UUID de creación. ND cobradas:34 variantes confirmadas/consultadas con PDF real; NC:36 variantes rechazadas por203/1015, con efectos comerciales guardados y capacidad fiscal bloqueada, sin pagos ficticios. Ajustes IGTF sin contrato/aceptación específica conservan pendientes. Esquema sólo para instalaciones nuevas; no se convirtió ningún tenant real.

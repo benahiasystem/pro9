@@ -111,6 +111,8 @@ class Facturalo
     {
         $this->actions = array_key_exists('actions', $inputs)?$inputs['actions']:[];
         $this->type = $inputs['type'];
+        // Acquire the serialization lock before any consistent read creates a MySQL snapshot.
+        if (in_array($this->type,['credit','debit'],true)) \App\Models\Tenant\Company::query()->lockForUpdate()->firstOrFail();
         if (!in_array($this->type, ['invoice', 'credit', 'debit'], true)) {
             \App\Services\ThirdPartyInvoicePolicy::assertInput($inputs);
         }
@@ -130,13 +132,22 @@ class Facturalo
         }
         // ######## FIN POLITICA IDENTIDAD ACTIVA EN VENTAS ########
 
+        if (in_array($this->type, ['credit','debit'], true)) {
+            if (empty($inputs['note_creation_key'])) \App\Services\Fiscal\FiscalAmounts::error('note_creation_key','Las notas requieren un UUID de creación y una factura original registrada.');
+            \App\Models\Tenant\Company::query()->lockForUpdate()->firstOrFail();
+            if ($existing = \App\Services\Fiscal\FiscalNote::existing($inputs)) { $this->document=$existing; return $this; }
+            $inputs=\App\Services\Fiscal\FiscalNote::resolve($inputs);
+        }
         switch ($this->type) {
             case 'debit':
             case 'credit':
                 $document = Document::create($inputs);
                 $document->note()->create($inputs['note']);
+                if (!empty($inputs['note_creation_key'])) {
+                    $document->forceFill(['customer'=>$inputs['customer'],'establishment'=>$inputs['establishment']])->save();
+                }
                 foreach ($inputs['items'] as $row) {
-                    $document->items()->create(in_array($this->type, ['invoice','credit','debit'], true) ? \App\Services\Fiscal\FiscalDocumentPersistence::line($row, \App\Services\ExportInvoicePolicy::isExport(\App\Services\ExportInvoicePolicy::operation($inputs))) : $row);
+                    $document->items()->create(!empty($inputs['note_creation_key']) ? $row : (in_array($this->type, ['invoice','credit','debit'], true) ? \App\Services\Fiscal\FiscalDocumentPersistence::line($row, \App\Services\ExportInvoicePolicy::isExport(\App\Services\ExportInvoicePolicy::operation($inputs))) : $row));
                 }
                 if($this->type === 'credit') $this->saveFee($document, $inputs['fee']);
                 // ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
@@ -144,6 +155,8 @@ class Facturalo
                 \App\Services\Fiscal\FiscalDocumentPersistence::otherTaxes($document, $inputs['taxes'] ?? []);
                 \App\Services\Fiscal\FiscalDocumentPersistence::summarize($document);
                 \App\Services\Fiscal\FiscalDocumentPersistence::applySettlements($document, $inputs);
+                if ($this->type === 'debit') $this->savePayments($document, $inputs['payments'] ?? []);
+                \App\Services\Fiscal\FiscalNote::finish($document);
                 // ######## FIN PERSISTENCIA FISCAL VENEZUELA ########
                 $this->document = Document::find($document->id);
                 break;
@@ -218,7 +231,7 @@ class Facturalo
             app(\App\Services\Fiscal\HkaMail::class)->registerAutomatic($this->document,
                 (bool) optional($this->configuration)->auto_send_pdf_email || ($this->actions['send_email'] ?? false) === true);
         }
-        if ($this->type === 'invoice' && $this->document->fiscal_emission_mode === 'digital'
+        if (($this->type === 'invoice' || \App\Services\Fiscal\FiscalNote::ordinary($this->document)) && $this->document->fiscal_emission_mode === 'digital'
             && $this->document->fiscal_environment === 'demo') {
             $id = $this->document->id;
             $database = $this->document->getConnection()->getDatabaseName();

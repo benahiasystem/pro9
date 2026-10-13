@@ -28,6 +28,7 @@ final class HkaEmission
                 $document = $document->fresh();
                 if (empty($document->emission->response['retry_allowed'])) return DocumentEmissionView::forDocument($document);
             }
+            if ($reason = HkaNoteCapability::reason($document)) FiscalAmounts::error('note',$reason);
             if ($reason = HkaIslrRetentionCapability::reason($document)) FiscalAmounts::error('islr_retention',$reason);
             if ($reason = HkaIvaRetentionCapability::reason($document)) FiscalAmounts::error('iva_retention',$reason);
             $token = app(HkaTransport::class)->token($company);
@@ -98,7 +99,8 @@ final class HkaEmission
     {
         $company = Company::firstOrFail();
         if (HkaIgtfNote::applies($document)) HkaIgtfNote::assertCollection($document);
-        if (($document->document_type_id !== '01' && !HkaIgtfNote::applies($document)) || $document->fiscal_emission_mode !== 'digital'
+        if (FiscalNote::ordinary($document) && ($reason=FiscalNote::reason($document->note->affected_document))) FiscalAmounts::error('note',$reason);
+        if (($document->document_type_id !== '01' && !HkaIgtfNote::applies($document) && !FiscalNote::ordinary($document)) || $document->fiscal_emission_mode !== 'digital'
             || $document->fiscal_environment !== 'demo' || $company->fiscal_environment !== 'demo'
             || $company->fiscal_emission_mode !== 'digital' || $document->isVoidedOrRejected()) {
             FiscalAmounts::error('emission', 'El envío HKA está habilitado únicamente para facturas vigentes en Medios digitales y DEMO.');

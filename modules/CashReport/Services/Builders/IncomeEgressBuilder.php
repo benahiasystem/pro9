@@ -28,6 +28,7 @@ class IncomeEgressBuilder implements CashReportBuilderInterface
             });
         }
 
+        foreach ($cash->noteRefunds()->where('payment_method_type_id',\App\Models\Tenant\PaymentMethodType::CASH_PAYMENT_ID)->get() as $refund) $data_payments->push($refund->getRowResourceCashPayment());
         $data['total_income'] = $data_payments->where('type_transaction', 'income')->sum('payment');
         $data['total_egress'] = $data_payments->where('type_transaction', 'egress')->sum('payment');
         $data['total_balance'] = $data['total_income'] - $data['total_egress'];

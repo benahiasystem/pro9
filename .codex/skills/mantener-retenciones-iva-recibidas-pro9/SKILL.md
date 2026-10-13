@@ -61,3 +61,7 @@ POST/GET/DELETE y conciliación pasaron en facturas de control completamente cob
 - UI/PDF: `tests/js/iva-retention-ui.test.cjs`, `pos-hka-email.test.cjs`, `CurrentPdfRenderingTest` y `CurrentPdfTemplateContractTest`; reapertura, borradores, respuestas obsoletas, errores y entradas compartidas. Elegir regresiones de pagos/SPE afectadas.
 - Assets según `frontend-build`, compilación del usuario. Después verificar manifiesto/bundle y cada entrada visual en instalación nueva; métodos/plantillas no acreditan esa aceptación, pendiente en la evidencia del chat.
 - Registrar evidencia saneada y límites sin JWT, credenciales o RIF reales en fixtures. Las pruebas nuevas siguen el alcance autorizado de la tarea; la evidencia histórica no concede permiso para emitir ni borrar registros remotos.
+
+## Ajustes por notas de crédito (13/10/2026)
+
+`NoteAdjustment` coordina solicitud de reversión y reemplazo desde una NC sin duplicar el servicio/outbox. La base/IVA admisibles usan `FiscalNote::remaining`, conservando el IVA original. Un resultado incierto conserva aplicación y bloquea el reemplazo. Sólo ausencia acreditada libera registro del comprobante corregido real con soporte, UUID y referencia original. `withNoteReplacement` admite dentro del bloqueo el exceso de efectivo reembolsable, con límite tributario/neto; no usar este ámbito fuera de la coordinación autorizada ni inventar pagos. El reembolso reserva la parte no monetaria mientras se concilia. Consultar [contrato y pruebas](../../../informes/notas_credito_debito_hka.md).

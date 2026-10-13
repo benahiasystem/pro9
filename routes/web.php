@@ -408,6 +408,13 @@ if ($hostname) {
             // Route::get('documents/remove/{document}', 'Tenant\DocumentController@remove');
             Route::post('documents/email', 'Tenant\DocumentController@email');
             // debe declararse antes del wildcard documents/note/{document}
+            // ######## INICIO NOTAS HKA ########
+            Route::get('documents/{note}/refunds', 'Tenant\NoteOperationController@records');
+            Route::post('documents/{note}/refunds', 'Tenant\NoteOperationController@refund');
+            Route::post('documents/{note}/refunds/{refund}/reverse', 'Tenant\NoteOperationController@reverseRefund');
+            Route::post('documents/{note}/adjustments', 'Tenant\NoteOperationController@adjustment');
+            Route::post('documents/{note}/adjustments/{adjustment}/replacement', 'Tenant\NoteOperationController@replacement');
+            // ######## FIN NOTAS HKA ########
             Route::get('documents/note/{document}', 'Tenant\NoteController@create');
             Route::get('documents/note/record/{document}', 'Tenant\NoteController@record');
             Route::get('documents/item/tables', 'Tenant\DocumentController@item_tables');

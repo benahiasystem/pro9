@@ -49,7 +49,7 @@ class MovementCollection extends ResourceCollection
             $payments = $payment->payment;
 
             // Convirtiendo el documento que esta hecho en dolares a bolívares
-            if ($payment instanceof \App\Models\Tenant\DocumentPayment) {
+            if ($payment instanceof \App\Models\Tenant\DocumentPayment || $payment instanceof \App\Models\Tenant\DocumentNoteRefund) {
                 $payments = $payment->reversed_at ? 0 : $payment->cash_received_amount;
                 $amount = \App\Services\Fiscal\FiscalAmounts::convert($payments, $payment->currency_type_id, 'VES', $payment->exchange_rate);
             } elseif ($document) {
@@ -76,7 +76,7 @@ class MovementCollection extends ResourceCollection
 
 
             if ($payment->associated_record_payment) {
-                if ($payment->associated_record_payment->date_of_issue) {
+                if (!($payment instanceof \App\Models\Tenant\DocumentNoteRefund) && $payment->associated_record_payment->date_of_issue) {
                     $timedate = $payment->associated_record_payment->date_of_issue->format('Y-m-d') . " " . $payment->associated_record_payment->time_of_issue;
                     $timedate = Carbon::createFromFormat('Y-m-d H:i:s', $timedate)->format('d-m-Y h:i A');
                 }
