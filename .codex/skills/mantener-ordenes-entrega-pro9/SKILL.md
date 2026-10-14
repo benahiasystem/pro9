@@ -24,10 +24,18 @@ description: Mantener en Pro9 el módulo y la presentación de Órdenes de entre
 
 - Preservar nombres internos vigentes como `dispatch` y `dispatches`, sus tablas, claves foráneas, rutas, permisos y campos de API. No restaurar el módulo retirado `dispatch_carrier` ni sus formularios para satisfacer pruebas históricas.
 - Preservar el valor técnico del módulo `guia` y el alias de búsqueda `guia` por compatibilidad.
-- La orden de entrega es local: no firma XML, no solicita ticket/CDR, no se envía a SUNAT y no expone `send_sunat`. El cierre sólo ofrece PDF, correo y WhatsApp.
+- La orden conserva el registro y PDF comercial local. En Medios digitales DEMO registra intención transaccional en `dispatch_emissions` y emite automáticamente HKA `04` después del commit, con consulta, PDF original A4 y relación con facturas. Producción, anulación remota y correo HKA de órdenes siguen fuera de alcance. No firma XML ni solicita ticket/CDR/SUNAT; no expone `send_sunat`.
 - El esquema `dispatches` conserva `hash` y `qr_url` para seguimiento comercial, y elimina `sunat_error_response`, `has_xml`, `has_cdr`, `ticket` y `reception_date`.
 - No restaurar `app/CoreFacturalo/WS`, endpoints de consulta CDR ni el selector `auto_send_dispatchs_to_sunat`.
 - No confundir las órdenes de entrega con guías documentarias, archivos adjuntos de compra u otros conceptos ajenos al módulo de despachos.
+
+## Persistencia, inventario y HKA DEMO
+
+Leer [implementación y evidencia](../../../informes/ordenes_entrega_hka.md). Mantener `creation_key` UUID y hash comercial, resolver IDs/snapshots en servidor y usar el almacén de la sucursal de la orden. Repetir una clave no crea otra orden ni otro movimiento. La edición restaura líneas anteriores dentro de la misma transacción y preserva su configuración de descuento de stock. Seriales únicos, enteros y del almacén autorizado; lotes del producto.
+
+`DeliveryOrderInvoiceInventory` conserva cantidades físicas ya trasladadas y lotes/seriales al convertir una o varias órdenes. Productos con trazabilidad requieren una línea por producto con su cantidad completa y unidad original; separar cantidades previamente trasladadas de cantidades nuevas. Bloquear edición fiscal y anulación local de órdenes HKA pendientes, inciertas o confirmadas. Conciliar antes de reenviar una solicitud incierta; conservar UUID, identidad y payload.
+
+El generador `scripts/prepare_delivery_order_demo.php` se limita a BBC DEMO y tiene manifiesto, bloqueo de ejecución y claves estables. Su ampliación de esquema BBC fue expresamente autorizada para estas pruebas; no extenderla automáticamente a otros tenants. Concurrencia, rollback y cambios de configuración se prueban en bases temporales.
 
 ## Verificación obligatoria
 

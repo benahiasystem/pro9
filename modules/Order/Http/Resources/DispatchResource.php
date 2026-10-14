@@ -27,6 +27,8 @@ class DispatchResource extends JsonResource
 
         return [
             'id' => $this->id,
+            'fiscal_emission' => \App\Services\Fiscal\HkaDispatchEmission::view($this->resource),
+            'pdf_downloads' => \App\Services\Fiscal\HkaDispatchPdf::view($this->resource),
             'external_id' => $this->external_id,
             'document_type_id' => $this->document_type_id,
             'number' => $this->number_full,
@@ -44,6 +46,7 @@ class DispatchResource extends JsonResource
                 'extension_only' => 'pdf'
             ],
             'reference_documents' => $this->reference_documents,
+            'reference_document_id' => $this->reference_document_id,
             'transfer_reason_type_id' => $this->transfer_reason_type_id,
             'transfer_reason_type_description' => optional($this->transfer_reason_type)->description,
             'transfer_reason_description' => $this->transfer_reason_description,

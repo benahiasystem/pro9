@@ -507,3 +507,7 @@ El contrato vigente de notas domésticas, devoluciones y ajustes está en [notas
 ## Emisión y anulación de notas — corrección del 13/10/2026
 
 El [contrato actualizado de NC/ND](notas_credito_debito_hka.md#corrección-de-envío-y-anulación--13102026) incorpora declaraciones fiscales99 de crédito comercial, cobros reales de ND al contado y anulación ordinaria DEMO con conciliación y reversión local idempotente. Sustituye el bloqueo histórico1015 de notas sin formas de pago; no habilita facturas a crédito, exportaciones, producción ni el circuito especializado IGTF. El esquema existente y los documentos confirmados se conservan. Consultar el informe y su evidencia consolidada para resultados, interfaces y límites.
+
+## Órdenes de entrega 04 — verificación DEMO de octubre de 2026
+
+Se implementó el envío automático después del commit desde Pro9 09 hacia HKA 04, con operación separada en dispatch_emissions, consulta, recuperación, PDF original privado A4 y relaciones con facturas. BBC conserva 23 órdenes confirmadas y cinco vínculos verificados en ambos sentidos. El contrato real de guías requiere precio unitario incluso cuando es cero y excluye el nodo de totales de factura. Ver [informe, matriz, restricciones y manifiesto](ordenes_entrega_hka.md). Esta evidencia sustituye el estado pendiente histórico del tipo 04 sólo para DEMO; producción, anulación y correo HKA de órdenes siguen fuera del alcance.

@@ -1,9 +1,9 @@
-# QA de facturación Pro9 en Medios digitales
+# QA de facturación Pro 9 en Medios digitales
 
-Guía detallada para que otro agente ejecute QA. Referencia: 12 de octubre de 2026, commit `87dc6506cf8d94c6e2d3cad1fb512b5b62e5e572`.
+Guía detallada para que otro agente ejecute QA. Referencia: 14 de octubre de 2026, commit `76690125` y cambios locales de órdenes con SHA-256 en fuentes.
 
 **Modalidad:** Medios digitales. **Ambiente de referencia:** DEMO, según la integración HKA actual.
-**Catálogo inicial:** 1121 casos especificados en 35 grupos (720 IDs originales conservados y 401 nuevos). Todos tienen estado **Pendiente**. No son resultados de pruebas ejecutadas.
+**Catálogo inicial:** 1702 casos especificados en 41 grupos (1121 anteriores conservados y 581 nuevos). Todos tienen estado **Pendiente**. No son resultados de pruebas ejecutadas.
 
 1. [Guía de ejecución](guia_ejecucion.md): alcance, instrucciones obligatorias, fixtures, oráculos, capas de evidencia, secuencia y criterios de cierre.
 2. [Casos y especificaciones detalladas](casos_prueba.md): pasos y aceptación de cada caso, más los campos de resultado individual.
@@ -22,7 +22,7 @@ Se actualizaron las expectativas de 37 casos anteriores y se agregaron cinco gru
 
 ## Instrucción lista para entregar al agente
 
-> Ejecuta la guía de QA de Pro9 en `informes/qa_facturacion_medios_digitales/guia_ejecucion.md`, con modalidad Medios digitales y ambiente DEMO conforme a la capacidad actual. La referencia actual es el commit 87dc6506cf8d94c6e2d3cad1fb512b5b62e5e572; conserva los 1121 IDs del catálogo y los 720 IDs originales. Lee los casos, inventaría todas las opciones y valores del despliegue, ejecuta las matrices y crea casos adicionales cuando falte cobertura. Para cada prueba y variante registra Aprobó o Reprobó con resultado observado, evidencia, documento/operación, ejecutor y fecha Caracas. Si no puedes ejecutarla, registra Bloqueada con su causa; No aplica exige exclusión sustentada. No conviertas pruebas simuladas o evidencia histórica en aceptación real HKA ni en ejecución de esta nueva corrida. Prueba regímenes, SPE, IVA, ISLR y coexistencia; documenta cada una de las cuatro capas y las capacidades netas bloqueadas con can_send =false. Conserva abonos al reabrir Pagos/recuperar borradores y aplica la ventana propia de retenciones de 90 segundos conforme a sus estados. Respeta permisos, fixtures QA, destinatarios controlados, estado fiscal, oráculos monetarios y la restricción de compilación del proyecto. Al finalizar entrega el registro actualizado, evidencia saneada y un informe autónomo completo según la plantilla, con conteos reconciliados, defectos reproducibles, conciliación de dinero/stock, límites y conclusión precisa. No declares aprobado el sistema con casos críticos faltantes o fallidos.
+> Ejecuta la guía de QA de Pro 9 en `informes/qa_facturacion_medios_digitales/guia_ejecucion.md`, con modalidad Medios digitales y ambiente DEMO conforme a la capacidad actual. La referencia actual es 76690125 más cambios locales de órdenes con hashes en fuentes; conserva los 1702 IDs del catálogo, incluidos los 1121 anteriores y los 720 originales. Lee los casos, inventaría todas las opciones y valores del despliegue, ejecuta las matrices y crea casos adicionales cuando falte cobertura. Para cada prueba y variante registra Aprobó o Reprobó con resultado observado, evidencia, documento/operación, ejecutor y fecha Caracas. Si no puedes ejecutarla, registra Bloqueada con su causa; No aplica exige exclusión sustentada. No conviertas pruebas simuladas o evidencia histórica en aceptación real HKA ni en ejecución de esta nueva corrida. Prueba regímenes, SPE, IVA, ISLR, coexistencia, NC/ND, devoluciones/ajustes, anulación de notas, órdenes de entrega, inventario y relaciones; documenta cada una de las cuatro capas y las capacidades netas bloqueadas con can_send =false. Conserva abonos al reabrir Pagos/recuperar borradores y aplica la ventana propia de retenciones de 90 segundos conforme a sus estados. Excluye las notas de entrega esGuiaDespacho=0; prueba únicamente órdenes 09→HKA04/indicador1. No ejecutes generadores históricos sobre BBC ni migraciones o compilaciones como preparación. Respeta permisos, fixtures QA, destinatarios controlados, estado fiscal, oráculos monetarios y la restricción de compilación del proyecto. Al finalizar entrega el registro actualizado, evidencia saneada y un informe autónomo completo según la plantilla, con conteos reconciliados, defectos reproducibles, conciliación de dinero/stock, límites y conclusión precisa. No declares aprobado el sistema con casos críticos faltantes o fallidos.
 
 ## Distribución de casos
 
@@ -63,3 +63,20 @@ Se actualizaron las expectativas de 37 casos anteriores y se agregaron cinco gru
 |RIVA|Retenciones IVA recibidas: previsión, aplicación y conciliación|63|
 |RISLR|Retenciones ISLR recibidas: conceptos, previsión y protocolo independiente|135|
 |INT|Integración y regresión: coexistencia, pagos, canales y aislamiento|80|
+
+## Ampliación del 14 de octubre de 2026
+
+Se agregan **581 casos**, conservando los 1121 anteriores. NHD incluye 224 combinaciones de siete motivos × dos monedas × propia/terceros × sin régimen/siete regímenes, 96 ND al contado y 42 controles adicionales. ODE incluye 40 combinaciones de cinco motivos × dos transportes × descuento de stock × valorización, más 32 controles. NRF, NAN, ODI y NRI desarrollan ciclos financieros, anulación, trazabilidad y regresión. Cada combinación tiene su ID y veredicto independiente.
+
+La creación ordinaria requiere factura doméstica vigente confirmada y control coincidente. Las notas heredan tercero/régimen; sus transacciones son 03/04/02. La declaración 99 de crédito comercial no crea pagos ni devoluciones. Las órdenes conservan Pro 9 09→HKA04/`esGuiaDespacho="1"`. **Las notas de entrega indicador 0 están excluidas**, junto con producción, anulación remota de facturas, correo/anulación HKA de órdenes y ampliación de API pública.
+
+La preparación de esta entrega verifica documentación y libro; no ejecuta QA de la aplicación ni operaciones fiscales. La evidencia del 13 de octubre y las suites existentes son antecedentes; todos los casos nuevos están Pendiente, sin resultados atribuidos.
+
+| Grupo nuevo | Área | Casos |
+|---|---|---:|
+|NHD|Notas ordinarias y emisión HKA|362|
+|NRF|Devoluciones de dinero y ajustes|38|
+|NAN|Anulación de notas|32|
+|ODE|Órdenes de entrega: guías de despacho|72|
+|ODI|Inventario, conversiones y relaciones|45|
+|NRI|Integración y regresión de notas y órdenes|32|

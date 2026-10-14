@@ -1,6 +1,6 @@
-# Informe final QA: Pro9 Medios digitales
+# Informe final QA: Pro 9 Medios digitales
 
-> Referencia `87dc6506cf8d94c6e2d3cad1fb512b5b62e5e572`, 12 de octubre de 2026: 1121 casos/35 grupos; 720 anteriores+401 nuevos. Plantilla sin ejecutar. Sustituir todos los campos entre corchetes. No conservar cifras de ejemplo como resultados reales.
+> Referencia `76690125` y cambios locales de órdenes identificados por hashes, 14 de octubre de 2026: 1702 casos/41 grupos; 1121 anteriores conservados +581 nuevos. Plantilla sin ejecutar. Sustituir todos los campos entre corchetes. No conservar cifras de ejemplo como resultados reales.
 
 ## 1. Identificación y conclusión
 
@@ -193,11 +193,11 @@ Describir uno activo por impuesto, reemplazos/historial, alícuotas mixtas, lím
 |---|---|---|---|---|---|---|---|---|---|
 | [ID/concepto] | [datos] | [datos QA] | [esperado/observado] | [datos] | [outbox propia] | [sólo 7 campos del contrato] | [prueba propia] | [ can_send false] | [estado/ruta] |
 
-Reportar 85 conceptos no salariales iniciales por ID, exclusión 001, ausencia de mapping codigoOperacion y de tasas/sustraendo automáticos. Precisar qué GET verificó:serie, tipoDocumento, numeroDocumento, numeroControl, numeroCompRetencion, fechaEmisionCR, impuestoRetenido; no afirmar RIF/porcentaje/concepto/sustraendo verificados remotos. La aceptación histórica parcial VES no habilita capacidad; USD/coexistencia tienen resultados independientes.
+Reportar 85 conceptos no salariales iniciales por ID, exclusión 001, ausencia de mapping codigoOperacion y de tasas/sustraendo automáticos. Precisar qué GET verificó:serie, tipoDocumento, numeroDocumento, numeroControl, numeroCompRetencion, fecha Emision CR, impuestoRetenido; no afirmar RIF/porcentaje/concepto/sustraendo verificados remotos. La aceptación histórica parcial VES no habilita capacidad; USD/coexistencia tienen resultados independientes.
 
 ## 17. Coexistencia, abonos y regresión por canal
 
-| Caso/variante/canal | Perfil/fechas/versiones | Total/pagos reales y monedas | IVA prevista/aplicada | ISLR prevista/aplicada | Sugerencia neta/deuda esperada-observada | Reabrir Pagos/borrador y UUIDs conservados | HKA IVA/ISLR independientes | Caja/CxC/reportes/stock/aislamiento | Veredicto/evidencia |
+| Caso/variante/canal | Perfil/fechas/versiones | Total/pagos reales y monedas | IVA prevista/aplicada | ISLR prevista/aplicada | Sugerencia neta/deuda esperada-observada | Reabrir Pagos/borrador y UUID s conservados | HKA IVA/ISLR independientes | Caja/CxC/reportes/stock/aislamiento | Veredicto/evidencia |
 |---|---|---|---|---|---|---|---|---|---|
 | [ID] | [datos] | [importes] | [datos/estado] | [datos/estado] | [valores] | [antes/después] | [estados/bloqueos] | [conciliación] | [estado/ruta] |
 
@@ -205,7 +205,55 @@ Reconciliar ejemplo 116−previsión 12−previsión 3=sugerencia 101, pago 101/
 
 Separar las cuatro conclusiones: registro comercial, aplicación local, sincronización HKA y presentación. Evidencia histórica/simulada debe figurar en apartado de soporte con capa explícita; no en tabla de emisiones reales de la corrida. No cerrar Aprobó si falta variante aplicable o caso P0.
 
-## 18. Cierre y archivos entregados
+## 18. Notas ordinarias y emisión HKA: resultados de NHD
+
+| Caso / variante | Contexto y fixture | Comercial / saldo | Cobros / egresos / ajustes | Stock / lote / serial | Emisión / control / intento | Distribución / relación | Esperado / observado | Estado / evidencia / defecto | Agente / fecha / iteración |
+|---|---|---|---|---|---|---|---|---|---|
+| [ID] | [datos concretos] | [antes/después] | [moneda/tasa/UUID] | [antes/después] | [estado/identidad] | [capas] | [cálculo independiente] | [veredicto/rutas] | [datos] |
+
+Reconciliar las 224 combinaciones sin cobro propio y 96NDalcontado por ID. Mostrar motivos/tipo/transacción, moneda, tasa de nota/referencia, tercero/régimen, derechos pendientes y centavos. FormasPago 99 no son cash. Presentar aceptación Real DEMO actual y evidencia de A4/A5/ticket/correo por separado; no importar 120 casos históricos como resultados.
+
+## 19. Devoluciones de dinero y ajustes: resultados de NRF
+
+| Caso / variante | Contexto y fixture | Comercial / saldo | Cobros / egresos / ajustes | Stock / lote / serial | Emisión / control / intento | Distribución / relación | Esperado / observado | Estado / evidencia / defecto | Agente / fecha / iteración |
+|---|---|---|---|---|---|---|---|---|---|
+| [ID] | [datos concretos] | [antes/después] | [moneda/tasa/UUID] | [antes/después] | [estado/identidad] | [capas] | [cálculo independiente] | [veredicto/rutas] | [datos] |
+
+Detallar origenreal/límites/moneda/tasa/destino y egresos activos/revertidos; no convertir NC en salida automática. Informar ajustesIVA/ISLR, reemplazos con soporte, uncertain que conserva aplicación, fondo ajustado e IGTF separado/bloqueado; conciliar saldos y cash.
+
+## 20. Anulación de notas: resultados de NAN
+
+| Caso / variante | Contexto y fixture | Comercial / saldo | Cobros / egresos / ajustes | Stock / lote / serial | Emisión / control / intento | Distribución / relación | Esperado / observado | Estado / evidencia / defecto | Agente / fecha / iteración |
+|---|---|---|---|---|---|---|---|---|---|
+| [ID] | [datos concretos] | [antes/después] | [moneda/tasa/UUID] | [antes/después] | [estado/identidad] | [capas] | [cálculo independiente] | [veredicto/rutas] | [datos] |
+
+Distinguir NC01 de anulación propia. Mostrar flujo local/remoto, dependencias, journal/UUID/control congelados, estados y reservas hasta confirmación. Documentar 201 vacío, EstadoDocumento Anulada, reversión única y casosremote_confirmed/comercialpendiente completa dos sin otro Anular.
+
+## 21. Órdenes de entrega: guías de despacho: resultados de ODE
+
+| Caso / variante | Contexto y fixture | Comercial / saldo | Cobros / egresos / ajustes | Stock / lote / serial | Emisión / control / intento | Distribución / relación | Esperado / observado | Estado / evidencia / defecto | Agente / fecha / iteración |
+|---|---|---|---|---|---|---|---|---|---|
+| [ID] | [datos concretos] | [antes/después] | [moneda/tasa/UUID] | [antes/después] | [estado/identidad] | [capas] | [cálculo independiente] | [veredicto/rutas] | [datos] |
+
+Mostrar 40 combinaciones y controles, siempre 09→04/indicador1. Señalar flagstock/valorización, datos autorizados, VES, transporte/motivo/fechas/peso y emisión después commit. Reportar límites del originalA4 sinretocar y excluir indicador0/correo/anulaciónHKAorden.
+
+## 22. Inventario, conversiones y relaciones: resultados de ODI
+
+| Caso / variante | Contexto y fixture | Comercial / saldo | Cobros / egresos / ajustes | Stock / lote / serial | Emisión / control / intento | Distribución / relación | Esperado / observado | Estado / evidencia / defecto | Agente / fecha / iteración |
+|---|---|---|---|---|---|---|---|---|---|
+| [ID] | [datos concretos] | [antes/después] | [moneda/tasa/UUID] | [antes/después] | [estado/identidad] | [capas] | [cálculo independiente] | [veredicto/rutas] | [datos] |
+
+Conciliar Kardex/almacén/lotes/seriales antes después y conversiones individuales/múltiples:yatrasladado/nuevopendiente. Reportar referencias locales frente fiscales, facturaGuia, consulta-POST-consulta, ambas direcciones, ausencia válida, timeout/concurrencia y guards de trazabilidad.
+
+## 23. Integración y regresión de notas y órdenes: resultados de NRI
+
+| Caso / variante | Contexto y fixture | Comercial / saldo | Cobros / egresos / ajustes | Stock / lote / serial | Emisión / control / intento | Distribución / relación | Esperado / observado | Estado / evidencia / defecto | Agente / fecha / iteración |
+|---|---|---|---|---|---|---|---|---|---|
+| [ID] | [datos concretos] | [antes/después] | [moneda/tasa/UUID] | [antes/después] | [estado/identidad] | [capas] | [cálculo independiente] | [veredicto/rutas] | [datos] |
+
+Comparar modeloSQL/listado/pagos/cxc/dashboard/reportes/exportaciones por moneda. Confirmar netoIVA/ISLRsiguenfalse, aislamiento tenant/sucursal/permisos, respuestasobsoletas/configuración y esquemalegado. FallosPDF/correono degradanconfirmed.
+
+## 24. Cierre y archivos entregados
 
 [Repetir conclusión con alcance preciso y las condiciones que faltan. Confirmar que conteos y veredictos están reconciliados.]
 
@@ -218,3 +266,5 @@ Separar las cuatro conclusiones: registro comercial, aplicación local, sincroni
 
 **No declarar aprobado un sistema con P0 fallido/bloqueado/pendiente, defectos críticos/altos abiertos o cobertura esencial sin demostrar. Entregar el informe también si el resultado es Inconcluso.**
 
+
+Catálogo de esta entrega: **1702 casos / 41 grupos**, con 581 nuevos Pendiente. Mantener casos y variantes separados. Justificar Bloqueada/No aplica; informe final obligatorio aunque sea Inconcluso. Producción, indicador 0, anulación remota facturas, correo/anulaciónHKAórdenes y nueva API pública fuera de positivas.

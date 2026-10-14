@@ -3343,6 +3343,7 @@ export default {
             this.preloadedCustomer =
                 _.find(this.customers, { id: client.id }) || client;
             // ######### FIN FACTURA DESDE MÚLTIPLES NOTAS PARA TODO CLIENTE #########
+            if (client.dispatch_establishment_id) this.form.establishment_id=client.dispatch_establishment_id;
             this.changeEstablishment();
             this.filterSeries();
             this.filterCustomers();

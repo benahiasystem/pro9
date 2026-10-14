@@ -160,6 +160,7 @@ final class HkaEmission
         } catch (\Throwable $ignored) { /* The sale and its fiscal confirmation remain persisted. */ }
         if (optional($current->emission)->status === 'confirmed') {
             HkaIgtfNote::resume($current);
+            try { HkaDispatchRelations::resumeInvoice($current); } catch (\Throwable $ignored) {}
             try { IvaRetentionService::resume($current); IslrRetentionService::resume($current); }
             catch (\Throwable $ignored) { /* Durable pending vouchers are recovered independently. */ }
         }

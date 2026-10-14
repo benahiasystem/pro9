@@ -519,6 +519,10 @@ if ($hostname) {
              * dispatches/search/customer/{id}
              */
             Route::prefix('dispatches')->group(function () {
+                Route::post('{id}/send-hka','Tenant\\DispatchFiscalController@send');
+                Route::post('{id}/query-hka','Tenant\\DispatchFiscalController@query');
+                Route::post('{id}/relate-hka','Tenant\\DispatchFiscalController@relate');
+                Route::get('{external_id}/download-hka-pdf/a4','Tenant\\DispatchFiscalController@download');
                 Route::get('', 'Tenant\DispatchController@index')->name('tenant.dispatches.index');
                 Route::get('/columns', 'Tenant\DispatchController@columns');
                 Route::get('/records', 'Tenant\DispatchController@records');
@@ -541,7 +545,7 @@ if ($hostname) {
                 Route::get('/get_origin_addresses/{establishment_id}', 'Tenant\DispatchController@getOriginAddresses');
                 Route::get('/get_addresses_other_establishments/{establishment_id}', 'Tenant\DispatchController@getAddressesOtherEstablishments');
                 Route::get('/get_delivery_addresses/{person_id}', 'Tenant\DispatchController@getDeliveryAddresses');
-                Route::get('/anulate/{id}', 'Tenant\DispatchController@anulate');
+                Route::post('/anulate/{id}', 'Tenant\DispatchController@anulate');
             });
 
             Route::get('customers/list', 'Tenant\PersonController@clientsForGenerateCPE');

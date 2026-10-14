@@ -1,0 +1,467 @@
+{
+  "environment": "demo",
+  "host": "bbc.localhost",
+  "date": "2026-10-13",
+  "commercial_orders": {
+    "checked_at": "2026-10-13T19:00:23-04:00",
+    "orders": 23,
+    "statuses": {
+      "confirmed": 23
+    },
+    "dispatch_stock_flags": [
+      false
+    ],
+    "motifs_stock_flags": {
+      "04": 0,
+      "21": 0,
+      "22": 0,
+      "23": 0,
+      "24": 0
+    }
+  },
+  "orders": {
+    "04-01": {
+      "id": 1,
+      "number_full": "1600000000",
+      "status": "confirmed",
+      "code": "200",
+      "control": "00-00000684",
+      "queried_status": "confirmed",
+      "pdf_bytes": 69814,
+      "pdf_sha256": "c0ff4f40ff75b1d79bb839a8a61818a2ea1064ccae2582fefe73250d65e0a9ff"
+    },
+    "04-02": {
+      "id": 2,
+      "number_full": "1600000001",
+      "status": "confirmed",
+      "code": "200",
+      "control": "00-00000685",
+      "queried_status": "confirmed",
+      "pdf_bytes": 69726,
+      "pdf_sha256": "982c032033b6aa7b04d8ba6d9bf0eed5ef2e10945ff23a27e8d8b4918204a52c"
+    },
+    "21-01": {
+      "id": 3,
+      "number_full": "1600000002",
+      "status": "confirmed",
+      "code": "200",
+      "control": "00-00000686",
+      "queried_status": "confirmed",
+      "pdf_bytes": 69851,
+      "pdf_sha256": "d57521e2f5868b82ee51055aeef21781b9366b9d94264ee82b14f047aefb5a1e"
+    },
+    "21-02": {
+      "id": 4,
+      "number_full": "1600000003",
+      "status": "confirmed",
+      "code": "200",
+      "control": "00-00000687",
+      "queried_status": "confirmed",
+      "pdf_bytes": 70012,
+      "pdf_sha256": "142feb1a84a6debaf12a35952151c64fe6d097cc3a0f99ccbd672c56d45a83de"
+    },
+    "22-01": {
+      "id": 5,
+      "number_full": "1600000004",
+      "status": "confirmed",
+      "code": "200",
+      "control": "00-00000688",
+      "queried_status": "confirmed",
+      "pdf_bytes": 69824,
+      "pdf_sha256": "b85dd439bfa5304c942240c9b6c7d1430506b729388c5b6b52c18400d5be3157"
+    },
+    "22-02": {
+      "id": 6,
+      "number_full": "1600000005",
+      "status": "confirmed",
+      "code": "200",
+      "control": "00-00000689",
+      "queried_status": "confirmed",
+      "pdf_bytes": 69936,
+      "pdf_sha256": "2121a41ab437b788e9a7e847638a4729e12fb8174190a2f7c1e44c44b50ec1f0"
+    },
+    "23-01": {
+      "id": 7,
+      "number_full": "1600000006",
+      "status": "confirmed",
+      "code": "200",
+      "control": "00-00000690",
+      "queried_status": "confirmed",
+      "pdf_bytes": 69714,
+      "pdf_sha256": "572fc12e7918c1c2c026e61ae1164b2bdc02dd88f9ad9cc34d27235927a719a3"
+    },
+    "23-02": {
+      "id": 8,
+      "number_full": "1600000007",
+      "status": "confirmed",
+      "code": "200",
+      "control": "00-00000691",
+      "queried_status": "confirmed",
+      "pdf_bytes": 69693,
+      "pdf_sha256": "8eca588b0ca4f3ef53099ed9c7afea4d7be786b2e2e136016eae9e6246777dff"
+    },
+    "24-01": {
+      "id": 9,
+      "number_full": "1600000008",
+      "status": "confirmed",
+      "code": "200",
+      "control": "00-00000692",
+      "queried_status": "confirmed",
+      "pdf_bytes": 70029,
+      "pdf_sha256": "a036fd05bb0cca303925a82a00e836a1c4a508ede1fe3346c3284f7bd67129d7"
+    },
+    "24-02": {
+      "id": 10,
+      "number_full": "1600000009",
+      "status": "confirmed",
+      "code": "200",
+      "control": "00-00000693",
+      "queried_status": "confirmed",
+      "pdf_bytes": 69905,
+      "pdf_sha256": "eb6a4441ce589016557a678a426e09ee4deb13e730cb36b7052a4b95a0247807"
+    },
+    "fraction": {
+      "id": 11,
+      "number_full": "1600000010",
+      "status": "confirmed",
+      "code": "200",
+      "control": "00-00000694",
+      "queried_status": "confirmed",
+      "pdf_bytes": 69760,
+      "pdf_sha256": "438117a6eec7fe8f95ab429a6d9281a07bbf09b0d6eefe2f70c13d84652cc2fe"
+    },
+    "lot": {
+      "id": 12,
+      "number_full": "1600000011",
+      "status": "confirmed",
+      "code": "200",
+      "control": "00-00000695",
+      "queried_status": "confirmed",
+      "pdf_bytes": 69772,
+      "pdf_sha256": "80e89ad00425fab544445aaa8067dd20d7080c67e816bf1b9e56ce295f6bffbe"
+    },
+    "serial": {
+      "id": 13,
+      "number_full": "1600000012",
+      "status": "confirmed",
+      "code": "200",
+      "control": "00-00000696",
+      "queried_status": "confirmed",
+      "pdf_bytes": 69745,
+      "pdf_sha256": "97c3f2d6c0695c3ed95a89be44ecb2d202c6534c4a63b2e26c693e197033bd6a"
+    },
+    "public-carrier-only": {
+      "id": 15,
+      "number_full": "1600000013",
+      "status": "confirmed",
+      "code": "200",
+      "control": "00-00000700",
+      "queried_status": "confirmed",
+      "pdf_bytes": 69600,
+      "pdf_sha256": "5551007478844dc60bb1e19a0f4f08b0f86b4198d375c435e36b76a29c8a5ffa"
+    },
+    "customer-6": {
+      "id": 16,
+      "number_full": "1600000014",
+      "status": "confirmed",
+      "code": "200",
+      "control": "00-00000701",
+      "queried_status": "confirmed",
+      "pdf_bytes": 69548,
+      "pdf_sha256": "58a6b2bd101febbfca51ca7669402a4b9f20eab842b221aff572d8c2feac2eb8"
+    },
+    "customer-E": {
+      "id": 17,
+      "number_full": "1600000015",
+      "status": "confirmed",
+      "code": "200",
+      "control": "00-00000702",
+      "queried_status": "confirmed",
+      "pdf_bytes": 69552,
+      "pdf_sha256": "5c3c1293abdf7f970ee800032ca66db4028fe385362525ae3cc7af15be4471e1"
+    },
+    "other-branch": {
+      "id": 14,
+      "number_full": "1600100000",
+      "status": "confirmed",
+      "code": "200",
+      "control": "00-00000697",
+      "queried_status": "confirmed",
+      "pdf_bytes": 69839,
+      "pdf_sha256": "61250794eca2a4fdd6f0d6e1aebdaeedcba401086c9d752d05e2c794d8d0b665"
+    },
+    "derived-quotation": {
+      "id": 19,
+      "number_full": "1600000017",
+      "status": "confirmed",
+      "code": "200",
+      "control": "00-00000705",
+      "queried_status": "confirmed",
+      "pdf_bytes": 69549,
+      "pdf_sha256": "624f35063dbdb69533bed5bc76a563106ebdab93cd218ee025085fc16b2deae0"
+    },
+    "derived-order-note": {
+      "id": 20,
+      "number_full": "1600000018",
+      "status": "confirmed",
+      "code": "200",
+      "control": "00-00000706",
+      "queried_status": "confirmed",
+      "pdf_bytes": 69798,
+      "pdf_sha256": "e6bf48873323a5b4420d33d100ce1b25585fad96a1a30c818f582eac7a404fc3"
+    },
+    "derived-sale-note": {
+      "id": 21,
+      "number_full": "1600000019",
+      "status": "confirmed",
+      "code": "200",
+      "control": "00-00000707",
+      "queried_status": "confirmed",
+      "pdf_bytes": 69718,
+      "pdf_sha256": "4d054c4f0a7a52a26a046dcf71d855e2087d07adb8653c1e777950a29873362f"
+    },
+    "derived-invoice-VES": {
+      "id": 22,
+      "number_full": "1600000020",
+      "status": "confirmed",
+      "code": "200",
+      "control": "00-00000708",
+      "queried_status": "confirmed",
+      "pdf_bytes": 69818,
+      "pdf_sha256": "d6aa73bc6d2f30b1761ee8d8fe66f7b00878588b48aebd6b7d02c466255959db"
+    },
+    "derived-invoice-USD": {
+      "id": 23,
+      "number_full": "1600000021",
+      "status": "confirmed",
+      "code": "200",
+      "control": "00-00000709",
+      "queried_status": "confirmed",
+      "pdf_bytes": 69814,
+      "pdf_sha256": "86d6efdf5b605e628a0564e8f83db2ba2ebbe6b1548a92ffe02a5df66a9c210c"
+    }
+  },
+  "browser": {
+    "id": 18,
+    "number": "1600000016",
+    "status": "confirmed",
+    "code": "200",
+    "control": "00-00000704",
+    "pdf_bytes": 69454,
+    "pdf_sha256": "6fe4c38488534aa85742b6f9e2f0d6cd38337dd12af634a1859ba5d8891a9392",
+    "query_ui": true,
+    "download_ui": true
+  },
+  "invoices": {
+    "VES": {
+      "id": 6,
+      "number": "00000355",
+      "status": "confirmed",
+      "code": "200",
+      "control": "00-00000698"
+    },
+    "USD": {
+      "id": 7,
+      "number": "00000356",
+      "status": "confirmed",
+      "code": "200",
+      "control": "00-00000699"
+    }
+  },
+  "relations": {
+    "10": {
+      "status": "confirmed",
+      "description": "Relación confirmada en HKA."
+    },
+    "11": {
+      "status": "confirmed",
+      "description": "Relación confirmada en HKA."
+    },
+    "12": {
+      "status": "confirmed",
+      "description": "Relación confirmada en HKA."
+    },
+    "22": {
+      "status": "confirmed",
+      "description": "Relación confirmada en HKA."
+    },
+    "23": {
+      "status": "confirmed",
+      "description": "Relación confirmada en HKA."
+    }
+  },
+  "reverse_relations": {
+    "VES": {
+      "http": 200,
+      "code": "200",
+      "related": [
+        {
+          "serie": "",
+          "tipoDocumento": "04",
+          "numeroDocumento": "1600000009"
+        },
+        {
+          "serie": "",
+          "tipoDocumento": "04",
+          "numeroDocumento": "1600000020"
+        }
+      ]
+    },
+    "USD": {
+      "http": 200,
+      "code": "200",
+      "related": [
+        {
+          "serie": "",
+          "tipoDocumento": "04",
+          "numeroDocumento": "1600000010"
+        },
+        {
+          "serie": "",
+          "tipoDocumento": "04",
+          "numeroDocumento": "1600000011"
+        },
+        {
+          "serie": "",
+          "tipoDocumento": "04",
+          "numeroDocumento": "1600000021"
+        }
+      ]
+    }
+  },
+  "protocol_probes": [
+    {
+      "file": "ordenes_hka_probe_2026_10_13_172749.json",
+      "status": "rejected",
+      "control_number": null,
+      "validation_codes": [
+        "1043"
+      ]
+    },
+    {
+      "file": "ordenes_hka_probe_2026_10_13_172918.json",
+      "status": "rejected",
+      "control_number": null,
+      "validation_codes": [
+        "1008",
+        "1011"
+      ]
+    },
+    {
+      "file": "ordenes_hka_probe_2026_10_13_173127.json",
+      "status": "confirmed",
+      "control_number": "00-00000683",
+      "validation_codes": []
+    },
+    {
+      "file": "ordenes_hka_probe_2026_10_13_182415.json",
+      "status": "rejected",
+      "control_number": null,
+      "validation_codes": [
+        "1008",
+        "1011"
+      ]
+    },
+    {
+      "file": "ordenes_hka_probe_2026_10_13_182657.json",
+      "status": "confirmed",
+      "control_number": "00-00000703",
+      "validation_codes": []
+    }
+  ],
+  "test_runs": [
+    {
+      "name": "PHP Unit",
+      "tests": 760,
+      "assertions": 15706,
+      "skipped": 52,
+      "failed": 0
+    },
+    {
+      "name": "Persistencia/compatibilidad",
+      "tests": 1,
+      "assertions": 25,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "name": "Stock/permisos/conversión",
+      "tests": 3,
+      "assertions": 29,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "name": "Regresión factura",
+      "tests": 1,
+      "assertions": 267,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "name": "JavaScript",
+      "tests": 169,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "name": "Instalación/rollback/repetición MySQL",
+      "tests": 1,
+      "assertions": 1601,
+      "failed": 0
+    },
+    {
+      "name": "Concurrencia creación MySQL",
+      "tests": 1,
+      "assertions": 15,
+      "failed": 0
+    },
+    {
+      "name": "Timeout/ausencia MySQL",
+      "tests": 1,
+      "assertions": 4,
+      "failed": 0
+    },
+    {
+      "name": "Regresión notas: packs/presentaciones/lotes/seriales/rollback MySQL",
+      "tests": 1,
+      "assertions": 25,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "name": "Conversión de órdenes derivadas sin repetir stock MySQL",
+      "tests": 1,
+      "assertions": 13,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "name": "Idempotencia con lotes y seriales consumidos MySQL",
+      "tests": 1,
+      "assertions": 15,
+      "failed": 0,
+      "skipped": 0
+    }
+  ],
+  "vite": {
+    "builds": 4,
+    "final_success": true,
+    "final_seconds": 43.96
+  },
+  "limitations": [
+    "Original HKA DEMO no imprime el origen de transporte enviado.",
+    "Guías valorizadas limitadas a precios VES; sin conversión automática USD.",
+    "Conversión con trazabilidad exige cantidad completa y unidad original, sin packs.",
+    "Producción, correo HKA de órdenes, anulación remota y API pública fuera de alcance."
+  ],
+  "privacy_verification": "La serialización de Dispatch excluye la relación privada emission",
+  "invoice_mail": {
+    "VES": {
+      "automatic_status": null
+    },
+    "USD": {
+      "automatic_status": null
+    }
+  }
+}

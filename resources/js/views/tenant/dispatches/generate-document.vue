@@ -997,11 +997,11 @@ export default {
 
             const items = await data.items.map((i) => {
 
-                const it = this.form.dispatch.items.filter((ite) => ite.item_id == i.id).reduce((ite) => ite);
+                const quantity=this.form.dispatch.items.filter((ite)=>ite.item_id==i.id).reduce((sum,line)=>sum+Number(line.quantity),0);
 
                 let unit_price = (!i.has_igv) ? i.sale_unit_price * (1 + this.percentage_igv) : i.sale_unit_price;
 
-                i.quantity = it.quantity;
+                i.quantity = quantity;
                 i.unit_price = unit_price;
                 // i.unit_price = i.sale_unit_price;
 

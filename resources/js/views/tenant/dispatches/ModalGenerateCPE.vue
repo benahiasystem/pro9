@@ -71,9 +71,7 @@
                 ></el-switch>
               </td>
               <td>
-                <span>{{ dis.series }}</span
-                >-
-                <span>{{ dis.number | pad(0, 3) }}</span>
+                <span>{{ documentNumberFull(dis.series, dis.number) }}</span>
               </td>
               <td>{{ dis.date_of_issue | toDate }}</td>
             </tr>
@@ -96,6 +94,7 @@
 </template>
 
 <script>
+import { documentNumberFull } from '../../../helpers/document-number';
 export default {
   props: {
     show: {
@@ -121,6 +120,7 @@ export default {
     };
   },
   methods: {
+    documentNumberFull,
     onFetchDispatchItems() {
       if (this.form.selecteds.length === 0) {
         this.$message({
@@ -139,11 +139,12 @@ export default {
           const dispatches = [];
           this.dispatches.map((d) => {
             if (d.selected) {
-              dispatches.push(`${d.series}-${d.number}`);
+              dispatches.push(documentNumberFull(d.series,d.number));
             }
           });
           const items = response.data.data;
           const client = this.clients.find((c) => c.id === this.form.client_id);
+          client.dispatch_establishment_id=response.data.establishment_id;
           localStorage.setItem("client", JSON.stringify(client));
           localStorage.setItem("items", JSON.stringify(items));
           localStorage.setItem("dispatches", JSON.stringify(dispatches));

@@ -29,8 +29,9 @@ use App\Models\Tenant\Catalogs\TransferReasonType;
 
 class DispatchInput
 {
-    public static function set($inputs)
+    public static function set($inputs, $service = 'web')
     {
+        if ($service === 'web') return \App\Services\Fiscal\DeliveryOrderInput::resolve($inputs);
         $document_type_id = $inputs['document_type_id'];
         $series = \App\Services\SeriesNumbering::normalizeCode($inputs['series'] ?? null);
         $number = $inputs['number'];

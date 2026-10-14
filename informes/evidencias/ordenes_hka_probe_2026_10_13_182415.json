@@ -1,0 +1,100 @@
+{
+    "environment": "demo",
+    "synthetic": true,
+    "operation_key": "033cd120-e6b2-4bd4-a292-1116e8cb987d",
+    "number": "1750070410",
+    "result": {
+        "status": "rejected",
+        "http_status": 200,
+        "code": "203",
+        "retry_allowed": false,
+        "diagnostic": "HKA rechazó los datos obligatorios o su formato.",
+        "validation_codes": [
+            "1008",
+            "1011"
+        ]
+    },
+    "validations": [
+        "Encabezado.Totales.MontoGravadoTotal: [1008] La suma de los precios en items debe coincidir con el monto total gravado. (Value: '200.00')",
+        "Encabezado.Totales.TotalIVA: [1011] El monto Total con IVA no coincide con la sumatoria de Subtotal y Montos IVA. (Value: '32.00')"
+    ],
+    "payload": {
+        "documentoElectronico": {
+            "encabezado": {
+                "identificacionDocumento": {
+                    "tipoDocumento": "04",
+                    "serie": "",
+                    "numeroDocumento": "1750070410",
+                    "fechaEmision": "13\/10\/2026",
+                    "horaEmision": "06:24:12 pm",
+                    "tipoTransaccion": "01",
+                    "tipoDeVenta": "Interna",
+                    "moneda": "VES",
+                    "transaccionId": "033cd120e6b24bd4a2921116e8cb987d",
+                    "sucursal": "0000"
+                },
+                "comprador": {
+                    "tipoIdentificacion": "J",
+                    "numeroIdentificacion": "000000004",
+                    "razonSocial": "PRUEBA-OE-CLIENTE",
+                    "direccion": "Direccion sintetica Caracas",
+                    "pais": "VE",
+                    "notificar": "No"
+                },
+                "totales": {
+                    "nroItems": "1",
+                    "montoGravadoTotal": "200.00",
+                    "montoExentoTotal": "0.00",
+                    "subtotal": "200.00",
+                    "totalIVA": "32.00",
+                    "montoTotalConIVA": "232.00",
+                    "totalAPagar": "232.00"
+                }
+            },
+            "guiaDespacho": {
+                "esGuiaDespacho": "1",
+                "motivoTraslado": "Reparación o perfeccionamiento",
+                "descripcionServicio": "Reparación sintética DEMO",
+                "pesoOVolumenTotal": "2.00 KGM",
+                "conductor": {
+                    "nombreCompleto": "PRUEBA-OE-CONDUCTOR",
+                    "tipoIdentificacion": "V",
+                    "numeroIdentificacion": "12345678",
+                    "tipoLicencia": "Tercera",
+                    "infoContacto": "04120000000"
+                },
+                "vehiculo": {
+                    "tipoVehiculo": "Camion de prueba",
+                    "numeroTransporte": "PRUEBAOE01",
+                    "numeroPlaca": "PRUEBA01"
+                },
+                "transportista": {
+                    "razonSocial": "PRUEBA-OE-TRANSPORTE",
+                    "numeroIdentificacion": "J000000004",
+                    "domicilioFiscal": "Direccion sintetica Caracas"
+                }
+            },
+            "transporte": {
+                "tipo": "Privado",
+                "origen": "Direccion sintetica Caracas",
+                "destino": "Direccion sintetica Valencia",
+                "fechaSalida": "13\/10\/2026"
+            },
+            "detallesItems": [
+                {
+                    "numeroLinea": "1",
+                    "indicadorBienoServicio": "1",
+                    "descripcion": "PRUEBA-OE-BIEN",
+                    "cantidad": "2.0000",
+                    "unidadMedida": "C62",
+                    "precioUnitario": "100.0000",
+                    "precioItem": "200.00",
+                    "codigoImpuesto": "G",
+                    "tasaIVA": "16.00",
+                    "valorIVA": "32.00",
+                    "valorTotalItem": "232.00"
+                }
+            ]
+        }
+    }
+}

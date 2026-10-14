@@ -72,6 +72,9 @@ class Dispatch extends ModelTenant
     protected $with = ['user', 'fiscal_environment_type', 'state_type', 'document_type', 'unit_type', 'transport_mode_type','transfer_reason_type', 'items', 'reference_document'];
 
     protected $fillable = [
+        'creation_key',
+        'creation_hash',
+        'hka_data',
         'user_id',
         'external_id',
         'establishment_id',
@@ -145,7 +148,12 @@ class Dispatch extends ModelTenant
         'custom_fields_data',
     ];
 
+    protected $hidden = ['creation_key', 'creation_hash', 'emission'];
+
+    public function emission() { return $this->hasOne(DispatchEmission::class); }
+
     protected $casts = [
+        'hka_data' => 'array',
         'date_of_issue' => 'date',
         'date_of_shipping' => 'date',
         'transport_data' => 'array',
@@ -718,6 +726,8 @@ class Dispatch extends ModelTenant
 
         return [
             'id' => $this->id,
+            'fiscal_emission' => \App\Services\Fiscal\HkaDispatchEmission::view($this),
+            'pdf_downloads' => \App\Services\Fiscal\HkaDispatchPdf::view($this),
             'external_id' => $this->external_id,
             'group_id' => $this->group_id,
             'fiscal_environment' => $this->fiscal_environment,
@@ -746,7 +756,7 @@ class Dispatch extends ModelTenant
             'order_notes' => $this->order_note,
             'created_at' => $this->created_at->format('Y-m-d H:i:s'),
             'updated_at' => $this->updated_at->format('Y-m-d H:i:s'),
-            'btn_generate_document' => $this->generate_document || $this->reference_document_id || !$btn_generate_document ? false : true,
+            'btn_generate_document' => (bool)$this->customer_id && !$this->generate_document && !$this->reference_document_id && !in_array($this->state_type_id,['09','11'],true),
             'transfer_reason_type' => $this->transfer_reason_type,
             'transfer_reason_type_description' => optional($this->transfer_reason_type)->description,
             'transfer_reason_description' => $this->transfer_reason_description,
@@ -756,8 +766,8 @@ class Dispatch extends ModelTenant
             'order_form_description' => $this->getOrderFormDescription(),
             'btn_pdf' => $btn_pdf,
             'btn_options' => $btn_options,
-            'btn_edit' => $btn_edit,
-            'btn_voided' => $btn_voided,
+            'btn_edit' => $btn_edit && !in_array(optional(\App\Services\Fiscal\HkaDispatchEmission::record($this))->status,['pending','uncertain','confirmed'],true),
+            'btn_voided' => $btn_voided && !in_array(optional(\App\Services\Fiscal\HkaDispatchEmission::record($this))->status,['pending','uncertain','confirmed'],true),
             'has_transport_driver_01'=> $this->has_transport_driver_01,
         ];
     }

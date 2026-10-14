@@ -20,6 +20,10 @@ class InputRequest
     {
         try {
             return \Illuminate\Support\Facades\DB::connection('tenant')->transaction(function () use ($request, $next, $type, $service) {
+                if ($type==='dispatch' && $service==='web') {
+                    \App\Services\Fiscal\DeliveryOrderInput::authorize();
+                    \App\Models\Tenant\Company::query()->lockForUpdate()->firstOrFail();
+                }
                 $inputs = $request->all();
                 if ($service === 'api') $inputs = $this->transformInputs($inputs, $type);
                 $inputs = $this->validationInputs($inputs, $type, $service);

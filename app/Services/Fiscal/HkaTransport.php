@@ -19,6 +19,17 @@ final class HkaTransport
         return $this->request($token, 20)->post('https://demoemisionv2.thefactoryhka.com.ve/api/Emision', $payload);
     }
 
+    public function relateDispatch(string $token,array $payload): Response
+    {
+        return $this->request($token,20)->post('https://demoemisionv2.thefactoryhka.com.ve/api/Documentos/Relacionar',$payload);
+    }
+
+    public function dispatchRelations(string $token,array $identity): Response
+    {
+        return $this->request($token,10)->get('https://demoemisionv2.thefactoryhka.com.ve/api/Documentos/Relacionar',[
+            'Serie'=>$identity['serie'],'TipoDocumento'=>$identity['tipoDocumento'],'NumeroDocumento'=>$identity['numeroDocumento']]);
+    }
+
     public function annul(string $token, array $payload): Response
     {
         return $this->request($token,20)->post('https://demoemisionv2.thefactoryhka.com.ve/api/Anular',$payload);

@@ -41,6 +41,10 @@ App\Models\Tenant\Document::observe(App\Observers\DocumentObserver::class);
 $manager->getConnection('tenant')->getPdo();
 fwrite(STDOUT,"READY\n");fflush(STDOUT);
 try {
+    if (($input['operation'] ?? '')==='dispatch-create') {
+        $order=(new App\CoreFacturalo\Facturalo)->save(App\CoreFacturalo\Requests\Inputs\DispatchInput::set($input['data']))->getDocument();
+        fwrite(STDOUT,json_encode(['id'=>$order->id,'number'=>$order->number]));exit(0);
+    }
     $document=App\Models\Tenant\Document::findOrFail($input['document_id']);
     $service=App\Services\Fiscal\FiscalDocumentPersistence::class;
     if (($input['operation'] ?? '') === 'note-create') {

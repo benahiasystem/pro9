@@ -13,6 +13,7 @@ use PHPUnit\Framework\TestCase;
 // ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 class FiscalEmissionSchemaTest extends TestCase
 {
+    use \Tests\Support\DispatchPersistenceCases;
     use \Tests\Support\NotePersistenceCases;
     use \Tests\Support\SpePersistenceCases;
     use \Tests\Support\IvaRetentionPersistenceCases;
@@ -1145,6 +1146,7 @@ class FiscalEmissionSchemaTest extends TestCase
             private $user;
             public function __construct($user) { $this->user = $user; }
             public function user() { return $this->user; }
+            public function setUser($user) { $this->user = $user; return $this; }
             public function id() { return $this->user->id; }
             public function check() { return true; }
             public function guard($name = null) { return $this; }

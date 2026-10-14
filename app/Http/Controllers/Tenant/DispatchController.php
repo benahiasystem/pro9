@@ -63,6 +63,7 @@ class DispatchController extends Controller
 
     public function __construct()
     {
+        $this->middleware(function ($request,$next) { \App\Services\Fiscal\DeliveryOrderInput::authorize();return $next($request); });
         $this->middleware('input.request:dispatch,web', ['only' => ['store']]);
     }
 
@@ -107,12 +108,14 @@ class DispatchController extends Controller
 ;
         }
 
+        if (auth()->user()->type!=='admin') $query->where('establishment_id',auth()->user()->establishment_id);
         $query->whereFiscalIdentifiers($series, $number, $request->control_number);
 
         if ($customer_id) {
             $query->where('customer_id', $customer_id);
         }
 
+        if ((new Dispatch)->getConnection()->getSchemaBuilder()->hasTable('dispatch_emissions')) $query->with('emission');
         return $query->latest();
     }
 
@@ -155,34 +158,9 @@ class DispatchController extends Controller
 
     public function create($document_id = null, $type = null, $dispatch_id = null)
     {
-        if ($type == 'q') {
-            $document = Quotation::find($document_id);
-        } elseif ($type == 'on') {
-            $document = OrderNote::find($document_id);
-        } else {
-            $type = 'i';
-            $document = Document::find($document_id);
-        }
-
-        if (!$document) {
-            return view('tenant.dispatches.create');
-        }
-
-        $configuration = Configuration::query()->first();
-        $items = [];
-        foreach ($document->items as $item) {
-            $name_product_pdf = ($configuration->show_pdf_name) ? strip_tags($item->name_product_pdf) : null;
-            $items[] = [
-                'item_id' => $item->item_id,
-                'item' => $item,
-                'quantity' => $item->quantity,
-                'description' => $item->item->description,
-                'name_product_pdf' => $name_product_pdf
-            ];
-        }
-
-        $dispatch = Dispatch::find($dispatch_id);
-        return view('tenant.dispatches.form', compact('document', 'items', 'type', 'dispatch'));
+        if ($dispatch_id) return $this->createNew('dispatch',$dispatch_id);
+        if (!$document_id) return view('tenant.dispatches.create');
+        return $this->createNew($type==='q' ? 'quotation':($type==='on' ? 'order_note':'document'),$document_id);
     }
 
     public function createNew($parentTable, $parentId)
@@ -214,7 +192,10 @@ class DispatchController extends Controller
             $reference_purchase_id = $parentId;
         }
 
-        $document = $query->find($parentId);
+        abort_unless($query,404);
+        $document = $query->findOrFail($parentId);
+        \App\Services\Fiscal\DeliveryOrderInput::authorize((int)$document->establishment_id);
+        if ($parentTable==='dispatch') \App\Services\Fiscal\DeliveryOrderPersistence::assertEditable($document);
         $configuration = Configuration::query()->first();
         $items = [];
         foreach ($document->items as $item) {
@@ -241,6 +222,9 @@ class DispatchController extends Controller
         if ($parentTable === 'dispatch') {
             $data = [
                 'id' => $document->id,
+                'creation_key' => $document->creation_key,
+                'hka_data' => $document->hka_data ?? [],
+                'time_of_issue' => $document->time_of_issue,
                 'series' => $document->series,
                 'number' => $document->number,
                 'establishment_id' => $document->establishment_id,
@@ -259,6 +243,9 @@ class DispatchController extends Controller
                 'driver_id' => $document->driver_id,
                 'dispatcher_id' => $document->dispatcher_id,
                 'transport_id' => $document->transport_id,
+                'secondary_drivers' => $document->secondary_drivers,
+                'secondary_transports' => $document->secondary_transports,
+                'has_transport_driver_01' => $document->has_transport_driver_01,
                 'origin_address_id' => $document->origin_address_id,
                 'delivery_address_id' => $document->delivery_address_id,
                 'date_delivery_to_transport' => $document->date_delivery_to_transport?$document->date_delivery_to_transport->format('Y-m-d'):null,
@@ -326,24 +313,7 @@ class DispatchController extends Controller
 
     public function generate($sale_note_id)
     {
-        $sale_note = SaleNote::findOrFail($sale_note_id);
-        $type = null;
-        $document = $sale_note;
-        $dispatch = null;
-        $configuration = Configuration::query()->first();
-        $items = [];
-        foreach ($document->items as $item) {
-            $name_product_pdf = ($configuration->show_pdf_name) ? strip_tags($item->name_product_pdf) : null;
-            $items[] = [
-                'item_id' => $item->item_id,
-                'item' => $item,
-                'quantity' => $item->quantity,
-                'description' => $item->item->description,
-                'name_product_pdf' => $name_product_pdf
-            ];
-        }
-        //dd($sale_note_id);
-        return view('tenant.dispatches.form', compact('document', 'type', 'dispatch', 'items'));
+        return $this->createNew('sale_note',$sale_note_id);
     }
 
 
@@ -396,6 +366,8 @@ class DispatchController extends Controller
         return [
             'success' => true,
             'message' => $message,
+            'fiscal_emission' => \App\Services\Fiscal\HkaDispatchEmission::view($document),
+            'pdf_downloads' => \App\Services\Fiscal\HkaDispatchPdf::view($document),
             'data' => [
                 'id' => $document->id,
             ],
@@ -497,7 +469,7 @@ class DispatchController extends Controller
         // }
 
         $customers = Person::with('addresses')
-            ->whereIn('identity_document_type_id', $identities)
+            ->whereHas('identity_document_type',fn($q)=>$q->where('active',true)->where('id','!=','ND'))
             ->whereType('customers')
             ->orderBy('name')
             ->whereIsEnabled()
@@ -531,7 +503,7 @@ class DispatchController extends Controller
         // ######## INICIO CONTRATO UNIDADES DE MEDIDA VENEZUELA ########
         $unitTypes = UnitType::query()
             ->where('active', true)
-            ->whereIn('id', ['KGM', 'TNE'])->get()->transform(function ($r) {
+            ->whereIn('id', ['KG', 'TON'])->get()->transform(function ($r) {
                 return [
                     'id' => $r->id,
                     'description' => $r->description,
@@ -539,9 +511,10 @@ class DispatchController extends Controller
             });
         // ######## FIN CONTRATO UNIDADES DE MEDIDA VENEZUELA ########
 
-        $establishments = Establishment::all();
+        $establishments = Establishment::query()->when(auth()->user()->type!=='admin',fn($q)=>$q->where('id',auth()->user()->establishment_id))->get();
         $series = app(SeriesResolver::class)->applyContext(Series::query())->get()->toArray();
-        $company = Company::select('number', 'name', 'identity_document_type_id')->first();
+        $company = Company::select('number', 'name', 'identity_document_type_id','fiscal_emission_mode','fiscal_environment')->first();
+        $hkaCatalogs=[];foreach (['product_types'=>'cat_product_types','product_origins'=>'cat_product_origins','taxation_products'=>'cat_taxation_products'] as $name=>$table) $hkaCatalogs[$name]=DB::connection('tenant')->table($table)->where('active',true)->get(['id','description']);
         $drivers = (new DriverController())->getOptions();
         $transports = (new TransportController())->getOptions();
         $dispatchers = (new DispatcherController())->getOptions();
@@ -562,6 +535,7 @@ class DispatchController extends Controller
             'items',
             'locations',
             'company',
+            'hkaCatalogs',
             'drivers',
             'dispatchers',
             'transports',
@@ -594,14 +568,14 @@ class DispatchController extends Controller
 
     public function record($id)
     {
-        $record = new DispatchResource(Dispatch::findOrFail($id));
+        $record = new DispatchResource(\App\Services\Fiscal\DeliveryOrderInput::order($id));
 
         return $record;
     }
 
     public function email(Request $request)
     {
-        $record = Dispatch::find($request->input('id'));
+        $record = \App\Services\Fiscal\DeliveryOrderInput::order($request->input('id'));
         $customer_email = $request->input('customer_email');
         $email = $customer_email;
         $mailable = new DispatchEmail($record);
@@ -629,8 +603,8 @@ class DispatchController extends Controller
 
     public function generateDocumentTables($id)
     {
-        $dispatch = Dispatch::findOrFail($id);
-        $establishment = Establishment::where('id', auth()->user()->establishment_id)->first();
+        $dispatch = \App\Services\Fiscal\DeliveryOrderInput::order($id);
+        $establishment = Establishment::findOrFail($dispatch->establishment_id);
         $establishment_id = $establishment->id;
         $warehouse = ModuleWarehouse::where('establishment_id', $establishment_id)->first();
         $relation_external_document = $dispatch->getRelationExternalDocument();
@@ -748,15 +722,16 @@ class DispatchController extends Controller
 
     public function setDocumentId($id)
     {
+        \App\Services\Fiscal\DeliveryOrderInput::order($id);
         request()->validate(['document_id' => 'required|exists:tenant.documents,id']);
         DB::connection('tenant')->beginTransaction();
         try {
-            Dispatch::where('id', $id)
-                ->update([
-                    'reference_document_id' => request('document_id')
-                ]);
+            Company::lockForUpdate()->firstOrFail();
+            $invoice=Document::lockForUpdate()->findOrFail(request('document_id'));
+            \App\Services\Fiscal\HkaDispatchRelations::attach($invoice,['dispatch_id'=>$id]);
+            DB::connection('tenant')->afterCommit(fn()=>\App\Services\Fiscal\HkaDispatchRelations::resumeInvoice($invoice->fresh()));
 
-            $dispatch = Dispatch::findOrFail($id);
+            $dispatch = \App\Services\Fiscal\DeliveryOrderInput::order($id);
             $facturalo = new Facturalo();
             $facturalo->createPdf($dispatch, 'dispatch', 'a4');
 
@@ -782,6 +757,7 @@ class DispatchController extends Controller
             'transfer_reason_type', 'items', 'reference_document'])
             ->select('series', 'number', 'id', 'date_of_issue')
             ->where('customer_id', $clientId)
+            ->when(auth()->user()->type!=='admin',fn($q)=>$q->where('establishment_id',auth()->user()->establishment_id))
             ->whereNull('reference_document_id')
             ->whereStateTypeAccepted()
             ->orderBy('series')
@@ -798,16 +774,24 @@ class DispatchController extends Controller
     public function getItemsFromDispatches(Request $request)
     {
         $request->validate([
-            'dispatches_id' => 'required|array',
+            'dispatches_id' => 'required|array|min:1',
+            'dispatches_id.*' => 'required|integer|distinct|exists:tenant.dispatches,id',
         ]);
 
+        $orders=Dispatch::whereIn('id',$request->dispatches_id)->get();
+        $customer=$orders->first()->customer_id;$branch=$orders->first()->establishment_id;
+        foreach ($orders as $order) {
+            \App\Services\Fiscal\DeliveryOrderInput::authorize((int)$order->establishment_id);
+            if ($order->customer_id!==$customer || $order->establishment_id!==$branch || $order->reference_document_id || in_array($order->state_type_id,['09','11'],true)) \App\Services\Fiscal\FiscalAmounts::error('dispatches_id','Seleccione órdenes vigentes del mismo cliente y sucursal, pendientes de facturación.');
+        }
         $items = DispatchItem::whereIn('dispatch_id', $request->dispatches_id)
             ->select('item_id', 'quantity')
-            ->get();
+            ->get()->groupBy('item_id')->map(fn($rows,$itemId)=>['item_id'=>(int)$itemId,'quantity'=>$rows->sum('quantity')])->values();
 
         return response()->json([
             'success' => true,
             'data' => $items,
+            'establishment_id'=>$branch,
         ], 200);
     }
 
@@ -834,8 +818,9 @@ class DispatchController extends Controller
     public function getOriginAddresses($id)
     {
         $records = [];
+        \App\Services\Fiscal\DeliveryOrderInput::authorize((int)$id);
         $record = Establishment::query()
-            ->find($id);
+            ->findOrFail($id);
         $records[] = [
             'id' => 0,
             'location_id' => [
@@ -865,8 +850,9 @@ class DispatchController extends Controller
     {
         $records = [];
 
+        \App\Services\Fiscal\DeliveryOrderInput::authorize((int)$id);
         $other_establishments = Establishment::query()
-            ->where('id', '!=', $id)
+            ->where('id', '!=', $id)->orderBy('id')
             ->get();
 
         foreach ($other_establishments as $establishment) {
@@ -883,7 +869,7 @@ class DispatchController extends Controller
 
         $origin_addresses = OriginAddress::query()
             ->where('is_active', true)
-            ->where('establishment_id', '!=', $id)
+            ->where('establishment_id', '!=', $id)->orderBy('id')
             ->get();
 
         foreach ($origin_addresses as $row) {
@@ -949,7 +935,8 @@ class DispatchController extends Controller
      */
     public function anulate($id)
     {
-        $dispatch = Dispatch::findOrFail($id);
+        $dispatch = \App\Services\Fiscal\DeliveryOrderInput::order($id);
+        \App\Services\Fiscal\DeliveryOrderPersistence::assertEditable($dispatch);
 
         if ($dispatch->document_type_id !== '09') {
             return [
@@ -972,8 +959,10 @@ class DispatchController extends Controller
             ];
         }
 
-        $dispatch->state_type_id = '11';
-        $dispatch->save();
+        $dispatch->getConnection()->transaction(function () use($dispatch) {
+            Company::lockForUpdate()->firstOrFail();$locked=Dispatch::lockForUpdate()->findOrFail($dispatch->id);
+            \App\Services\Fiscal\DeliveryOrderPersistence::assertEditable($locked);$locked->state_type_id='11';$locked->save();
+        });
 
         return [
             'success' => true,

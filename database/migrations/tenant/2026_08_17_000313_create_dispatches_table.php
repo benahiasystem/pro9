@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
  * Estructura inicial de `dispatches` para instalaciones nuevas.
  * Inventario de columnas:
  * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
+ * - `creation_key` char(36) nullable unique; `creation_hash` char(64) nullable; `hka_data` json nullable
  * - `user_id` int(10) unsigned NOT NULL
  * - `external_id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `establishment_id` int(10) unsigned NOT NULL
@@ -89,6 +90,10 @@ return new class extends Migration
     {
         DB::unprepared(<<<'SQL'
 CREATE TABLE `dispatches` (
+  `creation_key` char(36) DEFAULT NULL,
+  `creation_hash` char(64) DEFAULT NULL,
+  `hka_data` json DEFAULT NULL,
+  UNIQUE KEY `dispatches_creation_unique` (`creation_key`),
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `user_id` int(10) unsigned NOT NULL,
   `external_id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,

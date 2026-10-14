@@ -107,6 +107,7 @@ class InventoryKardexServiceProvider extends ServiceProvider
                 }
                 return;
             }
+            if ($document_item->document->document_type_id==='01' && \App\Services\Fiscal\DeliveryOrderInvoiceInventory::apply($document_item,-1)) return;
             // si es nota credito tipo 13, no se asocia a inventario
             if($document_item->document->isCreditNoteAndType13()) return;
 
@@ -713,10 +714,11 @@ class InventoryKardexServiceProvider extends ServiceProvider
 
         DispatchItem::created(function(DispatchItem $dispatch_item) {
             $dispatch = $dispatch_item->dispatch;
+            if ($dispatch->creation_key) { \App\Services\Fiscal\DeliveryOrderInventory::apply($dispatch_item,-1); return; }
             if($dispatch->document_type_id === '09') {
                 if($dispatch->discountsPhysicalStock()){
 
-                    $warehouse = $this->findWarehouse();
+                    $warehouse = $this->findWarehouse($dispatch->establishment_id);
 
                     $this->createInventoryKardex($dispatch, $dispatch_item->item_id, -$dispatch_item->quantity, $warehouse->id);
 

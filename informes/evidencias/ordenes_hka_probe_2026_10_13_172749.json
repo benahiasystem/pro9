@@ -1,0 +1,83 @@
+{
+    "environment": "demo",
+    "synthetic": true,
+    "operation_key": "c630e37c-1742-441f-a2f3-40278b8e032c",
+    "number": "1745001797",
+    "result": {
+        "status": "rejected",
+        "http_status": 200,
+        "code": "203",
+        "retry_allowed": false,
+        "diagnostic": "HKA rechazó los datos obligatorios o su formato.",
+        "validation_codes": [
+            "1043"
+        ]
+    },
+    "validations": [
+        "DetallesItems[NumeroLinea = 1].PrecioUnitario: [1043] La 'PrecioUnitario' en items es inválido o no está presente (Value: '')"
+    ],
+    "payload": {
+        "documentoElectronico": {
+            "encabezado": {
+                "identificacionDocumento": {
+                    "tipoDocumento": "04",
+                    "serie": "",
+                    "numeroDocumento": "1745001797",
+                    "fechaEmision": "13\/10\/2026",
+                    "horaEmision": "05:27:45 pm",
+                    "tipoTransaccion": "01",
+                    "tipoDeVenta": "Interna",
+                    "moneda": "VES",
+                    "transaccionId": "c630e37c1742441fa2f340278b8e032c",
+                    "sucursal": "0000"
+                },
+                "comprador": {
+                    "tipoIdentificacion": "J",
+                    "numeroIdentificacion": "000000004",
+                    "razonSocial": "PRUEBA-OE-CLIENTE",
+                    "direccion": "Direccion sintetica Caracas",
+                    "pais": "VE",
+                    "notificar": "No"
+                }
+            },
+            "guiaDespacho": {
+                "esGuiaDespacho": "1",
+                "motivoTraslado": "Reparación o perfeccionamiento",
+                "descripcionServicio": "Reparación sintética DEMO",
+                "pesoOVolumenTotal": "2.00 KGM",
+                "conductor": {
+                    "nombreCompleto": "PRUEBA-OE-CONDUCTOR",
+                    "tipoIdentificacion": "V",
+                    "numeroIdentificacion": "12345678",
+                    "tipoLicencia": "Tercera",
+                    "infoContacto": "04120000000"
+                },
+                "vehiculo": {
+                    "tipoVehiculo": "Camion de prueba",
+                    "numeroTransporte": "PRUEBAOE01",
+                    "numeroPlaca": "PRUEBA01"
+                },
+                "transportista": {
+                    "razonSocial": "PRUEBA-OE-TRANSPORTE",
+                    "numeroIdentificacion": "J000000004",
+                    "domicilioFiscal": "Direccion sintetica Caracas"
+                }
+            },
+            "transporte": {
+                "tipo": "Privado",
+                "origen": "Direccion sintetica Caracas",
+                "destino": "Direccion sintetica Valencia",
+                "fechaSalida": "13\/10\/2026"
+            },
+            "detallesItems": [
+                {
+                    "numeroLinea": "1",
+                    "indicadorBienoServicio": "1",
+                    "descripcion": "PRUEBA-OE-BIEN",
+                    "cantidad": "2.0000",
+                    "unidadMedida": "C62"
+                }
+            ]
+        }
+    }
+}

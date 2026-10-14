@@ -33,8 +33,8 @@ class QuotationStorefrontCorrelativeTest extends TestCase
         $quotation->prefix = Quotation::SERIES_STANDARD;
         $quotation->date_of_issue = Carbon::parse('2026-07-22');
 
-        $this->assertSame('COT-12', $quotation->storefront_code);
-        $this->assertSame('COT-12', $quotation->identifier);
+        $this->assertSame('COT-00000012', $quotation->storefront_code);
+        $this->assertSame('COT-00000012', $quotation->identifier);
         $this->assertSame('COT-00000012', $quotation->pdf_title);
         $this->assertSame('Tienda virtual', $quotation->source_label);
         $this->assertTrue($quotation->isFromEcommerce());
@@ -49,7 +49,7 @@ class QuotationStorefrontCorrelativeTest extends TestCase
         $quotation->prefix = Quotation::SERIES_STANDARD;
         $quotation->date_of_issue = Carbon::parse('2026-07-22');
 
-        $this->assertSame('COT-12', $quotation->identifier);
+        $this->assertSame('COT-00000012', $quotation->identifier);
         $this->assertSame('COT-00000012', $quotation->pdf_title);
         $this->assertSame('Empresa', $quotation->source_label);
         $this->assertFalse($quotation->isFromEcommerce());

@@ -1,14 +1,14 @@
-# Guía de ejecución QA de Pro9: facturación en Medios digitales
+# Guía de ejecución QA de Pro 9: facturación en Medios digitales
 
 **Edición:** 12 de octubre de 2026. **Zona de registro:** America/Caracas (UTC−04:00).
 **Modalidad requerida por el usuario:** Medios digitales (`digital`).
 **Ambiente de referencia:** DEMO (`demo`), por el alcance actual del transporte HKA. DEMO es una elección de esta guía, no una confirmación del ambiente de un tenant existente.
-**Versión contractual:** `87dc6506cf8d94c6e2d3cad1fb512b5b62e5e572`. **Catálogo:** 1121 casos en 35 grupos; 720 IDs conservados +401 nuevos.
+**Versión contractual:** `76690125` + cambios locales de órdenes. **Catálogo:** 1702 casos en 41 grupos; 1121 IDs anteriores conservados +581 nuevos.
 **Estado de este documento:** especificación de pruebas. No es un informe de pruebas ejecutadas.
 
 ## 1. Mandato para el agente ejecutor
 
-Ejecuta esta guía y el documento de casos completos sobre la versión identificada de Pro9. Tu trabajo comprende el registro comercial, su resultado fiscal, cobros, stock, distribución, reportes y permisos. Debes probar cada tipo vigente, cada opción disponible y las restricciones de los flujos no habilitados. No sustituyas una matriz completa por una muestra sin documentar expresamente la cobertura que falta.
+Ejecuta esta guía y el documento de casos completos sobre la versión identificada de Pro 9. Tu trabajo comprende el registro comercial, su resultado fiscal, cobros, stock, distribución, reportes y permisos. Debes probar cada tipo vigente, cada opción disponible y las restricciones de los flujos no habilitados. No sustituyas una matriz completa por una muestra sin documentar expresamente la cobertura que falta.
 
 Cada prueba que ejecutes debe terminar con **Aprobó** o **Reprobó**, con resultado observado y evidencia. Si no puedes ejecutarla, usa **Bloqueada** con el impedimento concreto. **No aplica** sólo procede por exclusión de alcance sustentada, no por falta de tiempo, credenciales, permisos, módulo habilitado o conocimiento de la herramienta. Las pruebas aún no iniciadas permanecen **Pendiente**. Nunca conviertas una lectura de código, una evidencia histórica o un fixture en una prueba funcional aprobada.
 
@@ -40,19 +40,19 @@ El resumen considera hasta 5000 filas por tabla de ejecución. Al añadir casos,
 | Exportación de bienes CIF | `01`, operación `0202` | Sólo Comprobantes web digital DEMO | Mismos controles, ejecución propia de CIF |
 | Exportación de bienes EXW | `01`, operación `0203` | Sólo Comprobantes web digital DEMO | Mismos controles, ejecución propia de EXW |
 | Venta por cuenta de terceros | `01`, `0101`, transacción fiscal `99` determinada por servidor | Sólo Comprobantes web digital DEMO, contado completamente cobrado | Titular único distinto de emisor/comprador, snapshot, cálculo/adaptación VES/USD y restricciones |
-| Nota de crédito | `07` | Guardado comercial y preparación local HKA; emisión remota actual no acreditada ni habilitada por el transporte de facturas | Cuatro motivos activos, ajustes/devoluciones, referencias, moneda, saldo, stock y preparación |
-| Nota de débito comercial | `08` | Guardado comercial y preparación local | Tres motivos manuales activos, importes/referencia y efecto comercial |
+| Nota de crédito | `07` | Creación, emisión, distribución y anulación ordinaria doméstica DEMO; exige factura original confirmed/control coincidente | Cuatro motivos activos, ajustes/devoluciones, referencias, moneda, saldo, stock y preparación |
+| Nota de débito comercial | `08` | Creación, emisión, distribución y anulación ordinaria doméstica DEMO; deuda/cobros propios | Tres motivos manuales activos, importes/referencia y efecto comercial |
 | Nota de débito IGTF posterior | `08`, motivo `IGTF`, transacción HKA `98` | Generación local asociada al cobro y preparación; sin artículos ni IVA | Principal/impuesto/recibo derivado, caja, idempotencia y reversión |
 | Nota de venta | `80`; `nv` únicamente donde el servicio técnico mantiene ese alias | Documento comercial propio, aunque su tenant sea digital | Creación, cobros, PDF, edición/duplicación/anulación según flujo y conversión a Factura |
 | Factura de anticipo y deducción | Factura `01` y relaciones comerciales de anticipo | Opciones existentes a validar comercialmente; la aceptación/adaptación HKA debe demostrarse por separado | Registro y saldo del anticipo, aplicación parcial/múltiple, exceso, concurrencia y no duplicación |
-| Orden de entrega | `09`, persistencia `dispatch` | Relación/conversión comercial; no presumir emisión HKA de guías | Vínculos, almacén/sucursal de origen, transporte y stock |
+| Orden de entrega | `09`, persistencia `dispatch` | Registro propio, emisión HKA04/indicador1 después del commit, consulta, PDF original A4 y relaciones; con ampliación de esquema | Vínculos, almacén/sucursal de origen, transporte y stock |
 | Retenciones IVA/ISLR recibidas | Relaciones recibidas de Factura 01, un activo por impuesto/factura | Previsión, aplicación local validada y outbox HKA independientes; emisión neta DEMO bloqueada | Perfil vigente, soporte privado, UUID, referencia/control, fórmula, estados, reversión y aislamiento |
-| Regímenes especiales | Factura 01/0101 con special_tax_regime_id1..7 | Comprobantes web digital/DEMO, VES/USD, contado real completo; propia o por terceros | Matriz 28, IVA intacto, descuentos/cargos, snapshot, UUID de edición, envío explícito y ticket |
+| Regímenes especiales | Factura 01/0101 con special_tax_regime_id 1..7 | Comprobantes web digital/DEMO, VES/USD, contado real completo; propia o por terceros | Matriz 28, IVA intacto, descuentos/cargos, snapshot, UUID de edición, envío explícito y ticket |
 | Perfiles fiscales SPE | Versiones de empresa y comprador, RIF separado de cédula | Perfil fechado, facultades IVA/ISLR independientes y decisión IGTF | Naturaleza/firma/clase pública, notificación, vigencia/revocación, permisos y snapshots |
 
 **No confundir catálogo con capacidad:** `FE`, `20`, `ISLR`, `ARCV` y otros tipos pueden existir en catálogos/series. Su presencia no habilita emisión en el procesamiento común de Facturas y notas. La exportación implementada usa Factura `01`; no `FE`. La Boleta `03` está retirada y debe rechazarse en cada canal nuevo.
 
-La traducción del adaptador es Pro9 `01 → HKA 01`, Pro9 `07 → HKA 02`, Pro9 `08 → HKA 03`. Los motivos de notas tienen sus propios códigos. HKA `07` no es Nota de crédito Pro9. Conserva los códigos internos en base de datos y no uses coincidencias de códigos de distintos catálogos para deducir comportamiento.
+La traducción del adaptador es Pro 9 `01 → HKA 01`, Pro 9 `07 → HKA 02`, Pro 9 `08 → HKA 03`. Los motivos de notas tienen sus propios códigos. HKA `07` no es Nota de crédito Pro 9. Conserva los códigos internos en base de datos y no uses coincidencias de códigos de distintos catálogos para deducir comportamiento.
 
 Motivos iniciales de NC: `01 Anulación total de factura`, `07 Devolución parcial de mercancía`, `04 Descuento o rebajas concedidas`, `09 Corrección de precios o cálculos`. Motivos de ND manual: `02 Ajustes por incremento de precios`, `01 Intereses de mora o financiamiento`, `03 Gastos de despacho, fletes, seguros o embalaje`. `IGTF` tiene un flujo derivado del cobro; no se trata como nota manual libre.
 
@@ -62,10 +62,10 @@ Motivos iniciales de NC: `01 Anulación total de factura`, `07 Devolución parci
 - NC/ND preparadas no son aceptadas remotamente por esa sola preparación. La integración de facturas no demuestra homologación de notas.
 - Exportaciones: sólo bienes y Comprobantes web DEMO, operaciones FOB/CIF/EXW; no servicios exportados, 0200 genérico, notas de exportación, otros canales, terceros o regímenes especiales combinados.
 - La evidencia actual de exportación HKA acredita contado. Crédito sin cobros ha sido rechazado por falta de formas de pago. Debe reportarse como límite conocido; no fabricar un cobro para convertirlo en éxito.
-- Terceros: sólo venta interna y contado real completo. Crédito, notas vinculadas y demás canales fuera de esta etapa. El IGTF posterior dependiente de una nota se bloquea para exportación/terceros; el inicial conserva su flujo vigente.
+- Terceros: sólo venta interna y contado real completo. Crédito de la factura y demás canales fuera de esta etapa. NC/ND domésticas vinculadas sí están habilitadas desde factura confirmada, con tercero/régimen heredados. El IGTF posterior dependiente de una nota se bloquea para exportación/terceros; el inicial conserva su flujo vigente.
 - Cobro en moneda propia/mixto está implementado por contrato API; la interfaz actual no contiene todos esos selectores. No describas una opción API como botón de pantalla.
 - La emisión HKA y su correo/PDF tienen estados separados. Guardado local, preparación, aceptación fiscal, disponibilidad PDF, solicitud de correo y entrega efectiva son resultados distintos.
-- No existe anulación remota HKA integrada ni distribución por orden consolidada. Anulación local no acredita cancelación del registro remoto.
+- Las notas ordinarias admiten anulación HKA DEMO auditada. Facturas y órdenes no admiten anulación remota positiva. Las órdenes tienen original A4 privado; correo HKA y anulación remota de órdenes quedan fuera.
 - No hay XML/CDR/SUNAT/PSE, firma fiscal SOAP/PFX, Boletas, ISC, detracciones ni impuesto a bolsas en el flujo vigente. QZ de impresión y QR comercial no son esos contratos retirados.
 
 Un caso de rechazo esperado **Aprobó** si rechaza correctamente y conserva la integridad. Ejemplo: “exportación por API bloqueada” aprueba cuando el servidor la rechaza antes de efectos. La **Factura rechazada por HKA** es el estado del documento, no automáticamente el estado del caso de prueba.
@@ -121,7 +121,7 @@ Usa impresora QA o doble de órdenes de impresión. Un PDF generado no acredita 
 
 ## 5. Oráculos monetarios, fiscales y comerciales
 
-Un oráculo es el valor esperado calculado independientemente. Calcula con `Decimal`, aritmética racional o precisión equivalente, sin copiar el total devuelto por Pro9 como si fuera el esperado. Conserva una hoja/JSON de cálculo por caso monetario. La tasa expresa VES por USD: USD→VES multiplica, VES→USD divide; se redondea el importe final, no la tasa.
+Un oráculo es el valor esperado calculado independientemente. Calcula con `Decimal`, aritmética racional o precisión equivalente, sin copiar el total devuelto por Pro 9 como si fuera el esperado. Conserva una hoja/JSON de cálculo por caso monetario. La tasa expresa VES por USD: USD→VES multiplica, VES→USD divide; se redondea el importe final, no la tasa.
 
 ### 5.1. Ejemplos base
 
@@ -225,12 +225,12 @@ Genera `QA-EXT-0001` y siguientes para cualquier opción no cubierta, con la mis
 Matrices obligatorias:
 
 - Ocho identidades domésticas × Factura/Nota de venta × doce canales inventariados:192 casos; añadir ocho identidades×NC/ND web:16 casos. Total 208 de elegibilidad comercial, separados de aceptación remota.
-- Factura ordinaria web: dos monedas×tres composicionesIVA×tres condiciones de pago:18 casos. NC/ND: dos tipos×dos monedas×tres composicionesIVA:12 casos.
+- Factura ordinaria web: dos monedas×tres com posiciones IVA×tres condiciones de pago:18 casos. NC/ND: dos tipos×dos monedas×tres com posiciones IVA:12 casos.
 - Exportación: FOB/CIF/EXW×VES/USD, seis ejecuciones comerciales/fiscales designadas; contado real y restricciones por canal/identidad/tipo/servicio.
 - Terceros: VES/USD, comprador/titular/emisor, descuento/cargo/IGTF inicial y completo contado; todos los rechazos descritos.
-- Regímenes: siete valores×VES/USD×propia/terceros =28 casos individuales QA-RGE-001 a028; completar edición/cálculos/restricciones y todos los demás casosRGE.
-- SPE: naturalezas y firma personal, seis clases públicas, estadosIVA, cinco fundamentos100 %, facultades independientes, versiones/vigencia/revocación; matrizIGTF dos perfiles emisor×dos monedas recibidas×tres intermediaciones =12 casos individuales.
-- IVA/ISLR: propuesta, pending/applied/invalid/reversed, HKAquery/apply/remove, soporte/permisos/idempotencia y recuperación por impuesto. Todos los 85 conceptosISLR iniciales no salariales tienen ID propio.
+- Regímenes: siete valores×VES/USD×propia/terceros =28 casos individuales QA-RGE-001 a 028; completar edición/cálculos/restricciones y todos los demás casos RGE.
+- SPE: naturalezas y firma personal, seis clases públicas, estados IVA, cinco fundamentos 100 %, facultades independientes, versiones/vigencia/revocación; matriz IGTF dos perfiles emisor×dos monedas recibidas×tres intermediaciones =12 casos individuales.
+- IVA/ISLR: propuesta, pending/applied/invalid/reversed, HKAquery/apply/remove, soporte/permisos/idempotencia y recuperación por impuesto. Todos los 85 conceptos ISLR iniciales no salariales tienen ID propio.
 - Coexistencia: cada impuesto solo y ambos×13 entradas/canales =39 casos individuales; abonos, borradores, conversiones, carreras, reportes e aislamiento.
 - Estados fiscales×acciones: editar/preparar/enviar/consultar/PDF/correo; ejecutar cada variante del caso y su permiso.
 - Roles×tenant/sucursal×rutas sensibles: visitante, vendedor autorizado, sin permiso, otra sucursal y otro tenant; administrador legítimo como control positivo.
@@ -240,9 +240,9 @@ La matriz de canal es una hipótesis de cobertura basada en el contrato transver
 
 ### 8.1. Configuraciones y bordes que pueden cambiar el resultado
 
-Registrar en inventario: documento por defecto, mostrar80/58, autoimpresión/autocorreo, edición permitida, listas/búsquedas de productos, precio editable, descripciónPDF, descuentos y cargos, stock/lotes/seriales, ventas restringidas por tipo, sistema de puntos, consignado/itinerante, girosHotel/TAP/transporte, límites del plan, crédito vencido, módulos offline/importación y roles. Probar activado y desactivado cuando existan ambas ramas en el flujo. No inventar flags sólo por una etiqueta antigua.
+Registrar en inventario: documento por defecto, mostrar80/58, autoimpresión/autocorreo, edición permitida, listas/búsquedas de productos, precio editable, descripción PDF, descuentos y cargos, stock/lotes/seriales, ventas restringidas por tipo, sistema de puntos, consignado/itinerante, girosHotel/TAP/transporte, límites del plan, crédito vencido, módulos offline/importación y roles. Probar activado y desactivado cuando existan ambas ramas en el flujo. No inventar flags sólo por una etiqueta antigua.
 
-El valor58MM puede existir para documentos comerciales. La descarga digital protegida permite `a 4|a 5|ticket` (80MM); no inferir soporte digital58 a partir de preferencias compartidas. Anticipos conservan controles comerciales; opciones heredadas de afectación retiradas deben reportarse si permanecen activas.
+El valor 58MM puede existir para documentos comerciales. La descarga digital protegida permite `a 4|a 5|ticket` (80MM); no inferir soporte digital 58 a partir de preferencias compartidas. Anticipos conservan controles comerciales; opciones heredadas de afectación retiradas deben reportarse si permanecen activas.
 
 ## 9. Secuencia sugerida y dependencias
 
@@ -254,7 +254,7 @@ El valor58MM puede existir para documentos comerciales. La descarga digital prot
 |3|PAG, IGT, RET, RIVA, RISLR, INT, EDI|Cobros/aplicaciones/reversión/edición y concurrencia|
 |4|HKA|Preparación, commit, fallos, recuperación y aceptación DEMO designada|
 |5|PDF, COR, LIS|Distribución, estados y todas las entradas/acciones|
-|6|NVE, CAN, MAT, NEG, API, IMP|Conversiones, módulos, matrices y contratosHTTP|
+|6|NVE, CAN, MAT, NEG, API, IMP|Conversiones, módulos, matrices y contratos HTTP|
 |7|FIN, SEG, ROB|Reportes, conciliación, permisos, estabilidad y retest|
 |8|ANU y limpieza del tenant desechable|Anulación local/herramientas sin borrar evidencia previamente|
 |9|Inventario e informe final|Conteos reconciliados, límites y conclusión|
@@ -275,17 +275,17 @@ Evidencia mínima por capa:
 |Navegador|Capturas del clic/resultado, assets versión, request correlacionado y verificación posterior pertinente|
 |Concurrencia|Dos procesos/sesiones, barrera temporal, ambos resultados, conteos, unicidad y montos finales|
 |PDF/render|Archivo/hashes, tamaños/páginas, texto extraído, render de todas las páginas y QR decodificado cuando corresponda|
-|Real DEMO|Documento de la corrida, identidad/UUID, resultado atribuible, control, consulta y originalPDF; contactoQA si se prueba correo|
+|Real DEMO|Documento de la corrida, identidad/UUID, resultado atribuible, control, consulta y original PDF; contacto QA si se prueba correo|
 
 Defecto obligatorio cuando Reprobó: `BUG-QA-NNN`, título, severidad, prioridad, casos afectados, versión/entorno, precondiciones, pasos de reproducción, esperado/observado, evidencia y efecto sobre venta/stock/dinero/fiscal/permisos. Incluye frecuencia y workaround si se conoce. Separa error de producto, bloqueo de entorno y limitación conocida; no conviertas una falta de credenciales en defecto de cálculo.
 
 Severidad propuesta para el informe: Crítica (cruce tenant, duplicación fiscal/financiera, corrupción grave), Alta (flujo principal bloqueado o cálculo/saldo incorrecto), Media (opción funcional incorrecta con alternativa) y Baja (presentación sin pérdida funcional). La prioridad P0/P1/P2 del caso fija orden; severidad del defecto se determina por impacto observado.
 
-Retest usa mismoID y nueva iteración/commit. Guarda la fila/bitácora anterior con Reprobó. Si una variante falla, padre Reprobó; si ninguna falla pero faltan variantes, padre Pendiente/Bloqueada según causa. Aprobó exige todas las variantes aplicables aprobadas y con evidencia.
+Retest usa mismo ID y nueva iteración/commit. Guarda la fila/bitácora anterior con Reprobó. Si una variante falla, padre Reprobó; si ninguna falla pero faltan variantes, padre Pendiente/Bloqueada según causa. Aprobó exige todas las variantes aplicables aprobadas y con evidencia.
 
 ## 11. Pruebas existentes como apoyo
 
-Antes de ejecutar Laravel conDB, verifica `tests/CreatesApplication.php`, phpunit.xml y conexiones central/tenant, colas, correo y red. El arranque de aplicación no debe caer en bases operativas. MySQL de la suite fiscal crea/elimina bases temporales con prefijo `pro 9_fiscal_test_`; no sustituirlo por un tenant real ni ejecutar `migrate:fresh` sobre datos existentes.
+Antes de ejecutar Laravel con DB, verifica `tests/CreatesApplication.php`, phpunit.xml y conexiones central/tenant, colas, correo y red. El arranque de aplicación no debe caer en bases operativas. My SQL de la suite fiscal crea/elimina bases temporales con prefijo `pro 9_fiscal_test_`; no sustituirlo por un tenant real ni ejecutar `migrate:fresh` sobre datos existentes.
 
 Comandos de referencia, después de verificar aislamiento y dependencias; estos comandos no se han ejecutado para elaborar esta guía:
 
@@ -304,13 +304,13 @@ node --test tests/js/hka-emission-ui.test.cjs
 node --test tests/js/third-party-invoice-ui.test.cjs
 ```
 
-Suites por área (verificar nombres en el inventario de fuentes): SalesDocumentTypePolicy/SalesCustomerIdentityPolicy/identidad; FiscalEmissionSettings/Schema; FiscalLineCalculation/FiscalApiPaymentTransform; DocumentEditPolicy/DocumentUpdateRequest; ExportInvoice/ThirdPartyInvoice; HkaPayloadBuilder/Transport/Response/Mail/Pdf/A5Text/A5Layout; CurrentPdfRendering/TemplateContract; FiscalIdentity/DocumentNumberDisplay/DocumentFileName; DocumentFiscalAuthorization/ListColumns; TestDocumentsDeletionBehavior/Contract. Los tests que buscan texto en fuente se etiquetan “contrato fuente”; no prueban permisosHTTP integrales o clics de UI.
+Suites por área (verificar nombres en el inventario de fuentes): SalesDocumentTypePolicy/SalesCustomerIdentityPolicy/identidad; FiscalEmissionSettings/Schema; FiscalLineCalculation/FiscalApiPaymentTransform; DocumentEditPolicy/DocumentUpdateRequest; ExportInvoice/ThirdPartyInvoice; HkaPayloadBuilder/Transport/Response/Mail/Pdf/A5Text/A5Layout; CurrentPdfRendering/TemplateContract; FiscalIdentity/DocumentNumberDisplay/DocumentFileName; DocumentFiscalAuthorization/ListColumns; TestDocumentsDeletionBehavior/Contract. Los tests que buscan texto en fuente se etiquetan “contrato fuente”; no prueban permisos HTTP integrales o clics de UI.
 
 Ejecuta la suite necesaria para el caso y conserva resultados. No marques cientos de casos funcionales Aprobó porque una suite general pasó. El inventario de tests apoya trazabilidad, no sustituye ejecución por flujo.
 
 ## 12. Criterios de cierre y métricas del informe
 
-SeaT el total planificado incluyendo extensiones/subcasos según el nivel de conteo declarado, A aprobadas, R reprobadas, B bloqueadas, N no aplicables y P pendientes. Debe cumplirse **T=A+R+B+N+P**. Ejecutadas=A+R. Aplicables=T−N. Cobertura de ejecución=(A+R)/(T−N). Tasa de aprobación=A/(A+R). Si denominador0, “No calculable”, no100 %.
+SeaT el total planificado incluyendo extensiones/subcasos según el nivel de conteo declarado, A aprobadas, R reprobadas, B bloqueadas, N no aplicables y P pendientes. Debe cumplirse **T=A+R+B+N+P**. Ejecutadas=A+R. Aplicables=T−N. Cobertura de ejecución=(A+R)/(T−N). Tasa de aprobación=A/(A+R). Si denominador 0, “No calculable”, no 100 %.
 
 No mezcles conteo de casos padre con subcasos. Presenta ambos niveles cuando existan variantes. Una prueba bloqueada es cobertura faltante, no prueba aprobada. Documenta cada exclusiónN y su evidencia. Añadir opciones/casos cambiaT; no mantengas porcentajes de una lista antigua.
 
@@ -318,9 +318,9 @@ Conclusiones posibles:
 
 - **Aprobado en el alcance ejecutado:** aplicables ejecutados, matrices/opciones trazables, sin P0 fallido/bloqueado/pendiente, sin defectos críticos/altos abiertos, dinero/stock/identidad fiscal conciliados y aceptación DEMO que el alcance requiere acreditada.
 - **Reprobado:** existe fallo que incumple un requisito de facturación. Enumerar defectos/impactos y no ocultar aprobaciones parciales.
-- **Inconcluso:** faltan pruebas aplicables o evidencia esencial por entorno, módulos, permisos, receptorQA, assets o proveedor. Enumerar exactamente faltantes; no llamarlo aprobado.
+- **Inconcluso:** faltan pruebas aplicables o evidencia esencial por entorno, módulos, permisos, receptor QA, assets o proveedor. Enumerar exactamente faltantes; no llamarlo aprobado.
 
-Separar conclusiones por registro comercial, emisión fiscalDEMO, notas locales/preparación, distribución y UI/API/seguridad. No certificar producción ni homologación completa desde DEMO. No usar límites conocidos como permiso para omitir casos de regresión de esos rechazos.
+Separar conclusiones por registro comercial, emisión fiscal DEMO, notas ordinarias y anulación, órdenes y relaciones, distribución y UI/API/seguridad. No certificar producción ni homologación completa desde DEMO. No usar límites conocidos como permiso para omitir casos de regresión de esos rechazos.
 
 El informe final debe entregarse incluso cuando la corrida sea inconclusa. Completa la plantilla, enlaza el registro actualizado, casos adicionales, evidencia y bitácora de retest. Explica qué decisión permite tomar y qué falta probar.
 
@@ -388,9 +388,9 @@ Usar reloj controlado para 39/40, 49/50, 89/90/91 y vencimientos de backoff; no 
 
 Protocolo GET antes de POST/DELETE y GET posterior. Registro remoto exacto se adopta sin POST nuevo; remoto distinto queda conflict sin sobrescribir. Una consulta de ausencia sobre apply conflict no autoriza retransmisión; coincidencia exacta sí puede confirmar. Retención posiblemente remota conserva efecto local durante reversal_pending hasta ausencia acreditada. Cuando nunca se transmitió ni observó remotamente puede revertirse localmente y cancelar intentos anteriores; respuesta tardía no la reactiva. Soporte/historial/actor/motivo permanecen.
 
-IVA usa /api/AplicarRetencion; ausencia exitosa específica: HTTP 2xx, codigo 203, mensaje exacto «Retención no encontrada», validaciones única «No se ha aplicado retención previamente por lo que no se puede consultar nada». También codigo 200/sin validaciones con infoRetencion null explícito, o identidad coincidente y totalesRetencion null, según adaptador. Un 203 genérico, JSON faltante, timeout o identidad contradictoria no acredita ausencia. GET/DELETE reciben JSON de identidad congelada, tipoDocumento 01/serie/número/control originales, sin número visible rellenado.
+IVA usa /api/AplicarRetencion; ausencia exitosa específica: HTTP 2 xx, codigo 203, mensaje exacto «Retención no encontrada», validaciones única «No se ha aplicado retención previamente por lo que no se puede consultar nada». También codigo 200/sin validaciones con infoRetencion null explícito, o identidad coincidente y totalesRetencion null, según adaptador. Un 203 genérico, JSON faltante, timeout o identidad contradictoria no acredita ausencia. GET/DELETE reciben JSON de identidad congelada, tipoDocumento 01/serie/número/control originales, sin número visible rellenado.
 
-ISLR usa /api/AplicarRetencionISLR y outbox propia. Ausencia específica: HTTP 2xx, codigo 204, mensaje exacto «No se ha registrado aún ninguna Retención de ISLR a este documento», validaciones vacías y sin infoRetencionISLR registrada; también respuesta 200 sin validaciones con infoRetencionISLR null explícito. 203 IVA no es ausencia ISLR. Payload detallesRetencionISLR incluye numeroCompRetencion, fechaEmisionCR, impuestoRetenido, rifAgenteRetencion, porcentaje y omite codigoOperacion. GET compara sólo siete campos:serie, tipoDocumento, numeroDocumento, numeroControl, numeroCompRetencion, fechaEmisionCR, impuestoRetenido. No afirmar RIF, porcentaje, concepto o sustraendo remotamente verificados si GET no los retorna.
+ISLR usa /api/AplicarRetencionISLR y outbox propia. Ausencia específica: HTTP 2 xx, codigo 204, mensaje exacto «No se ha registrado aún ninguna Retención de ISLR a este documento», validaciones vacías y sin infoRetencion ISLR registrada; también respuesta 200 sin validaciones con infoRetencion ISLR null explícito. 203 IVA no es ausencia ISLR. Payload detallesRetencion ISLR incluye numeroCompRetencion, fecha Emision CR, impuestoRetenido, rifAgenteRetencion, porcentaje y omite codigoOperacion. GET compara sólo siete campos:serie, tipoDocumento, numeroDocumento, numeroControl, numeroCompRetencion, fecha Emision CR, impuestoRetenido. No afirmar RIF, porcentaje, concepto o sustraendo remotamente verificados si GET no los retorna.
 
 ### 13.6. Capacidades y límites: no sustituir evidencia
 
@@ -407,3 +407,105 @@ Si el caso espera bloqueo contractual, aprueba el rechazo correcto y efectos cer
 ## 14. Contenido obligatorio adicional del informe de corrida
 
 Completar las secciones específicas de regímenes, SPE, IVA, ISLR y coexistencia en la plantilla. Enumerar todos los IDs/variantes y conclusiones de las cuatro capas. Incluir matriz 28 y conceptos ISLR 85 con resultado propio, perfil/versiones por fecha, saldo antes/después, cash por moneda y operaciones remotas por impuesto. Registrar bloqueo can_send y flags efectivos, los límites del original y la evidencia simulada/histórica en anexo separado. Todas las pruebas nuevas empiezan Pendiente; asignar Aprobó/Reprobó sólo tras ejecución atribuida y documentada. Entregar informe incluso Inconcluso, registro Excel actualizado, cálculos, evidencias y defectos/retest.
+
+## 15. Ejecución de notas y órdenes: ampliación del 14 de octubre
+
+### 15.1. Alcance, versión y preparación segura
+
+Leer primero los contratos actuales de [notas](../notas_credito_debito_hka.md) y [órdenes](../ordenes_entrega_hka.md). Referencia confirmada 76690125 y archivos locales con hashes en fuentes. Registrar HEAD, diff, hash de assets realmente cargados y flags efectivos al comenzar; si varía un contrato, documentar diferencia y actualizar el esperado con fundamento antes de ejecutar. Las restricciones de notas de etapas anteriores quedan reemplazadas por la habilitación doméstica actual. La aceptación histórica no es resultado de esta corrida.
+
+No realizar migraciones, resets, generadores sobre BBC ni compilaciones para seguir esta guía. El responsable del entorno proporciona fixtures y esquema QA apropiados; si falta, registrar Bloqueada. Los casos de concurrencia, fallos, reloj y flags de stock necesitan bases temporales propias aisladas y proveedor simulado; las pruebas fiscales positivas requieren evidencia Real DEMO propia. No tocar los motivos de stock en BBC: históricamente los cinco motivos tenían discount_stock=0. Una prueba con descuento activado necesita otro fixture configurado expresamente, nunca modificar el catálogo vivo para simular cobertura.
+
+La nota de entrega HKA con indicador 0 está excluida: no crear selector, payload o pruebas positivas de ese subtipo. Toda orden de esta ampliación usa Pro 9 09/HKA04/esGuiaDespacho1. NC y ND son ajustes ordinarios distintos de notas de entrega y permanecen incluidas.
+
+### 15.2. Fixtures concretos y condiciones comunes
+
+| Fixture | Datos y finalidad |
+|---|---|
+| QA-A / QA-B | Tenants aislados, modalidad digital, ambiente demo, RIF del emisor y conexión propios. Nunca copiar JWT, contraseña o datos privados a evidencia. |
+| S1/W1 y S2/W2 | Dos sucursales con almacén propio. G1 disponible 10 UND enW1 y 20 UND enW2, excepto cuando el caso declara otra línea base. Dirección válida por sucursal y origen adicional propio. |
+| Usuarios | UADMIN, UVENTA S1 con módulo, USINPERMISO sin create_payment/delete_payment; otro usuario para caja ajena. Validar ACL reales antes de probar. |
+| C1/C2/T1 | Clientes locales sintéticos activos, identidad fiscal válida y direcciones propias. T1 habilitado como titular. Emisor FORMAL vigente para matrices sin IGTF; casos sujetos requieren perfil SPE/moneda recibida/intermediación explícitos. |
+| Factura F del caso | 01/0101 interna vigente, confirmed con control real coherente en documento/emisión; dos G1 UND, base neta 100 cada unidad, IVA16%, total 232; monedaVES/USD según ID. Pagada 232 con recibo real, sin fondos/retenciones/IGTF, salvo escenario específico. Cada caso tiene factura independiente. |
+| Tasas QA | Factura USD50.00000000; NC usa tasa original; ND51.00000000 propia. Los casos de precisión usan tasas explícitas 8 dec; no son cotizaciones oficiales. |
+| G1/GKG/SERV/PACK | G1 bien UND; GKG bien fraccionario; SERV sólo cargo ND y nunca devolución física 07; pack con snapshot 2G1+3G2 para pruebas NC, excluido de órdenes individuales. IVA y unidad activos, equivalencia HKA preservada. |
+| Lotes/seriales | L1/L2 por producto/almacén, saldos propios; SN1/SN2 disponibles y trazables. Registrar sus estados y derechos originales antes de cada devolución/conversión. |
+| Transporte | T1 transportista local autorizado, D1 conductor con identidad/licencia/contacto, V1 vehículo con marca/modelo/placa/TUC; registros del tenant. Públicos 01 exigen transportista; privado 02 conductor/vehículo; opcionales secundarios inventariados individualmente. |
+| Órdenes | Motivos04/21/22/23/24 activos y textos exactos del catálogo, KG/TON; fecha emisión 14 oct y traslado 15 oct 2026. Motivo 04 destino otra sucursal/almacén propio; resto dirección del cliente. Motivo 21 descripción de reparación. Flagsstock/valorización según ID, precio VES116 bruto=100 neto+16IVA. |
+| Finanzas | Caja abierta propia por usuario/sucursal/moneda, bancos activos S1VES/S1USD; método de pago activo no is_credit; UUID de cada recibo/egreso. Soporte de retención privado válido/token autorizado y comprobante fiscal real en pruebas de aplicación. |
+| Fallos controlados | Doble HTTP con contador y transactionLevel, respuestas200/203/timeout/incompleta, reloj para límites30/40/50/90/backoff; dos procesos coordinados para races y respuestas tardías. Nunca fabricar el control de una operación Real DEMO. |
+
+Si un caso sobre devolución no enumera otro fixture, usar F232 pagada, NC07 confirmada 116 que retornó 1 UND, sin ajustes ni reservas; destino caja abierta o banco compatible. Para anulación usar nota ordinaria confirmada sin cobros/devoluciones/ajustes activos y con bienes devueltos aún disponibles. Para ODI usar órdenes propias del caso, cantidades efectivamente ya trasladadas documentadas por Kardex; no atribuir una salida física a un simple estado visual.
+
+### 15.3. Matrices y oráculos de notas
+
+NHD001–224: NC01,07,04,09 y ND02,01,03 × VES/USD × propia/terceros × régimen null/1..7. NHD225–320: ND02,01,03 al contado × las mismas categorías. Cada combinación tiene factura, nota, UUID y resultado independientes. El formulario se abre desde Comprobantes → Acciones → Nota; no crear notas libres sin factura afectada. Confirmar serie del tipo/sucursal, motivo activo, descripción y partidas originales. Verificar los nombres de regímenes contra snapshot, sin cambiar sus textos para superar rechazos.
+
+NC01 cancela el importe comercial restante de la factura, no su emisión fiscal. Selección automática por derechos pendientes; NC07 devuelve sólo bienes originales seleccionados; NC04/09 acreditan diferencia monetaria. ND02 registra incremento por partida; ND01/03 cargo SERV con IVA autorizado. Sólo NC01/07 retornan inventario y lotes/seriales en almacén original; usar composición y presentación históricas incluso si el catálogo cambió.
+
+| Nota | Base/IVA/total del fixture | Transacción HKA | Stock y dinero |
+|---|---|---|---|
+| NC01 |200/32/232|03|Retorna 2 UND; cash sin cambio hasta refund separado|
+| NC07 |100/16/116|04|Retorna 1 UND; cash sin cambio|
+| NC04/09 |10/1.60/11.60|04|Stock 0; cash 0|
+| ND02/01/03 |10/1.60/11.60|02|Stock 0; deuda/cobros propios|
+
+NC USD convierte copia fiscal usando tasa original 50: NC01=11600 VES, NC07=5800 VES, NC monetaria=580 VES. ND USD11.60×51=591.60 VES. La referencia conserva total232USD/tasa50/control del padre, nunca tasa 51 de la ND. Retener importes locales en moneda original. Calcular bases/IVA por grupos congelados y redondeo acumulado; sumar todos los créditos hasta agotar derechos y cotejar centavos con la factura original.
+
+Las NC no tienen condición Crédito 02 ni pagos propios. HkaNotePayments declara 99 crédito comercial por el importe NC, sin crear cobros ni egresos. NDCrédito usa 99 por pendiente y conserva los abonos reales con fecha/moneda/tasa/UUID; ND Contado 01 requiere cobros reales completos, destino autorizado y permiso. No utilizar is_credit como entrada de caja. Si redondeos de abonos convertidos dejan un centavo, sólo el complemento fiscal 99 se ajusta; nunca recibos, tasas o saldo local. La nueva capacidad de notas no activa demo_net_collection_verified de IVA/ISLR.
+
+### 15.4. Devoluciones, ajustes y saldo
+
+Oráculo de factura: **F.total − NC activas − pagos activos − retenciones aplicadas − fondo ajustado + devoluciones principales activas**. ND conserva deuda propia, NC saldo cobrable 0, ND anulada saldo 0 en modelo y SQL. La aritmética de F puede ser negativa tras NC sobre factura pagada; no ocultarla con clamp 0 inventado. Ejemplo F232/pago232/NC116: saldo−116; refund 58→−58; refundtotal 116→0. Refund no altera ni borra el cobro original.
+
+Registrar devolución sólo desde NC digital DEMO confirmed/controlcoincidente, vinculada a cobro real activo. Capturar principal, moneda recibida/devuelta, tasa 8 dec, fecha, medio, caja/banco, motivo, UUID/actor y hash. Límites por factura/NC/origen/reembolsos previos y reservas de impuestos/fondo. Ejemplo origen 30 impide devolver 30.01 aunque factura tenga otro pago 202. Dos devoluciones 80 compiten por NC116: sólo una 80 puede aplicarse. Reversión conserva historial y elimina el egreso activo una sola vez.
+
+Para IVA/ISLR solicitar ajuste, conciliar reversión por el outbox específico y registrar nuevo comprobante real con soporte privado, referencia fiscal, fundamento y UUID. Durante uncertain la aplicación anterior sigue restando saldo; no sustituir con cálculo sin comprobante. IVA remanente 8 al 75%=6; ISLR base 50 al 3% con sustraendo 0.50=1.00. Facultades y fundamentos son independientes. Un activo por impuesto/factura, con historial. Fondo 10−reducción 5=5, sin cash. IGTF exige ajuste fiscal independiente confirmado; no usar ND98 como crédito negativo ni habilitar contrato faltante. Reservar su importe/tasa original mientras corresponda.
+
+### 15.5. Anulación de la propia nota
+
+Admin con motivo y UUID solicita flujo auditado. Distinguir NC01 por anulación comercial de factura de la anulación de esa NC. Prevalidar dependencias: pagos ND, refunds NC, ajustes activos bloquean; nunca se revierten automáticamente. Prevalidar almacén/composición/lotes/seriales; serial vendido nuevamente impide transmitir.
+
+| Etapa | Comprobación obligatoria |
+|---|---|
+| Local sin transmisión |No control ni intentos y estado elegible, o ausencia acreditada con retry_allowed; no asumir que rejected/uncertain significa ausencia|
+| pending/uncertain |Comercial 13 mantiene crédito y cantidades reservadas; identidad congelada y sin otroAnular ciego|
+| rejected |Conservar efectos; diagnóstico y nueva acción según contrato, sin marcar completed|
+| Conciliación |Listado paginado cotejaRIF/serie/control;201 vacío no prueba ausencia. EstadoDocumento200/Anulada exige UUID/tipo/número/control exactos|
+| remote_confirmed |HKA canceló; reversión comercial aún pendiente si carrera impide stock. Emisióncancelled/comercial13; preservar intención|
+| completed |Efectos locales revertidos una sola vez y comercial 11; ND sin deuda, NC retorno retirado exacto|
+
+Completar reversión comercial hace sólo operación local, sin segundo Anular. Conservar control/número/payload/PDF/journal/historia y no reutilizar números. Verificar antiguas rutas de void/delete para que no omitan el flujo. HKA fuera de transacciones y bloqueos empresa→factura→nota→emisión en reclamaciones cortas. Cambios de contexto y respuestas tardías no aplican a otra operación.
+
+### 15.6. Órdenes, inventario y relaciones
+
+ODE001–040 corresponde a cinco motivos04/21/22/23/24 × transportepúblico01/privado02 × stock0/1 × valorización0/1, siempre indicador 1. Guardar desde módulo Órdenes de entrega. El servidor resuelve sucursal, cliente, direcciones, conductor/vehículo/transportista, bienes/unidades y catálogos permitidos; no aceptar snapshots arbitrarios. Peso positivo KG/TON, traslado no anterior a emisión, cantidad positiva hasta 4 dec y hasta 300 líneas. Público requiere transportista; privado conductor/vehículo. Motivo 04 usa destino establecimiento autorizado y 21 descripción de servicio. Catálogos condicionales y conductores/vehículos secundarios se inventarían con variantes propias.
+
+Stock pertenece a almacén de la sucursal de la orden. Edición elegible restaura anteriores y aplica nuevas en una TX; motivoigual mantiene flag congelado. Pending/uncertain/confirmed o relacionada a factura bloquean edición. Rechazo corregible conserva número y renueva UUID/payload sólo mediante flujo autorizado. Replay propio de lote/serial ya consumido devuelve orden existente sin tratar su propio movimiento como consumo ajeno.
+
+Sin valorización precioUnitario 0.0000/precioItem0.00; ignorar precio oculto. Con valorización VES dos unidades 116 bruto generan precioUnitario100/precioItem200/IVA32/valorTotalItem232. **Omitir encabezado.totales en ambos**, sin pagos ni impuestos comerciales de factura. Catálogo USD sin tasa documental no se convierte automáticamente. Preservar valores de la orden aunque cambien catálogos/configuración.
+
+Conversión a factura conserva cliente/sucursal/referenciasoriginales y agrupa productos repetidos. Si cinco unidades ya trasladadas y factura siete, sólo dos generan salida; revertir factura retorna sólo esas dos. Derivaciones de pedido/NV/factura que ya movieron stock no repiten salida. Para trazabilidad exigir cantidadcompleta/una línea por producto/unidadoriginal; rechazar parciales, packs y mezcla de nuevas/yatrasladadas con lote/serial.
+
+La referencia local puede existir con relation waiting. Fiscalmente source04/target01 requiere ambosconfirmed/configcoherente: consulta previa→asociación si ausencia→consulta posterior, y verificar también desde factura. Si relación exacta ya está presente, adopta sin POST. Ausencia real observada: HTTP200/codigo404/mensaje"Relación no encontrada"/validación única"Relación no encontrada en nuestra base de datos.". La implementación también permite ausencia con HTTP2xx/codigo200/sinvalidaciones y relacionados[] válida sin destino; probar esa rama con doble y distinguirla del contrato histórico observado. Timeout, JSON incompleto o 404 distinto no autorizan POST. Journal response.relation independiente de emisión; guard 40 s, hash/contexto/attempt_id evitan duplicados y respuestasviejas.
+
+### 15.7. Rutas, estados y presentación
+
+| Operación | Ruta web / contrato |
+|---|---|
+| Crear nota |POST /documents con note_creation_key y affected_document_item_id; formulario Comprobantes→Acciones→Nota|
+| Devoluciones |GET/POST documents/{note}/refunds; POST documents/{note}/refunds/{refund}/reverse|
+| Ajustes |POST documents/{note}/adjustments y documents/{note}/adjustments/{adjustment}/replacement|
+| Anulación notas |POST documents/{note}/annul, query-annulment-hka, complete-annulment|
+| Notas fiscal/distribución |Reutilizan endpoints documents existentes de enviar/consultar/PDF/correo; cotejar permisos vigentes|
+| Orden emisión/consulta |POST dispatches/{id}/send-hka y query-hka|
+| Orden relación |POST dispatches/{id}/relate-hka administrativo|
+| Original orden |GET dispatches/{external_id}/download-hka-pdf/a4 privado/autorizado|
+
+Inventariar rutas desplegadas y no ampliar API pública por analogía. Emisión protege pending 40 s y reenvío≥30 s con ausencia acreditada; correo 50 s segúnestado; retenciones 90 s propio y backoff según next_attempt_at. No compartir un temporizador universal.
+
+Notas A4 íntegro, A5 vectorial horizontal y ticket QR verificado; correo a buzón QA separado de confirmación. Orden A4 original privado, sinA5/ticket/correoHKApositivo no habilitado. El PDF comercial local de orden es distinto. Omisiones de origen en PDF04 y régimen/leyendasSPE en original se registran; no retocar ni sustituir original. PDF inválido/HTML no entra al caché; cachépor tenant/operación, headersprivado/no-store/nosniff. FalloPDF/correo no cambia confirmed ni efectos comerciales.
+
+### 15.8. Informe y resultados obligatorios
+
+El ejecutor debe registrar Aprobó/Reprobó para cada prueba ejecutada, con observado/evidencia/defecto/agente/fecha Caracas/iteración/documentoUUID. Bloqueada/Noaplica requieren fundamento, no equivalen a aprobado. Toda combinación de matrices tiene su fila. Variantes fuera de matrices conservan padre/IDpropio y métricas separadas. Anexar corridas históricas y dobles separadamente de Real DEMO actual. Entregar informe aun Inconcluso, con conciliación independiente de saldos/efectivo/stock/fiscal/relaciones y seis secciones nuevas de la plantilla. No aprobar sistema conP0pendiente/bloqueado/fallido o defecto crítico/alto sinresolver.

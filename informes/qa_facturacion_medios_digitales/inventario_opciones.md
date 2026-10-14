@@ -1,6 +1,6 @@
 # Inventario obligatorio de opciones de facturación digital
 
-Referencia: 12 de octubre de 2026, `87dc6506cf8d94c6e2d3cad1fb512b5b62e5e572`; 1121 casos planificados. Este archivo es una plantilla de ejecución. Las rutas son puntos de entrada del código actual; registrar la ubicación real del despliegue. Todas las filas comienzan **Por inventariar**. No constituyen opciones ya ejecutadas.
+Referencia: 14 de octubre de 2026, `76690125` y cambios locales de órdenes con hashes en fuentes; 1702 casos planificados. Este archivo es una plantilla de ejecución. Las rutas son puntos de entrada del código actual; registrar la ubicación real del despliegue. Todas las filas comienzan **Por inventariar**. No constituyen opciones ya ejecutadas.
 
 ## Procedimiento de inventario
 
@@ -36,7 +36,7 @@ Una fila agregada como “pagos” no cubre efectivo, tarjeta, transferencia, cr
 | Hotel/restaurante/servicio técnico | Todos los cierres/conversiones/tipos realmente ofrecidos y campos por giro |CAN/NVE/PRE|Por inventariar|
 | Ecommerce/Store/pedidos/consignación | Estados que generan venta, tipos, descuentos/precio/envío/cupón/pago en sandbox, vínculos y deduplicación |CAN/NVE/SEG|Por inventariar|
 | WhatsApp Bot, móvil/API y Offline | Contratos de creación/consulta/estado/documento/PDF, reintentos, sincronización; mensajes controlados |CAN/API/MAT|Por inventariar|
-| Suscripciones y otras fuentes | Modos/ciclos que generan Factura oNV, estados, cobros y vínculos |CAN/NVE|Por inventariar|
+| Suscripciones y otras fuentes | Modos/ciclos que generan Factura o NV, estados, cobros y vínculos |CAN/NVE|Por inventariar|
 | Cotizaciones/pedidos/órdenes de entrega | Cada forma de convertir, referencias, cliente, stock origen, serie/sucursal, transporte/dirección |NVE|Por inventariar|
 | Importar documentos | Formato estándar, segundo formato, Excel, validaciones/reportes/plantillas, corregir/reimportar |IMP|Por inventariar|
 | Facturación masiva superadmin | Descargar formato, cargar/procesar/registros/exportar/PDF y permisos |IMP|Por inventariar|
@@ -91,3 +91,21 @@ Cada valor/rama siguiente debe tener fila OP propia y caso/variante/veredicto in
 | Presentación fiscal | Snapshots, detalle, listado, ticket local, original A4 HKA, A5/correo; régimen/leyendas SPE presentes/omitidas; hash original sin alteración |RGE/SPE/INT/PDF|Por inventariar|
 
 Si el tenant tiene más conceptos/opciones que el catálogo inicial, agregar QA-EXT con datos/fundamento/pasos/oráculo, manteniendo IDs previos. Inventariar cada medio, destino, descuento, cargo, reporte/formato por canal; los grupos nuevos no sustituyen las matrices antiguas. Confirmar controles de versión realmente cargados en el navegador antes de ejecutar.
+
+## Ampliación: notas y órdenes (14/10/2026)
+
+| Pantalla / opción | Valores y controles a inventariar | Casos |
+|---|---|---|
+|Nota|Tipo07/08; siete motivos y activos; factura/control; remanentes/partidas; series vacías/autorizadas; descripción; tercero/régimen heredados; tasa NC/ND; lotes/seriales originales|NHD|
+|Pagos ND|Contado/Crédito; medios activos/no is_credit; VES/USD/tasa8dec/fecha/UUID; banco/caja por sucursal; IGTF/intermediación; abonos/borradores|NHD/NRI|
+|Devoluciones|Origen real; principal/moneda/tasa/fecha/medio/destino; parcial/total/remanente; UUID/motivo/actor; reversión e historial/permisos|NRF|
+|Ajustes|IVA/ISLR independientes; número/fundamento/soporte; reversión incierta/reemplazo; fondo parcial/total; reservas/IGTF bloqueado|NRF|
+|Anular nota|Admin/motivo/UUID; local/remoto; dependencias; pending/uncertain/rejected/remote_confirmed/completed; consultar/completar; rutas antiguas|NAN|
+|Fiscal y distribución nota|show_send/can_send/diagnóstico; cargar/consultar/reintentar; A4/A5/ticketURL; correo/rastreo; identidad en diálogos y respuestas tardías|NHD/NRI|
+|Nueva orden|Motivos04/21/22/23/24; público01/privado02; flagstock/valorización; receptor/origen/destino; KG/TON/fecha; descripción reparación; bienes/unidades/300líneas|ODE|
+|Transporte orden|Transportista/conductor/vehículo autorizado; has_transport_driver; placa/TUC/licencia/contacto; conductores/vehículos secundarios; catálogos tipo/origen/destino producto|ODE/ODI|
+|Inventario orden|Sucursal/almacén; cantidades 4 dec; lote/serial; edición/restauración; stock congelado; derechos físicos del origen|ODI|
+|Convertir/asociar|Individual/múltiple; origen cotización/pedido/NV/F; agrupación; ya trasladado/nuevo; unidad original; refs8dígitos/serie vacía; facturaGuia/relaciones y ambas direcciones|ODI|
+|Listado/finanzas|Filtrar/ordenar/paginar; estados; detalle/menúmóvil; reportes/caja/bancos/cxc/morosidad/dashboard/exportación; roles/tenant/sucursal/esquema legado|NRI|
+
+No inventariar selector ni emisión de nota de entrega indicador 0 como funcionalidad planificada. Órdenes usan 1. Para cada control realmente encontrado registrar entrada, valores permitidos, default, dependencia, endpoint, rol y caso/variante con resultado propio; una fila de inventario no es evidencia de ejecución.

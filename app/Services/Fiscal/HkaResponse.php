@@ -47,7 +47,7 @@ final class HkaResponse
         $url = $data['urlConsulta'] ?? null;
         if (!is_string($url) || strlen($url) > 255 || !filter_var($url, FILTER_VALIDATE_URL)
             || parse_url($url, PHP_URL_SCHEME) !== 'https') $url = null;
-        $label=['01'=>'Factura','02'=>'Nota de crédito','03'=>'Nota de débito'][$identity['tipoDocumento']] ?? 'Comprobante';
+        $label=['01'=>'Factura','02'=>'Nota de crédito','03'=>'Nota de débito','04'=>'Orden de entrega'][$identity['tipoDocumento']] ?? 'Comprobante';
         return array_replace($result, ['status' => 'confirmed', 'diagnostic' => $label.' confirmada por HKA.',
             'control_number' => $control, 'authorization' => is_string($data['autorizado'] ?? null) ? mb_substr($data['autorizado'], 0, 255) : null,
             'assigned_at' => self::assignmentDate($data['fechaAsignacion'] ?? null, $data['horaAsignacion'] ?? null),

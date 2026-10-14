@@ -17,6 +17,7 @@
                 </el-alert>
             </div>
         </div>
+        <dispatch-fiscal-status :record="form" />
         <!-- ########## INICIO CAMBIO SIN XML CDR SUNAT -->
         <!-- El cierre de la orden de entrega local no muestra firma, envío, ticket ni CDR fiscal. -->
         <!-- ######### FIN CAMBIO SIN XML CDR SUNAT -->
@@ -29,7 +30,7 @@
                             @click="clickDownload('a4')">
                         <i class="fa fa-file-alt"></i>
                     </button>
-                    <p>Descargar A4</p>
+                    <p>PDF local A4</p>
                 </div>
                 <div class="col-lg-6 col-md-6 col-sm-6 text-center font-weight-bold mt-3">
                     <button class="btn btn-lg btn-info waves-effect waves-light"
@@ -117,6 +118,7 @@
 </template>
 
 <script>
+import DispatchFiscalStatus from './fiscal-status.vue';
 import {whatsappNumber} from "@helpers/phone";
 import {mapState} from "vuex/dist/vuex.mjs";
 import QrApi from '@viewsModuleQrApi/QrApiTemplate.vue'
@@ -127,6 +129,7 @@ export default {
         'showClose'
     ],
     components: {
+        DispatchFiscalStatus,
         QrApi
     },
     name: 'DispatchFinish',

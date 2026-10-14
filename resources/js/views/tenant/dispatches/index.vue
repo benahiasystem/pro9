@@ -134,6 +134,7 @@
                                 }"
                                 >{{ row.state_type_description }}</span
                             >
+                            <dispatch-fiscal-status :record="row" />
                         </td>
                         <td class="text-center">
                             {{ formatDate(row.date_of_shipping) }}
@@ -242,7 +243,7 @@
                                 "
                                 v-if="row.btn_pdf"
                             >
-                                PDF
+                                PDF local
                             </button>
                         </td>
                         <td class="text-center">
@@ -361,6 +362,7 @@
 }
 </style>
 <script>
+import DispatchFiscalStatus from './partials/fiscal-status.vue';
 import DataTable from "../../../components/DataTableDispatch.vue";
 // import DataTable from '../../../components/DataTable.vue'
 import DispatchOptions from "./partials/options.vue";
@@ -369,6 +371,7 @@ import ModalGenerateCPE from "./ModalGenerateCPE.vue";
 
 export default {
     components: {
+        DispatchFiscalStatus,
         DataTable,
         DispatchOptions,
         FormGenerateDocument,
@@ -423,7 +426,7 @@ export default {
             )
                 .then(() => {
                     this.$http
-                        .get(`/${this.resource}/anulate/${id}`)
+                        .post(`/${this.resource}/anulate/${id}`)
                         .then((res) => {
                             if (res.data.success) {
                                 this.$message.success(

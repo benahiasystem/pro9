@@ -1,6 +1,6 @@
 # Fuentes y trazabilidad de la especificación
 
-Commit de referencia: `87dc6506cf8d94c6e2d3cad1fb512b5b62e5e572`. Fecha: 12 de octubre de 2026.
+Referencia actual: `76690125` y cambios locales de órdenes, 14 de octubre de 2026. Los SHA-256 actuales están en la sección de ampliación del 14 de octubre. Las tablas anteriores conservan la referencia histórica `87dc6506cf8d94c6e2d3cad1fb512b5b62e5e572`, del 12 de octubre, para trazabilidad.
 
 Las expectativas proceden del contrato actual de Venezuela, las políticas de producto y los puntos de implementación locales. Esta especificación no evalúa normativa externa. La lectura de código y los informes históricos sirven para diseñar pruebas; no acreditan su ejecución en esta corrida.
 
@@ -303,13 +303,83 @@ Se prepararon documentos de QA, datos de especificación y un libro editable. No
 
 | Commit | Funcionalidad cubierta | Grupos/correcciones |
 |---|---|---|
-|067d8fda|Regímenes especiales y combinación con terceros|RGE; TER 008 y edición UUID|
-|5ce9b802|Perfiles fiscales SPE y clasificación fechada|SPE; IGT/PAG/EDI 014|
-|3acaec8a|IVA recibida, soporte privado y outbox|RIVA; RET 001/002/004..015/018/019|
-|87dc6506|ISLR recibida y protocolo propio; coexistencia/abonos|RISLR/INT; RET 003/004/009/010|
+|067 d 8 fda|Regímenes especiales y combinación con terceros|RGE; TER 008 y edición UUID|
+|5 ce 9 b 802|Perfiles fiscales SPE y clasificación fechada|SPE; IGT/PAG/EDI 014|
+|3 acaec 8 a|IVA recibida, soporte privado y outbox|RIVA; RET 001/002/004..015/018/019|
+|87 dc 6506|ISLR recibida y protocolo propio; coexistencia/abonos|RISLR/INT; RET 003/004/009/010|
 
-Fuente base anterior 230830 dd conservada como historia de los 720 IDs. Referencia actual 87 dc 6506 prevalece al resolver expectativas. Sustituir múltiples comprobantes activos por uno activo por impuesto/factura; permitir coexistencia IVA+ISLR. Previsión no es aplicación, y confirmación/control/referencia son prerequisitos digitales. En IGTF resolver perfil vigente del emisor/moneda recibida/intermediación; excepción administrativa con motivo/fundamento. Terceros+régimen ahora positivo en alcance web contado completo; no ampliar a otros canales/notas.
+Fuente base anterior 230830 dd conservada como historia de los 720 IDs. Referencia histórica 87 dc 6506; para notas/órdenes prevalece ampliación14oct/76690125 más fuentes locales con hashes. Sustituir múltiples comprobantes activos por uno activo por impuesto/factura; permitir coexistencia IVA+ISLR. Previsión no es aplicación, y confirmación/control/referencia son prerequisitos digitales. En IGTF resolver perfil vigente del emisor/moneda recibida/intermediación; excepción administrativa con motivo/fundamento. Terceros+régimen ahora positivo en alcance web contado completo; no ampliar a otros canales. Notas ordinarias domésticas vinculadas ahora habilitadas por contrato del 13 de octubre; ver ampliación del 14 de octubre.
 
 Informes de regímenes/SPE/IVA/ISLR contienen resultados históricos del 12/10 y límites de proveedor. Conservar separados en el informe; no asignar Aprobó a casos nuevos por esas evidencias. El emisor HKA DEMO disponible FORMAL no homologa emisor SPE; JSON incluye datos que PDF original puede omitir. Capacidades IVA/ISLR netas false, incluida ISLR pese aceptación histórica parcial VES. Ausencias 203 IVA y 204 ISLR tienen contratos distintos; siete campos verificables ISLR no incluyen concepto/sustraendo/RIF/porcentaje.
 
-Verificación de esta entrega: IDs únicos y 720 originales conservados, especificaciones por ID en Markdown/Excel, 35 grupos, estados Pendiente/inputs vacíos, fórmulas y validaciones del registro ampliadas, enlaces/hash actuales y previews de las cuatro hojas. No se ejecutó una corrida QA de la aplicación para elaborar la documentación; esa obligación corresponde al agente ejecutor con registro y reporte final.
+Verificación histórica del 12 de octubre: IDs únicos y 720 originales conservados, especificaciones por ID en Markdown/Excel, 35 grupos, estados Pendiente/inputs vacíos, fórmulas y validaciones del registro ampliadas, enlaces/hash y previews de las cuatro hojas. No se ejecutó una corrida QA de la aplicación para elaborar la documentación; esa obligación corresponde al agente ejecutor con registro y reporte final.
+
+## Ampliación del 14 de octubre de 2026: referencia actual
+
+HEAD observado: `76690125acdf1377b0f93f434507a38dd8d7c292`. Base confirmada hasta `76690125`; cambios de notas `f37b664e` y `76690125`. Órdenes tienen modificaciones locales/no confirmadas, identificadas abajo. Los hashes son del contenido exacto leído al preparar esta entrega; cambios posteriores exigen revalidar contrato.
+
+| Grupo | Casos | Fuentes principales |
+|---|---|---|
+|NHD|QA-NHD-001 a QA-NHD-362|[app/Services/Fiscal/FiscalNote.php](../../app/Services/Fiscal/FiscalNote.php), [app/Services/Fiscal/HkaNotePayments.php](../../app/Services/Fiscal/HkaNotePayments.php), [app/Services/Fiscal/HkaNotePolicy.php](../../app/Services/Fiscal/HkaNotePolicy.php), [app/Services/Fiscal/FiscalNoteInventory.php](../../app/Services/Fiscal/FiscalNoteInventory.php)|
+|NRF|QA-NRF-001 a QA-NRF-038|[app/Services/Fiscal/NoteRefund.php](../../app/Services/Fiscal/NoteRefund.php), [app/Services/Fiscal/NoteAdjustment.php](../../app/Services/Fiscal/NoteAdjustment.php), [app/Services/Fiscal/FiscalNoteBalance.php](../../app/Services/Fiscal/FiscalNoteBalance.php)|
+|NAN|QA-NAN-001 a QA-NAN-032|[app/Services/Fiscal/NoteAnnulment.php](../../app/Services/Fiscal/NoteAnnulment.php)|
+|ODE|QA-ODE-001 a QA-ODE-072|[app/Services/Fiscal/DeliveryOrderInput.php](../../app/Services/Fiscal/DeliveryOrderInput.php), [app/Services/Fiscal/DeliveryOrderPersistence.php](../../app/Services/Fiscal/DeliveryOrderPersistence.php), [app/Services/Fiscal/HkaDispatchEmission.php](../../app/Services/Fiscal/HkaDispatchEmission.php), [app/Services/Fiscal/HkaDispatchPayloadBuilder.php](../../app/Services/Fiscal/HkaDispatchPayloadBuilder.php), [app/Services/Fiscal/HkaDispatchPdf.php](../../app/Services/Fiscal/HkaDispatchPdf.php)|
+|ODI|QA-ODI-001 a QA-ODI-045|[app/Services/Fiscal/DeliveryOrderInventory.php](../../app/Services/Fiscal/DeliveryOrderInventory.php), [app/Services/Fiscal/DeliveryOrderInvoiceInventory.php](../../app/Services/Fiscal/DeliveryOrderInvoiceInventory.php), [app/Services/Fiscal/HkaDispatchRelations.php](../../app/Services/Fiscal/HkaDispatchRelations.php)|
+|NRI|QA-NRI-001 a QA-NRI-032|[app/Services/Fiscal/FiscalNoteBalance.php](../../app/Services/Fiscal/FiscalNoteBalance.php)|
+
+| Archivo de referencia | SHA-256 actual | Estado al documentar |
+|---|---|---|
+|[informes/notas_credito_debito_hka.md](../../informes/notas_credito_debito_hka.md)|`4db68c2f1c4c40be0f8a056e1b793f794b8d878e3a4d21572ff0bda202bd3b8d`|Confirmado en HEAD|
+|[informes/ordenes_entrega_hka.md](../../informes/ordenes_entrega_hka.md)|`e9e2fe61a0e67374e7d4a2db088d939451922c8bbf7c376d2d6cbdf2d7a5f711`|??|
+|[config/hka_notes.php](../../config/hka_notes.php)|`1c4bfa379affc0b3e2108708c3ad33b0bea6ae9df772e91b7da3764c8e0de089`|Confirmado en HEAD|
+|[routes/web.php](../../routes/web.php)|`c8f3d8589cca66b4760267df06503baaa6edd0a80139cc21f32a60b6803d2325`| M|
+|[routes/api.php](../../routes/api.php)|`8b96ee2432356bdb235712f144fe691a602b386d27ce4fddf87307d45b121718`|Confirmado en HEAD|
+|[app/Services/Fiscal/contracts/hka-ve-v1.json](../../app/Services/Fiscal/contracts/hka-ve-v1.json)|`f2ddb07c239b04319df1fc9b1e6b4db137f89b51f063fa4989fd1bc836d10f04`|Confirmado en HEAD|
+|[app/Services/Fiscal/FiscalNote.php](../../app/Services/Fiscal/FiscalNote.php)|`28f975354badd2b4753f22e06dc50a9e72e465409f71c7516e2ef11361946ba5`|Confirmado en HEAD|
+|[app/Services/Fiscal/FiscalNoteBalance.php](../../app/Services/Fiscal/FiscalNoteBalance.php)|`b7b63ab9ff6d219d9fe706bf893193a319cf6d29e0678ecc6a7de26f0cd27738`|Confirmado en HEAD|
+|[app/Services/Fiscal/FiscalNoteInventory.php](../../app/Services/Fiscal/FiscalNoteInventory.php)|`07325ea3a57b23a29a87a46aa9c3cca1d7e172f331fb0e45095bfc139f6faa67`|Confirmado en HEAD|
+|[app/Services/Fiscal/HkaNotePayments.php](../../app/Services/Fiscal/HkaNotePayments.php)|`29dfa7611ea28af3ca203732b4492040f876bedd137c1c6741d60704f49000f1`|Confirmado en HEAD|
+|[app/Services/Fiscal/HkaNoteCapability.php](../../app/Services/Fiscal/HkaNoteCapability.php)|`ad16b9d75ed1114fb522d34a55b7f1112dc0648780080fde8d96a6537e940523`|Confirmado en HEAD|
+|[app/Services/Fiscal/HkaNotePolicy.php](../../app/Services/Fiscal/HkaNotePolicy.php)|`908607512275d0458be4223f00e41e650cc5f6d4b753c1d432931b718a0bd9a9`|Confirmado en HEAD|
+|[app/Services/Fiscal/NoteRefund.php](../../app/Services/Fiscal/NoteRefund.php)|`d41f36174cc604b03e459235a6d04c6c251ab9b02dd5f07af04a7f5671cf2655`|Confirmado en HEAD|
+|[app/Services/Fiscal/NoteAdjustment.php](../../app/Services/Fiscal/NoteAdjustment.php)|`c915fda62b0e0c1ccf1991a718e4f8e8f2899a5a4ef60e70ebdef37704cf9985`|Confirmado en HEAD|
+|[app/Services/Fiscal/NoteAnnulment.php](../../app/Services/Fiscal/NoteAnnulment.php)|`55e023747f1e4f35dc5d03c1efa65ba37cf61300cdb1561b82d058f2a7fe70fb`|Confirmado en HEAD|
+|[app/Services/Fiscal/DeliveryOrderInput.php](../../app/Services/Fiscal/DeliveryOrderInput.php)|`9f5a781003ffc3b0205e065292fd7ed3eb5823d1c898000f4a79498fd0ffeb3c`|??|
+|[app/Services/Fiscal/DeliveryOrderPersistence.php](../../app/Services/Fiscal/DeliveryOrderPersistence.php)|`e7ba913e26a010142205a5432e415c839856107ba721619dd7b52123b4656f09`|??|
+|[app/Services/Fiscal/DeliveryOrderInventory.php](../../app/Services/Fiscal/DeliveryOrderInventory.php)|`219b9e7a63f14a5ca4b9703429608bcc30ca770ea078be17b81bbc78534dcef2`|??|
+|[app/Services/Fiscal/DeliveryOrderInvoiceInventory.php](../../app/Services/Fiscal/DeliveryOrderInvoiceInventory.php)|`e3fee63f32684d05c1ada555592d17a374a2608527b65d42d8b267fbdb32cf59`|??|
+|[app/Services/Fiscal/HkaDispatchEmission.php](../../app/Services/Fiscal/HkaDispatchEmission.php)|`0cb24865a3612bb1b1d2c1b744fd2436d4a21189e4f74c8fcb21135c5fa3ae8f`|??|
+|[app/Services/Fiscal/HkaDispatchPayloadBuilder.php](../../app/Services/Fiscal/HkaDispatchPayloadBuilder.php)|`a8d41cfd8a0d6e24f3692372b0f74a6c35c7824415266bf319a9f52731dc2633`|??|
+|[app/Services/Fiscal/HkaDispatchRelations.php](../../app/Services/Fiscal/HkaDispatchRelations.php)|`bdae78e4b027d6283537d6ec38f5a165c44964d1dbf2bdac7c6a763ccf657565`|??|
+|[app/Services/Fiscal/HkaDispatchPdf.php](../../app/Services/Fiscal/HkaDispatchPdf.php)|`a1812766391d899e8ff7e2a0ccf01ec657b9f53d50f144829068a5f8d918e5f0`|??|
+|[app/Models/Tenant/Dispatch.php](../../app/Models/Tenant/Dispatch.php)|`963dc10a4826b2aa00cbf6758edaf8634a42f9eff5ff66ac98cc1dd9c715633b`| M|
+|[app/Models/Tenant/DispatchEmission.php](../../app/Models/Tenant/DispatchEmission.php)|`96f243acdd314550909189de1b69cf9cab192724ce0aae3e43f0aff461d7bde9`|??|
+|[app/Http/Controllers/Tenant/DispatchFiscalController.php](../../app/Http/Controllers/Tenant/DispatchFiscalController.php)|`e9442dc041d6be291af2fd1a9d4443e25fe283db4565208ee5c5ace622445bf1`|??|
+|[database/migrations/tenant/2026_08_17_000342_create_dispatch_emissions_table.php](../../database/migrations/tenant/2026_08_17_000342_create_dispatch_emissions_table.php)|`db7e6492f8191e300da6c496ed96aac57694f4601b7cfa9d941dd603014d261b`|??|
+|[resources/js/views/tenant/dispatches/create.vue](../../resources/js/views/tenant/dispatches/create.vue)|`45573716032a513715a4d5c8e222ea6312a31c9f31314ccb037c38e8511c2a71`| M|
+|[resources/js/views/tenant/dispatches/partials/fiscal-status.vue](../../resources/js/views/tenant/dispatches/partials/fiscal-status.vue)|`1ebfa3175a66188df854e28b88f610093c0e163737b015027005646481f54b4f`|??|
+|[resources/js/views/tenant/documents/invoice.vue](../../resources/js/views/tenant/documents/invoice.vue)|`c387dfc74f500b03b1e92601e90c0cd8a7087d046eee6e5e53763c67026ab35d`| M|
+|[tests/Support/NotePersistenceCases.php](../../tests/Support/NotePersistenceCases.php)|`e81bee6a61f23ff16c2152edec23b9bc3f28f561fc47b99dd117cedf40de2408`|Confirmado en HEAD|
+|[tests/Support/DispatchPersistenceCases.php](../../tests/Support/DispatchPersistenceCases.php)|`91a1a32585125f8b7bc56a62753c513c0301571c4b16fcb10da092c392eb4d90`|??|
+|[tests/js/dispatch-hka-ui.test.cjs](../../tests/js/dispatch-hka-ui.test.cjs)|`bc9d5280ab566df8e818e6872a09c0686f728815ea472167b62f23391c46b089`|??|
+
+### Precedencia y divergencias concretas
+
+Las prohibiciones antiguas de notas de terceros/regímenes y emisión ordinaria quedan reemplazadas por el contrato del 13 de octubre; no reemplazan restricciones de crédito de factura, exportación, producción, canales ni IGTF98. Config hka_notes habilita capacidades notas DEMO, no capacidades netoIVA/ISLR.
+
+El informe de órdenes describe la ausencia exacta 404 observada. HkaDispatchRelations::matches también devuelve ausencia para envolvente 200 válida/sinvalidaciones con lista relacionados que no contiene destino. ODI prueba ambas ramas, identifica doble frente Real DEMO y conserva incertidumbre para 404 no contractual/JSONincompleto. No ocultar diferencia de alcance entre informe histórico e implementación.
+
+La guía asume flagsstock/valorización declarados por caso en entorno aislado; BBC histórico conservó cinco motivos sin descuento. No ejecutar prepare_delivery_order_demo.php ni probes como preparación de esta documentación. Suites y manifiestos históricos no son veredictos de esta nueva corrida.
+
+### Evidencia histórica separada de la corrida
+
+- [Matriz consolidada notas](../evidencias/notas_hka_emision_anulacion_2026_10_13.json):120escenarios/128operaciones históricos; no poblar estados nuevos con ellos.
+- [Informe notas](../notas_credito_debito_hka.md):mapeos, corrección 99, anulación, referencias a pruebas y límites gráficos del original.
+- [Manifiesto órdenes BBC](../evidencias/ordenes_entrega_bbc_manifest.json) y [resultados históricos](../evidencias/ordenes_entrega_resultados.json):23órdenes/5relaciones, no ejecución actual.
+- [Informe órdenes](../ordenes_entrega_hka.md):esquema local/aditivo, contratos, cantidad/stock y originales; fuentes susceptibles de cambios locales.
+
+### Auditoría de preparación actual
+
+Sólo se actualizaron seis documentos QA y el libro existente. No se ejecutaron pruebas de aplicación, emisiones/anulaciones/correos, migraciones, generadores BBC ni builds; los cambios de aplicación existentes se preservaron. Los resultados nuevos son Pendiente, con campos de ejecución vacíos; las verificaciones de esta entrega sólo acreditan integridad de documentación/Excel.
+
+Verificación de la entrega del 14 de octubre: **1702 IDs únicos en 41 grupos**, con los **1121 anteriores conservados** y **581 nuevos Pendiente**. Se actualizaron expectativas o controles de 29 casos anteriores. Los IDs y especificaciones nuevos/corregidos coinciden entre Markdown y Excel; resultados, evidencias y variantes anteriores permanecen intactos. Se verificaron enlaces locales y hashes de fuentes actuales, cuatro hojas en el mismo orden, filtros, tablas, validaciones, paneles congelados y ausencia de errores de fórmula. La prueba temporal de Aprobó/Reprobó actualizó las métricas de casos y variantes por separado y se restauró antes de exportar. Se revisaron visualmente las cuatro hojas; no se ejecutó QA de la aplicación.

@@ -161,6 +161,7 @@ class Facturalo
                 $this->document = Document::find($document->id);
                 break;
             case 'invoice':
+                $inputs=\App\Services\Fiscal\DeliveryOrderInvoiceInventory::prepare($inputs);
                 $document = Document::create($inputs);
                 $document->invoice()->create($inputs['invoice']);
                 $this->saveFee($document, $inputs['fee']);
@@ -184,6 +185,7 @@ class Facturalo
                 \App\Services\Fiscal\FiscalDocumentPersistence::summarize($document);
                 \App\Services\Fiscal\FiscalDocumentPersistence::applySettlements($document, $inputs);
                 // ######## FIN PERSISTENCIA FISCAL VENEZUELA ########
+                \App\Services\Fiscal\HkaDispatchRelations::attach($document,$inputs);
                 $this->document = Document::find($document->id);
                 break;
             case 'voided':
@@ -215,6 +217,13 @@ class Facturalo
                 $this->document = PurchaseSettlement::find($document->id);
                 break;
             default:
+                if (!empty($inputs['creation_key'])) {
+                    $this->document=\App\Services\Fiscal\DeliveryOrderPersistence::save($inputs);
+                    break;
+                }
+                if (!empty($inputs['id'])) {
+                    $editing=\App\Services\Fiscal\DeliveryOrderInput::order($inputs['id']);\App\Services\Fiscal\DeliveryOrderPersistence::assertEditable($editing);
+                }
                 DispatchItem::query()->where('dispatch_id', $inputs['id'])->delete();
                 $document = Dispatch::query()->updateOrCreate([
                     'id' => $inputs['id']

@@ -1,6 +1,6 @@
 ---
 name: distribuir-documentos-hka
-description: Mantener el envío, rastreo y descarga de PDF fiscal HKA desde ventas web, listado, POS, Garage, finanzas y descargas masivas A5 de Pro9. Usar para HkaMail, HkaPdf, HkaTicketPdf, los diálogos, Correo/Enviar, Correo/Rastreo y DescargaArchivo; la distribución por orden sigue sin integrar.
+description: Mantener el envío, rastreo y descarga de PDF fiscal HKA desde ventas web, listado, POS, Garage, finanzas y descargas masivas A5 de Pro9. Usar para HkaMail, HkaPdf, HkaTicketPdf, los diálogos, Correo/Enviar, Correo/Rastreo y DescargaArchivo; órdenes de entrega tienen PDF original A4 DEMO, sin correo HKA.
 ---
 
 # Distribución de documentos HKA
@@ -12,6 +12,8 @@ Leer [referencia HKA, secciones 3, 4.3, 6 y 10–15](../../../informes/imprenta_
 - Separar estado de emisión, generación/descarga del PDF y entrega del correo; un éxito de una operación no demuestra éxito de las otras. Evitar duplicar envíos en reintentos inciertos y no divulgar datos del comprador a otro tenant.
 
 ## Correo implementado
+
+Órdenes de entrega: `HkaDispatchPdf` descarga únicamente el original A4 de una emisión `dispatch_emissions` confirmada en DEMO, mediante `DescargaArchivo`. Valida los bytes PDF y la identidad/control/contexto, almacena por tenant/UUID en ruta privada y sirve una descarga autenticada sin caché. Diferenciar `PDF original HKA` de `PDF local`. No editar el original ni prometer que imprime todos los campos enviados. No activar `Correo/EnviaOrden` por esta integración. Ver [evidencia](../../../informes/ordenes_entrega_hka.md).
 
 - `HkaMail` aplica a facturas `01` digitales y notas ordinarias reconocidas por `FiscalNote::ordinary` y notas exclusivas reconocidas por `HkaIgtfNote::applies`: exige documento vigente, emisión confirmada, control, DEMO y correspondencia de RIF/configuración con la identidad conservada. HKA envía su PDF fiscal. Producción queda bloqueada; no hacer fallback automático a SMTP. Los demás documentos conservan correo comercial.
 - Reutilizar `POST documents/email`, con `id`, `customer_email`, UUID `request_id` y `resend` explícito. Validar destinatarios en servidor. Devolver sólo `email_delivery` saneado: proveedor, estado, mensaje, código, intento, rastreo y acciones permitidas; no JWT, payload ni respuesta completa del proveedor.

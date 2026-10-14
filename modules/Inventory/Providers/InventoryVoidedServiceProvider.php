@@ -41,6 +41,8 @@ class InventoryVoidedServiceProvider extends ServiceProvider
                     // $warehouse = $this->findWarehouse($document['establishment_id']);
 
                     foreach ($document['items'] as $detail) {
+                        if (in_array($document->getOriginal('state_type_id'),['09','11'],true)) continue;
+                        if (\App\Services\Fiscal\DeliveryOrderInvoiceInventory::apply($detail,1)) continue;
                         // dd($detail['item']->presentation);
 
                         if(!$detail->item->is_set){
@@ -241,6 +243,8 @@ class InventoryVoidedServiceProvider extends ServiceProvider
                 return;
             }
 
+            if (in_array($dispatch->getOriginal('state_type_id'),['09','11'],true)) return;
+            if ($dispatch->creation_key) { foreach ($dispatch->items as $line) \App\Services\Fiscal\DeliveryOrderInventory::apply($line,1); return; }
             // dd($dispatch, $dispatch['state_type_id'],$dispatch->state_type_id);
             if($dispatch->discountsPhysicalStock()){
 

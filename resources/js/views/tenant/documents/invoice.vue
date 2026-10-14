@@ -1258,6 +1258,7 @@ export default {
             // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
             this.searchRemoteCustomers(client.number);
             this.form.customer_id = client.id;
+            if (client.dispatch_establishment_id) this.form.establishment_id=client.dispatch_establishment_id;
             this.changeEstablishment();
             this.filterSeries();
             this.filterCustomers();

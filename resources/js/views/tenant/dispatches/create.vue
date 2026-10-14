@@ -122,6 +122,19 @@
                                 </div>
                             </div>
                             <!-- ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES -->
+                            <template v-if="company.fiscal_emission_mode === 'digital' && company.fiscal_environment === 'demo'">
+                                <div v-for="field in [{key:'product_type_id',catalog:'product_types',label:'Tipo de producto (cuando aplique)'},{key:'product_origin_id',catalog:'product_origins',label:'Origen del producto'},{key:'taxation_product_id',catalog:'taxation_products',label:'Destino tributario del producto'}]" :key="field.key" class="col-lg-4">
+                                    <label class="control-label">{{ field.label }}</label>
+                                    <el-select v-model="form.hka_data[field.key]" clearable>
+                                        <el-option v-for="option in hkaCatalogs[field.catalog] || []" :key="option.id" :label="option.description" :value="option.id" />
+                                    </el-select>
+                                </div>
+                            </template>
+                            <div v-if="form.transfer_reason_type_id === '21'" class="col-lg-6">
+                                <label class="control-label">Servicio de reparación o perfeccionamiento <span class="text-danger">*</span></label>
+                                <el-input v-model="form.hka_data.service_description" maxlength="255"></el-input>
+                                <small v-if="errors['hka_data.service_description']" class="text-danger">{{ errors['hka_data.service_description'][0] }}</small>
+                            </div>
                             <div v-if="form.transfer_reason_type_id === '24'" class="col-lg-6">
                                 <div :class="{ 'has-danger': errors.transfer_reason_description }" class="form-group">
                                     <label class="control-label">Descripción de motivo de traslado<span
@@ -885,6 +898,7 @@ import DialogReferenceDocument from './Carrier/partials/DialogReferenceDocument.
 import CustomFieldsRenderer from '@viewsModuleCustomField/custom_fields/custom_field_renderer.vue';
 
 import DispatchFinish from './partials/finish.vue'
+import { noteRequestId } from '@helpers/fiscal-note';
 import { mapActions, mapState } from "vuex/dist/vuex.mjs";
 import WarehousesDetail from '@components/WarehousesDetail.vue'
 import { setDefaultSeriesByMultipleDocumentTypes } from '@mixins/functions'
@@ -1031,6 +1045,7 @@ export default {
             form: {},
             recordId: null,
             company: {},
+            hkaCatalogs: {},
             customerAddresses: [],
             showWarehousesDetail: false,
             warehousesDetail: [],
@@ -1071,6 +1086,7 @@ export default {
         }
         await this.$http.post(`/${this.resource}/tables`, payload).then(response => {
             this.company = response.data.company;
+            this.hkaCatalogs = response.data.hkaCatalogs || {};
             this.identityDocumentTypes = response.data.identityDocumentTypes;
             this.transferReasonTypes = response.data.transferReasonTypes;
             // this.related_document_types = response.data.related_document_types
@@ -1091,19 +1107,23 @@ export default {
 
         if (this.parentId) {
             this.form = Object.assign({}, this.form, this.document);
+            this.form.creation_key = this.form.creation_key || noteRequestId();
+            this.form.hka_data = Object.assign({service_description:''}, this.form.hka_data || {});
+            this.selectedDrivers = [this.form.driver_id,...(this.form.secondary_drivers || []).map(extra=>extra.id)].map(id=>this.drivers.find(d=>d.id===id)).filter(Boolean);
+            this.selectedTransports = [this.form.transport_id,...(this.form.secondary_transports || []).map(extra=>extra.id)].map(id=>this.transports.find(t=>t.id===id)).filter(Boolean);
             this.form.items = this.form.items.map(row => ({
                 ...row,
                 unit_price: row.unit_price || row.item?.unit_price || 0,
                 total: row.total || row.item?.total || 0,
             }));
             this.calculatePackagesFromItems();
-            await this.reloadDataCustomers(this.form.customer_id);
-            await this.getDeliveryAddresses(this.form.customer_id);
+            const savedDelivery = this.form.delivery_address_id;
+            if (this.form.customer_id) { await this.reloadDataCustomers(this.form.customer_id); await this.getDeliveryAddresses(this.form.customer_id); }
             if (this.delivery_addresses.length > 0) {
-                this.form.delivery_address_id = _.head(this.delivery_addresses).id;
+                this.form.delivery_address_id = savedDelivery !== null && savedDelivery !== undefined ? savedDelivery : _.head(this.delivery_addresses).id;
             }
             await this.changeEstablishment()
-            if (this.parentTable !== 'dispatches') {
+            if (this.parentTable !== 'dispatch') {
                 this.setDefaults();
             }
         } else {
@@ -1122,8 +1142,8 @@ export default {
         }
         if (this.order_form) {
             this.form = Object.assign({}, this.form, this.order_form);
-            await this.reloadDataCustomers(this.form.customer_id);
-            await this.getDeliveryAddresses(this.form.customer_id);
+            const savedDelivery = this.form.delivery_address_id;
+            if (this.form.customer_id) { await this.reloadDataCustomers(this.form.customer_id); await this.getDeliveryAddresses(this.form.customer_id); }
             await this.changeEstablishment()
         }
 
@@ -1175,6 +1195,8 @@ export default {
             if (isNaN(establishment_id)) establishment_id = null;
             this.form = {
                 id: null,
+                creation_key: noteRequestId(),
+                hka_data: {service_description: '', product_type_id: null, product_origin_id: null, taxation_product_id: null},
                 establishment_id: establishment_id,
                 document_type_id: '09',
                 series: null,
@@ -1855,7 +1877,8 @@ export default {
 
             this.form.origin = this.origin_addresses.find(row => String(row.id) === String(this.form.origin_address_id));
             this.form.delivery = this.delivery_addresses.find(row => String(row.id) === String(this.form.delivery_address_id));
-            this.form.total_weight = _.round(this.form.total_weight, 2) > 0 ? _.round(this.form.total_weight, 2) : 1;
+            if (!(Number(this.form.total_weight)>0)) return this.$message.error('Indique un peso total mayor que cero.');
+            this.form.total_weight = _.round(this.form.total_weight, 2);
             // this.form.origin = this.origin;
 
             // if (this.form.origin.location_id.length !== 3 || this.form.delivery.location_id.length !== 3) {
