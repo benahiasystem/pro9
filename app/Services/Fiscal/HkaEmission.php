@@ -2,14 +2,40 @@
 
 namespace App\Services\Fiscal;
 
-use App\Models\Tenant\{Company, Document};
+use App\Models\Tenant\{Company, Configuration, Document};
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 /** A single logical emission, claimed in the tenant DB before network I/O. */
 final class HkaEmission
 {
-    public function send(Document $document): array
+    // ######## INICIO ENVÍO AUTOMÁTICO HKA ########
+    public const DEFERRED_MESSAGE = 'Comprobante guardado. Pendiente de envío HKA';
+
+    public function sendAutomatic(Document $document): array
+    {
+        $document = $document->fresh();
+        if (!$this->automaticAllowed($document)) {
+            return $this->deferredView($document);
+        }
+        return $this->send($document, true);
+    }
+
+    private function automaticAllowed(Document $document): bool
+    {
+        return (optional(Configuration::first())->auto_send_hka ?? true)
+            && ($document->emission->response['auto_send_requested'] ?? true);
+    }
+
+    private function deferredView(Document $document): array
+    {
+        $view = DocumentEmissionView::forDocument($document);
+        if ($view['status'] === 'not_requested') $view['diagnostic'] = self::DEFERRED_MESSAGE;
+        return $view;
+    }
+    // ######## FIN ENVÍO AUTOMÁTICO HKA ########
+
+    public function send(Document $document, bool $automatic = false): array
     {
         $attempt = null;
         $operationKey = null;
@@ -32,14 +58,16 @@ final class HkaEmission
             if ($reason = HkaIslrRetentionCapability::reason($document)) FiscalAmounts::error('islr_retention',$reason);
             if ($reason = HkaIvaRetentionCapability::reason($document)) FiscalAmounts::error('iva_retention',$reason);
             $token = app(HkaTransport::class)->token($company);
+            if ($automatic && !$this->automaticAllowed($document->fresh())) return $this->deferredView($document->fresh());
             if ($document->emission->status === 'not_requested') (new HkaEmissionPreparation)->prepare($document, $operationKey);
-            $attempt = $document->getConnection()->transaction(function () use ($document, $company, $operationKey) {
+            $attempt = $document->getConnection()->transaction(function () use ($document, $company, $operationKey, $automatic) {
                 Company::query()->lockForUpdate()->findOrFail($company->id);
                 $locked = Document::query()->lockForUpdate()->findOrFail($document->id);
                 $currentCompany = $this->company($locked);
                 if ($this->context($currentCompany) !== $this->context($company)) FiscalAmounts::error('emission', 'La configuración cambió durante la autenticación. Intente de nuevo.');
                 $emission = $locked->emission()->lockForUpdate()->firstOrFail();
                 if ($emission->operation_key !== $operationKey) return null;
+                if ($automatic && !$this->automaticAllowed($locked)) return null;
                 $retry = $emission->status === 'uncertain' && !empty($emission->response['retry_allowed'])
                     && time() - ($emission->response['started_at'] ?? time()) >= 30;
                 if ($emission->status !== 'prepared' && !$retry) return null;

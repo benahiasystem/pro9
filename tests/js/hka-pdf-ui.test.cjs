@@ -68,6 +68,20 @@ test('pending invoices block buttons and direct methods without downloading loca
   assert.equal(ctx.requests.length,0);assert.equal(actions.length,0);assert.equal(ctx.messages[0],'Confirme la factura');
  }
 });
+test('unconfirmed invoices download 80MM while A4/A5 remain blocked in every shared dialog', async () => {
+ for (const component of [web,pos,finance]) {
+  const ctx=context(component);
+  ctx.form.fiscal_emission={status:'not_requested'};
+  ctx.form.pdf_downloads.a4.available=ctx.form.pdf_downloads.a5.available=false;
+  ctx.form.pdf_downloads.a4.message='Confirme el documento en HKA antes de descargar A4 o A5.';
+  assert.equal(ctx.pdfDownloadDisabled('ticket'),false);
+  assert.equal(ctx.pdfDownloadDisabled('a4'),true);assert.equal(ctx.pdfDownloadDisabled('a5'),true);
+  await ctx.downloadDocumentPdf('ticket',ctx.form.print_ticket);
+  assert.deepEqual(ctx.requests.map(r=>r[0]),['/documents/external-16/download-pdf/ticket']);
+  assert.deepEqual(downloads,['factura-16-80mm.pdf']);assert.equal(actions.length,0);
+  assert.equal(ctx.form.fiscal_emission.status,'not_requested');
+ }
+});
 test('an unloaded or loading dialog cannot open a null print URL or download another record', async () => {
  for (const component of [web,pos,finance]) {
   const ctx=context(component);

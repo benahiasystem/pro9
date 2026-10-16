@@ -1,4 +1,4 @@
-/** Explicit digital-invoice downloads: HKA A4/A5 or a local 80MM ticket with its HKA QR. */
+/** Explicit downloads: HKA A4/A5 or a local 80MM ticket, with an HKA QR after confirmation. */
 export const documentPdf = {
     data() {
         return { pdfDownloadBusy: false };
@@ -29,7 +29,9 @@ export const documentPdf = {
             if (this.pdfDownloadBusy) return;
             const entry = this.form.pdf_downloads?.[format];
             if (!entry?.available || !entry.url) {
-                this.$message.warning(entry?.message || 'Confirme la factura en HKA antes de descargar A4, A5 o 80MM.');
+                this.$message.warning(entry?.message || (format === 'ticket'
+                    ? 'El ticket 80MM no está disponible para este comprobante.'
+                    : 'Confirme la factura en HKA antes de descargar A4 o A5.'));
                 return;
             }
             let filename = `factura-${this.form.id}-${format === 'ticket' ? '80mm' : format}.pdf`;
@@ -57,7 +59,7 @@ export const documentPdf = {
                 }
                 const message = data?.errors?.pdf?.[0] || data?.pdf?.[0] || data?.message
                     || (format === 'ticket'
-                        ? 'No se pudo descargar el ticket 80MM con su QR HKA. Intente de nuevo; la venta sigue guardada.'
+                        ? 'No se pudo descargar el ticket 80MM. Intente de nuevo; la venta sigue guardada.'
                         : 'No se pudo descargar el PDF HKA. Intente de nuevo; la venta sigue guardada.');
                 this.$message.error(message);
             } finally {

@@ -35,6 +35,7 @@ use Illuminate\Support\Facades\DB;
  * - `compact_sidebar` tinyint(1) NOT NULL DEFAULT '0'
  * - `colums_grid_item` tinyint(4) DEFAULT '4'
  * - `options_pos` tinyint(1) NOT NULL DEFAULT '1'
+ * - `auto_send_hka` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'Envío automático de comprobantes digitales a HKA'
  * - `edit_name_product` tinyint(1) NOT NULL DEFAULT '0'
  * - `restrict_receipt_date` tinyint(1) NOT NULL DEFAULT '1'
  * - `shipping_time_days` int(11) NOT NULL DEFAULT '4'
@@ -274,6 +275,7 @@ CREATE TABLE `configurations` (
   `compact_sidebar` tinyint(1) NOT NULL DEFAULT '0',
   `colums_grid_item` tinyint(4) DEFAULT '4',
   `options_pos` tinyint(1) NOT NULL DEFAULT '1',
+  `auto_send_hka` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'Envío automático de comprobantes digitales a HKA',
   `edit_name_product` tinyint(1) NOT NULL DEFAULT '0',
   `restrict_receipt_date` tinyint(1) NOT NULL DEFAULT '1',
   `shipping_time_days` int(11) NOT NULL DEFAULT '4',

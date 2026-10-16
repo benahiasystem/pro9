@@ -16,6 +16,7 @@ class ConfigurationRequest extends FormRequest
 
         return [
             'cron' => ['required', 'boolean'],
+            'auto_send_hka' => ['sometimes', 'boolean'],
             'decimal_quantity' => ['required', 'integer'],
 
 

@@ -5,6 +5,10 @@ description: Mantener payloads HKA de facturas y notas desde snapshots y la emis
 
 # Facturas y notas HKA
 
+## Envío automático configurable — 14/10/2026
+
+Aplicar [el contrato vigente](../../../informes/envio_automatico_hka.md): `configurations.auto_send_hka` inicia activado y sólo admin puede cambiarlo. Facturalo y callbacks/reanudaciones IGTF usan `HkaEmission::sendAutomatic`, después del commit, con intención inicial `response.auto_send_requested` y comprobación de configuración actual. Apagado conserva `not_requested` sin preparación/HTTP; reactivación no opta documentos manuales anteriores ni reintentos por UUID. `send` manual sigue independiente y limitado a DEMO. La edición conserva envío explícito. El ticket local sin confirmación ya no requiere URL HKA; después de confirmar sí conserva los controles de QR/configuración. Esta regla sustituye los bloqueos históricos de 80MM antes de confirmar, sin cambiar A4/A5 ni correo.
+
 ## Estado y fuentes
 
 `HkaPayloadBuilder`, `HkaSchemaValidator` y `HkaEmissionPreparation` preparan localmente, sin HTTP. `HkaEmission` implementa envío y conciliación de facturas digitales DEMO del guardado común y de notas exclusivas IGTF elegibles mediante `HkaIgtfNote`; las notas ordinarias domésticas se rigen por el contrato del 13/10/2026 descrito más abajo. Producción permanece deshabilitada; la preparación de notas generales no acredita su aceptación real, distribución ni homologación. Las notas IGTF tienen transporte/distribución limitados y pruebas simuladas; su aceptación real sigue pendiente de una cuenta SPE habilitada. Leer el [informe de persistencia/preparación](../../../informes/persistencia_fiscal_venezuela_hka.md), la [integración y evidencia HKA](../../../informes/imprenta_digital_hka_api.md) y aplicar [persistencia fiscal y cobros](../mantener-persistencia-fiscal-venezuela-pro9/SKILL.md) al cambiar sus entradas.

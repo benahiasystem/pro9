@@ -178,6 +178,7 @@ use Illuminate\Support\Facades\Log;
             'login',
             'navbar',
             'options_pos',
+            'auto_send_hka',
             'percentage_allowance_charge',
             'permission_to_edit_cpe',
             'phone_whatsapp',
@@ -401,6 +402,7 @@ use Illuminate\Support\Facades\Log;
             'compact_sidebar' => 'bool',
             'colums_grid_item' => 'int',
             'options_pos' => 'bool',
+            'auto_send_hka' => 'boolean',
             'edit_name_product' => 'bool',
             'restrict_receipt_date' => 'bool',
             'include_igv' => 'bool',
@@ -556,6 +558,14 @@ use Illuminate\Support\Facades\Log;
 
         }
 
+        // ######## INICIO ENVÍO AUTOMÁTICO HKA ########
+        public function getAutoSendHkaAttribute($value): bool
+        {
+            // Preserve automatic sending until the additive tenant upgrade is applied.
+            return $value === null ? true : (bool) $value;
+        }
+        // ######## FIN ENVÍO AUTOMÁTICO HKA ########
+
         /**
          * Establece las configuraciones para envio de correo.
          *
@@ -704,6 +714,7 @@ use Illuminate\Support\Facades\Log;
                 'time_format' => $this->time_format ?: 'HH:mm:ss',
                 'colums_grid_item' => $this->colums_grid_item,
                 'options_pos' => (bool)$this->options_pos,
+                'auto_send_hka' => $this->auto_send_hka,
                 'edit_name_product' => (bool)($this->edit_name_product ?? false),
                 'restrict_receipt_date' => (bool)$this->restrict_receipt_date,
                 'affectation_igv_type_id' => $this->affectation_igv_type_id,

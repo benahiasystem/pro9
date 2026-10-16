@@ -39,6 +39,9 @@ final class DocumentEmissionView
         $diagnostic=$response['annulment']['diagnostic'] ?? $ivaBlock ?? $response['diagnostic'] ?? ($applies && !$enabled ? 'El envío está habilitado únicamente para documentos vigentes en DEMO.' : null);
         if (!$ivaBlock && $status === 'not_requested' && FiscalNote::ordinary($document) && in_array($diagnostic,[HkaNoteCapability::CREDIT_REASON,HkaNoteCapability::DEBIT_REASON],true)) $diagnostic='Nota guardada; puede solicitar su emisión mediante Enviar HKA.';
         if ($annulBusy && empty($response['annulment'])) $diagnostic='Hay una anulación relacionada pendiente. Concíliela antes de solicitar otra emisión.';
+        if ($enabled && $status === 'not_requested' && !$diagnostic && ($response['auto_send_requested'] ?? true) === false) {
+            $diagnostic = HkaEmission::DEFERRED_MESSAGE;
+        }
         $user = auth()->user();
         $scope = $user instanceof \App\Models\Tenant\User
             && ($user->type === 'admin' || (int) $user->establishment_id === (int) $document->establishment_id);

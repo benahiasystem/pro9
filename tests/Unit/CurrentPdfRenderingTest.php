@@ -251,7 +251,7 @@ class CurrentPdfRenderingTest extends TestCase
             self::assertCount(2, (array) $document->legends);
             self::assertSame(1, substr_count($downloadHtml, 'Consultar factura original en HKA'));
             self::assertStringNotContainsString('Consultar factura original en HKA', $baselineHtml);
-            $baseline = $engine->createPdf($document, 'invoice', 'ticket', 'string');
+            $baseline = (new \App\Services\Fiscal\HkaTicketPdf())->render($document);
             $download = (new \App\Services\Fiscal\HkaTicketPdf())->render($document, $url);
             $reader = new \setasign\Fpdi\Fpdi();
             $baselinePages = $reader->setSourceFile(\setasign\Fpdi\PdfParser\StreamReader::createByString($baseline));

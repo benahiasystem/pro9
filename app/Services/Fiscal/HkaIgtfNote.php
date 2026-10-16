@@ -19,7 +19,7 @@ final class HkaIgtfNote
         $id = $note->id;
         $note->getConnection()->afterCommit(function () use ($database, $id) {
             if ((new Document)->getConnection()->getDatabaseName() !== $database) return;
-            app(HkaEmission::class)->send(Document::findOrFail($id));
+            app(HkaEmission::class)->sendAutomatic(Document::findOrFail($id));
         });
     }
 
@@ -53,6 +53,6 @@ final class HkaIgtfNote
         if ($invoice->document_type_id !== '01' && !FiscalNote::ordinary($invoice)) return;
         $notes = Document::whereHas('note', fn ($query) => $query->where('affected_document_id', FiscalNote::ordinary($invoice) ? $invoice->note->affected_document_id : $invoice->id)->where('note_debit_type_id', 'IGTF'))
             ->whereHas('emission', fn ($query) => $query->where('status', 'not_requested'))->get();
-        foreach ($notes as $note) if (self::applies($note) && !$note->isVoidedOrRejected()) app(HkaEmission::class)->send($note);
+        foreach ($notes as $note) if (self::applies($note) && !$note->isVoidedOrRejected()) app(HkaEmission::class)->sendAutomatic($note);
     }
 }

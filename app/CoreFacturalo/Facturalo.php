@@ -248,9 +248,12 @@ class Facturalo
                 try {
                     if ((new Document)->getConnection()->getDatabaseName() !== $database) return;
                     $document = Document::findOrFail($id);
-                    $this->response['fiscal_emission'] = app(\App\Services\Fiscal\HkaEmission::class)->send($document);
+                    $this->response['fiscal_emission'] = app(\App\Services\Fiscal\HkaEmission::class)->sendAutomatic($document);
                     $this->response['sale_saved'] = true;
                     $this->response['message'] = 'Venta guardada. '.$this->response['fiscal_emission']['description'];
+                    if (($this->response['fiscal_emission']['diagnostic'] ?? null) === \App\Services\Fiscal\HkaEmission::DEFERRED_MESSAGE) {
+                        $this->response['message'] = \App\Services\Fiscal\HkaEmission::DEFERRED_MESSAGE;
+                    }
                     $this->document = $document->fresh();
                 } catch (\Throwable $exception) {
                     $this->response['sale_saved'] = true;

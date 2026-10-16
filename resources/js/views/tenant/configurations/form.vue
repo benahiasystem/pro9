@@ -1970,6 +1970,26 @@
                                         </div>
                                     </div>
 
+                                    <!-- ######## INICIO ENVÍO AUTOMÁTICO HKA ######## -->
+                                    <div v-if="form.company && form.company.fiscal_emission_mode === 'digital'" class="col-12">
+                                        <label class="control-label">
+                                            Enviar comprobante automáticamente
+                                            <el-tooltip class="item"
+                                                content="Aplica a facturas y notas de todos los canales. Al desactivarlo, se guardan para enviarlas despues desde el listado de comprobantes Acciones/Enviar."
+                                                effect="dark" placement="top-start">
+                                                <i class="fa fa-info-circle"></i>
+                                            </el-tooltip>
+                                        </label>
+                                        <div :class="{ 'has-danger': errors.auto_send_hka }" class="form-group">
+                                            <el-switch v-model="form.auto_send_hka"
+                                                :disabled="typeUser !== 'admin' || loading_submit"
+                                                @change="submit"></el-switch>
+                                            <small v-if="errors.auto_send_hka" class="form-control-feedback"
+                                                v-text="errors.auto_send_hka[0]"></small>
+                                        </div>
+                                    </div>
+                                    <!-- ######## FIN ENVÍO AUTOMÁTICO HKA ######## -->
+
                                     <div class="col-12">
                                         <label class="control-label">
                                             Activar servicios
@@ -3574,6 +3594,7 @@ export default {
             this.errors = {};
             this.form = {
                 stock: true,
+                auto_send_hka: true,
                 cron: true,
                 id: null,
                 subtotal_account: null,

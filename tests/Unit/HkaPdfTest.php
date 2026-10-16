@@ -212,7 +212,8 @@ class HkaPdfTest extends TestCase
             ['companies', 'fiscal_emission_mode', 'free_form'], ['document_emissions', 'response', '{}']] as [$table, $column, $value]) {
             $db = DB::connection('tenant'); $old = $db->table($table)->where('id', 1)->value($column);
             $db->table($table)->where('id', 1)->update([$column => $value]);
-            foreach (['a5', 'ticket'] as $format) {
+            $formats = $table === 'document_emissions' && $column === 'status' ? ['a5'] : ['a5', 'ticket'];
+            foreach ($formats as $format) {
                 try { (new HkaPdf())->download(Document::findOrFail(1), $format); self::fail('Must block ineligible invoice'); }
                 catch (ValidationException $exception) { self::assertArrayHasKey('pdf', $exception->errors()); }
             }
@@ -255,7 +256,11 @@ class HkaPdfTest extends TestCase
             catch (\Illuminate\Database\Eloquent\ModelNotFoundException $exception) { self::assertTrue(true); }
         }
         self::assertFalse(HkaPdf::view(Document::findOrFail(1))['a5']['available']);
-        self::assertFalse(HkaPdf::view(Document::findOrFail(1))['ticket']['available']);
+        self::assertTrue(HkaPdf::view(Document::findOrFail(1))['ticket']['available']);
+        $ticket = \Mockery::mock(HkaTicketPdf::class);
+        $ticket->shouldReceive('render')->once()->withArgs(fn ($document) => $document->external_id === 'other-invoice')->andReturn($this->original);
+        $this->app->instance(HkaTicketPdf::class, $ticket);
+        self::assertSame($this->original, (new DocumentPdfController())->download('other-invoice', 'ticket')->getContent());
         Http::assertNothingSent();
     }
 
@@ -441,6 +446,56 @@ class HkaPdfTest extends TestCase
         $this->app->instance(\App\CoreFacturalo\Facturalo::class, $engine);
         self::assertSame($this->original, (new HkaTicketPdf())->render($document, $url));
         self::assertSame([300, 300], array_slice(getimagesizefromstring(base64_decode($qr)), 0, 2));
+        Http::assertNothingSent();
+    }
+
+    public function test_unconfirmed_tickets_are_local_without_http_configuration_or_mutation(): void
+    {
+        DB::connection('tenant')->table('companies')->delete();
+        $ticket = \Mockery::mock(HkaTicketPdf::class);
+        $ticket->shouldReceive('render')->times(5)->withArgs(fn ($document) => $document->id === 1)->andReturn($this->original);
+        $this->app->instance(HkaTicketPdf::class, $ticket);
+        foreach (['not_requested', 'prepared', 'pending', 'uncertain', 'rejected'] as $status) {
+            DB::connection('tenant')->table('document_emissions')->update(['status' => $status, 'consulta_url' => null]);
+            DB::connection('tenant')->table('documents')->update(['control_number' => null]);
+            $document = Document::findOrFail(1);
+            $downloads = HkaPdf::view($document, true);
+            self::assertTrue($downloads['ticket']['available']);
+            self::assertNull($downloads['ticket']['message']);
+            self::assertFalse($downloads['a4']['available']);
+            self::assertFalse($downloads['a5']['available']);
+            $before = $this->snapshot();
+            $response = (new DocumentPdfController())->download('invoice-pdf', 'ticket');
+            self::assertSame($this->original, $response->getContent());
+            self::assertStringContainsString('attachment;', $response->headers->get('Content-Disposition'));
+            self::assertSame($before, $this->snapshot());
+            self::assertSame([], Storage::disk('tenant')->allFiles());
+        }
+        Http::assertNothingSent();
+    }
+
+    public function test_local_unconfirmed_ticket_requires_branch_scope_and_a_current_document(): void
+    {
+        DB::connection('tenant')->table('document_emissions')->update(['status' => 'not_requested']);
+        $this->actingAs(new User(['type' => 'seller', 'establishment_id' => 20]));
+        self::assertFalse(HkaPdf::view(Document::findOrFail(1))['ticket']['available']);
+        try { (new DocumentPdfController())->download('invoice-pdf', 'ticket'); self::fail('Other branch accessed a local ticket'); }
+        catch (HttpException $exception) { self::assertSame(403, $exception->getStatusCode()); }
+        $this->actingAs(new User(['type' => 'admin', 'establishment_id' => 20]));
+        DB::connection('tenant')->table('documents')->update(['state_type_id' => '11']);
+        self::assertFalse(HkaPdf::view(Document::findOrFail(1))['ticket']['available']);
+        try { (new DocumentPdfController())->download('invoice-pdf', 'ticket'); self::fail('Voided document downloaded'); }
+        catch (ValidationException $exception) { self::assertStringContainsString('vigente', $exception->errors()['pdf'][0]); }
+        Http::assertNothingSent();
+    }
+
+    public function test_unconfirmed_ticket_renderer_uses_the_existing_engine_without_a_qr(): void
+    {
+        $document = Document::findOrFail(1);
+        $engine = \Mockery::mock(\App\CoreFacturalo\Facturalo::class);
+        $engine->shouldReceive('createPdf')->once()->with($document, 'invoice', 'ticket', 'string', [])->andReturn($this->original);
+        $this->app->instance(\App\CoreFacturalo\Facturalo::class, $engine);
+        self::assertSame($this->original, (new HkaTicketPdf())->render($document));
         Http::assertNothingSent();
     }
 

@@ -5,6 +5,8 @@ description: Mantener el guardado transaccional de facturas y notas de Pro9, sna
 
 # Persistencia fiscal y cobros de Pro9
 
+Aplicar [envío automático configurable, 14/10/2026](../../../informes/envio_automatico_hka.md): `response.auto_send_requested` se captura al crear la emisión, nunca desde el payload del cliente ni al repetir la operación. Desactivar `configurations.auto_send_hka` conserva venta/cobros/inventario y evita preparación/HTTP automáticos, también en notas IGTF. La reactivación no autoriza documentos inicialmente manuales; el envío explícito conserva sus validaciones. El ticket previo a confirmación puede descargarse localmente en memoria y sin QR; A4/A5 y correo mantienen la confirmación requerida.
+
 ## Alcance y fuentes
 
 El contrato vigente conserva la operación comercial y prepara datos para HKA. Las facturas digitales DEMO y las notas exclusivas IGTF 08/98 elegibles pueden enviarse después del commit comercial mediante la habilidad de emisión; preparar una solicitud no acredita aceptación fiscal ni homologación. Órdenes de entrega y comprobantes emitidos de retención quedan fuera de este flujo.

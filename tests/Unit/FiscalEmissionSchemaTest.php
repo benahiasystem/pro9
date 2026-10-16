@@ -18,6 +18,7 @@ class FiscalEmissionSchemaTest extends TestCase
     use \Tests\Support\SpePersistenceCases;
     use \Tests\Support\IvaRetentionPersistenceCases;
     use \Tests\Support\IslrRetentionPersistenceCases;
+    use \Tests\Support\HkaAutoSendPersistenceCases;
     private $previousContainer;
     private $previousFacade;
     private $capsule;

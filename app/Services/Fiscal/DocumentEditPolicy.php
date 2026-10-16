@@ -50,7 +50,7 @@ final class DocumentEditPolicy
             'code' => $emission->response['code'] ?? null, 'diagnostic' => $emission->response['diagnostic'] ?? null,
             'payload_hash' => hash('sha256', json_encode($emission->payload)), 'actor_id' => auth()->id(), 'edited_at' => now()->toIso8601String()];
         $emission->update(['status' => 'not_requested', 'operation_key' => (string) Str::uuid(), 'payload' => null,
-            'response' => ['edit_history' => $history], 'authorization' => null, 'consulta_url' => null,
+            'response' => ['edit_history' => $history, 'auto_send_requested' => false], 'authorization' => null, 'consulta_url' => null,
             'assigned_at' => null, 'control_assigned_at' => null]);
     }
 }

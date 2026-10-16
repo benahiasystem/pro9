@@ -7,6 +7,8 @@ description: Mantener el esquema inicial consolidado y los datos vigentes de Pro
 
 ## Contrato
 
+- Excepción expresa del 14/10/2026: [envío automático HKA](../../../informes/envio_automatico_hka.md) añade `configurations.auto_send_hka` booleano NOT NULL DEFAULT 1 al consolidado. Para empresas existentes sólo se autoriza preparar el comando aditivo e idempotente `hka:upgrade-auto-send-setting`, con selección explícita y `--dry-run`; no ejecutarlo sobre bases reales por inferencia. No reconstruir tablas ni convertir comprobantes. La excepción no habilita otras conversiones/backfills.
+
 - El consolidado define instalaciones nuevas; este flujo no convierte tenants existentes. No copiar bases reales, reconciliar tablas de migraciones ni crear comandos de conversión o backfills.
 - Se retiran los scripts `generate_tenant_migrations.php`, `generate_tenant_seed_data.php`, `validate_tenant_migrations.php` y `validate_tenant_seeders.php`: dependían de una base fuente o de reproducir migraciones históricas. La verificación vigente es `FiscalEmissionSchemaTest` sobre bases temporales creadas desde el consolidado.
 - Mantener una migración por tabla. Crear todas las tablas antes de agregar las claves en `2026_08_17_000999_add_tenant_foreign_keys.php`; su `down()` debe retirarlas en orden inverso.

@@ -26,8 +26,11 @@ final class HkaPdf
         if ($remote && !$scope) $reason = 'No tiene permiso para descargar esta factura.';
         $result = [];
         foreach (['a4', 'a5', 'ticket'] as $format) {
-            $formatReason = $reason;
-            if ($remote && $format === 'ticket' && $formatReason === null) {
+            $formatReason = $remote && $format === 'ticket' && optional($document->emission)->status !== 'confirmed'
+                ? ($document->isVoidedOrRejected() ? 'El comprobante no está vigente para descargar su ticket.' : null)
+                : $reason;
+            if (!$scope) $formatReason = 'No tiene permiso para descargar este comprobante.';
+            if ($remote && $format === 'ticket' && $formatReason === null && optional($document->emission)->status === 'confirmed') {
                 $formatReason = self::ticketUnavailableReason($document);
             }
             $result[$format] = [
@@ -44,7 +47,7 @@ final class HkaPdf
     {
         if ($document->fiscal_environment !== 'demo') return 'La descarga HKA está habilitada únicamente en DEMO.';
         if ($document->isVoidedOrRejected()) return 'La factura no está vigente para descargar su PDF HKA.';
-        if (optional($document->emission)->status !== 'confirmed') return 'Confirme el documento en HKA antes de descargar A4, A5 o 80MM.';
+        if (optional($document->emission)->status !== 'confirmed') return 'Confirme el documento en HKA antes de descargar A4 o A5.';
         if (!$document->control_number || $document->control_number !== $document->emission->control_number) {
             return 'La factura no tiene un control HKA confirmado y coherente.';
         }
@@ -94,6 +97,16 @@ final class HkaPdf
         if ($authorize) DocumentFiscalController::authorizeDocument($document);
         if (!in_array($format, ['a4', 'a5', 'ticket'], true)) self::fail('Formato de descarga inválido.');
         if ($document->getConnection()->transactionLevel()) self::fail('Descargue el PDF después de guardar la factura.');
+        // ######## INICIO TICKET LOCAL SIN CONFIRMACIÓN HKA ########
+        if ($format === 'ticket' && self::applies($document) && optional($document->emission)->status !== 'confirmed') {
+            if ($document->isVoidedOrRejected()) self::fail('El comprobante no está vigente para descargar su ticket.');
+            try {
+                return app(HkaTicketPdf::class)->render($document);
+            } catch (\Throwable $exception) {
+                self::fail('No se pudo generar el ticket 80MM. Intente de nuevo; la venta sigue guardada.');
+            }
+        }
+        // ######## FIN TICKET LOCAL SIN CONFIRMACIÓN HKA ########
         $company = Company::firstOrFail();
         $identity = $this->verify($document, $company);
         $operation = $document->emission->operation_key;

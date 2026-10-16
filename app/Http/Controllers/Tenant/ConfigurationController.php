@@ -505,8 +505,24 @@ class ConfigurationController extends Controller
             ->first();
 
         $id = $request->input('id');
-        $configuration = Configuration::find($id);
-        $configuration->fill($request->all());
+        $configuration = Configuration::findOrFail($id);
+        $inputs = $request->all();
+        // ######## INICIO ENVÍO AUTOMÁTICO HKA ########
+        if (array_key_exists('auto_send_hka', $inputs)) {
+            if ((bool) $inputs['auto_send_hka'] !== $configuration->auto_send_hka) {
+                abort_unless(auth()->user() instanceof \App\Models\Tenant\User && auth()->user()->type === 'admin', 403);
+                if (!$configuration->getConnection()->getSchemaBuilder()->hasColumn('configurations', 'auto_send_hka')) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'auto_send_hka' => 'Actualice esta empresa con hka:upgrade-auto-send-setting antes de cambiar el envío automático.',
+                    ]);
+                }
+            } else {
+                // Older clients and tenants can continue saving unrelated preferences.
+                unset($inputs['auto_send_hka']);
+            }
+        }
+        // ######## FIN ENVÍO AUTOMÁTICO HKA ########
+        $configuration->fill($inputs);
         $listItemsByWarehouseChanged = $configuration->isDirty('list_items_by_warehouse');
         $configuration->save();
 

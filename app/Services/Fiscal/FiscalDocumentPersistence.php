@@ -156,6 +156,8 @@ final class FiscalDocumentPersistence
         ]);
         $document->emission()->firstOrCreate(['document_id' => $document->id], [
             'fiscal_environment' => $document->fiscal_environment, 'operation_key' => (string) Str::uuid(),
+            // Capture intent once; retries and later configuration changes cannot opt old documents in.
+            'response' => ['auto_send_requested' => optional(\App\Models\Tenant\Configuration::first())->auto_send_hka ?? true],
         ]);
     }
 

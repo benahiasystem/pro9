@@ -5,6 +5,10 @@ description: Mantener el envío, rastreo y descarga de PDF fiscal HKA desde vent
 
 # Distribución de documentos HKA
 
+## Ticket local antes de confirmar — 14/10/2026
+
+El [contrato autorizado](../../../informes/envio_automatico_hka.md) sustituye los bloqueos históricos de 80MM antes de confirmar: un documento vigente digital en `not_requested`, `prepared`, `pending`, `rejected` o `uncertain` descarga el ticket local en memoria, sin QR HKA ni HTTP, por las mismas rutas autenticadas y con alcance tenant/sucursal. `HkaTicketPdf::render` admite URL nullable; `null` conserva el ticket sin QR. Tras confirmar siguen siendo obligatorios control, identidad/configuración y URL QR válidos. A4/A5 y correo conservan sus reglas. El envío automático respeta `auto_send_hka` y la intención inicial; el manual sigue independiente. Probar la nueva excepción con `HkaPdfTest` y las regresiones de render/descarga, sin generar ventas reales ni compilar assets por iniciativa propia.
+
 Leer [referencia HKA, secciones 3, 4.3, 6 y 10–15](../../../informes/imprenta_digital_hka_api.md), [operación fiscal local](../mantener-operacion-local-fiscal-pro9/SKILL.md) y [seguridad Pro9](../mantener-seguridad-pro9/SKILL.md).
 
 - Resolver serie, tipo y número desde el payload fiscal congelado, sin reservas anticipadas ni catálogo mutable. Para `tipoDocumento` externo usar `01→01`, `07→02`, `08→03`, `09→04` según el significado; los códigos HKA no reemplazan los internos ni afectan numeración. Verificar autorización dentro del tenant y sucursal antes de enviar o consultar.
