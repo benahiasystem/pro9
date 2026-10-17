@@ -27,26 +27,28 @@ use Illuminate\Support\Facades\DB;
  * - `payment_condition_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `observation` text COLLATE utf8mb4_unicode_ci
  * - `exchange_rate_sale` decimal(18,8) NOT NULL
- * - `total_prepayment` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `total_charge` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `total_discount` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `total_exportation` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `total_free` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `total_taxed` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `total_unaffected` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `total_exonerated` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `total_igv` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `total_base_other_taxes` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `total_other_taxes` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `total_taxes` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `total_value` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `total` decimal(12,2) NOT NULL
+ * - `total_prepayment` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `total_charge` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `total_discount` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `total_exportation` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `total_free` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `total_taxed` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `total_unaffected` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `total_exonerated` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `total_igv` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `total_base_other_taxes` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `total_other_taxes` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `total_taxes` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `total_value` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `total_payable` decimal(30,12) DEFAULT NULL
+ * - `settlement_adjustment` decimal(30,12) NOT NULL DEFAULT 0
+ * - `total` decimal(30,12) NOT NULL
  * - `filename` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `total_canceled` tinyint(1) NOT NULL DEFAULT '0'
  * - `customer_id` int(10) unsigned DEFAULT NULL
  * - `perception_date` date DEFAULT NULL
  * - `perception_number` int(11) DEFAULT NULL
- * - `total_perception` decimal(12,2) DEFAULT NULL
+ * - `total_perception` decimal(30,12) DEFAULT NULL
  * - `charges` json DEFAULT NULL
  * - `discounts` json DEFAULT NULL
  * - `prepayments` json DEFAULT NULL
@@ -62,6 +64,7 @@ use Illuminate\Support\Facades\DB;
  * - `related_invoice_number` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `related_invoice_serie` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `affectation` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
 {
@@ -89,26 +92,26 @@ CREATE TABLE `purchases` (
   `payment_condition_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `observation` text COLLATE utf8mb4_unicode_ci,
   `exchange_rate_sale` decimal(18,8) NOT NULL,
-  `total_prepayment` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `total_charge` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `total_discount` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `total_exportation` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `total_free` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `total_taxed` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `total_unaffected` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `total_exonerated` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `total_igv` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `total_base_other_taxes` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `total_other_taxes` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `total_taxes` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `total_value` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `total` decimal(12,2) NOT NULL,
+  `total_prepayment` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `total_charge` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `total_discount` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `total_exportation` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `total_free` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `total_taxed` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `total_unaffected` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `total_exonerated` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `total_igv` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `total_base_other_taxes` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `total_other_taxes` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `total_taxes` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `total_value` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `total` decimal(30,12) NOT NULL,
   `filename` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `total_canceled` tinyint(1) NOT NULL DEFAULT '0',
   `customer_id` int(10) unsigned DEFAULT NULL,
   `perception_date` date DEFAULT NULL,
   `perception_number` int(11) DEFAULT NULL,
-  `total_perception` decimal(12,2) DEFAULT NULL,
+  `total_perception` decimal(30,12) DEFAULT NULL,
   `charges` json DEFAULT NULL,
   `discounts` json DEFAULT NULL,
   `prepayments` json DEFAULT NULL,
@@ -124,6 +127,9 @@ CREATE TABLE `purchases` (
   `related_invoice_number` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `related_invoice_serie` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `affectation` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
+  `total_payable` decimal(30,12) DEFAULT NULL,
+  `settlement_adjustment` decimal(30,12) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `purchases_user_id_foreign` (`user_id`),
   KEY `purchases_establishment_id_foreign` (`establishment_id`),

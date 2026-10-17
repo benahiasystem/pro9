@@ -19,22 +19,22 @@ use Illuminate\Support\Facades\DB;
  * - `payment_method_type_id` text COLLATE utf8mb4_unicode_ci
  * - `seller_id` int(10) unsigned DEFAULT '0'
  * - `exchange_rate_sale` decimal(18,8) DEFAULT '0.000'
- * - `total_prepayment` decimal(12,2) DEFAULT '0.00'
- * - `total_charge` decimal(12,2) DEFAULT '0.00'
- * - `total_discount` decimal(12,2) DEFAULT '0.00'
- * - `total_exportation` decimal(12,2) DEFAULT '0.00'
- * - `total_free` decimal(12,2) DEFAULT '0.00'
- * - `total_taxed` decimal(12,2) DEFAULT '0.00'
- * - `total_unaffected` decimal(12,2) DEFAULT '0.00'
- * - `total_exonerated` decimal(12,2) DEFAULT '0.00'
- * - `total_igv` decimal(12,2) DEFAULT '0.00'
- * - `total_igv_free` decimal(12,2) DEFAULT '0.00'
- * - `total_base_other_taxes` decimal(12,2) DEFAULT '0.00'
- * - `total_other_taxes` decimal(12,2) DEFAULT '0.00'
- * - `total_taxes` decimal(12,2) DEFAULT '0.00'
- * - `total_value` decimal(12,2) DEFAULT '0.00'
- * - `subtotal` decimal(12,2) DEFAULT '0.00'
- * - `total` decimal(12,2) DEFAULT '0.00'
+ * - `total_prepayment` decimal(30,12) DEFAULT '0.00'
+ * - `total_charge` decimal(30,12) DEFAULT '0.00'
+ * - `total_discount` decimal(30,12) DEFAULT '0.00'
+ * - `total_exportation` decimal(30,12) DEFAULT '0.00'
+ * - `total_free` decimal(30,12) DEFAULT '0.00'
+ * - `total_taxed` decimal(30,12) DEFAULT '0.00'
+ * - `total_unaffected` decimal(30,12) DEFAULT '0.00'
+ * - `total_exonerated` decimal(30,12) DEFAULT '0.00'
+ * - `total_igv` decimal(30,12) DEFAULT '0.00'
+ * - `total_igv_free` decimal(30,12) DEFAULT '0.00'
+ * - `total_base_other_taxes` decimal(30,12) DEFAULT '0.00'
+ * - `total_other_taxes` decimal(30,12) DEFAULT '0.00'
+ * - `total_taxes` decimal(30,12) DEFAULT '0.00'
+ * - `total_value` decimal(30,12) DEFAULT '0.00'
+ * - `subtotal` decimal(30,12) DEFAULT '0.00'
+ * - `total` decimal(30,12) DEFAULT '0.00'
  * - `is_editable` tinyint(3) unsigned DEFAULT '0'
  * - `cellphone` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `date_of_issue` date NOT NULL
@@ -44,8 +44,8 @@ use Illuminate\Support\Facades\DB;
  * - `reason` text COLLATE utf8mb4_unicode_ci NOT NULL
  * - `serial_number` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `filename` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `cost` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `prepayment` decimal(12,2) NOT NULL DEFAULT '0.00'
+ * - `cost` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `prepayment` decimal(30,12) NOT NULL DEFAULT '0.00'
  * - `activities` text COLLATE utf8mb4_unicode_ci
  * - `created_at` timestamp NULL DEFAULT NULL
  * - `updated_at` timestamp NULL DEFAULT NULL
@@ -56,6 +56,7 @@ use Illuminate\Support\Facades\DB;
  * - `warranty` tinyint(1) NOT NULL DEFAULT '0'
  * - `maintenance` tinyint(1) NOT NULL DEFAULT '0'
  * - `diagnosis` tinyint(1) NOT NULL DEFAULT '0'
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
 {
@@ -75,22 +76,22 @@ CREATE TABLE `technical_services` (
   `payment_method_type_id` text COLLATE utf8mb4_unicode_ci,
   `seller_id` int(10) unsigned DEFAULT '0',
   `exchange_rate_sale` decimal(18,8) DEFAULT '0.000',
-  `total_prepayment` decimal(12,2) DEFAULT '0.00',
-  `total_charge` decimal(12,2) DEFAULT '0.00',
-  `total_discount` decimal(12,2) DEFAULT '0.00',
-  `total_exportation` decimal(12,2) DEFAULT '0.00',
-  `total_free` decimal(12,2) DEFAULT '0.00',
-  `total_taxed` decimal(12,2) DEFAULT '0.00',
-  `total_unaffected` decimal(12,2) DEFAULT '0.00',
-  `total_exonerated` decimal(12,2) DEFAULT '0.00',
-  `total_igv` decimal(12,2) DEFAULT '0.00',
-  `total_igv_free` decimal(12,2) DEFAULT '0.00',
-  `total_base_other_taxes` decimal(12,2) DEFAULT '0.00',
-  `total_other_taxes` decimal(12,2) DEFAULT '0.00',
-  `total_taxes` decimal(12,2) DEFAULT '0.00',
-  `total_value` decimal(12,2) DEFAULT '0.00',
-  `subtotal` decimal(12,2) DEFAULT '0.00',
-  `total` decimal(12,2) DEFAULT '0.00',
+  `total_prepayment` decimal(30,12) DEFAULT '0.00',
+  `total_charge` decimal(30,12) DEFAULT '0.00',
+  `total_discount` decimal(30,12) DEFAULT '0.00',
+  `total_exportation` decimal(30,12) DEFAULT '0.00',
+  `total_free` decimal(30,12) DEFAULT '0.00',
+  `total_taxed` decimal(30,12) DEFAULT '0.00',
+  `total_unaffected` decimal(30,12) DEFAULT '0.00',
+  `total_exonerated` decimal(30,12) DEFAULT '0.00',
+  `total_igv` decimal(30,12) DEFAULT '0.00',
+  `total_igv_free` decimal(30,12) DEFAULT '0.00',
+  `total_base_other_taxes` decimal(30,12) DEFAULT '0.00',
+  `total_other_taxes` decimal(30,12) DEFAULT '0.00',
+  `total_taxes` decimal(30,12) DEFAULT '0.00',
+  `total_value` decimal(30,12) DEFAULT '0.00',
+  `subtotal` decimal(30,12) DEFAULT '0.00',
+  `total` decimal(30,12) DEFAULT '0.00',
   `is_editable` tinyint(3) unsigned DEFAULT '0',
   `cellphone` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `date_of_issue` date NOT NULL,
@@ -100,8 +101,8 @@ CREATE TABLE `technical_services` (
   `reason` text COLLATE utf8mb4_unicode_ci NOT NULL,
   `serial_number` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `filename` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `cost` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `prepayment` decimal(12,2) NOT NULL DEFAULT '0.00',
+  `cost` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `prepayment` decimal(30,12) NOT NULL DEFAULT '0.00',
   `activities` text COLLATE utf8mb4_unicode_ci,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
@@ -112,6 +113,7 @@ CREATE TABLE `technical_services` (
   `warranty` tinyint(1) NOT NULL DEFAULT '0',
   `maintenance` tinyint(1) NOT NULL DEFAULT '0',
   `diagnosis` tinyint(1) NOT NULL DEFAULT '0',
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`),
   KEY `technical_services_user_id_foreign` (`user_id`),
   KEY `technical_services_fiscal_environment_foreign` (`fiscal_environment`),

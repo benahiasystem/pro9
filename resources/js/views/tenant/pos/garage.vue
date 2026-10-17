@@ -1003,6 +1003,9 @@
 </style>
 
 <script>
+import {withoutDraftRetentions} from "@helpers/document-creation"
+import {documentTotals} from "../../../helpers/exact-document"
+
 import Keypress from "vue-keypress";
 import { calculateRowItem } from "../../../helpers/functions";
 import FastPayment from "./partials/fast_payment_garage.vue";
@@ -1441,7 +1444,7 @@ export default {
             let form_pos = localStorage.getItem("form_pos_garage");
             form_pos = JSON.parse(form_pos);
             if (form_pos) {
-                this.form = form_pos;
+                this.form = withoutDraftRetentions(form_pos);
                 this.initDateTimeIssue();
                 // this.calculateTotal()
             }
@@ -1459,12 +1462,12 @@ export default {
             if (form_param) {
                 localStorage.setItem(
                     "form_pos_garage",
-                    JSON.stringify(form_param)
+                    JSON.stringify(withoutDraftRetentions(form_param))
                 );
             } else {
                 localStorage.setItem(
                     "form_pos_garage",
-                    JSON.stringify(this.form)
+                    JSON.stringify(withoutDraftRetentions(this.form))
                 );
             }
         },
@@ -2166,71 +2169,12 @@ export default {
             await this.setFormPosLocalStorage();
         },
 
+        // ######## INICIO CALCULOS EXACTOS PRO9 ########
         calculateTotal() {
-            let total_discount = 0;
-            let total_charge = 0;
-            let total_exportation = 0;
-            let total_taxed = 0;
-            let total_exonerated = 0;
-
-
-            let total_igv = 0;
-            let total_value = 0;
-            let total = 0;
-
-
-            this.form.items.forEach(row => {
-                total_discount += parseFloat(row.total_discount);
-                total_charge += parseFloat(row.total_charge);
-
-                if (row.affectation_igv_type_id === "10") {
-                    total_taxed += parseFloat(row.total_value);
-                }
-                if (row.affectation_igv_type_id === "20") {
-                    total_exonerated += parseFloat(row.total_value);
-                }
-                ;
-                if (row.affectation_igv_type_id === "40") {
-                    total_exportation += parseFloat(row.total_value);
-                }
-                ;
-                if (
-                    ["10", "20", "30", "40"].indexOf(
-                        row.affectation_igv_type_id
-                    ) > -1
-                ) {
-                    total_igv += parseFloat(row.total_igv);
-                    total += parseFloat(row.total);
-                }
-                total_value += parseFloat(row.total_value);
-
-            });
-
-            this.form.total_exportation = _.round(total_exportation, 2);
-            this.form.total_exonerated = _.round(total_exonerated, 2);
-            this.form.total_taxed = _.round(total_taxed, 2);
-            this.form.total_exonerated = _.round(total_exonerated, 2);
-
-            // this.form.total_taxed =
-            //   _.round(total_taxed, 2) + this.form.total_exonerated;
-            // this.form.total_exonerated = _.round(total_exonerated, 2)
-
-
-            this.form.total_igv = _.round(total_igv, 2);
-            this.form.total_value = _.round(total_value, 2);
-            this.form.total_taxes = _.round(total_igv, 2);
-
-            // this.form.total = _.round(total, 2);
-            this.form.total = _.round(
-                total,
-                2
-            );
-            this.form.subtotal = this.form.total;
-
-            // Ya no esta funcionando el evento emit de checkPaymentGarage,
-            // this.checkPaymentGarage();
-            this.$refs.componentFastPaymentGarage.checkPaymentGarage(this.form.total)
+            Object.assign(this.form, documentTotals(this.form.items, this.form.discounts, this.form.charges, this.form.total_prepayment));
+            if (this.$refs.componentFastPaymentGarage) this.$refs.componentFastPaymentGarage.checkPaymentGarage(this.form.total_payable);
         },
+        // ######## FIN CALCULOS EXACTOS PRO9 ########
         checkPaymentGarage() {
             this.$eventHub.$emit("eventCheckPaymentGarage");
         },

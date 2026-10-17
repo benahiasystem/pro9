@@ -10,7 +10,8 @@ use Illuminate\Support\Facades\DB;
  * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
  * - `expense_id` int(10) unsigned NOT NULL
  * - `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `total` decimal(12,2) NOT NULL
+ * - `total` decimal(30,12) NOT NULL
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
 {
@@ -21,7 +22,8 @@ CREATE TABLE `expense_items` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `expense_id` int(10) unsigned NOT NULL,
   `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `total` decimal(12,2) NOT NULL,
+  `total` decimal(30,12) NOT NULL,
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`),
   KEY `expense_items_expense_id_foreign` (`expense_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci

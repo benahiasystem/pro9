@@ -11,7 +11,8 @@ use Illuminate\Support\Facades\DB;
  * - `devolution_id` int(10) unsigned NOT NULL
  * - `item_id` int(10) unsigned NOT NULL
  * - `item` json NOT NULL
- * - `quantity` decimal(12,4) NOT NULL
+ * - `quantity` decimal(30,12) NOT NULL
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
 {
@@ -23,7 +24,8 @@ CREATE TABLE `devolution_items` (
   `devolution_id` int(10) unsigned NOT NULL,
   `item_id` int(10) unsigned NOT NULL,
   `item` json NOT NULL,
-  `quantity` decimal(12,4) NOT NULL,
+  `quantity` decimal(30,12) NOT NULL,
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`),
   KEY `devolution_items_devolution_id_foreign` (`devolution_id`),
   KEY `devolution_items_item_id_foreign` (`item_id`)

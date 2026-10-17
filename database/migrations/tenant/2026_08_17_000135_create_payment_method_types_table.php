@@ -11,11 +11,12 @@ use Illuminate\Support\Facades\DB;
  * - `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `hka_code` char(2) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `has_card` tinyint(1) NOT NULL DEFAULT '0'
- * - `charge` decimal(12,2) DEFAULT NULL
+ * - `charge` decimal(30,12) DEFAULT NULL
  * - `number_days` int(11) DEFAULT NULL
  * - `is_credit` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'Define si es tipo credito'
  * - `is_cash` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'Define si es es efectivo'
  * - `is_active` tinyint(1) NOT NULL DEFAULT '1'
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
 {
@@ -27,11 +28,12 @@ CREATE TABLE `payment_method_types` (
   `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `hka_code` char(2) COLLATE utf8mb4_unicode_ci NOT NULL,
   `has_card` tinyint(1) NOT NULL DEFAULT '0',
-  `charge` decimal(12,2) DEFAULT NULL,
+  `charge` decimal(30,12) DEFAULT NULL,
   `number_days` int(11) DEFAULT NULL,
   `is_credit` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'Define si es tipo credito',
   `is_cash` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'Define si es es efectivo',
   `is_active` tinyint(1) NOT NULL DEFAULT '1',
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   KEY `payment_method_types_id_index` (`id`),
   KEY `payment_method_types_hka_code_index` (`hka_code`),
   KEY `payment_method_types_is_credit_index` (`is_credit`)

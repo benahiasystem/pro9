@@ -1,7 +1,6 @@
 <template>
 <div>
     <el-dialog :visible="showDialog" @open="create" width="30%" :close-on-click-modal="false" :close-on-press-escape="false" :show-close="false">
-<iva-retention-fields :form="document" />
         <span slot="title">
             <div class="widget-summary widget-summary-xs d-flex align-items-center">
                 <div class="">
@@ -395,7 +394,7 @@
 </template>
 
 <script>
-import IvaRetentionFields from "@views/documents/partials/iva_retention_fields.vue"
+import {withoutDraftRetentions, suggestRemainingPayment} from "@helpers/document-creation"
 import DocumentOptions from "@views/documents/partials/options.vue";
 import SaleNoteOptions from "@views/sale_notes/partials/options.vue";
 import SetTip from '@components/SetTip.vue'
@@ -403,7 +402,7 @@ import ListRestrictItems from '@components/secondary/ListRestrictItems.vue'
 import {fnRestrictSaleItemsCpe} from '@mixins/functions'
 
 export default {
-    components: {IvaRetentionFields,
+    components: {
         DocumentOptions,
         SaleNoteOptions,
         SetTip,
@@ -603,29 +602,8 @@ export default {
             this.calculatePayments()
 
         },
-        calculatePayments()
-        {
-            if (this.document.document_type_id === '01' && ((this.document.iva_retention_prevision && this.document.iva_retention_prevision.enabled) || (this.document.islr_retention_prevision && this.document.islr_retention_prevision.enabled))) {
-                const rows=this.document.payments;
-                const last=rows[rows.length-1];
-                const target=Math.max(0,Number(this.document.total)-Number(this.document.iva_retention_prevision && this.document.iva_retention_prevision.enabled ? this.document.iva_retention_prevision.amount || 0 : 0)-Number(this.document.islr_retention_prevision && this.document.islr_retention_prevision.enabled ? this.document.islr_retention_prevision.amount || 0 : 0));
-                const entered=rows.slice(0,-1).reduce((sum,row)=>sum+(Number(row.payment)||0),0);
-                if (last && !Number(last.payment)) last.payment=_.round(Math.max(0,target-entered),2);
-                return;
-            }
-            // const total = this.document.total
-            const total = this.form.order_note.total
-
-            let payment = 0
-            let amount = _.round(total / this.document.payments.length, 2)
-
-            _.forEach(this.document.payments, row => {
-                // payment += amount
-                // if (total - payment < 0) {
-                //     amount = _.round(total - payment + amount, 2)
-                // }
-                row.payment = _.round(amount, 2)
-            })
+        calculatePayments() {
+            suggestRemainingPayment({...this.document, total: this.document.total ?? this.form.order_note.total});
         },
         initForm() {
             this.generate = this.showGenerate ? true : false;
@@ -788,7 +766,7 @@ export default {
             if (this.document.payment_condition_id === '03') this.document.payment_condition_id = '02'
 
             this.$http
-                .post(`/${this.resource_documents}`, this.document)
+                .post(`/${this.resource_documents}`, withoutDraftRetentions(this.document))
                 .then(response => {
                     if (response.data.success) {
                         this.documentNewId = response.data.data.id;

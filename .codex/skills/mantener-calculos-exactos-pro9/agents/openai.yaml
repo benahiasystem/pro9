@@ -1,0 +1,4 @@
+interface:
+  display_name: "Cálculos exactos de Pro9"
+  short_description: "Precisión, persistencia y presentación decimal en Pro9"
+  default_prompt: "Usa $mantener-calculos-exactos-pro9 para conservar cálculos decimales exactos en Pro9."

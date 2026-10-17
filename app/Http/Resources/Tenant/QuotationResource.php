@@ -22,7 +22,7 @@ class QuotationResource extends JsonResource
     {
         $quotation = Quotation::with(['items', 'payments', 'person'])->find($this->id);
         $quotation->payments = self::getTransformPayments($quotation->payments);
-        $items = self::getTransformItems($quotation->items);
+        $items = self::getTransformItems($quotation->items, $quotation->currency_type_id);
         $quotation->setRelation('items', $items);
 
         $person = Person::with('identity_document_type')->find($this->customer_id);
@@ -147,7 +147,7 @@ class QuotationResource extends JsonResource
         });
     }
 
-    public static function getTransformItems($items)
+    public static function getTransformItems($items, ?string $currency = null)
     {
         $establishment_id = optional(auth()->user())->establishment_id;
         $warehouse = $establishment_id
@@ -155,23 +155,26 @@ class QuotationResource extends JsonResource
             : null;
         $warehouse_id = $warehouse ? $warehouse->id : null;
 
-        return $items->map(function ($row) use ($warehouse_id) {
+        return $items->map(function ($row) use ($warehouse_id, $currency) {
             $item = self::getTransformItem($row->item, $warehouse_id, $row->item_id, $row->unit_price);
 
             $rowArray = $row->toArray();
+            $rowArray['quantity_input'] = $row->calculation_snapshot['inputs']['quantity_input'] ?? null;
+            $rowArray['price_input'] = $row->calculation_snapshot['inputs']['price_input'] ?? null;
             $rowArray['item'] = $item;
+            $rowArray['currency_type_id'] = $currency ?? $item->currency_type_id;
             $rowArray['discounts'] = self::listFromMixed($row->discounts);
             $rowArray['charges'] = self::listFromMixed($row->charges);
             $rowArray['attributes'] = self::listFromMixed($row->attributes);
-            $rowArray['quantity'] = (float) $row->quantity;
-            $rowArray['unit_price'] = (float) $row->unit_price;
-            $rowArray['unit_value'] = (float) $row->unit_value;
-            $rowArray['total'] = (float) $row->total;
+            $rowArray['quantity'] = (string) $row->quantity;
+            $rowArray['unit_price'] = (string) $row->unit_price;
+            $rowArray['unit_value'] = (string) $row->unit_value;
+            $rowArray['total'] = (string) $row->total;
             // Valor ingresado en el form (sin IGV si has_igv=false); evita NaN al reeditar.
             $itemHasIgv = !isset($item->has_igv) || (bool) $item->has_igv;
             $rowArray['input_unit_price_value'] = $itemHasIgv
-                ? (float) $row->unit_price
-                : (float) $row->unit_value;
+                ? (string) $row->unit_price
+                : (string) $row->unit_value;
             $rowArray['warehouse_id'] = $row->warehouse_id ?: $warehouse_id;
 
             if (empty($rowArray['affectation_igv_type']) && ! empty($rowArray['affectation_igv_type_id'])) {
@@ -229,9 +232,9 @@ class QuotationResource extends JsonResource
                     'description' => $resource->unit_type->description,
                 ] : ($item->unit_type ?? null),
                 'currency_type_id' => $resource->currency_type_id ?: 'VES',
-                'sale_unit_price' => (float) $resource->sale_unit_price,
-                'purchase_unit_price' => (float) ($resource->purchase_unit_price ?? 0),
-                'purchase_unit_value' => (float) ($resource->purchase_unit_value ?? 0),
+                'sale_unit_price' => (string) $resource->sale_unit_price,
+                'purchase_unit_price' => (string) ($resource->purchase_unit_price ?? '0'),
+                'purchase_unit_value' => (string) ($resource->purchase_unit_value ?? '0'),
                 'has_igv' => (bool) ($resource->has_igv ?? true),
                 'purchase_has_igv' => (bool) ($resource->purchase_has_igv ?? true),
                 'is_set' => (int) ($resource->is_set ?? 0),
@@ -262,9 +265,9 @@ class QuotationResource extends JsonResource
         }
 
         // Cotizaciones ecommerce: unit_price suele faltar; usar sale/suggested/columna
-        $unitPrice = isset($item->unit_price) ? (float) $item->unit_price : 0.0;
+        $unitPrice = isset($item->unit_price) ? (string) $item->unit_price : '0';
         if ($unitPrice <= 0) {
-            $unitPrice = (float) (
+            $unitPrice = (string) (
                 $item->sale_unit_price
                 ?? $item->suggested_unit_price
                 ?? $fallbackUnitPrice

@@ -3,6 +3,7 @@
 // ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
 
 namespace App\Models\Tenant;
+    use App\Support\Exact\Decimal as D;
 
 use App\Traits\ApiResourceFindTrait;
 
@@ -301,7 +302,7 @@ class Purchase extends ModelTenant
      */
     public function getApiResourceFind()
     {
-        $global_discount = 0;
+        $global_discount = D::of(0);
         $person = $this->supplier_id ? Person::find($this->supplier_id) : null;
         $person_ubigeo = $this->resolvePersonUbigeo($person);
 
@@ -324,19 +325,19 @@ class Purchase extends ModelTenant
             'district_id'            => $person_ubigeo['district_id'],
 
             // Operaciones segun su afectacion al IGV.
-            'total_taxed'            => round((float) $this->total_taxed, 2),
-            'total_exonerated'       => round((float) $this->total_exonerated, 2),
-            'total_unaffected'       => round((float) $this->total_unaffected, 2),
-            'total_exportation'      => round((float) $this->total_exportation, 2),
-            'total_free'             => round((float) $this->total_free, 2),
+            'total_taxed'            => D::represent($this->exactValue('total_taxed')),
+            'total_exonerated'       => D::represent($this->exactValue('total_exonerated')),
+            'total_unaffected'       => D::represent($this->exactValue('total_unaffected')),
+            'total_exportation'      => D::represent($this->exactValue('total_exportation')),
+            'total_free'             => D::represent($this->exactValue('total_free')),
 
-            'total_igv'              => round((float) $this->total_igv, 2),
-            'total_value'            => round((float) $this->total_value, 2),
-            'total_taxes'            => round((float) $this->total_taxes, 2),
+            'total_igv'              => D::represent($this->exactValue('total_igv')),
+            'total_value'            => D::represent($this->exactValue('total_value')),
+            'total_taxes'            => D::represent($this->exactValue('total_taxes')),
             // Descuento global (con IGV), reconstruido desde los items.
-            'total_discount_global'  => round($global_discount, 2),
-            'total'                  => round((float) $this->total, 2),
-            'total_perception'       => round((float) $this->total_perception, 2),
+            'total_discount_global'  => D::represent($global_discount),
+            'total'                  => D::represent($this->exactValue('total')),
+            'total_perception'       => D::represent($this->exactValue('total_perception')),
 
             'items'                  => $items,
             // clave unificada con dispatch/find y sale-note/find; en purchases la
@@ -536,17 +537,17 @@ class Purchase extends ModelTenant
      *
      * @return string
      */
-    protected static function NumberFormat($number,$decimal = 2){
-        return number_format($number,$decimal,'.','');
+    protected static function NumberFormat($number,$decimal = 12){
+        return D::represent($number, $decimal);
     }
 
     /**
      * @return array
      */
     public function  getCollectionData() {
-        $total = $this->total;
+        $total = $this->exactValue('total');
         if ($this->total_perception) {
-            $total += round($this->total_perception, 2);
+            $total = D::of($total)->plus($this->exactValue('total_perception'));
         }
         $customer_number = '';
         $customer_name = '';
@@ -630,7 +631,7 @@ class Purchase extends ModelTenant
                     'id'          => $row->id,
                     'description' => $row->item->description,
                     'name_product_pdf' => $row->name_product_pdf,
-                    'quantity'    => round($row->quantity, 2),
+                    'quantity'    => D::represent($row->exactValue('quantity')),
                     'warehouse'   => $row->warehouse ? [
                         'id'          => $row->warehouse->id,
                         'description' => $row->warehouse->description,
@@ -905,7 +906,7 @@ class Purchase extends ModelTenant
      */
     public function totalCashPaymentsWithoutDestination()
     {
-        return $this->payments()->filterCashPaymentWithoutDestination()->sum('payment');
+        return $this->payments()->filterCashPaymentWithoutDestination()->get()->map(fn($r)=>$r->exactValue('payment'))->pipe(fn($rows)=>D::represent(D::sum($rows)));
     }
 
 
@@ -917,7 +918,7 @@ class Purchase extends ModelTenant
      */
     public function totalTransferPayments()
     {
-        return $this->payments()->filterTransferPayment()->sum('payment');
+        return $this->payments()->filterTransferPayment()->get()->map(fn($r)=>$r->exactValue('payment'))->pipe(fn($rows)=>D::represent(D::sum($rows)));
     }
 
 

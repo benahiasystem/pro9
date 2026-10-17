@@ -5,6 +5,11 @@ description: Mantener el guardado transaccional de facturas y notas de Pro9, sna
 
 # Persistencia fiscal y cobros de Pro9
 
+## Precisión exacta — contrato del 16/10/2026
+
+Aplicar [cálculos exactos](../mantener-calculos-exactos-pro9/SKILL.md). Para instalaciones nuevas esta instrucción sustituye las precisiones de dos/cuatro/seis decimales y redondeos intermedios descritos anteriormente: operar con fracciones exactas, conservar snapshots y representar hasta 12 posiciones; tasas con ocho exactas. Dos decimales sólo en liquidación/presentación que lo requiera. Precio unitario PDF configurable de 2 a 12, con dos por defecto. No convertir tenants ni recalcular históricos. Consultar el informe de cálculos para el estado real de adopción por consumidor.
+
+
 Aplicar [envío automático configurable, 14/10/2026](../../../informes/envio_automatico_hka.md): `response.auto_send_requested` se captura al crear la emisión, nunca desde el payload del cliente ni al repetir la operación. Desactivar `configurations.auto_send_hka` conserva venta/cobros/inventario y evita preparación/HTTP automáticos, también en notas IGTF. La reactivación no autoriza documentos inicialmente manuales; el envío explícito conserva sus validaciones. El ticket previo a confirmación puede descargarse localmente en memoria y sin QR; A4/A5 y correo mantienen la confirmación requerida.
 
 ## Alcance y fuentes
@@ -26,7 +31,7 @@ El contrato vigente conserva la operación comercial y prepara datos para HKA. L
 - La emisión conserva estado, control y `document_emissions.consulta_url`. Después del commit y de confirmar, guardar A4 HKA en el disco privado tenant mediante `HkaPdfStore`; A5 se deriva bajo demanda. Validar en memoria y escribir de forma atómica, separado por operación/formato. Reutilizar y recuperar copias sin alterar venta, pagos, inventario, confirmación, payload ni correo; jamás generar A4/A5 locales digitales. La descarga 80MM y la vista previa del formulario anterior a emitir continúan en memoria, sin guardar el ticket con QR. Seguir [distribución HKA](../distribuir-documentos-hka/SKILL.md).
 - Conservar tipos internos `01/07/08`, series/correlativos, anticipos, descuentos, cargos, cuotas e inventario. `igv` sigue siendo el nombre interno de IVA. `total_exportation` e `invoices.operation_type_id` distinguen exportaciones web digitales DEMO con INCOTERM 0201/0202/0203, líneas EXP y comprador ND. Conservar el INCOTERM/tipo externo/país en snapshots; sumar exportación separadamente de exento y en document_currency_totals.exportation. La edición conserva la categoría interna/exportación y los cobros; actualizar INCOTERM invalida el UUID y exige Enviar HKA explícito. No admitir notas referidas a exportaciones. Ver [contrato de exportación](../../../informes/facturas_exportacion_hka.md).
 - La edición de facturas antes del registro HKA usa `DocumentEditPolicy`, según la regla autorizada el 7 de octubre de 2026: permitir cobros existentes y operaciones preparadas/rechazadas sin registro remoto, conservar todos los cobros y bloquear pendientes, incertidumbre sin conciliar y confirmaciones. Consultar [la política y evidencia de edición](../../../informes/edicion_facturas_antes_hka.md). Mantener separadas las restricciones de reversión de cobros de `assertMutable`.
-- Mantener tipos y precisiones existentes: importes/bases/porcentajes nuevos usan `decimal(12,2)` y tasas `decimal(18,8)`, conforme a los equivalentes actuales. Conservar ocho decimales de tasa sin redondeo mediante `ExchangeRateMath` y el helper JS `exchange-rate-math`; los importes finales conservan su precisión monetaria.
+- En instalaciones nuevas, importes, bases, porcentajes y cantidades de negocio usan `DECIMAL(30,12)` más fracciones en `calculation_snapshot`. Las tasas usan `DECIMAL(18,8)`. Operar con las fracciones conservadas; limitar la precisión sólo al presentar o liquidar y conservar sus ajustes.
 
 ## Pagos, IGTF y saldos
 
@@ -71,7 +76,7 @@ Las reglas de registro, incertidumbre y bloqueo HKA de esta sección corresponde
 ## Precisión de tasas BCV — instrucción de 7 de octubre de 2026
 
 - Pro9 conserva tasas como cadenas decimales de ocho posiciones en `DECIMAL(18,8)`, incluidos ceros finales. La API BCV devuelve cadenas y mantiene token fijo.
-- Calcular conversiones con `Brick\Math\BigRational` en PHP y `ExactAmount`/`BigInt` en JavaScript. No redondear la tasa; redondear sólo el importe final a su precisión vigente.
+- Calcular conversiones con `Brick\Math\BigRational` en PHP y `ExactAmount`/`BigInt` en JavaScript. Conservar la fracción durante toda la operación y al recuperarla de la base. HALF_UP sólo para representaciones finales autorizadas, presentación o liquidación; nunca reutilizar esas representaciones para calcular.
 - Excepción autorizada para tenants existentes: `exchange-rates:upgrade-precision --all-tenants --dry-run` y luego sin `--dry-run`, tras pruebas en MySQL temporal. El comando amplía únicamente las columnas inventariadas en `config/exchange_rate_precision.php`; no reconstruye bases ni recupera decimales históricos.
 
 ## Persistencia de ventas por terceros

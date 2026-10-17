@@ -9,11 +9,12 @@ use Illuminate\Support\Facades\DB;
  * Inventario de columnas:
  * - `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT
  * - `name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `price` decimal(12,2) NOT NULL DEFAULT '0.00'
+ * - `price` decimal(30,12) NOT NULL DEFAULT '0.00'
  * - `specify_zone` tinyint(1) NOT NULL DEFAULT '0'
  * - `active` tinyint(1) NOT NULL DEFAULT '1'
  * - `created_at` timestamp NULL DEFAULT NULL
  * - `updated_at` timestamp NULL DEFAULT NULL
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
 {
@@ -23,11 +24,12 @@ return new class extends Migration
 CREATE TABLE `delivery_zones` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `price` decimal(12,2) NOT NULL DEFAULT '0.00',
+  `price` decimal(30,12) NOT NULL DEFAULT '0.00',
   `specify_zone` tinyint(1) NOT NULL DEFAULT '0',
   `active` tinyint(1) NOT NULL DEFAULT '1',
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL);

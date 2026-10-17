@@ -327,7 +327,7 @@
                 @endisset
 
             </td>
-            <td class="text-right align-top">{{ number_format($row->unit_price, 2) }}</td>
+            <td class="text-right align-top">{{ $row->formatPdfUnitPrice() }}</td>
             <td class="text-right align-top">
                 @if($row->discounts)
                     @php

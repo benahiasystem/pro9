@@ -21,10 +21,11 @@ use Illuminate\Support\Facades\DB;
  * - `date_of_issue` date NOT NULL
  * - `time_of_issue` time NOT NULL
  * - `exchange_rate_sale` decimal(18,8) NOT NULL
- * - `total` decimal(12,2) NOT NULL
+ * - `total` decimal(30,12) NOT NULL
  * - `filename` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `created_at` timestamp NULL DEFAULT NULL
  * - `updated_at` timestamp NULL DEFAULT NULL
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
 {
@@ -46,10 +47,11 @@ CREATE TABLE `income` (
   `date_of_issue` date NOT NULL,
   `time_of_issue` time NOT NULL,
   `exchange_rate_sale` decimal(18,8) NOT NULL,
-  `total` decimal(12,2) NOT NULL,
+  `total` decimal(30,12) NOT NULL,
   `filename` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`),
   UNIQUE KEY `income_filename_unique` (`filename`),
   KEY `income_user_id_foreign` (`user_id`),

@@ -15,16 +15,17 @@ use Illuminate\Support\Facades\DB;
  * - `warehouse_id` int(10) unsigned NOT NULL
  * - `warehouse_destination_id` int(10) unsigned DEFAULT NULL
  * - `inventory_transaction_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `quantity` decimal(12,4) NOT NULL
+ * - `quantity` decimal(30,12) NOT NULL
  * - `lot_code` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `inventories_transfer_id` int(10) unsigned DEFAULT NULL
  * - `comments` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `date_of_issue` date DEFAULT NULL
  * - `guide_id` int(10) unsigned DEFAULT NULL
- * - `system_stock` decimal(12,4) DEFAULT NULL
- * - `real_stock` decimal(12,4) DEFAULT NULL
+ * - `system_stock` decimal(30,12) DEFAULT NULL
+ * - `real_stock` decimal(30,12) DEFAULT NULL
  * - `created_at` timestamp NULL DEFAULT NULL
  * - `updated_at` timestamp NULL DEFAULT NULL
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
 {
@@ -40,16 +41,17 @@ CREATE TABLE `inventories` (
   `warehouse_id` int(10) unsigned NOT NULL,
   `warehouse_destination_id` int(10) unsigned DEFAULT NULL,
   `inventory_transaction_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `quantity` decimal(12,4) NOT NULL,
+  `quantity` decimal(30,12) NOT NULL,
   `lot_code` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `inventories_transfer_id` int(10) unsigned DEFAULT NULL,
   `comments` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `date_of_issue` date DEFAULT NULL,
   `guide_id` int(10) unsigned DEFAULT NULL,
-  `system_stock` decimal(12,4) DEFAULT NULL,
-  `real_stock` decimal(12,4) DEFAULT NULL,
+  `system_stock` decimal(30,12) DEFAULT NULL,
+  `real_stock` decimal(30,12) DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`),
   KEY `inventories_item_id_foreign` (`item_id`),
   KEY `inventories_warehouse_id_foreign` (`warehouse_id`),

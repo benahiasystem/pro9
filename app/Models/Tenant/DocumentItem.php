@@ -51,6 +51,7 @@
         protected $fillable = [
             'affected_document_item_id', 'inventory_quantity',
             'document_id',
+        'calculation_snapshot',
             'item_id',
             'item',
             'iva_rate',
@@ -590,20 +591,9 @@
 
         public function getUnitPrice($isPreview = false, $document = null)
         {
-            $unit_price = optional($this->item)->unit_price ? $this->item->unit_price : $this->unit_price;
-            $currency_type_id = isset($this->item->currency_type_id) ? $this->item->currency_type_id : Item::find($this->item_id)->currency_type_id;
-
-            if($isPreview)
-            {
-                if ($document->currency_type_id === $currency_type_id) return $unit_price;
-                if($document->currency_type_id === 'VES' && $currency_type_id === 'USD') return (float) \App\Services\ExchangeRates\ExchangeRateMath::finalAmount(\App\Services\ExchangeRates\ExchangeRateMath::rational($unit_price)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($document->exchange_rate_sale)), 6);
-                return  ($document->currency_type_id === 'USD') ? (float) \App\Services\ExchangeRates\ExchangeRateMath::finalAmount(\App\Services\ExchangeRates\ExchangeRateMath::rational($unit_price)->dividedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($document->exchange_rate_sale)), 6) : $unit_price;
-            } else {
-                if ($this->document->currency_type_id === $currency_type_id) return $unit_price;
-                if ($this->document->currency_type_id === 'VES' && $currency_type_id === 'USD') return (float) \App\Services\ExchangeRates\ExchangeRateMath::finalAmount(\App\Services\ExchangeRates\ExchangeRateMath::rational($unit_price)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($this->document->exchange_rate_sale)), 6) ;
-                return $this->isCurrencyTypeUsd() ? (float) \App\Services\ExchangeRates\ExchangeRateMath::finalAmount(\App\Services\ExchangeRates\ExchangeRateMath::rational($unit_price)->dividedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($this->document->exchange_rate_sale)), 6) : $unit_price;
-            }
-
+            // The authoritative line price is already expressed in document currency.
+            // Call exactValue('unit_price') when this value will feed another operation.
+            return \App\Support\Exact\Decimal::represent($this->exactValue('unit_price'));
         }
     }
 

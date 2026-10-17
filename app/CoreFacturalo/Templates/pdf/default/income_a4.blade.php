@@ -114,7 +114,7 @@
             <td class="text-left">
                 {!!$row->description!!}
             </td>
-            <td class="text-right align-top">{{ number_format($row->total, 2) }}</td>
+            <td class="text-right align-top">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($row, 'total'), 2) }}</td>
         </tr>
         <tr>
             <td colspan="3" class="border-bottom"></td>
@@ -122,7 +122,7 @@
     @endforeach
         <tr>
             <td colspan="2" class="text-right font-bold">TOTAL: {{ $document->currency_type->symbol }}</td>
-            <td class="text-right font-bold">{{ number_format($document->total, 2) }}</td>
+            <td class="text-right font-bold">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total'), 2) }}</td>
         </tr>
     </tbody>
 </table>

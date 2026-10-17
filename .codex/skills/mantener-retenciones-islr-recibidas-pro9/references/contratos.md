@@ -13,7 +13,7 @@
 | `DocumentFiscalController` | Consulta/registro/carga y catálogos; sucursal y permisos. |
 | `DocumentResource`, `DocumentCollection`, `DocumentPaymentController`, API/Web create y `Document::getApiResourceFind` | Publican IVA e ISLR; MobileApp consume recursos comunes. |
 | `DocumentInput`, `DocumentUpdateInput`, `DocumentTransform` | Preservan previsión/comprobantes en los contratos compartidos. |
-| `iva_retention_fields.vue`, `islr_retention_fields.vue`, `retention.vue`, mixin `iva-retention.js` | Todas las entradas, pronósticos combinados y conservación de abonos. |
+| `retention.vue`, `helpers/document-creation.js`, mixin `document-creation.js` | Gestión desde el listado sobre factura guardada; creación sin datos de retención y conservación de abonos. |
 | `RecoverIslrRetentions`, `Console/Kernel` | Reanuda pendientes por tipo y operaciones debidas cada minuto. |
 | `DocumentEditSettlements` | Conserva cliente, neto respaldado y aplicaciones vigentes. |
 
@@ -22,3 +22,7 @@ DDL consolidado: `000332` índice generado `active_islr_document_id` nullable, �
 API reutiliza `/documents/retention` (prefijo `/api` con token). Propuesta incluye `tax_kind=ISLR`, catálogo no salarial mediante GET `/documents/retention/concepts`. Registro/carga: create_payment; reversión/reintento de eliminación: delete_payment/admin. Descarga/consulta autoriza factura/sucursal. UUID del retry es el de la operación HKA vigente. Respuestas no devuelven payload/contexto/outbox privado.
 
 IVA e ISLR permanecen separados al revertir, consultar HKA y cargar comprobantes. Cambiar tipos, autorizar desde un identificador ajeno o reconstruir identidad desde datos recibidos rompe el contrato.
+
+## Interfaz centralizada — 16/10/2026
+
+Gestionar IVA/ISLR sólo desde el listado `/documents`; no ofrecer previsión/carga durante creación, pago ni confirmación en los módulos comerciales. Excluir retenciones de borradores/solicitudes UI, conservar cobros y usar el total liquidable sin deducciones antiguas. Los ajustes/reemplazos de NC requieren `allowRetentionManagement`, falso por defecto y habilitado por el listado. Mantener APIs, servicios, datos y soportes históricos. Verificar con `tests/js/received-retention-list.test.cjs` y regresiones de pagos/retenciones.

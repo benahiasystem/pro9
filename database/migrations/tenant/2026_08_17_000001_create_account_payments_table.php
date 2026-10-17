@@ -15,11 +15,12 @@ use Illuminate\Support\Facades\DB;
  * - `has_card` tinyint(1) NOT NULL DEFAULT '0'
  * - `card_brand_id` int(10) unsigned DEFAULT NULL
  * - `reference` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `payment` decimal(12,2) NOT NULL
+ * - `payment` decimal(30,12) NOT NULL
  * - `state` tinyint(1) NOT NULL DEFAULT '0'
  * - `reference_payment` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `created_at` timestamp NULL DEFAULT NULL
  * - `updated_at` timestamp NULL DEFAULT NULL
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
 {
@@ -35,11 +36,12 @@ CREATE TABLE `account_payments` (
   `has_card` tinyint(1) NOT NULL DEFAULT '0',
   `card_brand_id` int(10) unsigned DEFAULT NULL,
   `reference` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `payment` decimal(12,2) NOT NULL,
+  `payment` decimal(30,12) NOT NULL,
   `state` tinyint(1) NOT NULL DEFAULT '0',
   `reference_payment` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL);

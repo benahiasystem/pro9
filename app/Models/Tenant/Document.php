@@ -4,6 +4,7 @@
 // ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
 
 namespace App\Models\Tenant;
+    use App\Support\Exact\Decimal as D;
 
 use App\Http\Controllers\Tenant\DownloadController;
 use App\Models\Tenant\Catalogs\CurrencyType;
@@ -152,15 +153,30 @@ class Document extends ModelTenant
     public function guarantee_fund() { return $this->hasOne(DocumentGuaranteeFund::class); }
     public function fiscal_data() { return $this->hasOne(DocumentFiscalData::class); }
     public function emission() { return $this->hasOne(DocumentEmission::class); }
-    public function getRetentionAmountAttribute() { return round($this->received_retentions->sum('applied_amount'), 2); }
-    public function getGuaranteeAmountAttribute() { return max(0, round((float) optional($this->guarantee_fund)->amount - ($this->exists ? \App\Models\Tenant\DocumentNoteAdjustment::where('affected_document_id',$this->id)->where('kind','fund')->where('status','applied')->sum('amount') : 0),2)); }
-    public function getBalanceAttribute()
+    // ######## INICIO CALCULOS EXACTOS PRO9 ########
+    public function getRetentionAmountAttribute() { return D::represent($this->exactRetentionAmount()); }
+    public function exactRetentionAmount(): \Brick\Math\BigRational
     {
-        if ($this->document_type_id === '07' || ($this->document_type_id === '08' && $this->isVoidedOrRejected())) return 0.0;
-        $credits=$this->document_type_id === '01' ? \App\Services\Fiscal\FiscalNote::credits($this) : 0;
-        $refunds=$this->document_type_id === '01' ? \App\Services\Fiscal\FiscalNote::refunded($this) : 0;
-        return round($this->total - $credits - $this->payments()->whereNull('reversed_at')->sum('payment') - $this->retention_amount - $this->guarantee_amount + $refunds, 2);
+        return D::sum($this->received_retentions->map(fn($r)=>D::read($r,'applied_amount')));
     }
+    public function getGuaranteeAmountAttribute() { return D::represent($this->exactGuaranteeAmount()); }
+    public function exactGuaranteeAmount(): \Brick\Math\BigRational
+    {
+        $fund=$this->guarantee_fund ? D::read($this->guarantee_fund,'amount') : D::of(0);
+        $adjustments=$this->exists ? DocumentNoteAdjustment::where('affected_document_id',$this->id)->where('kind','fund')->where('status','applied')->get() : collect();
+        return D::max(0,$fund->minus(D::sum($adjustments->map(fn($r)=>$r->exactValue('amount')))));
+    }
+    public function getBalanceAttribute() { return D::represent($this->exactBalance()); }
+    public function exactBalance(): \Brick\Math\BigRational
+    {
+        if ($this->document_type_id === '07' || ($this->document_type_id === '08' && $this->isVoidedOrRejected())) return D::of(0);
+        $credits=$this->document_type_id === '01' ? D::sum(\App\Services\Fiscal\FiscalNote::activeCredits($this)->get()->map(fn($r)=>$r->total_payable === null ? $r->exactValue('total') : $r->exactValue('total_payable'))) : D::of(0);
+        $refunds=$this->document_type_id === '01' ? DocumentNoteRefund::where('affected_document_id',$this->id)->where('component','principal')->whereNull('reversed_at')->get() : collect();
+        $total=$this->total_payable === null ? $this->exactValue('total') : $this->exactValue('total_payable');
+        $payments=D::sum($this->payments()->whereNull('reversed_at')->get()->map(fn($r)=>$r->exactValue('payment')));
+        return $total->minus($credits)->minus($payments)->minus($this->exactRetentionAmount())->minus($this->exactGuaranteeAmount())->plus(D::sum($refunds->map(fn($r)=>$r->exactValue('amount'))));
+    }
+    // ######## FIN CALCULOS EXACTOS PRO9 ########
     // ######## FIN PERSISTENCIA FISCAL VENEZUELA ########
 
     public const GROUP_INVOICE = '01';
@@ -203,6 +219,7 @@ class Document extends ModelTenant
         'exchange_rate_source',
         'exchange_rate_date',
         'total_prepayment',
+        'calculation_snapshot',
         'total_discount',
         'total_charge',
         'total_exportation',
@@ -326,43 +343,19 @@ class Document extends ModelTenant
         });
     }
 
-    public function getTotalDiscountWithIgvAttribute()
+    public function getTotalDiscountWithIgvAttribute() { return D::represent($this->exactDiscountWithIgv()); }
+    public function exactDiscountWithIgv(): \Brick\Math\BigRational
     {
-        // dd($this->items);
-        $total_discount_item = 0;
-        $total_discount_global = 0;
-        $this->items->each(function ($it) use (&$total_discount_item, &$total_discount_global) {
-            if ($it->discounts) {
-                foreach ($it->discounts as $dis) {
-                    // ########## INICIO CAMBIO AFECTACIÓN IVA
-                    $amount = $dis->discount_type_id == "00"
-                        ? ($dis->amount_without_rounded ?? $dis->amount) * \App\Support\Venezuela\Localization::taxMultiplier()
-                        : $dis->amount;
-                    // ######### FIN CAMBIO AFECTACIÓN IVA
-                    if (isset($dis->from_global_distribution) && $dis->from_global_distribution)  {
-                        $total_discount_global += $amount;
-                    } else {
-                        $total_discount_item +=  $amount;
-
-                    }
-                }
-            }
-        });
-
-
-        // if ($this->discounts) {
-        //     foreach ($this->discounts as $dis) {
-        //         $total_discount_global +=  $dis->discount_type_id == "02" ? $dis->amount_without_rounded * 1.18 : $dis->amount;
-        //     }
-        // }
-
-        if ($this->total_value > 0 && $total_discount_item == 0 && $total_discount_global == 0) {
-            $factor = ($this->total_value + $this->total_taxes) / $this->total_value;
-            return round($this->total_discount * $factor, 2);
+        $discount=D::of(0);
+        foreach ($this->items as $line) foreach ($line->discounts ?: [] as $entry) {
+            $amount=D::of($entry->amount_exact ?? $entry->amount_without_rounded ?? $entry->amount);
+            if ($entry->discount_type_id === '00') $amount=$amount->multipliedBy(D::of(1)->plus($line->exactValue('percentage_igv')->dividedBy(100)));
+            $discount=$discount->plus($amount);
         }
-
-        // $factor = ($this->total_value + $this->total_taxes) / $this->total_value;
-        return round($total_discount_global + $total_discount_item, 2);
+        if ($discount->isZero() && $this->exactValue('total_value')->isGreaterThan(0)) {
+            $discount=$this->exactValue('total_discount')->multipliedBy($this->exactValue('total_value')->plus($this->exactValue('total_taxes')))->dividedBy($this->exactValue('total_value'));
+        }
+        return $discount;
     }
 
     /**
@@ -377,38 +370,35 @@ class Document extends ModelTenant
      */
     public function getApiResourceFind()
     {
-        $global_discount = 0;
+        $global_discount = D::of(0);
         $person = $this->customer_id ? Person::find($this->customer_id) : null;
         $person_ubigeo = $this->resolvePersonUbigeo($person);
 
         $items = $this->items->map(function ($row) use (&$global_discount) {
-            $item_discount = 0;
+            $item_discount = D::of(0);
 
             foreach (($row->discounts ?: []) as $discount) {
                 // ########## INICIO CAMBIO IGV A IVA
                 // discount_type_id "00" guarda el importe SIN IVA.
                 // ######### FIN CAMBIO IGV A IVA
-                $amount = $discount->discount_type_id == '00'
-                    // ########## INICIO CAMBIO AFECTACIÓN IVA
-                    ? ($discount->amount_without_rounded ?? $discount->amount) * \App\Support\Venezuela\Localization::taxMultiplier()
-                    // ######### FIN CAMBIO AFECTACIÓN IVA
-                    : $discount->amount;
+                $amount = D::of($discount->amount_exact ?? $discount->amount_without_rounded ?? $discount->amount);
+                    if ($discount->discount_type_id === '00') $amount=$amount->multipliedBy(D::of(1)->plus($row->exactValue('percentage_igv')->dividedBy(100)));
 
                 if (!empty($discount->from_global_distribution)) {
-                    $global_discount += $amount;
+                    $global_discount = $global_discount->plus($amount);
                 } else {
-                    $item_discount += $amount;
+                    $item_discount = $item_discount->plus($amount);
                 }
             }
 
             return [
-                'quantity'       => (float) $row->quantity,
+                'quantity'       => D::represent($row->exactValue('quantity')),
                 'unit_type_id'   => optional($row->item)->unit_type_id,
                 'description'    => $row->name_product_pdf ?: optional($row->item)->description,
-                'unit_price'     => round((float) $row->unit_price, 2),
+                'unit_price'     => D::represent($row->exactValue('unit_price')),
                 // Solo el descuento propio de la linea, sin la parte repartida del global.
-                'total_discount' => round($item_discount, 2),
-                'total'          => round((float) $row->total, 2),
+                'total_discount' => D::represent($item_discount),
+                'total'          => D::represent($row->exactValue('total')),
             ];
         })->values()->all();
 
@@ -432,15 +422,15 @@ class Document extends ModelTenant
             'district_id'            => $person_ubigeo['district_id'],
 
             // Operaciones segun su afectacion al IGV.
-            'total_taxed'            => round((float) $this->total_taxed, 2),
-            'total_exonerated'       => round((float) $this->total_exonerated, 2),
-            'total_exportation'      => round((float) $this->total_exportation, 2),
+            'total_taxed'            => D::represent($this->exactValue('total_taxed')),
+            'total_exonerated'       => D::represent($this->exactValue('total_exonerated')),
+            'total_exportation'      => D::represent($this->exactValue('total_exportation')),
 
-            'total_igv'              => round((float) $this->total_igv, 2),
-            'subtotal'               => round((float) $this->subtotal, 2),
+            'total_igv'              => D::represent($this->exactValue('total_igv')),
+            'subtotal'               => D::represent($this->exactValue('subtotal')),
             // Descuento global (con IGV), reconstruido desde los items.
-            'total_discount_global'  => round($global_discount, 2),
-            'total'                  => round((float) $this->total, 2),
+            'total_discount_global'  => D::represent($global_discount),
+            'total'                  => D::represent($this->exactValue('total')),
 
             'items'                  => $items,
             'terms_condition'        => $this->terms_condition,
@@ -1084,7 +1074,7 @@ class Document extends ModelTenant
     /**
      * @return float
      */
-    public function getTotal(): float
+    public function getTotal(): string
     {
         return $this->total;
     }
@@ -1094,7 +1084,7 @@ class Document extends ModelTenant
      *
      * @return Document
      */
-    public function setTotal(float $total): Document
+    public function setTotal($total): Document
     {
         $this->total = $total;
         return $this;
@@ -1537,14 +1527,14 @@ class Document extends ModelTenant
         $total_payments = 0;
 
         if (!$this->isVoidedOrRejected()) {
-            $total_payments = $this->payments->sum('payment');
+            $total_payments = D::sum($this->payments->map(fn($r)=>$r->exactValue('payment')));
 
             if ($this->currency_type_id === 'USD') {
                 $total_payments = $this->generalConvertValueToPen($total_payments, $this->exchange_rate_sale);
             }
         }
 
-        return $total_payments;
+        return D::represent($total_payments);
     }
 
 
@@ -1676,10 +1666,10 @@ class Document extends ModelTenant
         if($this->isPointSystem())
         {
             $point_system_data = $this->point_system_data;
-            $total = $this->total;
+            $total = $this->exactValue('total');
 
-            $value_quantity_points = ($total / $point_system_data->point_system_sale_amount) * $point_system_data->quantity_of_points;
-            $calculate_quantity_points = $point_system_data->round_points_of_sale ? intval($value_quantity_points) : round($value_quantity_points, 2);
+            $value_quantity_points = $total->dividedBy($point_system_data->point_system_sale_amount)->multipliedBy($point_system_data->quantity_of_points);
+            $calculate_quantity_points = $point_system_data->round_points_of_sale ? (string)$value_quantity_points->toScale(0, \Brick\Math\RoundingMode::DOWN) : D::represent($value_quantity_points);
         }
 
         return $calculate_quantity_points;
@@ -1807,7 +1797,7 @@ class Document extends ModelTenant
      */
     public function totalCashPaymentsWithoutDestination()
     {
-        return $this->payments()->filterCashPaymentWithoutDestination()->sum('payment');
+        return $this->payments()->filterCashPaymentWithoutDestination()->get()->map(fn($r)=>$r->exactValue('payment'))->pipe(fn($rows)=>D::represent(D::sum($rows)));
     }
 
 
@@ -1819,7 +1809,7 @@ class Document extends ModelTenant
      */
     public function totalTransferPayments()
     {
-        return $this->payments()->filterTransferPayment()->sum('payment');
+        return $this->payments()->filterTransferPayment()->get()->map(fn($r)=>$r->exactValue('payment'))->pipe(fn($rows)=>D::represent(D::sum($rows)));
     }
 
 

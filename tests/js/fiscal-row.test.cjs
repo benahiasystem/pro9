@@ -25,10 +25,10 @@ function row(affectation = '10', price = 116, quantity = 1, currency = 'VES') {
 
 test('taxed line retains base, IVA and total', () => {
     const result = calculateRowItem(row(), 'VES', 1)
-    assert.equal(result.total_value, 100)
-    assert.equal(result.total_igv, 16)
-    assert.equal(result.total, 116)
-    assert.equal(result.percentage_igv, 16)
+    assert.equal(result.total_value, '100')
+    assert.equal(result.total_igv, '16')
+    assert.equal(result.total, '116')
+    assert.equal(result.percentage_igv, '16')
     for (const key of ['total_isc', 'total_plastic_bag_taxes', 'system_isc_type_id']) {
         assert.equal(Object.hasOwn(result, key), false)
     }
@@ -36,31 +36,31 @@ test('taxed line retains base, IVA and total', () => {
 
 test('exempt quantity has zero IVA', () => {
     const result = calculateRowItem(row('20', 50, 3), 'VES', 1)
-    assert.equal(result.total_value, 150)
-    assert.equal(result.total_igv, 0)
-    assert.equal(result.total, 150)
+    assert.equal(result.total_value, '150')
+    assert.equal(result.total_igv, '0')
+    assert.equal(result.total, '150')
 })
 
 test('configured IVA rate overrides the default', () => {
     const result = calculateRowItem(row('10', 108), 'VES', 1, 0.08)
-    assert.equal(result.total_value, 100)
-    assert.equal(result.total_igv, 8)
-    assert.equal(result.total, 108)
+    assert.equal(result.total_value, '100')
+    assert.equal(result.total_igv, '8')
+    assert.equal(result.total, '108')
 })
 
 test('VES and USD conversion retains quantities and tax', () => {
-    assert.equal(calculateRowItem(row('10', 116, 2, 'USD'), 'VES', 40).total, 9280)
-    assert.equal(calculateRowItem(row('10', 4640, 2), 'USD', 40).total, 232)
+    assert.equal(calculateRowItem(row('10', 116, 2, 'USD'), 'VES', 40).total, '9280')
+    assert.equal(calculateRowItem(row('10', 4640, 2), 'USD', 40).total, '232')
 })
 
 test('a discount affecting the base reduces IVA proportionally', () => {
     const input = row()
     input.discounts = [{discount_type_id: '00', discount_type: {base: true}, percentage: 10, is_amount: false}]
     const result = calculateRowItem(input, 'VES', 1)
-    assert.equal(result.total_discount, 10)
-    assert.equal(result.total_base_igv, 90)
-    assert.equal(result.total_igv, 14.4)
-    assert.equal(result.total, 104.4)
+    assert.equal(result.total_discount, '10')
+    assert.equal(result.total_base_igv, '90')
+    assert.equal(result.total_igv, '14.4')
+    assert.equal(result.total, '104.4')
 })
 
 test('unknown affectations are never converted or calculated', () => {
@@ -78,11 +78,11 @@ test('export context calculates goods at zero IVA and preserves currency convers
     const input = row('EXP', 100, 2, 'USD')
     input.discounts = [{discount_type_id: '00', percentage: 10, is_amount: false}]
     const result = calculateRowItem(input, 'USD', '40.12345678', 0.16, true)
-    assert.equal(result.total_value, 180)
-    assert.equal(result.total_igv, 0)
-    assert.equal(result.percentage_igv, 0)
-    assert.equal(result.total, 180)
-    assert.equal(calculateRowItem(row('EXP', 100, 2, 'USD'), 'VES', '40.12345678', 0.16, true).total, 8024.691356)
+    assert.equal(result.total_value, '180')
+    assert.equal(result.total_igv, '0')
+    assert.equal(result.percentage_igv, '0')
+    assert.equal(result.total, '180')
+    assert.equal(calculateRowItem(row('EXP', 100, 2, 'USD'), 'VES', '40.12345678', 0.16, true).total, '8024.691356')
     assert.equal(resolveSelectableAffectationType('EXP', [{id: 'EXP'}], true).id, 'EXP')
     assert.equal(resolveSelectableAffectationType('EXP', [{id: 'EXP'}]), null)
     assert.throws(() => calculateRowItem(row('EXP'), 'VES', 1), /Gravado o Exento/)

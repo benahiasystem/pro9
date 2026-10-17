@@ -32,22 +32,24 @@ use Illuminate\Support\Facades\DB;
  * - `automatic_date_of_issue` date DEFAULT NULL
  * - `quantity_period` int(11) DEFAULT NULL
  * - `type_period` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `total_prepayment` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `total_charge` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `total_discount` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `total_exportation` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `total_free` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `total_taxed` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `total_unaffected` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `total_exonerated` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `total_igv` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `total_igv_free` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `total_base_other_taxes` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `total_other_taxes` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `total_taxes` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `total_value` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `subtotal` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `total` decimal(12,2) NOT NULL
+ * - `total_prepayment` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `total_charge` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `total_discount` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `total_exportation` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `total_free` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `total_taxed` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `total_unaffected` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `total_exonerated` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `total_igv` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `total_igv_free` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `total_base_other_taxes` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `total_other_taxes` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `total_taxes` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `total_value` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `subtotal` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `total_payable` decimal(30,12) DEFAULT NULL
+ * - `settlement_adjustment` decimal(30,12) NOT NULL DEFAULT 0
+ * - `total` decimal(30,12) NOT NULL
  * - `dispatch_ticket_pdf` tinyint(1) NOT NULL DEFAULT '0'
  * - `charges` json DEFAULT NULL
  * - `discounts` json DEFAULT NULL
@@ -92,6 +94,7 @@ use Illuminate\Support\Facades\DB;
  * - `document_type_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT ''
  * - `user_rel_subscription_plan_id` int(10) unsigned DEFAULT '0' COMMENT 'Relacion con suscripciones'
  * - `voided_description` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
 {
@@ -124,22 +127,22 @@ CREATE TABLE `sale_notes` (
   `automatic_date_of_issue` date DEFAULT NULL,
   `quantity_period` int(11) DEFAULT NULL,
   `type_period` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `total_prepayment` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `total_charge` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `total_discount` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `total_exportation` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `total_free` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `total_taxed` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `total_unaffected` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `total_exonerated` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `total_igv` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `total_igv_free` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `total_base_other_taxes` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `total_other_taxes` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `total_taxes` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `total_value` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `subtotal` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `total` decimal(12,2) NOT NULL,
+  `total_prepayment` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `total_charge` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `total_discount` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `total_exportation` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `total_free` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `total_taxed` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `total_unaffected` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `total_exonerated` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `total_igv` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `total_igv_free` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `total_base_other_taxes` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `total_other_taxes` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `total_taxes` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `total_value` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `subtotal` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `total` decimal(30,12) NOT NULL,
   `dispatch_ticket_pdf` tinyint(1) NOT NULL DEFAULT '0',
   `charges` json DEFAULT NULL,
   `discounts` json DEFAULT NULL,
@@ -184,6 +187,9 @@ CREATE TABLE `sale_notes` (
   `document_type_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
   `user_rel_subscription_plan_id` int(10) unsigned DEFAULT '0' COMMENT 'Relacion con suscripciones',
   `voided_description` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
+  `total_payable` decimal(30,12) DEFAULT NULL,
+  `settlement_adjustment` decimal(30,12) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   UNIQUE KEY `sale_notes_branch_number_unique` (`establishment_id`,`fiscal_environment`,`series`,`number`),
   UNIQUE KEY `sale_notes_unique_filename_unique` (`unique_filename`),

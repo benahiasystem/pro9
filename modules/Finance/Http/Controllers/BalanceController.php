@@ -69,18 +69,18 @@
             $data['records'] = $record;
             $data['totals'] = [];
 
-            $data['totals']['t_initial_balance'] = $this::FormatNumber($record->sum('initial_balance'));
-            $data['totals']['t_documents'] = $this::FormatNumber($record->sum('document_payment'));
-            $data['totals']['t_sale_notes'] = $this::FormatNumber($record->sum('sale_note_payment'));
-            $data['totals']['t_quotations'] = $this::FormatNumber($record->sum('quotation_payment'));
-            $data['totals']['t_contracts'] = $this::FormatNumber($record->sum('contract_payment'));
-            $data['totals']['t_technical_services'] = $this::FormatNumber($record->sum('technical_service_payment'));
-            $data['totals']['t_income'] = $this::FormatNumber($record->sum('income_payment'));
-            $data['totals']['t_expenses'] = $this::FormatNumber($record->sum('expense_payment'));
-            $data['totals']['t_balance'] = $this::FormatNumber($record->sum('balance'));
-            $data['totals']['t_purchases'] = $this::FormatNumber($record->sum('purchase_payment'));
-            $data['totals']['t_bank_loan'] = $this::FormatNumber($record->sum('bank_loan'));
-            $data['totals']['t_bank_loan_payment'] = $this::FormatNumber($record->sum('bank_loan_payment'));
+            $data['totals']['t_initial_balance'] = $this::FormatNumber(\App\Support\Exact\Decimal::sum($record->map(fn ($row) => \App\Support\Exact\Decimal::read($row, 'initial_balance'))));
+            $data['totals']['t_documents'] = $this::FormatNumber(\App\Support\Exact\Decimal::sum($record->map(fn ($row) => \App\Support\Exact\Decimal::read($row, 'document_payment'))));
+            $data['totals']['t_sale_notes'] = $this::FormatNumber(\App\Support\Exact\Decimal::sum($record->map(fn ($row) => \App\Support\Exact\Decimal::read($row, 'sale_note_payment'))));
+            $data['totals']['t_quotations'] = $this::FormatNumber(\App\Support\Exact\Decimal::sum($record->map(fn ($row) => \App\Support\Exact\Decimal::read($row, 'quotation_payment'))));
+            $data['totals']['t_contracts'] = $this::FormatNumber(\App\Support\Exact\Decimal::sum($record->map(fn ($row) => \App\Support\Exact\Decimal::read($row, 'contract_payment'))));
+            $data['totals']['t_technical_services'] = $this::FormatNumber(\App\Support\Exact\Decimal::sum($record->map(fn ($row) => \App\Support\Exact\Decimal::read($row, 'technical_service_payment'))));
+            $data['totals']['t_income'] = $this::FormatNumber(\App\Support\Exact\Decimal::sum($record->map(fn ($row) => \App\Support\Exact\Decimal::read($row, 'income_payment'))));
+            $data['totals']['t_expenses'] = $this::FormatNumber(\App\Support\Exact\Decimal::sum($record->map(fn ($row) => \App\Support\Exact\Decimal::read($row, 'expense_payment'))));
+            $data['totals']['t_balance'] = $this::FormatNumber(\App\Support\Exact\Decimal::sum($record->map(fn ($row) => \App\Support\Exact\Decimal::read($row, 'balance'))));
+            $data['totals']['t_purchases'] = $this::FormatNumber(\App\Support\Exact\Decimal::sum($record->map(fn ($row) => \App\Support\Exact\Decimal::read($row, 'purchase_payment'))));
+            $data['totals']['t_bank_loan'] = $this::FormatNumber(\App\Support\Exact\Decimal::sum($record->map(fn ($row) => \App\Support\Exact\Decimal::read($row, 'bank_loan'))));
+            $data['totals']['t_bank_loan_payment'] = $this::FormatNumber(\App\Support\Exact\Decimal::sum($record->map(fn ($row) => \App\Support\Exact\Decimal::read($row, 'bank_loan_payment'))));
             return $data;
         }
 

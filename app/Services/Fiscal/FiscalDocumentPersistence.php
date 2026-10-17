@@ -4,6 +4,7 @@ namespace App\Services\Fiscal;
 use App\Models\Tenant\{Company, Document, DocumentPayment, Establishment, Person, PaymentMethodType};
 use App\Services\SalesCustomerIdentityPolicy;
 use Illuminate\Support\Str;
+use App\Support\Exact\Decimal as D;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
@@ -58,48 +59,12 @@ final class FiscalDocumentPersistence
         $affectation = $line['affectation_igv_type_id'] ?? null;
         if (!in_array($affectation, $exportation ? ['EXP'] : ['10','20'], true)) FiscalAmounts::error('items', $exportation ? 'Seleccione Exportación — IVA 0 %.' : 'Seleccione Gravado o Exento.');
         if ($exportation && ($line['item']['unit_type_id'] ?? '') === 'SERV') FiscalAmounts::error('items', 'La exportación de servicios no está habilitada.');
-        validator($line, ['quantity'=>'required|numeric|gt:0', 'unit_price'=>'required|numeric|min:0'])->validate();
-        $percentage = $affectation === '10' ? \App\Support\Venezuela\Localization::taxPercentage() : 0;
-        $unit = $affectation === '10' ? $line['unit_price'] / (1 + $percentage / 100) : $line['unit_price'];
-        $gross = $unit * $line['quantity'];
-        $discountBase = $discountOther = $charges = 0;
-        $line['discounts'] = $line['discounts'] ?? [];
-        $line['charges'] = $line['charges'] ?? [];
-        foreach ($line['discounts'] as &$discount) {
-            $discount = (array) $discount;
-            $onBase = ($discount['discount_type_id'] ?? '') === '00';
-            $discount['base'] = round($onBase ? $gross : $line['unit_price'] * $line['quantity'], 2);
-            $amount = !empty($discount['is_amount']) || !empty($discount['from_global_distribution'])
-                ? ($discount['amount'] ?? 0) : $discount['base'] * ($discount['factor'] ?? (($discount['percentage'] ?? 0) / 100));
-            if (!is_numeric($amount) || $amount < 0) FiscalAmounts::error('items.discounts','Descuento inválido.');
-            $discount['amount'] = round($amount, 2);
-            if ($onBase) $discountBase += $discount['amount']; else $discountOther += $discount['amount'];
-        }
-        unset($discount);
-        foreach ($line['charges'] as &$charge) {
-            $charge = (array) $charge;
-            $charge['base'] = round($gross, 2);
-            $charge['amount'] = round($gross * ($charge['factor'] ?? (($charge['percentage'] ?? 0) / 100)), 2);
-            if ($charge['amount'] < 0) FiscalAmounts::error('items.charges','Cargo inválido.');
-            $charges += $charge['amount'];
-        }
-        unset($charge);
-        $base = round($gross - $discountBase, 2);
-        $line['unit_value'] = round($unit, 6);
-        $line['total_base_igv'] = $base;
-        $line['total_discount'] = round($discountBase + $discountOther, 2);
-        $line['total_charge'] = round($charges, 2);
-        $line['total_value'] = round($gross - $discountBase - $discountOther + $charges, 2);
-        if ($base < 0 || $line['total_value'] < 0) FiscalAmounts::error('items','El descuento supera el valor de la línea.');
+        validator($line, ['quantity'=>'required|numeric|min:0', 'unit_price'=>'required|numeric|min:0'])->validate();
+        $percentage = $affectation === '10' ? \App\Support\Venezuela\Localization::exactTaxPercentage() : 0;
+        // ######## INICIO CALCULOS EXACTOS PRO9 ########
         if (($line['total_other_taxes'] ?? 0) != 0) FiscalAmounts::error('items.total_other_taxes','Los tributos adicionales deben registrarse en el detalle del documento.');
-        $percentage = $affectation === '10' ? \App\Support\Venezuela\Localization::taxPercentage() : 0;
-        $line['total_other_taxes'] = 0;
-        $line['total_base_other_taxes'] = 0;
-        $line['percentage_other_taxes'] = 0;
-        $line['percentage_igv'] = $percentage;
-        $line['total_igv'] = round($base * $percentage / 100, 2);
-        $line['total_taxes'] = round($line['total_igv'] + ($line['total_other_taxes'] ?? 0), 2);
-        $line['total'] = round($line['total_value'] + $line['total_taxes'], 2);
+        $line = \App\Support\Exact\LineCalculation::fromRecord($line, $percentage);
+        // ######## FIN CALCULOS EXACTOS PRO9 ########
         $rateCode = in_array($affectation, ['20', 'EXP'], true) ? 'E' : (['8'=>'R','16'=>'G','31'=>'A'][(string)$percentage] ?? null);
         $line['iva_rate'] = ['code'=>$rateCode,'percentage'=>$percentage];
         unset($line['item']['cod_digemid']);
@@ -169,14 +134,16 @@ final class FiscalDocumentPersistence
         foreach ($input['received_retentions'] ?? [] as $retention) self::retention($document,$retention);
         if (!empty($input['guarantee_fund'])) {
             $g=validator($input['guarantee_fund'],['amount'=>'required|numeric|min:0','base'=>'required|numeric|min:0','percentage'=>'required|numeric|min:0|max:100'])->validate();
-            foreach ($g as &$value) $value=round((float)$value,2);
+            foreach ($g as $field => &$value) $value=D::input($value, 'guarantee_fund.'.$field);
             unset($value);
-            if (abs($g['amount']-round($g['base']*$g['percentage']/100,2))>0.005) FiscalAmounts::error('guarantee_fund','El importe no coincide con la base y porcentaje del fondo.');
+            $expected=D::of($g['base'])->multipliedBy(D::of($g['percentage']))->dividedBy(100);
+            if (!D::of($g['amount'])->isEqualTo(D::of(D::represent($expected)))) FiscalAmounts::error('guarantee_fund','El importe no coincide con la base y porcentaje del fondo.');
             $document=$document->fresh();
-            if ($g['amount']>$document->balance+$document->guarantee_amount+0.005) FiscalAmounts::error('guarantee_fund','El fondo supera el saldo disponible.');
+            if ($expected->isGreaterThan($document->exactBalance()->plus($document->exactGuaranteeAmount()))) FiscalAmounts::error('guarantee_fund','El fondo supera el saldo disponible.');
+            $g['amount']=$expected;
             $document->guarantee_fund()->updateOrCreate(['document_id'=>$document->id],$g);
         }
-        if ($document->document_type_id !== '07' && $document->fresh()->balance < -0.005) FiscalAmounts::error('document','Las aplicaciones superan el saldo del documento.');
+        if ($document->document_type_id !== '07' && $document->fresh()->exactBalance()->isNegative()) FiscalAmounts::error('document','Las aplicaciones superan el saldo del documento.');
         self::updateSettlementState($document);
     }
 
@@ -199,87 +166,22 @@ final class FiscalDocumentPersistence
         $document->taxes()->where('tax_kind','OTI')->delete();
         foreach ($taxes as $input) {
             $data = validator($input, ['code'=>'required|string|max:32|regex:/^[A-Za-z0-9_-]+$/','percentage'=>'required|numeric|min:0|max:100','base'=>'required|numeric|min:0'])->validate();
-            $data['percentage'] = round($data['percentage'], 2);
-            $data['base'] = round($data['base'], 2);
-            $data['amount'] = round($data['base'] * $data['percentage'] / 100, 2);
-            $data['tax_kind'] = 'OTI';
-            $data['base_ves'] = FiscalAmounts::convert($data['base'],$document->currency_type_id,'VES',$document->exchange_rate_sale);
-            $data['amount_ves'] = FiscalAmounts::convert($data['amount'],$document->currency_type_id,'VES',$document->exchange_rate_sale);
+            $base = D::of(D::input($data['base'], 'taxes.base'));
+            $percentage = D::of(D::input($data['percentage'], 'taxes.percentage'));
+            $amount = $base->multipliedBy($percentage)->dividedBy(100);
+            $values = ['base'=>$base, 'percentage'=>$percentage, 'amount'=>$amount,
+                'base_ves'=>D::convert($base,$document->currency_type_id,'VES',$document->exchange_rate_sale),
+                'amount_ves'=>D::convert($amount,$document->currency_type_id,'VES',$document->exchange_rate_sale)];
+            $data = D::values($values) + ['code'=>$data['code'],'tax_kind'=>'OTI','calculation_snapshot'=>D::snapshot($values)];
             $document->taxes()->create($data);
         }
     }
 
     public static function summarize(Document $document): void
     {
-        $exportation = \App\Services\ExportInvoicePolicy::isExport($document->invoice->operation_type_id ?? '');
-        $document->taxes()->whereNull('document_payment_id')->where('tax_kind', 'IVA')->delete();
-        $items = $document->items()->get();
-        $discounts = collect((array)$document->discounts)->map(fn ($r) => (array)$r);
-        $charges = collect((array)$document->charges)->map(fn ($r) => (array)$r);
-        foreach ($discounts->merge($charges) as $r) {
-            if (!is_numeric($r['amount'] ?? null) || $r['amount'] < 0) FiscalAmounts::error('discounts','Importe de descuento o cargo inválido.');
-        }
-        $distributed = $items->sum(fn ($line) => collect((array)$line->discounts)->sum(fn ($r) => !empty(((array)$r)['from_global_distribution']) ? ((array)$r)['amount'] : 0));
-        $taxedDiscount = max(0, $discounts->whereIn('discount_type_id',['02','04'])->sum('amount') - $distributed);
-        $exemptDiscount = $discounts->where('discount_type_id','05')->sum('amount');
-        $globalDiscount = max(0,$discounts->sum('amount') - $distributed);
-        $globalCharge = $charges->sum('amount');
-        $taxedOriginal = $items->where('affectation_igv_type_id','10')->sum('total_base_igv');
-        $exemptOriginal = $items->where('affectation_igv_type_id','20')->sum('total_base_igv');
-        if (!$exportation && ($taxedDiscount > $taxedOriginal || $exemptDiscount > $exemptOriginal)) FiscalAmounts::error('discounts','El descuento supera su base imponible.');
-        if ($exportation && $globalDiscount > $items->sum('total_value')) FiscalAmounts::error('discounts', 'El descuento supera el valor exportado.');
-        $taxed = $exempt = $iva = 0;
-        foreach ($items->groupBy(fn ($line) => ($line->iva_rate['code'] ?? '').':'.$line->percentage_igv) as $group) {
-            if ($exportation) continue;
-            $line = $group->first();
-            $base = round($group->sum('total_base_igv'), 2);
-            $deduction = $line->affectation_igv_type_id === '10'
-                ? ($taxedOriginal > 0 ? $taxedDiscount * $base / $taxedOriginal : 0)
-                : ($exemptOriginal > 0 ? $exemptDiscount * $base / $exemptOriginal : 0);
-            $base = round($base - $deduction, 2);
-            // Preserve current per-line IVA rounding when there is no global base adjustment.
-            $amount = $deduction > 0 ? round($base * $line->percentage_igv / 100, 2) : round($group->sum('total_igv'), 2);
-            $document->taxes()->create(['tax_kind'=>'IVA','code'=>$line->iva_rate['code'] ?? 'IVA',
-                'percentage'=>$line->percentage_igv,'base'=>$base,'amount'=>$amount,
-                'base_ves'=>FiscalAmounts::convert($base,$document->currency_type_id,'VES',$document->exchange_rate_sale),
-                'amount_ves'=>FiscalAmounts::convert($amount,$document->currency_type_id,'VES',$document->exchange_rate_sale)]);
-            if ($line->affectation_igv_type_id === '10') $taxed += $base; else $exempt += $base;
-            $iva += $amount;
-        }
-        if ($items->isNotEmpty()) {
-            $document->total_taxed = round($taxed, 2);
-            $document->total_exonerated = round($exempt, 2);
-            $document->total_igv = round($iva, 2);
-            $document->total_value = round($items->sum('total_value') - $globalDiscount + $globalCharge, 2);
-            $document->total_exportation = $exportation ? $document->total_value : 0;
-            if ($exportation) {
-                $document->taxes()->create(['tax_kind'=>'IVA', 'code'=>'E', 'percentage'=>0, 'base'=>$document->total_exportation, 'amount'=>0,
-                    'base_ves'=>FiscalAmounts::convert($document->total_exportation, $document->currency_type_id, 'VES', $document->exchange_rate_sale), 'amount_ves'=>0]);
-            }
-            $document->total_discount = round($items->sum('total_discount') + $globalDiscount, 2);
-            $document->total_charge = round($items->sum('total_charge') + $globalCharge, 2);
-        }
-        $igtf = $document->taxes()->where('tax_kind','IGTF')->sum('amount');
-        $other = $document->taxes()->whereNotIn('tax_kind',['IVA','IGTF'])->sum('amount');
-        $document->total_base_other_taxes = round($document->taxes()->whereNotIn('tax_kind',['IVA','IGTF'])->sum('base'), 2);
-        $document->total_other_taxes = round($igtf + $other, 2);
-        $document->total_taxes = round($document->total_igv + $document->total_other_taxes, 2);
-        // Advance discounts 04/05 already reduce bases and IVA; do not deduct them twice.
-        $advance = $discounts->whereIn('discount_type_id',['04','05'])->isEmpty() ? $document->total_prepayment : 0;
-        $document->total = round($document->total_value + $document->total_taxes - $advance, 2);
-        if ($document->total < 0) FiscalAmounts::error('total','El total no puede ser negativo.');
-        $document->subtotal = round($document->total - $igtf, 2);
-        $legends = collect((array)$document->legends)->map(fn ($r) => (array)$r)->reject(fn ($r) => ($r['code'] ?? null)==='1000')->values()->all();
-        $legends[] = ['code'=>'1000','value'=>\App\CoreFacturalo\Helpers\Number\NumberLetter::convertToLetter($document->total)];
-        $document->legends = $legends;
-        $document->save();
-        $breakdown = $document->taxes()->get(['tax_kind','code','percentage','base_ves','amount_ves'])->toArray();
-        $values = ['taxed'=>$document->total_taxed,'exempt'=>$document->total_exonerated,'exportation'=>$document->total_exportation,
-            'discount'=>$document->total_discount,'charge'=>$document->total_charge,
-            'iva'=>$document->total_igv,'other_taxes'=>$document->total_other_taxes,'total'=>$document->total];
-        foreach ($values as &$v) $v = FiscalAmounts::convert($v,$document->currency_type_id,'VES',$document->exchange_rate_sale);
-        unset($v);
-        $document->currency_totals()->updateOrCreate(['document_id'=>$document->id],$values + ['currency_type_id'=>'VES','tax_breakdown'=>$breakdown]);
+        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        ExactDocumentSummary::save($document);
+        // ######## FIN CALCULOS EXACTOS PRO9 ########
     }
 
     public static function payment(Document $document, array $input, bool $initial = false): DocumentPayment
@@ -309,7 +211,7 @@ final class FiscalDocumentPersistence
                 $existing ? $existing->igtf_status === 'subject' : (bool)$company->igtf_enabled, $existing ? $storedRate : $company->igtf_rate);
             if ($existing) {
                 if ($existing->document_id !== $document->id || $existing->reversed_at ||
-                    (float) $existing->original_amount !== $values['original_amount'] || $existing->currency_type_id !== $values['currency_type_id'] ||
+                    !\App\Support\Exact\Decimal::of($existing->original_amount)->isEqualTo(\App\Support\Exact\Decimal::of($values['original_amount'])) || $existing->currency_type_id !== $values['currency_type_id'] ||
                     \App\Services\ExchangeRates\ExchangeRateMath::rate($existing->exchange_rate) !== $values['exchange_rate'] || $existing->exemption_reason !== $values['exemption_reason'] ||
                     $existing->date_of_payment->format('Y-m-d') !== ($input['date_of_payment'] ?? '') ||
                     $existing->reference !== ($input['reference'] ?? null) ||
@@ -333,12 +235,28 @@ final class FiscalDocumentPersistence
             if (!$initial && !FiscalNote::ordinary($document) && $values['tax_amount'] > 0 && \App\Services\ThirdPartyInvoicePolicy::isThirdParty($document)) FiscalAmounts::error('payment', 'El IGTF de un cobro posterior requiere una nota por cuenta de terceros; ese flujo todavía no está habilitado.');
             $method = PaymentMethodType::findOrFail($input['payment_method_type_id']);
             if ($document->document_type_id === '07') FiscalAmounts::error('document','Las NC no reciben cobros; utilice Registrar devolución.');
-            if (!$initial && $values['payment'] > $document->balance + 0.005) FiscalAmounts::error('payment', 'El pago supera el saldo disponible.');
+            $balance=$document->exactBalance();
+            $principal=D::of($values['payment']);
+            if (!$principal->isEqualTo($balance) && $principal->isEqualTo(D::of(D::represent($balance,2)))) {
+                $values['payment']=D::represent($balance);
+                $values['calculation_snapshot']['values']['payment']=D::fraction($balance);
+                $values['calculation_snapshot']['values']['payment_adjustment']=D::fraction($balance->minus(D::of($values['calculation_snapshot']['values']['converted_principal'])));
+            }
+            if (!$initial && D::of($values['payment'])->isGreaterThan($balance)) FiscalAmounts::error('payment', 'El pago supera el saldo disponible.');
             if ($initial && $document->emission()->where('status', '!=', 'not_requested')->exists()) FiscalAmounts::error('emission','No se modifican los pagos de una operación preparada.');
             if (!empty($input['id'])) FiscalAmounts::error('id', 'Revierta el pago y registre uno nuevo; no se editan pagos contabilizados.');
             validator($input, ['date_of_payment'=>'required|date','exchange_rate_source'=>'nullable|string|max:255','exchange_rate_date'=>'nullable|date','exemption_reason'=>'nullable|string|max:255'])->validate();
             $fields = array_intersect_key($input, array_flip(['date_of_payment','payment_method_type_id','has_card','card_brand_id','reference','payment_received','change']));
 
+            if ($initial && D::of($values['payment'])->isGreaterThan($document->exactBalance())) {
+                $residual = D::of($values['payment'])->minus($document->exactBalance());
+                $cashResidual = D::convert($residual, $document->currency_type_id, $values['currency_type_id'], $values['exchange_rate']);
+                if (D::of(D::represent($cashResidual, 2))->isZero()) {
+                    $values['payment'] = D::represent($document->exactBalance());
+                    $values['calculation_snapshot']['values']['payment'] = D::fraction($document->exactBalance());
+                    $values['calculation_snapshot']['values']['payment_adjustment'] = D::fraction($document->exactBalance()->minus(D::of($values['calculation_snapshot']['values']['converted_principal'])));
+                }
+            }
             $context = $document->getConnection()->getSchemaBuilder()->hasColumn('document_payments', 'fiscal_context')
                 ? ['fiscal_context'=>['issuer'=>$issuer, 'buyer'=>$buyer, 'decision'=>$decision, 'date'=>$date]] : [];
             $payment = $document->payments()->create($values + $fields + $context + [
@@ -346,12 +264,12 @@ final class FiscalDocumentPersistence
                 ]);
             if ($values['tax_amount'] > 0) {
                 $target = $initial ? $document : self::igtfNote($document, $payment);
-                $base = FiscalAmounts::convert($values['original_amount'], $values['currency_type_id'], $target->currency_type_id, $values['exchange_rate']);
-                $tax = FiscalAmounts::convert($values['tax_amount'], $values['currency_type_id'], $target->currency_type_id, $values['exchange_rate']);
+                $base = D::convert($values['original_amount'], $values['currency_type_id'], $target->currency_type_id, $values['exchange_rate']);
+                $tax = D::convert($values['tax_amount'], $values['currency_type_id'], $target->currency_type_id, $values['exchange_rate']);
                 $target->taxes()->create(['document_payment_id' => $payment->id, 'tax_kind' => 'IGTF', 'code' => 'IGTF',
                     'percentage' => $company->igtf_rate, 'base' => $base, 'amount' => $tax,
-                    'base_ves' => FiscalAmounts::convert($values['original_amount'], $values['currency_type_id'], 'VES', $values['exchange_rate']),
-                    'amount_ves' => FiscalAmounts::convert($values['tax_amount'], $values['currency_type_id'], 'VES', $values['exchange_rate'])]);
+                    'base_ves' => D::convert($values['original_amount'], $values['currency_type_id'], 'VES', $values['exchange_rate']),
+                    'amount_ves' => D::convert($values['tax_amount'], $values['currency_type_id'], 'VES', $values['exchange_rate'])]);
                 self::summarize($target);
                 $target->payments()->create(['date_of_payment'=>$payment->date_of_payment,'payment_method_type_id'=>$payment->payment_method_type_id,
                         'currency_type_id'=>$payment->currency_type_id,'exchange_rate'=>$payment->exchange_rate,
@@ -416,7 +334,7 @@ final class FiscalDocumentPersistence
                 'fiscal_context'=>'nullable|array',
             ])->validate();
             if ($document->received_retentions()->applied()->where('tax_kind',$data['tax_kind'])->where('agent_id',$data['agent_id'])->where('voucher_number',$data['voucher_number'])->when($existing, fn($q) => $q->where('id','!=',$existing->id))->exists()) FiscalAmounts::error('voucher_number','El comprobante ya está registrado.');
-            foreach (['base','percentage','subtrahend','amount'] as $field) $data[$field] = round((float)($data[$field] ?? 0),2);
+            foreach (['base','percentage','subtrahend','amount'] as $field) $data[$field] = D::input($data[$field] ?? 0, $field);
             $data['exchange_rate'] = \App\Services\ExchangeRates\ExchangeRateMath::rate($data['exchange_rate']);
             if ($data['amount']<=0 || $data['base']<=0 || $data['exchange_rate']<=0) FiscalAmounts::error('amount','Importes y tasa deben ser positivos con la precisión del sistema.');
             $agent = Person::findOrFail($data['agent_id']);
@@ -436,7 +354,7 @@ final class FiscalDocumentPersistence
             $proposal = SpecialTaxpayerPolicy::retention($issuer, $buyer, $date, $context);
             if ($data['tax_kind'] === 'IVA') {
                 if (!$proposal['eligible']) FiscalAmounts::error('agent_id', 'El perfil o la operación no acreditan retención IVA.');
-                if ($data['percentage'] !== (float)$proposal['percentage'] || $data['subtrahend'] != 0) FiscalAmounts::error('percentage', 'La retención IVA debe usar 75 % o 100 % según su fundamento, sin sustraendo.');
+                if (!D::of($data['percentage'])->isEqualTo(D::of($proposal['percentage'])) || $data['subtrahend'] != 0) FiscalAmounts::error('percentage', 'La retención IVA debe usar 75 % o 100 % según su fundamento, sin sustraendo.');
                 if ($proposal['percentage'] === 100 && empty($context['evidence_reference']) && empty($issuer['evidence_reference'])) FiscalAmounts::error('fiscal_context', 'El 100 % requiere referencia de evidencia.');
                 if (!preg_match('/^[0-9]{14}$/D', $data['voucher_number']) || substr($data['voucher_number'],0,6) !== str_replace('-', '', substr($date,0,7))) FiscalAmounts::error('voucher_number', 'El comprobante IVA requiere AAAAMM y ocho dígitos consecutivos.');
             } elseif (!$proposal['islr_eligible']) FiscalAmounts::error('agent_id', 'El perfil no acredita facultad ISLR para el concepto aplicable.');
@@ -448,19 +366,20 @@ final class FiscalDocumentPersistence
                 if (empty($context['concept_basis']) || empty($context['evidence_reference'])) FiscalAmounts::error('fiscal_context', 'Indique el fundamento del concepto ISLR aplicable y su evidencia; SPE no determina ISLR.');
                 $concept = (array) DB::connection('tenant')->table('cat_retention_concept')->where('id',$data['concept_id'])->first();
             }
-            $expected = round(max(0, $data['base'] * $data['percentage'] / 100 - ($data['subtrahend'] ?? 0)), 2);
-            if (abs($data['amount'] - $expected) > 0.01) FiscalAmounts::error('amount','El importe no coincide con base, porcentaje y sustraendo.');
-            $applied = FiscalAmounts::convert($data['amount'], $data['currency_type_id'], $document->currency_type_id, $data['exchange_rate']);
+            $expected = D::of($data['base'])->multipliedBy(D::of($data['percentage']))->dividedBy(100)->minus(D::of($data['subtrahend'] ?? 0));
+            if ($expected->isNegative()) $expected = D::of(0);
+            if (!D::of(D::represent($expected, 2))->isEqualTo(D::of(D::represent($data['amount'], 2)))) FiscalAmounts::error('amount','El importe no coincide con base, porcentaje y sustraendo.');
+            $applied = D::convert($data['amount'], $data['currency_type_id'], $document->currency_type_id, $data['exchange_rate']);
             if ($document->document_type_id !== '01' || $document->isVoidedOrRejected()) FiscalAmounts::error('document','Sólo se retiene una factura vigente.');
-            if ($applied > ReceivedRetentionService::settlementLimit($document) + 0.005) FiscalAmounts::error('amount','La retención supera el saldo disponible.');
+            if ($applied->isGreaterThan(D::of(ReceivedRetentionService::settlementLimit($document))->plus('0.005'))) FiscalAmounts::error('amount','La retención supera el saldo disponible.');
             if ($data['tax_kind']==='IVA') {
-                $fiscalIva = FiscalAmounts::convert($document->total_igv,$document->currency_type_id,'VES',$document->exchange_rate_sale);
-                $retainedVes = $document->received_retentions()->where('tax_kind','IVA')->applied()->get()->sum(fn($row)=>FiscalAmounts::convert($row->amount,$row->currency_type_id,'VES',$row->exchange_rate));
-                $available = round($fiscalIva * $proposal['percentage'] / 100,2) - $retainedVes;
-                if (FiscalAmounts::convert($data['base'],$data['currency_type_id'],'VES',$data['exchange_rate']) > $fiscalIva + 0.01
-                    || FiscalAmounts::convert($data['amount'],$data['currency_type_id'],'VES',$data['exchange_rate']) > $available + 0.01) FiscalAmounts::error('base','La retención supera el IVA fiscal conservado de la factura.');
+                $fiscalIva = D::convert($document->exactValue('total_igv'),$document->currency_type_id,'VES',$document->exchange_rate_sale);
+                $retainedVes = $document->received_retentions()->where('tax_kind','IVA')->applied()->get()->map(fn($row)=>D::convert($row->exactValue('amount'),$row->currency_type_id,'VES',$row->exchange_rate))->pipe(fn($rows)=>D::sum($rows));
+                $available = $fiscalIva->multipliedBy(D::of($proposal['percentage']))->dividedBy(100)->minus($retainedVes);
+                if (D::convert($data['base'],$data['currency_type_id'],'VES',$data['exchange_rate'])->isGreaterThan($fiscalIva->plus('0.01'))
+                    || D::convert($data['amount'],$data['currency_type_id'],'VES',$data['exchange_rate'])->isGreaterThan($available->plus('0.01'))) FiscalAmounts::error('base','La retención supera el IVA fiscal conservado de la factura.');
             }
-            if ($data['tax_kind'] === 'ISLR' && FiscalAmounts::convert($data['base'],$data['currency_type_id'],'VES',$data['exchange_rate']) > FiscalAmounts::convert($document->total_value,$document->currency_type_id,'VES',$document->exchange_rate_sale) + 0.01) FiscalAmounts::error('base', 'La base ISLR supera el valor neto facturado.');
+            if ($data['tax_kind'] === 'ISLR' && D::convert($data['base'],$data['currency_type_id'],'VES',$data['exchange_rate'])->isGreaterThan(D::convert($document->exactValue('total_value'),$document->currency_type_id,'VES',$document->exchange_rate_sale)->plus('0.01'))) FiscalAmounts::error('base', 'La base ISLR supera el valor neto facturado.');
             if (!empty($data['attachment'])) {
                 $prefix = 'received_retentions/'.$document->id.'/';
                 if (!str_starts_with($data['attachment'], $prefix) || str_contains($data['attachment'],'..') || !Storage::disk('tenant')->exists($data['attachment'])) FiscalAmounts::error('attachment','Adjunto inválido para esta factura y tenant.');
@@ -469,7 +388,8 @@ final class FiscalDocumentPersistence
             $data['fiscal_context'] = ['issuer'=>$issuer,'buyer'=>$buyer,'proposal'=>$proposal,'operation'=>$context,
                 'concept'=>$concept,
                 'invoice_control'=>$document->control_number,'invoice_number'=>$document->number_full,'actor_id'=>$existing->fiscal_context['actor_id'] ?? auth()->id()];
-            $values = $data + ['agent' => $agent->only(['number','name','identity_document_type_id','address']) + ['fiscal_profile'=>$buyer], 'agent_number'=>$buyer['rif'],'applied_amount'=>$applied];
+            $values = $data + ['agent' => $agent->only(['number','name','identity_document_type_id','address']) + ['fiscal_profile'=>$buyer], 'agent_number'=>$buyer['rif'],'applied_amount'=>$applied,
+                'calculation_snapshot'=>D::snapshot(['base'=>$data['base'],'percentage'=>$data['percentage'],'amount'=>$data['amount'],'applied_amount'=>$applied,'expected_amount'=>$expected],$input)];
             if ($existing) { $existing->fill($values)->save(); $retention = $existing; }
             else $retention=$document->received_retentions()->create($values);
             self::updateSettlementState($document);
@@ -511,7 +431,7 @@ final class FiscalDocumentPersistence
     public static function updateSettlementState(Document $document): void
     {
         $document=$document->fresh();
-        $document->total_canceled=$document->balance<=0.005;
+        $document->total_canceled=$document->exactBalance()->isLessThanOrEqualTo(0);
         if ($document->isDirty('total_canceled')) $document->save();
     }
 }

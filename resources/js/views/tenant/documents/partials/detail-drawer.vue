@@ -173,6 +173,8 @@
                                     <div class="detail-drawer__totals-row"><span class="detail-drawer__totals-row-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-receipt"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 21v-16a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v16l-3 -2l-2 2l-2 -2l-2 2l-2 -2z"/><path d="M9 7l6 0"/><path d="M9 11l6 0"/></svg></span><span class="detail-drawer__totals-row-label">Op. gravada</span><strong>{{ formatMoney(record.total_taxed) }}</strong></div>
                                     <div class="detail-drawer__totals-row"><span class="detail-drawer__totals-row-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-percentage"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M17 17m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/><path d="M7 7m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/><path d="M6 18l12 -12"/></svg></span><span class="detail-drawer__totals-row-label">IGV</span><strong>{{ formatMoney(record.total_igv) }}</strong></div>
                                     <div class="detail-drawer__totals-row detail-drawer__totals-row--balance"><span class="detail-drawer__totals-row-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-wallet"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M17 8v-3a1 1 0 0 0 -1 -1h-10a2 2 0 0 0 0 4h12a1 1 0 0 1 1 1v3m0 4v3a1 1 0 0 1 -1 1h-12a2 2 0 0 1 -2 -2v-12"/><path d="M20 12v4h-4a2 2 0 0 1 0 -4z"/></svg></span><span class="detail-drawer__totals-row-label">Saldo pendiente</span><span class="detail-drawer__totals-status" :class="balanceIsPaid ? 'detail-drawer__totals-status--paid' : 'detail-drawer__totals-status--pending'"><svg v-if="balanceIsPaid" xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-check" aria-hidden="true"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l5 5l10 -10"/></svg>{{ balanceStatusLabel }}</span></div>
+                                    <div v-if="record.settlement_adjustment && record.settlement_adjustment != 0" class="detail-drawer__totals-row"><span>Ajuste de liquidación</span><strong>{{ formatMoney(record.settlement_adjustment) }}</strong></div>
+                                    <div v-if="record.settlement_adjustment && record.settlement_adjustment != 0" class="detail-drawer__totals-row"><span>Importe cobrable</span><strong>{{ formatMoney(record.total_payable) }}</strong></div>
                                     <div class="detail-drawer__totals-total"><span>Total</span><strong><small>{{ currencySymbol }}</small> {{ formatMoney(record.total, false) }}</strong></div>
                                 </div>
 
@@ -265,7 +267,7 @@
 
 <script>
 // ######## INICIO TASAS OCHO DECIMALES ########
-import { normalizeExchangeRate } from "../../../../helpers/exchange-rate-math"
+import { normalizeExchangeRate, exactAmount, exactSum, exactValue } from "../../../../helpers/exchange-rate-math"
 // ######## FIN TASAS OCHO DECIMALES ########
 import { documentStatus } from "../../../../helpers/document-status";
 import { documentFiscal } from "../../../../mixins/document-fiscal";
@@ -478,17 +480,18 @@ export default {
                 : `${this.currencyLabel} · T.C. ${this.exchangeRateLabel}`;
         },
         balanceAmount() {
-            return Math.max(this.parseAmount(this.record?.balance), 0);
+            const balance = exactAmount(this.record?.balance || '0');
+            return balance.compare(0) < 0 ? '0' : balance.decimal();
         },
         totalPayments() {
             if (this.record?.total_paid !== undefined && this.record?.total_paid !== null) {
                 return this.parseAmount(this.record.total_paid);
             }
 
-            return this.paymentRows.reduce((sum, payment) => sum + this.parseAmount(payment.payment), 0);
+            return exactSum(this.paymentRows.map(payment => exactValue(payment, 'payment'))).decimal();
         },
         balanceIsPaid() {
-            return this.balanceAmount < 0.01;
+            return exactAmount(this.balanceAmount).compare(0) <= 0;
         },
         balanceStatusLabel() {
             const status = this.balanceIsPaid ? 'Pagado' : 'Pendiente';
@@ -502,11 +505,11 @@ export default {
 
             return items.map((row, index) => {
                 const itemData = this.parseItemData(row.item);
-                const quantity = Number(row.quantity || 0);
-                const unitPrice = Number(row.unit_price ?? itemData?.sale_unit_price ?? 0);
+                const quantity = exactAmount(row.quantity || '0').decimal();
+                const unitPrice = exactAmount(row.unit_price ?? itemData?.sale_unit_price ?? '0').decimal();
                 const subtotal = row.total !== undefined && row.total !== null
-                    ? Number(row.total)
-                    : quantity * unitPrice;
+                    ? exactAmount(row.total).decimal()
+                    : exactAmount(quantity).times(unitPrice).decimal();
 
                 return {
                     key: row.id || index,
@@ -723,23 +726,12 @@ export default {
             return null;
         },
         parseAmount(value) {
-            if (value === undefined || value === null || value === '') {
-                return 0;
-            }
-
-            if (typeof value === 'number') {
-                return value;
-            }
-
-            return Number(String(value).replace(/,/g, '').trim()) || 0;
+            return exactAmount(value === undefined || value === null || value === '' ? '0' : String(value).replace(/,/g, '').trim()).decimal();
         },
         formatMoney(value, withSymbol = true) {
-            const amount = this.parseAmount(value);
-            const formatted = amount.toLocaleString('es-VE', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-            });
-
+            const amount = exactAmount(this.parseAmount(value)).decimal();
+            const [whole, decimals] = amount.split('.');
+            const formatted = whole.replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ',' + (decimals || '').padEnd(2, '0');
             return withSymbol ? `${this.currencySymbol} ${formatted}` : formatted;
         },
         formatDisplayDate(value) {

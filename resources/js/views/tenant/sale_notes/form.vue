@@ -2152,6 +2152,10 @@ header .head-notes > div {
 </style>
 
 <script>
+import {exactAmount} from '../../../helpers/exchange-rate-math'
+
+import {applyCommercialTotals, allocateCommercialRows} from '../../../helpers/exact-commercial'
+
 import SaleNotesFormItem from "./partials/item.vue";
 import PersonForm from "../persons/form.vue";
 import SaleNotesOptions from "./partials/options.vue";
@@ -2740,8 +2744,7 @@ export default {
 
         // },
         getFormatUnitPriceRow(unit_price) {
-            return _.round(unit_price, 6);
-            // return unit_price.toFixed(6)
+            return exactAmount(unit_price).decimal();
         },
         async isUpdate() {
             if (this.id) {
@@ -2841,34 +2844,10 @@ export default {
             this.calculateFee();
         },
         calculateFee() {
-            let fee_count = this.form.fee.length;
-            let total = this.form.total;
-
-            let accumulated = 0;
-            let amount = _.round(total / fee_count, 2);
-            _.forEach(this.form.fee, row => {
-                accumulated += amount;
-                if (total - accumulated < 0) {
-                    amount = _.round(total - accumulated + amount, 2);
-                }
-                row.amount = amount;
-            });
+            allocateCommercialRows(this.form.fee, 'amount', this.form.total_payable || this.form.total);
         },
         calculatePayments() {
-            let payment_count = this.form.payments.length;
-            let total = this.form.total;
-
-            let payment = 0;
-            let amount = _.round(total / payment_count, 2);
-            // console.log(amount);
-            _.forEach(this.form.payments, row => {
-                payment += amount;
-                if (total - payment < 0) {
-                    amount = _.round(total - payment + amount, 2);
-                }
-                row.payment = amount;
-                // console.error(row.payment)
-            });
+            allocateCommercialRows(this.form.payments, 'payment', this.form.total_payable || this.form.total);
         },
         clickCancel(index) {
             this.form.payments.splice(index, 1);
@@ -3127,132 +3106,7 @@ export default {
             this.calculateTotal();
         },
         calculateTotal() {
-            let total_discount = 0;
-            let total_charge = 0;
-            let total_exportation = 0;
-            let total_taxed = 0;
-            let total_exonerated = 0;
-            let total_unaffected = 0;
-            let total_free = 0;
-            let total_igv = 0;
-            let total_value = 0;
-            let total = 0;
-            this.total_discount_no_base = 0;
-
-            let total_igv_free = 0;
-
-            this.form.items.forEach(row => {
-                total_discount += parseFloat(row.total_discount);
-                total_charge += parseFloat(row.total_charge);
-
-                if (row.affectation_igv_type_id === "10") {
-                    total_taxed += parseFloat(row.total_value);
-                }
-                if (
-                    row.affectation_igv_type_id === "20" || // 20,Exonerado - Operación Onerosa
-                    row.affectation_igv_type_id === "21" // 21,Exonerado – Transferencia Gratuita
-                ) {
-                    total_exonerated += parseFloat(row.total_value);
-                }
-                if (
-                    row.affectation_igv_type_id === "30" || // 30,Inafecto - Operación Onerosa
-                    row.affectation_igv_type_id === "31" || // 31,Inafecto – Retiro por Bonificación
-                    row.affectation_igv_type_id === "32" || // 32,Inafecto – Retiro
-                    row.affectation_igv_type_id === "33" || // 33,Inafecto – Retiro por Muestras Médicas
-                    row.affectation_igv_type_id === "34" || // 34,Inafecto - Retiro por Convenio Colectivo
-                    row.affectation_igv_type_id === "35" || // 35,Inafecto – Retiro por premio
-                    row.affectation_igv_type_id === "36" || // 36,Inafecto - Retiro por publicidad
-                    row.affectation_igv_type_id === "37" // 37,Inafecto - Transferencia gratuita
-                ) {
-                    total_unaffected += parseFloat(row.total_value);
-                }
-                if (row.affectation_igv_type_id === "40") {
-                    total_exportation += parseFloat(row.total_value);
-                }
-                if (
-                    [
-                        "10",
-                        "20",
-                        "21",
-                        "30",
-                        "31",
-                        "32",
-                        "33",
-                        "34",
-                        "35",
-                        "36",
-                        "40"
-                    ].indexOf(row.affectation_igv_type_id) < 0
-                ) {
-                    total_free += parseFloat(row.total_value);
-                }
-                if (
-                    [
-                        "10",
-                        "20",
-                        "21",
-                        "30",
-                        "31",
-                        "32",
-                        "33",
-                        "34",
-                        "35",
-                        "36",
-                        "40"
-                    ].indexOf(row.affectation_igv_type_id) > -1
-                ) {
-                    total_igv += parseFloat(row.total_igv);
-                    total += parseFloat(row.total);
-                }
-
-                if (
-                    ["11", "12", "13", "14", "15", "16"].includes(
-                        row.affectation_igv_type_id
-                    )
-                ) {
-                    let unit_value = row.total_value / row.quantity;
-                    let total_value_partial = unit_value * row.quantity;
-                    row.total_taxes = row.total_value - total_value_partial;
-
-                    row.total_igv =
-                        total_value_partial * (row.percentage_igv / 100);
-                    row.total_base_igv = total_value_partial;
-                    total_value -= row.total_value;
-
-                    total_igv_free += row.total_igv;
-                }
-
-                total_value += parseFloat(row.total_value);
-
-                this.total_discount_no_base += sumAmountDiscountsNoBaseByItem(
-                    row
-                );
-            });
-
-            this.form.total_igv_free = _.round(total_igv_free, 2);
-
-            this.form.total_discount = _.round(total_discount, 2);
-            this.form.total_exportation = _.round(total_exportation, 2);
-            this.form.total_taxed = _.round(total_taxed, 2);
-            this.form.total_exonerated = _.round(total_exonerated, 2);
-            this.form.total_unaffected = _.round(total_unaffected, 2);
-            this.form.total_free = _.round(total_free, 2);
-            this.form.total_igv = _.round(total_igv, 2);
-            this.form.total_value = _.round(total_value, 2);
-            this.form.total_taxes = _.round(total_igv, 2);
-            // this.form.total = _.round(total, 2)
-            this.form_payment.payment = this.form.total;
-
-            this.form.subtotal = _.round(total, 2);
-            this.form.total = _.round(total - this.total_discount_no_base, 2);
-
-            // Activar tabla de pagos si hay productos
-            this.showPayments = this.form.items.length > 0;
-
-            this.chargeGlobal();
-
-            this.discountGlobal();
-
+            applyCommercialTotals(this);
             this.setTotalDefaultPayment();
         },
         deleteDiscountGlobal() {
@@ -3267,66 +3121,7 @@ export default {
             }
         },
         discountGlobal() {
-            this.deleteDiscountGlobal();
-
-            //input donde se ingresa monto o porcentaje
-            let input_global_discount = parseFloat(this.total_global_discount);
-
-            if (input_global_discount > 0) {
-                const percentage_igv = this.percentage_igv * 100;
-                let base = this.isGlobalDiscountBase
-                    ? parseFloat(this.form.total_taxed)
-                    : parseFloat(this.form.total);
-                let amount = 0;
-                let factor = 0;
-
-                if (this.is_amount) {
-                    amount = input_global_discount;
-                    factor = _.round(amount / base, 5);
-                } else {
-                    factor = _.round(input_global_discount / 100, 5);
-                    amount = factor * base;
-                }
-
-                this.form.total_discount = _.round(amount, 2);
-
-                // descuentos que afectan la bi
-                if (this.isGlobalDiscountBase) {
-                    this.form.total_taxed = _.round(
-                        base - this.form.total_discount,
-                        2
-                    );
-                    this.form.total_value = this.form.total_taxed;
-                    this.form.total_igv = _.round(
-                        this.form.total_taxed * (percentage_igv / 100),
-                        2
-                    );
-
-                    //impuestos (isc + igv + icbper)
-
-
-                    this.form.total_taxes = _.round(
-                        this.form.total_igv,
-                        2
-                    );
-                    this.form.total = _.round(
-                        this.form.total_taxed + this.form.total_taxes,
-                        2
-                    );
-                    this.form.subtotal = this.form.total;
-
-                    if (this.form.total <= 0 && this.total_global_discount > 0)
-                        this.$message.error(
-                            "El total debe ser mayor a 0, verifique el tipo de descuento asignado (Configuración/Avanzado/Contable)"
-                        );
-                }
-                // descuentos que no afectan la bi
-                else {
-                    this.form.total = _.round(this.form.total - amount, 2);
-                }
-
-                this.setGlobalDiscount(factor, _.round(amount, 2), base);
-            }
+            applyCommercialTotals(this);
         },
         changeTypeDiscount() {
             this.calculateTotal();
@@ -3353,57 +3148,7 @@ export default {
             return _.find(this.global_charge_types, { id: id });
         },
         chargeGlobal() {
-            let base = parseFloat(this.form.total);
-
-            if (this.config.active_allowance_charge) {
-                let percentage_allowance_charge = parseFloat(
-                    this.config.percentage_allowance_charge
-                );
-                this.total_global_charge = _.round(
-                    base * (percentage_allowance_charge / 100),
-                    2
-                );
-            }
-
-            if (this.total_global_charge == 0) {
-                this.deleteChargeGlobal();
-                return;
-            }
-
-            let amount = parseFloat(this.total_global_charge);
-            let factor = _.round(amount / base, 5);
-            let charge = _.find(this.form.charges, { charge_type_id: "50" });
-
-            if (amount > 0 && !charge) {
-                this.form.total_charge = _.round(amount, 2);
-                this.form.total = _.round(
-                    this.form.total + this.form.total_charge,
-                    2
-                );
-                const global_charge = this.getGlobalCharge("50");
-
-                this.form.charges.push({
-                    charge_type_id: global_charge.id,
-                    description: global_charge.description,
-                    factor: factor,
-                    amount: amount,
-                    base: base
-                });
-            } else {
-                let pos = this.form.charges.indexOf(charge);
-
-                if (pos > -1) {
-                    this.form.total_charge = _.round(amount, 2);
-                    this.form.total = _.round(
-                        this.form.total + this.form.total_charge,
-                        2
-                    );
-
-                    this.form.charges[pos].base = base;
-                    this.form.charges[pos].amount = amount;
-                    this.form.charges[pos].factor = factor;
-                }
-            }
+            applyCommercialTotals(this);
         },
         deleteChargeGlobal() {
             let charge = _.find(this.form.charges, { charge_type_id: "50" });

@@ -43,8 +43,8 @@ use Illuminate\Support\Facades\DB;
  * - `global_discount_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '02'
  * - `include_igv` tinyint(1) DEFAULT NULL
  * - `global_igv_handling` tinyint(1) NOT NULL DEFAULT '1'
- * - `percentage_allowance_charge` decimal(12,2) DEFAULT '0.00'
- * - `igv_retention_percentage` decimal(8,5) NOT NULL DEFAULT '3.00000'
+ * - `percentage_allowance_charge` decimal(30,12) DEFAULT '0.00'
+ * - `igv_retention_percentage` decimal(30,12) NOT NULL DEFAULT '3.00000'
  * - `active_allowance_charge` tinyint(1) DEFAULT '0'
  * - `active_warehouse_prices` tinyint(1) DEFAULT '0'
  * - `product_only_location` tinyint(1) DEFAULT NULL
@@ -133,18 +133,18 @@ use Illuminate\Support\Facades\DB;
  * - `dashboard_clients` tinyint(1) NOT NULL DEFAULT '1'
  * - `dashboard_products` tinyint(1) NOT NULL DEFAULT '0'
  * - `dashboard_goal_enabled` tinyint(1) NOT NULL DEFAULT '0'
- * - `dashboard_goal_amount` decimal(15,2) NOT NULL DEFAULT '0.00'
+ * - `dashboard_goal_amount` decimal(30,12) NOT NULL DEFAULT '0.00'
  * - `restrict_series_selection_seller` tinyint(1) NOT NULL DEFAULT '0'
  * - `regex_password_user` tinyint(1) NOT NULL DEFAULT '0'
  * - `enabled_remember_change_password` tinyint(1) NOT NULL DEFAULT '0'
  * - `quantity_month_remember_change_password` int(11) NOT NULL DEFAULT '1'
  * - `enabled_point_system` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'sistema por puntos'
- * - `point_system_sale_amount` decimal(12,2) NOT NULL DEFAULT '1.00' COMMENT 'sistema por puntos'
- * - `quantity_of_points` decimal(12,2) NOT NULL DEFAULT '1.00' COMMENT 'sistema por puntos'
+ * - `point_system_sale_amount` decimal(30,12) NOT NULL DEFAULT '1.00' COMMENT 'sistema por puntos'
+ * - `quantity_of_points` decimal(30,12) NOT NULL DEFAULT '1.00' COMMENT 'sistema por puntos'
  * - `round_points_of_sale` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'sistema por puntos'
  * - `enable_categories_products_view` tinyint(1) NOT NULL DEFAULT '0'
  * - `restrict_seller_discount` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'limitar descuento a los vendedores'
- * - `sellers_discount_limit` decimal(12,2) NOT NULL DEFAULT '0.00' COMMENT 'limitar descuento a los vendedores'
+ * - `sellers_discount_limit` decimal(30,12) NOT NULL DEFAULT '0.00' COMMENT 'limitar descuento a los vendedores'
  * - `enabled_sales_agents` tinyint(1) NOT NULL DEFAULT '0'
  * - `change_affectation_exonerated_igv` tinyint(1) NOT NULL DEFAULT '0'
  * - `search_factory_code_items` tinyint(1) NOT NULL DEFAULT '0'
@@ -162,7 +162,7 @@ use Illuminate\Support\Facades\DB;
  * - `remove_validation_email_establishments` tinyint(1) NOT NULL DEFAULT '0'
  * - `select_establishment_bank_account` tinyint(1) NOT NULL DEFAULT '0'
  * - `change_values_preview_document` tinyint(1) NOT NULL DEFAULT '0'
- * - `session_lifetime` decimal(4,2) NOT NULL DEFAULT '2.00'
+ * - `session_lifetime` decimal(30,12) NOT NULL DEFAULT '2.00'
  * - `search_items_main_form` tinyint(1) NOT NULL DEFAULT '0'
  * - `show_all_item_details` tinyint(1) NOT NULL DEFAULT '0'
  * - `add_description_to_document_item` tinyint(1) NOT NULL DEFAULT '0'
@@ -240,6 +240,7 @@ use Illuminate\Support\Facades\DB;
  * - `enable_dedicated_series` tinyint(1) NOT NULL DEFAULT '0'
  * - `qr_api_pdf_format` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'ticket'
  * - `enable_global_discount` tinyint(1) NOT NULL DEFAULT '0'
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
 {
@@ -283,8 +284,8 @@ CREATE TABLE `configurations` (
   `global_discount_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '02',
   `include_igv` tinyint(1) DEFAULT NULL,
   `global_igv_handling` tinyint(1) NOT NULL DEFAULT '1',
-  `percentage_allowance_charge` decimal(12,2) DEFAULT '0.00',
-  `igv_retention_percentage` decimal(8,5) NOT NULL DEFAULT '3.00000',
+  `percentage_allowance_charge` decimal(30,12) DEFAULT '0.00',
+  `igv_retention_percentage` decimal(30,12) NOT NULL DEFAULT '3.00000',
   `active_allowance_charge` tinyint(1) DEFAULT '0',
   `active_warehouse_prices` tinyint(1) DEFAULT '0',
   `product_only_location` tinyint(1) DEFAULT NULL,
@@ -373,18 +374,18 @@ CREATE TABLE `configurations` (
   `dashboard_clients` tinyint(1) NOT NULL DEFAULT '1',
   `dashboard_products` tinyint(1) NOT NULL DEFAULT '0',
   `dashboard_goal_enabled` tinyint(1) NOT NULL DEFAULT '0',
-  `dashboard_goal_amount` decimal(15,2) NOT NULL DEFAULT '0.00',
+  `dashboard_goal_amount` decimal(30,12) NOT NULL DEFAULT '0.00',
   `restrict_series_selection_seller` tinyint(1) NOT NULL DEFAULT '0',
   `regex_password_user` tinyint(1) NOT NULL DEFAULT '0',
   `enabled_remember_change_password` tinyint(1) NOT NULL DEFAULT '0',
   `quantity_month_remember_change_password` int(11) NOT NULL DEFAULT '1',
   `enabled_point_system` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'sistema por puntos',
-  `point_system_sale_amount` decimal(12,2) NOT NULL DEFAULT '1.00' COMMENT 'sistema por puntos',
-  `quantity_of_points` decimal(12,2) NOT NULL DEFAULT '1.00' COMMENT 'sistema por puntos',
+  `point_system_sale_amount` decimal(30,12) NOT NULL DEFAULT '1.00' COMMENT 'sistema por puntos',
+  `quantity_of_points` decimal(30,12) NOT NULL DEFAULT '1.00' COMMENT 'sistema por puntos',
   `round_points_of_sale` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'sistema por puntos',
   `enable_categories_products_view` tinyint(1) NOT NULL DEFAULT '0',
   `restrict_seller_discount` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'limitar descuento a los vendedores',
-  `sellers_discount_limit` decimal(12,2) NOT NULL DEFAULT '0.00' COMMENT 'limitar descuento a los vendedores',
+  `sellers_discount_limit` decimal(30,12) NOT NULL DEFAULT '0.00' COMMENT 'limitar descuento a los vendedores',
   `enabled_sales_agents` tinyint(1) NOT NULL DEFAULT '0',
   `change_affectation_exonerated_igv` tinyint(1) NOT NULL DEFAULT '0',
   `search_factory_code_items` tinyint(1) NOT NULL DEFAULT '0',
@@ -402,7 +403,7 @@ CREATE TABLE `configurations` (
   `remove_validation_email_establishments` tinyint(1) NOT NULL DEFAULT '0',
   `select_establishment_bank_account` tinyint(1) NOT NULL DEFAULT '0',
   `change_values_preview_document` tinyint(1) NOT NULL DEFAULT '0',
-  `session_lifetime` decimal(4,2) NOT NULL DEFAULT '2.00',
+  `session_lifetime` decimal(30,12) NOT NULL DEFAULT '2.00',
   `search_items_main_form` tinyint(1) NOT NULL DEFAULT '0',
   `show_all_item_details` tinyint(1) NOT NULL DEFAULT '0',
   `add_description_to_document_item` tinyint(1) NOT NULL DEFAULT '0',
@@ -480,6 +481,7 @@ CREATE TABLE `configurations` (
   `enable_dedicated_series` tinyint(1) NOT NULL DEFAULT '0',
   `qr_api_pdf_format` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'ticket',
   `enable_global_discount` tinyint(1) NOT NULL DEFAULT '0',
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL);

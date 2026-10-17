@@ -13,9 +13,10 @@ use Illuminate\Support\Facades\DB;
  * - `inventory_kardexable_id` int(10) unsigned NOT NULL
  * - `inventory_kardexable_type` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `warehouse_id` int(10) unsigned NOT NULL
- * - `quantity` decimal(12,4) NOT NULL
+ * - `quantity` decimal(30,12) NOT NULL
  * - `created_at` timestamp NULL DEFAULT NULL
  * - `updated_at` timestamp NULL DEFAULT NULL
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
 {
@@ -29,9 +30,10 @@ CREATE TABLE `inventory_kardex` (
   `inventory_kardexable_id` int(10) unsigned NOT NULL,
   `inventory_kardexable_type` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `warehouse_id` int(10) unsigned NOT NULL,
-  `quantity` decimal(12,4) NOT NULL,
+  `quantity` decimal(30,12) NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`),
   KEY `inventory_kardex_warehouse_id_foreign` (`warehouse_id`),
   KEY `inventory_kardex_item_wh_date_index` (`item_id`,`warehouse_id`,`date_of_issue`),

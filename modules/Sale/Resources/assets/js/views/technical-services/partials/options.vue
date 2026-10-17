@@ -8,7 +8,6 @@
                    :visible="showDialog"
                    width="30%"
                    @open="create">
-<iva-retention-fields :form="form" />
             <div v-show="!showGenerate"
                  class="row">
                 <div class="col-lg-4 col-md-4 col-sm-4 text-center font-weight-bold">
@@ -250,7 +249,7 @@
 </template>
 
 <script>
-import IvaRetentionFields from "@views/documents/partials/iva_retention_fields.vue"
+import {withoutDraftRetentions, suggestRemainingPayment} from "@helpers/document-creation"
 
 import DocumentOptions from "@views/documents/partials/options.vue";
 import SaleNoteOptions from "@views/sale_notes/partials/options.vue";
@@ -263,7 +262,7 @@ import {mapActions, mapState} from "vuex/dist/vuex.mjs";
 import {functions} from '@mixins/functions'
 
 export default {
-    components: {IvaRetentionFields,DocumentOptions, SaleNoteOptions, SeriesForm},
+    components: {DocumentOptions, SaleNoteOptions, SeriesForm},
     mixins: [functions],
     computed: {
         ...mapState([
@@ -538,6 +537,7 @@ export default {
                 reference: null,
                 payment: 0,
             });
+            suggestRemainingPayment(this.form);
         },
         initDocument() {
             this.document = {
@@ -644,13 +644,13 @@ export default {
             // console.log(item_id);
             // this.form.items[0].item_id = item_id;
 
-            // await this.$http.post(`/${this.resource_documents}`, this.form)
+            // await this.$http.post(`/${this.resource_documents}`, withoutDraftRetentions(this.form))
             if(
                 this.form.exchange_rate_sale === undefined
             ){
                 this.form.exchange_rate_sale =  this.exchange_rate;
             }
-                await this.$http.post(`/generate-document`, this.form)
+                await this.$http.post(`/generate-document`, withoutDraftRetentions(this.form))
                 .then((response) => {
                     if (response.data.success) {
                         // console.log(response.data.data);

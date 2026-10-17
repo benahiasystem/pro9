@@ -79,6 +79,8 @@
 </style>
 
 <script>
+import {suggestRemainingPayment} from "@helpers/document-creation"
+
 import IgtfPaymentFields from "../../documents/partials/igtf_fields.vue"
     export default {
         components: {IgtfPaymentFields},
@@ -126,7 +128,6 @@ import IgtfPaymentFields from "../../documents/partials/igtf_fields.vue"
                         this.clickAddPayment(this.total)
 
                     }else{
-                        form_pos.payments[0].payment = this.total
                         this.$eventHub.$emit('localSPaymentsGarage', (form_pos.payments))
                         this.$emit('add', form_pos.payments);
                     }
@@ -176,23 +177,11 @@ import IgtfPaymentFields from "../../documents/partials/igtf_fields.vue"
                 this.calculatePayments(this.payments)
                 this.$emit('add', this.payments)
             },
+            // ######## INICIO CALCULOS EXACTOS PRO9 ########
             calculatePayments(list = null) {
-                if (this.paymentConditionId === '02') return
-                const payments = list || (this.showDialog ? this.draftPayments : this.payments)
-                let payment_count = payments.length;
-                if (payment_count === 0) return;
-
-                let total = parseFloat(this.total) || 0;
-                let payment = 0;
-                let amount = _.round(total / payment_count, 2);
-
-                _.forEach(payments, row => {
-                    payment += amount;
-                    if (total - payment < 0) {
-                        amount = _.round(total - payment + amount, 2);
-                    }
-                    this.$set(row, 'payment', amount);
-                });
+                if (this.paymentConditionId === '02') return;
+                const payments = list || (this.showDialog ? this.draftPayments : this.payments);
+                suggestRemainingPayment({total: this.total || '0', currency_type_id: this.currencyTypeId}, payments);
             },
             accept() {
                 const payments = this.clonePayments(this.draftPayments)

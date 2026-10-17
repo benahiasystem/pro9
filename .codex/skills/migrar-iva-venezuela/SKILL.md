@@ -5,6 +5,11 @@ description: Mantener y verificar el IVA venezolano para instalaciones nuevas de
 
 # Mantener el IVA venezolano en Pro9
 
+## Precisión exacta — contrato del 16/10/2026
+
+Aplicar [cálculos exactos](../mantener-calculos-exactos-pro9/SKILL.md). Para instalaciones nuevas esta instrucción sustituye las precisiones de dos/cuatro/seis decimales y redondeos intermedios descritos anteriormente: operar con fracciones exactas, conservar snapshots y representar hasta 12 posiciones; tasas con ocho exactas. Dos decimales sólo en liquidación/presentación que lo requiera. Precio unitario PDF configurable de 2 a 12, con dos por defecto. No convertir tenants ni recalcular históricos. Consultar el informe de cálculos para el estado real de adopción por consumidor.
+
+
 ## Contrato
 
 - Mostrar `IVA`, `%IVA`, `Tipo %IVA`, `Incluye IVA`, `Total IVA` o `T.IVA` según el espacio disponible.

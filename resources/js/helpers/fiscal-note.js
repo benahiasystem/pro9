@@ -1,4 +1,4 @@
-import { exactAmount } from './exchange-rate-math';
+import { exactAmount, exactValue } from './exchange-rate-math';
 
 export function noteSeries(series, type, establishment) {
     return series.filter(row => row.document_type_id === type && Number(row.establishment_id) === Number(establishment) && !row.contingency);
@@ -9,10 +9,10 @@ export function noteTotal(form, context) {
         const source = context.items.find(item => item.id === row.affected_document_item_id);
         const returning = form.document_type_id === '07' && form.note_credit_or_debit_type_id === '07';
         const amount = returning && source && Number(source.remaining_quantity) > 0
-            ? exactAmount(source.remaining_total).times(row.quantity || 0).dividedBy(source.remaining_quantity).final(2)
+            ? exactValue(source, 'remaining_total').times(row.quantity || 0).dividedBy(exactValue(source, 'remaining_quantity'))
             : row.adjustment_amount || 0;
         return sum.plus(amount);
-    }, exactAmount(0)).final(2);
+    }, exactAmount(0)).decimal();
 }
 export function noteRequestId() {
     const bytes = new Uint8Array(16);

@@ -47,25 +47,25 @@ use Illuminate\Support\Facades\DB;
  * - `quantity_period` int(11) DEFAULT NULL
  * - `enabled_concurrency` tinyint(3) unsigned DEFAULT '0'
  * - `apply_concurrency` tinyint(3) unsigned DEFAULT '0'
- * - `total_prepayment` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `total_charge` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `total_discount` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `total_exportation` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `total_taxed` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `total_exonerated` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `total_igv` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `total_base_other_taxes` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `total_other_taxes` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `total_taxes` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `total_value` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `subtotal` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `total` decimal(12,2) NOT NULL
+ * - `total_prepayment` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `total_charge` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `total_discount` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `total_exportation` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `total_taxed` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `total_exonerated` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `total_igv` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `total_base_other_taxes` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `total_other_taxes` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `total_taxes` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `total_value` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `subtotal` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `total` decimal(30,12) NOT NULL
  * - `dispatch_ticket_pdf` tinyint(1) NOT NULL DEFAULT '0'
  * - `has_prepayment` tinyint(1) NOT NULL DEFAULT '0'
  * - `affectation_type_prepayment` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `was_deducted_prepayment` tinyint(1) NOT NULL DEFAULT '0'
- * - `pending_amount_prepayment` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `total_pending_payment` decimal(12,2) NOT NULL DEFAULT '0.00'
+ * - `pending_amount_prepayment` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `total_pending_payment` decimal(30,12) NOT NULL DEFAULT '0.00'
  * - `charges` json DEFAULT NULL
  * - `discounts` json DEFAULT NULL
  * - `prepayments` json DEFAULT NULL
@@ -98,6 +98,7 @@ use Illuminate\Support\Facades\DB;
  * - `consigned_ubigeo` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `custom_fields_data` json DEFAULT NULL
  * - `collect_api_state_id` int(10) unsigned NOT NULL DEFAULT '99' COMMENT 'estado de api en global factoring'
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
 {
@@ -149,25 +150,25 @@ CREATE TABLE `documents` (
   `quantity_period` int(11) DEFAULT NULL,
   `enabled_concurrency` tinyint(3) unsigned DEFAULT '0',
   `apply_concurrency` tinyint(3) unsigned DEFAULT '0',
-  `total_prepayment` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `total_charge` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `total_discount` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `total_exportation` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `total_taxed` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `total_exonerated` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `total_igv` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `total_base_other_taxes` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `total_other_taxes` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `total_taxes` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `total_value` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `subtotal` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `total` decimal(12,2) NOT NULL,
+  `total_prepayment` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `total_charge` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `total_discount` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `total_exportation` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `total_taxed` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `total_exonerated` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `total_igv` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `total_base_other_taxes` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `total_other_taxes` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `total_taxes` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `total_value` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `subtotal` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `total` decimal(30,12) NOT NULL,
   `dispatch_ticket_pdf` tinyint(1) NOT NULL DEFAULT '0',
   `has_prepayment` tinyint(1) NOT NULL DEFAULT '0',
   `affectation_type_prepayment` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `was_deducted_prepayment` tinyint(1) NOT NULL DEFAULT '0',
-  `pending_amount_prepayment` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `total_pending_payment` decimal(12,2) NOT NULL DEFAULT '0.00',
+  `pending_amount_prepayment` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `total_pending_payment` decimal(30,12) NOT NULL DEFAULT '0.00',
   `charges` json DEFAULT NULL,
   `discounts` json DEFAULT NULL,
   `prepayments` json DEFAULT NULL,
@@ -200,6 +201,9 @@ CREATE TABLE `documents` (
   `consigned_ubigeo` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `custom_fields_data` json DEFAULT NULL,
   `collect_api_state_id` int(10) unsigned NOT NULL DEFAULT '99' COMMENT 'estado de api en global factoring',
+  `total_payable` decimal(30,12) DEFAULT NULL,
+  `settlement_adjustment` decimal(30,12) NOT NULL DEFAULT 0,
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`),
   UNIQUE KEY `documents_environment_type_series_number_unique` (`establishment_id`,`fiscal_environment`,`document_type_id`,`series`,`number`),
   UNIQUE KEY `documents_unique_filename_unique` (`unique_filename`),

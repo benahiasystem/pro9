@@ -51,8 +51,8 @@ class ItemWarehouse extends ModelTenant
      * @param float|int $qty
      * @return $this
      */
-    public function addStock (float $qty =0 ){
-        $this->stock += $qty;
+    public function addStock ($qty = 0){
+        $this->stock = $this->exactValue('stock')->plus(\App\Support\Exact\Decimal::of($qty));
         return $this;
     }
 }

@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Services\Fiscal;
+use App\Support\Exact\Decimal as D;
 
 use App\Models\Tenant\{Company, Document, DocumentReceivedRetention, Person};
 use App\Services\ExchangeRates\ExchangeRateMath;
@@ -57,22 +58,23 @@ final class IslrRetentionService extends ReceivedRetentionService
         $rate = ExchangeRateMath::rate($data['exchange_rate']);
         $mode = $data['base_mode'] ?? (isset($data['base']) ? 'declared' : 'full_net');
         if ($mode === 'declared' && !isset($data['base'])) FiscalAmounts::error('base','Indique la base declarada del comprobante.');
-        $base = $mode === 'full_net' ? FiscalAmounts::convert(FiscalAmounts::convert($net,$documentCurrency,'VES',$invoiceRate),'VES',$data['currency_type_id'],$rate) : $data['base'];
-        $base = ExchangeRateMath::finalAmount($base);
-        $percentage = ExchangeRateMath::finalAmount($data['percentage']);
-        $subtrahend = ExchangeRateMath::finalAmount($data['subtrahend'] ?? 0);
-        $fiscalNet = FiscalAmounts::convert($net,$documentCurrency,'VES',$invoiceRate);
-        if (FiscalAmounts::convert($base,$data['currency_type_id'],'VES',$rate) > $fiscalNet + 0.01) FiscalAmounts::error('base','La base ISLR supera el valor neto fiscal conservado.');
-        $retained = ExchangeRateMath::rational($base)->multipliedBy($percentage)->dividedBy(100)->minus($subtrahend);
+        $baseExact = $mode === 'full_net' ? \App\Support\Exact\Decimal::convert(\App\Support\Exact\Decimal::convert($net,$documentCurrency,'VES',$invoiceRate),'VES',$data['currency_type_id'],$rate) : \App\Support\Exact\Decimal::of(\App\Support\Exact\Decimal::input($data['base'],'base'));
+        $base = \App\Support\Exact\Decimal::represent($baseExact);
+        $percentage = \App\Support\Exact\Decimal::input($data['percentage'], 'percentage');
+        $subtrahend = \App\Support\Exact\Decimal::input($data['subtrahend'] ?? 0, 'subtrahend');
+        $fiscalNet = D::convert($net,$documentCurrency,'VES',$invoiceRate);
+        if (D::convert($baseExact,$data['currency_type_id'],'VES',$rate)->isGreaterThan($fiscalNet->plus('0.01'))) FiscalAmounts::error('base','La base ISLR supera el valor neto fiscal conservado.');
+        $retained = $baseExact->multipliedBy(ExchangeRateMath::rational($percentage))->dividedBy(100)->minus($subtrahend);
         if ($retained->isLessThan(0)) $retained = ExchangeRateMath::rational(0);
-        $amount = ExchangeRateMath::finalAmount($retained);
+        $amount = \App\Support\Exact\Decimal::represent($retained);
         $issuer = FiscalProfileService::at(Company::firstOrFail(),$date);
         $buyer = FiscalProfileService::at(Person::whereType('customers')->findOrFail($customerId),$date);
         $decision = SpecialTaxpayerPolicy::retention($issuer,$buyer,$date,[]);
-        $eligible = $decision['islr_eligible'] && (float)$amount > 0 && (float)$base > 0;
+        $eligible = $decision['islr_eligible'] && D::of($amount)->isGreaterThan(0) && D::of($base)->isGreaterThan(0);
         return ['eligible'=>$eligible,'concept_id'=>$concept['id'],'concept'=>$concept,'base'=>$base,'base_mode'=>$mode,
             'percentage'=>$percentage,'subtrahend'=>$subtrahend,'voucher_amount'=>$amount,
-            'amount'=>ExchangeRateMath::finalAmount(FiscalAmounts::convert($amount,$data['currency_type_id'],$documentCurrency,$rate)),
+            'calculation_snapshot'=>\App\Support\Exact\Decimal::snapshot(['base'=>$baseExact,'voucher_amount'=>$retained,'amount'=>\App\Support\Exact\Decimal::convert($retained,$data['currency_type_id'],$documentCurrency,$rate)]),
+            'amount'=>\App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::convert($retained,$data['currency_type_id'],$documentCurrency,$rate)),
             'currency_type_id'=>$documentCurrency,'voucher_currency_type_id'=>$data['currency_type_id'],'exchange_rate'=>$rate,
             'agent_rif'=>$buyer['rif'] ?? '', 'date'=>$date,'fiscal_context'=>$context,
             'issuer_version_id'=>$issuer['version_id'] ?? null,'buyer_version_id'=>$buyer['version_id'] ?? null,
@@ -89,7 +91,7 @@ final class IslrRetentionService extends ReceivedRetentionService
         if ($enabled) {
             if ($document->document_type_id !== '01' || $document->isVoidedOrRejected()) FiscalAmounts::error('document','La previsión ISLR requiere una factura vigente.');
             if ($document->received_retentions()->where('tax_kind','ISLR')->where('application_status','applied')->exists()) FiscalAmounts::error('islr_retention_prevision','La factura ya tiene ISLR aplicado; no duplique la previsión.');
-            $value = static::proposal($document->customer_id,$document->date_of_issue->format('Y-m-d'),$document->total_value,
+            $value = static::proposal($document->customer_id,$document->date_of_issue->format('Y-m-d'),$document->exactValue('total_value'),
                 $document->currency_type_id,$input,$document->exchange_rate_sale);
             if (!$value['eligible']) FiscalAmounts::error('customer_id',$value['diagnostic']);
             $value += ['actor_id'=>auth()->id(),'saved_at'=>now()->toIso8601String()];
@@ -106,7 +108,7 @@ final class IslrRetentionService extends ReceivedRetentionService
         $input = $saved;
         $input['currency_type_id'] = $saved['voucher_currency_type_id'];
         try {
-            $proposal = static::proposal($document->customer_id,$document->date_of_issue->format('Y-m-d'),$document->total_value,
+            $proposal = static::proposal($document->customer_id,$document->date_of_issue->format('Y-m-d'),$document->exactValue('total_value'),
                 $document->currency_type_id,$input,$document->exchange_rate_sale);
             $value = $proposal['eligible'] ? array_replace($saved,$proposal) : null;
         } catch (\Illuminate\Validation\ValidationException $exception) { $value = null; }
@@ -118,16 +120,16 @@ final class IslrRetentionService extends ReceivedRetentionService
     {
         $date = $input['voucher_date'];
         if ($date < $document->date_of_issue->format('Y-m-d') || $date > now()->format('Y-m-d')) FiscalAmounts::error('voucher_date','El comprobante debe corresponder a la factura y no ser futuro.');
-        $proposal = static::proposal($document->customer_id,$date,FiscalNote::remaining($document,'total_value'),$document->currency_type_id,
+        $proposal = static::proposal($document->customer_id,$date,FiscalNote::remainingExact($document,'total_value'),$document->currency_type_id,
             $input+['base_mode'=>'declared'],$document->exchange_rate_sale);
         if (!$proposal['eligible'] || $input['agent_rif'] !== $proposal['agent_rif']) FiscalAmounts::error('agent_rif','El agente o la operación no acreditan facultad ISLR vigente.');
-        if (!ExchangeRateMath::rational($input['amount'])->isEqualTo(ExchangeRateMath::rational($proposal['voucher_amount']))) FiscalAmounts::error('amount','El importe no coincide con base, porcentaje y sustraendo declarados.');
-        if ((float)$proposal['amount'] > static::settlementLimit($document) + 0.005) FiscalAmounts::error('amount','La retención supera el saldo disponible.');
+        if (!ExchangeRateMath::rational($input['amount'])->isEqualTo(D::of(D::represent(D::read($proposal,'voucher_amount'),2)))) FiscalAmounts::error('amount','El importe no coincide con base, porcentaje y sustraendo declarados.');
+        if (D::read($proposal,'amount')->isGreaterThan(D::of(static::settlementLimit($document))->plus('0.005'))) FiscalAmounts::error('amount','La retención supera el saldo disponible.');
         static::validateSupport($document,$input);
     }
 
-    protected static function appliedTaxableBase(Document $document, DocumentReceivedRetention $retention): float
+    protected static function appliedTaxableBase(Document $document, DocumentReceivedRetention $retention): \Brick\Math\BigRational
     {
-        return (float)$retention->base;
+        return $retention->exactValue('base');
     }
 }

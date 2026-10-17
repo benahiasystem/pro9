@@ -22,7 +22,7 @@ class ExchangeRateMathTest extends TestCase
         self::assertSame('0.57216937', Rate::divide('500', '873.86712345', 8));
         $roundTrip = Rate::rational('500')->dividedBy('873.86712345')->multipliedBy('873.86712345');
         self::assertSame('500.00', Rate::finalAmount($roundTrip));
-        self::assertSame(873867.12, FiscalAmounts::convert('1000', 'USD', 'VES', '873.86712345'));
+        self::assertSame('873867.12345', FiscalAmounts::convert('1000', 'USD', 'VES', '873.86712345'));
         self::assertSame('-1.01', Rate::finalAmount('-1.005'));
     }
 }

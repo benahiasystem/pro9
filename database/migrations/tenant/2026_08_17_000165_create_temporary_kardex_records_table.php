@@ -21,13 +21,14 @@ use Illuminate\Support\Facades\DB;
  * - `warehouse` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `input` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `output` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `balance` decimal(8,2) DEFAULT NULL
+ * - `balance` decimal(30,12) DEFAULT NULL
  * - `type_transaction` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `date_of_register` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `guide_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `transfer_id` int(10) unsigned DEFAULT NULL
  * - `created_at` timestamp NULL DEFAULT NULL
  * - `updated_at` timestamp NULL DEFAULT NULL
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
 {
@@ -49,13 +50,14 @@ CREATE TABLE `temporary_kardex_records` (
   `warehouse` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `input` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `output` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `balance` decimal(8,2) DEFAULT NULL,
+  `balance` decimal(30,12) DEFAULT NULL,
   `type_transaction` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `date_of_register` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `guide_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `transfer_id` int(10) unsigned DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL);

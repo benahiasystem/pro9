@@ -15,9 +15,10 @@ use Illuminate\Support\Facades\DB;
  * - `purchase_id` int(10) unsigned DEFAULT NULL
  * - `purchase_settlement_id` int(10) unsigned DEFAULT NULL
  * - `sale_note_id` int(10) unsigned DEFAULT NULL
- * - `quantity` decimal(12,4) NOT NULL
+ * - `quantity` decimal(30,12) NOT NULL
  * - `created_at` timestamp NULL DEFAULT NULL
  * - `updated_at` timestamp NULL DEFAULT NULL
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
 {
@@ -33,9 +34,10 @@ CREATE TABLE `kardex` (
   `purchase_id` int(10) unsigned DEFAULT NULL,
   `purchase_settlement_id` int(10) unsigned DEFAULT NULL,
   `sale_note_id` int(10) unsigned DEFAULT NULL,
-  `quantity` decimal(12,4) NOT NULL,
+  `quantity` decimal(30,12) NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`),
   KEY `kardex_purchase_id_foreign` (`purchase_id`),
   KEY `kardex_document_id_foreign` (`document_id`),

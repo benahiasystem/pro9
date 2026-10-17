@@ -15,7 +15,7 @@ test('series accept empty and arbitrary codes within the original branch',()=>{
 });
 test('partial return uses the remaining amount after prior price credit',()=>{
     assert.equal(helper.noteTotal({document_type_id:'07',note_credit_or_debit_type_id:'07',items:[{affected_document_item_id:1,quantity:1}]},
-        {items:[{id:1,remaining_quantity:2,remaining_total:'208.80'}]}),'104.40');
+        {items:[{id:1,remaining_quantity:2,remaining_total:'208.80'}]}),'104.4');
 });
 test('monetary adjustment sends the delta once and full credit uses the server limit',()=>{
     assert.equal(helper.noteTotal({document_type_id:'08',note_credit_or_debit_type_id:'02',items:[{adjustment_amount:'11.60'},{adjustment_amount:'0.03'}]}, {items:[]}),'11.63');

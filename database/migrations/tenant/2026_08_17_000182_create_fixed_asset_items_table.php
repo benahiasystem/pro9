@@ -14,10 +14,11 @@ use Illuminate\Support\Facades\DB;
  * - `internal_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `unit_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `purchase_unit_price` decimal(16,6) NOT NULL
+ * - `purchase_unit_price` decimal(30,12) NOT NULL
  * - `purchase_affectation_igv_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `created_at` timestamp NULL DEFAULT NULL
  * - `updated_at` timestamp NULL DEFAULT NULL
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
 {
@@ -32,10 +33,11 @@ CREATE TABLE `fixed_asset_items` (
   `internal_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `unit_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `purchase_unit_price` decimal(16,6) NOT NULL,
+  `purchase_unit_price` decimal(30,12) NOT NULL,
   `purchase_affectation_igv_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`),
   KEY `fixed_asset_items_item_type_id_foreign` (`item_type_id`),
   KEY `fixed_asset_items_unit_type_id_foreign` (`unit_type_id`),

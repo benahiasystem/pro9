@@ -10,9 +10,11 @@
                     <el-button v-if="row.can_retry" size="mini" :disabled="loading" @click="action(row, 'retry-hka')">Reintentar</el-button>
                     <el-button v-if="row.can_reverse" size="mini" :disabled="loading" @click="reverse(row)">Revertir</el-button></td></tr></tbody>
         </table>
-        <p v-if="draftForm">Los datos cargados quedan pendientes hasta cotejar el número y control reales de la factura.</p>
-        <form v-if="canCreate" @submit.prevent="submit">
-            <label>Tipo</label><el-select v-model="form.tax_kind" :disabled="Boolean(replacementKind)" @change="changeKind"><el-option label="IVA" value="IVA"/><el-option label="ISLR" value="ISLR"/></el-select>
+        <p v-if="initializing">Cargando formulario…</p>
+        <div v-if="!initializing && document.id && !replacementKind">
+            <label>Tipo</label><el-select v-model="form.tax_kind" @change="changeKind"><el-option label="IVA" value="IVA"/><el-option label="ISLR" value="ISLR"/></el-select>
+        </div>
+        <form v-if="canCreate && !initializing" @submit.prevent="submit">
             <label>Número de comprobante</label><el-input v-model="form.voucher_number"/>
             <label>RIF del agente según comprobante</label><el-input v-model="form.agent_rif"/>
             <label>Número de factura</label><el-input v-model="form.invoice_number"/>
@@ -33,81 +35,96 @@
                 <el-button @click="evaluate">Consultar propuesta de retención</el-button><p v-if="proposal">{{ proposal.eligible ? 'Porcentaje propuesto: ' + proposal.percentage + ' %' : 'Sin facultad u operación elegible para retención IVA' }}</p>
             </template>
             <el-button v-if="form.tax_kind === 'ISLR'" @click="evaluate">Calcular propuesta ISLR declarada</el-button><p v-if="form.tax_kind === 'ISLR' && proposal">{{ proposal.voucher_amount }} {{ form.currency_type_id }}</p>
-            <label>Adjunto privado PDF o imagen (obligatorio)</label><input type="file" accept="application/pdf,image/png,image/jpeg" @change="upload"/>
-            <p v-if="error" class="text-danger">{{ error }}</p>
-            <el-button native-type="submit" type="primary" :loading="loading">{{ draftForm ? 'Incorporar a la factura' : 'Registrar comprobante' }}</el-button>
-            <el-button @click="close">Cerrar</el-button>
+            <label>Adjunto privado PDF o imagen (obligatorio)</label><input type="file" accept="application/pdf,image/png,image/jpeg" :disabled="uploading" @change="upload"/>
+            <p v-if="uploading">Cargando soporte…</p>
+            <p v-else-if="form.upload_id || form.attachment">Soporte cargado.</p>
+            <el-button native-type="submit" type="primary" :loading="loading" :disabled="uploading || evaluating">Registrar comprobante</el-button>
         </form>
+        <el-button @click="close">Cerrar</el-button>
+        <p v-if="error" class="text-danger" role="alert">{{ error }}</p>
     </el-dialog>
     <!-- ######## FIN PERSISTENCIA FISCAL VENEZUELA ######## -->
 </template>
 <script>
+import {exactAmount} from "@helpers/exchange-rate-math"
 // ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
 export default {
-    props: ['showDialog', 'documentId', 'draftForm', 'replacementEndpoint', 'replacementKind'],
-    data: () => ({ records: [], form: {}, loading: false, error: '', proposal: null, prevision: null, concepts: [], document: {}, canCreate: true, sequence: 0 }),
+    props: {
+        showDialog: Boolean,
+        documentId: {default: null},
+        replacementEndpoint: {type: String, default: null},
+        replacementKind: {type: String, default: null},
+    },
+    data: () => ({ records: [], form: {}, loading: false, uploading: false, evaluating: false, initializing: false, error: '', proposal: null, prevision: null, concepts: [], document: {}, canCreate: false, sequence: 0, proposalSequence: 0 }),
     watch: { showDialog(value) { if (value) this.load(); else this.sequence++ }, documentId() { if (this.showDialog) this.load() } },
+    beforeDestroy() { this.sequence++ },
     methods: {
         async load() {
             const sequence = ++this.sequence;
+            this.initializing = true;
+            this.uploading = false;
+            this.evaluating = false;
             this.error = ''; this.records = []; this.proposal = null; this.prevision = null; this.canCreate=false; this.form={};
             try {
-                let data;
-                if (this.documentId) {
-                    const response = await this.$http.get(`/documents/retention/${this.documentId}`); data = response.data;
-                    if (sequence !== this.sequence) return;
-                    const iva = data.document.iva_retention || {};
-                    const islr=data.document.islr_retention || {};
-                    this.records = data.data.map(row => ({...row,...[...(iva.records || []),...(islr.records || [])].find(info => info.id === row.id)}));
-                    this.concepts=data.document.islr_concepts || [];
-                    this.prevision = iva.prevision;
-                    this.canCreate = iva.can_create !== false;
-                } else {
-                    const draft = this.draftForm;
-                    this.canCreate=true;
-                    this.records = (draft.received_retentions || []).map(row => ({...row,applied_amount:0,application_status:'pending_validation'}));
-                    this.prevision = draft.iva_retention_prevision;
-                    data = {document:{...draft,number_full:'',control_number:'',total_igv:draft.total_igv}};
-                }
+                if (!this.documentId) { this.error = 'Seleccione una factura guardada para gestionar sus retenciones.'; return; }
+                const response = await this.$http.get(`/documents/retention/${this.documentId}`);
+                if (sequence !== this.sequence) return;
+                const data = response.data;
+                const iva = data.document.iva_retention || {};
+                const islr = data.document.islr_retention || {};
+                this.records = data.data.map(row => ({...row,...[...(iva.records || []),...(islr.records || [])].find(info => info.id === row.id)}));
+                this.concepts = data.document.islr_concepts || [];
                 if (this.replacementEndpoint) data.document={...data.document,total_igv:data.document.effective_total_igv,total_taxed:data.document.effective_total_taxed,total_value:data.document.effective_total_value};
                 this.document=data.document;
-                if (!this.documentId) { const response=await this.$http.get('/documents/retention/concepts'); if(sequence !== this.sequence)return; this.concepts=response.data.data; }
-                this.form = { agent_rif: '', invoice_control: data.document.control_number, invoice_number: data.document.number_full, fiscal_context: {concept_basis:null,iva_100_basis:null,evidence_reference:null,public_operation_scope:null,public_scope_reference:null}, document_id: this.documentId, agent_id: data.document.customer_id, tax_kind: this.replacementKind || 'IVA', voucher_number: '',
+                const kind = this.replacementKind || 'IVA';
+                const summary = kind === 'ISLR' ? islr : iva;
+                this.prevision = summary.prevision;
+                this.canCreate = summary.can_create === true;
+                this.form = { agent_rif: '', invoice_control: data.document.control_number, invoice_number: data.document.number_full, fiscal_context: {concept_basis:null,iva_100_basis:null,evidence_reference:null,public_operation_scope:null,public_scope_reference:null}, document_id: this.documentId, agent_id: data.document.customer_id, tax_kind: kind, voucher_number: '',
                     voucher_date: new Date().toLocaleDateString('en-CA', { timeZone: 'America/Caracas' }), currency_type_id: data.document.currency_type_id,
-                    exchange_rate: data.document.exchange_rate_sale, base: data.document.total_igv, percentage: '', subtrahend: 0, amount: '', concept_id: null, attachment: null, operation_key: this.newKey() }
-                if (this.draftForm && this.draftForm.received_retentions && this.draftForm.received_retentions[0]) this.form = {...this.form,...this.draftForm.received_retentions[0]};
-            } catch (e) { this.error = 'No se pudieron cargar las retenciones.' }
+                    exchange_rate: data.document.exchange_rate_sale, base: kind === 'ISLR' ? data.document.total_value : data.document.total_igv, percentage: '', subtrahend: 0, amount: '', concept_id: null, attachment: null, operation_key: this.newKey() }
+            } catch (e) { if (sequence === this.sequence) this.error = 'No se pudieron cargar las retenciones.' }
+            finally { if (sequence === this.sequence) this.initializing = false }
         },
         changeKind(kind) {
-            this.proposal=null; this.error='';
-            const saved=(this.draftForm && this.draftForm.received_retentions || []).find(row=>row.tax_kind===kind);
-            if(saved){this.form={...this.form,...saved};return}
-            this.form={...this.form,tax_kind:kind,base:kind === 'ISLR' ? this.document.total_value : this.document.total_igv,percentage:'',subtrahend:0,amount:'',voucher_number:'',attachment:null,upload_id:null,operation_key:this.newKey()};
+            this.proposal=null; this.error=''; this.uploading=false; this.evaluating=false;
+            const summary = this.document[kind === 'ISLR' ? 'islr_retention' : 'iva_retention'] || {};
+            this.prevision = summary.prevision;
+            this.canCreate = summary.can_create === true;
+            this.form={...this.form,tax_kind:kind,fiscal_context:{concept_basis:null,iva_100_basis:null,evidence_reference:null,public_operation_scope:null,public_scope_reference:null},base:kind === 'ISLR' ? this.document.total_value : this.document.total_igv,percentage:'',subtrahend:0,amount:'',voucher_number:'',attachment:null,upload_id:null,operation_key:this.newKey()};
         },
         async evaluate() {
+            if (!this.documentId || !this.canCreate) return;
             const sequence = this.sequence;
+            const proposalSequence = ++this.proposalSequence;
             const form = this.form;
+            this.evaluating = true; this.error = '';
             try {
                 const {data} = await this.$http.post('/documents/retention/proposal', {...this.form,document_currency_type_id:this.document.currency_type_id,document_id:this.documentId,total_value:this.document.total_value,exchange_rate_sale:this.document.exchange_rate_sale,customer_id:this.form.agent_id,date:this.form.voucher_date,currency_type_id:this.form.currency_type_id,
-                    total_igv:this.draftForm ? this.draftForm.total_igv : 0,total_taxed:this.draftForm ? this.draftForm.total_taxed : 0,fiscal_context:this.form.fiscal_context})
-                if (sequence !== this.sequence || form !== this.form) return;
+                    total_igv:this.document.total_igv,total_taxed:this.document.total_taxed,fiscal_context:this.form.fiscal_context})
+                if (sequence !== this.sequence || proposalSequence !== this.proposalSequence || form !== this.form) return;
                 this.proposal = data.data; this.form.agent_rif = data.data.agent_rif || ''
-                if (this.proposal.eligible) { this.form.percentage = this.proposal.percentage; this.form.amount = this.form.tax_kind === 'ISLR' ? this.proposal.voucher_amount : Math.round(Number(this.form.base) * this.proposal.percentage) / 100 }
-            } catch (e) {if (sequence === this.sequence && form === this.form) this.error = 'No se pudo evaluar la retención.'}
+                if (this.proposal.eligible) { this.form.percentage = this.proposal.percentage; this.form.amount = this.form.tax_kind === 'ISLR' ? this.proposal.voucher_amount : exactAmount(this.form.base).times(this.proposal.percentage).dividedBy(100).decimal() }
+            } catch (e) {if (sequence === this.sequence && proposalSequence === this.proposalSequence && form === this.form) this.error = 'No se pudo evaluar la retención.'}
+            finally { if (sequence === this.sequence && proposalSequence === this.proposalSequence && form === this.form) this.evaluating = false }
         },
         async upload(event) {
+            if (!this.documentId || !this.canCreate) return;
             const sequence = this.sequence;
             const form = this.form;
             const file = event.target.files[0]
             if (!file) return
+            if (this.uploading) return
+            this.uploading = true; this.error = '';
             const body = new FormData(); body.append('file', file); if (this.documentId) body.append('document_id', this.documentId)
-            try { const { data } = await this.$http.post(this.documentId ? '/documents/retention/upload' : '/documents/retention/upload-draft', body); if (sequence !== this.sequence || form !== this.form) return; this.form.attachment = data.attachment; this.form.upload_id = data.upload_id }
+            try { const { data } = await this.$http.post('/documents/retention/upload', body); if (sequence !== this.sequence || form !== this.form) return; this.form.attachment = data.attachment; this.form.upload_id = data.upload_id }
             catch (e) { if (sequence === this.sequence && form === this.form) this.error = 'No se pudo adjuntar el comprobante.' }
+            finally { if (sequence === this.sequence && form === this.form) this.uploading = false }
         },
         async submit() {
+            if (!this.documentId || !this.canCreate || this.loading || this.uploading || this.evaluating) return;
             this.loading = true; this.error = ''
             try {
-                if (this.draftForm) { this.$set(this.draftForm,'received_retentions',[...(this.draftForm.received_retentions || []).filter(row=>row.tax_kind !== this.form.tax_kind),{...this.form}]); this.close(); return; }
                 await this.$http.post(this.replacementEndpoint || '/documents/retention', this.form); await this.load(); this.$eventHub.$emit('reloadData'); this.$emit('changed')
             }
             catch (e) { this.error = this.requestError(e,'No se pudo registrar el comprobante.') }
@@ -146,7 +163,7 @@ export default {
                 link.href=url; link.download=`Retencion-${row.tax_kind}-${row.voucher_number}`; link.click(); URL.revokeObjectURL(url);
             } catch (e) { this.error='No se pudo descargar el soporte.' }
         },
-        close() { this.$emit('update:showDialog', false) }
+        close() { this.sequence++; this.$emit('update:showDialog', false) }
     }
 }
 // ######## FIN PERSISTENCIA FISCAL VENEZUELA ########

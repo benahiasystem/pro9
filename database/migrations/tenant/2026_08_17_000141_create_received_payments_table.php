@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\DB;
  * Inventario de columnas:
  * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
  * - `provider` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `amount` decimal(10,2) NOT NULL
+ * - `amount` decimal(30,12) NOT NULL
  * - `sender_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `raw_text` text COLLATE utf8mb4_unicode_ci NOT NULL
  * - `package_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
@@ -22,6 +22,7 @@ use Illuminate\Support\Facades\DB;
  * - `claimed_by_user_id` int(10) unsigned DEFAULT NULL
  * - `created_at` timestamp NULL DEFAULT NULL
  * - `updated_at` timestamp NULL DEFAULT NULL
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
 {
@@ -31,7 +32,7 @@ return new class extends Migration
 CREATE TABLE `received_payments` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `provider` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `amount` decimal(10,2) NOT NULL,
+  `amount` decimal(30,12) NOT NULL,
   `sender_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `raw_text` text COLLATE utf8mb4_unicode_ci NOT NULL,
   `package_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -44,6 +45,7 @@ CREATE TABLE `received_payments` (
   `claimed_by_user_id` int(10) unsigned DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`),
   UNIQUE KEY `received_payments_dedup_hash_unique` (`dedup_hash`),
   KEY `received_payments_provider_index` (`provider`),

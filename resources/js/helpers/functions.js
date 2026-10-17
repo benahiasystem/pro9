@@ -1,336 +1,65 @@
 
 // ######## INICIO TASAS OCHO DECIMALES ########
-import { exactAmount } from "./exchange-rate-math"
+import { exactAmount, exactSnapshot, exactValue } from "./exchange-rate-math"
 // ######## FIN TASAS OCHO DECIMALES ########
 // ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
 // ########## INICIO CAMBIO AFECTACIÓN IVA
-function calculateRowItem(row_old, currency_type_id_new, exchange_rate_sale, pigv = 0.16, exportation = false) {
+// ######## INICIO CALCULOS EXACTOS PRO9 ########
+function calculateRowItem(old, currency, rate, pigv = '0.16', exportation = false) {
 // ######### FIN CAMBIO AFECTACIÓN IVA
-    if (!(exportation ? ['EXP'] : ['10', '20']).includes(row_old.affectation_igv_type_id)) {
-        throw new Error('Seleccione una afectación de IVA vigente: Gravado o Exento.')
-    }
-    // console.log(currency_type_id_new, exchange_rate_sale)
-
-    let currency_type_id_old = row_old.item.currency_type_id
-    let unit_price = parseFloat(row_old.item.unit_price)
-    // ########## INICIO CAMBIO AFECTACIÓN IVA
-    // } else {
-    //     unit_price = parseFloat(row_old.item.unit_price) * (1 + pigv)
-    // }
-    // ######### FIN CAMBIO AFECTACIÓN IVA
-    let warehouse_id = row_old.warehouse_id
-
-    // console.log(row_old)
-
-    if (currency_type_id_old === 'VES' && currency_type_id_old !== currency_type_id_new) {
-        unit_price = exactAmount(unit_price).dividedBy(exactAmount(exchange_rate_sale)).final(6);
-    }
-
-    if (currency_type_id_new === 'VES' && currency_type_id_old !== currency_type_id_new) {
-        unit_price = exactAmount(unit_price).times(exactAmount(exchange_rate_sale)).final(6);
-    }
-
-    // unit_price = _.round(unit_price, 4);
-
-
-    // fixed for update sale_note
-    let record_id = (row_old.record_id) ? row_old.record_id : (row_old.id ? row_old.id : null)
-
-
-
-    // console.log(row_old)
-
-    let row = {
-        item_id: row_old.item.id,
-        // item_description: row_old.item.description,
-        item: row_old.item,
-        currency_type_id: currency_type_id_new,
-        quantity: row_old.quantity,
-        unit_value: 0,
-        affectation_igv_type_id: row_old.affectation_igv_type_id,
-        affectation_igv_type: row_old.affectation_igv_type,
-        total_base_igv: 0,
-        percentage_igv: exportation ? 0 : pigv * 100,
-        total_igv: 0,
-
-
-
-
-        total_base_other_taxes: 0,
-        percentage_other_taxes: 0,
-        total_other_taxes: 0,
-
-        total_taxes: 0,
-        price_type_id: '01',
-        unit_price: unit_price,
-        input_unit_price_value: row_old.input_unit_price_value,
-        total_value: 0,
-        total_discount: 0,
-        total_charge: 0,
-        total: 0,
-        attributes: row_old.attributes,
-        charges: row_old.charges,
-        discounts: row_old.discounts,
-        warehouse_id: warehouse_id,
-        name_product_pdf: row_old.name_product_pdf,
-        record_id: record_id, // fixed for update sale_note
-
-        //valores sin redondeo, se usa en los calculos (invoice) para mayor precision
-        total_value_without_rounding: 0,
-        total_base_igv_without_rounding: 0,
-        total_igv_without_rounding: 0,
-        total_taxes_without_rounding: 0,
-        total_without_rounding: 0,
-
-        //
-        purchase_unit_price: row_old.item.purchase_unit_price,
-        purchase_unit_value: row_old.item.purchase_unit_value,
-        purchase_has_igv: row_old.item.has_igv,
-
-
-        data_item_lot_group: getDataItemLotGroup(row_old)
-    };
-
-    // console.log(row)
-
-    let percentage_igv = exportation ? 0 : pigv * 100
-    let unit_value = row.unit_price
-
-    if (row.affectation_igv_type_id === '10') {
-        unit_value = row.unit_price / (1 + percentage_igv / 100)
-    }
-
-    // row.unit_value = _.round(unit_value, 4)
-
-    row.unit_value = unit_value
-
-    let total_value_partial = unit_value * row.quantity
-
-
-    /* Discounts */
-    let discount_base = 0
-    let discount_no_base = 0
-    // row.discounts.forEach((discount, index) => {
-    //     discount.percentage = parseFloat(discount.percentage)
-    //     discount.factor = discount.percentage / 100
-    //     discount.base = _.round(total_value_partial, 2)
-    //     discount.amount = _.round(discount.base * discount.factor, 2)
-    //     if (discount.discount_type.base) {
-    //         discount_base += discount.amount
-    //     } else {
-    //         discount_no_base += discount.amount
-    //     }
-    //     row.discounts.splice(index, discount)
-    // })
-    if (row.discounts.length > 0) {
-        row.discounts.forEach((discount, index) => {
-
-
-
-
-            if (discount.is_amount)
-            {
-                if (discount.discount_type && discount.discount_type.base || discount.discount_type_id === '00')
-                {
-                    discount.base = _.round(total_value_partial, 2)
-                    //amount and percentage are equals in input
-                    // discount.amount = _.round(discount.percentage, 2)
-
-                    discount.percentage = _.round(100 * (parseFloat(discount.amount) / parseFloat(discount.base)), 5)
-                    // discount.percentage =  _.round(100 * (parseFloat(discount.amount) / parseFloat(discount.base)),2)
-
-                    discount.factor = _.round(discount.percentage / 100, 5)
-                    // discount.factor = _.round(discount.percentage / 100, 2)
-
-                    if (discount.amount_without_rounded) {
-                        discount.amount = discount.amount
-                        discount_base += discount.amount_without_rounded
-                    } else {
-                        discount.amount = getAmountFromInputDiscount(discount)
-                        discount_base += getDiscountBaseIncrement(discount)
-                    }
-
-                } else {
-
-                    let aux_total_line = row.unit_price * row.quantity
-
-                    // if (!affectation_igv_type_exonerated.includes(row.affectation_igv_type_id)) {
-                    //     total_value_partial = (aux_total_line - discount.percentage) / (1 + percentage_igv / 100)
-                    // } else {
-                    //     total_value_partial = aux_total_line - discount.percentage
-                    // }
-
-                    discount.base = _.round(aux_total_line, 2)
-                    //amount and percentage are equals in input
-                    // discount.amount = _.round(discount.percentage, 2)
-                    discount.amount = getAmountFromInputDiscount(discount)
-                    // discount.amount = discount.amount
-
-                    discount.percentage = _.round(100 * (parseFloat(discount.amount) / parseFloat(discount.base)), 2)
-                    discount.factor = _.round(discount.percentage / 100, 5)
-                    // discount.factor = _.round(discount.percentage / 100, 2)
-                    // discount_no_base += discount.amount
-                }
-
-            } else {
-
-                if (discount.discount_type &&  discount.discount_type.base || discount.discount_type_id === '00') {
-
-                    discount.percentage = parseFloat(discount.percentage)
-                    discount.factor = discount.percentage / 100
-                    discount.base = _.round(total_value_partial, 2)
-                    // if (discount.discount_type.base) {
-                    if (discount.amount_without_rounded) {
-                        discount.amount = discount.amount
-                        discount_base += discount.amount_without_rounded
-                    } else {
-                        discount.amount = _.round(discount.base * discount.factor, 2)
-                        discount_base += getDiscountBaseIncrement(discount)
-                    }
-                    // } else {
-                    //     discount_no_base += discount.amount
-                    // }
-
-                } else {
-
-
-                    let aux_total_line = row.unit_price * row.quantity
-                    discount.factor = _.round(discount.percentage / 100, 5)
-                    // discount.amount = discount.amount
-                    discount.amount = _.round(aux_total_line * discount.factor, 2)
-
-                    // if (!affectation_igv_type_exonerated.includes(row.affectation_igv_type_id)) {
-                    //     total_value_partial = (aux_total_line - discount.amount) / (1 + percentage_igv / 100)
-                    // } else {
-                    //     total_value_partial = aux_total_line - discount.amount
-                    // }
-
-                    discount.base = _.round(aux_total_line, 2)
-
-                }
-
-            }
-
-            row.discounts.splice(index, discount)
-        })
-    }
-    // console.log('total base discount:'+discount_base)
-    // console.log('total no base discount:'+discount_no_base)
-
-    /* Charges */
-    let charge_base = 0
-    let charge_no_base = 0
-    if (row.charges.length > 0) {
-        row.charges.forEach((charge, index) => {
-            charge.percentage = parseFloat(charge.percentage)
-            charge.factor = charge.percentage / 100
-            charge.base = _.round(total_value_partial, 2)
-            charge.amount = _.round(charge.base * charge.factor, 2)
-            if (charge.charge_type.base) {
-                charge_base += charge.amount
-            } else {
-                charge_no_base += charge.amount
-            }
-            row.charges.splice(index, charge)
-        })
-    }
-    // console.log('total base charge:'+charge_base)
-    // console.log('total no base charge:'+charge_no_base)
-
-
-    let total_other_taxes = 0
-
-    let total_discount = discount_base + discount_no_base
-    let total_charge = charge_base + charge_no_base
-    let total_value = total_value_partial - total_discount + total_charge
-    let total_base_igv = total_value_partial - discount_base
-
-    // console.log(total_base_igv, total_value)
-
-    let total_igv = 0
-
-    if (row.affectation_igv_type_id === '10') {
-        total_igv = total_base_igv * percentage_igv / 100
-    }
-    if (row.affectation_igv_type_id === '20') { //Exonerated
-        total_igv = 0
-    }
-
-
-    //impuesto bolsa - icbper
-
-
-
-
-
-    // icbper
-
-
-    let total_taxes = total_igv + total_other_taxes
-
-    let total = total_value + total_taxes
-
-    row.total_charge = _.round(total_charge, 6)
-    row.total_discount = _.round(total_discount, 6)
-    row.total_charge = _.round(total_charge, 6)
-    row.total_value = _.round(total_value, 6)
-    row.total_base_igv = _.round(total_base_igv, 6)
-    row.total_igv = _.round(total_igv, 6)
-    row.total_taxes = _.round(total_taxes, 6)
-    row.total = _.round(total, 6)
-
-
-    //procedimiento para agregar isc
-
-    //procedimiento para agregar isc
-
-
-    // descuentos, se modifica precio unitario y total descuentos
-    if (row.discounts.length > 0) {
-
-        let sum_discount_no_base = 0
-        let sum_discount_base = 0
-
-        row.discounts.forEach(discount => {
-            let amount = discount.amount_exact ? discount.amount_exact : discount.amount
-            sum_discount_no_base += (discount.discount_type_id == '01') ? amount : 0
-            sum_discount_base += (discount.discount_type_id == '00') ? amount : 0
-        })
-
-        //obs 4287
-        // monto dscto que no afecta a la base segun fila 180, hoja factura2_0 excel validaciones (20210902)
-        row.unit_price = (total_value + total_taxes - sum_discount_no_base) / row.quantity
-
-        //obs 4288
-        // let exist_discount_no_base = _.find(row.discounts, {discount_type_id: '01'})
-        // if (exist_discount_no_base) {
-        //     row.unit_value = (total_value + total_taxes) / row.quantity
-        //     if (row.affectation_igv_type_id === '10') {
-        //         row.unit_value = row.unit_value / (1 + percentage_igv / 100)
-        //     }
-        // }
-
-        let total_discounts = sum_discount_no_base + sum_discount_base;
-        row.total_discount = _.round(total_discounts, 2)
-    }
-    // descuentos
-
-    //valores sin redondeo, se usa en los calculos para mayor precision (método calculateTotal - Invoice)
-    row.total_value_without_rounding = total_value
-    row.total_base_igv_without_rounding = total_base_igv
-    row.total_igv_without_rounding = total_igv
-    row.total_taxes_without_rounding = total_taxes
-    row.total_without_rounding = total
-
-
-
-    //impuesto bolsa
-    // }
-
-    // console.log(row)
-
-    return row
+    if (!(exportation ? ['EXP'] : ['10', '20']).includes(old.affectation_igv_type_id)) throw new Error('Seleccione una afectación de IVA vigente: Gravado o Exento.')
+    const inputs = old.calculation_snapshot?.inputs || {}
+    const unchangedQuantity = old.calculation_snapshot && exactValue(old, 'quantity').decimal() === exactAmount(old.quantity).decimal()
+    const quantityInput = old.quantity_input ?? (unchangedQuantity ? inputs.quantity_input : null) ?? null
+    const priceInput = old.price_input ?? inputs.price_input ?? (!old.calculation_snapshot
+        ? {amount: String(old.item.unit_price), currency_type_id: old.item.currency_type_id || old.currency_type_id || currency, includes_iva: true} : null)
+    const sourceCurrency = priceInput ? priceInput.currency_type_id : old.calculation_snapshot ? (old.currency_type_id || currency) : old.item.currency_type_id
+    let price = priceInput ? exactAmount(priceInput.amount) : old.calculation_snapshot ? exactValue(old, 'unit_price') : exactAmount(old.item.unit_price)
+    if (priceInput?.includes_iva === false && old.affectation_igv_type_id === '10') price = price.times(exactAmount(1).plus(pigv))
+    if (sourceCurrency !== currency) price = sourceCurrency === 'VES' ? price.dividedBy(rate) : price.times(rate)
+    const quantity = quantityInput
+        ? exactAmount(quantityInput.amount).dividedBy(quantityInput.unit_price)
+        : unchangedQuantity
+            ? exactValue(old, 'quantity') : exactAmount(old.quantity)
+    const percentage = old.affectation_igv_type_id === '10' ? exactAmount(pigv).times(100) : exactAmount(0)
+    const unit = price.dividedBy(exactAmount(1).plus(percentage.dividedBy(100)))
+    const gross = unit.times(quantity)
+    let discountBase = exactAmount(0), discountOther = exactAmount(0), charges = exactAmount(0)
+    const discounts = (old.discounts || []).map(source => {
+        const discount = {...source}
+        const onBase = discount.discount_type_id === '00' || discount.discount_type?.base
+        const base = onBase ? gross : price.times(quantity)
+        const factor = discount.percentage != null ? exactAmount(discount.percentage).dividedBy(100) : exactAmount(discount.factor || 0)
+        const amount = discount.is_amount || discount.from_global_distribution
+            ? exactAmount(discount.amount_exact ?? discount.amount_without_rounded ?? (discount.use_input_amount === false ? discount.percentage : discount.amount ?? discount.percentage) ?? 0)
+            : base.times(factor)
+        if (amount.compare(0) < 0) throw new Error('Descuento inválido')
+        if (onBase) discountBase = discountBase.plus(amount); else discountOther = discountOther.plus(amount)
+        return {...discount, base: base.decimal(), amount: amount.decimal(), amount_exact: amount.fraction(), factor: factor.decimal()}
+    })
+    const lineCharges = (old.charges || []).map(charge => {
+        const factor = charge.percentage != null ? exactAmount(charge.percentage).dividedBy(100) : exactAmount(charge.factor || 0)
+        const amount = gross.times(factor)
+        if (amount.compare(0) < 0) throw new Error('Cargo inválido')
+        charges = charges.plus(amount)
+        return {...charge, base: gross.decimal(), amount: amount.decimal(), amount_exact: amount.fraction()}
+    })
+    const base = gross.minus(discountBase), value = base.minus(discountOther).plus(charges)
+    if (base.compare(0) < 0 || value.compare(0) < 0) throw new Error('El descuento supera el valor de la línea')
+    const iva = base.times(percentage).dividedBy(100)
+    const values = {quantity, unit_price: price, unit_value: unit, percentage_igv: percentage,
+        total_base_igv: base, total_value: value, total_discount: discountBase.plus(discountOther), total_charge: charges,
+        total_igv: iva, total_taxes: iva, total_other_taxes: exactAmount(0), total_base_other_taxes: exactAmount(0), percentage_other_taxes: exactAmount(0), total: value.plus(iva)}
+    const result = {...old, item_id: old.item.id, currency_type_id: currency, discounts, charges: lineCharges,
+        quantity_input: quantityInput, price_input: priceInput,
+        price_type_id: '01', record_id: old.record_id || old.id || null,
+        calculation_snapshot: exactSnapshot(values, {quantity: String(old.quantity), unit_price: String(old.unit_price ?? old.item.unit_price), quantity_input: quantityInput, price_input: priceInput}),
+        data_item_lot_group: getDataItemLotGroup(old)}
+    for (const [field, value] of Object.entries(values)) result[field] = value.decimal()
+    for (const field of ['total_value', 'total_base_igv', 'total_igv', 'total_taxes', 'total']) result[field + '_without_rounding'] = result[field]
+    return result
 }
+// ######## FIN CALCULOS EXACTOS PRO9 ########
 
 
 /*
@@ -340,30 +69,12 @@ function calculateRowItem(row_old, currency_type_id_new, exchange_rate_sale, pig
 * y no de discount.percentage cuando es descuento por monto
 */
 function getDiscountBaseIncrement(discount) {
-    const exact = Number(discount.amount_exact)
-    if (!Number.isNaN(exact) && exact !== 0) {
-        return exact
-    }
-    return Number(discount.amount) || 0
+    return exactAmount(discount.amount_exact ?? discount.amount ?? '0').decimal()
 }
 
-function getAmountFromInputDiscount(discount)
-{
-    let value = 0
-
-    if(discount.use_input_amount !== undefined && discount.use_input_amount === true)
-    {
-        value = _.round(discount.amount, 2)
-    }
-    else
-    {
-        //flujo antiguo con propiedad no regularizada (algunos componentes item.vue lo usan)
-        value = _.round(discount.percentage, 2)
-    }
-
-    return value
+function getAmountFromInputDiscount(discount) {
+    return exactAmount(discount.use_input_amount === true ? discount.amount : discount.percentage).decimal()
 }
-
 
 function getUniqueArray(arr, keyProps) {
     if (arr == null) return null
@@ -394,25 +105,13 @@ function showNamePdfOfDescription(item, show_pdf_name) {
 }
 
 function sumAmountDiscountsNoBaseByItem(row) {
-
-    let sum_discount_no_base = 0
-
-    if (row.discounts) {
-        // if(row.discounts.length > 0){
-        sum_discount_no_base = _.sumBy(row.discounts, function (discount) {
-            return (discount.discount_type_id == '01') ? discount.amount : 0
-        })
-        // }
-    }
-
-    return sum_discount_no_base
+    return (row.discounts || []).filter(discount => discount.discount_type_id === '01')
+        .reduce((sum, discount) => sum.plus(discount.amount_exact ?? discount.amount ?? '0'), exactAmount(0)).decimal()
 }
 
 function FormatUnitPriceRow(unit_price) {
-    return _.round(unit_price, 6)
-    // return unit_price.toFixed(6)
+    return exactAmount(unit_price).decimal()
 }
-
 
 const filterWords = (input, items) => {
     let search_value = input.toLowerCase();
@@ -467,7 +166,7 @@ const DECIMAL_UNIT_TYPES = [
 /**
  *
  * Decimales admitidos en una cantidad según la unidad de medida del producto.
- * Se topan en 4 porque así se almacenan stock y movimientos: decimal(12,4).
+ * Las magnitudes continuas admiten hasta 12 posiciones; las unidades discretas conservan su regla.
  *
  * @param  {string} unit_type_id
  * @param  {number|undefined} fallback  Precisión para unidades discretas
@@ -476,7 +175,7 @@ const DECIMAL_UNIT_TYPES = [
 const getQuantityPrecisionByUnitType = (unit_type_id, fallback = 0) => {
     const unit_type = String(unit_type_id || '').toUpperCase()
 
-    return DECIMAL_UNIT_TYPES.includes(unit_type) ? 4 : fallback
+    return DECIMAL_UNIT_TYPES.includes(unit_type) ? 12 : fallback
 }
 
 // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES

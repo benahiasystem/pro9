@@ -528,6 +528,7 @@
             :showClose="true"
             :configuration="configuration"
             :annul-on-open="noteAnnulOnOpen"
+            :allow-retention-management="true"
             @fiscal-updated="onFiscalUpdated"
         ></document-options>
 
@@ -652,6 +653,8 @@
 }
 </style>
 <script>
+import {exactAmount} from "../../../helpers/exchange-rate-math"
+
 import DocumentsVoided from "./partials/voided.vue";
 import DocumentOptions from "./partials/options.vue";
 import DocumentPayments from "./partials/payments.vue";
@@ -836,8 +839,9 @@ export default {
             }
         },
         formatDecimal(value) {
-            if (value === undefined || value === null || isNaN(value)) return '';
-            return Number(value).toLocaleString('en-US', { minimumFractionDigits: this.decimal_quantity, maximumFractionDigits: this.decimal_quantity });
+            if (value === undefined || value === null || value === '') return '';
+            const [integer, fraction] = exactAmount(value).final(this.decimal_quantity).split('.');
+            return integer.replace(/\B(?=(\d{3})+(?!\d))/g, ',') + (fraction === undefined ? '' : '.' + fraction);
         },
         formatDate(date) {
             if (!date) return null;

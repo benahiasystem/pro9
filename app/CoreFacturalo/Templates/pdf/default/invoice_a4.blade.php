@@ -735,36 +735,23 @@ $exists_logo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::existsFileInU
                     </td>
                 @endif
                 @php
-                    $unit_price_item = $row->getUnitPrice(( isset($configuration['is_preview']) ? $configuration['is_preview'] : false ) , $document);
-                    $price_total_item = $unit_price_item * $row->quantity;
+                    $unit_price_item = \App\Support\Exact\Decimal::read($row, 'unit_price');
+                    $price_total_item = $unit_price_item->multipliedBy(\App\Support\Exact\Decimal::read($row, 'quantity'));
                 @endphp
-                @if ($configuration_decimal_quantity->change_decimal_quantity_unit_price_pdf)
-
-                <td class="text-right align-top">{{ $row->generalApplyNumberFormat( $unit_price_item, $configuration_decimal_quantity->decimal_quantity_unit_price_pdf) }}</td>
-                @else
-                <td class="text-right align-top">{{ number_format($unit_price_item, 2) }}</td>
-                @endif
+                <td class="text-right align-top">{{ $row->formatPdfUnitPrice($configuration_decimal_quantity) }}</td>
 
                 @if ($showDiscountItem)
-                    {{-- <td class="text-right align-top pr-2">{{ number_format($row->total_real, 2) }}</td> --}}
-                    <td class="text-right align-top pr-2">{{ number_format( $price_total_item , 2) }}</td>
+                    {{-- <td class="text-right align-top pr-2">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($row, 'total_real'), 2) }}</td> --}}
+                    <td class="text-right align-top pr-2">{{ \App\Support\Exact\Decimal::format($price_total_item, 2) }}</td>
 
                 @endif
 
                 <td class="text-right align-top pr-2">
                     @if($row->discounts)
-                    @php
-                    $total_discount_line = 0;
-                    foreach ($row->discounts as $disto) {
-                        if (optional($disto)->from_global_distribution) continue;
-                        // ########## INICIO CAMBIO AFECTACIÓN IVA
-                        $amount = $disto->discount_type_id == "00" ? $disto->amount_without_rounded * \App\Support\Venezuela\Localization::taxMultiplier() : $disto->amount;
-                        $total_discount_line = $total_discount_line + $amount;
-                    }
-                    @endphp
-                    {{ number_format($total_discount_line, 2) }}
+                    @php $total_discount_line = \App\Support\Exact\PdfAmounts::lineDiscount($row, true); @endphp
+                    {{ \App\Support\Exact\Decimal::format($total_discount_line, 2) }}
                     @else
-                    0
+                    0.00
                     @endif
                 </td>
                 @php
@@ -772,12 +759,11 @@ $exists_logo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::existsFileInU
                 @endphp
                 @if ($global)
                     @php
-                        $global_discount_amount = $global->discount_type_id == "00" ? $global->amount_without_rounded * \App\Support\Venezuela\Localization::taxMultiplier() : 0;
-                        // ######### FIN CAMBIO AFECTACIÓN IVA
+                        $global_discount_amount = $global->discount_type_id == "00" ? \App\Support\Exact\Decimal::of($global->amount_exact ?? $global->amount_without_rounded ?? $global->amount)->multipliedBy(\App\Support\Exact\Decimal::of(1)->plus(\App\Support\Exact\Decimal::read($row, 'percentage_igv')->dividedBy(100))) : \App\Support\Exact\Decimal::of(0);
                     @endphp
-                    <td class="text-right align-top">{{ number_format($row->total + $global_discount_amount, 2) }}</td>
+                    <td class="text-right align-top">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\Decimal::read($row, 'total')->plus($global_discount_amount), 2) }}</td>
                 @else
-                    <td class="text-right align-top">{{ number_format($row->total, 2) }}</td>
+                    <td class="text-right align-top">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($row, 'total'), 2) }}</td>
                 @endif
             </tr>
             <tr>
@@ -794,9 +780,9 @@ $exists_logo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::existsFileInU
                 <td class="text-left align-top">
                     ANTICIPO: FACTURA NRO. {{$p->number}}
                 </td>
-                <td class="text-right align-top">-{{ number_format($p->total, 2) }}</td>
+                <td class="text-right align-top">-{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($p, 'total'), 2) }}</td>
                 <td class="text-right align-top">0</td>
-                <td class="text-right align-top">-{{ number_format($p->total, 2) }}</td>
+                <td class="text-right align-top">-{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($p, 'total'), 2) }}</td>
             </tr>
             <tr>
                 <td colspan="{{ $colspan_total+1 }}" class="border-bottom"></td>
@@ -807,7 +793,7 @@ $exists_logo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::existsFileInU
             @if($document->total_exportation > 0)
             <tr>
                 <td colspan="{{ $colspan_total }}" class="text-right font-bold pr-2">OP. EXPORTACIÓN: {{ $document->currency_type->symbol }}</td>
-                <td class="text-right font-bold">{{ number_format($document->total_exportation, 2) }}</td>
+                <td class="text-right font-bold">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_exportation'), 2) }}</td>
             </tr>
             @endif
 
@@ -815,7 +801,7 @@ $exists_logo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::existsFileInU
             @if($document->total_exonerated > 0)
             <tr>
                 <td colspan="{{ $colspan_total }}" class="text-right font-bold pr-2">OP. EXONERADAS: {{ $document->currency_type->symbol }}</td>
-                <td class="text-right font-bold">{{ number_format($document->total_exonerated, 2) }}</td>
+                <td class="text-right font-bold">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_exonerated'), 2) }}</td>
             </tr>
             @endif
 
@@ -823,13 +809,13 @@ $exists_logo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::existsFileInU
             @if($document->total_taxed >= 0)
             <tr>
                 <td colspan="{{ $colspan_total }}" class="text-right pr-2">OP. GRAVADAS: {{ $document->currency_type->symbol }}</td>
-                <td class="text-right">{{ number_format($document->total_taxed, 2) }}</td>
+                <td class="text-right">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_taxed'), 2) }}</td>
             </tr>
             @endif
             @elseif($document->total_taxed > 0)
             <tr>
                 <td colspan="{{ $colspan_total }}" class="text-right pr-2">OP. GRAVADAS: {{ $document->currency_type->symbol }}</td>
-                <td class="text-right">{{ number_format($document->total_taxed, 2) }}</td>
+                <td class="text-right">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_taxed'), 2) }}</td>
             </tr>
             @endif
 
@@ -838,7 +824,7 @@ $exists_logo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::existsFileInU
                 {{-- ########## INICIO CAMBIO IGV A IVA --}}
                 <td colspan="{{ $colspan_total }}" class="text-right pr-2">IVA: {{ $document->currency_type->symbol }}</td>
                 {{-- ######### FIN CAMBIO IGV A IVA --}}
-                <td class="text-right">{{ number_format($document->total_igv, 2) }}</td>
+                <td class="text-right">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_igv'), 2) }}</td>
             </tr>
 
             {{-- ########## INICIO SIN DETRACCIONES E ISC --}}
@@ -847,11 +833,11 @@ $exists_logo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::existsFileInU
             @if($document->subtotal > 0)
                 @php
                     $labelSubtotal = $document->total_discount_with_igv > 0 ? 'SUMA DE IMPORTES' : 'SUBTOTAL';
-                    $subtotal = $document->total_discount_with_igv > 0 ? $document->subtotal + $document->total_discount_with_igv : $document->subtotal;
+                    $subtotal = $document->total_discount_with_igv > 0 ? \App\Support\Exact\PdfAmounts::read($document, 'subtotal')->plus(\App\Support\Exact\Decimal::of(\App\Support\Exact\Decimal::represent(\App\Support\Exact\PdfAmounts::read($document, 'total_discount_with_igv'), 2))) : \App\Support\Exact\PdfAmounts::read($document, 'subtotal');
                 @endphp
             <tr>
                 <td colspan="{{ $colspan_total }}" class="text-right font-bold pr-2">{{ $labelSubtotal }}: {{ $document->currency_type->symbol }}</td>
-                <td class="text-right font-bold">{{ number_format($subtotal, 2) }}</td>
+                <td class="text-right font-bold">{{ \App\Support\Exact\Decimal::format($subtotal, 2) }}</td>
             </tr>
             @endif
 
@@ -860,7 +846,7 @@ $exists_logo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::existsFileInU
                 <td colspan="{{ $colspan_total }}"
                     class="text-right font-bold pr-2">{{(($document->total_prepayment > 0) ? 'ANTICIPO':'DESCUENTO TOTAL')}}
                     : {{ $document->currency_type->symbol }}</td>
-                <td class="text-right font-bold">{{ number_format($document->total_discount_with_igv, 2) }}</td>
+                <td class="text-right font-bold">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_discount_with_igv'), 2) }}</td>
             </tr>
             @endif
 
@@ -875,12 +861,12 @@ $exists_logo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::existsFileInU
             <tr>
                 <td colspan="{{ $colspan_total }}" class="text-right font-bold pr-2">CARGOS ({{$total_factor}}
                     %): {{ $document->currency_type->symbol }}</td>
-                <td class="text-right font-bold">{{ number_format($document->total_charge, 2) }}</td>
+                <td class="text-right font-bold">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_charge'), 2) }}</td>
             </tr>
             @else
             <tr>
                 <td colspan="{{ $colspan_total }}" class="text-right font-bold pr-2">CARGOS: {{ $document->currency_type->symbol }}</td>
-                <td class="text-right font-bold">{{ number_format($document->total_charge, 2) }}</td>
+                <td class="text-right font-bold">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_charge'), 2) }}</td>
             </tr>
             @endif
             @endif
@@ -889,7 +875,7 @@ $exists_logo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::existsFileInU
             <tr>
                 <td colspan="{{ ceil(($colspan_total + 1) / 2) - 1 }}" class="text-left font-bold" style="white-space: nowrap;">Productos: {{ rtrim(rtrim(number_format(collect($document->items)->sum(function ($item) { return (float) data_get($item, 'quantity', 0); }), 2, '.', ''), '0'), '.') }}</td>
                 <td colspan="{{ floor(($colspan_total + 1) / 2)  }}" class="text-right font-bold pr-2">TOTAL A PAGAR: {{ $document->currency_type->symbol }}</td>
-                <td class="text-right font-bold">{{ number_format($document->total, 2) }}</td>
+                <td class="text-right font-bold">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total'), 2) }}</td>
             </tr>
 
 

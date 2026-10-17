@@ -24,8 +24,8 @@ use Illuminate\Support\Facades\DB;
  * - `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `perception_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `observations` text COLLATE utf8mb4_unicode_ci
- * - `total_perception` decimal(10,2) NOT NULL
- * - `total` decimal(10,2) NOT NULL
+ * - `total_perception` decimal(30,12) NOT NULL
+ * - `total` decimal(30,12) NOT NULL
  * - `optional` json DEFAULT NULL
  * - `legends` json DEFAULT NULL
  * - `filename` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
@@ -33,6 +33,7 @@ use Illuminate\Support\Facades\DB;
  * - `has_pdf` tinyint(1) NOT NULL DEFAULT '0'
  * - `created_at` timestamp NULL DEFAULT NULL
  * - `updated_at` timestamp NULL DEFAULT NULL
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
 {
@@ -57,8 +58,8 @@ CREATE TABLE `perceptions` (
   `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `perception_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `observations` text COLLATE utf8mb4_unicode_ci,
-  `total_perception` decimal(10,2) NOT NULL,
-  `total` decimal(10,2) NOT NULL,
+  `total_perception` decimal(30,12) NOT NULL,
+  `total` decimal(30,12) NOT NULL,
   `optional` json DEFAULT NULL,
   `legends` json DEFAULT NULL,
   `filename` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
@@ -66,6 +67,7 @@ CREATE TABLE `perceptions` (
   `has_pdf` tinyint(1) NOT NULL DEFAULT '0',
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`),
   KEY `perceptions_user_id_foreign` (`user_id`),
   KEY `perceptions_establishment_id_foreign` (`establishment_id`),

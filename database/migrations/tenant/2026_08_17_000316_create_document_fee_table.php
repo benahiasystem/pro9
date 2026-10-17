@@ -11,8 +11,9 @@ use Illuminate\Support\Facades\DB;
  * - `document_id` int(10) unsigned NOT NULL
  * - `date` date NOT NULL
  * - `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `amount` decimal(12,2) NOT NULL
+ * - `amount` decimal(30,12) NOT NULL
  * - `payment_method_type_id` char(2) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Relacion con el metodo de pago, Nulo es pago a cuotas'
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
 {
@@ -24,8 +25,9 @@ CREATE TABLE `document_fee` (
   `document_id` int(10) unsigned NOT NULL,
   `date` date NOT NULL,
   `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `amount` decimal(12,2) NOT NULL,
+  `amount` decimal(30,12) NOT NULL,
   `payment_method_type_id` char(2) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Relacion con el metodo de pago, Nulo es pago a cuotas',
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`),
   KEY `document_fee_document_id_foreign` (`document_id`),
   KEY `document_fee_currency_type_id_foreign` (`currency_type_id`)

@@ -2,7 +2,11 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 // ######## INICIO NOTAS HKA: ESQUEMA INICIAL ########
-/** New installations only. Amounts DECIMAL(12,2), rates DECIMAL(18,8); FKs in 000999. */
+/**
+ * Instalaciones nuevas: importes DECIMAL(30,12) y fracciones exactas; tasas DECIMAL(18,8).
+ * Las claves foráneas se agregan en 000999.
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
+ */
 return new class extends Migration {
     public function up(): void {
         DB::unprepared(<<<'SQL'
@@ -13,8 +17,8 @@ CREATE TABLE `document_note_refunds` (
   `date_of_payment` date NOT NULL,
   `payment_method_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `original_amount` decimal(12,2) NOT NULL,
-  `amount` decimal(12,2) NOT NULL,
+  `original_amount` decimal(30,12) NOT NULL,
+  `amount` decimal(30,12) NOT NULL,
   `exchange_rate` decimal(18,8) NOT NULL,
   `exchange_rate_source` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
   `reference` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
@@ -37,6 +41,7 @@ CREATE TABLE `document_note_refunds` (
   `context` json NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`),
   UNIQUE KEY `document_note_refunds_operation_unique` (`operation_key`),
   KEY `document_note_refunds_document_index` (`document_id`),

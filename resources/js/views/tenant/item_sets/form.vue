@@ -367,6 +367,7 @@
 </template>
 
 <script>
+import {exactAmount} from '../../../helpers/exchange-rate-math'
 import ItemSetFormItem from './partials/item.vue'
 
     export default {
@@ -485,7 +486,7 @@ import ItemSetFormItem from './partials/item.vue'
                 let exist = this.form.individual_items.find((item) => item.individual_item_id == row.individual_item_id)
 
                 if(exist) {
-                    exist.quantity += row.quantity;
+                    exist.quantity = exactAmount(exist.quantity).plus(row.quantity).decimal();
                 }else{
                     this.form.individual_items.push(row)
                 }

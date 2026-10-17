@@ -5,6 +5,11 @@ description: Mantener el esquema inicial consolidado y los datos vigentes de Pro
 
 # Esquema inicial tenant de Pro9
 
+## Precisión exacta — contrato del 16/10/2026
+
+Aplicar [cálculos exactos](../mantener-calculos-exactos-pro9/SKILL.md). Para instalaciones nuevas esta instrucción sustituye las precisiones de dos/cuatro/seis decimales y redondeos intermedios descritos anteriormente: operar con fracciones exactas, conservar snapshots y representar hasta 12 posiciones; tasas con ocho exactas. Dos decimales sólo en liquidación/presentación que lo requiera. Precio unitario PDF configurable de 2 a 12, con dos por defecto. No convertir tenants ni recalcular históricos. Consultar el informe de cálculos para el estado real de adopción por consumidor.
+
+
 ## Contrato
 
 - Excepción expresa del 14/10/2026: [envío automático HKA](../../../informes/envio_automatico_hka.md) añade `configurations.auto_send_hka` booleano NOT NULL DEFAULT 1 al consolidado. Para empresas existentes sólo se autoriza preparar el comando aditivo e idempotente `hka:upgrade-auto-send-setting`, con selección explícita y `--dry-run`; no ejecutarlo sobre bases reales por inferencia. No reconstruir tablas ni convertir comprobantes. La excepción no habilita otras conversiones/backfills.
@@ -75,7 +80,7 @@ Al tocar documentos, pagos o relaciones fiscales, aplicar [persistencia fiscal y
 - La cabecera conserva `issuer` obligatorio y fuente/fecha de tasa; las líneas conservan snapshot `iva_rate`. Las creaciones de pagos incluyen moneda propia, principal recibido/aplicado, tasa/fuente/fecha, clasificación IGTF, UUID, snapshot del medio, recibo derivado y reversión.
 - Mantener las seis tablas `document_taxes`, `document_currency_totals`, `document_received_retentions`, `document_guarantee_funds`, `document_fiscal_data` y `document_emissions` en sus migraciones `000330`–`000335`, con FKs en `000999`. No desplazar las claves a migraciones incrementales.
 - Conservar unicidad de operación de pago, vínculo de cargo IGTF al pago, recibo derivado, comprobante recibido por documento/tipo/agente/número y relaciones documentales únicas. Las restricciones respaldan los bloqueos del servicio ante concurrencia; no reemplazarlas por una validación previa sin índice.
-- Nuevos importes/bases/porcentajes siguen `decimal(12,2)` y tasas `decimal(18,8)`, como sus equivalentes actuales. Las columnas de tasas usan ocho decimales exactos.
+- En el consolidado nuevo, importes, bases, porcentajes y cantidades de negocio usan `DECIMAL(30,12)` y `calculation_snapshot` JSON; tasas `DECIMAL(18,8)`. No actualizar bases existentes. Validar precisión y rango en la aplicación antes de escribir, sin redondeo silencioso de MySQL.
 - `companies.igtf_enabled` inicia deshabilitado y `igtf_rate` nullable; conservar auditoría de cambios operativos en `fiscal_configuration_audits`. No sembrar una tasa habilitada desde el catálogo HKA.
 - `documents` no crea `ubl_version`, `perception`, `total_unaffected`, `total_free`, `total_igv_free`, `retention` ni `user_rel_subscription_plan_id`. Conservar `user_rel_suscription_plan_id` para suscripciones. `cod_digemid` se retira del JSON de artículo en sus productores; no es una columna adicional que recrear. Mantener `total_exportation` e `invoices.operation_type_id`; las exportaciones de bienes web digital DEMO usan EXP/0201–0203 y snapshots. Añadir en el DDL inicial persons.external_identity_type y su índice de identidad extranjera, y document_currency_totals.exportation, sin migración de tenants existentes. Ver [contrato de exportación](../../../informes/facturas_exportacion_hka.md).
 - Los estados de emisión admiten `not_requested`, `prepared`, `pending`, `confirmed`, `rejected`, `uncertain`, `cancelled`. Envío/conciliación DEMO implementan la máquina de estados de la habilidad de emisión; preparación no acredita envío ni aceptación. Cancelación remota continúa sin implementar.
@@ -84,7 +89,7 @@ Al tocar documentos, pagos o relaciones fiscales, aplicar [persistencia fiscal y
 ## Precisión de tasas BCV — instrucción de 7 de octubre de 2026
 
 - Pro9 conserva tasas como cadenas decimales de ocho posiciones en `DECIMAL(18,8)`, incluidos ceros finales. La API BCV devuelve cadenas y mantiene token fijo.
-- Calcular conversiones con `Brick\Math\BigRational` en PHP y `ExactAmount`/`BigInt` en JavaScript. No redondear la tasa; redondear sólo el importe final a su precisión vigente.
+- Calcular conversiones con `Brick\Math\BigRational` en PHP y `ExactAmount`/`BigInt` en JavaScript. Conservar la fracción durante toda la operación y al recuperarla de la base. HALF_UP sólo para representaciones finales autorizadas, presentación o liquidación; nunca reutilizar esas representaciones para calcular.
 - Excepción autorizada para tenants existentes: `exchange-rates:upgrade-precision --all-tenants --dry-run` y luego sin `--dry-run`, tras pruebas en MySQL temporal. El comando amplía únicamente las columnas inventariadas en `config/exchange_rate_precision.php`; no reconstruye bases ni recupera decimales históricos.
 
 ## Titulares de facturas por terceros
@@ -105,7 +110,7 @@ Aplicar [el contrato IVA recibido](../mantener-retenciones-iva-recibidas-pro9/SK
 - `000334`: `iva_retention_prevision` JSON nullable fuera de pagos/aplicaciones.
 - `000337`: `document_iva_retention_operations`, UUID único, acción apply/remove única por comprobante, payload/contexto congelados, reclamo, contadores y recuperación.
 - `000338`: `received_retention_uploads`, token único, usuario/vencimiento/ruta/documento consumidor. `000999` agrega FKs restrictivas de operaciones/uploads y `reversed_by`; retirarlas antes de revertir tablas.
-- Mantener precisiones existentes y limpieza demo en orden dependiente: operaciones/uploads antes de retenciones/documentos. Verificar índices generados, FKs, rollback/repetición y `test_iva_*` en MySQL temporal; el servicio no sustituye restricciones de base.
+- Mantener las precisiones del contrato de cálculos exactos y la limpieza demo en orden dependiente: operaciones/uploads antes de retenciones/documentos. Verificar índices generados, FKs, rollback/repetición y `test_iva_*` en MySQL temporal; el servicio no sustituye restricciones de base.
 
 ## ISLR recibido
 
@@ -113,4 +118,4 @@ Aplicar [contrato ISLR](../mantener-retenciones-islr-recibidas-pro9/SKILL.md): 0
 
 ## Trazabilidad de notas (13/10/2026)
 
-Inventario vigente:346 tablas de aplicación/347 migraciones tenant. 000318 incorpora partida original restrictiva e inventory_quantity;000323 incorpora UUID/hash/snapshot y unicidad documental;000340 crea devoluciones y000341 ajustes relacionados;000342 crea dispatch_emissions. Dispatches incorpora creation_key UUID nullable único, creation_hash y hka_data JSON. Claves de emisión/orden/ambiente en000999, con retirada inversa. Importes DECIMAL(12,2), cantidades(12,4), tasas(18,8); claves UUID únicas y FKs factura/nota/cobro/actor/ajuste en000999, con retirada inversa. Se extiende el consolidado para instalaciones nuevas: sin backfill, conversión ni reconstrucción de tenants reales. BBC recibió únicamente la ampliación aditiva expresamente autorizada para [pruebas de órdenes](../../../informes/ordenes_entrega_hka.md), sin reset. Verificar creación, semillas, índices, FKs, rollback y repetición en MySQL temporal junto con `TenantMigrationDataSeederTest` y [contrato de notas](../../../informes/notas_credito_debito_hka.md).
+Inventario vigente:346 tablas de aplicación/347 migraciones tenant. 000318 incorpora partida original restrictiva e inventory_quantity;000323 incorpora UUID/hash/snapshot y unicidad documental;000340 crea devoluciones y000341 ajustes relacionados;000342 crea dispatch_emissions. Dispatches incorpora creation_key UUID nullable único, creation_hash y hka_data JSON. Claves de emisión/orden/ambiente en000999, con retirada inversa. Importes y cantidades DECIMAL(30,12), fracciones en calculation_snapshot y tasas DECIMAL(18,8); claves UUID únicas y FKs factura/nota/cobro/actor/ajuste en000999, con retirada inversa. Se extiende el consolidado para instalaciones nuevas: sin backfill, conversión ni reconstrucción de tenants reales. BBC recibió únicamente la ampliación aditiva expresamente autorizada para [pruebas de órdenes](../../../informes/ordenes_entrega_hka.md), sin reset. Verificar creación, semillas, índices, FKs, rollback y repetición en MySQL temporal junto con `TenantMigrationDataSeederTest` y [contrato de notas](../../../informes/notas_credito_debito_hka.md).

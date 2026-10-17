@@ -15,13 +15,14 @@ use Illuminate\Support\Facades\DB;
  * - `payment_link_type_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `payment_id` int(11) DEFAULT NULL
  * - `payment_type` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `total` decimal(12,2) NOT NULL
+ * - `total` decimal(30,12) NOT NULL
  * - `status` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'pending'
  * - `paid_at` datetime DEFAULT NULL
  * - `uploaded_filename` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `query_transaction` tinyint(1) NOT NULL DEFAULT '0'
  * - `created_at` timestamp NULL DEFAULT NULL
  * - `updated_at` timestamp NULL DEFAULT NULL
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
 {
@@ -37,13 +38,14 @@ CREATE TABLE `payment_links` (
   `payment_link_type_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL,
   `payment_id` int(11) DEFAULT NULL,
   `payment_type` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `total` decimal(12,2) NOT NULL,
+  `total` decimal(30,12) NOT NULL,
   `status` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'pending',
   `paid_at` datetime DEFAULT NULL,
   `uploaded_filename` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `query_transaction` tinyint(1) NOT NULL DEFAULT '0',
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`),
   UNIQUE KEY `payment_links_uuid_unique` (`uuid`),
   KEY `payment_index` (`payment_id`,`payment_type`),

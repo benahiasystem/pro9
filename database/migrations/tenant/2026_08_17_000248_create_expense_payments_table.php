@@ -14,7 +14,8 @@ use Illuminate\Support\Facades\DB;
  * - `has_card` tinyint(1) NOT NULL DEFAULT '0'
  * - `card_brand_id` char(2) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `reference` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `payment` decimal(12,2) NOT NULL
+ * - `payment` decimal(30,12) NOT NULL
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
 {
@@ -29,7 +30,8 @@ CREATE TABLE `expense_payments` (
   `has_card` tinyint(1) NOT NULL DEFAULT '0',
   `card_brand_id` char(2) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `reference` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `payment` decimal(12,2) NOT NULL,
+  `payment` decimal(30,12) NOT NULL,
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`),
   KEY `expense_payments_expense_id_foreign` (`expense_id`),
   KEY `expense_payments_card_brand_id_foreign` (`card_brand_id`),

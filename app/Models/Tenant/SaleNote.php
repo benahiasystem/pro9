@@ -4,6 +4,7 @@
 // ######## INICIO ADAPTACIÓN VENEZUELA
 
     namespace App\Models\Tenant;
+    use App\Support\Exact\Decimal as D;
 
     use App\Models\Tenant\Catalogs\CurrencyType;
     use App\Models\Tenant\Catalogs\DocumentType;
@@ -349,36 +350,33 @@ use Modules\Sale\Models\Agent;
          */
         public function getApiResourceFind()
         {
-            $global_discount = 0;
+            $global_discount = D::of(0);
 
             $items = $this->items->map(function ($row) use (&$global_discount) {
-                $item_discount = 0;
+                $item_discount = D::of(0);
 
                 foreach (($row->discounts ?: []) as $discount) {
                     // ########## INICIO CAMBIO IGV A IVA
                     // discount_type_id "00" guarda el importe SIN IVA.
                     // ######### FIN CAMBIO IGV A IVA
-                    $amount = $discount->discount_type_id == '00'
-                        // ########## INICIO CAMBIO AFECTACIÓN IVA
-                        ? $discount->amount_without_rounded * \App\Support\Venezuela\Localization::taxMultiplier()
-                        // ######### FIN CAMBIO AFECTACIÓN IVA
-                        : $discount->amount;
+                    $amount = D::of($discount->amount_exact ?? $discount->amount_without_rounded ?? $discount->amount);
+                    if ($discount->discount_type_id === '00') $amount=$amount->multipliedBy(D::of(1)->plus($row->exactValue('percentage_igv')->dividedBy(100)));
 
                     if (!empty($discount->from_global_distribution)) {
-                        $global_discount += $amount;
+                        $global_discount = $global_discount->plus($amount);
                     } else {
-                        $item_discount += $amount;
+                        $item_discount = $item_discount->plus($amount);
                     }
                 }
 
                 return [
-                    'quantity'       => (float) $row->quantity,
+                    'quantity'       => D::represent($row->exactValue('quantity')),
                     'unit_type_id'   => optional($row->item)->unit_type_id,
                     'description'    => $row->name_product_pdf ?: optional($row->item)->description,
-                    'unit_price'     => round((float) $row->unit_price, 2),
+                    'unit_price'     => D::represent($row->exactValue('unit_price')),
                     // Solo el descuento propio de la linea, sin la parte repartida del global.
-                    'total_discount' => round($item_discount, 2),
-                    'total'          => round((float) $row->total, 2),
+                    'total_discount' => D::represent($item_discount),
+                    'total'          => D::represent($row->exactValue('total')),
                 ];
             })->values()->all();
 
@@ -397,17 +395,17 @@ use Modules\Sale\Models\Agent;
                 'customer_address'       => $this->getApiResourceCustomerAddress(),
 
                 // Operaciones segun su afectacion al IGV.
-                'total_taxed'            => round((float) $this->total_taxed, 2),
-                'total_exonerated'       => round((float) $this->total_exonerated, 2),
-                'total_unaffected'       => round((float) $this->total_unaffected, 2),
-                'total_exportation'      => round((float) $this->total_exportation, 2),
-                'total_free'             => round((float) $this->total_free, 2),
+                'total_taxed'            => D::represent($this->exactValue('total_taxed')),
+                'total_exonerated'       => D::represent($this->exactValue('total_exonerated')),
+                'total_unaffected'       => D::represent($this->exactValue('total_unaffected')),
+                'total_exportation'      => D::represent($this->exactValue('total_exportation')),
+                'total_free'             => D::represent($this->exactValue('total_free')),
 
-                'total_igv'              => round((float) $this->total_igv, 2),
-                'subtotal'               => round((float) $this->subtotal, 2),
+                'total_igv'              => D::represent($this->exactValue('total_igv')),
+                'subtotal'               => D::represent($this->exactValue('subtotal')),
                 // Descuento global (con IGV), reconstruido desde los items.
-                'total_discount_global'  => round($global_discount, 2),
-                'total'                  => round((float) $this->total, 2),
+                'total_discount_global'  => D::represent($global_discount),
+                'total'                  => D::represent($this->exactValue('total')),
 
                 'items'                  => $items,
                 // La tabla sale_notes tiene estas columnas y las plantillas pdf las
@@ -874,8 +872,9 @@ use Modules\Sale\Models\Agent;
             if ($configuration == null) {
                 $configuration = Configuration::first();
             }
-            $total_paid = number_format($this->payments->sum('payment'), 2, '.', '');
-            $total_pending_paid = number_format($this->total - $total_paid, 2, '.', '');
+            $paidExact=D::sum($this->payments->map(fn($r)=>$r->exactValue('payment')));
+            $total_paid = D::represent($paidExact);
+            $total_pending_paid = D::represent(($this->total_payable === null ? $this->exactValue('total') : $this->exactValue('total_payable'))->minus($paidExact));
             $document_id = $this->document_id;
             // Normalmente, un documento tendrá el id de la NV,
             // cuando se hace un CPE a partir de varias NV,
@@ -989,6 +988,9 @@ use Modules\Sale\Models\Agent;
                 'total_canceled' => (bool)$this->total_canceled,
                 'license_plate' => $this->license_plate,
                 'total_paid' => $total_paid,
+                'total_payable' => $this->total_payable,
+                'settlement_adjustment' => $this->settlement_adjustment,
+                'calculation_snapshot' => $this->calculation_snapshot,
                 'total_pending_paid' => $total_pending_paid,
                 'user_name' => ($this->user) ? $this->user->name : '',
                 'quotation_number_full' => ($this->quotation) ? $this->quotation->number_full : '',
@@ -1207,7 +1209,7 @@ use Modules\Sale\Models\Agent;
         }
         public static function FormatNumber($number, $decimal = 2)
         {
-            return number_format($number, $decimal);
+            return D::represent($number, $decimal);
         }
 
         /**
@@ -1625,7 +1627,7 @@ use Modules\Sale\Models\Agent;
          */
         public function getChangePayment()
         {
-            return ($this->total - $this->payments->sum('payment')) - $this->payments->sum('change');
+            return D::represent($this->exactValue('total')->minus(D::sum($this->payments->map(fn($r)=>$r->exactValue('payment'))))->minus(D::sum($this->payments->map(fn($r)=>$r->exactValue('change')))));
         }
 
         /**
@@ -1724,7 +1726,7 @@ use Modules\Sale\Models\Agent;
 
             if(!$this->isVoidedOrRejected())
             {
-                $total_payments = $this->payments->sum('payment');
+                $total_payments = D::sum($this->payments->map(fn($r)=>$r->exactValue('payment')));
 
                 if($this->currency_type_id === 'USD')
                 {
@@ -1732,7 +1734,7 @@ use Modules\Sale\Models\Agent;
                 }
             }
 
-            return $total_payments;
+            return D::represent($total_payments);
         }
 
 
@@ -1857,10 +1859,10 @@ use Modules\Sale\Models\Agent;
             if($this->isPointSystem())
             {
                 $point_system_data = $this->point_system_data;
-                $total = $this->total;
+                $total = $this->exactValue('total');
 
-                $value_quantity_points = ($total / $point_system_data->point_system_sale_amount) * $point_system_data->quantity_of_points;
-                $calculate_quantity_points = $point_system_data->round_points_of_sale ? intval($value_quantity_points) : round($value_quantity_points, 2);
+                $value_quantity_points = $total->dividedBy($point_system_data->point_system_sale_amount)->multipliedBy($point_system_data->quantity_of_points);
+                $calculate_quantity_points = $point_system_data->round_points_of_sale ? (string)$value_quantity_points->toScale(0, \Brick\Math\RoundingMode::DOWN) : D::represent($value_quantity_points);
             }
 
             return $calculate_quantity_points;
@@ -1960,7 +1962,7 @@ use Modules\Sale\Models\Agent;
          */
         public function totalCashPaymentsWithoutDestination()
         {
-            return $this->payments()->filterCashPaymentWithoutDestination()->sum('payment');
+            return $this->payments()->filterCashPaymentWithoutDestination()->get()->map(fn($r)=>$r->exactValue('payment'))->pipe(fn($rows)=>D::represent(D::sum($rows)));
         }
 
 
@@ -1972,7 +1974,7 @@ use Modules\Sale\Models\Agent;
          */
         public function totalTransferPayments()
         {
-            return $this->payments()->filterTransferPayment()->sum('payment');
+            return $this->payments()->filterTransferPayment()->get()->map(fn($r)=>$r->exactValue('payment'))->pipe(fn($rows)=>D::represent(D::sum($rows)));
         }
 
 

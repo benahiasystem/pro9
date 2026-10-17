@@ -7,7 +7,7 @@ const shared = require('./helpers/load-module.cjs')(path.resolve('resources/js/m
 function load(file, globals = {}) {
  const parsed = compiler.parseComponent(fs.readFileSync(file,'utf8')), exports = {};
  vm.runInNewContext(babel.transformSync(parsed.script.content,{configFile:false,babelrc:false,plugins:['@babel/plugin-transform-modules-commonjs']}).code,
- {exports, moment, _, require: name => name === '@mixins/document-pdf' ? require('./helpers/load-module.cjs')(require('node:path').resolve('resources/js/mixins/document-pdf.js')) : name === '@mixins/document-email' ? shared : name.includes('vuex') ? {mapActions:()=>({}),mapState:()=>({})} : {}, ...globals});
+ {exports, moment, _, require: name => require('./support/exact-runtime.cjs')(name) || (name === '@mixins/document-pdf' ? require('./helpers/load-module.cjs')(require('node:path').resolve('resources/js/mixins/document-pdf.js')) : name === '@mixins/document-email' ? shared : name.includes('vuex') ? {mapActions:()=>({}),mapState:()=>({})} : {}), ...globals});
  assert.deepEqual(compiler.compile(parsed.template.content).errors, []);
  return exports.default;
 }
@@ -78,9 +78,11 @@ for(const file of ['payment.vue','fast_payment_garage.vue']) {
    $message:{success(){},warning:m=>assert.fail(m),error:m=>assert.fail(m)},$eventHub:{$emit(){}},
    $http:{post:async(url,form)=>{requests.push({url,form:JSON.parse(JSON.stringify(form))});return{data:{success:true,data:{id:44,fiscal_emission:{status:'uncertain'}}}}}}};
   for(const[name,fn]of Object.entries(payment.methods))ctx[name]=fn.bind(ctx);
+  ctx.form.iva_retention_prevision={enabled:true,amount:12};ctx.form.islr_retention_prevision={enabled:true,amount:3};ctx.form.received_retentions=[{tax_kind:'IVA'}];
   for(const name of ['asignPlateNumberToItems','saveCashDocument','cleanLocalStoragePayment','initDataComponent'])ctx[name]=()=>{};
   ctx.validateRestrictSaleItemsCpe=ctx.validateRestrictSellerDiscount=()=>({success:true});
   await ctx.clickPayment();assert.equal(requests.length,1);assert.equal(requests[0].url,'/documents');assert.equal(requests[0].form.series_id,2);assert.equal(ctx.documentNewId,44);assert.equal(ctx.showDialogOptions,true);assert.equal(ctx.loading_submit,false);
+  for(const key of ['iva_retention_prevision','islr_retention_prevision','received_retentions'])assert.equal(Object.hasOwn(requests[0].form,key),false);
  });
  test(`${file} handles loss of the creation response without another sale`,async()=>{
   const messages=[],ctx={form:{document_type_id:'01',series_id:2,customer_id:10,date_of_issue:moment().format('YYYY-MM-DD'),items:[{quantity:1,unit_type_id:'UND'}],payments:[{payment:100}],total:100},config:{},configuration:{},businessTurns:{active:false},rowsItems:1,
@@ -129,6 +131,6 @@ for(const file of ['payment.vue','fast_payment.vue','fast_payment_garage.vue']) 
   const component=load('resources/js/views/tenant/pos/partials/'+file,{localStorage:{getItem:()=>JSON.stringify(draft)}});
   const ctx={form:{total:100},amount:100,enter_amount:100,$set:(o,k,v)=>o[k]=v,inputAmount:()=>{}};
   component.methods.getFormPosLocalStorage.call(ctx);
-  assert.equal(ctx.form.payment_condition_id,'02');assert.equal(ctx.amount,20);assert.equal(ctx.enter_amount,20);assert.equal(ctx.form.payments[0].payment,20);
+  assert.equal(ctx.form.payment_condition_id,'02');assert.equal(ctx.amount,'20');assert.equal(ctx.enter_amount,'20');assert.equal(ctx.form.payments[0].payment,20);
  });
 }

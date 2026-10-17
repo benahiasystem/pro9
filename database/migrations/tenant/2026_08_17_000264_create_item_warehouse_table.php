@@ -10,9 +10,10 @@ use Illuminate\Support\Facades\DB;
  * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
  * - `item_id` int(10) unsigned NOT NULL
  * - `warehouse_id` int(10) unsigned NOT NULL
- * - `stock` decimal(12,4) NOT NULL
+ * - `stock` decimal(30,12) NOT NULL
  * - `created_at` timestamp NULL DEFAULT NULL
  * - `updated_at` timestamp NULL DEFAULT NULL
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
 {
@@ -23,9 +24,10 @@ CREATE TABLE `item_warehouse` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `item_id` int(10) unsigned NOT NULL,
   `warehouse_id` int(10) unsigned NOT NULL,
-  `stock` decimal(12,4) NOT NULL,
+  `stock` decimal(30,12) NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`),
   UNIQUE KEY `item_warehouse_item_id_warehouse_id_unique` (`item_id`,`warehouse_id`),
   KEY `item_warehouse_warehouse_id_foreign` (`warehouse_id`)

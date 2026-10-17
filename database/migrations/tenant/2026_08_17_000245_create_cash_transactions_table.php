@@ -12,7 +12,8 @@ use Illuminate\Support\Facades\DB;
  * - `payment_method_type_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `date` date NOT NULL
  * - `description` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `payment` decimal(14,4) NOT NULL
+ * - `payment` decimal(30,12) NOT NULL
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
 {
@@ -25,7 +26,8 @@ CREATE TABLE `cash_transactions` (
   `payment_method_type_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL,
   `date` date NOT NULL,
   `description` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `payment` decimal(14,4) NOT NULL,
+  `payment` decimal(30,12) NOT NULL,
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`),
   KEY `cash_transactions_cash_id_foreign` (`cash_id`),
   KEY `cash_transactions_payment_method_type_id_foreign` (`payment_method_type_id`)

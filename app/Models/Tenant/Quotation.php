@@ -4,6 +4,7 @@
 // ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
 
 namespace App\Models\Tenant;
+    use App\Support\Exact\Decimal as D;
 
 use App\Models\Tenant\GuideFile;
 use App\Models\Tenant\Catalogs\CurrencyType;
@@ -240,7 +241,7 @@ class Quotation extends ModelTenant
      */
     public function getApiResourceFind()
     {
-        $global_discount = 0;
+        $global_discount = D::of(0);
         $person = $this->customer_id ? Person::find($this->customer_id) : null;
         $person_ubigeo = $this->resolvePersonUbigeo($person);
 
@@ -267,17 +268,17 @@ class Quotation extends ModelTenant
             'district_id'            => $person_ubigeo['district_id'],
 
             // Operaciones segun su afectacion al IGV.
-            'total_taxed'            => round((float) $this->total_taxed, 2),
-            'total_exonerated'       => round((float) $this->total_exonerated, 2),
-            'total_unaffected'       => round((float) $this->total_unaffected, 2),
-            'total_exportation'      => round((float) $this->total_exportation, 2),
-            'total_free'             => round((float) $this->total_free, 2),
+            'total_taxed'            => D::represent($this->exactValue('total_taxed')),
+            'total_exonerated'       => D::represent($this->exactValue('total_exonerated')),
+            'total_unaffected'       => D::represent($this->exactValue('total_unaffected')),
+            'total_exportation'      => D::represent($this->exactValue('total_exportation')),
+            'total_free'             => D::represent($this->exactValue('total_free')),
 
-            'total_igv'              => round((float) $this->total_igv, 2),
-            'subtotal'               => round((float) $this->subtotal, 2),
+            'total_igv'              => D::represent($this->exactValue('total_igv')),
+            'subtotal'               => D::represent($this->exactValue('subtotal')),
             // Descuento global (con IGV), reconstruido desde los items.
-            'total_discount_global'  => round($global_discount, 2),
-            'total'                  => round((float) $this->total, 2),
+            'total_discount_global'  => D::represent($global_discount),
+            'total'                  => D::represent($this->exactValue('total')),
 
             'items'                  => $items,
             'terms_condition'        => $this->terms_condition,
@@ -794,7 +795,7 @@ class Quotation extends ModelTenant
      */
     public function totalCashPaymentsWithoutDestination()
     {
-        if($this->applyQuotationToCash()) return $this->payments()->filterCashPaymentWithoutDestination()->sum('payment');
+        if($this->applyQuotationToCash()) return $this->payments()->filterCashPaymentWithoutDestination()->get()->map(fn($r)=>$r->exactValue('payment'))->pipe(fn($rows)=>D::represent(D::sum($rows)));
 
         return 0;
     }
@@ -808,7 +809,7 @@ class Quotation extends ModelTenant
      */
     public function totalTransferPayments()
     {
-        if($this->applyQuotationToCash()) return $this->payments()->filterTransferPayment()->sum('payment');
+        if($this->applyQuotationToCash()) return $this->payments()->filterTransferPayment()->get()->map(fn($r)=>$r->exactValue('payment'))->pipe(fn($rows)=>D::represent(D::sum($rows)));
 
         return 0;
     }

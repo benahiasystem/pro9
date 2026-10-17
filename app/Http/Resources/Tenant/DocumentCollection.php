@@ -87,9 +87,9 @@ class DocumentCollection extends ResourceCollection
                 $btn_change_to_registered_status = config('tenant.change_to_registered_status');
             }
 
-            $total_payment = $row->payments->sum('payment');
+            $total_payment = \App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::sum($row->payments->map(fn ($payment) => $payment->exactValue('payment'))));
 
-            $balance = number_format($row->balance, 2, '.', '');
+            $balance = \App\Support\Exact\Decimal::represent($row->balance);
 
             $nvs = $row->getNvCollection();
 
@@ -156,6 +156,9 @@ class DocumentCollection extends ResourceCollection
                 'total_taxed' => $row->total_taxed,
                 'total_igv' => $row->total_igv,
                 'total' => $row->total,
+                'total_payable' => $row->total_payable,
+                'settlement_adjustment' => $row->settlement_adjustment,
+                'calculation_snapshot' => $row->calculation_snapshot,
                 'state_type_id' => $row->state_type_id,
                 'state_type_description' => $row->state_type->description,
                 'document_type_description' => $row->document_type->description,

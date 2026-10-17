@@ -20,7 +20,7 @@
         </tr>
         <tr>
             <td colspan="2" class="text-center">
-                <h4>{{ $document->itemChunk->item->description }} {{ $document->currency_type->symbol }} {{ number_format($document->itemChunk->unit_price, 2)}}</h4>
+                <h4>{{ $document->itemChunk->item->description }} {{ $document->currency_type->symbol }} {{ \App\Support\Exact\PdfPrice::configured(\App\Support\Exact\Decimal::read($document->itemChunk, 'unit_price'))}}</h4>
             </td>
         </tr>
         <tr>

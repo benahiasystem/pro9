@@ -14,9 +14,10 @@ use Illuminate\Support\Facades\DB;
  * - `origin_id` int(11) NOT NULL
  * - `origin_type` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `worker_full_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `total` decimal(12,2) NOT NULL
+ * - `total` decimal(30,12) NOT NULL
  * - `created_at` timestamp NULL DEFAULT NULL
  * - `updated_at` timestamp NULL DEFAULT NULL
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
 {
@@ -31,9 +32,10 @@ CREATE TABLE `tips` (
   `origin_id` int(11) NOT NULL,
   `origin_type` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `worker_full_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `total` decimal(12,2) NOT NULL,
+  `total` decimal(30,12) NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`),
   KEY `origin_index` (`origin_id`,`origin_type`),
   KEY `tips_fiscal_environment_foreign` (`fiscal_environment`),

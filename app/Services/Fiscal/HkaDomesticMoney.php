@@ -3,17 +3,19 @@
 namespace App\Services\Fiscal;
 
 use App\Services\ExchangeRates\ExchangeRateMath;
+use App\Support\Exact\Decimal as D;
 
 /** Adapt only a copy of domestic invoice money; local bases, adjustments and receipts stay frozen. */
 final class HkaDomesticMoney
 {
-    private static function cents($value): int { return (int) round((float) $value * 100); }
-    private static function money(int $cents): string { return number_format($cents / 100, 2, '.', ''); }
-    private static function group($code, $rate): string { return $code.':'.number_format((float) $rate, 2, '.', ''); }
+    private static function cents($value): \Brick\Math\BigRational { return D::of(D::represent($value,2))->multipliedBy(100); }
+    private static function money($cents): string { return D::represent(D::of($cents)->dividedBy(100),2,true); }
+    private static function group($code, $rate): string { return $code.':'.D::represent($rate,2,true); }
 
     /** Match each HKA item to the final tax base, including global discounts already persisted. */
     public static function adapt(array $payload, array $snapshot): array
     {
+        if ($snapshot['currency_type_id'] === 'USD') return self::inVes($payload,$snapshot);
         $doc = &$payload['documentoElectronico'];
         $totals = &$doc['encabezado']['totales'];
         validator($snapshot, ['items.*.total_base_igv'=>'required|numeric|min:0'])->validate();
@@ -25,62 +27,56 @@ final class HkaDomesticMoney
         foreach ($doc['detallesItems'] as $index => $line) $groups[self::group($line['codigoImpuesto'], $line['tasaIVA'])][] = $index;
         foreach ($groups as $key => $indices) {
             if (!isset($taxes[$key])) FiscalAmounts::error('taxes', 'Falta la base fiscal conservada de las líneas con terceros o régimen especial.');
-            $weights = array_map(fn ($i) => self::cents($snapshot['items'][$i]['total_base_igv']), $indices);
-            $sum = array_sum($weights);
-            $base = self::cents($taxes[$key]['base']); $iva = self::cents($taxes[$key]['amount']);
-            $cumulative = $priorBase = $priorIva = 0;
+            $weights = array_map(fn ($i) => D::read($snapshot['items'][$i],'total_base_igv'), $indices);
+            if (D::sum($weights)->isZero()) $weights=array_fill(0,count($indices),D::of(1));
+            $bases = D::allocate(D::read($taxes[$key],'base'),$weights,2);
+            $ivas = D::allocate(D::read($taxes[$key],'amount'),$weights,2);
             foreach ($indices as $position => $i) {
-                $cumulative += $sum ? $weights[$position] : 1;
-                $share = ExchangeRateMath::rational($cumulative)->dividedBy($sum ?: count($indices));
-                $currentBase = (int) (string) $share->multipliedBy($base)->toScale(0, \Brick\Math\RoundingMode::HALF_UP);
-                $currentIva = (int) (string) $share->multipliedBy($iva)->toScale(0, \Brick\Math\RoundingMode::HALF_UP);
                 $line = &$doc['detallesItems'][$i];
-                $line['precioItem'] = self::money($currentBase - $priorBase);
-                $line['valorIVA'] = self::money($currentIva - $priorIva);
-                $gross = self::cents(ExchangeRateMath::multiply($snapshot['items'][$i]['unit_value'], $line['cantidad'], 2));
-                $discount = $gross - ($currentBase - $priorBase);
-                if ($discount < 0) FiscalAmounts::error('items', 'La base fiscal supera el precio original de la línea.');
+                $line['precioItem'] = $bases[$position];
+                $line['valorIVA'] = $ivas[$position];
+                $gross = self::cents(D::read($snapshot['items'][$i],'unit_value')->multipliedBy(D::read($snapshot['items'][$i],'quantity')));
+                $discount = $gross->minus(self::cents($bases[$position]));
+                if ($discount->isNegative()) FiscalAmounts::error('items', 'La base fiscal supera el precio original de la línea.');
                 $line['descuentoMonto'] = self::money($discount);
                 $line['recargoMonto'] = '0.00';
-                if ($discount) $line['precioAntesDescuento'] = self::money($gross);
-                $line['valorTotalItem'] = self::money($currentBase - $priorBase + $currentIva - $priorIva);
-                $priorBase = $currentBase; $priorIva = $currentIva;
+                if (!$discount->isZero()) $line['precioAntesDescuento'] = self::money($gross);
+                $line['valorTotalItem'] = D::represent(D::of($bases[$position])->plus($ivas[$position]),2,true);
                 unset($line);
             }
         }
-        $base = array_sum(array_map(fn ($tax) => self::cents($tax['base']), $taxes));
-        $untaxed = self::cents($snapshot['total_value']) - $base;
+        $base = D::sum(array_map(fn ($tax) => self::cents(D::read($tax,'base')), $taxes));
+        $untaxed = self::cents(D::read($snapshot,'total_value'))->minus($base);
         // Pro9 charges do not increase its IVA base. Present that conserved amount as an E service.
         // This avoids taxing the charge or reporting it twice as both an item and a header surcharge.
-        if ($untaxed > 0) {
+        if ($untaxed->isGreaterThan(0)) {
             $doc['detallesItems'][] = ['numeroLinea'=>(string) (count($doc['detallesItems']) + 1),
                 'indicadorBienoServicio'=>'2', 'descripcion'=>'Cargos no gravados de la venta', 'codigoPLU'=>'',
-                'cantidad'=>'1', 'unidadMedida'=>'C62', 'precioUnitario'=>number_format($untaxed / 100, 4, '.', ''),
+                'cantidad'=>'1', 'unidadMedida'=>'C62', 'precioUnitario'=>D::represent($untaxed->dividedBy(100),4,true),
                 'descuentoMonto'=>'0.00', 'recargoMonto'=>'0.00', 'precioItem'=>self::money($untaxed),
                 'codigoImpuesto'=>'E', 'tasaIVA'=>'0.00', 'valorIVA'=>'0.00', 'valorTotalItem'=>self::money($untaxed)];
             $found = false;
             foreach ($totals['impuestosSubtotal'] as &$tax) if ($tax['codigoTotalImp'] === 'E') {
-                $tax['baseImponibleImp'] = self::money(self::cents($tax['baseImponibleImp']) + $untaxed); $found = true;
+                $tax['baseImponibleImp'] = self::money(self::cents($tax['baseImponibleImp'])->plus($untaxed)); $found = true;
             }
             unset($tax);
             if (!$found) $totals['impuestosSubtotal'][] = ['codigoTotalImp'=>'E','alicuotaImp'=>'0.00','baseImponibleImp'=>self::money($untaxed),'valorTotalImp'=>'0.00'];
         }
         $totals['nroItems'] = (string) count($doc['detallesItems']);
-        $totals['montoExentoTotal'] = self::money(self::cents($snapshot['total_exonerated']) + max(0, $untaxed));
-        $totals['totalDescuento'] = self::money(max(0, -$untaxed));
+        $totals['montoExentoTotal'] = self::money(self::cents(D::read($snapshot,'total_exonerated'))->plus(D::max(0,$untaxed)));
+        $totals['totalDescuento'] = self::money(D::max(0,$untaxed->negated()));
         $totals['totalRecargos'] = '0.00';
-        $totals['montoTotalConIVA'] = self::money(self::cents($snapshot['total_value']) + self::cents($snapshot['total_igv']));
-        if ($untaxed < 0) $totals['subtotalAntesDescuento'] = self::money($base);
+        $totals['montoTotalConIVA'] = self::money(self::cents(D::read($snapshot,'total_value'))->plus(self::cents(D::read($snapshot,'total_igv'))));
+        if ($untaxed->isNegative()) $totals['subtotalAntesDescuento'] = self::money($base);
         // HKA validates totalAPagar against this tax row, in addition to the IGTF totals.
         $igtfGroups = [];
         foreach ($snapshot['taxes'] as $tax) if ($tax['tax_kind'] === 'IGTF') {
             $key = self::group('IGTF', $tax['percentage']);
-            $igtfGroups[$key] = ['codigoTotalImp'=>'IGTF', 'alicuotaImp'=>number_format((float) $tax['percentage'], 2, '.', ''),
-                'baseImponibleImp'=>self::money(self::cents($igtfGroups[$key]['baseImponibleImp'] ?? 0) + self::cents($tax['base'])),
-                'valorTotalImp'=>self::money(self::cents($igtfGroups[$key]['valorTotalImp'] ?? 0) + self::cents($tax['amount']))];
+            $igtfGroups[$key] = ['codigoTotalImp'=>'IGTF', 'alicuotaImp'=>D::represent($tax['percentage'],2,true),
+                'baseImponibleImp'=>self::money(self::cents($igtfGroups[$key]['baseImponibleImp'] ?? 0)->plus(self::cents(D::read($tax,'base')))),
+                'valorTotalImp'=>self::money(self::cents($igtfGroups[$key]['valorTotalImp'] ?? 0)->plus(self::cents(D::read($tax,'amount'))))];
         }
         foreach ($igtfGroups as $tax) $totals['impuestosSubtotal'][] = $tax;
-        if ($snapshot['currency_type_id'] === 'USD') return self::inVes($payload, $snapshot);
         return $payload;
     }
 
@@ -88,95 +84,102 @@ final class HkaDomesticMoney
     {
         $rate = $snapshot['exchange_rate_sale']; $frozen = $snapshot['currency_totals'] ?? [];
         foreach (['taxed'=>'total_taxed', 'exempt'=>'total_exonerated', 'iva'=>'total_igv', 'total'=>'total'] as $ves => $local) {
-            if (!isset($frozen[$ves]) || abs((float) $frozen[$ves] - FiscalAmounts::convert($snapshot[$local], 'USD', 'VES', $rate)) > 0.005) FiscalAmounts::error('currency_totals', 'Los totales VES de la factura con terceros o régimen especial no corresponden al snapshot documental.');
+            if (!isset($frozen[$ves]) || D::read($frozen,$ves)->minus(D::convert(D::read($snapshot,$local),'USD','VES',$rate))->abs()->isGreaterThan('0.005')) FiscalAmounts::error('currency_totals', 'Los totales VES de la factura con terceros o régimen especial no corresponden al snapshot documental.');
         }
-        $doc = &$payload['documentoElectronico']; $header = &$doc['encabezado']; $usdTotals = $header['totales'];
-        if (isset($header['identificacionDocumento']['montoFacturaAfectada'])) {
-            $reference = $snapshot['reference'] ?? [];
-            if (($reference['currency_type_id'] ?? $snapshot['currency_type_id']) === 'USD') {
-                $header['identificacionDocumento']['montoFacturaAfectada'] = ExchangeRateMath::multiply($reference['total'], $reference['exchange_rate_sale'] ?? $snapshot['exchange_rate_sale'], 2);
+        // Each currency is represented independently from the original fractions.
+        $local=$snapshot;$local['currency_type_id']='VES';
+        $usdPayload=self::adapt($payload,$local);
+        $copy=function(array $record,array $fields) use ($rate) {
+            foreach ($fields as $field) {
+                $value=D::convert(D::read($record,$field),'USD','VES',$rate);
+                $record[$field]=D::represent($value);
+                $record['calculation_snapshot']['values'][$field]=D::fraction($value);
             }
+            return $record;
+        };
+        $local=$copy($snapshot,['total_taxed','total_exonerated','total_value','total_igv','total','total_discount','total_charge']);
+        $local['currency_type_id']='VES';
+        $local['items']=array_map(fn($line)=>$copy($line,['unit_value','unit_price','total_base_igv','total_igv','total_value','total','total_discount','total_charge']),$snapshot['items']);
+        $local['taxes']=array_map(fn($tax)=>$copy($tax,['base','amount']),$snapshot['taxes']);
+        $doc=&$payload['documentoElectronico'];$header=&$doc['encabezado'];
+        $fields=['montoGravadoTotal'=>'total_taxed','montoExentoTotal'=>'total_exonerated','subtotal'=>'total_value','totalIVA'=>'total_igv','totalAPagar'=>'total'];
+        foreach ($fields as $provider=>$source) $header['totales'][$provider]=D::represent(D::read($local,$source),2,true);
+        $header['totales']['totalIGTF']=D::represent(D::sum(array_map(fn($tax)=>$tax['tax_kind']==='IGTF' ? D::read($tax,'amount') : D::of(0),$local['taxes'])),2,true);
+        foreach ($header['totales']['impuestosSubtotal'] as &$tax) {
+            $source=collect($local['taxes'])->first(fn($entry)=>self::group($entry['code'],$entry['percentage'])===self::group($tax['codigoTotalImp'],$tax['alicuotaImp']));
+            if ($source) foreach (['baseImponibleImp'=>'base','valorTotalImp'=>'amount'] as $key=>$field) $tax[$key]=D::represent(D::read($source,$field),2,true);
         }
-        $otherFields = ['montoGravadoTotal','montoExentoTotal','subtotal','subtotalAntesDescuento','totalIVA','montoTotalConIVA','totalAPagar','totalDescuento','totalRecargos','impuestosSubtotal'];
-        $header['totalesOtraMoneda'] = array_intersect_key($usdTotals, array_flip($otherFields));
-        $header['totalesOtraMoneda']['moneda'] = 'USD'; $header['totalesOtraMoneda']['tipoCambio'] = (string) $rate;
-        $header['identificacionDocumento']['moneda'] = 'VES';
-        foreach (['montoGravadoTotal','montoExentoTotal','subtotal','subtotalAntesDescuento','totalIVA','montoTotalConIVA','totalAPagar','totalDescuento','totalRecargos','totalIGTF'] as $key) {
-            if (isset($usdTotals[$key])) $header['totales'][$key] = ExchangeRateMath::multiply($usdTotals[$key], $rate, 2);
-        }
-        foreach ($header['totales']['impuestosSubtotal'] as &$tax) foreach (['baseImponibleImp','valorTotalImp'] as $key) $tax[$key] = ExchangeRateMath::multiply($tax[$key], $rate, 2);
         unset($tax);
-        $groups = [];
-        foreach ($doc['detallesItems'] as $index => $line) $groups[self::group($line['codigoImpuesto'], $line['tasaIVA'])][] = $index;
-        foreach ($groups as $indices) foreach (['precioItem','valorIVA','descuentoMonto','recargoMonto'] as $key) {
-            $cumulative = ExchangeRateMath::rational(0); $previous = 0;
-            foreach ($indices as $index) {
-                $cumulative = $cumulative->plus($doc['detallesItems'][$index][$key] ?? 0);
-                $current = self::cents(ExchangeRateMath::finalAmount($cumulative->multipliedBy($rate)));
-                $doc['detallesItems'][$index][$key] = self::money($current - $previous); $previous = $current;
-            }
+        foreach ($doc['detallesItems'] as $i=>&$line) {
+            $line['precioUnitario']=D::represent(D::read($local['items'][$i],'unit_value'),4,true);
         }
-        foreach ($doc['detallesItems'] as &$line) {
-            $line['precioUnitario'] = ExchangeRateMath::multiply($line['precioUnitario'], $rate, 4);
-            if (isset($line['precioAntesDescuento'])) $line['precioAntesDescuento'] = ExchangeRateMath::multiply($line['precioAntesDescuento'], $rate, 2);
+        unset($line,$header,$doc);
+        $payload=self::adapt($payload,$local);
+        $doc=&$payload['documentoElectronico'];$header=&$doc['encabezado'];
+        $otherFields=['montoGravadoTotal','montoExentoTotal','subtotal','subtotalAntesDescuento','totalIVA','montoTotalConIVA','totalAPagar','totalDescuento','totalRecargos','impuestosSubtotal'];
+        $header['totalesOtraMoneda']=array_intersect_key($usdPayload['documentoElectronico']['encabezado']['totales'],array_flip($otherFields));
+        $header['totalesOtraMoneda']['moneda']='USD';$header['totalesOtraMoneda']['tipoCambio']=(string)$rate;
+        $header['identificacionDocumento']['moneda']='VES';
+        if (isset($header['identificacionDocumento']['montoFacturaAfectada'])) {
+            $reference=$snapshot['reference'] ?? [];
+            if (($reference['currency_type_id'] ?? 'USD')==='USD') $header['identificacionDocumento']['montoFacturaAfectada']=D::represent(D::convert(D::read($reference,'total'),'USD','VES',$reference['exchange_rate_sale'] ?? $rate),2,true);
         }
-        unset($line);
         $totals = &$header['totales'];
-        $taxed = $exempt = 0;
+        $taxed = $exempt = D::of(0);
         foreach ($doc['detallesItems'] as $line) {
-            if ((float) $line['tasaIVA'] > 0) $taxed += self::cents($line['precioItem']);
-            else $exempt += self::cents($line['precioItem']);
+            if (D::of($line['tasaIVA'])->isGreaterThan(0)) $taxed=$taxed->plus(self::cents($line['precioItem']));
+            else $exempt=$exempt->plus(self::cents($line['precioItem']));
         }
         $totals['montoGravadoTotal'] = self::money($taxed);
         $totals['montoExentoTotal'] = self::money($exempt);
-        $baseResidual = self::cents($totals['subtotal']) + self::cents($totals['totalDescuento']) - $taxed - $exempt;
-        if ($baseResidual) self::adjustBase($doc, $baseResidual, false);
+        $baseResidual = self::cents($totals['subtotal'])->plus(self::cents($totals['totalDescuento']))->minus($taxed)->minus($exempt);
+        if (!$baseResidual->isZero()) self::adjustBase($doc, $baseResidual, false);
         // Allocate the unavoidable currency cent to IVA; never alter local snapshots or receipts.
-        $iva = 0;
-        foreach ($totals['impuestosSubtotal'] as $tax) if ($tax['codigoTotalImp'] !== 'IGTF') $iva += self::cents($tax['valorTotalImp']);
+        $iva = D::of(0);
+        foreach ($totals['impuestosSubtotal'] as $tax) if ($tax['codigoTotalImp'] !== 'IGTF') $iva=$iva->plus(self::cents($tax['valorTotalImp']));
         $totals['totalIVA'] = self::money($iva);
-        $residual = self::cents($totals['totalAPagar']) - self::cents($totals['subtotal']) - $iva - self::cents($totals['totalIGTF']);
-        if ($residual) {
+        $residual = self::cents($totals['totalAPagar'])->minus(self::cents($totals['subtotal']))->minus($iva)->minus(self::cents($totals['totalIGTF']));
+        if (!$residual->isZero()) {
             $taxIndex = null; $lineIndex = null;
-            foreach ($totals['impuestosSubtotal'] as $i => $tax) if ($tax['codigoTotalImp'] !== 'IGTF' && (float) $tax['alicuotaImp'] > 0) $taxIndex = $i;
-            if (abs($residual) > 2) FiscalAmounts::error('currency_totals', 'No se puede conciliar el redondeo fiscal VES de la factura.');
+            foreach ($totals['impuestosSubtotal'] as $i => $tax) if ($tax['codigoTotalImp'] !== 'IGTF' && D::of($tax['alicuotaImp'])->isGreaterThan(0)) $taxIndex = $i;
+            if ($residual->abs()->isGreaterThan(2)) FiscalAmounts::error('currency_totals', 'No se puede conciliar el redondeo fiscal VES de la factura.');
             if ($taxIndex === null) {
                 self::adjustBase($doc, $residual, true);
             } else {
                 $code = $totals['impuestosSubtotal'][$taxIndex]['codigoTotalImp']; $percentage = $totals['impuestosSubtotal'][$taxIndex]['alicuotaImp'];
                 foreach ($doc['detallesItems'] as $i => $line) if (self::group($line['codigoImpuesto'], $line['tasaIVA']) === self::group($code, $percentage)) $lineIndex = $i;
-                $totals['impuestosSubtotal'][$taxIndex]['valorTotalImp'] = self::money(self::cents($totals['impuestosSubtotal'][$taxIndex]['valorTotalImp']) + $residual);
-                $doc['detallesItems'][$lineIndex]['valorIVA'] = self::money(self::cents($doc['detallesItems'][$lineIndex]['valorIVA']) + $residual);
-                $totals['totalIVA'] = self::money(self::cents($totals['totalIVA']) + $residual);
+                $totals['impuestosSubtotal'][$taxIndex]['valorTotalImp'] = self::money(self::cents($totals['impuestosSubtotal'][$taxIndex]['valorTotalImp'])->plus($residual));
+                $doc['detallesItems'][$lineIndex]['valorIVA'] = self::money(self::cents($doc['detallesItems'][$lineIndex]['valorIVA'])->plus($residual));
+                $totals['totalIVA'] = self::money(self::cents($totals['totalIVA'])->plus($residual));
             }
         }
-        $totals['montoTotalConIVA'] = self::money(self::cents($totals['totalAPagar']) - self::cents($totals['totalIGTF']));
-        foreach ($doc['detallesItems'] as &$line) $line['valorTotalItem'] = self::money(self::cents($line['precioItem']) + self::cents($line['valorIVA']));
+        $totals['montoTotalConIVA'] = self::money(self::cents($totals['totalAPagar'])->minus(self::cents($totals['totalIGTF'])));
+        foreach ($doc['detallesItems'] as &$line) $line['valorTotalItem'] = self::money(self::cents($line['precioItem'])->plus(self::cents($line['valorIVA'])));
         unset($line);
         return $payload;
     }
 
-    private static function adjustBase(array &$doc, int $residual, bool $adjustSubtotal): void
+    private static function adjustBase(array &$doc, \Brick\Math\BigRational $residual, bool $adjustSubtotal): void
     {
-        if (abs($residual) > 2) FiscalAmounts::error('currency_totals', 'El redondeo de las bases fiscales supera dos centavos.');
+        if ($residual->abs()->isGreaterThan(2)) FiscalAmounts::error('currency_totals', 'El redondeo de las bases fiscales supera dos centavos.');
         $selected = null;
         foreach ($doc['detallesItems'] as $i => $line) {
-            if (self::cents($line['precioItem']) + $residual < 0) continue;
+            if (self::cents($line['precioItem'])->plus($residual)->isNegative()) continue;
             $selected = $i;
             if ($line['codigoImpuesto'] === 'E') break;
         }
         if ($selected === null) FiscalAmounts::error('currency_totals', 'No hay una línea que admita el redondeo fiscal.');
         $line = &$doc['detallesItems'][$selected];
         $line['precioAntesDescuento'] = $line['precioAntesDescuento'] ?? ExchangeRateMath::multiply($line['precioUnitario'], $line['cantidad'], 2);
-        $line['precioItem'] = self::money(self::cents($line['precioItem']) + $residual);
-        $field = $residual > 0 ? 'recargoMonto' : 'descuentoMonto';
-        $line[$field] = self::money(self::cents($line[$field]) + abs($residual));
+        $line['precioItem'] = self::money(self::cents($line['precioItem'])->plus($residual));
+        $field = $residual->isGreaterThan(0) ? 'recargoMonto' : 'descuentoMonto';
+        $line[$field] = self::money(self::cents($line[$field])->plus($residual->abs()));
         $totals = &$doc['encabezado']['totales'];
-        $field = (float) $line['tasaIVA'] > 0 ? 'montoGravadoTotal' : 'montoExentoTotal';
-        $totals[$field] = self::money(self::cents($totals[$field]) + $residual);
-        foreach ($totals['impuestosSubtotal'] as &$tax) if (self::group($tax['codigoTotalImp'], $tax['alicuotaImp']) === self::group($line['codigoImpuesto'], $line['tasaIVA'])) $tax['baseImponibleImp'] = self::money(self::cents($tax['baseImponibleImp']) + $residual);
+        $field = D::of($line['tasaIVA'])->isGreaterThan(0) ? 'montoGravadoTotal' : 'montoExentoTotal';
+        $totals[$field] = self::money(self::cents($totals[$field])->plus($residual));
+        foreach ($totals['impuestosSubtotal'] as &$tax) if (self::group($tax['codigoTotalImp'], $tax['alicuotaImp']) === self::group($line['codigoImpuesto'], $line['tasaIVA'])) $tax['baseImponibleImp'] = self::money(self::cents($tax['baseImponibleImp'])->plus($residual));
         unset($tax);
-        if ($adjustSubtotal) $totals['subtotal'] = self::money(self::cents($totals['subtotal']) + $residual);
-        if (isset($totals['subtotalAntesDescuento'])) $totals['subtotalAntesDescuento'] = self::money(self::cents($totals['subtotalAntesDescuento']) + $residual);
+        if ($adjustSubtotal) $totals['subtotal'] = self::money(self::cents($totals['subtotal'])->plus($residual));
+        if (isset($totals['subtotalAntesDescuento'])) $totals['subtotalAntesDescuento'] = self::money(self::cents($totals['subtotalAntesDescuento'])->plus($residual));
     }
 }

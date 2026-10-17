@@ -9,13 +9,14 @@ use Illuminate\Support\Facades\DB;
  * Inventario de columnas:
  * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
  * - `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `cost` decimal(12,2) NOT NULL DEFAULT '0.00'
+ * - `cost` decimal(30,12) NOT NULL DEFAULT '0.00'
  * - `unit_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `waste_percentage` decimal(5,2) NOT NULL DEFAULT '0.00'
- * - `stock` decimal(12,4) NOT NULL DEFAULT '0.0000'
- * - `minimum_stock` decimal(12,4) NOT NULL DEFAULT '0.0000'
+ * - `waste_percentage` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `stock` decimal(30,12) NOT NULL DEFAULT '0.0000'
+ * - `minimum_stock` decimal(30,12) NOT NULL DEFAULT '0.0000'
  * - `created_at` timestamp NULL DEFAULT NULL
  * - `updated_at` timestamp NULL DEFAULT NULL
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
 {
@@ -25,13 +26,14 @@ return new class extends Migration
 CREATE TABLE `supplies` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `cost` decimal(12,2) NOT NULL DEFAULT '0.00',
+  `cost` decimal(30,12) NOT NULL DEFAULT '0.00',
   `unit_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `waste_percentage` decimal(5,2) NOT NULL DEFAULT '0.00',
-  `stock` decimal(12,4) NOT NULL DEFAULT '0.0000',
-  `minimum_stock` decimal(12,4) NOT NULL DEFAULT '0.0000',
+  `waste_percentage` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `stock` decimal(30,12) NOT NULL DEFAULT '0.0000',
+  `minimum_stock` decimal(30,12) NOT NULL DEFAULT '0.0000',
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`),
   KEY `supplies_unit_type_id_foreign` (`unit_type_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci

@@ -153,7 +153,7 @@ trait DispatchPersistenceCases
         $saved=(new Facturalo)->forWebDocuments()->save($invoice)->getDocument();
         self::assertEquals(6,$db->table('item_warehouse')->where('item_id',$raw['items'][0]['item_id'])->value('stock'));
         self::assertSame($saved->id,(int)$first->fresh()->reference_document_id);self::assertSame($saved->id,(int)$second->fresh()->reference_document_id);
-        self::assertEquals(2,$saved->items->first()->item->dispatch_inventory_quantity);
+        self::assertSame('2',\App\Support\Exact\Decimal::represent($saved->items->first()->item->dispatch_inventory_quantity));
         $db->transaction(function() use($saved){$saved->state_type_id='11';$saved->save();});
         self::assertEquals(8,$db->table('item_warehouse')->where('item_id',$raw['items'][0]['item_id'])->value('stock'));
         $item=\App\Models\Tenant\Item::findOrFail($raw['items'][0]['item_id']);$item->forceFill(['lots_enabled'=>true])->save();
@@ -163,7 +163,7 @@ trait DispatchPersistenceCases
         $fourth=(new Facturalo)->save(DispatchInput::set($raw))->getDocument();
         $invoice['dispatches_relateds']=[$third->number_full,$fourth->number_full];
         $saved=(new Facturalo)->forWebDocuments()->save($invoice)->getDocument();
-        self::assertEquals(6,$lot->fresh()->quantity);self::assertEquals(4,$saved->items->first()->item->dispatch_inventory_quantity);
+        self::assertEquals(6,$lot->fresh()->quantity);self::assertSame('4',\App\Support\Exact\Decimal::represent($saved->items->first()->item->dispatch_inventory_quantity));
         self::assertEquals($lot->id,$saved->items->first()->item->IdLoteSelected[0]->id);
         $db->transaction(function() use($saved){$saved->state_type_id='11';$saved->save();});
         self::assertEquals(10,$lot->fresh()->quantity);
@@ -177,7 +177,7 @@ trait DispatchPersistenceCases
         $derived=(new Facturalo)->save(DispatchInput::set($raw))->getDocument();
         $invoice['dispatches_relateds']=[$derived->number_full];$invoice['items'][0]['quantity']=2;
         $saved=(new Facturalo)->forWebDocuments()->save($invoice)->getDocument();
-        self::assertEquals($before,$db->table('item_warehouse')->where('item_id',$item->id)->value('stock'));self::assertEquals(0,$saved->items->first()->item->dispatch_inventory_quantity);
+        self::assertEquals($before,$db->table('item_warehouse')->where('item_id',$item->id)->value('stock'));self::assertSame('0',\App\Support\Exact\Decimal::represent($saved->items->first()->item->dispatch_inventory_quantity));
         $bad=$raw;$bad['items'][0]['quantity']=3;
         try {DispatchInput::set($bad);self::fail('Quantity exceeds source order');} catch(\Illuminate\Validation\ValidationException $e) {self::assertArrayHasKey('items',$e->errors());}
     }

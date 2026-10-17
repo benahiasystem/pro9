@@ -9,7 +9,7 @@ const parsed = compiler.parseComponent(source);
 const exportsObject = {};
 vm.runInNewContext(babel.transformSync(parsed.script.content, {
     configFile: false, babelrc: false, plugins: ['@babel/plugin-transform-modules-commonjs']
-}).code, {exports: exportsObject, require: name => name.includes('vuex') ? {mapActions: () => ({}), mapState: () => ({})} : {}});
+}).code, {exports: exportsObject, require: name => require('./support/exact-runtime.cjs')(name) || (name.includes('vuex') ? {mapActions: () => ({}), mapState: () => ({})} : {})});
 const component = exportsObject.default;
 test('editing submits commercial changes without resubmitting collections', () => {
     const form = {id: 17, series: '', number: 5, currency_type_id: 'VES', customer_id: 4,
@@ -19,7 +19,9 @@ test('editing submits commercial changes without resubmitting collections', () =
     assert.equal(payload.items[0].unit_price, 110); assert.equal(payload.currency_type_id, 'VES');
     assert.equal(payload.payments.length, 0); assert.equal(payload.received_retentions.length, 0); assert.equal(payload.guarantee_fund, null);
     assert.equal(form.payments[0].payment, 100);
-    assert.equal(component.methods.documentSubmission.call({isUpdateDocument: false, form}), form);
+    const creation = component.methods.documentSubmission.call({isUpdateDocument: false, form});
+    assert.equal(Object.hasOwn(creation, 'received_retentions'), false);
+    assert.equal(creation.payments, form.payments);
 });
 test('blocked edits stop before validation, HTTP or cash writes', async () => {
     const messages = [];

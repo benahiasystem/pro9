@@ -11,9 +11,10 @@ use Illuminate\Support\Facades\DB;
  * - `dispatch_id` int(10) unsigned NOT NULL
  * - `item_id` int(10) unsigned NOT NULL
  * - `item` json NOT NULL
- * - `quantity` decimal(12,4) NOT NULL
+ * - `quantity` decimal(30,12) NOT NULL
  * - `name_product_pdf` longtext COLLATE utf8mb4_unicode_ci
  * - `additional_data` json DEFAULT NULL
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
 {
@@ -25,9 +26,10 @@ CREATE TABLE `dispatch_items` (
   `dispatch_id` int(10) unsigned NOT NULL,
   `item_id` int(10) unsigned NOT NULL,
   `item` json NOT NULL,
-  `quantity` decimal(12,4) NOT NULL,
+  `quantity` decimal(30,12) NOT NULL,
   `name_product_pdf` longtext COLLATE utf8mb4_unicode_ci,
   `additional_data` json DEFAULT NULL,
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`),
   KEY `dispatch_items_dispatch_id_foreign` (`dispatch_id`),
   KEY `dispatch_items_item_id_foreign` (`item_id`)

@@ -5,6 +5,7 @@
     use App\Models\Tenant\DispatchItem;
     use App\Models\Tenant\DocumentItem;
     use App\Models\Tenant\ItemMovement;
+    use App\Support\Exact\Decimal as D;
     use App\Models\Tenant\ItemMovementRelExtra;
     use App\Models\Tenant\PurchaseItem;
     use App\Models\Tenant\QuotationItem;
@@ -93,8 +94,8 @@
             }
 
             $item = $model->item_id;
-            $qty = $model->quantity;
-            if ($model instanceof DocumentItem && \App\Services\Fiscal\FiscalNote::ordinary($model->document)) $qty=$model->inventory_quantity;
+            $qty = D::read($model,'quantity');
+            if ($model instanceof DocumentItem && \App\Services\Fiscal\FiscalNote::ordinary($model->document)) $qty=D::read($model,'inventory_quantity');
 
             $datetime = null;
             if (isset($arrayModel['date_of_issue'])) {
@@ -137,9 +138,9 @@
 
 
             $movement = ItemMovement::where($toSearch)->first();
-            // A deleted invoice line no longer has a parent relation to resolve.
+            // A deleted line no longer has a parent relation to resolve.
             // Keep its movement trace but exclude it from counted stock.
-            if ($evento === 'deleted' && $model instanceof DocumentItem) {
+            if ($evento === 'deleted') {
                 if ($movement) $movement->setQuantity(0)->setCountable(false)->save();
                 return $movement;
             }
@@ -153,7 +154,7 @@
                 $movement
                     ->setQuantity(0)
                     ->setCountable(false)
-                    ->push();
+                    ->save();
                 return null;
             } else {
                 $arrayModelParent = $parentModel->toArray();
@@ -171,7 +172,7 @@
                 ->setCountable($Countable)
                 ->setQuantity($qty)
                 ->setEstablishmentId($establisment_id)
-                ->push();
+                ->save();
 
             if ($evento == 'deleted') {
                 $movement->delete();
@@ -257,7 +258,7 @@
             ) {
                 // Un egreso de item. la cantidad será restada
                 $Countable = true;
-                $qty *= (-1);
+                $qty = D::of($qty)->negated();
                 // @todo Se necesitará evaluar nota de credito y debito para que afecte correctamente.
             } elseif (
                 PurchaseItem::class == $modelClass ||
@@ -360,7 +361,7 @@
                         ->setItemUnitBusinessId($CatItemUnitBusiness)
                         ->setItemPackageMeasurementsId($CatItemPackageMeasurement)
                         ->setItemMoldCavitiesId($CatItemMoldCavity)
-                        ->push();
+                        ->save();
 
 
                 }

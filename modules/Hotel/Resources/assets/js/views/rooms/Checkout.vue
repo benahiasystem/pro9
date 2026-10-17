@@ -1,7 +1,6 @@
 <!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div>
-<iva-retention-fields :form="document" />
         <div class="page-header pe-0">
             <h2>
                 <a href="/hotels/reception">
@@ -416,7 +415,7 @@
 </template>
 
 <script>
-import IvaRetentionFields from "@views/documents/partials/iva_retention_fields.vue"
+import {withoutDraftRetentions, suggestRemainingPayment} from "@helpers/document-creation"
 import moment from "moment";
 import DocumentOptions from "@views/documents/partials/options.vue";
 import SaleNoteOptions from "@views/sale_notes/partials/options.vue";
@@ -426,7 +425,7 @@ import {exchangeRate, functions} from "@mixins/functions";
 import {mapActions, mapState} from "vuex/dist/vuex.mjs";
 
 export default {
-    components: {IvaRetentionFields,
+    components: {
         DocumentOptions,
         SaleNoteOptions,
     },
@@ -631,22 +630,6 @@ export default {
                 this.series.length > 0 ? this.series[0].id : null;
         },
         clickAddPayment() {
-
-            /*
-            const payment =
-                this.document.payments.length == 0 ? this.document.total : 0;
-            */
-
-            let payment = 0
-
-            if(this.document.payments.length == 0)
-            {
-                if(this.totalDebt > 0)
-                {
-                    payment = this.totalDebt
-                }
-            }
-
             let cash = _.find(this.paymentDestinations, {id: 'cash'})
             this.document.payments.push({
                 id: null,
@@ -655,8 +638,9 @@ export default {
                 payment_method_type_id: "01",
                 payment_destination_id: (cash)? cash.id : null,
                 reference: null,
-                payment: payment,
+                payment: 0,
             });
+            suggestRemainingPayment({...this.document, total: this.totalDebt, total_payable: this.totalDebt});
         },
         onExitPage() {
             window.location.href = "/hotels/reception";
@@ -758,7 +742,7 @@ export default {
             // ######## FIN MONEDA VENEZUELA HOTEL ########
             this.loading = true;
             this.$http
-                .post(`/${this.resource_documents}`, this.document)
+                .post(`/${this.resource_documents}`, withoutDraftRetentions(this.document))
                 .then((response) => {
                     if (response.data.success) {
 

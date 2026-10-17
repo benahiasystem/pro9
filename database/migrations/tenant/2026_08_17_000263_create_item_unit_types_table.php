@@ -11,12 +11,13 @@ use Illuminate\Support\Facades\DB;
  * - `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `item_id` int(10) unsigned NOT NULL
  * - `unit_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `quantity_unit` decimal(12,4) NOT NULL
- * - `price1` decimal(12,2) DEFAULT NULL
- * - `price2` decimal(12,2) DEFAULT NULL
- * - `price3` decimal(12,2) DEFAULT NULL
+ * - `quantity_unit` decimal(30,12) NOT NULL
+ * - `price1` decimal(30,12) DEFAULT NULL
+ * - `price2` decimal(30,12) DEFAULT NULL
+ * - `price3` decimal(30,12) DEFAULT NULL
  * - `price_default` tinyint(1) NOT NULL DEFAULT '2'
  * - `barcode` varchar(150) COLLATE utf8mb4_unicode_ci DEFAULT NULL
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
 {
@@ -28,12 +29,13 @@ CREATE TABLE `item_unit_types` (
   `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `item_id` int(10) unsigned NOT NULL,
   `unit_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `quantity_unit` decimal(12,4) NOT NULL,
-  `price1` decimal(12,2) DEFAULT NULL,
-  `price2` decimal(12,2) DEFAULT NULL,
-  `price3` decimal(12,2) DEFAULT NULL,
+  `quantity_unit` decimal(30,12) NOT NULL,
+  `price1` decimal(30,12) DEFAULT NULL,
+  `price2` decimal(30,12) DEFAULT NULL,
+  `price3` decimal(30,12) DEFAULT NULL,
   `price_default` tinyint(1) NOT NULL DEFAULT '2',
   `barcode` varchar(150) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`),
   KEY `item_unit_types_unit_type_id_foreign` (`unit_type_id`),
   KEY `item_unit_types_item_id_foreign` (`item_id`),

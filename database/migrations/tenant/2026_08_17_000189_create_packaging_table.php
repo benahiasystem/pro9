@@ -13,8 +13,8 @@ use Illuminate\Support\Facades\DB;
  * - `fiscal_environment` varchar(16) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `item_extra_data` json DEFAULT NULL
  * - `establishment_id` int(10) unsigned DEFAULT NULL
- * - `quantity` decimal(8,2) DEFAULT '0.00'
- * - `number_packages` decimal(8,2) DEFAULT '0.00'
+ * - `quantity` decimal(30,12) DEFAULT '0.00'
+ * - `number_packages` decimal(30,12) DEFAULT '0.00'
  * - `item` json DEFAULT NULL
  * - `observation` longtext COLLATE utf8mb4_unicode_ci
  * - `lot_code` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
@@ -26,6 +26,7 @@ use Illuminate\Support\Facades\DB;
  * - `created_at` timestamp NULL DEFAULT NULL
  * - `updated_at` timestamp NULL DEFAULT NULL
  * - `packaging_collaborator` text COLLATE utf8mb4_unicode_ci
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
 {
@@ -39,8 +40,8 @@ CREATE TABLE `packaging` (
   `fiscal_environment` varchar(16) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `item_extra_data` json DEFAULT NULL,
   `establishment_id` int(10) unsigned DEFAULT NULL,
-  `quantity` decimal(8,2) DEFAULT '0.00',
-  `number_packages` decimal(8,2) DEFAULT '0.00',
+  `quantity` decimal(30,12) DEFAULT '0.00',
+  `number_packages` decimal(30,12) DEFAULT '0.00',
   `item` json DEFAULT NULL,
   `observation` longtext COLLATE utf8mb4_unicode_ci,
   `lot_code` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
@@ -52,6 +53,7 @@ CREATE TABLE `packaging` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   `packaging_collaborator` text COLLATE utf8mb4_unicode_ci,
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`),
   KEY `packaging_fiscal_environment_foreign` (`fiscal_environment`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci

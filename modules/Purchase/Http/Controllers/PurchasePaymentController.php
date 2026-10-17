@@ -10,6 +10,7 @@ use App\Models\Tenant\Purchase;
 use Modules\Finance\Traits\FinanceTrait; 
 use Modules\Finance\Traits\FilePaymentTrait; 
 use Illuminate\Support\Facades\DB;
+use App\Support\Exact\Decimal as D;
 
 class PurchasePaymentController extends Controller
 {
@@ -34,9 +35,10 @@ class PurchasePaymentController extends Controller
     {
         $purchase = Purchase::find($purchase_id);
 
-        $total_paid = collect($purchase->payments)->sum('payment');
-        $total = $purchase->total;
-        $total_difference = round($total - $total_paid, 2);
+        $paidExact = D::sum($purchase->payments->map(fn($r)=>$r->exactValue('payment')));
+        $total_paid = D::represent($paidExact);
+        $total = D::represent($purchase->total_payable === null ? $purchase->exactValue('total') : $purchase->exactValue('total_payable'));
+        $total_difference = D::represent(D::of($total)->minus($paidExact));
 
         return [
             'number_full' => $purchase->number_full,

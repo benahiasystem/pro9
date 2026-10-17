@@ -59,7 +59,7 @@ class WeightedAverageCost extends ModelTenant
     {
         $query = self::where('item_id', $item_id)->orderForLastRow();
 
-        if($only_weighted_cost) $query->select(['weighted_cost']);
+        if($only_weighted_cost) $query->select(\App\Support\Exact\Persistence::enabled(new static) ? ['weighted_cost','calculation_snapshot'] : ['weighted_cost']);
 
         return $query->first();
     }

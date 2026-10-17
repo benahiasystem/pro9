@@ -7,7 +7,6 @@
                    :visible="show"
                    width="50%"
                    @open="create">
-<iva-retention-fields :form="document" />
             <div class="row">
                 <div class="col-lg-8">
                     <div :class="{'has-danger': errors.document_type_id}"
@@ -304,7 +303,7 @@
 </template>
 
 <script>
-import IvaRetentionFields from "@views/documents/partials/iva_retention_fields.vue"
+import {withoutDraftRetentions, suggestRemainingPayment} from "@helpers/document-creation"
 
 // import DocumentOptions from '../../documents/partials/options.vue'
 import DocumentOptions from '../../../../../../../resources/js/views/tenant/documents/partials/options.vue'
@@ -313,7 +312,7 @@ import DocumentOptions from '../../../../../../../resources/js/views/tenant/docu
 import moment from "moment";
 
 export default {
-    components: {IvaRetentionFields,DocumentOptions},
+    components: {DocumentOptions},
 
     props: [
         'show',
@@ -415,6 +414,7 @@ export default {
                 reference: null,
                 payment: 0,
             });
+            suggestRemainingPayment(this.document);
         },
         initForm() {
             this.generate = (this.showGenerate) ? true : false
@@ -516,7 +516,7 @@ export default {
 
             this.document.exchange_rate_sale = 1;
 
-            await this.$http.post(`/${this.resource_documents}`, this.document).then(response => {
+            await this.$http.post(`/${this.resource_documents}`, withoutDraftRetentions(this.document)).then(response => {
                 if (response.data.success) {
                     this.documentNewId = response.data.data.id;
                     this.showDialogDocumentOptions = true;

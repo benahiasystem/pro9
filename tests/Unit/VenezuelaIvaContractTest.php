@@ -80,9 +80,7 @@ class VenezuelaIvaContractTest extends TestCase
     /** @test */
     public function current_operation_structure_prepares_and_persists_sixteen_percent_iva(): void
     {
-        $calculator = (string) file_get_contents(resource_path('js/helpers/functions.js'));
-        self::assertStringContainsString('pigv = 0.16', $calculator);
-        self::assertStringContainsString('percentage_igv: exportation ? 0 : pigv * 100', $calculator);
+        // Numeric behavior is exercised by FiscalLineCalculationTest and fiscal-row.test.cjs.
 
         $quotation = (string) file_get_contents(app_path('Http/Controllers/Tenant/QuotationController.php'));
         self::assertStringContainsString('Localization::taxPercentage()', $quotation);

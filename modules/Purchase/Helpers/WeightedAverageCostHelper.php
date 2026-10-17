@@ -1,6 +1,7 @@
 <?php
 
 namespace Modules\Purchase\Helpers;
+use App\Support\Exact\Decimal as D;
 
 use Modules\Inventory\Models\ItemWarehouse;
 use Modules\Purchase\Models\WeightedAverageCost;
@@ -31,7 +32,7 @@ class WeightedAverageCostHelper
      */
     public function sumStockItemWarehouse($item_id)
     {
-        return ItemWarehouse::where('item_id', $item_id)->sum('stock');
+        return D::sum(ItemWarehouse::where('item_id', $item_id)->get()->map(fn ($row) => $row->exactValue('stock')));
     }
 
 
@@ -45,7 +46,7 @@ class WeightedAverageCostHelper
     {
         $row_weighted_cost = WeightedAverageCost::findLastWeightedAverageCost($item_id, true);
 
-        return number_format(optional($row_weighted_cost)->weighted_cost, 2, '.', '');
+        return D::represent($row_weighted_cost ? $row_weighted_cost->exactValue('weighted_cost') : 0);
     }
 
 
@@ -70,7 +71,7 @@ class WeightedAverageCostHelper
      */
     public function calculateWeightedCost($last_stock, $last_weighted_cost, $total, $stock)
     {
-        return round(($last_stock * $last_weighted_cost + $total) / $stock, 2);
+        return D::of($last_stock)->multipliedBy(D::of($last_weighted_cost))->plus(D::of($total))->dividedBy(D::of($stock));
     }
 
 
@@ -115,7 +116,7 @@ class WeightedAverageCostHelper
         // $presentation_quantity = $this->getPresentationQuantity($purchase_item);
         $presentation_quantity = 1;
 
-        return $last_stock + (($purchase_item->quantity * $factor) * $presentation_quantity);
+        return D::of($last_stock)->plus($purchase_item->exactValue('quantity')->multipliedBy($factor)->multipliedBy(D::of($presentation_quantity)));
     }
 
 
@@ -137,15 +138,15 @@ class WeightedAverageCostHelper
      */
     public function saveWeightedCostFromItem(Item $item, $is_created = true)
     {
-        $cost = $item->purchase_unit_price ? $item->purchase_unit_price : 0;
-        $stock = $is_created ? $item->stock : $this->sumStockItemWarehouse($item->id);
+        $cost = $item->exactValue('purchase_unit_price');
+        $stock = $is_created ? $item->exactValue('stock') : $this->sumStockItemWarehouse($item->id);
 
         return $this->createWeightedAverageCost($item, [
             'item_id' => $item->id,
             'date_of_issue' => date('Y-m-d'),
             'quantity' => $stock,
             'cost' => $cost,
-            'total' => $stock * $cost,
+            'total' => D::of($stock)->multipliedBy(D::of($cost)),
             'weighted_cost' => $cost,
             'stock' => $stock,
         ]);
@@ -197,27 +198,27 @@ class WeightedAverageCostHelper
 
         $last_weighted_average_cost = $this->getLastWeightedAverageCost($item_id);
 
-        $last_stock = isset($last_weighted_average_cost)  ? $last_weighted_average_cost->stock : 0 ;
+        $last_stock = isset($last_weighted_average_cost)  ? $last_weighted_average_cost->exactValue('stock') : 0 ;
 
-        $weighted_cost = isset($last_weighted_average_cost) ? $last_weighted_average_cost->weighted_cost : 0 ;
+        $weighted_cost = isset($last_weighted_average_cost) ? $last_weighted_average_cost->exactValue('weighted_cost') : 0 ;
 
         $stock = $this->calculateStock($purchase_item, $last_stock, $factor);
 
-        if($stock == 0 && $factor === -1)
+        if(D::of($stock)->isZero() && $factor === -1)
         {
-            $weighted_cost = $purchase_item->unit_price;
+            $weighted_cost = $purchase_item->exactValue('unit_price');
         }
         else
         {
-            $weighted_cost = $this->calculateWeightedCost($last_stock, $weighted_cost, ($purchase_item->total * $factor), $stock);
+            $weighted_cost = $this->calculateWeightedCost($last_stock, $weighted_cost, $purchase_item->exactValue('total')->multipliedBy($factor), $stock);
         }
 
         $this->createWeightedAverageCost($purchase_item, [
             'item_id' => $item_id,
             'date_of_issue' => date('Y-m-d'),
-            'quantity' => $purchase_item->quantity * $factor,
+            'quantity' => $purchase_item->exactValue('quantity')->multipliedBy($factor),
             'cost' => $purchase_item->unit_price,
-            'total' => $purchase_item->total * $factor,
+            'total' => $purchase_item->exactValue('total')->multipliedBy($factor),
             'weighted_cost' => $weighted_cost,
             'stock' => $stock,
         ]);

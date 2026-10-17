@@ -9,6 +9,7 @@ use App\Models\Tenant\PurchaseItem;
 use App\Models\Tenant\PurchaseSettlementItem;
 use App\Models\Tenant\SaleNoteItem;
 use Exception;
+use App\Support\Exact\Decimal as ExactDecimal;
 use Illuminate\Support\ServiceProvider;
 use Modules\Inventory\Traits\InventoryTrait;
 use Modules\Order\Models\OrderNote;
@@ -62,8 +63,8 @@ class InventoryKardexServiceProvider extends ServiceProvider
             // $warehouse = $this->findWarehouse($this->findWarehouseById($purchase_item->warehouse_id)->establishment_id);
             // $warehouse = $this->findWarehouse();
             //$this->createInventory($purchase_item->item_id, $purchase_item->quantity, $warehouse->id);
-            $this->createInventoryKardex($purchase_item->purchase, $purchase_item->item_id, /*$purchase_item->quantity*/ ($purchase_item->quantity * $presentationQuantity), $warehouse->id);
-            $this->updateStock($purchase_item->item_id, ($purchase_item->quantity * $presentationQuantity), $warehouse->id);
+            $this->createInventoryKardex($purchase_item->purchase, $purchase_item->item_id, /*$purchase_item->quantity*/ $purchase_item->exactValue('quantity')->multipliedBy(ExactDecimal::of($presentationQuantity)), $warehouse->id);
+            $this->updateStock($purchase_item->item_id, $purchase_item->exactValue('quantity')->multipliedBy(ExactDecimal::of($presentationQuantity)), $warehouse->id);
 
             // Sincronizar stock del restaurante
             $this->syncRestaurantStock($purchase_item->item_id);
@@ -82,9 +83,9 @@ class InventoryKardexServiceProvider extends ServiceProvider
             // $warehouse = $this->findWarehouse($this->findWarehouseById($purchase_item->warehouse_id)->establishment_id);
             // $warehouse = $this->findWarehouse();
             //$this->createInventory($purchase_item->item_id, $purchase_item->quantity, $warehouse->id);
-            $inve=$this->createInventoryKardex($purchase_item->purchase_settlement, $purchase_item->item_id, /*$purchase_item->quantity*/ ($purchase_item->quantity * $presentationQuantity), $warehouse->id);
+            $inve=$this->createInventoryKardex($purchase_item->purchase_settlement, $purchase_item->item_id, /*$purchase_item->quantity*/ $purchase_item->exactValue('quantity')->multipliedBy(ExactDecimal::of($presentationQuantity)), $warehouse->id);
             /* dd($inve); */
-            $this->updateStock($purchase_item->item_id, ($purchase_item->quantity * $presentationQuantity), $warehouse->id);
+            $this->updateStock($purchase_item->item_id, $purchase_item->exactValue('quantity')->multipliedBy(ExactDecimal::of($presentationQuantity)), $warehouse->id);
 
             // Sincronizar stock del restaurante
             $this->syncRestaurantStock($purchase_item->item_id);
@@ -120,18 +121,18 @@ class InventoryKardexServiceProvider extends ServiceProvider
                 if ($warehouse->establishment_id != $document->establishment_id) \App\Services\Fiscal\FiscalAmounts::error('items.warehouse_id','El almacén debe corresponder a la sucursal del comprobante.');
                 if (!$document_item->warehouse_id) $document_item->forceFill(['warehouse_id'=>$warehouse->id])->saveQuietly();
                 //$this->createInventory($document_item->item_id, $factor * $document_item->quantity, $warehouse->id);
-                $this->createInventoryKardex($document_item->document, $document_item->item_id, ($factor * ($document_item->quantity * $presentationQuantity)), $warehouse->id);
+                $this->createInventoryKardex($document_item->document, $document_item->item_id, $document_item->exactValue('quantity')->multipliedBy(ExactDecimal::of($presentationQuantity))->multipliedBy($factor), $warehouse->id);
 
                 if (!$document_item->document->sale_note_id && !$document_item->document->order_note_id && !$document_item->document->dispatch_id && !$document_item->document->sale_notes_relateds)
                 {
-                    $this->updateStock($document_item->item_id, ($factor * ($document_item->quantity * $presentationQuantity)), $warehouse->id);
+                    $this->updateStock($document_item->item_id, $document_item->exactValue('quantity')->multipliedBy(ExactDecimal::of($presentationQuantity))->multipliedBy($factor), $warehouse->id);
 
                 } else
                 {
                     if ($document_item->document->dispatch)
                     {
                         if (!$document_item->document->dispatch->discountsPhysicalStock()) {
-                            $this->updateStock($document_item->item_id, ($factor * ($document_item->quantity * $presentationQuantity)), $warehouse->id);
+                            $this->updateStock($document_item->item_id, $document_item->exactValue('quantity')->multipliedBy(ExactDecimal::of($presentationQuantity))->multipliedBy($factor), $warehouse->id);
                         }
                     }
                 }
@@ -150,15 +151,15 @@ class InventoryKardexServiceProvider extends ServiceProvider
                     $warehouse = $document_item->warehouse_id ? $this->findWarehouseById($document_item->warehouse_id) : $this->findWarehouse();
                     if ($warehouse->establishment_id != $document->establishment_id) \App\Services\Fiscal\FiscalAmounts::error('items.warehouse_id','El almacén debe corresponder a la sucursal del comprobante.');
                     if (!$document_item->warehouse_id) $document_item->forceFill(['warehouse_id'=>$warehouse->id])->saveQuietly();
-                    $this->createInventoryKardex($document_item->document, $ind_item->id, ($factor * ($document_item->quantity * $presentationQuantity * $item_set_quantity)), $warehouse->id);
+                    $this->createInventoryKardex($document_item->document, $ind_item->id, $document_item->exactValue('quantity')->multipliedBy(ExactDecimal::of($presentationQuantity))->multipliedBy(ExactDecimal::of($item_set_quantity))->multipliedBy($factor), $warehouse->id);
 
                     if (!$document_item->document->sale_note_id && !$document_item->document->order_note_id && !$document_item->document->dispatch_id && !$document_item->document->sale_notes_relateds)
                     {
-                        $this->updateStock($ind_item->id, ($factor * ($document_item->quantity * $presentationQuantity * $item_set_quantity)), $warehouse->id);
+                        $this->updateStock($ind_item->id, $document_item->exactValue('quantity')->multipliedBy(ExactDecimal::of($presentationQuantity))->multipliedBy(ExactDecimal::of($item_set_quantity))->multipliedBy($factor), $warehouse->id);
                     } else {
                         if ($document_item->document->dispatch) {
                             if (!$document_item->document->dispatch->discountsPhysicalStock()) {
-                                $this->updateStock($ind_item->id, ($factor * ($document_item->quantity * $presentationQuantity * $item_set_quantity)), $warehouse->id);
+                                $this->updateStock($ind_item->id, $document_item->exactValue('quantity')->multipliedBy(ExactDecimal::of($presentationQuantity))->multipliedBy(ExactDecimal::of($item_set_quantity))->multipliedBy($factor), $warehouse->id);
                             }
                         }
                     }
@@ -210,7 +211,7 @@ class InventoryKardexServiceProvider extends ServiceProvider
                                     throw new Exception("Lote no encontrado (id: {$lotId}) para el producto [{$productName}]");
                                 }
 
-                                $lot->quantity = $lot->quantity + (($quantity_unit * $compromiseQuantity) * $document_factor);
+                                $lot->quantity = $lot->exactValue('quantity')->plus(ExactDecimal::of($quantity_unit)->multipliedBy(ExactDecimal::of($compromiseQuantity))->multipliedBy($document_factor));
                                 $this->validateStockLotGroup($lot, $document_item);
                                 $lot->save();
                             }
@@ -230,9 +231,9 @@ class InventoryKardexServiceProvider extends ServiceProvider
                                 $quantity_unit = 1;
                             }
                             if ($document->document_type_id === '07') {
-                                $quantity = $lot->quantity + ($quantity_unit * $document_item->quantity);
+                                $quantity = $lot->exactValue('quantity')->plus($document_item->exactValue('quantity')->multipliedBy(ExactDecimal::of($quantity_unit)));
                             } else {
-                                $quantity = $lot->quantity - ($quantity_unit * $document_item->quantity);
+                                $quantity = $lot->exactValue('quantity')->minus($document_item->exactValue('quantity')->multipliedBy(ExactDecimal::of($quantity_unit)));
                             }
 
                             $lot->quantity = $quantity;
@@ -283,9 +284,9 @@ class InventoryKardexServiceProvider extends ServiceProvider
                 // $warehouse = $this->findWarehouse($sale_note_item->sale_note->establishment_id);
                 $warehouse = ($sale_note_item->warehouse_id) ? $this->findWarehouse($this->findWarehouseById($sale_note_item->warehouse_id)->establishment_id) : $this->findWarehouse($sale_note_item->sale_note->establishment_id);
 
-                // $this->createInventoryKardex($sale_note_item->sale_note, $sale_note_item->item_id, (-1 * ($sale_note_item->quantity * $presentationQuantity)), $warehouse->id);
-                $this->createInventoryKardexSaleNote($sale_note_item->sale_note, $sale_note_item->item_id, (-1 * ($sale_note_item->quantity * $presentationQuantity)), $warehouse->id, $sale_note_item->id);
-                if(!$sale_note_item->sale_note->order_note_id) $this->updateStock($sale_note_item->item_id, (-1 * ($sale_note_item->quantity * $presentationQuantity)), $warehouse->id);
+                // $this->createInventoryKardex($sale_note_item->sale_note, $sale_note_item->item_id, $sale_note_item->exactValue('quantity')->multipliedBy(ExactDecimal::of($presentationQuantity))->negated(), $warehouse->id);
+                $this->createInventoryKardexSaleNote($sale_note_item->sale_note, $sale_note_item->item_id, $sale_note_item->exactValue('quantity')->multipliedBy(ExactDecimal::of($presentationQuantity))->negated(), $warehouse->id, $sale_note_item->id);
+                if(!$sale_note_item->sale_note->order_note_id) $this->updateStock($sale_note_item->item_id, $sale_note_item->exactValue('quantity')->multipliedBy(ExactDecimal::of($presentationQuantity))->negated(), $warehouse->id);
 
             }else{
 
@@ -297,7 +298,7 @@ class InventoryKardexServiceProvider extends ServiceProvider
                     $item_set_quantity  = ($it->quantity) ? $it->quantity : 1;
                     $presentationQuantity = 1;
                     $warehouse = $this->findWarehouse($sale_note_item->sale_note->establishment_id);
-                    // $this->createInventoryKardex($sale_note_item->sale_note, $ind_item->id , (-1 * ($sale_note_item->quantity * $presentationQuantity)), $warehouse->id);
+                    // $this->createInventoryKardex($sale_note_item->sale_note, $ind_item->id , $sale_note_item->exactValue('quantity')->multipliedBy(ExactDecimal::of($presentationQuantity))->negated(), $warehouse->id);
                     $this->createInventoryKardexSaleNote($sale_note_item->sale_note, $ind_item->id , (-1 * ($sale_note_item->quantity * $presentationQuantity * $item_set_quantity)), $warehouse->id, $sale_note_item->id);
                     if(!$sale_note_item->sale_note->order_note_id) $this->updateStock($ind_item->id , (-1 * ($sale_note_item->quantity * $presentationQuantity * $item_set_quantity)), $warehouse->id);
 
@@ -341,7 +342,7 @@ class InventoryKardexServiceProvider extends ServiceProvider
     private function createInventory($item_id, $quantity, $warehouse_id) {
         if(!$this->checkInventory($item_id, $warehouse_id)) {
             $item = $this->findItem($item_id);
-            $this->createInitialInventory($item_id, $item->stock + (-1 * $quantity), $warehouse_id);
+            $this->createInitialInventory($item_id, $item->exactValue('stock')->minus(ExactDecimal::of($quantity)), $warehouse_id);
         }
     }
 
@@ -363,9 +364,9 @@ class InventoryKardexServiceProvider extends ServiceProvider
                 // $warehouse = $this->findWarehouse();
                 $warehouse = ($sale_note_item->warehouse_id) ? $this->findWarehouse($this->findWarehouseById($sale_note_item->warehouse_id)->establishment_id) : $this->findWarehouse($sale_note_item->sale_note->establishment_id);
 
-                $this->createInventoryKardex($sale_note_item->sale_note, $sale_note_item->item_id, ($sale_note_item->quantity * $presentationQuantity), $warehouse->id);
+                $this->createInventoryKardex($sale_note_item->sale_note, $sale_note_item->item_id, $sale_note_item->exactValue('quantity')->multipliedBy(ExactDecimal::of($presentationQuantity)), $warehouse->id);
                 // $this->deleteInventoryKardex($sale_note_item->sale_note, $sale_note_item->inventory_kardex_id);
-                $this->updateStock($sale_note_item->item_id, (1 * ($sale_note_item->quantity * $presentationQuantity)), $warehouse->id);
+                $this->updateStock($sale_note_item->item_id, $sale_note_item->exactValue('quantity')->multipliedBy(ExactDecimal::of($presentationQuantity)), $warehouse->id);
 
             }else{
 
@@ -423,7 +424,7 @@ class InventoryKardexServiceProvider extends ServiceProvider
 
             if (!$item->is_set) {
                 $presentationQuantity = $item->presentation->quantity_unit ?? 1;
-                $quanty = ($factor * ($order_note_item->quantity * $presentationQuantity));
+                $quanty = $order_note_item->exactValue('quantity')->multipliedBy(ExactDecimal::of($presentationQuantity))->multipliedBy($factor);
 
                 $warehouse = ($warehouse_id) ?
                     $this->findWarehouse($this->findWarehouseById($warehouse_id)->establishment_id) :
@@ -470,8 +471,8 @@ class InventoryKardexServiceProvider extends ServiceProvider
             }
 
 
-            // $this->createInventoryKardex($order_note_item->order_note, $order_note_item->item_id, (-1 * ($order_note_item->quantity * $presentationQuantity)), $warehouse->id);
-            // $this->updateStock($order_note_item->item_id, (-1 * ($order_note_item->quantity * $presentationQuantity)), $warehouse->id);
+            // $this->createInventoryKardex($order_note_item->order_note, $order_note_item->item_id, $order_note_item->exactValue('quantity')->multipliedBy(ExactDecimal::of($presentationQuantity))->negated(), $warehouse->id);
+            // $this->updateStock($order_note_item->item_id, $order_note_item->exactValue('quantity')->multipliedBy(ExactDecimal::of($presentationQuantity))->negated(), $warehouse->id);
 
             // control de lotes
             if (isset($order_note_item->item->IdLoteSelected))
@@ -543,9 +544,9 @@ class InventoryKardexServiceProvider extends ServiceProvider
             // $warehouse = $this->findWarehouse($order_note_item->order_note->establishment_id);
             $warehouse = ($order_note_item->warehouse_id) ? $this->findWarehouse($this->findWarehouseById($order_note_item->warehouse_id)->establishment_id) : $this->findWarehouse($order_note_item->order_note->establishment_id);
 
-            $this->createInventoryKardex($order_note_item->order_note, $order_note_item->item_id , (1 * ($order_note_item->quantity * $presentationQuantity)), $warehouse->id);
+            $this->createInventoryKardex($order_note_item->order_note, $order_note_item->item_id , $order_note_item->exactValue('quantity')->multipliedBy(ExactDecimal::of($presentationQuantity)), $warehouse->id);
 
-            $this->updateStock($order_note_item->item_id, (1 * ($order_note_item->quantity * $presentationQuantity)), $warehouse->id);
+            $this->updateStock($order_note_item->item_id, $order_note_item->exactValue('quantity')->multipliedBy(ExactDecimal::of($presentationQuantity)), $warehouse->id);
 
 
             if (isset($order_note_item->item->lots_group)) {
@@ -585,9 +586,9 @@ class InventoryKardexServiceProvider extends ServiceProvider
 
             $this->deleteItemSeriesAndGroup($purchase_item);
 
-            $this->createInventoryKardex($purchase_item->purchase, $purchase_item->item_id, (-1 * ($purchase_item->quantity * $presentationQuantity)), $warehouse->id);
-            // $this->updateStock($purchase_item->item_id, (-1 *($purchase_item->quantity * $presentationQuantity)), $warehouse->id);
-            $this->updateStockPurchase($purchase_item->item_id, (-1 *($purchase_item->quantity * $presentationQuantity)), $warehouse->id);
+            $this->createInventoryKardex($purchase_item->purchase, $purchase_item->item_id, $purchase_item->exactValue('quantity')->multipliedBy(ExactDecimal::of($presentationQuantity))->negated(), $warehouse->id);
+            // $this->updateStock($purchase_item->item_id, $purchase_item->exactValue('quantity')->multipliedBy(ExactDecimal::of($presentationQuantity))->negated(), $warehouse->id);
+            $this->updateStockPurchase($purchase_item->item_id, $purchase_item->exactValue('quantity')->multipliedBy(ExactDecimal::of($presentationQuantity))->negated(), $warehouse->id);
 
         });
     }
@@ -609,9 +610,9 @@ class InventoryKardexServiceProvider extends ServiceProvider
 
             $this->deleteItemSeriesAndGroup($purchase_item);
 
-            $this->createInventoryKardex($purchase_item->purchase_settlement, $purchase_item->item_id, (-1 * ($purchase_item->quantity * $presentationQuantity)), $warehouse->id);
-            // $this->updateStock($purchase_item->item_id, (-1 *($purchase_item->quantity * $presentationQuantity)), $warehouse->id);
-            $this->updateStockPurchase($purchase_item->item_id, (-1 *($purchase_item->quantity * $presentationQuantity)), $warehouse->id);
+            $this->createInventoryKardex($purchase_item->purchase_settlement, $purchase_item->item_id, $purchase_item->exactValue('quantity')->multipliedBy(ExactDecimal::of($presentationQuantity))->negated(), $warehouse->id);
+            // $this->updateStock($purchase_item->item_id, $purchase_item->exactValue('quantity')->multipliedBy(ExactDecimal::of($presentationQuantity))->negated(), $warehouse->id);
+            $this->updateStockPurchase($purchase_item->item_id, $purchase_item->exactValue('quantity')->multipliedBy(ExactDecimal::of($presentationQuantity))->negated(), $warehouse->id);
 
         });
     }

@@ -636,7 +636,7 @@ class FiscalEmissionSchemaTest extends TestCase
         $paid=(new \App\CoreFacturalo\Facturalo())->save($fx)->getDocument();
         self::assertEquals(238.96,$paid->total);self::assertTrue((bool)$paid->total_canceled);self::assertEquals(238.96,$paid->payments->sum('payment'));self::assertEquals(0,$paid->balance);
         self::assertEquals(6.96,$paid->taxes()->where('tax_kind','IGTF')->sum('amount'));
-        self::assertEquals(round(238.96*10.123,2),$paid->currency_totals->total);
+        self::assertSame('2418.99208', \App\Support\Exact\Decimal::represent($paid->currency_totals->exactValue('total')));
         self::assertEquals(232,$paid->payments->whereNull('receipt_parent_id')->first()->payment);
         $company->forceFill(['igtf_enabled'=>false])->save();
         self::assertSame($paid->payments->whereNull('receipt_parent_id')->first()->id,$service::payment($paid,[
@@ -696,7 +696,7 @@ class FiscalEmissionSchemaTest extends TestCase
             'received_retentions'=>[array_replace($retention,['amount'=>999])]]));self::fail('Invalid retention persisted');}
         catch (\Illuminate\Validation\ValidationException $e) { self::assertSame($count,$db->table('documents')->count()); }
         foreach (['total','total_igv','total_discount'] as $column) {
-            self::assertSame('decimal(12,2)',$db->selectOne('SHOW COLUMNS FROM documents WHERE Field = ?',[$column])->Type);
+            self::assertSame('decimal(30,12)',$db->selectOne('SHOW COLUMNS FROM documents WHERE Field = ?',[$column])->Type);
         }
         self::assertSame('decimal(18,8)',$db->selectOne("SHOW COLUMNS FROM documents WHERE Field = 'exchange_rate_sale'")->Type);
         foreach (['ubl_version','perception','total_unaffected','total_free','total_igv_free','retention','user_rel_subscription_plan_id'] as $column) {
@@ -1190,6 +1190,97 @@ class FiscalEmissionSchemaTest extends TestCase
         $input['customer'] = $customer->toArray();
         $input['payment_condition_id'] = '01';
         return [$db, $app, $input];
+    }
+
+    public function test_exact_calculations_survive_mysql_reads_grouping_discounts_and_rollback(): void
+    {
+        [$db, $app, $input] = $this->bootHkaFixture();
+        $db->table('configurations')->update(['auto_send_hka'=>false]);
+        $db->table('item_warehouse')->update(['stock'=>'1000']);
+        $input['payments'] = [];
+        $input['items'][0]['quantity'] = '1';
+        $input['items'][0]['unit_price'] = '500';
+        $document = (new \App\CoreFacturalo\Facturalo())->save($input)->getDocument()->fresh();
+        $D = \App\Support\Exact\Decimal::class;
+        self::assertSame('500', $D::represent($document->exactValue('total')));
+        self::assertSame('500', $D::represent($document->exactValue('total_payable')));
+        $line = $document->items()->firstOrFail();
+        self::assertSame('500', $D::represent($line->exactValue('unit_value')->multipliedBy('1.16')));
+        self::assertSame('431.034482758621', $D::represent($line->exactValue('total_value')));
+        self::assertSame(1, $line->calculation_snapshot['version']);
+        self::assertSame('500', $document->balance);
+
+        $feeAmounts=$D::allocate('500',[1,1,1]);
+        $withFee=array_replace($input,['external_id'=>(string)\Illuminate\Support\Str::uuid(),
+            'payment_condition_id'=>'02','fee'=>array_map(fn($amount)=>['date'=>'2026-11-16','currency_type_id'=>'VES',
+                'amount'=>$amount,'allocation_weight'=>'1'],$feeAmounts)]);
+        $scheduled=(new \App\CoreFacturalo\Facturalo())->save($withFee)->getDocument()->fresh()->fee;
+        self::assertSame('500',$D::represent($D::sum($scheduled->map(fn($fee)=>$fee->exactValue('amount')))));
+        foreach ($scheduled as $fee) self::assertSame(['n'=>'500','d'=>'3'],$D::fraction($fee->exactValue('scheduled_exact')));
+
+        $grouped = array_replace($input, ['external_id'=>(string)\Illuminate\Support\Str::uuid()]);
+        $grouped['items'][0]['quantity'] = '100';
+        $one = (new \App\CoreFacturalo\Facturalo())->save($grouped)->getDocument()->fresh();
+        $grouped['external_id'] = (string)\Illuminate\Support\Str::uuid();
+        $grouped['items'] = array_fill(0, 100, $input['items'][0]);
+        $many = (new \App\CoreFacturalo\Facturalo())->save($grouped)->getDocument()->fresh();
+        self::assertSame('50000', $D::represent($one->exactValue('total')));
+        self::assertTrue($one->exactValue('total')->isEqualTo($many->exactValue('total')));
+
+        $discounted = array_replace($input, ['external_id'=>(string)\Illuminate\Support\Str::uuid()]);
+        $discounted['items'][0]['unit_price'] = '100';
+        $discounted['items'][0]['affectation_igv_type_id'] = '20';
+        $discounted['items'][0]['discounts'] = [['discount_type_id'=>'00','is_amount'=>true,
+            'from_global_distribution'=>true,'amount'=>'0.333333333333','amount_exact'=>['n'=>'1','d'=>'3']]];
+        $discounted['items'] = array_fill(0, 3, $discounted['items'][0]);
+        $discounted = (new \App\CoreFacturalo\Facturalo())->save($discounted)->getDocument()->fresh();
+        self::assertSame('299', $D::represent($discounted->exactValue('total')));
+        self::assertSame('1', $D::represent($discounted->exactValue('total_discount')));
+
+        $before = $db->table('documents')->count();
+        $stock = $db->table('item_warehouse')->value('stock');
+        $invalid = array_replace($input, ['external_id'=>(string)\Illuminate\Support\Str::uuid()]);
+        $invalid['items'][0]['unit_price'] = '500.0000000000001';
+        try { (new \App\CoreFacturalo\Facturalo())->save($invalid); self::fail('Excess input precision must be rejected.'); }
+        catch (\Illuminate\Validation\ValidationException $expected) { self::assertNotEmpty($expected->errors()); }
+        self::assertSame($before, $db->table('documents')->count());
+        self::assertSame($stock, $db->table('item_warehouse')->value('stock'));
+
+    }
+
+    public function test_exact_commercial_lifecycle_preserves_quantities_and_reverses_stock(): void
+    {
+        [$db,$app,$input]=$this->bootHkaFixture();
+        $db->table('configurations')->update(['auto_send_hka'=>false]);
+        $db->table('item_warehouse')->update(['stock'=>'1000']);
+        $input['items'][0]['quantity']='1';
+        $D=\App\Support\Exact\Decimal::class;
+        // Commercial documents also recalculate their headers on the server.
+        $saleNote = new \App\Models\Tenant\SaleNote();
+        $saleNote->fill(array_intersect_key($input,array_flip($saleNote->getFillable())));
+        $db->table('cash')->insert(['user_id'=>auth()->id(),'date_opening'=>'2026-09-10','time_opening'=>'12:00:00','state'=>true]);
+        $saleNote->forceFill(['prefix'=>'NV','document_type_id'=>'80','series'=>'NV01','number'=>'#','total'=>'0','external_id'=>(string)\Illuminate\Support\Str::uuid(),
+            'user_id'=>auth()->id(),'state_type_id'=>'01'])->save();
+        $commercialLine = array_replace($input['items'][0],['unit_price'=>'500','total'=>'499.99','price_type_id'=>'01']);
+        $savedLine = $saleNote->items()->create($commercialLine);
+        self::assertSame('500',$D::represent($savedLine->fresh()->exactValue('total')));
+        self::assertSame('500',$D::represent($saleNote->fresh()->exactValue('total')));
+        // The commercial edit flow replaces quantity lines and reverses their movement first.
+        $savedLine->delete();
+        $savedLine=$saleNote->items()->create(array_replace($commercialLine,['quantity'=>'3']));
+        self::assertSame('1500',$D::represent($saleNote->fresh()->exactValue('total')));
+        $savedLine->delete();
+        self::assertSame('0',$D::represent($saleNote->fresh()->exactValue('total')));
+        self::assertSame('1000',$D::represent(\Modules\Inventory\Models\ItemWarehouse::firstOrFail()->exactValue('stock')));
+        $commercialLine=array_replace($commercialLine,['unit_price'=>'3','quantity'=>'166.666666666667',
+            'quantity_input'=>['amount'=>'500','unit_price'=>'3']]);
+        $periodic=$saleNote->items()->create($commercialLine);
+        self::assertSame('500',$D::represent($saleNote->fresh()->exactValue('total')));
+        $periodic=$periodic->fresh();$periodic->unit_price='6';$periodic->save();
+        self::assertSame('1000',$D::represent($saleNote->fresh()->exactValue('total')));
+        self::assertSame('2500',$D::represent(\Modules\Inventory\Models\ItemWarehouse::firstOrFail()->exactValue('stock')->multipliedBy(3)));
+        $periodic->delete();
+        self::assertSame('1000',$D::represent(\Modules\Inventory\Models\ItemWarehouse::firstOrFail()->exactValue('stock')));
     }
 
     public function test_hka_emission_runs_after_outer_commit_and_recovers_without_duplicate_sales(): void

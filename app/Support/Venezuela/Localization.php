@@ -30,6 +30,13 @@ final class Localization
         return self::taxRate() * 100;
     }
 
+    public static function exactTaxPercentage(): string
+    {
+        return \App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::of(
+            \App\Support\Exact\Decimal::input(config('venezuela.tax.rate','0.16'),'iva.rate')
+        )->multipliedBy(100));
+    }
+
     public static function taxMultiplier(): float
     {
         return 1 + self::taxRate();

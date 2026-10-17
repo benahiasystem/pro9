@@ -13,8 +13,8 @@ use Illuminate\Support\Facades\DB;
  * - `customer` json NOT NULL
  * - `shipping_address` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `items` json NOT NULL
- * - `total` decimal(12,2) NOT NULL
- * - `total_discount` decimal(12,2) NOT NULL DEFAULT '0.00'
+ * - `total` decimal(30,12) NOT NULL
+ * - `total_discount` decimal(30,12) NOT NULL DEFAULT '0.00'
  * - `discount_coupon_code` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `discount_coupon_id` bigint(20) unsigned DEFAULT NULL
  * - `stock_discounted` tinyint(1) NOT NULL DEFAULT '0'
@@ -30,6 +30,7 @@ use Illuminate\Support\Facades\DB;
  * - `updated_at` timestamp NULL DEFAULT NULL
  * - `deleted_at` timestamp NULL DEFAULT NULL
  * - `apply_restaurant` tinyint(1) DEFAULT '0'
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
 {
@@ -43,8 +44,8 @@ CREATE TABLE `orders` (
   `customer` json NOT NULL,
   `shipping_address` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `items` json NOT NULL,
-  `total` decimal(12,2) NOT NULL,
-  `total_discount` decimal(12,2) NOT NULL DEFAULT '0.00',
+  `total` decimal(30,12) NOT NULL,
+  `total_discount` decimal(30,12) NOT NULL DEFAULT '0.00',
   `discount_coupon_code` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `discount_coupon_id` bigint(20) unsigned DEFAULT NULL,
   `stock_discounted` tinyint(1) NOT NULL DEFAULT '0',
@@ -60,6 +61,7 @@ CREATE TABLE `orders` (
   `updated_at` timestamp NULL DEFAULT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL,
   `apply_restaurant` tinyint(1) DEFAULT '0',
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`),
   UNIQUE KEY `orders_order_code_unique` (`order_code`),
   KEY `orders_status_order_id_foreign` (`status_order_id`),

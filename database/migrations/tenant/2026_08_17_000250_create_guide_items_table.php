@@ -11,9 +11,10 @@ use Illuminate\Support\Facades\DB;
  * - `guide_id` int(10) unsigned NOT NULL
  * - `item_id` int(10) unsigned NOT NULL
  * - `item_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `quantity` decimal(20,8) NOT NULL
- * - `unit_cost` decimal(20,8) NOT NULL
- * - `total` decimal(12,2) NOT NULL
+ * - `quantity` decimal(30,12) NOT NULL
+ * - `unit_cost` decimal(30,12) NOT NULL
+ * - `total` decimal(30,12) NOT NULL
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
 {
@@ -25,9 +26,10 @@ CREATE TABLE `guide_items` (
   `guide_id` int(10) unsigned NOT NULL,
   `item_id` int(10) unsigned NOT NULL,
   `item_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `quantity` decimal(20,8) NOT NULL,
-  `unit_cost` decimal(20,8) NOT NULL,
-  `total` decimal(12,2) NOT NULL,
+  `quantity` decimal(30,12) NOT NULL,
+  `unit_cost` decimal(30,12) NOT NULL,
+  `total` decimal(30,12) NOT NULL,
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`),
   KEY `guide_items_guide_id_foreign` (`guide_id`),
   KEY `guide_items_item_id_foreign` (`item_id`)

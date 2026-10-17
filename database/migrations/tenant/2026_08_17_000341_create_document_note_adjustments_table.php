@@ -2,7 +2,11 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 // ######## INICIO NOTAS HKA: ESQUEMA INICIAL ########
-/** New installations only. Amounts DECIMAL(12,2), rates DECIMAL(18,8); FKs in 000999. */
+/**
+ * Instalaciones nuevas: importes DECIMAL(30,12) y fracciones exactas; tasas DECIMAL(18,8).
+ * Las claves foráneas se agregan en 000999.
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
+ */
 return new class extends Migration {
     public function up(): void {
         DB::unprepared(<<<'SQL'
@@ -11,7 +15,7 @@ CREATE TABLE `document_note_adjustments` (
   `retention_id` int unsigned DEFAULT NULL,
   `tax_id` int unsigned DEFAULT NULL,
   `guarantee_fund_id` int unsigned DEFAULT NULL,
-  `amount` decimal(12,2) NOT NULL,
+  `amount` decimal(30,12) NOT NULL,
   `status` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL,
   `diagnostic` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `reason` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -29,6 +33,7 @@ CREATE TABLE `document_note_adjustments` (
   `context` json NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`),
   UNIQUE KEY `document_note_adjustments_operation_unique` (`operation_key`),
   KEY `document_note_adjustments_document_index` (`document_id`),

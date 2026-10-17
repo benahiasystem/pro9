@@ -12,13 +12,14 @@ use Illuminate\Support\Facades\DB;
  * - `origin_id` int(11) NOT NULL
  * - `origin_type` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `item_id` int(10) unsigned NOT NULL
- * - `quantity` decimal(12,4) NOT NULL
- * - `cost` decimal(16,6) NOT NULL
- * - `total` decimal(12,2) NOT NULL
- * - `weighted_cost` decimal(12,2) NOT NULL
- * - `stock` decimal(12,4) NOT NULL
+ * - `quantity` decimal(30,12) NOT NULL
+ * - `cost` decimal(30,12) NOT NULL
+ * - `total` decimal(30,12) NOT NULL
+ * - `weighted_cost` decimal(30,12) NOT NULL
+ * - `stock` decimal(30,12) NOT NULL
  * - `created_at` timestamp NULL DEFAULT NULL
  * - `updated_at` timestamp NULL DEFAULT NULL
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
 {
@@ -31,13 +32,14 @@ CREATE TABLE `weighted_average_costs` (
   `origin_id` int(11) NOT NULL,
   `origin_type` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `item_id` int(10) unsigned NOT NULL,
-  `quantity` decimal(12,4) NOT NULL,
-  `cost` decimal(16,6) NOT NULL,
-  `total` decimal(12,2) NOT NULL,
-  `weighted_cost` decimal(12,2) NOT NULL,
-  `stock` decimal(12,4) NOT NULL,
+  `quantity` decimal(30,12) NOT NULL,
+  `cost` decimal(30,12) NOT NULL,
+  `total` decimal(30,12) NOT NULL,
+  `weighted_cost` decimal(30,12) NOT NULL,
+  `stock` decimal(30,12) NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`),
   KEY `origin_index` (`origin_id`,`origin_type`),
   KEY `weighted_average_costs_item_id_foreign` (`item_id`),

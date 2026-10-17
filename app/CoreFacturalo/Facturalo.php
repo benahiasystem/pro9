@@ -147,7 +147,7 @@ class Facturalo
                     $document->forceFill(['customer'=>$inputs['customer'],'establishment'=>$inputs['establishment']])->save();
                 }
                 foreach ($inputs['items'] as $row) {
-                    $document->items()->create(!empty($inputs['note_creation_key']) ? $row : (in_array($this->type, ['invoice','credit','debit'], true) ? \App\Services\Fiscal\FiscalDocumentPersistence::line($row, \App\Services\ExportInvoicePolicy::isExport(\App\Services\ExportInvoicePolicy::operation($inputs))) : $row));
+                    $document->items()->create(!empty($inputs['note_creation_key']) ? $row : (in_array($this->type, ['invoice','credit','debit'], true) ? \App\Services\Fiscal\FiscalDocumentPersistence::line($row + ['currency_type_id'=>$document->currency_type_id, 'exchange_rate_sale'=>$document->exchange_rate_sale], \App\Services\ExportInvoicePolicy::isExport(\App\Services\ExportInvoicePolicy::operation($inputs))) : $row));
                 }
                 if($this->type === 'credit') $this->saveFee($document, $inputs['fee']);
                 // ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
@@ -164,17 +164,17 @@ class Facturalo
                 $inputs=\App\Services\Fiscal\DeliveryOrderInvoiceInventory::prepare($inputs);
                 $document = Document::create($inputs);
                 $document->invoice()->create($inputs['invoice']);
-                $this->saveFee($document, $inputs['fee']);
                 foreach ($inputs['items'] as $row) {
 //                    $purchase_unit_price = $row['purchase_unit_price'];
 //                    $row['item']['purchase_unit_price'] = $purchase_unit_price;
-                    $document->items()->create(in_array($this->type, ['invoice','credit','debit'], true) ? \App\Services\Fiscal\FiscalDocumentPersistence::line($row, \App\Services\ExportInvoicePolicy::isExport(\App\Services\ExportInvoicePolicy::operation($inputs))) : $row);
+                    $document->items()->create(in_array($this->type, ['invoice','credit','debit'], true) ? \App\Services\Fiscal\FiscalDocumentPersistence::line($row + ['currency_type_id'=>$document->currency_type_id, 'exchange_rate_sale'=>$document->exchange_rate_sale], \App\Services\ExportInvoicePolicy::isExport(\App\Services\ExportInvoicePolicy::operation($inputs))) : $row);
                     // $row['document_id']=  $document->id;
                     // $item = new DocumentItem($row);
                     // $item->push();
                 }
                 \App\Services\Fiscal\FiscalDocumentPersistence::otherTaxes($document, $inputs['taxes'] ?? []);
                 \App\Services\Fiscal\FiscalDocumentPersistence::summarize($document);
+                $this->saveFee($document, $inputs['fee'] ?? []);
                 $this->savePayments($document, $inputs['payments']);
                 $this->updatePrepaymentDocuments($inputs);
                 if($inputs['hotel']) $document->hotel()->create($inputs['hotel']);
@@ -212,7 +212,7 @@ class Facturalo
             case 'purchase_settlement':
                 $document = PurchaseSettlement::create($inputs);
                 foreach ($inputs['items'] as $row) {
-                    $document->items()->create(in_array($this->type, ['invoice','credit','debit'], true) ? \App\Services\Fiscal\FiscalDocumentPersistence::line($row, \App\Services\ExportInvoicePolicy::isExport(\App\Services\ExportInvoicePolicy::operation($inputs))) : $row);
+                    $document->items()->create(in_array($this->type, ['invoice','credit','debit'], true) ? \App\Services\Fiscal\FiscalDocumentPersistence::line($row + ['currency_type_id'=>$document->currency_type_id, 'exchange_rate_sale'=>$document->exchange_rate_sale], \App\Services\ExportInvoicePolicy::isExport(\App\Services\ExportInvoicePolicy::operation($inputs))) : $row);
                 }
                 $this->document = PurchaseSettlement::find($document->id);
                 break;
@@ -229,7 +229,7 @@ class Facturalo
                     'id' => $inputs['id']
                 ], $inputs);
                 foreach ($inputs['items'] as $row) {
-                    $document->items()->create(in_array($this->type, ['invoice','credit','debit'], true) ? \App\Services\Fiscal\FiscalDocumentPersistence::line($row, \App\Services\ExportInvoicePolicy::isExport(\App\Services\ExportInvoicePolicy::operation($inputs))) : $row);
+                    $document->items()->create(in_array($this->type, ['invoice','credit','debit'], true) ? \App\Services\Fiscal\FiscalDocumentPersistence::line($row + ['currency_type_id'=>$document->currency_type_id, 'exchange_rate_sale'=>$document->exchange_rate_sale], \App\Services\ExportInvoicePolicy::isExport(\App\Services\ExportInvoicePolicy::operation($inputs))) : $row);
                 }
                 $this->document = Dispatch::find($document->id);
                 break;
@@ -991,14 +991,14 @@ class Facturalo
             $values = \App\Services\Fiscal\FiscalAmounts::payment($row, $document->currency_type_id, $document->exchange_rate_sale, (bool)$company->igtf_enabled, $company->igtf_rate);
             $normalized[] = array_merge($row, $values);
         }
-        $excess = round(array_sum(array_column($normalized, 'payment')) - $document->total, 2);
-        if ($excess > 0) {
+        $excess = \App\Support\Exact\Decimal::sum(array_column($normalized, 'payment'))->minus(\App\Support\Exact\Decimal::of($document->total_payable ?? $document->total));
+        if ($excess->isGreaterThan(0)) {
             $index = 0;
             foreach ($normalized as $i => $row) if ($row['payment_method_type_id'] === '01') { $index = $i; break; }
             $row = $normalized[$index];
-            if ($row['payment'] <= $excess) \App\Services\Fiscal\FiscalAmounts::error('payments','El exceso supera el pago seleccionado para vuelto.');
-            $row['change'] = \App\Services\Fiscal\FiscalAmounts::convert($excess, $document->currency_type_id, $row['currency_type_id'], $row['exchange_rate']);
-            $row['original_amount'] = round($row['original_amount'] - $row['change'], 2);
+            if (\App\Support\Exact\Decimal::of($row['payment'])->isLessThanOrEqualTo($excess)) \App\Services\Fiscal\FiscalAmounts::error('payments','El exceso supera el pago seleccionado para vuelto.');
+            $row['change'] = \App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::convert($excess, $document->currency_type_id, $row['currency_type_id'], $row['exchange_rate']), 2);
+            $row['original_amount'] = \App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::of($row['original_amount'])->minus(\App\Support\Exact\Decimal::of($row['change'])));
             $normalized[$index] = $row;
         }
         foreach ($normalized as $row) {
@@ -1084,7 +1084,7 @@ class Facturalo
                 // $document->items()->delete();
 
                 foreach ($inputs['items'] as $row) {
-                    $document->items()->create(in_array($this->type, ['invoice','credit','debit'], true) ? \App\Services\Fiscal\FiscalDocumentPersistence::line($row, \App\Services\ExportInvoicePolicy::isExport(\App\Services\ExportInvoicePolicy::operation($inputs))) : $row);
+                    $document->items()->create(in_array($this->type, ['invoice','credit','debit'], true) ? \App\Services\Fiscal\FiscalDocumentPersistence::line($row + ['currency_type_id'=>$document->currency_type_id, 'exchange_rate_sale'=>$document->exchange_rate_sale], \App\Services\ExportInvoicePolicy::isExport(\App\Services\ExportInvoicePolicy::operation($inputs))) : $row);
                 }
 
                 \App\Services\Fiscal\FiscalDocumentPersistence::otherTaxes($document, $inputs['taxes'] ?? []);
@@ -1158,12 +1158,17 @@ class Facturalo
         return $this;
     }
 
+    // ######## INICIO CALCULOS EXACTOS PRO9 ########
     private function saveFee($document, $fee)
     {
-        foreach ($fee as $row) {
-            $document->fee()->create($row);
+        $rows=\App\Support\Exact\Installments::calculate($document->exactValue('total'),array_values($fee),$document->total_payable ?? $document->total);
+        foreach ($rows as $row) {
+            $record = $document->fee()->make($row);
+            $record->calculation_snapshot = $row['calculation_snapshot'];
+            $record->save();
         }
     }
+    // ######## FIN CALCULOS EXACTOS PRO9 ########
 
     public function previewPdf($document = null, $type = null, $format = null, $output = 'pdf') {
         ini_set("pcre.backtrack_limit", "5000000");

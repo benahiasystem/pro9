@@ -10,7 +10,8 @@ use Illuminate\Support\Facades\DB;
  * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
  * - `item_id` int(10) unsigned NOT NULL
  * - `warehouse_id` int(10) unsigned NOT NULL
- * - `price` decimal(16,6) NOT NULL DEFAULT '0.000000'
+ * - `price` decimal(30,12) NOT NULL DEFAULT '0.000000'
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
 {
@@ -21,7 +22,8 @@ CREATE TABLE `item_warehouse_prices` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `item_id` int(10) unsigned NOT NULL,
   `warehouse_id` int(10) unsigned NOT NULL,
-  `price` decimal(16,6) NOT NULL DEFAULT '0.000000',
+  `price` decimal(30,12) NOT NULL DEFAULT '0.000000',
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`),
   KEY `item_warehouse_prices_item_id_foreign` (`item_id`),
   KEY `item_warehouse_prices_warehouse_id_foreign` (`warehouse_id`)

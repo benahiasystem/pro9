@@ -27,7 +27,7 @@ use Illuminate\Support\Facades\DB;
  * - `transshipment_indicator` tinyint(1) NOT NULL
  * - `port_code` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `unit_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `total_weight` decimal(10,2) NOT NULL
+ * - `total_weight` decimal(30,12) NOT NULL
  * - `packages_number` int(11) NOT NULL
  * - `container_number` int(11) DEFAULT NULL
  * - `origin` json NOT NULL
@@ -41,6 +41,7 @@ use Illuminate\Support\Facades\DB;
  * - `qr` longtext COLLATE utf8mb4_unicode_ci
  * - `created_at` timestamp NULL DEFAULT NULL
  * - `updated_at` timestamp NULL DEFAULT NULL
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
 {
@@ -68,7 +69,7 @@ CREATE TABLE `order_forms` (
   `transshipment_indicator` tinyint(1) NOT NULL,
   `port_code` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `unit_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `total_weight` decimal(10,2) NOT NULL,
+  `total_weight` decimal(30,12) NOT NULL,
   `packages_number` int(11) NOT NULL,
   `container_number` int(11) DEFAULT NULL,
   `origin` json NOT NULL,
@@ -82,6 +83,7 @@ CREATE TABLE `order_forms` (
   `qr` longtext COLLATE utf8mb4_unicode_ci,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`),
   KEY `order_forms_dispatcher_id_foreign` (`dispatcher_id`),
   KEY `order_forms_driver_id_foreign` (`driver_id`),

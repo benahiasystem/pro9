@@ -5,6 +5,11 @@ description: Mantener y verificar en Pro9 la creación, listado y selección de 
 
 # Mantener el flujo de productos de Pro9
 
+## Precisión exacta — contrato del 16/10/2026
+
+Aplicar [cálculos exactos](../mantener-calculos-exactos-pro9/SKILL.md). Para instalaciones nuevas esta instrucción sustituye las precisiones de dos/cuatro/seis decimales y redondeos intermedios descritos anteriormente: operar con fracciones exactas, conservar snapshots y representar hasta 12 posiciones; tasas con ocho exactas. Dos decimales sólo en liquidación/presentación que lo requiera. Precio unitario PDF configurable de 2 a 12, con dos por defecto. No convertir tenants ni recalcular históricos. Consultar el informe de cálculos para el estado real de adopción por consumidor.
+
+
 ## Objetivo
 
 Preservar un único contrato entre el esquema tenant, el modelo `Item` y todos los módulos que crean o buscan productos y servicios. Evitar arreglos locales que hagan funcionar un módulo mientras dejan rotos los demás.

@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\DB;
  * - `fiscal_environment` varchar(16) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `item_id` int(10) unsigned DEFAULT '0'
  * - `inventory_id_reference` int(10) unsigned DEFAULT NULL
- * - `quantity` decimal(12,4) DEFAULT '0.0000' COMMENT 'Peso dle insumo '
+ * - `quantity` decimal(30,12) DEFAULT '0.0000' COMMENT 'Peso dle insumo '
  * - `created_at` timestamp NULL DEFAULT NULL
  * - `updated_at` timestamp NULL DEFAULT NULL
  * - `machine_id` int(10) unsigned NOT NULL DEFAULT '0'
@@ -30,11 +30,12 @@ use Illuminate\Support\Facades\DB;
  * - `mix_date_end` date DEFAULT NULL
  * - `mix_time_end` time DEFAULT NULL
  * - `informative` tinyint(3) unsigned DEFAULT '0'
- * - `agreed` decimal(8,2) DEFAULT '0.00'
- * - `imperfect` decimal(8,2) DEFAULT '0.00'
+ * - `agreed` decimal(30,12) DEFAULT '0.00'
+ * - `imperfect` decimal(30,12) DEFAULT '0.00'
  * - `proccess_type` longtext COLLATE utf8mb4_unicode_ci
  * - `production_collaborator` text COLLATE utf8mb4_unicode_ci
  * - `mix_collaborator` text COLLATE utf8mb4_unicode_ci
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
 {
@@ -47,7 +48,7 @@ CREATE TABLE `production` (
   `fiscal_environment` varchar(16) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `item_id` int(10) unsigned DEFAULT '0',
   `inventory_id_reference` int(10) unsigned DEFAULT NULL,
-  `quantity` decimal(12,4) DEFAULT '0.0000' COMMENT 'Peso dle insumo ',
+  `quantity` decimal(30,12) DEFAULT '0.0000' COMMENT 'Peso dle insumo ',
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   `machine_id` int(10) unsigned NOT NULL DEFAULT '0',
@@ -65,11 +66,12 @@ CREATE TABLE `production` (
   `mix_date_end` date DEFAULT NULL,
   `mix_time_end` time DEFAULT NULL,
   `informative` tinyint(3) unsigned DEFAULT '0',
-  `agreed` decimal(8,2) DEFAULT '0.00',
-  `imperfect` decimal(8,2) DEFAULT '0.00',
+  `agreed` decimal(30,12) DEFAULT '0.00',
+  `imperfect` decimal(30,12) DEFAULT '0.00',
   `proccess_type` longtext COLLATE utf8mb4_unicode_ci,
   `production_collaborator` text COLLATE utf8mb4_unicode_ci,
   `mix_collaborator` text COLLATE utf8mb4_unicode_ci,
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`),
   KEY `production_fiscal_environment_foreign` (`fiscal_environment`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci

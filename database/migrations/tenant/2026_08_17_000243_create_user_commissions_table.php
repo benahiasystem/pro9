@@ -9,10 +9,11 @@ use Illuminate\Support\Facades\DB;
  * Inventario de columnas:
  * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
  * - `user_id` int(10) unsigned NOT NULL
- * - `amount` decimal(8,2) NOT NULL
+ * - `amount` decimal(30,12) NOT NULL
  * - `type` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `created_at` timestamp NULL DEFAULT NULL
  * - `updated_at` timestamp NULL DEFAULT NULL
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
 {
@@ -22,10 +23,11 @@ return new class extends Migration
 CREATE TABLE `user_commissions` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `user_id` int(10) unsigned NOT NULL,
-  `amount` decimal(8,2) NOT NULL,
+  `amount` decimal(30,12) NOT NULL,
   `type` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`),
   KEY `user_commissions_user_id_foreign` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci

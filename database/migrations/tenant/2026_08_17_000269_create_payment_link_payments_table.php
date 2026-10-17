@@ -13,10 +13,11 @@ use Illuminate\Support\Facades\DB;
  * - `record_type` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `payment_id` int(10) unsigned DEFAULT NULL
  * - `payment_type` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `total` decimal(12,2) DEFAULT NULL
+ * - `total` decimal(30,12) DEFAULT NULL
  * - `status` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'pending'
  * - `created_at` timestamp NULL DEFAULT NULL
  * - `updated_at` timestamp NULL DEFAULT NULL
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
 {
@@ -30,10 +31,11 @@ CREATE TABLE `payment_link_payments` (
   `record_type` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `payment_id` int(10) unsigned DEFAULT NULL,
   `payment_type` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `total` decimal(12,2) DEFAULT NULL,
+  `total` decimal(30,12) DEFAULT NULL,
   `status` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'pending',
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`),
   KEY `payment_link_payments_record_index` (`record_id`,`record_type`),
   KEY `payment_link_payments_payment_index` (`payment_id`,`payment_type`),

@@ -25,7 +25,7 @@ use Illuminate\Support\Facades\DB;
  * - `has_receipt` tinyint(1) NOT NULL DEFAULT '0'
  * - `receipt_series` varchar(10) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `receipt_number` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `receipt_amount` decimal(10,2) DEFAULT NULL
+ * - `receipt_amount` decimal(30,12) DEFAULT NULL
  * - `receipt_currency` varchar(3) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `claim_type` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `detail` text COLLATE utf8mb4_unicode_ci NOT NULL
@@ -43,6 +43,7 @@ use Illuminate\Support\Facades\DB;
  * - `due_date` date DEFAULT NULL
  * - `created_at` timestamp NULL DEFAULT NULL
  * - `updated_at` timestamp NULL DEFAULT NULL
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
 {
@@ -68,7 +69,7 @@ CREATE TABLE `claims` (
   `has_receipt` tinyint(1) NOT NULL DEFAULT '0',
   `receipt_series` varchar(10) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `receipt_number` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `receipt_amount` decimal(10,2) DEFAULT NULL,
+  `receipt_amount` decimal(30,12) DEFAULT NULL,
   `receipt_currency` varchar(3) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `claim_type` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL,
   `detail` text COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -86,6 +87,7 @@ CREATE TABLE `claims` (
   `due_date` date DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`),
   UNIQUE KEY `claims_code_unique` (`code`),
   UNIQUE KEY `claims_public_code_unique` (`public_code`),

@@ -39,8 +39,8 @@ class DocumentResource extends JsonResource
         $customer_email=  $mails['optional_email_send'];
 
 
-        $total_payment = $document->payments->sum('payment');
-            $balance = number_format($document->balance, 2, '.', '');
+        $total_payment = \App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::sum($document->payments->map(fn ($payment) => $payment->exactValue('payment'))));
+            $balance = \App\Support\Exact\Decimal::represent($document->balance);
 
         $btn_voided = false;
 
@@ -118,6 +118,9 @@ class DocumentResource extends JsonResource
             'incoterm' => \App\Services\ExportInvoicePolicy::INCOTERMS[$document->invoice->operation_type_id ?? ''] ?? null,
             'total_igv' => $document->total_igv,
             'total' => $document->total,
+                'total_payable' => $document->total_payable,
+                'settlement_adjustment' => $document->settlement_adjustment,
+                'calculation_snapshot' => $document->calculation_snapshot,
             'total_paid' => $total_payment,
             'balance' => $balance,
             'has_pdf' => true,
@@ -164,7 +167,7 @@ class DocumentResource extends JsonResource
             return [];
         }
 
-        return QuotationResource::getTransformItems($rows)
+        return QuotationResource::getTransformItems($rows, $document->currency_type_id)
             ->map(function ($row) {
                 $item = $row['item'] ?? null;
                 if (is_object($item)) {
@@ -182,9 +185,9 @@ class DocumentResource extends JsonResource
 
                 $row['item'] = $item;
                 $row['description'] = $description;
-                $row['quantity'] = (float) ($row['quantity'] ?? 0);
-                $row['unit_price'] = (float) ($row['unit_price'] ?? 0);
-                $row['total'] = (float) ($row['total'] ?? 0);
+                $row['quantity'] = (string) ($row['quantity'] ?? '0');
+                $row['unit_price'] = (string) ($row['unit_price'] ?? '0');
+                $row['total'] = (string) ($row['total'] ?? '0');
 
                 return $row;
             })

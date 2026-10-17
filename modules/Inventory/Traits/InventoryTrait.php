@@ -386,10 +386,10 @@ trait InventoryTrait
     {
         $inventory_configuration = InventoryConfiguration::firstOrFail();
         $item_warehouse = ItemWarehouse::firstOrNew(['item_id' => $item_id, 'warehouse_id' => $warehouse_id]);
-        $item_warehouse->stock = $item_warehouse->stock + $quantity;
+        $item_warehouse->stock = $item_warehouse->exactValue('stock')->plus(\App\Support\Exact\Decimal::of($quantity));
         // dd($item_warehouse->item->unit_type_id);
-        if ($quantity < 0 && $item_warehouse->item->unit_type_id !== 'SERV') {
-            if (($inventory_configuration->stock_control) && ($item_warehouse->stock < 0)) {
+        if (\App\Support\Exact\Decimal::of($quantity)->isNegative() && $item_warehouse->item->unit_type_id !== 'SERV') {
+            if (($inventory_configuration->stock_control) && ($item_warehouse->exactValue('stock')->isNegative())) {
                 // return [
                 //     'success' => false,
                 //     'message' => 'El producto {$item_warehouse->item->description} no tiene suficiente stock!'
@@ -763,7 +763,7 @@ trait InventoryTrait
     {
         $inventory_configuration = InventoryConfiguration::firstOrFail();
         $item_warehouse = ItemWarehouse::firstOrNew(['item_id' => $item_id, 'warehouse_id' => $warehouse_id]);
-        $item_warehouse->stock = $item_warehouse->stock + $quantity;
+        $item_warehouse->stock = $item_warehouse->exactValue('stock')->plus(\App\Support\Exact\Decimal::of($quantity));
         $item_warehouse->save();
     }
 

@@ -10,9 +10,10 @@ use Illuminate\Support\Facades\DB;
  * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
  * - `item_id` int(10) unsigned NOT NULL
  * - `individual_item_id` int(10) unsigned NOT NULL
- * - `quantity` decimal(12,4) NOT NULL DEFAULT '1.0000'
+ * - `quantity` decimal(30,12) NOT NULL DEFAULT '1.0000'
  * - `created_at` timestamp NULL DEFAULT NULL
  * - `updated_at` timestamp NULL DEFAULT NULL
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
 {
@@ -23,9 +24,10 @@ CREATE TABLE `item_sets` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `item_id` int(10) unsigned NOT NULL,
   `individual_item_id` int(10) unsigned NOT NULL,
-  `quantity` decimal(12,4) NOT NULL DEFAULT '1.0000',
+  `quantity` decimal(30,12) NOT NULL DEFAULT '1.0000',
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`),
   KEY `item_sets_item_id_foreign` (`item_id`),
   KEY `item_sets_individual_item_id_foreign` (`individual_item_id`)

@@ -19,6 +19,7 @@ class DocumentPayment extends ModelTenant
 
     protected $fillable = [
         'document_id',
+        'calculation_snapshot',
         'date_of_payment',
         'payment_method_type_id',
         'has_card',
@@ -42,7 +43,7 @@ class DocumentPayment extends ModelTenant
     ];
 
     // ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
-    public function getCashReceivedAmountAttribute() { return $this->receipt_parent_id ? 0 : round($this->original_amount + $this->tax_amount, 2); }
+    public function getCashReceivedAmountAttribute() { return $this->receipt_parent_id ? '0' : \App\Support\Exact\Decimal::represent($this->exactValue('original_amount')->plus($this->exactValue('tax_amount'))); }
     // ######## FIN PERSISTENCIA FISCAL VENEZUELA ########
 
     public function payment_method_type()

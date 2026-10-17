@@ -26,7 +26,7 @@ trait InventoryKardexTrait
     public function updateStock($item_id, $establishment_id, $quantity, $is_sale, $warehouse_id = null){
 
         $item_warehouse = $this->getItemWarehouse($item_id, $establishment_id, $warehouse_id);
-        $item_warehouse->stock = ($is_sale) ? $item_warehouse->stock - $quantity : $item_warehouse->stock + $quantity;
+        $item_warehouse->stock = $is_sale ? $item_warehouse->exactValue('stock')->minus(\App\Support\Exact\Decimal::of($quantity)) : $item_warehouse->exactValue('stock')->plus(\App\Support\Exact\Decimal::of($quantity));
         $item_warehouse->save();
 
     }

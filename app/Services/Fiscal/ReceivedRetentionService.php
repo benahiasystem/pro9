@@ -7,6 +7,7 @@ use App\Models\Tenant\{Company, Document, DocumentReceivedRetention, Person, Rec
 use App\Services\ExchangeRates\ExchangeRateMath;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use App\Support\Exact\Decimal as D;
 use Illuminate\Validation\ValidationException;
 
 /** Transactional lifecycle shared by received IVA and ISLR; fiscal rules stay in each policy. */
@@ -23,19 +24,19 @@ abstract class ReceivedRetentionService
         try { return $work(); } finally { unset(self::$noteReplacementScope[$key]); }
     }
 
-    public static function settlementLimit(Document $document): float
+    public static function settlementLimit(Document $document): \Brick\Math\BigRational
     {
         $key=$document->getConnection()->getDatabaseName().':'.$document->id;
-        if (empty(self::$noteReplacementScope[$key])) return $document->balance;
+        if (empty(self::$noteReplacementScope[$key])) return $document->exactBalance();
         // A corrected real voucher can coexist with cash pending return after an NC.
         // Its fiscal/base limits still apply; this does not manufacture a collection.
-        return max(0,$document->total-FiscalNote::credits($document)-$document->retention_amount-$document->guarantee_amount);
+        return D::max(0,$document->exactValue('total')->minus(D::sum(FiscalNote::activeCredits($document)->get()->map(fn($r)=>$r->exactValue('total'))))->minus($document->exactRetentionAmount())->minus($document->exactGuaranteeAmount()));
     }
     private static array $schemas = [];
 
     abstract protected static function validationRules(): array;
     abstract protected static function validatePending(Document $document, array $input): void;
-    abstract protected static function appliedTaxableBase(Document $document, DocumentReceivedRetention $retention): float;
+    abstract protected static function appliedTaxableBase(Document $document, DocumentReceivedRetention $retention): \Brick\Math\BigRational;
 
     public static function operationConflict(string $message): void
     {
@@ -64,9 +65,9 @@ abstract class ReceivedRetentionService
         $data['fiscal_context'] = static::context($data['fiscal_context'] ?? []);
         $data['operation_key'] = strtolower($data['operation_key']);
         $data['exchange_rate'] = ExchangeRateMath::rate($data['exchange_rate']);
-        foreach (['base','percentage','amount'] as $field) $data[$field] = ExchangeRateMath::finalAmount($data[$field]);
-        if ((float)$data['base'] <= 0 || (float)$data['amount'] <= 0) FiscalAmounts::error('amount','Los importes deben ser positivos a dos decimales.');
-        $data['subtrahend'] = ExchangeRateMath::finalAmount($data['subtrahend'] ?? 0);
+        foreach (['base','percentage','amount'] as $field) $data[$field] = \App\Support\Exact\Decimal::input($data[$field], $field);
+        if (D::of($data['base'])->isLessThanOrEqualTo(0) || D::of($data['amount'])->isLessThanOrEqualTo(0)) FiscalAmounts::error('amount','Los importes deben ser positivos.');
+        $data['subtrahend'] = \App\Support\Exact\Decimal::input($data['subtrahend'] ?? 0, 'subtrahend');
         $data['agent_id'] = $document->customer_id;
         $data['tax_kind'] = static::KIND;
         if (isset($input['agent_id']) && (int)$input['agent_id'] !== (int)$document->customer_id) FiscalAmounts::error('agent_id', 'El agente debe ser el cliente de la factura.');
@@ -244,8 +245,8 @@ abstract class ReceivedRetentionService
                 'has_attachment'=>(bool)$row->attachment];
         })->values()->all();
         return ['enabled'=>true,'prevision'=>$document->fiscal_data->$field ?? null,
-            'applied_amount'=>ExchangeRateMath::finalAmount($document->received_retentions->where('tax_kind',static::KIND)->sum('applied_amount')),
-            'balance'=>ExchangeRateMath::finalAmount($document->balance),'can_create'=>$canCreate,'records'=>$records];
+            'applied_amount'=>D::represent(D::sum($document->received_retentions->where('tax_kind',static::KIND)->map(fn($r)=>$r->exactValue('applied_amount')))),
+            'balance'=>$document->balance,'can_create'=>$canCreate,'records'=>$records];
     }
 
     protected static function validateSupport(Document $document, array $input): void

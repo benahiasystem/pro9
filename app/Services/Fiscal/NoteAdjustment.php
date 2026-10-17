@@ -1,5 +1,6 @@
 <?php
 namespace App\Services\Fiscal;
+use App\Support\Exact\Decimal as D;
 
 use App\Models\Tenant\{Company, Document, DocumentNoteAdjustment, DocumentReceivedRetention, DocumentTax};
 use App\Http\Controllers\Tenant\DocumentFiscalController;
@@ -35,7 +36,7 @@ final class NoteAdjustment
                 $retention=DocumentReceivedRetention::where('document_id',$invoice->id)->where('tax_kind',$data['kind'])->lockForUpdate()->findOrFail($data['source_id']);
                 if (DocumentNoteAdjustment::where('retention_id',$retention->id)->exists()) FiscalAmounts::error('source_id','El comprobante ya tiene un ajuste relacionado.');
                 if ($retention->reversal_key || $retention->application_status !== 'applied') FiscalAmounts::error('source_id','Seleccione un comprobante aplicado sin otra reversión en curso.');
-                $values['retention_id']=$retention->id; $values['amount']=$retention->applied_amount;
+                $values['retention_id']=$retention->id; $values['amount']=$retention->exactValue('applied_amount');
                 $values['context']['original_voucher']=$retention->only(['id','voucher_number','base','amount','applied_amount','currency_type_id','exchange_rate','attachment']);
                 $service=$data['kind'] === 'IVA' ? IvaRetentionService::class : IslrRetentionService::class;
                 $record=DocumentNoteAdjustment::create($values);
@@ -43,8 +44,8 @@ final class NoteAdjustment
                 $record->diagnostic='Reversión solicitada. Su efecto se conserva hasta acreditar ausencia en HKA.'; $record->save();
             } elseif ($data['kind'] === 'fund') {
                 $fund=$invoice->guarantee_fund()->lockForUpdate()->findOrFail($data['source_id']);
-                $amount=Math::finalAmount($data['amount'] ?? $invoice->guarantee_amount);
-                if ($amount <= 0 || $amount > min($invoice->guarantee_amount,$note->total-DocumentNoteAdjustment::where('document_id',$note->id)->where('kind','fund')->where('status','applied')->sum('amount'))+0.005) FiscalAmounts::error('amount','El ajuste supera el fondo disponible o la NC.');
+                $amount=isset($data['amount']) ? D::of(D::input($data['amount'],'amount')) : D::of($invoice->guarantee_amount);
+                if ($amount->isLessThanOrEqualTo(0) || $amount->isGreaterThan(D::min($invoice->guarantee_amount,$note->exactValue('total')->minus(D::sum(DocumentNoteAdjustment::where('document_id',$note->id)->where('kind','fund')->where('status','applied')->get()->map(fn($r)=>$r->exactValue('amount'))))))) FiscalAmounts::error('amount','El ajuste supera el fondo disponible o la NC.');
                 $values+=['guarantee_fund_id'=>$fund->id,'amount'=>$amount];
                 $values['status']='applied'; $values['context']['original_fund']=$fund->toArray();
                 $values['diagnostic']='Aplicación del fondo reducida con trazabilidad, sin salida de efectivo.';
@@ -54,10 +55,10 @@ final class NoteAdjustment
                 $tax=DocumentTax::where('tax_kind','IGTF')->whereNotNull('document_payment_id')->lockForUpdate()->findOrFail($data['source_id']);
                 $payment=\App\Models\Tenant\DocumentPayment::whereIn('document_id',FiscalNote::collectionDocumentIds($invoice))->whereNull('receipt_parent_id')->whereNull('reversed_at')->lockForUpdate()->find($tax->document_payment_id);
                 if (!$payment) FiscalAmounts::error('source_id','El cargo IGTF debe pertenecer a un cobro real vigente de la factura.');
-                $amount=Math::finalAmount($data['amount'] ?? FiscalAmounts::convert($tax->amount,$tax->document->currency_type_id,$invoice->currency_type_id,$payment->exchange_rate));
-                $used=DocumentNoteAdjustment::where('tax_id',$tax->id)->whereNull('reversed_at')->sum('amount');
-                $limit=FiscalAmounts::convert($payment->tax_amount,$payment->currency_type_id,$invoice->currency_type_id,$payment->exchange_rate);
-                if ($amount <= 0 || $amount > $limit-$used+0.005) FiscalAmounts::error('amount','El ajuste supera el IGTF del cobro original aún disponible.');
+                $amount=isset($data['amount']) ? D::of(D::input($data['amount'],'amount')) : D::convert($tax->exactValue('amount'),$tax->document->currency_type_id,$invoice->currency_type_id,$payment->exchange_rate);
+                $used=D::sum(DocumentNoteAdjustment::where('tax_id',$tax->id)->whereNull('reversed_at')->get()->map(fn($r)=>$r->exactValue('amount')));
+                $limit=D::convert($payment->exactValue('tax_amount'),$payment->currency_type_id,$invoice->currency_type_id,$payment->exchange_rate);
+                if ($amount->isLessThanOrEqualTo(0) || $amount->isGreaterThan($limit->minus($used))) FiscalAmounts::error('amount','El ajuste supera el IGTF del cobro original aún disponible.');
                 $values+=['tax_id'=>$tax->id,'amount'=>$amount];
                 $values['context']+=['original_tax'=>$tax->toArray(),'document_payment_id'=>$payment->id,'original_payment'=>$payment->only(['id','operation_key','original_amount','tax_amount','exchange_rate','fiscal_context'])];
                 $values['status']='blocked';

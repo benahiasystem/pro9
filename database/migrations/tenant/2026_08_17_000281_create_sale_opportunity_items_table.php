@@ -11,22 +11,23 @@ use Illuminate\Support\Facades\DB;
  * - `sale_opportunity_id` int(10) unsigned NOT NULL
  * - `item_id` int(10) unsigned NOT NULL
  * - `item` json NOT NULL
- * - `quantity` decimal(12,4) NOT NULL
- * - `unit_value` decimal(16,6) NOT NULL
+ * - `quantity` decimal(30,12) NOT NULL
+ * - `unit_value` decimal(30,12) NOT NULL
  * - `affectation_igv_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `total_base_igv` decimal(12,2) NOT NULL
- * - `percentage_igv` decimal(12,2) NOT NULL
- * - `total_igv` decimal(12,2) NOT NULL
- * - `total_taxes` decimal(12,2) NOT NULL
+ * - `total_base_igv` decimal(30,12) NOT NULL
+ * - `percentage_igv` decimal(30,12) NOT NULL
+ * - `total_igv` decimal(30,12) NOT NULL
+ * - `total_taxes` decimal(30,12) NOT NULL
  * - `price_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `unit_price` decimal(16,6) NOT NULL
- * - `total_value` decimal(12,2) NOT NULL
- * - `total_charge` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `total_discount` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `total` decimal(12,2) NOT NULL
+ * - `unit_price` decimal(30,12) NOT NULL
+ * - `total_value` decimal(30,12) NOT NULL
+ * - `total_charge` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `total_discount` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `total` decimal(30,12) NOT NULL
  * - `attributes` json DEFAULT NULL
  * - `discounts` json DEFAULT NULL
  * - `charges` json DEFAULT NULL
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
 {
@@ -38,22 +39,23 @@ CREATE TABLE `sale_opportunity_items` (
   `sale_opportunity_id` int(10) unsigned NOT NULL,
   `item_id` int(10) unsigned NOT NULL,
   `item` json NOT NULL,
-  `quantity` decimal(12,4) NOT NULL,
-  `unit_value` decimal(16,6) NOT NULL,
+  `quantity` decimal(30,12) NOT NULL,
+  `unit_value` decimal(30,12) NOT NULL,
   `affectation_igv_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `total_base_igv` decimal(12,2) NOT NULL,
-  `percentage_igv` decimal(12,2) NOT NULL,
-  `total_igv` decimal(12,2) NOT NULL,
-  `total_taxes` decimal(12,2) NOT NULL,
+  `total_base_igv` decimal(30,12) NOT NULL,
+  `percentage_igv` decimal(30,12) NOT NULL,
+  `total_igv` decimal(30,12) NOT NULL,
+  `total_taxes` decimal(30,12) NOT NULL,
   `price_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `unit_price` decimal(16,6) NOT NULL,
-  `total_value` decimal(12,2) NOT NULL,
-  `total_charge` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `total_discount` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `total` decimal(12,2) NOT NULL,
+  `unit_price` decimal(30,12) NOT NULL,
+  `total_value` decimal(30,12) NOT NULL,
+  `total_charge` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `total_discount` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `total` decimal(30,12) NOT NULL,
   `attributes` json DEFAULT NULL,
   `discounts` json DEFAULT NULL,
   `charges` json DEFAULT NULL,
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`),
   KEY `sale_opportunity_items_sale_opportunity_id_foreign` (`sale_opportunity_id`),
   KEY `sale_opportunity_items_item_id_foreign` (`item_id`),

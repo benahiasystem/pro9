@@ -10,13 +10,14 @@ use Illuminate\Support\Facades\DB;
  * - `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT
  * - `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `discount_type` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'percentage'
- * - `value` decimal(12,2) NOT NULL
+ * - `value` decimal(30,12) NOT NULL
  * - `starts_at` datetime DEFAULT NULL
  * - `expires_at` datetime DEFAULT NULL
  * - `is_active` tinyint(1) NOT NULL DEFAULT '1'
  * - `created_at` timestamp NULL DEFAULT NULL
  * - `updated_at` timestamp NULL DEFAULT NULL
  * - `deleted_at` timestamp NULL DEFAULT NULL
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
 {
@@ -27,13 +28,14 @@ CREATE TABLE `discount_campaigns` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `discount_type` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'percentage',
-  `value` decimal(12,2) NOT NULL,
+  `value` decimal(30,12) NOT NULL,
   `starts_at` datetime DEFAULT NULL,
   `expires_at` datetime DEFAULT NULL,
   `is_active` tinyint(1) NOT NULL DEFAULT '1',
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL,
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`),
   KEY `discount_campaigns_is_active_starts_at_expires_at_index` (`is_active`,`starts_at`,`expires_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci

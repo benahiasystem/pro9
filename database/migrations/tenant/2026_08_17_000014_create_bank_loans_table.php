@@ -20,13 +20,14 @@ use Illuminate\Support\Facades\DB;
  * - `time_of_issue` time NOT NULL
  * - `bank` json NOT NULL
  * - `exchange_rate_sale` decimal(18,8) DEFAULT '0.00'
- * - `total` decimal(12,2) DEFAULT '0.00'
- * - `total_interest` decimal(12,2) DEFAULT '0.00'
- * - `total_ingress` decimal(12,2) DEFAULT '0.00'
+ * - `total` decimal(30,12) DEFAULT '0.00'
+ * - `total_interest` decimal(30,12) DEFAULT '0.00'
+ * - `total_ingress` decimal(30,12) DEFAULT '0.00'
  * - `fiscal_environment` varchar(16) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `state_type_id` char(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `created_at` timestamp NULL DEFAULT NULL
  * - `updated_at` timestamp NULL DEFAULT NULL
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
 {
@@ -47,13 +48,14 @@ CREATE TABLE `bank_loans` (
   `time_of_issue` time NOT NULL,
   `bank` json NOT NULL,
   `exchange_rate_sale` decimal(18,8) DEFAULT '0.00',
-  `total` decimal(12,2) DEFAULT '0.00',
-  `total_interest` decimal(12,2) DEFAULT '0.00',
-  `total_ingress` decimal(12,2) DEFAULT '0.00',
+  `total` decimal(30,12) DEFAULT '0.00',
+  `total_interest` decimal(30,12) DEFAULT '0.00',
+  `total_ingress` decimal(30,12) DEFAULT '0.00',
   `fiscal_environment` varchar(16) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `state_type_id` char(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL);

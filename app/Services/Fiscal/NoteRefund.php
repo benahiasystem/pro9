@@ -3,6 +3,7 @@ namespace App\Services\Fiscal;
 
 use App\Models\Tenant\{Company, Document, DocumentNoteRefund, DocumentNoteAdjustment, DocumentPayment, PaymentMethodType, BankAccount, Cash};
 use App\Services\ExchangeRates\ExchangeRateMath as Math;
+use App\Support\Exact\Decimal as D;
 use App\Http\Controllers\Tenant\DocumentFiscalController;
 use Modules\Finance\Traits\FinanceTrait;
 
@@ -18,33 +19,43 @@ final class NoteRefund
             || $note->control_number !== optional($note->emission)->control_number) FiscalAmounts::error('note','Confirme la NC digital DEMO en HKA antes de registrar una devolución de dinero.');
     }
 
-    public static function available(Document $note): float
+    // ######## INICIO CALCULOS EXACTOS PRO9 ########
+    public static function available(Document $note): string
     {
-        $invoice=$note->note->affected_document;
-        $cash=$invoice->payments()->whereNull('reversed_at')->whereNull('receipt_parent_id')->sum('payment');
-        $refunded=FiscalNote::refunded($invoice);
-        $commercial=max(0,$invoice->total-$invoice->taxes->where('tax_kind','IGTF')->sum('amount'));
-        $remainingCommercial=max(0,$commercial-FiscalNote::credits($invoice));
-        $corrected=DocumentNoteAdjustment::where('affected_document_id',$invoice->id)->whereIn('kind',['IVA','ISLR'])->get()
-            ->map(fn ($r)=>$r->context['replacement_id'] ?? null)->filter()->all();
-        // Pending vouchers retain their settlement effect, but their credited share is not cash available to refund.
-        $retentions=$invoice->received_retentions->sum(function ($r) use ($invoice,$corrected) {
-            if (in_array($r->id,$corrected,true)) return $r->applied_amount;
-            $field=$r->tax_kind === 'IVA' ? 'total_igv':'total_value';
-            $original=(float)$invoice->$field;
-            if ($r->tax_kind === 'ISLR' && $original > 0) {
-                $base=Math::rational($r->base)->multipliedBy(FiscalNote::remaining($invoice,$field))->dividedBy($original);
-                $amount=Math::finalAmount($base->multipliedBy($r->percentage)->dividedBy(100)->minus($r->subtrahend ?? 0));
-                return min($r->applied_amount,max(0,FiscalAmounts::convert($amount,$r->currency_type_id,$invoice->currency_type_id,$r->exchange_rate)));
-            }
-            return $original > 0 ? min($r->applied_amount,round($r->applied_amount*FiscalNote::remaining($invoice,$field)/$original,2)) : 0;
-        });
-        $fund=min($invoice->guarantee_amount,$commercial > 0 ? round((float)optional($invoice->guarantee_fund)->amount*$remainingCommercial/$commercial,2) : 0);
-        $receivable=max(0,$remainingCommercial-$retentions-$fund);
-        $remaining=max(0,$cash-$refunded-$receivable);
-        $noteRemaining=max(0,$note->total-DocumentNoteRefund::where('document_id',$note->id)->where('component','principal')->whereNull('reversed_at')->sum('amount'));
-        return round(min($remaining,$noteRemaining),2);
+        return D::represent(self::availableExact($note), 2, true);
     }
+
+    private static function availableExact(Document $note): \Brick\Math\BigRational
+    {
+        $invoice = $note->note->affected_document;
+        $cash = D::sum($invoice->payments()->whereNull('reversed_at')->whereNull('receipt_parent_id')->get()->map(fn ($r) => $r->exactValue('payment')));
+        $refunds = D::sum(DocumentNoteRefund::where('affected_document_id',$invoice->id)->where('component','principal')->whereNull('reversed_at')->get()->map(fn ($r) => $r->exactValue('amount')));
+        $commercial = D::max(0, $invoice->exactValue('total')->minus(D::sum($invoice->taxes->where('tax_kind','IGTF')->map(fn ($r) => $r->exactValue('amount')))));
+        $credits = D::sum(FiscalNote::activeCredits($invoice)->get()->map(fn ($r) => $r->exactValue('total')));
+        $remainingCommercial = D::max(0, $commercial->minus($credits));
+        $corrected = DocumentNoteAdjustment::where('affected_document_id',$invoice->id)->whereIn('kind',['IVA','ISLR'])->get()->map(fn ($r) => $r->context['replacement_id'] ?? null)->filter()->all();
+        $retentions = D::sum($invoice->received_retentions->map(function ($r) use ($invoice, $corrected) {
+            $applied = $r->exactValue('applied_amount');
+            if (in_array($r->id,$corrected,true)) return $applied;
+            $field = $r->tax_kind === 'IVA' ? 'total_igv' : 'total_value';
+            $original = $invoice->exactValue($field);
+            if ($original->isLessThanOrEqualTo(0)) return D::of(0);
+            $remaining = FiscalNote::remainingExact($invoice, $field);
+            if ($r->tax_kind === 'ISLR') {
+                $base = $r->exactValue('base')->multipliedBy($remaining)->dividedBy($original);
+                $amount = D::max(0, $base->multipliedBy(D::of($r->percentage))->dividedBy(100)->minus(D::of($r->subtrahend ?? 0)));
+                return D::min($applied, D::convert($amount,$r->currency_type_id,$invoice->currency_type_id,$r->exchange_rate));
+            }
+            return D::min($applied, $applied->multipliedBy($remaining)->dividedBy($original));
+        }));
+        $fund = $invoice->exactGuaranteeAmount()->isZero() ? D::of(0) : D::min($invoice->exactGuaranteeAmount(), $commercial->isGreaterThan(0) && $invoice->guarantee_fund
+            ? $invoice->guarantee_fund->exactValue('amount')->multipliedBy($remainingCommercial)->dividedBy($commercial) : 0);
+        $receivable = D::max(0, $remainingCommercial->minus($retentions)->minus($fund));
+        $remaining = D::max(0, $cash->minus($refunds)->minus($receivable));
+        $noteRefunds = D::sum(DocumentNoteRefund::where('document_id',$note->id)->where('component','principal')->whereNull('reversed_at')->get()->map(fn ($r) => $r->exactValue('amount')));
+        return D::min($remaining, D::max(0, $note->exactValue('total')->minus($noteRefunds)));
+    }
+    // ######## FIN CALCULOS EXACTOS PRO9 ########
 
     public static function view(Document $note): array
     {
@@ -77,7 +88,9 @@ final class NoteRefund
             'payment_method_type_id'=>'required|string','payment_destination_id'=>'required','currency_type_id'=>'required|in:VES,USD',
             'original_amount'=>'required|numeric|gt:0','exchange_rate'=>'required','exchange_rate_source'=>'required|string|max:50','reference'=>'nullable|string|max:255'])->validate();
         $data['exchange_rate']=Math::rate($data['exchange_rate']);
-        $data['original_amount']=Math::finalAmount($data['original_amount']);
+        $requested = D::of(D::input($data['original_amount'], 'original_amount'));
+        $data['original_amount'] = D::represent($requested, 2, true);
+        $data['calculation_snapshot'] = D::snapshot(['original_amount'=>$data['original_amount'], 'requested_amount'=>$requested, 'cash_adjustment'=>D::of($data['original_amount'])->minus($requested)]);
         $hash=hash('sha256',json_encode($data,JSON_THROW_ON_ERROR));
         return $note->getConnection()->transaction(function () use ($note,$data,$hash) {
             Company::query()->lockForUpdate()->firstOrFail();
@@ -91,16 +104,18 @@ final class NoteRefund
             if (!$source) FiscalAmounts::error('document_payment_id','Seleccione un cobro real vigente de la factura original.');
             $method=PaymentMethodType::where('is_active',1)->find($data['payment_method_type_id']);
             if (!$method) FiscalAmounts::error('payment_method_type_id','Seleccione un medio de pago activo.');
-            $amount=FiscalAmounts::convert($data['original_amount'],$data['currency_type_id'],$invoice->currency_type_id,$data['exchange_rate']);
+            $converted = D::convert($data['original_amount'],$data['currency_type_id'],$invoice->currency_type_id,$data['exchange_rate']);
+            $amount = D::represent($converted, 2);
+            $data['calculation_snapshot']['values'] += ['amount'=>D::fraction($amount),'converted_principal'=>D::fraction($converted),'payment_adjustment'=>D::fraction(D::of($amount)->minus($converted))];
             if ($amount <= 0) FiscalAmounts::error('original_amount','El importe convertido debe ser positivo.');
-            $used=DocumentNoteRefund::where('document_payment_id',$source->id)->where('component',$data['component'])->whereNull('reversed_at')->sum('amount');
+            $used=DocumentNoteRefund::where('document_payment_id',$source->id)->where('component',$data['component'])->whereNull('reversed_at')->get()->map(fn($r)=>$r->exactValue('amount'))->pipe(fn($rows)=>D::sum($rows));
             if ($data['component'] === 'principal') {
-                if ($amount > self::available($note)+0.005 || $amount > $source->payment-$used+0.005) FiscalAmounts::error('original_amount','La devolución supera el excedente, la NC o el cobro original disponible.');
+                if (D::of($amount)->isGreaterThan(D::of(self::available($note))->plus('0.005')) || D::of($amount)->isGreaterThan($source->exactValue('payment')->minus($used)->plus('0.005'))) FiscalAmounts::error('original_amount','La devolución supera el excedente, la NC o el cobro original disponible.');
             } else {
                 $adjustment=DocumentNoteAdjustment::where('document_id',$note->id)->where('kind','IGTF')->where('status','confirmed')->lockForUpdate()->find($data['adjustment_id'] ?? 0);
                 if (!$adjustment || ($adjustment->context['document_payment_id'] ?? null) != $source->id) FiscalAmounts::error('adjustment_id','El ajuste IGTF requiere un contrato y confirmación fiscal verificables antes de devolver su importe.');
-                $tax=FiscalAmounts::convert($source->tax_amount,$source->currency_type_id,$invoice->currency_type_id,$source->exchange_rate);
-                if ($amount > min($tax,$adjustment->amount)-$used+0.005) FiscalAmounts::error('original_amount','La devolución supera el IGTF confirmado disponible.');
+                $tax=D::convert($source->exactValue('tax_amount'),$source->currency_type_id,$invoice->currency_type_id,$source->exchange_rate);
+                if (D::of($amount)->isGreaterThan(D::min($tax,$adjustment->exactValue('amount'))->minus($used)->plus('0.005'))) FiscalAmounts::error('original_amount','La devolución supera el IGTF confirmado disponible.');
             }
             $destination=$this->getDestinationRecord($data);
             if ($destination['destination_type'] === BankAccount::class) {

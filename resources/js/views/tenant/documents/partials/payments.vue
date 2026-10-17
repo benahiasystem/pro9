@@ -1,8 +1,6 @@
 <template>
     <el-dialog :title="title || 'Cargando pagos...'" :visible="showDialog" @close="close" @open="getData" width="80%">
-        <el-button v-if="document.document_type_id === '01' && ((document.iva_retention && document.iva_retention.enabled) || (document.islr_retention && document.islr_retention.enabled))" size="small" @click="showIvaRetention = true">Retenciones IVA / ISLR</el-button>
         <p v-if="document.islr_retention && document.islr_retention.prevision">ISLR prevista: {{ document.islr_retention.prevision.amount }} {{ document.currency_type_id }}. Permanece como saldo pendiente.</p>
-        <retention-form :show-dialog.sync="showIvaRetention" :document-id="documentId" @changed="getData"/>
         <div class="form-body">
             <div class="row">
                 <div class="col-md-12" v-if="records && records.length >= 0">
@@ -36,7 +34,7 @@
                                     <td>{{ row.payment_method_type_description }}</td>
                                     <td>{{ row.destination_description }}</td>
                                     <!-- <td>{{ row.reference }}</td> -->
-                                    <td class="text-center">{{ row.payment }} aplicado<br><small>{{ row.currency_type_id }} {{ row.original_amount }} recibido; IGTF {{ row.tax_amount }}</small><br><small v-if="row.reversed_at">Revertido</small></td>
+                                    <td class="text-center">{{ row.payment }} aplicado<br><small>{{ row.currency_type_id }} {{ row.original_amount }} recibido; IGTF {{ row.tax_amount }}</small><br><small v-if="row.payment_adjustment && row.payment_adjustment !== '0'">Ajuste de liquidación: {{ row.payment_adjustment }}</small><br><small v-if="row.reversed_at">Revertido</small></td>
 
                                     <td class="text-left">
 
@@ -259,7 +257,7 @@
 </template>
 
 <script>
-import RetentionForm from "./retention.vue"
+import {exactAmount} from '../../../../helpers/exchange-rate-math'
 import IgtfPaymentFields from "./igtf_fields.vue"
 
     import {deletable} from '../../../../mixins/deletable'
@@ -268,7 +266,7 @@ import IgtfPaymentFields from "./igtf_fields.vue"
     export default {
         props: ['showDialog', 'documentId', 'external','configuration'],
         mixins: [deletable],
-        components: {RetentionForm,IgtfPaymentFields,
+        components: {IgtfPaymentFields,
             DialogLinkPayment,
             DocumentOptions
         },
@@ -284,7 +282,6 @@ import IgtfPaymentFields from "./igtf_fields.vue"
                 showAddButton: true,
                 loadingFetch: false, 
                 document: {},
-                showIvaRetention: false,
                 permissions: {},
                 index_file: null,
                 documentPayment: {},
@@ -447,7 +444,7 @@ import IgtfPaymentFields from "./igtf_fields.vue"
                     temp_path: null,
                     igtf_status: 'not_applicable', exemption_reason: null,
                     operation_key: (window.crypto && window.crypto.randomUUID) ? window.crypto.randomUUID() : undefined,
-                    payment: parseFloat(this.document.total_difference),
+                    payment: this.document.amount_payable || this.document.total_difference,
                     // payment: 0,
                     errors: {},
                     loading: false,
@@ -462,7 +459,7 @@ import IgtfPaymentFields from "./igtf_fields.vue"
             },
             clickSubmit(index) {
 
-                if(this.records[index].payment > parseFloat(this.document.total_difference)) {
+                if(exactAmount(this.records[index].payment).compare(this.document.amount_payable || this.document.total_difference) > 0) {
                     this.$message.error('El monto ingresado supera al monto pendiente de pago, verifique.');
                     return;
                 }

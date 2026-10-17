@@ -25,14 +25,15 @@ use Illuminate\Support\Facades\DB;
  * - `retention_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `observations` text COLLATE utf8mb4_unicode_ci
  * - `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `total_retention` decimal(10,2) NOT NULL
- * - `total` decimal(10,2) NOT NULL
+ * - `total_retention` decimal(30,12) NOT NULL
+ * - `total` decimal(30,12) NOT NULL
  * - `legends` json DEFAULT NULL
  * - `optional` json DEFAULT NULL
  * - `filename` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `has_pdf` tinyint(1) NOT NULL DEFAULT '0'
  * - `created_at` timestamp NULL DEFAULT NULL
  * - `updated_at` timestamp NULL DEFAULT NULL
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
 {
@@ -58,14 +59,15 @@ CREATE TABLE `retentions` (
   `retention_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `observations` text COLLATE utf8mb4_unicode_ci,
   `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `total_retention` decimal(10,2) NOT NULL,
-  `total` decimal(10,2) NOT NULL,
+  `total_retention` decimal(30,12) NOT NULL,
+  `total` decimal(30,12) NOT NULL,
   `legends` json DEFAULT NULL,
   `optional` json DEFAULT NULL,
   `filename` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `has_pdf` tinyint(1) NOT NULL DEFAULT '0',
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`),
   KEY `retentions_user_id_foreign` (`user_id`),
   KEY `retentions_establishment_id_foreign` (`establishment_id`),

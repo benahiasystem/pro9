@@ -19,10 +19,11 @@ use Illuminate\Support\Facades\DB;
  * - `warehouse_id` int(10) unsigned DEFAULT NULL
  * - `warehouse_destination_id` int(10) unsigned DEFAULT NULL
  * - `transfer_collect_id` int(10) unsigned DEFAULT NULL
- * - `quantity` decimal(12,4) NOT NULL
+ * - `quantity` decimal(30,12) NOT NULL
  * - `created_at` timestamp NULL DEFAULT NULL
  * - `updated_at` timestamp NULL DEFAULT NULL
  * - `user_id` int(10) unsigned DEFAULT '0' COMMENT 'usuario que crea el registro'
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
 {
@@ -42,10 +43,11 @@ CREATE TABLE `inventories_transfer` (
   `warehouse_id` int(10) unsigned DEFAULT NULL,
   `warehouse_destination_id` int(10) unsigned DEFAULT NULL,
   `transfer_collect_id` int(10) unsigned DEFAULT NULL,
-  `quantity` decimal(12,4) NOT NULL,
+  `quantity` decimal(30,12) NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   `user_id` int(10) unsigned DEFAULT '0' COMMENT 'usuario que crea el registro',
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`),
   UNIQUE KEY `inventories_transfer_branch_number_unique` (`establishment_id`,`fiscal_environment`,`document_type_id`,`series`,`number`),
   KEY `inventories_transfer_establishment_id_foreign` (`establishment_id`),

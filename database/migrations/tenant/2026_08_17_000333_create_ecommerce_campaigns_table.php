@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\DB;
  * - `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT
  * - `title` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `discount_type` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'percentage'
- * - `discount_value` decimal(12,4) NOT NULL DEFAULT '0.0000'
+ * - `discount_value` decimal(30,12) NOT NULL DEFAULT '0.0000'
  * - `start_date` datetime DEFAULT NULL
  * - `end_date` datetime DEFAULT NULL
  * - `sp_product_ids` json DEFAULT NULL
@@ -28,6 +28,7 @@ use Illuminate\Support\Facades\DB;
  * - `sp_purchase_max` int(11) NOT NULL DEFAULT '30'
  * - `created_at` timestamp NULL DEFAULT NULL
  * - `updated_at` timestamp NULL DEFAULT NULL
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
 {
@@ -38,7 +39,7 @@ CREATE TABLE `ecommerce_campaigns` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `title` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `discount_type` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'percentage',
-  `discount_value` decimal(12,4) NOT NULL DEFAULT '0.0000',
+  `discount_value` decimal(30,12) NOT NULL DEFAULT '0.0000',
   `start_date` datetime DEFAULT NULL,
   `end_date` datetime DEFAULT NULL,
   `sp_product_ids` json DEFAULT NULL,
@@ -56,6 +57,7 @@ CREATE TABLE `ecommerce_campaigns` (
   `sp_purchase_max` int(11) NOT NULL DEFAULT '30',
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`),
   KEY `ecommerce_campaigns_status_end_idx` (`status`,`end_date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci

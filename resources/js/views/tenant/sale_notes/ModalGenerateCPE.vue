@@ -122,6 +122,7 @@
 </template>
 
 <script>
+import {exactAmount} from '../../../helpers/exchange-rate-math'
 import { documentNumberFull } from "../../../helpers/document-number";
 export default {
   props: {
@@ -263,14 +264,14 @@ export default {
     onFillSelectedNotes() {
       this.form.selecteds = [];
       this.sum_total=0;
-      let total=0;
+      let total=exactAmount(0);
       this.notes.map((d) => {
         if (d.selected) {
-          total+=d.total;
+          total=total.plus(d.calculation_snapshot?.values?.total ?? d.total);
           this.form.selecteds.push(d.id);
         }
       });
-      this.sum_total+=Number(parseFloat(total).toFixed(2));
+      this.sum_total=total.decimal();
     },
     onFindNotes() {
       this.form.selecteds = [];

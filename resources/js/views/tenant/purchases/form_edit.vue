@@ -531,6 +531,10 @@
 </template>
 
 <script>
+import {exactAmount} from '../../../helpers/exchange-rate-math'
+
+import {applyCommercialTotals, allocateCommercialRows} from '../../../helpers/exact-commercial'
+
 
 import PurchaseFormItem from './partials/item.vue'
 import PersonForm from '../persons/form.vue'
@@ -727,8 +731,7 @@ export default {
             this.customers = this.all_customers
         },
         getFormatUnitPriceRow(unit_price) {
-            return _.round(unit_price, 6)
-            // return unit_price.toFixed(6)
+            return exactAmount(unit_price).decimal();
         },
         async validate_payments() {
 
@@ -1123,73 +1126,8 @@ export default {
             this.calculateTotal()
         },
         calculateTotal() {
-            let total_discount = 0
-            let total_charge = 0
-            let total_exportation = 0
-            let total_taxed = 0
-            let total_exonerated = 0
-            let total_unaffected = 0
-            let total_free = 0
-            let total_igv = 0
-            let total_value = 0
-            let total = 0
-
-
-
-
-            this.form.items.forEach((row) => {
-                total_discount += parseFloat(row.total_discount)
-                total_charge += parseFloat(row.total_charge)
-
-                if (row.affectation_igv_type_id === '10') {
-                    total_taxed += parseFloat(row.total_value)
-                }
-                if (row.affectation_igv_type_id === '20') {
-                    total_exonerated += parseFloat(row.total_value)
-                }
-                if (row.affectation_igv_type_id === '30') {
-                    total_unaffected += parseFloat(row.total_value)
-                }
-                if (row.affectation_igv_type_id === '40') {
-                    total_exportation += parseFloat(row.total_value)
-                }
-                if (['10', '20', '30', '40'].indexOf(row.affectation_igv_type_id) < 0) {
-                    total_free += parseFloat(row.total_value)
-                }
-
-                total_value += parseFloat(row.total_value)
-                total_igv += parseFloat(row.total_igv)
-                total += parseFloat(row.total)
-
-                // isc
-
-
-
-            });
-
-            // isc
-
-
-
-            this.form.total_exportation = _.round(total_exportation, 2)
-            this.form.total_taxed = _.round(total_taxed, 2)
-            this.form.total_exonerated = _.round(total_exonerated, 2)
-            this.form.total_unaffected = _.round(total_unaffected, 2)
-            this.form.total_free = _.round(total_free, 2)
-            this.form.total_igv = _.round(total_igv, 2)
-            this.form.total_value = _.round(total_value, 2)
-            // this.form.total_taxes = _.round(total_igv, 2)
-
-            //impuestos (isc + igv)
-            this.form.total_taxes = _.round(total_igv, 2)
-
-            this.form.total = _.round(total, 2)
-
-            this.calculatePerception()
-            // this.setTotalDefaultPayment()
-            this.calculatePayments()
-            this.calculateFee()
-
+            applyCommercialTotals(this);
+            this.calculatePayments(); this.calculateFee();
         },
         calculatePerception() {
 
@@ -1213,7 +1151,7 @@ export default {
 
                     this.is_perception_agent = (quantity_item_perception > 0) ? true : false
                     this.form.total_perception = _.round(total_perception, 2)
-                    total_amount = this.form.total + parseFloat(this.form.total_perception)
+                    total_amount = exactAmount(this.form.total).plus(this.form.total_perception).decimal()
                     this.total_amount = _.round(total_amount, 2)
 
                 } else {

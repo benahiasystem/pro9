@@ -25,22 +25,22 @@ use Illuminate\Support\Facades\DB;
  * - `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `payment_method_type_id` char(2) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `exchange_rate_sale` decimal(18,8) NOT NULL
- * - `total_prepayment` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `total_charge` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `total_discount` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `total_exportation` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `total_free` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `total_taxed` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `total_unaffected` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `total_exonerated` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `total_igv` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `total_igv_free` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `total_base_other_taxes` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `total_other_taxes` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `total_taxes` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `total_value` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `subtotal` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `total` decimal(12,2) NOT NULL
+ * - `total_prepayment` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `total_charge` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `total_discount` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `total_exportation` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `total_free` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `total_taxed` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `total_unaffected` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `total_exonerated` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `total_igv` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `total_igv_free` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `total_base_other_taxes` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `total_other_taxes` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `total_taxes` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `total_value` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `subtotal` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `total` decimal(30,12) NOT NULL
  * - `charges` json DEFAULT NULL
  * - `discounts` json DEFAULT NULL
  * - `prepayments` json DEFAULT NULL
@@ -60,6 +60,7 @@ use Illuminate\Support\Facades\DB;
  * - `number` int(11) NOT NULL DEFAULT '0'
  * - `order_zone_id` int(11) DEFAULT NULL
  * - `order_person_id` int(11) DEFAULT NULL
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
 {
@@ -85,22 +86,22 @@ CREATE TABLE `order_notes` (
   `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `payment_method_type_id` char(2) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `exchange_rate_sale` decimal(18,8) NOT NULL,
-  `total_prepayment` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `total_charge` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `total_discount` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `total_exportation` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `total_free` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `total_taxed` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `total_unaffected` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `total_exonerated` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `total_igv` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `total_igv_free` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `total_base_other_taxes` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `total_other_taxes` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `total_taxes` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `total_value` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `subtotal` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `total` decimal(12,2) NOT NULL,
+  `total_prepayment` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `total_charge` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `total_discount` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `total_exportation` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `total_free` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `total_taxed` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `total_unaffected` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `total_exonerated` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `total_igv` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `total_igv_free` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `total_base_other_taxes` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `total_other_taxes` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `total_taxes` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `total_value` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `subtotal` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `total` decimal(30,12) NOT NULL,
   `charges` json DEFAULT NULL,
   `discounts` json DEFAULT NULL,
   `prepayments` json DEFAULT NULL,
@@ -120,6 +121,7 @@ CREATE TABLE `order_notes` (
   `number` int(11) NOT NULL DEFAULT '0',
   `order_zone_id` int(11) DEFAULT NULL,
   `order_person_id` int(11) DEFAULT NULL,
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`),
   KEY `order_notes_user_id_foreign` (`user_id`),
   KEY `order_notes_establishment_id_foreign` (`establishment_id`),

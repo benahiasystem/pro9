@@ -9,10 +9,11 @@ use Illuminate\Support\Facades\DB;
  * Inventario de columnas:
  * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
  * - `seller_id` int(10) unsigned NOT NULL
- * - `amount` decimal(12,2) NOT NULL
+ * - `amount` decimal(30,12) NOT NULL
  * - `commission_type` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `created_at` timestamp NULL DEFAULT NULL
  * - `updated_at` timestamp NULL DEFAULT NULL
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
 {
@@ -22,10 +23,11 @@ return new class extends Migration
 CREATE TABLE `pending_account_commissions` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `seller_id` int(10) unsigned NOT NULL,
-  `amount` decimal(12,2) NOT NULL,
+  `amount` decimal(30,12) NOT NULL,
   `commission_type` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`),
   KEY `pending_account_commissions_seller_id_foreign` (`seller_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci

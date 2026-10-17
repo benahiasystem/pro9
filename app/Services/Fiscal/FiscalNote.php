@@ -3,6 +3,7 @@ namespace App\Services\Fiscal;
 
 use App\Models\Tenant\{Company, Document, DocumentItem, DocumentNoteRefund, Note};
 use App\Services\ExchangeRates\ExchangeRateMath as Math;
+use App\Support\Exact\Decimal as D;
 use App\Http\Controllers\Tenant\DocumentFiscalController;
 use Illuminate\Support\Facades\DB;
 
@@ -38,13 +39,19 @@ final class FiscalNote
             ->whereHas('note', fn ($q) => $q->where('affected_document_id',$invoice->id));
     }
 
-    public static function remaining(Document $invoice,string $field): float
+    public static function remaining(Document $invoice, string $field): string
     {
-        if (!$invoice->exists) return (float)$invoice->$field;
-        return max(0,round($invoice->$field-self::activeCredits($invoice)->sum($field),2));
+        return D::represent(self::remainingExact($invoice, $field));
     }
 
-    public static function credits(Document $invoice): float { return round(self::activeCredits($invoice)->sum('total'),2); }
+    public static function remainingExact(Document $invoice, string $field): \Brick\Math\BigRational
+    {
+        $used = $invoice->exists ? D::sum(self::activeCredits($invoice)->get()->map(fn ($r) => $r->exactValue($field))) : D::of(0);
+        $remaining = $invoice->exactValue($field)->minus($used);
+        return $remaining->isNegative() ? D::of(0) : $remaining;
+    }
+
+    public static function credits(Document $invoice): string { return D::represent(D::sum(self::activeCredits($invoice)->get()->map(fn ($r) => $r->exactValue('total')))); }
 
     public static function hasRelatedNotes(Document $invoice): bool
     {
@@ -57,53 +64,50 @@ final class FiscalNote
             ->whereHas('note',fn ($q)=>$q->where('affected_document_id',$invoice->id)->whereNotNull('creation_key'))->pluck('id')->all());
     }
 
-    public static function refunded(Document $invoice): float
+    public static function refunded(Document $invoice): string
     {
-        return round(DocumentNoteRefund::where('affected_document_id',$invoice->id)->where('component','principal')->whereNull('reversed_at')->sum('amount'),2);
+        return D::represent(D::sum(DocumentNoteRefund::where('affected_document_id',$invoice->id)->where('component','principal')->whereNull('reversed_at')->get()->map(fn ($r) => $r->exactValue('amount'))));
     }
 
-    /** Exact cumulative rounding distributes all cents once, including global discounts/charges. */
+    /** Keep proportional entitlements exact; represent cents only at the final consumer. */
     public static function distribute($amount, array $weights): array
     {
-        $total = array_sum($weights); $sum = 0; $prior = 0; $result = [];
-        foreach ($weights as $key=>$weight) {
-            $sum += $total ? $weight : 1;
-            $current = Math::finalAmount(Math::rational($amount)->multipliedBy($sum)->dividedBy($total ?: count($weights)));
-            $result[$key] = Math::finalAmount(Math::rational($current)->minus($prior)); $prior = $current;
-        }
+        $sum = D::sum($weights); $result = [];
+        foreach ($weights as $key => $weight) $result[$key] = $sum->isZero()
+            ? D::of($amount)->dividedBy(count($weights)) : D::of($amount)->multipliedBy(D::of($weight))->dividedBy($sum);
         return $result;
     }
 
-    /** Entitlements use the original fiscal groups, never the current product price or IVA. */
     public static function entitlements(Document $invoice): array
     {
         $lines = $invoice->items; $result = []; $groups = [];
         foreach ($lines as $line) {
-            $key = ($line->iva_rate['code'] ?? '').':'.$line->percentage_igv;
-            $groups[$key][$line->id] = (float)$line->total_base_igv;
-            $result[$line->id] = ['line'=>$line, 'base'=>0, 'iva'=>0, 'value'=>0];
+            $key = ($line->iva_rate['code'] ?? '').':'.D::represent($line->percentage_igv);
+            $groups[$key][$line->id] = $line->exactValue('total_base_igv');
+            $result[$line->id] = ['line'=>$line];
         }
         foreach ($groups as $key=>$weights) {
-            $tax = $invoice->taxes->first(fn ($t) => $t->tax_kind === 'IVA' && ($t->code.':'.$t->percentage) === $key);
-            // DECIMAL strings may have trailing zeros; compare numerically within a fiscal code.
-            if (!$tax) {
-                $first = $result[array_key_first($weights)]['line'];
-                $tax = $invoice->taxes->first(fn ($t) => $t->tax_kind === 'IVA' && $t->code === ($first->iva_rate['code'] ?? '') && (float)$t->percentage === (float)$first->percentage_igv);
-            }
-            $base = self::distribute($tax ? $tax->base : array_sum($weights), $weights);
-            $iva = self::distribute($tax ? $tax->amount : $lines->whereIn('id',array_keys($weights))->sum('total_igv'), $weights);
+            $first = $result[array_key_first($weights)]['line'];
+            $tax = $invoice->taxes->first(fn ($t) => $t->tax_kind === 'IVA' && $t->code === ($first->iva_rate['code'] ?? '') && D::of($t->percentage)->isEqualTo(D::of($first->percentage_igv)));
+            $base = self::distribute($tax ? $tax->exactValue('base') : D::sum($weights), $weights);
+            $iva = self::distribute($tax ? $tax->exactValue('amount') : D::sum($lines->whereIn('id',array_keys($weights))->map(fn ($l) => $l->exactValue('total_igv'))), $weights);
             foreach ($weights as $id=>$unused) { $result[$id]['base']=$base[$id]; $result[$id]['iva']=$iva[$id]; }
         }
-        $value = self::distribute($invoice->total_value, $lines->mapWithKeys(fn ($l)=>[$l->id=>(float)$l->total_value])->all());
-        foreach ($result as $id=>&$row) $row['value'] = $value[$id];
-        unset($row);
-        $creditIds = self::activeCredits($invoice)->pluck('id');
-        $credited = DocumentItem::whereIn('document_id',$creditIds)->get()->groupBy('affected_document_item_id');
+        $values = self::distribute($invoice->exactValue('total_value'), $lines->mapWithKeys(fn ($l)=>[$l->id=>$l->exactValue('total_value')])->all());
+        $credited = DocumentItem::whereIn('document_id',self::activeCredits($invoice)->pluck('id'))->get()->groupBy('affected_document_item_id');
         foreach ($result as $id=>&$row) {
+            $row['value'] = $values[$id];
             $used = $credited->get($id, collect());
-            $row['remaining_quantity'] = max(0, (float)$row['line']->quantity - $used->sum('inventory_quantity'));
-            foreach (['base'=>'total_base_igv','iva'=>'total_igv','value'=>'total_value'] as $k=>$field) $row['remaining_'.$k] = max(0, round($row[$k]-$used->sum($field),2));
-            $row['remaining_total'] = round($row['remaining_value']+$row['remaining_iva'],2);
+            $remaining = $row['line']->exactValue('quantity')->minus(D::sum($used->map(fn ($r) => $r->exactValue('inventory_quantity'))));
+            $exact = ['remaining_quantity'=>$remaining->isNegative() ? D::of(0) : $remaining];
+            foreach (['base'=>'total_base_igv','iva'=>'total_igv','value'=>'total_value'] as $k=>$field) {
+                $remaining = $row[$k]->minus(D::sum($used->map(fn ($r) => $r->exactValue($field))));
+                $exact['remaining_'.$k] = $remaining->isNegative() ? D::of(0) : $remaining;
+                $row[$k] = D::represent($row[$k]);
+            }
+            $exact['remaining_total'] = $exact['remaining_value']->plus($exact['remaining_iva']);
+            $row += D::values($exact);
+            $row['calculation_snapshot'] = D::snapshot($exact);
         }
         unset($row);
         return $result;
@@ -113,11 +117,11 @@ final class FiscalNote
     {
         $reason = self::reason($invoice);
         return ['can_create'=>$reason === null,'block_reason'=>$reason,'control_number'=>$invoice->control_number,
-            'credit_available'=>max(0, round($invoice->total - $invoice->taxes->where('tax_kind','IGTF')->sum('amount') - self::credits($invoice),2)),
+            'credit_available'=>D::represent(D::max(0, $invoice->exactValue('total')->minus(D::sum($invoice->taxes->where('tax_kind','IGTF')->map(fn ($t) => $t->exactValue('amount'))))->minus(D::sum(self::activeCredits($invoice)->get()->map(fn ($r) => $r->exactValue('total')))))),
             'items'=>array_values(array_map(function ($r) {
                 $allocations=FiscalNoteInventory::snapshot($r['line'],$r['remaining_quantity'],[]);
                 return ['id'=>$r['line']->id, 'description'=>$r['line']->item->description,
-                    'quantity'=>$r['line']->quantity,'remaining_quantity'=>$r['remaining_quantity'], 'remaining_total'=>$r['remaining_total'],
+                    'quantity'=>$r['line']->quantity,'remaining_quantity'=>$r['remaining_quantity'], 'remaining_total'=>$r['remaining_total'], 'calculation_snapshot'=>$r['calculation_snapshot'],
                     'iva_rate'=>$r['line']->iva_rate, 'unit_type_id'=>$r['line']->item->unit_type_id,
                     'serials'=>array_map(fn ($s)=>['id'=>$s['id'],'series'=>$s['series']],$allocations['lots'] ?? []),
                     'lots'=>array_map(fn ($l)=>['id'=>$l['id'],'quantity'=>$l['compromise_quantity']],$allocations['IdLoteSelected'] ?? [])];
@@ -214,42 +218,44 @@ final class FiscalNote
                 $seen[$sourceId]=true; $e=$entitlements[$sourceId]; $source=$e['line'];
                 if ($credit && $reasonId === '07' && $source->item->unit_type_id === 'SERV') FiscalAmounts::error('items','La devolución de mercancía requiere un producto; el servicio se ajusta por precio o anulación.');
                 $return = $credit && in_array($reasonId,['01','07'],true);
-                if ($return && $reasonId === '07') validator($row,['quantity'=>'required|numeric|gt:0|regex:/^[0-9]+(?:\\.[0-9]{1,4})?$/D'])->validate();
-                $quantity = $return ? ($reasonId === '01' ? $e['remaining_quantity'] : ($row['quantity'] ?? 0)) : 1;
-                if ($quantity < 0 || ($return && $quantity > $e['remaining_quantity']+0.00005)) FiscalAmounts::error("items.$index.quantity",'La cantidad supera lo pendiente de devolución.');
-                if ($return && $reasonId === '07' && $quantity <= 0) FiscalAmounts::error("items.$index.quantity",'Indique una cantidad positiva.');
+                if ($return && $reasonId === '07') validator($row,['quantity'=>'required|numeric|gt:0|regex:/^[0-9]+(?:\\.[0-9]{1,12})?$/D'])->validate();
+                $quantity = $return ? ($reasonId === '01' ? D::read($e,'remaining_quantity') : D::of(D::input($row['quantity'] ?? 0,'items.quantity'))) : D::of(1);
+                if ($quantity->isNegative() || ($return && $quantity->isGreaterThan(D::read($e,'remaining_quantity')))) FiscalAmounts::error("items.$index.quantity",'La cantidad supera lo pendiente de devolución.');
+                if ($return && $reasonId === '07' && $quantity->isLessThanOrEqualTo(0)) FiscalAmounts::error("items.$index.quantity",'Indique una cantidad positiva.');
                 if ($return) {
-                    $ratio = $e['remaining_quantity'] ? Math::rational($quantity)->dividedBy($e['remaining_quantity']) : Math::rational(1);
-                    $base=Math::finalAmount($ratio->multipliedBy($e['remaining_base']));
-                    $iva=Math::finalAmount($ratio->multipliedBy($e['remaining_iva']));
-                    $value=Math::finalAmount($ratio->multipliedBy($e['remaining_value']));
+                    $remainingQuantity=D::read($e,'remaining_quantity');
+                    $ratio=$remainingQuantity->isZero() ? D::of(1) : $quantity->dividedBy($remainingQuantity);
+                    $base=$ratio->multipliedBy(D::read($e, 'remaining_base'));
+                    $iva=$ratio->multipliedBy(D::read($e, 'remaining_iva'));
+                    $value=$ratio->multipliedBy(D::read($e, 'remaining_value'));
                 } else {
                     $amount=$row['adjustment_amount'] ?? $row['total'] ?? 0;
                     validator(['amount'=>$amount],['amount'=>'required|numeric|gt:0'])->validate();
-                    $amount=Math::finalAmount($amount);
-                    if ($amount <= 0) FiscalAmounts::error('items.adjustment_amount','El importe debe ser positivo a dos decimales.');
-                    if ($credit && $amount > $e['remaining_total']+0.005) FiscalAmounts::error("items.$index.adjustment_amount",'El ajuste supera el importe acreditable de la partida.');
+                    $amount=D::of(D::input($amount, 'items.adjustment_amount'));
+                    if ($amount->isLessThanOrEqualTo(0)) FiscalAmounts::error('items.adjustment_amount','El importe debe ser positivo a dos decimales.');
+                    if ($credit && $amount->isGreaterThan(D::read($e,'remaining_total'))) FiscalAmounts::error("items.$index.adjustment_amount",'El ajuste supera el importe acreditable de la partida.');
                     $rate=$source->percentage_igv;
                     if ($credit) {
-                        $ratio=Math::rational($amount)->dividedBy($e['remaining_total']);
-                        $base=Math::finalAmount($ratio->multipliedBy($e['remaining_base']));
-                        $value=Math::finalAmount($ratio->multipliedBy($e['remaining_value']));
-                        $iva=Math::finalAmount(Math::rational($amount)->minus($value));
+                        $ratio=D::of($amount)->dividedBy(D::read($e, 'remaining_total'));
+                        $base=$ratio->multipliedBy(D::read($e, 'remaining_base'));
+                        $value=$ratio->multipliedBy(D::read($e, 'remaining_value'));
+                        $iva=D::of($amount)->minus($value);
                     } else {
-                        $base=Math::finalAmount(Math::rational($amount)->dividedBy(Math::rational(1)->plus(Math::rational($rate)->dividedBy(100))));
-                        $iva=Math::finalAmount(Math::rational($amount)->minus($base)); $value=$base;
+                        $base=D::of($amount)->dividedBy(D::of(1)->plus(D::of($rate)->dividedBy(100)));
+                        $iva=D::of($amount)->minus($base); $value=$base;
                     }
-                    if ($credit && ($base > $e['remaining_base']+0.005 || $iva > $e['remaining_iva']+0.005)) FiscalAmounts::error("items.$index",'El ajuste supera la base o IVA disponible.');
+                    if ($credit && ($base->isGreaterThan(D::read($e, 'remaining_base')) || $iva->isGreaterThan(D::read($e, 'remaining_iva')))) FiscalAmounts::error("items.$index",'El ajuste supera la base o IVA disponible.');
                 }
-                $qty=$quantity ?: 1;
+                $qty=$quantity->isZero() ? D::of(1) : $quantity;
                 $line=$source->toArray(); $line['additional_information']=$source->getRawOriginal('additional_information'); unset($line['id'],$line['document_id'],$line['affectation_igv_type'],$line['price_type']);
                 $line['affected_document_item_id']=$sourceId; $line['inventory_quantity']=$return ? $quantity : 0;
                 $line['quantity']=$qty; $line['discounts']=[]; $line['charges']=[];
-                $line['unit_value']=Math::divide($base,$qty,6); $line['unit_price']=Math::divide($value+$iva,$qty,6);
-                $line['total_base_igv']=$base; $line['total_igv']=$iva; $line['total_value']=$value;
-                $line['total_taxes']=$iva; $line['total']=$value+$iva; $line['total_discount']=0;
-                $line['total_charge']=round($value-$base,2);
-                $line['item']=FiscalNoteInventory::snapshot($source,$line['inventory_quantity'],$row);
+                $exact = ['quantity'=>D::of($qty), 'inventory_quantity'=>D::of($return ? $quantity : 0),
+                    'unit_value'=>$base->dividedBy(D::of($qty)), 'unit_price'=>$value->plus($iva)->dividedBy(D::of($qty)),
+                    'total_base_igv'=>$base, 'total_igv'=>$iva, 'total_value'=>$value, 'total_taxes'=>$iva,
+                    'total'=>$value->plus($iva), 'total_discount'=>D::of(0), 'total_charge'=>$value->minus($base)];
+                $line = array_replace($line, D::values($exact), ['calculation_snapshot'=>D::snapshot($exact)]);
+                $line['item']=FiscalNoteInventory::snapshot($source,$exact['inventory_quantity'],$row);
                 $rows[]=$line;
             } else {
                 if ($credit || $reasonId === '02') FiscalAmounts::error("items.$index",'Seleccione una partida de la factura original.');

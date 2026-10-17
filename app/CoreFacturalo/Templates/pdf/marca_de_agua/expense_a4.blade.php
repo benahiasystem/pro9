@@ -248,7 +248,7 @@
             <td class="text-left align-top desc cell-solid-rl p-1">
                 {!!$row->description!!}
             </td>
-            <td class="text-center align-top align-top desc cell-solid-rl p-1">{{ number_format($row->total, 2) }}</td>
+            <td class="text-center align-top align-top desc cell-solid-rl p-1">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($row, 'total'), 2) }}</td>
         </tr>
     @endforeach
     @for($i = 0; $i < $cycle_items; $i++)
@@ -260,7 +260,7 @@
     @endfor
         <tr>
             <td class="p-1 text-right align-top desc cell-solid" colspan="2"><strong>TOTAL</strong> {{ $document->currency_type->symbol }}</td>
-            <td class="p-1 text-right align-top desc cell-solid font-bold">{{ number_format($document->total, 2) }}</td>
+            <td class="p-1 text-right align-top desc cell-solid font-bold">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total'), 2) }}</td>
         </tr>
     </tbody>
 </table>

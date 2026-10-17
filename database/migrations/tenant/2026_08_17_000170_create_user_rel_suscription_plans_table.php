@@ -50,7 +50,7 @@ use Illuminate\Support\Facades\DB;
  * - `total_other_taxes` double(12,2) DEFAULT '0.00'
  * - `total_taxes` double(12,2) DEFAULT '0.00'
  * - `total_value` double(12,2) DEFAULT '0.00'
- * - `total` decimal(12,2) DEFAULT '0.00'
+ * - `total` decimal(30,12) DEFAULT '0.00'
  * - `charges` json DEFAULT NULL
  * - `attributes` json DEFAULT NULL
  * - `discounts` json DEFAULT NULL
@@ -64,6 +64,7 @@ use Illuminate\Support\Facades\DB;
  * - `grade` text COLLATE utf8mb4_unicode_ci COMMENT 'Grado designado - utilizado en matricula'
  * - `section` text COLLATE utf8mb4_unicode_ci COMMENT 'Seccion designado - utilizado en matricula'
  * - `orders_created` int(11) NOT NULL DEFAULT '0' COMMENT 'Cantidad de órdenes de cobro creadas para esta suscripción'
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
 {
@@ -114,7 +115,7 @@ CREATE TABLE `user_rel_suscription_plans` (
   `total_other_taxes` double(12,2) DEFAULT '0.00',
   `total_taxes` double(12,2) DEFAULT '0.00',
   `total_value` double(12,2) DEFAULT '0.00',
-  `total` decimal(12,2) DEFAULT '0.00',
+  `total` decimal(30,12) DEFAULT '0.00',
   `charges` json DEFAULT NULL,
   `attributes` json DEFAULT NULL,
   `discounts` json DEFAULT NULL,
@@ -128,6 +129,7 @@ CREATE TABLE `user_rel_suscription_plans` (
   `grade` text COLLATE utf8mb4_unicode_ci COMMENT 'Grado designado - utilizado en matricula',
   `section` text COLLATE utf8mb4_unicode_ci COMMENT 'Seccion designado - utilizado en matricula',
   `orders_created` int(11) NOT NULL DEFAULT '0' COMMENT 'Cantidad de órdenes de cobro creadas para esta suscripción',
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL);

@@ -20,21 +20,18 @@ Rutas relativas a Pro9. Leer el código vigente antes de modificar campos/estado
 | `DocumentEditSettlements` | Sólo aplicaciones vigentes condicionan cliente/IVA; límites fiscales VES. |
 | `CashController` / `CashDocumentCredit` | Estado del crédito por saldo, sin representar retención como efectivo. |
 | `RecoverIvaRetentions` / `Console/Kernel` | Pendientes con factura lista, operaciones debidas y limpieza; scheduler tenant por minuto sin superposición. |
-| `documents/partials/iva_retention_fields.vue` | Previsión/contexto, propuesta protegida, neto explícito y carga durante creación. |
-| `documents/partials/retention.vue` | Historial/soporte/formulario común y gestión posterior, errores Web/API legibles. |
-| `resources/js/mixins/iva-retention.js` | Objetivo de cobro neto; conserva total de venta y abonos. |
+| `documents/partials/retention.vue` | Historial/soporte/formulario sobre factura guardada desde el listado; errores Web/API legibles y protección de respuestas tardías. |
+| `resources/js/helpers/document-creation.js` / `mixins/document-creation.js` | Excluir retenciones de creación/borradores; objetivo liquidable y sugerencia exacta del restante, sin redistribuir abonos. |
 | `resources/views/pdf/partials/document_fiscal_totals.blade.php` / `Template` | Aplicaciones/previsión locales y altura del ticket. |
 
-## Entradas que deben conservar el flujo
+## Entradas de interfaz — contrato del 16/10/2026
 
-- Web: `documents/invoice_generate.vue`, opciones y pagos posteriores compartidos.
-- POS/Garage: `pos/partials/payment.vue`, `fast_payment.vue`, `fast_payment_garage.vue` y `options.vue`; incluir pagos rápidos, reapertura y borradores.
-- Hotel: `modules/Hotel/.../rooms/Checkout.vue`, con opciones comunes del documento resultante.
-- Pedidos: `modules/Order/.../order_notes/partials/options.vue`; con previsión, agregar un medio sugiere sólo restante neto y conserva los anteriores.
-- Servicio técnico: `modules/Sale/.../technical-services/partials/options.vue`, conversión `GenerateDocumentController` → `DocumentInput`/guardado común.
-- Suscripciones: `payment_receipt/partials/option_documents.vue` en `Suscription` y `FullSuscription`, además de gestión posterior de facturas automáticas.
-- Restaurante usa POS. Cotizaciones, notas de venta y órdenes de entrega convierten mediante formulario común. Ecommerce y facturación masiva conservan servicio/API posterior sin fabricar soportes.
-- `DocumentInput`, `DocumentUpdateInput`, `DocumentTransform` preservan campos; los módulos no implementan un segundo cálculo/aplicación.
+- El listado `/documents` conserva la acción Retención con gestión IVA/ISLR: registro, soporte privado vinculado, consulta, reintento y reversión. No requiere recrear la factura.
+- Facturas, POS/Garage (incluidos pagos rápidos), Hotel, pedidos, servicio técnico y ambas suscripciones no presentan previsión/carga. Sus ventanas de confirmación y pagos compartidos tampoco montan el gestor.
+- Sólo el listado pasa `allowRetentionManagement=true` a las opciones de documento y de allí a operaciones de NC. Fuera de ese contexto no se ofrecen ajustes/reemplazos IVA/ISLR; las demás operaciones de devolución continúan.
+- `withoutDraftRetentions` excluye `iva_retention_prevision`, `islr_retention_prevision` y `received_retentions` al restaurar/guardar borradores POS/Garage y preparar solicitudes/preview. Conservar artículos y cobros. `collectionTarget` no deduce previsiones; `suggestRemainingPayment` conserva filas ingresadas y sugiere únicamente el restante en moneda documental.
+- Los componentes `received_retention_options.vue`, `iva_retention_fields.vue`, `islr_retention_fields.vue` y el mixin `iva-retention.js` se retiraron al quedar sin consumidores. No reintroducirlos en creación por interpretar capacidades históricas del API como requisito de interfaz.
+- `DocumentInput`, `DocumentUpdateInput`, `DocumentTransform` y los servicios/API conservan sus contratos y las retenciones persistidas. No modificar tablas ni históricos para esta retirada UI.
 
 ## Esquema inicial y soporte
 
@@ -66,7 +63,7 @@ Web conserva sesión/CSRF; API añade `/api` y autenticación tenant. Para campo
 | Reintento | `POST documents/retention/{id}/retry-hka` |
 | Reversión | `POST documents/retention/{id}/reverse` |
 
-Creación: `iva_retention_prevision={enabled,fiscal_context}` y `received_retentions[]` con token `upload_id`. El servidor recalcula importes; no confiar en `amount` previsto publicado por cliente. Consulta no exige nuevo UUID; registro/reversión lo exigen y retry usa la clave HKA vigente. Reutilizar clave con otros datos/acción: 409; validación ordinaria: 422. Handler y Vue conservan/interpretan los sobres Web/API.
+Contrato API de creación (no usado por la interfaz): `iva_retention_prevision={enabled,fiscal_context}` y `received_retentions[]` con token `upload_id`. El servidor recalcula importes; no confiar en `amount` previsto publicado por cliente. Consulta no exige nuevo UUID; registro/reversión lo exigen y retry usa la clave HKA vigente. Reutilizar clave con otros datos/acción: 409; validación ordinaria: 422. Handler y Vue conservan/interpretan los sobres Web/API.
 
 | Estado local | Efecto en saldo |
 |---|---|
@@ -104,4 +101,4 @@ Consulta manual de conflicto corregido: aplicación ausente conserva conflicto, 
 
 Ver las tres evidencias del informe: rechazo del neto Contado, rechazo del neto Crédito y control POST/GET/DELETE VES/USD. Control completamente cobrado no acredita neto. La bandera DEMO permanece falsa fuera de dobles de prueba. Producción, emisión 05 y aceptación visual integral en instalación nueva no se acreditaron.
 
-Pruebas mantenidas: `IvaRetentionPersistenceCases` en `FiscalEmissionSchemaTest`, `HkaIvaRetentionPayloadTest`, `IvaRetentionHttpContractTest`, `HkaTransportTest`, `HkaPayloadBuilderTest`, `tests/js/iva-retention-ui.test.cjs`. Worker fiscal sólo con bases temporales de nombre controlado; sus dobles no autorizan mutaciones reales.
+Pruebas mantenidas: `IvaRetentionPersistenceCases` en `FiscalEmissionSchemaTest`, `HkaIvaRetentionPayloadTest`, `IvaRetentionHttpContractTest`, `HkaTransportTest`, `HkaPayloadBuilderTest`, `tests/js/iva-retention-ui.test.cjs` y `tests/js/received-retention-list.test.cjs`. Worker fiscal sólo con bases temporales de nombre controlado; sus dobles no autorizan mutaciones reales.

@@ -39,6 +39,7 @@
 </template>
 
 <script>
+import {exactAmount} from '@helpers/exchange-rate-math'
 
 import { functions, fnRestrictSaleItemsCpe, operationsForDiscounts } from '@mixins/functions'
 import { sumAmountDiscountsNoBaseByItem } from '@helpers/functions'
@@ -160,7 +161,7 @@ export default {
 
                 total_value += parseFloat(row.total_value)
 
-                this.total_discount_no_base += sumAmountDiscountsNoBaseByItem(row)
+                this.total_discount_no_base = exactAmount(this.total_discount_no_base).plus(sumAmountDiscountsNoBaseByItem(row)).decimal()
 
             });
 

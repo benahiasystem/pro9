@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\DB;
  * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
  * - `status` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `products` json DEFAULT NULL
- * - `total` decimal(12,2) NOT NULL
+ * - `total` decimal(30,12) NOT NULL
  * - `personas` int(11) NOT NULL
  * - `cliente` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `comentarios` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
@@ -25,6 +25,7 @@ use Illuminate\Support\Facades\DB;
  * - `is_active` tinyint(1) NOT NULL DEFAULT '1'
  * - `is_paid` tinyint(1) NOT NULL DEFAULT '0'
  * - `delivery` json DEFAULT NULL
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
 {
@@ -35,7 +36,7 @@ CREATE TABLE `restaurant_tables` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `status` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `products` json DEFAULT NULL,
-  `total` decimal(12,2) NOT NULL,
+  `total` decimal(30,12) NOT NULL,
   `personas` int(11) NOT NULL,
   `cliente` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `comentarios` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
@@ -50,6 +51,7 @@ CREATE TABLE `restaurant_tables` (
   `is_active` tinyint(1) NOT NULL DEFAULT '1',
   `is_paid` tinyint(1) NOT NULL DEFAULT '0',
   `delivery` json DEFAULT NULL,
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`),
   KEY `restaurant_tables_group_id_foreign` (`group_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci

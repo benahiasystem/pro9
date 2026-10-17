@@ -1077,6 +1077,8 @@
 </style>
 
 <script>
+import {exactAmount} from "../../../../helpers/exchange-rate-math"
+
 import ItemForm from "../../items/form.vue";
 import VariationChips from "../../items/partials/variation_chips.vue";
 import LotsGroup from "./lots_group.vue";
@@ -1513,6 +1515,7 @@ export default {
             this.calculateTotal();
         },
         changeValidateQuantity(event) {
+            this.form.quantity_input = null;
             this.calculateTotal();
         },
         getMinQuantity() {
@@ -1522,7 +1525,8 @@ export default {
             this.form.quantity = this.getMinQuantity();
         },
         clickDecrease() {
-            this.form.quantity = parseInt(this.form.quantity - 1);
+            this.form.quantity_input = null;
+            this.form.quantity = exactAmount(this.form.quantity).minus(1).decimal();
 
             if (this.form.quantity <= this.getMinQuantity()) {
                 this.setMinQuantity();
@@ -1532,7 +1536,8 @@ export default {
             this.calculateTotal();
         },
         clickIncrease() {
-            this.form.quantity = parseInt(this.form.quantity) + 1;
+            this.form.quantity_input = null;
+            this.form.quantity = exactAmount(this.form.quantity).plus(1).decimal();
             this.calculateTotal();
         },
         async searchRemoteItems(input) {
@@ -1680,7 +1685,9 @@ export default {
 
 
                 suggested_price: 0,
-                quantity: 1,
+                quantity: '1',
+                quantity_input: null,
+                price_input: null,
                 unit_price: 0,
                 unit_price_value: 0,
                 input_unit_price: 0,
@@ -2172,21 +2179,21 @@ export default {
                 this.total_item = this.form.unit_price_value;
             }
         },
+        // ######## INICIO CALCULOS EXACTOS PRO9 ########
         calculateQuantity() {
-            if (this.form.item.calculate_quantity) {
-                this.form.quantity = _.round(
-                    this.total_item / this.form.unit_price_value,
-                    4
-                );
+            if (this.form.item.calculate_quantity && exactAmount(this.form.unit_price_value || '0').compare(0) > 0) {
+                this.form.quantity_input = {amount: String(this.total_item || '0'), unit_price: String(this.form.unit_price_value)};
+                this.form.quantity = exactAmount(this.total_item || '0').dividedBy(this.form.unit_price_value).decimal();
             }
             this.calculateTotal();
         },
         calculateTotal() {
-            this.readonly_total = _.round(
-                this.form.quantity * this.form.unit_price_value,
-                4
-            );
+            const quantity = this.form.quantity_input
+                ? exactAmount(this.form.quantity_input.amount).dividedBy(this.form.quantity_input.unit_price)
+                : exactAmount(this.form.quantity || '0');
+            this.readonly_total = quantity.times(this.form.unit_price_value || '0').decimal();
         },
+        // ######## FIN CALCULOS EXACTOS PRO9 ########
         cleanTotalItem() {
             this.total_item = null;
         },
@@ -2284,7 +2291,7 @@ export default {
                     // exonerado de igv
                 } else {
                     unit_price =
-                        this.form.unit_price_value * (1 + this.percentageIgv);
+                        exactAmount(this.form.unit_price_value).times(exactAmount(1).plus(this.percentageIgv)).decimal();
                 }
             }
 
@@ -2305,6 +2312,7 @@ export default {
 
             this.form.input_unit_price_value = this.form.unit_price_value;
 
+            this.form.price_input = {amount: String(this.form.unit_price_value), currency_type_id: this.form.item.currency_type_id || this.currencyTypeIdActive, includes_iva: this.form.has_igv !== false};
             this.form.unit_price = unit_price;
             this.form.item.unit_price = unit_price;
             this.form.item.presentation = this.item_unit_type;
@@ -2333,69 +2341,29 @@ export default {
 
 
             // Configurar base, amount, porcentaje y factor de cada descuento
-            const igv_factor = 1 + this.percentageIgv;
-            const quantity = parseFloat(this.form.quantity);
-            const is_taxed = affectation_igv_type_id === "10";
-
-            const unit_value = is_taxed ? unit_price / igv_factor : unit_price;
-
-
-            // ########## INICIO CAMBIO IGV A IVA
-            const total_value_partial = unit_value * quantity;   // base imponible (SIN IVA)
-            // ######### FIN CAMBIO IGV A IVA
-
-            const aux_total_line = unit_price * quantity;        // total con IGV
-
-            // El precio del item puede estar en una moneda distinta a la del documento.
-            // El unit_price (y por tanto base/amount) está en la moneda del item, pero
-            // calculateRowItem convierte la línea a la moneda del documento. Aquí se
-            // convierten los montos del descuento a la moneda del documento (mismo
-            // criterio que usa calculateRowItem con el unit_price) para que el descuento
-            // sea compatible cuando el documento está en dólares. Si las monedas
-            // coinciden, doc_factor = 1 y no hay cambio.
-            const item_currency =
-                this.form.item.currency_type_id || this.currencyTypeIdActive;
-            let doc_factor = 1;
-            if (item_currency !== this.currencyTypeIdActive && this.exchangeRateSale) {
-                doc_factor =
-                    item_currency === "VES"
-                        ? 1 / this.exchangeRateSale // item en Bolívares -> documento en Dólares
-                        : this.exchangeRateSale; // item en Dólares -> documento en Bolívares
-            }
-
+            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            const igvFactor = affectation_igv_type_id === '10' ? exactAmount(1).plus(this.percentageIgv) : exactAmount(1);
+            const quantity = this.form.quantity_input
+                ? exactAmount(this.form.quantity_input.amount).dividedBy(this.form.quantity_input.unit_price)
+                : exactAmount(this.form.quantity);
+            const itemCurrency = this.form.item.currency_type_id || this.currencyTypeIdActive;
+            const conversion = itemCurrency === this.currencyTypeIdActive ? exactAmount(1)
+                : itemCurrency === 'VES' ? exactAmount(1).dividedBy(this.exchangeRateSale) : exactAmount(this.exchangeRateSale);
+            const gross = exactAmount(unit_price).times(quantity).times(conversion);
             this.form.discounts.forEach(discount => {
-                const affects_base =
-                    discount.discount_type.base;
-                const base = (affects_base ? total_value_partial : aux_total_line) * doc_factor;
-
-                if (discount.is_amount) {
-                    // Monto fijo ingresado por el usuario (en la moneda del item) -> documento
-                    const amount = (parseFloat(discount.amount) || 0) * doc_factor;
-                    const factor = base > 0 ? amount / base : 0;
-
-                    discount.base = _.round(base, 2);
-                    let amount_base = affects_base ?  amount / igv_factor : amount;
-                    discount.amount = Number((amount_base).toFixed(2));
-                    discount.amount_without_rounded = affects_base ? amount / igv_factor : amount; // monto sin redondear para cálculos posteriores
-                    discount.factor = _.round(factor, 5);
-                    discount.percentage = _.round(factor * 100, 5);
-                } else {
-                    // Porcentaje ingresado por el usuario
-                    const percentage = parseFloat(discount.percentage) || 0;
-                    const factor = percentage / 100;
-
-                    let amount_base = Number((affects_base ? base * factor : (discount.amount * doc_factor) / igv_factor).toFixed(2));
-                    discount.base = _.round(base, 2);
-                    discount.factor = _.round(factor, 5);
-                    discount.percentage = percentage;
-                    // ########## INICIO CAMBIO IGV A IVA
-                    discount.amount = (amount_base); // Vista para mostrar el monto del descuento con IVA incluido
-                    // ######### FIN CAMBIO IGV A IVA
-                    discount.amount_without_rounded = affects_base ? base * factor : discount.amount / igv_factor; // monto sin redondear para cálculos posteriores
-
-                }
-
+                const onBase = discount.discount_type?.base || discount.discount_type_id === '00';
+                const base = onBase ? gross.dividedBy(igvFactor) : gross;
+                const amount = discount.is_amount
+                    ? exactAmount(discount.amount || '0').times(conversion).dividedBy(onBase ? igvFactor : 1)
+                    : base.times(discount.percentage || '0').dividedBy(100);
+                discount.base = base.decimal();
+                discount.amount = amount.decimal();
+                discount.amount_exact = amount.fraction();
+                discount.amount_without_rounded = amount.decimal();
+                discount.factor = base.compare(0) > 0 ? amount.dividedBy(base).decimal() : '0';
+                discount.use_input_amount = true;
             });
+            // ######## FIN CALCULOS EXACTOS PRO9 ########
 
             this.row = calculateRowItem(
                 this.form,

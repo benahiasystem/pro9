@@ -1,0 +1,178 @@
+[
+  {
+    "name": "iva incluido 500",
+    "percentage": "16",
+    "input": {
+      "quantity": "1",
+      "unit_price": "500",
+      "affectation_igv_type_id": "10"
+    },
+    "expected": {
+      "total": {
+        "n": "500",
+        "d": "1"
+      },
+      "unit_value": {
+        "n": "12500",
+        "d": "29"
+      },
+      "total_igv": {
+        "n": "2000",
+        "d": "29"
+      }
+    }
+  },
+  {
+    "name": "cantidad periódica desde importe",
+    "percentage": "0",
+    "input": {
+      "quantity": "166.666666666667",
+      "unit_price": "3",
+      "affectation_igv_type_id": "20",
+      "quantity_input": {
+        "amount": "500",
+        "unit_price": "3"
+      }
+    },
+    "expected": {
+      "quantity": {
+        "n": "500",
+        "d": "3"
+      },
+      "total": {
+        "n": "500",
+        "d": "1"
+      }
+    }
+  },
+  {
+    "name": "descuento periódico",
+    "percentage": "0",
+    "input": {
+      "quantity": "1",
+      "unit_price": "100",
+      "affectation_igv_type_id": "20",
+      "discounts": [
+        {
+          "discount_type_id": "00",
+          "is_amount": true,
+          "amount_exact": {
+            "n": "1",
+            "d": "3"
+          }
+        }
+      ]
+    },
+    "expected": {
+      "total_discount": {
+        "n": "1",
+        "d": "3"
+      },
+      "total": {
+        "n": "299",
+        "d": "3"
+      }
+    }
+  },
+  {
+    "name": "precio neto y conversión",
+    "percentage": "16",
+    "input": {
+      "quantity": "1",
+      "unit_price": "1160",
+      "affectation_igv_type_id": "10",
+      "currency_type_id": "VES",
+      "exchange_rate_sale": "10.00000000",
+      "price_input": {
+        "amount": "100",
+        "currency_type_id": "USD",
+        "includes_iva": false
+      }
+    },
+    "expected": {
+      "unit_value": {
+        "n": "1000",
+        "d": "1"
+      },
+      "total_igv": {
+        "n": "160",
+        "d": "1"
+      },
+      "total": {
+        "n": "1160",
+        "d": "1"
+      }
+    }
+  },
+  {
+    "name": "factor sin porcentaje",
+    "percentage": "16",
+    "input": {
+      "quantity": "2",
+      "unit_price": "116",
+      "affectation_igv_type_id": "10",
+      "discounts": [
+        {
+          "discount_type_id": "00",
+          "factor": "0.1",
+          "percentage": null
+        },
+        {
+          "discount_type_id": "01",
+          "factor": "0.05"
+        }
+      ]
+    },
+    "expected": {
+      "total": {
+        "n": "986",
+        "d": "5"
+      },
+      "total_discount": {
+        "n": "158",
+        "d": "5"
+      }
+    }
+  },
+  {
+    "name": "valor inferior a céntimo",
+    "percentage": "0",
+    "input": {
+      "quantity": "0.000000000001",
+      "unit_price": "0.000000000001",
+      "affectation_igv_type_id": "20"
+    },
+    "expected": {
+      "total": {
+        "n": "1",
+        "d": "1000000000000000000000000"
+      }
+    }
+  },
+  {
+    "name": "conversión periódica desde origen",
+    "percentage": "0",
+    "input": {
+      "quantity": "1",
+      "unit_price": "0.572169370847",
+      "affectation_igv_type_id": "20",
+      "currency_type_id": "USD",
+      "exchange_rate_sale": "873.86712345",
+      "price_input": {
+        "amount": "500",
+        "currency_type_id": "VES",
+        "includes_iva": true
+      }
+    },
+    "expected": {
+      "unit_price": {
+        "n": "10000000000",
+        "d": "17477342469"
+      },
+      "total": {
+        "n": "10000000000",
+        "d": "17477342469"
+      }
+    }
+  }
+]

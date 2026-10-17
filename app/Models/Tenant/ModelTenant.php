@@ -26,11 +26,63 @@
     {
         use UsesTenantConnection;
 
+        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        protected static function booted()
+        {
+            static::saved(fn ($model) => \App\Support\Exact\CommercialCalculation::afterLine($model));
+            static::deleted(fn ($model) => \App\Support\Exact\CommercialCalculation::afterLine($model));
+            static::saved(fn ($model) => \App\Support\Exact\Settlement::afterPayment($model));
+            static::deleted(fn ($model) => \App\Support\Exact\Settlement::afterPayment($model));
+        }
+
+        public function setAttribute($key, $value)
+        {
+            if ($value instanceof \Brick\Math\BigRational) {
+                $snapshot = $this->calculation_snapshot ?? \App\Support\Exact\Decimal::snapshot([]);
+                $snapshot['values'][$key] = \App\Support\Exact\Decimal::fraction($value);
+                parent::setAttribute('calculation_snapshot', $snapshot);
+                $value = \App\Support\Exact\Decimal::represent($value);
+            }
+            return parent::setAttribute($key, $value);
+        }
+
+        public function isFillable($key)
+        {
+            if (in_array($key, ['quantity_input','price_input'], true) && \App\Support\Exact\CommercialCalculation::supportsLine($this)) return true;
+            return parent::isFillable($key);
+        }
+
+        protected function fillableFromArray(array $attributes)
+        {
+            $fillable=parent::fillableFromArray($attributes);
+            if (\App\Support\Exact\CommercialCalculation::supportsLine($this)) {
+                foreach (['quantity_input','price_input'] as $field) {
+                    if (array_key_exists($field,$attributes)) $fillable[$field]=$attributes[$field];
+                }
+            }
+            return $fillable;
+        }
+
+        protected function castAttribute($key, $value)
+        {
+            if ($value !== null && in_array($key, \App\Support\Exact\Persistence::columns($this), true)) {
+                return \App\Support\Exact\Decimal::represent($value);
+            }
+            return parent::castAttribute($key, $value);
+        }
+        // ######## FIN CALCULOS EXACTOS PRO9 ########
+
         // ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
         // ######## INICIO TASAS OCHO DECIMALES ########
         public function getCasts()
         {
             $casts = parent::getCasts();
+            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            $casts['calculation_snapshot'] = 'array';
+            foreach (\App\Support\Exact\Persistence::columns($this) as $column) {
+                $casts[$column] = 'string';
+            }
+            // ######## FIN CALCULOS EXACTOS PRO9 ########
             foreach (['exchange_rate_sale', 'exchange_rate'] as $column) {
                 if (in_array($column, $this->getFillable(), true) && !$this->hasGetMutator($column) && (!isset($casts[$column]) || $casts[$column] === 'float' || str_starts_with($casts[$column], 'decimal:'))) {
                     $casts[$column] = 'decimal:8';
@@ -42,6 +94,25 @@
 
         public function save(array $options = [])
         {
+            if (\App\Support\Exact\Persistence::enabled($this) && $this->getConnection()->transactionLevel() === 0) {
+                return $this->getConnection()->transaction(fn () => $this->saveWithExactCalculation($options));
+            }
+            return $this->saveWithExactCalculation($options);
+        }
+
+        public function delete()
+        {
+            if (\App\Support\Exact\Persistence::enabled($this) && $this->getConnection()->transactionLevel() === 0) {
+                return $this->getConnection()->transaction(fn () => parent::delete());
+            }
+            return parent::delete();
+        }
+
+        private function saveWithExactCalculation(array $options = [])
+        {
+            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            \App\Support\Exact\Persistence::prepare($this);
+            // ######## FIN CALCULOS EXACTOS PRO9 ########
             // ######## INICIO TASAS OCHO DECIMALES ########
             foreach (['exchange_rate_sale', 'exchange_rate'] as $column) {
                 if (array_key_exists($column, $this->attributes) && ($this->getCasts()[$column] ?? '') === 'decimal:8') {
@@ -153,7 +224,7 @@
          */
         public function generalConvertValueToPen($value, $exchange_rate_sale)
         {
-            return (float) \App\Services\ExchangeRates\ExchangeRateMath::multiply($value, $exchange_rate_sale, 2);
+            return \App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::convert($value, 'USD', 'VES', $exchange_rate_sale));
         }
 
 
@@ -209,8 +280,32 @@
          */
         public function generalApplyNumberFormat($value, $decimals = 2)
         {
-            return number_format($value, $decimals, ".", "");
+            return \App\Support\Exact\Decimal::represent($value, $decimals, true);
         }
+
+        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        public function exactValue(string $field): \Brick\Math\BigRational
+        {
+            return \App\Support\Exact\Decimal::read($this, $field);
+        }
+
+        public function formatPdfUnitPrice($configuration = null): string
+        {
+            $configuration ??= Configuration::getDataDecimalQuantity();
+            return \App\Support\Exact\PdfPrice::format($this->exactValue('unit_price'), $configuration);
+        }
+
+        public function setExactValues(array $values): self
+        {
+            $snapshot = $this->calculation_snapshot ?? \App\Support\Exact\Decimal::snapshot([]);
+            foreach ($values as $field => $value) {
+                $snapshot['values'][$field] = \App\Support\Exact\Decimal::fraction($value);
+                $this->setAttribute($field, \App\Support\Exact\Decimal::represent($value));
+            }
+            $this->calculation_snapshot = $snapshot;
+            return $this;
+        }
+        // ######## FIN CALCULOS EXACTOS PRO9 ########
 
 
         /**

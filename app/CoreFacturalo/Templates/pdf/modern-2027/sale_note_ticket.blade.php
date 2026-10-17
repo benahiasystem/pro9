@@ -213,18 +213,18 @@
     @endphp
     @if($fusionados->count())
         @php
-            $cantidad_fusionada = $fusionados->sum('quantity');
-            $total_fusionado = $fusionados->sum('total');
-            $cantidad_fusionada_format = ((int)$cantidad_fusionada != $cantidad_fusionada) ? $cantidad_fusionada : number_format($cantidad_fusionada, 0);
+            $cantidad_fusionada = \App\Support\Exact\Decimal::sum($fusionados->map(fn ($row) => \App\Support\Exact\Decimal::read($row, 'quantity')));
+            $total_fusionado = \App\Support\Exact\Decimal::sum($fusionados->map(fn ($row) => \App\Support\Exact\Decimal::read($row, 'total')));
+            $cantidad_fusionada_format = \App\Support\Exact\Decimal::represent($cantidad_fusionada);
         @endphp
         <tr>
             <td class="m27-item text-left">{{ $cantidad_fusionada_format }}</td>
             <td class="m27-item text-left">Por consumo</td>
-            <td class="m27-item text-right font-bold">{{ number_format($total_fusionado, 2) }}</td>
+            <td class="m27-item text-right font-bold">{{ \App\Support\Exact\Decimal::format($total_fusionado) }}</td>
         </tr>
         <tr>
             <td></td>
-            <td colspan="2" class="m27-item-sub">({{ $document->currency_type->symbol }} {{ number_format($total_fusionado, 2) }})</td>
+            <td colspan="2" class="m27-item-sub">({{ $document->currency_type->symbol }} {{ \App\Support\Exact\PdfPrice::configured($cantidad_fusionada->isZero() ? 0 : $total_fusionado->dividedBy($cantidad_fusionada)) }})</td>
         </tr>
     @endif
     @foreach($no_fusionados as $row)
@@ -309,7 +309,7 @@
                     @endisset
                 </small>
             </td>
-            <td class="m27-item text-right font-bold">{{ number_format($row->total, 2) }}</td>
+            <td class="m27-item text-right font-bold">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($row, 'total'), 2) }}</td>
         </tr>
         <tr>
             <td></td>
@@ -317,11 +317,11 @@
                 @php
                     // Blade se come un "(...)" que siga a una directiva como @endif,
                     // asi que la linea secundaria se arma aqui y se imprime entera.
-                    $item_unit_price = $row->unit_price;
+                    $item_unit_price = \App\Support\Exact\Decimal::read($row, 'unit_price');
                     $item_unit_label = $row->item->unit_type_id !== 'UND' ? $row->item->unit_type_id.' x ' : '';
                     $item_code_label = trim((string) $internal_id);
                     $item_sub_line = ($item_code_label !== '' ? $item_code_label.' ' : '')
-                        .'('.$item_unit_label.$document->currency_type->symbol.' '.number_format($item_unit_price, 2).')';
+                        .'('.$item_unit_label.$document->currency_type->symbol.' '.\App\Support\Exact\PdfPrice::configured($item_unit_price).')';
                 @endphp
                 {{ $item_sub_line }}
             </td>
@@ -345,37 +345,37 @@
     @if($document->total_exportation > 0)
         <tr>
             <td colspan="2" class="m27-total-label">Op. exportación:</td>
-            <td class="m27-total-value">{{ $document->currency_type->symbol }} {{ number_format($document->total_exportation, 2) }}</td>
+            <td class="m27-total-value">{{ $document->currency_type->symbol }} {{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_exportation'), 2) }}</td>
         </tr>
     @endif
     @if($document->total_free > 0)
         <tr>
             <td colspan="2" class="m27-total-label">Op. gratuitas:</td>
-            <td class="m27-total-value">{{ $document->currency_type->symbol }} {{ number_format($document->total_free, 2) }}</td>
+            <td class="m27-total-value">{{ $document->currency_type->symbol }} {{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_free'), 2) }}</td>
         </tr>
     @endif
     @if($document->total_unaffected > 0)
         <tr>
             <td colspan="2" class="m27-total-label">Op. inafectas:</td>
-            <td class="m27-total-value">{{ $document->currency_type->symbol }} {{ number_format($document->total_unaffected, 2) }}</td>
+            <td class="m27-total-value">{{ $document->currency_type->symbol }} {{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_unaffected'), 2) }}</td>
         </tr>
     @endif
     @if($document->total_exonerated > 0)
         <tr>
             <td colspan="2" class="m27-total-label">Op. exoneradas:</td>
-            <td class="m27-total-value">{{ $document->currency_type->symbol }} {{ number_format($document->total_exonerated, 2) }}</td>
+            <td class="m27-total-value">{{ $document->currency_type->symbol }} {{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_exonerated'), 2) }}</td>
         </tr>
     @endif
     @if($document->total_discount_with_igv > 0)
         <tr>
             <td colspan="2" class="m27-total-label">{{ ($document->total_prepayment > 0) ? 'Anticipo' : 'Descuento total' }}:</td>
-            <td class="m27-total-value">{{ $document->currency_type->symbol }} {{ number_format($document->total_discount_with_igv, 2) }}</td>
+            <td class="m27-total-value">{{ $document->currency_type->symbol }} {{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_discount_with_igv'), 2) }}</td>
         </tr>
     @endif
     @if($document->total_charge > 0 && $document->charges)
         <tr>
             <td colspan="2" class="m27-total-label">Cargos ({{ $document->getTotalFactor() }}%):</td>
-            <td class="m27-total-value">{{ $document->currency_type->symbol }} {{ number_format($document->total_charge, 2) }}</td>
+            <td class="m27-total-value">{{ $document->currency_type->symbol }} {{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_charge'), 2) }}</td>
         </tr>
     @endif
     @if($document->total_igv > 0)
@@ -385,7 +385,7 @@
         </tr>
         <tr>
             <td colspan="2" class="m27-total-label">IGV{{ $m27_igv_percentage ? ' ('.$m27_igv_percentage.'%)' : '' }}:</td>
-            <td class="m27-total-value">{{ $document->currency_type->symbol }} {{ number_format($document->total_igv, 2) }}</td>
+            <td class="m27-total-value">{{ $document->currency_type->symbol }} {{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_igv'), 2) }}</td>
         </tr>
     @endif
 
@@ -402,7 +402,7 @@
     <tr>
         <td class="m27-item-sub align-bottom" style="white-space: nowrap;">{{ $m27_total_products }} und.</td>
         <td class="m27-grand-label">TOTAL:</td>
-        <td class="m27-grand-value">{{ $document->currency_type->symbol }} {{ number_format($document->total, 2) }}</td>
+        <td class="m27-grand-value">{{ $document->currency_type->symbol }} {{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total'), 2) }}</td>
     </tr>
     </tbody>
 </table>

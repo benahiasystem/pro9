@@ -15,7 +15,7 @@ class HkaIvaRetentionPayloadTest extends TestCase
         $reduced=new \App\Models\Tenant\DocumentTax;$reduced->setRawAttributes(['tax_kind'=>'IVA','percentage'=>8,'base'=>100,'amount'=>8]);
         $general=new \App\Models\Tenant\DocumentTax;$general->setRawAttributes(['tax_kind'=>'IVA','percentage'=>16,'base'=>100,'amount'=>16]);
         $document->setRelation('taxes',collect([$reduced,$general]));
-        self::assertSame(200.0,\App\Services\Fiscal\IvaRetentionService::voucherTaxableBase($document,24,'VES',10));
+        self::assertSame('200',\App\Services\Fiscal\IvaRetentionService::voucherTaxableBase($document,24,'VES',10));
         $this->expectException(\Illuminate\Validation\ValidationException::class);
         \App\Services\Fiscal\IvaRetentionService::voucherTaxableBase($document,8,'VES',10);
     }

@@ -14,13 +14,14 @@ use Illuminate\Support\Facades\DB;
  * - `date_of_issue` date NOT NULL
  * - `date_of_perception` date NOT NULL
  * - `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `total_document` decimal(10,2) NOT NULL
- * - `total_perception` decimal(10,2) NOT NULL
+ * - `total_document` decimal(30,12) NOT NULL
+ * - `total_perception` decimal(30,12) NOT NULL
  * - `payments` json NOT NULL
  * - `series` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `exchange_rate` json NOT NULL
- * - `total_to_pay` decimal(10,2) NOT NULL
- * - `total_payment` decimal(10,2) NOT NULL
+ * - `total_to_pay` decimal(30,12) NOT NULL
+ * - `total_payment` decimal(30,12) NOT NULL
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
 {
@@ -35,13 +36,14 @@ CREATE TABLE `perception_documents` (
   `date_of_issue` date NOT NULL,
   `date_of_perception` date NOT NULL,
   `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `total_document` decimal(10,2) NOT NULL,
-  `total_perception` decimal(10,2) NOT NULL,
+  `total_document` decimal(30,12) NOT NULL,
+  `total_perception` decimal(30,12) NOT NULL,
   `payments` json NOT NULL,
   `series` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `exchange_rate` json NOT NULL,
-  `total_to_pay` decimal(10,2) NOT NULL,
-  `total_payment` decimal(10,2) NOT NULL,
+  `total_to_pay` decimal(30,12) NOT NULL,
+  `total_payment` decimal(30,12) NOT NULL,
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`),
   KEY `perception_details_perception_id_foreign` (`perception_id`),
   KEY `perception_documents_document_type_id_foreign` (`document_type_id`),

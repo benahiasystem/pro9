@@ -10,8 +10,9 @@ use Illuminate\Support\Facades\DB;
  * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
  * - `item_unit_type_id` int(10) unsigned NOT NULL
  * - `price_label_id` int(10) unsigned NOT NULL
- * - `price` decimal(12,2) NOT NULL DEFAULT '0.00'
+ * - `price` decimal(30,12) NOT NULL DEFAULT '0.00'
  * - `is_active` tinyint(1) NOT NULL DEFAULT '1'
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
 {
@@ -22,8 +23,9 @@ CREATE TABLE `item_unit_type_prices` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `item_unit_type_id` int(10) unsigned NOT NULL,
   `price_label_id` int(10) unsigned NOT NULL,
-  `price` decimal(12,2) NOT NULL DEFAULT '0.00',
+  `price` decimal(30,12) NOT NULL DEFAULT '0.00',
   `is_active` tinyint(1) NOT NULL DEFAULT '1',
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`),
   UNIQUE KEY `unique_item_unit_price_label` (`item_unit_type_id`,`price_label_id`),
   KEY `item_unit_type_prices_item_unit_type_id_position_index` (`item_unit_type_id`),

@@ -246,6 +246,8 @@ class DocumentInput
                         'currency_type_id' => $row['item']['currency_type_id'] ?? null
                     ],
                     'quantity' => $row['quantity'],
+                    'quantity_input' => $row['quantity_input'] ?? null,
+                    'price_input' => $row['price_input'] ?? null,
                     'unit_value' => $row['unit_value'],
                     'price_type_id' => $row['price_type_id'],
                     'unit_price' => $row['unit_price'],
@@ -423,9 +425,11 @@ class DocumentInput
                     $discounts[] = [
                         'discount_type_id' => $discount_type_id,
                         'amount_without_rounded'  => $amount_without_rounded,
+                        'amount_exact' => $row['amount_exact'] ?? null,
                         'from_global_distribution' => $row['from_global_distribution'] ?? null, // para identificar si el descuento viene de una distribución global o es un descuento directo del item
                         'description' => $description,
                         'factor' => $factor,
+                        'percentage' => $row['percentage'] ?? null,
                         'amount' => $amount,
                         'base' => $base,
                         'is_amount' => $is_amount,

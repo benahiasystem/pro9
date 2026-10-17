@@ -840,6 +840,8 @@
 </style>
 
 <script>
+import {exactAmount,exactSum} from '../../../../helpers/exchange-rate-math'
+
 import ItemForm from "../../items/form.vue";
 import LotsGroup from "./lots_group.vue";
 
@@ -1134,6 +1136,7 @@ export default {
             this.calculateTotal();
         },
         changeValidateQuantity(event) {
+            this.form.quantity_input=null;
             this.calculateTotal();
         },
         getMinQuantity() {
@@ -1143,17 +1146,14 @@ export default {
             this.form.quantity = this.getMinQuantity();
         },
         clickDecrease() {
-            this.form.quantity = parseInt(this.form.quantity - 1);
-
-            if (this.form.quantity <= this.getMinQuantity()) {
-                this.setMinQuantity();
-                return;
-            }
-
+            this.form.quantity_input=null;
+            const quantity=exactAmount(this.form.quantity).minus(1);
+            this.form.quantity=quantity.compare(this.getMinQuantity()) < 0 ? String(this.getMinQuantity()) : quantity.decimal();
             this.calculateTotal();
         },
         clickIncrease() {
-            this.form.quantity = parseInt(this.form.quantity) + 1;
+            this.form.quantity_input=null;
+            this.form.quantity=exactAmount(this.form.quantity).plus(1).decimal();
             this.calculateTotal();
         },
         async searchRemoteItems(input) {
@@ -1675,19 +1675,17 @@ export default {
             }
         },
         calculateQuantity() {
-            if (this.form.item.calculate_quantity) {
-                this.form.quantity = _.round(
-                    this.total_item / this.form.unit_price_value,
-                    4
-                );
-            }
+            if (!this.form.item.calculate_quantity) return false;
+            const price=exactAmount(this.form.unit_price_value);
+            if (price.compare(0) <= 0 || this.total_item == null) return false;
+            this.form.quantity_input={amount:String(this.total_item),unit_price:String(this.form.unit_price_value)};
+            this.form.quantity=exactAmount(this.total_item).dividedBy(price).decimal();
             this.calculateTotal();
+            return true;
         },
         calculateTotal() {
-            this.readonly_total = _.round(
-                this.form.quantity * this.form.unit_price_value,
-                4
-            );
+            const quantity=this.form.quantity_input ? exactAmount(this.form.quantity_input.amount).dividedBy(this.form.quantity_input.unit_price) : exactAmount(this.form.quantity);
+            this.readonly_total=quantity.times(this.form.unit_price_value).decimal();
         },
         cleanTotalItem() {
             this.total_item = null;
@@ -1706,11 +1704,9 @@ export default {
                         "Debe seleccionar un lote."
                     );
                 } else {
-                    const compromise_quantity = parseFloat(
-                        _.sumBy(this.form.IdLoteSelected, "compromise_quantity")
-                    );
+                    const compromise_quantity = exactSum(this.form.IdLoteSelected.map(lot=>lot.compromise_quantity_exact ?? lot.compromise_quantity));
 
-                    if (compromise_quantity != parseFloat(this.form.quantity)) {
+                    if (compromise_quantity.compare(this.form.quantity_input ? exactAmount(this.form.quantity_input.amount).dividedBy(this.form.quantity_input.unit_price) : this.form.quantity) !== 0) {
                         return this.getResponseMessage(
                             false,
                             "La suma de cantidades comprometidas de los lotes debe der igual a la cantidad pedida."
@@ -1745,6 +1741,7 @@ export default {
 
             let affectation_igv_type_id = this.form.affectation_igv_type_id;
             // let unit_price = (this.form.has_igv) ? this.form.unit_price_value : this.form.unit_price_value * 1.18;
+            this.form.price_input={amount:String(this.form.unit_price_value),currency_type_id:this.form.item.currency_type_id || this.currencyTypeIdActive,includes_iva:this.form.has_igv !== false};
             let unit_price = this.form.unit_price_value;
             if (this.form.has_igv === false) {
                 if (
@@ -1756,7 +1753,7 @@ export default {
                     // exonerado de igv
                 } else {
                     unit_price =
-                        this.form.unit_price_value * (1 + this.percentageIgv);
+                        exactAmount(this.form.unit_price_value).times(exactAmount(1).plus(this.percentageIgv)).decimal();
                 }
             }
 

@@ -15,10 +15,11 @@ use Illuminate\Support\Facades\DB;
  * - `uuid` char(36) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `payment_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `amount` decimal(16,2) NOT NULL
+ * - `amount` decimal(30,12) NOT NULL
  * - `transaction_state_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `created_at` timestamp NULL DEFAULT NULL
  * - `updated_at` timestamp NULL DEFAULT NULL
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
 {
@@ -34,10 +35,11 @@ CREATE TABLE `transactions` (
   `uuid` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
   `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `payment_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `amount` decimal(16,2) NOT NULL,
+  `amount` decimal(30,12) NOT NULL,
   `transaction_state_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`),
   UNIQUE KEY `transactions_uuid_unique` (`uuid`),
   KEY `transactions_payment_link_id_foreign` (`payment_link_id`),

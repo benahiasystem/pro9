@@ -16,15 +16,15 @@ use Illuminate\Support\Facades\DB;
  * - `card_brand_id` char(2) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `reference` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `payment_received` tinyint(1) DEFAULT NULL
- * - `change` decimal(12,2) DEFAULT NULL
- * - `payment` decimal(12,2) NOT NULL
+ * - `change` decimal(30,12) DEFAULT NULL
+ * - `payment` decimal(30,12) NOT NULL
  * - `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `exchange_rate` decimal(18,8) NOT NULL
  * - `exchange_rate_source` varchar(255) DEFAULT NULL
  * - `exchange_rate_date` date DEFAULT NULL
- * - `original_amount` decimal(12,2) NOT NULL
+ * - `original_amount` decimal(30,12) NOT NULL
  * - `receipt_parent_id` int(10) unsigned DEFAULT NULL
- * - `tax_amount` decimal(12,2) NOT NULL DEFAULT '0.00'
+ * - `tax_amount` decimal(30,12) NOT NULL DEFAULT '0.00'
  * - `payment_method_snapshot` json NOT NULL
  * - `igtf_status` varchar(16) NOT NULL DEFAULT 'not_applicable'
  * - `exemption_reason` varchar(255) DEFAULT NULL
@@ -32,6 +32,7 @@ use Illuminate\Support\Facades\DB;
  * - `reversed_at` timestamp NULL DEFAULT NULL
  * - `reversal_reason` varchar(255) DEFAULT NULL
  * - `reversed_by` int(10) unsigned DEFAULT NULL
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
 {
@@ -48,16 +49,16 @@ CREATE TABLE `document_payments` (
   `card_brand_id` char(2) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `reference` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `payment_received` tinyint(1) DEFAULT NULL,
-  `change` decimal(12,2) DEFAULT NULL,
-  `payment` decimal(12,2) NOT NULL,
+  `change` decimal(30,12) DEFAULT NULL,
+  `payment` decimal(30,12) NOT NULL,
   -- ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
   `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `exchange_rate` decimal(18,8) NOT NULL,
   `exchange_rate_source` varchar(255) DEFAULT NULL,
   `exchange_rate_date` date DEFAULT NULL,
-  `original_amount` decimal(12,2) NOT NULL,
+  `original_amount` decimal(30,12) NOT NULL,
   `receipt_parent_id` int(10) unsigned DEFAULT NULL,
-  `tax_amount` decimal(12,2) NOT NULL DEFAULT '0.00',
+  `tax_amount` decimal(30,12) NOT NULL DEFAULT '0.00',
   `payment_method_snapshot` json NOT NULL,
   `igtf_status` varchar(16) NOT NULL DEFAULT 'not_applicable',
   `exemption_reason` varchar(255) DEFAULT NULL,
@@ -68,6 +69,7 @@ CREATE TABLE `document_payments` (
   UNIQUE KEY `document_payments_operation_unique` (`operation_key`),
   UNIQUE KEY `document_payments_receipt_parent_unique` (`receipt_parent_id`),
   -- ######## FIN PERSISTENCIA FISCAL VENEZUELA ########
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`),
   KEY `document_payments_document_id_foreign` (`document_id`),
   KEY `document_payments_card_brand_id_foreign` (`card_brand_id`),

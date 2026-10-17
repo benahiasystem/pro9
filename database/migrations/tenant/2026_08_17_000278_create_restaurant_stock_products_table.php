@@ -9,9 +9,10 @@ use Illuminate\Support\Facades\DB;
  * Inventario de columnas:
  * - `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT
  * - `item_id` int(10) unsigned NOT NULL
- * - `stock` decimal(12,4) NOT NULL DEFAULT '0.0000'
- * - `quantity_reserved` decimal(12,4) NOT NULL DEFAULT '0.0000'
+ * - `stock` decimal(30,12) NOT NULL DEFAULT '0.0000'
+ * - `quantity_reserved` decimal(30,12) NOT NULL DEFAULT '0.0000'
  * - `has_supplies` tinyint(1) NOT NULL DEFAULT '0'
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
 {
@@ -21,9 +22,10 @@ return new class extends Migration
 CREATE TABLE `restaurant_stock_products` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `item_id` int(10) unsigned NOT NULL,
-  `stock` decimal(12,4) NOT NULL DEFAULT '0.0000',
-  `quantity_reserved` decimal(12,4) NOT NULL DEFAULT '0.0000',
+  `stock` decimal(30,12) NOT NULL DEFAULT '0.0000',
+  `quantity_reserved` decimal(30,12) NOT NULL DEFAULT '0.0000',
   `has_supplies` tinyint(1) NOT NULL DEFAULT '0',
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`),
   KEY `restaurant_stock_products_item_id_foreign` (`item_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci

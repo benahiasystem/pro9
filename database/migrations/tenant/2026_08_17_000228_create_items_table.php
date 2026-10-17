@@ -25,21 +25,21 @@ use Illuminate\Support\Facades\DB;
  * - `item_code_gs1` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `unit_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `sale_unit_price` decimal(16,6) NOT NULL
+ * - `sale_unit_price` decimal(30,12) NOT NULL
  * - `purchase_has_igv` tinyint(1) NOT NULL DEFAULT '1'
  * - `has_igv` tinyint(1) NOT NULL DEFAULT '1'
- * - `purchase_unit_price` decimal(16,6) NOT NULL DEFAULT '0.000000'
+ * - `purchase_unit_price` decimal(30,12) NOT NULL DEFAULT '0.000000'
  * - `restrict_sale_cpe` tinyint(1) NOT NULL DEFAULT '0'
  * - `exchange_points` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'sistema por puntos'
- * - `quantity_of_points` decimal(12,2) NOT NULL DEFAULT '0.00' COMMENT 'sistema por puntos'
- * - `commission_amount` decimal(8,2) DEFAULT NULL
+ * - `quantity_of_points` decimal(30,12) NOT NULL DEFAULT '0.00' COMMENT 'sistema por puntos'
+ * - `commission_amount` decimal(30,12) DEFAULT NULL
  * - `line` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `commission_type` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `suggested_price` decimal(12,2) NOT NULL DEFAULT '0.00'
+ * - `suggested_price` decimal(30,12) NOT NULL DEFAULT '0.00'
  * - `sale_affectation_igv_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `purchase_affectation_igv_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `calculate_quantity` tinyint(1) NOT NULL DEFAULT '0'
- * - `sale_unit_price_set` decimal(16,6) DEFAULT NULL
+ * - `sale_unit_price_set` decimal(30,12) DEFAULT NULL
  * - `is_set` tinyint(1) NOT NULL DEFAULT '0'
  * - `parent_item_id` int(10) unsigned DEFAULT NULL
  * - `favorite` tinyint(1) NOT NULL DEFAULT '0'
@@ -48,14 +48,14 @@ use Illuminate\Support\Facades\DB;
  * - `image` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'imagen-no-disponible.jpg'
  * - `image_medium` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'imagen-no-disponible.jpg'
  * - `image_small` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'imagen-no-disponible.jpg'
- * - `stock` decimal(16,4) NOT NULL DEFAULT '0.0000'
- * - `stock_min` decimal(12,2) NOT NULL DEFAULT '0.00'
+ * - `stock` decimal(30,12) NOT NULL DEFAULT '0.0000'
+ * - `stock_min` decimal(30,12) NOT NULL DEFAULT '0.00'
  * - `lot_code` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `lots_enabled` tinyint(1) NOT NULL DEFAULT '0'
  * - `series_enabled` tinyint(1) NOT NULL DEFAULT '0'
- * - `percentage_of_profit` decimal(12,2) NOT NULL DEFAULT '0.00'
+ * - `percentage_of_profit` decimal(30,12) NOT NULL DEFAULT '0.00'
  * - `has_perception` tinyint(1) NOT NULL DEFAULT '0'
- * - `percentage_perception` decimal(12,2) DEFAULT NULL
+ * - `percentage_perception` decimal(30,12) DEFAULT NULL
  * - `attributes` json DEFAULT NULL
  * - `active` tinyint(1) NOT NULL DEFAULT '1'
  * - `hidden_search` tinyint(1) NOT NULL DEFAULT '0'
@@ -71,6 +71,7 @@ use Illuminate\Support\Facades\DB;
  * - `cod_digemid` text COLLATE utf8mb4_unicode_ci COMMENT 'Codigo de producto DIGEMID'
  * - `sanitary` text COLLATE utf8mb4_unicode_ci COMMENT 'Registro sanitario'
  * - `is_for_production` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'Define si es compuesto para produccion'
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
 {
@@ -96,21 +97,21 @@ CREATE TABLE `items` (
   `item_code_gs1` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `unit_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `sale_unit_price` decimal(16,6) NOT NULL,
+  `sale_unit_price` decimal(30,12) NOT NULL,
   `purchase_has_igv` tinyint(1) NOT NULL DEFAULT '1',
   `has_igv` tinyint(1) NOT NULL DEFAULT '1',
-  `purchase_unit_price` decimal(16,6) NOT NULL DEFAULT '0.000000',
+  `purchase_unit_price` decimal(30,12) NOT NULL DEFAULT '0.000000',
   `restrict_sale_cpe` tinyint(1) NOT NULL DEFAULT '0',
   `exchange_points` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'sistema por puntos',
-  `quantity_of_points` decimal(12,2) NOT NULL DEFAULT '0.00' COMMENT 'sistema por puntos',
-  `commission_amount` decimal(8,2) DEFAULT NULL,
+  `quantity_of_points` decimal(30,12) NOT NULL DEFAULT '0.00' COMMENT 'sistema por puntos',
+  `commission_amount` decimal(30,12) DEFAULT NULL,
   `line` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `commission_type` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `suggested_price` decimal(12,2) NOT NULL DEFAULT '0.00',
+  `suggested_price` decimal(30,12) NOT NULL DEFAULT '0.00',
   `sale_affectation_igv_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `purchase_affectation_igv_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `calculate_quantity` tinyint(1) NOT NULL DEFAULT '0',
-  `sale_unit_price_set` decimal(16,6) DEFAULT NULL,
+  `sale_unit_price_set` decimal(30,12) DEFAULT NULL,
   `is_set` tinyint(1) NOT NULL DEFAULT '0',
   `parent_item_id` int(10) unsigned DEFAULT NULL,
   `favorite` tinyint(1) NOT NULL DEFAULT '0',
@@ -119,14 +120,14 @@ CREATE TABLE `items` (
   `image` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'imagen-no-disponible.jpg',
   `image_medium` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'imagen-no-disponible.jpg',
   `image_small` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'imagen-no-disponible.jpg',
-  `stock` decimal(16,4) NOT NULL DEFAULT '0.0000',
-  `stock_min` decimal(12,2) NOT NULL DEFAULT '0.00',
+  `stock` decimal(30,12) NOT NULL DEFAULT '0.0000',
+  `stock_min` decimal(30,12) NOT NULL DEFAULT '0.00',
   `lot_code` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `lots_enabled` tinyint(1) NOT NULL DEFAULT '0',
   `series_enabled` tinyint(1) NOT NULL DEFAULT '0',
-  `percentage_of_profit` decimal(12,2) NOT NULL DEFAULT '0.00',
+  `percentage_of_profit` decimal(30,12) NOT NULL DEFAULT '0.00',
   `has_perception` tinyint(1) NOT NULL DEFAULT '0',
-  `percentage_perception` decimal(12,2) DEFAULT NULL,
+  `percentage_perception` decimal(30,12) DEFAULT NULL,
   `attributes` json DEFAULT NULL,
   `active` tinyint(1) NOT NULL DEFAULT '1',
   `hidden_search` tinyint(1) NOT NULL DEFAULT '0',
@@ -142,6 +143,7 @@ CREATE TABLE `items` (
   `cod_digemid` text COLLATE utf8mb4_unicode_ci COMMENT 'Codigo de producto DIGEMID',
   `sanitary` text COLLATE utf8mb4_unicode_ci COMMENT 'Registro sanitario',
   `is_for_production` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'Define si es compuesto para produccion',
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`),
   KEY `items_item_type_id_foreign` (`item_type_id`),
   KEY `items_unit_type_id_foreign` (`unit_type_id`),

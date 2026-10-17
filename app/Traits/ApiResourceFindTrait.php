@@ -3,6 +3,7 @@
 namespace App\Traits;
 
 use App\Models\Tenant\Catalogs\District;
+use App\Support\Exact\Decimal as D;
 
 /**
  * Piezas comunes de los endpoints "find" de la API (document, sale-note,
@@ -107,29 +108,28 @@ trait ApiResourceFindTrait
     protected function buildApiResourceItems($items, &$global_discount)
     {
         return collect($items)->map(function ($row) use (&$global_discount) {
-            $item_discount = 0;
+            $item_discount = D::of(0);
 
             foreach (($row->discounts ?: []) as $discount) {
                 // discount_type_id "00" guarda el importe sin IGV.
-                $amount = $discount->discount_type_id == '00'
-                    ? $discount->amount_without_rounded * 1.18
-                    : $discount->amount;
+                $amount = D::of($discount->amount_exact ?? $discount->amount_without_rounded ?? $discount->amount);
+                if ($discount->discount_type_id === '00') $amount=$amount->multipliedBy(D::of(1)->plus($row->exactValue('percentage_igv')->dividedBy(100)));
 
                 if (!empty($discount->from_global_distribution)) {
-                    $global_discount += $amount;
+                    $global_discount=D::of($global_discount)->plus($amount);
                 } else {
-                    $item_discount += $amount;
+                    $item_discount=$item_discount->plus($amount);
                 }
             }
 
             return [
-                'quantity'       => (float) $row->quantity,
+                'quantity'       => D::represent($row->exactValue('quantity')),
                 'unit_type_id'   => optional($row->item)->unit_type_id,
                 'description'    => $row->name_product_pdf ?: optional($row->item)->description,
-                'unit_price'     => round((float) $row->unit_price, 2),
+                'unit_price'     => D::represent($row->exactValue('unit_price')),
                 // Solo el descuento propio de la linea, sin la parte repartida del global.
-                'total_discount' => round($item_discount, 2),
-                'total'          => round((float) $row->total, 2),
+                'total_discount' => D::represent($item_discount),
+                'total'          => D::represent($row->exactValue('total')),
             ];
         })->values()->all();
     }

@@ -1,0 +1,102 @@
+{
+  "date": "2026-10-16",
+  "global_plan_complete": false,
+  "existing_tenant_migrations_run": false,
+  "frontend_build_run": false,
+  "checks_overlap": true,
+  "checks": [
+    {
+      "check": "php_unit",
+      "command": "docker compose exec -T php php vendor/bin/phpunit --testsuite Unit",
+      "result": [
+        "Time: 00:45.742, Memory: 163.00 MB",
+        "OK, but incomplete, skipped, or risky tests!",
+        "Tests: 795, Assertions: 15966, Skipped: 58."
+      ]
+    },
+    {
+      "check": "javascript",
+      "command": "node --test tests/js/*.test.cjs",
+      "result": [
+        "# tests 180",
+        "# pass 180",
+        "# fail 0",
+        "# skipped 0"
+      ]
+    },
+    {
+      "check": "php_shared_cases",
+      "command": "docker compose exec -T php php vendor/bin/phpunit --filter 'ExactCalculationTest|FiscalLineCalculationTest|FiscalNote'",
+      "result": [
+        "Time: 00:00.869, Memory: 54.50 MB",
+        "OK (15 tests, 61 assertions)"
+      ]
+    },
+    {
+      "check": "mysql_exact_and_concurrent",
+      "command": null,
+      "result": [
+        "Time: 04:35.737, Memory: 96.50 MB",
+        "OK (3 tests, 51 assertions)"
+      ]
+    },
+    {
+      "check": "mysql_notes",
+      "command": null,
+      "result": [
+        "Time: 10:47.930, Memory: 90.50 MB",
+        "OK (4 tests, 81 assertions)"
+      ]
+    },
+    {
+      "check": "mysql_installation",
+      "command": null,
+      "result": [
+        "Time: 04:25.923, Memory: 112.50 MB",
+        "OK (2 tests, 1614 assertions)"
+      ]
+    },
+    {
+      "check": "mysql_exact_installments",
+      "command": null,
+      "result": [
+        "Time: 01:30.050, Memory: 94.00 MB",
+        "OK (1 test, 17 assertions)"
+      ]
+    },
+    {
+      "check": "pdf_contracts",
+      "command": "docker compose exec -T php php vendor/bin/phpunit --filter 'CurrentPdfRenderingTest|PdfPricePrecisionTest|CurrentPdfTemplateContractTest|VenezuelaIvaContractTest'",
+      "result": [
+        "Time: 00:07.406, Memory: 104.50 MB",
+        "OK (31 tests, 890 assertions)"
+      ]
+    },
+    {
+      "check": "http_snapshot_boundary",
+      "command": "docker compose exec -T php php vendor/bin/phpunit --filter ExactCalculationHttpBoundaryTest",
+      "result": [
+        "Time: 00:00.034, Memory: 22.00 MB",
+        "OK (1 test, 19 assertions)"
+      ]
+    },
+    {
+      "check": "mysql_credit_note_internal_read",
+      "command": "docker compose exec -T -e PRO9_FISCAL_MYSQL_TESTS=1 php php vendor/bin/phpunit --filter test_note_credit_limits_inventory_idempotency_and_hka_mapping",
+      "result": [
+        "Time: 01:12.800, Memory: 80.50 MB",
+        "OK (1 test, 25 assertions)"
+      ]
+    }
+  ],
+  "static": {
+    "business_tables": 111,
+    "business_columns": 491,
+    "php_files_linted": 187,
+    "blade_templates_compiled_and_linted": 148,
+    "php_review_candidates": 1057,
+    "javascript_review_candidates": 747,
+    "javascript_parse_errors": 0,
+    "skill_validation": "valid"
+  }
+}

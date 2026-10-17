@@ -24,7 +24,6 @@
             :class="{ 'layout-editing-active': editingLayout }"
             @submit.prevent="submit"
             >
-<div class="col-12"><iva-retention-fields :form="form" :readonly="isUpdateDocument" @net="applyIvaNetCollection" /></div>
             <div class="col-xl-12 col-md-12 col-12 px-0">
                 <header class="clearfix clearfix-default py-2 px-0 px-md-2 border-0">
                     <div
@@ -863,6 +862,7 @@
 
 
 
+
                                         <div class="col-12 py-2 switch-container">
                                             <div class="row no-gutters">
                                                 <div class="col-10">
@@ -1637,6 +1637,15 @@
                                         {{ currency_type.symbol }}
                                         {{ form.total }}
                                     </td>
+                                </tr>
+
+                                <tr v-if="form.settlement_adjustment && form.settlement_adjustment != 0">
+                                    <td>Ajuste de liquidación:</td>
+                                    <td>{{ currency_type.symbol }} {{ form.settlement_adjustment }}</td>
+                                </tr>
+                                <tr v-if="form.settlement_adjustment && form.settlement_adjustment != 0">
+                                    <td>Importe cobrable:</td>
+                                    <td>{{ currency_type.symbol }} {{ form.total_payable }}</td>
                                 </tr>
 
                                 <tr v-if="form.total > 0">
@@ -2584,10 +2593,11 @@
 </style>
     <!-- ######## FIN CAMBIO GEOPOLITICO VENEZUELA -->
 <script>
-import IvaRetentionFields from "./partials/iva_retention_fields.vue"
-import ivaRetentionMixin from "@mixins/iva-retention"
+import {withoutDraftRetentions, suggestRemainingPayment} from "@helpers/document-creation"
+import documentCreationMixin from "@mixins/document-creation"
 // ######## INICIO TASAS OCHO DECIMALES ########
-import { exactAmount, normalizeExchangeRate } from "../../../helpers/exchange-rate-math"
+import { exactAmount, normalizeExchangeRate, exactValue, exactSum, allocateExact } from "../../../helpers/exchange-rate-math"
+import { documentTotals } from "../../../helpers/exact-document"
 // ######## FIN TASAS OCHO DECIMALES ########
 
 import IgtfPaymentFields from "./partials/igtf_fields.vue"
@@ -2670,7 +2680,7 @@ export default {
         "isUpdate",
         "authUser"
     ],
-    components: {IvaRetentionFields, IgtfPaymentFields,
+    components: { IgtfPaymentFields,
         StoreItemSeriesIndex,
         DocumentFormItem,
         PersonForm,
@@ -2695,7 +2705,7 @@ export default {
         RemoteSlot,
         MiniTour,
     },
-    mixins: [ivaRetentionMixin,
+    mixins: [documentCreationMixin,
         functions,
         exchangeRate,
         pointSystemFunctions,
@@ -3171,35 +3181,12 @@ export default {
             return customer.address;
         },
         totalDiscount() {
-            // Calculo por total (no por linea) para evitar diferencias de 0.01 por redondeo
-            const igv_factor = 1 + this.percentage_igv;
-            let total_items = 0;
-
-            if (this.form.items.length > 0) {
-                this.form.items.forEach(item => {
-                    if (!item.discounts) return;
-
-                    item.discounts.forEach(discount => {
-                        const is_base = discount.discount_type_id === "00";
-                        const base_amount = discount.amount_without_rounded
-                            ? discount.amount_without_rounded
-                            : discount.amount;
-                        total_items += is_base
-                            ? base_amount * igv_factor
-                            : discount.amount;
-                    });
-                });
-            }
-
-            const global_amount =
-                this.form.discounts.length > 0
-                    ? this.form.discounts[0].amount_without_rounded
-                    : 0;
-            const total_global = this.isGlobalDiscountBase
-                ? global_amount * igv_factor
-                : global_amount;
-
-            return _.round(total_items + total_global, 2);
+            const lineDiscount = exactSum(this.form.items.map(item => this.itemDiscountDisplayAmount(item)));
+            const global = exactSum((this.form.discounts || []).map(discount => {
+                const amount = exactAmount(discount.amount_exact ?? discount.amount_without_rounded ?? discount.amount ?? '0');
+                return ['02','04'].includes(discount.discount_type_id) ? amount.times(exactAmount(1).plus(this.percentage_igv)) : amount;
+            }));
+            return lineDiscount.plus(global).decimal();
         },
         displaySubtotalBeforeDiscount() {
             // Tipo 02: mostrar total con IGV ANTES del dto (UI). form.subtotal = total post-dto (XML).
@@ -4090,9 +4077,7 @@ export default {
                 ip => ip.item_id == item.id || ip.id == item.id
             );
 
-            return _.sumBy(group_items, function(row) {
-                return parseFloat(row.quantity);
-            });
+            return exactSum(group_items.map(row=>exactValue(row,'quantity'))).decimal();
         },
         disabledSeries() {
             return (
@@ -4210,32 +4195,30 @@ export default {
             this.form.items = this.onPrepareItems(data.items);
             // this.series = this.onSetSeries(data.document_type_id, data.series);
             this.form.state_type_id = data.state_type_id;
-            this.form.total_discount = parseFloat(data.total_discount);
-            this.form.total_exonerated = parseFloat(data.total_exonerated);
-            this.form.total_exportation = parseFloat(data.total_exportation);
+            this.form.total_discount = String(data.total_discount ?? "0");
+            this.form.total_exonerated = String(data.total_exonerated ?? "0");
+            this.form.total_exportation = String(data.total_exportation ?? "0");
 
-            this.form.total_igv = parseFloat(data.total_igv);
+            this.form.total_igv = String(data.total_igv ?? "0");
 
 
-            this.form.total_base_other_taxes = parseFloat(
-                data.total_base_other_taxes
-            );
-            this.form.total_other_taxes = parseFloat(data.total_other_taxes);
+            this.form.total_base_other_taxes = String(data.total_base_other_taxes ?? '0');
+            this.form.total_other_taxes = String(data.total_other_taxes ?? "0");
 
-            this.form.total_prepayment = parseFloat(data.total_prepayment);
-            this.form.total_taxed = parseFloat(data.total_taxed);
-            this.form.total_taxes = parseFloat(data.total_taxes);
+            this.form.total_prepayment = String(data.total_prepayment ?? "0");
+            this.form.total_taxed = String(data.total_taxed ?? "0");
+            this.form.total_taxes = String(data.total_taxes ?? "0");
 
-            this.form.total_value = parseFloat(data.total_value);
-            this.form.total_charge = parseFloat(data.total_charge);
-            this.form.total = parseFloat(data.total);
-            this.form.subtotal = parseFloat(data.subtotal);
+            this.form.total_value = String(data.total_value ?? "0");
+            this.form.total_charge = String(data.total_charge ?? "0");
+            this.form.total = String(data.total ?? "0");
+            this.form.subtotal = String(data.subtotal ?? "0");
 
             this.form.operation_type_id = data.invoice
                 ? data.invoice.operation_type_id
                 : data.operation_type_id;
             if (this.isExportInvoice) {
-                this.total_global_charge = _.round(_.sumBy(this.form.charges, charge => Number(charge.amount || 0)), 2);
+                this.total_global_charge = exactSum(this.form.charges.map(charge => exactAmount(charge.amount_exact ?? charge.amount ?? '0'))).decimal();
             }
             this.form.terms_condition = data.terms_condition || "";
             this.form.guides = data.guides || [];
@@ -4280,7 +4263,7 @@ export default {
                     this.prepareDataGlobalDiscount(data);
                 } else {
                     this.total_global_discount = discount_type_id !== "02" ? data.total_discount :
-                        _.round(data.total_discount * (1 + this.percentage_igv), 2);
+                        exactAmount(data.total_discount).times(exactAmount(1).plus(this.percentage_igv)).decimal();
                 }
             }
 
@@ -4369,10 +4352,7 @@ export default {
 
                     this.form.fee[index].payment_method_type_id =
                         data.document_payment_method_type.id;
-                    this.form.fee[index].amount = _.sumBy(
-                        data.data_payments_fee,
-                        "payment"
-                    );
+                    this.form.fee[index].amount = exactSum(data.data_payments_fee.map(row=>row.payment || '0')).decimal();
 
                     this.changePaymentMethodType(index);
                 }
@@ -4533,8 +4513,7 @@ export default {
             let prepayment = this.getPrepayment(index);
 
             if (
-                parseFloat(this.form.prepayments[index].amount) >
-                parseFloat(prepayment.amount)
+                exactAmount(this.form.prepayments[index].amount).compare(prepayment.amount) > 0
             ) {
                 this.form.prepayments[index].amount = prepayment.amount;
                 this.$message.error(
@@ -4542,14 +4521,9 @@ export default {
                 );
             }
 
-            this.form.prepayments[index].total =
-                this.form.affectation_type_prepayment == 10
-                    ? _.round(
-                          this.form.prepayments[index].amount *
-                              (1 + this.percentage_igv),
-                          2
-                      )
-                    : this.form.prepayments[index].amount;
+            this.form.prepayments[index].total = this.form.affectation_type_prepayment == 10
+                ? exactAmount(this.form.prepayments[index].amount).times(exactAmount(1).plus(this.percentage_igv)).decimal()
+                : String(this.form.prepayments[index].amount);
 
             this.changeTotalPrepayment();
         },
@@ -4668,152 +4642,24 @@ export default {
             this.recordItem = null;
             this.showDialogAddItem = true;
         },
+        // ######## INICIO CALCULOS EXACTOS PRO9 ########
         getFormatUnitPriceRow(unit_price, row) {
-            // El precio base siempre está guardado en Bolívares (VES).
-            // Si el comprobante está en Dólares (USD) se convierte usando el tipo de cambio.
-            let price = parseFloat(unit_price) || 0;
-            const exchange_rate =
-                    normalizeExchangeRate(this.form.exchange_rate_sale) || 0;
-
-
-            if (this.form.currency_type_id === row.item.currency_type_id) return price
-
-            if (this.form.currency_type_id === "USD" ) {
-
-                if (exchange_rate > 0) {
-                    price = exactAmount(price).dividedBy(exactAmount(exchange_rate)).final(2);
-                }
-            } else if (this.form.currency_type_id === 'VES' && row.item.currency_type_id === 'USD') {
-                price = exactAmount(price).times(exactAmount(exchange_rate)).final(2);
-            }
-
-            return _.round(price, 2);
-            // return unit_price.toFixed(6)
+            const price = exactAmount(unit_price || '0');
+            if (this.form.currency_type_id === row.item.currency_type_id) return price.decimal();
+            return (this.form.currency_type_id === 'USD' ? price.dividedBy(this.form.exchange_rate_sale) : price.times(this.form.exchange_rate_sale)).decimal();
         },
         discountGlobalPrepayment() {
-            let global_discount = 0;
-            let sum_total_prepayment = 0;
-
-            this.form.prepayments.forEach(item => {
-                global_discount += parseFloat(item.amount);
-                sum_total_prepayment += parseFloat(item.total);
-            });
-
-            // let base = (this.form.affectation_type_prepayment == 10) ? parseFloat(this.form.total_taxed):parseFloat(this.form.total_exonerated)
-            let base = 0;
-
-            switch (this.form.affectation_type_prepayment) {
-                case 10:
-                    base = parseFloat(this.form.total_taxed) + global_discount;
-                    // base = parseFloat(this.form.total_taxed)
-                    break;
-                case 20:
-                    base =
-                        parseFloat(this.form.total_exonerated) +
-                        global_discount;
-                    break;
-                case 30:
-                    base =
-                        parseFloat(0) +
-                        global_discount;
-                    break;
-            }
-
-            let amount = _.round(global_discount, 2);
-            let factor = _.round(amount / base, 5);
-
-            this.form.total_prepayment = _.round(sum_total_prepayment, 2);
-            // this.form.total_prepayment = _.round(global_discount, 2)
-
-            if (this.form.affectation_type_prepayment == 10) {
-                let discount = _.find(this.form.discounts, {
-                    discount_type_id: "04"
-                });
-
-                if (global_discount > 0 && !discount) {
-                    this.form.total_discount = _.round(amount, 2);
-                    this.form.total_taxed = _.round(
-                        this.form.total_taxed - amount,
-                        2
-                    );
-                    this.form.total_igv = _.round(
-                        this.form.total_taxed * this.percentage_igv,
-                        2
-                    );
-                    this.form.total_taxes = _.round(this.form.total_igv, 2);
-                    this.form.total = _.round(
-                        this.form.total_taxed + this.form.total_taxes,
-                        2
-                    );
-
-                    this.form.discounts.push({
-                        discount_type_id: "04",
-                        description:
-                            // ########## INICIO CAMBIO IGV A IVA
-                            "Descuentos globales por anticipos gravados que afectan la base imponible del IVA",
-                            // ######### FIN CAMBIO IGV A IVA
-                        factor: factor,
-                        amount: amount,
-                        base: base
-                    });
-                } else {
-                    let pos = this.form.discounts.indexOf(discount);
-
-                    if (pos > -1) {
-                        this.form.total_discount = _.round(amount, 2);
-                        this.form.total_taxed = _.round(
-                            this.form.total_taxed - amount,
-                            2
-                        );
-                        this.form.total_igv = _.round(
-                            this.form.total_taxed * this.percentage_igv,
-                            2
-                        );
-                        this.form.total_taxes = _.round(this.form.total_igv, 2);
-                        this.form.total = _.round(
-                            this.form.total_taxed + this.form.total_taxes,
-                            2
-                        );
-
-                        this.form.discounts[pos].base = base;
-                        this.form.discounts[pos].amount = amount;
-                        this.form.discounts[pos].factor = factor;
-                    }
-                }
-            } else if (this.form.affectation_type_prepayment == 20) {
-                let exonerated_discount = _.find(this.form.discounts, {
-                    discount_type_id: "05"
-                });
-
-                this.form.total_discount = _.round(amount, 2);
-                this.form.total_exonerated = _.round(
-                    this.form.total_exonerated - amount,
-                    2
-                );
-                this.form.total = this.form.total_exonerated;
-
-                if (global_discount > 0 && !exonerated_discount) {
-                    this.form.discounts.push({
-                        discount_type_id: "05",
-                        description:
-                            "Descuentos globales por anticipos exonerados",
-                        factor: factor,
-                        amount: amount,
-                        base: base
-                    });
-                } else {
-                    let position = this.form.discounts.indexOf(
-                        exonerated_discount
-                    );
-
-                    if (position > -1) {
-                        this.form.discounts[position].base = base;
-                        this.form.discounts[position].amount = amount;
-                        this.form.discounts[position].factor = factor;
-                    }
-                }
-            } else ;
+            const amount = exactSum(this.form.prepayments.map(row => row.amount || '0'));
+            this.form.total_prepayment = exactSum(this.form.prepayments.map(row => row.total || '0')).decimal();
+            const taxed = String(this.form.affectation_type_prepayment) === '10';
+            const type = taxed ? '04' : '05';
+            this.form.discounts = this.form.discounts.filter(row => !['04','05'].includes(row.discount_type_id));
+            const base = exactSum(this.form.items.filter(row => row.affectation_igv_type_id === (taxed ? '10' : '20')).map(row => exactValue(row, 'total_base_igv')));
+            if (amount.compare(0) > 0 && base.compare(0) > 0) this.form.discounts.push({discount_type_id: type,
+                description: 'Descuento por anticipos', amount: amount.decimal(), amount_exact: amount.fraction(),
+                base: base.decimal(), factor: amount.dividedBy(base).decimal(), is_amount: true});
         },
+        // ######## FIN CALCULOS EXACTOS PRO9 ########
         async changeDocumentPrepayment(index) {
             let prepayment = await _.find(this.prepayment_documents, {
                 id: this.form.prepayments[index].document_id
@@ -4966,10 +4812,6 @@ export default {
             ) {
                 id = this.cash_payment_metod[0].id;
             }
-            let total = 0;
-            if (this.form.total !== undefined) {
-                total = this.form.total;
-            }
             this.form.date_of_due = moment().format("YYYY-MM-DD");
 
             this.form.payments.push({
@@ -4979,7 +4821,7 @@ export default {
                 payment_method_type_id: id,
                 reference: null,
                 payment_destination_id: this.getPaymentDestinationId(),
-                payment: total,
+                payment: 0,
 
                 payment_received: true,
                 filename: null,
@@ -5364,7 +5206,7 @@ export default {
                     );
 
                     newItem.quantity =
-                        parseFloat(newItem.quantity) + parseFloat(row.quantity);
+                        exactAmount(newItem.quantity).plus(row.quantity).decimal();
 
                     const unifiedRow = await calculateRowItem(
                         newItem,
@@ -5462,219 +5304,23 @@ export default {
             }
             this.calculateTotal();
         },
+        // ######## INICIO CALCULOS EXACTOS PRO9 ########
         calculateTotal() {
-            // Restaurar ítems ANTES de sumar: si no, el descuento global se acumula
-            // en cada recalculo y SUNAT rechaza con error 3271 (LineExtensionAmount).
-            if (this.enabled_discount_global) {
-                this.clearGlobalDistributionDiscounts();
-            }
-            this.subtotal_before_global_discount = 0;
-
-            let total_discount = 0;
-            let total_charge = 0;
-            let total_exportation = 0;
-            let total_taxed = 0;
-            let total_exonerated = 0;
-
-
-            let total_igv = 0;
-            let total_value = 0;
-            let total = 0;
-
-            this.total_discount_no_base = 0;
-
-
-
-
-
-            // let total_free_igv = 0
-
-            this.form.items.forEach(row => {
-                total_discount += parseFloat(row.total_discount);
-                total_charge += parseFloat(row.total_charge);
-
-                if (row.affectation_igv_type_id === "10") {
-                    // total_taxed += parseFloat(row.total_value)
-                    if (row.total_value_without_rounding) {
-                        total_taxed += parseFloat(
-                            row.total_value_without_rounding
-                        );
-                    } else {
-                        total_taxed += parseFloat(row.total_value);
-                    }
-                }
-
-                if (
-                    row.affectation_igv_type_id === "20" // 20,Exonerado - Operación Onerosa
-                    // || row.affectation_igv_type_id === '21' // 21,Exonerado – Transferencia Gratuita
-                ) {
-                    // total_exonerated += parseFloat(row.total_value)
-
-                    total_exonerated += row.total_value_without_rounding
-                        ? parseFloat(row.total_value_without_rounding)
-                        : parseFloat(row.total_value);
-                }
-
-                ;
-
-                if (row.affectation_igv_type_id === "EXP") {
-                    total_exportation += parseFloat(row.total_value);
-                }
-
-                ;
-
-                if (
-                    [
-                        "10",
-                        "20",
-                        "21",
-                        "30",
-                        "31",
-                        "32",
-                        "33",
-                        "34",
-                        "35",
-                        "36",
-                        "EXP"
-                    ].indexOf(row.affectation_igv_type_id) > -1
-                ) {
-                    // total_igv += parseFloat(row.total_igv)
-                    // total += parseFloat(row.total)
-                    if (row.total_igv_without_rounding) {
-                        total_igv += parseFloat(row.total_igv_without_rounding);
-                    } else {
-                        total_igv += parseFloat(row.total_igv);
-                    }
-
-                    // row.total_value_without_rounding = total_value
-                    // row.total_base_igv_without_rounding = total_base_igv
-                    // row.total_igv_without_rounding = total_igv
-                    // row.total_taxes_without_rounding = total_taxes
-                    // row.total_without_rounding = total
-
-                    if (row.total_without_rounding) {
-                        total += parseFloat(row.total_without_rounding);
-                    } else {
-                        total += parseFloat(row.total);
-                    }
-                }
-
-                // console.log(row.total_value)
-
-                if (!["21", "37"].includes(row.affectation_igv_type_id)) {
-                    // total_value += parseFloat(row.total_value)
-                    if (row.total_value_without_rounding) {
-                        total_value += parseFloat(
-                            row.total_value_without_rounding
-                        );
-                    } else {
-                        total_value += parseFloat(row.total_value);
-                    }
-                }
-
-
-
-                ;
-
-                //sum discount no base
-                this.total_discount_no_base += this.sumDiscountsNoBaseByItem(
-                    row
-                );
-
-                // isc
-
-
-            });
-            if (this.is_restaurant_active && this.total_consumption_charge > 0) {
-                this.form.total_taxed =  _.round(total_taxed * ((1 + this.percentage_igv)/( 1 + this.percentage_igv + (this.restaurant_tip_factor / 100))),2)
-                total_igv = ((this.form.total - this.total_consumption_charge) / (1 + this.percentage_igv) ) * this.percentage_igv
-                this.form.total_value = this.form.total_taxed
-
-            }
-
-            let total_taxes = total_igv;
-            let total_all = total - this.total_discount_no_base;
-
-            let totals_without_rounding = {
-                total_discount,
-                total_charge,
-                total_exportation,
-                total_taxed,
-                total_exonerated,
-
-
-                total_igv,
-                total_value,
-                total: total_all,
-
-
-
-
-                total_taxes
-            };
-            // isc
-
-
-
-
-            this.form.total_discount_item = _.round(total_discount, 2);
-            this.form.total_discount = _.round(total_discount, 2);
-            if (this.isExportInvoice) this.form.total_charge = _.round(total_charge, 2);
-            this.form.total_exportation = _.round(total_exportation, 2);
-            this.form.total_taxed = _.round(total_taxed, 2);
-            this.form.total_exonerated = _.round(total_exonerated, 2);
-
-
-            // this.form.total_igv = _.round(total_igv + total_free_igv, 2)
-            this.form.total_igv = _.round(total_igv, 2);
-            this.form.total_value = _.round(total_value, 2);
-            // this.form.total_taxes = _.round(total_igv, 2)
-
-            //impuestos (isc + igv + icbper)
-            this.form.total_taxes = _.round(total_taxes, 2);
-
-
-
-            this.form.subtotal = _.round(total, 2);
-            this.form.total = _.round(total_all, 2);
-
-            if (
-                this.verifyRecalculateTotalTaxed() &&
-                this.form.total_taxed > 0
-            ) {
-                    // this.form.total_taxed = _.round(total_taxed, 2);
-                    this.form.total_taxed = this.recalculateDecimalTotalTaxed(
-                        this.form.total,
-                        this.form.total_igv
-                    );
-
-            }
-
-
-
-            if (this.enabled_discount_global || (this.isExportInvoice && this.recordDiscountsGlobal))
-                this.discountGlobalItems(totals_without_rounding);
-
+            if (this.enabled_discount_global) this.clearGlobalDistributionDiscounts();
+            Object.assign(this.form, documentTotals(this.form.items, this.form.discounts, this.form.charges, this.form.total_prepayment));
+            this.subtotal_before_global_discount = this.form.total;
+            this.total_discount_no_base = '0';
+            if (this.enabled_discount_global || (this.isExportInvoice && this.recordDiscountsGlobal)) this.discountGlobalItems(this.form);
             if (this.prepayment_deduction) this.discountGlobalPrepayment();
-
             if (this.isExportInvoice) this.applyExportGlobalCharge();
-
-
-            let customer = _.find(this.customers, {
-                id: this.form.customer_id
-            });
-            if (customer) {
-
-            }
+            else this.chargeGlobal();
+            Object.assign(this.form, documentTotals(this.form.items, this.form.discounts, this.form.charges, this.form.total_prepayment));
             this.setTotalDefaultPayment();
             this.setPendingAmount();
-
             this.calculateFee();
-
-            if (!this.isExportInvoice) this.chargeGlobal();
-
             this.setTotalPointsBySale(this.config);
         },
+        // ######## FIN CALCULOS EXACTOS PRO9 ########
         recalculateDecimalTotalTaxed(total, igv) {
             return total - igv;
         },
@@ -5692,21 +5338,7 @@ export default {
             return !keysToCheck.some(key => this.form[key] > 0);
         },
         sumDiscountsNoBaseByItem(row) {
-            let sum_discount_no_base = 0;
-
-            if (row.discounts) {
-                // if(row.discounts.length > 0){
-                sum_discount_no_base = _.sumBy(row.discounts, function(
-                    discount
-                ) {
-                    return discount.discount_type_id == "01"
-                        ? discount.amount
-                        : 0;
-                });
-                // }
-            }
-
-            return sum_discount_no_base;
+            return exactSum((row.discounts || []).filter(d=>d.discount_type_id === '01').map(d=>d.amount_exact ?? d.amount ?? '0')).decimal();
         },
         setTotalDefaultPayment() {
             // if (this.form.payments.length > 0) {
@@ -5715,138 +5347,37 @@ export default {
             // }
             this.calculatePayments();
         },
+        // ######## INICIO CALCULOS EXACTOS PRO9 ########
         applyExportGlobalCharge() {
-            const amount = _.round(Number(this.total_global_charge || 0), 2);
-            const base = Number(this.form.total_value);
-            if (amount > 0) {
-                const charges = this.form.charges.length ? this.form.charges : [{
-                    charge_type_id: '50', description: 'Cargos globales que no afectan la base imponible del IVA', amount: 0
-                }];
-                const original = _.sumBy(charges, charge => Number(charge.amount || 0));
-                let cumulative = 0, allocated = 0;
-                this.form.charges = charges.map((charge, index) => {
-                    cumulative += original > 0 ? Number(charge.amount || 0) : 1;
-                    const next = index === charges.length - 1 ? amount : _.round(amount * cumulative / (original > 0 ? original : charges.length), 2);
-                    const share = _.round(next - allocated, 2);
-                    allocated = next;
-                    return Object.assign({}, charge, {amount: share, base, factor: base > 0 ? _.round(share / base, 5) : 0});
-                }).filter(charge => charge.amount > 0);
-            } else {
-                this.form.charges = [];
-            }
-            this.form.total_charge = _.round(this.form.total_charge + amount, 2);
-            this.form.total_exportation = _.round(this.form.total_exportation + amount, 2);
-            this.form.total_value = _.round(this.form.total_value + amount, 2);
-            this.form.total = _.round(this.form.total + amount, 2);
-            this.form.subtotal = this.form.total;
+            const amount = exactAmount(this.total_global_charge || '0');
+            const base = exactValue(documentTotals(this.form.items, this.form.discounts), 'total_value');
+            const charges = this.form.charges.length ? this.form.charges : [{charge_type_id: '50', description: 'Cargos globales', amount: '1'}];
+            const weights = charges.map(row => exactAmount(row.amount_exact ?? row.amount ?? '0'));
+            const sum = exactSum(weights);
+            this.form.charges = amount.compare(0) > 0 ? charges.map((charge, index) => {
+                const share = amount.times(sum.compare(0) > 0 ? weights[index] : 1).dividedBy(sum.compare(0) > 0 ? sum : charges.length);
+                return {...charge, amount: share.decimal(), amount_exact: share.fraction(), base: base.decimal(), factor: base.compare(0) > 0 ? share.dividedBy(base).decimal() : '0'};
+            }) : [];
         },
         chargeGlobal() {
-            let base = parseFloat(this.form.total);
-
-            if (this.config.active_allowance_charge) {
-                let percentage_allowance_charge = parseFloat(
-                    this.config.percentage_allowance_charge
-                );
-                this.total_global_charge = _.round(
-                    base * (percentage_allowance_charge / 100),
-                    2
-                );
-            }
-
-            if (this.total_global_charge == 0) {
-                this.deleteChargeGlobal();
-                return;
-            }
-
-            let amount = parseFloat(this.total_global_charge);
-            // let base = this.form.total_taxed + amount
-            let factor = _.round(amount / base, 5);
-
-            // console.log(base,factor, amount)
-
-            let charge = _.find(this.form.charges, { charge_type_id: "50" });
-
-            if (amount > 0 && !charge) {
-                this.form.total_charge = _.round(amount, 2);
-                this.form.total = _.round(
-                    this.form.total + this.form.total_charge,
-                    2
-                );
-
-                this.form.charges.push({
-                    charge_type_id: "50",
-                    description:
-                        // ########## INICIO CAMBIO IGV A IVA
-                        "Cargos globales que no afectan la base imponible del IVA",
-                        // ######### FIN CAMBIO IGV A IVA
-                    factor: factor,
-                    amount: amount,
-                    base: base
-                });
-            } else {
-                let pos = this.form.charges.indexOf(charge);
-
-                if (pos > -1) {
-                    this.form.total_charge = _.round(amount, 2);
-                    this.form.total = _.round(
-                        this.form.total + this.form.total_charge,
-                        2
-                    );
-
-                    this.form.charges[pos].base = base;
-                    this.form.charges[pos].amount = amount;
-                    this.form.charges[pos].factor = factor;
-                }
-            }
+            const others = this.form.charges.filter(row => row.charge_type_id !== '50');
+            const base = exactValue(documentTotals(this.form.items, this.form.discounts, others, this.form.total_prepayment), 'total');
+            const amount = this.config.active_allowance_charge ? base.times(this.config.percentage_allowance_charge || '0').dividedBy(100) : exactAmount(this.total_global_charge || '0');
+            this.total_global_charge = amount.decimal();
+            this.form.charges = others;
+            if (amount.compare(0) > 0) this.form.charges.push({charge_type_id: '50', description: 'Cargos globales que no afectan la base imponible del IVA',
+                base: base.decimal(), amount: amount.decimal(), amount_exact: amount.fraction(), factor: base.compare(0) > 0 ? amount.dividedBy(base).decimal() : '0'});
         },
-        chargeConsumptionSurcharge(){
-
-            if (this.is_consumption_charge) {
-                this.total_consumption_charge = _.round(this.form.total * (this.restaurant_tip_factor / 100),2)
-                let base = _.round(parseFloat(this.form.total),2);
-                let amount = Number(_.round(this.total_consumption_charge,2).toFixed(2));
-                let factor = _.round(this.restaurant_tip_factor / 100, 5);
-
-                let charge = _.find(this.form.charges, { charge_type_id: "46" });
-
-                if (!charge) {
-                    this.form.total_charge = _.round(amount, 2);
-                    this.form.total = _.round(
-                        this.form.total + amount,
-                        2
-                    );
-                    this.form.charges.push({
-                        charge_type_id: "46",
-                        description:
-                            "Recargo al consumo y/o propinas",
-                        factor: factor,
-                        amount: amount,
-                        base: base
-                    });
-                    this.calculatePayments()
-                }
-                let pos = this.form.charges.indexOf(charge);
-
-                if (pos > -1) {
-                    this.form.total_charge = _.round(amount, 2);
-                    this.form.total = _.round(
-                        this.form.total + amount,
-                        2
-                    );
-                    this.form.charges[pos].base = base;
-                    this.form.charges[pos].amount = amount;
-                    this.form.charges[pos].factor = factor;
-                    this.calculatePayments()
-                }
-            } else {
-                this.total_consumption_charge = 0
-                this.form.total_charge = 0
-                this.calculateTotal()
-
-            }
-
-
+        chargeConsumptionSurcharge() {
+            this.form.charges = this.form.charges.filter(row => row.charge_type_id !== '46');
+            const base = exactValue(documentTotals(this.form.items, this.form.discounts, this.form.charges, this.form.total_prepayment), 'total');
+            const amount = this.is_consumption_charge ? base.times(this.restaurant_tip_factor || '0').dividedBy(100) : exactAmount(0);
+            this.total_consumption_charge = amount.decimal();
+            if (amount.compare(0) > 0) this.form.charges.push({charge_type_id: '46', description: 'Recargo al consumo y/o propinas',
+                base: base.decimal(), amount: amount.decimal(), amount_exact: amount.fraction(), factor: exactAmount(this.restaurant_tip_factor).dividedBy(100).decimal()});
+            this.calculateTotal();
         },
+        // ######## FIN CALCULOS EXACTOS PRO9 ########
         deleteChargeGlobal() {
             let charge = _.find(this.form.charges, { charge_type_id: "50" });
             let index = this.form.charges.indexOf(charge);
@@ -5892,113 +5423,11 @@ export default {
                 amount: amount,
                 base: base,
                 is_amount: this.is_amount,
-                amount_without_rounded: amount_without_rounded
+                amount_without_rounded: amount_without_rounded,
+                amount_exact: exactAmount(amount_without_rounded ?? amount).fraction()
             });
         },
         //Parametro ctx, mantiene los valores sin redondeo
-        discountGlobal(ctx) {
-            this.deleteDiscountGlobal();
-
-            let amount_discount = this.total_global_discount;
-            if (this.is_amount) {
-                if (this.recordDiscountsGlobal) {
-                    if (this.recordDiscountsGlobal.discount_type_id === "02") {
-                        amount_discount =  this.total_global_discount / (1 + this.percentage_igv)
-                    } else {
-                        amount_discount = this.total_global_discount
-                    }
-                }  else {
-                        amount_discount =
-                            (this.configuration.global_discount_type_id === "02" &&
-                            this.configuration.exact_discount )
-                                ? this.total_global_discount / (1 + this.percentage_igv)
-                                : this.total_global_discount;
-                }
-            }
-
-            let input_global_discount = parseFloat(amount_discount);
-            if (this.total_global_discount &&  this.total_global_discount > 0) {
-                const percentage_igv = this.percentage_igv * 100;
-                let base = this.isGlobalDiscountBase
-                    ? parseFloat(ctx.total_taxed + ctx.total_exportation)
-                    : parseFloat(ctx.total);
-
-                let amount = 0;
-                let factor = 0;
-
-                if (this.is_amount) {
-                    amount = input_global_discount;
-                    factor = _.round(amount / base, 5);
-                } else {
-                    factor = _.round(input_global_discount / 100, 5);
-                    amount = factor * base;
-                }
-
-                // descuentos que afectan la bi
-                if (this.isGlobalDiscountBase) {
-
-                    let total_taxed = base  - amount;
-                    let total_igv = total_taxed * (percentage_igv / 100);
-                    let total_taxes =
-                        total_igv;
-                    let total_out = _.round(
-                        ctx.total_exonerated + 0 + ctx.total_exportation + 0,
-                        2
-                    );
-                    let total = total_taxed + total_out + total_taxes;
-
-                    this.form.total_taxed = _.round(
-                        parseFloat(total_taxed.toFixed(3)),
-                         2
-                     );
-
-                    this.form.total_value = total_taxed + total_out;
-
-                    this.form.total_igv = _.round(
-                        total_taxed * (percentage_igv / 100),
-                        2
-                    );
-
-                    //impuestos (isc + igv + icbper)
-                    this.form.total_taxes = _.round(
-                        parseFloat(total_taxes.toFixed(3)),
-                        2
-                    );
-                    this.form.total = _.round(total, 2);
-                    this.form.subtotal = this.form.total;
-
-                    if (this.form.total <= 0)
-                        this.$message.error(
-                            "El total debe ser mayor a 0, verifique el tipo de descuento asignado (Configuración/Avanzado/Contable)"
-                        );
-
-                    this.form.total_discount += _.round(amount, 2);
-                }
-                // descuentos que no afectan la bi
-                else {
-                    this.form.total = _.round(this.form.total - amount, 2);
-                    this.form.total_discount += _.round(amount, 2);
-                }
-
-                this.setGlobalDiscount(
-                    factor,
-                    _.round(amount, 2),
-                    _.round(base, 2),
-                    amount
-                );
-            }
-        },
-        /**
-         * Descuento global para repatir en items.
-         *  [(valor del item)/suma de todo los items] * descuento global
-         *
-         * @param ctx
-         */
-        /**
-         * Elimina descuentos from_global_distribution y restaura los importes
-         * originales del ítem (unit_price, unit_value, totales) para que el
-         * siguiente prorrateo no acumule descuentos (error SUNAT 3271).
-         */
         clearGlobalDistributionDiscounts() {
             this.form.items.forEach((item, index) => {
                 if (!item.discounts || item.discounts.length === 0) {
@@ -6034,24 +5463,9 @@ export default {
             });
         },
         restoreItemFromGlobalDiscountSnapshot(item) {
-            const orig = item._original_before_global_discount;
-            if (!orig) return;
-
-            item.unit_price = orig.unit_price;
-            item.unit_value = orig.unit_value;
-            item.total_value = orig.total_value;
-            item.total_base_igv = orig.total_base_igv;
-            item.total_igv = orig.total_igv;
-            item.total_taxes = orig.total_taxes;
-            item.total = orig.total;
-            item.total_discount = orig.total_discount;
-            item.total_value_without_rounding = orig.total_value_without_rounding;
-            item.total_base_igv_without_rounding =
-                orig.total_base_igv_without_rounding;
-            item.total_igv_without_rounding = orig.total_igv_without_rounding;
-            item.total_taxes_without_rounding =
-                orig.total_taxes_without_rounding;
-            item.total_without_rounding = orig.total_without_rounding;
+            const original = item._original_before_global_discount;
+            if (!original) return;
+            Object.assign(item, original);
             delete item._original_before_global_discount;
         },
         /**
@@ -6080,45 +5494,14 @@ export default {
         /**
          * Valor de la linea sobre el que se calcula un descuento.
          */
-        itemValueForDiscount(item) {
-            return item.total_value_without_rounding
-                ? parseFloat(item.total_value_without_rounding)
-                : parseFloat(item.total_value);
-        },
-        /**
-         * Descuento vigente de una linea en las mismas unidades que muestra la
-         * fila DESCUENTOS TOTALES: los que afectan la base imponible se guardan
-         * netos y se muestran con IGV; el resto ya esta en su valor final.
-         */
+        itemValueForDiscount(item) { return exactValue(item, 'total_value').decimal(); },
         itemDiscountDisplayAmount(item, predicate) {
-            if (!item.discounts || item.discounts.length === 0) return 0;
-
-            const igv_factor = 1 + this.percentage_igv;
-            let total = 0;
-
-            item.discounts.forEach(discount => {
-                if (predicate && !predicate(discount)) return;
-
-                if (!this.isBaseDiscount(discount)) {
-                    total += parseFloat(discount.amount);
-                    return;
-                }
-
-                const base_amount = discount.amount_without_rounded
-                    ? discount.amount_without_rounded
-                    : discount.amount;
-
-                total += parseFloat(base_amount) * igv_factor;
-            });
-
-            return total;
+            const multiplier = item.affectation_igv_type_id === '10' ? exactAmount(1).plus(this.percentage_igv) : exactAmount(1);
+            return exactSum((item.discounts || []).filter(discount => !predicate || predicate(discount)).map(discount => {
+                const amount = exactAmount(discount.amount_exact ?? discount.amount_without_rounded ?? discount.amount ?? '0');
+                return this.isBaseDiscount(discount) ? amount.times(multiplier) : amount;
+            })).decimal();
         },
-        /**
-         * Un descuento afecta la base imponible segun el flag `base` de su tipo
-         * (cat_charge_discount_types: "00" true, "01" false). Ese es el flag que
-         * usan item.vue y setTextDiscountItem, no el id. Si el tipo no viene
-         * cargado se cae al id del catalogo 53.
-         */
         isBaseDiscount(discount) {
             if (discount.discount_type) return !!discount.discount_type.base;
 
@@ -6133,76 +5516,25 @@ export default {
          */
         spreadItemDiscount(item, target) {
             item.discounts = item.discounts || [];
-
-            const current = this.itemDiscountDisplayAmount(
-                item,
-                d => !d.from_global_distribution
-            );
-
-            if (current > 0) {
-                if (target <= 0) {
-                    item.discounts = item.discounts.filter(
-                        d => d.from_global_distribution
-                    );
-                    return;
-                }
-
-                const factor = target / current;
-
+            target = exactAmount(target);
+            const own = discount => !discount.from_global_distribution;
+            const current = exactAmount(this.itemDiscountDisplayAmount(item, own));
+            if (target.compare(0) <= 0) { item.discounts = item.discounts.filter(discount => !own(discount)); return; }
+            if (current.compare(0) > 0) {
+                const factor = target.dividedBy(current);
                 item.discounts.forEach(discount => {
-                    if (discount.from_global_distribution) return;
-
-                    // Los que afectan la base llevan el neto en
-                    // amount_without_rounded; el resto solo tiene amount, que ya
-                    // es el valor final.
-                    const base_amount =
-                        this.isBaseDiscount(discount) &&
-                        discount.amount_without_rounded
-                            ? parseFloat(discount.amount_without_rounded)
-                            : parseFloat(discount.amount);
-
-                    discount.amount_without_rounded = base_amount * factor;
-                    discount.amount = _.round(base_amount * factor, 2);
-                    discount.is_amount = true;
-                    // Mantiene a calculateRowItem en la rama que lee amount
-                    // y no percentage (getAmountFromInputDiscount).
-                    discount.use_input_amount = true;
+                    if (!own(discount)) return;
+                    const amount = exactAmount(discount.amount_exact ?? discount.amount_without_rounded ?? discount.amount).times(factor);
+                    Object.assign(discount, {amount: amount.decimal(), amount_exact: amount.fraction(), amount_without_rounded: amount.decimal(), is_amount: true, use_input_amount: true});
                 });
-
                 return;
             }
-
-            if (target <= 0) return;
-
-            const value = this.itemValueForDiscount(item);
-            if (value <= 0) return;
-
-            const discount_type = _.find(this.discount_types, { id: "00" });
-
-            // Si afecta la base imponible, lo tecleado viene con IGV y en la
-            // linea se guarda neto, igual que hace item.vue. Si no la afecta, el
-            // monto ya es el final y se guarda tal cual.
-            const amount =
-                !discount_type || discount_type.base
-                    ? target / (1 + this.percentage_igv)
-                    : target;
-
-            item.discounts.push({
-                discount_type_id: "00",
-                discount_type: discount_type,
-                description: "Descuento",
-                percentage: 0,
-                factor: 0,
-                amount: _.round(amount, 2),
-                amount_without_rounded: amount,
-                base: _.round(value, 2),
-                is_amount: true,
-                use_input_amount: true
-            });
+            const base = exactValue(item, 'total_value');
+            if (base.compare(0) <= 0) return;
+            const amount = item.affectation_igv_type_id === '10' ? target.dividedBy(exactAmount(1).plus(this.percentage_igv)) : target;
+            item.discounts.push({discount_type_id: '00', discount_type: _.find(this.discount_types, {id: '00'}), description: 'Descuento',
+                percentage: '0', factor: '0', amount: amount.decimal(), amount_exact: amount.fraction(), amount_without_rounded: amount.decimal(), base: base.decimal(), is_amount: true, use_input_amount: true});
         },
-        /**
-         * Recalcula solo las lineas cuyos descuentos cambiaron.
-         */
         recalculateDiscountedItems(indexes) {
             indexes.forEach(index => {
                 const item = this.form.items[index];
@@ -6236,402 +5568,63 @@ export default {
         /**
          * Descuento vigente de una fila, redondeado, para pintar el input.
          */
-        rowDiscountValue(row) {
-            return _.round(this.itemDiscountDisplayAmount(row), 2);
-        },
-        /**
-         * Edicion del descuento de una fila de la tabla de items.
-         *
-         * Lo tecleado es el descuento total de esa linea. La parte que viene del
-         * prorrateo del descuento global no se toca: solo se ajusta la parte
-         * propia del item, escalando los descuentos que ya tenga o creando uno.
-         */
+        rowDiscountValue(row) { return this.itemDiscountDisplayAmount(row); },
         applyItemDiscount(index, value) {
-            let target = parseFloat(value);
-            if (isNaN(target) || target < 0) target = 0;
-
             let item = this.form.items[index];
             if (!item) return;
-
-            const global_amount = this.itemDiscountDisplayAmount(
-                item,
-                d => d.from_global_distribution
-            );
-
-            let item_target = _.round(target - global_amount, 2);
-
-            if (item_target < 0) {
-                item_target = 0;
-                this.$message.warning(
-                    `${this.currency_type.symbol} ${_.round(
-                        global_amount,
-                        2
-                    )} son del descuento global prorrateado y no se editan desde aqui`
-                );
-            }
-
-            // Tope: el valor de la linea antes de sus descuentos propios
-            const max_discount = _.round(
-                this.itemValueForDiscount(item) * (1 + this.percentage_igv) +
-                    this.itemDiscountDisplayAmount(
-                        item,
-                        d => !d.from_global_distribution
-                    ),
-                2
-            );
-
-            if (item_target > max_discount) {
-                item_target = max_discount;
-                this.$message.warning(
-                    `El descuento no puede superar ${this.currency_type.symbol} ${max_discount}`
-                );
-            }
-
-            // El prorrateo global se regenera en cada calculateTotal a partir de
-            // total_global_discount. Hay que limpiarlo antes de recalcular la
-            // linea: si quedara el snapshot, restaurarlo pisaria el cambio.
+            const global = exactAmount(this.itemDiscountDisplayAmount(item, discount => discount.from_global_distribution));
+            let target = exactAmount(value || '0').minus(global);
+            if (target.compare(0) < 0) target = exactAmount(0);
+            const maximum = exactValue(item, 'total').plus(this.itemDiscountDisplayAmount(item, discount => !discount.from_global_distribution));
+            if (target.compare(maximum) > 0) { target = maximum; this.$message.warning(`El descuento no puede superar ${maximum.decimal()}`); }
             this.clearGlobalDistributionDiscounts();
-
-            // clearGlobalDistributionDiscounts puede reemplazar la fila
             item = this.form.items[index];
-            if (!item) return;
-
-            this.spreadItemDiscount(item, item_target);
-
+            this.spreadItemDiscount(item, target);
             this.recalculateDiscountedItems([index]);
             this.calculateTotal();
         },
+        // ######## INICIO CALCULOS EXACTOS PRO9 ########
         discountGlobalItems(ctx) {
             if (this.isExportInvoice) {
                 this.deleteDiscountGlobal();
-                const base = Number(ctx.total_exportation);
-                const amount = this.is_amount ? Number(this.total_global_discount || 0) : _.round(base * Number(this.total_global_discount || 0) / 100, 2);
-                if (amount < 0 || amount > base) {
-                    this.$message.error('El descuento supera el valor exportado.');
-                    return;
-                }
-                if (amount > 0 && base > 0) this.setGlobalDiscount(_.round(amount / base, 5), _.round(amount, 2), _.round(base, 2), amount);
-                this.form.total_exportation = _.round(base - amount, 2);
-                this.form.total_value = this.form.total_exportation;
-                this.form.total = this.form.total_exportation;
-                this.form.subtotal = this.form.total;
-                this.form.total_discount += _.round(amount, 2);
+                const base = this.form.items ? exactSum(this.form.items.filter(item => item.affectation_igv_type_id === 'EXP').map(item => exactValue(item, 'total_value'))) : exactValue(ctx, 'total_exportation');
+                const amount = this.is_amount ? exactAmount(this.total_global_discount || '0') : base.times(this.total_global_discount || '0').dividedBy(100);
+                if (amount.compare(0) < 0 || amount.compare(base) > 0) { this.$message.error('El descuento supera el valor exportado.'); return; }
+                if (amount.compare(0) > 0 && base.compare(0) > 0) this.setGlobalDiscount(amount.dividedBy(base).decimal(), amount.decimal(), base.decimal(), amount.fraction());
+                const total = base.minus(amount).decimal();
+                Object.assign(this.form, {total_exportation: total, total_value: total, total, subtotal: total,
+                    total_discount: exactAmount(this.form.total_discount || '0').plus(amount).decimal()});
                 return;
             }
-             let total_discounts_item = 0;
-             // Seguridad: no acumular si calculateTotal no restauró antes
-             this.clearGlobalDistributionDiscounts();
-
-             if (!this.total_global_discount || this.total_global_discount <= 0) return;
-
-             // Base del descuento: solo operaciones onerosas. Las gratuitas
-             // (11-16, 21, 37) quedan fuera, no tienen valor de venta que
-             // descontar y su importe no forma parte del total a pagar.
-             let total_base = parseFloat(ctx.total_taxed)
-                + parseFloat(ctx.total_exonerated)
-                + parseFloat(0)
-                + parseFloat(ctx.total_exportation);
-
-            if (total_base <= 0) return;
-
-            // ########## INICIO CAMBIO IGV A IVA
-            // Si el monto incluye IVA (descuento exacto tipo "02"), extraemos la
-            // base sin IVA. Solo la porcion gravada genera IVA, por eso se divide
-            // entre (1 + IVA * participacion gravada): en un comprobante
-            // exonerado/inafecto el monto tecleado ya es neto y dividir entre
-            // 1.18 aplicaria un descuento menor al pedido.
-            let amount_discount = parseFloat(this.total_global_discount);
-            if (this.is_amount) {
-                const taxed_share = parseFloat(ctx.total_taxed) / total_base;
-                const igv_divisor = 1 + this.percentage_igv * taxed_share;
-
-                if (this.recordDiscountsGlobal) {
-                    if (this.recordDiscountsGlobal.discount_type_id === "02") {
-                        amount_discount = this.total_global_discount / igv_divisor;
-                    }
-                } else if (
-                    this.configuration.global_discount_type_id === "02" &&
-                    this.configuration.exact_discount
-                ) {
-                    amount_discount = this.total_global_discount / igv_divisor;
-                }
-            }
-            // ######### FIN CAMBIO IGV A IVA
-
-            let global_amount = this.is_amount
-                ? parseFloat(amount_discount)
-                : _.round((parseFloat(amount_discount) / 100) * total_base, 2);
-
-            // Suma de los items que reciben descuento (denominador de la formula)
-            let sum_items_value = _.sumBy(this.form.items, item => {
-                if (!this.isDiscountableAffectation(item)) return 0;
-                return item.total_value_without_rounding
-                    ? parseFloat(item.total_value_without_rounding)
-                    : parseFloat(item.total_value);
+            this.clearGlobalDistributionDiscounts();
+            if (!this.total_global_discount || exactAmount(this.total_global_discount).compare(0) <= 0) return;
+            const selected = this.form.items.filter(item => this.isDiscountableAffectation(item));
+            const base = exactSum(selected.map(item => exactValue(item, 'total_value')));
+            if (base.compare(0) <= 0) return;
+            const type = this.recordDiscountsGlobal?.discount_type_id || this.global_discount_type.id;
+            const taxed = exactSum(selected.filter(item => item.affectation_igv_type_id === '10').map(item => exactValue(item, 'total_value')));
+            let amount = exactAmount(this.total_global_discount);
+            if (!this.is_amount) amount = base.times(amount).dividedBy(100);
+            else if (type === '02' && this.configuration.exact_discount) amount = amount.dividedBy(exactAmount(1).plus(exactAmount(this.percentage_igv).times(taxed).dividedBy(base)));
+            if (amount.compare(base) > 0) { this.$message.error('El descuento supera su base.'); return; }
+            this.deleteDiscountGlobal();
+            selected.forEach(item => {
+                const share = exactValue(item, 'total_value').times(amount).dividedBy(base);
+                const snapshot = {...item, discounts: [...(item.discounts || [])]};
+                item.discounts = [...snapshot.discounts, {discount_type_id: type === '02' ? '00' : '01',
+                    description: 'Descuento global', is_amount: true, use_input_amount: true,
+                    from_global_distribution: true, amount: share.decimal(), amount_exact: share.fraction()}];
+                Object.assign(item, calculateRowItem(item, this.form.currency_type_id, this.form.exchange_rate_sale, this.percentage_igv, this.isExportInvoice));
+                item._original_before_global_discount = snapshot;
             });
-
-            if (sum_items_value <= 0) return;
-
-            // Descuento repartido, separado por afectacion: cada base solo se
-            // reduce con lo que se repartio a SUS items
-            let discount_by_affectation = {
-                taxed: 0,
-                exonerated: 0,
-                unaffected: 0,
-                exportation: 0
-            };
-
-            let discount_type_id = this.recordDiscountsGlobal
-                ? this.recordDiscountsGlobal.discount_type_id
-                : this.global_discount_type.id;
-            let description = this.recordDiscountsGlobal
-                ? this.recordDiscountsGlobal.description
-                : this.global_discount_type.description;
-
-            this.form.items.forEach((item, index) => {
-                if (!this.isDiscountableAffectation(item)) return;
-
-                let item_value = item.total_value_without_rounding
-                    ? parseFloat(item.total_value_without_rounding)
-                    : parseFloat(item.total_value);
-
-                if (item_value <= 0) return;
-
-                // [(valor del item) / suma de todo los items] * descuento global
-                let item_discount_amount =
-                    (item_value / sum_items_value) * global_amount
-
-                if (item_discount_amount <= 0) return;
-
-                total_discounts_item += item_discount_amount;
-
-                let factor = _.round(item_discount_amount / item_value, 5);
-
-                item.discounts = item.discounts || [];
-
-                let $_discount_type_id  = discount_type_id === "02" ? "00" : "01"
-
-                item.discounts.push({
-                    discount_type_id: $_discount_type_id,
-                    discount_type : _.find(this.discount_types, { id: $_discount_type_id }),
-                    description: description,
-                    factor: factor,
-                    percentage: _.round(factor * 100, 5),
-                    amount: _.round(item_discount_amount, 2),
-                    base: _.round(item_value, 2),
-                    is_amount: true,
-                    amount_without_rounded: item_discount_amount,
-                    from_global_distribution: true
-                });
-
-                // El descuento de una linea solo puede reducir la base de su
-                // propia afectacion
-                switch (item.affectation_igv_type_id) {
-                    case "10": // Gravada
-                        discount_by_affectation.taxed += item_discount_amount;
-                        break;
-                    case "20": // Exonerada
-                        discount_by_affectation.exonerated += item_discount_amount;
-                        break;
-                    case "EXP": // Exportacion
-                        discount_by_affectation.exportation += item_discount_amount;
-                        break;
-                    default: // Inafecta (30 a 36)
-                        discount_by_affectation.unaffected += item_discount_amount;
-                        break;
-                }
-
-                this.recalcItemBasesAndIgv(item);
-
-            });
-
-            let amount = 0;
-            let factor = 0;
-                if (this.is_amount) {
-                    amount = global_amount;
-                    factor = _.round(amount / total_base, 5);
-                } else {
-                    factor = _.round(global_amount / 100, 5);
-                    amount = global_amount;
-                }
-
-
-                ;
-
-            // this.form.total_discount = _.round(total_discounts_item, 2);
         },
-        /**
-         * Recalcula los totales del item considerando los descuentos que afectan
-         * a la base imponible, para CUALQUIER afectación (gravada, exonerada,
-         * inafecta, exportación o gratuita). El descuento reduce siempre el
-         * total_value y la base imponible del item; el IGV solo se genera cuando
-         * la afectación es gravada ('10') — en el resto queda en 0 por norma SUNAT.
-         *
-         * Los descuentos globales que NO afectan la base imponible (catálogo 53
-         * tipo '01') dejan el item intacto — valor, base, IGV y unit_price se
-         * mantienen; solo se acumulan en item.total_discount. Su efecto sobre el
-         * comprobante lo aplica calculateTotal vía total_discount_no_base.
-         *
-         * SUNAT:
-         * - 3271: LineExtensionAmount = qty * unit_value - AllowanceCharge
-         *   → unit_value se mantiene ORIGINAL (pre-descuento)
-         * - 3270: PricingReference/PriceAmount ≈ (LineExtensionAmount + IGV) / qty
-         *   → unit_price se actualiza al precio de operación POST-descuento
-         */
+        // ######## FIN CALCULOS EXACTOS PRO9 ########
         recalcItemBasesAndIgv(item) {
-            const pigv = this.percentage_igv;
-            const affectation = item.affectation_igv_type_id;
-
-            // Snapshot de importes previos al dto global (una sola vez)
-            if (!item._original_before_global_discount) {
-                item._original_before_global_discount = {
-                    unit_price: parseFloat(item.unit_price),
-                    unit_value: parseFloat(item.unit_value),
-                    total_value: parseFloat(item.total_value),
-                    total_base_igv: parseFloat(item.total_base_igv),
-                    total_igv: parseFloat(item.total_igv),
-                    total_taxes: parseFloat(item.total_taxes),
-                    total: parseFloat(item.total),
-                    total_discount: parseFloat(item.total_discount || 0),
-                    total_value_without_rounding: parseFloat(
-                        item.total_value_without_rounding || item.total_value
-                    ),
-                    total_base_igv_without_rounding: parseFloat(
-                        item.total_base_igv_without_rounding || item.total_base_igv
-                    ),
-                    total_igv_without_rounding: parseFloat(
-                        item.total_igv_without_rounding || item.total_igv
-                    ),
-                    total_taxes_without_rounding: parseFloat(
-                        item.total_taxes_without_rounding || item.total_taxes
-                    ),
-                    total_without_rounding: parseFloat(
-                        item.total_without_rounding || item.total
-                    )
-                };
-            }
-
-            const orig = item._original_before_global_discount;
-            const total_value_partial = orig.total_value_without_rounding;
-
-            let discount_base = 0;
-            let discount_no_base = 0;
-            if (item.discounts && item.discounts.length > 0) {
-                item.discounts.forEach(d => {
-                    if (!d.from_global_distribution) return;
-                    const amount = d.amount_without_rounded
-                        ? d.amount_without_rounded
-                        : d.amount;
-                    // Catalogo 53: '01' = descuento global que NO afecta la base
-                    // imponible. No toca valor de linea, base ni IGV del item; se
-                    // descuenta del total via total_discount_no_base en calculateTotal.
-                    if (d.discount_type_id === "01") {
-                        discount_no_base += parseFloat(amount);
-                    } else {
-                        discount_base += parseFloat(amount);
-                    }
-                });
-            }
-
-            // Solo el descuento que afecta la BI reduce el valor del item
-            const total_value = total_value_partial - discount_base;
-            // Base imponible del item (relevante solo si paga IGV)
-            const total_base_igv = total_value;
-
-            // IGV por afectación
-            let total_igv = 0;
-            switch (affectation) {
-                case '10': // Gravada
-                    total_igv = total_base_igv * pigv;
-                    break;
-                case '20': // Exonerada
-                case '30': // Inafecta - Operación Onerosa
-                case '31': // Inafecta - Retiro por Bonificación
-                case '32': // Inafecta - Retiro
-                case '33': // Inafecta - Retiro por Muestras Médicas
-                case '34': // Inafecta - Retiro por Convenio Colectivo
-                case '35': // Inafecta - Retiro por Premio
-                case '36': // Inafecta - Retiro por Publicidad
-                case 'EXP': // Exportación
-                case '21': // Exonerada - Transferencia Gratuita
-                case '37': // Inafecta - Transferencia Gratuita
-                default:
-                    total_igv = 0;
-                    break;
-            }
-
-
-
-            const total_taxes = total_igv;
-            const total = total_value + total_taxes;
-
-            const quantity = parseFloat(item.quantity) || 1;
-            // 3270: precio unitario de la operación = total de línea con impuestos / cant.
-            const unit_price_operation =
-                quantity > 0 ? total / quantity : orig.unit_price;
-
-            // 3271: unit_value ORIGINAL; 3270: unit_price = precio operación post-dto.
-            //
-            // Si el descuento NO afecta la base imponible (catalogo 53 '01') el
-            // item queda intacto: total_value y total_igv no cambian, asi que el
-            // precio unitario tampoco puede cambiar sin romper 3270
-            // (PriceAmount ≈ (LineExtensionAmount + IGV) / cantidad).
-            // Antes se hacia `orig.unit_price - discount_no_base`, que resta un
-            // importe de linea a un precio unitario: con cantidad > 1 el precio
-            // caia el descuento completo en lugar de la parte proporcional, y ni
-            // siquiera con cantidad 1 cuadraba contra total_value.
-            item.unit_value = orig.unit_value;
-            item.unit_price =
-                discount_base > 0
-                    ? _.round(unit_price_operation, 6)
-                    : orig.unit_price;
-            item.total_value = _.round(total_value, 2);
-            item.total_base_igv = _.round(total_base_igv, 2);
-            item.total_igv = _.round(total_igv, 2);
-            item.total_taxes = _.round(total_taxes, 2);
-            item.total_discount = _.round(
-                orig.total_discount + discount_base + discount_no_base,
-                2
-            );
-            item.total = _.round(total, 2);
-
-            item.total_value_without_rounding = total_value;
-            item.total_base_igv_without_rounding = total_base_igv;
-            item.total_igv_without_rounding = total_igv;
-            item.total_taxes_without_rounding = total_taxes;
-            item.total_without_rounding = total;
-
+            Object.assign(item, calculateRowItem(item, this.form.currency_type_id, this.form.exchange_rate_sale, this.percentage_igv, this.isExportInvoice));
             return item;
         },
         // Descuento por item (incluye prorrateo del descuento global)
-        setTextDiscountItem(item) {
-            let discount = 0;
-            if (!item.discounts) return "0";
-
-            const igvFactor = 1 + this.percentage_igv;
-
-            item.discounts.forEach(dis => {
-                if (dis.from_global_distribution) {
-                    const baseAmount = dis.amount_without_rounded
-                        ? parseFloat(dis.amount_without_rounded)
-                        : parseFloat(dis.amount);
-                    // Mostrar con IGV para alinear Precio Unitario / Total (con IGV)
-                    discount +=
-                        dis.discount_type_id === "00"
-                            ? baseAmount * igvFactor
-                            : baseAmount;
-                    return;
-                }
-
-                if (dis.discount_type && dis.discount_type.base) {
-                    discount += dis.amount_without_rounded * igvFactor;
-                } else {
-                    discount += dis.amount;
-                }
-            });
-
-            return discount > 0 ? _.round(discount, 2) : "0";
-        },
+        setTextDiscountItem(item) { return this.itemDiscountDisplayAmount(item); },
 
         async deleteInitGuides() {
             await _.remove(this.form.guides, { number: null });
@@ -6694,7 +5687,8 @@ export default {
             };
         },
         documentSubmission() {
-            return this.isUpdateDocument ? {...this.form, payments: [], received_retentions: [], guarantee_fund: null} : this.form;
+            const form = withoutDraftRetentions(this.form);
+            return this.isUpdateDocument ? {...form, payments: [], received_retentions: [], guarantee_fund: null} : form;
         },
         async submit() {
             if (this.editBlocked) return this.$message.error(this.form.edit_block_reason);
@@ -7171,41 +6165,18 @@ export default {
             this.calculateFee();
             this.setDateOfDue(this.getLastDateFee());
         },
+        // ######## INICIO CALCULOS EXACTOS PRO9 ########
         calculatePayments() {
-            if (this.form.payment_condition_id === "02") return;
-            let payment_count = this.form.payments.length;
-            // let total = this.form.total;
-            let total = this.ivaCollectionTarget;
-
-            let payment = 0;
-            let amount = _.round(total / payment_count, 2);
-            // console.log(amount);
-            _.forEach(this.form.payments, row => {
-                payment += amount;
-                if (total - payment < 0) {
-                    amount = _.round(total - payment + amount, 2);
-                }
-                row.payment = amount;
-                // console.error(row.payment)
-            });
+            if (this.form.payment_condition_id === '02') return;
+            suggestRemainingPayment(this.form);
         },
         calculateFee() {
-            let fee_count = this.form.fee.length;
-            // let total = this.form.total;
-            let total = this.getTotal();
-
-            let accumulated = 0;
-            let amount = _.round(total / fee_count, 2);
-            _.forEach(this.form.fee, row => {
-                accumulated += amount;
-                if (total - accumulated < 0) {
-                    amount = _.round(total - accumulated + amount, 2);
-                }
-                row.amount = amount;
-            });
+            const amounts = allocateExact(this.getTotal(), this.form.fee.map(() => '1'), 2);
+            this.form.fee.forEach((row, index) => { row.amount = amounts[index]; row.allocation_weight = '1'; });
         },
+        // ######## FIN CALCULOS EXACTOS PRO9 ########
         getTotal() {
-            let total_pay = this.ivaCollectionTarget;
+            let total_pay = this.collectionTarget;
             ;
             // console.log(this.form.retention)
             // console.log(this.form.total_pending_payment)
@@ -7488,7 +6459,7 @@ export default {
             this.form.actions.format_pdf = format;
 
             try {
-                let response = await this.$http.post(path, this.form, {
+                let response = await this.$http.post(path, withoutDraftRetentions(this.form), {
                     responseType: "blob"
                 });
                 if (!response.headers?.['content-type']?.includes('application/pdf') || !response.data?.size) {

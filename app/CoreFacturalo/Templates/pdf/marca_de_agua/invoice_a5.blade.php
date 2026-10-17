@@ -565,26 +565,17 @@ foreach ($document->items as $row) {
                     {{ $cleanedDate }}
                 </td>
             @endif
-            @if ($configuration_decimal_quantity->change_decimal_quantity_unit_price_pdf)
-                <td class="text-center align-top desc cell-solid-rl p-1">{{ $row->generalApplyNumberFormat($row->unit_price, $configuration_decimal_quantity->decimal_quantity_unit_price_pdf) }}</td>
-            @else
-                <td class="text-center align-top desc cell-solid-rl p-1">{{ number_format($row->unit_price, 2) }}</td>
-            @endif
+            <td class="text-center align-top desc cell-solid-rl p-1">{{ $row->formatPdfUnitPrice($configuration_decimal_quantity) }}</td>
 
             <td class="text-center align-top desc cell-solid-rl p-1">
                 @if($row->discounts)
-                    @php
-                        $total_discount_line = 0;
-                        foreach ($row->discounts as $disto) {
-                            $total_discount_line = $total_discount_line + $disto->amount;
-                        }
-                    @endphp
-                    {{ number_format($total_discount_line, 2) }}
+                    @php $total_discount_line = \App\Support\Exact\PdfAmounts::lineDiscount($row, false); @endphp
+                    {{ \App\Support\Exact\Decimal::format($total_discount_line, 2) }}
                 @else
-                    0
+                    0.00
                 @endif
             </td>
-            <td class="text-center align-top desc cell-solid-rl p-1">{{ number_format($row->total, 2) }}</td>
+            <td class="text-center align-top desc cell-solid-rl p-1">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($row, 'total'), 2) }}</td>
         </tr>
     @endforeach
     @php
@@ -639,11 +630,11 @@ foreach ($document->items as $row) {
         @if ($document->document_type_id === '07')
             @if($document->total_taxed >= 0)
             <td class="p-1 text-right align-top desc cell-solid font-bold" colspan="{{ $colspan_total }}">OP. GRAVADAS: {{ $document->currency_type->symbol }}</td>
-            <td class="p-1 text-right align-top desc cell-solid font-bold">{{ number_format($document->total_taxed, 2) }}</td>
+            <td class="p-1 text-right align-top desc cell-solid font-bold">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_taxed'), 2) }}</td>
             @endif
         @elseif($document->total_taxed > 0)
             <td class="p-1 text-right align-top desc cell-solid font-bold" colspan="{{ $colspan_total }}">OP. GRAVADAS: {{ $document->currency_type->symbol }}</td>
-            <td class="p-1 text-right align-top desc cell-solid font-bold">{{ number_format($document->total_taxed, 2) }}</td>
+            <td class="p-1 text-right align-top desc cell-solid font-bold">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_taxed'), 2) }}</td>
         @endif
     </tr>
     <tr>
@@ -674,30 +665,30 @@ foreach ($document->items as $row) {
             <td class="p-1 text-center align-top desc cell-solid " rowspan="6">
             </td>
             <td class="p-1 text-right align-top desc cell-solid font-bold" colspan="{{ $colspan_total }}">OP. INAFECTAS: {{ $document->currency_type->symbol }}</td>
-            <td class="p-1 text-right align-top desc cell-solid font-bold">{{ number_format($document->total_unaffected, 2) }}</td>
+            <td class="p-1 text-right align-top desc cell-solid font-bold">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_unaffected'), 2) }}</td>
     </tr>
     <tr>
         <td class="p-1 text-right align-top desc cell-solid font-bold" colspan="{{ $colspan_total }}">OP. EXONERADAS: {{ $document->currency_type->symbol }}</td>
-        <td class="p-1 text-right align-top desc cell-solid font-bold">{{ number_format($document->total_exonerated, 2) }}</td>
+        <td class="p-1 text-right align-top desc cell-solid font-bold">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_exonerated'), 2) }}</td>
     </tr>
     <tr>
         <td class="p-1 text-right align-top desc cell-solid font-bold" colspan="{{ $colspan_total }}">OP. GRATUITAS: {{ $document->currency_type->symbol }}</td>
-        <td class="p-1 text-right align-top desc cell-solid font-bold">{{ number_format($document->total_free, 2) }}</td>
+        <td class="p-1 text-right align-top desc cell-solid font-bold">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_free'), 2) }}</td>
     </tr>
     <tr>
         {{-- ########## INICIO CAMBIO IGV A IVA --}}
         <td class="p-1 text-right align-top desc cell-solid font-bold" colspan="{{ $colspan_total }}">IVA: {{ $document->currency_type->symbol }}</td>
         {{-- ######### FIN CAMBIO IGV A IVA --}}
-        <td class="p-1 text-right align-top desc cell-solid font-bold">{{ number_format($document->total_igv, 2) }}</td>
+        <td class="p-1 text-right align-top desc cell-solid font-bold">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_igv'), 2) }}</td>
     </tr>
     <tr>
         <td class="p-1 text-right align-top desc cell-solid font-bold" colspan="{{ $colspan_total }}">TOTAL A PAGAR: {{ $document->currency_type->symbol }}</td>
-        <td class="p-1 text-right align-top desc cell-solid font-bold">{{ number_format($document->total, 2) }}</td>
+        <td class="p-1 text-right align-top desc cell-solid font-bold">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total'), 2) }}</td>
     </tr>
     @if($document->total_exportation > 0)
         <tr>
             <td class="p-1 text-right align-top desc cell-solid font-bold" colspan="{{ $colspan_total }}">OP. EXPORTACIÓN: {{ $document->currency_type->symbol }}</td>
-            <td class="p-1 text-right align-top desc cell-solid font-bold">{{ number_format($document->total_exportation, 2) }}</td>
+            <td class="p-1 text-right align-top desc cell-solid font-bold">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_exportation'), 2) }}</td>
         </tr>
     @endif
 
@@ -709,11 +700,11 @@ foreach ($document->items as $row) {
     @if($document->subtotal > 0)
         @php
             $labelSubtotal = $document->total_discount_with_igv > 0 ? 'SUMA DE IMPORTES' : 'SUBTOTAL';
-            $subtotal = $document->total_discount_with_igv > 0 ? $document->subtotal + $document->total_discount_with_igv : $document->subtotal;
+            $subtotal = $document->total_discount_with_igv > 0 ? \App\Support\Exact\PdfAmounts::read($document, 'subtotal')->plus(\App\Support\Exact\Decimal::of(\App\Support\Exact\Decimal::represent(\App\Support\Exact\PdfAmounts::read($document, 'total_discount_with_igv'), 2))) : \App\Support\Exact\PdfAmounts::read($document, 'subtotal');
         @endphp
         <tr>
             <td class="p-1 text-right align-top desc cell-solid font-bold" colspan="{{ $colspan_total }}">{{ $labelSubtotal }}: {{ $document->currency_type->symbol }}</td>
-            <td class="p-1 text-right align-top desc cell-solid font-bold">{{ number_format($subtotal, 2) }}</td>
+            <td class="p-1 text-right align-top desc cell-solid font-bold">{{ \App\Support\Exact\Decimal::format($subtotal, 2) }}</td>
         </tr>
     @endif
 
@@ -721,7 +712,7 @@ foreach ($document->items as $row) {
         <tr>
             <td class="p-1 text-right align-top desc cell-solid font-bold" colspan="{{ $colspan_total }}" >{{(($document->total_prepayment > 0) ? 'ANTICIPO':'DESCUENTO TOTAL')}}
                 : {{ $document->currency_type->symbol }}</td>
-            <td class="p-1 text-right align-top desc cell-solid font-bold">{{ number_format($document->total_discount_with_igv, 2) }}</td>
+            <td class="p-1 text-right align-top desc cell-solid font-bold">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_discount_with_igv'), 2) }}</td>
         </tr>
     @endif
 
@@ -736,12 +727,12 @@ foreach ($document->items as $row) {
             <tr>
                 <td class="p-1 text-right align-top desc cell-solid font-bold" colspan="{{ $colspan_total }}">CARGOS ({{$total_factor}}
                     %): {{ $document->currency_type->symbol }}</td>
-                <td class="p-1 text-right align-top desc cell-solid font-bold">{{ number_format($document->total_charge, 2) }}</td>
+                <td class="p-1 text-right align-top desc cell-solid font-bold">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_charge'), 2) }}</td>
             </tr>
         @else
             <tr>
                 <td class="p-1 text-right align-top desc cell-solid font-bold" colspan="{{ $colspan_total }}">CARGOS: {{ $document->currency_type->symbol }}</td>
-                <td class="p-1 text-right align-top desc cell-solid font-bold">{{ number_format($document->total_charge, 2) }}</td>
+                <td class="p-1 text-right align-top desc cell-solid font-bold">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_charge'), 2) }}</td>
             </tr>
         @endif
     @endif
@@ -766,9 +757,9 @@ foreach ($document->items as $row) {
                     ANTICIPO: FACTURA NRO. {{$p->number}}
                 </td>
                 <td class="text-right align-top"></td>
-                <td class="text-right align-top">-{{ number_format($p->total, 2) }}</td>
+                <td class="text-right align-top">-{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($p, 'total'), 2) }}</td>
                 <td class="text-right align-top">0</td>
-                <td class="text-right align-top">-{{ number_format($p->total, 2) }}</td>
+                <td class="text-right align-top">-{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($p, 'total'), 2) }}</td>
             </tr>
         @endforeach
     @endif

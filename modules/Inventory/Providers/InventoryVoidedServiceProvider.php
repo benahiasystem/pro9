@@ -111,7 +111,7 @@ class InventoryVoidedServiceProvider extends ServiceProvider
                         $presentation_quantity = (!empty($document_item->item->presentation)) ? $document_item->item->presentation->quantity_unit : 1;
 
                         $factor = -1;
-                        $calculate_quantity = $factor * ($document_item->quantity * $presentation_quantity);
+                        $calculate_quantity = $factor * $document_item->exactValue('quantity')->multipliedBy(ExactDecimal::of($presentation_quantity));
 
                         $this->createInventoryKardex($document, $document_item->item_id, $calculate_quantity, $warehouse->id);
 

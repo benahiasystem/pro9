@@ -11,9 +11,10 @@ use Illuminate\Support\Facades\DB;
  * - `main_table_id` int(10) unsigned DEFAULT NULL
  * - `status` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'open'
  * - `opening_date` datetime DEFAULT NULL
- * - `total` decimal(10,2) NOT NULL DEFAULT '0.00'
+ * - `total` decimal(30,12) NOT NULL DEFAULT '0.00'
  * - `created_at` timestamp NULL DEFAULT NULL
  * - `updated_at` timestamp NULL DEFAULT NULL
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
 {
@@ -25,9 +26,10 @@ CREATE TABLE `restaurant_table_groups` (
   `main_table_id` int(10) unsigned DEFAULT NULL,
   `status` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'open',
   `opening_date` datetime DEFAULT NULL,
-  `total` decimal(10,2) NOT NULL DEFAULT '0.00',
+  `total` decimal(30,12) NOT NULL DEFAULT '0.00',
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`),
   KEY `restaurant_table_groups_main_table_id_foreign` (`main_table_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci

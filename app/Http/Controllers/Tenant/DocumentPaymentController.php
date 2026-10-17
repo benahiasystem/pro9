@@ -44,14 +44,11 @@ class DocumentPaymentController extends Controller
         $document = Document::find($document_id);
 
         DocumentFiscalController::authorizeDocument($document);
-        $total = $document->total - $document->retention_amount - $document->guarantee_amount - ($document->document_type_id === '01' ? \App\Services\Fiscal\FiscalNote::credits($document) : 0) + ($document->document_type_id === '01' ? \App\Services\Fiscal\FiscalNote::refunded($document) : 0);
-
-        $total_paid = $document->payments()->whereNull('reversed_at')->sum('payment');
-
-        // $credit_notes_total = $document->getCreditNotesTotal();
-
-        $total_difference = round($total - $total_paid, 2);
-        // $total_difference = round($total - $total_paid, 2);
+        $paidExact = \App\Support\Exact\Decimal::sum($document->payments()->whereNull('reversed_at')->get()->map(fn($r)=>$r->exactValue('payment')));
+        $balance = $document->exactBalance();
+        $total = \App\Support\Exact\Decimal::represent($balance->plus($paidExact));
+        $total_paid = \App\Support\Exact\Decimal::represent($paidExact);
+        $total_difference = \App\Support\Exact\Decimal::represent($balance);
 
         return [
             'number_full' => $document->number_full,
@@ -61,6 +58,8 @@ class DocumentPaymentController extends Controller
             'total_paid' => $total_paid,
             'total' => $total,
             'total_difference' => $total_difference,
+            'amount_payable' => \App\Support\Exact\Decimal::represent($balance,2,true),
+            'calculation_snapshot' => \App\Support\Exact\Decimal::snapshot(['total'=>$balance->plus($paidExact),'total_paid'=>$paidExact,'total_difference'=>$balance]),
             'currency_type_id' => $document->currency_type_id,
             'exchange_rate_sale' => \App\Services\ExchangeRates\ExchangeRateMath::rate($document->exchange_rate_sale),
             // 'credit_notes_total' => $credit_notes_total,
@@ -94,7 +93,7 @@ class DocumentPaymentController extends Controller
         if ($adjustmentDocument && !\App\Services\Fiscal\HkaIgtfNote::applies($adjustmentDocument) && !$adjustmentDocument->isVoidedOrRejected()) (new \App\CoreFacturalo\Facturalo())->createPdf($adjustmentDocument,'debit','a4');
         $document_balance = (object)$this->document($request->document_id);
 
-        if ($document_balance->total_difference < 1) {
+        if (\App\Models\Tenant\Document::findOrFail($request->document_id)->exactBalance()->isLessThanOrEqualTo(0)) {
 
             $credit = CashDocumentCredit::where([
                 ['status', 'PENDING'],
@@ -154,11 +153,7 @@ class DocumentPaymentController extends Controller
 
             foreach ($documents as $document) {
 
-                $total_payments = $document->payments->sum('payment');
-
-                $balance = $document->balance;
-
-                if ($balance <= 0) {
+                if ($document->exactBalance()->isLessThanOrEqualTo(0)) {
 
                     $document->total_canceled = true;
                     $document->update();

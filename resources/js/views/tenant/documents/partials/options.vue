@@ -86,10 +86,8 @@
                 <el-button v-if="form.fiscal_emission.annulment.can_query" class="mt-2" :disabled="loading || fiscalActionBusy" :loading="fiscalActionBusy" @click="runFiscalAction('query-annulment')">Consultar anulación HKA</el-button>
                 <el-button v-if="form.fiscal_emission.annulment.can_complete" class="mt-2" :disabled="loading || fiscalActionBusy" :loading="fiscalActionBusy" @click="runFiscalAction('complete-annulment')">Completar reversión comercial</el-button>
             </div>
-            <el-button v-if="form.document_type_id === '01' && ((form.iva_retention && form.iva_retention.enabled) || (form.islr_retention && form.islr_retention.enabled))" size="small" @click="showIvaRetention = true">Retenciones IVA / ISLR</el-button>
         <p v-if="form.islr_retention && form.islr_retention.prevision">ISLR prevista: {{ form.islr_retention.prevision.amount }} {{ form.currency_type_id }}. Permanece como saldo pendiente.</p>
             <p v-if="form.iva_retention && form.iva_retention.prevision">Prevista: {{ form.iva_retention.prevision.amount }} {{ form.currency_type_id }}. Saldo pendiente: {{ form.iva_retention.balance }}.</p>
-            <retention-form :show-dialog.sync="showIvaRetention" :document-id="recordId" />
             <span>Formatos disponibles para la descarga del comprobante:</span>
             <p v-if="pdfDownloadMessage" class="text-warning mt-2">{{ pdfDownloadMessage }}</p>
             <div class="row print-buttons-container">
@@ -225,13 +223,12 @@
                 </el-popover>
             </template>
         </span>
-        <note-operations :showDialog.sync="showNoteOperations" :documentId="form.id" @changed="create"/>
+        <note-operations :showDialog.sync="showNoteOperations" :documentId="form.id" :allow-retention-management="allowRetentionManagement" @changed="create"/>
     </el-dialog>
 </template>
 
 <script>
 import NoteOperations from './note-operations.vue';
-import RetentionForm from "./retention.vue"
 import {documentPdf} from "@mixins/document-pdf";
 import {documentEmail} from "@mixins/document-email";
 import {documentFiscal} from "@mixins/document-fiscal";
@@ -242,8 +239,22 @@ import QrApi from '@viewsModuleQrApi/QrApiTemplate.vue'
 import QrChatWsapp from '@viewsModuleQrChatBuho/ButtonSend.vue'
 
 export default {
-    props: ['annulOnOpen', 'showDialog', 'recordId', 'showClose', 'isContingency', 'generatDispatch', 'dispatchId', 'isUpdate', 'configuration', 'table', 'failsInSend', 'failsMessage'],
-    components: {NoteOperations, RetentionForm,
+    props: {
+        annulOnOpen: {},
+        showDialog: {},
+        recordId: {},
+        showClose: {},
+        isContingency: {},
+        generatDispatch: {},
+        dispatchId: {},
+        isUpdate: {},
+        configuration: {},
+        table: {},
+        failsInSend: {},
+        failsMessage: {},
+        allowRetentionManagement: Boolean,
+    },
+    components: {NoteOperations,
         Keypress,
         QrApi,
         QrChatWsapp
@@ -253,7 +264,6 @@ export default {
             showNoteOperations:false,
             ...documentPdf.data(),
             ...documentFiscal.data(),
-            showIvaRetention: false,
             recordRequestSequence: 0,
             titleDialog: null,
             loading: false,
@@ -352,7 +362,6 @@ export default {
     watch: {
         showDialog(value) {
             if (!value) {
-                this.showIvaRetention = false;
                 this.resetFiscalAction();
                 this.recordRequestSequence += 1;
                 this.loading = false;
@@ -360,7 +369,6 @@ export default {
         },
         recordId() {
             this.showNoteOperations=false;
-            this.showIvaRetention = false;
             this.resetFiscalAction();
             this.recordRequestSequence += 1;
         },

@@ -24,8 +24,8 @@
       "__plugin-vue2_normalizer-2bbd088e.js"
     ]
   },
-  "_exchange-rate-math-b13cb0df.js": {
-    "file": "assets/exchange-rate-math-b13cb0df.js"
+  "_exchange-rate-math-73c33bee.js": {
+    "file": "assets/exchange-rate-math-73c33bee.js"
   },
   "_index-3744837a.js": {
     "assets": [
@@ -36,6 +36,20 @@
       "assets/index-fd3e0cf7.css"
     ],
     "file": "assets/index-3744837a.js",
+    "imports": [
+      "_index-e849b4f5.js",
+      "_vue.esm-340a2d96.js"
+    ]
+  },
+  "_index-49ee4bbd.js": {
+    "assets": [
+      "assets/element-icons-ab40a589.woff",
+      "assets/element-icons-a30f5b3b.ttf"
+    ],
+    "css": [
+      "assets/index-fd3e0cf7.css"
+    ],
+    "file": "assets/index-49ee4bbd.js",
     "imports": [
       "_index-e849b4f5.js",
       "_vue.esm-340a2d96.js"
@@ -58,30 +72,43 @@
       "_vue.esm-340a2d96.js"
     ]
   },
-  "_vue-clipboard-2e6a814d.js": {
+  "_vue-clipboard-1f23d0b1.js": {
     "css": [
       "assets/vue-clipboard-a067d18e.css"
     ],
-    "file": "assets/vue-clipboard-2e6a814d.js",
+    "file": "assets/vue-clipboard-1f23d0b1.js",
     "imports": [
       "_vue.esm-340a2d96.js",
       "_index-f428bc3c.js",
       "_index-e849b4f5.js",
       "__plugin-vue2_normalizer-2bbd088e.js",
-      "_exchange-rate-math-b13cb0df.js"
+      "_exchange-rate-math-73c33bee.js"
     ]
   },
-  "_vue-clipboard-ee7e2883.js": {
+  "_vue-clipboard-2b5f22b2.js": {
     "css": [
       "assets/vue-clipboard-a067d18e.css"
     ],
-    "file": "assets/vue-clipboard-ee7e2883.js",
+    "file": "assets/vue-clipboard-2b5f22b2.js",
+    "imports": [
+      "_vue.esm-340a2d96.js",
+      "_index-49ee4bbd.js",
+      "_index-e849b4f5.js",
+      "__plugin-vue2_normalizer-2bbd088e.js",
+      "_exchange-rate-math-73c33bee.js"
+    ]
+  },
+  "_vue-clipboard-b1a8a1b4.js": {
+    "css": [
+      "assets/vue-clipboard-a067d18e.css"
+    ],
+    "file": "assets/vue-clipboard-b1a8a1b4.js",
     "imports": [
       "_vue.esm-340a2d96.js",
       "_index-3744837a.js",
       "_index-e849b4f5.js",
       "__plugin-vue2_normalizer-2bbd088e.js",
-      "_exchange-rate-math-b13cb0df.js"
+      "_exchange-rate-math-73c33bee.js"
     ]
   },
   "_vue.esm-340a2d96.js": {
@@ -128,11 +155,11 @@
     "src": "jetbrains-mono-latin.woff2"
   },
   "modules/ClaimsBook/Resources/assets/js/app.js": {
-    "file": "assets/app-53bade9b.js",
+    "file": "assets/app-8ecf237b.js",
     "imports": [
       "_vue.esm-340a2d96.js",
       "_index-e849b4f5.js",
-      "_index-f428bc3c.js",
+      "_index-49ee4bbd.js",
       "_claim_form-e14cd897.js",
       "__plugin-vue2_normalizer-2bbd088e.js"
     ],
@@ -140,9 +167,9 @@
     "src": "modules/ClaimsBook/Resources/assets/js/app.js"
   },
   "modules/Ecommerce/Resources/assets/js/frontend/cart-app.js": {
-    "file": "assets/cart-app-be617ba9.js",
+    "file": "assets/cart-app-3eae7296.js",
     "imports": [
-      "_exchange-rate-math-b13cb0df.js",
+      "_exchange-rate-math-73c33bee.js",
       "_FrequentlyBoughtTogether-418e6ba7.js",
       "__plugin-vue2_normalizer-2bbd088e.js"
     ],
@@ -234,7 +261,7 @@
     "src": "node_modules/element-ui/lib/theme-chalk/fonts/element-icons.woff"
   },
   "resources/js/app.css": {
-    "file": "assets/app-d1957b59.css",
+    "file": "assets/app-8d404694.css",
     "src": "resources/js/app.css"
   },
   "resources/js/app.js": {
@@ -244,15 +271,15 @@
       "assets/tabler-icons-9920d986.ttf"
     ],
     "css": [
-      "assets/app-d1957b59.css"
+      "assets/app-8d404694.css"
     ],
-    "file": "assets/app-4e1d5cd0.js",
+    "file": "assets/app-868f162f.js",
     "imports": [
-      "_vue-clipboard-2e6a814d.js",
+      "_vue-clipboard-2b5f22b2.js",
       "_vue.esm-340a2d96.js",
-      "_index-f428bc3c.js",
+      "_index-49ee4bbd.js",
       "__plugin-vue2_normalizer-2bbd088e.js",
-      "_exchange-rate-math-b13cb0df.js",
+      "_exchange-rate-math-73c33bee.js",
       "_index-e849b4f5.js",
       "_claim_form-e14cd897.js"
     ],
@@ -267,14 +294,14 @@
     "css": [
       "assets/system-6865b2e5.css"
     ],
-    "file": "assets/system-25935c45.js",
+    "file": "assets/system-0cf406cc.js",
     "imports": [
-      "_vue-clipboard-2e6a814d.js",
+      "_vue-clipboard-2b5f22b2.js",
       "_vue.esm-340a2d96.js",
-      "_index-f428bc3c.js",
+      "_index-49ee4bbd.js",
       "__plugin-vue2_normalizer-2bbd088e.js",
       "_index-e849b4f5.js",
-      "_exchange-rate-math-b13cb0df.js"
+      "_exchange-rate-math-73c33bee.js"
     ],
     "isEntry": true,
     "src": "resources/js/system.js"

@@ -20,16 +20,17 @@ use Illuminate\Support\Facades\DB;
  * - `agent` json NOT NULL
  * - `agent_number` varchar(32) NOT NULL
  * - `concept_id` char(3) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `base` decimal(12,2) NOT NULL DEFAULT 0
- * - `percentage` decimal(12,2) NOT NULL DEFAULT 0
- * - `subtrahend` decimal(12,2) NOT NULL DEFAULT 0
- * - `amount` decimal(12,2) NOT NULL DEFAULT 0
+ * - `base` decimal(30,12) NOT NULL DEFAULT 0
+ * - `percentage` decimal(30,12) NOT NULL DEFAULT 0
+ * - `subtrahend` decimal(30,12) NOT NULL DEFAULT 0
+ * - `amount` decimal(30,12) NOT NULL DEFAULT 0
  * - `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `exchange_rate` decimal(18,8) NOT NULL
- * - `applied_amount` decimal(12,2) NOT NULL DEFAULT 0
+ * - `applied_amount` decimal(30,12) NOT NULL DEFAULT 0
  * - `attachment` varchar(255) DEFAULT NULL
  * - `created_at` timestamp NULL DEFAULT NULL
  * - `updated_at` timestamp NULL DEFAULT NULL
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration {
     public function up(): void {
@@ -40,7 +41,7 @@ CREATE TABLE `document_received_retentions` (
   `operation_key` char(36) DEFAULT NULL,
   `input_hash` char(64) DEFAULT NULL,
   `input_snapshot` json DEFAULT NULL,
-  `taxable_base` decimal(12,2) NOT NULL DEFAULT 0,
+  `taxable_base` decimal(30,12) NOT NULL DEFAULT 0,
   `diagnostic` varchar(1000) DEFAULT NULL,
   `reversal_key` char(36) DEFAULT NULL,
   `reversal_reason` varchar(255) DEFAULT NULL,
@@ -55,19 +56,20 @@ CREATE TABLE `document_received_retentions` (
   `agent` json NOT NULL,
   `agent_number` varchar(32) NOT NULL,
   `concept_id` char(3) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `base` decimal(12,2) NOT NULL DEFAULT 0,
-  `percentage` decimal(12,2) NOT NULL DEFAULT 0,
-  `subtrahend` decimal(12,2) NOT NULL DEFAULT 0,
-  `amount` decimal(12,2) NOT NULL DEFAULT 0,
+  `base` decimal(30,12) NOT NULL DEFAULT 0,
+  `percentage` decimal(30,12) NOT NULL DEFAULT 0,
+  `subtrahend` decimal(30,12) NOT NULL DEFAULT 0,
+  `amount` decimal(30,12) NOT NULL DEFAULT 0,
   `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `exchange_rate` decimal(18,8) NOT NULL,
-  `applied_amount` decimal(12,2) NOT NULL DEFAULT 0,
+  `applied_amount` decimal(30,12) NOT NULL DEFAULT 0,
   `attachment` varchar(255) DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   `active_iva_document_id` int(10) unsigned GENERATED ALWAYS AS (CASE WHEN tax_kind = 'IVA' AND application_status IN ('pending_validation','applied') THEN document_id ELSE NULL END) STORED,
   `active_islr_document_id` int(10) unsigned GENERATED ALWAYS AS (CASE WHEN tax_kind = 'ISLR' AND application_status IN ('pending_validation','applied') THEN document_id ELSE NULL END) STORED,
   `active_voucher_number` varchar(100) GENERATED ALWAYS AS (CASE WHEN application_status IN ('pending_validation','applied') THEN voucher_number ELSE NULL END) STORED,
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`),
   UNIQUE KEY `received_iva_active_unique` (`active_iva_document_id`),
   UNIQUE KEY `received_islr_active_unique` (`active_islr_document_id`),

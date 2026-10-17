@@ -1836,7 +1836,7 @@
                                     <div class="col-12">
                                         <label class="control-label">Modificar cantidad de decimales
                                             <el-tooltip class="item"
-                                                content="Disponible para el precio unitario de Facturas/Boletas en formato A4/A5, usando la plantilla pdf Default"
+                                                content="Decimales del precio unitario en los PDF generados por Pro9: de 2 a 12; por defecto 2. No modifica los cálculos ni los PDF originales de HKA."
                                                 effect="dark" placement="top-start">
                                                 <i class="fa fa-info-circle"></i>
                                             </el-tooltip>
@@ -1859,7 +1859,7 @@
                                             <div :class="{ 'has-danger': errors.decimal_quantity_unit_price_pdf }"
                                                 class="form-group w-50">
                                                 <el-input-number v-model="form.decimal_quantity_unit_price_pdf" :min="2"
-                                                    :max="6" :precision="0" :step="1" @change="submit"></el-input-number>
+                                                    :max="12" :precision="0" :step="1" @change="submit"></el-input-number>
                                                 <small v-if="errors.decimal_quantity_unit_price_pdf"
                                                     class="form-control-feedback"
                                                     v-text="errors.decimal_quantity_unit_price_pdf[0]"></small>
@@ -3653,7 +3653,7 @@ export default {
                 change_currency_item: false,
                 enabled_advanced_records_search: false,
                 change_decimal_quantity_unit_price_pdf: false,
-                decimal_quantity_unit_price_pdf: false,
+                decimal_quantity_unit_price_pdf: 2,
                 separate_cash_transactions: false,
                 order_cash_income: false,
                 generate_order_note_from_quotation: false,

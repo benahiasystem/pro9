@@ -13,14 +13,15 @@ use Illuminate\Support\Facades\DB;
  * - `time_opening` time NOT NULL
  * - `date_closed` date DEFAULT NULL
  * - `time_closed` time DEFAULT NULL
- * - `beginning_balance` decimal(12,4) NOT NULL DEFAULT '0.0000'
- * - `final_balance` decimal(12,4) NOT NULL DEFAULT '0.0000'
- * - `income` decimal(12,4) NOT NULL DEFAULT '0.0000'
+ * - `beginning_balance` decimal(30,12) NOT NULL DEFAULT '0.0000'
+ * - `final_balance` decimal(30,12) NOT NULL DEFAULT '0.0000'
+ * - `income` decimal(30,12) NOT NULL DEFAULT '0.0000'
  * - `state` tinyint(1) NOT NULL DEFAULT '0'
  * - `reference_number` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `created_at` timestamp NULL DEFAULT NULL
  * - `updated_at` timestamp NULL DEFAULT NULL
  * - `apply_restaurant` tinyint(1) NOT NULL DEFAULT '0'
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
 {
@@ -34,14 +35,15 @@ CREATE TABLE `cash` (
   `time_opening` time NOT NULL,
   `date_closed` date DEFAULT NULL,
   `time_closed` time DEFAULT NULL,
-  `beginning_balance` decimal(12,4) NOT NULL DEFAULT '0.0000',
-  `final_balance` decimal(12,4) NOT NULL DEFAULT '0.0000',
-  `income` decimal(12,4) NOT NULL DEFAULT '0.0000',
+  `beginning_balance` decimal(30,12) NOT NULL DEFAULT '0.0000',
+  `final_balance` decimal(30,12) NOT NULL DEFAULT '0.0000',
+  `income` decimal(30,12) NOT NULL DEFAULT '0.0000',
   `state` tinyint(1) NOT NULL DEFAULT '0',
   `reference_number` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   `apply_restaurant` tinyint(1) NOT NULL DEFAULT '0',
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`),
   KEY `cash_user_id_foreign` (`user_id`),
   KEY `cash_date_opening_index` (`date_opening`),

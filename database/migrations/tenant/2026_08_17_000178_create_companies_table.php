@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\DB;
  * Estructura inicial de `companies` para instalaciones nuevas.
  * Inventario de columnas:
  * - `igtf_enabled` tinyint(1) NOT NULL DEFAULT 0
- * - `igtf_rate` decimal(12,2) DEFAULT NULL
+ * - `igtf_rate` decimal(30,12) DEFAULT NULL
  * - `fiscal_profile` json DEFAULT NULL (current version; history is immutable)
  * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
  * - `identity_document_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
@@ -47,6 +47,7 @@ use Illuminate\Support\Facades\DB;
  * - `name_person_support_contaweb` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `telephone_support_contaweb` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `email_support_contaweb` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
 {
@@ -56,7 +57,7 @@ return new class extends Migration
 CREATE TABLE `companies` (
   -- ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
   `igtf_enabled` tinyint(1) NOT NULL DEFAULT 0,
-  `igtf_rate` decimal(12,2) DEFAULT NULL,
+  `igtf_rate` decimal(30,12) DEFAULT NULL,
   -- ######## FIN PERSISTENCIA FISCAL VENEZUELA ########
   `fiscal_profile` json DEFAULT NULL,
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
@@ -96,6 +97,7 @@ CREATE TABLE `companies` (
   `name_person_support_contaweb` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `telephone_support_contaweb` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `email_support_contaweb` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`),
   KEY `companies_identity_document_type_id_foreign` (`identity_document_type_id`),
   KEY `companies_fiscal_environment_foreign` (`fiscal_environment`)

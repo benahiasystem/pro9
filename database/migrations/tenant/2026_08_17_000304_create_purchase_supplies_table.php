@@ -10,11 +10,12 @@ use Illuminate\Support\Facades\DB;
  * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
  * - `purchase_id` int(10) unsigned NOT NULL
  * - `supply_id` int(10) unsigned NOT NULL
- * - `quantity` decimal(12,2) NOT NULL
- * - `cost` decimal(12,2) NOT NULL
+ * - `quantity` decimal(30,12) NOT NULL
+ * - `cost` decimal(30,12) NOT NULL
  * - `affectation_igv_type_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '10'
  * - `created_at` timestamp NULL DEFAULT NULL
  * - `updated_at` timestamp NULL DEFAULT NULL
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
 {
@@ -25,11 +26,12 @@ CREATE TABLE `purchase_supplies` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `purchase_id` int(10) unsigned NOT NULL,
   `supply_id` int(10) unsigned NOT NULL,
-  `quantity` decimal(12,2) NOT NULL,
-  `cost` decimal(12,2) NOT NULL,
+  `quantity` decimal(30,12) NOT NULL,
+  `cost` decimal(30,12) NOT NULL,
   `affectation_igv_type_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '10',
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`),
   KEY `purchase_supplies_purchase_id_foreign` (`purchase_id`),
   KEY `purchase_supplies_supply_id_foreign` (`supply_id`)

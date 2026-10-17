@@ -14,13 +14,14 @@ use Illuminate\Support\Facades\DB;
  * - `number` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `date_of_issue` date NOT NULL
  * - `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `total_document` decimal(10,2) NOT NULL
+ * - `total_document` decimal(30,12) NOT NULL
  * - `payments` json NOT NULL
  * - `exchange_rate` json NOT NULL
  * - `date_of_retention` date NOT NULL
- * - `total_retention` decimal(10,2) NOT NULL
- * - `total_to_pay` decimal(10,2) NOT NULL
- * - `total_payment` decimal(10,2) NOT NULL
+ * - `total_retention` decimal(30,12) NOT NULL
+ * - `total_to_pay` decimal(30,12) NOT NULL
+ * - `total_payment` decimal(30,12) NOT NULL
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
 {
@@ -35,13 +36,14 @@ CREATE TABLE `retention_documents` (
   `number` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `date_of_issue` date NOT NULL,
   `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `total_document` decimal(10,2) NOT NULL,
+  `total_document` decimal(30,12) NOT NULL,
   `payments` json NOT NULL,
   `exchange_rate` json NOT NULL,
   `date_of_retention` date NOT NULL,
-  `total_retention` decimal(10,2) NOT NULL,
-  `total_to_pay` decimal(10,2) NOT NULL,
-  `total_payment` decimal(10,2) NOT NULL,
+  `total_retention` decimal(30,12) NOT NULL,
+  `total_to_pay` decimal(30,12) NOT NULL,
+  `total_payment` decimal(30,12) NOT NULL,
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`),
   KEY `retention_documents_retention_id_foreign` (`retention_id`),
   KEY `retention_documents_document_type_id_foreign` (`document_type_id`),

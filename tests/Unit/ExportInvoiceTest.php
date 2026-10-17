@@ -82,9 +82,9 @@ class ExportInvoiceTest extends TestCase
     {
         $line = FiscalDocumentPersistence::line(['item'=>['unit_type_id'=>'UND'], 'quantity'=>2, 'unit_price'=>100, 'affectation_igv_type_id'=>'EXP',
             'discounts'=>[['discount_type_id'=>'00','factor'=>0.1]], 'charges'=>[['factor'=>0.05]], 'total_igv'=>999], true);
-        self::assertSame(190.0, $line['total_value']);
-        self::assertSame(190.0, $line['total']);
-        self::assertSame(0.0, $line['total_igv']);
+        self::assertSame('190', $line['total_value']);
+        self::assertSame('190', $line['total']);
+        self::assertSame('0', $line['total_igv']);
         self::assertSame(['code'=>'E','percentage'=>0], $line['iva_rate']);
     }
 

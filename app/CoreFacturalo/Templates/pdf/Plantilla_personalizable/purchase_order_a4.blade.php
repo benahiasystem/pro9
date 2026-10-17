@@ -255,18 +255,13 @@
             @if($show_model)
                 <td class="text-left">{{ $row->item->model ?? '' }}</td>
             @endif
-            <td class="text-right align-top">{{ number_format($row->unit_price, $decimals) }}</td>
+            <td class="text-right align-top">{{ $row->formatPdfUnitPrice() }}</td>
             <td class="text-right align-top">
                 @if($row->discounts)
-                    @php
-                        $total_discount_line = 0;
-                        foreach ($row->discounts as $disto) {
-                            $total_discount_line = $total_discount_line + $disto->amount;
-                        }
-                    @endphp
+                    @php $total_discount_line = \App\Support\Exact\PdfAmounts::lineDiscount($row, false); @endphp
                     {{ number_format($total_discount_line, $decimals) }}
                 @else
-                0
+                0.00
                 @endif
             </td>
             <td class="text-right align-top">{{ number_format($row->total, $decimals) }}</td>

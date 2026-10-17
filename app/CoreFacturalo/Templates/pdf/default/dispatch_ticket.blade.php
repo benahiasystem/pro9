@@ -326,7 +326,7 @@ $document_number = $document->number_full;
                     {{ number_format($row->quantity, 0) }}
                 @endif
             </td>
-            <td class="text-center">{{ number_format($row->item->unit_price, 2) }}</td>
+            <td class="text-center">{{ \App\Support\Exact\PdfPrice::configured(\App\Support\Exact\Decimal::read($row->item, 'unit_price')) }}</td>
             <td class="text-right">{{ number_format($row->item->total, 2) }}</td>
          </tr>
         @else

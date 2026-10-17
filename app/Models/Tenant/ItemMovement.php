@@ -531,7 +531,7 @@
         /**
          * @return float|null
          */
-        public function getQuantity(): ?float
+        public function getQuantity(): ?string
         {
             return $this->quantity;
         }
@@ -541,7 +541,7 @@
          *
          * @return ItemMovement
          */
-        public function setQuantity(?float $quantity): ItemMovement
+        public function setQuantity($quantity): ItemMovement
         {
             $this->quantity = $quantity;
             return $this;

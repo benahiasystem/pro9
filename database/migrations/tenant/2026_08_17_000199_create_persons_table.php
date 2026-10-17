@@ -35,13 +35,13 @@ use Illuminate\Support\Facades\DB;
  * - `password` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `remember_token` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `telephone` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `accumulated_points` decimal(12,2) NOT NULL DEFAULT '0.00' COMMENT 'sistema por puntos'
+ * - `accumulated_points` decimal(30,12) NOT NULL DEFAULT '0.00' COMMENT 'sistema por puntos'
  * - `perception_agent` tinyint(1) NOT NULL DEFAULT '0'
  * - `is_agent_retention` tinyint(1) NOT NULL DEFAULT '0'
  * - `person_type_id` int(10) unsigned DEFAULT NULL
  * - `contact` json DEFAULT NULL
  * - `comment` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `percentage_perception` decimal(12,2) DEFAULT NULL
+ * - `percentage_perception` decimal(30,12) DEFAULT NULL
  * - `enabled` tinyint(1) NOT NULL DEFAULT '1'
  * - `website` text COLLATE utf8mb4_unicode_ci COMMENT 'Sitio Web'
  * - `zone` longtext COLLATE utf8mb4_unicode_ci COMMENT 'Zona'
@@ -56,8 +56,9 @@ use Illuminate\Support\Facades\DB;
  * - `seller_id` int(10) unsigned DEFAULT NULL
  * - `has_discount` tinyint(1) NOT NULL DEFAULT '0'
  * - `discount_type` char(2) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '01'
- * - `discount_amount` decimal(12,2) NOT NULL DEFAULT '0.00'
+ * - `discount_amount` decimal(30,12) NOT NULL DEFAULT '0.00'
  * - `text_filter` longtext COLLATE utf8mb4_unicode_ci
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
 {
@@ -92,13 +93,13 @@ CREATE TABLE `persons` (
   `password` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `remember_token` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `telephone` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `accumulated_points` decimal(12,2) NOT NULL DEFAULT '0.00' COMMENT 'sistema por puntos',
+  `accumulated_points` decimal(30,12) NOT NULL DEFAULT '0.00' COMMENT 'sistema por puntos',
   `perception_agent` tinyint(1) NOT NULL DEFAULT '0',
   `is_agent_retention` tinyint(1) NOT NULL DEFAULT '0',
   `person_type_id` int(10) unsigned DEFAULT NULL,
   `contact` json DEFAULT NULL,
   `comment` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `percentage_perception` decimal(12,2) DEFAULT NULL,
+  `percentage_perception` decimal(30,12) DEFAULT NULL,
   `enabled` tinyint(1) NOT NULL DEFAULT '1',
   `website` text COLLATE utf8mb4_unicode_ci COMMENT 'Sitio Web',
   `zone` longtext COLLATE utf8mb4_unicode_ci COMMENT 'Zona',
@@ -113,8 +114,9 @@ CREATE TABLE `persons` (
   `seller_id` int(10) unsigned DEFAULT NULL,
   `has_discount` tinyint(1) NOT NULL DEFAULT '0',
   `discount_type` char(2) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '01',
-  `discount_amount` decimal(12,2) NOT NULL DEFAULT '0.00',
+  `discount_amount` decimal(30,12) NOT NULL DEFAULT '0.00',
   `text_filter` longtext COLLATE utf8mb4_unicode_ci,
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`),
   UNIQUE KEY `persons_external_identity_unique` (`type`,`identity_document_type_id`,`country_id`,`external_identity_type`,`number`),
   UNIQUE KEY `persons_third_party_rif_unique` (`third_party_rif`),

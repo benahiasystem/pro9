@@ -41,7 +41,7 @@ use Illuminate\Support\Facades\DB;
  * - `transshipment_indicator` tinyint(1) NOT NULL
  * - `port_code` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `unit_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `total_weight` decimal(10,2) NOT NULL
+ * - `total_weight` decimal(30,12) NOT NULL
  * - `packages_number` int(11) DEFAULT NULL
  * - `container_number` int(11) DEFAULT NULL
  * - `related` json DEFAULT NULL COMMENT 'Numero de DAM'
@@ -83,6 +83,7 @@ use Illuminate\Support\Facades\DB;
  * - `delivery_address_id` int(10) unsigned DEFAULT NULL
  * - `reference_documents` json DEFAULT NULL
  * - `custom_fields_data` json DEFAULT NULL
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
 {
@@ -131,7 +132,7 @@ CREATE TABLE `dispatches` (
   `transshipment_indicator` tinyint(1) NOT NULL,
   `port_code` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `unit_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `total_weight` decimal(10,2) NOT NULL,
+  `total_weight` decimal(30,12) NOT NULL,
   `packages_number` int(11) DEFAULT NULL,
   `container_number` int(11) DEFAULT NULL,
   `related` json DEFAULT NULL COMMENT 'Numero de DAM',
@@ -173,6 +174,7 @@ CREATE TABLE `dispatches` (
   `delivery_address_id` int(10) unsigned DEFAULT NULL,
   `reference_documents` json DEFAULT NULL,
   `custom_fields_data` json DEFAULT NULL,
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`),
   UNIQUE KEY `dispatches_environment_type_series_number_unique` (`establishment_id`,`fiscal_environment`,`document_type_id`,`series`,`number`),
   KEY `dispatches_user_id_foreign` (`user_id`),

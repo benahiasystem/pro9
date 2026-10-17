@@ -21,6 +21,7 @@ use Modules\Finance\Traits\FilePaymentTrait;
 use Illuminate\Support\Facades\DB;
 use App\Models\Tenant\CashDocumentCredit;
 use App\Models\Tenant\Cash;
+use App\Support\Exact\Decimal as D;
 
 class SaleNotePaymentController extends Controller
 {
@@ -46,9 +47,10 @@ class SaleNotePaymentController extends Controller
         /** @var SaleNote $sale_note */
         $sale_note = SaleNote::find($sale_note_id);
 
-        $total_paid = round(collect($sale_note->payments)->sum('payment'), 2);
-        $total = $sale_note->total;
-        $total_difference = round($total - $total_paid, 2);
+        $paidExact=D::sum($sale_note->payments->map(fn($r)=>$r->exactValue('payment')));
+        $total_paid = D::represent($paidExact);
+        $total = D::represent($sale_note->total_payable === null ? $sale_note->exactValue('total') : $sale_note->exactValue('total_payable'));
+        $total_difference = D::represent(D::of($total)->minus($paidExact));
 
         $sale_note->total_canceled = $total_difference <= 0;
         $sale_note->save();
@@ -78,11 +80,12 @@ class SaleNotePaymentController extends Controller
             $this->saveFiles($record, $request, 'sale_notes');
             $this->createCashDocumentPayment($record, false);
 
-            $sale_note = SaleNote::find($request->sale_note_id);
+            $sale_note = SaleNote::lockForUpdate()->findOrFail($request->sale_note_id);
 
-            $total_paid = round((float) $sale_note->payments()->sum('payment'), 2);
-            $total = round((float) $sale_note->total, 2);
-            $total_difference = round($total - $total_paid, 2);
+            $paidExact=D::sum($sale_note->payments()->get()->map(fn($r)=>$r->exactValue('payment')));
+            $total_paid = D::represent($paidExact);
+            $total = D::represent($sale_note->total_payable === null ? $sale_note->exactValue('total') : $sale_note->exactValue('total_payable'));
+            $total_difference = D::represent(D::of($total)->minus($paidExact));
 
             $sale_note->total_canceled = $total_difference <= 0;
             $sale_note->save();
@@ -138,9 +141,10 @@ class SaleNotePaymentController extends Controller
     public function createPdf($sale_note_id, $format = null)
     {
         $sale_note = SaleNote::find($sale_note_id);
-        $total_paid = round(collect($sale_note->payments)->sum('payment'), 2);
-        $total = $sale_note->total;
-        $total_difference = round($total - $total_paid, 2);
+        $paidExact=D::sum($sale_note->payments->map(fn($r)=>$r->exactValue('payment')));
+        $total_paid = D::represent($paidExact);
+        $total = D::represent($sale_note->total_payable === null ? $sale_note->exactValue('total') : $sale_note->exactValue('total_payable'));
+        $total_difference = D::represent(D::of($total)->minus($paidExact));
 
         if($total_difference == 0) {
             Log::info('true '.$total_difference);

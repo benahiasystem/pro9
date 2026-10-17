@@ -10,13 +10,14 @@ use Illuminate\Support\Facades\DB;
  * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
  * - `item_id` int(10) unsigned DEFAULT '0'
  * - `mill_id` int(10) unsigned DEFAULT '0'
- * - `height_to_mill` decimal(12,3) DEFAULT '0.000' COMMENT 'Peso de entrada'
- * - `total_height` decimal(12,3) DEFAULT '0.000' COMMENT 'Peso dle insumo '
+ * - `height_to_mill` decimal(30,12) DEFAULT '0.000' COMMENT 'Peso de entrada'
+ * - `total_height` decimal(30,12) DEFAULT '0.000' COMMENT 'Peso dle insumo '
  * - `created_at` timestamp NULL DEFAULT NULL
  * - `updated_at` timestamp NULL DEFAULT NULL
  * - `item` json NOT NULL
- * - `quantity` decimal(12,3) DEFAULT '0.000' COMMENT 'Peso dle insumo '
+ * - `quantity` decimal(30,12) DEFAULT '0.000' COMMENT 'Peso dle insumo '
  * - `item_extra_data` json DEFAULT NULL
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
 {
@@ -27,13 +28,14 @@ CREATE TABLE `mill_items` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `item_id` int(10) unsigned DEFAULT '0',
   `mill_id` int(10) unsigned DEFAULT '0',
-  `height_to_mill` decimal(12,3) DEFAULT '0.000' COMMENT 'Peso de entrada',
-  `total_height` decimal(12,3) DEFAULT '0.000' COMMENT 'Peso dle insumo ',
+  `height_to_mill` decimal(30,12) DEFAULT '0.000' COMMENT 'Peso de entrada',
+  `total_height` decimal(30,12) DEFAULT '0.000' COMMENT 'Peso dle insumo ',
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   `item` json NOT NULL,
-  `quantity` decimal(12,3) DEFAULT '0.000' COMMENT 'Peso dle insumo ',
+  `quantity` decimal(30,12) DEFAULT '0.000' COMMENT 'Peso dle insumo ',
   `item_extra_data` json DEFAULT NULL,
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL);

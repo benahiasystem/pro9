@@ -56,7 +56,7 @@ class CurrentPdfRenderingTest extends TestCase
     }
 
     /** @dataProvider invoiceSeries */
-    public function test_default_invoice_template_produces_a_readable_pdf(string $series): void
+    public function test_default_invoice_template_produces_a_readable_pdf(string $series, int $precision = 2): void
     {
         $company = new Fluent([
             'name' => 'Empresa Venezolana de Prueba, C.A.',
@@ -65,6 +65,16 @@ class CurrentPdfRenderingTest extends TestCase
             'logo' => null,
         ]);
         $document = $this->documentFixture();
+        if ($precision > 2) {
+            DB::connection('tenant')->table('configurations')->update(['change_decimal_quantity_unit_price_pdf'=>true, 'decimal_quantity_unit_price_pdf'=>$precision]);
+            $calculated = \App\Support\Exact\LineCalculation::calculate(['quantity'=>'1','unit_price'=>'116.123456789123'], '16');
+            foreach (['unit_price','unit_value','total_value','total_base_igv','total_igv','total'] as $field) $document->items->first()->$field = $calculated[$field];
+            foreach (['total_value','total_igv','total'] as $field) $document->$field = $calculated[$field];
+            $document->total_taxed = $calculated['total_base_igv'];
+            $document->subtotal = $calculated['total'];
+            $document->legends=[new Fluent(['code'=>'1000','value'=>\App\CoreFacturalo\Helpers\Number\NumberLetter::convertToLetter(
+                \App\Support\Exact\Decimal::represent($calculated['total'],2,true))])];
+        }
         $document->series = $series;
         $document->number = 457;
         $document->number_full = (new \App\Models\Tenant\Document(['series' => $series, 'number' => 457]))->number_full;
@@ -81,6 +91,7 @@ class CurrentPdfRenderingTest extends TestCase
         if ($series === '') self::assertStringNotContainsString('-457', $html);
         self::assertStringContainsString('J-12345678-9', $html);
         self::assertStringContainsString('IVA:', $html);
+        self::assertStringContainsString($precision === 2 ? '116.00' : ($precision === 6 ? '116.123457' : '116.123456789123'), $html);
         self::assertStringNotContainsStringIgnoringCase('BOLETA', $html);
         self::assertStringNotContainsStringIgnoringCase('SUNAT', $html);
         self::assertStringNotContainsString('Código Hash:', $html);
@@ -179,7 +190,37 @@ class CurrentPdfRenderingTest extends TestCase
 
     public function invoiceSeries(): array
     {
-        return [['FF01'], [''], ['AB-CD123456789012345']];
+        return [['FF01',2], ['',2], ['AB-CD123456789012345',2], ['FF01',6], ['FF01',12]];
+    }
+
+    public function test_ticket_unit_prices_follow_the_configuration_without_using_catalog_prices(): void
+    {
+        $document=$this->documentFixture();
+        $document->number_full='FF01-00000001';
+        $row=$document->items->first();
+        $row->additional_information=[];
+        $row->unit_price='116.123456789123';
+        $row->item->unit_price='999.99';
+        $before=json_encode($row->getAttributes(),JSON_THROW_ON_ERROR);
+        $company=new Fluent(['name'=>'Empresa de prueba','number'=>'J-12345678-9','trade_name'=>'Prueba','logo'=>null]);
+        foreach (['default','modern-2027'] as $template) {
+            foreach ([[false,12,'116.12'],[true,2,'116.12'],[true,6,'116.123457'],[true,12,'116.123456789123']] as [$enabled,$scale,$expected]) {
+                DB::connection('tenant')->table('configurations')->update([
+                    'change_decimal_quantity_unit_price_pdf'=>$enabled,'decimal_quantity_unit_price_pdf'=>$scale,
+                ]);
+                $html=(new Template())->pdf($template,'invoice',$company,$document,'ticket',['is_preview'=>false]);
+                self::assertStringContainsString($expected,$html);
+                self::assertStringNotContainsString('999.99',$html);
+                self::assertSame($before,json_encode($row->getAttributes(),JSON_THROW_ON_ERROR));
+            }
+            $third=(object)['esFusionado'=>true,'cantidad'=>'1','total_item'=>'0.333333333333',
+                'calculation_snapshot'=>\App\Support\Exact\Decimal::snapshot(['cantidad'=>'1','total_item'=>\App\Support\Exact\Decimal::of(1)->dividedBy(3)])];
+            $document->data_json=(object)['items'=>[$third,clone $third]];
+            $grouped=(new Template())->pdf($template,'invoice',$company,$document,'ticket',['is_preview'=>false]);
+            self::assertStringContainsString('0.333333333333',$grouped);
+            self::assertStringContainsString('0.67',$grouped);
+            unset($document->data_json);
+        }
     }
 
     /** @dataProvider ticketWidths */
@@ -445,6 +486,12 @@ class CurrentPdfDocumentFixture extends Fluent
 
 class CurrentPdfItemFixture extends Fluent
 {
+    public function formatPdfUnitPrice($configuration = null): string
+    {
+        $configuration ??= \App\Models\Tenant\Configuration::getDataDecimalQuantity();
+        return \App\Support\Exact\PdfPrice::format($this->unit_price, $configuration);
+    }
+
     public function getUnitPrice(bool $isPreview, $document): float
     {
         return (float) $this->unit_price;

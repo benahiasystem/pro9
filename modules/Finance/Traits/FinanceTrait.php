@@ -11,6 +11,7 @@
     use App\Models\Tenant\Company;
     use App\Models\Tenant\TransferAccountPayment;
     use Carbon\Carbon;
+    use App\Support\Exact\Decimal as ExactDecimal;
     use ErrorException;
     use Illuminate\Database\Eloquent\Collection;
     use Modules\Expense\Models\BankLoanPayment;
@@ -335,28 +336,18 @@
             $purchase__settlement_payment = $this->getSumPayment($cash, PurchaseSettlementPayment::class, $requestCurrencyTipeId);
             $cash_ids = $cash->pluck('destination_id')->unique();
 
-            $transfer_beween_account = 0;
+            $transfer_beween_account = ExactDecimal::of(0);
             foreach ($cash_ids as $c) {
-                $transfer_beween_account += $this->getTransferAccountPayment(Cash::find($c));
+                $transfer_beween_account = $transfer_beween_account->plus($this->getTransferAccountPayment(Cash::find($c)));
             }
-            $entry = $document_payment +
-                $sale_note_payment +
-                $quotation_payment +
-                $contract_payment +
-                $income_payment +
-                $cash_pos +
-                $technical_service_payment;
+            $entry = ExactDecimal::sum([$document_payment, $sale_note_payment, $quotation_payment, $contract_payment,
+                $income_payment, $cash_pos, $technical_service_payment]);
             $refund_payment = $this->getSumPayment($cash, \App\Models\Tenant\DocumentNoteRefund::class, $requestCurrencyTipeId);
-            $egress = $refund_payment + $expense_payment +
-                $purchase_payment;
-
-            $balance =
-                $entry -
-                $egress +
-                $transfer_beween_account;
-            $income_payment_return = $income_payment +
-                $cash_pos;
+            $egress = ExactDecimal::sum([$refund_payment, $expense_payment, $purchase_payment]);
+            $balance = $entry->minus($egress)->plus($transfer_beween_account);
+            $income_payment_return = ExactDecimal::of($income_payment)->plus($cash_pos);
             return [
+                'calculation_snapshot'=>ExactDecimal::snapshot(['document_payment'=>$document_payment, 'sale_note_payment'=>$sale_note_payment, 'quotation_payment'=>$quotation_payment, 'contract_payment'=>$contract_payment, 'purchase_payment'=>$purchase_payment, 'income_payment'=>$income_payment, 'technical_service_payment'=>$technical_service_payment, 'expense_payment'=>$expense_payment, 'balance'=>$balance]),
 
                 'id' => 'cash',
                 'description' => "CAJA GENERAL",
@@ -368,8 +359,8 @@
                 'quotation_payment' => self::FormatNumber($quotation_payment),
                 'contract_payment' => self::FormatNumber($contract_payment),
                 'income_payment' => self::FormatNumber($income_payment_return),
-               'debs' => self::FormatNumber( (($transfer_beween_account < 0)?(abs($transfer_beween_account)):0) +$egress),
-                'credits' => self::FormatNumber((($transfer_beween_account > 0)?(abs($transfer_beween_account)):0) +$entry),
+               'debs' => self::FormatNumber($egress->plus($transfer_beween_account->isNegative() ? $transfer_beween_account->abs() : 0)),
+                'credits' => self::FormatNumber($entry->plus($transfer_beween_account->isGreaterThan(0) ? $transfer_beween_account : 0)),
                 'technical_service_payment' => self::FormatNumber($technical_service_payment),
                 'balance' => self::FormatNumber($balance),
                 'transfer_beween_account' => self::FormatNumber($transfer_beween_account),
@@ -385,75 +376,45 @@
         public static function getBankLoan($bankLoanItems, &$loans)
         {
             if (!empty($bankLoanItems)) {
-                $loans = $bankLoanItems->sum('total_ingress');
+                $loans = ExactDecimal::sum($bankLoanItems->map(fn ($row) => ExactDecimal::read($row, 'total_ingress')));
             }
 
         }
 
+        // ######## INICIO CALCULOS EXACTOS PRO9 ########
         public function getSumPayment($record, $model, $requestCurrencyTipeId = 'VES')
         {
-            return $record->where('payment_type', $model)->sum(function ($row) use($model, $requestCurrencyTipeId) {
-
-
-                if ($row->payment instanceof \App\Models\Tenant\DocumentPayment || $row->payment instanceof \App\Models\Tenant\DocumentNoteRefund) {
-                    $receipt = $row->payment;
-                    if ($receipt->reversed_at) return 0;
-                    return \App\Services\Fiscal\FiscalAmounts::convert($receipt->cash_received_amount, $receipt->currency_type_id, $requestCurrencyTipeId, $receipt->exchange_rate);
+            return ExactDecimal::sum($record->where('payment_type', $model)->map(function ($row) use ($requestCurrencyTipeId) {
+                $receipt = $row->payment;
+                if (!$receipt || $receipt->reversed_at) return ExactDecimal::of(0);
+                if ($receipt instanceof \App\Models\Tenant\DocumentPayment || $receipt instanceof \App\Models\Tenant\DocumentNoteRefund) {
+                    return ExactDecimal::convert($receipt->cash_received_amount, $receipt->currency_type_id, $requestCurrencyTipeId, $receipt->exchange_rate);
                 }
-                // se dispara un error cuando no hay relacion de paymeny y associated_record_payment
-                try{
-                    $total_credit_notes = ($row->instance_type == 'document') ? $this->getTotalCreditNotes($row->payment->associated_record_payment, $requestCurrencyTipeId) : 0;
-                }catch (ErrorException $e){
-                    $total_credit_notes = 0;
-                }
-
-                try {
-                    $total_currency_type = $this->calculateTotalCurrencyType($row->payment->associated_record_payment, $row->payment->payment, $requestCurrencyTipeId);
-                }catch (ErrorException $e) {
-                    $total_currency_type = 0;
-                    if( $row->payment && $row->payment->payment ) {
-                        $total_currency_type = $row->payment->payment;
-                    }
-                }
-                return $total_currency_type - $total_credit_notes;
-
-            });
+                $parent = $receipt->associated_record_payment;
+                if (!$parent) return ExactDecimal::read($receipt, 'payment');
+                $credit = $row->instance_type === 'document' ? $this->getTotalCreditNotes($parent, $requestCurrencyTipeId) : ExactDecimal::of(0);
+                return $this->calculateTotalCurrencyType($parent, ExactDecimal::read($receipt, 'payment'), $requestCurrencyTipeId)->minus($credit);
+            }));
         }
 
         public function getTotalCreditNotes($record, $requestCurrencyTipeId = 'VES')
         {
-
-            $credit_notes = $record->affected_documents->where('note_type', 'credit');
-
-            $total_credit_notes = $credit_notes->sum(function ($note) use ($requestCurrencyTipeId) {
-
-                if (in_array($note->document->state_type_id, ['01', '03', '05', '07', '13'])) {
-                    return $this->calculateTotalCurrencyType($note->document, $note->document->total, $requestCurrencyTipeId);
-                }
-
-                return 0;
-            });
-
-            return $total_credit_notes;
-
+            return ExactDecimal::sum($record->affected_documents->where('note_type', 'credit')->map(function ($note) use ($requestCurrencyTipeId) {
+                return in_array($note->document->state_type_id, ['01','03','05','07','13'])
+                    ? $this->calculateTotalCurrencyType($note->document, $note->document->exactValue('total'), $requestCurrencyTipeId) : ExactDecimal::of(0);
+            }));
         }
 
         public function calculateTotalCurrencyType($record, $payment, $requestCurrencyTipeId = 'VES')
         {
-            if($requestCurrencyTipeId == 'VES') {
-                return ($record->currency_type_id === 'USD') ? (float) \App\Services\ExchangeRates\ExchangeRateMath::finalAmount(\App\Services\ExchangeRates\ExchangeRateMath::rational($payment)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($record->exchange_rate_sale)), 2) : $payment;
-            }
-            else {
-                return ($record->currency_type_id === 'USD') ? $payment : ((float) \App\Services\ExchangeRates\ExchangeRateMath::finalAmount(\App\Services\ExchangeRates\ExchangeRateMath::rational($payment)->dividedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($record->exchange_rate_sale)), 2));
-            }
+            return ExactDecimal::convert($payment, $record->currency_type_id, $requestCurrencyTipeId, $record->exchange_rate_sale);
         }
 
         public function getSumPaymentCashPos($record, $model)
         {
-            return $record->where('payment_type', $model)->sum(function ($row) {
-                return $row->payment->payment;
-            });
+            return ExactDecimal::sum($record->where('payment_type', $model)->map(fn ($row) => ExactDecimal::read($row->payment, 'payment')));
         }
+        // ######## FIN CALCULOS EXACTOS PRO9 ########
 
         /**
          * Devuelve los movimientos de efectivo entre cuentas.
@@ -469,7 +430,7 @@
                 'destiny_id' => $model->id,
                 'destiny_type' => get_class($model),
             ];
-            return TransferAccountPayment::where($filter)->select('amount')->get()->sum('amount');
+            return ExactDecimal::sum(TransferAccountPayment::where($filter)->get()->map(fn ($row) => $row->exactValue('amount')));
         }
 
         /**
@@ -482,10 +443,9 @@
          */
         public static function FormatNumber($number)
         {
-            if ($number == '-') return $number;
-            if ($number == 0) return '0.00';
+            if (is_string($number) && $number === '-') return $number;
 
-            return number_format($number, 2, '.', '');
+            return ExactDecimal::represent($number);
         }
 
         /**
@@ -530,25 +490,16 @@
             $transfer_beween_account = $this->getTransferAccountPayment($bank_account);
             $initial_balance = $bank_account->initial_balance;
 
-            $entry = $document_payment +
-                $sale_note_payment +
-                $quotation_payment +
-                $contract_payment +
-                $income_payment +
-                $cash_pos +
-                $technical_service_payment +
-                $initial_balance +
-                $transfer_beween_account;
-            $refund_payment=$this->getSumPayment($bank_account->global_destination, \App\Models\Tenant\DocumentNoteRefund::class);
-            $egress = $refund_payment + $expense_payment +
-                $purchase_payment;
-
-            $balance = $entry -
-                $egress;
+            $entry = ExactDecimal::sum([$document_payment, $sale_note_payment, $quotation_payment, $contract_payment,
+                $income_payment, $cash_pos, $technical_service_payment, $initial_balance, $transfer_beween_account]);
+            $refund_payment = $this->getSumPayment($bank_account->global_destination, \App\Models\Tenant\DocumentNoteRefund::class);
+            $egress = ExactDecimal::sum([$refund_payment, $expense_payment, $purchase_payment]);
+            $balance = $entry->minus($egress);
             $description = "{$bank_account->bank->description} - {$bank_account->currency_type_id} - {$bank_account->description}";
 
 
             return [
+                'calculation_snapshot'=>ExactDecimal::snapshot(['document_payment'=>$document_payment, 'sale_note_payment'=>$sale_note_payment, 'quotation_payment'=>$quotation_payment, 'contract_payment'=>$contract_payment, 'purchase_payment'=>$purchase_payment, 'income_payment'=>$income_payment, 'technical_service_payment'=>$technical_service_payment, 'expense_payment'=>$expense_payment, 'balance'=>$balance, 'initial_balance'=>$initial_balance, 'purchase_settlement_payment'=>$purchase_settlement_payment]),
 
                 'id' => $bank_account->id,
                 'description' => $description,
@@ -603,28 +554,12 @@
                 $bankLoanPayment = $this->getSumPayment($row->global_destination, BankLoanPayment::class, $requestCurrencyTipeId);
 
 
-                $entry = $document_payment +
-                    $sale_note_payment +
-                    $quotation_payment +
-                    $contract_payment +
-                    $bankLoan +
-                    $income_payment +
-                    $technical_service_payment;
-                $refund_payment=$this->getSumPayment($row->global_destination, \App\Models\Tenant\DocumentNoteRefund::class, $requestCurrencyTipeId);
-                $egress = $refund_payment + $expense_payment +
-                    $purchase_payment +
-                    $bankLoanPayment
-                ;
-
-                $initial_balance = $row->initial_balance;
-                /*if($row->currency_type_id == 'USD') {
-                    $initial_balance = $exchangeRate->sale_original * $row->initial_balance;
-                }*/
-
-                $balance = $initial_balance +
-                    $entry -
-                    $egress +
-                    $transfer_beween_account;
+                $entry = ExactDecimal::sum([$document_payment, $sale_note_payment, $quotation_payment, $contract_payment, $bankLoan, $income_payment, $technical_service_payment]);
+                $refund_payment = $this->getSumPayment($row->global_destination, \App\Models\Tenant\DocumentNoteRefund::class, $requestCurrencyTipeId);
+                $egress = ExactDecimal::sum([$refund_payment, $expense_payment, $purchase_payment, $bankLoanPayment]);
+                $initial_balance = $row->exactValue('initial_balance');
+                $transfer_beween_account = ExactDecimal::of($transfer_beween_account);
+                $balance = $initial_balance->plus($entry)->minus($egress)->plus($transfer_beween_account);
 
                 return [
 
@@ -641,8 +576,8 @@
                     'bank_loan_payment' => self::FormatNumber($bankLoanPayment),
                     'initial_balance' => self::FormatNumber($row->initial_balance),
                     'technical_service_payment' => self::FormatNumber($technical_service_payment),
-                    'debs' => self::FormatNumber( (($transfer_beween_account < 0)?(abs($transfer_beween_account)):0) +$egress),
-                    'credits' => self::FormatNumber((($transfer_beween_account > 0)?(abs($transfer_beween_account)):0) +$entry),
+                    'debs' => self::FormatNumber($egress->plus($transfer_beween_account->isNegative() ? $transfer_beween_account->abs() : 0)),
+                    'credits' => self::FormatNumber($entry->plus($transfer_beween_account->isGreaterThan(0) ? $transfer_beween_account : 0)),
                     'balance' => self::FormatNumber($balance),
                     'transfer_beween_account' => self::FormatNumber($transfer_beween_account),
 
@@ -670,23 +605,16 @@
                 $quotation_payment = $this->getSumByPMT($row->quotation_payments);
                 $contract_payment = $this->getSumByPMT($row->contract_payments);
                 // $contract_payment = 0; //$this->getSumByPMT($row->contract_payments);
-                $cash_transaction = $row->cash_transactions->sum('payment');
-                $income_payment = $this->getSumByPMT($row->income_payments) + $cash_transaction;
+                $cash_transaction = ExactDecimal::sum($row->cash_transactions->map(fn ($receipt) => ExactDecimal::read($receipt, 'payment')));
+                $income_payment = $this->getSumByPMT($row->income_payments)->plus($cash_transaction);
                 $technical_service_payment = $this->getSumByPMT($row->technical_service_payments);
 
                 $egress = $purchase_payment;
-                $entry = $document_payment +
-                    $sale_note_payment +
-                    $quotation_payment +
-                    $contract_payment +
-                    $income_payment +
-                    $technical_service_payment;
-                $balance =
-                    $entry -
-                    $egress;
-
+                $entry = ExactDecimal::sum([$document_payment,$sale_note_payment,$quotation_payment,$contract_payment,$income_payment,$technical_service_payment]);
+                $balance = $entry->minus(ExactDecimal::of($egress));
 
                 return [
+                'calculation_snapshot'=>ExactDecimal::snapshot(['document_payment'=>$document_payment, 'sale_note_payment'=>$sale_note_payment, 'quotation_payment'=>$quotation_payment, 'contract_payment'=>$contract_payment, 'purchase_payment'=>$purchase_payment, 'income_payment'=>$income_payment, 'technical_service_payment'=>$technical_service_payment, 'balance'=>$balance, 'purchase_settlement_payment'=>$purchase_settlement_payment]),
 
                     'id' => $row->id,
                     'description' => $row->description,
@@ -720,16 +648,11 @@
          */
         public function getSumByPMT($records, $include_credit_notes = false)
         {
-
-            return $records->sum(function ($row) use ($include_credit_notes) {
-
-                if ($row instanceof DocumentPayment) return $row->reversed_at ? 0 : \App\Services\Fiscal\FiscalAmounts::convert($row->cash_received_amount, $row->currency_type_id, 'VES', $row->exchange_rate);
-                $total_credit_notes = ($include_credit_notes) ? $this->getTotalCreditNotes($row->associated_record_payment) : 0;
-                $total_currency_type = $this->calculateTotalCurrencyType($row->associated_record_payment, $row->payment);
-
-                return $total_currency_type - $total_credit_notes;
-            });
-
+            return ExactDecimal::sum($records->map(function ($row) use ($include_credit_notes) {
+                if ($row instanceof DocumentPayment) return $row->reversed_at ? ExactDecimal::of(0) : ExactDecimal::convert($row->cash_received_amount, $row->currency_type_id, 'VES', $row->exchange_rate);
+                $credit = $include_credit_notes ? $this->getTotalCreditNotes($row->associated_record_payment) : ExactDecimal::of(0);
+                return $this->calculateTotalCurrencyType($row->associated_record_payment, $row->exactValue('payment'))->minus($credit);
+            }));
         }
 
         /**
@@ -746,6 +669,7 @@
                 $expense_payment = $this->getSumByPMT($row->expense_payments);
 
                 return [
+                'calculation_snapshot'=>ExactDecimal::snapshot(['expense_payment'=>$expense_payment]),
 
                     'id' => $row->id,
                     'description' => $row->description,
@@ -786,39 +710,19 @@
             $t_income = 0;
             $t_technical_services = 0;
 
-            $t_documents = $records_by_pmt->sum('document_payment');
-            $t_sale_notes = $records_by_pmt->sum('sale_note_payment');
-            $t_quotations = $records_by_pmt->sum('quotation_payment');
-            $t_contracts = $records_by_pmt->sum('contract_payment');
-            $t_purchases = $records_by_pmt->sum('purchase_payment') ;
-            $t_purchase_settlement = $records_by_pmt->sum('purchase_settlement_payment') ;
-            $t_income = $records_by_pmt->sum('income_payment');
-            $t_technical_services = $records_by_pmt->sum('technical_service_payment');
-            $t_balance = $records_by_pmt->sum('balance') - $records_by_emt->sum('balance');
-            $t_expenses = $records_by_emt->sum('expense_payment');
-            $t_bank_loan_payment = $records_by_pmt->sum('bankLoanPayment') ;
-            $t_bank_loan = $records_by_pmt->sum('$bankLoan') ;
+            $t_documents = ExactDecimal::sum($records_by_pmt->map(fn ($row) => ExactDecimal::read($row, 'document_payment')));
+            $t_sale_notes = ExactDecimal::sum($records_by_pmt->map(fn ($row) => ExactDecimal::read($row, 'sale_note_payment')));
+            $t_quotations = ExactDecimal::sum($records_by_pmt->map(fn ($row) => ExactDecimal::read($row, 'quotation_payment')));
+            $t_contracts = ExactDecimal::sum($records_by_pmt->map(fn ($row) => ExactDecimal::read($row, 'contract_payment')));
+            $t_purchases = ExactDecimal::sum($records_by_pmt->map(fn ($row) => ExactDecimal::read($row, 'purchase_payment')));
+            $t_purchase_settlement = ExactDecimal::sum($records_by_pmt->map(fn ($row) => ExactDecimal::read($row, 'purchase_settlement_payment')));
+            $t_income = ExactDecimal::sum($records_by_pmt->map(fn ($row) => ExactDecimal::read($row, 'income_payment')));
+            $t_technical_services = ExactDecimal::sum($records_by_pmt->map(fn ($row) => ExactDecimal::read($row, 'technical_service_payment')));
+            $t_expenses = ExactDecimal::sum($records_by_emt->map(fn ($row) => ExactDecimal::read($row, 'expense_payment')));
+            $t_bank_loan_payment = ExactDecimal::sum($records_by_pmt->map(fn ($row) => ExactDecimal::read($row, 'bank_loan_payment')));
+            $t_bank_loan = ExactDecimal::sum($records_by_pmt->map(fn ($row) => ExactDecimal::read($row, 'bank_loan')));
+            $t_balance = ExactDecimal::sum($records_by_pmt->map(fn ($row) => ExactDecimal::read($row,'balance')))->minus(ExactDecimal::sum($records_by_emt->map(fn ($row) => ExactDecimal::read($row,'balance'))));
 
-            /*
-            foreach ($records_by_pmt as $value) {
-
-                $t_documents += $value['document_payment'];
-                $t_sale_notes += $value['sale_note_payment'];
-                $t_quotations += $value['quotation_payment'];
-                $t_contracts += $value['contract_payment'];
-                $t_purchases += $value['purchase_payment'];
-                $t_income += $value['income_payment'];
-                $t_technical_services += $value['technical_service_payment'];
-
-            }
-
-            foreach ($records_by_emt as $value) {
-
-                $t_expenses += $value['expense_payment'];
-
-            }
-
-            */
             return [
                 't_documents' => self::FormatNumber($t_documents),
                 't_sale_notes' => self::FormatNumber($t_sale_notes),

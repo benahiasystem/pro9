@@ -11,22 +11,22 @@ use Illuminate\Support\Facades\DB;
  * - `sale_note_id` int(10) unsigned NOT NULL
  * - `item_id` int(10) unsigned NOT NULL
  * - `item` json NOT NULL
- * - `quantity` decimal(12,4) NOT NULL
- * - `unit_value` decimal(16,6) NOT NULL
+ * - `quantity` decimal(30,12) NOT NULL
+ * - `unit_value` decimal(30,12) NOT NULL
  * - `affectation_igv_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `total_base_igv` decimal(12,2) NOT NULL
- * - `percentage_igv` decimal(12,2) NOT NULL
- * - `total_igv` decimal(12,2) NOT NULL
- * - `total_base_other_taxes` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `percentage_other_taxes` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `total_other_taxes` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `total_taxes` decimal(12,2) NOT NULL
+ * - `total_base_igv` decimal(30,12) NOT NULL
+ * - `percentage_igv` decimal(30,12) NOT NULL
+ * - `total_igv` decimal(30,12) NOT NULL
+ * - `total_base_other_taxes` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `percentage_other_taxes` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `total_other_taxes` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `total_taxes` decimal(30,12) NOT NULL
  * - `price_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `unit_price` decimal(16,6) NOT NULL
- * - `total_value` decimal(12,2) NOT NULL
- * - `total_charge` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `total_discount` decimal(12,2) NOT NULL DEFAULT '0.00'
- * - `total` decimal(12,2) NOT NULL
+ * - `unit_price` decimal(30,12) NOT NULL
+ * - `total_value` decimal(30,12) NOT NULL
+ * - `total_charge` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `total_discount` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `total` decimal(30,12) NOT NULL
  * - `attributes` json DEFAULT NULL
  * - `discounts` json DEFAULT NULL
  * - `charges` json DEFAULT NULL
@@ -34,7 +34,8 @@ use Illuminate\Support\Facades\DB;
  * - `inventory_kardex_id` int(10) unsigned DEFAULT NULL
  * - `warehouse_id` int(10) unsigned DEFAULT NULL
  * - `name_product_pdf` longtext COLLATE utf8mb4_unicode_ci
- * - `quantity_factor` decimal(12,4) NOT NULL DEFAULT '1.0000'
+ * - `quantity_factor` decimal(30,12) NOT NULL DEFAULT '1.0000'
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
 {
@@ -46,22 +47,22 @@ CREATE TABLE `sale_note_items` (
   `sale_note_id` int(10) unsigned NOT NULL,
   `item_id` int(10) unsigned NOT NULL,
   `item` json NOT NULL,
-  `quantity` decimal(12,4) NOT NULL,
-  `unit_value` decimal(16,6) NOT NULL,
+  `quantity` decimal(30,12) NOT NULL,
+  `unit_value` decimal(30,12) NOT NULL,
   `affectation_igv_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `total_base_igv` decimal(12,2) NOT NULL,
-  `percentage_igv` decimal(12,2) NOT NULL,
-  `total_igv` decimal(12,2) NOT NULL,
-  `total_base_other_taxes` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `percentage_other_taxes` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `total_other_taxes` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `total_taxes` decimal(12,2) NOT NULL,
+  `total_base_igv` decimal(30,12) NOT NULL,
+  `percentage_igv` decimal(30,12) NOT NULL,
+  `total_igv` decimal(30,12) NOT NULL,
+  `total_base_other_taxes` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `percentage_other_taxes` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `total_other_taxes` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `total_taxes` decimal(30,12) NOT NULL,
   `price_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `unit_price` decimal(16,6) NOT NULL,
-  `total_value` decimal(12,2) NOT NULL,
-  `total_charge` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `total_discount` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `total` decimal(12,2) NOT NULL,
+  `unit_price` decimal(30,12) NOT NULL,
+  `total_value` decimal(30,12) NOT NULL,
+  `total_charge` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `total_discount` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `total` decimal(30,12) NOT NULL,
   `attributes` json DEFAULT NULL,
   `discounts` json DEFAULT NULL,
   `charges` json DEFAULT NULL,
@@ -69,7 +70,8 @@ CREATE TABLE `sale_note_items` (
   `inventory_kardex_id` int(10) unsigned DEFAULT NULL,
   `warehouse_id` int(10) unsigned DEFAULT NULL,
   `name_product_pdf` longtext COLLATE utf8mb4_unicode_ci,
-  `quantity_factor` decimal(12,4) NOT NULL DEFAULT '1.0000',
+  `quantity_factor` decimal(30,12) NOT NULL DEFAULT '1.0000',
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`),
   KEY `sale_note_items_sale_note_id_foreign` (`sale_note_id`),
   KEY `sale_note_items_item_id_foreign` (`item_id`),

@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\DB;
  * Inventario de columnas:
  * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
  * - `item_id` int(10) unsigned DEFAULT '0' COMMENT 'Relacion con item'
- * - `quantity` decimal(12,4) DEFAULT '0.0000' COMMENT 'Cantidad de venta del item'
+ * - `quantity` decimal(30,12) DEFAULT '0.0000' COMMENT 'Cantidad de venta del item'
  * - `date_of_movement` timestamp NULL DEFAULT NULL
  * - `countable` tinyint(3) unsigned DEFAULT '0' COMMENT 'Define si se toma en cuenta para el conteo de inventario'
  * - `establishment_id` int(10) unsigned DEFAULT '0' COMMENT 'Relacion con la tabla'
@@ -31,6 +31,7 @@ use Illuminate\Support\Facades\DB;
  * - `technical_service_item_id` int(10) unsigned DEFAULT '0' COMMENT 'Relacion con la tabla'
  * - `created_at` timestamp NULL DEFAULT NULL
  * - `updated_at` timestamp NULL DEFAULT NULL
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
 {
@@ -40,7 +41,7 @@ return new class extends Migration
 CREATE TABLE `item_movement` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `item_id` int(10) unsigned DEFAULT '0' COMMENT 'Relacion con item',
-  `quantity` decimal(12,4) DEFAULT '0.0000' COMMENT 'Cantidad de venta del item',
+  `quantity` decimal(30,12) DEFAULT '0.0000' COMMENT 'Cantidad de venta del item',
   `date_of_movement` timestamp NULL DEFAULT NULL,
   `countable` tinyint(3) unsigned DEFAULT '0' COMMENT 'Define si se toma en cuenta para el conteo de inventario',
   `establishment_id` int(10) unsigned DEFAULT '0' COMMENT 'Relacion con la tabla',
@@ -62,6 +63,7 @@ CREATE TABLE `item_movement` (
   `technical_service_item_id` int(10) unsigned DEFAULT '0' COMMENT 'Relacion con la tabla',
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`),
   KEY `item_movement_item_id_index` (`item_id`),
   KEY `item_movement_quantity_index` (`quantity`),

@@ -208,7 +208,7 @@ trait NotePersistenceCases
         $refund=['operation_key'=>(string)Str::uuid(),'component'=>'principal','document_payment_id'=>$invoice->payments->first()->id,
             'date_of_payment'=>'2026-09-10','payment_method_type_id'=>'01','payment_destination_id'=>$bankId,
             'currency_type_id'=>'VES','original_amount'=>10,'exchange_rate'=>'1.00000000','exchange_rate_source'=>'manual'];
-        $before=$invoice->payments->first()->toArray();
+        $before=$invoice->payments->first()->getAttributes();
         $excess=array_replace($refund,['operation_key'=>(string)Str::uuid(),'original_amount'=>24]);
         try {(new NoteRefund)->register($note,$excess);self::fail('Cash refund cannot exceed the NC');}
         catch (\Illuminate\Validation\ValidationException $e) {self::assertArrayHasKey('original_amount',$e->errors());}
@@ -216,10 +216,10 @@ trait NotePersistenceCases
         self::assertSame($record->id,(new NoteRefund)->register($note,$refund)->id);
         self::assertEquals(-13.20,$invoice->fresh()->balance);self::assertEquals(13.20,NoteRefund::available($note));
         $sql=\App\Services\Fiscal\FiscalNoteBalance::sql();
-        self::assertEquals($invoice->fresh()->balance,$db->table('documents')->where('id',$invoice->id)->selectRaw($sql.' AS outstanding')->first()->outstanding);
+        self::assertTrue(\App\Support\Exact\Decimal::of($invoice->fresh()->balance)->isEqualTo(\App\Support\Exact\Decimal::of($db->table('documents')->where('id',$invoice->id)->selectRaw($sql.' AS outstanding')->first()->outstanding)));
         self::assertEquals(0,$db->table('documents')->where('id',$note->id)->selectRaw($sql.' AS outstanding')->first()->outstanding);
         self::assertSame('output',$record->global_payment->type_movement);
-        self::assertEquals($before,$invoice->payments->first()->fresh()->toArray());
+        self::assertSame($before,$invoice->payments->first()->fresh()->getAttributes());
         $reverse=['operation_key'=>(string)Str::uuid(),'reason'=>'Corrección del registro de devolución'];
         (new NoteRefund)->reverse($note,$record,$reverse);(new NoteRefund)->reverse($note,$record,$reverse);
         self::assertEquals(-23.20,$invoice->fresh()->balance);self::assertEquals(23.20,NoteRefund::available($note));

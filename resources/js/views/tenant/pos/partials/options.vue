@@ -10,9 +10,7 @@
         :close-on-press-escape="false"
         :show-close="false"
     >
-        <el-button v-if="resource === 'documents' && ((form.iva_retention && form.iva_retention.enabled) || (form.islr_retention && form.islr_retention.enabled))" size="small" @click="showIvaRetention = true">Retenciones IVA / ISLR</el-button>
         <p v-if="form.islr_retention && form.islr_retention.prevision">ISLR prevista: {{ form.islr_retention.prevision.amount }} {{ form.currency_type_id }}. Permanece como saldo pendiente.</p>
-        <retention-form :show-dialog.sync="showIvaRetention" :document-id="recordId"/>
 
         <Keypress key-event="keyup" :key-code="13" @success="someMethod" />
 
@@ -522,7 +520,6 @@ html.dark .pos-success {
 }
 </style>
 <script>
-import RetentionForm from "../../documents/partials/retention.vue"
 import {documentPdf} from "@mixins/document-pdf";
 import {documentEmail} from "@mixins/document-email";
 import {whatsappNumber} from "@helpers/phone";
@@ -534,7 +531,7 @@ import { buhoprinter } from "@mixins/buhoprinter";
 
 export default {
     props: ["showDialog", "recordId", "statusDocument", "resource", "fromPos", "isPrint"],
-    components: {RetentionForm,
+    components: {
         Keypress,
         SaleNoteGenerate,
         QrApi
@@ -548,7 +545,6 @@ export default {
             errors: {},
             ...documentEmail.data(),
             form: {},
-            showIvaRetention: false,
             company: {},
             configuration: {},
             activeName: "first",

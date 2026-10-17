@@ -1,6 +1,5 @@
 <template>
 <div class="row col-lg-12 m-0 p-0">
-    <iva-retention-fields :form="form" @net="applyIvaNetCollection" />
     <div v-if="form.document_type_id === '01'" class="col-12"><label>Condición de pago</label><el-select :value="form.payment_condition_id || '01'" @change="changeFiscalPaymentCondition"><el-option value="01" label="Contado"/><el-option value="02" label="Crédito (registrar sólo abonos reales)"/></el-select></div>
     <Keypress :key-code="113"
               key-event="keyup"
@@ -168,7 +167,7 @@
         :payments="payments"
         :currency-type-id="form.currency_type_id" :exchange-rate-sale="form.exchange_rate_sale" :customer-id="form.customer_id" :payment-condition-id="form.payment_condition_id"
         :showDialog.sync="showDialogMultiplePayment"
-        :total="ivaCollectionTarget"
+        :total="collectionTarget"
         @add="addRow"
     ></multiple-payment-form>
 
@@ -216,8 +215,12 @@
 </style>
 
 <script>
-import IvaRetentionFields from "../../documents/partials/iva_retention_fields.vue"
-import ivaRetentionMixin from "@mixins/iva-retention"
+import {withoutDraftRetentions} from "@helpers/document-creation"
+import {exactAmount,exactSum} from '../../../../helpers/exchange-rate-math'
+
+import {checkoutTotals} from '../../../../helpers/exact-commercial'
+
+import documentCreationMixin from "@mixins/document-creation"
 import IgtfPaymentFields from "../../documents/partials/igtf_fields.vue"
 import Keypress from 'vue-keypress'
 
@@ -228,8 +231,8 @@ import MultiplePaymentForm from './multiple_payment.vue'
 import { buhoprinter } from '@mixins/buhoprinter'
 
 export default {
-    components: {IvaRetentionFields,IgtfPaymentFields,OptionsForm, CardBrandsForm, SaleNotesOptions, MultiplePaymentForm, Keypress},
-    mixins: [ivaRetentionMixin,buhoprinter],
+    components: {IgtfPaymentFields,OptionsForm, CardBrandsForm, SaleNotesOptions, MultiplePaymentForm, Keypress},
+    mixins: [documentCreationMixin,buhoprinter],
 
     props: ['form', 'customer', 'configuration', 'config', 'currencyTypeActive', 'exchangeRateSale', 'is_payment', 'companyEnvironment', 'businessTurns', 'isPrint', 'rowsItems'],
     data() {
@@ -303,6 +306,7 @@ export default {
         },
     },
     methods: {
+        money(value) { try { return exactAmount(value).final(2); } catch (_) { return String(value); } },
         changeFiscalPaymentCondition(value) {
             this.$set(this.form, 'payment_condition_id', value)
             if (value === '02') {
@@ -332,7 +336,7 @@ export default {
         },
         async setInitialAmount() {
             const rows = this.form.payments || []
-            this.enter_amount = rows.length ? rows.reduce((sum,row)=>sum+(Number(row.payment)||0),0) : (this.ivaCollectionTarget ?? this.form.total)
+            this.enter_amount = rows.length ? exactSum(rows.map(row=>row.payment || '0')).decimal() : (this.collectionTarget ?? this.form.total)
             if (rows.length) this.amount = this.enter_amount
             // this.form.payments = this.payments
             // this.$eventHub.$emit('eventSetFormPosLocalStorage', this.form)
@@ -383,110 +387,11 @@ export default {
             return (not_exonerated) ? false : true
         },
         async discountGlobal() {
+            checkoutTotals(this);
 
-            // let is_exonerated = this.isExonerated()
-            // let is_exonerated = false
-
-            let global_discount = parseFloat(this.discount_amount)
-
-            let base = parseFloat(this.form.total)
-            let amount = parseFloat(global_discount)
-            let factor = _.round(amount / base, 5)
-
-            let discount = _.find(this.form.discounts, {'discount_type_id': '03'})
-
-            if (global_discount > 0 && !discount) {
-
-                this.form.total_discount = _.round(amount, 2)
-                this.form.total = _.round(this.form.total - amount, 2)
-
-                this.form.discounts.push({
-                    discount_type_id: '03',
-                    // ########## INICIO CAMBIO IGV A IVA
-                    description: 'Descuentos globales que no afectan la base imponible del IVA',
-                    // ######### FIN CAMBIO IGV A IVA
-                    factor: factor,
-                    amount: amount,
-                    base: base
-                })
-
-            }
-
-            this.difference = this.enter_amount - this.form.total
-            // this.difference = this.enter_amount - this.form.total_payable_amount
-            // console.log(this.form.discounts)
         },
         reCalculateTotal() {
-
-            let total_discount = 0
-            let total_charge = 0
-            let total_exportation = 0
-            let total_taxed = 0
-            let total_exonerated = 0
-            let total_unaffected = 0
-            let total_free = 0
-            let total_igv = 0
-            let total_value = 0
-            let total = 0
-
-
-
-
-            this.form.items.forEach((row) => {
-                total_discount += parseFloat(row.total_discount)
-                total_charge += parseFloat(row.total_charge)
-
-                if (row.affectation_igv_type_id === '10') {
-                    total_taxed += parseFloat(row.total_value)
-                }
-                if (row.affectation_igv_type_id === '20') {
-                    total_exonerated += parseFloat(row.total_value)
-                }
-                if (row.affectation_igv_type_id === '30') {
-                    total_unaffected += parseFloat(row.total_value)
-                }
-                if (row.affectation_igv_type_id === '40') {
-                    total_exportation += parseFloat(row.total_value)
-                }
-                if (['10', '20', '30', '40'].indexOf(row.affectation_igv_type_id) < 0) {
-                    total_free += parseFloat(row.total_value)
-                }
-                if (['10', '20', '30', '40'].indexOf(row.affectation_igv_type_id) > -1) {
-                    total_igv += parseFloat(row.total_igv)
-                    total += parseFloat(row.total)
-                }
-                total_value += parseFloat(row.total_value)
-
-
-                // isc
-
-
-
-            });
-
-            // isc
-
-
-
-            this.form.total_exportation = _.round(total_exportation, 2)
-            this.form.total_taxed = _.round(total_taxed, 2)
-            this.form.total_exonerated = _.round(total_exonerated, 2)
-            this.form.total_unaffected = _.round(total_unaffected, 2)
-            this.form.total_free = _.round(total_free, 2)
-            this.form.total_igv = _.round(total_igv, 2)
-            this.form.total_value = _.round(total_value, 2)
-            // this.form.total_taxes = _.round(total_igv, 2)
-
-            //impuestos (isc + igv)
-            this.form.total_taxes = _.round(total_igv, 2);
-
-
-            // this.form.total = _.round(total, 2)
-            this.form.subtotal = _.round(total, 2)
-            this.form.total = _.round(total, 2)
-
-            this.discountGlobal()
-
+            checkoutTotals(this);
 
         },
         deleteDiscountGlobal() {
@@ -521,7 +426,7 @@ export default {
                     this.$set(this.form, 'payment_condition_id', '02')
                 }
                 if ((this.form.payments || []).length || this.form.payment_condition_id === '02') {
-                    this.amount = (this.form.payments || []).reduce((sum, row) => sum + (Number(row.payment) || 0), 0)
+                    this.amount = exactSum((this.form.payments || []).map(row=>row.payment || '0')).decimal()
                     this.enter_amount = this.amount
                     this.inputAmount()
                 }
@@ -550,55 +455,36 @@ export default {
             this.form_payment.card_brand_id = (payment_method_type.has_card) ? this.form_payment.card_brand_id : null
         },
         addRow(payments) {
-
-            this.form.payments = payments
-            let acum_payment = 0
-
-            this.form.payments.forEach((item) => {
-                acum_payment += parseFloat(item.payment)
-            })
-
-            // this.amount = acum_payment
-            this.setAmount(acum_payment)
-
-            // console.log(this.form.payments)
+            this.form.payments=payments;
+            this.setAmount(exactSum(payments.map(row=>row.payment || '0')).decimal());
         },
         setAmount(amount) {
-            // this.amount = parseFloat(this.amount) + parseFloat(amount)
-            this.amount = parseFloat(amount) //+ parseFloat(amount)
-            this.enter_amount = parseFloat(amount) //+ parseFloat(amount)
-            this.inputAmount()
+            this.amount=exactAmount(amount || '0').decimal();
+            this.enter_amount=this.amount;
+            this.inputAmount();
         },
         setAmountCash(amount) {
-            let row = _.last(this.payments, {'payment_method_type_id': '01'})
-            row.payment = parseFloat(row.payment) + parseFloat(amount)
-            // console.log(row.payment)
-
-            this.form.payments = this.payments
-            let acum_payment = 0
-
-            this.form.payments.forEach((item) => {
-                acum_payment += parseFloat(item.payment)
-            })
-
-            this.setAmount(acum_payment)
-
+            const row=_.last(this.payments);
+            if (!row) return;
+            row.payment=exactAmount(row.payment || '0').plus(amount).decimal();
+            this.form.payments=this.payments;
+            this.setAmount(exactSum(this.payments.map(row=>row.payment || '0')).decimal());
         },
         async enterAmount() {
             if (!this.form.payments.length) return
 
             let r_item = await _.last(this.payments, {'payment_method_type_id': '01'})
-            r_item.payment = await parseFloat(this.enter_amount)
+            r_item.payment = await exactAmount(this.enter_amount || '0').decimal()
             // console.log(r_item.payment)
 
             let ind = this.form.payments.length - 1
-            this.form.payments[ind].payment = parseFloat(this.enter_amount)
+            this.form.payments[ind].payment = exactAmount(this.enter_amount || '0').decimal()
             // this.setAmount(item.payment)
 
             let acum_payment = 0
 
             await this.form.payments.forEach((item) => {
-                acum_payment += parseFloat(item.payment)
+                acum_payment = exactAmount(acum_payment).plus(item.payment || '0').decimal()
             })
             // console.log(this.form.payments)
 
@@ -606,18 +492,18 @@ export default {
             this.amount = acum_payment
             // this.amount = this.enter_amount
             // console.log(this.amount)
-            this.difference = this.amount - this.ivaCollectionTarget
+            this.difference = exactAmount(this.amount || '0').minus(this.collectionTarget ?? this.form.total_payable ?? this.form.total).decimal()
 
             if (isNaN(this.difference)) {
                 this.button_payment = this.form.payment_condition_id !== '02'
                 this.difference = "-"
             } else if (this.difference >= 0) {
                 this.button_payment = false
-                this.difference = this.amount - this.ivaCollectionTarget
+                this.difference = exactAmount(this.amount || '0').minus(this.collectionTarget ?? this.form.total_payable ?? this.form.total).decimal()
             } else {
                 this.button_payment = this.form.payment_condition_id !== '02'
             }
-            this.difference = _.round(this.difference, 2)
+            if (this.difference !== '-') this.difference = exactAmount(this.difference).decimal()
 
             this.$eventHub.$emit('eventSetFormPosLocalStorage', this.form)
 
@@ -640,18 +526,18 @@ export default {
         },
         inputAmount() {
 
-            this.difference = this.amount - this.ivaCollectionTarget
+            this.difference = exactAmount(this.amount || '0').minus(this.collectionTarget ?? this.form.total_payable ?? this.form.total).decimal()
 
             if (isNaN(this.difference)) {
                 this.button_payment = this.form.payment_condition_id !== '02'
                 this.difference = "-"
             } else if (this.difference >= 0) {
                 this.button_payment = false
-                this.difference = this.amount - this.ivaCollectionTarget
+                this.difference = exactAmount(this.amount || '0').minus(this.collectionTarget ?? this.form.total_payable ?? this.form.total).decimal()
             } else {
                 this.button_payment = this.form.payment_condition_id !== '02'
             }
-            this.difference = _.round(this.difference, 2)
+            if (this.difference !== '-') this.difference = exactAmount(this.difference).decimal()
             // this.form_payment.payment = this.amount
 
             this.$eventHub.$emit('eventSetFormPosLocalStorage', this.form)
@@ -668,7 +554,7 @@ export default {
         },
         initFormPayment() {
 
-            this.difference = -this.ivaCollectionTarget
+            this.difference = exactAmount('0').minus(this.collectionTarget ?? this.form.total_payable ?? this.form.total).decimal()
 
             this.form_payment = {
                 id: null,
@@ -678,7 +564,7 @@ export default {
                 card_brand_id: null,
                 document_id: null,
                 sale_note_id: null,
-                payment: this.ivaCollectionTarget,
+                payment: this.collectionTarget,
             }
 
             this.form_cash_document = {
@@ -801,7 +687,7 @@ export default {
             this.loading_submit = true
             this.locked_submit = true
 
-            await this.$http.post(`/${this.resource_documents}`, this.form).then(async (response) => {
+            await this.$http.post(`/${this.resource_documents}`, withoutDraftRetentions(this.form)).then(async (response) => {
                 if (response.data.success) {
                     let response_sent = response
 

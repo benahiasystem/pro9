@@ -18,6 +18,10 @@ class ConfigurationRequest extends FormRequest
             'cron' => ['required', 'boolean'],
             'auto_send_hka' => ['sometimes', 'boolean'],
             'decimal_quantity' => ['required', 'integer'],
+            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            'change_decimal_quantity_unit_price_pdf' => ['sometimes', 'boolean'],
+            'decimal_quantity_unit_price_pdf' => ['sometimes', 'required', 'integer', 'between:2,12'],
+            // ######## FIN CALCULOS EXACTOS PRO9 ########
 
 
             // 'subtotal_account' => ['required'],

@@ -628,7 +628,7 @@ $showDateDue  = $showDateDue  && ($showColumns['fecha_vencimiento'] ?? false);
             </td>
             @endif
             @if($showColumns['precio_unitario'] ?? true)
-            <td class="text-center">{{ number_format($row->item->unit_price, 2) }}</td>
+            <td class="text-center">{{ \App\Support\Exact\PdfPrice::configured(\App\Support\Exact\Decimal::read($row->item, 'unit_price')) }}</td>
             @endif
             @if($showColumns['total'] ?? true)
             <td class="text-right">{{ number_format($row->item->total, 2) }}</td>

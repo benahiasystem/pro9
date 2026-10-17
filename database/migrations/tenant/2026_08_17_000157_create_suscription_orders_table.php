@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\DB;
  * - `type` enum('new_suscription','suscription_order') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'suscription_order'
  * - `person_number` varchar(25) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `count_rejected_payments` int(11) NOT NULL DEFAULT '0'
- * - `amount` decimal(12,2) NOT NULL DEFAULT '0.00'
+ * - `amount` decimal(30,12) NOT NULL DEFAULT '0.00'
  * - `date_of_issue` timestamp NULL DEFAULT NULL
  * - `date_of_due` timestamp NULL DEFAULT NULL
  * - `date_of_payment` timestamp NULL DEFAULT NULL
@@ -23,6 +23,7 @@ use Illuminate\Support\Facades\DB;
  * - `documentable_id` bigint(20) unsigned DEFAULT NULL
  * - `count_notification` int(11) NOT NULL DEFAULT '0'
  * - `date_notification` timestamp NULL DEFAULT NULL
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
 {
@@ -37,7 +38,7 @@ CREATE TABLE `suscription_orders` (
   `type` enum('new_suscription','suscription_order') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'suscription_order',
   `person_number` varchar(25) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `count_rejected_payments` int(11) NOT NULL DEFAULT '0',
-  `amount` decimal(12,2) NOT NULL DEFAULT '0.00',
+  `amount` decimal(30,12) NOT NULL DEFAULT '0.00',
   `date_of_issue` timestamp NULL DEFAULT NULL,
   `date_of_due` timestamp NULL DEFAULT NULL,
   `date_of_payment` timestamp NULL DEFAULT NULL,
@@ -46,6 +47,7 @@ CREATE TABLE `suscription_orders` (
   `documentable_id` bigint(20) unsigned DEFAULT NULL,
   `count_notification` int(11) NOT NULL DEFAULT '0',
   `date_notification` timestamp NULL DEFAULT NULL,
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`),
   UNIQUE KEY `suscription_orders_external_id_unique` (`external_id`),
   KEY `suscription_orders_type_index` (`type`)
