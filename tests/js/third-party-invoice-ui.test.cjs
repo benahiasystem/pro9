@@ -89,3 +89,26 @@ test('a saved titular is selected using its fiscal RIF while the buyer stays unc
  await invoice.component.methods.thirdPartySaved.call(ctx,{id:5,rif:'V234567891'});
  assert.equal(ctx.form.third_party_id,null);assert.equal(ctx.form.customer_id,42);
 });
+test('third-party selector offers inline creation and editing using the isolated dialog',()=>{
+ assert.match(invoice.template,/class="el-select-dropdown__item new-option" @click.stop="openThirdPartyDialog\(\)"/);
+ assert.match(invoice.template,/btn-edit-person btn-add-new-invoice" @click.prevent="openThirdPartyDialog\(true\)"/);
+ assert.match(invoice.template,/selection_target="third_party"[^>]+@saved="thirdPartySaved"/);
+ assert.doesNotMatch(invoice.template,/>Registrar tercero<|>Editar tercero</);
+ const ctx=context({thirdPartySearchTerm:'Empresa nueva',form:{customer_id:42,third_party_id:5}});
+ invoice.component.methods.openThirdPartyDialog.call(ctx);
+ assert.equal(ctx.thirdPartyRecordId,null);assert.equal(ctx.thirdPartyCreateInput,'Empresa nueva');assert.equal(ctx.showDialogThirdParty,true);
+ invoice.component.methods.openThirdPartyDialog.call(ctx,true);
+ assert.equal(ctx.thirdPartyRecordId,5);assert.equal(ctx.form.customer_id,42);
+ ctx.thirdPartySearchTerm='12345678';invoice.component.methods.openThirdPartyDialog.call(ctx);
+ assert.equal(ctx.thirdPartyCreateInput.number,'12345678');
+ ctx.thirdPartySearchTerm='J-12345678-9';invoice.component.methods.openThirdPartyDialog.call(ctx);
+ assert.equal(ctx.thirdPartyCreateInput,'');
+});
+test('third-party searches keep buyer search state separate and disabling clears their state',async()=>{
+ const ctx=context({customerSearchTerm:'Comprador',thirdPartySearchTerm:'Viejo',
+  $http:{get:async(url,{params})=>{assert.equal(params.input,'Nuevo');return {data:{customers:[]}};}}});
+ await invoice.component.methods.searchRemoteThirdParties.call(ctx,'Nuevo');
+ assert.equal(ctx.thirdPartySearchTerm,'Nuevo');assert.equal(ctx.customerSearchTerm,'Comprador');
+ ctx.thirdPartyMode=false;ctx.changeThirdPartyMode(false);
+ assert.equal(ctx.thirdPartySearchTerm,'');assert.equal(ctx.loadingThirdParties,false);
+});

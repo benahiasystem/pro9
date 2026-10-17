@@ -137,7 +137,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="row px-2" v-if="specialTaxRegimeAvailable || savedSpecialTaxRegime">
+                    <div class="row px-2" v-if="specialTaxRegimeMode && (specialTaxRegimeAvailable || savedSpecialTaxRegime)">
                         <div class="col-md-8 mb-3" :class="{'has-danger': errors['fiscal_data.special_tax_regime_id']}">
                             <label class="control-label">Régimen especial de tributación</label>
                             <el-select v-model="form.fiscal_data.special_tax_regime_id" :disabled="!specialTaxRegimeAvailable" @change="changeSpecialTaxRegime">
@@ -149,21 +149,29 @@
                             <small v-if="errors['fiscal_data.special_tax_regime_id']" class="form-control-feedback d-block text-danger" v-text="errors['fiscal_data.special_tax_regime_id'][0]" />
                         </div>
                     </div>
-                    <div class="row px-2" v-if="thirdPartyAvailable || originalThirdPartyInvoice">
-                        <div class="col-12 mb-2">
-                            <el-checkbox v-model="thirdPartyMode" :disabled="isUpdateDocument" @change="changeThirdPartyMode">Facturar por cuenta de terceros</el-checkbox>
-                        </div>
-                        <div v-if="thirdPartyMode" class="col-md-8 mb-3" :class="{'has-danger': errors.third_party_id}">
-                            <label class="control-label">Cliente tercero titular de la venta</label>
-                            <el-select v-model="form.third_party_id" filterable remote :remote-method="loadThirdParties" :loading="loadingThirdParties" placeholder="Buscar por RIF o razón social" @focus="loadThirdParties('')">
-                                <el-option v-for="third in thirdParties" :key="third.id" :value="third.id" :label="third.third_party_rif + ' · ' + third.name" />
-                            </el-select>
-                            <small v-if="errors.third_party_id" class="form-control-feedback d-block text-danger" v-text="errors.third_party_id[0]" />
+                    <div class="row px-2" v-if="thirdPartyMode && (thirdPartyAvailable || originalThirdPartyInvoice)">
+                        <div class="col-md-8 mb-3">
+                            <div class="form-group position-relative" :class="{'has-danger': errors.third_party_id}">
+                                <label class="control-label font-weight-bold">Cliente tercero titular de la venta</label>
+                                <el-select v-model="form.third_party_id" filterable remote :remote-method="searchRemoteThirdParties" :loading="loadingThirdParties" class="border-left rounded-left border-info customer-select-clearable" popper-class="el-select-customers" placeholder="Buscar por RIF o razón social" @focus="loadThirdParties(thirdPartySearchTerm)">
+                                    <el-option v-for="third in thirdParties" :key="third.id" :value="third.id" :label="third.third_party_rif + ' · ' + third.name" />
+                                    <template slot="empty">
+                                        <p v-if="loadingThirdParties" class="el-select-dropdown__empty">Cargando...</p>
+                                        <p v-else class="el-select-dropdown__empty">No se encontraron resultados</p>
+                                        <div v-if="!loadingThirdParties" class="el-select-dropdown__item new-option" @click.stop="openThirdPartyDialog()">
+                                            <span>{{ thirdPartySearchTerm ? `Crear cliente "${thirdPartySearchTerm}"` : 'Crear cliente' }}</span>
+                                        </div>
+                                    </template>
+                                </el-select>
+                                <span v-if="form.third_party_id" class="btn-add-new btn-edit-person btn-add-new-invoice" @click.prevent="openThirdPartyDialog(true)" title="Editar cliente tercero">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" /><path d="M6 21v-2a4 4 0 0 1 4 -4h3.5" /><path d="M18.42 15.61a2.1 2.1 0 0 1 2.97 2.97l-3.39 3.42h-3v-3l3.42 -3.39" /></svg>
+                                </span>
+                                <span class="btn-add-new btn-add-new-invoice" @click.prevent="openThirdPartyDialog()" title="Agregar nuevo cliente tercero">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" /><path d="M16 19h6" /><path d="M19 16v6" /><path d="M6 21v-2a4 4 0 0 1 4 -4h4" /></svg>
+                                </span>
+                                <small v-if="errors.third_party_id" class="form-control-feedback d-block text-danger" v-text="errors.third_party_id[0]" />
+                            </div>
                             <small class="text-muted">Un titular por factura, venta interna al contado y completamente pagada.</small>
-                        </div>
-                        <div v-if="thirdPartyMode" class="col-md-4 mb-3 align-self-end">
-                            <el-button @click="thirdPartyRecordId = null; showDialogThirdParty = true">Registrar tercero</el-button>
-                            <el-button :disabled="!form.third_party_id" @click="thirdPartyRecordId = form.third_party_id; showDialogThirdParty = true">Editar tercero</el-button>
                         </div>
                     </div>
                     <div class="d-flex align-items-end justify-content-start gap-1 p-0 py-1 py-md-2 px-md-2 mx-1" v-if="editingLayout">
@@ -624,6 +632,22 @@
                                 </div>
 
                                 <div class="mt-5 w-100">
+                                    <div v-if="specialTaxRegimeAvailable || savedSpecialTaxRegime" class="col-12 py-2 switch-container">
+                                        <div class="row no-gutters">
+                                            <div class="col-10">Régimen especial de tributación</div>
+                                            <div class="col-2 text-end">
+                                                <el-switch v-model="specialTaxRegimeMode" :disabled="!specialTaxRegimeAvailable" @change="changeSpecialTaxRegimeMode" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div v-if="thirdPartyAvailable || originalThirdPartyInvoice" class="col-12 py-2 switch-container">
+                                        <div class="row no-gutters">
+                                            <div class="col-10">Factura por cuenta de terceros</div>
+                                            <div class="col-2 text-end">
+                                                <el-switch v-model="thirdPartyMode" :disabled="isUpdateDocument" @change="changeThirdPartyMode" />
+                                            </div>
+                                        </div>
+                                    </div>
                                     <div class="col-12 switch-container">
                                         <div class="row no-gutters">
                                             <div class="col-10">
@@ -2336,7 +2360,7 @@
         type="customers"
     ></person-form>
 
-    <person-form :external="true" selection_target="third_party" :recordId="thirdPartyRecordId" :showDialog.sync="showDialogThirdParty" type="customers" @saved="thirdPartySaved" />
+    <person-form :external="true" selection_target="third_party" :input_person="thirdPartyRecordId ? null : thirdPartyCreateInput" :recordId="thirdPartyRecordId" :showDialog.sync="showDialogThirdParty" type="customers" @saved="thirdPartySaved" />
 
     <document-options
         :configuration="config"
@@ -2778,6 +2802,9 @@ export default {
             showDialogNewPerson: false,
             showDialogThirdParty: false,
             thirdPartyRecordId: null,
+            thirdPartySearchTerm: '',
+            thirdPartyCreateInput: '',
+            specialTaxRegimeMode: false,
             specialTaxRegimes: [],
             savedSpecialTaxRegime: null,
             thirdPartyMode: false,
@@ -3381,6 +3408,40 @@ export default {
         }
     },
     methods: {
+        restoreFiscalOptions(data) {
+            this.form.fiscal_data = {special_tax_regime_id: data.special_tax_regime_id ?? null};
+            this.savedSpecialTaxRegime = data.special_tax_regime_description || null;
+            if (data.special_tax_regime_id && !this.specialTaxRegimes.some(row => row.id === data.special_tax_regime_id)) {
+                this.specialTaxRegimes.push({id: data.special_tax_regime_id, description: data.special_tax_regime_description, inactive: true});
+            }
+            this.originalThirdPartyInvoice = Boolean(data.is_third_party_invoice);
+            this.thirdPartyMode = this.originalThirdPartyInvoice;
+            this.form.third_party_id = data.third_party_id || null;
+            this.thirdPartySavedOption = data.third_party ? {id: data.third_party_id, name: data.third_party.name,
+                third_party_rif: data.third_party.rif, third_party_activity: data.third_party.activity} : null;
+            this.thirdParties = this.thirdPartySavedOption ? [this.thirdPartySavedOption] : [];
+            this.specialTaxRegimeMode = data.special_tax_regime_id != null;
+            this.thirdPartySearchTerm = '';
+        },
+        changeSpecialTaxRegimeMode(value) {
+            if (value && (!this.specialTaxRegimeAvailable || this.form.payment_condition_id !== '01')) {
+                this.specialTaxRegimeMode = false;
+                this.$message.error('El régimen especial requiere una Factura interna al contado en Medios digitales DEMO.');
+                return;
+            }
+            if (!value) this.form.fiscal_data.special_tax_regime_id = null;
+        },
+        openThirdPartyDialog(edit = false) {
+            this.thirdPartyRecordId = edit ? this.form.third_party_id : null;
+            const term = (this.thirdPartySearchTerm || '').trim();
+            this.thirdPartyCreateInput = /^\d+$/.test(term) ? {number: term}
+                : /^[VJEGPCR]-?\d/i.test(term) ? '' : term;
+            this.showDialogThirdParty = true;
+        },
+        searchRemoteThirdParties(input) {
+            this.thirdPartySearchTerm = input;
+            return this.loadThirdParties(input);
+        },
         changeSpecialTaxRegime(value) {
             if (value != null && (!this.specialTaxRegimeAvailable || this.form.payment_condition_id !== '01')) {
                 this.form.fiscal_data.special_tax_regime_id = null;
@@ -3404,6 +3465,8 @@ export default {
             }
             this.form.third_party_id = null;
             this.thirdPartySearchSequence += 1;
+            this.thirdPartySearchTerm = '';
+            this.loadingThirdParties = false;
             if (value) this.loadThirdParties('');
         },
         async loadThirdParties(input = '') {
@@ -3805,6 +3868,10 @@ export default {
             }
         },
         initForm() {
+            this.specialTaxRegimeMode = false;
+            this.thirdPartySearchTerm = '';
+            this.thirdPartyCreateInput = '';
+            this.thirdPartyRecordId = null;
             this.savedSpecialTaxRegime = null;
             this.thirdPartyMode = false;
             this.originalThirdPartyInvoice = false;
@@ -4163,17 +4230,7 @@ export default {
             this.form.group_id = data.group_id;
 
             this.form.note = data.note;
-            this.form.fiscal_data = {special_tax_regime_id: data.special_tax_regime_id ?? null};
-            this.savedSpecialTaxRegime = data.special_tax_regime_description || null;
-            if (data.special_tax_regime_id && !this.specialTaxRegimes.some(row => row.id === data.special_tax_regime_id)) {
-                this.specialTaxRegimes.push({id: data.special_tax_regime_id, description: data.special_tax_regime_description, inactive: true});
-            }
-            this.originalThirdPartyInvoice = Boolean(data.is_third_party_invoice);
-            this.thirdPartyMode = this.originalThirdPartyInvoice;
-            this.form.third_party_id = data.third_party_id || null;
-            this.thirdPartySavedOption = data.third_party ? {id: data.third_party_id, name: data.third_party.name,
-                third_party_rif: data.third_party.rif, third_party_activity: data.third_party.activity} : null;
-            this.thirdParties = this.thirdPartySavedOption ? [this.thirdPartySavedOption] : [];
+            this.restoreFiscalOptions(data);
             this.form.plate_number = data.plate_number;
             this.form.payments = data.payments || [];
             this.form.prepayments = data.prepayments || [];

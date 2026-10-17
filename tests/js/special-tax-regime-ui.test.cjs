@@ -54,3 +54,39 @@ test('editable regime submits only its ID and preserves the existing payments',(
  assert.equal(ctx.form.payments[0].id,9);
  assert.match(invoice.template,/Sin régimen especial/);assert.match(invoice.template,/Régimen registrado:/);
 });
+test('regime switch reveals the field without selecting a regime and clears it when disabled',()=>{
+ const ctx=context({specialTaxRegimeMode:true});ctx.form.fiscal_data.special_tax_regime_id=null;
+ invoice.component.methods.changeSpecialTaxRegimeMode.call(ctx,true);
+ assert.equal(ctx.specialTaxRegimeMode,true);assert.equal(ctx.form.fiscal_data.special_tax_regime_id,null);
+ ctx.form.fiscal_data.special_tax_regime_id=2;ctx.specialTaxRegimeMode=false;
+ invoice.component.methods.changeSpecialTaxRegimeMode.call(ctx,false);
+ assert.equal(ctx.form.fiscal_data.special_tax_regime_id,null);
+ for(const extra of [{specialTaxRegimeAvailable:false},{form:{payment_condition_id:'02',fiscal_data:{special_tax_regime_id:null}}}]) {
+  const invalid=context({specialTaxRegimeMode:true,...extra});
+  invoice.component.methods.changeSpecialTaxRegimeMode.call(invalid,true);
+  assert.equal(invalid.specialTaxRegimeMode,false);assert.equal(invalid.messages.length,1);
+ }
+});
+test('fiscal switches live in additional information while enabled fields remain in the header',()=>{
+ const panel=invoice.template.slice(invoice.template.indexOf('class="additional-information px-4"'));
+ const header=invoice.template.slice(0,invoice.template.indexOf('</header>'));
+ for(const model of ['specialTaxRegimeMode','thirdPartyMode']) {
+  assert.match(panel,new RegExp('<el-switch v-model="'+model+'"'));
+  assert.doesNotMatch(header,new RegExp('<el-(switch|checkbox) v-model="'+model+'"'));
+ }
+ assert.match(header,/v-if="specialTaxRegimeMode &&/);
+ assert.match(header,/v-if="thirdPartyMode &&/);
+});
+test('loading existing fiscal options restores both switches and retains historical options',()=>{
+ const ctx=context({specialTaxRegimes:[]});
+ invoice.component.methods.restoreFiscalOptions.call(ctx,{
+  special_tax_regime_id:2,special_tax_regime_description:'Histórico',
+  is_third_party_invoice:true,third_party_id:5,third_party:{name:'Titular',rif:'J-12345678-9',activity:'Comercio'}
+ });
+ assert.equal(ctx.specialTaxRegimeMode,true);assert.equal(ctx.thirdPartyMode,true);
+ assert.equal(ctx.form.fiscal_data.special_tax_regime_id,2);assert.equal(ctx.form.third_party_id,5);
+ assert.equal(ctx.specialTaxRegimes[0].inactive,true);assert.equal(ctx.thirdParties[0].name,'Titular');
+ invoice.component.methods.restoreFiscalOptions.call(ctx,{});
+ assert.equal(ctx.specialTaxRegimeMode,false);assert.equal(ctx.thirdPartyMode,false);
+ assert.equal(ctx.form.third_party_id,null);
+});
