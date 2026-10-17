@@ -8,12 +8,19 @@ use Maatwebsite\Excel\Concerns\Exportable;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\FromCollection;
 
-class ToPayExport implements  FromView, ShouldAutoSize
+class ToPayExport implements FromView, ShouldAutoSize, \Maatwebsite\Excel\Concerns\WithEvents
 {
+    // ######## INICIO CALCULOS EXACTOS PRO9 ########
+    protected $records;
+    protected $company;
+    protected $establishment;
+    protected $params;
+    // ######## FIN CALCULOS EXACTOS PRO9 ########
+
     use Exportable;
     
     public function records($records) {
-        $this->records = $records;
+        $this->records = $records->filter(fn($row)=>\App\Support\Exact\Decimal::readRequired($row, 'total_to_pay')->isPositive());
         
         return $this;
     }
@@ -31,4 +38,14 @@ class ToPayExport implements  FromView, ShouldAutoSize
             'company' => $this->company,
         ]);
     }
+    // ######## INICIO CALCULOS EXACTOS PRO9 ########
+    public function registerEvents(): array
+    {
+        return [\Maatwebsite\Excel\Events\AfterSheet::class=>function ($event) {
+            \App\Support\Exact\FractionSheet::append($event->sheet->getDelegate(), $this->records,
+                ['total', 'total_payable', 'total_payment', 'total_to_pay', 'exact_balance', 'settlement_adjustment']);
+        }];
+    }
+    // ######## FIN CALCULOS EXACTOS PRO9 ########
+
 }

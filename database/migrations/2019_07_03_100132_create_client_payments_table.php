@@ -15,6 +15,9 @@ class CreateClientPaymentsTable extends Migration
     {
         Schema::create('client_payments', function (Blueprint $table) {
 
+            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            $table->json('calculation_snapshot')->nullable();
+            // ######## FIN CALCULOS EXACTOS PRO9 ########
             $table->increments('id');
             $table->unsignedInteger('client_id');
             $table->date('date_of_payment');
@@ -22,7 +25,7 @@ class CreateClientPaymentsTable extends Migration
             $table->boolean('has_card')->default(false);
             $table->unsignedInteger('card_brand_id')->nullable();
             $table->string('reference')->nullable();
-            $table->decimal('payment', 12, 2);
+            $table->decimal('payment', 30, 12);
             $table->boolean('state')->default(false);
             $table->timestamps();
 

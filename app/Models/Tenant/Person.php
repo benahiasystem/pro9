@@ -103,6 +103,10 @@ use Illuminate\Support\Facades\DB;
      */
     class Person extends Authenticatable
     {
+        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        use \App\Support\Exact\HasExactValues;
+        use \App\Support\Exact\PersistsExactValues;
+        // ######## FIN CALCULOS EXACTOS PRO9 ########
         use Notifiable, UsesTenantConnection;
 
         protected $guard = 'ecommerce';
@@ -185,7 +189,7 @@ use Illuminate\Support\Facades\DB;
             'seller_id' => 'int',
             'zone_id' => 'int',
             'parent_id' => 'int',
-            'accumulated_points' => 'float',
+            'accumulated_points' => 'string',
             'has_discount' => 'bool',
             'discount_amount' => 'float',
             'is_agent_retention' => 'bool',

@@ -89,6 +89,7 @@
 </template>
 
 <script>
+import {exactValue} from '../../../helpers/exchange-rate-math'
 export default {
   data() {
     return {
@@ -127,7 +128,7 @@ export default {
     isDowngrade(plan) {
       if (!this.currentPlan) return false;
       if (plan.id === this.current_plan_id) return false;
-      return Number(plan.pricing) < Number(this.currentPlan.pricing);
+      return exactValue(plan,'pricing').compare(exactValue(this.currentPlan,'pricing')) < 0;
     },
     async selectPlan(plan) {
       const confirmed = await this.$confirm(

@@ -16,7 +16,7 @@ class AddColumnPriceAndPeriodsToClients extends Migration
         Schema::table('clients', function (Blueprint $table) {
             $table->unsignedInteger('plan_period_id')->default(1)->after('plan_id'); // Mensual
 			$table->foreign('plan_period_id')->references('id')->on('plan_periods');
-            $table->float('price')->nullable()->default(null)->after('plan_period_id');
+            $table->decimal('price', 30, 12)->nullable()->default(null)->after('plan_period_id');
             $table->date('ending_billing_cycle')->nullable()->default(null)->after('start_billing_cycle');
         });
     }

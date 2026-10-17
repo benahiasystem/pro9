@@ -41,16 +41,15 @@ class ClientPaymentController extends Controller
     {
         $client = Client::find($client_id);
 
-        $total_paid = collect($client->payments)->where('state',true)->sum('payment');
-        $total = collect($client->payments)->sum('payment');
-        $total_difference = round($total - $total_paid, 2);
+        $totals=\App\Support\Exact\AccountTotals::payments($client->payments()->lazyById(500));
 
         return [
             'name' => $client->name,
             'pricing' => $client->plan->pricing,
-            'total_paid' => $total_paid,
-            'total' => $total,
-            'total_difference' => $total_difference
+            'total_paid' => $totals['total_paid'],
+            'total' => $totals['total'],
+            'total_difference' => $totals['total_difference'],
+            'calculation_snapshot' => $totals['calculation_snapshot']
         ];
 
     }
@@ -68,7 +67,7 @@ class ClientPaymentController extends Controller
 
         DB::connection('tenant')->table('account_payments')->insert(
 
-            ['date_of_payment' => $record->date_of_payment, 'reference_id' => $record->id, 'payment_method_type_id'=> $record->payment_method_type_id, 'card_brand_id' =>$record->card_brand_id, 'reference' => $record->reference, 'payment' => $record->payment, 'state' => 0, 'created_at' => date('Y-m-d H:i:s')]
+            ['date_of_payment' => $record->date_of_payment, 'reference_id' => $record->id, 'payment_method_type_id'=> $record->payment_method_type_id, 'card_brand_id' =>$record->card_brand_id, 'reference' => $record->reference, 'payment' => $record->payment, 'calculation_snapshot'=>json_encode(\App\Support\Exact\Decimal::snapshot(['payment'=>$record->exactValue('payment')]),JSON_THROW_ON_ERROR), 'state' => 0, 'created_at' => date('Y-m-d H:i:s')]
         );
 
         return [

@@ -1,3 +1,4 @@
+import {exactAmount, exactSum, exactValue} from '../helpers/exchange-rate-math'
 // ######## INICIO TASAS OCHO DECIMALES ########
 import { normalizeExchangeRate } from '../helpers/exchange-rate-math'
 // ######## FIN TASAS OCHO DECIMALES ########
@@ -321,21 +322,25 @@ export const setDefaultSeriesByMultipleDocumentTypes = {
 export const pointSystemFunctions = {
     data() {
         return {
-            customer_accumulated_points: 0,
+            customer_accumulated_points: '0',
+            customer_accumulated_points_exact: {n:'0',d:'1'},
+            total_exchange_points_exact: {n:'0',d:'1'},
+            remaining_points_exact: {n:'0',d:'1'},
             calculate_customer_accumulated_points: 0,
             total_exchange_points: 0,
             total_points_by_sale: 0,
+            customer_points_request: null,
         }
     },
     methods: {
         setTotalPointsBySale(configuration)
         {
-            if(configuration && configuration.enabled_point_system)
+            if(configuration && configuration.enabled_point_system && exactValue(configuration,'point_system_sale_amount').compare('0') > 0)
             {
-                const calculate_points = (this.form.total / configuration.point_system_sale_amount) * configuration.quantity_of_points
-                this.total_points_by_sale = configuration.round_points_of_sale ? parseInt(calculate_points) : _.round(calculate_points, 2)
-                // this.total_points_by_sale = _.round((this.form.total / configuration.point_system_sale_amount) * configuration.quantity_of_points, 2)
+                const calculate_points = exactValue(this.form, 'total').dividedBy(exactValue(configuration,'point_system_sale_amount')).times(exactValue(configuration,'quantity_of_points'))
+                this.total_points_by_sale = calculate_points.decimal(configuration.round_points_of_sale ? 0 : 12)
             }
+            else this.total_points_by_sale = '0'
         },
         recalculateUsedPointsForExchange(row)
         {
@@ -343,14 +348,33 @@ export const pointSystemFunctions = {
         },
         async setCustomerAccumulatedPoints(customer_id, enabled_point_system)
         {
-            if(enabled_point_system)
+            if(enabled_point_system && customer_id)
             {
-                await this.$http.get(`/persons/accumulated-points/${customer_id}`).then((response) => {
-                        this.customer_accumulated_points = response.data
-                        this.calculate_customer_accumulated_points = response.data //para calculos
+                const request = {}
+                this.customer_points_request = request
+                await this.$http.get(`/persons/accumulated-points/${customer_id}?exact=1`).then((response) => {
+                        if (this.customer_points_request !== request) return
+                        this.customer_accumulated_points = response.data.amount
+                        this.customer_accumulated_points_exact = response.data.exact
                         this.calculateNewPoints()
                     })
             }
+            else this.resetCustomerPoints()
+        },
+        resetCustomerPoints()
+        {
+            this.customer_points_request = null
+            this.customer_accumulated_points = '0'
+            this.customer_accumulated_points_exact = {n:'0',d:'1'}
+            this.setTotalExchangePoints()
+        },
+        hasAccumulatedPoints()
+        {
+            return exactAmount(this.customer_accumulated_points_exact).compare('0') > 0
+        },
+        hasExchangePoints()
+        {
+            return exactAmount(this.total_exchange_points_exact).compare('0') > 0
         },
         setTotalExchangePoints()
         {
@@ -359,11 +383,13 @@ export const pointSystemFunctions = {
         },
         hasPointsAvailable()
         {
-            return this.calculate_customer_accumulated_points >= 0
+            return exactAmount(this.remaining_points_exact).compare('0') >= 0
         },
         calculateNewPoints()
         {
-            this.calculate_customer_accumulated_points = this.customer_accumulated_points - this.total_exchange_points
+            const remaining = exactAmount(this.customer_accumulated_points_exact).minus(this.total_exchange_points_exact)
+            this.remaining_points_exact = remaining.fraction()
+            this.calculate_customer_accumulated_points = remaining.decimal()
         },
         validateExchangePoints()
         {
@@ -385,13 +411,14 @@ export const pointSystemFunctions = {
         },
         getUsedPoints(row)
         {
-            return _.round(row.item.quantity_of_points * row.quantity, 2)
+            return exactValue(row.item,'quantity_of_points').times(exactValue(row,'quantity')).decimal()
         },
         getTotalExchangePointsItems()
         {
-            return _.sumBy(this.form.items, (row)=>{
-                return (row.item.exchanged_for_points) ? this.getUsedPoints(row) : 0
-            })
+            const total = exactSum(this.form.items.filter(row => row.item.exchanged_for_points)
+                .map(row => exactValue(row.item,'quantity_of_points').times(exactValue(row, 'quantity'))))
+            this.total_exchange_points_exact = total.fraction()
+            return total.decimal()
         },
     }
 }

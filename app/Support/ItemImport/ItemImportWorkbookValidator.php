@@ -28,6 +28,7 @@ class ItemImportWorkbookValidator
             $reader = IOFactory::createReader('Xlsx');
             $reader->setReadDataOnly(false);
             $spreadsheet = $reader->load($path);
+            \App\Support\Exact\XlsxDecimals::restore($spreadsheet,$path,[6,9,11,12]);
         } catch (Throwable $exception) {
             return new ItemImportValidationResult([
                 $this->error(1, 1, 'El archivo XLSX está dañado o no puede leerse.'),

@@ -1,0 +1,60 @@
+{
+  "date": "2026-10-17",
+  "status": "global_plan_incomplete",
+  "source_head": "fd9e6d18bb2808ea97bf4909044ca6e20ff13966",
+  "php_unit": {
+    "tests": 813,
+    "assertions": 16044,
+    "skipped": 59,
+    "failures": 0,
+    "errors": 0
+  },
+  "javascript": {
+    "tests": 193,
+    "failures": 0,
+    "skipped": 0
+  },
+  "mysql": {
+    "mysql_calculos.log": {
+      "tests": 3,
+      "assertions": 45,
+      "failures": 0,
+      "errors": 0
+    },
+    "mysql_central_instalacion.log": {
+      "tests": 2,
+      "assertions": 92,
+      "failures": 0,
+      "errors": 0
+    },
+    "mysql_tenant_instalacion.log": {
+      "tests": 1,
+      "assertions": 1601,
+      "failures": 0,
+      "errors": 0
+    }
+  },
+  "syntax": {
+    "php_files": 84,
+    "failures": []
+  },
+  "skills_validated": [
+    "mantener-calculos-exactos-pro9",
+    "migrate-product-import-excel-format"
+  ],
+  "audit": {
+    "php_exit_code": 1,
+    "javascript_exit_code": 1,
+    "parse_errors": 0,
+    "pending": 39789,
+    "classified": 123
+  },
+  "limits": [
+    "No global completion: unreviewed consumers remain.",
+    "No frontend build command executed by the agent.",
+    "No existing tenant database conversion or historical recalculation.",
+    "No live HKA requests.",
+    "No full HTTP/POS/report performance benchmark yet.",
+    "Unit subsets overlap integrations; do not add their counts."
+  ]
+}

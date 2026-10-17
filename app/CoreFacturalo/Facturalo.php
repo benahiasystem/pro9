@@ -1161,12 +1161,7 @@ class Facturalo
     // ######## INICIO CALCULOS EXACTOS PRO9 ########
     private function saveFee($document, $fee)
     {
-        $rows=\App\Support\Exact\Installments::calculate($document->exactValue('total'),array_values($fee),$document->total_payable ?? $document->total);
-        foreach ($rows as $row) {
-            $record = $document->fee()->make($row);
-            $record->calculation_snapshot = $row['calculation_snapshot'];
-            $record->save();
-        }
+        \App\Support\Exact\Installments::save($document,array_values($fee));
     }
     // ######## FIN CALCULOS EXACTOS PRO9 ########
 

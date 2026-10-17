@@ -3051,8 +3051,7 @@
                                         <div class="col-md-6">
                                             <label class="control-label">Monto de venta</label>
                                             <div :class="{ 'has-danger': errors.point_system_sale_amount }" class="form-group">
-                                                <el-input-number v-model="form.point_system_sale_amount" :min="0.01"
-                                                    :precision="2" :step="1" @change="submit"></el-input-number>
+                                                <el-input v-model="form.point_system_sale_amount" inputmode="decimal" @change="submit"></el-input>
                                                 <small v-if="errors.point_system_sale_amount" class="form-control-feedback"
                                                     v-text="errors.point_system_sale_amount[0]"></small>
                                             </div>
@@ -3060,16 +3059,16 @@
                                         <div class="col-md-6">
                                             <label class="control-label">N° de puntos</label>
                                             <div :class="{ 'has-danger': errors.quantity_of_points }" class="form-group">
-                                                <el-input-number v-model="form.quantity_of_points" :min="0.01" :precision="2"
-                                                    :step="1" @change="submit"></el-input-number>
+                                                <el-input v-model="form.quantity_of_points" inputmode="decimal" @change="submit"></el-input>
                                                 <small v-if="errors.quantity_of_points" class="form-control-feedback"
                                                     v-text="errors.quantity_of_points[0]"></small>
                                             </div>
                                         </div>
                                         <div class="col-12">
-                                            <label class="control-label">Redondear al obtener puntos</label>
+                                            <label class="control-label">Mostrar puntos sin decimales</label>
                                             <div :class="{ 'has-danger': errors.round_points_of_sale }" class="form-group">
                                                 <el-switch v-model="form.round_points_of_sale" @change="submit"></el-switch>
+                                                <small>Solo presentación. La acumulación y el canje conservan todas las fracciones.</small>
                                                 <small v-if="errors.round_points_of_sale" class="form-control-feedback"
                                                     v-text="errors.round_points_of_sale[0]"></small>
                                             </div>

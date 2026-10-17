@@ -667,7 +667,8 @@
 
                 $temp =   [
                     'id' => $row->id,
-                    'sale_unit_price' => round($unit_price, 6),
+                    'sale_unit_price' => $unit_price,
+                    'calculation_snapshot' => $row->selectionPriceSnapshot($warehouse_id),
                     'purchase_unit_price' => $row->purchase_unit_price,
                     'unit_type_id' => $row->unit_type_id,
                     'sale_affectation_igv_type_id' => $row->sale_affectation_igv_type_id,
@@ -784,7 +785,8 @@
                     'calculate_quantity' => (bool)$row->calculate_quantity,
                     'currency_type_id' => $row->currency_type_id,
                     'currency_type_symbol' => $row->currency_type->symbol,
-                    'sale_unit_price' => round($row::getSaleUnitPriceByWarehouse($row, $warehouse_id), 2),
+                    'sale_unit_price' => $row::getSaleUnitPriceByWarehouse($row, $warehouse_id),
+                    'calculation_snapshot' => $row->selectionPriceSnapshot($warehouse_id),
                     'purchase_unit_price' => $row->purchase_unit_price,
                     'unit_type_id' => $row->unit_type_id,
                     'sale_affectation_igv_type_id' => $row->sale_affectation_igv_type_id,

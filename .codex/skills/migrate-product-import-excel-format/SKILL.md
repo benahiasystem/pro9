@@ -44,7 +44,8 @@ Usar estos archivos como fuente de verdad en `Pro9`:
 
 ## Invariantes
 
-- Mantener `app/Imports/ItemsImport.php` sin cambios salvo que el usuario solicite expresamente cambiar el mapeo de importación.
+- Mantener las posiciones y el mapeo de `app/Imports/ItemsImport.php`. La extensión de cálculos exactos autorizada por el usuario permite corregir lectura, tipos, comparaciones y operaciones de sus importes, sin desplazar columnas ni alterar la identidad de los campos.
+- Para instalaciones nuevas aplicar el [contrato de cálculos exactos](../mantener-calculos-exactos-pro9/references/contrato.md): precios, stock y stock mínimo admiten DECIMAL(30,12). Recuperar el texto de las celdas numéricas OOXML antes de validar o importar mediante `XlsxDecimals`; no convertir los importes a float. Las conversiones de seriales de fecha de la biblioteca son técnicas y no se reutilizan como importes.
 - Mantener las columnas `0..19` por posición y permitir la columna `20` solamente como campo opcional `URL Imagen`.
 - La columna de imagen puede omitirse, pero cuando tenga datos debe incluir `URL Imagen` en U1. No aceptar la variante anterior con imágenes bajo un encabezado vacío; señalar U1 en el reporte y no importar filas. No cambiar el mapeo de `ItemsImport`.
 - Usar `VES`, nunca `VED`, como identificador de moneda de Venezuela.

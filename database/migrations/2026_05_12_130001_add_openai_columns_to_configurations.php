@@ -17,7 +17,9 @@ class AddOpenaiColumnsToConfigurations extends Migration
     public function down()
     {
         Schema::table('configurations', function (Blueprint $table) {
-            $table->dropColumn(['openai_api_key', 'openai_model']);
+            foreach (['openai_api_key', 'openai_model'] as $column) {
+                if (Schema::hasColumn('configurations',$column)) $table->dropColumn($column);
+            }
         });
     }
 }

@@ -125,6 +125,7 @@ class AccountController extends Controller
             'due_date' => $dueDate,
             'notifications' => 0,
             'amount' => $row->payment,
+            'calculation_snapshot' => \App\Support\Exact\Decimal::snapshot(['amount'=>$row->exactValue('payment')]),
             'order_state_id' => $stateId,
             'order_state' => $stateName,
             'date_of_payment' => $row->date_of_payment_real ? $row->date_of_payment_real->format('Y-m-d') : null,
@@ -138,10 +139,12 @@ class AccountController extends Controller
     private function buildStateTotals($records)
     {
         return PaymentOrderState::all()->map(function ($state) use ($records) {
+            $total=\App\Support\Exact\Aggregate::records($records->where('order_state_id',$state->id),'amount');
             return (object) [
                 'id' => $state->id,
                 'name' => strtoupper($state->name),
-                'total' => $records->where('order_state_id', $state->id)->sum('amount'),
+                'total' => \App\Support\Exact\Decimal::represent($total),
+                'calculation_snapshot' => \App\Support\Exact\Decimal::snapshot(['total'=>$total]),
             ];
         });
     }
@@ -180,7 +183,7 @@ class AccountController extends Controller
         }
 
         $currentPlan = $client->plan;
-        if ($currentPlan && (float) $targetPlan->pricing < (float) $currentPlan->pricing) {
+        if ($currentPlan && $targetPlan->exactValue('pricing')->isLessThan($currentPlan->exactValue('pricing'))) {
             return response()->json([
                 'success' => false,
                 'message' => 'No es posible bajar de plan desde aquí. Contacta a soporte para gestionar el cambio.',
@@ -192,7 +195,7 @@ class AccountController extends Controller
         $order = PaymentOrder::create([
             'order' => str_pad((PaymentOrder::count() + 1), 6, '0', STR_PAD_LEFT),
             'date_of_due' => now()->toDateString(),
-            'amount' => $targetPlan->pricing,
+            'amount' => $targetPlan->exactValue('pricing'),
             'order_state_id' => 1,
             'client_id' => $client->id,
             'plan_id' => $targetPlan->id,

@@ -24,8 +24,7 @@ class PlanRequest extends FormRequest
             ],
             'pricing' => [
                 'required',
-                'numeric' ,
-                'min:0'  
+                new \App\Rules\ExactDecimal('0'),
             ],
             'limit_users' => [
                 'required',
@@ -62,8 +61,7 @@ class PlanRequest extends FormRequest
             return [
                 'required',
                 // 'integer', 
-                'numeric' ,
-                'gt:0', 
+                new \App\Rules\ExactDecimal('0',true,20),
             ];
         }
 

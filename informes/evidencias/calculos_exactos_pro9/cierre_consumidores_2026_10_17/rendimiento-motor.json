@@ -1,0 +1,36 @@
+{
+    "runtime": "8.2.34",
+    "source_sha256": "fabcab65765ef107eb49e12f59bd0f36dd817c37ed08e68f483a1bf2e8f3b842",
+    "cases": {
+        "sum_thirds_100": {
+            "median_ms": 0.239275,
+            "fraction": {
+                "n": "100",
+                "d": "3"
+            }
+        },
+        "sum_thirds_1000": {
+            "median_ms": 2.083635,
+            "fraction": {
+                "n": "1000",
+                "d": "3"
+            }
+        },
+        "read_snapshot_10000": {
+            "median_ms": 4.863893
+        },
+        "invoice_lines_10": {
+            "elapsed_ms": 5.833857,
+            "total": "5000"
+        },
+        "invoice_lines_100": {
+            "elapsed_ms": 29.325079,
+            "total": "50000"
+        },
+        "invoice_lines_1000": {
+            "elapsed_ms": 283.864625,
+            "total": "500000"
+        }
+    },
+    "peak_memory_bytes": 10485760
+}

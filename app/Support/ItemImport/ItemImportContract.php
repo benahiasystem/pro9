@@ -81,13 +81,13 @@ class ItemImportContract
         $this->validateItemCode($errors, $row, $rowNumber, 3);
         $this->validateCatalog($errors, $row, $rowNumber, 4, $catalogs['unit_type_ids'] ?? []);
         $this->validateCatalog($errors, $row, $rowNumber, 5, $catalogs['currency_type_ids'] ?? []);
-        $this->validateDecimal($errors, $row, $rowNumber, 6, 16, 6, true, 0, true);
+        $this->validateDecimal($errors, $row, $rowNumber, 6, 30, 12, true, 0, true);
         $this->validateCatalog($errors, $row, $rowNumber, 7, $catalogs['affectation_igv_type_ids'] ?? []);
         $this->validateBooleanText($errors, $row, $rowNumber, 8);
-        $this->validateDecimal($errors, $row, $rowNumber, 9, 16, 6, false, 0);
+        $this->validateDecimal($errors, $row, $rowNumber, 9, 30, 12, false, 0);
         $this->validateCatalog($errors, $row, $rowNumber, 10, $catalogs['affectation_igv_type_ids'] ?? []);
-        $this->validateDecimal($errors, $row, $rowNumber, 11, 16, 4, true, 0, $updatesExistingItem);
-        $this->validateDecimal($errors, $row, $rowNumber, 12, 12, 2, true, 0);
+        $this->validateDecimal($errors, $row, $rowNumber, 11, 30, 12, true, 0, $updatesExistingItem);
+        $this->validateDecimal($errors, $row, $rowNumber, 12, 30, 12, true, 0);
         $this->validateNullableText($errors, $row, $rowNumber, 13, 255);
         $this->validateNullableText($errors, $row, $rowNumber, 14, 255);
         $this->validateNullableText($errors, $row, $rowNumber, 15, 1000);
@@ -250,8 +250,8 @@ class ItemImportContract
             );
         }
 
-        $numeric = (float) $normalized;
-        $isBelowMinimum = $strictlyGreater ? $numeric <= (float) $minimum : $numeric < (float) $minimum;
+        $numeric = \App\Support\Exact\Decimal::of($normalized);
+        $isBelowMinimum = $strictlyGreater ? $numeric->isLessThanOrEqualTo($minimum) : $numeric->isLessThan($minimum);
 
         if ($isBelowMinimum) {
             $comparator = $strictlyGreater ? 'mayor que' : 'mayor o igual que';
@@ -278,7 +278,8 @@ class ItemImportContract
                 return null;
             }
 
-            return rtrim(rtrim(sprintf('%.14F', $value), '0'), '.');
+            // Compatibility for direct callers. XLSX business cells are restored from XML first.
+            return (string) \Brick\Math\BigDecimal::of((string)$value);
         }
 
         $value = trim((string) $value);

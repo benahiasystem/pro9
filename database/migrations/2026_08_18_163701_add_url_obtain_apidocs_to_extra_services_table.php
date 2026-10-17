@@ -23,7 +23,7 @@ return new class extends Migration
     public function down(): void
     {
         DB::table('extra_services')
-            ->where('name', 'apidocs')
+            ->where('id', 1)
             ->update([
                 'urlObtainApidocs' => 'https://buho.la/'
             ]);

@@ -4,7 +4,7 @@ namespace App\Models\System;
 
 use Illuminate\Database\Eloquent\Model;
 
-class MassiveInvoice extends Model
+class MassiveInvoice extends ModelSystem
 {
     protected $fillable = [
         'fecha_emision',
@@ -40,10 +40,10 @@ class MassiveInvoice extends Model
         'fecha_emision' => 'date',
         'fecha_vencimiento' => 'date',
         'incluye_igv' => 'boolean',
-        'cantidad' => 'decimal:2',
-        'precio' => 'decimal:2',
-        'total_gravado' => 'decimal:2',
-        'total_igv' => 'decimal:2',
-        'total_venta' => 'decimal:2'
+        'cantidad' => 'string',
+        'precio' => 'string',
+        'total_gravado' => 'string',
+        'total_igv' => 'string',
+        'total_venta' => 'string'
     ];
 }

@@ -99,57 +99,8 @@
                 </tr>
             </table>
         </div>
-        @if(!empty($records))
-            <div class="">
-                <div class=" ">
-                    @php
-                        $acum_total=0;
-                        $acu_total_sale = 0;
-                    @endphp
-                    <table class="">
-                        <thead>
-                            <tr>
-                                <th  class="text-center">#</th>
-                                <th  class="text-center">Cod. Interno</th>
-                                <th  class="celda-item">Producto</th>
-                                <th  class="text-center">Unidad</th>
-                                <th  class="text-center">Categoria</th>
-                                <th  class="text-center">Cantidad Total</th>
-                                <th  class="text-center">Total de venta</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($records as $key => $value)
-
-                                <tr>
-                                    <td class="celda">{{ $loop->iteration }}</td>
-                                    <td class="celda">{{$value['item_internal_id']}}</td>
-                                    <td class="celda-item">{{$value['item_description']}}</td>
-                                    <td class="celda">{{$value['item_unit_type_id']}}</td>
-                                    <td class="celda">{{$value['category']}}</td>
-                                    <td class="celda">{{$value['quantity']}}</td>
-                                    <td class="celda">{{$value['total_sale']}}</td>
-                                </tr>
-                                @php
-                                    $acum_total += $value['quantity']??0;
-                                    $acu_total_sale += $value['total_sale']??0;
-                                @endphp
-                            @endforeach
-
-                            <tr>
-                                <td class="celda" colspan="4"></td>
-                                <td class="celda" ><strong>Total</strong></td>
-                                <td class="celda">{{$acum_total}}</td>
-                                <td class="celda">{{$acu_total_sale}}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        @else
-            <div class="callout callout-info">
-                <p>No se encontraron registros.</p>
-            </div>
-        @endif
+        {{-- ######## INICIO CALCULOS EXACTOS PRO9 ######## --}}
+        @include('report::sales_consolidated.exact_table', ['detail'=>false, 'excel'=>false])
+        {{-- ######## FIN CALCULOS EXACTOS PRO9 ######## --}}
     </body>
 </html>

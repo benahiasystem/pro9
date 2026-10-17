@@ -9,7 +9,7 @@ function load(file) {
  const exports={};
  vm.runInNewContext(babel.transformSync(parsed.script.content,{configFile:false,babelrc:false,plugins:['@babel/plugin-transform-modules-commonjs']}).code,{
   exports,require:name=>name.includes('vuex')?{mapState:()=>({}),mapActions:()=>({})}
-   :name==='moment'?require('moment'):name==='lodash'?require('lodash'):{},window:{},localStorage:{getItem:()=>null}
+   :require('./support/exact-runtime.cjs')(name) || (name==='moment'?require('moment'):name==='lodash'?require('lodash'):{}),window:{},localStorage:{getItem:()=>null}
  });
  return {component:exports.default,template:parsed.template.content};
 }

@@ -1,0 +1,23 @@
+{
+    "runtime": "8.2.5",
+    "cases": {
+        "sum_thirds_100": {
+            "median_ms": 0.338295,
+            "fraction": {
+                "n": "100",
+                "d": "3"
+            }
+        },
+        "sum_thirds_1000": {
+            "median_ms": 7.283098,
+            "fraction": {
+                "n": "1000",
+                "d": "3"
+            }
+        },
+        "read_snapshot_10000": {
+            "elapsed_ms": 130.675174
+        }
+    },
+    "peak_memory_bytes": 10485760
+}

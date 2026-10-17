@@ -12,11 +12,11 @@ use App\Models\Tenant\Catalogs\UnitType;
  *
  * @property int $id
  * @property string $name
- * @property float $cost
+ * @property string $cost
  * @property int $unit_type_id
- * @property float $waste_percentage
- * @property float $stock
- * @property float $minimum_stock
+ * @property string $waste_percentage
+ * @property string $stock
+ * @property string $minimum_stock
  * @property \Illuminate\Support\Carbon $created_at
  * @property \Illuminate\Support\Carbon $updated_at
  */
@@ -57,17 +57,21 @@ class Supply extends ModelTenant
      */
     public function isBelowMinimumStock()
     {
-        return $this->stock < $this->minimum_stock;
+        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        return $this->exactValue('stock')->isLessThan($this->exactValue('minimum_stock'));
+        // ######## FIN CALCULOS EXACTOS PRO9 ########
     }
 
     /**
      * Calcula el costo efectivo considerando la merma
      *
-     * @return float
+     * @return \Brick\Math\BigRational
      */
     public function getEffectiveCost()
     {
-        $wasteMultiplier = 1 + ($this->waste_percentage / 100);
-        return $this->cost * $wasteMultiplier;
+        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        $wasteMultiplier = \App\Support\Exact\Decimal::of(1)->plus($this->exactValue('waste_percentage')->dividedBy(100));
+        return $this->exactValue('cost')->multipliedBy($wasteMultiplier)->simplified();
+        // ######## FIN CALCULOS EXACTOS PRO9 ########
     }
 }

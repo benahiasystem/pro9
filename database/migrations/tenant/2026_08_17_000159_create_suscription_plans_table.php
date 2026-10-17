@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\DB;
  * - `cat_period_id` int(10) unsigned DEFAULT '0' COMMENT 'Relacion con el periodo de tiempo'
  * - `name` text COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Nombre del plan'
  * - `description` longtext COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Descripcion del plan'
- * - `total` double(12,2) DEFAULT '0.00' COMMENT 'El total del costo del plan'
+ * - `total` decimal(30,12) DEFAULT '0.00' COMMENT 'El total del costo del plan'
  * - `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `payment_method_type_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `quantity_period` int(10) unsigned DEFAULT NULL
@@ -19,20 +19,20 @@ use Illuminate\Support\Facades\DB;
  * - `trial_days` int(11) DEFAULT NULL
  * - `status` tinyint(1) NOT NULL DEFAULT '1'
  * - `exchange_rate_sale` decimal(18,8) DEFAULT '0.000'
- * - `total_prepayment` double(12,2) DEFAULT '0.00'
- * - `total_charge` double(12,2) DEFAULT '0.00'
- * - `total_discount` double(12,2) DEFAULT '0.00'
- * - `total_exportation` double(12,2) DEFAULT '0.00'
- * - `total_free` double(12,2) DEFAULT '0.00'
- * - `total_taxed` double(12,2) DEFAULT '0.00'
- * - `total_unaffected` double(12,2) DEFAULT '0.00'
- * - `total_exonerated` double(12,2) DEFAULT '0.00'
- * - `total_igv` double(12,2) DEFAULT '0.00'
- * - `total_igv_free` double(12,2) DEFAULT '0.00'
- * - `total_base_other_taxes` double(12,2) DEFAULT '0.00'
- * - `total_other_taxes` double(12,2) DEFAULT '0.00'
- * - `total_taxes` double(12,2) DEFAULT '0.00'
- * - `total_value` double(12,2) DEFAULT '0.00'
+ * - `total_prepayment` decimal(30,12) DEFAULT '0.00'
+ * - `total_charge` decimal(30,12) DEFAULT '0.00'
+ * - `total_discount` decimal(30,12) DEFAULT '0.00'
+ * - `total_exportation` decimal(30,12) DEFAULT '0.00'
+ * - `total_free` decimal(30,12) DEFAULT '0.00'
+ * - `total_taxed` decimal(30,12) DEFAULT '0.00'
+ * - `total_unaffected` decimal(30,12) DEFAULT '0.00'
+ * - `total_exonerated` decimal(30,12) DEFAULT '0.00'
+ * - `total_igv` decimal(30,12) DEFAULT '0.00'
+ * - `total_igv_free` decimal(30,12) DEFAULT '0.00'
+ * - `total_base_other_taxes` decimal(30,12) DEFAULT '0.00'
+ * - `total_other_taxes` decimal(30,12) DEFAULT '0.00'
+ * - `total_taxes` decimal(30,12) DEFAULT '0.00'
+ * - `total_value` decimal(30,12) DEFAULT '0.00'
  * - `charges` json DEFAULT NULL
  * - `attributes` json DEFAULT NULL
  * - `discounts` json DEFAULT NULL
@@ -41,6 +41,7 @@ use Illuminate\Support\Facades\DB;
  * - `perception` json DEFAULT NULL
  * - `legends` json DEFAULT NULL
  * - `terms_condition` longtext COLLATE utf8mb4_unicode_ci
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  * - `created_at` timestamp NULL DEFAULT NULL
  * - `updated_at` timestamp NULL DEFAULT NULL
  */
@@ -54,7 +55,7 @@ CREATE TABLE `suscription_plans` (
   `cat_period_id` int(10) unsigned DEFAULT '0' COMMENT 'Relacion con el periodo de tiempo',
   `name` text COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Nombre del plan',
   `description` longtext COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Descripcion del plan',
-  `total` double(12,2) DEFAULT '0.00' COMMENT 'El total del costo del plan',
+  `total` decimal(30,12) DEFAULT '0.00' COMMENT 'El total del costo del plan',
   `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `payment_method_type_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `quantity_period` int(10) unsigned DEFAULT NULL,
@@ -62,20 +63,20 @@ CREATE TABLE `suscription_plans` (
   `trial_days` int(11) DEFAULT NULL,
   `status` tinyint(1) NOT NULL DEFAULT '1',
   `exchange_rate_sale` decimal(18,8) DEFAULT '0.000',
-  `total_prepayment` double(12,2) DEFAULT '0.00',
-  `total_charge` double(12,2) DEFAULT '0.00',
-  `total_discount` double(12,2) DEFAULT '0.00',
-  `total_exportation` double(12,2) DEFAULT '0.00',
-  `total_free` double(12,2) DEFAULT '0.00',
-  `total_taxed` double(12,2) DEFAULT '0.00',
-  `total_unaffected` double(12,2) DEFAULT '0.00',
-  `total_exonerated` double(12,2) DEFAULT '0.00',
-  `total_igv` double(12,2) DEFAULT '0.00',
-  `total_igv_free` double(12,2) DEFAULT '0.00',
-  `total_base_other_taxes` double(12,2) DEFAULT '0.00',
-  `total_other_taxes` double(12,2) DEFAULT '0.00',
-  `total_taxes` double(12,2) DEFAULT '0.00',
-  `total_value` double(12,2) DEFAULT '0.00',
+  `total_prepayment` decimal(30,12) DEFAULT '0.00',
+  `total_charge` decimal(30,12) DEFAULT '0.00',
+  `total_discount` decimal(30,12) DEFAULT '0.00',
+  `total_exportation` decimal(30,12) DEFAULT '0.00',
+  `total_free` decimal(30,12) DEFAULT '0.00',
+  `total_taxed` decimal(30,12) DEFAULT '0.00',
+  `total_unaffected` decimal(30,12) DEFAULT '0.00',
+  `total_exonerated` decimal(30,12) DEFAULT '0.00',
+  `total_igv` decimal(30,12) DEFAULT '0.00',
+  `total_igv_free` decimal(30,12) DEFAULT '0.00',
+  `total_base_other_taxes` decimal(30,12) DEFAULT '0.00',
+  `total_other_taxes` decimal(30,12) DEFAULT '0.00',
+  `total_taxes` decimal(30,12) DEFAULT '0.00',
+  `total_value` decimal(30,12) DEFAULT '0.00',
   `charges` json DEFAULT NULL,
   `attributes` json DEFAULT NULL,
   `discounts` json DEFAULT NULL,
@@ -86,6 +87,7 @@ CREATE TABLE `suscription_plans` (
   `terms_condition` longtext COLLATE utf8mb4_unicode_ci,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL);

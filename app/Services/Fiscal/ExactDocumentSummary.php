@@ -64,7 +64,7 @@ final class ExactDocumentSummary
         $values['subtotal'] = $values['total']->minus($igtf);
         $values['total_payable'] = D::of(D::represent($values['total'], 2));
         $values['settlement_adjustment'] = $values['total_payable']->minus($values['total']);
-        $document->forceFill(D::values($values) + ['calculation_snapshot' => D::snapshot($values)]);
+        $document->forceFill(D::values($values) + ['calculation_snapshot' => array_replace($document->calculation_snapshot ?? [],D::snapshot($values))]);
         $legends = collect((array) $document->legends)->map(fn ($v) => (array) $v)->reject(fn ($v) => ($v['code'] ?? '') === '1000')->values()->all();
         $legends[] = ['code' => '1000', 'value' => \App\CoreFacturalo\Helpers\Number\NumberLetter::convertToLetter($document->total_payable)];
         $document->legends = $legends;
@@ -84,7 +84,7 @@ final class ExactDocumentSummary
         $values = ['percentage' => D::of($rate), 'base' => $base, 'amount' => $amount,
             'base_ves' => D::convert($base, $document->currency_type_id, 'VES', $document->exchange_rate_sale),
             'amount_ves' => D::convert($amount, $document->currency_type_id, 'VES', $document->exchange_rate_sale)];
-        $document->taxes()->create(D::values($values) + ['tax_kind' => 'IVA', 'code' => $code, 'calculation_snapshot' => D::snapshot($values)]);
+        $document->taxes()->create(D::values($values) + ['tax_kind' => 'IVA', 'code' => $code, 'calculation_snapshot' => array_replace($document->calculation_snapshot ?? [],D::snapshot($values))]);
     }
 }
 // ######## FIN CALCULOS EXACTOS PRO9 ########

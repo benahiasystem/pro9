@@ -22,6 +22,7 @@ class MassiveInvoiceExport extends DefaultValueBinder implements
     WithMapping,
     WithColumnFormatting,
     WithCustomValueBinder,
+    \Maatwebsite\Excel\Concerns\WithEvents,
     ShouldAutoSize
 {
     use Exportable;
@@ -80,9 +81,9 @@ class MassiveInvoiceExport extends DefaultValueBinder implements
             $row->correo ?? '',
             $row->moneda ?? '',
             $row->estado_emision ?: ($row->status ?? ''),
-            (float) $row->total_gravado,
-            (float) $row->total_igv,
-            (float) $row->total_venta,
+            \App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::readRequired($row,'total_gravado')),
+            \App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::readRequired($row,'total_igv')),
+            \App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::readRequired($row,'total_venta')),
         ];
     }
 
@@ -92,21 +93,29 @@ class MassiveInvoiceExport extends DefaultValueBinder implements
             'C' => NumberFormat::FORMAT_TEXT,
             'F' => NumberFormat::FORMAT_TEXT,
             'G' => NumberFormat::FORMAT_TEXT,
-            'L' => NumberFormat::FORMAT_NUMBER_00,
-            'M' => NumberFormat::FORMAT_NUMBER_00,
-            'N' => NumberFormat::FORMAT_NUMBER_00,
+            'L' => NumberFormat::FORMAT_TEXT,
+            'M' => NumberFormat::FORMAT_TEXT,
+            'N' => NumberFormat::FORMAT_TEXT,
         ];
     }
 
     public function bindValue(Cell $cell, $value)
     {
-        if (in_array($cell->getColumn(), ['C', 'F', 'G'], true)) {
+        if (is_string($value)) {
             $cell->setValueExplicit((string) $value, DataType::TYPE_STRING);
 
             return true;
         }
 
         return parent::bindValue($cell, $value);
+    }
+
+    public function registerEvents(): array
+    {
+        return [\Maatwebsite\Excel\Events\AfterSheet::class=>function ($event) {
+            \App\Support\Exact\FractionSheet::append($event->sheet->getDelegate(),$this->records,
+                ['cantidad','precio','total_gravado','total_igv','total_venta']);
+        }];
     }
 
     protected function splitDocumentAndName(?string $value): array

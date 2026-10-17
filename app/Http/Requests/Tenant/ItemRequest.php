@@ -66,6 +66,7 @@ class ItemRequest extends FormRequest
             'purchase_unit_price' => [
                 'required', 'numeric'
             ],
+            'quantity_of_points' => ['sometimes',new \App\Rules\ExactDecimal('0')],
             'stock' => [
                 'required',
                 // 'gt:0'

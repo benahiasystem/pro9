@@ -203,7 +203,7 @@
                                     </thead>
                                     <tbody>
                                         <template v-for="(row, index) in records">
-                                            <tr v-if="row.total_to_pay > 0" :key="index">
+                                            <tr :key="row.report_key">
                                                 <!-- <td>{{ index + 1 }}</td> -->
                                                 <td>{{ row.date_of_issue }}</td>
                                                 <td>{{ row.date_of_due ? row.date_of_due : 'No tiene fecha de vencimiento.'}}</td>
@@ -242,7 +242,9 @@
                                                 </td>
                                                     <td>{{row.currency_type_id}}</td>
                                                 <td class="text-end text-danger">{{ row.total_to_pay }}</td>
-                                                <td class="text-end">{{ row.total }}</td>
+                                                <td class="text-end">{{ row.total }}
+                                                    <small v-if="row.settlement_adjustment !== '0'" class="d-block">Liquidable: {{ row.total_payable }} · Ajuste: {{ row.settlement_adjustment }}</small>
+                                                </td>
                                                 <td class="text-end">
                                                     <template v-if="row.type === 'purchase'">
                                                     <button
@@ -266,6 +268,9 @@
                                         </template>
                                     </tbody>
                                 </table>
+                                <!-- ######## INICIO CALCULOS EXACTOS PRO9 ######## -->
+                                <el-pagination :current-page="pagination.current_page" :page-size="pagination.per_page" :total="pagination.total" layout="prev, pager, next, total" @current-change="loadToPay" />
+                                <!-- ######## FIN CALCULOS EXACTOS PRO9 ######## -->
                                 </div>
                                 </div>
                             </div>
@@ -309,6 +314,8 @@
                 suppliers: [],
                 recordId: null,
                 records:[],
+                summary: {},
+                pagination: {current_page: 1, per_page: 50, total: 0},
                 establishments: [],
                 pickerOptionsDates: {
                     disabledDate: (time) => {
@@ -341,99 +348,13 @@
         },
         computed: {
 
-            getCurrentBalance() {
-
-                const self = this;
-                let source = [];
-                if (self.form.supplier_id) {
-                    source = _.filter(self.records, function(item) {
-                    return (
-                        item.total_to_pay > 0 && item.supplier_id == self.form.supplier_id && item.currency_type_id == 'VES'
-                    );
-                    });
-                } else {
-                    source = _.filter(this.records, function(item) {
-                    return item.total_to_pay > 0 && item.currency_type_id == 'VES';
-                    });
-                }
-
-                return _.sumBy(source, function(item) {
-                    return parseFloat(item.total_to_pay);
-                }).toFixed(2);
-            },
-            getCurrentBalanceUsd() {
-
-                const self = this;
-                let source = [];
-                if (self.form.supplier_id) {
-                    source = _.filter(self.records, function(item) {
-                    return (
-                        item.total_to_pay > 0 && item.supplier_id == self.form.supplier_id && item.currency_type_id == 'USD'
-                    );
-                    });
-                } else {
-                    source = _.filter(this.records, function(item) {
-                    return item.total_to_pay > 0 && item.currency_type_id == 'USD';
-                    });
-                }
-
-                return _.sumBy(source, function(item) {
-                    return  parseFloat(item.total_to_pay);
-                }).toFixed(2);
-            },
-            getTotalRowsUnpaid() {
-                const self = this;
-
-                if (self.form.supplier_id) {
-                    return _.filter(self.records, function(item) {
-                    return (
-                        item.total_to_pay > 0 && item.supplier_id == self.form.supplier_id
-                    );
-                    }).length;
-                } else {
-                    return _.filter(this.records, function(item) {
-                    return item.total_to_pay > 0;
-                    }).length;
-                }
-            },
-            getTotalAmountUnpaid() {
-                const self = this;
-                let source = [];
-                if (self.form.supplier_id) {
-                    source = _.filter(self.records, function(item) {
-                    return (
-                        item.total_to_pay > 0 && item.supplier_id == self.form.supplier_id && item.currency_type_id == 'VES'
-                    );
-                    });
-                } else {
-                    source = _.filter(this.records, function(item) {
-                    return item.total_to_pay > 0 &&  item.currency_type_id == 'VES';
-                    });
-                }
-
-                return _.sumBy(source, function(item) {
-                    return  parseFloat(item.total)
-                }).toFixed(2)
-            },
-            getTotalAmountUnpaidUsd() {
-                const self = this;
-                let source = [];
-                if (self.form.supplier_id) {
-                    source = _.filter(self.records, function(item) {
-                    return (
-                        item.total_to_pay > 0 && item.supplier_id == self.form.supplier_id && item.currency_type_id == 'USD'
-                    );
-                    });
-                } else {
-                    source = _.filter(this.records, function(item) {
-                    return item.total_to_pay > 0 && item.currency_type_id == 'USD';
-                    });
-                }
-
-                return _.sumBy(source, function(item) {
-                    return  parseFloat(item.total);
-                }).toFixed(2)
-            },
+            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            getCurrentBalance() { return this.summary.VES_balance ?? '0'; },
+            getCurrentBalanceUsd() { return this.summary.USD_balance ?? '0'; },
+            getTotalRowsUnpaid() { return this.summary.count ?? 0; },
+            getTotalAmountUnpaid() { return this.summary.VES_total ?? '0'; },
+            getTotalAmountUnpaidUsd() { return this.summary.USD_total ?? '0'; },
+            // ######## FIN CALCULOS EXACTOS PRO9 ########
             canExportResults() {
                 return this.getTotalRowsUnpaid > 0;
             }
@@ -493,11 +414,16 @@
                     this.form.establishment_id = this.establishments.length > 0 ? this.establishments[0].id : null;
                 });
             },
-            loadToPay() {
-                this.$http.post(`/${this.resource}/records`, this.form).then(response => {
+            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            loadToPay(page = 1) {
+                const currentPage = Number.isInteger(page) ? page : 1;
+                return this.$http.post(`/${this.resource}/records`, {...this.form, page: currentPage, per_page: this.pagination.per_page}).then(response => {
                     this.records = response.data.records;
+                    this.summary = response.data.summary;
+                    this.pagination = response.data.meta;
                 });
             },
+            // ######## FIN CALCULOS EXACTOS PRO9 ########
             clickPurchasePayment(recordId) {
                 this.recordId = recordId;
                 this.showDialogPurchasePayments = true;

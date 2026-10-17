@@ -51,6 +51,7 @@ class ItemImportValidationWorkbook
         $reader = IOFactory::createReader('Xlsx');
         $reader->setReadDataOnly(false);
         $spreadsheet = $reader->load($sourcePath);
+        \App\Support\Exact\XlsxDecimals::restore($spreadsheet,$sourcePath,[6,9,11,12]);
         foreach ($spreadsheet->getWorksheetIterator() as $worksheet) {
             $this->removePreviousValidationMarks($worksheet);
 

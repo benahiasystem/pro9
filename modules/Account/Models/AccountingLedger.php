@@ -191,7 +191,7 @@
                 'date_of_report' => $requestArray['date_end'],
                 'name' => AccountingLedgerCodeAccount::getNameByCodeAcount('2.1.1.1', 'Cuentas por pagar a proveedores'),
 
-                'serialize_data' => serialize($cuentasPorPagar),
+                'serialize_data' => serialize(iterator_to_array($cuentasPorPagar)),
             ]; //
             $record['2.1.1.1']['serialize_data'] = serialize($record['2.1.1.1']);
             // Activos
@@ -286,15 +286,15 @@
             ])->first();
 
             if (null !== $account) {
-                $model->last_month_total = $account->final_total;
+                $model->last_month_total = $account->exactValue('final_total');
             }
             $model->name = trim($model->name);
-            $model->final_total = ($model->credits - $model->debs) + $model->last_month_total;
+            $model->final_total = $model->exactValue('credits')->minus($model->exactValue('debs'))->plus($model->exactValue('last_month_total'))->simplified();
             // Se establecen los montos en positivo
-            $model->last_month_total = abs($model->last_month_total);
-            $model->credits = abs($model->credits);
-            $model->debs = abs($model->debs);
-            $model->final_total = abs($model->final_total);
+            $model->last_month_total = $model->exactValue('last_month_total')->abs();
+            $model->credits = $model->exactValue('credits')->abs();
+            $model->debs = $model->exactValue('debs')->abs();
+            $model->final_total = $model->exactValue('final_total')->abs();
             $accountLedger = AccountingLedgerCodeAccount::where(['code_account' => $model->code_account,])->first();
             if (!empty($accountLedger)) {
                 // sumar todos los hijos de la cuenta
@@ -308,10 +308,10 @@
                     ->whereNotIn('code_account', $excludeaAccounts)
                     ->get();
 
-                $last_month_total = $acoounts->sum('last_month_total');
-                $credits = $acoounts->sum('credits');
-                $debs = $acoounts->sum('debs');
-                $final_total = $acoounts->sum('final_total');
+                $last_month_total = \App\Support\Exact\Aggregate::records($acoounts, 'last_month_total');
+                $credits = \App\Support\Exact\Aggregate::records($acoounts, 'credits');
+                $debs = \App\Support\Exact\Aggregate::records($acoounts, 'debs');
+                $final_total = \App\Support\Exact\Aggregate::records($acoounts, 'final_total');
 
 
                 $model->last_month_total = $last_month_total;

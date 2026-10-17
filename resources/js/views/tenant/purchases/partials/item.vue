@@ -553,7 +553,7 @@
 }
 </style>
 <script>
-import {exactAmount} from '../../../../helpers/exchange-rate-math'
+import {exactAmount, exactValue} from '../../../../helpers/exchange-rate-math'
 
 import itemForm from '../../items/form.vue'
 import {calculateRowItem} from '../../../../helpers/functions'
@@ -951,8 +951,7 @@ export default {
             this.form.item = item;
             this.form.item = this.setExtraFieldOfitem(this.form.item)
 
-            const saleUnitPrice = item.sale_unit_price;
-            this.sale_unit_price = parseFloat(saleUnitPrice).toFixed(2);
+            this.sale_unit_price = exactValue(item, 'sale_unit_price').decimal();
             this.form.unit_price = this.form.item.purchase_unit_price
             this.form.affectation_igv_type_id = this.form.item.purchase_affectation_igv_type_id
             this.form.item_unit_types = _.find(this.items, {'id': this.form.item_id}).item_unit_types
@@ -996,8 +995,7 @@ export default {
             let item = _.find(this.items, {'id': this.form.item_id});
             this.form.item = item;
             this.form.item = this.setExtraFieldOfitem(this.form.item)
-            let saleUnitPrice = item.sale_unit_price;
-            this.sale_unit_price = parseFloat(saleUnitPrice).toFixed(2);
+            this.sale_unit_price = exactValue(item, 'sale_unit_price').decimal();
             this.form.unit_price = this.form.item.purchase_unit_price
             this.form.affectation_igv_type_id = this.form.item.purchase_affectation_igv_type_id
             this.form.item_unit_types = item.item_unit_types
@@ -1027,7 +1025,12 @@ export default {
 
             let affectation_igv_types_exonerated_unaffected = ['20', '21', '30', '31', '32', '33', '34', '35', '36', '37']
 
-            this.form.price_input={amount:String(this.form.unit_price),currency_type_id:this.form.item.currency_type_id || this.currencyTypeIdActive,includes_iva:this.form.purchase_has_igv !== false};
+            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            const catalogPurchase = exactValue(this.form.item, 'purchase_unit_price');
+            const priceSource = exactAmount(this.form.unit_price).compare(catalogPurchase.decimal()) === 0
+                ? catalogPurchase.fraction() : String(this.form.unit_price);
+            this.form.price_input={amount:priceSource,currency_type_id:this.form.item.currency_type_id || this.currencyTypeIdActive,includes_iva:this.form.purchase_has_igv !== false};
+            // ######## FIN CALCULOS EXACTOS PRO9 ########
             let unit_price = this.form.unit_price
 
             if (!affectation_igv_types_exonerated_unaffected.includes(this.form.affectation_igv_type_id)) {

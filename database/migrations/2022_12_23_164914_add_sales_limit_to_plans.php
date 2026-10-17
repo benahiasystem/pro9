@@ -14,7 +14,7 @@ class AddSalesLimitToPlans extends Migration
     public function up()
     {
         Schema::table('plans', function (Blueprint $table) {
-            $table->decimal('sales_limit', 22, 2)->default(0)->after('locked');
+            $table->decimal('sales_limit', 32, 12)->default(0)->after('locked');
             $table->boolean('sales_unlimited')->default(true)->after('sales_limit');
         });
     }

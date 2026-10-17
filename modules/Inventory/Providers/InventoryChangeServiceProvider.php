@@ -34,7 +34,7 @@ class InventoryChangeServiceProvider extends ServiceProvider
             }
             $warehouse = ($item->warehouse_id) ? $this->findWarehouse($this->findWarehouseById($item->warehouse_id)->establishment_id) : $this->findWarehouse();
             if(!$item->is_set){
-                $this->createInitialInventory($item->id, $item->stock, $warehouse->id);
+                $this->createInitialInventory($item->id, $item->exactValue('stock'), $warehouse->id);
             }else{
                 $item_warehouse = ItemWarehouse::firstOrNew(['item_id' => $item->id, 'warehouse_id' => $warehouse->id]);
                 $item_warehouse->stock = 0;
@@ -47,22 +47,24 @@ class InventoryChangeServiceProvider extends ServiceProvider
     private function inventory()
     {
         Inventory::created(function ($inventory) {
+            $quantity=$inventory->exactValue('quantity');
+            $negative=$quantity->negated();
             switch ($inventory->type) {
                 case 1:
-                    $this->createInventoryKardex($inventory, $inventory->item_id, $inventory->quantity, $inventory->warehouse_id);
-                    $this->updateStock($inventory->item_id, $inventory->quantity, $inventory->warehouse_id);
+                    $this->createInventoryKardex($inventory, $inventory->item_id, $quantity, $inventory->warehouse_id);
+                    $this->updateStock($inventory->item_id, $quantity, $inventory->warehouse_id);
                     break;
                 case 2:
                     //Origin
-                    $this->createInventoryKardex($inventory, $inventory->item_id, -1 * $inventory->quantity, $inventory->warehouse_id);
-                    $this->updateStock($inventory->item_id, -1 * $inventory->quantity, $inventory->warehouse_id);
+                    $this->createInventoryKardex($inventory, $inventory->item_id, $negative, $inventory->warehouse_id);
+                    $this->updateStock($inventory->item_id, $negative, $inventory->warehouse_id);
                     //Arrival
-                    $this->createInventoryKardex($inventory, $inventory->item_id, $inventory->quantity, $inventory->warehouse_destination_id);
-                    $this->updateStock($inventory->item_id, $inventory->quantity, $inventory->warehouse_destination_id);
+                    $this->createInventoryKardex($inventory, $inventory->item_id, $quantity, $inventory->warehouse_destination_id);
+                    $this->updateStock($inventory->item_id, $quantity, $inventory->warehouse_destination_id);
                     break;
                 case 3:
-                    $this->createInventoryKardex($inventory, $inventory->item_id, -1 * $inventory->quantity, $inventory->warehouse_id);
-                    $this->updateStock($inventory->item_id, -1 * $inventory->quantity, $inventory->warehouse_id);
+                    $this->createInventoryKardex($inventory, $inventory->item_id, $negative, $inventory->warehouse_id);
+                    $this->updateStock($inventory->item_id, $negative, $inventory->warehouse_id);
                     break;
                 default:
                     //aqui en el defualt tendria que acceder a la inventory_transactions y determinar el tipo de transaccion
@@ -71,13 +73,13 @@ class InventoryChangeServiceProvider extends ServiceProvider
 
                     if($inventory_transaction->type === 'input'){
 
-                        $this->createInventoryKardex($inventory, $inventory->item_id, $inventory->quantity, $inventory->warehouse_id);
-                        $this->updateStock($inventory->item_id, $inventory->quantity, $inventory->warehouse_id);
+                        $this->createInventoryKardex($inventory, $inventory->item_id, $quantity, $inventory->warehouse_id);
+                        $this->updateStock($inventory->item_id, $quantity, $inventory->warehouse_id);
 
                     }else{
 
-                        $this->createInventoryKardex($inventory, $inventory->item_id, -1 * $inventory->quantity, $inventory->warehouse_id);
-                        $this->updateStock($inventory->item_id, -1 * $inventory->quantity, $inventory->warehouse_id);
+                        $this->createInventoryKardex($inventory, $inventory->item_id, $negative, $inventory->warehouse_id);
+                        $this->updateStock($inventory->item_id, $negative, $inventory->warehouse_id);
 
                     }
                     break;

@@ -14,6 +14,7 @@ final class Decimal
 {
     public const SCALE = 12;
     public const VERSION = 1;
+    private static ?\WeakMap $readCache = null;
 
     public static function of($value): BigRational
     {
@@ -35,11 +36,14 @@ final class Decimal
         return BigRational::of((string) $value)->simplified();
     }
 
-    public static function input($value, string $field = 'amount', int $scale = self::SCALE): string
+    public static function input($value, string $field = 'amount', int $scale = self::SCALE, int $integerDigits = 18): string
     {
         try {
+            if (!is_scalar($value) || is_bool($value) || $value==='') throw new \InvalidArgumentException();
             $decimal = BigDecimal::of((string) $value)->toScale($scale, RoundingMode::UNNECESSARY);
-            if ($decimal->abs()->isGreaterThan('999999999999999999.999999999999')) throw new \InvalidArgumentException();
+            if ($integerDigits < 1 || $integerDigits + $scale > 65) throw new \InvalidArgumentException();
+            $limit=str_repeat('9',$integerDigits).($scale ? '.'.str_repeat('9',$scale) : '');
+            if ($decimal->abs()->isGreaterThan($limit)) throw new \InvalidArgumentException();
             return (string) $decimal;
         } catch (\Throwable $exception) {
             throw ValidationException::withMessages([$field => "Indique un decimal válido con hasta $scale posiciones, sin redondeo."]);
@@ -76,8 +80,23 @@ final class Decimal
     public static function sum(iterable $values): BigRational
     {
         $sum = self::of(0);
-        foreach ($values as $value) $sum = $sum->plus(self::of($value));
+        foreach ($values as $value) {
+            $value=self::of($value);
+            $sum=$sum->getDenominator()->isEqualTo($value->getDenominator())
+                ? BigRational::nd($sum->getNumerator()->plus($value->getNumerator()),$sum->getDenominator())
+                : $sum->plus($value)->simplified();
+        }
         return $sum->simplified();
+    }
+
+    /** Canonical stored decimal, without reparsing a fraction for each model read. */
+    public static function canonical($value): string
+    {
+        $text=(string)$value;
+        if (!preg_match('/^(-?)([0-9]+)(?:\.([0-9]{1,12}))?$/D',$text,$parts)) return self::represent($value);
+        $integer=ltrim($parts[2],'0') ?: '0';
+        $fraction=rtrim($parts[3] ?? '','0');
+        return ($parts[1] && ($integer!=='0' || $fraction!=='') ? '-' : '').$integer.($fraction!=='' ? '.'.$fraction : '');
     }
 
     public static function min($a, $b): BigRational
@@ -100,11 +119,48 @@ final class Decimal
 
     public static function read($record, string $field): BigRational
     {
-        $snapshot = is_array($record) ? ($record['calculation_snapshot'] ?? null) : $record->calculation_snapshot ?? null;
+        $snapshot = is_array($record) ? ($record['calculation_snapshot'] ?? null)
+            : (method_exists($record,'getAttributes') ? ($record->getAttributes()['calculation_snapshot'] ?? null) : ($record->calculation_snapshot ?? null));
+        if (is_object($record)) {
+            self::$readCache ??= new \WeakMap();
+            $entry=self::$readCache[$record] ?? null;
+            if ($entry && $entry['source']===$snapshot) {
+                if (isset($entry['values'][$field])) return $entry['values'][$field];
+                $snapshot=$entry['decoded'];
+            } else $entry=null;
+            $source=$snapshot;
+        }
         if (is_string($snapshot)) $snapshot = json_decode($snapshot, true, 512, JSON_THROW_ON_ERROR);
         if (is_object($snapshot)) $snapshot = json_decode(json_encode($snapshot, JSON_THROW_ON_ERROR), true, 512, JSON_THROW_ON_ERROR);
+        if (is_object($record)) {
+            $entry ??= ['source'=>$source,'decoded'=>$snapshot,'values'=>[]];
+            if (isset($snapshot['values'][$field])) $entry['values'][$field]=self::of($snapshot['values'][$field]);
+            self::$readCache[$record]=$entry;
+            if (isset($entry['values'][$field])) return $entry['values'][$field];
+        }
         $value = is_array($record) ? ($record[$field] ?? 0) : ($record->$field ?? 0);
         return self::of($snapshot['values'][$field] ?? $value);
+    }
+
+    /** A partial SQL projection must never invent a zero-valued business operand. */
+    public static function readRequired($record, string $field): BigRational
+    {
+        $attributes = is_array($record) ? $record
+            : (method_exists($record, 'getAttributes') ? $record->getAttributes() : get_object_vars($record));
+        $snapshot = $attributes['calculation_snapshot'] ?? null;
+        if (is_string($snapshot)) $snapshot = json_decode($snapshot, true, 512, JSON_THROW_ON_ERROR);
+        if (is_object($snapshot)) $snapshot = json_decode(json_encode($snapshot, JSON_THROW_ON_ERROR), true, 512, JSON_THROW_ON_ERROR);
+        if ($snapshot !== null && (!is_array($snapshot) || ($snapshot['version'] ?? null) !== self::VERSION
+            || !is_array($snapshot['values'] ?? null))) {
+            throw new \UnexpectedValueException('Snapshot de cálculo inválido.');
+        }
+        if (!array_key_exists($field, $attributes) && !isset($snapshot['values'][$field])) {
+            throw new \UnexpectedValueException("Falta el operando exacto $field en la consulta.");
+        }
+        if (!isset($snapshot['values'][$field]) && ($attributes[$field] ?? null) === null) {
+            throw new \UnexpectedValueException("El operando $field no puede ser nulo.");
+        }
+        return self::read($record, $field);
     }
 
     public static function values(array $values): array

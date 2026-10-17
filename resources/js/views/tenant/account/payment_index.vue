@@ -22,7 +22,7 @@
               :style="{ backgroundColor: getStateColor(pay.id) }"
             >
               <div>
-                <span class="status-price">Bs. {{ parseFloat(pay.total).toFixed(2) }}</span>
+                <span class="status-price">Bs. {{ money(pay, 'total') }}</span>
                 <p class="m-0">{{ pay.name }}</p>
               </div>
               <div v-html="getStateIcon(pay.id)"></div>
@@ -61,7 +61,7 @@
                 <td>
                   <span class="text-muted">{{ record.description }}</span>
                 </td>
-                <td class="text-center">Bs. {{ parseFloat(record.amount).toFixed(2) }}</td>
+                <td class="text-center">Bs. {{ money(record, 'amount') }}</td>
                 <td class="text-center">{{ record.due_date }}</td>
                 <td class="text-center">
                   <span class="badge badge-pill" :class="getStateBadgeClass(record.order_state_id)">
@@ -106,6 +106,7 @@
 </template>
 
 <script>
+import {exactValue} from '../../../helpers/exchange-rate-math'
 export default {
   props: {
     canConfigure: {
@@ -142,6 +143,9 @@ export default {
     },
   },
   methods: {
+    money(record,field) {
+      return exactValue(record,field).final(2)
+    },
     getData() {
       this.$http.get(`/${this.resource}/payment_records`).then(response => {
         this.records = response.data.data;

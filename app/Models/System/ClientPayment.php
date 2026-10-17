@@ -4,7 +4,7 @@ namespace App\Models\System;
 use Hyn\Tenancy\Traits\UsesSystemConnection;
 use Illuminate\Database\Eloquent\Model;
 
-class ClientPayment extends Model
+class ClientPayment extends ModelSystem
 {
     protected $with = ['payment_method_type', 'card_brand'];
 

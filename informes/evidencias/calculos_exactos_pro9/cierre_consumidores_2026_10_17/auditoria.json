@@ -1,0 +1,47 @@
+{
+  "php": {
+    "candidates": 23418,
+    "classified": 5719,
+    "pending": 17699,
+    "parse_errors": [],
+    "registry_errors": [],
+    "coverage_missing": [],
+    "scanned_files": 3615,
+    "check_exit_code": 1,
+    "categories": {
+      "pending": 17699,
+      "technical": 5669,
+      "discrete_units": 3,
+      "settlement": 4,
+      "validation": 4,
+      "storage": 10,
+      "presentation": 17,
+      "allocation": 11,
+      "exact_arithmetic": 1
+    }
+  },
+  "js": {
+    "candidates": 23169,
+    "classified": 3306,
+    "pending": 19863,
+    "parse_errors": [],
+    "registry_errors": [],
+    "coverage_missing": [],
+    "scanned_files": 1950,
+    "check_exit_code": 1,
+    "categories": {
+      "technical": 3204,
+      "pending": 19863,
+      "validation": 29,
+      "exact_arithmetic": 36,
+      "presentation": 19,
+      "allocation": 18
+    }
+  },
+  "totals": {
+    "candidates": 46587,
+    "classified": 9025,
+    "pending": 37562
+  },
+  "scope": "Cobertura sintáctica de fuentes según política. No demuestra por sí sola trazabilidad interprocedimental, SQL dinámico ni cierre de consumidores."
+}

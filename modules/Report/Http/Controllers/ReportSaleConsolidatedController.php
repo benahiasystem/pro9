@@ -18,6 +18,10 @@ use Illuminate\Support\Facades\DB;
 use Modules\Report\Exports\SaleConsolidatedExport;
 use Modules\Report\Exports\SaleConsolidatedTotalExport;
 use Modules\Report\Traits\ConsolidatedReportTrayTrait;
+// ######## INICIO CALCULOS EXACTOS PRO9 ########
+use App\Support\Exact\SalesConsolidated;
+use App\Support\Exact\ReportDataset;
+// ######## FIN CALCULOS EXACTOS PRO9 ########
 
 
 class ReportSaleConsolidatedController extends Controller
@@ -56,70 +60,41 @@ class ReportSaleConsolidatedController extends Controller
         return view('report::sales_consolidated.index');
     }
 
+    // ######## INICIO CALCULOS EXACTOS PRO9 ########
     public function records(Request $request)
     {
-        $records = $this->getRecordsSalesConsolidated($request->all());
-
-        return new SaleConsolidatedCollection($records->paginate(config('tenant.items_per_page')));
+        $request->validate(['page'=>'sometimes|integer|min:1']);
+        $query = $this->getRecordsSalesConsolidated($request->all());
+        return $query->getModel()->getConnection()->transaction(function () use ($query, $request) {
+            $perPage = max(1, min(500, (int)config('tenant.items_per_page', 50)));
+            $page = $query->reorder()->orderByDesc('id')->orderBy('source_type')->withoutEagerLoads()
+                ->with(['relation_item'=>fn($q)=>$q->withoutEagerLoads()->with(['brand', 'category'])])
+                ->paginate($perPage, ['*'], 'page', (int)$request->input('page', 1));
+            $rows = $page->getCollection()->map(fn($row)=>SalesConsolidated::line($row));
+            $page->setCollection($rows);
+            return (new SaleConsolidatedCollection($page))->additional(['summary'=>SalesConsolidated::summary($rows)]);
+        });
     }
 
+    private function sourceLines($query): \Generator
+    {
+        $source = (clone $query)->withoutEagerLoads()->with(['relation_item'=>fn($q)=>$q->withoutEagerLoads()->with(['brand', 'category'])])->reorder()
+            ->orderBy('source_type')->orderBy('id');
+        foreach ($source->lazy(500) as $record) yield SalesConsolidated::line($record);
+    }
+
+    public function detailRecords(array $params)
+    {
+        $query = $this->getRecordsSalesConsolidated($params);
+        return $query->getModel()->getConnection()->transaction(fn()=>new ReportDataset($this->sourceLines($query)));
+    }
 
     public function totalsByItem(Request $request)
     {
-
-        // $records = $this->getRecordsSalesConsolidated($request->all())->groupBy('item_id')->get();
-        $records = $this->groupTotalsByItem($this->getRecordsSalesConsolidated($request->all())->get());
-
-
-        return $records->map(function(\Illuminate\Database\Eloquent\Collection $row, $key){
-            $unit_type_id = 'SERV';
-            $first =$row->first();
-            $quantity = $row->sum('quantity');
-            $brand = "";
-            $category = "";
-            $unit_price = 1;
-
-
-            if (property_exists($first->item, 'presentation') && $first->item->presentation) {
-                $unit_type_id = $first->item->presentation->unit_type_id;
-            }
-            if($unit_type_id !== 'SERV'){
-                $item = \App\Models\Tenant\Item::select('brand_id')->where('internal_id',$first->item->internal_id)->first();
-                if(!empty($item)){
-                    $brand = $item->brand;
-                    $brand = $brand['name'];
-                    $category = $item->category;
-                    $category = $category['name'];
-                }
-            }
-            if (property_exists($first->item,'unit_price')) {
-                $unit_price = $first->item->unit_price * 1;
-                if(!is_numeric($unit_price)){
-                    $unit_price = 1;
-                }
-            }
-            $total_sale = $unit_price * ($row->sum('quantity') * 1);
-
-            // obtener item id y unit_type_id
-            $item_unit_type = explode('-', $key);
-            $row_item_id = $item_unit_type[0] ?? $first->item_id;
-            $row_unit_type_id = $item_unit_type[1] ?? $first->relation_item->unit_type_id;
-
-            return [
-                'item_id' => $row_item_id,
-                // 'item_id' => $key,
-                'brand' => $brand,
-                'total_sale' => $total_sale,
-                'category' => $category,
-                'item_internal_id' => $first->relation_item->internal_id,
-                'item_unit_type_id' => $row_unit_type_id,
-                // 'item_unit_type_id' => $first->relation_item->unit_type_id,
-                'item_description' => $first->item->description,
-                'quantity' => number_format($quantity, 4, ".", ""),
-            ];
-        });
-
+        $query = $this->getRecordsSalesConsolidated($request->all());
+        return $query->getModel()->getConnection()->transaction(fn()=>SalesConsolidated::groupedDataset($this->sourceLines($query)));
     }
+    // ######## FIN CALCULOS EXACTOS PRO9 ########
 
 
     /**
@@ -176,27 +151,6 @@ class ReportSaleConsolidatedController extends Controller
 
 
         return $data;
-
-        $document_type_id = $request['document_type_id'];
-
-        switch ($document_type_id) {
-
-            case '01':
-
-            case '80':
-                $data = SaleNoteItem::whereDefaultDocumentType($request);
-                break;
-
-            default:
-                $document_items = DocumentItem::whereDefaultDocumentType($request);
-                $sale_note_items = SaleNoteItem::whereDefaultDocumentType($request);
-                $data = $document_items->union($sale_note_items);
-
-                break;
-        }
-
-        return $data;
-
     }
 
 
@@ -235,10 +189,12 @@ class ReportSaleConsolidatedController extends Controller
         }
 
         [$company, $establishment] = $this->consolidatedCompanyAndEstablishment($request);
-        $records = $this->getRecordsSalesConsolidated($request->all())->get();
+        $records = $this->detailRecords($request->all());
         $params = $request->all();
+        $reportSummary = SalesConsolidated::summary($records);
+        $records = \App\Support\Exact\ReportProjection::money($records, ['total_sale', 'total_ves', 'total_usd']);
 
-        $pdf = PDF::loadView('report::sales_consolidated.report_pdf', compact('records', 'company', 'establishment', 'params'));
+        $pdf = PDF::loadView('report::sales_consolidated.report_pdf', compact('records', 'company', 'establishment', 'params', 'reportSummary'));
         $filename = 'Reporte_Consolidado_Items_Ventas_'.date('YmdHis');
 
         return $pdf->stream($filename.'.pdf');
@@ -258,8 +214,9 @@ class ReportSaleConsolidatedController extends Controller
         }
 
         [$company, $establishment] = $this->consolidatedCompanyAndEstablishment($request);
-        $records = $this->getRecordsSalesConsolidated($request->all())->get();
+        $records = $this->detailRecords($request->all());
         $params = $request->all();
+        $reportSummary = SalesConsolidated::summary($records);
         $filename = 'Reporte_Consolidado_Items_Ventas_'.date('YmdHis');
 
         $saleConsolidatedExport = new SaleConsolidatedExport();
@@ -288,8 +245,10 @@ class ReportSaleConsolidatedController extends Controller
         [$company, $establishment] = $this->consolidatedCompanyAndEstablishment($request);
         $records = $this->totalsByItem($request)->sortBy('item_id');
         $params = $request->all();
+        $reportSummary = SalesConsolidated::summary($records);
+        $records = \App\Support\Exact\ReportProjection::money($records, ['total_sale', 'total_ves', 'total_usd']);
 
-        $pdf = PDF::loadView('report::sales_consolidated.report_pdf_totals', compact("records", "company", "establishment", "params"));
+        $pdf = PDF::loadView('report::sales_consolidated.report_pdf_totals', compact("records", "company", "establishment", "params", "reportSummary"));
         $filename = 'Reporte_Consolidado_Items_Ventas_Totales_'.date('YmdHis');
 
         return $pdf->stream($filename.'.pdf');
@@ -311,9 +270,11 @@ class ReportSaleConsolidatedController extends Controller
         [$company, $establishment] = $this->consolidatedCompanyAndEstablishment($request);
         $records = $this->totalsByItem($request)->sortBy('item_id');
         $params = $request->all();
+        $reportSummary = SalesConsolidated::summary($records);
+        $records = \App\Support\Exact\ReportProjection::money($records, ['total_sale', 'total_ves', 'total_usd']);
         $height = (5.8 / 2.54) * 72;
         $customPaper = [0, 0, $height, 1440];
-        $pdf = PDF::loadView('report::sales_consolidated.report_pdf_totals_ticket', compact("records", "company", "establishment", "params"))
+        $pdf = PDF::loadView('report::sales_consolidated.report_pdf_totals_ticket', compact("records", "company", "establishment", "params", "reportSummary"))
             ->setPaper($customPaper);
         $filename = 'Reporte_Consolidado_Items_Ventas_Totales_'.date('YmdHis');
 
@@ -335,9 +296,11 @@ class ReportSaleConsolidatedController extends Controller
         [$company, $establishment] = $this->consolidatedCompanyAndEstablishment($request);
         $records = $this->totalsByItem($request)->sortBy('item_id');
         $params = $request->all();
+        $reportSummary = SalesConsolidated::summary($records);
+        $records = \App\Support\Exact\ReportProjection::money($records, ['total_sale', 'total_ves', 'total_usd']);
         $height = (8 / 2.54) * 72;
         $customPaper = [0, 0, $height, 1440];
-        $pdf = PDF::loadView('report::sales_consolidated.report_pdf_totals_ticket_80', compact("records", "company", "establishment", "params"))
+        $pdf = PDF::loadView('report::sales_consolidated.report_pdf_totals_ticket_80', compact("records", "company", "establishment", "params", "reportSummary"))
             ->setPaper($customPaper);
         $filename = 'Reporte_Consolidado_Items_Ventas_Totales_'.date('YmdHis');
 
@@ -360,6 +323,7 @@ class ReportSaleConsolidatedController extends Controller
         [$company, $establishment] = $this->consolidatedCompanyAndEstablishment($request);
         $records = $this->totalsByItem($request)->sortBy('item_id');
         $params = $request->all();
+        $reportSummary = SalesConsolidated::summary($records);
         $filename = 'Reporte_Consolidado_Items_Ventas_Totales_'.date('YmdHis');
 
         return (new SaleConsolidatedTotalExport)

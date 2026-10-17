@@ -1,0 +1,14 @@
+PHPUnit 9.6.34 by Sebastian Bergmann and contributors.
+
+Warning:       Your XML configuration validates against a deprecated schema.
+Suggestion:    Migrate your XML configuration using "--migrate-configuration"!
+
+.                                                                   1 / 1 (100%)
+Deprecated: Optional parameter $search_item_by_barcode_presentation declared before required parameter $barcode_presentation is implicitly treated as a required parameter in /var/www/pro9/app/Models/Tenant/Item.php on line 2891
+
+Deprecated: Optional parameter $filename declared before required parameter $format is implicitly treated as a required parameter in /var/www/pro9/app/Traits/JobReportTrait.php on line 211
+
+
+Time: 01:10.471, Memory: 34.00 MB
+
+OK (1 test, 12 assertions)

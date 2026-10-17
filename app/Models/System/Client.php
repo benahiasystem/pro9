@@ -65,7 +65,7 @@ use Modules\WhatsAppBot\Services\WhatsAppProviderFactory;
  * @property bool $enable_list_product
  * @mixin \Eloquent
  */
-class Client extends Model
+class Client extends ModelSystem
 {
     use UsesSystemConnection;
 
@@ -346,7 +346,12 @@ class Client extends Model
 
     public function getPricePlan()
     {
-        return isset($this->price) ? $this->price : $this->plan->pricing;
+        return \App\Support\Exact\Decimal::represent($this->exactPricePlan());
+    }
+
+    public function exactPricePlan(): \Brick\Math\BigRational
+    {
+        return isset($this->price) ? $this->exactValue('price') : $this->plan->exactValue('pricing');
     }
 
     /**
@@ -354,7 +359,7 @@ class Client extends Model
      */
     public function createPayemtnOrder($description = null, $created_by = 'Sistema', $extras = [])
     {
-        $price = $this->getPricePlan();
+        $price = $this->exactPricePlan();
 
         $data =  [
             'order' => str_pad((PaymentOrder::count() + 1), 6, '0', STR_PAD_LEFT),

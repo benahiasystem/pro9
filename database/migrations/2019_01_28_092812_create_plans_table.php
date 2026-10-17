@@ -14,9 +14,12 @@ class CreatePlansTable extends Migration
     public function up()
     {
         Schema::create('plans', function (Blueprint $table) {
+            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            $table->json('calculation_snapshot')->nullable();
+            // ######## FIN CALCULOS EXACTOS PRO9 ########
             $table->increments('id');
             $table->string('name');
-            $table->double('pricing');
+            $table->decimal('pricing', 30, 12);
             $table->bigInteger('limit_users');
             $table->bigInteger('limit_documents');
             $table->json('plan_documents'); 

@@ -63,16 +63,16 @@
                                     $user_name = $user->getName();
                                 }
                                 ?>
-                                @if($value['total_to_pay'] > 0)
+                                @if(\App\Support\Exact\Decimal::readRequired($value, 'total_to_pay')->isPositive())
                                     <tr>
-                                        <td class="celda">{{$loop->iteration}}</td>
-                                        <td class="celda">{{$value['date_of_issue']}}</td>
-                                        <td class="celda">{{$value['number_full']}}</td>
-                                        <td class="celda">{{$value['supplier_name']}}</td>
-                                        <td class="celda">{{$user_name}}</td>
-                                        <td class="celda">{{$value['currency_type_id']}}</td>
-                                        <td class="celda">{{$value['total_to_pay']}}</td>
-                                        <td class="celda">{{$value['total']}}</td>
+                                        <td class="celda" data-type="s">{{$loop->iteration}}</td>
+                                        <td class="celda" data-type="s">{{$value['date_of_issue']}}</td>
+                                        <td class="celda" data-type="s">{{$value['number_full']}}</td>
+                                        <td class="celda" data-type="s">{{$value['supplier_name']}}</td>
+                                        <td class="celda" data-type="s">{{$user_name}}</td>
+                                        <td class="celda" data-type="s">{{$value['currency_type_id']}}</td>
+                                        <td class="celda" data-type="s">{{$value['total_to_pay']}}</td>
+                                        <td class="celda" data-type="s">{{$value['total']}}</td>
                                     </tr>
                                 @endif
                             @endforeach

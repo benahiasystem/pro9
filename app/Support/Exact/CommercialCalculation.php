@@ -102,6 +102,7 @@ final class CommercialCalculation
         $values['settlement_adjustment']=$values['total_payable']->minus($values['total']);
         $values = array_intersect_key($values, array_flip(Persistence::columns($owner)));
         $owner->setExactValues($values)->saveQuietly();
+        LoyaltyPoints::synchronize($owner);
     }
 }
 // ######## FIN CALCULOS EXACTOS PRO9 ########

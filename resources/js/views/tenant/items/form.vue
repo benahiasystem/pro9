@@ -661,7 +661,7 @@
                                     </el-tooltip>
                                 </label>
                                 <div :class="{'has-danger': errors.quantity_of_points}" class="form-group">
-                                    <el-input-number v-model="form.quantity_of_points" :min="0.01" :precision="2" :step="1" controls-position="right"></el-input-number>
+                                    <el-input v-model="form.quantity_of_points" inputmode="decimal"></el-input>
                                     <small v-if="errors.quantity_of_points" class="form-control-feedback" v-text="errors.quantity_of_points[0]"></small>
                                 </div>
                             </div>

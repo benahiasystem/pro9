@@ -1669,7 +1669,7 @@ class Document extends ModelTenant
             $total = $this->exactValue('total');
 
             $value_quantity_points = $total->dividedBy($point_system_data->point_system_sale_amount)->multipliedBy($point_system_data->quantity_of_points);
-            $calculate_quantity_points = $point_system_data->round_points_of_sale ? (string)$value_quantity_points->toScale(0, \Brick\Math\RoundingMode::DOWN) : D::represent($value_quantity_points);
+            $calculate_quantity_points = D::represent($value_quantity_points,$point_system_data->round_points_of_sale ? 0 : 12);
         }
 
         return $calculate_quantity_points;

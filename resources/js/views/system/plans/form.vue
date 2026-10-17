@@ -269,6 +269,7 @@
 </style>
 
 <script>
+    import {exactAmount} from '../../../helpers/exchange-rate-math'
 
     import {nrusModules} from '../../../mixins/nrus-modules'
 
@@ -320,6 +321,10 @@
             })
         },
         methods: {
+            exactSalesLimit() {
+                try { return exactAmount(this.form.sales_limit) }
+                catch (error) { return null }
+            },
             notEmpty(value)
             {
                 return !_.isEmpty(value)
@@ -389,14 +394,14 @@
             normalizeNrusSalesLimit() {
                 if (!this.form.nrus || this.form.sales_unlimited) return;
 
-                const salesLimit = Number(this.form.sales_limit);
+                const salesLimit = this.exactSalesLimit();
 
-                if (isNaN(salesLimit) || salesLimit <= 8000) {
+                if (!salesLimit || salesLimit.compare('8000') <= 0) {
                     this.nrus_sales_warned = false;
                     return;
                 }
 
-                this.form.sales_limit = 8000;
+                this.form.sales_limit = '8000';
 
                 if (this.nrus_sales_warned) return;
 
@@ -405,12 +410,12 @@
             },
             applyNrusLimits(showMessages = false) {
                 const messages = [];
-                const salesLimit = Number(this.form.sales_limit);
+                const salesLimit = this.exactSalesLimit();
                 const establishmentsLimit = Number(this.form.establishments_limit);
                 const wasEstablishmentsUnlimited = this.form.establishments_unlimited;
 
-                if (!isNaN(salesLimit) && salesLimit > 8000) {
-                    this.form.sales_limit = 8000;
+                if (salesLimit && salesLimit.compare('8000') > 0) {
+                    this.form.sales_limit = '8000';
                     messages.push('las ventas mensuales se ajustaron a Bs. 8000');
                 }
 
@@ -437,9 +442,9 @@
 
                 if(!this.form.sales_unlimited)
                 {
-                    if(isNaN(this.form.sales_limit)) return this.getResponseValidations(false, 'Límite de ventas no es un número válido.')
+                    if(!this.exactSalesLimit()) return this.getResponseValidations(false, 'Límite de ventas no es un número válido.')
                     if(this.form.nrus) this.applyNrusLimits()
-                    if(this.form.nrus && Number(this.form.sales_limit) > 8000) return this.getResponseValidations(false, 'El límite de ventas mensual para NRUS no puede ser mayor a 8000.')
+                    if(this.form.nrus && this.exactSalesLimit().compare('8000') > 0) return this.getResponseValidations(false, 'El límite de ventas mensual para NRUS no puede ser mayor a 8000.')
                 }
 
                 if(!this.form.whatsapp_messages_unlimited)

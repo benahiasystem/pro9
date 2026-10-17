@@ -33,6 +33,7 @@ export class ExactAmount {
     fraction() { return {n: this.n.toString(), d: this.d.toString()} }
     decimal(scale = 12) { const text = this.final(scale); return scale ? text.replace(/\.?0+$/, '') || '0' : text }
     final(scale = 2) {
+        if (!Number.isInteger(scale) || scale < 0 || scale > 12) throw new Error('Precisión fuera de rango')
         const negative = this.n < BigInt(0)
         const scaled = (negative ? -this.n : this.n) * BigInt(10) ** BigInt(scale)
         let integer = scaled / this.d
@@ -43,10 +44,21 @@ export class ExactAmount {
 }
 export const exactAmount = rational
 // ######## INICIO CALCULOS EXACTOS PRO9 ########
+export function exactInput(value, scale = 12, integerDigits = 18) {
+    if (typeof value !== 'string' || !value.trim()) throw new Error('Indique un decimal válido como texto')
+    if (!Number.isInteger(scale) || !Number.isInteger(integerDigits) || scale < 0 || scale > 12 || integerDigits < 1 || integerDigits + scale > 65) throw new Error('Precisión fuera de rango')
+    const amount = rational(value.trim()), unit = BigInt(10) ** BigInt(scale)
+    if ((amount.n * unit) % amount.d !== BigInt(0)) throw new Error(`Se admiten hasta ${scale} decimales sin redondear`)
+    const limit = BigInt(10) ** BigInt(integerDigits + scale) - BigInt(1)
+    const magnitude = amount.n < BigInt(0) ? -amount.n : amount.n
+    if (magnitude * unit > limit * amount.d) throw new Error('El importe excede el rango permitido')
+    return amount.decimal(scale)
+}
 export function exactValue(record, field) { return rational(record.calculation_snapshot?.values?.[field] ?? record[field] ?? 0) }
 export function exactSum(values) { return values.reduce((sum, value) => sum.plus(value), rational(0)) }
 export function exactSnapshot(values, inputs = {}) { return {version: 1, inputs, values: Object.fromEntries(Object.entries(values).map(([key, value]) => [key, rational(value).fraction()]))} }
 export function allocateExact(total, weights, scale = 2) {
+    if (!Number.isInteger(scale) || scale < 0 || scale > 12) throw new Error('Precisión fuera de rango')
     if (!weights.length) return []
     total = rational(total)
     if (total.compare(0) < 0) return allocateExact(rational(0).minus(total), weights, scale).map(value => rational(0).minus(value).final(scale))

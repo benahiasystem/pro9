@@ -21,8 +21,8 @@
             <div class="col-md-3 form-group">
                 <label class="control-label">Cantidad</label>
                 <el-input
-                    v-model.number="selectedQuantity"
-                    type="number"
+                    v-model="selectedQuantity"
+                    type="text" inputmode="decimal"
                     step="0.0001"
                     min="0.0001"
                     placeholder="0.0000">
@@ -34,7 +34,7 @@
                     type="primary"
                     @click="addSupply"
                     style="width: 100%"
-                    :disabled="!selectedSupplyId || !selectedQuantity || selectedQuantity <= 0">
+                    :disabled="!selectedSupplyId || !selectedQuantity || !validSelectedQuantity">
                     Agregar
                 </el-button>
             </div>
@@ -61,7 +61,7 @@
                 width="120"
                 align="right">
                 <template slot-scope="scope">
-                    {{ parseFloat(scope.row.quantity).toFixed(4) }}
+                    {{ exactValue(scope.row, 'quantity').decimal() }}
                 </template>
             </el-table-column>
             <el-table-column
@@ -69,7 +69,7 @@
                 width="140"
                 align="right">
                 <template slot-scope="scope">
-                    Bs. {{ calculateEffectiveCost(scope.row.cost, scope.row.waste_percentage).toFixed(2) }}
+                    Bs. {{ calculateEffectiveCost(scope.row).decimal() }}
                 </template>
             </el-table-column>
             <el-table-column
@@ -77,7 +77,7 @@
                 width="140"
                 align="right">
                 <template slot-scope="scope">
-                    Bs. {{ calculateLineCost(scope.row).toFixed(2) }}
+                    Bs. {{ calculateLineCost(scope.row).decimal() }}
                 </template>
             </el-table-column>
             <el-table-column
@@ -111,13 +111,13 @@
                         <div class="col-md-12 text-end">
                             <h4>
                                 <strong>Costo de Producción Total: </strong>
-                                <span class="text-primary">{{ productionCost.toFixed(2) }}</span>
+                                <span class="text-primary">{{ productionCost.decimal() }}</span>
                             </h4>
                         </div>
                         <div class="col-md-12 text-end">
                             <h4>
                                 <strong>Precio Sugerido (Costo + 20%): </strong>
-                                <span class="text-success">{{ suggestedPrice.toFixed(2) }}</span>
+                                <span class="text-success">{{ suggestedPrice.decimal() }}</span>
                             </h4>
                         </div>
                     </div>
@@ -128,6 +128,10 @@
 </template>
 
 <script>
+// ######## INICIO CALCULOS EXACTOS PRO9 ########
+import {exactAmount, exactValue, exactSnapshot, exactInput} from '../../../../../../../resources/js/helpers/exchange-rate-math'
+import {recipeEffectiveCost, recipeLineCost, recipeTotals} from '../../../../../../../resources/js/helpers/exact-recipe'
+// ######## FIN CALCULOS EXACTOS PRO9 ########
 export default {
     name: 'SuppliesTab',
     props: {
@@ -146,14 +150,15 @@ export default {
         }
     },
     computed: {
-        productionCost() {
-            return this.itemSupplies.reduce((sum, item) => {
-                return sum + this.calculateLineCost(item)
-            }, 0)
-        },
-        suggestedPrice() {
-            return this.productionCost * 1.20
+        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        recipeSummary() { return recipeTotals(this.itemSupplies) },
+        productionCost() { return exactValue(this.recipeSummary, 'production_cost') },
+        suggestedPrice() { return exactValue(this.recipeSummary, 'suggested_price') },
+        validSelectedQuantity() {
+            try { return exactAmount(exactInput(this.selectedQuantity)).compare('0.0001') >= 0 }
+            catch (_) { return false }
         }
+        // ######## FIN CALCULOS EXACTOS PRO9 ########
     },
     mounted() {
         this.loadAvailableSupplies()
@@ -174,17 +179,11 @@ export default {
         /**
          * Calcula el costo efectivo de un insumo (costo + merma)
          */
-        calculateEffectiveCost(cost, wastePercentage) {
-            const wasteFactor = 1 + (parseFloat(wastePercentage) / 100)
-            return parseFloat(cost) * wasteFactor
-        },
-        /**
-         * Calcula el costo total de una línea (costo efectivo × cantidad)
-         */
-        calculateLineCost(item) {
-            const effectiveCost = this.calculateEffectiveCost(item.cost, item.waste_percentage)
-            return effectiveCost * parseFloat(item.quantity)
-        },
+        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        exactValue,
+        calculateEffectiveCost: recipeEffectiveCost,
+        calculateLineCost: recipeLineCost,
+        // ######## FIN CALCULOS EXACTOS PRO9 ########
         async loadAvailableSupplies() {
             try {
                 const response = await this.$http.get('/restaurant/item-supplies/available/list')
@@ -210,7 +209,7 @@ export default {
             }
         },
         addSupply() {
-            if (!this.selectedSupplyId || !this.selectedQuantity || this.selectedQuantity <= 0) {
+            if (!this.selectedSupplyId || !this.selectedQuantity || !this.validSelectedQuantity) {
                 this.$message.warning('Seleccione un insumo y una cantidad válida')
                 return
             }
@@ -233,7 +232,9 @@ export default {
                 unit_type: supply.unit_type,
                 quantity: this.selectedQuantity,
                 cost: supply.cost,
-                waste_percentage: supply.waste_percentage
+                waste_percentage: supply.waste_percentage,
+                calculation_snapshot: exactSnapshot({quantity: this.selectedQuantity,
+                    cost: exactValue(supply, 'cost'), waste_percentage: exactValue(supply, 'waste_percentage')})
             })
 
             // Limpiar selección

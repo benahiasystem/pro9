@@ -10,7 +10,8 @@ use Illuminate\Support\Facades\DB;
  * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
  * - `hotel_room_id` int(10) unsigned NOT NULL
  * - `hotel_rate_id` int(10) unsigned NOT NULL
- * - `price` double NOT NULL DEFAULT '0'
+ * - `price` decimal(30,12) NOT NULL DEFAULT '0'
+ * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  * - `created_at` timestamp NULL DEFAULT NULL
  * - `updated_at` timestamp NULL DEFAULT NULL
  */
@@ -23,9 +24,10 @@ CREATE TABLE `hotel_room_rates` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `hotel_room_id` int(10) unsigned NOT NULL,
   `hotel_rate_id` int(10) unsigned NOT NULL,
-  `price` double NOT NULL DEFAULT '0',
+  `price` decimal(30,12) NOT NULL DEFAULT '0',
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`),
   KEY `hotel_room_rates_hotel_room_id_foreign` (`hotel_room_id`),
   KEY `hotel_room_rates_hotel_rate_id_foreign` (`hotel_rate_id`)

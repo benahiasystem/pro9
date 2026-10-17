@@ -22,6 +22,9 @@ use Carbon\Carbon;
 use App\Models\Tenant\Person;
 use Modules\Dashboard\Helpers\DashboardView;
 use Modules\Finance\Helpers\ToPay;
+// ######## INICIO CALCULOS EXACTOS PRO9 ########
+use App\Support\Exact\{Decimal, Payables, ReportProjection};
+// ######## FIN CALCULOS EXACTOS PRO9 ########
 use Modules\Finance\Exports\ToPaymentMethodDayExport;
 
 
@@ -93,9 +96,14 @@ class ToPayController extends Controller
             $data['stablishmentTopaidAll'] = 1; // Lista todos los establecimients
         }
 
-        return [
-            'records' => ToPay::getToPay($data)
-       ];
+        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        $request->validate(['page'=>'sometimes|integer|min:1', 'per_page'=>'sometimes|integer|between:1,500']);
+        $dataset = ToPay::getToPay($data)->filter(fn($row)=>Decimal::readRequired($row, 'total_to_pay')->isPositive());
+        $summary = Payables::summary($dataset);
+        $page = $dataset->paginate((int)$request->input('per_page', 50), (int)$request->input('page', 1));
+        return ['records'=>$page->items(), 'summary'=>$summary,
+            'meta'=>['current_page'=>$page->currentPage(), 'per_page'=>$page->perPage(), 'total'=>$page->total()]];
+        // ######## FIN CALCULOS EXACTOS PRO9 ########
     }
 
     /**
@@ -132,7 +140,7 @@ class ToPayController extends Controller
 
         $all_records = (new ToPay())->getToPay($request->all());
 
-        $records = collect($all_records)->where('total_to_pay', '>', 0)->where('type', 'purchase')->map(function($row){
+        $records = $all_records->filter(fn($row)=>Decimal::readRequired($row, 'total_to_pay')->isPositive() && $row['type'] === 'purchase')->map(function($row){
             $row['difference_days'] = Carbon::parse($row['date_of_issue'])->diffInDays($row['date_of_due']);
             return $row;
         });
@@ -150,6 +158,9 @@ class ToPayController extends Controller
     public function pdf(Request $request) {
 
         $records = (new ToPay())->getToPay($request->all());
+
+        $records = $records->filter(fn($row)=>Decimal::readRequired($row, 'total_to_pay')->isPositive());
+        $records = ReportProjection::money($records, ['total', 'total_to_pay']);
 
         $company = Company::first();
 

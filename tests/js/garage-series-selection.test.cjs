@@ -12,7 +12,7 @@ const parsed = compiler.parseComponent(source);
 const exported = {};
 vm.runInNewContext(babel.transformSync(parsed.script.content, {
     configFile: false, babelrc: false, plugins: ['@babel/plugin-transform-modules-commonjs'],
-}).code, {exports: exported, require: () => ({}), _: lodash, moment});
+}).code, {exports: exported, require: name => require('./support/exact-runtime.cjs')(name) || ({}), _: lodash, moment});
 const component = exported.default;
 
 function context() {

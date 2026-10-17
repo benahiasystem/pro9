@@ -23,8 +23,8 @@
                                 <th  class="text-center">Categoria</th>
                                 <th  class="text-center">Producto</th>
                                 <th  class="text-center">Cantidad</th>
-                                <th  class="text-center">Total de venta</th>
-                            <tr>
+                                <th  class="text-center">Total de venta (Bs.) / moneda original</th>
+                            </tr>
                             <tr slot-scope="{ index, row }">
                                 <td>{{ index }}</td>
                                 <td  class="text-start">{{ documentNumberFull(row.series, row.number) }}</td>
@@ -34,7 +34,7 @@
                                 <td  class="text-center">{{ row.category_name }}</td>
                                 <td  class="text-center">{{row.item_description}}</td>
                                 <td  class="text-center">{{row.item_quantity}}</td>
-                                <td  class="text-center">{{row.total_sale}}</td>
+                                <td  class="text-center">{{row.total_sale}} Bs.<br><small>{{row.currency_type_id}} {{row.total_original}}</small></td>
                             </tr>
                         </data-table>
     

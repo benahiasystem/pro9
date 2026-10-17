@@ -26,7 +26,9 @@ class MassiveInvoiceService
     {
         $spreadsheet = IOFactory::load($file->getPathname());
         $worksheet = $spreadsheet->getActiveSheet();
-        $rows = $worksheet->toArray();
+        \App\Support\Exact\XlsxDecimals::restore($spreadsheet,$file->getPathname(),[17,20],$spreadsheet->getActiveSheetIndex());
+        $rows = $worksheet->toArray(null,false,false,false);
+        $spreadsheet->disconnectWorksheets();
 
         array_shift($rows); // Eliminar encabezados
 
@@ -58,8 +60,8 @@ class MassiveInvoiceService
             $tipoComprobante = '01';
             // ######## FIN FACTURAS SIN CONVERSIÓN DE TIPOS ########
             $tipoAfectacion = $this->getTipoAfectacion($row[19] ?? '10');
-            $cantidad = floatval($row[17] ?? 1);
-            $precio = floatval($row[20] ?? 0);
+            $cantidad = \App\Support\Exact\Decimal::input($row[17] ?? '1','cantidad');
+            $precio = \App\Support\Exact\Decimal::input($row[20] ?? '0','precio');
             $incluyeIgv = strtolower(trim($row[11] ?? '')) === 'si';
 
             // Cálculos de montos según tipo de afectación e IGV incluido
@@ -118,11 +120,8 @@ class MassiveInvoiceService
                         'cantidad' => $cantidad,
                         'valor_unitario' => $montos['valorUnitario'],
                         'codigo_tipo_precio' => '01',
-                        'precio_unitario' => ($tipoAfectacion == '20' || $tipoAfectacion == '30')
-                            ? $precio
-                            // ########## INICIO CAMBIO AFECTACIÓN IVA
-                            : ($incluyeIgv ? $precio : round($precio * \App\Support\Venezuela\Localization::taxMultiplier(), 2)),
-                            // ######### FIN CAMBIO AFECTACIÓN IVA
+                        'precio_unitario' => $montos['precioUnitario'],
+                        'price_input' => ['amount'=>$precio,'includes_iva'=>$incluyeIgv,'currency_type_id'=>$row[7] ?? 'VES'],
                         'codigo_tipo_afectacion_igv' => $tipoAfectacion,
                         'total_base_igv' => $tipoAfectacion == '10' ? $montos['baseImponible'] : (
                             $tipoAfectacion == '20' ? $montos['baseImponible'] : (
@@ -146,44 +145,21 @@ class MassiveInvoiceService
 
     private function calcularMontos($precio, $cantidad, $tipoAfectacion, $incluyeIgv)
     {
-        // ########## INICIO CAMBIO AFECTACIÓN IVA
-        $igvPercentage = ($tipoAfectacion == '20' || $tipoAfectacion == '30')
-            ? 0
-            : \App\Support\Venezuela\Localization::taxPercentage();
-        // ######### FIN CAMBIO AFECTACIÓN IVA
-
-        if ($igvPercentage == 0) {
-            // Exonerado o inafecto, no hay IGV
-            $valorUnitario = $precio;
-            $baseImponible = $valorUnitario * $cantidad;
-            $igv = 0;
-            $total = $baseImponible;
-        } else {
-            if ($incluyeIgv) {
-                // ########## INICIO CAMBIO IGV A IVA
-                // El precio Incluye IVA
-                // ######### FIN CAMBIO IGV A IVA
-                $valorUnitario = round($precio / (1 + ($igvPercentage/100)), 2);
-                $baseImponible = round($valorUnitario * $cantidad, 2);
-                $igv = round($baseImponible * ($igvPercentage/100), 2);
-                $total = round($precio * $cantidad, 2);
-            } else {
-                // El precio es base, hay que sumarle IGV
-                $valorUnitario = $precio;
-                $baseImponible = round($valorUnitario * $cantidad, 2);
-                $igv = round($baseImponible * ($igvPercentage/100), 2);
-                $total = round($baseImponible + $igv, 2);
-            }
-        }
-
-        return [
-            'valorUnitario' => $valorUnitario,
-            'baseImponible' => $baseImponible,
-            'igv' => $igv,
-            'total' => $total,
-            'igvPercentage' => $igvPercentage
-        ];
+        return self::calculateAmounts($precio,$cantidad,$tipoAfectacion,$incluyeIgv);
     }
+
+    // ######## INICIO CALCULOS EXACTOS PRO9 ########
+    public static function calculateAmounts($price, $quantity, string $affectation, bool $includesIva): array
+    {
+        $rate=in_array($affectation,['20','30'],true) ? '0' : \App\Support\Venezuela\Localization::exactTaxPercentage();
+        $line=\App\Support\Exact\LineCalculation::calculate(['quantity'=>$quantity,'unit_price'=>$price,
+            'currency_type_id'=>'VES','price_input'=>['amount'=>$price,'includes_iva'=>$includesIva,'currency_type_id'=>'VES']],$rate);
+        $D=\App\Support\Exact\Decimal::class;
+        $values=['valorUnitario'=>$D::read($line,'unit_value'),'precioUnitario'=>$D::read($line,'unit_price'),
+            'baseImponible'=>$D::read($line,'total_value'),'igv'=>$D::read($line,'total_igv'),'total'=>$D::read($line,'total'),'igvPercentage'=>$rate];
+        return $D::values($values)+['calculation_snapshot'=>$D::snapshot($values,['price'=>$price,'quantity'=>$quantity,'includes_iva'=>$includesIva])];
+    }
+    // ######## FIN CALCULOS EXACTOS PRO9 ########
 
     private function validateRow($row)
     {

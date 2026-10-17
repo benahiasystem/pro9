@@ -270,7 +270,7 @@
                                     >
                                     <b>{{ customer_accumulated_points }}</b>
 
-                                    <template v-if="total_exchange_points > 0">
+                                    <template v-if="hasExchangePoints()">
                                         -
                                         <b class="text-danger">{{ total_exchange_points}}</b>
                                         <b>{{ calculate_customer_accumulated_points }}</b>
@@ -1325,7 +1325,7 @@
                                         </template>
 
                                         <template
-                                            v-if="config.enabled_point_system && customer_accumulated_points > 0 && row.item.exchange_points"
+                                            v-if="config.enabled_point_system && hasAccumulatedPoints() && row.item.exchange_points"
                                         >
                                             <el-checkbox
                                                 v-model="row.item.exchanged_for_points"
@@ -3912,8 +3912,7 @@ export default {
             this.readonly_date_of_due = false;
             this.total_discount_no_base = 0;
 
-            this.calculate_customer_accumulated_points = 0;
-            this.total_exchange_points = 0;
+            this.resetCustomerPoints();
 
 
 

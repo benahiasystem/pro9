@@ -19,6 +19,9 @@ class Kernel extends HttpKernel
         // ######### FIN CORRECCIÓN INICIALIZACIÓN TENANT ##########
         \Illuminate\Foundation\Http\Middleware\PreventRequestsDuringMaintenance::class,
         \Illuminate\Foundation\Http\Middleware\ValidatePostSize::class,
+        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        \App\Http\Middleware\PreserveJsonDecimals::class,
+        // ######## FIN CALCULOS EXACTOS PRO9 ########
         \App\Http\Middleware\TrimStrings::class,
         \Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull::class,
         \App\Http\Middleware\RemoveClientCalculationSnapshots::class,

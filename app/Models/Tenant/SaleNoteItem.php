@@ -125,9 +125,14 @@ class SaleNoteItem extends ModelTenant
     public function scopeWhereDefaultDocumentType($query, $params)
     {
 
+        // ######## INICIO CALCULOS EXACTOS PRO9 ########
         $db_raw = DB::raw("sale_note_items.id as id, sale_notes.series as series, sale_notes.number as number,
-                            sale_note_items.item as item, sale_note_items.quantity as quantity,
-                            sale_note_items.item_id as item_id,sale_notes.date_of_issue as date_of_issue");
+            sale_note_items.item as item, sale_note_items.quantity as quantity, sale_note_items.item_id as item_id,
+            sale_notes.date_of_issue as date_of_issue, sale_note_items.unit_price as unit_price,
+            sale_note_items.total as total, sale_note_items.calculation_snapshot as calculation_snapshot,
+            sale_notes.currency_type_id as currency_type_id, sale_notes.exchange_rate_sale as exchange_rate_sale,
+            '80' as document_type_id, 'sale_note' as source_type");
+        // ######## FIN CALCULOS EXACTOS PRO9 ########
 
         if (isset($params['establishment_id'])) {
             $query->where('establishment_id', $params['establishment_id']);
@@ -192,6 +197,7 @@ class SaleNoteItem extends ModelTenant
                 }
             }
         })
+            ->where('sale_notes.changed', false)
             ->join('sale_notes', 'sale_note_items.sale_note_id', '=', 'sale_notes.id')
             ->select($db_raw)
             ->latest('id');

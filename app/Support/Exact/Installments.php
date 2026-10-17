@@ -5,6 +5,15 @@ namespace App\Support\Exact;
 /** Keep the original shares separately from the amounts scheduled in cents. */
 final class Installments
 {
+    public static function save($owner, array $rows): void
+    {
+        foreach (self::calculate($owner->exactValue('total'),array_values($rows),$owner->total_payable ?? $owner->total) as $row) {
+            $record=$owner->fee()->make($row);
+            $record->calculation_snapshot=$row['calculation_snapshot'];
+            $record->save();
+        }
+    }
+
     public static function calculate($total, array $rows, $payable = null): array
     {
         if (!$rows) return [];

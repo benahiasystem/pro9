@@ -68,6 +68,17 @@ class MassiveInvoiceController extends Controller
             
             foreach($documents as $document) {
                 try {
+                    // Recalculate from the submitted source price/quantity, never from client totals.
+                    if (count($document['data']['items'] ?? [])!==1) throw new \InvalidArgumentException('Cada fila de facturación masiva debe tener una partida.');
+                    $source=$document['data']['items'][0];
+                    $priceInput=$source['price_input'] ?? ['amount'=>$source['precio_unitario'],'includes_iva'=>true,
+                        'currency_type_id'=>$document['data']['codigo_tipo_moneda']];
+                    $D=\App\Support\Exact\Decimal::class;
+                    $line=\App\Support\Exact\LineCalculation::calculate(['quantity'=>$source['cantidad'],
+                        'unit_price'=>$source['precio_unitario'],'price_input'=>$priceInput,
+                        'currency_type_id'=>$document['data']['codigo_tipo_moneda'],
+                        'exchange_rate_sale'=>$document['data']['tipo_cambio'] ?? null],
+                        ($source['codigo_tipo_afectacion_igv'] ?? '')==='10' ? \App\Support\Venezuela\Localization::exactTaxPercentage() : '0');
                     $client = new \GuzzleHttp\Client([
                         'verify' => false,
                         'http_errors' => false
@@ -127,9 +138,9 @@ class MassiveInvoiceController extends Controller
 
                     // Extraer montos del documento
                     $totales = $document['data']['totales'];
-                    $baseImponible = $totales['total_operaciones_gravadas'] ?? 0;
-                    $igv = $totales['total_igv'] ?? 0;
-                    $total = $totales['total_venta'] ?? 0;
+                    $baseImponible = ($source['codigo_tipo_afectacion_igv'] ?? '')==='10' ? $D::read($line,'total_value') : $D::of(0);
+                    $igv = $D::read($line,'total_igv');
+                    $total = $D::read($line,'total');
 
                     $invoice = \App\Models\System\MassiveInvoice::create([
                         'fecha_emision' => $document['data']['fecha_de_emision'],
@@ -145,10 +156,10 @@ class MassiveInvoiceController extends Controller
                         'observacion' => explode('|', $document['data']['informacion_adicional'])[1] ?? '',
                         'item' => $document['data']['items'][0]['codigo_interno'],
                         'descripcion_producto' => $document['data']['items'][0]['descripcion'],
-                        'cantidad' => $document['data']['items'][0]['cantidad'],
+                        'cantidad' => $D::read($line,'quantity'),
                         'unidad_medida' => $document['data']['items'][0]['unidad_de_medida'],
                         'tipo_afectacion' => $document['data']['items'][0]['codigo_tipo_afectacion_igv'],
-                        'precio' => $document['data']['items'][0]['precio_unitario'],
+                        'precio' => $D::read($line,'unit_price'),
                         'status' => $statusCode === 200 ? 'PROCESADO' : 'ERROR',
                         'nota' => isset($responseBody['message']) ? $responseBody['message'] : '',
                         'external_id' => $responseBody['data']['external_id'] ?? null,

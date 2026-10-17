@@ -11,11 +11,29 @@ use Maatwebsite\Excel\Concerns\ToCollection;
 use Modules\Inventory\Models\Inventory;
 use Modules\Inventory\Models\ItemWarehouse;
 
-class StockImport implements ToCollection
+// ######## INICIO CALCULOS EXACTOS PRO9 ########
+class StockImport implements ToCollection, \Maatwebsite\Excel\Concerns\WithEvents
 {
     use Importable;
 
     protected $data;
+
+    public function __construct(private ?string $sourcePath = null) {}
+
+    public function registerEvents(): array
+    {
+        return [\Maatwebsite\Excel\Events\BeforeSheet::class=>function ($event) {
+            if ($this->sourcePath === null) throw new \InvalidArgumentException('Falta el XLSX original para conservar los decimales.');
+            $sheet = $event->sheet->getDelegate();
+            \App\Support\Exact\XlsxDecimals::restore($sheet->getParent(), $this->sourcePath, [1], $sheet->getParent()->getIndex($sheet));
+            if ($sheet->getHighestDataRow() < 2) return;
+            foreach ($sheet->getRowIterator(2) as $row) {
+                if ($sheet->getCell('B'.$row->getRowIndex())->getDataType() === \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_FORMULA) {
+                    throw new \InvalidArgumentException('No se admiten fórmulas en el stock real.');
+                }
+            }
+        }];
+    }
 
     public function collection(Collection $rows)
     {
@@ -56,9 +74,9 @@ class StockImport implements ToCollection
                     continue;
                 }
 
-                $quantity_real = (float) $quantity_raw;
+                $quantity_real = \App\Support\Exact\Decimal::of(\App\Support\Exact\Decimal::input(str_replace(',', '.', trim((string)$quantity_raw)), 'stock'));
 
-                $item = Item::where('internal_id', $internal_id)->first();
+                $item = Item::withoutEagerLoads()->where('internal_id', $internal_id)->lockForUpdate()->first();
                 if (!$item) {
                     $errors[] = "Fila {$row_number} ({$internal_id}): producto no encontrado.";
                     continue;
@@ -66,19 +84,19 @@ class StockImport implements ToCollection
 
                 $item_warehouse = ItemWarehouse::where('item_id', $item->id)
                     ->where('warehouse_id', $warehouse_id)
-                    ->first();
+                    ->lockForUpdate()->first();
 
-                $quantity = $item_warehouse ? (float) $item_warehouse->stock : 0;
+                $quantity = $item_warehouse ? $item_warehouse->exactValue('stock') : \App\Support\Exact\Decimal::of(0);
 
-                if ($quantity_real == $quantity) {
+                if ($quantity_real->isEqualTo($quantity)) {
                     $skipped++;
                     continue;
                 }
 
                 $type = 1;
-                $quantity_new = $quantity_real - $quantity;
-                if ($quantity_real < $quantity) {
-                    $quantity_new = $quantity - $quantity_real;
+                $quantity_new = $quantity_real->minus($quantity)->simplified();
+                if ($quantity_real->isLessThan($quantity)) {
+                    $quantity_new = $quantity->minus($quantity_real)->simplified();
                     $type = null;
                 }
 
@@ -88,14 +106,14 @@ class StockImport implements ToCollection
                 $inventory->item_id = $item->id;
                 $inventory->warehouse_id = $warehouse_id;
                 $inventory->quantity = $quantity_new;
-                if ($quantity_real != $quantity) {
+                if (!$quantity_real->isEqualTo($quantity)) {
                     $inventory->inventory_transaction_id = 28;
                 }
                 $inventory->real_stock = $quantity_real;
                 $inventory->system_stock = $quantity;
                 $inventory->save();
 
-                $item_warehouse = ItemWarehouse::firstOrNew([
+                $item_warehouse = $item_warehouse ?? ItemWarehouse::firstOrNew([
                     'item_id' => $item->id,
                     'warehouse_id' => $warehouse_id,
                 ]);
@@ -168,7 +186,9 @@ class StockImport implements ToCollection
             return false;
         }
 
-        return (float) $value >= 0;
+        try {
+            return !\App\Support\Exact\Decimal::of(\App\Support\Exact\Decimal::input($value, 'stock'))->isNegative();
+        } catch (\Throwable $exception) { return false; }
     }
 
     private function buildErrorMessage(array $errors): string
@@ -183,3 +203,4 @@ class StockImport implements ToCollection
         return $message;
     }
 }
+// ######## FIN CALCULOS EXACTOS PRO9 ########

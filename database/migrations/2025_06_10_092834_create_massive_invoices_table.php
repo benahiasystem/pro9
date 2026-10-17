@@ -14,6 +14,9 @@ class CreateMassiveInvoicesTable extends Migration
     public function up()
     {
        Schema::create('massive_invoices', function (Blueprint $table) {
+            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            $table->json('calculation_snapshot')->nullable();
+            // ######## FIN CALCULOS EXACTOS PRO9 ########
             $table->increments('id');
             $table->date('fecha_emision');
             $table->date('fecha_vencimiento')->nullable();
@@ -29,19 +32,19 @@ class CreateMassiveInvoicesTable extends Migration
             $table->boolean('incluye_igv')->default(true);
             $table->string('item');
             $table->string('descripcion_producto');
-            $table->decimal('cantidad', 12, 2);
+            $table->decimal('cantidad', 30, 12);
             $table->string('unidad_medida');
             $table->string('tipo_afectacion');
-            $table->decimal('precio', 12, 2);
+            $table->decimal('precio', 30, 12);
             $table->string('status')->default('PENDIENTE');
             $table->text('nota')->nullable();
             $table->string('external_id')->nullable();
             $table->text('pdf_link')->nullable();
             $table->string('estado_emision')->nullable();
             $table->text('mensaje_emision')->nullable();
-            $table->decimal('total_gravado', 12, 2)->default(0);
-            $table->decimal('total_igv', 12, 2)->default(0);
-            $table->decimal('total_venta', 12, 2)->default(0);
+            $table->decimal('total_gravado', 30, 12)->default(0);
+            $table->decimal('total_igv', 30, 12)->default(0);
+            $table->decimal('total_venta', 30, 12)->default(0);
             $table->timestamps();
         });
     }

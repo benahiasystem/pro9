@@ -20,7 +20,7 @@ return [
     'suscription_orders' => ['amount'],
     'temporary_kardex_records' => ['balance'],
     'transfer_account_payments' => ['amount'],
-    'user_rel_suscription_plans' => ['total'],
+    'user_rel_suscription_plans' => ['total', 'total_prepayment', 'total_charge', 'total_discount', 'total_exportation', 'total_free', 'total_taxed', 'total_unaffected', 'total_exonerated', 'total_igv', 'total_igv_free', 'total_base_other_taxes', 'total_other_taxes', 'total_taxes', 'total_value'],
     'companies' => ['igtf_rate'],
     'fixed_asset_items' => ['purchase_unit_price'],
     'inventories_transfer' => ['quantity'],
@@ -113,5 +113,9 @@ return [
     'ecommerce_campaigns' => ['discount_value'],
     'document_note_refunds' => ['original_amount', 'amount'],
     'document_note_adjustments' => ['amount'],
+    'hotel_room_rates' => ['price'],
+    'accounting_ledger' => ['last_month_total', 'credits', 'debs', 'final_total'],
+    'suscription_plans' => ['total', 'total_prepayment', 'total_charge', 'total_discount', 'total_exportation', 'total_free', 'total_taxed', 'total_unaffected', 'total_exonerated', 'total_igv', 'total_igv_free', 'total_base_other_taxes', 'total_other_taxes', 'total_taxes', 'total_value'],
+    'technical_service_items' => ['quantity', 'unit_value', 'total_base_igv', 'percentage_igv', 'total_igv', 'total_base_other_taxes', 'percentage_other_taxes', 'total_other_taxes', 'total_taxes', 'unit_price', 'total_value', 'total_charge', 'total_discount', 'total'],
 ];
 // ######## FIN CALCULOS EXACTOS PRO9 ########

@@ -1098,7 +1098,12 @@ class ItemController extends Controller
         try {
             $data = DB::connection('tenant')->transaction(function () use ($file) {
                 $import = new ItemsImport();
-                $import->import($file, null, Excel::XLSX);
+                $book=\PhpOffice\PhpSpreadsheet\IOFactory::load($file->getRealPath());
+                try {
+                    \App\Support\Exact\XlsxDecimals::restore($book,$file->getRealPath(),[6,9,11,12]);
+                    $rows=$book->getSheet(0)->toArray(null,false,false,false);
+                    $import->collection(collect($rows)->map(fn($row)=>collect($row)));
+                } finally {$book->disconnectWorksheets();}
 
                 return $import->getData();
             });

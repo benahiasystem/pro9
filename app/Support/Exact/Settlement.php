@@ -16,7 +16,8 @@ final class Settlement
     public static function prepare(Model $payment): void
     {
         if (!isset(self::OWNERS[$payment->getTable()]) || !$payment->isDirty('payment')) return;
-        $requested = Decimal::of(Decimal::input($payment->payment,'payment'));
+        Decimal::input($payment->payment,'payment');
+        $requested = $payment->exactValue('payment');
         $cash = Decimal::of(Decimal::represent($requested,2));
         if ($requested->isNegative() || $requested->isGreaterThan(0) && $cash->isZero()) {
             \App\Services\Fiscal\FiscalAmounts::error('payment','El cobro debe ser positivo y liquidable en céntimos.');

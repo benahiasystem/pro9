@@ -8,8 +8,15 @@ use Maatwebsite\Excel\Concerns\Exportable;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\FromCollection;
 
-class SaleConsolidatedTotalExport implements  FromView, ShouldAutoSize
+class SaleConsolidatedTotalExport implements FromView, ShouldAutoSize, \Maatwebsite\Excel\Concerns\WithEvents
 {
+    // ######## INICIO CALCULOS EXACTOS PRO9 ########
+    protected $records;
+    protected $company;
+    protected $establishment;
+    protected $params;
+    // ######## FIN CALCULOS EXACTOS PRO9 ########
+
     use Exportable;
     
     public function records($records) {
@@ -39,10 +46,20 @@ class SaleConsolidatedTotalExport implements  FromView, ShouldAutoSize
     public function view(): View {
         return view('report::sales_consolidated.report_excel_totals', [
             'records'=> $this->records,
+            'reportSummary'=>\App\Support\Exact\SalesConsolidated::summary($this->records),
             'company' => $this->company,
             'establishment'=>$this->establishment,
             'params'=>$this->params
         ]);
     }
+
+    // ######## INICIO CALCULOS EXACTOS PRO9 ########
+    public function registerEvents(): array
+    {
+        return [\Maatwebsite\Excel\Events\AfterSheet::class=>function ($event) {
+            \App\Support\Exact\FractionSheet::append($event->sheet->getDelegate(), $this->records, ['quantity', 'total_sale', 'total_ves', 'total_usd']);
+        }];
+    }
+    // ######## FIN CALCULOS EXACTOS PRO9 ########
 
 }

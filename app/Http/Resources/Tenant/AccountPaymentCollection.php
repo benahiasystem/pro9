@@ -21,6 +21,7 @@ class AccountPaymentCollection extends ResourceCollection
                 'date_of_payment_real' => ($row->date_of_payment_real) ? $row->date_of_payment_real->format('d/m/Y') : "",
                 'comentario' => $row->reference,
                 'payment' => $row->payment, 
+                'calculation_snapshot' => $row->calculation_snapshot,
                 'state' => (bool)$row->state,
                 'reference_payment' => $row->reference_payment,
                 'state_description' => ($row->state) ? 'Pagado': (($row->date_of_payment >= date('Y-m-d')) ? 'Pendiente':'Vencido'),

@@ -121,14 +121,44 @@ class FiscalEmissionSchemaTest extends TestCase
         $paths = glob(database_path($pattern));
         sort($paths, SORT_STRING);
         return array_map(function ($path) {
-            $migration = require $path;
-            if (!is_object($migration)) {
-                self::assertSame(1, preg_match('/class\s+(\w+)\s+extends\s+\w+/', file_get_contents($path), $class), $path);
-                $migration = new $class[1]();
+            if (preg_match('/class\s+(\w+)\s+extends\s+\w+/',file_get_contents($path),$class)) {
+                if (!class_exists($class[1],false)) require $path;
+                return new $class[1]();
             }
-            return $migration;
+            return require $path;
         }, $paths);
     }
+
+    // ######## INICIO CALCULOS EXACTOS PRO9 ########
+    public function test_central_exact_schema_range_snapshot_rollback_and_repeat_in_mysql(): void
+    {
+        $migrations=[];
+        foreach (['2019_01_28_092812_create_plans_table.php','2022_12_23_164914_add_sales_limit_to_plans.php',
+            '2025_06_10_092834_create_massive_invoices_table.php'] as $file) $migrations=array_merge($migrations,$this->migrations('migrations/'.$file));
+        $db=$this->capsule->getConnection('system');
+        for ($cycle=0;$cycle<2;$cycle++) {
+            foreach ($migrations as $migration) $migration->up();
+            self::assertSame('decimal(32,12)',$db->select("SHOW COLUMNS FROM plans LIKE 'sales_limit'")[0]->Type);
+            $plan=\App\Models\System\Plan::create(['name'=>'Exacto','pricing'=>\App\Support\Exact\Decimal::of(1)->dividedBy(3),
+                'sales_limit'=>'99999999999999999999.999999999999','limit_users'=>1,'limit_documents'=>1,'plan_documents'=>[]]);
+            $plan=$plan->fresh();
+            self::assertSame('99999999999999999999.999999999999',$plan->sales_limit);
+            self::assertSame('1',\App\Support\Exact\Decimal::represent($plan->exactValue('pricing')->multipliedBy(3)));
+            $db->beginTransaction();
+            $plan->pricing=\App\Support\Exact\Decimal::of(2)->dividedBy(7);$plan->save();
+            $db->rollBack();
+            self::assertSame(['n'=>'1','d'=>'3'],\App\Support\Exact\Decimal::fraction($plan->fresh()->exactValue('pricing')));
+            try {
+                $plan->pricing=\App\Support\Exact\Decimal::of('1000000000000000000');$plan->save();
+                self::fail('El valor fuera de rango no puede llegar a MySQL.');
+            } catch (\Illuminate\Validation\ValidationException $error) {self::assertArrayHasKey('pricing',$error->errors());}
+            self::assertSame(['n'=>'1','d'=>'3'],\App\Support\Exact\Decimal::fraction($plan->fresh()->exactValue('pricing')));
+            foreach (array_reverse($migrations) as $migration) $migration->down();
+            self::assertFalse($db->getSchemaBuilder()->hasTable('plans'));
+            self::assertFalse($db->getSchemaBuilder()->hasTable('massive_invoices'));
+        }
+    }
+    // ######## FIN CALCULOS EXACTOS PRO9 ########
 
     public function test_fresh_tenant_migrations_seed_rollback_and_repeat(): void
     {
@@ -1279,9 +1309,50 @@ class FiscalEmissionSchemaTest extends TestCase
         $periodic=$periodic->fresh();$periodic->unit_price='6';$periodic->save();
         self::assertSame('1000',$D::represent($saleNote->fresh()->exactValue('total')));
         self::assertSame('2500',$D::represent(\Modules\Inventory\Models\ItemWarehouse::firstOrFail()->exactValue('stock')->multipliedBy(3)));
+        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        $report = (new \Modules\Report\Http\Controllers\ReportSaleConsolidatedController())->detailRecords([
+            'document_type_id'=>'[]', 'date_range_type_id'=>'date_of_issue', 'date_start'=>'2026-09-01', 'date_end'=>'2026-09-30', 'person_id'=>null,
+        ]);
+        self::assertCount(1, $report);
+        $reportTotals = \App\Support\Exact\SalesConsolidated::summary($report);
+        self::assertSame('1000', $reportTotals['total_sale']);
+        self::assertTrue($D::readRequired($reportTotals, 'quantity')->isEqualTo($D::of(500)->dividedBy(3)));
+        // ######## FIN CALCULOS EXACTOS PRO9 ########
         $periodic->delete();
         self::assertSame('1000',$D::represent(\Modules\Inventory\Models\ItemWarehouse::firstOrFail()->exactValue('stock')));
     }
+
+    // ######## INICIO CALCULOS EXACTOS PRO9 ########
+    public function test_exact_stock_import_retains_periodic_delta_and_repeating_the_file_does_not_move_stock(): void
+    {
+        [$db, $app, $input] = $this->bootHkaFixture();
+        $D = \App\Support\Exact\Decimal::class;
+        $warehouseId = $input['items'][0]['warehouse_id'];
+        $itemId = $input['items'][0]['item_id'];
+        $third = $D::of(1)->dividedBy(3);
+        $db->table('item_warehouse')->where('item_id', $itemId)->where('warehouse_id', $warehouseId)
+            ->update(['stock'=>$D::represent($third), 'calculation_snapshot'=>json_encode($D::snapshot(['stock'=>$third]))]);
+        (new \Modules\Inventory\Providers\InventoryChangeServiceProvider($app))->boot();
+        $app->instance('request', \Illuminate\Http\Request::create('/', 'POST', ['warehouse_id'=>$warehouseId]));
+        $internal = $db->table('items')->where('id', $itemId)->value('internal_id');
+        $target = '0.666666666667';
+        $rows = fn()=>collect([collect(['Código','Stock real']), collect([$internal, $target])]);
+        $import = new \App\Imports\StockImport();
+        $import->collection($rows());
+        self::assertSame(1, $import->getData()['registered']);
+        $stock = \Modules\Inventory\Models\ItemWarehouse::where('item_id', $itemId)->where('warehouse_id', $warehouseId)->firstOrFail();
+        self::assertSame($target, $D::represent($stock->exactValue('stock')));
+        $movement = \Modules\Inventory\Models\Inventory::withoutEagerLoads()->where('item_id', $itemId)->latest('id')->firstOrFail();
+        self::assertTrue($movement->exactValue('quantity')->isEqualTo($D::of($target)->minus($third)));
+        $kardex = \Modules\Inventory\Models\InventoryKardex::where('inventory_kardexable_type', get_class($movement))->where('inventory_kardexable_id', $movement->id)->firstOrFail();
+        self::assertTrue($kardex->exactValue('quantity')->isEqualTo($movement->exactValue('quantity')));
+        $count = $db->table('inventories')->count();
+        $import->collection($rows());
+        self::assertSame(0, $import->getData()['registered']);
+        self::assertSame(1, $import->getData()['skipped']);
+        self::assertSame($count, $db->table('inventories')->count());
+    }
+    // ######## FIN CALCULOS EXACTOS PRO9 ########
 
     public function test_hka_emission_runs_after_outer_commit_and_recovers_without_duplicate_sales(): void
     {
@@ -1864,7 +1935,8 @@ class FiscalEmissionSchemaTest extends TestCase
     public function test_fresh_system_migrations_do_not_create_fiscal_transport_configuration(): void
     {
         $this->capsule->getDatabaseManager()->setDefaultConnection('system');
-        foreach ($this->migrations('migrations/*.php') as $migration) {
+        $migrations=$this->migrations('migrations/*.php');
+        foreach ($migrations as $migration) {
             $migration->up();
         }
         $db = $this->capsule->getConnection('system');
@@ -1879,6 +1951,17 @@ class FiscalEmissionSchemaTest extends TestCase
         }
         self::assertSame(0, $db->table('module_levels')->whereIn('value', ['dispatch_carrier', 'carrier_dispatches'])->count());
         self::assertSame(1, $db->table('module_levels')->where('value', 'dispatches')->count());
+        foreach (array_reverse($migrations) as $migration) $migration->down();
+        self::assertSame([],array_map(fn($row)=>(array)$row,$db->select('SHOW TABLES')));
+        foreach ($migrations as $migration) $migration->up();
+        foreach (require base_path('config/exact_calculations_system.php') as $table=>$fields) {
+            self::assertTrue($db->getSchemaBuilder()->hasColumn($table,'calculation_snapshot'),$table);
+            foreach ($fields as $field) {
+                $expected=$table==='plans' && $field==='sales_limit' ? 'decimal(32,12)' : 'decimal(30,12)';
+                $column=$db->selectOne('SELECT COLUMN_TYPE AS definition FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?',[$table,$field]);
+                self::assertSame($expected,$column->definition,$table.'.'.$field);
+            }
+        }
     }
 
     private function assertFiscalSchema(Connection $db): void

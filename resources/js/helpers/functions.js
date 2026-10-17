@@ -11,8 +11,11 @@ function calculateRowItem(old, currency, rate, pigv = '0.16', exportation = fals
     const inputs = old.calculation_snapshot?.inputs || {}
     const unchangedQuantity = old.calculation_snapshot && exactValue(old, 'quantity').decimal() === exactAmount(old.quantity).decimal()
     const quantityInput = old.quantity_input ?? (unchangedQuantity ? inputs.quantity_input : null) ?? null
+    const selectedPrice = old.item.calculation_snapshot?.values?.unit_price ?? old.item.calculation_snapshot?.values?.sale_unit_price
+    const originalPrice = selectedPrice && exactAmount(selectedPrice).decimal() === exactAmount(old.item.unit_price).decimal()
+        ? selectedPrice : String(old.item.unit_price)
     const priceInput = old.price_input ?? inputs.price_input ?? (!old.calculation_snapshot
-        ? {amount: String(old.item.unit_price), currency_type_id: old.item.currency_type_id || old.currency_type_id || currency, includes_iva: true} : null)
+        ? {amount: originalPrice, currency_type_id: old.item.currency_type_id || old.currency_type_id || currency, includes_iva: true} : null)
     const sourceCurrency = priceInput ? priceInput.currency_type_id : old.calculation_snapshot ? (old.currency_type_id || currency) : old.item.currency_type_id
     let price = priceInput ? exactAmount(priceInput.amount) : old.calculation_snapshot ? exactValue(old, 'unit_price') : exactAmount(old.item.unit_price)
     if (priceInput?.includes_iva === false && old.affectation_igv_type_id === '10') price = price.times(exactAmount(1).plus(pigv))

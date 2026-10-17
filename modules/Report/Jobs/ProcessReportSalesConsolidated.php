@@ -121,6 +121,10 @@ class ProcessReportSalesConsolidated implements ShouldQueue
     private function buildPdf($company, $establishment, $params)
     {
         $records = $this->resolveRecords($params);
+        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        $reportSummary = $this->report_source === 'sales' ? \App\Support\Exact\SalesConsolidated::summary($records) : null;
+        if ($this->report_source === 'sales') $records = \App\Support\Exact\ReportProjection::money($records, ['total_sale','total_ves','total_usd']);
+        // ######## FIN CALCULOS EXACTOS PRO9 ########
 
         switch ($this->report_source) {
             case 'order_notes':
@@ -135,7 +139,7 @@ class ProcessReportSalesConsolidated implements ShouldQueue
                 break;
         }
 
-        $pdf = PDF::loadView($view, compact('records', 'company', 'establishment', 'params'));
+        $pdf = PDF::loadView($view, compact('records', 'company', 'establishment', 'params', 'reportSummary'));
 
         if ($this->export_mode === 'ticket') {
             $height = (5.8 / 2.54) * 72;
@@ -153,6 +157,9 @@ class ProcessReportSalesConsolidated implements ShouldQueue
     private function buildExcelExport($company, $establishment, $params)
     {
         $records = $this->resolveRecords($params);
+        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        $reportSummary = $this->report_source === 'sales' ? \App\Support\Exact\SalesConsolidated::summary($records) : null;
+        // ######## FIN CALCULOS EXACTOS PRO9 ########
 
         if ($this->report_source === 'guides') {
             $params = $this->normalizeGuidesParams($params);
@@ -232,7 +239,7 @@ class ProcessReportSalesConsolidated implements ShouldQueue
                     return $controller->totalsByItem($request)->sortBy('item_id');
                 }
 
-                return $controller->getRecordsSalesConsolidated($params)->get();
+                return $controller->detailRecords($params);
         }
     }
 

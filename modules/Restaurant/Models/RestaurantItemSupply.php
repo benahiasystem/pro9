@@ -14,7 +14,7 @@ class RestaurantItemSupply extends ModelTenant
     ];
 
     protected $casts = [
-        'quantity' => 'float',
+        'quantity' => 'string',
     ];
 
     /**

@@ -56,17 +56,17 @@
                         </thead>
                         <tbody>
                             @foreach($records as $key => $value)
-                                @if($value['total_to_pay'] > 0)
+                                @if(\App\Support\Exact\Decimal::readRequired($value, 'total_to_pay')->isPositive())
                                     <tr>
-                                        <td class="celda">{{$loop->iteration}}</td>
-                                        <td class="celda">{{$value['date_of_issue']}}</td>
-                                        <td class="celda">{{$value['date_of_due']}}</td>
-                                        <td class="celda">{{$value['number_full']}}</td>
+                                        <td class="celda" data-type="s">{{$loop->iteration}}</td>
+                                        <td class="celda" data-type="s">{{$value['date_of_issue']}}</td>
+                                        <td class="celda" data-type="s">{{$value['date_of_due']}}</td>
+                                        <td class="celda" data-type="s">{{$value['number_full']}}</td>
 
-                                        <td class="celda">{{$value['supplier_name']}}</td>
-                                        <td class="celda">{{$value['total_to_pay']}}</td>
-                                        <td class="celda">{{$value['total']}}</td>
-                                        <td class="celda">{{$value['difference_days']}} días</td>
+                                        <td class="celda" data-type="s">{{$value['supplier_name']}}</td>
+                                        <td class="celda" data-type="s">{{$value['total_to_pay']}}</td>
+                                        <td class="celda" data-type="s">{{$value['total']}}</td>
+                                        <td class="celda" data-type="s">{{$value['difference_days']}} días</td>
                                     </tr>
                                 @endif
                             @endforeach

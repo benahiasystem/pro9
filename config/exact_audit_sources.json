@@ -1,0 +1,164 @@
+{
+    "roots": [
+        "app",
+        "modules",
+        "resources",
+        "routes",
+        "database",
+        "config",
+        "bootstrap",
+        "public"
+    ],
+    "excluded_directory_names": [
+        "vendor",
+        "node_modules",
+        "tests"
+    ],
+    "exclusions": [
+        {
+            "path": "database/factories",
+            "kind": "test_support",
+            "reason": "Definiciones de factories de pruebas; los seeders de instalación sí se auditan."
+        },
+        {
+            "path": "bootstrap/cache",
+            "kind": "generated",
+            "reason": "Cachés de Laravel generados desde fuentes auditadas."
+        },
+        {
+            "path": "public/build",
+            "kind": "generated",
+            "reason": "Assets de Vite; se auditan resources y modules y el usuario realiza la compilación."
+        },
+        {
+            "path": "public/vendeya",
+            "kind": "external_client",
+            "reason": "Cliente compilado cuyo cierre se separó expresamente del código disponible de Pro9."
+        },
+        {
+            "path": "public/mozo",
+            "kind": "external_client",
+            "reason": "Cliente compilado cuyo cierre se separó expresamente del código disponible de Pro9."
+        },
+        {
+            "path": "public/liveapp",
+            "kind": "external_client",
+            "reason": "Cliente LiveApp compilado, con fuentes externas pendientes."
+        },
+        {
+            "path": "public/liveapp-white",
+            "kind": "external_client",
+            "reason": "Variante compilada de LiveApp, con fuentes externas pendientes."
+        },
+        {
+            "path": "public/porto-light",
+            "kind": "third_party_ui",
+            "reason": "Distribución del tema Porto y sus bibliotecas de presentación. Los consumidores de datos de Pro9 se auditan en resources y modules."
+        },
+        {
+            "path": "public/js/app.js",
+            "kind": "generated",
+            "reason": "Bundle webpack heredado; no editar bundles. Las fuentes de aplicación se auditan en resources y modules."
+        },
+        {
+            "path": "public/js/vendor.js",
+            "kind": "third_party",
+            "reason": "Bundle webpack de dependencias node_modules."
+        },
+        {
+            "path": "public/js/manifest.js",
+            "kind": "generated",
+            "reason": "Runtime de carga webpack, sin operaciones comerciales propias."
+        },
+        {
+            "path": "public/js/rsvp-3.1.0.min.js",
+            "kind": "third_party",
+            "reason": "Biblioteca RSVP de promesas."
+        },
+        {
+            "path": "public/js/qz-tray.js",
+            "kind": "third_party",
+            "reason": "SDK QZ Tray; se auditan sus consumidores function-qztray y sign-message."
+        },
+        {
+            "path": "public/js/jsrsasign-all-min.js",
+            "kind": "third_party",
+            "reason": "Biblioteca criptográfica jsrsasign."
+        },
+        {
+            "path": "public/js/sha-256.min.js",
+            "kind": "third_party",
+            "reason": "Implementación criptográfica SHA-256."
+        },
+        {
+            "path": "public/js/pdf.js",
+            "kind": "third_party",
+            "reason": "Biblioteca de lectura PDF; no es una fuente de importes comerciales."
+        },
+        {
+            "path": "public/b4b7d46bf6d5ac41c0eb.worker.js",
+            "kind": "generated",
+            "reason": "Worker compilado de biblioteca PDF."
+        },
+        {
+            "path": "public/e577c11bc075a5dd26d8.worker.js",
+            "kind": "generated",
+            "reason": "Worker compilado de biblioteca PDF."
+        },
+        {
+            "path": "public/porto-ecommerce/assets/js/bootstrap.bundle.min.js",
+            "kind": "third_party",
+            "reason": "Bootstrap 4.1.3 distribuido como dependencia; sus consumidores de Pro9 se auditan por separado."
+        },
+        {
+            "path": "public/porto-ecommerce/assets/js/vue.min.js",
+            "kind": "third_party",
+            "reason": "Vue 2.6.10 distribuido como dependencia; sus consumidores de Pro9 se auditan por separado."
+        },
+        {
+            "path": "public/porto-ecommerce/assets/js/vue.js",
+            "kind": "third_party",
+            "reason": "Vue 2.6.10 distribuido como dependencia; sus consumidores de Pro9 se auditan por separado."
+        },
+        {
+            "path": "public/porto-ecommerce/assets/js/axios.min.js",
+            "kind": "third_party",
+            "reason": "Axios 0.18.1 distribuido como dependencia; sus consumidores de Pro9 se auditan por separado."
+        },
+        {
+            "path": "public/porto-ecommerce/assets/js/sweetalert2.all.min.js",
+            "kind": "third_party",
+            "reason": "SweetAlert2 distribuido como dependencia; sus consumidores de Pro9 se auditan por separado."
+        },
+        {
+            "path": "public/porto-ecommerce/assets/js/nouislider.min.js",
+            "kind": "third_party",
+            "reason": "noUiSlider 11.1.0 distribuido como dependencia; sus consumidores de Pro9 se auditan por separado."
+        },
+        {
+            "path": "public/porto-ecommerce/assets/js/moment.min.js",
+            "kind": "third_party",
+            "reason": "Moment.js distribuido como dependencia; sus consumidores de Pro9 se auditan por separado."
+        },
+        {
+            "path": "public/porto-ecommerce/assets/js/plugins.min.js",
+            "kind": "third_party",
+            "reason": "Plugins de presentación Waypoint y del tema Porto distribuido como dependencia; sus consumidores de Pro9 se auditan por separado."
+        },
+        {
+            "path": "public/porto-ecommerce/assets/js/jquery.min.js",
+            "kind": "third_party",
+            "reason": "jQuery 3.3.1 distribuido como dependencia; sus consumidores de Pro9 se auditan por separado."
+        },
+        {
+            "path": "public/porto-ecommerce/assets/js/culqi_v3.js",
+            "kind": "third_party",
+            "reason": "SDK Culqi v3 distribuido como dependencia; sus consumidores de Pro9 se auditan por separado."
+        },
+        {
+            "path": "public/porto-ecommerce/assets/js/main.min.js",
+            "kind": "generated",
+            "reason": "Versión minificada de main.js; se audita main.js y no se editan bundles."
+        }
+    ]
+}

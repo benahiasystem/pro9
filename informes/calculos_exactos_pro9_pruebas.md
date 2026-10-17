@@ -2,6 +2,8 @@
 
 Fecha: 16 de octubre de 2026. Complementa [implementación y pendientes](calculos_exactos_pro9.md).
 
+**Actualización del 17 de octubre:** [extensión implementada y pendientes](calculos_exactos_extension_pro9.md), con [resultados y registros](evidencias/calculos_exactos_pro9/extension_2026_10_17/resultados.json). Suite actual: 813 pruebas PHP, 16.044 aserciones, cero fallos y 59 omisiones; 193 pruebas JavaScript sin fallos. MySQL temporal verificó cálculos, instalación/semillas/reversión/repetición del tenant e instalación/reversión/repetición central. Los recuentos siguientes corresponden a la primera entrega.
+
 Los resultados siguientes acreditan los componentes y escenarios indicados. **No acreditan la migración completa de todas las operaciones de Pro9.** Las etapas 2–5 conservan los pendientes del informe. No se ejecutaron migraciones ni se modificaron datos de tenants reales.
 
 ## Ejecuciones verificadas
@@ -72,7 +74,7 @@ node scripts/audit_exact_calculations.cjs
 git diff --check
 ```
 
-El inventario recoge **1.057 candidatos PHP y 747 JavaScript**. Son puntos de revisión que incluyen formato, enteros de configuración y consumidores de negocio; no son 1.804 errores confirmados ni un inventario completo de toda aritmética nativa. Permanecen, entre otros, consumidores de módulos secundarios, agregados SQL y exportaciones. Los redondeos pendientes aún no tienen una justificación individual completa; por eso el plan global sigue abierto.
+El inventario inicial recogía **1.057 candidatos PHP y 747 JavaScript**. El [inventario ampliado](calculos_exactos_extension_inventario.json) contiene 39.912 candidatos de aritmética, comparaciones, formato, controles y SQL: 123 tienen clasificación y evidencia individuales; 39.789 siguen pendientes. No son 39.789 errores monetarios confirmados. Los auditores ampliados analizan sin errores de sintaxis y ambos fallan en modo `--check` debido a esos pendientes. Permanecen consumidores de módulos secundarios, agregados SQL y exportaciones; el plan global sigue abierto.
 
 ## Evidencia visual
 

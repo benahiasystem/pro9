@@ -464,9 +464,7 @@ class SaleNoteController extends Controller
         // Al editar, reemplazar cuotas (evita acumular historial de crédito en el PDF).
         $document->fee()->delete();
 
-        foreach ($fee as $row) {
-            $document->fee()->create($row);
-        }
+        \App\Support\Exact\Installments::save($document,array_values($fee));
 
         $document->unsetRelation('fee');
     }

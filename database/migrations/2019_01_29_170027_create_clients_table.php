@@ -14,6 +14,9 @@ class CreateClientsTable extends Migration
     public function up()
     {
         Schema::create('clients', function (Blueprint $table) {
+            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            $table->json('calculation_snapshot')->nullable();
+            // ######## FIN CALCULOS EXACTOS PRO9 ########
             $table->increments('id');
             $table->bigInteger ('hostname_id')->unsigned()->nullable();
             $table->string('number');

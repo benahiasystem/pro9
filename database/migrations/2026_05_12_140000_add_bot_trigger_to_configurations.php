@@ -18,7 +18,10 @@ class AddBotTriggerToConfigurations extends Migration
     public function down()
     {
         Schema::table('configurations', function (Blueprint $table) {
-            $table->dropColumn(['bot_trigger_command', 'bot_exit_command', 'bot_session_ttl_minutes']);
+            // The later retirement already removes these fields during a complete rollback.
+            foreach (['bot_trigger_command', 'bot_exit_command', 'bot_session_ttl_minutes'] as $column) {
+                if (Schema::hasColumn('configurations',$column)) $table->dropColumn($column);
+            }
         });
     }
 }

@@ -205,7 +205,7 @@
                         <tfoot v-if="resource == 'reports/order-notes-consolidated' || resource == 'reports/sales-consolidated'">
                             <tr>
                                 <td colspan="5"></td>
-                                <td class="text-center"><strong>Total</strong></td>
+                                <td class="text-center"><strong>Total de esta página</strong></td>
                                 <td class="text-center">{{totals}}</td>
                                 <td class="text-center">{{totals_sale}}</td>
                             </tr>
@@ -264,8 +264,9 @@ export default {
                 series: [],
                 pagination: {},
                 search: {},
-                totals_sale: {},
-                totals: {},
+                totals_sale: "0",
+                reportSummary: null,
+                totals: "0",
                 establishment: null,
                 establishment_id: null,
                 parameters: null,
@@ -452,8 +453,10 @@ export default {
 
             },
             getTotals(){
-                this.totals = _.sumBy(this.records, (it) => parseFloat(it.item_quantity));
-                this.totals_sale = _.sumBy(this.records, (it) => parseFloat(it.total_sale));
+                // ######## INICIO CALCULOS EXACTOS PRO9 ########
+                this.totals = this.reportSummary?.quantity ?? '0';
+                this.totals_sale = this.reportSummary?.total_sale ?? '0';
+                // ######## FIN CALCULOS EXACTOS PRO9 ########
             },
             getRecords() {
 
@@ -461,6 +464,8 @@ export default {
                     .get(`/${this.resource}/records?${this.getQueryParameters()}`)
                     .then((response) => {
                         this.records = response.data.data
+                        this.reportSummary = response.data.summary
+                        this.getTotals()
                         this.pagination = response.data.meta
                         this.pagination.per_page = parseInt(response.data.meta.per_page)
                     })

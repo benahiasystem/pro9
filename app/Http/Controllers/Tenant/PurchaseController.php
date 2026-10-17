@@ -458,9 +458,7 @@ use Modules\Purchase\Helpers\WeightedAverageCostHelper;
 
         private function savePurchaseFee($purchase, $fee)
         {
-            foreach ($fee as $row) {
-                $purchase->fee()->create($row);
-            }
+            \App\Support\Exact\Installments::save($purchase,array_values($fee));
         }
 
         /**

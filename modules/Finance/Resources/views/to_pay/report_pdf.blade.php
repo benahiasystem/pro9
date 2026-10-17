@@ -93,15 +93,15 @@
                         </thead>
                         <tbody>
                             @foreach($records as $key => $value)
-                                @if($value['total_to_pay'] > 0)
+                                @if(\App\Support\Exact\Decimal::readRequired($value, 'total_to_pay')->isPositive())
                                     <tr>
                                         <td class="celda">{{$loop->iteration}}</td>
                                         <td class="celda">{{$value['date_of_issue']}}</td>
                                         <td class="celda">{{$value['number_full']}}</td>
 
                                         <td class="celda">{{$value['supplier_name']}}</td>
-                                        <td class="celda">{{$value['total_to_pay']}}</td>
-                                        <td class="celda">{{$value['total']}}</td>
+                                        <td class="celda">{{\App\Support\Exact\Decimal::format($value['display']['total_to_pay'], 2)}}</td>
+                                        <td class="celda">{{\App\Support\Exact\Decimal::format($value['display']['total'], 2)}}</td>
                                     </tr>
                                 @endif
                             @endforeach

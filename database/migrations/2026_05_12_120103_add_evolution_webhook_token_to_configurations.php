@@ -16,7 +16,7 @@ class AddEvolutionWebhookTokenToConfigurations extends Migration
     public function down()
     {
         Schema::table('configurations', function (Blueprint $table) {
-            $table->dropColumn('evolution_webhook_token');
+            if (Schema::hasColumn('configurations','evolution_webhook_token')) $table->dropColumn('evolution_webhook_token');
         });
     }
 }

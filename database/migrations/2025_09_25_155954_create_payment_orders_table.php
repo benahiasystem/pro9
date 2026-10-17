@@ -14,11 +14,14 @@ class CreatePaymentOrdersTable extends Migration
     public function up()
     {
         Schema::create('payment_orders', function (Blueprint $table) {
+            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            $table->json('calculation_snapshot')->nullable();
+            // ######## FIN CALCULOS EXACTOS PRO9 ########
             $table->increments('id');
             $table->string('order');
             $table->date('date_of_due');
             $table->integer('notifications')->default(0);
-            $table->float('amount');
+            $table->decimal('amount', 30, 12);
             $table->timestamp('date_of_payment')->nullable();
             $table->timestamp('date_of_notification')->nullable();
             $table->text('description')->nullable();

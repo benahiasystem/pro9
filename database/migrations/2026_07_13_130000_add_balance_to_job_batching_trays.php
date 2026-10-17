@@ -14,7 +14,7 @@ return new class extends Migration
     public function up()
     {
         Schema::table('job_batching_trays', function (Blueprint $table) {
-            $table->decimal('balance', 18, 4)->default(0)->after('payload');
+            $table->decimal('balance', 30, 12)->default(0)->after('payload');
         });
     }
 

@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 /**
  * @property bool test_days_enabled
  */
-class Plan extends Model
+class Plan extends ModelSystem
 {
     use UsesSystemConnection;
 
@@ -40,7 +40,7 @@ class Plan extends Model
         'establishments_unlimited' => 'boolean',
         'establishments_limit' => 'int',
         'sales_unlimited' => 'boolean',
-        'sales_limit' => 'float',
+        'sales_limit' => 'string',
         'include_sale_notes_sales_limit' => 'boolean',
         'include_sale_notes_limit_documents' => 'boolean',
         'module_permissions' => 'array',

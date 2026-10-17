@@ -45,7 +45,7 @@
                         <label class="control-label">Costo</label>
                         <el-input
                             v-model="form.cost"
-                            type="number"
+                            type="text" inputmode="decimal"
                             step="0.01"
                             placeholder="0.00"
                         >
@@ -59,7 +59,7 @@
                         <label class="control-label">Merma %</label>
                         <el-input
                             v-model="form.waste_percentage"
-                            type="number"
+                            type="text" inputmode="decimal"
                             step="0.01"
                             placeholder="0.00"
                         >
@@ -75,7 +75,7 @@
                         <label class="control-label">Stock</label>
                         <el-input
                             v-model="form.stock"
-                            type="number"
+                            type="text" inputmode="decimal"
                             step="0.01"
                             placeholder="0.00"
                         ></el-input>
@@ -87,7 +87,7 @@
                         <label class="control-label">Stock Mínimo</label>
                         <el-input
                             v-model="form.minimum_stock"
-                            type="number"
+                            type="text" inputmode="decimal"
                             step="0.01"
                             placeholder="0.00"
                         ></el-input>
@@ -110,6 +110,9 @@
 </template>
 
 <script>
+// ######## INICIO CALCULOS EXACTOS PRO9 ########
+import {exactAmount, exactInput} from '../../../../../../../resources/js/helpers/exchange-rate-math'
+// ######## FIN CALCULOS EXACTOS PRO9 ########
 export default {
     props: {
         showDialog: {
@@ -150,11 +153,11 @@ export default {
             this.form = {
                 id: null,
                 name: null,
-                cost: 0,
+                cost: "0",
                 unit_type_id: null,
-                waste_percentage: 0,
-                stock: 0,
-                minimum_stock: 0
+                waste_percentage: "0",
+                stock: "0",
+                minimum_stock: "0"
             };
         },
 
@@ -184,10 +187,15 @@ export default {
                 return;
             }
 
-            if (this.form.cost < 0) {
-                this.$message.error("El costo no puede ser negativo");
-                return;
-            }
+            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            try {
+                for (const field of ['cost', 'waste_percentage', 'stock', 'minimum_stock']) {
+                    this.form[field] = exactInput(this.form[field] ?? '0')
+                    if (exactAmount(this.form[field]).compare(0) < 0) throw new Error('Los importes y cantidades no pueden ser negativos')
+                }
+                if (exactAmount(this.form.waste_percentage).compare(100) > 0) throw new Error('La merma no puede superar 100%')
+            } catch (error) { this.$message.error(error.message); return }
+            // ######## FIN CALCULOS EXACTOS PRO9 ########
 
             this.loading = true;
 

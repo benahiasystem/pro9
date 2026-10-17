@@ -63,7 +63,7 @@
                             <tr
                                 v-for="(row, index) in records"
                                 :key="row.id"
-                                :class="{ 'disable_color': row.stock < row.minimum_stock }"
+                                :class="{ 'disable_color': belowMinimum(row) }"
                             >
                                 <!-- <td>{{ index + 1 }}</td> -->
                                 <td>{{ row.name }}</td>
@@ -74,7 +74,7 @@
                                 <td class="text-end">{{ formatNumber(row.minimum_stock) }}</td>
                                 <td class="text-center">
                                     <el-tag
-                                        v-if="row.stock < row.minimum_stock"
+                                        v-if="belowMinimum(row)"
                                         type="danger"
                                         size="small"
                                     >
@@ -128,6 +128,9 @@
 </template>
 
 <script>
+// ######## INICIO CALCULOS EXACTOS PRO9 ########
+import {exactAmount, exactValue} from '../../../../../../../resources/js/helpers/exchange-rate-math'
+// ######## FIN CALCULOS EXACTOS PRO9 ########
 import { deletable } from "@mixins/deletable";
 import SupplyForm from './form.vue';
 import EmptyState from '@/components/EmptyState.vue';
@@ -215,8 +218,9 @@ export default {
         /**
          * Formatea números para mostrar
          */
+        belowMinimum(row) { return exactValue(row, 'stock').compare(exactValue(row, 'minimum_stock')) < 0; },
         formatNumber(value) {
-            return parseFloat(value || 0).toFixed(2);
+            return exactAmount(value ?? '0').decimal();
         }
     }
 };

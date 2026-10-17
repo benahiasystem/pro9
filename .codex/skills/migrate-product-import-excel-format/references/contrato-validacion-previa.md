@@ -67,13 +67,13 @@
 | 3 | `item_code` | código SUNAT anulable de exactamente 8 dígitos numéricos, conforme al importador actual de Pro9 |
 | 4 | `unit_type_id` | identificador obligatorio, presente y activo en el catálogo de unidades del tenant; usar `UND` para productos y `SERV` para servicios; rechazar `NIU` y `ZZ` |
 | 5 | `currency_type_id` | identificador obligatorio, presente y activo en el catálogo de monedas del tenant; Venezuela usa `VES`, no `VED` |
-| 6 | `sale_unit_price` | `decimal(16,6)` obligatorio y estrictamente mayor que cero |
+| 6 | `sale_unit_price` | `decimal(30,12)` obligatorio y estrictamente mayor que cero |
 | 7 | `sale_affectation_igv_type_id` | identificador activo de afectación de IVA obligatorio |
 | 8 | entrada de `has_igv` | `SI` o `NO` obligatorio, sin distinguir mayúsculas y minúsculas |
-| 9 | `purchase_unit_price` | `decimal(16,6)` anulable, mínimo cero; el importador convierte un valor vacío en cero |
+| 9 | `purchase_unit_price` | `decimal(30,12)` anulable, mínimo cero; el importador convierte un valor vacío en cero |
 | 10 | `purchase_affectation_igv_type_id` | identificador activo de afectación de IVA obligatorio porque la columna efectiva de base de datos no admite nulos |
-| 11 | `stock` | `decimal(16,4)` obligatorio, mínimo cero; estrictamente mayor que cero si `internal_id` ya existe, porque una actualización crea un movimiento de inventario |
-| 12 | `stock_min` | `decimal(12,2)` obligatorio, mínimo cero |
+| 11 | `stock` | `decimal(30,12)` obligatorio, mínimo cero; estrictamente mayor que cero si `internal_id` ya existe, porque una actualización crea un movimiento de inventario |
+| 12 | `stock_min` | `decimal(30,12)` obligatorio, mínimo cero |
 | 13 | nombre de categoría | texto escalar anulable, máximo 255 |
 | 14 | nombre de marca | texto escalar anulable, máximo 255 |
 | 15 | `name` | texto escalar anulable, máximo 1000 en el esquema efectivo de Pro9 |

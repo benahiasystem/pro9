@@ -291,8 +291,10 @@ class ItemsImport implements ToCollection
                         ])->first();
 
                         if($current_lot) {
-                            $current_lot->quantity = $current_lot->quantity + (int)$stock;
-                            $current_lot->old_quantity = $current_lot->quantity;
+                            // ########### INICIO CAMBIO VALIDACIÓN PREVIA IMPORTACIÓN ITEMS
+                            $current_lot->quantity = $current_lot->exactValue('quantity')->plus(\App\Support\Exact\Decimal::of($stock));
+                            // ########### FIN CAMBIO VALIDACIÓN PREVIA IMPORTACIÓN ITEMS
+                            $current_lot->old_quantity = $current_lot->exactValue('quantity');
                             $current_lot->save();
                         }
                         else {
@@ -355,7 +357,7 @@ class ItemsImport implements ToCollection
         $currency_type_id,
         $sale_unit_price,
         $sale_affectation_igv_type_id
-    ): float {
+    ): string {
         if ($this->isBlank($description)) {
             throw new Exception("Fila {$rowNumber}: la descripción del producto es obligatoria (columna A).");
         }
@@ -376,9 +378,10 @@ class ItemsImport implements ToCollection
             throw new Exception("Fila {$rowNumber}: el precio de venta unitario debe ser un número válido (columna G). Valor recibido: \"{$sale_unit_price}\".");
         }
 
-        $sale_unit_price = (float) $sale_unit_price;
+        // ########### INICIO CAMBIO VALIDACIÓN PREVIA IMPORTACIÓN ITEMS
+        $sale_unit_price = \App\Support\Exact\Decimal::input($sale_unit_price,'sale_unit_price');
 
-        if ($sale_unit_price < 0) {
+        if (\App\Support\Exact\Decimal::of($sale_unit_price)->isNegative()) {
             throw new Exception("Fila {$rowNumber}: el precio de venta unitario no puede ser negativo (columna G).");
         }
 
@@ -389,6 +392,7 @@ class ItemsImport implements ToCollection
         }
 
         return $sale_unit_price;
+        // ########### FIN CAMBIO VALIDACIÓN PREVIA IMPORTACIÓN ITEMS
     }
 
     private function isBlank($value): bool

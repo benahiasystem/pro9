@@ -1,0 +1,32 @@
+{
+  "7ef42180927962d701cbe6d8": {
+    "review": {
+      "category": "validation",
+      "justification": "Comprueba si la fracción conservada corresponde a la columna decimal. Además valida el rango exacto antes de escribir; esta comparación no reemplaza los operandos exactos.",
+      "evidence": [
+        "app/Support/Exact/Persistence.php",
+        "tests/Unit/ExactExtensionPersistenceTest.php"
+      ]
+    },
+    "previous_source": {
+      "language": "php",
+      "file": "app/Support/Exact/Persistence.php",
+      "line": 56,
+      "symbol": "Persistence::prepare",
+      "operation": "represent",
+      "expression": "Decimal::represent($snapshot['values'][$field], 12, true)",
+      "review": "consumer_or_boundary_review",
+      "id": "7ef42180927962d701cbe6d8",
+      "classification": {
+        "category": "validation",
+        "justification": "Comprueba si la fracción conservada corresponde a la columna decimal. Además valida el rango exacto antes de escribir; esta comparación no reemplaza los operandos exactos.",
+        "evidence": [
+          "app/Support/Exact/Persistence.php",
+          "tests/Unit/ExactExtensionPersistenceTest.php"
+        ]
+      },
+      "status": "justified"
+    },
+    "reason": "La expresión anterior ya no aparece en el inventario actual; no se transfiere su aprobación a otro ID."
+  }
+}

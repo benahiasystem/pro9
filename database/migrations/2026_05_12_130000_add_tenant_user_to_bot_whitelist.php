@@ -16,6 +16,7 @@ class AddTenantUserToBotWhitelist extends Migration
 
     public function down()
     {
+        if (!Schema::hasTable('bot_whitelist')) return;
         Schema::table('bot_whitelist', function (Blueprint $table) {
             $table->dropColumn(['tenant_hostname', 'user_id']);
         });

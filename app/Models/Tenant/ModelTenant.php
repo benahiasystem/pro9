@@ -25,6 +25,7 @@
     class ModelTenant extends Model
     {
         use UsesTenantConnection;
+        use \App\Support\Exact\HasExactValues;
 
         // ######## INICIO CALCULOS EXACTOS PRO9 ########
         protected static function booted()
@@ -33,17 +34,6 @@
             static::deleted(fn ($model) => \App\Support\Exact\CommercialCalculation::afterLine($model));
             static::saved(fn ($model) => \App\Support\Exact\Settlement::afterPayment($model));
             static::deleted(fn ($model) => \App\Support\Exact\Settlement::afterPayment($model));
-        }
-
-        public function setAttribute($key, $value)
-        {
-            if ($value instanceof \Brick\Math\BigRational) {
-                $snapshot = $this->calculation_snapshot ?? \App\Support\Exact\Decimal::snapshot([]);
-                $snapshot['values'][$key] = \App\Support\Exact\Decimal::fraction($value);
-                parent::setAttribute('calculation_snapshot', $snapshot);
-                $value = \App\Support\Exact\Decimal::represent($value);
-            }
-            return parent::setAttribute($key, $value);
         }
 
         public function isFillable($key)
@@ -63,26 +53,13 @@
             return $fillable;
         }
 
-        protected function castAttribute($key, $value)
-        {
-            if ($value !== null && in_array($key, \App\Support\Exact\Persistence::columns($this), true)) {
-                return \App\Support\Exact\Decimal::represent($value);
-            }
-            return parent::castAttribute($key, $value);
-        }
         // ######## FIN CALCULOS EXACTOS PRO9 ########
 
         // ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
         // ######## INICIO TASAS OCHO DECIMALES ########
         public function getCasts()
         {
-            $casts = parent::getCasts();
-            // ######## INICIO CALCULOS EXACTOS PRO9 ########
-            $casts['calculation_snapshot'] = 'array';
-            foreach (\App\Support\Exact\Persistence::columns($this) as $column) {
-                $casts[$column] = 'string';
-            }
-            // ######## FIN CALCULOS EXACTOS PRO9 ########
+            $casts = $this->exactCasts(parent::getCasts());
             foreach (['exchange_rate_sale', 'exchange_rate'] as $column) {
                 if (in_array($column, $this->getFillable(), true) && !$this->hasGetMutator($column) && (!isset($casts[$column]) || $casts[$column] === 'float' || str_starts_with($casts[$column], 'decimal:'))) {
                     $casts[$column] = 'decimal:8';
@@ -284,27 +261,12 @@
         }
 
         // ######## INICIO CALCULOS EXACTOS PRO9 ########
-        public function exactValue(string $field): \Brick\Math\BigRational
-        {
-            return \App\Support\Exact\Decimal::read($this, $field);
-        }
-
         public function formatPdfUnitPrice($configuration = null): string
         {
             $configuration ??= Configuration::getDataDecimalQuantity();
             return \App\Support\Exact\PdfPrice::format($this->exactValue('unit_price'), $configuration);
         }
 
-        public function setExactValues(array $values): self
-        {
-            $snapshot = $this->calculation_snapshot ?? \App\Support\Exact\Decimal::snapshot([]);
-            foreach ($values as $field => $value) {
-                $snapshot['values'][$field] = \App\Support\Exact\Decimal::fraction($value);
-                $this->setAttribute($field, \App\Support\Exact\Decimal::represent($value));
-            }
-            $this->calculation_snapshot = $snapshot;
-            return $this;
-        }
         // ######## FIN CALCULOS EXACTOS PRO9 ########
 
 

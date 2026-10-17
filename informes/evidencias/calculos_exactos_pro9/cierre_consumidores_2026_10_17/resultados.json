@@ -1,0 +1,144 @@
+{
+  "date": "2026-10-17",
+  "status": "partial_global_plan_open",
+  "git_reference": "fd9e6d18bb2808ea97bf4909044ca6e20ff13966",
+  "working_tree": "Cambios previos y actuales sin commit; no se atribuye todo el diff a esta entrega.",
+  "php_runtime": "8.2.34",
+  "mysql_test_runtime": "PHP 8.2.5 en contenedor pro9-php",
+  "php_unit": {
+    "tests": 861,
+    "assertions": 16302,
+    "skipped": 60,
+    "failures": 0,
+    "errors": 0,
+    "log": "php-unit.log",
+    "scope": "Suite Unit completa con acceso al host real deshabilitado por puerto 1; pruebas MySQL optativas se ejecutaron por separado."
+  },
+  "javascript": {
+    "tests": 200,
+    "passed": 200,
+    "failed": 0,
+    "skipped": 0,
+    "log": "javascript.log"
+  },
+  "mysql_runs": [
+    {
+      "log": "mysql-calculos.log",
+      "tests": 3,
+      "assertions": 42,
+      "scope": "Persistencia racional, ciclo comercial y rango central/rollback parcial."
+    },
+    {
+      "log": "mysql-instalacion-stock.log",
+      "tests": 2,
+      "assertions": 1608,
+      "scope": "Instalación tenant/semillas/rollback/repetición e importación real de stock con fracción periódica y repetición idempotente."
+    },
+    {
+      "log": "mysql-consolidado.log",
+      "tests": 1,
+      "assertions": 12,
+      "scope": "Repetición del ciclo comercial con aserciones nuevas de lectura SQL UNION del consolidado."
+    }
+  ],
+  "mysql_note": "Las ejecuciones se solapan; no sumar pruebas/aserciones como una suite distinta. Usan bases efímeras pro9_fiscal_test_* que el test crea y elimina. No se migraron tenants reales.",
+  "audit": {
+    "php": {
+      "candidates": 23418,
+      "classified": 5719,
+      "pending": 17699,
+      "parse_errors": [],
+      "registry_errors": [],
+      "coverage_missing": [],
+      "scanned_files": 3615,
+      "check_exit_code": 1,
+      "categories": {
+        "pending": 17699,
+        "technical": 5669,
+        "discrete_units": 3,
+        "settlement": 4,
+        "validation": 4,
+        "storage": 10,
+        "presentation": 17,
+        "allocation": 11,
+        "exact_arithmetic": 1
+      }
+    },
+    "js": {
+      "candidates": 23169,
+      "classified": 3306,
+      "pending": 19863,
+      "parse_errors": [],
+      "registry_errors": [],
+      "coverage_missing": [],
+      "scanned_files": 1950,
+      "check_exit_code": 1,
+      "categories": {
+        "technical": 3204,
+        "pending": 19863,
+        "validation": 29,
+        "exact_arithmetic": 36,
+        "presentation": 19,
+        "allocation": 18
+      }
+    },
+    "totals": {
+      "candidates": 46587,
+      "classified": 9025,
+      "pending": 37562
+    },
+    "scope": "Cobertura sintáctica de fuentes según política. No demuestra por sí sola trazabilidad interprocedimental, SQL dinámico ni cierre de consumidores."
+  },
+  "benchmarks": {
+    "consumer": "rendimiento-consumidor.json",
+    "baseline_git_commit": "fd9e6d18bb2808ea97bf4909044ca6e20ff13966",
+    "baseline_scope": "Antiguo helper ToPay extraído del Git HEAD indicado, reproducido con modelos actuales, mismo entorno SQLite y fixtures. El consumidor nuevo devuelve página más resumen; el anterior devuelve todo el conjunto. Incluye serialización JSON.",
+    "current_source_matches_measurement": true,
+    "core": "rendimiento-motor.json",
+    "limits": "No se acredita la matriz p50/p95 de HTTP/POS/MySQL/caja ni los demás módulos con estas mediciones."
+  },
+  "frontend": {
+    "compiled_by_agent": false,
+    "vue_files_checked_in_memory": 15,
+    "visual_acceptance": "Pendiente del usuario después de compilar las fuentes."
+  },
+  "pdf_fixtures": {
+    "58mm": "output/pdf/calculos-exactos-pro9/calculos-exactos-ticket-58mm.pdf",
+    "80mm": "output/pdf/calculos-exactos-pro9/calculos-exactos-ticket-80mm.pdf",
+    "scope": "Fixtures sintéticas renderizadas y revisadas visualmente; no emisión fiscal."
+  },
+  "artifacts_sha256": {
+    "informes/evidencias/calculos_exactos_pro9/cierre_consumidores_2026_10_17/aprobaciones_anteriores_retiradas.json": "fe6dcac2fda589e8b1f008783e8d184aa578ca691f19c041672aa26473f78edb",
+    "informes/evidencias/calculos_exactos_pro9/cierre_consumidores_2026_10_17/auditores-pruebas.log": "2f0af477c5c2938c4895e9659e02db53d61c135e9a468dbe7ba06a1462fa4c69",
+    "informes/evidencias/calculos_exactos_pro9/cierre_consumidores_2026_10_17/auditoria.json": "c4e862fe43d12ea9e4a35080acef21fe853a59ad8b32847ebde43ef0aec020b8",
+    "informes/evidencias/calculos_exactos_pro9/cierre_consumidores_2026_10_17/fuentes.json": "28c8ee3002094757f877b742c8db7d60c919af43fcc66cd119f516a1b36c96f5",
+    "informes/evidencias/calculos_exactos_pro9/cierre_consumidores_2026_10_17/git-diff-check.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "informes/evidencias/calculos_exactos_pro9/cierre_consumidores_2026_10_17/habilidad-validacion.log": "db349825903d66adffea3ecf1bd8e1803043e8a71cf1a051235dabc5371f5bb0",
+    "informes/evidencias/calculos_exactos_pro9/cierre_consumidores_2026_10_17/javascript.log": "2b5d68177863da1bdd5002d3dcb849d6bbbb63eff89c2db6ed38911414bc8a66",
+    "informes/evidencias/calculos_exactos_pro9/cierre_consumidores_2026_10_17/mysql-calculos.log": "ca1c6464767abd9ca599d5efc27e683ddcb27b19b243a9dcbced46362504c08f",
+    "informes/evidencias/calculos_exactos_pro9/cierre_consumidores_2026_10_17/mysql-consolidado.log": "c2fc8970d0a31d7249f8d459a460bbe84e77348a784cfaf21b1949dda676e4de",
+    "informes/evidencias/calculos_exactos_pro9/cierre_consumidores_2026_10_17/mysql-instalacion-stock.log": "4e89e41158a3b1954e74eb50402ce7b488c9dae0580effe904cce4e4738c8b11",
+    "informes/evidencias/calculos_exactos_pro9/cierre_consumidores_2026_10_17/php-sintaxis.json": "f20a2bb73019e17e09aa193b6458f2042afa47931148224615022de6e0598fac",
+    "informes/evidencias/calculos_exactos_pro9/cierre_consumidores_2026_10_17/php-unit.log": "0df88167b4e6341d1dbc23706a204d1a7d061495e1a90d1d5014b43388f8f9b9",
+    "informes/evidencias/calculos_exactos_pro9/cierre_consumidores_2026_10_17/pruebas-ast-individuales.json": "2edce1650ae155febdd27ebceb1699ed3aba0c5367b6a310ce83a3c5ac10d143",
+    "informes/evidencias/calculos_exactos_pro9/cierre_consumidores_2026_10_17/rendimiento-consumidor.json": "e3c60a410e1f58c09de3d97f3a2b4f7e2cfc2f89bf7a3ccfcc215391901586c4",
+    "informes/evidencias/calculos_exactos_pro9/cierre_consumidores_2026_10_17/rendimiento-consumidor.log": "bc290e632f370ecbd3b2f1152f97c0391496dce8d35f6810e7abba393bad8cca",
+    "informes/evidencias/calculos_exactos_pro9/cierre_consumidores_2026_10_17/rendimiento-motor.json": "b6f1193717ba59f7a1dcdd0d19c25c0e7759ab9ff8fcd049c8b3baa795f068f0",
+    "informes/evidencias/calculos_exactos_pro9/cierre_consumidores_2026_10_17/ticket-58mm.png": "f5b108af82ed59b0522ae2e85c3d085cf573f1a7a5b8e30f369f7ab8c3a5a44b",
+    "informes/evidencias/calculos_exactos_pro9/cierre_consumidores_2026_10_17/ticket-58mm.txt": "cb156e9e8ab96ebae10755918e603a8f4ad004a55807e8450803de9c1ca272b1",
+    "informes/evidencias/calculos_exactos_pro9/cierre_consumidores_2026_10_17/ticket-80mm.png": "5040f6e46ea1c201a4bedc6d83d56926df091fd322293282931bf1cc3d91a115",
+    "informes/evidencias/calculos_exactos_pro9/cierre_consumidores_2026_10_17/ticket-80mm.txt": "60f77a23849e92850b7ecd195365be8d752113d8e1eb9ce2c1a629a9b8dc09ae",
+    "informes/evidencias/calculos_exactos_pro9/cierre_consumidores_2026_10_17/vue-sintaxis.json": "92e12ed294b46c0afcc5853b71d7f3f00694eafbfb2a9f14eb9ab4975291e5ca"
+  },
+  "delivery_artifacts_sha256": {
+    "informes/calculos_exactos_cierre_consumidores_pro9.md": "bceb0d98eee73ff47601a48d1fc2ca189de593e2daf20c2847deace0c8fe2fc9",
+    "informes/calculos_exactos_extension_pro9.md": "c12d8da5ddadca78d12162040ea1ec01b2a21bdd3e91c534be0e9b1561301950",
+    "informes/calculos_exactos_extension_inventario.json": "0eefaf581db5409bae0cd36e5d2165249278f3451b9c37c59f78d46aaa96a8a9",
+    "informes/calculos_exactos_extension_inventario.jsonl": "0b1ca3b7d8681536c625799a553241095bfab7c400193c47961131daea5f58c9",
+    "informes/calculos_exactos_cierre_consumidores_matriz.json": "b29dc4757f765dfd48338d24dc347946036238076ad40c77063df4b45054b503",
+    "config/exact_rounding_registry.json": "1b1e4aa59813b60898b420a9a248d6c296911060198142320d491f95d2bd2737",
+    "config/exact_audit_sources.json": "eb0af6fee37a2e91a909d8b8d6d58d4571c10bd803d34920af5b5c65685e4ec2",
+    ".codex/skills/mantener-calculos-exactos-pro9/SKILL.md": "46c497b0c161437e1afd8059ab68159f36a7ee7bfbc0d686b678f15f2450b24f",
+    ".codex/skills/mantener-calculos-exactos-pro9/references/contrato.md": "fab648862ead4d287a604f8ebb6227dd537acfeed1bdba803c5f1b0d9ac96ffc"
+  }
+}

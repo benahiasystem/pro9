@@ -317,9 +317,14 @@
         public function scopeWhereDefaultDocumentType($query, $params)
         {
 
+            // ######## INICIO CALCULOS EXACTOS PRO9 ########
             $db_raw = DB::raw("document_items.id as id, documents.series as series, documents.number as number,
-                            document_items.item as item, document_items.quantity as quantity,
-                            document_items.item_id as item_id, documents.date_of_issue as date_of_issue");
+                document_items.item as item, document_items.quantity as quantity, document_items.item_id as item_id,
+                documents.date_of_issue as date_of_issue, document_items.unit_price as unit_price,
+                document_items.total as total, document_items.calculation_snapshot as calculation_snapshot,
+                documents.currency_type_id as currency_type_id, documents.exchange_rate_sale as exchange_rate_sale,
+                documents.document_type_id as document_type_id, 'document' as source_type");
+            // ######## FIN CALCULOS EXACTOS PRO9 ########
 
             if (isset($params['series'])) {
                 $query->where('series', $params['series'] === \App\Services\Fiscal\FiscalIdentity::EMPTY_SERIES_FILTER ? '' : $params['series']);

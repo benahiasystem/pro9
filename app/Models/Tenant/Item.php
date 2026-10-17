@@ -843,7 +843,7 @@ class Item extends ModelTenant
             'restaurant_item_supplies',
             'item_id',
             'supply_id'
-        )->withPivot('quantity')->withTimestamps();
+        )->withPivot('quantity','calculation_snapshot')->withTimestamps();
     }
 
     /**
@@ -896,7 +896,7 @@ class Item extends ModelTenant
         // volver a consultar los insumos producto por producto.
         if ($this->relationLoaded('restaurantSupplies')) {
             $itemSupplies = $this->restaurantSupplies->map(function ($supply) {
-                return (object) ['supply' => $supply, 'quantity' => $supply->pivot->quantity];
+                return (object) ['supply' => $supply, 'quantity' => \App\Support\Exact\Decimal::read($supply->pivot,'quantity')];
             });
         } else {
             $itemSupplies = $this->restaurantItemSupplies()->with('supply')->get();
@@ -913,18 +913,20 @@ class Item extends ModelTenant
             $supply = $itemSupply->supply;
 
             // Si algún insumo no existe o no tiene stock, no se puede preparar
-            if (!$supply || $supply->stock <= 0) {
+            if (!$supply || \App\Support\Exact\Decimal::read($supply,'stock')->isLessThanOrEqualTo(0)) {
                 return 0;
             }
 
             // Calcular cuántos productos se pueden hacer con este insumo
             // stock_insumo / cantidad_requerida_por_producto
-            $possible = floor($supply->stock / $itemSupply->quantity);
+            $required=$itemSupply instanceof \Illuminate\Database\Eloquent\Model ? $itemSupply->exactValue('quantity') : \App\Support\Exact\Decimal::of($itemSupply->quantity);
+            if ($required->isLessThanOrEqualTo(0)) \App\Services\Fiscal\FiscalAmounts::error('quantity','La cantidad de insumo debe ser positiva.');
+            $possible = (string) \App\Support\Exact\Decimal::read($supply,'stock')->dividedBy($required)->quotient();
             $possibleStock[] = $possible;
         }
 
         // Retornar el menor stock posible (el insumo limitante)
-        return min($possibleStock);
+        return \App\Support\Exact\Decimal::represent(array_reduce($possibleStock,fn($a,$b)=>$a===null ? \App\Support\Exact\Decimal::of($b) : \App\Support\Exact\Decimal::min($a,$b)));
     }
 
     /**
@@ -939,7 +941,7 @@ class Item extends ModelTenant
             'item_sets',           // A través de esta tabla
             'item_id',             // La llave del combo
             'individual_item_id'   // La llave del producto individual
-        )->withPivot('quantity');  // También trae la cantidad
+        )->withPivot('quantity','calculation_snapshot');
     }
 
     /**
@@ -957,20 +959,22 @@ class Item extends ModelTenant
         $possibleStocks = [];
 
         foreach ($items as $item) {
+            $required=\App\Support\Exact\Decimal::read($item->pivot,'quantity');
+            if ($required->isLessThanOrEqualTo(0)) \App\Services\Fiscal\FiscalAmounts::error('quantity','La cantidad del componente debe ser positiva.');
             if ($item->hasRestaurantSupplies()) {
                 // Si el item del set tiene insumos asignados, se calcula su stock en base a esos insumos
                 $itemStock = $item->getRestaurantStock();
-                $possibleStocks[] = floor($itemStock / $item->pivot->quantity);
+                $possibleStocks[] = (string) \App\Support\Exact\Decimal::of($itemStock)->dividedBy($required)->quotient();
                 continue;
             } else {
                 // Si el item del set no tiene insumos asignados, se toma su stock normal
-                $itemStock = $item->stock;
-                $possibleStocks[] = floor($itemStock / $item->pivot->quantity);
+                $itemStock = $item->exactValue('stock');
+                $possibleStocks[] = (string) \App\Support\Exact\Decimal::of($itemStock)->dividedBy($required)->quotient();
                 continue;
             }
         }
 
-        return min($possibleStocks);
+        return $possibleStocks ? \App\Support\Exact\Decimal::represent(array_reduce($possibleStocks,fn($a,$b)=>$a===null ? \App\Support\Exact\Decimal::of($b) : \App\Support\Exact\Decimal::min($a,$b))) : '0';
     }
 
     /**
@@ -1129,13 +1133,46 @@ class Item extends ModelTenant
 
     public static function getSaleUnitPriceByWarehouse(Item $item, int $warehouseId): string
     {
+        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        return \App\Support\Exact\Decimal::represent(self::exactSaleUnitPriceByWarehouse($item, $warehouseId));
+        // ######## FIN CALCULOS EXACTOS PRO9 ########
+    }
+
+    // ######## INICIO CALCULOS EXACTOS PRO9 ########
+    public static function exactSaleUnitPriceByWarehouse(Item $item, int $warehouseId): \Brick\Math\BigRational
+    {
         $warehousePrice = $item->warehousePrices->where('item_id', $item->id)
             ->where('warehouse_id', $warehouseId)
             ->first();
 
-        $price = $warehousePrice->price ?? $item->sale_unit_price;
-        return number_format($price, 4, ".", "");
+        return $warehousePrice ? \App\Support\Exact\Decimal::readRequired($warehousePrice, 'price')
+            : \App\Support\Exact\Decimal::readRequired($item, 'sale_unit_price');
     }
+
+    public function modalPriceValues(int $warehouseId): array
+    {
+        $sale = self::exactSaleUnitPriceByWarehouse($this, $warehouseId);
+        $purchase = $this->exactValue('purchase_unit_price');
+        $multiplier = \App\Support\Venezuela\Localization::exactTaxMultiplier();
+        $base = $this->purchase_has_igv ? $purchase->dividedBy($multiplier) : $purchase;
+        $gross = $this->purchase_has_igv ? $purchase : $base->multipliedBy($multiplier);
+        $values = ['unit_price'=>$sale, 'sale_unit_price'=>$sale, 'purchase_unit_value'=>$base, 'purchase_unit_price'=>$gross];
+        $snapshot = $this->selectionPriceSnapshot($warehouseId);
+        $snapshot['values'] = array_replace($snapshot['values'], array_map([\App\Support\Exact\Decimal::class, 'fraction'], $values));
+        return array_merge(\App\Support\Exact\Decimal::values($values), ['calculation_snapshot'=>$snapshot]);
+    }
+
+    /** Raw purchase prices and selected sale price; warehouse stock has a separate source. */
+    public function selectionPriceSnapshot(int $warehouseId): array
+    {
+        $snapshot = $this->calculation_snapshot ?? \App\Support\Exact\Decimal::snapshot([]);
+        unset($snapshot['values']['stock']);
+        $price = self::exactSaleUnitPriceByWarehouse($this, $warehouseId);
+        $snapshot['values']['sale_unit_price'] = $snapshot['values']['unit_price'] = \App\Support\Exact\Decimal::fraction($price);
+        $snapshot['inputs']['selected_warehouse_id'] = $warehouseId;
+        return $snapshot;
+    }
+    // ######## FIN CALCULOS EXACTOS PRO9 ########
 
     /**
      * Devuelve la esuctura de item para los select correspondientes.
@@ -1317,15 +1354,11 @@ class Item extends ModelTenant
             $currency = new CurrencyType();
         }
 
-        $purchase_unit_price = $this->purchase_unit_price;
-        $purchase_unit_value = $this->purchase_unit_price;
-        if($this->purchase_has_igv) {
-            // ########## INICIO CAMBIO AFECTACIÓN IVA
-            $purchase_unit_value = round($purchase_unit_price / \App\Support\Venezuela\Localization::taxMultiplier(), 8);
-        } else {
-            $purchase_unit_price = $purchase_unit_value * \App\Support\Venezuela\Localization::taxMultiplier();
-            // ######### FIN CAMBIO AFECTACIÓN IVA
-        }
+        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        $prices = $this->modalPriceValues($warehouse->id);
+        $purchase_unit_price = $prices['purchase_unit_price'];
+        $purchase_unit_value = $prices['purchase_unit_value'];
+        // ######## FIN CALCULOS EXACTOS PRO9 ########
 
         $data = [
             'id'                               => $this->id,
@@ -1444,7 +1477,7 @@ class Item extends ModelTenant
         // El nombre de producto, por defecto, sera la misma descripcion.
         $data['name_product_pdf']="<p>".$data['description']."</p>";
 
-        return $data;
+        return array_merge($data, $prices);
     }
 
 
@@ -2478,6 +2511,9 @@ class Item extends ModelTenant
             'currency_type_symbol' => $this->currency_type->symbol,
             'sale_unit_price' => $this->sale_unit_price,
             'purchase_unit_price' => $this->purchase_unit_price,
+            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            'calculation_snapshot' => $this->calculation_snapshot,
+            // ######## FIN CALCULOS EXACTOS PRO9 ########
             'unit_type_id' => $this->unit_type_id,
             'sale_affectation_igv_type_id' => $this->sale_affectation_igv_type_id,
             'purchase_affectation_igv_type_id' => $this->purchase_affectation_igv_type_id,

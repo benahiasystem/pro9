@@ -35,6 +35,13 @@ class RestaurantItemSupplyController extends Controller
                         'quantity' => $itemSupply->quantity,
                         'cost' => $supply->cost,
                         'waste_percentage' => $supply->waste_percentage,
+                        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+                        'calculation_snapshot' => \App\Support\Exact\Decimal::snapshot([
+                            'quantity'=>$itemSupply->exactValue('quantity'),
+                            'cost'=>$supply->exactValue('cost'),
+                            'waste_percentage'=>$supply->exactValue('waste_percentage'),
+                        ]),
+                        // ######## FIN CALCULOS EXACTOS PRO9 ########
                     ];
                 })->filter();
 
@@ -196,6 +203,9 @@ class RestaurantItemSupplyController extends Controller
                         'cost' => $supply->cost,
                         'waste_percentage' => $supply->waste_percentage,
                         'stock' => $supply->stock,
+                        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+                        'calculation_snapshot' => $supply->calculation_snapshot,
+                        // ######## FIN CALCULOS EXACTOS PRO9 ########
                     ];
                 });
 

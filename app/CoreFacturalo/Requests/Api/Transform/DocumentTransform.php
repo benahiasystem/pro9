@@ -126,6 +126,8 @@ class DocumentTransform
                     'unit_value' => Functions::valueKeyInArray($row, 'valor_unitario'),
                     'price_type_id' => Functions::valueKeyInArray($row, 'codigo_tipo_precio'),
                     'unit_price' => Functions::valueKeyInArray($row, 'precio_unitario'),
+                    'price_input' => $row['price_input'] ?? null,
+                    'quantity_input' => $row['quantity_input'] ?? null,
 
                     'affectation_igv_type_id' => Functions::valueKeyInArray($row, 'codigo_tipo_afectacion_igv'),
                     'total_base_igv' => Functions::valueKeyInArray($row, 'total_base_igv'),

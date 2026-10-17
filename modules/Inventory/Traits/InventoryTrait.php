@@ -385,7 +385,7 @@ trait InventoryTrait
     private function updateStock($item_id, $quantity, $warehouse_id)
     {
         $inventory_configuration = InventoryConfiguration::firstOrFail();
-        $item_warehouse = ItemWarehouse::firstOrNew(['item_id' => $item_id, 'warehouse_id' => $warehouse_id]);
+        $item_warehouse = ItemWarehouse::query()->lockForUpdate()->firstOrNew(['item_id' => $item_id, 'warehouse_id' => $warehouse_id]);
         $item_warehouse->stock = $item_warehouse->exactValue('stock')->plus(\App\Support\Exact\Decimal::of($quantity));
         // dd($item_warehouse->item->unit_type_id);
         if (\App\Support\Exact\Decimal::of($quantity)->isNegative() && $item_warehouse->item->unit_type_id !== 'SERV') {
@@ -516,19 +516,19 @@ trait InventoryTrait
                 {
 
                     // presentacion - factor de lista de precios
-                    $quantity_unit = isset($document_item->item->presentation->quantity_unit) ? $document_item->item->presentation->quantity_unit : 1;
+                    $quantity_unit = $this->getQuantityUnitPresentation($document_item);
                     $lotesSelecteds = $document_item->item->IdLoteSelected;
 
                     foreach ($lotesSelecteds as $item)
                     {
-                        $lot = ItemLotsGroup::query()->find($item->id);
-                        $lot->quantity = $lot->quantity + ($quantity_unit * $item->compromise_quantity);
+                        $lot = ItemLotsGroup::query()->lockForUpdate()->find($item->id);
+                        $lot->quantity = $lot->exactValue('quantity')->plus($quantity_unit->multipliedBy(\App\Support\Exact\Decimal::read($item,'compromise_quantity')));
                         $lot->save();
                     }
 
                 }else {
-                    $lot = ItemLotsGroup::find($document_item->item->IdLoteSelected);
-                    $lot->quantity = $lot->quantity + $document_item->quantity;
+                    $lot = ItemLotsGroup::query()->lockForUpdate()->find($document_item->item->IdLoteSelected);
+                    $lot->quantity = $lot->exactValue('quantity')->plus($document_item->exactValue('quantity'));
                     $lot->save();
                 }
 
@@ -552,11 +552,12 @@ trait InventoryTrait
      * Obtener factor de presentación
      *
      * @param  mixed $model_item
-     * @return float
+     * @return \Brick\Math\BigRational
      */
     public function getQuantityUnitPresentation($model_item)
     {
-        return isset($model_item->item->presentation->quantity_unit) ? (float) $model_item->item->presentation->quantity_unit : 1;
+        return isset($model_item->item->presentation->quantity_unit)
+            ? \App\Support\Exact\Decimal::read($model_item->item->presentation,'quantity_unit') : \App\Support\Exact\Decimal::of(1);
     }
 
 
@@ -587,8 +588,8 @@ trait InventoryTrait
 
             foreach ($lot_group_selecteds as $lt)
             {
-                $lot = ItemLotsGroup::find($lt->id);
-                $lot->quantity = $lot->quantity + ($quantity_unit * $lt->compromise_quantity);
+                $lot = ItemLotsGroup::query()->lockForUpdate()->find($lt->id);
+                $lot->quantity = $lot->exactValue('quantity')->plus($quantity_unit->multipliedBy(\App\Support\Exact\Decimal::read($lt,'compromise_quantity')));
                 $lot->save();
             }
         }
@@ -625,13 +626,15 @@ trait InventoryTrait
         $item = Item::findOrFail($document_item->item_id);
         foreach ($item->sets as $it) {
             $ind_item = $it->individual_item;
-            $item_set_quantity = ($it->quantity) ? $it->quantity : 1;
+            $item_set_quantity = $it->exactValue('quantity');
+            if ($item_set_quantity->isZero()) $item_set_quantity=\App\Support\Exact\Decimal::of(1);
             $presentationQuantity = 1;
             $document = $document_item->document;
             $factor = 1;
             $warehouse = $this->findWarehouse();
-            $this->createInventoryKardex($document_item->document, $ind_item->id, ($factor * ($document_item->quantity * $presentationQuantity * $item_set_quantity)), $warehouse->id);
-            if (!$document_item->document->sale_note_id && !$document_item->document->order_note_id && !$document_item->document->sale_notes_relateds) $this->updateStock($ind_item->id, ($factor * ($document_item->quantity * $presentationQuantity * $item_set_quantity)), $warehouse->id);
+            $quantity=$document_item->exactValue('quantity')->multipliedBy($factor)->multipliedBy($presentationQuantity)->multipliedBy($item_set_quantity);
+            $this->createInventoryKardex($document_item->document, $ind_item->id, $quantity, $warehouse->id);
+            if (!$document_item->document->sale_note_id && !$document_item->document->order_note_id && !$document_item->document->sale_notes_relateds) $this->updateStock($ind_item->id, $quantity, $warehouse->id);
         }
     }
     /**
@@ -697,9 +700,9 @@ trait InventoryTrait
 
 
                 // factor de lista de precios
-                $presentation_quantity = (isset($purchase_item->item->presentation->quantity_unit)) ? $purchase_item->item->presentation->quantity_unit : 1;
+                $presentation_quantity = $this->getQuantityUnitPresentation($purchase_item);
 
-                if ((int)$lot_group->quantity != (int) ($purchase_item->quantity * $presentation_quantity)) {
+                if (!$lot_group->exactValue('quantity')->isEqualTo($purchase_item->exactValue('quantity')->multipliedBy($presentation_quantity))) {
                     throw new Exception("Los productos del lote {$purchase_item->lot_code} han sido vendidos!");
                 }
             }
@@ -776,20 +779,21 @@ trait InventoryTrait
      */
     public function processIndividualDocumentItem($document_item, $factor = 1)
     {
-        $presentationQuantity = (!empty($document_item->item->presentation)) ? $document_item->item->presentation->quantity_unit : 1;
+        $presentationQuantity = $this->getQuantityUnitPresentation($document_item);
         $document = $document_item->document;
         $warehouse = ($document_item->warehouse_id) ? $this->findWarehouse($this->findWarehouseById($document_item->warehouse_id)->establishment_id) : $this->findWarehouse();
 
-        $this->createInventoryKardex($document_item->document, $document_item->item_id, ($factor * ($document_item->quantity * $presentationQuantity)), $warehouse->id);
+        $quantity=$document_item->exactValue('quantity')->multipliedBy($factor)->multipliedBy($presentationQuantity);
+        $this->createInventoryKardex($document_item->document, $document_item->item_id, $quantity, $warehouse->id);
 
         if (!$document_item->document->sale_note_id && !$document_item->document->order_note_id && !$document_item->document->dispatch_id && !$document_item->document->sale_notes_relateds)
         {
-            $this->updateStock($document_item->item_id, ($factor * ($document_item->quantity * $presentationQuantity)), $warehouse->id);
+            $this->updateStock($document_item->item_id, $quantity, $warehouse->id);
         } else
         {
             if ($document_item->document->dispatch) {
                 if (!$document_item->document->dispatch->discountsPhysicalStock()) {
-                    $this->updateStock($document_item->item_id, ($factor * ($document_item->quantity * $presentationQuantity)), $warehouse->id);
+                    $this->updateStock($document_item->item_id, $quantity, $warehouse->id);
                 }
             }
         }

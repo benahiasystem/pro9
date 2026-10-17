@@ -34,14 +34,16 @@ class PaymentOrderController extends Controller
         });
         $status = PaymentOrderState::all();
         $active_cron = Configuration::first()->active_cron;
-        $clientPlans = Client::all()->transform(function($row) {
-            $payments = PaymentOrder::paymentsTotals($row->id)->get();
-            $payments = PaymentOrderState::all()->transform(function($row) use ($payments) {
+        $allTotals=PaymentOrder::exactPaymentsTotals(null,true)->groupBy('client_id');
+        $clientPlans = Client::all()->transform(function($row) use ($allTotals,$status) {
+            $payments = $allTotals->get($row->id,collect());
+            $payments = $status->map(function($row) use ($payments) {
                 $total = $payments->where('id', $row->id)->first();
                 return (object) [
                     'id' => $row->id,
                     'name' => strtoupper($row->name),
-                    'total' => $total ? $total->total : 0,
+                    'total' => $total ? $total->total : '0',
+                    'calculation_snapshot' => $total ? $total->calculation_snapshot : \App\Support\Exact\Decimal::snapshot(['total'=>'0']),
                 ];
             });
             $ending = Carbon::now()->diffAsCarbonInterval(Carbon::parse($row->ending_billing_cycle));
@@ -58,6 +60,7 @@ class PaymentOrderController extends Controller
                 'name' => $row->name,
                 'number' => $row->number,
                 'price' => $row->getPricePlan(),
+                'calculation_snapshot' => \App\Support\Exact\Decimal::snapshot(['price'=>$row->exactPricePlan()]),
                 'contact_email' => $row->contact_email,
                 'phone_ws' => $row->phone_ws,
                 'client_name' => $row->client_name,
@@ -68,6 +71,7 @@ class PaymentOrderController extends Controller
                 'plan' => [
                     'name' => $row->plan ? $row->plan->name : 'Sin plan',
                     'price' => $row->getPricePlan(),
+                    'calculation_snapshot' => \App\Support\Exact\Decimal::snapshot(['price'=>$row->exactPricePlan()]),
                     'period' => $row->period ? $row->period->name : 'Mensual',
                     'active' => $row->activeService(),
                     'date_of_ending' => $row->ending_billing_cycle ? Carbon::parse($row->ending_billing_cycle)->format('Y-m-d') : '',
@@ -88,15 +92,15 @@ class PaymentOrderController extends Controller
     public function records(Request $request)
     {
         $paymen_orders = PaymentOrder::query();
-        $payments = PaymentOrder::paymentsTotals()
-        ->get();
+        $payments = PaymentOrder::exactPaymentsTotals();
 
         $payments = PaymentOrderState::all()->transform(function($row) use ($payments) {
             $total = $payments->where('id', $row->id)->first();
             return (object) [
                 'id' => $row->id,
                 'name' => $row->name,
-                'total' => $total ? $total->total : 0,
+                'total' => $total ? $total->total : '0',
+                'calculation_snapshot' => $total ? $total->calculation_snapshot : \App\Support\Exact\Decimal::snapshot(['total'=>'0']),
             ];
         });
 
@@ -130,7 +134,7 @@ class PaymentOrderController extends Controller
     {
         $validated = $request->validate([
             'client_id' => 'required',
-            'amount' => 'required|numeric|min:0',
+            'amount' => ['required',new \App\Rules\ExactDecimal('0')],
             'date_of_due' => 'required|date',
             'description' => 'nullable|string',
             'notify' => 'boolean'
@@ -211,6 +215,7 @@ class PaymentOrderController extends Controller
 
     public function updateTable(Request $request)
     {
+        $request->validate(['price'=>['sometimes','nullable',new \App\Rules\ExactDecimal('0')]]);
         $model = PaymentOrder::find($request->id);
 
         if ($request->date_of_due) {
@@ -237,7 +242,7 @@ class PaymentOrderController extends Controller
                 DB::connection('tenant')->table('configurations')->where('id', 1)->update(['locked_tenant' => $client->locked_tenant]);
             }
         }
-        if ($request->price) {
+        if ($request->has('price') && $request->price!==null) {
             $model->amount = $request->price;
         }
 

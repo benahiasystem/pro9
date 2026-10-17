@@ -14,6 +14,9 @@ return new class extends Migration
     public function up()
     {
         Schema::create('job_batching_trays', function (Blueprint $table) {
+            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            $table->json('calculation_snapshot')->nullable();
+            // ######## FIN CALCULOS EXACTOS PRO9 ########
             $table->id();
             $table->string('job_batch_id');
             $table->foreign('job_batch_id')->references('id')->on('job_batches');
@@ -29,6 +32,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('jobs_batching_tray');
+        Schema::dropIfExists('job_batching_trays');
     }
 };

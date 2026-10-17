@@ -6,6 +6,9 @@ use App\Models\Tenant\Item;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Validator;
 use Illuminate\Validation\Rule;
+// ######## INICIO CALCULOS EXACTOS PRO9 ########
+use App\Support\Exact\Decimal;
+// ######## FIN CALCULOS EXACTOS PRO9 ########
 
 /**
  * Class DocumentRequest
@@ -112,7 +115,8 @@ class DocumentRequest extends FormRequest
                 }
 
                 $description = $this->resolveItemDescription($row, $index);
-                $quantity = round((float) ($row['quantity'] ?? 0), 4);
+                // ######## INICIO CALCULOS EXACTOS PRO9 ########
+                $quantity = Decimal::of(Decimal::input($row['quantity'] ?? '0', "items.{$index}.quantity"));
                 $idLoteSelected = $row['IdLoteSelected']
                     ?? data_get($row, 'item.IdLoteSelected')
                     ?? null;
@@ -130,10 +134,10 @@ class DocumentRequest extends FormRequest
                     continue;
                 }
 
-                $sumCompromise = 0.0;
+                $sumCompromise = Decimal::of(0);
                 foreach ($idLoteSelected as $lotRow) {
                     $lotId = $this->lotField($lotRow, 'id');
-                    $compromise = (float) $this->lotField($lotRow, 'compromise_quantity', 0);
+                    $compromise = Decimal::of(Decimal::input($this->lotField($lotRow, 'compromise_quantity', '0'), "items.{$index}.IdLoteSelected"));
 
                     if ($lotId === null || $lotId === '') {
                         $validator->errors()->add(
@@ -143,7 +147,7 @@ class DocumentRequest extends FormRequest
                         continue 2;
                     }
 
-                    if ($compromise <= 0) {
+                    if (!$compromise->isPositive()) {
                         $validator->errors()->add(
                             "items.{$index}.IdLoteSelected",
                             "El lote #{$lotId} del producto \"{$description}\" debe tener cantidad comprometida mayor a 0."
@@ -151,12 +155,12 @@ class DocumentRequest extends FormRequest
                         continue 2;
                     }
 
-                    $sumCompromise += $compromise;
+                    $sumCompromise = $sumCompromise->plus($compromise)->simplified();
                 }
 
-                $sumCompromise = round($sumCompromise, 4);
+                // ######## FIN CALCULOS EXACTOS PRO9 ########
 
-                if ($sumCompromise !== $quantity) {
+                if (!$sumCompromise->isEqualTo($quantity)) {
                     $validator->errors()->add(
                         "items.{$index}.IdLoteSelected",
                         "Las cantidades de lote del producto \"{$description}\" ({$sumCompromise}) deben coincidir con la cantidad vendida ({$quantity})."

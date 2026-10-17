@@ -23,7 +23,7 @@
             <div v-if="enabledPointSystem" class="pos-checkout__points">
                 <p class="pos-checkout__point-row">
                     Puntos acumulados: <span>{{ customer_accumulated_points }}</span>
-                    <template v-if="total_exchange_points > 0">
+                    <template v-if="hasExchangePoints()">
                         - <b class="text-danger">{{ total_exchange_points }}</b>
                         = <b>{{ calculate_customer_accumulated_points }}</b>
                     </template>
@@ -605,7 +605,7 @@ export default {
         },
         isAvailablePointSystem(row)
         {
-            return (this.enabledPointSystem && this.customer_accumulated_points > 0 && row.item.exchange_points)
+            return (this.enabledPointSystem && this.hasAccumulatedPoints() && row.item.exchange_points)
         },
         changeRowExchangePoints(row, index)
         {

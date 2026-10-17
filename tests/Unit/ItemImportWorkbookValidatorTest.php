@@ -68,6 +68,30 @@ class ItemImportWorkbookValidatorTest extends TestCase
         self::assertSame(1, $result->totalRows());
     }
 
+    public function test_raw_numeric_ooxml_decimals_survive_before_validation(): void
+    {
+        $path=$this->workbookPath();
+        $book=new Spreadsheet();
+        $sheet=$book->getActiveSheet();
+        $sheet->fromArray(ItemImportContract::HEADERS,null,'A1');
+        $sheet->fromArray($this->validRow('EXACT-12'),null,'A2');
+        IOFactory::createWriter($book,'Xlsx')->save($path);
+        $book->disconnectWorksheets();
+        // Write the source lexeme directly: PHP/Excel numeric cells would lose its digits first.
+        $source='123456789012345678.123456789012';
+        $zip=new \ZipArchive();$zip->open($path);
+        $xml=$zip->getFromName('xl/worksheets/sheet1.xml');
+        $xml=preg_replace('~<c\b[^>]*\br="G2"[^>]*>.*?</c>~s','<c r="G2" t="n"><v>'.$source.'</v></c>',$xml,1,$count);
+        self::assertSame(1,$count);
+        $zip->addFromString('xl/worksheets/sheet1.xml',$xml);$zip->close();
+        self::assertTrue($this->validator()->validate($path)->passes());
+        $book=IOFactory::load($path);
+        \App\Support\Exact\XlsxDecimals::restore($book,$path,[6,9,11,12]);
+        self::assertSame($source,$book->getSheet(0)->getCell('G2')->getValue());
+        self::assertSame('s',$book->getSheet(0)->getCell('G2')->getDataType());
+        $book->disconnectWorksheets();
+    }
+
     /** @test */
     public function it_rejects_legacy_product_and_service_unit_codes(): void
     {

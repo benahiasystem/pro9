@@ -19,7 +19,9 @@ class AddEvolutionColumnsToConfigurations extends Migration
     public function down()
     {
         Schema::table('configurations', function (Blueprint $table) {
-            $table->dropColumn(['evolution_url', 'evolution_apikey', 'evolution_instance', 'evolution_enabled']);
+            foreach (['evolution_url', 'evolution_apikey', 'evolution_instance', 'evolution_enabled'] as $column) {
+                if (Schema::hasColumn('configurations',$column)) $table->dropColumn($column);
+            }
         });
     }
 }

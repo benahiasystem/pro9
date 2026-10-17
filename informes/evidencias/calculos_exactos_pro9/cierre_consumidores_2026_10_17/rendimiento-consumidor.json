@@ -1,0 +1,78 @@
+{
+    "runtime": "8.2.34",
+    "database": "SQLite temporal en memoria",
+    "scope": "Consumidor backend; referencia anterior reproducida con el código de HEAD y modelos actuales. No mide transporte HTTP, MySQL ni POS.",
+    "baseline_source_sha256": "fc75689e8190228362b22cf282473a035703da104d26995c63a703f447a0c133",
+    "current_source_sha256": "b8843f9c412ccd2bac4300a8e2bc8b5b61a81cd6e9bf614082aca3133a07dcb1",
+    "samples": 7,
+    "cases": {
+        "1000": {
+            "legacy": {
+                "p50_ms": 193.683457,
+                "p95_ms": 213.103909,
+                "query_count": 1001,
+                "peak_memory_bytes": 44564480,
+                "raw_ms": [
+                    182.953233,
+                    188.034471,
+                    190.82268,
+                    193.683457,
+                    194.50797,
+                    199.925674,
+                    213.103909
+                ]
+            },
+            "current": {
+                "p50_ms": 205.040746,
+                "p95_ms": 285.099997,
+                "query_count": 8,
+                "peak_memory_bytes": 44564480,
+                "raw_ms": [
+                    191.786013,
+                    201.190291,
+                    203.396697,
+                    205.040746,
+                    210.398954,
+                    220.38795,
+                    285.099997
+                ]
+            },
+            "allowed_p95_ms": 313.103909,
+            "passed": true
+        },
+        "10000": {
+            "legacy": {
+                "p50_ms": 2215.706051,
+                "p95_ms": 2297.045668,
+                "query_count": 10001,
+                "peak_memory_bytes": 71831552,
+                "raw_ms": [
+                    2174.236738,
+                    2175.314991,
+                    2193.822493,
+                    2215.706051,
+                    2244.640325,
+                    2245.19732,
+                    2297.045668
+                ]
+            },
+            "current": {
+                "p50_ms": 2135.861491,
+                "p95_ms": 2222.662525,
+                "query_count": 44,
+                "peak_memory_bytes": 67633152,
+                "raw_ms": [
+                    2087.472427,
+                    2102.22614,
+                    2121.556235,
+                    2135.861491,
+                    2203.954373,
+                    2214.394248,
+                    2222.662525
+                ]
+            },
+            "allowed_p95_ms": 2756.4548016000003,
+            "passed": true
+        }
+    }
+}

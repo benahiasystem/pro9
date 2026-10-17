@@ -45,11 +45,11 @@
                        ->first();
             if (!empty($e)) {
                 $id = $e->id;
-                $e->delete();
                 $q = ModuleLevel::where('module_id', $id)->get();
                 foreach ($q as $i) {
                     $i->delete();
                 }
+                $e->delete();
 
             }
         }

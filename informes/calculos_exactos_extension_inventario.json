@@ -1,0 +1,872 @@
+{
+  "date": "2026-10-17",
+  "status": "incomplete",
+  "contract_version": 1,
+  "tenant_tables": 115,
+  "tenant_decimal_columns": 539,
+  "tenant_fields": {
+    "account_payments": [
+      "payment"
+    ],
+    "bank_loan_fee": [
+      "amount"
+    ],
+    "bank_loan_items": [
+      "total",
+      "total_interest",
+      "total_ingress"
+    ],
+    "bank_loan_payments": [
+      "payment"
+    ],
+    "bank_loans": [
+      "total",
+      "total_interest",
+      "total_ingress"
+    ],
+    "cat_iva_rate_types": [
+      "percentage"
+    ],
+    "configurations": [
+      "percentage_allowance_charge",
+      "igv_retention_percentage",
+      "dashboard_goal_amount",
+      "point_system_sale_amount",
+      "quantity_of_points",
+      "sellers_discount_limit",
+      "session_lifetime"
+    ],
+    "delivery_zones": [
+      "price"
+    ],
+    "discount_coupons": [
+      "amount",
+      "min_amount",
+      "max_amount"
+    ],
+    "documentary_processes": [
+      "price"
+    ],
+    "item_movement": [
+      "quantity"
+    ],
+    "item_rel_suscription_plans": [
+      "quantity",
+      "unit_value",
+      "total_base_igv",
+      "percentage_igv",
+      "total_igv",
+      "total_base_other_taxes",
+      "percentage_other_taxes",
+      "total_other_taxes",
+      "total_taxes",
+      "unit_price",
+      "total_value",
+      "total_charge",
+      "total_discount",
+      "total"
+    ],
+    "mill_items": [
+      "height_to_mill",
+      "total_height",
+      "quantity"
+    ],
+    "payment_method_types": [
+      "charge"
+    ],
+    "received_payments": [
+      "amount"
+    ],
+    "suscription_orders": [
+      "amount"
+    ],
+    "temporary_kardex_records": [
+      "balance"
+    ],
+    "transfer_account_payments": [
+      "amount"
+    ],
+    "user_rel_suscription_plans": [
+      "total",
+      "total_prepayment",
+      "total_charge",
+      "total_discount",
+      "total_exportation",
+      "total_free",
+      "total_taxed",
+      "total_unaffected",
+      "total_exonerated",
+      "total_igv",
+      "total_igv_free",
+      "total_base_other_taxes",
+      "total_other_taxes",
+      "total_taxes",
+      "total_value"
+    ],
+    "companies": [
+      "igtf_rate"
+    ],
+    "fixed_asset_items": [
+      "purchase_unit_price"
+    ],
+    "inventories_transfer": [
+      "quantity"
+    ],
+    "orders": [
+      "total",
+      "total_discount"
+    ],
+    "packaging": [
+      "quantity",
+      "number_packages"
+    ],
+    "production": [
+      "quantity",
+      "agreed",
+      "imperfect"
+    ],
+    "supplies": [
+      "cost",
+      "waste_percentage",
+      "stock",
+      "minimum_stock"
+    ],
+    "tips": [
+      "total"
+    ],
+    "persons": [
+      "accumulated_points",
+      "percentage_perception",
+      "discount_amount"
+    ],
+    "bank_accounts": [
+      "initial_balance"
+    ],
+    "cash": [
+      "beginning_balance",
+      "final_balance",
+      "income"
+    ],
+    "claims": [
+      "receipt_amount"
+    ],
+    "expenses": [
+      "total"
+    ],
+    "fixed_asset_purchases": [
+      "total_prepayment",
+      "total_charge",
+      "total_discount",
+      "total_exportation",
+      "total_free",
+      "total_taxed",
+      "total_unaffected",
+      "total_exonerated",
+      "total_igv",
+      "total_base_other_taxes",
+      "total_other_taxes",
+      "total_taxes",
+      "total_value",
+      "total",
+      "total_perception"
+    ],
+    "income": [
+      "total"
+    ],
+    "items": [
+      "sale_unit_price",
+      "purchase_unit_price",
+      "quantity_of_points",
+      "commission_amount",
+      "suggested_price",
+      "sale_unit_price_set",
+      "stock",
+      "stock_min",
+      "percentage_of_profit",
+      "percentage_perception"
+    ],
+    "order_forms": [
+      "total_weight"
+    ],
+    "order_notes": [
+      "total_prepayment",
+      "total_charge",
+      "total_discount",
+      "total_exportation",
+      "total_free",
+      "total_taxed",
+      "total_unaffected",
+      "total_exonerated",
+      "total_igv",
+      "total_igv_free",
+      "total_base_other_taxes",
+      "total_other_taxes",
+      "total_taxes",
+      "total_value",
+      "subtotal",
+      "total"
+    ],
+    "payment_links": [
+      "total"
+    ],
+    "pending_account_commissions": [
+      "amount"
+    ],
+    "perceptions": [
+      "total_perception",
+      "total"
+    ],
+    "purchase_settlements": [
+      "total_prepayment",
+      "total_taxed",
+      "total_unaffected",
+      "total_exonerated",
+      "total_igv",
+      "total_taxes",
+      "total_value",
+      "subtotal",
+      "total"
+    ],
+    "retentions": [
+      "total_retention",
+      "total"
+    ],
+    "sale_opportunities": [
+      "total_exportation",
+      "total_free",
+      "total_taxed",
+      "total_unaffected",
+      "total_exonerated",
+      "total_igv",
+      "total_taxes",
+      "total_value",
+      "total"
+    ],
+    "technical_services": [
+      "total_prepayment",
+      "total_charge",
+      "total_discount",
+      "total_exportation",
+      "total_free",
+      "total_taxed",
+      "total_unaffected",
+      "total_exonerated",
+      "total_igv",
+      "total_igv_free",
+      "total_base_other_taxes",
+      "total_other_taxes",
+      "total_taxes",
+      "total_value",
+      "subtotal",
+      "total",
+      "cost",
+      "prepayment"
+    ],
+    "user_commissions": [
+      "amount"
+    ],
+    "cash_transactions": [
+      "payment"
+    ],
+    "devolution_items": [
+      "quantity"
+    ],
+    "expense_items": [
+      "total"
+    ],
+    "expense_payments": [
+      "payment"
+    ],
+    "fixed_asset_purchase_items": [
+      "quantity",
+      "unit_value",
+      "total_base_igv",
+      "percentage_igv",
+      "total_igv",
+      "total_base_other_taxes",
+      "percentage_other_taxes",
+      "total_other_taxes",
+      "total_taxes",
+      "unit_price",
+      "total_value",
+      "total_charge",
+      "total_discount",
+      "total"
+    ],
+    "guide_items": [
+      "quantity",
+      "unit_cost",
+      "total"
+    ],
+    "income_items": [
+      "total"
+    ],
+    "income_payments": [
+      "change",
+      "payment"
+    ],
+    "inventories": [
+      "quantity",
+      "system_stock",
+      "real_stock"
+    ],
+    "inventory_kardex": [
+      "quantity"
+    ],
+    "item_lots_group": [
+      "quantity",
+      "old_quantity"
+    ],
+    "item_sets": [
+      "quantity"
+    ],
+    "item_supplies": [
+      "quantity",
+      "unit_price"
+    ],
+    "item_unit_types": [
+      "quantity_unit",
+      "price1",
+      "price2",
+      "price3"
+    ],
+    "item_warehouse": [
+      "stock"
+    ],
+    "item_warehouse_prices": [
+      "price"
+    ],
+    "order_form_items": [
+      "quantity"
+    ],
+    "order_note_items": [
+      "quantity",
+      "unit_value",
+      "total_base_igv",
+      "percentage_igv",
+      "total_igv",
+      "total_base_other_taxes",
+      "percentage_other_taxes",
+      "total_other_taxes",
+      "total_taxes",
+      "unit_price",
+      "total_value",
+      "total_charge",
+      "total_discount",
+      "total",
+      "quantity_factor"
+    ],
+    "payment_link_payments": [
+      "total"
+    ],
+    "perception_documents": [
+      "total_document",
+      "total_perception",
+      "total_to_pay",
+      "total_payment"
+    ],
+    "purchase_orders": [
+      "total_prepayment",
+      "total_charge",
+      "total_discount",
+      "total_exportation",
+      "total_free",
+      "total_taxed",
+      "total_unaffected",
+      "total_exonerated",
+      "total_igv",
+      "total_base_other_taxes",
+      "total_other_taxes",
+      "total_taxes",
+      "total_value",
+      "total"
+    ],
+    "purchase_quotation_items": [
+      "quantity"
+    ],
+    "purchase_settlement_items": [
+      "quantity",
+      "unit_value",
+      "total_base_igv",
+      "percentage_igv",
+      "total_igv",
+      "total_taxes",
+      "unit_price",
+      "total_value",
+      "total",
+      "income_retention_percentage",
+      "income_retention_amount"
+    ],
+    "purchase_settlement_payments": [
+      "change",
+      "payment"
+    ],
+    "quotations": [
+      "total_prepayment",
+      "total_charge",
+      "total_discount",
+      "total_exportation",
+      "total_free",
+      "total_taxed",
+      "total_unaffected",
+      "total_exonerated",
+      "total_igv",
+      "total_igv_free",
+      "total_base_other_taxes",
+      "total_other_taxes",
+      "total_taxes",
+      "total_value",
+      "subtotal",
+      "total"
+    ],
+    "restaurant_item_supplies": [
+      "quantity"
+    ],
+    "restaurant_stock_products": [
+      "stock",
+      "quantity_reserved"
+    ],
+    "retention_documents": [
+      "total_document",
+      "total_retention",
+      "total_to_pay",
+      "total_payment"
+    ],
+    "sale_opportunity_items": [
+      "quantity",
+      "unit_value",
+      "total_base_igv",
+      "percentage_igv",
+      "total_igv",
+      "total_taxes",
+      "unit_price",
+      "total_value",
+      "total_charge",
+      "total_discount",
+      "total"
+    ],
+    "technical_service_payments": [
+      "change",
+      "payment"
+    ],
+    "transactions": [
+      "amount"
+    ],
+    "weighted_average_costs": [
+      "quantity",
+      "cost",
+      "total",
+      "weighted_cost",
+      "stock"
+    ],
+    "contracts": [
+      "total_prepayment",
+      "total_charge",
+      "total_discount",
+      "total_exportation",
+      "total_free",
+      "total_taxed",
+      "total_unaffected",
+      "total_exonerated",
+      "total_igv",
+      "total_base_other_taxes",
+      "total_other_taxes",
+      "total_taxes",
+      "total_value",
+      "total"
+    ],
+    "item_unit_type_prices": [
+      "price"
+    ],
+    "purchase_order_items": [
+      "unit_value",
+      "total_base_igv",
+      "percentage_igv",
+      "total_igv",
+      "total_base_other_taxes",
+      "percentage_other_taxes",
+      "total_other_taxes",
+      "total_taxes",
+      "unit_price",
+      "total_value",
+      "total_charge",
+      "total_discount",
+      "total",
+      "quantity_factor"
+    ],
+    "purchases": [
+      "total_prepayment",
+      "total_charge",
+      "total_discount",
+      "total_exportation",
+      "total_free",
+      "total_taxed",
+      "total_unaffected",
+      "total_exonerated",
+      "total_igv",
+      "total_base_other_taxes",
+      "total_other_taxes",
+      "total_taxes",
+      "total_value",
+      "total",
+      "total_perception",
+      "total_payable",
+      "settlement_adjustment"
+    ],
+    "quotation_items": [
+      "quantity",
+      "unit_value",
+      "total_base_igv",
+      "percentage_igv",
+      "total_igv",
+      "total_base_other_taxes",
+      "percentage_other_taxes",
+      "total_other_taxes",
+      "total_taxes",
+      "unit_price",
+      "total_value",
+      "total_charge",
+      "total_discount",
+      "total",
+      "quantity_factor"
+    ],
+    "quotation_payments": [
+      "change",
+      "payment"
+    ],
+    "sale_notes": [
+      "total_prepayment",
+      "total_charge",
+      "total_discount",
+      "total_exportation",
+      "total_free",
+      "total_taxed",
+      "total_unaffected",
+      "total_exonerated",
+      "total_igv",
+      "total_igv_free",
+      "total_base_other_taxes",
+      "total_other_taxes",
+      "total_taxes",
+      "total_value",
+      "subtotal",
+      "total",
+      "total_payable",
+      "settlement_adjustment"
+    ],
+    "contract_items": [
+      "quantity",
+      "unit_value",
+      "total_base_igv",
+      "percentage_igv",
+      "total_igv",
+      "total_base_other_taxes",
+      "percentage_other_taxes",
+      "total_other_taxes",
+      "total_taxes",
+      "unit_price",
+      "total_value",
+      "total_charge",
+      "total_discount",
+      "total"
+    ],
+    "contract_payments": [
+      "change",
+      "payment"
+    ],
+    "purchase_fee": [
+      "amount"
+    ],
+    "purchase_items": [
+      "quantity",
+      "unit_value",
+      "total_base_igv",
+      "percentage_igv",
+      "total_igv",
+      "total_base_other_taxes",
+      "percentage_other_taxes",
+      "total_other_taxes",
+      "total_taxes",
+      "unit_price",
+      "total_value",
+      "total_charge",
+      "total_discount",
+      "total"
+    ],
+    "purchase_payments": [
+      "payment"
+    ],
+    "purchase_supplies": [
+      "quantity",
+      "cost"
+    ],
+    "sale_note_fees": [
+      "amount"
+    ],
+    "sale_note_items": [
+      "quantity",
+      "unit_value",
+      "total_base_igv",
+      "percentage_igv",
+      "total_igv",
+      "total_base_other_taxes",
+      "percentage_other_taxes",
+      "total_other_taxes",
+      "total_taxes",
+      "unit_price",
+      "total_value",
+      "total_charge",
+      "total_discount",
+      "total",
+      "quantity_factor"
+    ],
+    "sale_note_payments": [
+      "change",
+      "payment"
+    ],
+    "hotel_rent_item_payments": [
+      "change",
+      "payment"
+    ],
+    "dispatches": [
+      "total_weight"
+    ],
+    "dispatch_items": [
+      "quantity"
+    ],
+    "documents": [
+      "total_prepayment",
+      "total_charge",
+      "total_discount",
+      "total_exportation",
+      "total_taxed",
+      "total_exonerated",
+      "total_igv",
+      "total_base_other_taxes",
+      "total_other_taxes",
+      "total_taxes",
+      "total_value",
+      "subtotal",
+      "total",
+      "pending_amount_prepayment",
+      "total_pending_payment",
+      "total_payable",
+      "settlement_adjustment"
+    ],
+    "document_fee": [
+      "amount"
+    ],
+    "document_items": [
+      "quantity",
+      "unit_value",
+      "total_base_igv",
+      "percentage_igv",
+      "total_igv",
+      "total_base_other_taxes",
+      "percentage_other_taxes",
+      "total_other_taxes",
+      "total_taxes",
+      "unit_price",
+      "total_value",
+      "total_charge",
+      "total_discount",
+      "total",
+      "quantity_factor",
+      "inventory_quantity"
+    ],
+    "document_payments": [
+      "change",
+      "payment",
+      "original_amount",
+      "tax_amount"
+    ],
+    "kardex": [
+      "quantity"
+    ],
+    "restaurant_tables": [
+      "total"
+    ],
+    "restaurant_table_groups": [
+      "total"
+    ],
+    "document_taxes": [
+      "percentage",
+      "base",
+      "amount",
+      "base_ves",
+      "amount_ves"
+    ],
+    "document_currency_totals": [
+      "taxed",
+      "exportation",
+      "exempt",
+      "discount",
+      "charge",
+      "iva",
+      "other_taxes",
+      "total"
+    ],
+    "discount_campaigns": [
+      "value"
+    ],
+    "document_received_retentions": [
+      "taxable_base",
+      "base",
+      "percentage",
+      "subtrahend",
+      "amount",
+      "applied_amount"
+    ],
+    "document_guarantee_funds": [
+      "amount",
+      "base",
+      "percentage"
+    ],
+    "ecommerce_campaigns": [
+      "discount_value"
+    ],
+    "document_note_refunds": [
+      "original_amount",
+      "amount"
+    ],
+    "document_note_adjustments": [
+      "amount"
+    ],
+    "hotel_room_rates": [
+      "price"
+    ],
+    "accounting_ledger": [
+      "last_month_total",
+      "credits",
+      "debs",
+      "final_total"
+    ],
+    "suscription_plans": [
+      "total",
+      "total_prepayment",
+      "total_charge",
+      "total_discount",
+      "total_exportation",
+      "total_free",
+      "total_taxed",
+      "total_unaffected",
+      "total_exonerated",
+      "total_igv",
+      "total_igv_free",
+      "total_base_other_taxes",
+      "total_other_taxes",
+      "total_taxes",
+      "total_value"
+    ],
+    "technical_service_items": [
+      "quantity",
+      "unit_value",
+      "total_base_igv",
+      "percentage_igv",
+      "total_igv",
+      "total_base_other_taxes",
+      "percentage_other_taxes",
+      "total_other_taxes",
+      "total_taxes",
+      "unit_price",
+      "total_value",
+      "total_charge",
+      "total_discount",
+      "total"
+    ]
+  },
+  "system_fields": {
+    "plans": [
+      "pricing",
+      "sales_limit"
+    ],
+    "clients": [
+      "price"
+    ],
+    "client_payments": [
+      "payment"
+    ],
+    "payment_orders": [
+      "amount"
+    ],
+    "massive_invoices": [
+      "cantidad",
+      "precio",
+      "total_gravado",
+      "total_igv",
+      "total_venta"
+    ],
+    "job_batching_trays": [
+      "balance"
+    ]
+  },
+  "findings_file": "calculos_exactos_extension_inventario.jsonl",
+  "classifications": {
+    "pending": 37562,
+    "technical": 8873,
+    "discrete_units": 3,
+    "settlement": 4,
+    "validation": 33,
+    "storage": 10,
+    "presentation": 36,
+    "allocation": 29,
+    "exact_arithmetic": 37
+  },
+  "audit": {
+    "php": {
+      "candidates": 23418,
+      "classified": 5719,
+      "pending": 17699,
+      "parse_errors": [],
+      "registry_errors": [],
+      "coverage_missing": [],
+      "scanned_files": 3615,
+      "check_exit_code": 1,
+      "categories": {
+        "pending": 17699,
+        "technical": 5669,
+        "discrete_units": 3,
+        "settlement": 4,
+        "validation": 4,
+        "storage": 10,
+        "presentation": 17,
+        "allocation": 11,
+        "exact_arithmetic": 1
+      }
+    },
+    "js": {
+      "candidates": 23169,
+      "classified": 3306,
+      "pending": 19863,
+      "parse_errors": [],
+      "registry_errors": [],
+      "coverage_missing": [],
+      "scanned_files": 1950,
+      "check_exit_code": 1,
+      "categories": {
+        "technical": 3204,
+        "pending": 19863,
+        "validation": 29,
+        "exact_arithmetic": 36,
+        "presentation": 19,
+        "allocation": 18
+      }
+    },
+    "totals": {
+      "candidates": 46587,
+      "classified": 9025,
+      "pending": 37562
+    },
+    "scope": "Cobertura sintáctica de fuentes según política. No demuestra por sí sola trazabilidad interprocedimental, SQL dinámico ni cierre de consumidores."
+  },
+  "source_policy": "config/exact_audit_sources.json",
+  "individual_registry": "config/exact_rounding_registry.json",
+  "candidates_file": "informes/calculos_exactos_extension_inventario.jsonl",
+  "consumer_matrix": "informes/calculos_exactos_cierre_consumidores_matriz.json",
+  "report": "informes/calculos_exactos_cierre_consumidores_pro9.md",
+  "audit_totals": {
+    "candidates": 46587,
+    "classified": 9025,
+    "pending": 37562
+  }
+}

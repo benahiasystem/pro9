@@ -1,0 +1,29 @@
+          Consolidado de items por cliente/vendedor - Totales
+
+Empresa: Pro9 - Prueba local
+DEMOSTRACIÓN DE CÁLCULOS
+RIF: J000000000
+Establecimiento: Sucursal de prueba - Caracas - Libertador
+              Producto                 Cant.           Total Bs.
+
+Producto de prueba Bs. 500                                         500.00
+                                               1
+QA-1 · UND                                                   VES 500.00
+
+Servicio en moneda extranjera 2                                      1.00
+                                               1
+QA-2 · SERV                                                   USD 0.34
+
+Servicio en moneda extranjera 3                                      1.00
+                                               1
+QA-3 · SERV                                                   USD 0.33
+
+Servicio en moneda extranjera 4                                      1.00
+                                               1
+QA-4 · SERV                                                   USD 0.33
+Total (Bs.)                                    4                   503.00
+
+Moneda original:
+Bs. 500.00
+USD 1.00
+

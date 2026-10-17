@@ -36,20 +36,20 @@ use Illuminate\Support\Facades\DB;
  * - `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `payment_method_type_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `exchange_rate_sale` decimal(18,8) DEFAULT '0.000'
- * - `total_prepayment` double(12,2) DEFAULT '0.00'
- * - `total_charge` double(12,2) DEFAULT '0.00'
- * - `total_discount` double(12,2) DEFAULT '0.00'
- * - `total_exportation` double(12,2) DEFAULT '0.00'
- * - `total_free` double(12,2) DEFAULT '0.00'
- * - `total_taxed` double(12,2) DEFAULT '0.00'
- * - `total_unaffected` double(12,2) DEFAULT '0.00'
- * - `total_exonerated` double(12,2) DEFAULT '0.00'
- * - `total_igv` double(12,2) DEFAULT '0.00'
- * - `total_igv_free` double(12,2) DEFAULT '0.00'
- * - `total_base_other_taxes` double(12,2) DEFAULT '0.00'
- * - `total_other_taxes` double(12,2) DEFAULT '0.00'
- * - `total_taxes` double(12,2) DEFAULT '0.00'
- * - `total_value` double(12,2) DEFAULT '0.00'
+ * - `total_prepayment` decimal(30,12) DEFAULT '0.00'
+ * - `total_charge` decimal(30,12) DEFAULT '0.00'
+ * - `total_discount` decimal(30,12) DEFAULT '0.00'
+ * - `total_exportation` decimal(30,12) DEFAULT '0.00'
+ * - `total_free` decimal(30,12) DEFAULT '0.00'
+ * - `total_taxed` decimal(30,12) DEFAULT '0.00'
+ * - `total_unaffected` decimal(30,12) DEFAULT '0.00'
+ * - `total_exonerated` decimal(30,12) DEFAULT '0.00'
+ * - `total_igv` decimal(30,12) DEFAULT '0.00'
+ * - `total_igv_free` decimal(30,12) DEFAULT '0.00'
+ * - `total_base_other_taxes` decimal(30,12) DEFAULT '0.00'
+ * - `total_other_taxes` decimal(30,12) DEFAULT '0.00'
+ * - `total_taxes` decimal(30,12) DEFAULT '0.00'
+ * - `total_value` decimal(30,12) DEFAULT '0.00'
  * - `total` decimal(30,12) DEFAULT '0.00'
  * - `charges` json DEFAULT NULL
  * - `attributes` json DEFAULT NULL
@@ -101,20 +101,20 @@ CREATE TABLE `user_rel_suscription_plans` (
   `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `payment_method_type_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `exchange_rate_sale` decimal(18,8) DEFAULT '0.000',
-  `total_prepayment` double(12,2) DEFAULT '0.00',
-  `total_charge` double(12,2) DEFAULT '0.00',
-  `total_discount` double(12,2) DEFAULT '0.00',
-  `total_exportation` double(12,2) DEFAULT '0.00',
-  `total_free` double(12,2) DEFAULT '0.00',
-  `total_taxed` double(12,2) DEFAULT '0.00',
-  `total_unaffected` double(12,2) DEFAULT '0.00',
-  `total_exonerated` double(12,2) DEFAULT '0.00',
-  `total_igv` double(12,2) DEFAULT '0.00',
-  `total_igv_free` double(12,2) DEFAULT '0.00',
-  `total_base_other_taxes` double(12,2) DEFAULT '0.00',
-  `total_other_taxes` double(12,2) DEFAULT '0.00',
-  `total_taxes` double(12,2) DEFAULT '0.00',
-  `total_value` double(12,2) DEFAULT '0.00',
+  `total_prepayment` decimal(30,12) DEFAULT '0.00',
+  `total_charge` decimal(30,12) DEFAULT '0.00',
+  `total_discount` decimal(30,12) DEFAULT '0.00',
+  `total_exportation` decimal(30,12) DEFAULT '0.00',
+  `total_free` decimal(30,12) DEFAULT '0.00',
+  `total_taxed` decimal(30,12) DEFAULT '0.00',
+  `total_unaffected` decimal(30,12) DEFAULT '0.00',
+  `total_exonerated` decimal(30,12) DEFAULT '0.00',
+  `total_igv` decimal(30,12) DEFAULT '0.00',
+  `total_igv_free` decimal(30,12) DEFAULT '0.00',
+  `total_base_other_taxes` decimal(30,12) DEFAULT '0.00',
+  `total_other_taxes` decimal(30,12) DEFAULT '0.00',
+  `total_taxes` decimal(30,12) DEFAULT '0.00',
+  `total_value` decimal(30,12) DEFAULT '0.00',
   `total` decimal(30,12) DEFAULT '0.00',
   `charges` json DEFAULT NULL,
   `attributes` json DEFAULT NULL,

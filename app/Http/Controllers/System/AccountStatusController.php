@@ -31,19 +31,11 @@ class AccountStatusController extends Controller
     {
         $client = Client::find($client_id);
 
-        $total_due = collect($client->payments)->where('state',false)->sum('payment');
-        $total_paid = collect($client->payments)->where('state',true)->sum('payment');
-        $total = collect($client->payments)->sum('payment');
-        $total_difference = round($total - $total_paid, 2);
-        $image_url = ($total_due>0) ? asset('/logo/sad.png') : asset('/logo/happy.png');
+        $totals=\App\Support\Exact\AccountTotals::payments($client->payments()->lazyById(500));
+        $image_url = (\App\Support\Exact\Decimal::read($totals,'total_due')->isGreaterThan(0)) ? asset('/logo/sad.png') : asset('/logo/happy.png');
 
         return [
-            'totals' => [
-                'total_due' => $total_due,
-                'total_paid' => $total_paid,
-                'total' => $total,
-                'total_difference' => $total_difference,
-            ],
+            'totals' => $totals,
             'client' => $client, 
             'image_url' => $image_url
         ];

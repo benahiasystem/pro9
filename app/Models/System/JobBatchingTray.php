@@ -11,7 +11,7 @@ use Illuminate\Support\Collection;
  * @property int $job_batch_id
  * @property string $generated_filename
  */
-class JobBatchingTray extends Model
+class JobBatchingTray extends ModelSystem
 {
     use UsesSystemConnection;
 

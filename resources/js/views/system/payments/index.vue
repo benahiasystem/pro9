@@ -20,7 +20,7 @@
                 <div class="col-12 col-sm-6 col-lg-3 mb-3 mb-md-2">
                     <div class="status-container p-3 d-flex align-items-center justify-content-between" :style="{backgroundColor: getClassStatePay(pay.id)}">
                         <div>
-                            <span class="status-price">Bs. {{ parseFloat(pay.total).toFixed(2) }}</span>
+                            <span class="status-price">Bs. {{ money(pay, 'total') }}</span>
                             <p class="m-0">{{ pay.name }}</p>
                         </div>
                         <div v-html="getIconPay(pay.id)"></div>
@@ -175,7 +175,7 @@
                                      class="text-center price-pay"
                                      :class="getTextClassPay(pay.id)"
                                    >
-                                     Bs. {{ parseFloat(pay.total).toFixed(2) }}
+                                     Bs. {{ money(pay, 'total') }}
                                    </strong>
                                </div>
                            </template>
@@ -198,7 +198,7 @@
                                    </span>
                                    <br>
                                    <strong class="text-center price-pay">
-                                       Bs. {{ parseFloat(getClient.plan.price).toFixed(2) }}
+                                       Bs. {{ money(getClient.plan, 'price') }}
                                    </strong>
                                </div>
                                <div class="col text-center p-3">
@@ -295,10 +295,7 @@
                                         :disabled="record.order_state_id == 4 || record.order_state_id == 2"
                                         v-model="record.amount"
                                         size="small"
-                                        type="number"
-                                        step="0.01"
-                                        min="0"
-                                        @blur="formatDecimal(record)"
+                                        inputmode="decimal"
                                         @change="updateTable(record.id)"
                                     ></el-input>
                                 </td>
@@ -406,6 +403,7 @@
 import { get } from 'jquery';
 import CreateOrder from './form.vue'
 import EditClient from './partials/edit-client.vue'
+import {exactValue} from '../../../helpers/exchange-rate-math'
     export default {
         data() {
             return {
@@ -532,12 +530,7 @@ import EditClient from './partials/edit-client.vue'
             async getRecords() {
               await this.$http.get(`/${this.resource}/records`, { params: this.filters })
                 .then(response => {
-                  this.records = response.data.data.map(record => {
-                    if (record.amount !== null && record.amount !== undefined) {
-                      record.amount = parseFloat(record.amount).toFixed(2)
-                    }
-                    return record
-                  })
+                  this.records = response.data.data
                   this.payments_records = response.data.pays
                 })
             },
@@ -611,14 +604,8 @@ import EditClient from './partials/edit-client.vue'
             onErrorLink() {
               this.$message.error('No se pudo copiar el link de pago')
             },
-            formatDecimal(record) {
-              if (record.amount === '' || record.amount === null || record.amount === undefined) return;
-              const val = parseFloat(record.amount);
-              if (!isNaN(val)) {
-                record.amount = val.toFixed(2);
-              } else {
-                record.amount = '0.00';
-              }
+            money(record,field) {
+              return exactValue(record,field).final(2)
             }
         }
     }

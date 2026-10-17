@@ -25,6 +25,7 @@ class ClientPaymentRequest extends FormRequest
             ],
             'payment' => [
                 'required',
+                new \App\Rules\ExactDecimal('0',true),
             ],
         ];
     }

@@ -47,6 +47,20 @@ test('price 500 and grouping survive exact totals and JSON round trips', () => {
     assert.equal(hundred.total, helpers.calculateRowItem(input('100'), 'VES', '1').total)
     assert.equal(math.exactValue(loaded, 'unit_value').times('1.16').decimal(), '500')
 })
+
+test('warehouse selector fractions feed the first calculation and explicit price edits take precedence', () => {
+    const source = input('3')
+    source.affectation_igv_type_id = '20'
+    source.item.unit_price = '0.333333333333'
+    source.item.calculation_snapshot = math.exactSnapshot({unit_price:math.exactAmount(1).dividedBy(3)})
+    const line = helpers.calculateRowItem(source, 'VES', '1')
+    assert.equal(line.total, '1')
+    assert.deepEqual(line.price_input.amount, {n:'1', d:'3'})
+    const edit = helpers.calculateRowItem({...source, item:{...source.item, unit_price:'0.4'}}, 'VES', '1')
+    assert.equal(edit.total, '1.2')
+    const explicit = helpers.calculateRowItem({...source, price_input:{amount:'0.5',currency_type_id:'VES',includes_iva:true}}, 'VES', '1')
+    assert.equal(explicit.total, '1.5')
+})
 test('fractions, large decimals and currency round trips are lossless', () => {
     const third = math.exactAmount(1).dividedBy(3)
     assert.equal(math.exactAmount(JSON.parse(JSON.stringify(third.fraction()))).times(3).decimal(), '1')

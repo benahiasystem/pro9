@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 
-class PaymentOrder extends Model
+class PaymentOrder extends ModelSystem
 {
     use UsesSystemConnection;
 
@@ -72,6 +72,7 @@ class PaymentOrder extends Model
             'due_date' => $this->date_of_due->format('Y-m-d'),
             'notifications' => $this->notifications,
             'amount' => $this->amount,
+            'calculation_snapshot' => $this->calculation_snapshot,
             'order_state_id' => $this->order_state_id,
             'order_state' => $this->order_state ? $this->order_state->name : '',
             'client' => $this->client ? $this->client->name : '',
@@ -92,17 +93,21 @@ class PaymentOrder extends Model
      * @param  builder $query
      * @return builder
      */
-    public function scopePaymentsTotals($query, $client_id = null)
+    public static function exactPaymentsTotals($client_id = null, bool $byClient = false)
     {
-        if ($client_id) {
-            $query->where('client_id', $client_id);
+        $query=static::query()->select(['id','client_id','order_state_id','amount','calculation_snapshot']);
+        if ($client_id) $query->where('client_id',$client_id);
+        $totals=[];
+        foreach ($query->lazyById(500) as $order) {
+            $key=($byClient ? $order->client_id.':' : '').$order->order_state_id;
+            if (!isset($totals[$key])) $totals[$key]=['id'=>$order->order_state_id,'client_id'=>$byClient ? $order->client_id : null,'value'=>\App\Support\Exact\Decimal::of(0)];
+            $totals[$key]['value']=$totals[$key]['value']->plus($order->exactValue('amount'))->simplified();
         }
-
-        return $query
-            ->join('payment_order_states', 'payment_orders.order_state_id', '=', 'payment_order_states.id')
-        ->select('payment_order_states.name', 'payment_order_states.id', DB::raw('SUM(amount) as total'))
-        ->groupBy('payment_order_states.name', 'payment_order_states.id');
-
+        return collect(array_values($totals))->map(fn($row)=>(object)[
+            'id'=>$row['id'],'client_id'=>$row['client_id'],
+            'total'=>\App\Support\Exact\Decimal::represent($row['value']),
+            'calculation_snapshot'=>\App\Support\Exact\Decimal::snapshot(['total'=>$row['value']]),
+        ]);
     }
 
 

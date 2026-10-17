@@ -1,8 +1,10 @@
 # Cálculos exactos de Pro9
 
-Fecha: 16 de octubre de 2026.
+Fecha: 16 de octubre de 2026. Extensión revisada el 17 de octubre de 2026.
 
 **Implementación por etapas, todavía sin cierre global.** El motor, el almacenamiento inicial, los flujos comunes y la presentación PDF están modificados. Permanecen consumidores antiguos que requieren migración y validación. La existencia de snapshots en una tabla no demuestra que todos sus productores y lectores calculen exactamente.
+
+La [extensión del 17 de octubre](calculos_exactos_extension_pro9.md) documenta los cambios posteriores de administración central, puntos, importación XLSX, cuotas, inventario, rendimiento y registro individual de excepciones. Sus resultados sustituyen los recuentos históricos de esta primera entrega, sin dar por terminados los consumidores pendientes.
 
 ## Causa del caso de Bs. 500
 
@@ -21,7 +23,7 @@ El cálculo fiscal anterior redondeaba la base a dos posiciones antes de obtener
 
 ## Esquema inicial
 
-[Registro de columnas](../config/exact_calculations.php): 111 tablas y 491 campos decimales de negocio. Los campos afectados usan `DECIMAL(30,12)` y las tablas incorporan `calculation_snapshot` JSON. Los rangos enteros anteriores inventariados caben dentro del nuevo rango de 18 enteros. Las tasas conservan `DECIMAL(18,8)` y su transporte de ocho posiciones.
+[Registro tenant](../config/exact_calculations.php): 115 tablas y 539 campos decimales de negocio. El [registro central](../config/exact_calculations_system.php) añade seis tablas y once campos. Se utiliza `DECIMAL(30,12)` como regla y `DECIMAL(32,12)` para `plans.sales_limit`, conservando sus veinte enteros anteriores; las tablas incorporan `calculation_snapshot` JSON. Las tasas conservan `DECIMAL(18,8)` y su transporte de ocho posiciones.
 
 Facturas, notas de venta y compras separan `total`, `total_payable` y `settlement_adjustment`. No se creó una migración incremental de conversión, no se ejecutó DDL sobre tenants existentes ni se recalcularon comprobantes históricos.
 
@@ -44,7 +46,7 @@ Los productores que conviertan importes a float o Number antes del motor requier
 
 Las cabeceras comerciales se recalculan después de modificar o borrar partidas. La edición de cantidades se verifica con el flujo comercial de reemplazo de partidas; las rutas de actualización directa y sus efectos de inventario requieren revisión adicional. Los agregados consultan las partidas con bloqueo. Las operaciones de cobro mantienen las transacciones y los bloqueos de su flujo. Las cuotas y salidas que requieren céntimos reparten el total completo con desempate por orden de partida.
 
-Las cuotas de factura conservan `scheduled_exact`, el importe liquidable `amount`, su ajuste y los pesos originales. Los repartos automáticos envían pesos iguales como entradas; una edición manual de importes invalida esos pesos si ya no concuerdan. No reconstruir las participaciones exactas desde los céntimos repartidos. Falta completar esa adopción en los demás productores de cuotas y sus lectores.
+Las cuotas de factura, nota de venta y compra comparten el guardado de `scheduled_exact`, el importe liquidable `amount`, su ajuste y los pesos originales. Los repartos automáticos envían pesos iguales como entradas; una edición manual de importes invalida esos pesos si ya no concuerdan. No reconstruir las participaciones exactas desde los céntimos repartidos. Los demás productores y los lectores de cuotas todavía necesitan revisión individual.
 
 El recálculo fiscal de partidas reutilizadas internamente conserva las fracciones de cantidad/precio cuando coinciden con sus representaciones y restaura sus entradas originales. Un campo editado deja de heredar la fracción anterior. Esta recuperación no acepta snapshots HTTP del cliente.
 
@@ -70,7 +72,7 @@ php scripts/audit_exact_calculations.php > /tmp/pro9-exact-php-inventory.json
 node scripts/audit_exact_calculations.cjs > /tmp/pro9-exact-js-inventory.json
 ```
 
-Los candidatos no equivalen automáticamente a defectos: incluyen formato, enteros de configuración y consumidores antiguos. La auditoría PHP excluye comentarios; la de JavaScript analiza el árbol sintáctico. No constituyen un análisis completo del flujo de datos ni detectan toda aritmética nativa. Los archivos Blade requieren además revisión de sus expresiones.
+Los candidatos no equivalen automáticamente a defectos: incluyen formato, enteros de configuración y consumidores antiguos. El inventario enlazado es histórico. La auditoría ampliada del 17 de octubre incluye aritmética y comparaciones nativas, casts, SQL, módulos, controles Vue y expresiones Blade compiladas. No sustituye el seguimiento de operandos entre funciones, consultas y procesos externos; cada resultado pendiente requiere revisión.
 
 Antes de cerrar el plan hay que revisar, entre otros, Dashboard, ecommerce, WhatsApp, hotel, restaurante, suscripciones, comisiones, producción, importaciones y reportes especializados; sustituir los cálculos activos pendientes y comprobar sus consumidores completos. Los `SUM` SQL sobre proyecciones no sustituyen sumas de fracciones. Los filtros de saldo SQL todavía necesitan revisión para resultados periódicos inferiores a la precisión de la columna.
 
@@ -82,4 +84,4 @@ Las pruebas añadidas cubren 500 con IVA, agrupación de cien partidas, reparto 
 
 Las regresiones MySQL se ejecutan exclusivamente con `PRO9_FISCAL_MYSQL_TESTS=1` sobre bases temporales creadas por `FiscalEmissionSchemaTest`. La prueba de instalación compara siembra, rollback y repetición. Los transportes HKA de estas pruebas utilizan respuestas simuladas.
 
-La evidencia final de ejecución se registra en [el resumen de pruebas](calculos_exactos_pro9_pruebas.md). La compilación de assets corresponde al usuario según `frontend-build`; no se ejecutó una compilación de producción ni se modificó `public/build`.
+La evidencia de ejecución se registra en [el resumen de pruebas](calculos_exactos_pro9_pruebas.md) y en la extensión. La compilación de assets corresponde al usuario según `frontend-build`; el agente no ejecutó comandos de compilación. Durante la extensión un proceso externo regeneró archivos de `public/build`; se preservaron esos cambios.
