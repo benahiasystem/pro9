@@ -124,6 +124,7 @@
                         <td>{{ row.transfer_reason_label }}</td>
                         <td>
                             <span
+                                v-if="!isDigitalEmission"
                                 class="badge bg-secondary text-white"
                                 :class="{
                                     'bg-secondary': row.state_type_id === '01',
@@ -134,7 +135,7 @@
                                 }"
                                 >{{ row.state_type_description }}</span
                             >
-                            <dispatch-fiscal-status :record="row" />
+                            <dispatch-fiscal-status v-else :record="row" :show-actions="false" status-only />
                         </td>
                         <td class="text-center">
                             {{ formatDate(row.date_of_shipping) }}
@@ -272,6 +273,26 @@
                                     <i class="fas fa-ellipsis-h" style="display: none;"></i>
                                 </el-button>
                                 <el-dropdown-menu slot="dropdown">
+                                    <template v-if="row.fiscal_emission && row.fiscal_emission.status">
+                                        <el-dropdown-item
+                                            :disabled="!row.fiscal_emission.can_query || Boolean(row.hka_action_busy)"
+                                            :title="row.fiscal_emission.can_query ? null : 'Disponible después de enviar la orden.'"
+                                            @click.native="row.fiscal_emission.can_query && performFiscalAction(row, 'query-hka')"
+                                        >Consultar</el-dropdown-item>
+                                        <el-dropdown-item
+                                            v-if="$store.state.config.typeUser === 'admin'"
+                                            :disabled="row.fiscal_emission.status !== 'confirmed' || !row.reference_document_id || Boolean(row.hka_action_busy)"
+                                            :title="row.fiscal_emission.status !== 'confirmed' ? 'Requiere una orden confirmada.' : (!row.reference_document_id ? 'Requiere una factura relacionada.' : null)"
+                                            @click.native="row.fiscal_emission.status === 'confirmed' && row.reference_document_id && performFiscalAction(row, 'relate-hka')"
+                                        >Conciliar factura</el-dropdown-item>
+                                        <el-dropdown-item
+                                            :disabled="!row.pdf_downloads || !row.pdf_downloads.hka_a4 || !row.pdf_downloads.hka_a4.available"
+                                            :title="row.pdf_downloads && row.pdf_downloads.hka_a4 && row.pdf_downloads.hka_a4.available ? null : 'Disponible cuando la orden esté confirmada y el PDF original esté habilitado.'"
+                                        >
+                                            <a v-if="row.pdf_downloads && row.pdf_downloads.hka_a4 && row.pdf_downloads.hka_a4.available" :href="row.pdf_downloads.hka_a4.url" class="d-block">PDF original</a>
+                                            <span v-else>PDF original</span>
+                                        </el-dropdown-item>
+                                    </template>
                                     <el-dropdown-item
                                         v-if="row.btn_edit"
                                         @click.native="go(`/dispatches/create_new/dispatch/${row.id}`)"
@@ -363,6 +384,7 @@
 </style>
 <script>
 import DispatchFiscalStatus from './partials/fiscal-status.vue';
+import performFiscalAction from './partials/fiscal-action';
 import DataTable from "../../../components/DataTableDispatch.vue";
 // import DataTable from '../../../components/DataTable.vue'
 import DispatchOptions from "./partials/options.vue";
@@ -378,6 +400,11 @@ export default {
         ModalGenerateCPE
     },
     props: ["configuration"],
+    computed: {
+        isDigitalEmission() {
+            return this.configuration.company?.fiscal_emission_mode === 'digital';
+        }
+    },
     data() {
         return {
             resource: "dispatches",
@@ -393,6 +420,7 @@ export default {
         this.loadCustomFieldsColumns();
     },
     methods: {
+        performFiscalAction,
         go(url) {
             window.location.href = url;
         },

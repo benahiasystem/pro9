@@ -173,6 +173,28 @@ test('old preferences keep visibility, custom fields and relative order while in
     assert.equal(reordered.document_type.visible, false);
     assert.equal(ordered(reordered)[0], 'document_type');
 });
+test('delivery orders keep one column and ignore retired guides preferences', () => {
+    const defaults = list.component.data().columns;
+    const columns = mergeDocumentColumns(defaults, {
+        document_type: { visible: true, order: 4.5 },
+        dispatch: { visible: true, order: 7 },
+        guides: { visible: true, order: 17 },
+    });
+    assert.equal(columns.guides, undefined);
+    assert.equal(columns.dispatch.visible, true);
+    assert.equal(columns.dispatch.order, 7);
+    assert.equal(Object.values(columns).filter(column => /[ÓO]rden(?:es)? de entrega/.test(column.title)).length, 1);
+    assert.doesNotMatch(list.template, /col.key === 'guides'|row.guides/);
+    assert.equal((list.template.match(/<th[^>]+col.key === 'dispatch'/g) || []).length, 1);
+    assert.equal((list.template.match(/<td[^>]+col.key === 'dispatch'/g) || []).length, 1);
+    const hidden = mergeDocumentColumns(defaults, {
+        document_type: { visible: true, order: 4.5 },
+        dispatch: { visible: false, order: 3 }, guides: { visible: true },
+    });
+    assert.equal(hidden.dispatch.visible, false);
+    assert.equal(hidden.dispatch.order, 3);
+    assert.equal(hidden.guides, undefined);
+});
 test('Total stays visible despite old preferences, saves selected and cannot be removed by the superadmin', async () => {
     const ctx = context(list.component);
     assert.equal(ctx.columns.total.visible, true);

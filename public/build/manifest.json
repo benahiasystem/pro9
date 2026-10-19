@@ -27,15 +27,6 @@
   "_exchange-rate-math-107d2170.js": {
     "file": "assets/exchange-rate-math-107d2170.js"
   },
-  "_exchange-rate-math-6458eb49.js": {
-    "file": "assets/exchange-rate-math-6458eb49.js"
-  },
-  "_exchange-rate-math-72e427c0.js": {
-    "file": "assets/exchange-rate-math-72e427c0.js"
-  },
-  "_exchange-rate-math-73c33bee.js": {
-    "file": "assets/exchange-rate-math-73c33bee.js"
-  },
   "_index-3744837a.js": {
     "assets": [
       "assets/element-icons-ab40a589.woff",
@@ -45,20 +36,6 @@
       "assets/index-fd3e0cf7.css"
     ],
     "file": "assets/index-3744837a.js",
-    "imports": [
-      "_index-e849b4f5.js",
-      "_vue.esm-340a2d96.js"
-    ]
-  },
-  "_index-49ee4bbd.js": {
-    "assets": [
-      "assets/element-icons-ab40a589.woff",
-      "assets/element-icons-a30f5b3b.ttf"
-    ],
-    "css": [
-      "assets/index-fd3e0cf7.css"
-    ],
-    "file": "assets/index-49ee4bbd.js",
     "imports": [
       "_index-e849b4f5.js",
       "_vue.esm-340a2d96.js"
@@ -81,19 +58,6 @@
       "_vue.esm-340a2d96.js"
     ]
   },
-  "_vue-clipboard-04e45c1f.js": {
-    "css": [
-      "assets/vue-clipboard-a067d18e.css"
-    ],
-    "file": "assets/vue-clipboard-04e45c1f.js",
-    "imports": [
-      "_vue.esm-340a2d96.js",
-      "_index-49ee4bbd.js",
-      "_index-e849b4f5.js",
-      "__plugin-vue2_normalizer-2bbd088e.js",
-      "_exchange-rate-math-73c33bee.js"
-    ]
-  },
   "_vue-clipboard-181f65b2.js": {
     "css": [
       "assets/vue-clipboard-a067d18e.css"
@@ -107,147 +71,17 @@
       "_exchange-rate-math-107d2170.js"
     ]
   },
-  "_vue-clipboard-280fddbc.js": {
+  "_vue-clipboard-5e91613d.js": {
     "css": [
       "assets/vue-clipboard-a067d18e.css"
     ],
-    "file": "assets/vue-clipboard-280fddbc.js",
-    "imports": [
-      "_vue.esm-340a2d96.js",
-      "_index-49ee4bbd.js",
-      "_index-e849b4f5.js",
-      "__plugin-vue2_normalizer-2bbd088e.js",
-      "_exchange-rate-math-6458eb49.js"
-    ]
-  },
-  "_vue-clipboard-8990ffde.js": {
-    "css": [
-      "assets/vue-clipboard-a067d18e.css"
-    ],
-    "file": "assets/vue-clipboard-8990ffde.js",
-    "imports": [
-      "_vue.esm-340a2d96.js",
-      "_index-49ee4bbd.js",
-      "_index-e849b4f5.js",
-      "__plugin-vue2_normalizer-2bbd088e.js",
-      "_exchange-rate-math-73c33bee.js"
-    ]
-  },
-  "_vue-clipboard-8a90bba4.js": {
-    "css": [
-      "assets/vue-clipboard-a067d18e.css"
-    ],
-    "file": "assets/vue-clipboard-8a90bba4.js",
-    "imports": [
-      "_vue.esm-340a2d96.js",
-      "_index-f428bc3c.js",
-      "_index-e849b4f5.js",
-      "__plugin-vue2_normalizer-2bbd088e.js",
-      "_exchange-rate-math-73c33bee.js"
-    ]
-  },
-  "_vue-clipboard-8d9706bb.js": {
-    "css": [
-      "assets/vue-clipboard-a067d18e.css"
-    ],
-    "file": "assets/vue-clipboard-8d9706bb.js",
-    "imports": [
-      "_vue.esm-340a2d96.js",
-      "_index-49ee4bbd.js",
-      "_index-e849b4f5.js",
-      "__plugin-vue2_normalizer-2bbd088e.js",
-      "_exchange-rate-math-73c33bee.js"
-    ]
-  },
-  "_vue-clipboard-9884cc13.js": {
-    "css": [
-      "assets/vue-clipboard-a067d18e.css"
-    ],
-    "file": "assets/vue-clipboard-9884cc13.js",
-    "imports": [
-      "_vue.esm-340a2d96.js",
-      "_index-f428bc3c.js",
-      "_index-e849b4f5.js",
-      "__plugin-vue2_normalizer-2bbd088e.js",
-      "_exchange-rate-math-6458eb49.js"
-    ]
-  },
-  "_vue-clipboard-9fb1609e.js": {
-    "css": [
-      "assets/vue-clipboard-a067d18e.css"
-    ],
-    "file": "assets/vue-clipboard-9fb1609e.js",
-    "imports": [
-      "_vue.esm-340a2d96.js",
-      "_index-f428bc3c.js",
-      "_index-e849b4f5.js",
-      "__plugin-vue2_normalizer-2bbd088e.js",
-      "_exchange-rate-math-73c33bee.js"
-    ]
-  },
-  "_vue-clipboard-a4888bac.js": {
-    "css": [
-      "assets/vue-clipboard-a067d18e.css"
-    ],
-    "file": "assets/vue-clipboard-a4888bac.js",
-    "imports": [
-      "_vue.esm-340a2d96.js",
-      "_index-49ee4bbd.js",
-      "_index-e849b4f5.js",
-      "__plugin-vue2_normalizer-2bbd088e.js",
-      "_exchange-rate-math-73c33bee.js"
-    ]
-  },
-  "_vue-clipboard-b1a8a1b4.js": {
-    "css": [
-      "assets/vue-clipboard-a067d18e.css"
-    ],
-    "file": "assets/vue-clipboard-b1a8a1b4.js",
+    "file": "assets/vue-clipboard-5e91613d.js",
     "imports": [
       "_vue.esm-340a2d96.js",
       "_index-3744837a.js",
       "_index-e849b4f5.js",
       "__plugin-vue2_normalizer-2bbd088e.js",
-      "_exchange-rate-math-73c33bee.js"
-    ]
-  },
-  "_vue-clipboard-ba251e39.js": {
-    "css": [
-      "assets/vue-clipboard-a067d18e.css"
-    ],
-    "file": "assets/vue-clipboard-ba251e39.js",
-    "imports": [
-      "_vue.esm-340a2d96.js",
-      "_index-49ee4bbd.js",
-      "_index-e849b4f5.js",
-      "__plugin-vue2_normalizer-2bbd088e.js",
       "_exchange-rate-math-107d2170.js"
-    ]
-  },
-  "_vue-clipboard-bb610e50.js": {
-    "css": [
-      "assets/vue-clipboard-a067d18e.css"
-    ],
-    "file": "assets/vue-clipboard-bb610e50.js",
-    "imports": [
-      "_vue.esm-340a2d96.js",
-      "_index-49ee4bbd.js",
-      "_index-e849b4f5.js",
-      "__plugin-vue2_normalizer-2bbd088e.js",
-      "_exchange-rate-math-72e427c0.js"
-    ]
-  },
-  "_vue-clipboard-f65d118f.js": {
-    "css": [
-      "assets/vue-clipboard-a067d18e.css"
-    ],
-    "file": "assets/vue-clipboard-f65d118f.js",
-    "imports": [
-      "_vue.esm-340a2d96.js",
-      "_index-f428bc3c.js",
-      "_index-e849b4f5.js",
-      "__plugin-vue2_normalizer-2bbd088e.js",
-      "_exchange-rate-math-73c33bee.js"
     ]
   },
   "_vue.esm-340a2d96.js": {
@@ -400,7 +234,7 @@
     "src": "node_modules/element-ui/lib/theme-chalk/fonts/element-icons.woff"
   },
   "resources/js/app.css": {
-    "file": "assets/app-a4cf88a3.css",
+    "file": "assets/app-19b0c1a7.css",
     "src": "resources/js/app.css"
   },
   "resources/js/app.js": {
@@ -410,9 +244,9 @@
       "assets/tabler-icons-9920d986.ttf"
     ],
     "css": [
-      "assets/app-a4cf88a3.css"
+      "assets/app-19b0c1a7.css"
     ],
-    "file": "assets/app-a6821e1a.js",
+    "file": "assets/app-cfcd5659.js",
     "imports": [
       "_vue-clipboard-181f65b2.js",
       "_vue.esm-340a2d96.js",

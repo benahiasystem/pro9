@@ -148,8 +148,8 @@ class DispatchAddressController extends Controller
         $id = $request->input('id');
         $data = $request->all();
         if(is_array($data['location_id']) && count($data['location_id']) === 3) {
-            $person['department_id'] = $data['location_id'][0];
-            $person['province_id'] = $data['location_id'][1];
+            $data['department_id'] = $data['location_id'][0];
+            $data['province_id'] = $data['location_id'][1];
             $data['district_id'] = $data['location_id'][2];
         }else{
             return ['success' => false,'id' => 0];

@@ -186,7 +186,6 @@
                         <th v-if="col.visible && col.key === 'source_module'" :key="col.key" class="text-center">Origen</th>
                         <th v-if="col.visible && col.key === 'exchange_rate_sale'" :key="col.key" class="text-end">T.C.</th>
                         <th v-if="col.visible && col.key === 'currency_type_id'" :key="col.key" class="text-center">Moneda</th>
-                        <th v-if="col.visible && col.key === 'guides'" :key="col.key" class="text-end">Orden de entrega</th>
                         <th v-if="col.visible && col.key === 'plate_numbers'" :key="col.key" class="text-center">Placa</th>
                         <th v-if="col.visible && col.key === 'total_exportation'" :key="col.key" class="text-end">T.Exportación</th>
 
@@ -301,9 +300,6 @@
                         <td v-if="col.visible && col.key === 'source_module'" :key="col.key" class="text-center">{{ row.source_module_description }}</td>
                         <td v-if="col.visible && col.key === 'exchange_rate_sale'" :key="col.key">{{ row.exchange_rate_sale }}</td>
                         <td v-if="col.visible && col.key === 'currency_type_id'" :key="col.key" class="text-center">{{ row.currency_type_id }}</td>
-                        <td v-if="col.visible && col.key === 'guides'" :key="col.key" class="text-center">
-                            <span v-for="(item, i) in row.guides" :key="i">{{ item.number }} <br /></span>
-                        </td>
                         <td v-if="col.visible && col.key === 'plate_numbers'" :key="col.key" class="text-center">
                             <span v-for="(item, i) in row.plate_numbers" :key="i">{{ item.description }} <br /></span>
                         </td>
@@ -761,7 +757,6 @@ export default {
                 source_module:      { title: "Origen",                         visible: false, order: 14 },
                 exchange_rate_sale: { title: "Tipo de cambio",                 visible: false, order: 15 },
                 currency_type_id:   { title: "Moneda",                         visible: false, order: 16 },
-                guides:             { title: "Órdenes de entrega",                          visible: false, order: 17 },
                 plate_numbers:      { title: "Placa",                          visible: false, order: 18 },
                 total_exportation:  { title: "T.Exportación",                  visible: false, order: 19 },
 

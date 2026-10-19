@@ -323,10 +323,18 @@
                                                 @click.prevent="showDialogDeliveryAddressForm = true">[+ Nuevo]</a>
                                     </label>
                                     <el-select v-model="form.delivery_address_id"
-                                        placeholder="Seleccionar punto de llegada">
+                                        :loading="loadingDeliveryAddresses"
+                                        filterable placeholder="Seleccionar punto de llegada">
                                         <el-option v-for="option in delivery_addresses" :key="option.id"
                                             :label="option.address" :value="option.id"></el-option>
                                     </el-select>
+                                    <small v-if="!loadingDeliveryAddresses && !delivery_addresses.length" class="text-muted d-block">
+                                        <template v-if="form.transfer_reason_type_id === '04'">
+                                            No hay otra sucursal con dirección de destino. Regístrela en Sucursales para trasladar entre locales propios.
+                                        </template>
+                                        <template v-else-if="!form.customer_id">Seleccione un cliente para cargar sus puntos de llegada.</template>
+                                        <template v-else>El cliente no tiene direcciones disponibles. Agregue un punto de llegada.</template>
+                                    </small>
                                     <small v-if="errors.delivery_address_id" class="form-control-feedback"
                                         v-text="errors.delivery_address_id[0]"></small>
                                 </div>
@@ -1054,6 +1062,8 @@ export default {
             origin: null,
             delivery: null,
             delivery_addresses: [],
+            loadingDeliveryAddresses: false,
+            deliveryAddressesRequest: 0,
             origin_addresses: [],
             selectedTransport: null,
             selectedTransports: [],
@@ -1117,11 +1127,7 @@ export default {
                 total: row.total || row.item?.total || 0,
             }));
             this.calculatePackagesFromItems();
-            const savedDelivery = this.form.delivery_address_id;
             if (this.form.customer_id) { await this.reloadDataCustomers(this.form.customer_id); await this.getDeliveryAddresses(this.form.customer_id); }
-            if (this.delivery_addresses.length > 0) {
-                this.form.delivery_address_id = savedDelivery !== null && savedDelivery !== undefined ? savedDelivery : _.head(this.delivery_addresses).id;
-            }
             await this.changeEstablishment()
             if (this.parentTable !== 'dispatch') {
                 this.setDefaults();
@@ -1142,7 +1148,6 @@ export default {
         }
         if (this.order_form) {
             this.form = Object.assign({}, this.form, this.order_form);
-            const savedDelivery = this.form.delivery_address_id;
             if (this.form.customer_id) { await this.reloadDataCustomers(this.form.customer_id); await this.getDeliveryAddresses(this.form.customer_id); }
             await this.changeEstablishment()
         }
@@ -1296,20 +1301,13 @@ export default {
             this.warehousesDetail = item.warehouses
             this.showWarehousesDetail = true
         },
-        changeTransferReasonType() {
-            // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
-            const isReasonType04 = this.form.transfer_reason_type_id === '04';
-
-            this.form.customer_id = isReasonType04 ? null : this.form.customer_id;
-            this.delivery = { ...this.delivery, country_id: 'VE' };
+        async changeTransferReasonType() {
+            if (this.form.transfer_reason_type_id === '04') this.form.customer_id = null;
             if (this.form.transfer_reason_type_id !== '24') this.form.transfer_reason_description = null;
-
-            isReasonType04 ? this.getAddressesOtherEstablishment(this.form.establishment_id) : this.searchRemoteCustomers('');
-
-            if (this.showBuyer) {
-                this.getBuyers();
-            }
-            // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
+            this.form.delivery_address_id = null;
+            await this.loadDeliveryAddresses();
+            if (this.form.transfer_reason_type_id !== '04') this.searchRemoteCustomers('');
+            if (this.showBuyer) this.getBuyers();
         },
         getFormatQuantity(quantity) {
             return _.round(quantity, 4)
@@ -1464,10 +1462,7 @@ export default {
         },
         async changeCustomer() {
             this.form.delivery_address_id = null;
-            await this.getDeliveryAddresses(this.form.customer_id);
-            if (this.delivery_addresses.length > 0) {
-                this.form.delivery_address_id = _.head(this.delivery_addresses).id;
-            }
+            await this.loadDeliveryAddresses();
         },
         onLoadItemsFromSummary(items, itemsFromStorage) {
             items.map(it => {
@@ -1574,7 +1569,7 @@ export default {
                 }
             }
         },
-        async changeEstablishment() {
+        async changeEstablishment(changedEstablishment = null) {
             if (this.form.establishment_id) {
                 this.series = _.filter(this.seriesAll, {
                     'establishment_id': this.form.establishment_id,
@@ -1589,6 +1584,7 @@ export default {
 
                 await this.getOriginAddresses(this.form.establishment_id)
                 if(this.form.transfer_reason_type_id==='04'){
+                    if (changedEstablishment !== null) this.form.delivery_address_id = null;
                     await this.getAddressesOtherEstablishment(this.form.establishment_id)
                 }
             }
@@ -1875,6 +1871,11 @@ export default {
                 return this.$message.error('Los productos no pueden tener cantidad 0.')
             }
 
+            if (this.loadingDeliveryAddresses) return this.$message.error('Espere a que se carguen los puntos de llegada.');
+            if (!this.delivery_addresses.some(row => this.form.delivery_address_id !== null && String(row.id) === String(this.form.delivery_address_id))) {
+                this.$set(this.errors, 'delivery_address_id', ['Seleccione un punto de llegada disponible.']);
+                return this.$message.error('Seleccione un punto de llegada disponible.');
+            }
             this.form.origin = this.origin_addresses.find(row => String(row.id) === String(this.form.origin_address_id));
             this.form.delivery = this.delivery_addresses.find(row => String(row.id) === String(this.form.delivery_address_id));
             if (!(Number(this.form.total_weight)>0)) return this.$message.error('Indique un peso total mayor que cero.');
@@ -1967,17 +1968,36 @@ export default {
                     this.origin_addresses = response.data;
                 });
         },
-        async getDeliveryAddresses(customer_id) {
-            await this.$http.get(`/dispatch_addresses/get_by_person/${customer_id}`)
-                .then(response => {
-                    this.delivery_addresses = response.data ? response.data.filter(el => !el.has_consigned) : [];
-                });
+        async getDeliveryAddresses() {
+            await this.loadDeliveryAddresses();
         },
-        async getAddressesOtherEstablishment(establishment_id) {
-            await this.$http.get(`/${this.resource}/get_addresses_other_establishments/${establishment_id}`)
-                .then(response => {
-                    this.delivery_addresses = response.data;
-                });
+        async getAddressesOtherEstablishment() {
+            await this.loadDeliveryAddresses();
+        },
+        async loadDeliveryAddresses() {
+            const request = ++this.deliveryAddressesRequest;
+            const selected = this.form.delivery_address_id;
+            const ownTransfer = this.form.transfer_reason_type_id === '04';
+            const url = ownTransfer
+                ? (this.form.establishment_id ? `/${this.resource}/get_addresses_other_establishments/${this.form.establishment_id}` : null)
+                : (this.form.customer_id ? `/${this.resource}/get_delivery_addresses/${this.form.customer_id}` : null);
+            this.delivery_addresses = [];
+            this.form.delivery_address_id = null;
+            this.form.delivery = null;
+            this.$delete(this.errors, 'delivery_address_id');
+            this.loadingDeliveryAddresses = !!url;
+            if (!url) return;
+            try {
+                const response = await this.$http.get(url);
+                if (request !== this.deliveryAddressesRequest) return;
+                this.delivery_addresses = response.data || [];
+                const previous = this.delivery_addresses.find(row => selected !== null && selected !== undefined && String(row.id) === String(selected));
+                this.form.delivery_address_id = previous ? previous.id : (this.delivery_addresses.length ? this.delivery_addresses[0].id : null);
+            } catch (error) {
+                if (request === this.deliveryAddressesRequest) this.$message.error('No se pudieron cargar los puntos de llegada. Vuelva a seleccionar el cliente o la sucursal.');
+            } finally {
+                if (request === this.deliveryAddressesRequest) this.loadingDeliveryAddresses = false;
+            }
         },
         addVehicle() {
             if (this.selectedTransport && !this.selectedTransports.includes(this.selectedTransport)) {
@@ -2051,7 +2071,7 @@ export default {
             handler: function(newVal, oldVal) {
                 if (newVal && newVal !== oldVal) {
                     this.form.establishment_id = newVal;
-                    this.changeEstablishment();
+                    this.changeEstablishment(newVal);
                 }
             },
             deep: true

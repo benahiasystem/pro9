@@ -673,7 +673,7 @@ class Dispatch extends ModelTenant
 
         if ($this->generate_document) $documents [] = ['description' => $this->generate_document->number_full];
         if ($this->reference_document) $documents [] = ['description' => $this->reference_document->number_full];
-
+        $documents = array_values(array_unique($documents, SORT_REGULAR));
 
         $btn_pdf = true;
         $btn_options = false;

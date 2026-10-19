@@ -32,7 +32,6 @@ use Modules\Dispatch\Http\Controllers\DispatcherController;
 use Modules\Dispatch\Http\Controllers\DriverController;
 use Modules\Dispatch\Http\Controllers\OriginAddressController;
 use Modules\Dispatch\Http\Controllers\TransportController;
-use Modules\Dispatch\Models\DeliveryAddress;
 use Modules\Dispatch\Models\Dispatcher;
 use Modules\Dispatch\Models\Driver;
 use Modules\Dispatch\Models\OriginAddress;
@@ -889,43 +888,23 @@ class DispatchController extends Controller
 
     public function getDeliveryAddresses($id)
     {
+        \App\Services\Fiscal\DeliveryOrderInput::authorize();
+        $customer = Person::where('type', 'customers')->where('enabled', true)->findOrFail($id);
         $records = [];
-        $record = Person::query()
-//            ->with('person_addresses')
-            ->find($id);
-        $records[] = [
-            'id' => 0,
-            'location_id' => [
-                $record->department_id,
-                $record->province_id,
-                $record->district_id,
-            ],
-            'address' => $record->address,
-        ];
-//        foreach ($record->person_addresses as $row) {
-//            $records[] = [
-//                'id' => $row->id,
-//                'location_id' => [
-//                    $row->department_id,
-//                    $row->province_id,
-//                    $row->district_id,
-//                ],
-//                'address' => $row->address,
-//            ];
-//        }
-
-        $delivery_addresses = DeliveryAddress::query()
-            ->where('person_id', $id)
-            ->where('is_active', true)
-            ->get();
-        foreach ($delivery_addresses as $row) {
+        if (trim($customer->address ?? '') !== '' && $customer->address !== '-') {
             $records[] = [
-                'id' => $row->id,
-                'address' => $row->address,
-                'location_id' => $row->location_id,
+                'id' => 0,
+                'location_id' => [$customer->department_id, $customer->province_id, $customer->district_id],
+                'address' => $customer->address,
             ];
         }
-
+        foreach (\App\Models\Tenant\PersonAddress::where('person_id', $customer->id)->where('has_consigned', false)->orderBy('id')->get() as $row) {
+            $records[] = [
+                'id' => $row->id,
+                'location_id' => [$row->department_id, $row->province_id, $row->district_id],
+                'address' => $row->address,
+            ];
+        }
         return $records;
     }
 

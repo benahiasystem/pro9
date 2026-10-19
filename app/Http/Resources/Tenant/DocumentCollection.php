@@ -240,17 +240,17 @@ class DocumentCollection extends ResourceCollection
 
         if (in_array($row->document_type_id, ['01'])) {
 
-            $dispatches = $row->reference_guides->transform(function ($row) {
-                return [
-                    'description' => $row->number_full,
-                ];
-            });
+            $dispatches = $row->reference_guides->toBase();
 
             if ($row->dispatch) {
-                $dispatches = $dispatches->push([
-                    'description' => $row->dispatch->number_full,
-                ]);
+                $dispatches->push($row->dispatch);
             }
+
+            $dispatches = $dispatches->unique('id')->values()->map(function ($dispatch) {
+                return [
+                    'description' => $dispatch->number_full,
+                ];
+            });
 
         }
 

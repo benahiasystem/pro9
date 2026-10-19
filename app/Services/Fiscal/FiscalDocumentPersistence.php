@@ -5,6 +5,7 @@ use App\Models\Tenant\{Company, Document, DocumentPayment, Establishment, Person
 use App\Services\SalesCustomerIdentityPolicy;
 use Illuminate\Support\Str;
 use App\Support\Exact\Decimal as D;
+use App\Support\Venezuela\IdentityDocument;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
@@ -50,7 +51,7 @@ final class FiscalDocumentPersistence
             return $customer;
         }
         $customer['hka_identity_code'] = preg_match('/^([VJEGCR])[-0-9]/i', $customer['number'] ?? '', $match)
-            ? strtoupper($match[1]) : (['1'=>'V','7'=>'P','E'=>'E','C'=>'C','G'=>'G','R'=>'R'][$type] ?? null);
+            ? strtoupper($match[1]) : IdentityDocument::code($type);
         return $customer;
     }
 

@@ -19,6 +19,10 @@ final class HkaEmissionPreparation
             $document->load(['items','payments','taxes','currency_totals','fiscal_data','note','invoice','received_retentions']);
             $snapshot=json_decode(json_encode($document->toArray(), JSON_THROW_ON_ERROR), true, 512, JSON_THROW_ON_ERROR);
             $snapshot['operation_key']=$emission->operation_key;
+            // Recover missing adapter metadata from the frozen identity, never from the current customer.
+            if (empty($snapshot['customer']['hka_identity_code'])) {
+                $snapshot['customer'] = FiscalDocumentPersistence::withHkaIdentity($snapshot['customer']);
+            }
             if($document->note) {
                 $snapshot['note']=array_replace($snapshot['note'] ?? [],$document->note->only(['creation_key','effect_snapshot','note_credit_type_id','note_debit_type_id','note_description','affected_document_id']));
                 $affected=Document::find($document->note->affected_document_id);
@@ -30,7 +34,8 @@ final class HkaEmissionPreparation
                 $document->note->save();
             }
             $payload=(new HkaPayloadBuilder())->build($snapshot);
-            $emission->update(['status'=>'prepared','contract_version'=>HkaPayloadBuilder::contractVersion(),'payload'=>$payload]);
+            $emission->update(['status'=>'prepared','contract_version'=>HkaPayloadBuilder::contractVersion(),'payload'=>$payload,
+                'response'=>array_replace($emission->response ?? [], ['diagnostic'=>'Documento preparado. Pendiente de envío HKA.'])]);
             return $emission->fresh();
         });
     }

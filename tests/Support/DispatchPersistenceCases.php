@@ -112,6 +112,47 @@ trait DispatchPersistenceCases
         $view=app(HkaDispatchEmission::class)->query($d);self::assertTrue($view['can_send'],json_encode($view));self::assertSame($key,$d->fresh()->emission->operation_key);self::assertSame(1,$db->table('dispatches')->count());
     }
 
+    public function test_dispatch_customer_destinations_match_server_resolution_and_new_address_keeps_location(): void
+    {
+        [$db,$app,$raw]=$this->dispatchFixture();
+        $customer=\App\Models\Tenant\Person::findOrFail($raw['customer_id']);
+        $customer->forceFill(['address'=>'Dirección principal','department_id'=>'14','province_id'=>'0229','district_id'=>'000619'])->save();
+        $controller=new \App\Http\Controllers\Tenant\DispatchController;
+        $options=$controller->getDeliveryAddresses($customer->id);
+        self::assertSame(0,$options[0]['id']);
+        self::assertSame('Dirección principal',$options[0]['address']);
+        self::assertContains($raw['delivery_address_id'],array_column($options,'id'));
+        foreach ($options as $option) {
+            $input=$raw;$input['delivery_address_id']=$option['id'];
+            $resolved=\App\Services\Fiscal\DeliveryOrderInput::resolve($input);
+            self::assertSame($option['address'],$resolved['delivery']['address']);
+        }
+        $address=\App\Models\Tenant\PersonAddress::findOrFail($raw['delivery_address_id']);
+        $address->forceFill(['has_consigned'=>true])->save();
+        self::assertNotContains($address->id,array_column($controller->getDeliveryAddresses($customer->id),'id'));
+        $request=\Illuminate\Http\Request::create('/dispatch_addresses/save','POST',[
+            'person_id'=>$customer->id,'address'=>'Nueva llegada','location_id'=>['14','0229','000619'],'has_consigned'=>false,
+        ]);
+        $result=(new \Modules\Dispatch\Http\Controllers\DispatchAddressController)->saveAddressPerson($request);
+        $saved=\App\Models\Tenant\PersonAddress::findOrFail($result['id']);
+        self::assertSame('14',$saved->department_id);self::assertSame('0229',$saved->province_id);self::assertSame('000619',$saved->district_id);
+        $input=$raw;$input['delivery_address_id']=$saved->id;
+        self::assertSame('Nueva llegada',\App\Services\Fiscal\DeliveryOrderInput::resolve($input)['delivery']['address']);
+        Company::first()->forceFill(['fiscal_emission_mode'=>'free_form'])->save();
+        $main=$raw;$main['delivery_address_id']=0;
+        $order=(new Facturalo)->save(DispatchInput::set($main))->getDocument();
+        self::assertSame('Dirección principal',$order->delivery->address);
+        self::assertSame([],$controller->getAddressesOtherEstablishments($raw['establishment_id']));
+        $branch=Establishment::create(['description'=>'Destino propio','country_id'=>'VE','department_id'=>'14','province_id'=>'0229','district_id'=>'000619','address'=>'Otro local','code'=>'0001','telephone'=>'04120000000']);
+        $ownOptions=$controller->getAddressesOtherEstablishments($raw['establishment_id']);
+        self::assertCount(1,$ownOptions);
+        $own=$raw;$own['creation_key']=(string)Str::uuid();$own['transfer_reason_type_id']='04';$own['customer_id']=null;$own['delivery_address_id']=$ownOptions[0]['id'];
+        $ownOrder=(new Facturalo)->save(DispatchInput::set($own))->getDocument();
+        self::assertSame('Otro local',$ownOrder->delivery->address);
+        self::assertSame(2,$db->table('dispatches')->count());
+        $app->make(\Illuminate\Http\Client\Factory::class)->assertNothingSent();
+    }
+
     public function test_dispatch_server_rejects_foreign_addresses_and_invalid_weight_before_network(): void
     {
         [$db,$app,$raw]=$this->dispatchFixture();$bad=$raw;$bad['total_weight']=0;

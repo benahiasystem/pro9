@@ -1159,6 +1159,53 @@ class FiscalEmissionSchemaTest extends TestCase
         } finally { unlink($log); }
     }
 
+    public function test_hka_legal_identity_is_saved_and_missing_pending_mapping_recovers_from_frozen_customer(): void
+    {
+        [$db,$app,$input] = $this->bootHkaFixture();
+        $sent=[];$mode='success';$this->fakeSpeHka($db,$app,$sent,$mode);
+        $customer=\App\Models\Tenant\Person::findOrFail($input['customer_id']);
+        $customer->forceFill(['identity_document_type_id'=>'6','number'=>'123456789'])->save();
+        $input['customer']=$customer->toArray();
+        $created=(new \App\CoreFacturalo\Facturalo)->save($input)->getDocument()->fresh();
+        self::assertSame('J',$created->customer->hka_identity_code);
+        self::assertSame('confirmed',$created->emission->status);
+        self::assertSame('J',$created->emission->payload['documentoElectronico']['encabezado']['comprador']['tipoIdentificacion']);
+        self::assertCount(1,$sent);
+
+        $db->table('configurations')->update(['auto_send_hka'=>false]);
+        $input['external_id']=(string)\Illuminate\Support\Str::uuid();
+        $pending=(new \App\CoreFacturalo\Facturalo)->save($input)->getDocument()->fresh();
+        $frozen=(array)$pending->customer;unset($frozen['hka_identity_code']);
+        $pending->forceFill(['customer'=>$frozen])->save();
+        $pending->emission()->update(['response'=>['auto_send_requested'=>false,'diagnostic'=>'Falta una equivalencia de identidad HKA.']]);
+        $pending=$pending->fresh();$operation=$pending->emission->operation_key;
+        $before=$db->table('documents')->where('id',$pending->id)->first();
+        $payments=$db->table('document_payments')->get()->toArray();
+        $stock=$db->table('item_warehouse')->get()->toArray();
+        $customer->forceFill(['identity_document_type_id'=>'1','number'=>'87654321','name'=>'Cliente modificado después'])->save();
+        $service=new \App\Services\Fiscal\HkaEmissionPreparation;
+        $prepared=$service->prepare($pending);
+        $buyer=$prepared->payload['documentoElectronico']['encabezado']['comprador'];
+        self::assertSame('prepared',$prepared->status);
+        self::assertSame($operation,$prepared->operation_key);
+        self::assertSame('J',$buyer['tipoIdentificacion']);
+        self::assertSame('123456789',$buyer['numeroIdentificacion']);
+        self::assertNotSame($customer->name,$buyer['razonSocial']);
+        self::assertSame(false,$prepared->response['auto_send_requested']);
+        self::assertStringNotContainsString('Falta una equivalencia',$prepared->response['diagnostic']);
+        self::assertEquals($before,$db->table('documents')->where('id',$pending->id)->first());
+        self::assertEquals($payments,$db->table('document_payments')->get()->toArray());
+        self::assertEquals($stock,$db->table('item_warehouse')->get()->toArray());
+        self::assertCount(1,$sent,'Preparing a pending invoice must not transmit it.');
+        self::assertSame($prepared->payload,$service->prepare($pending)->payload);
+        foreach (['uncertain','confirmed'] as $status) {
+            $pending->emission()->update(['status'=>$status]);
+            try { $service->prepare($pending);self::fail('An in-flight or confirmed operation cannot be rebuilt.'); }
+            catch (\Illuminate\Validation\ValidationException $expected) { self::assertArrayHasKey('emission',$expected->errors()); }
+            self::assertSame($prepared->payload,$pending->fresh()->emission->payload);
+        }
+    }
+
     private function bootHkaFixture(): array
     {
         $db = $this->capsule->getConnection('tenant');
