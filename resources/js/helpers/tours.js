@@ -155,7 +155,9 @@ export default {
             element: '.tour-step-tipo-afectacion',
             popover: {
                 title: 'Tipo de Afectación',
-                description: 'Selecciona el tipo de afectación para el IGV de este producto.',
+                // ########## INICIO CAMBIO IGV A IVA
+                description: 'Selecciona el tipo de afectación para el IVA de este producto.',
+                // ######### FIN CAMBIO IGV A IVA
                 side: 'top'
             }
         }

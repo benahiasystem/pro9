@@ -1,4 +1,5 @@
 <template>
+<!-- ########## INICIO CAMBIO IGV A IVA -->
     <el-drawer
         :visible.sync="visibleDrawer"
         :with-header="false"
@@ -155,17 +156,17 @@
                                 <div class="detail-drawer__totals-card">
                                     <div class="detail-drawer__totals-row">
                                         <span class="detail-drawer__totals-row-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-percentage"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M17 17m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/><path d="M7 7m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/><path d="M6 18l12 -12"/></svg></span>
-                                        <span class="detail-drawer__totals-row-label">Incluye IGV (venta)</span><strong>{{ hasIgvLabel }}</strong>
+                                        <span class="detail-drawer__totals-row-label">Incluye IVA (venta)</span><strong>{{ hasIgvLabel }}</strong>
                                     </div>
                                     <div v-if="showPurchasePrices" class="detail-drawer__totals-row">
                                         <span class="detail-drawer__totals-row-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-receipt"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 21v-16a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v16l-3 -2l-2 2l-2 -2l-2 2l-2 -2z"/><path d="M9 7l6 0"/><path d="M9 11l6 0"/></svg></span>
-                                        <span class="detail-drawer__totals-row-label">Incluye IGV (compra)</span><strong>{{ purchaseHasIgvLabel }}</strong>
+                                        <span class="detail-drawer__totals-row-label">Incluye IVA (compra)</span><strong>{{ purchaseHasIgvLabel }}</strong>
                                     </div>
                                     <div class="detail-drawer__totals-row">
                                         <span class="detail-drawer__totals-row-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-coin"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 6m-6 0a6 3 0 1 0 12 0a6 3 0 1 0 -12 0"/><path d="M6 6v6c0 1.657 2.686 3 6 3s6 -1.343 6 -3v-6"/><path d="M6 12v6c0 1.657 2.686 3 6 3s6 -1.343 6 -3v-6"/></svg></span>
                                         <span class="detail-drawer__totals-row-label">Moneda</span><strong>{{ currencySymbol }}</strong>
                                     </div>
-                                    <div class="detail-drawer__totals-total"><span>Precio venta con IGV</span><strong><small>{{ currencySymbol }}</small> {{ priceWithIgvAmount }}</strong></div>
+                                    <div class="detail-drawer__totals-total"><span>Precio venta con IVA</span><strong><small>{{ currencySymbol }}</small> {{ priceWithIgvAmount }}</strong></div>
                                 </div>
                             </div>
                         </el-tab-pane>
@@ -195,6 +196,7 @@
             </template>
         </div>
     </el-drawer>
+<!-- ######### FIN CAMBIO IGV A IVA -->
 </template>
 
 <script>

@@ -1,4 +1,5 @@
 <template>
+<!-- ########## INICIO CAMBIO IGV A IVA -->
     <div>
         <el-dialog
             :close-on-click-modal="false"
@@ -293,7 +294,7 @@
 
                 <div class="col-lg-4 col-md-4 mt-3 mb-3" v-if="show_has_retention">
                     <div class="form-group">
-                        <label class="control-label">¿Tiene retención de igv?</label>
+                        <label class="control-label">¿Tiene retención de IVA?</label>
                         <el-switch v-model="document.has_retention" @change="changeRetention"></el-switch>
                     </div>
                 </div>
@@ -545,6 +546,7 @@
             :showDialog.sync="showDialogSaleNoteOptions"
         ></sale-note-options>
     </div>
+<!-- ######### FIN CAMBIO IGV A IVA -->
 </template>
 
 <script>

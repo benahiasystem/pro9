@@ -1,5 +1,6 @@
 <!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
+<!-- ########## INICIO CAMBIO IGV A IVA -->
     <div>
         <el-dialog
             :close-on-click-modal="false"
@@ -226,7 +227,7 @@
                 <div class="col-lg-6 col-md-6 px-0"
                      v-if="show_has_retention">
                     <div class="row no-gutters">
-                        <div class="col-10">¿Tiene retención de igv?</div>
+                        <div class="col-10">¿Tiene retención de IVA?</div>
                         <div class="col-2">
                             <el-switch v-model="document.has_retention"
                                         @change="changeRetention"></el-switch>
@@ -424,6 +425,7 @@
             :showDialog.sync="showDialogSaleNoteOptions"
         ></sale-note-options>
     </div>
+<!-- ######### FIN CAMBIO IGV A IVA -->
 </template>
 
 <script>

@@ -1,4 +1,5 @@
 <template>
+<!-- ########## INICIO CAMBIO IGV A IVA -->
   <div>
     <div class="page-header pe-0">
       <h2>
@@ -35,7 +36,7 @@
             <th class="text-end">T.Inafecta</th>
             <th class="text-end">T.Exonerado</th> -->
             <th class="text-end">T.Gravado</th>
-            <th class="text-end">T.Igv</th>
+            <th class="text-end">T.IVA</th>
             <!-- <th>Percepcion</th> -->
             <th class="text-end">Total</th>
             <th class="text-center">Descarga</th>
@@ -194,6 +195,7 @@
         ></purchase-order-detail-drawer>
     </div>
   </div>
+<!-- ######### FIN CAMBIO IGV A IVA -->
 </template>
 <style scoped>
 .anulate_color {

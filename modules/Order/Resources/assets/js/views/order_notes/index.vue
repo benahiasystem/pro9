@@ -1,5 +1,6 @@
 <!-- ######## INICIO MODALIDAD DE EMISIÓN FISCAL ######## -->
 <template>
+<!-- ########## INICIO CAMBIO IGV A IVA -->
     <div>
         <div class="page-header pr-0">
             <h2>
@@ -139,7 +140,7 @@
                             <th v-if="col.visible && col.key === 'total_unaffected'" :key="col.key" class="text-end">T.Inafecta</th>
                             <th v-if="col.visible && col.key === 'total_exonerated'" :key="col.key" class="text-end">T.Exonerado</th>
                             <th v-if="col.visible && col.key === 'total_taxed'" :key="col.key" class="text-end">T.Gravado</th>
-                            <th v-if="col.visible && col.key === 'total_igv'" :key="col.key" class="text-end">T.Igv</th>
+                            <th v-if="col.visible && col.key === 'total_igv'" :key="col.key" class="text-end">T.IVA</th>
                             <th v-if="col.visible && col.key === 'balance'" :key="col.key" class="text-end">Saldo</th>
                             <th v-if="col.visible && col.key === 'total'" :key="col.key" class="text-end">Total</th>
                             <th v-if="col.visible && col.key === 'pdf'" :key="col.key" class="text-center">PDF</th>
@@ -313,6 +314,7 @@
             ></order-note-detail-drawer>
         </div>
     </div>
+<!-- ######### FIN CAMBIO IGV A IVA -->
 </template>
 <style scoped>
 .anulate_color {

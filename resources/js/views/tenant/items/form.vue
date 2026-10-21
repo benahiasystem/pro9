@@ -1,5 +1,6 @@
 <!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
+<!-- ########## INICIO CAMBIO IGV A IVA -->
     <el-dialog :close-on-click-modal="false"
                :visible="showDialog"
                append-to-body
@@ -88,7 +89,7 @@
                 <template #sale_unit_price>
                     <div :class="{'has-danger': errors.sale_unit_price}" class="form-group">
                         <!-- ########## INICIO CAMBIO IGV A IVA -->
-                        <label class="control-label">Precio Unitario <template v-if="!isNrus"><small v-if="form.has_igv">(con IGV)</small> <small v-else>(SIN IVA)</small></template><span class="text-danger">*</span></label>
+                        <label class="control-label">Precio Unitario <template v-if="!isNrus"><small v-if="form.has_igv">(con IVA)</small> <small v-else>(SIN IVA)</small></template><span class="text-danger">*</span></label>
                         <!-- ######### FIN CAMBIO IGV A IVA -->
                         <el-input v-model="form.sale_unit_price"
                                   class="input-select-all"
@@ -318,7 +319,7 @@
                 <template #purchase_unit_price>
                     <div :class="{'has-danger': errors.purchase_unit_price}" class="form-group">
                         <!-- ########## INICIO CAMBIO IGV A IVA -->
-                        <label class="control-label">Precio Unitario (Compra) <template v-if="!isNrus"><small v-if="form.purchase_has_igv">(con IGV)</small> <small v-else>(SIN IVA)</small></template></label>
+                        <label class="control-label">Precio Unitario (Compra) <template v-if="!isNrus"><small v-if="form.purchase_has_igv">(con IVA)</small> <small v-else>(SIN IVA)</small></template></label>
                         <!-- ######### FIN CAMBIO IGV A IVA -->
                         <el-input v-model="form.purchase_unit_price"
                                   class="input-select-all"
@@ -1286,7 +1287,7 @@
                             <div :class="{'has-danger': errors.purchase_unit_price}"
                                  class="form-group">
                                 <!-- ########## INICIO CAMBIO IGV A IVA -->
-                                <label class="control-label">Precio Unitario <template v-if="!isNrus"><small v-if="form.purchase_has_igv">(con IGV)</small> <small v-else>(SIN IVA)</small></template></label>
+                                <label class="control-label">Precio Unitario <template v-if="!isNrus"><small v-if="form.purchase_has_igv">(con IVA)</small> <small v-else>(SIN IVA)</small></template></label>
                                 <!-- ######### FIN CAMBIO IGV A IVA -->
                                 <el-input v-model="form.purchase_unit_price"
                                           class="input-select-all"
@@ -1662,6 +1663,7 @@
         </variation-picker>
 
     </el-dialog>
+<!-- ######### FIN CAMBIO IGV A IVA -->
 </template>
 
 <script>
@@ -1847,7 +1849,9 @@ export default {
                 igv = price * IGV_RATE
                 total = price + igv
             }
-            return `${base.toFixed(2)} + ${igv.toFixed(2)} IGV = ${symbol} ${total.toFixed(2)}`
+            // ########## INICIO CAMBIO IGV A IVA
+            return `${base.toFixed(2)} + ${igv.toFixed(2)} IVA = ${symbol} ${total.toFixed(2)}`
+            // ######### FIN CAMBIO IGV A IVA
         },
         purchaseUnitPriceBreakdown()
         {
@@ -1867,7 +1871,9 @@ export default {
                 igv = price * IGV_RATE
                 total = price + igv
             }
-            return `${base.toFixed(2)} + ${igv.toFixed(2)} IGV = ${symbol} ${total.toFixed(2)}`
+            // ########## INICIO CAMBIO IGV A IVA
+            return `${base.toFixed(2)} + ${igv.toFixed(2)} IVA = ${symbol} ${total.toFixed(2)}`
+            // ######### FIN CAMBIO IGV A IVA
         }
 
     },

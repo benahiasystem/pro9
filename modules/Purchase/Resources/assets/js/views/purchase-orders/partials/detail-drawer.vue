@@ -1,4 +1,5 @@
 <template>
+<!-- ########## INICIO CAMBIO IGV A IVA -->
     <el-drawer
         :visible.sync="visibleDrawer"
         :with-header="false"
@@ -108,7 +109,7 @@
                             <div class="detail-drawer__totals-section">
                                 <div class="detail-drawer__totals-heading">
                                     <h5 class="section-title">Totales</h5>
-                                    <p class="section-subtitle">Importes gravados, IGV y total de la orden</p>
+                                    <p class="section-subtitle">Importes gravados, IVA y total de la orden</p>
                                 </div>
 
                                 <div class="detail-drawer__totals-summary">
@@ -118,7 +119,7 @@
 
                                 <div class="detail-drawer__totals-card">
                                     <div class="detail-drawer__totals-row"><span class="detail-drawer__totals-row-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-receipt"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 21v-16a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v16l-3 -2l-2 2l-2 -2l-2 2l-2 -2z"/><path d="M9 7l6 0"/><path d="M9 11l6 0"/></svg></span><span class="detail-drawer__totals-row-label">Op. gravada</span><strong>{{ formatMoney(record.total_taxed) }}</strong></div>
-                                    <div class="detail-drawer__totals-row"><span class="detail-drawer__totals-row-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-percentage"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M17 17m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/><path d="M7 7m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/><path d="M6 18l12 -12"/></svg></span><span class="detail-drawer__totals-row-label">IGV</span><strong>{{ formatMoney(record.total_igv) }}</strong></div>
+                                    <div class="detail-drawer__totals-row"><span class="detail-drawer__totals-row-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-percentage"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M17 17m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/><path d="M7 7m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/><path d="M6 18l12 -12"/></svg></span><span class="detail-drawer__totals-row-label">IVA</span><strong>{{ formatMoney(record.total_igv) }}</strong></div>
                                     <div class="detail-drawer__totals-total"><span>Total</span><strong><small>{{ currencySymbol }}</small> {{ formatMoney(record.total, false) }}</strong></div>
                                 </div>
                             </div>
@@ -195,6 +196,7 @@
             </template>
         </div>
     </el-drawer>
+<!-- ######### FIN CAMBIO IGV A IVA -->
 </template>
 
 <script>

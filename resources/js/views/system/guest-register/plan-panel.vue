@@ -1,5 +1,6 @@
 <!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
+<!-- ########## INICIO CAMBIO IGV A IVA -->
     <div class="plan-panel">
         <!-- ============ VISTA: PLAN SELECCIONADO ============ -->
         <template v-if="mode === 'plan'">
@@ -45,7 +46,7 @@
                 <span v-if="!isFree" class="plan-panel__period">/ mes</span>
             </div>
             <p class="plan-panel__price-note">
-                Facturado mensualmente · IGV incluido · cancela cuando quieras
+                Facturado mensualmente · IVA incluido · cancela cuando quieras
             </p>
 
             <hr class="plan-panel__divider" />
@@ -250,6 +251,7 @@
             </div>
         </div>
     </div>
+<!-- ######### FIN CAMBIO IGV A IVA -->
 </template>
 
 <script>

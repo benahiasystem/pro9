@@ -459,7 +459,9 @@ const MODULES = {
             stock:                       { title: 'Stock',                    visible: true,  type: 'number'   },
             sale_unit_price:             { title: 'P. Unitario (Venta)',      visible: true,  type: 'price'    },
             purchase_unit_price:         { title: 'P. Unitario (Compra)',     visible: false, type: 'price'    },
-            real_unit_price:             { title: 'P. Venta total (con IGV)', visible: false, type: 'price'    },
+            // ########## INICIO CAMBIO IGV A IVA
+            real_unit_price:             { title: 'P. Venta total (con IVA)', visible: false, type: 'price'    },
+            // ######### FIN CAMBIO IGV A IVA
             // ########## INICIO CAMBIO IGV A IVA
             has_igv:                     { title: 'Tiene IVA (Venta)',        visible: true,  type: 'boolean'  },
             // ######### FIN CAMBIO IGV A IVA

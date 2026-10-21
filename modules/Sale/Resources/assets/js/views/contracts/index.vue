@@ -1,4 +1,5 @@
 <template>
+<!-- ########## INICIO CAMBIO IGV A IVA -->
     <div>
         <div class="page-header pr-0">
             <h2><a href="/contracts"><svg  xmlns="http://www.w3.org/2000/svg" style="margin-top: -5px;" width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-edit"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" /><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z" /><path d="M16 5l3 3" /></svg></a></h2>
@@ -40,7 +41,7 @@
                             <th v-if="col.visible && col.key === 'total_unaffected'" :key="col.key" class="text-end">T.Inafecta</th>
                             <th v-if="col.visible && col.key === 'total_exonerated'" :key="col.key" class="text-end">T.Exonerado</th>
                             <th v-if="col.visible && col.key === 'total_taxed'" :key="col.key" class="text-end">T.Gravado</th>
-                            <th v-if="col.visible && col.key === 'total_igv'" :key="col.key" class="text-end">T.Igv</th>
+                            <th v-if="col.visible && col.key === 'total_igv'" :key="col.key" class="text-end">T.IVA</th>
                             <th v-if="col.visible && col.key === 'total'" :key="col.key" class="text-end">Total</th>
                             <th v-if="col.visible && col.key === 'actions'" :key="col.key" class="text-end">Acciones</th>
                         </template>
@@ -132,6 +133,7 @@
             ></contract-detail-drawer>
         </div>
     </div>
+<!-- ######### FIN CAMBIO IGV A IVA -->
 </template>
 <style scoped>
     .anulate_color{
@@ -180,7 +182,9 @@
                     total_unaffected:  { title: 'T.Inafecto',    visible: false, order: 10 },
                     total_exonerated:  { title: 'T.Exonerado',   visible: false, order: 11 },
                     total_taxed:       { title: 'T.Gravado',     visible: true,  order: 12 },
-                    total_igv:         { title: 'T.Igv',         visible: true,  order: 13 },
+                    // ########## INICIO CAMBIO IGV A IVA
+                    total_igv:         { title: 'T.IVA',         visible: true,  order: 13 },
+                    // ######### FIN CAMBIO IGV A IVA
                     total:             { title: 'Total',         visible: true,  order: 14 },
                     actions:           { title: 'Acciones',      visible: true,  order: 15 },
                 },

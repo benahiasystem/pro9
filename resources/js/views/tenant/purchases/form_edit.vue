@@ -1,4 +1,5 @@
 <template>
+<!-- ########## INICIO CAMBIO IGV A IVA -->
 <div>
     <div class="page-header pe-0 d-none d-md-block">
         <h2><a href="/purchases">
@@ -140,7 +141,7 @@
                                              @change="changeHasGlobalIgv">¿La compra Tiene IVA?
                                              <!-- ######### FIN CAMBIO IGV A IVA -->
                                     <el-tooltip class="item"
-                                                content="Al estar la configuracion activa, sobreescribe el igv del item. Si no esta checado, el producto no tendra igv."
+                                                content="Al estar la configuracion activa, sobreescribe el IVA del item. Si no esta checado, el producto no tendra IVA."
                                                 effect="dark"
                                                 placement="top-end">
                                         <i class="fa fa-info-circle"></i>
@@ -528,6 +529,7 @@
                           :showClose="false"></purchase-options>
     </div>
 </div>
+<!-- ######### FIN CAMBIO IGV A IVA -->
 </template>
 
 <script>

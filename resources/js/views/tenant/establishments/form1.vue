@@ -1,4 +1,5 @@
 <template>
+<!-- ########## INICIO CAMBIO IGV A IVA -->
     <!-- ######## INICIO CAMBIO GEOPOLITICO VENEZUELA -->
     <el-dialog :title="titleDialog" :visible="showDialog" @close="close" @open="create" :close-on-click-modal="false">
         <form autocomplete="off" @submit.prevent="submit">
@@ -140,7 +141,7 @@
                             <div class="col-12">
                                 <div class="form-comtrol">
                                     <el-checkbox v-model="form.has_igv_31556">
-                                        Sujeto al IGV - Ley 31556
+                                        Sujeto al IVA - Ley 31556
                                     </el-checkbox>
                                 </div>
                             </div>
@@ -231,6 +232,7 @@
         </form>
     </el-dialog>
 
+<!-- ######### FIN CAMBIO IGV A IVA -->
 </template>
 
     <!-- ######## FIN CAMBIO GEOPOLITICO VENEZUELA -->

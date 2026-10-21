@@ -1,4 +1,5 @@
 <template>
+<!-- ########## INICIO CAMBIO IGV A IVA -->
     <el-dialog
         :title="dialogTitle"
         :visible="showDialog"
@@ -89,7 +90,7 @@
                     <strong>Descuentos:</strong> {{ currencySymbol }} {{ formatMoney(summary.discount) }}
                 </div>
                 <div><strong>Gravado:</strong> {{ currencySymbol }} {{ formatMoney(summary.taxed) }}</div>
-                <div><strong>IGV:</strong> {{ currencySymbol }} {{ formatMoney(summary.igv) }}</div>
+                <div><strong>IVA:</strong> {{ currencySymbol }} {{ formatMoney(summary.igv) }}</div>
                 <div class="h5 mb-0 mt-1"><strong>Total:</strong> {{ currencySymbol }} {{ formatMoney(summary.total) }}</div>
             </div>
         </div>
@@ -101,6 +102,7 @@
             </el-button>
         </span>
     </el-dialog>
+<!-- ######### FIN CAMBIO IGV A IVA -->
 </template>
 
 <script>

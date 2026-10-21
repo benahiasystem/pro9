@@ -1,4 +1,5 @@
 <template>
+<!-- ########## INICIO CAMBIO IGV A IVA -->
     <el-drawer
         :visible.sync="visibleDrawer"
         :with-header="false"
@@ -246,7 +247,7 @@
                                         <span class="detail-drawer__totals-row-icon" aria-hidden="true">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-percentage"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M17 17m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/><path d="M7 7m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/><path d="M6 18l12 -12"/></svg>
                                         </span>
-                                        <span class="detail-drawer__totals-row-label">IGV ({{ igvPercentage }}%)</span>
+                                        <span class="detail-drawer__totals-row-label">IVA ({{ igvPercentage }}%)</span>
                                         <strong>{{ formatMoney(record.total_igv) }}</strong>
                                     </div>
 
@@ -284,6 +285,7 @@
             </template>
         </div>
     </el-drawer>
+<!-- ######### FIN CAMBIO IGV A IVA -->
 </template>
 
 <script>

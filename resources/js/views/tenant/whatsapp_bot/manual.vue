@@ -1,5 +1,6 @@
 <!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
+<!-- ########## INICIO CAMBIO IGV A IVA -->
     <div class="whatsapp-bot-manual">
         <div class="page-header pe-0">
             <h2><a href="#"><i class="fas fa-cogs"></i></a></h2>
@@ -38,7 +39,7 @@
                             <el-collapse-item title="Flujo para emitir un comprobante" name="flow">
                                 <ol>
                                     <li>El vendedor describe el pedido (ej. <em>"hazme una boleta de 3 yogures para Juan Pérez"</em>).</li>
-                                    <li>El bot busca los productos en el catálogo real y arma un resumen con total e IGV.</li>
+                                    <li>El bot busca los productos en el catálogo real y arma un resumen con total e IVA.</li>
                                     <li>Si el cliente no existe pero hay DNI, lo registra automáticamente vía RENIEC.</li>
                                     <li>Pregunta si confirma. Solo emite si el vendedor responde afirmativamente.</li>
                                     <li>Al confirmar, emite contra SUNAT y manda el PDF por el mismo chat.</li>
@@ -50,7 +51,7 @@
                                     <span class="text-success font-weight-bold">Qué puede hacer</span>
                                 </template>
                                 <ul>
-                                    <li>Consultar productos del catálogo con precio (IGV incluido) y stock.</li>
+                                    <li>Consultar productos del catálogo con precio (IVA incluido) y stock.</li>
                                     <li>Buscar clientes por nombre, DNI o RIF.</li>
                                     <li>Registrar nuevos clientes desde RENIEC con solo el DNI.</li>
                                     <li>Emitir boletas y facturas reales contra SUNAT.</li>
@@ -131,6 +132,7 @@
             </div>
         </div>
     </div>
+<!-- ######### FIN CAMBIO IGV A IVA -->
 </template>
 
 <script>
