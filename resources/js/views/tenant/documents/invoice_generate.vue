@@ -2177,6 +2177,7 @@
                                                                     v-model="
                                                                         row.payment
                                                                     "
+                                                                    @input="markPaymentEdited(row)"
                                                                 ></el-input>
                                                             </td>
                                                             <td
@@ -2619,7 +2620,7 @@
 <script>
 import {restoreSaleNoteContext} from "../../../helpers/sale-note-conversion"
 
-import {withoutDraftRetentions, suggestRemainingPayment} from "@helpers/document-creation"
+import {withoutDraftRetentions, suggestRemainingPayment, markPaymentEdited} from "@helpers/document-creation"
 import documentCreationMixin from "@mixins/document-creation"
 // ######## INICIO TASAS OCHO DECIMALES ########
 import { exactAmount, normalizeExchangeRate, exactValue, exactSum, allocateExact } from "../../../helpers/exchange-rate-math"
@@ -3411,6 +3412,10 @@ export default {
         }
     },
     methods: {
+        markPaymentEdited(row) {
+            markPaymentEdited(row);
+            this.calculatePayments();
+        },
         restoreFiscalOptions(data) {
             this.form.fiscal_data = {special_tax_regime_id: data.special_tax_regime_id ?? null};
             this.savedSpecialTaxRegime = data.special_tax_regime_description || null;
@@ -6227,7 +6232,8 @@ export default {
         // ######## INICIO CALCULOS EXACTOS PRO9 ########
         calculatePayments() {
             if (this.form.payment_condition_id === '02') return;
-            suggestRemainingPayment(this.form);
+            if (this.isUpdateDocument) return;
+            suggestRemainingPayment(this.form, this.form.payments, {refreshSuggested: this.form.payment_condition_id === '01'});
         },
         calculateFee() {
             const amounts = allocateExact(this.getTotal(), this.form.fee.map(() => '1'), 2);
