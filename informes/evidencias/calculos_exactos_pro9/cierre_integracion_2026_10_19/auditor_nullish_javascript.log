@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: Vue AST covers filters, nested objects, branch expressions, slots and numeric modifiers
+ok 1 - Vue AST covers filters, nested objects, branch expressions, slots and numeric modifiers
+  ---
+  duration_ms: 30.941502
+  type: 'test'
+  ...
+# Subtest: registry rejects changed evidence, missing anchors, symlink escapes and orphan reviews
+ok 2 - registry rejects changed evidence, missing anchors, symlink escapes and orphan reviews
+  ---
+  duration_ms: 7.828505
+  type: 'test'
+  ...
+# Subtest: classification proof never exempts arithmetic, numeric comparisons or coercive equality
+ok 3 - classification proof never exempts arithmetic, numeric comparisons or coercive equality
+  ---
+  duration_ms: 2.921724
+  type: 'test'
+  ...
+# Subtest: nullish guards prove presence only and retain nested monetary candidates
+ok 4 - nullish guards prove presence only and retain nested monetary candidates
+  ---
+  duration_ms: 1.139125
+  type: 'test'
+  ...
+# Subtest: loose nonnumeric guards exclude numeric coercions and nested money
+ok 5 - loose nonnumeric guards exclude numeric coercions and nested money
+  ---
+  duration_ms: 1.123615
+  type: 'test'
+  ...
+# Subtest: new production files are covered and undocumented exclusions fail
+ok 6 - new production files are covered and undocumented exclusions fail
+  ---
+  duration_ms: 2.478324
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 201.76708

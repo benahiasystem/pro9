@@ -1,0 +1,890 @@
+[
+  {
+    "id": "52e8b31d9138777f981d6920",
+    "expression": "\"Liquidable: \"+_s(row.total_payable)",
+    "location": "modules/Finance/Resources/assets/js/views/unpaid/index.vue:834",
+    "review": {
+      "category": "presentation",
+      "justification": "Prefijo del nodo final que muestra el importe liquidable y su ajuste; el texto sólo se renderiza y la visibilidad consulta la fracción. Expresión: \"Liquidable: \"+_s(row.total_payable)",
+      "evidence": [
+        "modules/Finance/Resources/assets/js/views/unpaid/index.vue#<template>",
+        "tests/js/exact-outstanding-ui.test.cjs"
+      ],
+      "evidence_sha256": {
+        "modules/Finance/Resources/assets/js/views/unpaid/index.vue": "d0adfc7f35e62108523155170c43b38ca64388640d9d71ea41bed9c085c9b8c7",
+        "tests/js/exact-outstanding-ui.test.cjs": "c2c4b6d47ab4973c9466230a3e14355a36a0dbc3acacc4432f54ae06f784945b"
+      },
+      "source": {
+        "file": "modules/Finance/Resources/assets/js/views/unpaid/index.vue",
+        "symbol": "{template}",
+        "operation": "native_+",
+        "operation_language": "javascript"
+      }
+    }
+  },
+  {
+    "id": "f28f6a35f55965f71c5971a4",
+    "expression": "\"Liquidable: \"+_s(row.total_payable)+\" · Ajuste: \"",
+    "location": "modules/Finance/Resources/assets/js/views/unpaid/index.vue:834",
+    "review": {
+      "category": "presentation",
+      "justification": "Prefijo del nodo final que muestra el importe liquidable y su ajuste; el texto sólo se renderiza y la visibilidad consulta la fracción. Expresión: \"Liquidable: \"+_s(row.total_payable)+\" · Ajuste: \"",
+      "evidence": [
+        "modules/Finance/Resources/assets/js/views/unpaid/index.vue#<template>",
+        "tests/js/exact-outstanding-ui.test.cjs"
+      ],
+      "evidence_sha256": {
+        "modules/Finance/Resources/assets/js/views/unpaid/index.vue": "d0adfc7f35e62108523155170c43b38ca64388640d9d71ea41bed9c085c9b8c7",
+        "tests/js/exact-outstanding-ui.test.cjs": "c2c4b6d47ab4973c9466230a3e14355a36a0dbc3acacc4432f54ae06f784945b"
+      },
+      "source": {
+        "file": "modules/Finance/Resources/assets/js/views/unpaid/index.vue",
+        "symbol": "{template}",
+        "operation": "native_+",
+        "operation_language": "javascript"
+      }
+    }
+  },
+  {
+    "id": "07792126ebac62661b317e78",
+    "expression": "$this->company != null",
+    "location": "modules/Finance/Http/Controllers/UnpaidController.php:178",
+    "review": {
+      "category": "technical",
+      "justification": "Selecciona el objeto existente de empresa/documento o la fuente del PDF local, sin operar con importes. Expresión: $this->company != null",
+      "evidence": [
+        "modules/Finance/Http/Controllers/UnpaidController.php#createPdf"
+      ],
+      "evidence_sha256": {
+        "modules/Finance/Http/Controllers/UnpaidController.php": "a5f92f4d568f7890a2d8392110df020fb507f5a097055b6aa707fa476c390537"
+      },
+      "source": {
+        "file": "modules/Finance/Http/Controllers/UnpaidController.php",
+        "symbol": "UnpaidController::createPdf",
+        "operation": "native_NotEqual",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "6a6b75d6c694f967b7e8d755",
+    "expression": "$sale_note != null",
+    "location": "modules/Finance/Http/Controllers/UnpaidController.php:179",
+    "review": {
+      "category": "technical",
+      "justification": "Selecciona el objeto existente de empresa/documento o la fuente del PDF local, sin operar con importes. Expresión: $sale_note != null",
+      "evidence": [
+        "modules/Finance/Http/Controllers/UnpaidController.php#createPdf"
+      ],
+      "evidence_sha256": {
+        "modules/Finance/Http/Controllers/UnpaidController.php": "a5f92f4d568f7890a2d8392110df020fb507f5a097055b6aa707fa476c390537"
+      },
+      "source": {
+        "file": "modules/Finance/Http/Controllers/UnpaidController.php",
+        "symbol": "UnpaidController::createPdf",
+        "operation": "native_NotEqual",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "95907bffbcb182e1dd3fff27",
+    "expression": "$pdf_font_regular != false",
+    "location": "modules/Finance/Http/Controllers/UnpaidController.php:249",
+    "review": {
+      "category": "technical",
+      "justification": "Selecciona el objeto existente de empresa/documento o la fuente del PDF local, sin operar con importes. Expresión: $pdf_font_regular != false",
+      "evidence": [
+        "modules/Finance/Http/Controllers/UnpaidController.php#createPdf"
+      ],
+      "evidence_sha256": {
+        "modules/Finance/Http/Controllers/UnpaidController.php": "a5f92f4d568f7890a2d8392110df020fb507f5a097055b6aa707fa476c390537"
+      },
+      "source": {
+        "file": "modules/Finance/Http/Controllers/UnpaidController.php",
+        "symbol": "UnpaidController::createPdf",
+        "operation": "native_NotEqual",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "e5e819595c2b6abfdb8519ab",
+    "expression": "strlen($this->company->name) / 20",
+    "location": "modules/Finance/Http/Controllers/UnpaidController.php:194",
+    "review": {
+      "category": "technical",
+      "justification": "Estima altura del papel por longitud de nombres, direcciones o descripciones. Sus resultados se usan exclusivamente en format de mPDF como milímetros; no modifican precio, cantidad o saldo. Expresión: strlen($this->company->name) / 20",
+      "evidence": [
+        "modules/Finance/Http/Controllers/UnpaidController.php#createPdf"
+      ],
+      "evidence_sha256": {
+        "modules/Finance/Http/Controllers/UnpaidController.php": "a5f92f4d568f7890a2d8392110df020fb507f5a097055b6aa707fa476c390537"
+      },
+      "source": {
+        "file": "modules/Finance/Http/Controllers/UnpaidController.php",
+        "symbol": "UnpaidController::createPdf",
+        "operation": "native_Div",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "c94efe99d65da60b1845916b",
+    "expression": "strlen($this->company->name) / 20 * 10",
+    "location": "modules/Finance/Http/Controllers/UnpaidController.php:194",
+    "review": {
+      "category": "technical",
+      "justification": "Estima altura del papel por longitud de nombres, direcciones o descripciones. Sus resultados se usan exclusivamente en format de mPDF como milímetros; no modifican precio, cantidad o saldo. Expresión: strlen($this->company->name) / 20 * 10",
+      "evidence": [
+        "modules/Finance/Http/Controllers/UnpaidController.php#createPdf"
+      ],
+      "evidence_sha256": {
+        "modules/Finance/Http/Controllers/UnpaidController.php": "a5f92f4d568f7890a2d8392110df020fb507f5a097055b6aa707fa476c390537"
+      },
+      "source": {
+        "file": "modules/Finance/Http/Controllers/UnpaidController.php",
+        "symbol": "UnpaidController::createPdf",
+        "operation": "native_Mul",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "6977608b234c7cbd86a0673e",
+    "expression": "strlen($this->document->establishment->address) / 30",
+    "location": "modules/Finance/Http/Controllers/UnpaidController.php:195",
+    "review": {
+      "category": "technical",
+      "justification": "Estima altura del papel por longitud de nombres, direcciones o descripciones. Sus resultados se usan exclusivamente en format de mPDF como milímetros; no modifican precio, cantidad o saldo. Expresión: strlen($this->document->establishment->address) / 30",
+      "evidence": [
+        "modules/Finance/Http/Controllers/UnpaidController.php#createPdf"
+      ],
+      "evidence_sha256": {
+        "modules/Finance/Http/Controllers/UnpaidController.php": "a5f92f4d568f7890a2d8392110df020fb507f5a097055b6aa707fa476c390537"
+      },
+      "source": {
+        "file": "modules/Finance/Http/Controllers/UnpaidController.php",
+        "symbol": "UnpaidController::createPdf",
+        "operation": "native_Div",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "92fcc66c43bf455733099af7",
+    "expression": "strlen($this->document->establishment->address) / 30 * 10",
+    "location": "modules/Finance/Http/Controllers/UnpaidController.php:195",
+    "review": {
+      "category": "technical",
+      "justification": "Estima altura del papel por longitud de nombres, direcciones o descripciones. Sus resultados se usan exclusivamente en format de mPDF como milímetros; no modifican precio, cantidad o saldo. Expresión: strlen($this->document->establishment->address) / 30 * 10",
+      "evidence": [
+        "modules/Finance/Http/Controllers/UnpaidController.php#createPdf"
+      ],
+      "evidence_sha256": {
+        "modules/Finance/Http/Controllers/UnpaidController.php": "a5f92f4d568f7890a2d8392110df020fb507f5a097055b6aa707fa476c390537"
+      },
+      "source": {
+        "file": "modules/Finance/Http/Controllers/UnpaidController.php",
+        "symbol": "UnpaidController::createPdf",
+        "operation": "native_Mul",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "2d647f7fde2579da62b550ad",
+    "expression": "strlen($this->document->customer->name) > '25'",
+    "location": "modules/Finance/Http/Controllers/UnpaidController.php:197",
+    "review": {
+      "category": "technical",
+      "justification": "Estima altura del papel por longitud de nombres, direcciones o descripciones. Sus resultados se usan exclusivamente en format de mPDF como milímetros; no modifican precio, cantidad o saldo. Expresión: strlen($this->document->customer->name) > '25'",
+      "evidence": [
+        "modules/Finance/Http/Controllers/UnpaidController.php#createPdf"
+      ],
+      "evidence_sha256": {
+        "modules/Finance/Http/Controllers/UnpaidController.php": "a5f92f4d568f7890a2d8392110df020fb507f5a097055b6aa707fa476c390537"
+      },
+      "source": {
+        "file": "modules/Finance/Http/Controllers/UnpaidController.php",
+        "symbol": "UnpaidController::createPdf",
+        "operation": "native_Greater",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "4935a41cfad88fb29828ec49",
+    "expression": "strlen($this->document->customer->address) / 200",
+    "location": "modules/Finance/Http/Controllers/UnpaidController.php:198",
+    "review": {
+      "category": "technical",
+      "justification": "Estima altura del papel por longitud de nombres, direcciones o descripciones. Sus resultados se usan exclusivamente en format de mPDF como milímetros; no modifican precio, cantidad o saldo. Expresión: strlen($this->document->customer->address) / 200",
+      "evidence": [
+        "modules/Finance/Http/Controllers/UnpaidController.php#createPdf"
+      ],
+      "evidence_sha256": {
+        "modules/Finance/Http/Controllers/UnpaidController.php": "a5f92f4d568f7890a2d8392110df020fb507f5a097055b6aa707fa476c390537"
+      },
+      "source": {
+        "file": "modules/Finance/Http/Controllers/UnpaidController.php",
+        "symbol": "UnpaidController::createPdf",
+        "operation": "native_Div",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "2e7d4676662221caee943e4f",
+    "expression": "strlen($this->document->customer->address) / 200 * 10",
+    "location": "modules/Finance/Http/Controllers/UnpaidController.php:198",
+    "review": {
+      "category": "technical",
+      "justification": "Estima altura del papel por longitud de nombres, direcciones o descripciones. Sus resultados se usan exclusivamente en format de mPDF como milímetros; no modifican precio, cantidad o saldo. Expresión: strlen($this->document->customer->address) / 200 * 10",
+      "evidence": [
+        "modules/Finance/Http/Controllers/UnpaidController.php#createPdf"
+      ],
+      "evidence_sha256": {
+        "modules/Finance/Http/Controllers/UnpaidController.php": "a5f92f4d568f7890a2d8392110df020fb507f5a097055b6aa707fa476c390537"
+      },
+      "source": {
+        "file": "modules/Finance/Http/Controllers/UnpaidController.php",
+        "symbol": "UnpaidController::createPdf",
+        "operation": "native_Mul",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "306b38805813e0d9198f7333",
+    "expression": "strlen($it->item->description) > 100",
+    "location": "modules/Finance/Http/Controllers/UnpaidController.php:209",
+    "review": {
+      "category": "technical",
+      "justification": "Estima altura del papel por longitud de nombres, direcciones o descripciones. Sus resultados se usan exclusivamente en format de mPDF como milímetros; no modifican precio, cantidad o saldo. Expresión: strlen($it->item->description) > 100",
+      "evidence": [
+        "modules/Finance/Http/Controllers/UnpaidController.php#createPdf"
+      ],
+      "evidence_sha256": {
+        "modules/Finance/Http/Controllers/UnpaidController.php": "a5f92f4d568f7890a2d8392110df020fb507f5a097055b6aa707fa476c390537"
+      },
+      "source": {
+        "file": "modules/Finance/Http/Controllers/UnpaidController.php",
+        "symbol": "UnpaidController::createPdf",
+        "operation": "native_Greater",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "a59e04a9fb74cffbf63ec120",
+    "expression": "$extra_by_item_description += 24",
+    "location": "modules/Finance/Http/Controllers/UnpaidController.php:210",
+    "review": {
+      "category": "technical",
+      "justification": "Estima altura del papel por longitud de nombres, direcciones o descripciones. Sus resultados se usan exclusivamente en format de mPDF como milímetros; no modifican precio, cantidad o saldo. Expresión: $extra_by_item_description += 24",
+      "evidence": [
+        "modules/Finance/Http/Controllers/UnpaidController.php#createPdf"
+      ],
+      "evidence_sha256": {
+        "modules/Finance/Http/Controllers/UnpaidController.php": "a5f92f4d568f7890a2d8392110df020fb507f5a097055b6aa707fa476c390537"
+      },
+      "source": {
+        "file": "modules/Finance/Http/Controllers/UnpaidController.php",
+        "symbol": "UnpaidController::createPdf",
+        "operation": "native_Plus",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "c9844f621cd15d495cc5e0ff",
+    "expression": "$this->document->establishment->telephone != ''",
+    "location": "modules/Finance/Http/Controllers/UnpaidController.php:196",
+    "review": {
+      "category": "technical",
+      "justification": "Comprueba presencia para reservar diez milímetros de papel. Incluso al consultar un total, la condición sólo selecciona una altura 0/10 y no adapta ni calcula ese importe. Expresión: $this->document->establishment->telephone != ''",
+      "evidence": [
+        "modules/Finance/Http/Controllers/UnpaidController.php#createPdf"
+      ],
+      "evidence_sha256": {
+        "modules/Finance/Http/Controllers/UnpaidController.php": "a5f92f4d568f7890a2d8392110df020fb507f5a097055b6aa707fa476c390537"
+      },
+      "source": {
+        "file": "modules/Finance/Http/Controllers/UnpaidController.php",
+        "symbol": "UnpaidController::createPdf",
+        "operation": "native_NotEqual",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "eefab649912e3db3a0c61b5c",
+    "expression": "$this->document->purchase_order != ''",
+    "location": "modules/Finance/Http/Controllers/UnpaidController.php:199",
+    "review": {
+      "category": "technical",
+      "justification": "Comprueba presencia para reservar diez milímetros de papel. Incluso al consultar un total, la condición sólo selecciona una altura 0/10 y no adapta ni calcula ese importe. Expresión: $this->document->purchase_order != ''",
+      "evidence": [
+        "modules/Finance/Http/Controllers/UnpaidController.php#createPdf"
+      ],
+      "evidence_sha256": {
+        "modules/Finance/Http/Controllers/UnpaidController.php": "a5f92f4d568f7890a2d8392110df020fb507f5a097055b6aa707fa476c390537"
+      },
+      "source": {
+        "file": "modules/Finance/Http/Controllers/UnpaidController.php",
+        "symbol": "UnpaidController::createPdf",
+        "operation": "native_NotEqual",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "0f693fbc17d92aeebe9c48de",
+    "expression": "$this->document->total_exportation != ''",
+    "location": "modules/Finance/Http/Controllers/UnpaidController.php:201",
+    "review": {
+      "category": "technical",
+      "justification": "Comprueba presencia para reservar diez milímetros de papel. Incluso al consultar un total, la condición sólo selecciona una altura 0/10 y no adapta ni calcula ese importe. Expresión: $this->document->total_exportation != ''",
+      "evidence": [
+        "modules/Finance/Http/Controllers/UnpaidController.php#createPdf"
+      ],
+      "evidence_sha256": {
+        "modules/Finance/Http/Controllers/UnpaidController.php": "a5f92f4d568f7890a2d8392110df020fb507f5a097055b6aa707fa476c390537"
+      },
+      "source": {
+        "file": "modules/Finance/Http/Controllers/UnpaidController.php",
+        "symbol": "UnpaidController::createPdf",
+        "operation": "native_NotEqual",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "454704a2ecbb20853d085a5f",
+    "expression": "$this->document->total_exonerated != ''",
+    "location": "modules/Finance/Http/Controllers/UnpaidController.php:202",
+    "review": {
+      "category": "technical",
+      "justification": "Comprueba presencia para reservar diez milímetros de papel. Incluso al consultar un total, la condición sólo selecciona una altura 0/10 y no adapta ni calcula ese importe. Expresión: $this->document->total_exonerated != ''",
+      "evidence": [
+        "modules/Finance/Http/Controllers/UnpaidController.php#createPdf"
+      ],
+      "evidence_sha256": {
+        "modules/Finance/Http/Controllers/UnpaidController.php": "a5f92f4d568f7890a2d8392110df020fb507f5a097055b6aa707fa476c390537"
+      },
+      "source": {
+        "file": "modules/Finance/Http/Controllers/UnpaidController.php",
+        "symbol": "UnpaidController::createPdf",
+        "operation": "native_NotEqual",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "28bad5d9559d83e835f0ab68",
+    "expression": "$this->document->total_taxed != ''",
+    "location": "modules/Finance/Http/Controllers/UnpaidController.php:203",
+    "review": {
+      "category": "technical",
+      "justification": "Comprueba presencia para reservar diez milímetros de papel. Incluso al consultar un total, la condición sólo selecciona una altura 0/10 y no adapta ni calcula ese importe. Expresión: $this->document->total_taxed != ''",
+      "evidence": [
+        "modules/Finance/Http/Controllers/UnpaidController.php#createPdf"
+      ],
+      "evidence_sha256": {
+        "modules/Finance/Http/Controllers/UnpaidController.php": "a5f92f4d568f7890a2d8392110df020fb507f5a097055b6aa707fa476c390537"
+      },
+      "source": {
+        "file": "modules/Finance/Http/Controllers/UnpaidController.php",
+        "symbol": "UnpaidController::createPdf",
+        "operation": "native_NotEqual",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "d27677f82ea41b1d94194c30",
+    "expression": "$this->document->legends != ''",
+    "location": "modules/Finance/Http/Controllers/UnpaidController.php:216",
+    "review": {
+      "category": "technical",
+      "justification": "Comprueba presencia para reservar diez milímetros de papel. Incluso al consultar un total, la condición sólo selecciona una altura 0/10 y no adapta ni calcula ese importe. Expresión: $this->document->legends != ''",
+      "evidence": [
+        "modules/Finance/Http/Controllers/UnpaidController.php#createPdf"
+      ],
+      "evidence_sha256": {
+        "modules/Finance/Http/Controllers/UnpaidController.php": "a5f92f4d568f7890a2d8392110df020fb507f5a097055b6aa707fa476c390537"
+      },
+      "source": {
+        "file": "modules/Finance/Http/Controllers/UnpaidController.php",
+        "symbol": "UnpaidController::createPdf",
+        "operation": "native_NotEqual",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "38f961aa0fad5b70ab4d3fd3",
+    "expression": "$this->document->payments()->count() * 2",
+    "location": "modules/Finance/Http/Controllers/UnpaidController.php:205",
+    "review": {
+      "category": "technical",
+      "justification": "Cuenta filas de partidas, pagos, cuentas bancarias o líneas con descuento y estima su espacio en el ticket. discount_global aquí es un contador iniciado en cero e incrementado de uno en uno, no un descuento monetario. Expresión: $this->document->payments()->count() * 2",
+      "evidence": [
+        "modules/Finance/Http/Controllers/UnpaidController.php#createPdf"
+      ],
+      "evidence_sha256": {
+        "modules/Finance/Http/Controllers/UnpaidController.php": "a5f92f4d568f7890a2d8392110df020fb507f5a097055b6aa707fa476c390537"
+      },
+      "source": {
+        "file": "modules/Finance/Http/Controllers/UnpaidController.php",
+        "symbol": "UnpaidController::createPdf",
+        "operation": "native_Mul",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "54db3e7e6f91e80614264799",
+    "expression": "BankAccount::count() * 6",
+    "location": "modules/Finance/Http/Controllers/UnpaidController.php:217",
+    "review": {
+      "category": "technical",
+      "justification": "Cuenta filas de partidas, pagos, cuentas bancarias o líneas con descuento y estima su espacio en el ticket. discount_global aquí es un contador iniciado en cero e incrementado de uno en uno, no un descuento monetario. Expresión: BankAccount::count() * 6",
+      "evidence": [
+        "modules/Finance/Http/Controllers/UnpaidController.php#createPdf"
+      ],
+      "evidence_sha256": {
+        "modules/Finance/Http/Controllers/UnpaidController.php": "a5f92f4d568f7890a2d8392110df020fb507f5a097055b6aa707fa476c390537"
+      },
+      "source": {
+        "file": "modules/Finance/Http/Controllers/UnpaidController.php",
+        "symbol": "UnpaidController::createPdf",
+        "operation": "native_Mul",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "fe9d1613fd08b5d962f014ab",
+    "expression": "$discount_global + 1",
+    "location": "modules/Finance/Http/Controllers/UnpaidController.php:213",
+    "review": {
+      "category": "technical",
+      "justification": "Cuenta filas de partidas, pagos, cuentas bancarias o líneas con descuento y estima su espacio en el ticket. discount_global aquí es un contador iniciado en cero e incrementado de uno en uno, no un descuento monetario. Expresión: $discount_global + 1",
+      "evidence": [
+        "modules/Finance/Http/Controllers/UnpaidController.php#createPdf"
+      ],
+      "evidence_sha256": {
+        "modules/Finance/Http/Controllers/UnpaidController.php": "a5f92f4d568f7890a2d8392110df020fb507f5a097055b6aa707fa476c390537"
+      },
+      "source": {
+        "file": "modules/Finance/Http/Controllers/UnpaidController.php",
+        "symbol": "UnpaidController::createPdf",
+        "operation": "native_Plus",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "fab06e6b2428dd53926df2f9",
+    "expression": "$discount_global * 3",
+    "location": "modules/Finance/Http/Controllers/UnpaidController.php:225",
+    "review": {
+      "category": "technical",
+      "justification": "Cuenta filas de partidas, pagos, cuentas bancarias o líneas con descuento y estima su espacio en el ticket. discount_global aquí es un contador iniciado en cero e incrementado de uno en uno, no un descuento monetario. Expresión: $discount_global * 3",
+      "evidence": [
+        "modules/Finance/Http/Controllers/UnpaidController.php#createPdf"
+      ],
+      "evidence_sha256": {
+        "modules/Finance/Http/Controllers/UnpaidController.php": "a5f92f4d568f7890a2d8392110df020fb507f5a097055b6aa707fa476c390537"
+      },
+      "source": {
+        "file": "modules/Finance/Http/Controllers/UnpaidController.php",
+        "symbol": "UnpaidController::createPdf",
+        "operation": "native_Mul",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "caeab5b69971b68699f2f1f0",
+    "expression": "$quantity_rows * 8",
+    "location": "modules/Finance/Http/Controllers/UnpaidController.php:224",
+    "review": {
+      "category": "technical",
+      "justification": "Cuenta filas de partidas, pagos, cuentas bancarias o líneas con descuento y estima su espacio en el ticket. discount_global aquí es un contador iniciado en cero e incrementado de uno en uno, no un descuento monetario. Expresión: $quantity_rows * 8",
+      "evidence": [
+        "modules/Finance/Http/Controllers/UnpaidController.php#createPdf"
+      ],
+      "evidence_sha256": {
+        "modules/Finance/Http/Controllers/UnpaidController.php": "a5f92f4d568f7890a2d8392110df020fb507f5a097055b6aa707fa476c390537"
+      },
+      "source": {
+        "file": "modules/Finance/Http/Controllers/UnpaidController.php",
+        "symbol": "UnpaidController::createPdf",
+        "operation": "native_Mul",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "087b628e065d0b8c9998b937",
+    "expression": "120 + $quantity_rows * 8 + $discount_global * 3 + $company_logo + $payments + $company_name + $company_address + $company_number + $customer_name + $customer_address + $p_order + $legends",
+    "location": "modules/Finance/Http/Controllers/UnpaidController.php:223",
+    "review": {
+      "category": "technical",
+      "justification": "Suma milímetros y conteos de secciones para la segunda dimensión de format de mPDF. Los valores que tienen nombres fiscales son alturas 0/10, no los importes del documento. No se reutiliza la altura para cálculos comerciales. Expresión: 120 + $quantity_rows * 8 + $discount_global * 3 + $company_logo + $payments + $company_name + $company_address + $company_number + $customer_name + $customer_address + $p_order + $legends",
+      "evidence": [
+        "modules/Finance/Http/Controllers/UnpaidController.php#createPdf"
+      ],
+      "evidence_sha256": {
+        "modules/Finance/Http/Controllers/UnpaidController.php": "a5f92f4d568f7890a2d8392110df020fb507f5a097055b6aa707fa476c390537"
+      },
+      "source": {
+        "file": "modules/Finance/Http/Controllers/UnpaidController.php",
+        "symbol": "UnpaidController::createPdf",
+        "operation": "native_Plus",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "4868940552a7a6541ba83cbb",
+    "expression": "120 + $quantity_rows * 8 + $discount_global * 3 + $company_logo + $payments + $company_name + $company_address + $company_number + $customer_name + $customer_address + $p_order + $legends + $bank_accounts + $total_exportation + $total_exonerated + $extra_by_item_description",
+    "location": "modules/Finance/Http/Controllers/UnpaidController.php:223",
+    "review": {
+      "category": "technical",
+      "justification": "Suma milímetros y conteos de secciones para la segunda dimensión de format de mPDF. Los valores que tienen nombres fiscales son alturas 0/10, no los importes del documento. No se reutiliza la altura para cálculos comerciales. Expresión: 120 + $quantity_rows * 8 + $discount_global * 3 + $company_logo + $payments + $company_name + $company_address + $company_number + $customer_name + $customer_address + $p_order + $legends + $bank_accounts + $total_exportation + $total_exonerated + $extra_by_item_description",
+      "evidence": [
+        "modules/Finance/Http/Controllers/UnpaidController.php#createPdf"
+      ],
+      "evidence_sha256": {
+        "modules/Finance/Http/Controllers/UnpaidController.php": "a5f92f4d568f7890a2d8392110df020fb507f5a097055b6aa707fa476c390537"
+      },
+      "source": {
+        "file": "modules/Finance/Http/Controllers/UnpaidController.php",
+        "symbol": "UnpaidController::createPdf",
+        "operation": "native_Plus",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "4b3834d89305166277bd2209",
+    "expression": "120 + $quantity_rows * 8 + $discount_global * 3 + $company_logo + $payments + $company_name + $company_address + $company_number + $customer_name + $customer_address",
+    "location": "modules/Finance/Http/Controllers/UnpaidController.php:223",
+    "review": {
+      "category": "technical",
+      "justification": "Suma milímetros y conteos de secciones para la segunda dimensión de format de mPDF. Los valores que tienen nombres fiscales son alturas 0/10, no los importes del documento. No se reutiliza la altura para cálculos comerciales. Expresión: 120 + $quantity_rows * 8 + $discount_global * 3 + $company_logo + $payments + $company_name + $company_address + $company_number + $customer_name + $customer_address",
+      "evidence": [
+        "modules/Finance/Http/Controllers/UnpaidController.php#createPdf"
+      ],
+      "evidence_sha256": {
+        "modules/Finance/Http/Controllers/UnpaidController.php": "a5f92f4d568f7890a2d8392110df020fb507f5a097055b6aa707fa476c390537"
+      },
+      "source": {
+        "file": "modules/Finance/Http/Controllers/UnpaidController.php",
+        "symbol": "UnpaidController::createPdf",
+        "operation": "native_Plus",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "4d52e23b9d5021beddfefe20",
+    "expression": "120 + $quantity_rows * 8",
+    "location": "modules/Finance/Http/Controllers/UnpaidController.php:223",
+    "review": {
+      "category": "technical",
+      "justification": "Suma milímetros y conteos de secciones para la segunda dimensión de format de mPDF. Los valores que tienen nombres fiscales son alturas 0/10, no los importes del documento. No se reutiliza la altura para cálculos comerciales. Expresión: 120 + $quantity_rows * 8",
+      "evidence": [
+        "modules/Finance/Http/Controllers/UnpaidController.php#createPdf"
+      ],
+      "evidence_sha256": {
+        "modules/Finance/Http/Controllers/UnpaidController.php": "a5f92f4d568f7890a2d8392110df020fb507f5a097055b6aa707fa476c390537"
+      },
+      "source": {
+        "file": "modules/Finance/Http/Controllers/UnpaidController.php",
+        "symbol": "UnpaidController::createPdf",
+        "operation": "native_Plus",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "5a101b6143706a7cc7f2d774",
+    "expression": "120 + $quantity_rows * 8 + $discount_global * 3 + $company_logo + $payments + $company_name + $company_address + $company_number + $customer_name + $customer_address + $p_order + $legends + $bank_accounts",
+    "location": "modules/Finance/Http/Controllers/UnpaidController.php:223",
+    "review": {
+      "category": "technical",
+      "justification": "Suma milímetros y conteos de secciones para la segunda dimensión de format de mPDF. Los valores que tienen nombres fiscales son alturas 0/10, no los importes del documento. No se reutiliza la altura para cálculos comerciales. Expresión: 120 + $quantity_rows * 8 + $discount_global * 3 + $company_logo + $payments + $company_name + $company_address + $company_number + $customer_name + $customer_address + $p_order + $legends + $bank_accounts",
+      "evidence": [
+        "modules/Finance/Http/Controllers/UnpaidController.php#createPdf"
+      ],
+      "evidence_sha256": {
+        "modules/Finance/Http/Controllers/UnpaidController.php": "a5f92f4d568f7890a2d8392110df020fb507f5a097055b6aa707fa476c390537"
+      },
+      "source": {
+        "file": "modules/Finance/Http/Controllers/UnpaidController.php",
+        "symbol": "UnpaidController::createPdf",
+        "operation": "native_Plus",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "5db3672098956b4da5ae63f8",
+    "expression": "120 + $quantity_rows * 8 + $discount_global * 3 + $company_logo",
+    "location": "modules/Finance/Http/Controllers/UnpaidController.php:223",
+    "review": {
+      "category": "technical",
+      "justification": "Suma milímetros y conteos de secciones para la segunda dimensión de format de mPDF. Los valores que tienen nombres fiscales son alturas 0/10, no los importes del documento. No se reutiliza la altura para cálculos comerciales. Expresión: 120 + $quantity_rows * 8 + $discount_global * 3 + $company_logo",
+      "evidence": [
+        "modules/Finance/Http/Controllers/UnpaidController.php#createPdf"
+      ],
+      "evidence_sha256": {
+        "modules/Finance/Http/Controllers/UnpaidController.php": "a5f92f4d568f7890a2d8392110df020fb507f5a097055b6aa707fa476c390537"
+      },
+      "source": {
+        "file": "modules/Finance/Http/Controllers/UnpaidController.php",
+        "symbol": "UnpaidController::createPdf",
+        "operation": "native_Plus",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "730a9abc80d613f550a96f4f",
+    "expression": "120 + $quantity_rows * 8 + $discount_global * 3 + $company_logo + $payments + $company_name + $company_address + $company_number",
+    "location": "modules/Finance/Http/Controllers/UnpaidController.php:223",
+    "review": {
+      "category": "technical",
+      "justification": "Suma milímetros y conteos de secciones para la segunda dimensión de format de mPDF. Los valores que tienen nombres fiscales son alturas 0/10, no los importes del documento. No se reutiliza la altura para cálculos comerciales. Expresión: 120 + $quantity_rows * 8 + $discount_global * 3 + $company_logo + $payments + $company_name + $company_address + $company_number",
+      "evidence": [
+        "modules/Finance/Http/Controllers/UnpaidController.php#createPdf"
+      ],
+      "evidence_sha256": {
+        "modules/Finance/Http/Controllers/UnpaidController.php": "a5f92f4d568f7890a2d8392110df020fb507f5a097055b6aa707fa476c390537"
+      },
+      "source": {
+        "file": "modules/Finance/Http/Controllers/UnpaidController.php",
+        "symbol": "UnpaidController::createPdf",
+        "operation": "native_Plus",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "732c79d37647686bfae1facc",
+    "expression": "120 + $quantity_rows * 8 + $discount_global * 3",
+    "location": "modules/Finance/Http/Controllers/UnpaidController.php:223",
+    "review": {
+      "category": "technical",
+      "justification": "Suma milímetros y conteos de secciones para la segunda dimensión de format de mPDF. Los valores que tienen nombres fiscales son alturas 0/10, no los importes del documento. No se reutiliza la altura para cálculos comerciales. Expresión: 120 + $quantity_rows * 8 + $discount_global * 3",
+      "evidence": [
+        "modules/Finance/Http/Controllers/UnpaidController.php#createPdf"
+      ],
+      "evidence_sha256": {
+        "modules/Finance/Http/Controllers/UnpaidController.php": "a5f92f4d568f7890a2d8392110df020fb507f5a097055b6aa707fa476c390537"
+      },
+      "source": {
+        "file": "modules/Finance/Http/Controllers/UnpaidController.php",
+        "symbol": "UnpaidController::createPdf",
+        "operation": "native_Plus",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "90f039bf85036a1aeb991ec5",
+    "expression": "120 + $quantity_rows * 8 + $discount_global * 3 + $company_logo + $payments + $company_name + $company_address + $company_number + $customer_name + $customer_address + $p_order + $legends + $bank_accounts + $total_exportation + $total_exonerated",
+    "location": "modules/Finance/Http/Controllers/UnpaidController.php:223",
+    "review": {
+      "category": "technical",
+      "justification": "Suma milímetros y conteos de secciones para la segunda dimensión de format de mPDF. Los valores que tienen nombres fiscales son alturas 0/10, no los importes del documento. No se reutiliza la altura para cálculos comerciales. Expresión: 120 + $quantity_rows * 8 + $discount_global * 3 + $company_logo + $payments + $company_name + $company_address + $company_number + $customer_name + $customer_address + $p_order + $legends + $bank_accounts + $total_exportation + $total_exonerated",
+      "evidence": [
+        "modules/Finance/Http/Controllers/UnpaidController.php#createPdf"
+      ],
+      "evidence_sha256": {
+        "modules/Finance/Http/Controllers/UnpaidController.php": "a5f92f4d568f7890a2d8392110df020fb507f5a097055b6aa707fa476c390537"
+      },
+      "source": {
+        "file": "modules/Finance/Http/Controllers/UnpaidController.php",
+        "symbol": "UnpaidController::createPdf",
+        "operation": "native_Plus",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "c2f6ca77be10af9e274b819e",
+    "expression": "120 + $quantity_rows * 8 + $discount_global * 3 + $company_logo + $payments + $company_name + $company_address",
+    "location": "modules/Finance/Http/Controllers/UnpaidController.php:223",
+    "review": {
+      "category": "technical",
+      "justification": "Suma milímetros y conteos de secciones para la segunda dimensión de format de mPDF. Los valores que tienen nombres fiscales son alturas 0/10, no los importes del documento. No se reutiliza la altura para cálculos comerciales. Expresión: 120 + $quantity_rows * 8 + $discount_global * 3 + $company_logo + $payments + $company_name + $company_address",
+      "evidence": [
+        "modules/Finance/Http/Controllers/UnpaidController.php#createPdf"
+      ],
+      "evidence_sha256": {
+        "modules/Finance/Http/Controllers/UnpaidController.php": "a5f92f4d568f7890a2d8392110df020fb507f5a097055b6aa707fa476c390537"
+      },
+      "source": {
+        "file": "modules/Finance/Http/Controllers/UnpaidController.php",
+        "symbol": "UnpaidController::createPdf",
+        "operation": "native_Plus",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "c48e08e30ba4a765a9d97d6c",
+    "expression": "120 + $quantity_rows * 8 + $discount_global * 3 + $company_logo + $payments",
+    "location": "modules/Finance/Http/Controllers/UnpaidController.php:223",
+    "review": {
+      "category": "technical",
+      "justification": "Suma milímetros y conteos de secciones para la segunda dimensión de format de mPDF. Los valores que tienen nombres fiscales son alturas 0/10, no los importes del documento. No se reutiliza la altura para cálculos comerciales. Expresión: 120 + $quantity_rows * 8 + $discount_global * 3 + $company_logo + $payments",
+      "evidence": [
+        "modules/Finance/Http/Controllers/UnpaidController.php#createPdf"
+      ],
+      "evidence_sha256": {
+        "modules/Finance/Http/Controllers/UnpaidController.php": "a5f92f4d568f7890a2d8392110df020fb507f5a097055b6aa707fa476c390537"
+      },
+      "source": {
+        "file": "modules/Finance/Http/Controllers/UnpaidController.php",
+        "symbol": "UnpaidController::createPdf",
+        "operation": "native_Plus",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "ccede5b8ca0cdefa67f40519",
+    "expression": "120 + $quantity_rows * 8 + $discount_global * 3 + $company_logo + $payments + $company_name + $company_address + $company_number + $customer_name",
+    "location": "modules/Finance/Http/Controllers/UnpaidController.php:223",
+    "review": {
+      "category": "technical",
+      "justification": "Suma milímetros y conteos de secciones para la segunda dimensión de format de mPDF. Los valores que tienen nombres fiscales son alturas 0/10, no los importes del documento. No se reutiliza la altura para cálculos comerciales. Expresión: 120 + $quantity_rows * 8 + $discount_global * 3 + $company_logo + $payments + $company_name + $company_address + $company_number + $customer_name",
+      "evidence": [
+        "modules/Finance/Http/Controllers/UnpaidController.php#createPdf"
+      ],
+      "evidence_sha256": {
+        "modules/Finance/Http/Controllers/UnpaidController.php": "a5f92f4d568f7890a2d8392110df020fb507f5a097055b6aa707fa476c390537"
+      },
+      "source": {
+        "file": "modules/Finance/Http/Controllers/UnpaidController.php",
+        "symbol": "UnpaidController::createPdf",
+        "operation": "native_Plus",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "da994442927bce0997edd976",
+    "expression": "120 + $quantity_rows * 8 + $discount_global * 3 + $company_logo + $payments + $company_name + $company_address + $company_number + $customer_name + $customer_address + $p_order + $legends + $bank_accounts + $total_exportation",
+    "location": "modules/Finance/Http/Controllers/UnpaidController.php:223",
+    "review": {
+      "category": "technical",
+      "justification": "Suma milímetros y conteos de secciones para la segunda dimensión de format de mPDF. Los valores que tienen nombres fiscales son alturas 0/10, no los importes del documento. No se reutiliza la altura para cálculos comerciales. Expresión: 120 + $quantity_rows * 8 + $discount_global * 3 + $company_logo + $payments + $company_name + $company_address + $company_number + $customer_name + $customer_address + $p_order + $legends + $bank_accounts + $total_exportation",
+      "evidence": [
+        "modules/Finance/Http/Controllers/UnpaidController.php#createPdf"
+      ],
+      "evidence_sha256": {
+        "modules/Finance/Http/Controllers/UnpaidController.php": "a5f92f4d568f7890a2d8392110df020fb507f5a097055b6aa707fa476c390537"
+      },
+      "source": {
+        "file": "modules/Finance/Http/Controllers/UnpaidController.php",
+        "symbol": "UnpaidController::createPdf",
+        "operation": "native_Plus",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "e062ac661af01c7bf9eec880",
+    "expression": "120 + $quantity_rows * 8 + $discount_global * 3 + $company_logo + $payments + $company_name + $company_address + $company_number + $customer_name + $customer_address + $p_order + $legends + $bank_accounts + $total_exportation + $total_exonerated + $extra_by_item_description + $total_taxed",
+    "location": "modules/Finance/Http/Controllers/UnpaidController.php:223",
+    "review": {
+      "category": "technical",
+      "justification": "Suma milímetros y conteos de secciones para la segunda dimensión de format de mPDF. Los valores que tienen nombres fiscales son alturas 0/10, no los importes del documento. No se reutiliza la altura para cálculos comerciales. Expresión: 120 + $quantity_rows * 8 + $discount_global * 3 + $company_logo + $payments + $company_name + $company_address + $company_number + $customer_name + $customer_address + $p_order + $legends + $bank_accounts + $total_exportation + $total_exonerated + $extra_by_item_description + $total_taxed",
+      "evidence": [
+        "modules/Finance/Http/Controllers/UnpaidController.php#createPdf"
+      ],
+      "evidence_sha256": {
+        "modules/Finance/Http/Controllers/UnpaidController.php": "a5f92f4d568f7890a2d8392110df020fb507f5a097055b6aa707fa476c390537"
+      },
+      "source": {
+        "file": "modules/Finance/Http/Controllers/UnpaidController.php",
+        "symbol": "UnpaidController::createPdf",
+        "operation": "native_Plus",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "f2c2a26f307999641240e0c6",
+    "expression": "120 + $quantity_rows * 8 + $discount_global * 3 + $company_logo + $payments + $company_name + $company_address + $company_number + $customer_name + $customer_address + $p_order",
+    "location": "modules/Finance/Http/Controllers/UnpaidController.php:223",
+    "review": {
+      "category": "technical",
+      "justification": "Suma milímetros y conteos de secciones para la segunda dimensión de format de mPDF. Los valores que tienen nombres fiscales son alturas 0/10, no los importes del documento. No se reutiliza la altura para cálculos comerciales. Expresión: 120 + $quantity_rows * 8 + $discount_global * 3 + $company_logo + $payments + $company_name + $company_address + $company_number + $customer_name + $customer_address + $p_order",
+      "evidence": [
+        "modules/Finance/Http/Controllers/UnpaidController.php#createPdf"
+      ],
+      "evidence_sha256": {
+        "modules/Finance/Http/Controllers/UnpaidController.php": "a5f92f4d568f7890a2d8392110df020fb507f5a097055b6aa707fa476c390537"
+      },
+      "source": {
+        "file": "modules/Finance/Http/Controllers/UnpaidController.php",
+        "symbol": "UnpaidController::createPdf",
+        "operation": "native_Plus",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "fec6964e39de9f55451a3851",
+    "expression": "120 + $quantity_rows * 8 + $discount_global * 3 + $company_logo + $payments + $company_name",
+    "location": "modules/Finance/Http/Controllers/UnpaidController.php:223",
+    "review": {
+      "category": "technical",
+      "justification": "Suma milímetros y conteos de secciones para la segunda dimensión de format de mPDF. Los valores que tienen nombres fiscales son alturas 0/10, no los importes del documento. No se reutiliza la altura para cálculos comerciales. Expresión: 120 + $quantity_rows * 8 + $discount_global * 3 + $company_logo + $payments + $company_name",
+      "evidence": [
+        "modules/Finance/Http/Controllers/UnpaidController.php#createPdf"
+      ],
+      "evidence_sha256": {
+        "modules/Finance/Http/Controllers/UnpaidController.php": "a5f92f4d568f7890a2d8392110df020fb507f5a097055b6aa707fa476c390537"
+      },
+      "source": {
+        "file": "modules/Finance/Http/Controllers/UnpaidController.php",
+        "symbol": "UnpaidController::createPdf",
+        "operation": "native_Plus",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "38914810d84607ddd6587f13",
+    "expression": "max($maximum, $row['delay_payment'])",
+    "location": "modules/Finance/Http/Controllers/UnpaidController.php:304",
+    "review": {
+      "category": "technical",
+      "justification": "Máximo de días enteros vencidos de documentos cuyo saldo racional es positivo; no es un máximo de importes ni una comparación de proyecciones. Expresión: max($maximum, $row['delay_payment'])",
+      "evidence": [
+        "modules/Finance/Http/Controllers/UnpaidController.php#customerExpiredDays",
+        "tests/Unit/ExactReceivablesTest.php#test_credit_expiry_checks_exact_balances_of_only_the_customer_and_requested_source"
+      ],
+      "evidence_sha256": {
+        "modules/Finance/Http/Controllers/UnpaidController.php": "a5f92f4d568f7890a2d8392110df020fb507f5a097055b6aa707fa476c390537",
+        "tests/Unit/ExactReceivablesTest.php": "2041c494f2e5d7dffc744d055c91f23f523f66c7d7e116cbe61ea429776418b0"
+      },
+      "source": {
+        "file": "modules/Finance/Http/Controllers/UnpaidController.php",
+        "symbol": "UnpaidController::customerExpiredDays",
+        "operation": "max",
+        "operation_language": "php"
+      }
+    }
+  }
+]

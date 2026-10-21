@@ -1,0 +1,77 @@
+[
+  {
+    "id": "a9a05205259e3bd934581c14",
+    "reason": "Expresión retirada o modificada desde el inventario anterior; no se transfiere su aprobación.",
+    "review": {
+      "category": "technical",
+      "justification": "Igualdad con literal de texto no numérico; comprueba una categoría sin adaptar valores decimales: col.key === 'guides'",
+      "evidence": [
+        "resources/js/views/tenant/documents/index.vue",
+        "scripts/exact_guard_proof.cjs",
+        "tests/js/exact-vue-audit.test.cjs#classification proof never exempts"
+      ],
+      "evidence_sha256": {
+        "resources/js/views/tenant/documents/index.vue": "5c24fae4edbc9d7f3e7571fa8347f80efe30e724cc49087910e2b3b47571982b",
+        "scripts/exact_guard_proof.cjs": "1e087514575072be108f49f7c46f633baec720a7f87b12dd2d532b8094d18d33",
+        "tests/js/exact-vue-audit.test.cjs": "1d2cd00d4bd19c5ff48493e776b7e1e75f8453deeb0e1fd6ebf21402b1f73ad0"
+      },
+      "proof": "nonnumeric_string_equality",
+      "source": {
+        "file": "resources/js/views/tenant/documents/index.vue",
+        "symbol": "{template}",
+        "operation": "native_===",
+        "operation_language": "javascript"
+      }
+    }
+  },
+  {
+    "id": "d920e0761a055d2d91f131f5",
+    "reason": "Expresión retirada o modificada desde el inventario anterior; no se transfiere su aprobación.",
+    "review": {
+      "category": "technical",
+      "justification": "Comparación estricta con null/booleano; comprueba tipo o presencia sin calcular un importe: savedDelivery !== null",
+      "evidence": [
+        "resources/js/views/tenant/dispatches/create.vue",
+        "scripts/exact_guard_proof.cjs",
+        "tests/js/exact-vue-audit.test.cjs#classification proof never exempts"
+      ],
+      "evidence_sha256": {
+        "resources/js/views/tenant/dispatches/create.vue": "45573716032a513715a4d5c8e222ea6312a31c9f31314ccb037c38e8511c2a71",
+        "scripts/exact_guard_proof.cjs": "1e087514575072be108f49f7c46f633baec720a7f87b12dd2d532b8094d18d33",
+        "tests/js/exact-vue-audit.test.cjs": "1d2cd00d4bd19c5ff48493e776b7e1e75f8453deeb0e1fd6ebf21402b1f73ad0"
+      },
+      "proof": "strict_type_guard",
+      "source": {
+        "file": "resources/js/views/tenant/dispatches/create.vue",
+        "symbol": "mounted",
+        "operation": "native_!==",
+        "operation_language": "javascript"
+      }
+    }
+  },
+  {
+    "id": "e17bd00d1d87e839e2f7e451",
+    "reason": "Expresión retirada o modificada desde el inventario anterior; no se transfiere su aprobación.",
+    "review": {
+      "category": "technical",
+      "justification": "Igualdad con literal de texto no numérico; comprueba una categoría sin adaptar valores decimales: col.key === 'guides'",
+      "evidence": [
+        "resources/js/views/tenant/documents/index.vue",
+        "scripts/exact_guard_proof.cjs",
+        "tests/js/exact-vue-audit.test.cjs#classification proof never exempts"
+      ],
+      "evidence_sha256": {
+        "resources/js/views/tenant/documents/index.vue": "5c24fae4edbc9d7f3e7571fa8347f80efe30e724cc49087910e2b3b47571982b",
+        "scripts/exact_guard_proof.cjs": "1e087514575072be108f49f7c46f633baec720a7f87b12dd2d532b8094d18d33",
+        "tests/js/exact-vue-audit.test.cjs": "1d2cd00d4bd19c5ff48493e776b7e1e75f8453deeb0e1fd6ebf21402b1f73ad0"
+      },
+      "proof": "nonnumeric_string_equality",
+      "source": {
+        "file": "resources/js/views/tenant/documents/index.vue",
+        "symbol": "{template}",
+        "operation": "native_===",
+        "operation_language": "javascript"
+      }
+    }
+  }
+]

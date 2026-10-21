@@ -54,6 +54,8 @@
                                 <th>Cliente</th>
                                 <th>Por pagar</th>
                                 <th>Total</th>
+                                <th>Saldo equivalente (Bs.)</th>
+                                <th>Total documental equivalente (Bs.)</th>
 
 
                             </tr>
@@ -69,6 +71,8 @@
                                         <td class="celda" data-type="s">{{$value['supplier_name']}}</td>
                                         <td class="celda" data-type="s">{{$value['total_to_pay']}}</td>
                                         <td class="celda" data-type="s">{{$value['total']}}</td>
+                                        <td data-type="s" class="celda">{{$value['balance_ves_equivalent']}}</td>
+                                        <td data-type="s" class="celda">{{$value['total_ves_equivalent']}}</td>
                                     </tr>
                                 @endif
                             @endforeach
@@ -81,4 +85,7 @@
                 <p>No se encontraron registros.</p>
             </div>
         @endif
+@isset($reportSummary)
+@include('partials.exact_outstanding_summary', ['excel'=>true])
+@endisset
 </html>

@@ -428,13 +428,20 @@ trait NotePersistenceCases
         $app->instance(\Illuminate\Http\Client\Factory::class,new \Illuminate\Http\Client\Factory());\Illuminate\Support\Facades\Facade::clearResolvedInstance(\Illuminate\Http\Client\Factory::class);
         $app->make(\Illuminate\Http\Client\Factory::class)->fake(function($request) use ($db,$line,&$calls) {
             self::assertSame(0,$db->transactionLevel());$calls++;
-            $db->table('item_warehouse')->where('item_id',$line->item_id)->update(['stock'=>0]);
+            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            // A real exact writer changes the stock fraction and its projection together.
+            $warehouseStock=\Modules\Inventory\Models\ItemWarehouse::where('item_id',$line->item_id)->firstOrFail();
+            $warehouseStock->stock=\App\Support\Exact\Decimal::of(0);$warehouseStock->save();
+            // ######## FIN CALCULOS EXACTOS PRO9 ########
             return \Illuminate\Support\Facades\Http::response(['codigo'=>'200','validaciones'=>[]]);
         });
         $service=app(\App\Services\Fiscal\NoteAnnulment::class);$result=$service->request($note,['operation_key'=>(string)Str::uuid(),'reason'=>'Anulación con consumo concurrente de stock']);
         self::assertSame('remote_confirmed',$result['annulment']['status']);self::assertSame('cancelled',$result['status']);self::assertSame('13',$note->fresh()->state_type_id);
         self::assertEquals($note->total,FiscalNote::credits($invoice));self::assertTrue($result['annulment']['can_complete']);
-        $db->table('item_warehouse')->where('item_id',$line->item_id)->update(['stock'=>$stock+1]);
+        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        $warehouseStock=\Modules\Inventory\Models\ItemWarehouse::where('item_id',$line->item_id)->firstOrFail();
+        $warehouseStock->stock=\App\Support\Exact\Decimal::of($stock)->plus(1);$warehouseStock->save();
+        // ######## FIN CALCULOS EXACTOS PRO9 ########
         $result=$service->complete($note->fresh());self::assertSame('completed',$result['annulment']['status']);self::assertSame(1,$calls);
         self::assertEquals($stock,$db->table('item_warehouse')->where('item_id',$line->item_id)->value('stock'));self::assertEquals(0,$invoice->fresh()->balance);
         $service->complete($note->fresh());self::assertSame(1,$calls);

@@ -12,7 +12,8 @@ function exactAuditClassify(array $rows, string $root): array
         $review=$registry[$row['id']] ?? null;
         $valid=exactAuditValidReview($review,$root,$evidenceCache)
             && $review['source']['file'] === $row['file'] && $review['source']['symbol'] === $row['symbol']
-            && $review['source']['operation'] === $row['operation'] && $review['source']['operation_language'] === 'php';
+            && $review['source']['operation'] === $row['operation'] && $review['source']['operation_language'] === 'php'
+            && (!isset($review['proof']) || ($row['technical_proof'] ?? null) === $review['proof']);
         $row['classification']=$valid ? $review : ['category'=>'pending','justification'=>null,'evidence'=>[]];
         $row['status']=$valid ? 'justified' : 'pending';
     }
@@ -47,11 +48,14 @@ function exactAuditRegistryDiagnostics(array $rows, string $root, string $langua
     $path = $root.'/config/exact_rounding_registry.json';
     $registry = is_file($path) ? json_decode(file_get_contents($path), true, 512, JSON_THROW_ON_ERROR) : [];
     $ids = array_fill_keys(array_column($rows, 'id'), true);
+    $current = array_column($rows, null, 'id');
     $errors = [];
     foreach ($registry as $id=>$review) {
         if (empty($review['source']['file'])) { $errors[] = ['id'=>$id, 'reason'=>'missing_source']; continue; }
         if (($review['source']['operation_language'] ?? null) === $language && !isset($ids[$id])) {
             $errors[] = ['id'=>$id, 'reason'=>'orphaned_review', 'source'=>$review['source']];
+        } elseif (($review['source']['operation_language'] ?? null) === $language && ($current[$id]['status'] ?? null) === 'pending') {
+            $errors[] = ['id'=>$id, 'reason'=>'invalid_or_stale_review', 'source'=>$review['source']];
         }
     }
     return $errors;

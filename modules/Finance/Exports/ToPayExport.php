@@ -35,6 +35,7 @@ class ToPayExport implements FromView, ShouldAutoSize, \Maatwebsite\Excel\Concer
     public function view(): View {
         return view('finance::to_pay.report_excel', [
             'records'=> $this->records,
+            'reportSummary'=>\App\Support\Exact\OutstandingSummary::summarize($this->records),
             'company' => $this->company,
         ]);
     }
@@ -43,7 +44,7 @@ class ToPayExport implements FromView, ShouldAutoSize, \Maatwebsite\Excel\Concer
     {
         return [\Maatwebsite\Excel\Events\AfterSheet::class=>function ($event) {
             \App\Support\Exact\FractionSheet::append($event->sheet->getDelegate(), $this->records,
-                ['total', 'total_payable', 'total_payment', 'total_to_pay', 'exact_balance', 'settlement_adjustment']);
+                ['total', 'total_payable', 'total_payment', 'total_to_pay', 'exact_balance', 'settlement_adjustment', 'total_ves_equivalent', 'balance_ves_equivalent']);
         }];
     }
     // ######## FIN CALCULOS EXACTOS PRO9 ########

@@ -10,19 +10,30 @@ final class ExactDocumentSummary
 {
     public static function save(Document $document): void
     {
+        if ($document->getConnection()->transactionLevel() === 0) {
+            $document->getConnection()->transaction(fn()=>self::save($document));
+            return;
+        }
+        // A newly inserted Eloquent model does not hydrate database defaults.
+        // Read the persisted operand explicitly rather than inventing zero.
+        if (!array_key_exists('total_prepayment', $document->getAttributes())) {
+            $stored = $document->newQuery()->withoutEagerLoads()->select(['id','total_prepayment','calculation_snapshot'])
+                ->lockForUpdate()->findOrFail($document->getKey());
+            $document->total_prepayment = D::readRequired($stored, 'total_prepayment');
+        }
         $export = \App\Services\ExportInvoicePolicy::isExport($document->invoice->operation_type_id ?? '');
-        $items = $document->items()->get();
+        $items = $document->items()->withoutEagerLoads()->get();
         $discounts = collect((array) $document->discounts)->map(fn ($v) => (array) $v);
         $charges = collect((array) $document->charges)->map(fn ($v) => (array) $v);
         $amount = fn ($row) => D::inputRational($row['amount_exact'] ?? $row['amount'] ?? 0,'adjustments.amount');
         foreach ($discounts->merge($charges) as $row) if ($amount($row)->isNegative()) FiscalAmounts::error('discounts', 'Importe inválido.');
-        $sum = fn ($rows, $field) => D::sum($rows->map(fn ($v) => D::read($v, $field)));
-        $distributed = D::sum($items->flatMap(fn ($line) => collect((array) $line->discounts)
-            ->map(fn ($v) => (array) $v)->filter(fn ($v) => !empty($v['from_global_distribution']))->map($amount)));
-        $nonnegative = fn ($v) => $v->isNegative() ? D::of(0) : $v;
-        $taxedDiscount = $nonnegative(D::sum($discounts->whereIn('discount_type_id', ['02', '04'])->map($amount))->minus($distributed));
-        $exemptDiscount = D::sum($discounts->where('discount_type_id', '05')->map($amount));
-        $globalDiscount = $nonnegative(D::sum($discounts->map($amount))->minus($distributed));
+        $sum = fn ($rows, $field) => D::sum($rows->map(fn ($v) => D::readRequired($v, $field)));
+        $allocationStats = \App\Support\Exact\HeaderAllocation::stats();
+        foreach ($items as $line) \App\Support\Exact\HeaderAllocation::add($allocationStats, $line);
+        $remainingDiscounts = \App\Support\Exact\HeaderAllocation::discounts($document->discounts, $allocationStats);
+        $taxedDiscount = $remainingDiscounts['taxed'];
+        $exemptDiscount = $remainingDiscounts['exempt'];
+        $globalDiscount = $remainingDiscounts['global'];
         $globalCharge = D::sum($charges->map($amount));
         $taxedOriginal = $sum($items->where('affectation_igv_type_id', '10'), 'total_base_igv');
         $exemptOriginal = $sum($items->where('affectation_igv_type_id', '20'), 'total_base_igv');
@@ -30,7 +41,7 @@ final class ExactDocumentSummary
             || ($export && $globalDiscount->isGreaterThan($sum($items, 'total_value')))) FiscalAmounts::error('discounts', 'El descuento supera su base.');
         $document->taxes()->whereNull('document_payment_id')->where('tax_kind', 'IVA')->delete();
         $taxed = $exempt = $iva = D::of(0);
-        foreach ($items->groupBy(fn ($line) => ($line->iva_rate['code'] ?? '').':'.$line->percentage_igv) as $group) {
+        foreach ($items->groupBy(fn ($line) => ($line->iva_rate['code'] ?? '').':'.(string)D::readRequired($line,'percentage_igv')) as $group) {
             if ($export) continue;
             $first = $group->first();
             $base = $sum($group, 'total_base_igv');
@@ -38,8 +49,8 @@ final class ExactDocumentSummary
             $discount = $first->affectation_igv_type_id === '10' ? $taxedDiscount : $exemptDiscount;
             $deduction = $original->isZero() ? D::of(0) : $discount->multipliedBy($base)->dividedBy($original);
             $base = $base->minus($deduction);
-            $tax = $deduction->isZero() ? $sum($group, 'total_igv') : $base->multipliedBy(D::of($first->percentage_igv))->dividedBy(100);
-            self::tax($document, $first->iva_rate['code'] ?? 'IVA', $first->percentage_igv, $base, $tax);
+            $tax = $deduction->isZero() ? $sum($group, 'total_igv') : $base->multipliedBy(D::readRequired($first, 'percentage_igv'))->dividedBy(100);
+            self::tax($document, $first->iva_rate['code'] ?? 'IVA', D::readRequired($first,'percentage_igv'), $base, $tax);
             if ($first->affectation_igv_type_id === '10') $taxed = $taxed->plus($base); else $exempt = $exempt->plus($base);
             $iva = $iva->plus($tax);
         }
@@ -58,16 +69,18 @@ final class ExactDocumentSummary
         $values['total_base_other_taxes'] = $sum($other, 'base');
         $values['total_other_taxes'] = $igtf->plus($sum($other, 'amount'));
         $values['total_taxes'] = ($values['total_igv'] ?? D::read($document, 'total_igv'))->plus($values['total_other_taxes']);
-        $advance = $discounts->whereIn('discount_type_id', ['04', '05'])->isEmpty() ? D::of($document->total_prepayment ?? 0) : D::of(0);
+        $advance = \App\Support\Exact\HeaderAllocation::includesAdvance($document->discounts) ? D::of(0) : D::read($document, 'total_prepayment');
         $values['total'] = ($values['total_value'] ?? D::read($document, 'total_value'))->plus($values['total_taxes'])->minus($advance);
         if ($values['total']->isNegative()) FiscalAmounts::error('total', 'El total no puede ser negativo.');
         $values['subtotal'] = $values['total']->minus($igtf);
         $values['total_payable'] = D::of(D::represent($values['total'], 2));
         $values['settlement_adjustment'] = $values['total_payable']->minus($values['total']);
-        $document->forceFill(D::values($values) + ['calculation_snapshot' => array_replace($document->calculation_snapshot ?? [],D::snapshot($values))]);
+        // Update calculated fields while keeping original operands (including periodic advances).
+        $document->setExactValues($values);
         $legends = collect((array) $document->legends)->map(fn ($v) => (array) $v)->reject(fn ($v) => ($v['code'] ?? '') === '1000')->values()->all();
         $legends[] = ['code' => '1000', 'value' => \App\CoreFacturalo\Helpers\Number\NumberLetter::convertToLetter($document->total_payable)];
         $document->legends = $legends;
+        \App\Support\Exact\HeaderAllocation::freeze($document, $items);
         $document->save();
         $equivalents = [];
         foreach (['taxed'=>'total_taxed', 'exempt'=>'total_exonerated', 'exportation'=>'total_exportation', 'discount'=>'total_discount',

@@ -55,6 +55,22 @@ JSON;
         self::assertTrue(Decimal::readRequired(['total'=>'0'], 'total')->isZero());
     }
 
+    public function test_required_read_cache_tracks_replaced_and_mutated_snapshots(): void
+    {
+        $record = new \Illuminate\Support\Fluent(['total'=>'0.333333333333',
+            'calculation_snapshot'=>json_encode(Decimal::snapshot(['total'=>'1/3']))]);
+        self::assertSame('1/3', (string)Decimal::readRequired($record,'total'));
+        self::assertSame('1/3', (string)Decimal::readRequired($record,'total'));
+        $snapshot = json_decode(json_encode(Decimal::snapshot(['total'=>'2/3'])));
+        $record->calculation_snapshot = $snapshot;
+        self::assertSame('2/3', (string)Decimal::readRequired($record,'total'));
+        $snapshot->values->total->n = '4';
+        self::assertSame('4/3', (string)Decimal::readRequired($record,'total'));
+        $snapshot->version = 9;
+        $this->expectException(\UnexpectedValueException::class);
+        Decimal::readRequired($record,'total');
+    }
+
     /** @dataProvider invalidReads */
     public function test_incomplete_or_corrupt_reads_fail(array $row): void
     {

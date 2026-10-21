@@ -391,25 +391,22 @@ class PaymentOrderController extends Controller
 
     public function paymentViewPay(Request $request)
     {
-        $request->validate([
-            'status' => 'required',
-            'uuid' => 'required|uuid|exists:payment_orders,uuid'
+        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        \App\Support\Exact\CheckoutAvailability::assertAvailable();
+        $validated = $request->validate([
+            'status' => 'required|string',
+            'uuid' => 'required|uuid',
         ]);
-
-
-        $status = $this->returnStatusOrder($request->status);
-        $order =  PaymentOrder::where('uuid', $request->uuid)->first();
-
-        $order->order_state_id = $status ? '02' : $order->order_state_id;
-
-        $order->save();
-
+        $order = PaymentOrder::where('uuid', $validated['uuid'])->firstOrFail();
+        // The browser's notification is not proof of amount, currency or capture.
+        // Only the provider reconciliation or the existing manual operation may
+        // persist payment; this endpoint reads that state without applying it again.
         return [
-            'uuid' => $request->uuid,
-            'paid' =>  $status,
-            'status' => $order->order_state_id
+            'uuid' => $order->uuid,
+            'paid' => (int) $order->order_state_id === 2,
+            'status' => $order->order_state_id,
         ];
-
+        // ######## FIN CALCULOS EXACTOS PRO9 ########
     }
         public function returnStatusOrder(string $status) : bool
         {

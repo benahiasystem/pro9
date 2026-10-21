@@ -1,0 +1,1967 @@
+{
+  "date": "2026-10-19",
+  "scope": "Revisión manual de expresiones conservadas y nuevas de los consumidores implementados; no aprueba carpetas.",
+  "reviews": [
+    {
+      "id": "5a087126db8c726ca37dbf01",
+      "expression": "Decimal::represent($values['total'], 2)",
+      "location": "app/Support/Exact/CommercialCalculation.php:107",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "settlement",
+      "previous_evidence_sha256": {
+        "app/Support/Exact/CommercialCalculation.php": "addff8fad443e5b87762a71acda664a9a5e39b5f4b9d63029d9fb7bb91b077df",
+        "tests/Unit/FiscalEmissionSchemaTest.php": "5f6a25076ddd16c643343bc6fc37f61809e5f922693258245749c881726b3e16"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/CommercialCalculation.php": "55bdb3d3ee0eeda90ecc03489f7ca2bb7cd7c5cf1fcead0d27cac97394749e5f",
+        "tests/Unit/FiscalEmissionSchemaTest.php": "d4b4ea211255e7fe050e916cc5fb3bcbb77af0c4db629ff0e915e738f0ff774d"
+      }
+    },
+    {
+      "id": "f4a507b4fef6199032f604a7",
+      "expression": "BigDecimal::of((string) $value)->toScale($scale, RoundingMode::UNNECESSARY)",
+      "location": "app/Support/Exact/Decimal.php:43",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "validation",
+      "previous_evidence_sha256": {
+        "app/Support/Exact/Decimal.php": "fabcab65765ef107eb49e12f59bd0f36dd817c37ed08e68f483a1bf2e8f3b842",
+        "tests/Unit/ExactExtensionBoundariesTest.php": "7a2afc26fb1190a420b2aa8ed49a827211bebbd093759dcd5d4ab73132b7c78d"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/Decimal.php": "43428318292748d6b845ea413a467821eae1e85dd12ef8b071ba2e8811dbca80",
+        "tests/Unit/ExactExtensionBoundariesTest.php": "7a2afc26fb1190a420b2aa8ed49a827211bebbd093759dcd5d4ab73132b7c78d"
+      }
+    },
+    {
+      "id": "90fc62e447752a6262728c3d",
+      "expression": "self::of($value)->toScale($scale, RoundingMode::HALF_UP)",
+      "location": "app/Support/Exact/Decimal.php:68",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "storage",
+      "previous_evidence_sha256": {
+        "app/Support/Exact/Decimal.php": "fabcab65765ef107eb49e12f59bd0f36dd817c37ed08e68f483a1bf2e8f3b842",
+        "tests/Unit/ExactCalculationTest.php": "4db2afb83a02d7254b25db62dd670f29cb5720760b089e3308860db562913e77",
+        ".codex/skills/mantener-calculos-exactos-pro9/references/contrato.md": "fab648862ead4d287a604f8ebb6227dd537acfeed1bdba803c5f1b0d9ac96ffc"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/Decimal.php": "43428318292748d6b845ea413a467821eae1e85dd12ef8b071ba2e8811dbca80",
+        "tests/Unit/ExactCalculationTest.php": "4db2afb83a02d7254b25db62dd670f29cb5720760b089e3308860db562913e77",
+        ".codex/skills/mantener-calculos-exactos-pro9/references/contrato.md": "a631b1135c31b3db60834c204dbc518da8a4356449e74a884146cbfa0a755227"
+      }
+    },
+    {
+      "id": "e004fa4cabef101d143fcd1a",
+      "expression": "self::represent($value, $scale, true)",
+      "location": "app/Support/Exact/Decimal.php:75",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "presentation",
+      "previous_evidence_sha256": {
+        "app/Support/Exact/Decimal.php": "fabcab65765ef107eb49e12f59bd0f36dd817c37ed08e68f483a1bf2e8f3b842",
+        "tests/Unit/PdfPricePrecisionTest.php": "56a3a42c238f58ad5dcf26fbe75aa3e52654415f0d755c0b8bba6226f86ee45f"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/Decimal.php": "43428318292748d6b845ea413a467821eae1e85dd12ef8b071ba2e8811dbca80",
+        "tests/Unit/PdfPricePrecisionTest.php": "56a3a42c238f58ad5dcf26fbe75aa3e52654415f0d755c0b8bba6226f86ee45f"
+      }
+    },
+    {
+      "id": "4df9a2f228cbb5febccc3b70",
+      "expression": "self::represent(self::of($v)->negated(), $scale, true)",
+      "location": "app/Support/Exact/Decimal.php:191",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "allocation",
+      "previous_evidence_sha256": {
+        "app/Support/Exact/Decimal.php": "fabcab65765ef107eb49e12f59bd0f36dd817c37ed08e68f483a1bf2e8f3b842",
+        "tests/Unit/ExactCalculationTest.php": "4db2afb83a02d7254b25db62dd670f29cb5720760b089e3308860db562913e77"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/Decimal.php": "43428318292748d6b845ea413a467821eae1e85dd12ef8b071ba2e8811dbca80",
+        "tests/Unit/ExactCalculationTest.php": "4db2afb83a02d7254b25db62dd670f29cb5720760b089e3308860db562913e77"
+      }
+    },
+    {
+      "id": "f0348638cf6b08f83028deb5",
+      "expression": "self::represent(0, $scale, true)",
+      "location": "app/Support/Exact/Decimal.php:197",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "allocation",
+      "previous_evidence_sha256": {
+        "app/Support/Exact/Decimal.php": "fabcab65765ef107eb49e12f59bd0f36dd817c37ed08e68f483a1bf2e8f3b842",
+        "tests/Unit/ExactCalculationTest.php": "4db2afb83a02d7254b25db62dd670f29cb5720760b089e3308860db562913e77"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/Decimal.php": "43428318292748d6b845ea413a467821eae1e85dd12ef8b071ba2e8811dbca80",
+        "tests/Unit/ExactCalculationTest.php": "4db2afb83a02d7254b25db62dd670f29cb5720760b089e3308860db562913e77"
+      }
+    },
+    {
+      "id": "713701d944c1486d43fe3f86",
+      "expression": "$total->multipliedBy($unit)->toScale(0, RoundingMode::HALF_UP)",
+      "location": "app/Support/Exact/Decimal.php:200",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "allocation",
+      "previous_evidence_sha256": {
+        "app/Support/Exact/Decimal.php": "fabcab65765ef107eb49e12f59bd0f36dd817c37ed08e68f483a1bf2e8f3b842",
+        "tests/Unit/ExactCalculationTest.php": "4db2afb83a02d7254b25db62dd670f29cb5720760b089e3308860db562913e77"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/Decimal.php": "43428318292748d6b845ea413a467821eae1e85dd12ef8b071ba2e8811dbca80",
+        "tests/Unit/ExactCalculationTest.php": "4db2afb83a02d7254b25db62dd670f29cb5720760b089e3308860db562913e77"
+      }
+    },
+    {
+      "id": "634091608b367e520c31cab1",
+      "expression": "$share->toScale(0, RoundingMode::DOWN)",
+      "location": "app/Support/Exact/Decimal.php:204",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "allocation",
+      "previous_evidence_sha256": {
+        "app/Support/Exact/Decimal.php": "fabcab65765ef107eb49e12f59bd0f36dd817c37ed08e68f483a1bf2e8f3b842",
+        "tests/Unit/ExactCalculationTest.php": "4db2afb83a02d7254b25db62dd670f29cb5720760b089e3308860db562913e77",
+        "tests/Unit/ExactExtensionPersistenceTest.php": "0cab1e8106d2e7edea6d9b13aca9b6757c80ebadbb8bad282625d3f527ddc633"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/Decimal.php": "43428318292748d6b845ea413a467821eae1e85dd12ef8b071ba2e8811dbca80",
+        "tests/Unit/ExactCalculationTest.php": "4db2afb83a02d7254b25db62dd670f29cb5720760b089e3308860db562913e77",
+        "tests/Unit/ExactExtensionPersistenceTest.php": "0cab1e8106d2e7edea6d9b13aca9b6757c80ebadbb8bad282625d3f527ddc633"
+      }
+    },
+    {
+      "id": "9968be43ab2c216080ce5d86",
+      "expression": "self::represent(self::of($v)->dividedBy($unit), $scale, true)",
+      "location": "app/Support/Exact/Decimal.php:211",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "allocation",
+      "previous_evidence_sha256": {
+        "app/Support/Exact/Decimal.php": "fabcab65765ef107eb49e12f59bd0f36dd817c37ed08e68f483a1bf2e8f3b842",
+        "tests/Unit/ExactCalculationTest.php": "4db2afb83a02d7254b25db62dd670f29cb5720760b089e3308860db562913e77"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/Decimal.php": "43428318292748d6b845ea413a467821eae1e85dd12ef8b071ba2e8811dbca80",
+        "tests/Unit/ExactCalculationTest.php": "4db2afb83a02d7254b25db62dd670f29cb5720760b089e3308860db562913e77"
+      }
+    },
+    {
+      "id": "d44467eda110383b6738113b",
+      "expression": "$row++",
+      "location": "app/Support/Exact/FractionSheet.php:17",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "technical",
+      "previous_evidence_sha256": {
+        "app/Support/Exact/FractionSheet.php": "e808c1aaf22c48c93363a645b26ae449f5d4dbf975d11775e0a67417effe3d6c",
+        "tests/Unit/ExactExtensionBoundariesTest.php": "7a2afc26fb1190a420b2aa8ed49a827211bebbd093759dcd5d4ab73132b7c78d",
+        "tests/Unit/ExactConsolidatedConsumersTest.php": "e31367548acd9b99edad30cef9458b70fdbc841556ff61625a464e92528c0039"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/FractionSheet.php": "e808c1aaf22c48c93363a645b26ae449f5d4dbf975d11775e0a67417effe3d6c",
+        "tests/Unit/ExactExtensionBoundariesTest.php": "7a2afc26fb1190a420b2aa8ed49a827211bebbd093759dcd5d4ab73132b7c78d",
+        "tests/Unit/ExactConsolidatedConsumersTest.php": "7b0c22863f044a4e16d9de0baf1ffa508656f5d82e7ee64ca8f99c8f627d90b5"
+      }
+    },
+    {
+      "id": "9ffa761998e2ac88d12e9b21",
+      "expression": "'Representación decimal (12)'",
+      "location": "app/Support/Exact/FractionSheet.php:17",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "technical",
+      "previous_evidence_sha256": {
+        "app/Support/Exact/FractionSheet.php": "e808c1aaf22c48c93363a645b26ae449f5d4dbf975d11775e0a67417effe3d6c",
+        "tests/Unit/ExactExtensionBoundariesTest.php": "7a2afc26fb1190a420b2aa8ed49a827211bebbd093759dcd5d4ab73132b7c78d",
+        "tests/Unit/ExactConsolidatedConsumersTest.php": "e31367548acd9b99edad30cef9458b70fdbc841556ff61625a464e92528c0039"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/FractionSheet.php": "e808c1aaf22c48c93363a645b26ae449f5d4dbf975d11775e0a67417effe3d6c",
+        "tests/Unit/ExactExtensionBoundariesTest.php": "7a2afc26fb1190a420b2aa8ed49a827211bebbd093759dcd5d4ab73132b7c78d",
+        "tests/Unit/ExactConsolidatedConsumersTest.php": "7b0c22863f044a4e16d9de0baf1ffa508656f5d82e7ee64ca8f99c8f627d90b5"
+      }
+    },
+    {
+      "id": "7098aabec53342ba8250b75d",
+      "expression": "$row++",
+      "location": "app/Support/Exact/FractionSheet.php:23",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "technical",
+      "previous_evidence_sha256": {
+        "app/Support/Exact/FractionSheet.php": "e808c1aaf22c48c93363a645b26ae449f5d4dbf975d11775e0a67417effe3d6c",
+        "tests/Unit/ExactExtensionBoundariesTest.php": "7a2afc26fb1190a420b2aa8ed49a827211bebbd093759dcd5d4ab73132b7c78d",
+        "tests/Unit/ExactConsolidatedConsumersTest.php": "e31367548acd9b99edad30cef9458b70fdbc841556ff61625a464e92528c0039"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/FractionSheet.php": "e808c1aaf22c48c93363a645b26ae449f5d4dbf975d11775e0a67417effe3d6c",
+        "tests/Unit/ExactExtensionBoundariesTest.php": "7a2afc26fb1190a420b2aa8ed49a827211bebbd093759dcd5d4ab73132b7c78d",
+        "tests/Unit/ExactConsolidatedConsumersTest.php": "7b0c22863f044a4e16d9de0baf1ffa508656f5d82e7ee64ca8f99c8f627d90b5"
+      }
+    },
+    {
+      "id": "5827bc17a5091a919f3b0cf6",
+      "expression": "$row - 1",
+      "location": "app/Support/Exact/FractionSheet.php:27",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "technical",
+      "previous_evidence_sha256": {
+        "app/Support/Exact/FractionSheet.php": "e808c1aaf22c48c93363a645b26ae449f5d4dbf975d11775e0a67417effe3d6c",
+        "tests/Unit/ExactExtensionBoundariesTest.php": "7a2afc26fb1190a420b2aa8ed49a827211bebbd093759dcd5d4ab73132b7c78d",
+        "tests/Unit/ExactConsolidatedConsumersTest.php": "e31367548acd9b99edad30cef9458b70fdbc841556ff61625a464e92528c0039"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/FractionSheet.php": "e808c1aaf22c48c93363a645b26ae449f5d4dbf975d11775e0a67417effe3d6c",
+        "tests/Unit/ExactExtensionBoundariesTest.php": "7a2afc26fb1190a420b2aa8ed49a827211bebbd093759dcd5d4ab73132b7c78d",
+        "tests/Unit/ExactConsolidatedConsumersTest.php": "7b0c22863f044a4e16d9de0baf1ffa508656f5d82e7ee64ca8f99c8f627d90b5"
+      }
+    },
+    {
+      "id": "c9f09a62a05dc479a1a54e9c",
+      "expression": "mb_strlen((string) $value, 'UTF-8') > 32767",
+      "location": "app/Support/Exact/FractionSheet.php:35",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "validation",
+      "previous_evidence_sha256": {
+        "app/Support/Exact/FractionSheet.php": "e808c1aaf22c48c93363a645b26ae449f5d4dbf975d11775e0a67417effe3d6c",
+        "tests/Unit/ExactExtensionBoundariesTest.php": "7a2afc26fb1190a420b2aa8ed49a827211bebbd093759dcd5d4ab73132b7c78d",
+        "tests/Unit/ExactConsolidatedConsumersTest.php": "e31367548acd9b99edad30cef9458b70fdbc841556ff61625a464e92528c0039"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/FractionSheet.php": "e808c1aaf22c48c93363a645b26ae449f5d4dbf975d11775e0a67417effe3d6c",
+        "tests/Unit/ExactExtensionBoundariesTest.php": "7a2afc26fb1190a420b2aa8ed49a827211bebbd093759dcd5d4ab73132b7c78d",
+        "tests/Unit/ExactConsolidatedConsumersTest.php": "7b0c22863f044a4e16d9de0baf1ffa508656f5d82e7ee64ca8f99c8f627d90b5"
+      }
+    },
+    {
+      "id": "d9f4fa8fdb0faad3bed0e5be",
+      "expression": "$column + 1",
+      "location": "app/Support/Exact/FractionSheet.php:38",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "technical",
+      "previous_evidence_sha256": {
+        "app/Support/Exact/FractionSheet.php": "e808c1aaf22c48c93363a645b26ae449f5d4dbf975d11775e0a67417effe3d6c",
+        "tests/Unit/ExactExtensionBoundariesTest.php": "7a2afc26fb1190a420b2aa8ed49a827211bebbd093759dcd5d4ab73132b7c78d",
+        "tests/Unit/ExactConsolidatedConsumersTest.php": "e31367548acd9b99edad30cef9458b70fdbc841556ff61625a464e92528c0039"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/FractionSheet.php": "e808c1aaf22c48c93363a645b26ae449f5d4dbf975d11775e0a67417effe3d6c",
+        "tests/Unit/ExactExtensionBoundariesTest.php": "7a2afc26fb1190a420b2aa8ed49a827211bebbd093759dcd5d4ab73132b7c78d",
+        "tests/Unit/ExactConsolidatedConsumersTest.php": "7b0c22863f044a4e16d9de0baf1ffa508656f5d82e7ee64ca8f99c8f627d90b5"
+      }
+    },
+    {
+      "id": "abcf9c990948afe21adf71f8",
+      "expression": "Decimal::represent($total, 2)",
+      "location": "app/Support/Exact/Installments.php:21",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "settlement",
+      "previous_evidence_sha256": {
+        "app/Support/Exact/Installments.php": "ee5150da1184af333018de34a3834432114c485ee512dee034567e36b13818db",
+        "tests/Unit/ExactExtensionPersistenceTest.php": "0cab1e8106d2e7edea6d9b13aca9b6757c80ebadbb8bad282625d3f527ddc633",
+        "tests/Unit/FiscalEmissionSchemaTest.php": "5f6a25076ddd16c643343bc6fc37f61809e5f922693258245749c881726b3e16"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/Installments.php": "ee5150da1184af333018de34a3834432114c485ee512dee034567e36b13818db",
+        "tests/Unit/ExactExtensionPersistenceTest.php": "0cab1e8106d2e7edea6d9b13aca9b6757c80ebadbb8bad282625d3f527ddc633",
+        "tests/Unit/FiscalEmissionSchemaTest.php": "d4b4ea211255e7fe050e916cc5fb3bcbb77af0c4db629ff0e915e738f0ff774d"
+      }
+    },
+    {
+      "id": "0a01cd53e0132cb13ea1c15e",
+      "expression": "$token[0] !== '\"'",
+      "location": "app/Support/Exact/JsonDecimals.php:17",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "technical",
+      "previous_evidence_sha256": {
+        "app/Support/Exact/JsonDecimals.php": "9cf7b7980f1ecce1d28f07bb3508d583e36a6c0f309627710963753b1d0cbe03",
+        "tests/Unit/ExactJsonBoundaryTest.php": "586dbc903928c54eef434712e092fba0bbe614bbb70c9a5b37326c2a01bb847b"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/JsonDecimals.php": "9cf7b7980f1ecce1d28f07bb3508d583e36a6c0f309627710963753b1d0cbe03",
+        "tests/Unit/ExactJsonBoundaryTest.php": "305df775f7ecbc802db9ac1333724b99bdb0faa3be4b45610ea643bd17a17dda"
+      }
+    },
+    {
+      "id": "c56f3b7405eb587dc43f7285",
+      "expression": "strpbrk($token, '.eE') !== false",
+      "location": "app/Support/Exact/JsonDecimals.php:17",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "technical",
+      "previous_evidence_sha256": {
+        "app/Support/Exact/JsonDecimals.php": "9cf7b7980f1ecce1d28f07bb3508d583e36a6c0f309627710963753b1d0cbe03",
+        "tests/Unit/ExactJsonBoundaryTest.php": "586dbc903928c54eef434712e092fba0bbe614bbb70c9a5b37326c2a01bb847b"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/JsonDecimals.php": "9cf7b7980f1ecce1d28f07bb3508d583e36a6c0f309627710963753b1d0cbe03",
+        "tests/Unit/ExactJsonBoundaryTest.php": "305df775f7ecbc802db9ac1333724b99bdb0faa3be4b45610ea643bd17a17dda"
+      }
+    },
+    {
+      "id": "92211922b5d1725454835008",
+      "expression": "Decimal::represent($snapshot['values'][$field])",
+      "location": "app/Support/Exact/LineCalculation.php:17",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "validation",
+      "previous_evidence_sha256": {
+        "app/Support/Exact/LineCalculation.php": "c7e35c79ddfb7660c90a9febdfe9a72a2879f8dcf6f0ddd2ee8463c94549f3c0",
+        "tests/Unit/FiscalEmissionSchemaTest.php": "5f6a25076ddd16c643343bc6fc37f61809e5f922693258245749c881726b3e16"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/LineCalculation.php": "c7e35c79ddfb7660c90a9febdfe9a72a2879f8dcf6f0ddd2ee8463c94549f3c0",
+        "tests/Unit/FiscalEmissionSchemaTest.php": "d4b4ea211255e7fe050e916cc5fb3bcbb77af0c4db629ff0e915e738f0ff774d"
+      }
+    },
+    {
+      "id": "a0751e68952b81d2725e43c8",
+      "expression": "Decimal::represent($line[$field])",
+      "location": "app/Support/Exact/LineCalculation.php:17",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "validation",
+      "previous_evidence_sha256": {
+        "app/Support/Exact/LineCalculation.php": "c7e35c79ddfb7660c90a9febdfe9a72a2879f8dcf6f0ddd2ee8463c94549f3c0",
+        "tests/Unit/FiscalEmissionSchemaTest.php": "5f6a25076ddd16c643343bc6fc37f61809e5f922693258245749c881726b3e16"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/LineCalculation.php": "c7e35c79ddfb7660c90a9febdfe9a72a2879f8dcf6f0ddd2ee8463c94549f3c0",
+        "tests/Unit/FiscalEmissionSchemaTest.php": "d4b4ea211255e7fe050e916cc5fb3bcbb77af0c4db629ff0e915e738f0ff774d"
+      }
+    },
+    {
+      "id": "0bd4eb9ed250d9f02eeccb5d",
+      "expression": "$table === 'bank_loans'",
+      "location": "app/Support/Exact/Payables.php:21",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "technical",
+      "previous_evidence_sha256": {
+        "app/Support/Exact/Payables.php": "b8843f9c412ccd2bac4300a8e2bc8b5b61a81cd6e9bf614082aca3133a07dcb1",
+        "tests/Unit/ExactPayablesTest.php": "8f5327979e879aed97674edf765c9f844ee9c2748ded65bdda687374e8d06be9"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/Payables.php": "69e7f7485cb8537f6a56a12d76c38a4db462f768f5c1b95c0f57a8b1abf13673",
+        "tests/Unit/ExactPayablesTest.php": "7f798531590655499142d0e6e276a3f2d6cd1689637b39decfcb94f0104969d9"
+      }
+    },
+    {
+      "id": "fb675ded946143126d426e36",
+      "expression": "$table === 'purchases'",
+      "location": "app/Support/Exact/Payables.php:28",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "technical",
+      "previous_evidence_sha256": {
+        "app/Support/Exact/Payables.php": "b8843f9c412ccd2bac4300a8e2bc8b5b61a81cd6e9bf614082aca3133a07dcb1",
+        "tests/Unit/ExactPayablesTest.php": "8f5327979e879aed97674edf765c9f844ee9c2748ded65bdda687374e8d06be9"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/Payables.php": "69e7f7485cb8537f6a56a12d76c38a4db462f768f5c1b95c0f57a8b1abf13673",
+        "tests/Unit/ExactPayablesTest.php": "7f798531590655499142d0e6e276a3f2d6cd1689637b39decfcb94f0104969d9"
+      }
+    },
+    {
+      "id": "a44b2c2b67c7913205828368",
+      "expression": "(int) ($filters['user'] ?? 0)",
+      "location": "app/Support/Exact/Payables.php:32",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "technical",
+      "previous_evidence_sha256": {
+        "app/Support/Exact/Payables.php": "b8843f9c412ccd2bac4300a8e2bc8b5b61a81cd6e9bf614082aca3133a07dcb1",
+        "tests/Unit/ExactPayablesTest.php": "8f5327979e879aed97674edf765c9f844ee9c2748ded65bdda687374e8d06be9"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/Payables.php": "69e7f7485cb8537f6a56a12d76c38a4db462f768f5c1b95c0f57a8b1abf13673",
+        "tests/Unit/ExactPayablesTest.php": "7f798531590655499142d0e6e276a3f2d6cd1689637b39decfcb94f0104969d9"
+      }
+    },
+    {
+      "id": "585dbf5192701ab472e9a6f9",
+      "expression": "auth()->user()->type !== 'admin'",
+      "location": "app/Support/Exact/Payables.php:32",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "technical",
+      "previous_evidence_sha256": {
+        "app/Support/Exact/Payables.php": "b8843f9c412ccd2bac4300a8e2bc8b5b61a81cd6e9bf614082aca3133a07dcb1",
+        "tests/Unit/ExactPayablesTest.php": "8f5327979e879aed97674edf765c9f844ee9c2748ded65bdda687374e8d06be9"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/Payables.php": "69e7f7485cb8537f6a56a12d76c38a4db462f768f5c1b95c0f57a8b1abf13673",
+        "tests/Unit/ExactPayablesTest.php": "7f798531590655499142d0e6e276a3f2d6cd1689637b39decfcb94f0104969d9"
+      }
+    },
+    {
+      "id": "48368ee6349ea3580509632d",
+      "expression": "$start !== null",
+      "location": "app/Support/Exact/Payables.php:34",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "technical",
+      "previous_evidence_sha256": {
+        "app/Support/Exact/Payables.php": "b8843f9c412ccd2bac4300a8e2bc8b5b61a81cd6e9bf614082aca3133a07dcb1",
+        "tests/Unit/ExactPayablesTest.php": "8f5327979e879aed97674edf765c9f844ee9c2748ded65bdda687374e8d06be9"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/Payables.php": "69e7f7485cb8537f6a56a12d76c38a4db462f768f5c1b95c0f57a8b1abf13673",
+        "tests/Unit/ExactPayablesTest.php": "7f798531590655499142d0e6e276a3f2d6cd1689637b39decfcb94f0104969d9"
+      }
+    },
+    {
+      "id": "0bc5270bbd682d127ed17dcf",
+      "expression": "strcmp($date, $lastPayment[$id]) > 0",
+      "location": "app/Support/Exact/Payables.php:48",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "technical",
+      "previous_evidence_sha256": {
+        "app/Support/Exact/Payables.php": "b8843f9c412ccd2bac4300a8e2bc8b5b61a81cd6e9bf614082aca3133a07dcb1",
+        "tests/Unit/ExactPayablesTest.php": "8f5327979e879aed97674edf765c9f844ee9c2748ded65bdda687374e8d06be9"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/Payables.php": "69e7f7485cb8537f6a56a12d76c38a4db462f768f5c1b95c0f57a8b1abf13673",
+        "tests/Unit/ExactPayablesTest.php": "7f798531590655499142d0e6e276a3f2d6cd1689637b39decfcb94f0104969d9"
+      }
+    },
+    {
+      "id": "33778478f0b3a57d6ea74c27",
+      "expression": "count($batch) === 500",
+      "location": "app/Support/Exact/Payables.php:54",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "technical",
+      "previous_evidence_sha256": {
+        "app/Support/Exact/Payables.php": "b8843f9c412ccd2bac4300a8e2bc8b5b61a81cd6e9bf614082aca3133a07dcb1",
+        "tests/Unit/ExactPayablesTest.php": "8f5327979e879aed97674edf765c9f844ee9c2748ded65bdda687374e8d06be9"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/Payables.php": "69e7f7485cb8537f6a56a12d76c38a4db462f768f5c1b95c0f57a8b1abf13673",
+        "tests/Unit/ExactPayablesTest.php": "7f798531590655499142d0e6e276a3f2d6cd1689637b39decfcb94f0104969d9"
+      }
+    },
+    {
+      "id": "c916be905fa86f1d89b34e56",
+      "expression": "Decimal::represent($total, 2)",
+      "location": "app/Support/Exact/Payables.php:65",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "settlement",
+      "previous_evidence_sha256": {
+        "app/Support/Exact/Payables.php": "b8843f9c412ccd2bac4300a8e2bc8b5b61a81cd6e9bf614082aca3133a07dcb1",
+        "tests/Unit/ExactPayablesTest.php": "8f5327979e879aed97674edf765c9f844ee9c2748ded65bdda687374e8d06be9"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/Payables.php": "69e7f7485cb8537f6a56a12d76c38a4db462f768f5c1b95c0f57a8b1abf13673",
+        "tests/Unit/ExactPayablesTest.php": "7f798531590655499142d0e6e276a3f2d6cd1689637b39decfcb94f0104969d9"
+      }
+    },
+    {
+      "id": "95e04cc7af9af9f922ee1b37",
+      "expression": "Carbon::parse($row->date_of_issue)->format('Y/m/d')",
+      "location": "app/Support/Exact/Payables.php:72",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "technical",
+      "previous_evidence_sha256": {
+        "app/Support/Exact/Payables.php": "b8843f9c412ccd2bac4300a8e2bc8b5b61a81cd6e9bf614082aca3133a07dcb1",
+        "tests/Unit/ExactPayablesTest.php": "8f5327979e879aed97674edf765c9f844ee9c2748ded65bdda687374e8d06be9"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/Payables.php": "69e7f7485cb8537f6a56a12d76c38a4db462f768f5c1b95c0f57a8b1abf13673",
+        "tests/Unit/ExactPayablesTest.php": "7f798531590655499142d0e6e276a3f2d6cd1689637b39decfcb94f0104969d9"
+      }
+    },
+    {
+      "id": "139aca01a901e84227657b94",
+      "expression": "$due->format('Y/m/d')",
+      "location": "app/Support/Exact/Payables.php:73",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "technical",
+      "previous_evidence_sha256": {
+        "app/Support/Exact/Payables.php": "b8843f9c412ccd2bac4300a8e2bc8b5b61a81cd6e9bf614082aca3133a07dcb1",
+        "tests/Unit/ExactPayablesTest.php": "8f5327979e879aed97674edf765c9f844ee9c2748ded65bdda687374e8d06be9"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/Payables.php": "69e7f7485cb8537f6a56a12d76c38a4db462f768f5c1b95c0f57a8b1abf13673",
+        "tests/Unit/ExactPayablesTest.php": "7f798531590655499142d0e6e276a3f2d6cd1689637b39decfcb94f0104969d9"
+      }
+    },
+    {
+      "id": "d2360aae27dc3d6e08304fb0",
+      "expression": "$type === 'bank_loans'",
+      "location": "app/Support/Exact/Payables.php:76",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "technical",
+      "previous_evidence_sha256": {
+        "app/Support/Exact/Payables.php": "b8843f9c412ccd2bac4300a8e2bc8b5b61a81cd6e9bf614082aca3133a07dcb1",
+        "tests/Unit/ExactPayablesTest.php": "8f5327979e879aed97674edf765c9f844ee9c2748ded65bdda687374e8d06be9"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/Payables.php": "69e7f7485cb8537f6a56a12d76c38a4db462f768f5c1b95c0f57a8b1abf13673",
+        "tests/Unit/ExactPayablesTest.php": "7f798531590655499142d0e6e276a3f2d6cd1689637b39decfcb94f0104969d9"
+      }
+    },
+    {
+      "id": "bb0baf9bb6a587b9852bf4ee",
+      "expression": "$type === 'purchase'",
+      "location": "app/Support/Exact/Payables.php:77",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "technical",
+      "previous_evidence_sha256": {
+        "app/Support/Exact/Payables.php": "b8843f9c412ccd2bac4300a8e2bc8b5b61a81cd6e9bf614082aca3133a07dcb1",
+        "tests/Unit/ExactPayablesTest.php": "8f5327979e879aed97674edf765c9f844ee9c2748ded65bdda687374e8d06be9"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/Payables.php": "69e7f7485cb8537f6a56a12d76c38a4db462f768f5c1b95c0f57a8b1abf13673",
+        "tests/Unit/ExactPayablesTest.php": "7f798531590655499142d0e6e276a3f2d6cd1689637b39decfcb94f0104969d9"
+      }
+    },
+    {
+      "id": "b1db2be512aeefb5a90f9278",
+      "expression": "Carbon::parse($lastPayment)->format('Y-m-d')",
+      "location": "app/Support/Exact/Payables.php:78",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "technical",
+      "previous_evidence_sha256": {
+        "app/Support/Exact/Payables.php": "b8843f9c412ccd2bac4300a8e2bc8b5b61a81cd6e9bf614082aca3133a07dcb1",
+        "tests/Unit/ExactPayablesTest.php": "8f5327979e879aed97674edf765c9f844ee9c2748ded65bdda687374e8d06be9"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/Payables.php": "69e7f7485cb8537f6a56a12d76c38a4db462f768f5c1b95c0f57a8b1abf13673",
+        "tests/Unit/ExactPayablesTest.php": "7f798531590655499142d0e6e276a3f2d6cd1689637b39decfcb94f0104969d9"
+      }
+    },
+    {
+      "id": "c970e88d3d513742df46af0c",
+      "expression": "Carbon::parse($filters['month_start'] . '-01')->endOfMonth()->format('Y-m-d')",
+      "location": "app/Support/Exact/Payables.php:94",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "technical",
+      "previous_evidence_sha256": {
+        "app/Support/Exact/Payables.php": "b8843f9c412ccd2bac4300a8e2bc8b5b61a81cd6e9bf614082aca3133a07dcb1",
+        "tests/Unit/ExactPayablesTest.php": "8f5327979e879aed97674edf765c9f844ee9c2748ded65bdda687374e8d06be9"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/Payables.php": "69e7f7485cb8537f6a56a12d76c38a4db462f768f5c1b95c0f57a8b1abf13673",
+        "tests/Unit/ExactPayablesTest.php": "7f798531590655499142d0e6e276a3f2d6cd1689637b39decfcb94f0104969d9"
+      }
+    },
+    {
+      "id": "d39d551c8581596add2a45c7",
+      "expression": "Carbon::parse($filters['month_start'] . '-01')->format('Y-m-d')",
+      "location": "app/Support/Exact/Payables.php:94",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "technical",
+      "previous_evidence_sha256": {
+        "app/Support/Exact/Payables.php": "b8843f9c412ccd2bac4300a8e2bc8b5b61a81cd6e9bf614082aca3133a07dcb1",
+        "tests/Unit/ExactPayablesTest.php": "8f5327979e879aed97674edf765c9f844ee9c2748ded65bdda687374e8d06be9"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/Payables.php": "69e7f7485cb8537f6a56a12d76c38a4db462f768f5c1b95c0f57a8b1abf13673",
+        "tests/Unit/ExactPayablesTest.php": "7f798531590655499142d0e6e276a3f2d6cd1689637b39decfcb94f0104969d9"
+      }
+    },
+    {
+      "id": "8d96f5829694f3f112fc6030",
+      "expression": "Carbon::parse($filters['month_start'] . '-01')->format('Y-m-d')",
+      "location": "app/Support/Exact/Payables.php:95",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "technical",
+      "previous_evidence_sha256": {
+        "app/Support/Exact/Payables.php": "b8843f9c412ccd2bac4300a8e2bc8b5b61a81cd6e9bf614082aca3133a07dcb1",
+        "tests/Unit/ExactPayablesTest.php": "8f5327979e879aed97674edf765c9f844ee9c2748ded65bdda687374e8d06be9"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/Payables.php": "69e7f7485cb8537f6a56a12d76c38a4db462f768f5c1b95c0f57a8b1abf13673",
+        "tests/Unit/ExactPayablesTest.php": "7f798531590655499142d0e6e276a3f2d6cd1689637b39decfcb94f0104969d9"
+      }
+    },
+    {
+      "id": "c729572ec61c284ce5fd5915",
+      "expression": "Carbon::parse($filters['month_end'] . '-01')->endOfMonth()->format('Y-m-d')",
+      "location": "app/Support/Exact/Payables.php:95",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "technical",
+      "previous_evidence_sha256": {
+        "app/Support/Exact/Payables.php": "b8843f9c412ccd2bac4300a8e2bc8b5b61a81cd6e9bf614082aca3133a07dcb1",
+        "tests/Unit/ExactPayablesTest.php": "8f5327979e879aed97674edf765c9f844ee9c2748ded65bdda687374e8d06be9"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/Payables.php": "69e7f7485cb8537f6a56a12d76c38a4db462f768f5c1b95c0f57a8b1abf13673",
+        "tests/Unit/ExactPayablesTest.php": "7f798531590655499142d0e6e276a3f2d6cd1689637b39decfcb94f0104969d9"
+      }
+    },
+    {
+      "id": "01dc4e0e5df231de82776dac",
+      "expression": "($data['document_type_id'] ?? '') === '07'",
+      "location": "app/Support/Exact/SalesConsolidated.php:36",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "technical",
+      "previous_evidence_sha256": {
+        "app/Support/Exact/SalesConsolidated.php": "641a9f48580448e965792b29b323b1544611d037d7fe5675fa3d8218a4bd6857",
+        "tests/Unit/ExactConsolidatedConsumersTest.php": "e31367548acd9b99edad30cef9458b70fdbc841556ff61625a464e92528c0039"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/SalesConsolidated.php": "c29deb4546151a77ed118db332997ef8b16ec781753857bcda0dd6454ab129cd",
+        "tests/Unit/ExactConsolidatedConsumersTest.php": "7b0c22863f044a4e16d9de0baf1ffa508656f5d82e7ee64ca8f99c8f627d90b5"
+      }
+    },
+    {
+      "id": "ccb87fe722f105b75696f43b",
+      "expression": "$currency === 'USD'",
+      "location": "app/Support/Exact/SalesConsolidated.php:41",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "technical",
+      "previous_evidence_sha256": {
+        "app/Support/Exact/SalesConsolidated.php": "641a9f48580448e965792b29b323b1544611d037d7fe5675fa3d8218a4bd6857",
+        "tests/Unit/ExactConsolidatedConsumersTest.php": "e31367548acd9b99edad30cef9458b70fdbc841556ff61625a464e92528c0039"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/SalesConsolidated.php": "c29deb4546151a77ed118db332997ef8b16ec781753857bcda0dd6454ab129cd",
+        "tests/Unit/ExactConsolidatedConsumersTest.php": "7b0c22863f044a4e16d9de0baf1ffa508656f5d82e7ee64ca8f99c8f627d90b5"
+      }
+    },
+    {
+      "id": "efa421e8d866c49c6226caa9",
+      "expression": "$rate === null",
+      "location": "app/Support/Exact/SalesConsolidated.php:43",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "technical",
+      "previous_evidence_sha256": {
+        "app/Support/Exact/SalesConsolidated.php": "641a9f48580448e965792b29b323b1544611d037d7fe5675fa3d8218a4bd6857",
+        "tests/Unit/ExactConsolidatedConsumersTest.php": "e31367548acd9b99edad30cef9458b70fdbc841556ff61625a464e92528c0039"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/SalesConsolidated.php": "c29deb4546151a77ed118db332997ef8b16ec781753857bcda0dd6454ab129cd",
+        "tests/Unit/ExactConsolidatedConsumersTest.php": "7b0c22863f044a4e16d9de0baf1ffa508656f5d82e7ee64ca8f99c8f627d90b5"
+      }
+    },
+    {
+      "id": "0ecb62a2670c4e8694f33ae0",
+      "expression": "$currency === 'VES'",
+      "location": "app/Support/Exact/SalesConsolidated.php:54",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "technical",
+      "previous_evidence_sha256": {
+        "app/Support/Exact/SalesConsolidated.php": "641a9f48580448e965792b29b323b1544611d037d7fe5675fa3d8218a4bd6857",
+        "tests/Unit/ExactConsolidatedConsumersTest.php": "e31367548acd9b99edad30cef9458b70fdbc841556ff61625a464e92528c0039"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/SalesConsolidated.php": "c29deb4546151a77ed118db332997ef8b16ec781753857bcda0dd6454ab129cd",
+        "tests/Unit/ExactConsolidatedConsumersTest.php": "7b0c22863f044a4e16d9de0baf1ffa508656f5d82e7ee64ca8f99c8f627d90b5"
+      }
+    },
+    {
+      "id": "635003e95f574ebbff7a0323",
+      "expression": "$currency === 'USD'",
+      "location": "app/Support/Exact/SalesConsolidated.php:55",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "technical",
+      "previous_evidence_sha256": {
+        "app/Support/Exact/SalesConsolidated.php": "641a9f48580448e965792b29b323b1544611d037d7fe5675fa3d8218a4bd6857",
+        "tests/Unit/ExactConsolidatedConsumersTest.php": "e31367548acd9b99edad30cef9458b70fdbc841556ff61625a464e92528c0039"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/SalesConsolidated.php": "c29deb4546151a77ed118db332997ef8b16ec781753857bcda0dd6454ab129cd",
+        "tests/Unit/ExactConsolidatedConsumersTest.php": "7b0c22863f044a4e16d9de0baf1ffa508656f5d82e7ee64ca8f99c8f627d90b5"
+      }
+    },
+    {
+      "id": "422baca983fe7777d1f3ba62",
+      "expression": "Decimal::represent($original)",
+      "location": "app/Support/Exact/SalesConsolidated.php:73",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "storage",
+      "previous_evidence_sha256": {
+        "app/Support/Exact/SalesConsolidated.php": "641a9f48580448e965792b29b323b1544611d037d7fe5675fa3d8218a4bd6857",
+        "tests/Unit/ExactConsolidatedConsumersTest.php": "e31367548acd9b99edad30cef9458b70fdbc841556ff61625a464e92528c0039"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/SalesConsolidated.php": "c29deb4546151a77ed118db332997ef8b16ec781753857bcda0dd6454ab129cd",
+        "tests/Unit/ExactConsolidatedConsumersTest.php": "7b0c22863f044a4e16d9de0baf1ffa508656f5d82e7ee64ca8f99c8f627d90b5"
+      }
+    },
+    {
+      "id": "3efd9e9877cf17ab7b51e70d",
+      "expression": "$row['currency_type_id'] === $currency",
+      "location": "app/Support/Exact/SalesConsolidated.php:89",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "technical",
+      "previous_evidence_sha256": {
+        "app/Support/Exact/SalesConsolidated.php": "641a9f48580448e965792b29b323b1544611d037d7fe5675fa3d8218a4bd6857",
+        "tests/Unit/ExactConsolidatedConsumersTest.php": "e31367548acd9b99edad30cef9458b70fdbc841556ff61625a464e92528c0039"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/SalesConsolidated.php": "c29deb4546151a77ed118db332997ef8b16ec781753857bcda0dd6454ab129cd",
+        "tests/Unit/ExactConsolidatedConsumersTest.php": "7b0c22863f044a4e16d9de0baf1ffa508656f5d82e7ee64ca8f99c8f627d90b5"
+      }
+    },
+    {
+      "id": "33983431d3a3be6bc4ce67e9",
+      "expression": "count($batch) === 500",
+      "location": "app/Support/Exact/SalesConsolidated.php:134",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "technical",
+      "previous_evidence_sha256": {
+        "app/Support/Exact/SalesConsolidated.php": "641a9f48580448e965792b29b323b1544611d037d7fe5675fa3d8218a4bd6857",
+        "tests/Unit/ExactConsolidatedConsumersTest.php": "e31367548acd9b99edad30cef9458b70fdbc841556ff61625a464e92528c0039"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/SalesConsolidated.php": "c29deb4546151a77ed118db332997ef8b16ec781753857bcda0dd6454ab129cd",
+        "tests/Unit/ExactConsolidatedConsumersTest.php": "7b0c22863f044a4e16d9de0baf1ffa508656f5d82e7ee64ca8f99c8f627d90b5"
+      }
+    },
+    {
+      "id": "d7498d2a95867b3b1ea2fa92",
+      "expression": "$currentKey !== $rowKey",
+      "location": "app/Support/Exact/SalesConsolidated.php:150",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "technical",
+      "previous_evidence_sha256": {
+        "app/Support/Exact/SalesConsolidated.php": "641a9f48580448e965792b29b323b1544611d037d7fe5675fa3d8218a4bd6857",
+        "tests/Unit/ExactConsolidatedConsumersTest.php": "e31367548acd9b99edad30cef9458b70fdbc841556ff61625a464e92528c0039"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/SalesConsolidated.php": "c29deb4546151a77ed118db332997ef8b16ec781753857bcda0dd6454ab129cd",
+        "tests/Unit/ExactConsolidatedConsumersTest.php": "7b0c22863f044a4e16d9de0baf1ffa508656f5d82e7ee64ca8f99c8f627d90b5"
+      }
+    },
+    {
+      "id": "5868fd2fbb737f623833089a",
+      "expression": "$first !== null",
+      "location": "app/Support/Exact/SalesConsolidated.php:151",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "technical",
+      "previous_evidence_sha256": {
+        "app/Support/Exact/SalesConsolidated.php": "641a9f48580448e965792b29b323b1544611d037d7fe5675fa3d8218a4bd6857",
+        "tests/Unit/ExactConsolidatedConsumersTest.php": "e31367548acd9b99edad30cef9458b70fdbc841556ff61625a464e92528c0039"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/SalesConsolidated.php": "c29deb4546151a77ed118db332997ef8b16ec781753857bcda0dd6454ab129cd",
+        "tests/Unit/ExactConsolidatedConsumersTest.php": "7b0c22863f044a4e16d9de0baf1ffa508656f5d82e7ee64ca8f99c8f627d90b5"
+      }
+    },
+    {
+      "id": "faa1ce25444897974f909501",
+      "expression": "$first !== null",
+      "location": "app/Support/Exact/SalesConsolidated.php:161",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "technical",
+      "previous_evidence_sha256": {
+        "app/Support/Exact/SalesConsolidated.php": "641a9f48580448e965792b29b323b1544611d037d7fe5675fa3d8218a4bd6857",
+        "tests/Unit/ExactConsolidatedConsumersTest.php": "e31367548acd9b99edad30cef9458b70fdbc841556ff61625a464e92528c0039"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/SalesConsolidated.php": "c29deb4546151a77ed118db332997ef8b16ec781753857bcda0dd6454ab129cd",
+        "tests/Unit/ExactConsolidatedConsumersTest.php": "7b0c22863f044a4e16d9de0baf1ffa508656f5d82e7ee64ca8f99c8f627d90b5"
+      }
+    },
+    {
+      "id": "fcdab107e57376b67298a514",
+      "expression": "Decimal::represent($requested, 2)",
+      "location": "app/Support/Exact/Settlement.php:21",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "settlement",
+      "previous_evidence_sha256": {
+        "app/Support/Exact/Settlement.php": "7d2be8750f3fe44e091d46b1b5314583606a7bb7edf17eec54a7e2f7e6834c3a",
+        "tests/Unit/FiscalEmissionSchemaTest.php": "5f6a25076ddd16c643343bc6fc37f61809e5f922693258245749c881726b3e16"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/Settlement.php": "7d2be8750f3fe44e091d46b1b5314583606a7bb7edf17eec54a7e2f7e6834c3a",
+        "tests/Unit/FiscalEmissionSchemaTest.php": "d4b4ea211255e7fe050e916cc5fb3bcbb77af0c4db629ff0e915e738f0ff774d"
+      }
+    },
+    {
+      "id": "1cb2297c08614bf37756ea41",
+      "expression": "Decimal::represent($requested)",
+      "location": "app/Support/Exact/Settlement.php:26",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "storage",
+      "previous_evidence_sha256": {
+        "app/Support/Exact/Settlement.php": "7d2be8750f3fe44e091d46b1b5314583606a7bb7edf17eec54a7e2f7e6834c3a",
+        "tests/Unit/FiscalEmissionSchemaTest.php": "5f6a25076ddd16c643343bc6fc37f61809e5f922693258245749c881726b3e16"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/Settlement.php": "7d2be8750f3fe44e091d46b1b5314583606a7bb7edf17eec54a7e2f7e6834c3a",
+        "tests/Unit/FiscalEmissionSchemaTest.php": "d4b4ea211255e7fe050e916cc5fb3bcbb77af0c4db629ff0e915e738f0ff774d"
+      }
+    },
+    {
+      "id": "77272caf871c2d121aa9152b",
+      "expression": "Decimal::represent($cash)",
+      "location": "app/Support/Exact/Settlement.php:29",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "storage",
+      "previous_evidence_sha256": {
+        "app/Support/Exact/Settlement.php": "7d2be8750f3fe44e091d46b1b5314583606a7bb7edf17eec54a7e2f7e6834c3a",
+        "tests/Unit/FiscalEmissionSchemaTest.php": "5f6a25076ddd16c643343bc6fc37f61809e5f922693258245749c881726b3e16"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/Settlement.php": "7d2be8750f3fe44e091d46b1b5314583606a7bb7edf17eec54a7e2f7e6834c3a",
+        "tests/Unit/FiscalEmissionSchemaTest.php": "d4b4ea211255e7fe050e916cc5fb3bcbb77af0c4db629ff0e915e738f0ff774d"
+      }
+    },
+    {
+      "id": "d007804e0a7817da28d8d92d",
+      "expression": "(int) config('tenant.items_per_page', 50)",
+      "location": "modules/Report/Http/Controllers/ReportSaleConsolidatedController.php:69",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "technical",
+      "previous_evidence_sha256": {
+        "modules/Report/Http/Controllers/ReportSaleConsolidatedController.php": "d316a204d140dee0a044ddbc153792eda20527d631b97cd4a552aaf73554a8bb",
+        "tests/Unit/ExactConsolidatedConsumersTest.php": "e31367548acd9b99edad30cef9458b70fdbc841556ff61625a464e92528c0039",
+        "tests/Unit/ExactReportTicketRenderingTest.php": "b12689c1b97a9e14b0c53a1944003702829183e3dc8ee4b66d69e54cc5de089e"
+      },
+      "evidence_sha256": {
+        "modules/Report/Http/Controllers/ReportSaleConsolidatedController.php": "e9ba1cfc7866a498bdf566affc902dbb97e758c9ffc11b095dfa7fa556d0d932",
+        "tests/Unit/ExactConsolidatedConsumersTest.php": "7b0c22863f044a4e16d9de0baf1ffa508656f5d82e7ee64ca8f99c8f627d90b5",
+        "tests/Unit/ExactReportTicketRenderingTest.php": "b12689c1b97a9e14b0c53a1944003702829183e3dc8ee4b66d69e54cc5de089e"
+      }
+    },
+    {
+      "id": "3a4e2e902965f264ce6159a6",
+      "expression": "max(1, min(500, (int) config('tenant.items_per_page', 50)))",
+      "location": "modules/Report/Http/Controllers/ReportSaleConsolidatedController.php:69",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "technical",
+      "previous_evidence_sha256": {
+        "modules/Report/Http/Controllers/ReportSaleConsolidatedController.php": "d316a204d140dee0a044ddbc153792eda20527d631b97cd4a552aaf73554a8bb",
+        "tests/Unit/ExactConsolidatedConsumersTest.php": "e31367548acd9b99edad30cef9458b70fdbc841556ff61625a464e92528c0039",
+        "tests/Unit/ExactReportTicketRenderingTest.php": "b12689c1b97a9e14b0c53a1944003702829183e3dc8ee4b66d69e54cc5de089e"
+      },
+      "evidence_sha256": {
+        "modules/Report/Http/Controllers/ReportSaleConsolidatedController.php": "e9ba1cfc7866a498bdf566affc902dbb97e758c9ffc11b095dfa7fa556d0d932",
+        "tests/Unit/ExactConsolidatedConsumersTest.php": "7b0c22863f044a4e16d9de0baf1ffa508656f5d82e7ee64ca8f99c8f627d90b5",
+        "tests/Unit/ExactReportTicketRenderingTest.php": "b12689c1b97a9e14b0c53a1944003702829183e3dc8ee4b66d69e54cc5de089e"
+      }
+    },
+    {
+      "id": "b672c90017a7370574708ba4",
+      "expression": "min(500, (int) config('tenant.items_per_page', 50))",
+      "location": "modules/Report/Http/Controllers/ReportSaleConsolidatedController.php:69",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "technical",
+      "previous_evidence_sha256": {
+        "modules/Report/Http/Controllers/ReportSaleConsolidatedController.php": "d316a204d140dee0a044ddbc153792eda20527d631b97cd4a552aaf73554a8bb",
+        "tests/Unit/ExactConsolidatedConsumersTest.php": "e31367548acd9b99edad30cef9458b70fdbc841556ff61625a464e92528c0039",
+        "tests/Unit/ExactReportTicketRenderingTest.php": "b12689c1b97a9e14b0c53a1944003702829183e3dc8ee4b66d69e54cc5de089e"
+      },
+      "evidence_sha256": {
+        "modules/Report/Http/Controllers/ReportSaleConsolidatedController.php": "e9ba1cfc7866a498bdf566affc902dbb97e758c9ffc11b095dfa7fa556d0d932",
+        "tests/Unit/ExactConsolidatedConsumersTest.php": "7b0c22863f044a4e16d9de0baf1ffa508656f5d82e7ee64ca8f99c8f627d90b5",
+        "tests/Unit/ExactReportTicketRenderingTest.php": "b12689c1b97a9e14b0c53a1944003702829183e3dc8ee4b66d69e54cc5de089e"
+      }
+    },
+    {
+      "id": "2a88b21f29a8a74274242008",
+      "expression": "(int) $request->input('page', 1)",
+      "location": "modules/Report/Http/Controllers/ReportSaleConsolidatedController.php:72",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "technical",
+      "previous_evidence_sha256": {
+        "modules/Report/Http/Controllers/ReportSaleConsolidatedController.php": "d316a204d140dee0a044ddbc153792eda20527d631b97cd4a552aaf73554a8bb",
+        "tests/Unit/ExactConsolidatedConsumersTest.php": "e31367548acd9b99edad30cef9458b70fdbc841556ff61625a464e92528c0039",
+        "tests/Unit/ExactReportTicketRenderingTest.php": "b12689c1b97a9e14b0c53a1944003702829183e3dc8ee4b66d69e54cc5de089e"
+      },
+      "evidence_sha256": {
+        "modules/Report/Http/Controllers/ReportSaleConsolidatedController.php": "e9ba1cfc7866a498bdf566affc902dbb97e758c9ffc11b095dfa7fa556d0d932",
+        "tests/Unit/ExactConsolidatedConsumersTest.php": "7b0c22863f044a4e16d9de0baf1ffa508656f5d82e7ee64ca8f99c8f627d90b5",
+        "tests/Unit/ExactReportTicketRenderingTest.php": "b12689c1b97a9e14b0c53a1944003702829183e3dc8ee4b66d69e54cc5de089e"
+      }
+    },
+    {
+      "id": "94a91cb971c081659c420382",
+      "expression": "$nota_venta != null",
+      "location": "modules/Report/Http/Controllers/ReportSaleConsolidatedController.php:152",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "technical",
+      "previous_evidence_sha256": {
+        "modules/Report/Http/Controllers/ReportSaleConsolidatedController.php": "d316a204d140dee0a044ddbc153792eda20527d631b97cd4a552aaf73554a8bb",
+        "tests/Unit/ExactConsolidatedConsumersTest.php": "e31367548acd9b99edad30cef9458b70fdbc841556ff61625a464e92528c0039",
+        "tests/Unit/ExactReportTicketRenderingTest.php": "b12689c1b97a9e14b0c53a1944003702829183e3dc8ee4b66d69e54cc5de089e"
+      },
+      "evidence_sha256": {
+        "modules/Report/Http/Controllers/ReportSaleConsolidatedController.php": "e9ba1cfc7866a498bdf566affc902dbb97e758c9ffc11b095dfa7fa556d0d932",
+        "tests/Unit/ExactConsolidatedConsumersTest.php": "7b0c22863f044a4e16d9de0baf1ffa508656f5d82e7ee64ca8f99c8f627d90b5",
+        "tests/Unit/ExactReportTicketRenderingTest.php": "b12689c1b97a9e14b0c53a1944003702829183e3dc8ee4b66d69e54cc5de089e"
+      }
+    },
+    {
+      "id": "3ea321f22f26944a0ff05fe0",
+      "expression": "5.8 / 2.54",
+      "location": "modules/Report/Http/Controllers/ReportSaleConsolidatedController.php:281",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "technical",
+      "previous_evidence_sha256": {
+        "modules/Report/Http/Controllers/ReportSaleConsolidatedController.php": "d316a204d140dee0a044ddbc153792eda20527d631b97cd4a552aaf73554a8bb",
+        "tests/Unit/ExactConsolidatedConsumersTest.php": "e31367548acd9b99edad30cef9458b70fdbc841556ff61625a464e92528c0039",
+        "tests/Unit/ExactReportTicketRenderingTest.php": "b12689c1b97a9e14b0c53a1944003702829183e3dc8ee4b66d69e54cc5de089e"
+      },
+      "evidence_sha256": {
+        "modules/Report/Http/Controllers/ReportSaleConsolidatedController.php": "e9ba1cfc7866a498bdf566affc902dbb97e758c9ffc11b095dfa7fa556d0d932",
+        "tests/Unit/ExactConsolidatedConsumersTest.php": "7b0c22863f044a4e16d9de0baf1ffa508656f5d82e7ee64ca8f99c8f627d90b5",
+        "tests/Unit/ExactReportTicketRenderingTest.php": "b12689c1b97a9e14b0c53a1944003702829183e3dc8ee4b66d69e54cc5de089e"
+      }
+    },
+    {
+      "id": "763ef3dbc4d3c22da83cb864",
+      "expression": "5.8 / 2.54 * 72",
+      "location": "modules/Report/Http/Controllers/ReportSaleConsolidatedController.php:281",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "technical",
+      "previous_evidence_sha256": {
+        "modules/Report/Http/Controllers/ReportSaleConsolidatedController.php": "d316a204d140dee0a044ddbc153792eda20527d631b97cd4a552aaf73554a8bb",
+        "tests/Unit/ExactConsolidatedConsumersTest.php": "e31367548acd9b99edad30cef9458b70fdbc841556ff61625a464e92528c0039",
+        "tests/Unit/ExactReportTicketRenderingTest.php": "b12689c1b97a9e14b0c53a1944003702829183e3dc8ee4b66d69e54cc5de089e"
+      },
+      "evidence_sha256": {
+        "modules/Report/Http/Controllers/ReportSaleConsolidatedController.php": "e9ba1cfc7866a498bdf566affc902dbb97e758c9ffc11b095dfa7fa556d0d932",
+        "tests/Unit/ExactConsolidatedConsumersTest.php": "7b0c22863f044a4e16d9de0baf1ffa508656f5d82e7ee64ca8f99c8f627d90b5",
+        "tests/Unit/ExactReportTicketRenderingTest.php": "b12689c1b97a9e14b0c53a1944003702829183e3dc8ee4b66d69e54cc5de089e"
+      }
+    },
+    {
+      "id": "a981ac88dd5e0d26f8299234",
+      "expression": "8 / 2.54",
+      "location": "modules/Report/Http/Controllers/ReportSaleConsolidatedController.php:307",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "technical",
+      "previous_evidence_sha256": {
+        "modules/Report/Http/Controllers/ReportSaleConsolidatedController.php": "d316a204d140dee0a044ddbc153792eda20527d631b97cd4a552aaf73554a8bb",
+        "tests/Unit/ExactConsolidatedConsumersTest.php": "e31367548acd9b99edad30cef9458b70fdbc841556ff61625a464e92528c0039",
+        "tests/Unit/ExactReportTicketRenderingTest.php": "b12689c1b97a9e14b0c53a1944003702829183e3dc8ee4b66d69e54cc5de089e"
+      },
+      "evidence_sha256": {
+        "modules/Report/Http/Controllers/ReportSaleConsolidatedController.php": "e9ba1cfc7866a498bdf566affc902dbb97e758c9ffc11b095dfa7fa556d0d932",
+        "tests/Unit/ExactConsolidatedConsumersTest.php": "7b0c22863f044a4e16d9de0baf1ffa508656f5d82e7ee64ca8f99c8f627d90b5",
+        "tests/Unit/ExactReportTicketRenderingTest.php": "b12689c1b97a9e14b0c53a1944003702829183e3dc8ee4b66d69e54cc5de089e"
+      }
+    },
+    {
+      "id": "4dd4bd18e1d573d917fa86ec",
+      "expression": "8 / 2.54 * 72",
+      "location": "modules/Report/Http/Controllers/ReportSaleConsolidatedController.php:307",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "technical",
+      "previous_evidence_sha256": {
+        "modules/Report/Http/Controllers/ReportSaleConsolidatedController.php": "d316a204d140dee0a044ddbc153792eda20527d631b97cd4a552aaf73554a8bb",
+        "tests/Unit/ExactConsolidatedConsumersTest.php": "e31367548acd9b99edad30cef9458b70fdbc841556ff61625a464e92528c0039",
+        "tests/Unit/ExactReportTicketRenderingTest.php": "b12689c1b97a9e14b0c53a1944003702829183e3dc8ee4b66d69e54cc5de089e"
+      },
+      "evidence_sha256": {
+        "modules/Report/Http/Controllers/ReportSaleConsolidatedController.php": "e9ba1cfc7866a498bdf566affc902dbb97e758c9ffc11b095dfa7fa556d0d932",
+        "tests/Unit/ExactConsolidatedConsumersTest.php": "7b0c22863f044a4e16d9de0baf1ffa508656f5d82e7ee64ca8f99c8f627d90b5",
+        "tests/Unit/ExactReportTicketRenderingTest.php": "b12689c1b97a9e14b0c53a1944003702829183e3dc8ee4b66d69e54cc5de089e"
+      }
+    },
+    {
+      "id": "01d2744bc48156996326533b",
+      "expression": "\\App\\Support\\Exact\\Decimal::format($value['display']['total_sale'], 2)",
+      "location": "modules/Report/Resources/views/sales_consolidated/exact_table.blade.php:20",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "presentation",
+      "previous_evidence_sha256": {
+        "modules/Report/Resources/views/sales_consolidated/exact_table.blade.php": "3bbd1045fbf3e7911cafefd8c80f00a446087ca038ecc6b647244395d9e7a305",
+        "tests/Unit/ExactConsolidatedConsumersTest.php": "e31367548acd9b99edad30cef9458b70fdbc841556ff61625a464e92528c0039",
+        "tests/Unit/ExactReportProjectionTest.php": "ea6b5b8059baffbd52741b5a1aec5937650f8012250172519c51e9c7ac994847"
+      },
+      "evidence_sha256": {
+        "modules/Report/Resources/views/sales_consolidated/exact_table.blade.php": "f5ee4d023cd39638f07fa7f2fc039ac4d02f7b6e1df6d52052ed8295a1a740fa",
+        "tests/Unit/ExactConsolidatedConsumersTest.php": "7b0c22863f044a4e16d9de0baf1ffa508656f5d82e7ee64ca8f99c8f627d90b5",
+        "tests/Unit/ExactReportProjectionTest.php": "ea6b5b8059baffbd52741b5a1aec5937650f8012250172519c51e9c7ac994847"
+      }
+    },
+    {
+      "id": "6ef90596abaf6cdafe64d0e3",
+      "expression": "\\App\\Support\\Exact\\Decimal::format(\\App\\Support\\Exact\\Decimal::readRequired($reportSummary, 'total_sale'), 2)",
+      "location": "modules/Report/Resources/views/sales_consolidated/exact_table.blade.php:31",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "presentation",
+      "previous_evidence_sha256": {
+        "modules/Report/Resources/views/sales_consolidated/exact_table.blade.php": "3bbd1045fbf3e7911cafefd8c80f00a446087ca038ecc6b647244395d9e7a305",
+        "tests/Unit/ExactConsolidatedConsumersTest.php": "e31367548acd9b99edad30cef9458b70fdbc841556ff61625a464e92528c0039",
+        "tests/Unit/ExactReportProjectionTest.php": "ea6b5b8059baffbd52741b5a1aec5937650f8012250172519c51e9c7ac994847"
+      },
+      "evidence_sha256": {
+        "modules/Report/Resources/views/sales_consolidated/exact_table.blade.php": "f5ee4d023cd39638f07fa7f2fc039ac4d02f7b6e1df6d52052ed8295a1a740fa",
+        "tests/Unit/ExactConsolidatedConsumersTest.php": "7b0c22863f044a4e16d9de0baf1ffa508656f5d82e7ee64ca8f99c8f627d90b5",
+        "tests/Unit/ExactReportProjectionTest.php": "ea6b5b8059baffbd52741b5a1aec5937650f8012250172519c51e9c7ac994847"
+      }
+    },
+    {
+      "id": "3354e102a9201db5f9014aa8",
+      "expression": "\\App\\Support\\Exact\\Decimal::format(\\App\\Support\\Exact\\Decimal::readRequired($reportSummary, 'total_usd'), 2)",
+      "location": "modules/Report/Resources/views/sales_consolidated/exact_table.blade.php:32",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "presentation",
+      "previous_evidence_sha256": {
+        "modules/Report/Resources/views/sales_consolidated/exact_table.blade.php": "3bbd1045fbf3e7911cafefd8c80f00a446087ca038ecc6b647244395d9e7a305",
+        "tests/Unit/ExactConsolidatedConsumersTest.php": "e31367548acd9b99edad30cef9458b70fdbc841556ff61625a464e92528c0039",
+        "tests/Unit/ExactReportProjectionTest.php": "ea6b5b8059baffbd52741b5a1aec5937650f8012250172519c51e9c7ac994847"
+      },
+      "evidence_sha256": {
+        "modules/Report/Resources/views/sales_consolidated/exact_table.blade.php": "f5ee4d023cd39638f07fa7f2fc039ac4d02f7b6e1df6d52052ed8295a1a740fa",
+        "tests/Unit/ExactConsolidatedConsumersTest.php": "7b0c22863f044a4e16d9de0baf1ffa508656f5d82e7ee64ca8f99c8f627d90b5",
+        "tests/Unit/ExactReportProjectionTest.php": "ea6b5b8059baffbd52741b5a1aec5937650f8012250172519c51e9c7ac994847"
+      }
+    },
+    {
+      "id": "b645eb17571d5c63f85f54d6",
+      "expression": "\\App\\Support\\Exact\\Decimal::format(\\App\\Support\\Exact\\Decimal::readRequired($reportSummary, 'total_ves'), 2)",
+      "location": "modules/Report/Resources/views/sales_consolidated/exact_table.blade.php:32",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "presentation",
+      "previous_evidence_sha256": {
+        "modules/Report/Resources/views/sales_consolidated/exact_table.blade.php": "3bbd1045fbf3e7911cafefd8c80f00a446087ca038ecc6b647244395d9e7a305",
+        "tests/Unit/ExactConsolidatedConsumersTest.php": "e31367548acd9b99edad30cef9458b70fdbc841556ff61625a464e92528c0039",
+        "tests/Unit/ExactReportProjectionTest.php": "ea6b5b8059baffbd52741b5a1aec5937650f8012250172519c51e9c7ac994847"
+      },
+      "evidence_sha256": {
+        "modules/Report/Resources/views/sales_consolidated/exact_table.blade.php": "f5ee4d023cd39638f07fa7f2fc039ac4d02f7b6e1df6d52052ed8295a1a740fa",
+        "tests/Unit/ExactConsolidatedConsumersTest.php": "7b0c22863f044a4e16d9de0baf1ffa508656f5d82e7ee64ca8f99c8f627d90b5",
+        "tests/Unit/ExactReportProjectionTest.php": "ea6b5b8059baffbd52741b5a1aec5937650f8012250172519c51e9c7ac994847"
+      }
+    },
+    {
+      "id": "5ba6baa79638cc3104486dd2",
+      "expression": "\\App\\Support\\Exact\\Decimal::format(\\App\\Support\\Exact\\Decimal::readRequired($reportSummary, 'total_sale'), 2)",
+      "location": "modules/Report/Resources/views/sales_consolidated/exact_ticket_table.blade.php:21",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "presentation",
+      "previous_evidence_sha256": {
+        "modules/Report/Resources/views/sales_consolidated/exact_ticket_table.blade.php": "76517ebd803ab93ce0d7668b50f62cdba421ae8924cd5948fbd72bd14005fcee",
+        "tests/Unit/ExactReportTicketRenderingTest.php": "b12689c1b97a9e14b0c53a1944003702829183e3dc8ee4b66d69e54cc5de089e"
+      },
+      "evidence_sha256": {
+        "modules/Report/Resources/views/sales_consolidated/exact_ticket_table.blade.php": "f5395046e28cc019820bbc380250f662e7f9620aef6c45ebc99668e2749da7d4",
+        "tests/Unit/ExactReportTicketRenderingTest.php": "b12689c1b97a9e14b0c53a1944003702829183e3dc8ee4b66d69e54cc5de089e"
+      }
+    },
+    {
+      "id": "55a5623e6083646b1bd930ed",
+      "expression": "\\App\\Support\\Exact\\Decimal::format(\\App\\Support\\Exact\\Decimal::readRequired($reportSummary, 'total_ves'), 2)",
+      "location": "modules/Report/Resources/views/sales_consolidated/exact_ticket_table.blade.php:26",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "presentation",
+      "previous_evidence_sha256": {
+        "modules/Report/Resources/views/sales_consolidated/exact_ticket_table.blade.php": "76517ebd803ab93ce0d7668b50f62cdba421ae8924cd5948fbd72bd14005fcee",
+        "tests/Unit/ExactReportTicketRenderingTest.php": "b12689c1b97a9e14b0c53a1944003702829183e3dc8ee4b66d69e54cc5de089e"
+      },
+      "evidence_sha256": {
+        "modules/Report/Resources/views/sales_consolidated/exact_ticket_table.blade.php": "f5395046e28cc019820bbc380250f662e7f9620aef6c45ebc99668e2749da7d4",
+        "tests/Unit/ExactReportTicketRenderingTest.php": "b12689c1b97a9e14b0c53a1944003702829183e3dc8ee4b66d69e54cc5de089e"
+      }
+    },
+    {
+      "id": "dc9cd1c3a05205c06d3d26ff",
+      "expression": "\\App\\Support\\Exact\\Decimal::format(\\App\\Support\\Exact\\Decimal::readRequired($reportSummary, 'total_usd'), 2)",
+      "location": "modules/Report/Resources/views/sales_consolidated/exact_ticket_table.blade.php:27",
+      "action": "manual_revalidated_after_consumer_review",
+      "category": "presentation",
+      "previous_evidence_sha256": {
+        "modules/Report/Resources/views/sales_consolidated/exact_ticket_table.blade.php": "76517ebd803ab93ce0d7668b50f62cdba421ae8924cd5948fbd72bd14005fcee",
+        "tests/Unit/ExactReportTicketRenderingTest.php": "b12689c1b97a9e14b0c53a1944003702829183e3dc8ee4b66d69e54cc5de089e"
+      },
+      "evidence_sha256": {
+        "modules/Report/Resources/views/sales_consolidated/exact_ticket_table.blade.php": "f5395046e28cc019820bbc380250f662e7f9620aef6c45ebc99668e2749da7d4",
+        "tests/Unit/ExactReportTicketRenderingTest.php": "b12689c1b97a9e14b0c53a1944003702829183e3dc8ee4b66d69e54cc5de089e"
+      }
+    },
+    {
+      "id": "944f5359d4288acec5bc41c5",
+      "expression": "count($records) > 500",
+      "location": "app/Support/Exact/ConsolidatedLines.php:16",
+      "action": "manual_review",
+      "category": "technical",
+      "justification": "Límite de 500 registros/cabeceras de un lote del reporte; no limita una cantidad comercial.",
+      "evidence": [
+        "app/Support/Exact/ConsolidatedLines.php",
+        "tests/Unit/ExactConsolidatedConsumersTest.php"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/ConsolidatedLines.php": "30b33258b923aa864e732d257d0b716d343a83e0098637b537f28700cd65326b",
+        "tests/Unit/ExactConsolidatedConsumersTest.php": "7b0c22863f044a4e16d9de0baf1ffa508656f5d82e7ee64ca8f99c8f627d90b5"
+      }
+    },
+    {
+      "id": "9ac0a6fbcf63872652f40d5b",
+      "expression": "count($this->parents) > 500",
+      "location": "app/Support/Exact/ConsolidatedLines.php:59",
+      "action": "manual_review",
+      "category": "technical",
+      "justification": "Límite de 500 registros/cabeceras de un lote del reporte; no limita una cantidad comercial.",
+      "evidence": [
+        "app/Support/Exact/ConsolidatedLines.php",
+        "tests/Unit/ExactConsolidatedConsumersTest.php"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/ConsolidatedLines.php": "30b33258b923aa864e732d257d0b716d343a83e0098637b537f28700cd65326b",
+        "tests/Unit/ExactConsolidatedConsumersTest.php": "7b0c22863f044a4e16d9de0baf1ffa508656f5d82e7ee64ca8f99c8f627d90b5"
+      }
+    },
+    {
+      "id": "710a8191d7578fca781a8c01",
+      "expression": "($snapshot['version'] ?? null) !== Decimal::VERSION",
+      "location": "app/Support/Exact/ConsolidatedLines.php:67",
+      "action": "manual_review",
+      "category": "validation",
+      "justification": "Rechaza una versión de snapshot incompatible antes de leer las participaciones congeladas.",
+      "evidence": [
+        "app/Support/Exact/ConsolidatedLines.php",
+        "tests/Unit/ExactConsolidatedConsumersTest.php"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/ConsolidatedLines.php": "30b33258b923aa864e732d257d0b716d343a83e0098637b537f28700cd65326b",
+        "tests/Unit/ExactConsolidatedConsumersTest.php": "7b0c22863f044a4e16d9de0baf1ffa508656f5d82e7ee64ca8f99c8f627d90b5"
+      }
+    },
+    {
+      "id": "0ec29532b4a114bc70ad0fbc",
+      "expression": "($snapshot['inputs']['header_allocation_key'] ?? null) !== $key",
+      "location": "app/Support/Exact/ConsolidatedLines.php:70",
+      "action": "manual_review",
+      "category": "validation",
+      "justification": "Comprueba la identidad canónica del reparto frente a los valores guardados de la cabecera; no compara proyecciones monetarias.",
+      "evidence": [
+        "app/Support/Exact/ConsolidatedLines.php",
+        "tests/Unit/ExactConsolidatedConsumersTest.php"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/ConsolidatedLines.php": "30b33258b923aa864e732d257d0b716d343a83e0098637b537f28700cd65326b",
+        "tests/Unit/ExactConsolidatedConsumersTest.php": "7b0c22863f044a4e16d9de0baf1ffa508656f5d82e7ee64ca8f99c8f627d90b5"
+      }
+    },
+    {
+      "id": "44bd8deb97a5e72d293f37b6",
+      "expression": "$type === '10'",
+      "location": "app/Support/Exact/HeaderAllocation.php:35",
+      "action": "manual_review",
+      "category": "validation",
+      "justification": "Selecciona el código fiscal de afectación o descuento para restringir la base elegible; son identificadores de catálogo. La participación se calcula con racionales.",
+      "evidence": [
+        "app/Support/Exact/HeaderAllocation.php",
+        "tests/Unit/ExactHeaderAllocationTest.php"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/HeaderAllocation.php": "d3264e7dcc43fb430a0cd2adcb5a23553ceb31ce98bbd48492fbcdadf4040421",
+        "tests/Unit/ExactHeaderAllocationTest.php": "f41b123a279b882b357a833ea54c296509ecd5f4e8dd9715e0289b5533a394b0"
+      }
+    },
+    {
+      "id": "924002e1ef225715351cd785",
+      "expression": "($discount['discount_type_id'] ?? '') === '00'",
+      "location": "app/Support/Exact/HeaderAllocation.php:43",
+      "action": "manual_review",
+      "category": "validation",
+      "justification": "Selecciona el código fiscal de afectación o descuento para restringir la base elegible; son identificadores de catálogo. La participación se calcula con racionales.",
+      "evidence": [
+        "app/Support/Exact/HeaderAllocation.php",
+        "tests/Unit/ExactHeaderAllocationTest.php"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/HeaderAllocation.php": "d3264e7dcc43fb430a0cd2adcb5a23553ceb31ce98bbd48492fbcdadf4040421",
+        "tests/Unit/ExactHeaderAllocationTest.php": "f41b123a279b882b357a833ea54c296509ecd5f4e8dd9715e0289b5533a394b0"
+      }
+    },
+    {
+      "id": "9d3517bc0ba676200df9baac",
+      "expression": "$type === '20'",
+      "location": "app/Support/Exact/HeaderAllocation.php:44",
+      "action": "manual_review",
+      "category": "validation",
+      "justification": "Selecciona el código fiscal de afectación o descuento para restringir la base elegible; son identificadores de catálogo. La participación se calcula con racionales.",
+      "evidence": [
+        "app/Support/Exact/HeaderAllocation.php",
+        "tests/Unit/ExactHeaderAllocationTest.php"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/HeaderAllocation.php": "d3264e7dcc43fb430a0cd2adcb5a23553ceb31ce98bbd48492fbcdadf4040421",
+        "tests/Unit/ExactHeaderAllocationTest.php": "f41b123a279b882b357a833ea54c296509ecd5f4e8dd9715e0289b5533a394b0"
+      }
+    },
+    {
+      "id": "418120e75c58bb6affa76d7d",
+      "expression": "($discount['discount_type_id'] ?? '') === '05'",
+      "location": "app/Support/Exact/HeaderAllocation.php:59",
+      "action": "manual_review",
+      "category": "validation",
+      "justification": "Selecciona el código fiscal de afectación o descuento para restringir la base elegible; son identificadores de catálogo. La participación se calcula con racionales.",
+      "evidence": [
+        "app/Support/Exact/HeaderAllocation.php",
+        "tests/Unit/ExactHeaderAllocationTest.php"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/HeaderAllocation.php": "d3264e7dcc43fb430a0cd2adcb5a23553ceb31ce98bbd48492fbcdadf4040421",
+        "tests/Unit/ExactHeaderAllocationTest.php": "f41b123a279b882b357a833ea54c296509ecd5f4e8dd9715e0289b5533a394b0"
+      }
+    },
+    {
+      "id": "7a7f850ca7fe4c215eab191a",
+      "expression": "$type === '10'",
+      "location": "app/Support/Exact/HeaderAllocation.php:124",
+      "action": "manual_review",
+      "category": "validation",
+      "justification": "Selecciona el código fiscal de afectación o descuento para restringir la base elegible; son identificadores de catálogo. La participación se calcula con racionales.",
+      "evidence": [
+        "app/Support/Exact/HeaderAllocation.php",
+        "tests/Unit/ExactHeaderAllocationTest.php"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/HeaderAllocation.php": "d3264e7dcc43fb430a0cd2adcb5a23553ceb31ce98bbd48492fbcdadf4040421",
+        "tests/Unit/ExactHeaderAllocationTest.php": "f41b123a279b882b357a833ea54c296509ecd5f4e8dd9715e0289b5533a394b0"
+      }
+    },
+    {
+      "id": "f393873e4d7576ed80806bdd",
+      "expression": "$type === '20'",
+      "location": "app/Support/Exact/HeaderAllocation.php:125",
+      "action": "manual_review",
+      "category": "validation",
+      "justification": "Selecciona el código fiscal de afectación o descuento para restringir la base elegible; son identificadores de catálogo. La participación se calcula con racionales.",
+      "evidence": [
+        "app/Support/Exact/HeaderAllocation.php",
+        "tests/Unit/ExactHeaderAllocationTest.php"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/HeaderAllocation.php": "d3264e7dcc43fb430a0cd2adcb5a23553ceb31ce98bbd48492fbcdadf4040421",
+        "tests/Unit/ExactHeaderAllocationTest.php": "f41b123a279b882b357a833ea54c296509ecd5f4e8dd9715e0289b5533a394b0"
+      }
+    },
+    {
+      "id": "86e171cf9d45791a6c76c600",
+      "expression": "$owner->getConnection()->transactionLevel() === 0",
+      "location": "app/Support/Exact/HeaderAllocation.php:141",
+      "action": "manual_review",
+      "category": "validation",
+      "justification": "Exige la transacción comercial activa para congelar cabecera y participaciones conjuntamente.",
+      "evidence": [
+        "app/Support/Exact/HeaderAllocation.php",
+        "tests/Unit/ExactCommercialBatchTest.php"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/HeaderAllocation.php": "d3264e7dcc43fb430a0cd2adcb5a23553ceb31ce98bbd48492fbcdadf4040421",
+        "tests/Unit/ExactCommercialBatchTest.php": "14dce73adb3c27b6abc8e77bd28d401d4f9062a2c88d3191429217b8d243d800"
+      }
+    },
+    {
+      "id": "551f45b4c85b3e8b0016c592",
+      "expression": "$owner->getConnection()->update('UPDATE ' . $table . ' SET calculation_snapshot = CASE id ' . implode(' ', $cases) . ' ELSE calculation_snapshot END WHERE ' . $foreign . ' = ? AND id IN (' . implode(',', array_fill(0, count($ids), '?')) . ')', array_merge($bindings, $ids))",
+      "location": "app/Support/Exact/HeaderAllocation.php:158",
+      "action": "manual_review",
+      "category": "storage",
+      "justification": "CASE actualiza únicamente JSON de fracciones en lotes con parámetros enlazados y dueño restringido. No realiza CAST ni aritmética SQL. La cabecera se guarda en la misma transacción; rollback probado.",
+      "evidence": [
+        "app/Support/Exact/HeaderAllocation.php",
+        "tests/Unit/FiscalEmissionSchemaTest.php"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/HeaderAllocation.php": "d3264e7dcc43fb430a0cd2adcb5a23553ceb31ce98bbd48492fbcdadf4040421",
+        "tests/Unit/FiscalEmissionSchemaTest.php": "d4b4ea211255e7fe050e916cc5fb3bcbb77af0c4db629ff0e915e738f0ff774d"
+      }
+    },
+    {
+      "id": "6ca82745836c990fd30015de",
+      "expression": "count($batch) === 500",
+      "location": "app/Support/Exact/HeaderAllocation.php:168",
+      "action": "manual_review",
+      "category": "technical",
+      "justification": "Vacía cada lote de 500 snapshots; es una cuenta de filas, no un límite de unidades o dinero.",
+      "evidence": [
+        "app/Support/Exact/HeaderAllocation.php",
+        "tests/Unit/ExactCommercialBatchTest.php"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/HeaderAllocation.php": "d3264e7dcc43fb430a0cd2adcb5a23553ceb31ce98bbd48492fbcdadf4040421",
+        "tests/Unit/ExactCommercialBatchTest.php": "14dce73adb3c27b6abc8e77bd28d401d4f9062a2c88d3191429217b8d243d800"
+      }
+    },
+    {
+      "id": "50358452710b5177ec8e548c",
+      "expression": "$count++",
+      "location": "app/Support/Exact/OutstandingSummary.php:35",
+      "action": "manual_review",
+      "category": "technical",
+      "justification": "Cuenta documentos con saldo positivo para el resumen global; no cambia el saldo.",
+      "evidence": [
+        "app/Support/Exact/OutstandingSummary.php",
+        "tests/Unit/ExactReceivablesTest.php"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/OutstandingSummary.php": "6b873acccc36be28f5d045a4e5744502436e4295cf8647cb42d741766812c976",
+        "tests/Unit/ExactReceivablesTest.php": "552796fb5c880f085c989b8908889a5c6318a861c21ed1ae4feec757297d6ee4"
+      }
+    },
+    {
+      "id": "3681bdc3e7d358be6956761d",
+      "expression": "$connection->transactionLevel() > 0",
+      "location": "app/Support/Exact/ReadSnapshot.php:15",
+      "action": "manual_review",
+      "category": "technical",
+      "justification": "Detecta transacción activa para controlar el corte consistente MySQL y sus ámbitos anidados.",
+      "evidence": [
+        "app/Support/Exact/ReadSnapshot.php",
+        "tests/Unit/ExactReadSnapshotTest.php"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/ReadSnapshot.php": "f7d446671dafadf28844e205a9ed09b3e84bec91dba57d87818619e96cffce66",
+        "tests/Unit/ExactReadSnapshotTest.php": "8347d49fafad499c4efb70416f74b4bbce7c66ea7e9494bde5ce786b3fb7474b"
+      }
+    },
+    {
+      "id": "c11a1db55122e598a7a56c70",
+      "expression": "$q->selectRaw('1')",
+      "location": "app/Support/Exact/Receivables.php:47",
+      "action": "manual_review",
+      "category": "technical",
+      "justification": "SELECT 1 es la constante booleana de una subconsulta EXISTS de plataformas; no suma ni convierte dinero.",
+      "evidence": [
+        "app/Support/Exact/Receivables.php",
+        "tests/Unit/ExactReceivablesTest.php"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/Receivables.php": "6e627b0c61c06ef2b365d1af3b79faad19f6d235ef5502fa734239d8610432c0",
+        "tests/Unit/ExactReceivablesTest.php": "552796fb5c880f085c989b8908889a5c6318a861c21ed1ae4feec757297d6ee4"
+      }
+    },
+    {
+      "id": "eea7a8265ae4cdf7989c0a69",
+      "expression": "count($batch) === 500",
+      "location": "app/Support/Exact/Receivables.php:98",
+      "action": "manual_review",
+      "category": "technical",
+      "justification": "Continúa la paginación keyset sólo tras un lote completo de 500 cabeceras.",
+      "evidence": [
+        "app/Support/Exact/Receivables.php",
+        "tests/Unit/ExactReceivablesTest.php"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/Receivables.php": "6e627b0c61c06ef2b365d1af3b79faad19f6d235ef5502fa734239d8610432c0",
+        "tests/Unit/ExactReceivablesTest.php": "552796fb5c880f085c989b8908889a5c6318a861c21ed1ae4feec757297d6ee4"
+      }
+    },
+    {
+      "id": "0ae332a5c3b58ae570028d56",
+      "expression": "$row->document_type_id !== '01'",
+      "location": "app/Support/Exact/Receivables.php:108",
+      "action": "manual_review",
+      "category": "technical",
+      "justification": "El código 01 identifica la factura que admite notas y devolución principal; no es el valor decimal uno.",
+      "evidence": [
+        "app/Support/Exact/Receivables.php",
+        "tests/Unit/ExactReceivablesTest.php"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/Receivables.php": "6e627b0c61c06ef2b365d1af3b79faad19f6d235ef5502fa734239d8610432c0",
+        "tests/Unit/ExactReceivablesTest.php": "552796fb5c880f085c989b8908889a5c6318a861c21ed1ae4feec757297d6ee4"
+      }
+    },
+    {
+      "id": "68a77b91c50480904da5f731",
+      "expression": "$due->format('d/m/Y')",
+      "location": "app/Support/Exact/Receivables.php:121",
+      "action": "manual_review",
+      "category": "technical",
+      "justification": "Formatea el Carbon de vencimiento construido desde due_at; sólo fecha del DTO. El saldo se recupera de sus fracciones.",
+      "evidence": [
+        "app/Support/Exact/Receivables.php",
+        "tests/Unit/ExactReceivablesTest.php"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/Receivables.php": "6e627b0c61c06ef2b365d1af3b79faad19f6d235ef5502fa734239d8610432c0",
+        "tests/Unit/ExactReceivablesTest.php": "552796fb5c880f085c989b8908889a5c6318a861c21ed1ae4feec757297d6ee4"
+      }
+    },
+    {
+      "id": "d6fd505a8a90b773dd4c07a4",
+      "expression": "$due->format('Y-m-d')",
+      "location": "app/Support/Exact/Receivables.php:122",
+      "action": "manual_review",
+      "category": "technical",
+      "justification": "Formatea el Carbon de vencimiento construido desde due_at; sólo fecha del DTO. El saldo se recupera de sus fracciones.",
+      "evidence": [
+        "app/Support/Exact/Receivables.php",
+        "tests/Unit/ExactReceivablesTest.php"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/Receivables.php": "6e627b0c61c06ef2b365d1af3b79faad19f6d235ef5502fa734239d8610432c0",
+        "tests/Unit/ExactReceivablesTest.php": "552796fb5c880f085c989b8908889a5c6318a861c21ed1ae4feec757297d6ee4"
+      }
+    },
+    {
+      "id": "f5c838a38c7db55f21d28b85",
+      "expression": "strcmp((string) $row->date_of_payment, $dates[$id]) > 0",
+      "location": "app/Support/Exact/Receivables.php:152",
+      "action": "manual_review",
+      "category": "technical",
+      "justification": "Escoge la última fecha ISO de pago por orden lexical; no compara ni suma importes.",
+      "evidence": [
+        "app/Support/Exact/Receivables.php",
+        "tests/Unit/ExactReceivablesTest.php"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/Receivables.php": "6e627b0c61c06ef2b365d1af3b79faad19f6d235ef5502fa734239d8610432c0",
+        "tests/Unit/ExactReceivablesTest.php": "552796fb5c880f085c989b8908889a5c6318a861c21ed1ae4feec757297d6ee4"
+      }
+    },
+    {
+      "id": "15e2b868795b41aa9295188b",
+      "expression": "$limit > 500",
+      "location": "app/Support/Exact/DashboardDebtors.php:13",
+      "action": "manual_review",
+      "category": "technical",
+      "justification": "Valida el límite entero de clientes del widget entre 1 y 500 antes de paginar el resultado exacto.",
+      "evidence": [
+        "app/Support/Exact/DashboardDebtors.php",
+        "tests/Unit/ExactDashboardConsumersTest.php"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/DashboardDebtors.php": "891ae3b32a439723ca4ec69b2188f69a26b84ba11b8ca7eaa54333834bbce7d5",
+        "tests/Unit/ExactDashboardConsumersTest.php": "229fcf91dd2a4eaae473ef128d139e6a2a5cd234adc5b70cb221b901ba6b6b81"
+      }
+    },
+    {
+      "id": "a937ec8fe77602c6f618a654",
+      "expression": "$limit < 1",
+      "location": "app/Support/Exact/DashboardDebtors.php:13",
+      "action": "manual_review",
+      "category": "technical",
+      "justification": "Valida el límite entero de clientes del widget entre 1 y 500 antes de paginar el resultado exacto.",
+      "evidence": [
+        "app/Support/Exact/DashboardDebtors.php",
+        "tests/Unit/ExactDashboardConsumersTest.php"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/DashboardDebtors.php": "891ae3b32a439723ca4ec69b2188f69a26b84ba11b8ca7eaa54333834bbce7d5",
+        "tests/Unit/ExactDashboardConsumersTest.php": "229fcf91dd2a4eaae473ef128d139e6a2a5cd234adc5b70cb221b901ba6b6b81"
+      }
+    },
+    {
+      "id": "9a51bff663d0b50721458d75",
+      "expression": "$current !== $row['customer_id']",
+      "location": "app/Support/Exact/DashboardDebtors.php:18",
+      "action": "manual_review",
+      "category": "technical",
+      "justification": "Detecta cambio de identidad del cliente en el conjunto ordenado para cerrar su grupo; la deuda se suma racionalmente.",
+      "evidence": [
+        "app/Support/Exact/DashboardDebtors.php",
+        "tests/Unit/ExactDashboardConsumersTest.php"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/DashboardDebtors.php": "891ae3b32a439723ca4ec69b2188f69a26b84ba11b8ca7eaa54333834bbce7d5",
+        "tests/Unit/ExactDashboardConsumersTest.php": "229fcf91dd2a4eaae473ef128d139e6a2a5cd234adc5b70cb221b901ba6b6b81"
+      }
+    },
+    {
+      "id": "69e6a0af71565ac67fc5f781",
+      "expression": "$days < 0",
+      "location": "app/Support/Exact/DashboardDebtors.php:36",
+      "action": "manual_review",
+      "category": "technical",
+      "justification": "Opera únicamente con días enteros de calendario para vencido/hoy/próxima semana, su plural y orden temporal; no redondea deudas.",
+      "evidence": [
+        "app/Support/Exact/DashboardDebtors.php",
+        "tests/Unit/ExactDashboardConsumersTest.php"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/DashboardDebtors.php": "891ae3b32a439723ca4ec69b2188f69a26b84ba11b8ca7eaa54333834bbce7d5",
+        "tests/Unit/ExactDashboardConsumersTest.php": "229fcf91dd2a4eaae473ef128d139e6a2a5cd234adc5b70cb221b901ba6b6b81"
+      }
+    },
+    {
+      "id": "f7c6aa9a2a82beb2e37e0741",
+      "expression": "$days <= 7",
+      "location": "app/Support/Exact/DashboardDebtors.php:36",
+      "action": "manual_review",
+      "category": "technical",
+      "justification": "Opera únicamente con días enteros de calendario para vencido/hoy/próxima semana, su plural y orden temporal; no redondea deudas.",
+      "evidence": [
+        "app/Support/Exact/DashboardDebtors.php",
+        "tests/Unit/ExactDashboardConsumersTest.php"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/DashboardDebtors.php": "891ae3b32a439723ca4ec69b2188f69a26b84ba11b8ca7eaa54333834bbce7d5",
+        "tests/Unit/ExactDashboardConsumersTest.php": "229fcf91dd2a4eaae473ef128d139e6a2a5cd234adc5b70cb221b901ba6b6b81"
+      }
+    },
+    {
+      "id": "5f775e49787058ea12cbf38e",
+      "expression": "abs($days)",
+      "location": "app/Support/Exact/DashboardDebtors.php:37",
+      "action": "manual_review",
+      "category": "technical",
+      "justification": "Opera únicamente con días enteros de calendario para vencido/hoy/próxima semana, su plural y orden temporal; no redondea deudas.",
+      "evidence": [
+        "app/Support/Exact/DashboardDebtors.php",
+        "tests/Unit/ExactDashboardConsumersTest.php"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/DashboardDebtors.php": "891ae3b32a439723ca4ec69b2188f69a26b84ba11b8ca7eaa54333834bbce7d5",
+        "tests/Unit/ExactDashboardConsumersTest.php": "229fcf91dd2a4eaae473ef128d139e6a2a5cd234adc5b70cb221b901ba6b6b81"
+      }
+    },
+    {
+      "id": "a1b12719c7769ade63f65a28",
+      "expression": "abs($days)",
+      "location": "app/Support/Exact/DashboardDebtors.php:37",
+      "action": "manual_review",
+      "category": "technical",
+      "justification": "Opera únicamente con días enteros de calendario para vencido/hoy/próxima semana, su plural y orden temporal; no redondea deudas.",
+      "evidence": [
+        "app/Support/Exact/DashboardDebtors.php",
+        "tests/Unit/ExactDashboardConsumersTest.php"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/DashboardDebtors.php": "891ae3b32a439723ca4ec69b2188f69a26b84ba11b8ca7eaa54333834bbce7d5",
+        "tests/Unit/ExactDashboardConsumersTest.php": "229fcf91dd2a4eaae473ef128d139e6a2a5cd234adc5b70cb221b901ba6b6b81"
+      }
+    },
+    {
+      "id": "8b2907757a2e69da700f008a",
+      "expression": "abs($days) === 1",
+      "location": "app/Support/Exact/DashboardDebtors.php:37",
+      "action": "manual_review",
+      "category": "technical",
+      "justification": "Opera únicamente con días enteros de calendario para vencido/hoy/próxima semana, su plural y orden temporal; no redondea deudas.",
+      "evidence": [
+        "app/Support/Exact/DashboardDebtors.php",
+        "tests/Unit/ExactDashboardConsumersTest.php"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/DashboardDebtors.php": "891ae3b32a439723ca4ec69b2188f69a26b84ba11b8ca7eaa54333834bbce7d5",
+        "tests/Unit/ExactDashboardConsumersTest.php": "229fcf91dd2a4eaae473ef128d139e6a2a5cd234adc5b70cb221b901ba6b6b81"
+      }
+    },
+    {
+      "id": "1fef7505de8cf780f7daae7b",
+      "expression": "$days < 0",
+      "location": "app/Support/Exact/DashboardDebtors.php:37",
+      "action": "manual_review",
+      "category": "technical",
+      "justification": "Opera únicamente con días enteros de calendario para vencido/hoy/próxima semana, su plural y orden temporal; no redondea deudas.",
+      "evidence": [
+        "app/Support/Exact/DashboardDebtors.php",
+        "tests/Unit/ExactDashboardConsumersTest.php"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/DashboardDebtors.php": "891ae3b32a439723ca4ec69b2188f69a26b84ba11b8ca7eaa54333834bbce7d5",
+        "tests/Unit/ExactDashboardConsumersTest.php": "229fcf91dd2a4eaae473ef128d139e6a2a5cd234adc5b70cb221b901ba6b6b81"
+      }
+    },
+    {
+      "id": "0a13da9091de639c83a8aa6c",
+      "expression": "$days === 1",
+      "location": "app/Support/Exact/DashboardDebtors.php:38",
+      "action": "manual_review",
+      "category": "technical",
+      "justification": "Opera únicamente con días enteros de calendario para vencido/hoy/próxima semana, su plural y orden temporal; no redondea deudas.",
+      "evidence": [
+        "app/Support/Exact/DashboardDebtors.php",
+        "tests/Unit/ExactDashboardConsumersTest.php"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/DashboardDebtors.php": "891ae3b32a439723ca4ec69b2188f69a26b84ba11b8ca7eaa54333834bbce7d5",
+        "tests/Unit/ExactDashboardConsumersTest.php": "229fcf91dd2a4eaae473ef128d139e6a2a5cd234adc5b70cb221b901ba6b6b81"
+      }
+    },
+    {
+      "id": "642fd8f35b80afc8c8daa65d",
+      "expression": "$days === 0",
+      "location": "app/Support/Exact/DashboardDebtors.php:38",
+      "action": "manual_review",
+      "category": "technical",
+      "justification": "Opera únicamente con días enteros de calendario para vencido/hoy/próxima semana, su plural y orden temporal; no redondea deudas.",
+      "evidence": [
+        "app/Support/Exact/DashboardDebtors.php",
+        "tests/Unit/ExactDashboardConsumersTest.php"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/DashboardDebtors.php": "891ae3b32a439723ca4ec69b2188f69a26b84ba11b8ca7eaa54333834bbce7d5",
+        "tests/Unit/ExactDashboardConsumersTest.php": "229fcf91dd2a4eaae473ef128d139e6a2a5cd234adc5b70cb221b901ba6b6b81"
+      }
+    },
+    {
+      "id": "cc1ea240afc067493f16590b",
+      "expression": "($a['due_days'] ?? PHP_INT_MAX) <=> ($b['due_days'] ?? PHP_INT_MAX)",
+      "location": "app/Support/Exact/DashboardDebtors.php:49",
+      "action": "manual_review",
+      "category": "technical",
+      "justification": "Opera únicamente con días enteros de calendario para vencido/hoy/próxima semana, su plural y orden temporal; no redondea deudas.",
+      "evidence": [
+        "app/Support/Exact/DashboardDebtors.php",
+        "tests/Unit/ExactDashboardConsumersTest.php"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/DashboardDebtors.php": "891ae3b32a439723ca4ec69b2188f69a26b84ba11b8ca7eaa54333834bbce7d5",
+        "tests/Unit/ExactDashboardConsumersTest.php": "229fcf91dd2a4eaae473ef128d139e6a2a5cd234adc5b70cb221b901ba6b6b81"
+      }
+    },
+    {
+      "id": "db861a859ffe72926ae13a0c",
+      "expression": "Decimal::represent($amount)",
+      "location": "app/Support/Exact/DashboardDebtors.php:41",
+      "action": "manual_review",
+      "category": "storage",
+      "justification": "La cadena del DTO acompaña un snapshot de total_to_pay/total; la agrupación, ordenación y sumas frontend utilizan la fracción conservada. El formato final es independiente.",
+      "evidence": [
+        "app/Support/Exact/DashboardDebtors.php",
+        "tests/Unit/ExactDashboardConsumersTest.php"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/DashboardDebtors.php": "891ae3b32a439723ca4ec69b2188f69a26b84ba11b8ca7eaa54333834bbce7d5",
+        "tests/Unit/ExactDashboardConsumersTest.php": "229fcf91dd2a4eaae473ef128d139e6a2a5cd234adc5b70cb221b901ba6b6b81"
+      }
+    },
+    {
+      "id": "4b2044e9de08a4fba9333513",
+      "expression": "Decimal::represent($total)",
+      "location": "app/Support/Exact/DashboardDebtors.php:58",
+      "action": "manual_review",
+      "category": "storage",
+      "justification": "La cadena del DTO acompaña un snapshot de total_to_pay/total; la agrupación, ordenación y sumas frontend utilizan la fracción conservada. El formato final es independiente.",
+      "evidence": [
+        "app/Support/Exact/DashboardDebtors.php",
+        "tests/Unit/ExactDashboardConsumersTest.php"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/DashboardDebtors.php": "891ae3b32a439723ca4ec69b2188f69a26b84ba11b8ca7eaa54333834bbce7d5",
+        "tests/Unit/ExactDashboardConsumersTest.php": "229fcf91dd2a4eaae473ef128d139e6a2a5cd234adc5b70cb221b901ba6b6b81"
+      }
+    },
+    {
+      "id": "abeea3237dcbbb9768b0dcc0",
+      "expression": "Decimal::represent($total)",
+      "location": "app/Support/Exact/DashboardDebtors.php:64",
+      "action": "manual_review",
+      "category": "storage",
+      "justification": "La cadena del DTO acompaña un snapshot de total_to_pay/total; la agrupación, ordenación y sumas frontend utilizan la fracción conservada. El formato final es independiente.",
+      "evidence": [
+        "app/Support/Exact/DashboardDebtors.php",
+        "tests/Unit/ExactDashboardConsumersTest.php"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/DashboardDebtors.php": "891ae3b32a439723ca4ec69b2188f69a26b84ba11b8ca7eaa54333834bbce7d5",
+        "tests/Unit/ExactDashboardConsumersTest.php": "229fcf91dd2a4eaae473ef128d139e6a2a5cd234adc5b70cb221b901ba6b6b81"
+      }
+    },
+    {
+      "id": "7a2fab1e7bc8738ae873ca1e",
+      "expression": "$customers->sum('total_to_pay')",
+      "location": "app/Support/Exact/DashboardDebtors.php:57",
+      "action": "manual_review",
+      "category": "exact_arithmetic",
+      "justification": "ReportDataset::sum recupera cada total_to_pay mediante readRequired y utiliza Decimal::sum; conserva el subcéntimo antes de limitar clientes.",
+      "evidence": [
+        "app/Support/Exact/DashboardDebtors.php",
+        "tests/Unit/ExactDashboardConsumersTest.php"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/DashboardDebtors.php": "891ae3b32a439723ca4ec69b2188f69a26b84ba11b8ca7eaa54333834bbce7d5",
+        "tests/Unit/ExactDashboardConsumersTest.php": "229fcf91dd2a4eaae473ef128d139e6a2a5cd234adc5b70cb221b901ba6b6b81"
+      }
+    },
+    {
+      "id": "b8f65953363ca418f16384ac",
+      "expression": "$id !== $row['item_id']",
+      "location": "app/Support/Exact/DashboardStock.php:33",
+      "action": "manual_review",
+      "category": "technical",
+      "justification": "Detecta el cambio de item_id para cerrar la suma por producto; no utiliza stock proyectado para comparar cantidades.",
+      "evidence": [
+        "app/Support/Exact/DashboardStock.php",
+        "tests/Unit/ExactDashboardConsumersTest.php"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/DashboardStock.php": "7f140076854688f2b621af7321b85990ec56f3361e37dc06d1e1403f59cf0d2d",
+        "tests/Unit/ExactDashboardConsumersTest.php": "229fcf91dd2a4eaae473ef128d139e6a2a5cd234adc5b70cb221b901ba6b6b81"
+      }
+    },
+    {
+      "id": "0e5065c1ce88f59645537178",
+      "expression": "(int) $request",
+      "location": "modules/Dashboard/Helpers/DashboardData.php:299",
+      "action": "manual_review",
+      "category": "technical",
+      "justification": "Convierte el límite de clientes heredado del widget a entero; DashboardDebtors exige 1..500. No convierte importes.",
+      "evidence": [
+        "modules/Dashboard/Helpers/DashboardData.php",
+        "tests/Unit/ExactDashboardConsumersTest.php"
+      ],
+      "evidence_sha256": {
+        "modules/Dashboard/Helpers/DashboardData.php": "cae596998dcda24a76e0b9ccb7ae42bbf1a1313ec5bce2d9297b961e248eb937",
+        "tests/Unit/ExactDashboardConsumersTest.php": "229fcf91dd2a4eaae473ef128d139e6a2a5cd234adc5b70cb221b901ba6b6b81"
+      }
+    },
+    {
+      "id": "8046b52bb22839599e65752a",
+      "expression": "(int) $limit",
+      "location": "modules/Dashboard/Helpers/DashboardData.php:303",
+      "action": "manual_review",
+      "category": "technical",
+      "justification": "Convierte el límite de clientes heredado del widget a entero; DashboardDebtors exige 1..500. No convierte importes.",
+      "evidence": [
+        "modules/Dashboard/Helpers/DashboardData.php",
+        "tests/Unit/ExactDashboardConsumersTest.php"
+      ],
+      "evidence_sha256": {
+        "modules/Dashboard/Helpers/DashboardData.php": "cae596998dcda24a76e0b9ccb7ae42bbf1a1313ec5bce2d9297b961e248eb937",
+        "tests/Unit/ExactDashboardConsumersTest.php": "229fcf91dd2a4eaae473ef128d139e6a2a5cd234adc5b70cb221b901ba6b6b81"
+      }
+    },
+    {
+      "id": "cc6dd6e94cc34338746ec4a9",
+      "expression": "$document->getConnection()->transactionLevel() === 0",
+      "location": "app/Services/Fiscal/ExactDocumentSummary.php:13",
+      "action": "manual_review",
+      "category": "technical",
+      "justification": "Consulta el nivel entero de transacción para que el productor conserve escritura y snapshot atómicos.",
+      "evidence": [
+        "app/Services/Fiscal/ExactDocumentSummary.php",
+        "tests/Unit/ExactCommercialBatchTest.php"
+      ],
+      "evidence_sha256": {
+        "app/Services/Fiscal/ExactDocumentSummary.php": "78b9403e15faaea2e8606a5cc0da217a479283b5aa7fbb5a4d856624a5ac2a06",
+        "tests/Unit/ExactCommercialBatchTest.php": "14dce73adb3c27b6abc8e77bd28d401d4f9062a2c88d3191429217b8d243d800"
+      }
+    },
+    {
+      "id": "fc44da8bba723e39d941d0e3",
+      "expression": "$owner->getConnection()->transactionLevel() === 0",
+      "location": "app/Support/Exact/CommercialCalculation.php:74",
+      "action": "manual_review",
+      "category": "technical",
+      "justification": "Consulta el nivel entero de transacción para que el productor conserve escritura y snapshot atómicos.",
+      "evidence": [
+        "app/Support/Exact/CommercialCalculation.php",
+        "tests/Unit/ExactCommercialBatchTest.php"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/CommercialCalculation.php": "55bdb3d3ee0eeda90ecc03489f7ca2bb7cd7c5cf1fcead0d27cac97394749e5f",
+        "tests/Unit/ExactCommercialBatchTest.php": "14dce73adb3c27b6abc8e77bd28d401d4f9062a2c88d3191429217b8d243d800"
+      }
+    },
+    {
+      "id": "35996adf79f2a99d340d6393",
+      "expression": "$owner->getConnection()->transactionLevel() === 0",
+      "location": "app/Support/Exact/CommercialCalculation.php:119",
+      "action": "manual_review",
+      "category": "technical",
+      "justification": "Consulta el nivel entero de transacción para que el productor conserve escritura y snapshot atómicos.",
+      "evidence": [
+        "app/Support/Exact/CommercialCalculation.php",
+        "tests/Unit/ExactCommercialBatchTest.php"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/CommercialCalculation.php": "55bdb3d3ee0eeda90ecc03489f7ca2bb7cd7c5cf1fcead0d27cac97394749e5f",
+        "tests/Unit/ExactCommercialBatchTest.php": "14dce73adb3c27b6abc8e77bd28d401d4f9062a2c88d3191429217b8d243d800"
+      }
+    },
+    {
+      "id": "062cfe0e13e4e4b1f201beed",
+      "expression": "D::sum($rows->map(fn($v) => D::readRequired($v, $field)))",
+      "location": "app/Services/Fiscal/ExactDocumentSummary.php:30",
+      "action": "manual_review",
+      "category": "exact_arithmetic",
+      "justification": "Decimal::sum recibe fracciones BigRational de las partidas/cargos; no es Collection::sum ni una suma de textos formateados.",
+      "evidence": [
+        "app/Services/Fiscal/ExactDocumentSummary.php",
+        "tests/Unit/FiscalEmissionSchemaTest.php"
+      ],
+      "evidence_sha256": {
+        "app/Services/Fiscal/ExactDocumentSummary.php": "78b9403e15faaea2e8606a5cc0da217a479283b5aa7fbb5a4d856624a5ac2a06",
+        "tests/Unit/FiscalEmissionSchemaTest.php": "d4b4ea211255e7fe050e916cc5fb3bcbb77af0c4db629ff0e915e738f0ff774d"
+      }
+    },
+    {
+      "id": "cbc806e810e6c349464d6a3a",
+      "expression": "D::sum($charges->map($amount))",
+      "location": "app/Services/Fiscal/ExactDocumentSummary.php:37",
+      "action": "manual_review",
+      "category": "exact_arithmetic",
+      "justification": "Decimal::sum recibe fracciones BigRational de las partidas/cargos; no es Collection::sum ni una suma de textos formateados.",
+      "evidence": [
+        "app/Services/Fiscal/ExactDocumentSummary.php",
+        "tests/Unit/FiscalEmissionSchemaTest.php"
+      ],
+      "evidence_sha256": {
+        "app/Services/Fiscal/ExactDocumentSummary.php": "78b9403e15faaea2e8606a5cc0da217a479283b5aa7fbb5a4d856624a5ac2a06",
+        "tests/Unit/FiscalEmissionSchemaTest.php": "d4b4ea211255e7fe050e916cc5fb3bcbb77af0c4db629ff0e915e738f0ff774d"
+      }
+    },
+    {
+      "id": "931dba5405e13750b02778cb",
+      "expression": "Decimal::sum($rows->map(fn($r) => Decimal::read($r, $field)))",
+      "location": "app/Support/Exact/CommercialCalculation.php:79",
+      "action": "manual_review",
+      "category": "exact_arithmetic",
+      "justification": "Decimal::sum recibe fracciones BigRational de las partidas/cargos; no es Collection::sum ni una suma de textos formateados.",
+      "evidence": [
+        "app/Support/Exact/CommercialCalculation.php",
+        "tests/Unit/FiscalEmissionSchemaTest.php"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/CommercialCalculation.php": "55bdb3d3ee0eeda90ecc03489f7ca2bb7cd7c5cf1fcead0d27cac97394749e5f",
+        "tests/Unit/FiscalEmissionSchemaTest.php": "d4b4ea211255e7fe050e916cc5fb3bcbb77af0c4db629ff0e915e738f0ff774d"
+      }
+    },
+    {
+      "id": "8e26392cba6e6bf39d76ba6d",
+      "expression": "Decimal::sum($charges->map($amount))",
+      "location": "app/Support/Exact/CommercialCalculation.php:96",
+      "action": "manual_review",
+      "category": "exact_arithmetic",
+      "justification": "Decimal::sum recibe fracciones BigRational de las partidas/cargos; no es Collection::sum ni una suma de textos formateados.",
+      "evidence": [
+        "app/Support/Exact/CommercialCalculation.php",
+        "tests/Unit/FiscalEmissionSchemaTest.php"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/CommercialCalculation.php": "55bdb3d3ee0eeda90ecc03489f7ca2bb7cd7c5cf1fcead0d27cac97394749e5f",
+        "tests/Unit/FiscalEmissionSchemaTest.php": "d4b4ea211255e7fe050e916cc5fb3bcbb77af0c4db629ff0e915e738f0ff774d"
+      }
+    },
+    {
+      "id": "85bf6bb8fc550fb840561372",
+      "expression": "$first->affectation_igv_type_id === '10'",
+      "location": "app/Services/Fiscal/ExactDocumentSummary.php:48",
+      "action": "manual_review",
+      "category": "validation",
+      "justification": "El código de afectación 10 identifica base gravada y tasa aplicable. Las tasas, bases y descuentos se operan exactamente.",
+      "evidence": [
+        "app/Services/Fiscal/ExactDocumentSummary.php",
+        "tests/Unit/ExactHeaderAllocationTest.php"
+      ],
+      "evidence_sha256": {
+        "app/Services/Fiscal/ExactDocumentSummary.php": "78b9403e15faaea2e8606a5cc0da217a479283b5aa7fbb5a4d856624a5ac2a06",
+        "tests/Unit/ExactHeaderAllocationTest.php": "f41b123a279b882b357a833ea54c296509ecd5f4e8dd9715e0289b5533a394b0"
+      }
+    },
+    {
+      "id": "0572a66a6c97a74de2274cc5",
+      "expression": "$first->affectation_igv_type_id === '10'",
+      "location": "app/Services/Fiscal/ExactDocumentSummary.php:49",
+      "action": "manual_review",
+      "category": "validation",
+      "justification": "El código de afectación 10 identifica base gravada y tasa aplicable. Las tasas, bases y descuentos se operan exactamente.",
+      "evidence": [
+        "app/Services/Fiscal/ExactDocumentSummary.php",
+        "tests/Unit/ExactHeaderAllocationTest.php"
+      ],
+      "evidence_sha256": {
+        "app/Services/Fiscal/ExactDocumentSummary.php": "78b9403e15faaea2e8606a5cc0da217a479283b5aa7fbb5a4d856624a5ac2a06",
+        "tests/Unit/ExactHeaderAllocationTest.php": "f41b123a279b882b357a833ea54c296509ecd5f4e8dd9715e0289b5533a394b0"
+      }
+    },
+    {
+      "id": "1d9f3d20eebb83eab230c947",
+      "expression": "$first->affectation_igv_type_id === '10'",
+      "location": "app/Services/Fiscal/ExactDocumentSummary.php:54",
+      "action": "manual_review",
+      "category": "validation",
+      "justification": "El código de afectación 10 identifica base gravada y tasa aplicable. Las tasas, bases y descuentos se operan exactamente.",
+      "evidence": [
+        "app/Services/Fiscal/ExactDocumentSummary.php",
+        "tests/Unit/ExactHeaderAllocationTest.php"
+      ],
+      "evidence_sha256": {
+        "app/Services/Fiscal/ExactDocumentSummary.php": "78b9403e15faaea2e8606a5cc0da217a479283b5aa7fbb5a4d856624a5ac2a06",
+        "tests/Unit/ExactHeaderAllocationTest.php": "f41b123a279b882b357a833ea54c296509ecd5f4e8dd9715e0289b5533a394b0"
+      }
+    },
+    {
+      "id": "11ee09558a9abdfb28d68039",
+      "expression": "$affectation === '10'",
+      "location": "app/Support/Exact/CommercialCalculation.php:55",
+      "action": "manual_review",
+      "category": "validation",
+      "justification": "El código de afectación 10 identifica base gravada y tasa aplicable. Las tasas, bases y descuentos se operan exactamente.",
+      "evidence": [
+        "app/Support/Exact/CommercialCalculation.php",
+        "tests/Unit/ExactHeaderAllocationTest.php"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/CommercialCalculation.php": "55bdb3d3ee0eeda90ecc03489f7ca2bb7cd7c5cf1fcead0d27cac97394749e5f",
+        "tests/Unit/ExactHeaderAllocationTest.php": "f41b123a279b882b357a833ea54c296509ecd5f4e8dd9715e0289b5533a394b0"
+      }
+    },
+    {
+      "id": "a96414f322d67beee45dd7ed",
+      "expression": "($v['code'] ?? '') === '1000'",
+      "location": "app/Services/Fiscal/ExactDocumentSummary.php:80",
+      "action": "manual_review",
+      "category": "technical",
+      "justification": "1000 es el código de la leyenda del importe en letras que se reemplaza, no una tolerancia ni un importe.",
+      "evidence": [
+        "app/Services/Fiscal/ExactDocumentSummary.php",
+        "tests/Unit/FiscalEmissionSchemaTest.php"
+      ],
+      "evidence_sha256": {
+        "app/Services/Fiscal/ExactDocumentSummary.php": "78b9403e15faaea2e8606a5cc0da217a479283b5aa7fbb5a4d856624a5ac2a06",
+        "tests/Unit/FiscalEmissionSchemaTest.php": "d4b4ea211255e7fe050e916cc5fb3bcbb77af0c4db629ff0e915e738f0ff774d"
+      }
+    },
+    {
+      "id": "e085172f91bb9ab3b6653986",
+      "expression": "D::represent($values['total'], 2)",
+      "location": "app/Services/Fiscal/ExactDocumentSummary.php:76",
+      "action": "manual_review",
+      "category": "settlement",
+      "justification": "Una adaptación final del total exacto al total_payable de dos posiciones; se conserva settlement_adjustment y la fracción original, sin movimiento ficticio.",
+      "evidence": [
+        "app/Services/Fiscal/ExactDocumentSummary.php",
+        "tests/Unit/FiscalEmissionSchemaTest.php"
+      ],
+      "evidence_sha256": {
+        "app/Services/Fiscal/ExactDocumentSummary.php": "78b9403e15faaea2e8606a5cc0da217a479283b5aa7fbb5a4d856624a5ac2a06",
+        "tests/Unit/FiscalEmissionSchemaTest.php": "d4b4ea211255e7fe050e916cc5fb3bcbb77af0c4db629ff0e915e738f0ff774d"
+      }
+    },
+    {
+      "id": "5c5c99987db1905c1a2939fa",
+      "expression": "(self::$deferred[$key] ?? 0) + 1",
+      "location": "app/Support/Exact/CommercialCalculation.php:126",
+      "action": "manual_review",
+      "category": "technical",
+      "justification": "Controla profundidad de ámbitos de reemplazo de líneas. El contador sólo decide cuándo resumir el conjunto completo; finally elimina el ámbito tras fallo.",
+      "evidence": [
+        "app/Support/Exact/CommercialCalculation.php",
+        "tests/Unit/ExactCommercialBatchTest.php"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/CommercialCalculation.php": "55bdb3d3ee0eeda90ecc03489f7ca2bb7cd7c5cf1fcead0d27cac97394749e5f",
+        "tests/Unit/ExactCommercialBatchTest.php": "14dce73adb3c27b6abc8e77bd28d401d4f9062a2c88d3191429217b8d243d800"
+      }
+    },
+    {
+      "id": "106e2f55d28bbfb1ac6d0521",
+      "expression": "--self::$deferred[$key] === 0",
+      "location": "app/Support/Exact/CommercialCalculation.php:130",
+      "action": "manual_review",
+      "category": "technical",
+      "justification": "Controla profundidad de ámbitos de reemplazo de líneas. El contador sólo decide cuándo resumir el conjunto completo; finally elimina el ámbito tras fallo.",
+      "evidence": [
+        "app/Support/Exact/CommercialCalculation.php",
+        "tests/Unit/ExactCommercialBatchTest.php"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/CommercialCalculation.php": "55bdb3d3ee0eeda90ecc03489f7ca2bb7cd7c5cf1fcead0d27cac97394749e5f",
+        "tests/Unit/ExactCommercialBatchTest.php": "14dce73adb3c27b6abc8e77bd28d401d4f9062a2c88d3191429217b8d243d800"
+      }
+    },
+    {
+      "id": "3c65304035f4d7bfa88686f2",
+      "expression": "--self::$deferred[$key]",
+      "location": "app/Support/Exact/CommercialCalculation.php:130",
+      "action": "manual_review",
+      "category": "technical",
+      "justification": "Controla profundidad de ámbitos de reemplazo de líneas. El contador sólo decide cuándo resumir el conjunto completo; finally elimina el ámbito tras fallo.",
+      "evidence": [
+        "app/Support/Exact/CommercialCalculation.php",
+        "tests/Unit/ExactCommercialBatchTest.php"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/CommercialCalculation.php": "55bdb3d3ee0eeda90ecc03489f7ca2bb7cd7c5cf1fcead0d27cac97394749e5f",
+        "tests/Unit/ExactCommercialBatchTest.php": "14dce73adb3c27b6abc8e77bd28d401d4f9062a2c88d3191429217b8d243d800"
+      }
+    },
+    {
+      "id": "137708e4ddbf62c932b1398b",
+      "expression": "Decimal::represent($value)",
+      "location": "app/Support/Exact/SalesConsolidated.php:20",
+      "action": "manual_review",
+      "category": "presentation",
+      "justification": "DTO temporal exclusivo de displayComponents: fracción acompañada de cadena; ReportProjection lee la fracción para repartir la representación final. Los textos resultantes sólo se renderizan.",
+      "evidence": [
+        "app/Support/Exact/SalesConsolidated.php",
+        "tests/Unit/ExactConsolidatedConsumersTest.php"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/SalesConsolidated.php": "c29deb4546151a77ed118db332997ef8b16ec781753857bcda0dd6454ab129cd",
+        "tests/Unit/ExactConsolidatedConsumersTest.php": "7b0c22863f044a4e16d9de0baf1ffa508656f5d82e7ee64ca8f99c8f627d90b5"
+      }
+    }
+  ]
+}

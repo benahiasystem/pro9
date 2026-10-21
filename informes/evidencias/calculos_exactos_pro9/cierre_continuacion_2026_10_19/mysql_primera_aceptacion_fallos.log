@@ -1,0 +1,34 @@
+MySQL 5.7 temporal aislado; sin cambios en la instancia de la aplicación.
+PHPUnit 9.6.34 by Sebastian Bergmann and contributors.
+
+Warning:       Your XML configuration validates against a deprecated schema.
+Suggestion:    Migrate your XML configuration using "--migrate-configuration"!
+
+.....F.........................F...F.................             53 / 53 (100%)
+
+Time: 17:11.107, Memory: 688.51 MB
+
+There were 3 failures:
+
+1) Tests\Unit\FiscalEmissionSchemaTest::test_export_invoices_persist_freeze_edit_and_emit_after_commit
+Failed asserting that '7824.0740721' matches expected 7824.07.
+
+/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php:1062
+
+2) Tests\Unit\FiscalEmissionSchemaTest::test_note_annulment_remote_success_can_finish_commercially_after_stock_race
+Failed asserting that two strings are identical.
+--- Expected
++++ Actual
+@@ @@
+-'remote_confirmed'
++'completed'
+
+/home/benahia/benahia/pro/Pro9/tests/Support/NotePersistenceCases.php:435
+
+3) Tests\Unit\FiscalEmissionSchemaTest::test_spe_real_collection_context_retentions_notes_freeze_and_recovery
+Failed asserting that '1.5000000015' matches expected 1.5.
+
+/home/benahia/benahia/pro/Pro9/tests/Support/SpePersistenceCases.php:104
+
+FAILURES!
+Tests: 53, Assertions: 5682, Failures: 3.

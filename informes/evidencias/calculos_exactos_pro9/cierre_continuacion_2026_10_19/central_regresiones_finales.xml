@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="Tests\Unit\ExactCentralQuoteTest" file="/home/benahia/benahia/pro/Pro9/tests/Unit/ExactCentralQuoteTest.php" tests="6" assertions="39" errors="0" warnings="0" failures="0" skipped="0" time="4.979993">
+    <testcase name="test_new_order_freezes_currency_exact_price_payable_and_adjustment_without_changing_price" class="Tests\Unit\ExactCentralQuoteTest" classname="Tests.Unit.ExactCentralQuoteTest" file="/home/benahia/benahia/pro/Pro9/tests/Unit/ExactCentralQuoteTest.php" line="25" assertions="6" time="0.952164"/>
+    <testcase name="test_corrupt_or_obsolete_quote_is_rejected_without_reconstructing_a_historical_currency" class="Tests\Unit\ExactCentralQuoteTest" classname="Tests.Unit.ExactCentralQuoteTest" file="/home/benahia/benahia/pro/Pro9/tests/Unit/ExactCentralQuoteTest.php" line="39" assertions="3" time="0.817449"/>
+    <testcase name="test_negative_order_rolls_back_before_sql" class="Tests\Unit\ExactCentralQuoteTest" classname="Tests.Unit.ExactCentralQuoteTest" file="/home/benahia/benahia/pro/Pro9/tests/Unit/ExactCentralQuoteTest.php" line="51" assertions="1" time="0.796109"/>
+    <testcase name="test_direct_usd_payload_cannot_bypass_ves_checkout_before_database_credentials_or_network" class="Tests\Unit\ExactCentralQuoteTest" classname="Tests.Unit.ExactCentralQuoteTest" file="/home/benahia/benahia/pro/Pro9/tests/Unit/ExactCentralQuoteTest.php" line="57" assertions="7" time="0.802812"/>
+    <testcase name="test_browser_success_text_cannot_mark_an_order_paid_or_repeat_the_payment" class="Tests\Unit\ExactCentralQuoteTest" classname="Tests.Unit.ExactCentralQuoteTest" file="/home/benahia/benahia/pro/Pro9/tests/Unit/ExactCentralQuoteTest.php" line="73" assertions="20" time="0.809217"/>
+    <testcase name="test_browser_confirmation_also_obeys_unavailable_ves_checkout_before_any_database_read" class="Tests\Unit\ExactCentralQuoteTest" classname="Tests.Unit.ExactCentralQuoteTest" file="/home/benahia/benahia/pro/Pro9/tests/Unit/ExactCentralQuoteTest.php" line="96" assertions="2" time="0.802241"/>
+  </testsuite>
+</testsuites>

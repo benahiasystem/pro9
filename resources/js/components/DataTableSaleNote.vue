@@ -95,9 +95,9 @@
                     </table>
 
                     <div class="row mb-5">
-                        <div class="col-md-4 text-center">Total notas de venta en bolívares Bs. {{ formatDecimal(totals.total_pen)}}</div>
-                        <div class="col-md-4 text-center">Total pagado en bolívares Bs. {{ formatDecimal(totals.total_paid_pen)}}</div>
-                        <div class="col-md-4 text-center">Total por cobrar en bolívares Bs. {{ formatDecimal(totals.total_pending_paid_pen)}}</div>
+                        <div class="col-md-4 text-center">Total notas de venta en bolívares Bs. {{ formatDecimal(totals.total_pen, 'total_pen')}}</div>
+                        <div class="col-md-4 text-center">Total pagado en bolívares Bs. {{ formatDecimal(totals.total_paid_pen, 'total_paid_pen')}}</div>
+                        <div class="col-md-4 text-center">Total por cobrar en bolívares Bs. {{ formatDecimal(totals.total_pending_paid_pen, 'total_pending_paid_pen')}}</div>
                     </div>
 
                     <div>
@@ -121,6 +121,9 @@
 
     import moment from 'moment'
     import queryString from 'query-string'
+    // ######## INICIO CALCULOS EXACTOS PRO9 ########
+    import {exactAmount, exactValue} from '../helpers/exchange-rate-math'
+    // ######## FIN CALCULOS EXACTOS PRO9 ########
 
     export default {
         props: {
@@ -204,9 +207,14 @@
                     }
                 }));
             },
-            formatDecimal(value) {
-                if (value === undefined || value === null || isNaN(value)) return '';
-                return Number(value).toLocaleString('en-US', { minimumFractionDigits: this.decimal_quantity, maximumFractionDigits: this.decimal_quantity });
+            formatDecimal(value, field) {
+                // ######## INICIO CALCULOS EXACTOS PRO9 ########
+                if (value === undefined || value === null) return '';
+                const amount = field ? exactValue(this.totals, field) : exactAmount(value);
+                const parts = amount.final(Number(this.decimal_quantity)).split('.');
+                parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+                return parts.join('.');
+                // ######## FIN CALCULOS EXACTOS PRO9 ########
             },
             checkScrollShadows() {
                 const el = this.$refs.scrollContainer;

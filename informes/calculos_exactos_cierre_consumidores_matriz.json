@@ -1,5 +1,5 @@
 {
-  "date": "2026-10-17",
+  "date": "2026-10-19",
   "status": "incomplete",
   "definition": "Agrupación por ubicación de fuentes. Un contador cero no acredita un recorrido comercial completo. El inventario individual permite localizar cada expresión y su evidencia.",
   "groups": [
@@ -354,13 +354,12 @@
         "app/CoreFacturalo/Templates/preprinted_pdf/static/partials/footer_term_condition.blade.php"
       ],
       "roles": {
-        "other": 75,
-        "models": 2,
-        "views": 207
+        "other": 282,
+        "models": 2
       },
       "candidates": 9086,
-      "classified": 2820,
-      "pending": 6266,
+      "classified": 2828,
+      "pending": 6258,
       "status": "pending_consumers"
     },
     {
@@ -402,9 +401,9 @@
       "roles": {
         "exports": 18
       },
-      "candidates": 24,
-      "classified": 3,
-      "pending": 21,
+      "candidates": 5,
+      "classified": 0,
+      "pending": 5,
       "status": "pending_consumers"
     },
     {
@@ -741,9 +740,9 @@
         "controllers": 142,
         "other": 167
       },
-      "candidates": 1978,
-      "classified": 523,
-      "pending": 1455,
+      "candidates": 1945,
+      "classified": 542,
+      "pending": 1403,
       "status": "pending_consumers"
     },
     {
@@ -783,7 +782,7 @@
       "candidates": 1,
       "classified": 1,
       "pending": 0,
-      "status": "requires_semantic_review"
+      "status": "expressions_reviewed_flow_acceptance_pending"
     },
     {
       "module": "app/Models",
@@ -974,9 +973,9 @@
       "roles": {
         "models": 182
       },
-      "candidates": 900,
-      "classified": 175,
-      "pending": 725,
+      "candidates": 899,
+      "classified": 177,
+      "pending": 722,
       "status": "pending_consumers"
     },
     {
@@ -1000,7 +999,7 @@
         "app/Observers/PurchaseObserver.php"
       ],
       "roles": {
-        "other": 3
+        "observers": 3
       },
       "candidates": 5,
       "classified": 0,
@@ -1147,9 +1146,9 @@
       "roles": {
         "other": 92
       },
-      "candidates": 1901,
-      "classified": 496,
-      "pending": 1405,
+      "candidates": 1885,
+      "classified": 542,
+      "pending": 1343,
       "status": "pending_consumers"
     },
     {
@@ -1158,23 +1157,35 @@
         "app/Support/DocumentListColumns.php",
         "app/Support/Exact/AccountTotals.php",
         "app/Support/Exact/Aggregate.php",
+        "app/Support/Exact/CentralPaymentQuote.php",
+        "app/Support/Exact/CheckoutAvailability.php",
         "app/Support/Exact/CommercialCalculation.php",
+        "app/Support/Exact/ConsolidatedLines.php",
+        "app/Support/Exact/DashboardDebtors.php",
+        "app/Support/Exact/DashboardStock.php",
         "app/Support/Exact/Decimal.php",
         "app/Support/Exact/FractionSheet.php",
         "app/Support/Exact/HasExactValues.php",
+        "app/Support/Exact/HeaderAllocation.php",
         "app/Support/Exact/Installments.php",
         "app/Support/Exact/JsonDecimals.php",
         "app/Support/Exact/LineCalculation.php",
         "app/Support/Exact/LoyaltyPoints.php",
+        "app/Support/Exact/OutstandingSummary.php",
         "app/Support/Exact/Payables.php",
         "app/Support/Exact/PdfAmounts.php",
         "app/Support/Exact/PdfPrice.php",
         "app/Support/Exact/Persistence.php",
         "app/Support/Exact/PersistsExactValues.php",
+        "app/Support/Exact/ReadSnapshot.php",
+        "app/Support/Exact/Receivables.php",
         "app/Support/Exact/ReportDataset.php",
         "app/Support/Exact/ReportProjection.php",
+        "app/Support/Exact/SaleNoteBalance.php",
+        "app/Support/Exact/SaleNoteConversionLines.php",
         "app/Support/Exact/SalesConsolidated.php",
         "app/Support/Exact/Settlement.php",
+        "app/Support/Exact/TenderAllocation.php",
         "app/Support/Exact/XlsxDecimals.php",
         "app/Support/ItemImport/ItemImportCatalogs.php",
         "app/Support/ItemImport/ItemImportContract.php",
@@ -1190,11 +1201,11 @@
         "app/Support/Venezuela/VendeyaDocumentPayloadNormalizer.php"
       ],
       "roles": {
-        "other": 33
+        "other": 45
       },
-      "candidates": 337,
-      "classified": 161,
-      "pending": 176,
+      "candidates": 458,
+      "classified": 281,
+      "pending": 177,
       "status": "pending_consumers"
     },
     {
@@ -1236,7 +1247,7 @@
       "candidates": 0,
       "classified": 0,
       "pending": 0,
-      "status": "requires_semantic_review"
+      "status": "expressions_reviewed_flow_acceptance_pending"
     },
     {
       "module": "config",
@@ -1800,7 +1811,7 @@
         "database/migrations/tenant/2026_08_17_000999_add_tenant_foreign_keys.php"
       ],
       "roles": {
-        "other": 506
+        "migrations": 506
       },
       "candidates": 439,
       "classified": 11,
@@ -1820,7 +1831,7 @@
         "database/seeders/data/venezuela_geopolitical_data.php"
       ],
       "roles": {
-        "other": 8
+        "seeders": 8
       },
       "candidates": 15,
       "classified": 0,
@@ -1904,8 +1915,8 @@
         "routes": 2
       },
       "candidates": 396,
-      "classified": 47,
-      "pending": 349,
+      "classified": 48,
+      "pending": 348,
       "status": "pending_consumers"
     },
     {
@@ -1969,8 +1980,8 @@
         "routes": 2
       },
       "candidates": 35,
-      "classified": 4,
-      "pending": 31,
+      "classified": 8,
+      "pending": 27,
       "status": "pending_consumers"
     },
     {
@@ -2080,9 +2091,9 @@
         "views": 7,
         "routes": 2
       },
-      "candidates": 510,
+      "candidates": 514,
       "classified": 68,
-      "pending": 442,
+      "pending": 446,
       "status": "pending_consumers"
     },
     {
@@ -2096,7 +2107,7 @@
       "candidates": 0,
       "classified": 0,
       "pending": 0,
-      "status": "requires_semantic_review"
+      "status": "expressions_reviewed_flow_acceptance_pending"
     },
     {
       "module": "modules/CustomField",
@@ -2198,9 +2209,9 @@
         "views": 2,
         "routes": 2
       },
-      "candidates": 1384,
-      "classified": 179,
-      "pending": 1205,
+      "candidates": 1300,
+      "classified": 232,
+      "pending": 1068,
       "status": "pending_consumers"
     },
     {
@@ -2228,8 +2239,8 @@
         "routes": 2
       },
       "candidates": 39,
-      "classified": 6,
-      "pending": 33,
+      "classified": 12,
+      "pending": 27,
       "status": "pending_consumers"
     },
     {
@@ -2272,8 +2283,9 @@
       ],
       "roles": {
         "controllers": 6,
-        "other": 21,
+        "other": 18,
         "models": 5,
+        "observers": 3,
         "routes": 2
       },
       "candidates": 16,
@@ -2436,8 +2448,8 @@
         "routes": 2
       },
       "candidates": 717,
-      "classified": 115,
-      "pending": 602,
+      "classified": 158,
+      "pending": 559,
       "status": "pending_consumers"
     },
     {
@@ -2576,9 +2588,9 @@
         "views": 51,
         "routes": 2
       },
-      "candidates": 2119,
-      "classified": 301,
-      "pending": 1818,
+      "candidates": 2121,
+      "classified": 316,
+      "pending": 1805,
       "status": "pending_consumers"
     },
     {
@@ -2664,8 +2676,8 @@
         "routes": 2
       },
       "candidates": 376,
-      "classified": 41,
-      "pending": 335,
+      "classified": 45,
+      "pending": 331,
       "status": "pending_consumers"
     },
     {
@@ -2817,9 +2829,9 @@
         "views": 24,
         "routes": 2
       },
-      "candidates": 946,
-      "classified": 200,
-      "pending": 746,
+      "candidates": 888,
+      "classified": 372,
+      "pending": 516,
       "status": "pending_consumers"
     },
     {
@@ -2911,8 +2923,8 @@
         "routes": 2
       },
       "candidates": 1067,
-      "classified": 122,
-      "pending": 945,
+      "classified": 161,
+      "pending": 906,
       "status": "pending_consumers"
     },
     {
@@ -2983,8 +2995,8 @@
         "routes": 1
       },
       "candidates": 429,
-      "classified": 63,
-      "pending": 366,
+      "classified": 74,
+      "pending": 355,
       "status": "pending_consumers"
     },
     {
@@ -3198,19 +3210,20 @@
         "modules/Inventory/webpack.mix.js"
       ],
       "roles": {
-        "other": 48,
+        "other": 46,
         "exports": 10,
         "controllers": 26,
         "imports": 3,
         "jobs": 2,
         "models": 13,
+        "observers": 2,
         "frontend": 55,
         "views": 47,
         "routes": 2
       },
       "candidates": 954,
-      "classified": 111,
-      "pending": 843,
+      "classified": 122,
+      "pending": 832,
       "status": "pending_consumers"
     },
     {
@@ -3313,18 +3326,19 @@
         "modules/Item/webpack.mix.js"
       ],
       "roles": {
-        "other": 29,
+        "other": 28,
         "exports": 2,
         "controllers": 12,
         "imports": 7,
         "models": 10,
+        "observers": 1,
         "frontend": 21,
         "views": 12,
         "routes": 2
       },
       "candidates": 549,
-      "classified": 96,
-      "pending": 453,
+      "classified": 115,
+      "pending": 434,
       "status": "pending_consumers"
     },
     {
@@ -3409,8 +3423,8 @@
         "routes": 2
       },
       "candidates": 53,
-      "classified": 10,
-      "pending": 43,
+      "classified": 12,
+      "pending": 41,
       "status": "pending_consumers"
     },
     {
@@ -3520,9 +3534,9 @@
         "views": 3,
         "routes": 3
       },
-      "candidates": 464,
-      "classified": 94,
-      "pending": 370,
+      "candidates": 472,
+      "classified": 97,
+      "pending": 375,
       "status": "pending_consumers"
     },
     {
@@ -3561,8 +3575,8 @@
         "routes": 2
       },
       "candidates": 19,
-      "classified": 0,
-      "pending": 19,
+      "classified": 1,
+      "pending": 18,
       "status": "pending_consumers"
     },
     {
@@ -3651,9 +3665,9 @@
         "views": 5,
         "routes": 3
       },
-      "candidates": 158,
+      "candidates": 164,
       "classified": 22,
-      "pending": 136,
+      "pending": 142,
       "status": "pending_consumers"
     },
     {
@@ -3810,8 +3824,8 @@
         "routes": 2
       },
       "candidates": 1035,
-      "classified": 135,
-      "pending": 900,
+      "classified": 158,
+      "pending": 877,
       "status": "pending_consumers"
     },
     {
@@ -4056,8 +4070,8 @@
         "routes": 2
       },
       "candidates": 265,
-      "classified": 43,
-      "pending": 222,
+      "classified": 45,
+      "pending": 220,
       "status": "pending_consumers"
     },
     {
@@ -4149,8 +4163,8 @@
         "routes": 2
       },
       "candidates": 819,
-      "classified": 53,
-      "pending": 766,
+      "classified": 74,
+      "pending": 745,
       "status": "pending_consumers"
     },
     {
@@ -4444,6 +4458,7 @@
         "modules/Report/Resources/views/sales_by_brand/report_pdf.blade.php",
         "modules/Report/Resources/views/sales_consolidated/exact_table.blade.php",
         "modules/Report/Resources/views/sales_consolidated/exact_ticket_table.blade.php",
+        "modules/Report/Resources/views/sales_consolidated/header_components.blade.php",
         "modules/Report/Resources/views/sales_consolidated/index.blade.php",
         "modules/Report/Resources/views/sales_consolidated/report_excel.blade.php",
         "modules/Report/Resources/views/sales_consolidated/report_excel_totals.blade.php",
@@ -4484,12 +4499,12 @@
         "jobs": 4,
         "models": 1,
         "frontend": 56,
-        "views": 101,
+        "views": 102,
         "routes": 2
       },
-      "candidates": 3027,
-      "classified": 447,
-      "pending": 2580,
+      "candidates": 3033,
+      "classified": 557,
+      "pending": 2476,
       "status": "pending_consumers"
     },
     {
@@ -4602,15 +4617,16 @@
       ],
       "roles": {
         "other": 9,
-        "controllers": 17,
-        "models": 15,
+        "controllers": 16,
+        "models": 16,
+        "observers": 1,
         "frontend": 25,
-        "views": 36,
+        "views": 35,
         "routes": 2
       },
       "candidates": 746,
-      "classified": 114,
-      "pending": 632,
+      "classified": 128,
+      "pending": 618,
       "status": "pending_consumers"
     },
     {
@@ -4727,9 +4743,9 @@
         "views": 11,
         "routes": 2
       },
-      "candidates": 1155,
-      "classified": 161,
-      "pending": 994,
+      "candidates": 1150,
+      "classified": 178,
+      "pending": 972,
       "status": "pending_consumers"
     },
     {
@@ -4750,7 +4766,7 @@
       "candidates": 0,
       "classified": 0,
       "pending": 0,
-      "status": "requires_semantic_review"
+      "status": "expressions_reviewed_flow_acceptance_pending"
     },
     {
       "module": "modules/Store",
@@ -4849,8 +4865,8 @@
         "routes": 2
       },
       "candidates": 724,
-      "classified": 84,
-      "pending": 640,
+      "classified": 109,
+      "pending": 615,
       "status": "pending_consumers"
     },
     {
@@ -5011,23 +5027,30 @@
         "routes": 2,
         "frontend": 1
       },
-      "candidates": 196,
+      "candidates": 198,
       "classified": 24,
-      "pending": 172,
+      "pending": 174,
       "status": "pending_consumers"
     },
     {
       "module": "public",
       "files": [
-        "public/index.php"
+        "public/index.php",
+        "public/js/function-qztray.js",
+        "public/js/sign-message.js",
+        "public/porto-ecommerce/assets/js/cart.js",
+        "public/porto-ecommerce/assets/js/main.js",
+        "public/porto-ecommerce/assets/js/map.js",
+        "public/porto-ecommerce/assets/js/rating.js",
+        "public/porto-ecommerce/assets/js/shop.js"
       ],
       "roles": {
-        "other": 1
+        "other": 8
       },
-      "candidates": 0,
-      "classified": 0,
-      "pending": 0,
-      "status": "requires_semantic_review"
+      "candidates": 324,
+      "classified": 33,
+      "pending": 291,
+      "status": "pending_consumers"
     },
     {
       "module": "public/js",
@@ -5039,8 +5062,8 @@
         "frontend": 2
       },
       "candidates": 72,
-      "classified": 1,
-      "pending": 71,
+      "classified": 2,
+      "pending": 70,
       "status": "pending_consumers"
     },
     {
@@ -5056,8 +5079,8 @@
         "frontend": 5
       },
       "candidates": 252,
-      "classified": 17,
-      "pending": 235,
+      "classified": 31,
+      "pending": 221,
       "status": "pending_consumers"
     },
     {
@@ -5139,6 +5162,7 @@
         "resources/js/helpers/lotValidation.js",
         "resources/js/helpers/modal_item.js",
         "resources/js/helpers/phone.js",
+        "resources/js/helpers/sale-note-conversion.js",
         "resources/js/helpers/tours.js",
         "resources/js/mixins/buhoprinter.js",
         "resources/js/mixins/changeable.js",
@@ -5295,6 +5319,7 @@
         "resources/js/views/tenant/dispatches/partials/ReplaceNamePencil.vue",
         "resources/js/views/tenant/dispatches/partials/buyer.vue",
         "resources/js/views/tenant/dispatches/partials/finish.vue",
+        "resources/js/views/tenant/dispatches/partials/fiscal-action.js",
         "resources/js/views/tenant/dispatches/partials/fiscal-status.vue",
         "resources/js/views/tenant/dispatches/partials/listLotsGroupSelected.vue",
         "resources/js/views/tenant/dispatches/partials/lots.vue",
@@ -5501,11 +5526,12 @@
         "resources/js/views/tenant/whatsapp_bot/manual.vue"
       ],
       "roles": {
-        "frontend": 423
+        "frontend": 424,
+        "other": 1
       },
-      "candidates": 10548,
-      "classified": 1618,
-      "pending": 8930,
+      "candidates": 10576,
+      "classified": 2004,
+      "pending": 8572,
       "status": "pending_consumers"
     },
     {
@@ -5528,7 +5554,7 @@
       "candidates": 0,
       "classified": 0,
       "pending": 0,
-      "status": "requires_semantic_review"
+      "status": "expressions_reviewed_flow_acceptance_pending"
     },
     {
       "module": "resources/sass",
@@ -5571,8 +5597,8 @@
         "frontend": 33
       },
       "candidates": 477,
-      "classified": 53,
-      "pending": 424,
+      "classified": 79,
+      "pending": 398,
       "status": "pending_consumers"
     },
     {
@@ -5591,6 +5617,7 @@
         "resources/views/modules/report/general_items/index.blade.php",
         "resources/views/modules/report/items/report_excel.blade.php",
         "resources/views/modules/report/purchases_items/index.blade.php",
+        "resources/views/partials/exact_outstanding_summary.blade.php",
         "resources/views/partials/exchange_rate_math.blade.php",
         "resources/views/partials/fiscal_report_control.blade.php",
         "resources/views/partials/report_company_header.blade.php",
@@ -5801,11 +5828,11 @@
         "resources/views/tenant/whatsapp_bot/configuration.blade.php"
       ],
       "roles": {
-        "views": 221
+        "views": 222
       },
-      "candidates": 1074,
-      "classified": 407,
-      "pending": 667,
+      "candidates": 1073,
+      "classified": 408,
+      "pending": 665,
       "status": "pending_consumers"
     },
     {
@@ -5841,5 +5868,340 @@
       "status": "separate_external_closure",
       "server_endpoints_in_scope": true
     }
-  ]
+  ],
+  "baseline_git_commit": "cab49e553230e48d3cf962261e5f6c961f6ffb13",
+  "audit_totals": {
+    "candidates": 46547,
+    "classified": 10241,
+    "pending": 36306
+  },
+  "consumer_coverage": [
+    {
+      "consumer": "ventas_consolidadas_cabeceras",
+      "status": "implemented_partial_global_acceptance",
+      "covered": [
+        "reglas compartidas de descuento por base y anticipos",
+        "snapshot de participaciones en misma transacción",
+        "lectura congelada o desglose temporal sin backfill",
+        "API/listado/resumen/agrupación/PDF/tickets/XLSX/bandeja por mismos DTO"
+      ],
+      "tests": [
+        "ExactHeaderAllocationTest",
+        "ExactConsolidatedConsumersTest",
+        "FiscalEmissionSchemaTest"
+      ],
+      "remaining": [
+        "aceptación completa Web/POS/Garage y notas parciales",
+        "rendimiento HTTP/POS completo",
+        "compilación y aceptación visual del usuario"
+      ]
+    },
+    {
+      "consumer": "lecturas_cuentas_por_cobrar",
+      "status": "implemented_reads_producers_pending",
+      "covered": [
+        "saldo liquidable y total documental separados",
+        "notas/pagos activos/retenciones/garantías/devoluciones",
+        "mora exacta del servidor",
+        "corte consistente con configuración",
+        "API/listado/PDF/tres exportaciones y hojas de fracciones",
+        "verificación de vencimientos por cliente/origen para crédito",
+        "adaptación del consumidor de libro contable"
+      ],
+      "tests": [
+        "ExactReceivablesTest",
+        "ExactReadSnapshotTest",
+        "FiscalEmissionSchemaTest"
+      ],
+      "remaining": [
+        "resto de productores y lectores de cobros/finanzas/libro contable",
+        "HTTP y concurrencia global",
+        "frontend compilado y aceptación visual"
+      ]
+    },
+    {
+      "consumer": "cuentas_por_pagar_equivalencia_ves",
+      "status": "implemented_reads_producers_pending",
+      "covered": [
+        "total/saldo consolidados VES con desglose original",
+        "DTO fraccional compartido por pantalla/PDF/XLSX",
+        "usuarios precargados sin consultas por fila",
+        "30 muestras de backend MySQL y presupuesto cumplido"
+      ],
+      "tests": [
+        "ExactPayablesTest",
+        "ExactOutstandingSummaryTest",
+        "benchmark_exact_mysql_reports.php"
+      ],
+      "remaining": [
+        "productores de egresos y libro contable completos",
+        "matriz HTTP/caja/proveedores",
+        "aceptación visual del usuario"
+      ]
+    },
+    {
+      "consumer": "dashboard_deudores_stock",
+      "status": "implemented_widgets_dashboard_remaining",
+      "covered": [
+        "deudores desde Receivables sin tolerancia subcéntimo",
+        "agrupación y orden por fracción antes del límite",
+        "stock agregado por producto desde snapshots",
+        "suma frontend racional y representación hasta doce posiciones"
+      ],
+      "tests": [
+        "ExactDashboardConsumersTest",
+        "exact-outstanding-ui.test.cjs",
+        "FiscalEmissionSchemaTest"
+      ],
+      "remaining": [
+        "otros KPI/Dashboard/indicadores/caja/bancos",
+        "movimientos y valoración de inventario completos",
+        "frontend compilado y aceptación visual"
+      ]
+    },
+    {
+      "consumer": "auditoria_individual",
+      "status": "incomplete",
+      "covered": [
+        "pruebas AST específicas de fecha y unión de arreglos",
+        "control de prueba vigente y hashes de fuentes realmente analizadas",
+        "revisión manual por ID y archivo de aprobaciones retiradas"
+      ],
+      "remaining_candidates": 36306,
+      "remaining": [
+        "revisión semántica de candidatos restantes",
+        "cierre interprocedimental de recorridos",
+        "cero pendientes en ambos auditores"
+      ]
+    },
+    {
+      "consumer": "nota_venta_cobros_y_lecturas",
+      "status": "implemented_precision_changes_full_flow_acceptance_pending",
+      "routes": [
+        "POST sale-notes",
+        "GET sale-notes/totals",
+        "GET sale-notes/list-by-client",
+        "GET sale_note_payments/document/{sale_note}",
+        "GET sale_note_payments/records/{sale_note}",
+        "POST sale_note_payments",
+        "DELETE sale_note_payments/{sale_note_payment}"
+      ],
+      "producers": [
+        "SaleNoteController::savePayments",
+        "SaleNotePaymentController::store",
+        "Settlement::prepare/defer"
+      ],
+      "events": [
+        "ModelTenant saved/deleted",
+        "SaleNotePaymentProvider"
+      ],
+      "fields": [
+        "payment",
+        "change",
+        "total",
+        "total_payable",
+        "total_canceled",
+        "requested_payment",
+        "tendered_amount",
+        "cash_adjustment"
+      ],
+      "readers": [
+        "SaleNoteBalance",
+        "SaleNotePaymentCollection",
+        "DataTableSaleNote",
+        "sale_notes/form.vue",
+        "sale_notes/partials/payments.vue"
+      ],
+      "covered": [
+        "recepción y vuelto sin pagos negativos",
+        "lote bloqueado y resumen único",
+        "importe original y ajuste en mismo snapshot",
+        "validación lexical/rango/precisión",
+        "GET de saldo consistente sin escritura",
+        "listado desde fracciones antes del formato",
+        "instantáneas en selección de partidas para conversión"
+      ],
+      "tests": [
+        "ExactTenderConsumersTest",
+        "ExactMySqlContinuationTest",
+        "exact-tender-consumers.test.cjs"
+      ],
+      "remaining": [
+        "idempotencia y reversión auditada de todos los productores",
+        "conversión agrupada de notas y consumidores de sus cantidades/precios",
+        "PDF/tickets completos y eliminación de cálculos residuales",
+        "aceptación HTTP/POS/rendimiento y frontend compilado"
+      ]
+    },
+    {
+      "consumer": "igtf_recibo_derivado_y_cierre_fraccional",
+      "status": "implemented_regressions_other_finance_consumers_pending",
+      "routes": [
+        "POST document_payments",
+        "guardado común Web/POS/Garage/API",
+        "anulación de notas"
+      ],
+      "producers": [
+        "FiscalDocumentPersistence::payment"
+      ],
+      "fields": [
+        "payment",
+        "converted_principal",
+        "payment_adjustment",
+        "receipt_parent_id",
+        "total_payable",
+        "settlement_adjustment"
+      ],
+      "readers": [
+        "Document::exactBalance",
+        "HkaIgtfNote::assertCollection",
+        "NoteAnnulment::complete",
+        "DocumentPaymentCollection",
+        "documents/partials/payments.vue"
+      ],
+      "covered": [
+        "aplicación derivada a céntimos sin saldo negativo diminuto",
+        "fracción convertida y ajuste conservados",
+        "recibo padre como única recepción física",
+        "identidad monetaria IGTF sin tolerancia",
+        "comprobación de cierre desde payment conservado, no proyección",
+        "ajuste subdoce posiciones visible como fracción"
+      ],
+      "tests": [
+        "SpePersistenceCases",
+        "NotePersistenceCases",
+        "ExactMySqlContinuationTest",
+        "exact-tender-consumers.test.cjs"
+      ],
+      "remaining": [
+        "productores y lectores restantes de finanzas/caja/bancos",
+        "contratos y consumidores fiscales aún pendientes del inventario",
+        "aceptación HTTP completa y rendimiento"
+      ]
+    },
+    {
+      "consumer": "ordenes_centrales_moneda_y_disponibilidad",
+      "status": "foundation_implemented_provider_reconciliation_pending",
+      "routes": [
+        "POST pago/{uuid}/culqi/charge",
+        "POST pago/{uuid}/izipay/payment",
+        "POST pago/{uuid}/izipay/transaction",
+        "POST payment-gateway/culqi/charge",
+        "POST payment-gateway/izipay/payment",
+        "POST payment-gateway/izipay/transaction",
+        "POST payment-orders/payment-view/pays"
+      ],
+      "producers": [
+        "PaymentOrder creating",
+        "CentralPaymentQuote::freeze"
+      ],
+      "fields": [
+        "amount",
+        "provider_payable",
+        "provider_adjustment",
+        "payment_currency_type_id",
+        "payment_order_uuid"
+      ],
+      "readers": [
+        "CentralPaymentQuote::read",
+        "CheckoutAvailability",
+        "PaymentOrderController::paymentViewPay"
+      ],
+      "tests": [
+        "ExactCentralQuoteTest"
+      ],
+      "covered": [
+        "cotización conservada en órdenes nuevas",
+        "rechazo de datos de cotización incoherentes",
+        "restricción VES en POST directos antes de DB/credenciales/red",
+        "notificación del navegador sólo lee el estado guardado; no marca pagada ni repite efectos"
+      ],
+      "remaining": [
+        "vinculación de cotización autorizada a adaptadores en otros contextos",
+        "respuesta de proveedor/orden/moneda/importe",
+        "solicitado/enviado/liquidado, idempotencia y reversión",
+        "recorridos completos centrales y aceptación HTTP/rendimiento",
+        "PaymentOrderPublicController::culqiCharge aún toma amount/currency_code del request y sólo decide éxito por outcome",
+        "PaymentOrderPublicController::izipayPayment aún toma amount/currency/orderId del request",
+        "PaymentOrderPublicController::izipayTransaction aún confirma PAID sin cotejar orden/moneda/importe",
+        "PaymentGatewayController: productores y confirmaciones centrales/tenant sin autoridad vinculada",
+        "PaymentOrderController::updateTable edita amount; debe renovar la cotización autorizada antes de abrir un nuevo intento",
+        "CheckoutGuest, checkout-admin y payment-view conservan cálculos binarios y formatos por migrar"
+      ]
+    },
+    {
+      "consumer": "nota_venta_preparacion_conversion",
+      "status": "read_preparation_implemented_persistence_and_full_acceptance_pending",
+      "routes": [
+        "POST sale-notes/items"
+      ],
+      "producers": [
+        "SaleNoteConversionLines::preview/sourceRows/group"
+      ],
+      "fields": [
+        "quantity",
+        "unit_price",
+        "unit_value",
+        "percentage_igv",
+        "total",
+        "discounts",
+        "charges",
+        "grouped_items",
+        "conversion_context",
+        "source_sale_note_items",
+        "calculation_snapshot"
+      ],
+      "readers": [
+        "ModalGenerateCPE.vue",
+        "invoice_generate.vue",
+        "invoice.vue",
+        "invoiceupdate.vue",
+        "restoreSaleNoteContext"
+      ],
+      "covered": [
+        "fuentes autorizadas y vigentes bajo corte consistente",
+        "lecturas de partidas por lotes de500 sin consultas por fila",
+        "agrupación por precio racional y condiciones compatibles",
+        "partidas con lotes/seriales conservadas por origen",
+        "cantidades, importes y ajustes sumados desde fracciones",
+        "JSON persistido leído lexicalmente, incluidos descuentos numéricos sin amount_exact y objetos vacíos",
+        "moneda y tasa históricas restauradas antes de preparar las filas",
+        "cachés locales acotadas por JSON/condiciones/operandos completos",
+        "pruebas negativas de versiones y operandos ausentes",
+        "errores de preparación visibles en el modal",
+        "limpieza del traslado incompleto si falla el almacenamiento del navegador, sin abrir la factura",
+        "eliminación de borradores y lotes heredados al preparar una selección nueva",
+        "HTTP real con sesión cifrada, CSRF y MySQL temporal:30 muestras por1/100/1000 partidas; repetición final dentro del presupuesto y fallo previo conservado"
+      ],
+      "remaining": [
+        "resolver y bloquear nuevamente las fuentes al guardar la factura",
+        "reconciliar cabeceras, anticipos, impuestos y cobros ya recibidos",
+        "conversión parcial, concurrencia e idempotencia de todas las entradas",
+        "evitar duplicaciones de caja, saldos e inventario en los lectores pendientes",
+        "migrar el consumo de borradores heredados itemsForNotes",
+        "validar traslado de selecciones grandes mediante localStorage y frontend compilado",
+        "mediciones HTTP completas de facturación/POS/caja/reportes",
+        "selecciones con monedas/tasas incompatibles no se convierten automáticamente: hoy se rechazan explícitamente"
+      ],
+      "notes": "Preparación de lectura; no acredita el recorrido completo de conversión persistida ni los otros productores de ventas.",
+      "evidence": "evidencias/calculos_exactos_pro9/cierre_integracion_2026_10_19/",
+      "tests": [
+        "ExactSaleNoteGroupingTest",
+        "ExactHttpAcceptanceTest",
+        "exact-note-conversion.test.cjs"
+      ],
+      "route_trace": "evidencias/calculos_exactos_pro9/cierre_integracion_2026_10_19/nota_conversion_recorrido.json",
+      "source_models": [
+        "App\\Models\\Tenant\\SaleNote",
+        "App\\Models\\Tenant\\SaleNoteItem"
+      ],
+      "pending_write_paths": [
+        "DocumentController::store/storeWithData/associateSaleNoteToDocument",
+        "Facturalo::save",
+        "RemoveClientCalculationSnapshots (rehidratar fuentes después de retirar resultados del cliente)"
+      ]
+    }
+  ],
+  "continuation_reference": "evidencias/calculos_exactos_pro9/cierre_continuacion_2026_10_19/referencia.json",
+  "integration_reference": "evidencias/calculos_exactos_pro9/cierre_integracion_2026_10_19/referencia.json"
 }

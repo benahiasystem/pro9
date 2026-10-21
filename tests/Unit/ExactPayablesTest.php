@@ -19,6 +19,8 @@ class ExactPayablesTest extends TestCase
         auth()->setUser((new User())->forceFill(['id'=>1, 'type'=>'admin']));
         Schema::connection('tenant')->create('persons', function ($t) { $t->increments('id'); $t->string('name'); });
         DB::connection('tenant')->table('persons')->insert(['id'=>1, 'name'=>'Proveedor']);
+        Schema::connection('tenant')->create('users',function ($t) { $t->increments('id'); $t->string('name'); });
+        DB::connection('tenant')->table('users')->insert(['id'=>1,'name'=>'Operador']);
         foreach (['purchases','expenses'] as $table) Schema::connection('tenant')->create($table, function ($t) {
             $t->increments('id'); $t->integer('supplier_id')->default(1); $t->integer('user_id')->default(1); $t->integer('establishment_id')->default(1);
             $t->string('state_type_id')->default('01'); $t->string('document_type_id')->default('01'); $t->date('date_of_issue')->default('2026-10-17');
@@ -64,6 +66,7 @@ class ExactPayablesTest extends TestCase
         self::assertSame(502, $response['meta']['total']);
         self::assertSame('250500', $response['summary']['VES_balance']);
         self::assertSame('10', $response['summary']['USD_balance']);
+        self::assertSame('250530', $response['summary']['consolidated_balance_ves']);
     }
 }
 // ######## FIN CALCULOS EXACTOS PRO9 ########

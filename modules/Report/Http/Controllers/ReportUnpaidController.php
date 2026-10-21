@@ -20,7 +20,7 @@ class ReportUnpaidController extends Controller
     public function excel(Request $request)
     {
 
-        $records = (new DashboardView())->getUnpaidFilterUser($request->all())->get();
+        $records = DashboardView::getUnpaidFilterUser($request->all());
         $records = $this->transformRecords($records);
 
         $company = Company::first();

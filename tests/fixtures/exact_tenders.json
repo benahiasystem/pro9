@@ -1,0 +1,15 @@
+[
+  {"name":"500 completo","payable":"500","rows":[{"payment":"500","payment_method_type_id":"01"}],"net":["500"],"change":["0"]},
+  {"name":"vuelto distribuido sin negativos","payable":"500","rows":[{"payment":"400","payment_method_type_id":"04"},{"payment":"10","payment_method_type_id":"01"},{"payment":"100","payment_method_type_id":"01"}],"net":["400","0","100"],"change":["0","10","0"]},
+  {"name":"adaptacion subcentimo trazable","payable":"0.33","rows":[{"payment":"0.335","payment_method_type_id":"01"}],"net":["0.33"],"change":["0.01"]},
+  {"name":"devolucion completa","payable":"0","rows":[{"payment":"0.335","payment_method_type_id":"01"}],"net":["0"],"change":["0.34"]},
+  {"name":"pago parcial","payable":"500","rows":[{"payment":"499.99","payment_method_type_id":"04"}],"net":["499.99"],"change":["0"]},
+  {"name":"no fabricar efectivo","payable":"500","rows":[{"payment":"501","payment_method_type_id":"04"}],"invalid":true},
+  {"name":"efectivo insuficiente","payable":"500","rows":[{"payment":"600","payment_method_type_id":"04"},{"payment":"10","payment_method_type_id":"01"}],"invalid":true},
+  {"name":"subcentimo no liquidable","payable":"1","rows":[{"payment":"0.004","payment_method_type_id":"01"}],"invalid":true},
+  {"name":"precision excesiva","payable":"1","rows":[{"payment":"0.1234567890123","payment_method_type_id":"01"}],"invalid":true},
+  {"name":"importe negativo","payable":"1","rows":[{"payment":"-1","payment_method_type_id":"01"}],"invalid":true},
+  {"name":"flotante no autorizado","payable":"1","rows":[{"payment":0.1,"payment_method_type_id":"01"}],"invalid":true},
+  {"name":"entero exacto","payable":"1","rows":[{"payment":1,"payment_method_type_id":"01"}],"net":["1"],"change":["0"]},
+  {"name":"efectivo dolares","payable":"500","rows":[{"payment":"501","payment_method_type_id":"10"}],"net":["500"],"change":["1"]}
+]

@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: note modal transports the server groups without regrouping products or fetching current catalog prices
+ok 1 - note modal transports the server groups without regrouping products or fetching current catalog prices
+  ---
+  duration_ms: 197.877951
+  type: 'test'
+  ...
+# Subtest: a full browser storage leaves no partial currency or rows and does not open an invoice (grouped=true)
+ok 2 - a full browser storage leaves no partial currency or rows and does not open an invoice (grouped=true)
+  ---
+  duration_ms: 55.537297
+  type: 'test'
+  ...
+# Subtest: a full browser storage leaves no partial currency or rows and does not open an invoice (grouped=false)
+ok 3 - a full browser storage leaves no partial currency or rows and does not open an invoice (grouped=false)
+  ---
+  duration_ms: 58.956064
+  type: 'test'
+  ...
+# Subtest: invoice_generate.vue retains distinct prices, quantities and fractions from grouped note lines
+ok 4 - invoice_generate.vue retains distinct prices, quantities and fractions from grouped note lines
+  ---
+  duration_ms: 1328.230192
+  type: 'test'
+  ...
+# Subtest: invoice.vue retains distinct prices, quantities and fractions from grouped note lines
+ok 5 - invoice.vue retains distinct prices, quantities and fractions from grouped note lines
+  ---
+  duration_ms: 324.803404
+  type: 'test'
+  ...
+# Subtest: invoiceupdate.vue retains distinct prices, quantities and fractions from grouped note lines
+ok 6 - invoiceupdate.vue retains distinct prices, quantities and fractions from grouped note lines
+  ---
+  duration_ms: 232.717596
+  type: 'test'
+  ...
+# Subtest: missing or malformed historical conversion context is not replaced with zero or a current rate
+ok 7 - missing or malformed historical conversion context is not replaced with zero or a current rate
+  ---
+  duration_ms: 1.163237
+  type: 'test'
+  ...
+# Subtest: the grouped conversion shows a source validation error instead of silently opening another invoice
+ok 8 - the grouped conversion shows a source validation error instead of silently opening another invoice
+  ---
+  duration_ms: 42.081439
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3398.951228

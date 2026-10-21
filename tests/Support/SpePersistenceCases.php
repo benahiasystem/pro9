@@ -101,7 +101,17 @@ trait SpePersistenceCases
         $pay=['date_of_payment'=>'2026-09-10','payment_method_type_id'=>'01','currency_type_id'=>'USD','exchange_rate'=>'10.00000001','original_amount'=>5,'financial_intermediation'=>'none','operation_key'=>(string)Str::uuid()];
         $before=count($sent);$db->beginTransaction();$payment=FiscalDocumentPersistence::payment($doc,$pay);self::assertSame($before,count($sent));$db->commit();
         $tax=\App\Models\Tenant\DocumentTax::where('document_payment_id',$payment->id)->firstOrFail();$note=Document::findOrFail($tax->document_id);
-        self::assertSame('confirmed',$note->emission->status);self::assertTrue(HkaIgtfNote::applies($note));self::assertCount(0,$note->items);self::assertEquals(0,$note->total_igv);self::assertEquals(1.5,$note->total);self::assertEquals(158,$doc->fresh()->balance);
+        self::assertSame('confirmed',$note->emission->status);self::assertTrue(HkaIgtfNote::applies($note));self::assertCount(0,$note->items);self::assertEquals(0,$note->total_igv);self::assertSame('1.5000000015',$note->total);self::assertEquals(158,$doc->fresh()->balance);
+        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        self::assertSame('1.5',$note->total_payable);
+        self::assertTrue($note->exactBalance()->isZero());
+        self::assertSame('-3/2000000000',(string)$note->payments->first()->exactValue('payment_adjustment'));
+        $receiptRows=(new \App\Http\Resources\Tenant\DocumentPaymentCollection($note->payments))->toArray(\Illuminate\Http\Request::create('/'));
+        self::assertSame($payment->id,$receiptRows->first()['receipt_parent_id']);
+        $changed=clone $note;$changed->total=$note->exactValue('total')->plus('0.000000000001');
+        try { HkaIgtfNote::assertCollection($changed);self::fail('Una diferencia subcéntimo no acredita el impuesto original.'); }
+        catch (ValidationException $error) { self::assertArrayHasKey('payment',$error->errors()); }
+        // ######## FIN CALCULOS EXACTOS PRO9 ########
         self::assertSame('03',$note->emission->payload['documentoElectronico']['encabezado']['identificacionDocumento']['tipoDocumento']);
         self::assertSame('98',$note->emission->payload['documentoElectronico']['encabezado']['identificacionDocumento']['tipoTransaccion']);
         self::assertSame($doc->control_number,$note->note->data_affected_document->control_number);

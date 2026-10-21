@@ -1,0 +1,102 @@
+[
+  {
+    "id": "336c58a67de3a074af1dde8b",
+    "reason": "La expresión fue sustituida por el consumidor exacto; no se transfiere su aprobación a otro ID.",
+    "previous": {
+      "category": "technical",
+      "justification": "Comparación estricta con null/booleano; comprueba tipo o presencia sin calcular un importe: $sale_note->total_payable === null",
+      "evidence": [
+        "app/Http/Controllers/Tenant/SaleNotePaymentController.php",
+        "scripts/exact_guard_proof.php",
+        "tests/Unit/ExactGuardProofTest.php#test_only_type_or_nonnumeric_string_guards_are_proven"
+      ],
+      "evidence_sha256": {
+        "app/Http/Controllers/Tenant/SaleNotePaymentController.php": "4aff7171b1408a2589778a8f5c624169cb3d5bf4b93ee9511eeeeab768015b9d",
+        "scripts/exact_guard_proof.php": "72fcf3c54b46e472d9ca1869db0941cfe29c0c3951a6ff613bc2f86ff31f8eb0",
+        "tests/Unit/ExactGuardProofTest.php": "e758abc24cc0fbb778d6c2895bec3c114ec8712d06e4b85615346b6afa49b381"
+      },
+      "proof": "strict_type_guard",
+      "source": {
+        "file": "app/Http/Controllers/Tenant/SaleNotePaymentController.php",
+        "symbol": "SaleNotePaymentController::document",
+        "operation": "native_Identical",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "5a3469602e223eba1f5c749d",
+    "reason": "La expresión fue sustituida por el consumidor exacto; no se transfiere su aprobación a otro ID.",
+    "previous": {
+      "category": "technical",
+      "justification": "Comparación estricta con null/booleano; comprueba tipo o presencia sin calcular un importe: $owner->total_payable === null",
+      "evidence": [
+        "app/Support/Exact/Settlement.php",
+        "scripts/exact_guard_proof.php",
+        "tests/Unit/ExactGuardProofTest.php#test_only_type_or_nonnumeric_string_guards_are_proven"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/Settlement.php": "7d2be8750f3fe44e091d46b1b5314583606a7bb7edf17eec54a7e2f7e6834c3a",
+        "scripts/exact_guard_proof.php": "72fcf3c54b46e472d9ca1869db0941cfe29c0c3951a6ff613bc2f86ff31f8eb0",
+        "tests/Unit/ExactGuardProofTest.php": "e758abc24cc0fbb778d6c2895bec3c114ec8712d06e4b85615346b6afa49b381"
+      },
+      "proof": "strict_type_guard",
+      "source": {
+        "file": "app/Support/Exact/Settlement.php",
+        "symbol": "Settlement::afterPayment",
+        "operation": "native_Identical",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "9560754f2af4e648bf3e8820",
+    "reason": "La expresión fue sustituida por el consumidor exacto; no se transfiere su aprobación a otro ID.",
+    "previous": {
+      "category": "technical",
+      "justification": "Comparación estricta con null/booleano; comprueba tipo o presencia sin calcular un importe: $sale_note->total_payable === null",
+      "evidence": [
+        "app/Http/Controllers/Tenant/SaleNotePaymentController.php",
+        "scripts/exact_guard_proof.php",
+        "tests/Unit/ExactGuardProofTest.php#test_only_type_or_nonnumeric_string_guards_are_proven"
+      ],
+      "evidence_sha256": {
+        "app/Http/Controllers/Tenant/SaleNotePaymentController.php": "4aff7171b1408a2589778a8f5c624169cb3d5bf4b93ee9511eeeeab768015b9d",
+        "scripts/exact_guard_proof.php": "72fcf3c54b46e472d9ca1869db0941cfe29c0c3951a6ff613bc2f86ff31f8eb0",
+        "tests/Unit/ExactGuardProofTest.php": "e758abc24cc0fbb778d6c2895bec3c114ec8712d06e4b85615346b6afa49b381"
+      },
+      "proof": "strict_type_guard",
+      "source": {
+        "file": "app/Http/Controllers/Tenant/SaleNotePaymentController.php",
+        "symbol": "SaleNotePaymentController::store",
+        "operation": "native_Identical",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "a319b6366a24f834ea5779c8",
+    "reason": "La expresión fue sustituida por el consumidor exacto; no se transfiere su aprobación a otro ID.",
+    "previous": {
+      "category": "technical",
+      "justification": "Comparación estricta con null/booleano; comprueba tipo o presencia sin calcular un importe: $sale_note->total_payable === null",
+      "evidence": [
+        "app/Http/Controllers/Tenant/SaleNotePaymentController.php",
+        "scripts/exact_guard_proof.php",
+        "tests/Unit/ExactGuardProofTest.php#test_only_type_or_nonnumeric_string_guards_are_proven"
+      ],
+      "evidence_sha256": {
+        "app/Http/Controllers/Tenant/SaleNotePaymentController.php": "4aff7171b1408a2589778a8f5c624169cb3d5bf4b93ee9511eeeeab768015b9d",
+        "scripts/exact_guard_proof.php": "72fcf3c54b46e472d9ca1869db0941cfe29c0c3951a6ff613bc2f86ff31f8eb0",
+        "tests/Unit/ExactGuardProofTest.php": "e758abc24cc0fbb778d6c2895bec3c114ec8712d06e4b85615346b6afa49b381"
+      },
+      "proof": "strict_type_guard",
+      "source": {
+        "file": "app/Http/Controllers/Tenant/SaleNotePaymentController.php",
+        "symbol": "SaleNotePaymentController::createPdf",
+        "operation": "native_Identical",
+        "operation_language": "php"
+      }
+    }
+  }
+]

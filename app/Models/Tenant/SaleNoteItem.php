@@ -131,7 +131,11 @@ class SaleNoteItem extends ModelTenant
             sale_notes.date_of_issue as date_of_issue, sale_note_items.unit_price as unit_price,
             sale_note_items.total as total, sale_note_items.calculation_snapshot as calculation_snapshot,
             sale_notes.currency_type_id as currency_type_id, sale_notes.exchange_rate_sale as exchange_rate_sale,
-            '80' as document_type_id, 'sale_note' as source_type");
+            '80' as document_type_id, 'sale_note' as source_type,
+            sale_note_items.sale_note_id as source_id, sale_note_items.affectation_igv_type_id,
+            sale_note_items.total_value, sale_note_items.total_base_igv, sale_note_items.total_igv,
+            sale_note_items.total_other_taxes, sale_note_items.total_discount, sale_note_items.total_charge,
+            sale_note_items.discounts");
         // ######## FIN CALCULOS EXACTOS PRO9 ########
 
         if (isset($params['establishment_id'])) {

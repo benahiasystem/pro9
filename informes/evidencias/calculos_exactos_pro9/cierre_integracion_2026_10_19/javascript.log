@@ -1,0 +1,1384 @@
+TAP version 13
+# Subtest: draft digital preview forces 80MM with a different default and disabled ticket setting
+ok 1 - draft digital preview forces 80MM with a different default and disabled ticket setting
+  ---
+  duration_ms: 7.544599
+  type: 'test'
+  ...
+# Subtest: closing revokes the PDF and reopening requests fresh draft content
+ok 2 - closing revokes the PDF and reopening requests fresh draft content
+  ---
+  duration_ms: 1.276342
+  type: 'test'
+  ...
+# Subtest: a response arriving after close cannot restore the old draft
+ok 3 - a response arriving after close cannot restore the old draft
+  ---
+  duration_ms: 7.517538
+  type: 'test'
+  ...
+# Subtest: draft failures show an error and release loading
+ok 4 - draft failures show an error and release loading
+  ---
+  duration_ms: 1.332229
+  type: 'test'
+  ...
+# Subtest: customer main address with id zero is selectable and stale destination is cleared
+ok 5 - customer main address with id zero is selectable and stale destination is cleared
+  ---
+  duration_ms: 3.075087
+  type: 'test'
+  ...
+# Subtest: changing reason removes customer destination and clears empty own destinations
+ok 6 - changing reason removes customer destination and clears empty own destinations
+  ---
+  duration_ms: 1.661435
+  type: 'test'
+  ...
+# Subtest: a late response cannot replace destinations for the newly selected customer
+ok 7 - a late response cannot replace destinations for the newly selected customer
+  ---
+  duration_ms: 1.130222
+  type: 'test'
+  ...
+# Subtest: failed load removes old destinations and releases loading
+ok 8 - failed load removes old destinations and releases loading
+  ---
+  duration_ms: 1.505534
+  type: 'test'
+  ...
+# Subtest: delivery order template compiles with loading and missing destination guidance
+ok 9 - delivery order template compiles with loading and missing destination guidance
+  ---
+  duration_ms: 272.700322
+  type: 'test'
+  ...
+# Subtest: fiscal action posts once and refreshes emission and PDF availability
+ok 10 - fiscal action posts once and refreshes emission and PDF availability
+  ---
+  duration_ms: 4.473848
+  type: 'test'
+  ...
+# Subtest: double clicks and unsupported actions do not repeat mutations
+ok 11 - double clicks and unsupported actions do not repeat mutations
+  ---
+  duration_ms: 0.813134
+  type: 'test'
+  ...
+# Subtest: network failures preserve the record and release the action guard
+ok 12 - network failures preserve the record and release the action guard
+  ---
+  duration_ms: 2.890482
+  type: 'test'
+  ...
+# Subtest: the list and finish dialog mount the fiscal status control in their compiled templates
+ok 13 - the list and finish dialog mount the fiscal status control in their compiled templates
+  ---
+  duration_ms: 163.270414
+  type: 'test'
+  ...
+# Subtest: multiple-order conversion carries the authorized branch and correctly formatted references
+ok 14 - multiple-order conversion carries the authorized branch and correctly formatted references
+  ---
+  duration_ms: 30.466702
+  type: 'test'
+  ...
+# Subtest: the actions menu keeps unavailable HKA options visible and prevents their requests
+ok 15 - the actions menu keeps unavailable HKA options visible and prevents their requests
+  ---
+  duration_ms: 28.978076
+  type: 'test'
+  ...
+# Subtest: editing submits commercial changes without resubmitting collections
+ok 16 - editing submits commercial changes without resubmitting collections
+  ---
+  duration_ms: 2.115281
+  type: 'test'
+  ...
+# Subtest: blocked edits stop before validation, HTTP or cash writes
+ok 17 - blocked edits stop before validation, HTTP or cash writes
+  ---
+  duration_ms: 22.742801
+  type: 'test'
+  ...
+# Subtest: the editor displays existing collections and preserves currency and series controls
+ok 18 - the editor displays existing collections and preserves currency and series controls
+  ---
+  duration_ms: 1014.667631
+  type: 'test'
+  ...
+# Subtest: display matches eight-digit backend format and preserves empty, provisional and long values
+ok 19 - display matches eight-digit backend format and preserves empty, provisional and long values
+  ---
+  duration_ms: 3.420279
+  type: 'test'
+  ...
+# Subtest: changed Vue templates compile and import the shared display helper
+ok 20 - changed Vue templates compile and import the shared display helper
+  ---
+  duration_ms: 3498.580165
+  type: 'test'
+  ...
+# Subtest: blank series option displays no ID or filter marker in Element UI
+ok 21 - blank series option displays no ID or filter marker in Element UI
+  ---
+  duration_ms: 717.382181
+  type: 'test'
+  ...
+# Subtest: all series option sources compile and keep blank options selectable
+ok 22 - all series option sources compile and keep blank options selectable
+  ---
+  duration_ms: 16281.636153
+  type: 'test'
+  ...
+# Subtest: shared PHP and JavaScript cases produce the same normalized fractions
+ok 23 - shared PHP and JavaScript cases produce the same normalized fractions
+  ---
+  duration_ms: 60.429503
+  type: 'test'
+  ...
+# Subtest: commercial totals retain all mixed IVA lines and do not compound global adjustments
+ok 24 - commercial totals retain all mixed IVA lines and do not compound global adjustments
+  ---
+  duration_ms: 6.341495
+  type: 'test'
+  ...
+# Subtest: price 500 and grouping survive exact totals and JSON round trips
+ok 25 - price 500 and grouping survive exact totals and JSON round trips
+  ---
+  duration_ms: 4.13723
+  type: 'test'
+  ...
+# Subtest: warehouse selector fractions feed the first calculation and explicit price edits take precedence
+ok 26 - warehouse selector fractions feed the first calculation and explicit price edits take precedence
+  ---
+  duration_ms: 5.7803
+  type: 'test'
+  ...
+# Subtest: fractions, large decimals and currency round trips are lossless
+ok 27 - fractions, large decimals and currency round trips are lossless
+  ---
+  duration_ms: 3.176374
+  type: 'test'
+  ...
+# Subtest: reopening lines restores original inputs for server recalculation
+ok 28 - reopening lines restores original inputs for server recalculation
+  ---
+  duration_ms: 4.750298
+  type: 'test'
+  ...
+# Subtest: largest remainders conserve each cents target deterministically
+ok 29 - largest remainders conserve each cents target deterministically
+  ---
+  duration_ms: 7.692964
+  type: 'test'
+  ...
+# Subtest: a fractional global discount is preserved in persisted line snapshots
+ok 30 - a fractional global discount is preserved in persisted line snapshots
+  ---
+  duration_ms: 2.17694
+  type: 'test'
+  ...
+# Subtest: central payment records keep their original decimal text for editing
+ok 31 - central payment records keep their original decimal text for editing
+  ---
+  duration_ms: 10.871614
+  type: 'test'
+  ...
+# Subtest: central display rounds from the fraction without changing the editable value
+ok 32 - central display rounds from the fraction without changing the editable value
+  ---
+  duration_ms: 2.151757
+  type: 'test'
+  ...
+# Subtest: tenant account templates use the same exact amount projection
+ok 33 - tenant account templates use the same exact amount projection
+  ---
+  duration_ms: 341.709221
+  type: 'test'
+  ...
+# Subtest: loyalty display precision never changes exact redemption availability
+ok 34 - loyalty display precision never changes exact redemption availability
+  ---
+  duration_ms: 14.183714
+  type: 'test'
+  ...
+# Subtest: loyalty earned points use exact total, with zero-base protection
+ok 35 - loyalty earned points use exact total, with zero-base protection
+  ---
+  duration_ms: 1.529682
+  type: 'test'
+  ...
+# Subtest: a late response for the previous customer cannot replace the current points balance
+ok 36 - a late response for the previous customer cannot replace the current points balance
+  ---
+  duration_ms: 1.357202
+  type: 'test'
+  ...
+# Subtest: final projections and allocations reject invalid scales without mutating their operands
+ok 37 - final projections and allocations reject invalid scales without mutating their operands
+  ---
+  duration_ms: 3.482817
+  type: 'test'
+  ...
+# Subtest: note modal transports the server groups without regrouping products or fetching current catalog prices
+ok 38 - note modal transports the server groups without regrouping products or fetching current catalog prices
+  ---
+  duration_ms: 449.773081
+  type: 'test'
+  ...
+# Subtest: a full browser storage leaves no partial currency or rows and does not open an invoice (grouped=true)
+ok 39 - a full browser storage leaves no partial currency or rows and does not open an invoice (grouped=true)
+  ---
+  duration_ms: 135.436276
+  type: 'test'
+  ...
+# Subtest: a full browser storage leaves no partial currency or rows and does not open an invoice (grouped=false)
+ok 40 - a full browser storage leaves no partial currency or rows and does not open an invoice (grouped=false)
+  ---
+  duration_ms: 215.554112
+  type: 'test'
+  ...
+# Subtest: invoice_generate.vue retains distinct prices, quantities and fractions from grouped note lines
+ok 41 - invoice_generate.vue retains distinct prices, quantities and fractions from grouped note lines
+  ---
+  duration_ms: 1641.335559
+  type: 'test'
+  ...
+# Subtest: invoice.vue retains distinct prices, quantities and fractions from grouped note lines
+ok 42 - invoice.vue retains distinct prices, quantities and fractions from grouped note lines
+  ---
+  duration_ms: 569.521134
+  type: 'test'
+  ...
+# Subtest: invoiceupdate.vue retains distinct prices, quantities and fractions from grouped note lines
+ok 43 - invoiceupdate.vue retains distinct prices, quantities and fractions from grouped note lines
+  ---
+  duration_ms: 859.223558
+  type: 'test'
+  ...
+# Subtest: missing or malformed historical conversion context is not replaced with zero or a current rate
+ok 44 - missing or malformed historical conversion context is not replaced with zero or a current rate
+  ---
+  duration_ms: 12.364259
+  type: 'test'
+  ...
+# Subtest: the grouped conversion shows a source validation error instead of silently opening another invoice
+ok 45 - the grouped conversion shows a source validation error instead of silently opening another invoice
+  ---
+  duration_ms: 187.73099
+  type: 'test'
+  ...
+# Subtest: receivables use global exact summaries and preserve the server arrears and row fractions
+ok 46 - receivables use global exact summaries and preserve the server arrears and row fractions
+  ---
+  duration_ms: 3189.146967
+  type: 'test'
+  ...
+# Subtest: payables and consolidated sales templates expose exact server values without assets
+ok 47 - payables and consolidated sales templates expose exact server values without assets
+  ---
+  duration_ms: 777.257988
+  type: 'test'
+  ...
+# Subtest: dashboard debtor groups operate on retained fractions and stock shows all business decimals
+ok 48 - dashboard debtor groups operate on retained fractions and stock shows all business decimals
+  ---
+  duration_ms: 275.055068
+  type: 'test'
+  ...
+# Subtest: recipe costs use original fractions through waste, quantity and suggested margin
+ok 49 - recipe costs use original fractions through waste, quantity and suggested margin
+  ---
+  duration_ms: 15.861329
+  type: 'test'
+  ...
+# Subtest: decimal input rejects precision loss, overflow and already converted numbers
+ok 50 - decimal input rejects precision loss, overflow and already converted numbers
+  ---
+  duration_ms: 1.670736
+  type: 'test'
+  ...
+# Subtest: PHP and JavaScript tender fixtures conserve cash and reject fictitious change
+ok 51 - PHP and JavaScript tender fixtures conserve cash and reject fictitious change
+  ---
+  duration_ms: 40.83696
+  type: 'test'
+  ...
+# Subtest: sale note totals format large decimal text without Number conversion
+ok 52 - sale note totals format large decimal text without Number conversion
+  ---
+  duration_ms: 570.979594
+  type: 'test'
+  ...
+# Subtest: payment inputs remove consecutive zero rows while retaining exact requested strings
+ok 53 - payment inputs remove consecutive zero rows while retaining exact requested strings
+  ---
+  duration_ms: 1.170959
+  type: 'test'
+  ...
+# Subtest: sale note payment dialog uses fractions for residual debt and adjustment visibility
+ok 54 - sale note payment dialog uses fractions for residual debt and adjustment visibility
+  ---
+  duration_ms: 648.815219
+  type: 'test'
+  ...
+# Subtest: Vue AST covers filters, nested objects, branch expressions, slots and numeric modifiers
+ok 55 - Vue AST covers filters, nested objects, branch expressions, slots and numeric modifiers
+  ---
+  duration_ms: 349.481339
+  type: 'test'
+  ...
+# Subtest: registry rejects changed evidence, missing anchors, symlink escapes and orphan reviews
+ok 56 - registry rejects changed evidence, missing anchors, symlink escapes and orphan reviews
+  ---
+  duration_ms: 85.82061
+  type: 'test'
+  ...
+# Subtest: classification proof never exempts arithmetic, numeric comparisons or coercive equality
+ok 57 - classification proof never exempts arithmetic, numeric comparisons or coercive equality
+  ---
+  duration_ms: 42.325853
+  type: 'test'
+  ...
+# Subtest: nullish guards prove presence only and retain nested monetary candidates
+ok 58 - nullish guards prove presence only and retain nested monetary candidates
+  ---
+  duration_ms: 32.187976
+  type: 'test'
+  ...
+# Subtest: loose nonnumeric guards exclude numeric coercions and nested money
+ok 59 - loose nonnumeric guards exclude numeric coercions and nested money
+  ---
+  duration_ms: 11.557638
+  type: 'test'
+  ...
+# Subtest: new production files are covered and undocumented exclusions fail
+ok 60 - new production files are covered and undocumented exclusions fail
+  ---
+  duration_ms: 29.861572
+  type: 'test'
+  ...
+# Subtest: rates retain all eight decimals including trailing zeroes
+ok 61 - rates retain all eight decimals including trailing zeroes
+  ---
+  duration_ms: 2.661182
+  type: 'test'
+  ...
+# Subtest: multiplication and division use complete rate and round only final money
+ok 62 - multiplication and division use complete rate and round only final money
+  ---
+  duration_ms: 1.748699
+  type: 'test'
+  ...
+# Subtest: the operation selector receives the catalog loaded by the form in create and edit contexts
+ok 63 - the operation selector receives the catalog loaded by the form in create and edit contexts
+  ---
+  duration_ms: 11.417969
+  type: 'test'
+  ...
+# Subtest: a registered invoice or a populated draft retains its sales category
+ok 64 - a registered invoice or a populated draft retains its sales category
+  ---
+  duration_ms: 0.660457
+  type: 'test'
+  ...
+# Subtest: export lookup selects foreign customers and discards an obsolete response
+ok 65 - export lookup selects foreign customers and discards an obsolete response
+  ---
+  duration_ms: 7.502135
+  type: 'test'
+  ...
+# Subtest: export header discount is counted once and never introduces IVA
+ok 66 - export header discount is counted once and never introduces IVA
+  ---
+  duration_ms: 4.549089
+  type: 'test'
+  ...
+# Subtest: an export discount above its base is rejected
+ok 67 - an export discount above its base is rejected
+  ---
+  duration_ms: 7.180647
+  type: 'test'
+  ...
+# Subtest: export recalculation includes header charges once and updates payment totals after adjustments
+ok 68 - export recalculation includes header charges once and updates payment totals after adjustments
+  ---
+  duration_ms: 51.187088
+  type: 'test'
+  ...
+# Subtest: loading an existing export preserves its rate, collections and object-serialized header adjustments
+ok 69 - loading an existing export preserves its rate, collections and object-serialized header adjustments
+  ---
+  duration_ms: 24.459058
+  type: 'test'
+  ...
+# Subtest: all affected forms compile their templates
+ok 70 - all affected forms compile their templates
+  ---
+  duration_ms: 3353.824169
+  type: 'test'
+  ...
+# Subtest: invalid control shows error and releases loading without discarding filters
+ok 71 - invalid control shows error and releases loading without discarding filters
+  ---
+  duration_ms: 9.084771
+  type: 'test'
+  ...
+# Subtest: failed query keeps filter panel visible and does not fetch totals
+ok 72 - failed query keeps filter panel visible and does not fetch totals
+  ---
+  duration_ms: 0.539896
+  type: 'test'
+  ...
+# Subtest: reset clears control filter
+ok 73 - reset clears control filter
+  ---
+  duration_ms: 0.429978
+  type: 'test'
+  ...
+# Subtest: double click and a lost save response preserve the creation UUID
+ok 74 - double click and a lost save response preserve the creation UUID
+  ---
+  duration_ms: 11.616191
+  type: 'test'
+  ...
+# Subtest: a refund timeout preserves its UUID and releases the action
+ok 75 - a refund timeout preserves its UUID and releases the action
+  ---
+  duration_ms: 1.044272
+  type: 'test'
+  ...
+# Subtest: a response for a previous note cannot overwrite the newly selected note
+ok 76 - a response for a previous note cannot overwrite the newly selected note
+  ---
+  duration_ms: 0.877586
+  type: 'test'
+  ...
+# Subtest: switching notes clears the previous receipt, adjustment and reversal keys
+ok 77 - switching notes clears the previous receipt, adjustment and reversal keys
+  ---
+  duration_ms: 0.56155
+  type: 'test'
+  ...
+# Subtest: cash debit payment rows start empty and require a permitted explicit collection
+ok 78 - cash debit payment rows start empty and require a permitted explicit collection
+  ---
+  duration_ms: 0.612878
+  type: 'test'
+  ...
+# Subtest: cash collections exclude credit declarations and changing condition clears unsaved cash rows
+ok 79 - cash collections exclude credit declarations and changing condition clears unsaved cash rows
+  ---
+  duration_ms: 0.823576
+  type: 'test'
+  ...
+# Subtest: series accept empty and arbitrary codes within the original branch
+ok 80 - series accept empty and arbitrary codes within the original branch
+  ---
+  duration_ms: 7.839296
+  type: 'test'
+  ...
+# Subtest: partial return uses the remaining amount after prior price credit
+ok 81 - partial return uses the remaining amount after prior price credit
+  ---
+  duration_ms: 11.91182
+  type: 'test'
+  ...
+# Subtest: monetary adjustment sends the delta once and full credit uses the server limit
+ok 82 - monetary adjustment sends the delta once and full credit uses the server limit
+  ---
+  duration_ms: 0.585371
+  type: 'test'
+  ...
+# Subtest: legacy payment rows default to no IGTF without adding a currency selector
+ok 83 - legacy payment rows default to no IGTF without adding a currency selector
+  ---
+  duration_ms: 3.774836
+  type: 'test'
+  ...
+# Subtest: an explicitly exempt payment retains its classification and stated reason
+ok 84 - an explicitly exempt payment retains its classification and stated reason
+  ---
+  duration_ms: 0.640601
+  type: 'test'
+  ...
+# Subtest: payment currency conversions preserve eight-decimal rates and separate IGTF
+ok 85 - payment currency conversions preserve eight-decimal rates and separate IGTF
+  ---
+  duration_ms: 2.203062
+  type: 'test'
+  ...
+# Subtest: a stale proposal cannot overwrite the current collection
+ok 86 - a stale proposal cannot overwrite the current collection
+  ---
+  duration_ms: 79.814391
+  type: 'test'
+  ...
+# Subtest: Vue consumers compile with fiscal profiles and the shared payment fields
+ok 87 - Vue consumers compile with fiscal profiles and the shared payment fields
+  ---
+  duration_ms: 1586.600447
+  type: 'test'
+  ...
+# Subtest: taxed line retains base, IVA and total
+ok 88 - taxed line retains base, IVA and total
+  ---
+  duration_ms: 27.354044
+  type: 'test'
+  ...
+# Subtest: exempt quantity has zero IVA
+ok 89 - exempt quantity has zero IVA
+  ---
+  duration_ms: 2.884251
+  type: 'test'
+  ...
+# Subtest: configured IVA rate overrides the default
+ok 90 - configured IVA rate overrides the default
+  ---
+  duration_ms: 3.988287
+  type: 'test'
+  ...
+# Subtest: VES and USD conversion retains quantities and tax
+ok 91 - VES and USD conversion retains quantities and tax
+  ---
+  duration_ms: 9.787039
+  type: 'test'
+  ...
+# Subtest: a discount affecting the base reduces IVA proportionally
+ok 92 - a discount affecting the base reduces IVA proportionally
+  ---
+  duration_ms: 2.126004
+  type: 'test'
+  ...
+# Subtest: unknown affectations are never converted or calculated
+ok 93 - unknown affectations are never converted or calculated
+  ---
+  duration_ms: 3.966261
+  type: 'test'
+  ...
+# Subtest: export context calculates goods at zero IVA and preserves currency conversion
+ok 94 - export context calculates goods at zero IVA and preserves currency conversion
+  ---
+  duration_ms: 1.688097
+  type: 'test'
+  ...
+# Subtest: customer changes and repeated filtering preserve selected invoice series 2 through payment
+ok 95 - customer changes and repeated filtering preserve selected invoice series 2 through payment
+  ---
+  duration_ms: 34.87759
+  type: 'test'
+  ...
+# Subtest: customer changes and repeated filtering preserve selected invoice series 3 through payment
+ok 96 - customer changes and repeated filtering preserve selected invoice series 3 through payment
+  ---
+  duration_ms: 1.946447
+  type: 'test'
+  ...
+# Subtest: customer changes and repeated filtering preserve selected invoice series 4 through payment
+ok 97 - customer changes and repeated filtering preserve selected invoice series 4 through payment
+  ---
+  duration_ms: 1.413434
+  type: 'test'
+  ...
+# Subtest: switching document type replaces an incompatible series and preserves a compatible selection
+ok 98 - switching document type replaces an incompatible series and preserves a compatible selection
+  ---
+  duration_ms: 0.460088
+  type: 'test'
+  ...
+# Subtest: refreshing available series discards a removed selection and blocks payment when none remain
+ok 99 - refreshing available series discards a removed selection and blocks payment when none remain
+  ---
+  duration_ms: 1.069756
+  type: 'test'
+  ...
+# Subtest: payment panel template compiles without generating assets
+ok 100 - payment panel template compiles without generating assets
+  ---
+  duration_ms: 128.834017
+  type: 'test'
+  ...
+# Subtest: advanced settings template compiles and starts with automatic sending enabled
+ok 101 - advanced settings template compiles and starts with automatic sending enabled
+  ---
+  duration_ms: 501.239677
+  type: 'test'
+  ...
+# Subtest: digital admin switch changes the preference and immediately posts the configuration
+ok 102 - digital admin switch changes the preference and immediately posts the configuration
+  ---
+  duration_ms: 36.396604
+  type: 'test'
+  ...
+# Subtest: other fiscal modes hide the switch and sellers or saving requests cannot toggle it
+ok 103 - other fiscal modes hide the switch and sellers or saving requests cannot toggle it
+  ---
+  duration_ms: 2.291794
+  type: 'test'
+  ...
+# Subtest: fiscal results share the same label and color in the list and detail
+ok 104 - fiscal results share the same label and color in the list and detail
+  ---
+  duration_ms: 10.241667
+  type: 'test'
+  ...
+# Subtest: commercial rejection and annulment retain priority; non-HKA documents use local state
+ok 105 - commercial rejection and annulment retain priority; non-HKA documents use local state
+  ---
+  duration_ms: 0.616382
+  type: 'test'
+  ...
+# Subtest: the actual status popup shows the reason only on rejection and handles missing information
+ok 106 - the actual status popup shows the reason only on rejection and handles missing information
+  ---
+  duration_ms: 21.928368
+  type: 'test'
+  ...
+# Subtest: local rejection does not reuse an unrelated fiscal diagnostic
+ok 107 - local rejection does not reuse an unrelated fiscal diagnostic
+  ---
+  duration_ms: 0.35691
+  type: 'test'
+  ...
+# Subtest: list retains mobile PDF and edit permissions without a download column or blocked-edit notice
+ok 108 - list retains mobile PDF and edit permissions without a download column or blocked-edit notice
+  ---
+  duration_ms: 1.855422
+  type: 'test'
+  ...
+# Subtest: type is visible after customer; HKA actions and the old column leave the table
+ok 109 - type is visible after customer; HKA actions and the old column leave the table
+  ---
+  duration_ms: 1.133962
+  type: 'test'
+  ...
+# Subtest: old preferences keep visibility, custom fields and relative order while inserting type after customer
+ok 110 - old preferences keep visibility, custom fields and relative order while inserting type after customer
+  ---
+  duration_ms: 0.856915
+  type: 'test'
+  ...
+# Subtest: delivery orders keep one column and ignore retired guides preferences
+ok 111 - delivery orders keep one column and ignore retired guides preferences
+  ---
+  duration_ms: 7.75588
+  type: 'test'
+  ...
+# Subtest: Total stays visible despite old preferences, saves selected and cannot be removed by the superadmin
+ok 112 - Total stays visible despite old preferences, saves selected and cannot be removed by the superadmin
+  ---
+  duration_ms: 11.371681
+  type: 'test'
+  ...
+# Subtest: saving and reloading type visibility uses the existing report configuration
+ok 113 - saving and reloading type visibility uses the existing report configuration
+  ---
+  duration_ms: 1.859785
+  type: 'test'
+  ...
+# Subtest: superadmin exposes type and inserts it after a reordered customer in saved configurations
+ok 114 - superadmin exposes type and inserts it after a reordered customer in saved configurations
+  ---
+  duration_ms: 1.418911
+  type: 'test'
+  ...
+# Subtest: detail action prevents double clicks, refreshes the record and publishes the fiscal update
+ok 115 - detail action prevents double clicks, refreshes the record and publishes the fiscal update
+  ---
+  duration_ms: 9.313304
+  type: 'test'
+  ...
+# Subtest: detail refuses unavailable actions, loading, hidden windows and mismatched document IDs
+ok 116 - detail refuses unavailable actions, loading, hidden windows and mismatched document IDs
+  ---
+  duration_ms: 0.820716
+  type: 'test'
+  ...
+# Subtest: detail failures preserve the saved document and allow another explicit attempt
+ok 117 - detail failures preserve the saved document and allow another explicit attempt
+  ---
+  duration_ms: 0.744151
+  type: 'test'
+  ...
+# Subtest: detail ignores a response after closing and reopening the same document
+ok 118 - detail ignores a response after closing and reopening the same document
+  ---
+  duration_ms: 0.634872
+  type: 'test'
+  ...
+# Subtest: detail ignores a late error after switching documents
+ok 119 - detail ignores a late error after switching documents
+  ---
+  duration_ms: 0.664806
+  type: 'test'
+  ...
+# Subtest: options action prevents double clicks, refreshes the record and publishes the fiscal update
+ok 120 - options action prevents double clicks, refreshes the record and publishes the fiscal update
+  ---
+  duration_ms: 7.851373
+  type: 'test'
+  ...
+# Subtest: options refuses unavailable actions, loading, hidden windows and mismatched document IDs
+ok 121 - options refuses unavailable actions, loading, hidden windows and mismatched document IDs
+  ---
+  duration_ms: 0.512853
+  type: 'test'
+  ...
+# Subtest: options failures preserve the saved document and allow another explicit attempt
+ok 122 - options failures preserve the saved document and allow another explicit attempt
+  ---
+  duration_ms: 0.489375
+  type: 'test'
+  ...
+# Subtest: options ignores a response after closing and reopening the same document
+ok 123 - options ignores a response after closing and reopening the same document
+  ---
+  duration_ms: 0.413009
+  type: 'test'
+  ...
+# Subtest: options ignores a late error after switching documents
+ok 124 - options ignores a late error after switching documents
+  ---
+  duration_ms: 0.469685
+  type: 'test'
+  ...
+# Subtest: record refresh discards an obsolete detail response after an awaited item fallback
+ok 125 - record refresh discards an obsolete detail response after an awaited item fallback
+  ---
+  duration_ms: 0.72401
+  type: 'test'
+  ...
+# Subtest: options refresh cannot restore a previous window session or reopen dispatch generation
+ok 126 - options refresh cannot restore a previous window session or reopen dispatch generation
+  ---
+  duration_ms: 0.88361
+  type: 'test'
+  ...
+# Subtest: fiscal events refresh the list without applying another document result to the detail snapshot
+ok 127 - fiscal events refresh the list without applying another document result to the detail snapshot
+  ---
+  duration_ms: 0.761106
+  type: 'test'
+  ...
+# Subtest: actual options render credit and debit fiscal notices with a visible send action
+ok 128 - actual options render credit and debit fiscal notices with a visible send action
+  ---
+  duration_ms: 20.743202
+  type: 'test'
+  ...
+# Subtest: annulment requests preserve their UUID and reason after a lost response
+ok 129 - annulment requests preserve their UUID and reason after a lost response
+  ---
+  duration_ms: 1.049392
+  type: 'test'
+  ...
+# Subtest: annulment reconciliation updates the note and discards a late result for another note
+ok 130 - annulment reconciliation updates the note and discards a late result for another note
+  ---
+  duration_ms: 0.745336
+  type: 'test'
+  ...
+# Subtest: double click while the annulment confirmation is open shows one prompt and sends once
+ok 131 - double click while the annulment confirmation is open shows one prompt and sends once
+  ---
+  duration_ms: 2.383314
+  type: 'test'
+  ...
+# Subtest: both invoice creation and listing use the same email dialog and valid template
+ok 132 - both invoice creation and listing use the same email dialog and valid template
+  ---
+  duration_ms: 1079.507546
+  type: 'test'
+  ...
+# Subtest: the generated invoice reports HKA acceptance and its control number
+ok 133 - the generated invoice reports HKA acceptance and its control number
+  ---
+  duration_ms: 1.381983
+  type: 'test'
+  ...
+# Subtest: HKA rejection is visible even when the sale or email was successful
+ok 134 - HKA rejection is visible even when the sale or email was successful
+  ---
+  duration_ms: 0.898131
+  type: 'test'
+  ...
+# Subtest: pending and uncertain states cannot be shown as fiscal acceptance or rejection
+ok 135 - pending and uncertain states cannot be shown as fiscal acceptance or rejection
+  ---
+  duration_ms: 22.591831
+  type: 'test'
+  ...
+# Subtest: other modalities and document types retain their existing response message
+ok 136 - other modalities and document types retain their existing response message
+  ---
+  duration_ms: 0.475945
+  type: 'test'
+  ...
+# Subtest: reopening the dialog clears the previous invoice result before loading another record
+ok 137 - reopening the dialog clears the previous invoice result before loading another record
+  ---
+  duration_ms: 9.431941
+  type: 'test'
+  ...
+# Subtest: send uses one request UUID and prevents parallel clicks and blocked invoices
+ok 138 - send uses one request UUID and prevents parallel clicks and blocked invoices
+  ---
+  duration_ms: 1.493148
+  type: 'test'
+  ...
+# Subtest: network failure retains the UUID and the saved invoice
+ok 139 - network failure retains the UUID and the saved invoice
+  ---
+  duration_ms: 7.600261
+  type: 'test'
+  ...
+# Subtest: query updates delivery independently from fiscal state
+ok 140 - query updates delivery independently from fiscal state
+  ---
+  duration_ms: 3.316159
+  type: 'test'
+  ...
+# Subtest: web and listing shared dialog downloads both formats using the dedicated routes
+ok 141 - web and listing shared dialog downloads both formats using the dedicated routes
+  ---
+  duration_ms: 26.826592
+  type: 'test'
+  ...
+# Subtest: POS/Garage format buttons and keyboard tabs use the same service
+ok 142 - POS/Garage format buttons and keyboard tabs use the same service
+  ---
+  duration_ms: 1.321804
+  type: 'test'
+  ...
+# Subtest: downloads retain the fiscal filename for quoted and plain disposition headers
+ok 143 - downloads retain the fiscal filename for quoted and plain disposition headers
+  ---
+  duration_ms: 15.60679
+  type: 'test'
+  ...
+# Subtest: finance A4 action uses HKA while sale notes retain their local print URL
+ok 144 - finance A4 action uses HKA while sale notes retain their local print URL
+  ---
+  duration_ms: 11.378775
+  type: 'test'
+  ...
+# Subtest: pending invoices block buttons and direct methods without downloading local copies
+ok 145 - pending invoices block buttons and direct methods without downloading local copies
+  ---
+  duration_ms: 10.285116
+  type: 'test'
+  ...
+# Subtest: unconfirmed invoices download 80MM while A4/A5 remain blocked in every shared dialog
+ok 146 - unconfirmed invoices download 80MM while A4/A5 remain blocked in every shared dialog
+  ---
+  duration_ms: 1.853882
+  type: 'test'
+  ...
+# Subtest: an unloaded or loading dialog cannot open a null print URL or download another record
+ok 147 - an unloaded or loading dialog cannot open a null print URL or download another record
+  ---
+  duration_ms: 22.525038
+  type: 'test'
+  ...
+# Subtest: double clicks share the busy state and release it when download finishes
+ok 148 - double clicks share the busy state and release it when download finishes
+  ---
+  duration_ms: 0.79601
+  type: 'test'
+  ...
+# Subtest: blob validation and network errors retain the sale and allow manual retry
+ok 149 - blob validation and network errors retain the sale and allow manual retry
+  ---
+  duration_ms: 12.524765
+  type: 'test'
+  ...
+# Subtest: local formats and tickets preserve existing links; a missing remote contract fails closed
+ok 150 - local formats and tickets preserve existing links; a missing remote contract fails closed
+  ---
+  duration_ms: 21.772775
+  type: 'test'
+  ...
+# Subtest: 80MM web/list/finance buttons and POS/Garage shortcuts download a local ticket from the authenticated route
+ok 151 - 80MM web/list/finance buttons and POS/Garage shortcuts download a local ticket from the authenticated route
+  ---
+  duration_ms: 1.324731
+  type: 'test'
+  ...
+# Subtest: an unavailable HKA QR blocks only 80MM and releases the busy state after failures
+ok 152 - an unavailable HKA QR blocks only 80MM and releases the busy state after failures
+  ---
+  duration_ms: 21.737414
+  type: 'test'
+  ...
+# Subtest: 80MM visibility still follows configuration and preview/print URLs remain unchanged
+ok 153 - 80MM visibility still follows configuration and preview/print URLs remain unchanged
+  ---
+  duration_ms: 16.474408
+  type: 'test'
+  ...
+# Subtest: POS preview URLs and automatic printing remain local and distinct from download buttons
+ok 154 - POS preview URLs and automatic printing remain local and distinct from download buttons
+  ---
+  duration_ms: 7.472729
+  type: 'test'
+  ...
+# Subtest: hotel sale note obtains a valid exchange rate before saving
+ok 155 - hotel sale note obtains a valid exchange rate before saving
+  ---
+  duration_ms: 9.325868
+  type: 'test'
+  ...
+# Subtest: converting an existing note keeps its valid recorded exchange rate
+ok 156 - converting an existing note keeps its valid recorded exchange rate
+  ---
+  duration_ms: 0.45562
+  type: 'test'
+  ...
+# Subtest: an invalid exchange response does not change the note or invoice
+ok 157 - an invalid exchange response does not change the note or invoice
+  ---
+  duration_ms: 1.249088
+  type: 'test'
+  ...
+# Subtest: reopening POS payments restores entered receipts instead of suggesting the gross total
+ok 158 - reopening POS payments restores entered receipts instead of suggesting the gross total
+  ---
+  duration_ms: 7116.968885
+  type: 'test'
+  ...
+# Subtest: garage refresh preserves one receipt and multiple receipts when the collection target changes
+ok 159 - garage refresh preserves one receipt and multiple receipts when the collection target changes
+  ---
+  duration_ms: 670.570561
+  type: 'test'
+  ...
+# Subtest: voucher validation details remain visible for both Web and API error envelopes
+ok 160 - voucher validation details remain visible for both Web and API error envelopes
+  ---
+  duration_ms: 387.207775
+  type: 'test'
+  ...
+# Subtest: adding a method in order invoicing preserves real collections and suggests only the remaining total
+ok 161 - adding a method in order invoicing preserves real collections and suggests only the remaining total
+  ---
+  duration_ms: 341.396573
+  type: 'test'
+  ...
+# Subtest: all creation and collection entries compile with retentions managed after creation
+ok 162 - all creation and collection entries compile with retentions managed after creation
+  ---
+  duration_ms: 1205.32367
+  type: 'test'
+  ...
+# Subtest: WhatsApp numbers use the current Venezuelan input contract
+ok 163 - WhatsApp numbers use the current Venezuelan input contract
+  ---
+  duration_ms: 29.944312
+  type: 'test'
+  ...
+# Subtest: send handlers reject foreign numbers before window, PDF or HTTP activity
+ok 164 - send handlers reject foreign numbers before window, PDF or HTTP activity
+  ---
+  duration_ms: 1336.513997
+  type: 'test'
+  ...
+# Subtest: both POS payment panels expose the same dialog and shared HKA behavior
+ok 165 - both POS payment panels expose the same dialog and shared HKA behavior
+  ---
+  duration_ms: 3.960645
+  type: 'test'
+  ...
+# Subtest: POS sends one request with UUID, blocks double clicks and offers explicit resend
+ok 166 - POS sends one request with UUID, blocks double clicks and offers explicit resend
+  ---
+  duration_ms: 1.645451
+  type: 'test'
+  ...
+# Subtest: unconfirmed, pending and uncertain mail never sends; failures preserve the invoice and request
+ok 167 - unconfirmed, pending and uncertain mail never sends; failures preserve the invoice and request
+  ---
+  duration_ms: 1.198862
+  type: 'test'
+  ...
+# Subtest: POS loads persisted pending attempts and queries tracking without changing fiscal state
+ok 168 - POS loads persisted pending attempts and queries tracking without changing fiscal state
+  ---
+  duration_ms: 7.072886
+  type: 'test'
+  ...
+# Subtest: failure to create an attempt UUID releases the send button and explains the failure
+ok 169 - failure to create an attempt UUID releases the send button and explains the failure
+  ---
+  duration_ms: 1.77657
+  type: 'test'
+  ...
+# Subtest: request validation errors cannot silently disappear in the POS dialog
+ok 170 - request validation errors cannot silently disappear in the POS dialog
+  ---
+  duration_ms: 1.648003
+  type: 'test'
+  ...
+# Subtest: flat Pro9 AJAX validation maps the recipient error to the visible email field
+ok 171 - flat Pro9 AJAX validation maps the recipient error to the visible email field
+  ---
+  duration_ms: 1.107503
+  type: 'test'
+  ...
+# Subtest: garage initial amount waits for rendering and tolerates an absent input
+ok 172 - garage initial amount waits for rendering and tolerates an absent input
+  ---
+  duration_ms: 281.553021
+  type: 'test'
+  ...
+# Subtest: payment.vue tolerates missing optional configuration after the sale is saved
+ok 173 - payment.vue tolerates missing optional configuration after the sale is saved
+  ---
+  duration_ms: 435.67142
+  type: 'test'
+  ...
+# Subtest: fast_payment_garage.vue tolerates missing optional configuration after the sale is saved
+ok 174 - fast_payment_garage.vue tolerates missing optional configuration after the sale is saved
+  ---
+  duration_ms: 442.897613
+  type: 'test'
+  ...
+# Subtest: payment.vue generates a paid invoice and opens options even when HKA is uncertain
+ok 175 - payment.vue generates a paid invoice and opens options even when HKA is uncertain
+  ---
+  duration_ms: 32.906463
+  type: 'test'
+  ...
+# Subtest: payment.vue handles loss of the creation response without another sale
+ok 176 - payment.vue handles loss of the creation response without another sale
+  ---
+  duration_ms: 5.090769
+  type: 'test'
+  ...
+# Subtest: fast_payment_garage.vue generates a paid invoice and opens options even when HKA is uncertain
+ok 177 - fast_payment_garage.vue generates a paid invoice and opens options even when HKA is uncertain
+  ---
+  duration_ms: 11.319351
+  type: 'test'
+  ...
+# Subtest: fast_payment_garage.vue handles loss of the creation response without another sale
+ok 178 - fast_payment_garage.vue handles loss of the creation response without another sale
+  ---
+  duration_ms: 3.638099
+  type: 'test'
+  ...
+# Subtest: POS credit clears suggested cash and keeps partial real collections enabled
+ok 179 - POS credit clears suggested cash and keeps partial real collections enabled
+  ---
+  duration_ms: 423.131957
+  type: 'test'
+  ...
+# Subtest: fast_payment.vue preserves credit when reopening payments and changing real amounts
+ok 180 - fast_payment.vue preserves credit when reopening payments and changing real amounts
+  ---
+  duration_ms: 332.80231
+  type: 'test'
+  ...
+# Subtest: fast_payment_garage.vue preserves credit when reopening payments and changing real amounts
+ok 181 - fast_payment_garage.vue preserves credit when reopening payments and changing real amounts
+  ---
+  duration_ms: 419.963563
+  type: 'test'
+  ...
+# Subtest: multiple_payment.vue opens unpaid credit without inventing payments and preserves real partial amounts
+ok 182 - multiple_payment.vue opens unpaid credit without inventing payments and preserves real partial amounts
+  ---
+  duration_ms: 58.339325
+  type: 'test'
+  ...
+# Subtest: multiple_payment_garage.vue opens unpaid credit without inventing payments and preserves real partial amounts
+ok 183 - multiple_payment_garage.vue opens unpaid credit without inventing payments and preserves real partial amounts
+  ---
+  duration_ms: 58.563432
+  type: 'test'
+  ...
+# Subtest: payment.vue restores credit amounts from actual draft receipts instead of the invoice total
+ok 184 - payment.vue restores credit amounts from actual draft receipts instead of the invoice total
+  ---
+  duration_ms: 322.058311
+  type: 'test'
+  ...
+# Subtest: fast_payment.vue restores credit amounts from actual draft receipts instead of the invoice total
+ok 185 - fast_payment.vue restores credit amounts from actual draft receipts instead of the invoice total
+  ---
+  duration_ms: 428.942731
+  type: 'test'
+  ...
+# Subtest: fast_payment_garage.vue restores credit amounts from actual draft receipts instead of the invoice total
+ok 186 - fast_payment_garage.vue restores credit amounts from actual draft receipts instead of the invoice total
+  ---
+  duration_ms: 392.211059
+  type: 'test'
+  ...
+# Subtest: creation and confirmation screens expose no retention editor, catalogue or proposal requests
+ok 187 - creation and confirmation screens expose no retention editor, catalogue or proposal requests
+  ---
+  duration_ms: 4063.64594
+  type: 'test'
+  ...
+# Subtest: creation sanitization excludes old retentions without changing items, receipts or source data
+ok 188 - creation sanitization excludes old retentions without changing items, receipts or source data
+  ---
+  duration_ms: 3.499141
+  type: 'test'
+  ...
+# Subtest: POS and Garage restore sanitized drafts and persist them without resetting real receipts
+ok 189 - POS and Garage restore sanitized drafts and persist them without resetting real receipts
+  ---
+  duration_ms: 2001.101728
+  type: 'test'
+  ...
+# Subtest: adding a receipt suggests the exact remaining amount without redistributing previous collections
+ok 190 - adding a receipt suggests the exact remaining amount without redistributing previous collections
+  ---
+  duration_ms: 1.295377
+  type: 'test'
+  ...
+# Subtest: invoice and POS multiple-payment consumers preserve real receipts when adding another method
+ok 191 - invoice and POS multiple-payment consumers preserve real receipts when adding another method
+  ---
+  duration_ms: 1308.768731
+  type: 'test'
+  ...
+# Subtest: the invoice add-payment action suggests only the remaining amount rather than the full total
+ok 192 - the invoice add-payment action suggests only the remaining amount rather than the full total
+  ---
+  duration_ms: 836.883643
+  type: 'test'
+  ...
+# Subtest: other creation modules suggest only their outstanding total when another payment is added
+ok 193 - other creation modules suggest only their outstanding total when another payment is added
+  ---
+  duration_ms: 459.292983
+  type: 'test'
+  ...
+# Subtest: the manager requires a saved invoice and obtains both tax histories and action permissions
+ok 194 - the manager requires a saved invoice and obtains both tax histories and action permissions
+  ---
+  duration_ms: 89.380251
+  type: 'test'
+  ...
+# Subtest: both tax types register against an existing invoice and upload only linked private support
+ok 195 - both tax types register against an existing invoice and upload only linked private support
+  ---
+  duration_ms: 26.646719
+  type: 'test'
+  ...
+# Subtest: closing the manager prevents late proposals and uploads from changing its state
+ok 196 - closing the manager prevents late proposals and uploads from changing its state
+  ---
+  duration_ms: 8.800332
+  type: 'test'
+  ...
+# Subtest: note retention corrections require the list context while other adjustments remain available
+ok 197 - note retention corrections require the list context while other adjustments remain available
+  ---
+  duration_ms: 10.346388
+  type: 'test'
+  ...
+# Subtest: sale note conversion submits a VES invoice with its recorded exchange rate
+ok 198 - sale note conversion submits a VES invoice with its recorded exchange rate
+  ---
+  duration_ms: 21.211948
+  type: 'test'
+  ...
+# Subtest: sale note conversion submits a USD invoice with its recorded exchange rate
+ok 199 - sale note conversion submits a USD invoice with its recorded exchange rate
+  ---
+  duration_ms: 1.504614
+  type: 'test'
+  ...
+# Subtest: conversion obtains a missing exchange rate and sends it without replacing it
+ok 200 - conversion obtains a missing exchange rate and sends it without replacing it
+  ---
+  duration_ms: 24.901751
+  type: 'test'
+  ...
+# Subtest: invalid exchange rate blocks conversion before saving or marking the note converted
+ok 201 - invalid exchange rate blocks conversion before saving or marking the note converted
+  ---
+  duration_ms: 1.403595
+  type: 'test'
+  ...
+# Subtest: six original sections filter the same series records and preserve catalog order
+ok 202 - six original sections filter the same series records and preserve catalog order
+  ---
+  duration_ms: 75.159082
+  type: 'test'
+  ...
+# Subtest: create stays in same window, normalizes series and sends only local configuration
+ok 203 - create stays in same window, normalizes series and sends only local configuration
+  ---
+  duration_ms: 1.30501
+  type: 'test'
+  ...
+# Subtest: cancel does not write and rejected creation keeps the draft
+ok 204 - cancel does not write and rejected creation keeps the draft
+  ---
+  duration_ms: 7.021554
+  type: 'test'
+  ...
+# Subtest: dedicated section reloads groups and selectable series without HKA requests
+ok 205 - dedicated section reloads groups and selectable series without HKA requests
+  ---
+  duration_ms: 3.262624
+  type: 'test'
+  ...
+# Subtest: used series remain visibly locked and all modalities share the original dialog
+ok 206 - used series remain visibly locked and all modalities share the original dialog
+  ---
+  duration_ms: 90.965165
+  type: 'test'
+  ...
+# Subtest: new series scrolls its inline editor into view without writes
+ok 207 - new series scrolls its inline editor into view without writes
+  ---
+  duration_ms: 0.814693
+  type: 'test'
+  ...
+# Subtest: optional series starts empty and changing emission never requests an automatic code
+ok 208 - optional series starts empty and changing emission never requests an automatic code
+  ---
+  duration_ms: 1.026815
+  type: 'test'
+  ...
+# Subtest: blank series saves normally, labels explain internal numbering, and nullable records sort
+ok 209 - blank series saves normally, labels explain internal numbering, and nullable records sort
+  ---
+  duration_ms: 7.740766
+  type: 'test'
+  ...
+# Subtest: document references accept 20 characters and reject longer or malformed series
+ok 210 - document references accept 20 characters and reject longer or malformed series
+  ---
+  duration_ms: 96.965278
+  type: 'test'
+  ...
+# Subtest: series accepts both letter cases, numbers and hyphens but never posts other characters
+ok 211 - series accepts both letter cases, numbers and hyphens but never posts other characters
+  ---
+  duration_ms: 9.860893
+  type: 'test'
+  ...
+# Subtest: regime availability requires a domestic invoice and digital DEMO
+ok 212 - regime availability requires a domestic invoice and digital DEMO
+  ---
+  duration_ms: 9.740979
+  type: 'test'
+  ...
+# Subtest: selection keeps product IVA and money unchanged; credit refuses the regime
+ok 213 - selection keeps product IVA and money unchanged; credit refuses the regime
+  ---
+  duration_ms: 0.516521
+  type: 'test'
+  ...
+# Subtest: export and itinerant switching require removing the selected regime first
+ok 214 - export and itinerant switching require removing the selected regime first
+  ---
+  duration_ms: 0.530471
+  type: 'test'
+  ...
+# Subtest: excluded or credit submissions stop before any commercial request
+ok 215 - excluded or credit submissions stop before any commercial request
+  ---
+  duration_ms: 1.333309
+  type: 'test'
+  ...
+# Subtest: editable regime submits only its ID and preserves the existing payments
+ok 216 - editable regime submits only its ID and preserves the existing payments
+  ---
+  duration_ms: 0.988654
+  type: 'test'
+  ...
+# Subtest: regime switch reveals the field without selecting a regime and clears it when disabled
+ok 217 - regime switch reveals the field without selecting a regime and clears it when disabled
+  ---
+  duration_ms: 0.938913
+  type: 'test'
+  ...
+# Subtest: fiscal switches live in additional information while enabled fields remain in the header
+ok 218 - fiscal switches live in additional information while enabled fields remain in the header
+  ---
+  duration_ms: 8.189758
+  type: 'test'
+  ...
+# Subtest: loading existing fiscal options restores both switches and retains historical options
+ok 219 - loading existing fiscal options restores both switches and retains historical options
+  ---
+  duration_ms: 2.144704
+  type: 'test'
+  ...
+# Subtest: client classification contains the third-party checkbox and complementary fiscal fields
+ok 220 - client classification contains the third-party checkbox and complementary fiscal fields
+  ---
+  duration_ms: 3.648242
+  type: 'test'
+  ...
+# Subtest: third-party availability follows company, invoice and domestic operation
+ok 221 - third-party availability follows company, invoice and domestic operation
+  ---
+  duration_ms: 1.477299
+  type: 'test'
+  ...
+# Subtest: turning the mode off clears its titular; credit or existing-category changes are refused
+ok 222 - turning the mode off clears its titular; credit or existing-category changes are refused
+  ---
+  duration_ms: 1.349897
+  type: 'test'
+  ...
+# Subtest: late searches cannot replace newer results or reopen the third-party mode
+ok 223 - late searches cannot replace newer results or reopen the third-party mode
+  ---
+  duration_ms: 13.9657
+  type: 'test'
+  ...
+# Subtest: an editor displays its frozen titular even when not offered for new selection
+ok 224 - an editor displays its frozen titular even when not offered for new selection
+  ---
+  duration_ms: 3.970963
+  type: 'test'
+  ...
+# Subtest: a third-party draft cannot switch to export or itinerant; submit rejects an absent titular
+ok 225 - a third-party draft cannot switch to export or itinerant; submit rejects an absent titular
+  ---
+  duration_ms: 11.261566
+  type: 'test'
+  ...
+# Subtest: saving a titular uses its own event and cannot select or reset the buyer
+ok 226 - saving a titular uses its own event and cannot select or reset the buyer
+  ---
+  duration_ms: 1.946442
+  type: 'test'
+  ...
+# Subtest: a saved titular is selected using its fiscal RIF while the buyer stays unchanged
+ok 227 - a saved titular is selected using its fiscal RIF while the buyer stays unchanged
+  ---
+  duration_ms: 1.417585
+  type: 'test'
+  ...
+# Subtest: third-party selector offers inline creation and editing using the isolated dialog
+ok 228 - third-party selector offers inline creation and editing using the isolated dialog
+  ---
+  duration_ms: 9.174529
+  type: 'test'
+  ...
+# Subtest: third-party searches keep buyer search state separate and disabling clears their state
+ok 229 - third-party searches keep buyer search state separate and disabling clears their state
+  ---
+  duration_ms: 1.623229
+  type: 'test'
+  ...
+1..229
+# tests 229
+# suites 0
+# pass 229
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 33009.294786

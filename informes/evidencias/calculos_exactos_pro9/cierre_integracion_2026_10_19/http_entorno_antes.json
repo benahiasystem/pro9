@@ -1,0 +1,33 @@
+{
+  "utc": "2026-10-20T01:58:18.026017+00:00",
+  "loadavg": "5.36 7.41 7.36 3/1864 357464",
+  "cpuinfo_processors": 8,
+  "memory": "MemTotal:       16302076 kB\nMemFree:         2798072 kB\nMemAvailable:    7579996 kB\nBuffers:          503284 kB\nCached:          5269688 kB\nSwapCached:       127092 kB\nActive:          6046384 kB\nInactive:        6083108 kB\nActive(anon):    5164216 kB\nInactive(anon):  2254964 kB\nActive(file):     882168 kB\nInactive(file):  3828144 kB\nUnevictable:      287732 kB\nMlocked:             200 kB\nSwapTotal:       4194300 kB\nSwapFree:        2358492 kB\nZswap:                 0 kB\nZswapped:              0 kB\nDirty:              5640 kB\nWriteback:             0 kB\nAnonPages:       6608572 kB\nMapped:          1287964 kB\nShmem:           1062664 kB\nKReclaimable:     411360 kB\nSlab:             743292 kB\nSReclaimable:     411360 kB\nSUnreclaim:       331932 kB\nKernelStack:       29936 kB\nPageTables:       140868 kB\nSecPageTables:         0 kB\nNFS_Unstable:          0 kB\nBounce:                0 kB\nWritebackTmp:          0 kB\nCommitLimit:    12345336 kB\nCommitted_AS:   49867396 kB\nVmallocTotal:   34359738367 kB\nVmallocUsed:       67120 kB\nVmallocChunk:          0 kB\nPercpu:             8576 kB\nHardwareCorrupted:     0 kB\nAnonHugePages:         0 kB\nShmemHugePages:        0 kB\nShmemPmdMapped:        0 kB\nFileHugePages:    192512 kB\nFilePmdMapped:         0 kB\nCmaTotal:              0 kB\nCmaFree:          168484 kB\nUnaccepted:            0 kB\nBalloon:               0 kB\nGPUActive:             0 kB\nGPUReclaim:            0 kB\nHugePages_Total:       0\nHugePages_Free:        0\nHugePages_Rsvd:        0\nHugePages_Surp:        0\nHugepagesize:       2048 kB\nHugetlb:               0 kB\nDirectMap4k:      262656 kB\nDirectMap2M:     8056832 kB\nDirectMap1G:     9437184 kB\n",
+  "processes": [
+    "    PID    PPID %CPU %MEM COMMAND",
+    " 357464  357463 75.0  0.0 python3",
+    " 225098    8997 42.4  4.5 chrome",
+    "  16353   15777 11.0  5.9 ChatGPT",
+    "   9147    8974 10.7  1.2 chrome",
+    "  15809   15770  8.4  0.7 ChatGPT",
+    "   8403    1471  6.4  1.4 gnome-shell",
+    "   8722    8370  3.9  2.9 chrome",
+    "  15757    8403  2.4  2.5 ChatGPT",
+    "   2719    2591  2.0  3.2 mysqld",
+    "  15004    8997  1.8  4.9 chrome",
+    "  15403    8997  1.7  2.3 chrome",
+    "     20       2  1.4  0.0 idle_inject/0",
+    "     23       2  1.4  0.0 idle_inject/2",
+    "     29       2  1.4  0.0 idle_inject/4",
+    "     41       2  1.4  0.0 idle_inject/1",
+    "     47       2  1.4  0.0 idle_inject/3",
+    "     53       2  1.4  0.0 idle_inject/5",
+    "     35       2  1.4  0.0 idle_inject/6",
+    "     59       2  1.4  0.0 idle_inject/7",
+    "   9541    8997  1.3  1.8 chrome",
+    "   8912    8403  1.1  0.2 Xwayland",
+    "  15534    8997  0.9  2.3 chrome",
+    " 218805    8997  0.9  2.1 chrome",
+    "   9152    8722  0.6  0.8 chrome"
+  ]
+}

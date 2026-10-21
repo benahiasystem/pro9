@@ -94,7 +94,7 @@ test('loading an existing export preserves its rate, collections and object-seri
         setTotalDefaultPayment(){},setPendingAmount(){},calculateFee(){},setTotalPointsBySale(){},
         chargeGlobal:()=>assert.fail('Automatic domestic charges cannot replace saved export charges')};
     Object.defineProperty(ctx,'isExportInvoice',{get:()=>['0201','0202','0203'].includes(ctx.form.operation_type_id)});
-    for(const method of ['sumDiscountsNoBaseByItem','discountGlobalItems','deleteDiscountGlobal','setGlobalDiscount','applyExportGlobalCharge',
+    for(const method of ['restoreFiscalOptions','sumDiscountsNoBaseByItem','discountGlobalItems','deleteDiscountGlobal','setGlobalDiscount','applyExportGlobalCharge',
         'prepareDataGlobalDiscount','calculateTotal','changeDateOfIssue'])ctx[method]=(...args)=>c.methods[method].apply(ctx,args);
     const payments=[{id:4,payment:'95.00',currency_type_id:'USD'}];
     await c.methods.onSetFormData.call(ctx,{id:1,document_type_id:'01',currency_type_id:'USD',exchange_rate_sale:'40.12345678',
@@ -105,6 +105,7 @@ test('loading an existing export preserves its rate, collections and object-seri
     assert.equal(ctx.total_global_charge,'5');assert.equal(ctx.form.total_exportation,'95');assert.equal(ctx.form.total,'95');
     assert.deepEqual(Array.from(ctx.form.charges,row=>[row.charge_type_id,row.amount]),[['50','5']]);
     assert.deepEqual(JSON.parse(JSON.stringify(ctx.existingPayments)),payments);assert.deepEqual(ctx.form.payments,payments);
+    assert.equal(ctx.thirdPartyMode,false);assert.equal(ctx.specialTaxRegimeMode,false);
 });
 test('all affected forms compile their templates',()=>{
     for(const file of ['documents/invoice_generate.vue','documents/partials/item.vue','persons/form.vue','documents/partials/detail-drawer.vue']){

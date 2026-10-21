@@ -1,0 +1,11 @@
+{
+  "temporary_test_containers_remaining": [],
+  "existing_application_containers": [
+    "pro9-api-bcv",
+    "pro9-mysql",
+    "pro9-nginx",
+    "pro9-php",
+    "pro9-redis"
+  ],
+  "application_containers_modified": false
+}

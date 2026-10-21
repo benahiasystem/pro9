@@ -29,7 +29,12 @@ class SaleNotePaymentController extends Controller
 
     public function records($sale_note_id)
     {
-        $records = SaleNotePayment::where('sale_note_id', $sale_note_id)->get();
+        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        $records = SaleNotePayment::with(['global_payment.destination'=>fn($relation)=>$relation->morphWith([
+            \App\Models\Tenant\BankAccount::class=>['bank'],
+        ]),'payment_file'])
+            ->where('sale_note_id', $sale_note_id)->get();
+        // ######## FIN CALCULOS EXACTOS PRO9 ########
 
         return new SaleNotePaymentCollection($records);
     }
@@ -44,27 +49,27 @@ class SaleNotePaymentController extends Controller
 
     public function document($sale_note_id)
     {
-        /** @var SaleNote $sale_note */
-        $sale_note = SaleNote::find($sale_note_id);
-
-        $paidExact=D::sum($sale_note->payments->map(fn($r)=>$r->exactValue('payment')));
-        $total_paid = D::represent($paidExact);
-        $total = D::represent($sale_note->total_payable === null ? $sale_note->exactValue('total') : $sale_note->exactValue('total_payable'));
-        $total_difference = D::represent(D::of($total)->minus($paidExact));
-
-        $sale_note->total_canceled = $total_difference <= 0;
-        $sale_note->save();
+        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        return \App\Support\Exact\ReadSnapshot::run(DB::connection('tenant'), function () use ($sale_note_id) {
+        $sale_note = SaleNote::withoutEagerLoads()->findOrFail($sale_note_id);
+        $values = \App\Support\Exact\SaleNoteBalance::values($sale_note);
+        $totals = \App\Support\Exact\SaleNoteBalance::transport($values);
 
         return [
             'identifier' => $sale_note->identifier,
             'full_number' => $sale_note->getNumberFullAttribute(),
             'number_full' => $sale_note->getNumberFullAttribute(),
-            'total_paid' => $total_paid,
-            'total' => $total,
-            'total_difference' => $total_difference,
-            'paid' => $sale_note->total_canceled,
+            'total_paid' => $totals['total_paid'],
+            'total' => $totals['total'],
+            'total_difference' => $totals['total_difference'],
+            'document_total' => $totals['document_total'],
+            'settlement_adjustment' => $totals['settlement_adjustment'],
+            'calculation_snapshot' => $totals['calculation_snapshot'],
+            'paid' => $values['total_difference']->isZero(),
             'external_id' => $sale_note->external_id,
         ];
+        });
+        // ######## FIN CALCULOS EXACTOS PRO9 ########
     }
 
     public function store(SaleNotePaymentRequest $request)
@@ -72,9 +77,17 @@ class SaleNotePaymentController extends Controller
         $id = $request->input('id');
 
         DB::connection('tenant')->transaction(function () use ($id, $request) {
-
-            $record = SaleNotePayment::firstOrNew(['id' => $id]);
-            $record->fill($request->all());
+            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            $sale_note = SaleNote::withoutEagerLoads()->lockForUpdate()->findOrFail($request->sale_note_id);
+            $record = $id ? $sale_note->payments()->whereKey($id)->firstOrFail() : $sale_note->payments()->make();
+            // ######## FIN CALCULOS EXACTOS PRO9 ########
+            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            $record->fill($request->only(['date_of_payment','payment_method_type_id','reference','payment','has_card','card_brand_id']));
+            if ($record->exists && isset($record->calculation_snapshot['inputs']['tendered_payment'])
+                && $record->isDirty(['payment','payment_method_type_id'])) {
+                \App\Services\Fiscal\FiscalAmounts::error('payment','Revierta el cobro inicial antes de registrar otro importe o medio de pago.');
+            }
+            // ######## FIN CALCULOS EXACTOS PRO9 ########
             $record->save();
             $this->createGlobalPayment($record, $request->all());
             $this->saveFiles($record, $request, 'sale_notes');
@@ -82,12 +95,10 @@ class SaleNotePaymentController extends Controller
 
             $sale_note = SaleNote::lockForUpdate()->findOrFail($request->sale_note_id);
 
-            $paidExact=D::sum($sale_note->payments()->get()->map(fn($r)=>$r->exactValue('payment')));
-            $total_paid = D::represent($paidExact);
-            $total = D::represent($sale_note->total_payable === null ? $sale_note->exactValue('total') : $sale_note->exactValue('total_payable'));
-            $total_difference = D::represent(D::of($total)->minus($paidExact));
-
-            $sale_note->total_canceled = $total_difference <= 0;
+            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            $values = \App\Support\Exact\SaleNoteBalance::values($sale_note);
+            $sale_note->total_canceled = $values['total_difference']->isZero();
+            // ######## FIN CALCULOS EXACTOS PRO9 ########
             $sale_note->save();
 
             if ($sale_note->total_canceled) {
@@ -121,14 +132,19 @@ class SaleNotePaymentController extends Controller
 
     public function destroy($id)
     {
-        $item = SaleNotePayment::findOrFail($id);
-        $sale_note_id = $item->sale_note_id;
-        $item->cashDocumentPayments()->delete();
-        $item->delete();
-
-        $sale_note = SaleNote::find($item->sale_note_id);
-        $sale_note->total_canceled = false;
-        $sale_note->save();
+        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        $sale_note_id = DB::connection('tenant')->transaction(function () use ($id) {
+            $ownerId = SaleNotePayment::withoutEagerLoads()->findOrFail($id)->sale_note_id;
+            $sale_note = SaleNote::withoutEagerLoads()->lockForUpdate()->findOrFail($ownerId);
+            $item = $sale_note->payments()->whereKey($id)->lockForUpdate()->firstOrFail();
+            $item->cashDocumentPayments()->delete();
+            $item->delete();
+            $values = \App\Support\Exact\SaleNoteBalance::values($sale_note);
+            $sale_note->total_canceled = $values['total_difference']->isZero();
+            $sale_note->save();
+            return $sale_note->id;
+        });
+        // ######## FIN CALCULOS EXACTOS PRO9 ########
 
         $this->createPdf($sale_note_id);
 
@@ -141,18 +157,12 @@ class SaleNotePaymentController extends Controller
     public function createPdf($sale_note_id, $format = null)
     {
         $sale_note = SaleNote::find($sale_note_id);
-        $paidExact=D::sum($sale_note->payments->map(fn($r)=>$r->exactValue('payment')));
-        $total_paid = D::represent($paidExact);
-        $total = D::represent($sale_note->total_payable === null ? $sale_note->exactValue('total') : $sale_note->exactValue('total_payable'));
-        $total_difference = D::represent(D::of($total)->minus($paidExact));
+        $values = \App\Support\Exact\SaleNoteBalance::values($sale_note);
+        $totals = \App\Support\Exact\SaleNoteBalance::transport($values);
 
-        if($total_difference == 0) {
-            Log::info('true '.$total_difference);
-            $sale_note->total_canceled = true;
-        } else {
-            Log::info('false '.$total_difference);
-            $sale_note->total_canceled = false;
-        }
+        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        $sale_note->total_canceled = $values['total_difference']->isZero();
+        // ######## FIN CALCULOS EXACTOS PRO9 ########
         $sale_note->save();
 
 

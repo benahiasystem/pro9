@@ -1,0 +1,554 @@
+[
+  {
+    "id": "90fc62e447752a6262728c3d",
+    "review": "Se releyó Decimal::represent: conserva la misma adaptación final HALF_UP a texto. Su código y ExactCalculationTest son idénticos a la referencia. La ampliación del contrato sólo añade preparación de conversiones, cachés exactas acotadas, medición HTTP e intentos centrales pendientes; no altera la frontera previa ni aprueba sus consumidores. Las representaciones nuevas de agrupación continúan pendientes de su persistencia autorizada.",
+    "previous": {
+      "category": "storage",
+      "justification": "Implementación central de la proyección finita HALF_UP. La fracción sigue siendo la autoridad; cada consumidor de esta función debe revisarse por separado.",
+      "evidence": [
+        "app/Support/Exact/Decimal.php",
+        "tests/Unit/ExactCalculationTest.php",
+        ".codex/skills/mantener-calculos-exactos-pro9/references/contrato.md"
+      ],
+      "source": {
+        "file": "app/Support/Exact/Decimal.php",
+        "symbol": "Decimal::represent",
+        "operation": "toscale",
+        "operation_language": "php"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/Decimal.php": "43428318292748d6b845ea413a467821eae1e85dd12ef8b071ba2e8811dbca80",
+        "tests/Unit/ExactCalculationTest.php": "4db2afb83a02d7254b25db62dd670f29cb5720760b089e3308860db562913e77",
+        ".codex/skills/mantener-calculos-exactos-pro9/references/contrato.md": "d7c96f61b7cdcaa091b18ca822b1cae3c811e7063a512b374aab2501edb818fb"
+      }
+    },
+    "current": {
+      "category": "storage",
+      "justification": "Implementación central de la proyección finita HALF_UP. La fracción sigue siendo la autoridad; cada consumidor de esta función debe revisarse por separado.",
+      "evidence": [
+        "app/Support/Exact/Decimal.php",
+        "tests/Unit/ExactCalculationTest.php",
+        ".codex/skills/mantener-calculos-exactos-pro9/references/contrato.md"
+      ],
+      "source": {
+        "file": "app/Support/Exact/Decimal.php",
+        "symbol": "Decimal::represent",
+        "operation": "toscale",
+        "operation_language": "php"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/Decimal.php": "43428318292748d6b845ea413a467821eae1e85dd12ef8b071ba2e8811dbca80",
+        "tests/Unit/ExactCalculationTest.php": "4db2afb83a02d7254b25db62dd670f29cb5720760b089e3308860db562913e77",
+        ".codex/skills/mantener-calculos-exactos-pro9/references/contrato.md": "02b9f548c72aac0debee5c7731510a58d26d741e6bbd851654decd66a30884ad"
+      }
+    }
+  },
+  {
+    "id": "9435b87732841c4514fd2d59",
+    "expression": "$notes->count() !== count($batch)",
+    "review": "Compara el número entero de notas autorizadas con el número de IDs solicitados; una fuente ausente produce404 antes de preparar partidas. No suma ni compara dinero.",
+    "previous": null,
+    "current": {
+      "category": "technical",
+      "justification": "Compara el número entero de notas autorizadas con el número de IDs solicitados; una fuente ausente produce404 antes de preparar partidas. No suma ni compara dinero. Expresión: $notes->count() !== count($batch)",
+      "evidence": [
+        "app/Support/Exact/SaleNoteConversionLines.php",
+        "tests/Unit/ExactHttpAcceptanceTest.php#test_production_kernel_routes_and_api_authentication_run_against_disposable_mysql"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/SaleNoteConversionLines.php": "fde5c60fb60173beec8a62d837e25d232d8d9b008ddc9ec7e7869c85dd0acaeb",
+        "tests/Unit/ExactHttpAcceptanceTest.php": "a641e0acf78dd059c98f2127bb6e49637c91d7b99e460fe188b292cf5655d8e3"
+      },
+      "source": {
+        "file": "app/Support/Exact/SaleNoteConversionLines.php",
+        "symbol": "SaleNoteConversionLines::sourceRows",
+        "operation": "native_NotIdentical",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "d16db119235e58fce3a5f266",
+    "expression": "(string) $note->establishment_id !== (string) auth()->user()->establishment_id",
+    "review": "Compara las identidades de sucursal de la nota y del usuario como cadenas completas. Son claves foráneas, no importes; la comparación no convierte identidades grandes a flotante ni acredita por sí sola el cierre de autorización de otras rutas.",
+    "previous": null,
+    "current": {
+      "category": "validation",
+      "justification": "Compara las identidades de sucursal de la nota y del usuario como cadenas completas. Son claves foráneas, no importes; la comparación no convierte identidades grandes a flotante ni acredita por sí sola el cierre de autorización de otras rutas. Expresión: (string) $note->establishment_id !== (string) auth()->user()->establishment_id",
+      "evidence": [
+        "app/Support/Exact/SaleNoteConversionLines.php",
+        "tests/Unit/ExactHttpAcceptanceTest.php#test_production_kernel_routes_and_api_authentication_run_against_disposable_mysql"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/SaleNoteConversionLines.php": "fde5c60fb60173beec8a62d837e25d232d8d9b008ddc9ec7e7869c85dd0acaeb",
+        "tests/Unit/ExactHttpAcceptanceTest.php": "a641e0acf78dd059c98f2127bb6e49637c91d7b99e460fe188b292cf5655d8e3"
+      },
+      "source": {
+        "file": "app/Support/Exact/SaleNoteConversionLines.php",
+        "symbol": "SaleNoteConversionLines::sourceRows",
+        "operation": "native_NotIdentical",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "395250a95e4832aaf0a1a81b",
+    "expression": "$context !== $current",
+    "review": "Exige cliente, sucursal, moneda y tasa conservados compatibles. La tasa se normaliza antes mediante ExchangeRateMath::rate al contrato exacto de ocho posiciones; la desigualdad no redondea un importe ni sustituye la tasa por otra actual. El caso HTTP rechaza la selección mixta.",
+    "previous": null,
+    "current": {
+      "category": "validation",
+      "justification": "Exige cliente, sucursal, moneda y tasa conservados compatibles. La tasa se normaliza antes mediante ExchangeRateMath::rate al contrato exacto de ocho posiciones; la desigualdad no redondea un importe ni sustituye la tasa por otra actual. El caso HTTP rechaza la selección mixta. Expresión: $context !== $current",
+      "evidence": [
+        "app/Support/Exact/SaleNoteConversionLines.php",
+        "tests/Unit/ExactHttpAcceptanceTest.php#test_production_kernel_routes_and_api_authentication_run_against_disposable_mysql"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/SaleNoteConversionLines.php": "fde5c60fb60173beec8a62d837e25d232d8d9b008ddc9ec7e7869c85dd0acaeb",
+        "tests/Unit/ExactHttpAcceptanceTest.php": "a641e0acf78dd059c98f2127bb6e49637c91d7b99e460fe188b292cf5655d8e3"
+      },
+      "source": {
+        "file": "app/Support/Exact/SaleNoteConversionLines.php",
+        "symbol": "SaleNoteConversionLines::sourceRows",
+        "operation": "native_NotIdentical",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "e575eb2f290c19608fcc8179",
+    "expression": "count($decoded) < 128",
+    "review": "Límite entero de128 entradas de la caché local de JSON completos, identificados por campo y bytes originales; no limita posiciones decimales ni cantidades comerciales. El caso HTTP conserva objetos vacíos y snapshots en la respuesta.",
+    "previous": null,
+    "current": {
+      "category": "technical",
+      "justification": "Límite entero de128 entradas de la caché local de JSON completos, identificados por campo y bytes originales; no limita posiciones decimales ni cantidades comerciales. El caso HTTP conserva objetos vacíos y snapshots en la respuesta. Expresión: count($decoded) < 128",
+      "evidence": [
+        "app/Support/Exact/SaleNoteConversionLines.php",
+        "tests/Unit/ExactHttpAcceptanceTest.php#test_production_kernel_routes_and_api_authentication_run_against_disposable_mysql"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/SaleNoteConversionLines.php": "fde5c60fb60173beec8a62d837e25d232d8d9b008ddc9ec7e7869c85dd0acaeb",
+        "tests/Unit/ExactHttpAcceptanceTest.php": "a641e0acf78dd059c98f2127bb6e49637c91d7b99e460fe188b292cf5655d8e3"
+      },
+      "source": {
+        "file": "app/Support/Exact/SaleNoteConversionLines.php",
+        "symbol": "SaleNoteConversionLines::sourceRows",
+        "operation": "native_Smaller",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "f37c0d5d4a9c6fb8fb65012d",
+    "expression": "($snapshot['version'] ?? null) !== Decimal::VERSION",
+    "review": "Compara exclusivamente la versión del contrato con Decimal::VERSION antes de consultar las cachés. El caso negativo demuestra que un operando ya visto no autoriza un snapshot de versión99 ni la ausencia del total.",
+    "previous": null,
+    "current": {
+      "category": "validation",
+      "justification": "Compara exclusivamente la versión del contrato con Decimal::VERSION antes de consultar las cachés. El caso negativo demuestra que un operando ya visto no autoriza un snapshot de versión99 ni la ausencia del total. Expresión: ($snapshot['version'] ?? null) !== Decimal::VERSION",
+      "evidence": [
+        "app/Support/Exact/SaleNoteConversionLines.php",
+        "tests/Unit/ExactSaleNoteGroupingTest.php#test_operand_cache_does_not_hide_corrupt_snapshots_or_missing_fields"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/SaleNoteConversionLines.php": "fde5c60fb60173beec8a62d837e25d232d8d9b008ddc9ec7e7869c85dd0acaeb",
+        "tests/Unit/ExactSaleNoteGroupingTest.php": "b9940161fdc12012638b1fcca0d501d24d04b126163c36eeba5d7c075cd1e685"
+      },
+      "source": {
+        "file": "app/Support/Exact/SaleNoteConversionLines.php",
+        "symbol": "SaleNoteConversionLines::group",
+        "operation": "native_NotIdentical",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "795e4247eb5204406f0408b4",
+    "expression": "count($conditionKeys) < 256",
+    "review": "Límite entero de256 identidades completas de condiciones en la caché local. Fuera de ese límite se sigue construyendo la clave canónica; nunca se agrupan condiciones por un precio representado. Las pruebas separan precios subdoce y conservan grupos con distinto orden de metadatos.",
+    "previous": null,
+    "current": {
+      "category": "technical",
+      "justification": "Límite entero de256 identidades completas de condiciones en la caché local. Fuera de ese límite se sigue construyendo la clave canónica; nunca se agrupan condiciones por un precio representado. Las pruebas separan precios subdoce y conservan grupos con distinto orden de metadatos. Expresión: count($conditionKeys) < 256",
+      "evidence": [
+        "app/Support/Exact/SaleNoteConversionLines.php",
+        "tests/Unit/ExactSaleNoteGroupingTest.php"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/SaleNoteConversionLines.php": "fde5c60fb60173beec8a62d837e25d232d8d9b008ddc9ec7e7869c85dd0acaeb",
+        "tests/Unit/ExactSaleNoteGroupingTest.php": "b9940161fdc12012638b1fcca0d501d24d04b126163c36eeba5d7c075cd1e685"
+      },
+      "source": {
+        "file": "app/Support/Exact/SaleNoteConversionLines.php",
+        "symbol": "SaleNoteConversionLines::group",
+        "operation": "native_Smaller",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "026ef8d9e5831e7efedaee0c",
+    "expression": "count($cache) < 256",
+    "review": "Límite entero de256 operandos exactos internados por serialización del n/d o del escalar original. Un fallo de caché vuelve a Decimal::readRequired; no usa la proyección como clave ni omite la validación de versión o de operandos.",
+    "previous": null,
+    "current": {
+      "category": "technical",
+      "justification": "Límite entero de256 operandos exactos internados por serialización del n/d o del escalar original. Un fallo de caché vuelve a Decimal::readRequired; no usa la proyección como clave ni omite la validación de versión o de operandos. Expresión: count($cache) < 256",
+      "evidence": [
+        "app/Support/Exact/SaleNoteConversionLines.php",
+        "tests/Unit/ExactSaleNoteGroupingTest.php#test_operand_cache_does_not_hide_corrupt_snapshots_or_missing_fields"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/SaleNoteConversionLines.php": "fde5c60fb60173beec8a62d837e25d232d8d9b008ddc9ec7e7869c85dd0acaeb",
+        "tests/Unit/ExactSaleNoteGroupingTest.php": "b9940161fdc12012638b1fcca0d501d24d04b126163c36eeba5d7c075cd1e685"
+      },
+      "source": {
+        "file": "app/Support/Exact/SaleNoteConversionLines.php",
+        "symbol": "SaleNoteConversionLines::operand",
+        "operation": "native_Smaller",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "90fc62e447752a6262728c3d",
+    "review": "Se vuelve a revisar Decimal::represent: su código y ExactCalculationTest conservan los hashes de la revisión inicial. El contrato se amplió con lectura lexical de JSON y una prueba AST JavaScript de presencia; no cambió la adaptación final HALF_UP de esta expresión. Se verifica que el contrato anterior es prefijo del actual. No se aprueban sus consumidores.",
+    "expression": null,
+    "previous": {
+      "category": "storage",
+      "justification": "Implementación central de la proyección finita HALF_UP. La fracción sigue siendo la autoridad; cada consumidor de esta función debe revisarse por separado.",
+      "evidence": [
+        "app/Support/Exact/Decimal.php",
+        "tests/Unit/ExactCalculationTest.php",
+        ".codex/skills/mantener-calculos-exactos-pro9/references/contrato.md"
+      ],
+      "source": {
+        "file": "app/Support/Exact/Decimal.php",
+        "symbol": "Decimal::represent",
+        "operation": "toscale",
+        "operation_language": "php"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/Decimal.php": "43428318292748d6b845ea413a467821eae1e85dd12ef8b071ba2e8811dbca80",
+        "tests/Unit/ExactCalculationTest.php": "4db2afb83a02d7254b25db62dd670f29cb5720760b089e3308860db562913e77",
+        ".codex/skills/mantener-calculos-exactos-pro9/references/contrato.md": "02b9f548c72aac0debee5c7731510a58d26d741e6bbd851654decd66a30884ad"
+      }
+    },
+    "current": {
+      "category": "storage",
+      "justification": "Implementación central de la proyección finita HALF_UP. La fracción sigue siendo la autoridad; cada consumidor de esta función debe revisarse por separado.",
+      "evidence": [
+        "app/Support/Exact/Decimal.php",
+        "tests/Unit/ExactCalculationTest.php",
+        ".codex/skills/mantener-calculos-exactos-pro9/references/contrato.md"
+      ],
+      "source": {
+        "file": "app/Support/Exact/Decimal.php",
+        "symbol": "Decimal::represent",
+        "operation": "toscale",
+        "operation_language": "php"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/Decimal.php": "43428318292748d6b845ea413a467821eae1e85dd12ef8b071ba2e8811dbca80",
+        "tests/Unit/ExactCalculationTest.php": "4db2afb83a02d7254b25db62dd670f29cb5720760b089e3308860db562913e77",
+        ".codex/skills/mantener-calculos-exactos-pro9/references/contrato.md": "06c41d7141aca4c7b21d7a31c2d9a8ca598e18b63fd76e4b414e4d3f87073f01"
+      }
+    },
+    "stage": "revalidacion_lectura_json_lexical"
+  },
+  {
+    "id": "9435b87732841c4514fd2d59",
+    "review": "Se conserva la comparación entera count de notas autorizadas e IDs del lote. La lectura lexical añadida sucede después y no cambia el rechazo 404 por fuente ausente, que la prueba HTTP sigue ejecutando.",
+    "expression": "$notes->count() !== count($batch)",
+    "previous": {
+      "category": "technical",
+      "justification": "Compara el número entero de notas autorizadas con el número de IDs solicitados; una fuente ausente produce404 antes de preparar partidas. No suma ni compara dinero. Expresión: $notes->count() !== count($batch)",
+      "evidence": [
+        "app/Support/Exact/SaleNoteConversionLines.php",
+        "tests/Unit/ExactHttpAcceptanceTest.php#test_production_kernel_routes_and_api_authentication_run_against_disposable_mysql"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/SaleNoteConversionLines.php": "fde5c60fb60173beec8a62d837e25d232d8d9b008ddc9ec7e7869c85dd0acaeb",
+        "tests/Unit/ExactHttpAcceptanceTest.php": "a641e0acf78dd059c98f2127bb6e49637c91d7b99e460fe188b292cf5655d8e3"
+      },
+      "source": {
+        "file": "app/Support/Exact/SaleNoteConversionLines.php",
+        "symbol": "SaleNoteConversionLines::sourceRows",
+        "operation": "native_NotIdentical",
+        "operation_language": "php"
+      }
+    },
+    "current": {
+      "category": "technical",
+      "justification": "Compara el número entero de notas autorizadas con el número de IDs solicitados; una fuente ausente produce404 antes de preparar partidas. No suma ni compara dinero. Expresión: $notes->count() !== count($batch)",
+      "evidence": [
+        "app/Support/Exact/SaleNoteConversionLines.php",
+        "tests/Unit/ExactHttpAcceptanceTest.php#test_production_kernel_routes_and_api_authentication_run_against_disposable_mysql"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/SaleNoteConversionLines.php": "180f6b0ff018584bbeae8b3450f265fb398794a795a15ddd8c4710c8ab9289ad",
+        "tests/Unit/ExactHttpAcceptanceTest.php": "28226a72e406e2182de1767057934335a28f413906fc97cea71aa562357ba161"
+      },
+      "source": {
+        "file": "app/Support/Exact/SaleNoteConversionLines.php",
+        "symbol": "SaleNoteConversionLines::sourceRows",
+        "operation": "native_NotIdentical",
+        "operation_language": "php"
+      }
+    },
+    "stage": "revalidacion_lectura_json_lexical"
+  },
+  {
+    "id": "d16db119235e58fce3a5f266",
+    "review": "Se conserva la comparación completa de identificadores de sucursal como cadenas, antes de decodificar partidas. La corrección de tokens JSON y el nuevo caso de descuento no convierten esta comparación en monetaria; no acredita autorización de otras rutas.",
+    "expression": "(string) $note->establishment_id !== (string) auth()->user()->establishment_id",
+    "previous": {
+      "category": "validation",
+      "justification": "Compara las identidades de sucursal de la nota y del usuario como cadenas completas. Son claves foráneas, no importes; la comparación no convierte identidades grandes a flotante ni acredita por sí sola el cierre de autorización de otras rutas. Expresión: (string) $note->establishment_id !== (string) auth()->user()->establishment_id",
+      "evidence": [
+        "app/Support/Exact/SaleNoteConversionLines.php",
+        "tests/Unit/ExactHttpAcceptanceTest.php#test_production_kernel_routes_and_api_authentication_run_against_disposable_mysql"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/SaleNoteConversionLines.php": "fde5c60fb60173beec8a62d837e25d232d8d9b008ddc9ec7e7869c85dd0acaeb",
+        "tests/Unit/ExactHttpAcceptanceTest.php": "a641e0acf78dd059c98f2127bb6e49637c91d7b99e460fe188b292cf5655d8e3"
+      },
+      "source": {
+        "file": "app/Support/Exact/SaleNoteConversionLines.php",
+        "symbol": "SaleNoteConversionLines::sourceRows",
+        "operation": "native_NotIdentical",
+        "operation_language": "php"
+      }
+    },
+    "current": {
+      "category": "validation",
+      "justification": "Compara las identidades de sucursal de la nota y del usuario como cadenas completas. Son claves foráneas, no importes; la comparación no convierte identidades grandes a flotante ni acredita por sí sola el cierre de autorización de otras rutas. Expresión: (string) $note->establishment_id !== (string) auth()->user()->establishment_id",
+      "evidence": [
+        "app/Support/Exact/SaleNoteConversionLines.php",
+        "tests/Unit/ExactHttpAcceptanceTest.php#test_production_kernel_routes_and_api_authentication_run_against_disposable_mysql"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/SaleNoteConversionLines.php": "180f6b0ff018584bbeae8b3450f265fb398794a795a15ddd8c4710c8ab9289ad",
+        "tests/Unit/ExactHttpAcceptanceTest.php": "28226a72e406e2182de1767057934335a28f413906fc97cea71aa562357ba161"
+      },
+      "source": {
+        "file": "app/Support/Exact/SaleNoteConversionLines.php",
+        "symbol": "SaleNoteConversionLines::sourceRows",
+        "operation": "native_NotIdentical",
+        "operation_language": "php"
+      }
+    },
+    "stage": "revalidacion_lectura_json_lexical"
+  },
+  {
+    "id": "395250a95e4832aaf0a1a81b",
+    "review": "Se conserva la comparación de cliente/sucursal/moneda/tasa normalizada antes de leer partidas. La prueba HTTP final incluye explícitamente rechazo 422 de dos notas VES/USD con tasas incompatibles; la corrección JSON no cambia ese contrato.",
+    "expression": "$context !== $current",
+    "previous": {
+      "category": "validation",
+      "justification": "Exige cliente, sucursal, moneda y tasa conservados compatibles. La tasa se normaliza antes mediante ExchangeRateMath::rate al contrato exacto de ocho posiciones; la desigualdad no redondea un importe ni sustituye la tasa por otra actual. El caso HTTP rechaza la selección mixta. Expresión: $context !== $current",
+      "evidence": [
+        "app/Support/Exact/SaleNoteConversionLines.php",
+        "tests/Unit/ExactHttpAcceptanceTest.php#test_production_kernel_routes_and_api_authentication_run_against_disposable_mysql"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/SaleNoteConversionLines.php": "fde5c60fb60173beec8a62d837e25d232d8d9b008ddc9ec7e7869c85dd0acaeb",
+        "tests/Unit/ExactHttpAcceptanceTest.php": "a641e0acf78dd059c98f2127bb6e49637c91d7b99e460fe188b292cf5655d8e3"
+      },
+      "source": {
+        "file": "app/Support/Exact/SaleNoteConversionLines.php",
+        "symbol": "SaleNoteConversionLines::sourceRows",
+        "operation": "native_NotIdentical",
+        "operation_language": "php"
+      }
+    },
+    "current": {
+      "category": "validation",
+      "justification": "Exige cliente, sucursal, moneda y tasa conservados compatibles. La tasa se normaliza antes mediante ExchangeRateMath::rate al contrato exacto de ocho posiciones; la desigualdad no redondea un importe ni sustituye la tasa por otra actual. El caso HTTP rechaza la selección mixta. Expresión: $context !== $current",
+      "evidence": [
+        "app/Support/Exact/SaleNoteConversionLines.php",
+        "tests/Unit/ExactHttpAcceptanceTest.php#test_production_kernel_routes_and_api_authentication_run_against_disposable_mysql"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/SaleNoteConversionLines.php": "180f6b0ff018584bbeae8b3450f265fb398794a795a15ddd8c4710c8ab9289ad",
+        "tests/Unit/ExactHttpAcceptanceTest.php": "28226a72e406e2182de1767057934335a28f413906fc97cea71aa562357ba161"
+      },
+      "source": {
+        "file": "app/Support/Exact/SaleNoteConversionLines.php",
+        "symbol": "SaleNoteConversionLines::sourceRows",
+        "operation": "native_NotIdentical",
+        "operation_language": "php"
+      }
+    },
+    "stage": "revalidacion_lectura_json_lexical"
+  },
+  {
+    "id": "e575eb2f290c19608fcc8179",
+    "review": "Se vuelve a revisar el límite entero de 128 entradas, identificadas por campo y bytes originales. La decodificación cacheada conserva ahora tokens decimales y forma de contenedores; el HTTP comprueba objetos vacíos y dos descuentos numéricos cuya suma anterior perdía cuatro céntimos. El límite sólo determina reutilización de lecturas, nunca precisión ni resultado.",
+    "expression": "count($decoded) < 128",
+    "previous": {
+      "category": "technical",
+      "justification": "Límite entero de128 entradas de la caché local de JSON completos, identificados por campo y bytes originales; no limita posiciones decimales ni cantidades comerciales. El caso HTTP conserva objetos vacíos y snapshots en la respuesta. Expresión: count($decoded) < 128",
+      "evidence": [
+        "app/Support/Exact/SaleNoteConversionLines.php",
+        "tests/Unit/ExactHttpAcceptanceTest.php#test_production_kernel_routes_and_api_authentication_run_against_disposable_mysql"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/SaleNoteConversionLines.php": "fde5c60fb60173beec8a62d837e25d232d8d9b008ddc9ec7e7869c85dd0acaeb",
+        "tests/Unit/ExactHttpAcceptanceTest.php": "a641e0acf78dd059c98f2127bb6e49637c91d7b99e460fe188b292cf5655d8e3"
+      },
+      "source": {
+        "file": "app/Support/Exact/SaleNoteConversionLines.php",
+        "symbol": "SaleNoteConversionLines::sourceRows",
+        "operation": "native_Smaller",
+        "operation_language": "php"
+      }
+    },
+    "current": {
+      "category": "technical",
+      "justification": "Límite entero de 128 JSON completos de caché local, identificados por campo y bytes. Conserva tokens decimales y tipos de contenedor; fuera del límite se lee exactamente sin caché. No limita precisión ni importes. Expresión: count($decoded) < 128",
+      "evidence": [
+        "app/Support/Exact/SaleNoteConversionLines.php",
+        "tests/Unit/ExactHttpAcceptanceTest.php#test_production_kernel_routes_and_api_authentication_run_against_disposable_mysql"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/SaleNoteConversionLines.php": "180f6b0ff018584bbeae8b3450f265fb398794a795a15ddd8c4710c8ab9289ad",
+        "tests/Unit/ExactHttpAcceptanceTest.php": "28226a72e406e2182de1767057934335a28f413906fc97cea71aa562357ba161"
+      },
+      "source": {
+        "file": "app/Support/Exact/SaleNoteConversionLines.php",
+        "symbol": "SaleNoteConversionLines::sourceRows",
+        "operation": "native_Smaller",
+        "operation_language": "php"
+      }
+    },
+    "stage": "revalidacion_lectura_json_lexical"
+  },
+  {
+    "id": "f37c0d5d4a9c6fb8fb65012d",
+    "review": "Se conserva la comparación de versión contra Decimal::VERSION antes del acierto de caché. Los snapshots JSON de texto pasan ahora por lectura lexical; la versión sigue siendo un entero y la prueba negativa de versión desconocida/total ausente sigue vigente.",
+    "expression": "($snapshot['version'] ?? null) !== Decimal::VERSION",
+    "previous": {
+      "category": "validation",
+      "justification": "Compara exclusivamente la versión del contrato con Decimal::VERSION antes de consultar las cachés. El caso negativo demuestra que un operando ya visto no autoriza un snapshot de versión99 ni la ausencia del total. Expresión: ($snapshot['version'] ?? null) !== Decimal::VERSION",
+      "evidence": [
+        "app/Support/Exact/SaleNoteConversionLines.php",
+        "tests/Unit/ExactSaleNoteGroupingTest.php#test_operand_cache_does_not_hide_corrupt_snapshots_or_missing_fields"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/SaleNoteConversionLines.php": "fde5c60fb60173beec8a62d837e25d232d8d9b008ddc9ec7e7869c85dd0acaeb",
+        "tests/Unit/ExactSaleNoteGroupingTest.php": "b9940161fdc12012638b1fcca0d501d24d04b126163c36eeba5d7c075cd1e685"
+      },
+      "source": {
+        "file": "app/Support/Exact/SaleNoteConversionLines.php",
+        "symbol": "SaleNoteConversionLines::group",
+        "operation": "native_NotIdentical",
+        "operation_language": "php"
+      }
+    },
+    "current": {
+      "category": "validation",
+      "justification": "Compara exclusivamente la versión del contrato con Decimal::VERSION antes de consultar las cachés. El caso negativo demuestra que un operando ya visto no autoriza un snapshot de versión99 ni la ausencia del total. Expresión: ($snapshot['version'] ?? null) !== Decimal::VERSION",
+      "evidence": [
+        "app/Support/Exact/SaleNoteConversionLines.php",
+        "tests/Unit/ExactSaleNoteGroupingTest.php#test_operand_cache_does_not_hide_corrupt_snapshots_or_missing_fields"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/SaleNoteConversionLines.php": "180f6b0ff018584bbeae8b3450f265fb398794a795a15ddd8c4710c8ab9289ad",
+        "tests/Unit/ExactSaleNoteGroupingTest.php": "b9940161fdc12012638b1fcca0d501d24d04b126163c36eeba5d7c075cd1e685"
+      },
+      "source": {
+        "file": "app/Support/Exact/SaleNoteConversionLines.php",
+        "symbol": "SaleNoteConversionLines::group",
+        "operation": "native_NotIdentical",
+        "operation_language": "php"
+      }
+    },
+    "stage": "revalidacion_lectura_json_lexical"
+  },
+  {
+    "id": "795e4247eb5204406f0408b4",
+    "review": "Se conserva el límite técnico entero de 256 claves de condiciones completas. La corrección lexical evita introducir floats en descuentos; fuera del límite continúa la misma clave canónica, con separación de precios racionales y pruebas de orden de metadatos.",
+    "expression": "count($conditionKeys) < 256",
+    "previous": {
+      "category": "technical",
+      "justification": "Límite entero de256 identidades completas de condiciones en la caché local. Fuera de ese límite se sigue construyendo la clave canónica; nunca se agrupan condiciones por un precio representado. Las pruebas separan precios subdoce y conservan grupos con distinto orden de metadatos. Expresión: count($conditionKeys) < 256",
+      "evidence": [
+        "app/Support/Exact/SaleNoteConversionLines.php",
+        "tests/Unit/ExactSaleNoteGroupingTest.php"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/SaleNoteConversionLines.php": "fde5c60fb60173beec8a62d837e25d232d8d9b008ddc9ec7e7869c85dd0acaeb",
+        "tests/Unit/ExactSaleNoteGroupingTest.php": "b9940161fdc12012638b1fcca0d501d24d04b126163c36eeba5d7c075cd1e685"
+      },
+      "source": {
+        "file": "app/Support/Exact/SaleNoteConversionLines.php",
+        "symbol": "SaleNoteConversionLines::group",
+        "operation": "native_Smaller",
+        "operation_language": "php"
+      }
+    },
+    "current": {
+      "category": "technical",
+      "justification": "Límite entero de256 identidades completas de condiciones en la caché local. Fuera de ese límite se sigue construyendo la clave canónica; nunca se agrupan condiciones por un precio representado. Las pruebas separan precios subdoce y conservan grupos con distinto orden de metadatos. Expresión: count($conditionKeys) < 256",
+      "evidence": [
+        "app/Support/Exact/SaleNoteConversionLines.php",
+        "tests/Unit/ExactSaleNoteGroupingTest.php"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/SaleNoteConversionLines.php": "180f6b0ff018584bbeae8b3450f265fb398794a795a15ddd8c4710c8ab9289ad",
+        "tests/Unit/ExactSaleNoteGroupingTest.php": "b9940161fdc12012638b1fcca0d501d24d04b126163c36eeba5d7c075cd1e685"
+      },
+      "source": {
+        "file": "app/Support/Exact/SaleNoteConversionLines.php",
+        "symbol": "SaleNoteConversionLines::group",
+        "operation": "native_Smaller",
+        "operation_language": "php"
+      }
+    },
+    "stage": "revalidacion_lectura_json_lexical"
+  },
+  {
+    "id": "026ef8d9e5831e7efedaee0c",
+    "review": "Se conserva el límite técnico entero de 256 operandos completos. La corrección lexical ocurre al leer JSON y no altera este almacenamiento local de racionales ni el rechazo previo de snapshots/operandos ausentes. No acredita proyecciones como entradas.",
+    "expression": "count($cache) < 256",
+    "previous": {
+      "category": "technical",
+      "justification": "Límite entero de256 operandos exactos internados por serialización del n/d o del escalar original. Un fallo de caché vuelve a Decimal::readRequired; no usa la proyección como clave ni omite la validación de versión o de operandos. Expresión: count($cache) < 256",
+      "evidence": [
+        "app/Support/Exact/SaleNoteConversionLines.php",
+        "tests/Unit/ExactSaleNoteGroupingTest.php#test_operand_cache_does_not_hide_corrupt_snapshots_or_missing_fields"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/SaleNoteConversionLines.php": "fde5c60fb60173beec8a62d837e25d232d8d9b008ddc9ec7e7869c85dd0acaeb",
+        "tests/Unit/ExactSaleNoteGroupingTest.php": "b9940161fdc12012638b1fcca0d501d24d04b126163c36eeba5d7c075cd1e685"
+      },
+      "source": {
+        "file": "app/Support/Exact/SaleNoteConversionLines.php",
+        "symbol": "SaleNoteConversionLines::operand",
+        "operation": "native_Smaller",
+        "operation_language": "php"
+      }
+    },
+    "current": {
+      "category": "technical",
+      "justification": "Límite entero de256 operandos exactos internados por serialización del n/d o del escalar original. Un fallo de caché vuelve a Decimal::readRequired; no usa la proyección como clave ni omite la validación de versión o de operandos. Expresión: count($cache) < 256",
+      "evidence": [
+        "app/Support/Exact/SaleNoteConversionLines.php",
+        "tests/Unit/ExactSaleNoteGroupingTest.php#test_operand_cache_does_not_hide_corrupt_snapshots_or_missing_fields"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/SaleNoteConversionLines.php": "180f6b0ff018584bbeae8b3450f265fb398794a795a15ddd8c4710c8ab9289ad",
+        "tests/Unit/ExactSaleNoteGroupingTest.php": "b9940161fdc12012638b1fcca0d501d24d04b126163c36eeba5d7c075cd1e685"
+      },
+      "source": {
+        "file": "app/Support/Exact/SaleNoteConversionLines.php",
+        "symbol": "SaleNoteConversionLines::operand",
+        "operation": "native_Smaller",
+        "operation_language": "php"
+      }
+    },
+    "stage": "revalidacion_lectura_json_lexical"
+  }
+]

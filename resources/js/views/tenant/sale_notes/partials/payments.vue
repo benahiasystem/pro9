@@ -34,7 +34,13 @@
                                             <i class="fas fa-file-download"></i>
                                         </button>
                                     </td>
-                                    <td class="text-right">{{ row.payment }}</td>
+                                    <!-- ######## INICIO CALCULOS EXACTOS PRO9 ######## -->
+                                    <td class="text-right">
+                                        {{ row.payment }}
+                                        <small v-if="hasCashAdjustment(row)" class="d-block text-muted">Ajuste de liquidación: {{ cashAdjustmentText(row) }}</small>
+                                        <small v-if="hasChange(row)" class="d-block text-muted">Vuelto: {{ row.change }}</small>
+                                    </td>
+                                    <!-- ######## FIN CALCULOS EXACTOS PRO9 ######## -->
                                 <template v-if="external">
                                     <td class="series-table-actions text-center">
                                         <button type="button" class="btn waves-effect waves-light btn-xs btn-primary" @click.prevent="clickOptions()"><i class="fas fa-file-upload"></i></button>
@@ -168,6 +174,9 @@
 </style>
 
 <script>
+    // ######## INICIO CALCULOS EXACTOS PRO9 ########
+    import {exactAmount, exactInput, exactValue} from '../../../../helpers/exchange-rate-math'
+    // ######## FIN CALCULOS EXACTOS PRO9 ########
 
     import {deletable} from '../../../../mixins/deletable'
     import DocumentOptions from '../../../../../../modules/Finance/Resources/assets/js/views/unpaid/partials/options.vue'
@@ -206,6 +215,17 @@
                 })
         },
         methods: {
+            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            hasCashAdjustment(row) { return exactValue(row, 'cash_adjustment').compare(0) !== 0; },
+            hasChange(row) { return exactValue(row, 'change').compare(0) !== 0; },
+            cashAdjustmentText(row) {
+                const value = exactValue(row, 'cash_adjustment');
+                const text = value.decimal();
+                if (text !== '0' || value.compare(0) === 0) return text;
+                const fraction = value.fraction();
+                return `${fraction.n}/${fraction.d}`;
+            },
+            // ######## FIN CALCULOS EXACTOS PRO9 ########
             clickDownloadFile(filename) {
                 window.open(
                     `/finances/payment-file/download-file/${filename}/sale_notes`,
@@ -306,7 +326,15 @@
                 this.fileList = []
             },
             clickSubmit(index) {
-                if(this.records[index].payment > parseFloat(this.document.total_difference)) {
+                // ######## INICIO CALCULOS EXACTOS PRO9 ########
+                let requested, applied;
+                try {
+                    this.records[index].payment = exactInput(String(this.records[index].payment));
+                    requested = exactAmount(this.records[index].payment);
+                    applied = exactAmount(requested.final(2));
+                    if (requested.compare(0) <= 0 || applied.compare(0) <= 0) throw new Error('Indique un cobro positivo y liquidable en céntimos.');
+                } catch (error) { this.$message.error(error.message); return; }
+                if(applied.compare(exactValue(this.document, 'total_difference')) > 0) {
                     this.$message.error('El monto ingresado supera al monto pendiente de pago, verifique.');
                     return;
                 }
@@ -318,11 +346,8 @@
 
                 this.records[index].loading = true;
 
-                let paid = false
-                if( parseFloat(this.records[index].payment) == parseFloat(this.document.total_difference))
-                {
-                    paid = true
-                }
+                const paid = applied.compare(exactValue(this.document, 'total_difference')) === 0;
+                // ######## FIN CALCULOS EXACTOS PRO9 ########
 
 
                 let form = {

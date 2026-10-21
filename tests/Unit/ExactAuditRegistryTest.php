@@ -24,6 +24,10 @@ class ExactAuditRegistryTest extends TestCase
             $review['evidence_sha256']=['proof.php'=>hash_file('sha256',$root.'/proof.php')];
             file_put_contents($root.'/config/exact_rounding_registry.json',json_encode([$unknown['id']=>$review]));
             self::assertSame('justified',\exactAuditClassify([$row],$root)[0]['status']);
+            $mismatchedProof = $review; $mismatchedProof['proof'] = 'strict_type_guard';
+            file_put_contents($root.'/config/exact_rounding_registry.json',json_encode([$unknown['id']=>$mismatchedProof]));
+            self::assertSame('pending',\exactAuditClassify([$row],$root)[0]['status']);
+            file_put_contents($root.'/config/exact_rounding_registry.json',json_encode([$unknown['id']=>$review]));
             $malformed = $review; unset($malformed['source']['symbol']);
             self::assertFalse(\exactAuditValidReview($malformed,$root));
             $row['expression']='D::represent($value, 3)';
@@ -39,7 +43,7 @@ class ExactAuditRegistryTest extends TestCase
             $review['source']=['file'=>'source.php','operation_language'=>'php'];
             file_put_contents($root.'/config/exact_rounding_registry.json',json_encode([$unknown['id']=>$review]));
             self::assertSame('orphaned_review',\exactAuditRegistryDiagnostics([],$root,'php')[0]['reason']);
-            self::assertSame([],\exactAuditRegistryDiagnostics([$unknown],$root,'php'));
+            self::assertSame('invalid_or_stale_review',\exactAuditRegistryDiagnostics([$unknown],$root,'php')[0]['reason']);
             $review['evidence']=['/etc/passwd'];
             self::assertFalse(\exactAuditValidReview($review,$root));
         } finally {

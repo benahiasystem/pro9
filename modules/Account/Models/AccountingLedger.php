@@ -124,7 +124,7 @@
             $date_of_report = Carbon::createFromFormat('m-Y', $dates[1] . "-" . $dates[0]);
             // Cuentas por pagar
             $requestArray['stablishmentUnpaidAll'] = 1;
-            $cuentasPorCobrar = DashboardView::getUnpaidFilterUser($requestArray)->get();
+            $cuentasPorCobrar = DashboardView::getUnpaidFilterUser($requestArray);
             $requestArray['stablishmentTopaidAll'] = 1;
             $cuentasPorPagar = ToPay::getToPay($requestArray);
 

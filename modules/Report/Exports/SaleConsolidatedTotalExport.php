@@ -57,7 +57,8 @@ class SaleConsolidatedTotalExport implements FromView, ShouldAutoSize, \Maatwebs
     public function registerEvents(): array
     {
         return [\Maatwebsite\Excel\Events\AfterSheet::class=>function ($event) {
-            \App\Support\Exact\FractionSheet::append($event->sheet->getDelegate(), $this->records, ['quantity', 'total_sale', 'total_ves', 'total_usd']);
+            \App\Support\Exact\FractionSheet::append($event->sheet->getDelegate(), $this->records,
+                array_merge(['quantity', 'total_sale', 'total_ves', 'total_usd'], \App\Support\Exact\HeaderAllocation::FIELDS));
         }];
     }
     // ######## FIN CALCULOS EXACTOS PRO9 ########

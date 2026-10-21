@@ -102,7 +102,7 @@ final class NoteAnnulment
     {
         if ($note->document_type_id === '07') foreach ($note->items as $line) {
             FiscalNoteInventory::apply($line,-1,$checkOnly);
-            if (!$checkOnly && $line->inventory_quantity > 0 && !empty($line->item->inventory_components)) {
+            if (!$checkOnly && $line->exactValue('inventory_quantity')->isPositive() && !empty($line->item->inventory_components)) {
                 $ids=[$line->item_id];foreach ((array)$line->item->inventory_components as $component) $ids[]=((array)$component)['item_id'];
                 $note->getConnection()->afterCommit(function() use($ids) {
                     try {
@@ -206,7 +206,9 @@ final class NoteAnnulment
                 $n->state_type_id='11';$n->saveQuietly();$e->status='cancelled';
                 $j['status']='completed';$j['completed_at']=now()->toIso8601String();$j['diagnostic']=$j['remote'] ? 'Nota anulada en HKA; reversión comercial completada.':'Nota anulada localmente sin transmisión HKA.';
                 self::store($e,$j);FiscalDocumentPersistence::updateSettlementState($invoice);
-                \App\Models\Tenant\CashDocumentCredit::where('document_id',$invoice->id)->update(['status'=>$invoice->fresh()->balance <= 0.005 ? 'PROCESSED':'PENDING']);
+                // ######## INICIO CALCULOS EXACTOS PRO9 ########
+                \App\Models\Tenant\CashDocumentCredit::where('document_id',$invoice->id)->update(['status'=>$invoice->fresh()->exactBalance()->isPositive() ? 'PENDING':'PROCESSED']);
+                // ######## FIN CALCULOS EXACTOS PRO9 ########
             });
         } catch (\Throwable $exception) {
             $this->locked($note,function ($n,$e) use ($exception) {

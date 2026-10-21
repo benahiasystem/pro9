@@ -2617,6 +2617,8 @@
 </style>
     <!-- ######## FIN CAMBIO GEOPOLITICO VENEZUELA -->
 <script>
+import {restoreSaleNoteContext} from "../../../helpers/sale-note-conversion"
+
 import {withoutDraftRetentions, suggestRemainingPayment} from "@helpers/document-creation"
 import documentCreationMixin from "@mixins/document-creation"
 // ######## INICIO TASAS OCHO DECIMALES ########
@@ -3306,6 +3308,7 @@ export default {
                 });
         }
 
+        restoreSaleNoteContext(this, localStorage);
         const itemsFromNotes = localStorage.getItem("itemsForNotes");
         if (itemsFromNotes) {
             const itemsParsed = JSON.parse(itemsFromNotes);

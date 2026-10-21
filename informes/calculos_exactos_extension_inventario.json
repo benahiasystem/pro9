@@ -1,5 +1,5 @@
 {
-  "date": "2026-10-17",
+  "date": "2026-10-19",
   "status": "incomplete",
   "contract_version": 1,
   "tenant_tables": 115,
@@ -802,62 +802,73 @@
   },
   "findings_file": "calculos_exactos_extension_inventario.jsonl",
   "classifications": {
-    "pending": 37562,
-    "technical": 8873,
+    "pending": 36306,
+    "technical": 9919,
+    "presentation": 138,
     "discrete_units": 3,
-    "settlement": 4,
-    "validation": 33,
-    "storage": 10,
-    "presentation": 36,
-    "allocation": 29,
-    "exact_arithmetic": 37
+    "exact_arithmetic": 44,
+    "validation": 75,
+    "settlement": 14,
+    "storage": 18,
+    "allocation": 30
   },
   "audit": {
     "php": {
-      "candidates": 23418,
-      "classified": 5719,
-      "pending": 17699,
+      "candidates": 23365,
+      "classified": 5979,
+      "pending": 17386,
       "parse_errors": [],
       "registry_errors": [],
       "coverage_missing": [],
-      "scanned_files": 3615,
+      "scanned_files": 3629,
       "check_exit_code": 1,
       "categories": {
-        "pending": 17699,
-        "technical": 5669,
+        "pending": 17386,
+        "technical": 5883,
+        "presentation": 22,
         "discrete_units": 3,
-        "settlement": 4,
-        "validation": 4,
-        "storage": 10,
-        "presentation": 17,
-        "allocation": 11,
-        "exact_arithmetic": 1
+        "exact_arithmetic": 6,
+        "validation": 24,
+        "settlement": 12,
+        "storage": 18,
+        "allocation": 11
       }
     },
     "js": {
-      "candidates": 23169,
-      "classified": 3306,
-      "pending": 19863,
+      "candidates": 23182,
+      "classified": 4262,
+      "pending": 18920,
       "parse_errors": [],
       "registry_errors": [],
       "coverage_missing": [],
-      "scanned_files": 1950,
+      "scanned_files": 1954,
       "check_exit_code": 1,
       "categories": {
-        "technical": 3204,
-        "pending": 19863,
-        "validation": 29,
-        "exact_arithmetic": 36,
-        "presentation": 19,
-        "allocation": 18
+        "technical": 4036,
+        "pending": 18920,
+        "presentation": 116,
+        "exact_arithmetic": 38,
+        "validation": 51,
+        "settlement": 2,
+        "allocation": 19
       }
     },
     "totals": {
-      "candidates": 46587,
-      "classified": 9025,
-      "pending": 37562
+      "candidates": 46547,
+      "classified": 10241,
+      "pending": 36306
     },
-    "scope": "Cobertura sintáctica de fuentes según política. No demuestra por sí sola trazabilidad interprocedimental, SQL dinámico ni cierre de consumidores."
+    "unique_scanned_files": 4678,
+    "proofs": {
+      "nonnumeric_string_equality": 7470,
+      "strict_type_guard": 1359,
+      "array_union": 72,
+      "known_date_format": 23,
+      "manual": 557,
+      "loose_nonnumeric_string_equality": 481,
+      "nullish_presence_guard": 279
+    },
+    "scope": "Cobertura sintáctica y revisiones individuales vigentes; no acredita cierre interprocedimental ni aceptación global."
   },
   "source_policy": "config/exact_audit_sources.json",
   "individual_registry": "config/exact_rounding_registry.json",
@@ -865,8 +876,8 @@
   "consumer_matrix": "informes/calculos_exactos_cierre_consumidores_matriz.json",
   "report": "informes/calculos_exactos_cierre_consumidores_pro9.md",
   "audit_totals": {
-    "candidates": 46587,
-    "classified": 9025,
-    "pending": 37562
+    "candidates": 46547,
+    "classified": 10241,
+    "pending": 36306
   }
 }

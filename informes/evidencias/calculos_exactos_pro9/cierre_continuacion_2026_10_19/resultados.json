@@ -1,0 +1,162 @@
+{
+  "date": "2026-10-19",
+  "status": "incomplete",
+  "initial_audit_totals": {
+    "candidates": 46553,
+    "classified": 9409,
+    "pending": 37144
+  },
+  "audit_totals": {
+    "candidates": 46534,
+    "classified": 9946,
+    "pending": 36588
+  },
+  "audit": {
+    "php": {
+      "candidates": 23349,
+      "classified": 5965,
+      "pending": 17384,
+      "parse_errors": [],
+      "registry_errors": [],
+      "coverage_missing": [],
+      "scanned_files": 3628,
+      "check_exit_code": 1,
+      "categories": {
+        "pending": 17384,
+        "technical": 5872,
+        "presentation": 22,
+        "discrete_units": 3,
+        "exact_arithmetic": 6,
+        "validation": 21,
+        "settlement": 12,
+        "storage": 18,
+        "allocation": 11
+      }
+    },
+    "js": {
+      "candidates": 23185,
+      "classified": 3981,
+      "pending": 19204,
+      "parse_errors": [],
+      "registry_errors": [],
+      "coverage_missing": [],
+      "scanned_files": 1953,
+      "check_exit_code": 1,
+      "categories": {
+        "technical": 3755,
+        "pending": 19204,
+        "presentation": 116,
+        "exact_arithmetic": 38,
+        "validation": 51,
+        "settlement": 2,
+        "allocation": 19
+      }
+    },
+    "totals": {
+      "candidates": 46534,
+      "classified": 9946,
+      "pending": 36588
+    },
+    "unique_scanned_files": 4676,
+    "proofs": {
+      "nonnumeric_string_equality": 7465,
+      "strict_type_guard": 1356,
+      "array_union": 71,
+      "known_date_format": 23,
+      "manual": 550,
+      "loose_nonnumeric_string_equality": 481
+    },
+    "scope": "Cobertura sintáctica y revisiones individuales vigentes; no acredita cierre interprocedimental ni aceptación global."
+  },
+  "manual_reviews_this_step": 68,
+  "retired_reviews_this_step": 4,
+  "php_mysql_enabled_suite": {
+    "tests": 939,
+    "assertions": 22823,
+    "skipped": 0,
+    "failures": 0,
+    "errors": 0,
+    "mysql_specific_cases": 63,
+    "source_note": "La suite se inició antes de los últimos ajustes. Se repitieron al final los tres escenarios de persistencia/IGTF/concurrencia y el caso ampliado de cierre de posición veinte sobre las fuentes finales. Después se modificó paymentViewPay; se ejecutaron sus seis pruebas y las ocho de moneda sobre las fuentes finales."
+  },
+  "final_mysql_regressions": {
+    "repeated_tests": 4,
+    "assertions": 153,
+    "failures": 0,
+    "errors": 0
+  },
+  "javascript": {
+    "tests": 220,
+    "passed": 220,
+    "failed": 0,
+    "skipped": 0
+  },
+  "php_lint": {
+    "files": [
+      "app/Http/Controllers/System/PaymentOrderController.php",
+      "app/Http/Controllers/System/PaymentOrderPublicController.php",
+      "app/Http/Controllers/Tenant/SaleNoteController.php",
+      "app/Http/Controllers/Tenant/SaleNotePaymentController.php",
+      "app/Http/Requests/Tenant/SaleNotePaymentRequest.php",
+      "app/Http/Resources/Tenant/DocumentPaymentCollection.php",
+      "app/Http/Resources/Tenant/SaleNotePaymentCollection.php",
+      "app/Models/System/PaymentOrder.php",
+      "app/Models/Tenant/SaleNotePayment.php",
+      "app/Services/Fiscal/FiscalDocumentPersistence.php",
+      "app/Services/Fiscal/HkaIgtfNote.php",
+      "app/Services/Fiscal/NoteAnnulment.php",
+      "app/Support/Exact/CentralPaymentQuote.php",
+      "app/Support/Exact/CheckoutAvailability.php",
+      "app/Support/Exact/SaleNoteBalance.php",
+      "app/Support/Exact/Settlement.php",
+      "app/Support/Exact/TenderAllocation.php",
+      "modules/Finance/Models/GlobalPayment.php",
+      "modules/Payment/Http/Controllers/PaymentGatewayController.php",
+      "modules/Sale/Providers/SaleNotePaymentProvider.php",
+      "scripts/classify_exact_type_guards.php",
+      "scripts/exact_audit_registry.php",
+      "scripts/exact_guard_proof.php",
+      "scripts/test_exact_isolated_mysql.php",
+      "tests/Support/NotePersistenceCases.php",
+      "tests/Support/SpePersistenceCases.php",
+      "tests/Unit/BcvMySqlConcurrencyTest.php",
+      "tests/Unit/ExactAuditRegistryTest.php",
+      "tests/Unit/ExactCentralQuoteTest.php",
+      "tests/Unit/ExactCounterProofTest.php",
+      "tests/Unit/ExactMySqlContinuationTest.php",
+      "tests/Unit/ExactTenderConsumersTest.php",
+      "tests/Unit/ExchangeRatePrecisionUpgradeTest.php",
+      "tests/Unit/FiscalEmissionSchemaTest.php",
+      "tests/Unit/SeriesMySqlConcurrencyTest.php"
+    ],
+    "errors": []
+  },
+  "skill_valid": true,
+  "frontend_build": "not_run_user_responsibility",
+  "new_http_performance_acceptance": false,
+  "http_baseline_before_this_step": false,
+  "performance_note": "La referencia inicial conserva commit/diferencias/hashes. No hubo línea base HTTP previa a estas modificaciones ni medición HTTP posterior; no se cierra el presupuesto de rendimiento. La medición backend anterior no sustituye esa aceptación.",
+  "production_schema_changes": false,
+  "historical_recalculation": false,
+  "real_hka_emission": false,
+  "real_provider_charge": false,
+  "temporary_mysql_server_removed": true,
+  "registry_sha256": "f68cb0afebaaef02177f56224d05d143e02d592ff5ec842cf3e9e19316a5f15b",
+  "audit_output_sha256": {
+    "php": "6b61830096c02b5d6f986d7b9bb0a9aadaaf1c1e49e7c668e50fb379676b4758",
+    "js": "94458bdb8280a1dcb00717c935eea0b4a0b45b3b4611416e19234076443dfdfa"
+  },
+  "final_central_regressions": {
+    "tests": 6,
+    "assertions": 39,
+    "failures": 0,
+    "errors": 0,
+    "source_note": "Incluye dos casos nuevos posteriores a la suite integral; no se declara que esa suite haya ejecutado los dos casos nuevos."
+  },
+  "final_currency_regressions": {
+    "tests": 8,
+    "assertions": 49,
+    "failures": 0,
+    "errors": 0
+  }
+}

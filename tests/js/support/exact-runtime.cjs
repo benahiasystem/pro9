@@ -3,7 +3,7 @@ const vm = require('node:vm')
 const babel = require('@babel/core')
 const cache = new Map()
 module.exports = function exactRuntime(name) {
-    const file = ['exact-commercial','exact-document','exchange-rate-math','document-creation'].find(file=>name.includes(file))
+    const file = ['exact-commercial','exact-document','exchange-rate-math','document-creation','sale-note-conversion'].find(file=>name.includes(file))
     if (!file) return null
     if (!cache.has(file)) {
         const exports = {}

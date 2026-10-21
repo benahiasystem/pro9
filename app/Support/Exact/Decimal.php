@@ -124,7 +124,7 @@ final class Decimal
         if (is_object($record)) {
             self::$readCache ??= new \WeakMap();
             $entry=self::$readCache[$record] ?? null;
-            if ($entry && $entry['source']===$snapshot) {
+            if ($entry && !is_object($snapshot) && $entry['source']===$snapshot) {
                 if (isset($entry['values'][$field])) return $entry['values'][$field];
                 $snapshot=$entry['decoded'];
             } else $entry=null;
@@ -148,8 +148,12 @@ final class Decimal
         $attributes = is_array($record) ? $record
             : (method_exists($record, 'getAttributes') ? $record->getAttributes() : get_object_vars($record));
         $snapshot = $attributes['calculation_snapshot'] ?? null;
-        if (is_string($snapshot)) $snapshot = json_decode($snapshot, true, 512, JSON_THROW_ON_ERROR);
-        if (is_object($snapshot)) $snapshot = json_decode(json_encode($snapshot, JSON_THROW_ON_ERROR), true, 512, JSON_THROW_ON_ERROR);
+        $cached = is_object($record) ? (self::$readCache[$record] ?? null) : null;
+        if ($cached && !is_object($snapshot) && $cached['source'] === $snapshot) $snapshot = $cached['decoded'];
+        else {
+            if (is_string($snapshot)) $snapshot = json_decode($snapshot, true, 512, JSON_THROW_ON_ERROR);
+            if (is_object($snapshot)) $snapshot = json_decode(json_encode($snapshot, JSON_THROW_ON_ERROR), true, 512, JSON_THROW_ON_ERROR);
+        }
         if ($snapshot !== null && (!is_array($snapshot) || ($snapshot['version'] ?? null) !== self::VERSION
             || !is_array($snapshot['values'] ?? null))) {
             throw new \UnexpectedValueException('Snapshot de cálculo inválido.');

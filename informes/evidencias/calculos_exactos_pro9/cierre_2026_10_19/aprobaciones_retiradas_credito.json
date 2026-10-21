@@ -1,0 +1,77 @@
+[
+  {
+    "id": "074523d0fd9211d51e7e2948",
+    "review": {
+      "category": "technical",
+      "justification": "Igualdad con literal de texto no numérico; comprueba una categoría sin adaptar valores decimales: $model === 'document'",
+      "evidence": [
+        "modules/Finance/Http/Controllers/UnpaidController.php",
+        "scripts/exact_guard_proof.php",
+        "tests/Unit/ExactGuardProofTest.php#test_only_type_or_nonnumeric_string_guards_are_proven"
+      ],
+      "evidence_sha256": {
+        "modules/Finance/Http/Controllers/UnpaidController.php": "af6b13a50e793023d8bce474d4936fb4b9b7045533b18a440ebe5eb62a31d339",
+        "scripts/exact_guard_proof.php": "72fcf3c54b46e472d9ca1869db0941cfe29c0c3951a6ff613bc2f86ff31f8eb0",
+        "tests/Unit/ExactGuardProofTest.php": "e758abc24cc0fbb778d6c2895bec3c114ec8712d06e4b85615346b6afa49b381"
+      },
+      "proof": "nonnumeric_string_equality",
+      "source": {
+        "file": "modules/Finance/Http/Controllers/UnpaidController.php",
+        "symbol": "UnpaidController::customerExpiredDays",
+        "operation": "native_Identical",
+        "operation_language": "php"
+      }
+    },
+    "reason": "La expresión fue retirada al reutilizar saldos exactos para la verificación de crédito o al sustituir la condición proyectada; no se transfiere."
+  },
+  {
+    "id": "16ab4f89a3a66e810b91e9ae",
+    "review": {
+      "category": "technical",
+      "justification": "Igualdad con literal de texto no numérico; comprueba una categoría sin adaptar valores decimales: $model === 'sale_note'",
+      "evidence": [
+        "modules/Finance/Http/Controllers/UnpaidController.php",
+        "scripts/exact_guard_proof.php",
+        "tests/Unit/ExactGuardProofTest.php#test_only_type_or_nonnumeric_string_guards_are_proven"
+      ],
+      "evidence_sha256": {
+        "modules/Finance/Http/Controllers/UnpaidController.php": "af6b13a50e793023d8bce474d4936fb4b9b7045533b18a440ebe5eb62a31d339",
+        "scripts/exact_guard_proof.php": "72fcf3c54b46e472d9ca1869db0941cfe29c0c3951a6ff613bc2f86ff31f8eb0",
+        "tests/Unit/ExactGuardProofTest.php": "e758abc24cc0fbb778d6c2895bec3c114ec8712d06e4b85615346b6afa49b381"
+      },
+      "proof": "nonnumeric_string_equality",
+      "source": {
+        "file": "modules/Finance/Http/Controllers/UnpaidController.php",
+        "symbol": "UnpaidController::customerExpiredDays",
+        "operation": "native_Identical",
+        "operation_language": "php"
+      }
+    },
+    "reason": "La expresión fue retirada al reutilizar saldos exactos para la verificación de crédito o al sustituir la condición proyectada; no se transfiere."
+  },
+  {
+    "id": "5e1b1284f5997c44a82a371f",
+    "review": {
+      "category": "technical",
+      "justification": "Igualdad con literal de texto no numérico; comprueba una categoría sin adaptar valores decimales: $model === 'document'",
+      "evidence": [
+        "modules/Finance/Http/Controllers/UnpaidController.php",
+        "scripts/exact_guard_proof.php",
+        "tests/Unit/ExactGuardProofTest.php#test_only_type_or_nonnumeric_string_guards_are_proven"
+      ],
+      "evidence_sha256": {
+        "modules/Finance/Http/Controllers/UnpaidController.php": "af6b13a50e793023d8bce474d4936fb4b9b7045533b18a440ebe5eb62a31d339",
+        "scripts/exact_guard_proof.php": "72fcf3c54b46e472d9ca1869db0941cfe29c0c3951a6ff613bc2f86ff31f8eb0",
+        "tests/Unit/ExactGuardProofTest.php": "e758abc24cc0fbb778d6c2895bec3c114ec8712d06e4b85615346b6afa49b381"
+      },
+      "proof": "nonnumeric_string_equality",
+      "source": {
+        "file": "modules/Finance/Http/Controllers/UnpaidController.php",
+        "symbol": "UnpaidController::customerExpiredDays",
+        "operation": "native_Identical",
+        "operation_language": "php"
+      }
+    },
+    "reason": "La expresión fue retirada al reutilizar saldos exactos para la verificación de crédito o al sustituir la condición proyectada; no se transfiere."
+  }
+]

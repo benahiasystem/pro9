@@ -360,6 +360,8 @@ class SaleNoteController extends Controller
 
             $this->deleteAllPayments($this->sale_note->payments);
 
+            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            \App\Support\Exact\CommercialCalculation::defer($this->sale_note, function () use ($data) {
             //se elimina los items para activar el evento deleted del modelo y controlar el inventario
             $this->deleteAllItems($this->sale_note->items);
 
@@ -426,13 +428,15 @@ class SaleNoteController extends Controller
 
             }
 
+            });
+            // ######## FIN CALCULOS EXACTOS PRO9 ########
             //pagos
             $this->savePayments($this->sale_note, $data['payments'], $isUpdate);
             $this->saveFee($this->sale_note, $data['fee'] ?? []);
 
             $this->setFilename();
             $this->createPdf($this->sale_note,"a4", $this->sale_note->filename);
-            $this->regularizePayments($data['payments']);
+            $this->regularizePayments();
             DB::connection('tenant')->commit();
 
             return [
@@ -518,23 +522,12 @@ class SaleNoteController extends Controller
     }
 
 
-    private function regularizePayments($payments){
-
-        $total_payments = collect($payments)->sum('payment');
-
-        $balance = $this->sale_note->total - $total_payments;
-
-        if($balance <= 0){
-
-            $this->sale_note->total_canceled = true;
-            $this->sale_note->save();
-
-        }else{
-
-            $this->sale_note->total_canceled = false;
-            $this->sale_note->save();
-        }
-
+    private function regularizePayments(){
+        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        $balance = \App\Support\Exact\SaleNoteBalance::values($this->sale_note);
+        $this->sale_note->total_canceled = $balance['total_difference']->isZero();
+        $this->sale_note->save();
+        // ######## FIN CALCULOS EXACTOS PRO9 ########
     }
 
 
@@ -1461,19 +1454,9 @@ class SaleNoteController extends Controller
     {
         $query = $this->getRecords($request)->whereStateTypeAccepted()->whereFilterWithOutRelations()->filterCurrencyPen();
 
-        $total_pen = $query->sum('total');
-
-        $sale_notes_id = $query->select('id')->get()->pluck('id')->toArray();
-
-        $total_paid_pen = SaleNotePayment::sumPaymentsBySaleNote($sale_notes_id);
-
-        $total_pending_paid_pen = $total_pen - $total_paid_pen;
-
-        return [
-            'total_pen' => number_format($total_pen, 2, ".", ""),
-            'total_paid_pen' => number_format($total_paid_pen, 2, ".", ""),
-            'total_pending_paid_pen' => number_format($total_pending_paid_pen, 2, ".", "")
-        ];
+        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        return \App\Support\Exact\SaleNoteBalance::listing($query);
+        // ######## FIN CALCULOS EXACTOS PRO9 ########
     }
 
 
@@ -1488,61 +1471,31 @@ class SaleNoteController extends Controller
 
     public function savePayments($sale_note, $payments, $isUpdate = false){
 
+        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        return \App\Support\Exact\Settlement::defer($sale_note, function () use ($sale_note, $payments, $isUpdate) {
+        // ######## FIN CALCULOS EXACTOS PRO9 ########
         // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
-        foreach ($payments as $payment) {
-            PaymentMethodType::assertActiveForPayment($payment['payment_method_type_id'] ?? null);
+        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        $methods = array_values(array_unique(array_map(fn($row)=>(string)($row['payment_method_type_id'] ?? ''), $payments)));
+        $active = PaymentMethodType::active()->whereIn('id',$methods)->pluck('id')->all();
+        if (array_diff($methods, $active)) {
+            \App\Services\Fiscal\FiscalAmounts::error('payment_method_type_id','La forma de pago seleccionada no está disponible.');
         }
+        // ######## FIN CALCULOS EXACTOS PRO9 ########
         // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
 
-        $total = $sale_note->total;
-        $balance = $total - collect($payments)->sum('payment');
-
-        $search_cash = ($balance < 0) ? collect($payments)->firstWhere('payment_method_type_id', '01') : null;
-
-        $this->apply_change = false;
-
-        if($balance < 0 && $search_cash){
-
-            $payments = collect($payments)->map(function($row) use($balance){
-
-                $change = null;
-                $payment = $row['payment'];
-
-                if($row['payment_method_type_id'] == '01' && !$this->apply_change){
-
-                    $change = abs($balance);
-                    $payment = $row['payment'] - abs($balance);
-                    $this->apply_change = true;
-
-                }
-
-                return [
-                    "id" => null,
-                    "document_id" => null,
-                    "sale_note_id" => null,
-                    "date_of_payment" => $row['date_of_payment'],
-                    "payment_method_type_id" => $row['payment_method_type_id'],
-                    "reference" => $row['reference'],
-                    "payment_destination_id" => isset($row['payment_destination_id']) ? $row['payment_destination_id'] : null,
-                    "payment_filename" => isset($row['payment_filename']) ? $row['payment_filename'] : null,
-                    "change" => $change,
-                    "payment" => $payment
-                ];
-
-            });
-        }
-
-        // dd($payments, $balance, $this->apply_change);
+        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        $paid = \App\Support\Exact\SaleNoteBalance::values($sale_note);
+        $payments = \App\Support\Exact\TenderAllocation::calculate($paid['total_difference'], array_values($payments));
+        // ######## FIN CALCULOS EXACTOS PRO9 ########
 
         foreach ($payments as $row) {
 
-            if($balance < 0 && !$this->apply_change){
-                $row['change'] = abs($balance);
-                $row['payment'] = $row['payment'] - abs($balance);
-                $this->apply_change = true;
-            }
-
-            $record_payment = $sale_note->payments()->create($row);
+            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            $record_payment = $sale_note->payments()->make($row);
+            $record_payment->calculation_snapshot = $row['calculation_snapshot'];
+            $record_payment->save();
+            // ######## FIN CALCULOS EXACTOS PRO9 ########
 
             if(isset($row['payment_destination_id'])){
                 $this->createGlobalPayment($record_payment, $row);
@@ -1560,6 +1513,7 @@ class SaleNoteController extends Controller
             // para carga de voucher
             $this->saveFilesFromPayments($row, $record_payment, 'sale_notes');
         }
+        });
     }
 
 
@@ -1597,7 +1551,7 @@ class SaleNoteController extends Controller
         ]);
         $clientId = $request->client_id;
         $records = SaleNote::without(['user', 'fiscal_environment_type', 'state_type', 'currency_type', 'payments'])
-                            ->select('series', 'number', 'id', 'date_of_issue', 'total')
+                            ->select('series', 'number', 'id', 'date_of_issue', 'total', 'calculation_snapshot')
                             ->where('customer_id', $clientId)
                             ->whereNull('document_id')
                             ->whereIn('state_type_id', ['01', '03', '05'])
@@ -1615,36 +1569,29 @@ class SaleNoteController extends Controller
         $sum_total=0;
         $records = $records->take(20)
             ->get();
-        $sum_total=number_format($records->sum('total'),2);
+        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        $exactTotal = \App\Support\Exact\Decimal::sum($records->map(fn($row)=>\App\Support\Exact\Decimal::readRequired($row,'total')));
+        $sum_total=\App\Support\Exact\Decimal::represent($exactTotal);
+        // ######## FIN CALCULOS EXACTOS PRO9 ########
         return response()->json([
             'success' => true,
             'data' => $records,
             'sum_total' => $sum_total,
+            'calculation_snapshot' => \App\Support\Exact\Decimal::snapshot(['sum_total'=>$exactTotal]),
         ], 200);
     }
 
     public function getItemsFromNotes(Request $request)
     {
         $request->validate([
-            'notes_id' => 'required|array',
+            'notes_id' => 'required|array|min:1',
+            'notes_id.*' => 'required|integer|min:1|distinct',
         ]);
-
-        if($request->select_all){
-
-            $items = SaleNoteItem::whereIn('sale_note_id', $request->notes_id)->get();
-
-        }else{
-
-            $items = SaleNoteItem::whereIn('sale_note_id', $request->notes_id)
-                    ->select('item_id', 'quantity','unit_price','item')
-                    ->get();
-        }
-
-
-        return response()->json([
-            'success' => true,
-            'data' => $items,
-        ], 200);
+        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        return \App\Support\Exact\ReadSnapshot::run(DB::connection('tenant'),function () use ($request) {
+            return response()->json(['success'=>true]+\App\Support\Exact\SaleNoteConversionLines::preview($request->notes_id,$request->boolean('select_all')));
+        });
+        // ######## FIN CALCULOS EXACTOS PRO9 ########
     }
 
 

@@ -22,7 +22,9 @@ class SaleNotePaymentCollection extends ResourceCollection
                 'destination_description' => ($row->global_payment) ? $row->global_payment->destination_description:null,
                 'reference' => $row->reference,
                 'filename' => ($row->payment_file) ? $row->payment_file->filename:null,
-                'payment' => $row->payment,
+                // ######## INICIO CALCULOS EXACTOS PRO9 ########
+                ...\App\Support\Exact\SaleNoteBalance::paymentTransport($row),
+                // ######## FIN CALCULOS EXACTOS PRO9 ########
             ];
         });
     }

@@ -1,0 +1,37 @@
+[
+  {
+    "file": "app/Support/Exact/SaleNoteConversionLines.php",
+    "exit_code": 0,
+    "output": "No syntax errors detected in app/Support/Exact/SaleNoteConversionLines.php\n"
+  },
+  {
+    "file": "app/Http/Controllers/Tenant/SaleNoteController.php",
+    "exit_code": 0,
+    "output": "No syntax errors detected in app/Http/Controllers/Tenant/SaleNoteController.php\n"
+  },
+  {
+    "file": "tests/Unit/ExactSaleNoteGroupingTest.php",
+    "exit_code": 0,
+    "output": "No syntax errors detected in tests/Unit/ExactSaleNoteGroupingTest.php\n"
+  },
+  {
+    "file": "tests/Unit/ExactHttpAcceptanceTest.php",
+    "exit_code": 0,
+    "output": "No syntax errors detected in tests/Unit/ExactHttpAcceptanceTest.php\n"
+  },
+  {
+    "file": "tests/Support/exact_http_router.php",
+    "exit_code": 0,
+    "output": "No syntax errors detected in tests/Support/exact_http_router.php\n"
+  },
+  {
+    "file": "scripts/classify_exact_type_guards.php",
+    "exit_code": 0,
+    "output": "No syntax errors detected in scripts/classify_exact_type_guards.php\n"
+  },
+  {
+    "file": "tests/Feature/ExampleTest.php",
+    "exit_code": 0,
+    "output": "No syntax errors detected in tests/Feature/ExampleTest.php\n"
+  }
+]

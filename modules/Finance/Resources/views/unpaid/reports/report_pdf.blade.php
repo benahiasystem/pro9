@@ -95,7 +95,7 @@
                         </thead>
                         <tbody>
                             @foreach($records as $key => $value)
-                                @if($value['total_to_pay'] > 0)
+                                @if(\App\Support\Exact\Decimal::readRequired($value, 'total_to_pay')->isPositive())
                                     <tr>
                                         <td class="celda">{{$loop->iteration}}</td>
                                         <td class="celda">{{$value['date_of_issue']}}</td>
@@ -105,13 +105,13 @@
                                         <td class="celda">
                                             @if(isset($value['web_platforms']))
                                             @foreach($value['web_platforms'] as $platform)
-                                                <label > {{$platform->name}}</label>
+                                                <label > {{$platform['name']}}</label>
                                                 @endforeach
                                                 @endif
                                         </td>
                                         <td class="celda">{{$value['purchase_order']}}</td>
-                                        <td class="celda">{{$value['total_to_pay']}}</td>
-                                        <td class="celda">{{$value['total']}}</td>
+                                        <td class="celda">{{ $value['display']['total_to_pay'] }}@if($value['currency_type_id'] === 'USD')<br><small>Bs. {{ $value['display']['balance_ves_equivalent'] }}</small>@endif</td>
+                                        <td class="celda">{{ $value['display']['total'] }}@if($value['currency_type_id'] === 'USD')<br><small>Bs. {{ $value['display']['total_ves_equivalent'] }}</small>@endif</td>
                                     </tr>
                                 @endif
                             @endforeach
@@ -124,5 +124,8 @@
                 <p>No se encontraron registros.</p>
             </div>
         @endif
-    </body>
+    @isset($reportSummary)
+@include('partials.exact_outstanding_summary', ['excel'=>false])
+@endisset
+</body>
 </html>

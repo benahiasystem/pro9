@@ -24,6 +24,8 @@ $db->getPdo()->sqliteCreateFunction('DATE_FORMAT', static fn($value,$format)=>$v
 $db->getPdo()->sqliteCreateFunction('CONCAT', static fn(...$parts)=>implode('', $parts));
 Schema::connection('tenant')->create('persons', function ($t) { $t->increments('id'); $t->string('name'); });
 $db->table('persons')->insert(['id'=>1,'name'=>'Benchmark']);
+Schema::connection('tenant')->create('users', function ($t) { $t->increments('id'); $t->string('name'); });
+$db->table('users')->insert(['id'=>1,'name'=>'Benchmark']);
 foreach (['purchases','expenses'] as $table) Schema::connection('tenant')->create($table, function ($t) {
     $t->increments('id'); $t->integer('supplier_id')->default(1); $t->integer('user_id')->default(1); $t->integer('establishment_id')->default(1);
     $t->string('state_type_id')->default('01'); $t->string('document_type_id')->default('01'); $t->date('date_of_issue')->default('2026-10-17');

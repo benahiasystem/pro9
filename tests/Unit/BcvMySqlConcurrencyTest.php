@@ -13,7 +13,7 @@ class BcvMySqlConcurrencyTest extends TestCase
         if (getenv('PRO9_FISCAL_MYSQL_TESTS') !== '1') $this->markTestSkipped('Requiere MySQL temporal aislado.');
         $env = \Dotenv\Dotenv::parse(file_get_contents(dirname(__DIR__, 2).'/.env'));
         $connection = ['driver' => 'mysql', 'host' => getenv('DB_HOST') ?: $env['DB_HOST'],
-            'port' => $env['DB_PORT'] ?? 3306, 'username' => $env['DB_USERNAME'], 'password' => $env['DB_PASSWORD'],
+            'port' => getenv('DB_PORT') ?: ($env['DB_PORT'] ?? 3306), 'username' => $env['DB_USERNAME'], 'password' => $env['DB_PASSWORD'],
             'database' => 'information_schema', 'charset' => 'utf8mb4', 'collation' => 'utf8mb4_unicode_ci', 'prefix' => ''];
         config()->set('database.connections.bcv_control', $connection);
         $control = DB::connection('bcv_control');

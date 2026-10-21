@@ -16,6 +16,10 @@ class SaleNotePaymentRequest extends FormRequest
     {
         $id = $this->input('id');
         return [
+            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            'id' => ['nullable','integer','min:1'],
+            'sale_note_id' => ['required','integer','min:1',Rule::exists('tenant.sale_notes','id')],
+            // ######## FIN CALCULOS EXACTOS PRO9 ########
             'date_of_payment' => [
                 'date',
                 'required',
@@ -28,7 +32,10 @@ class SaleNotePaymentRequest extends FormRequest
                 'required',
             ],
             'payment' => [
-                'required',
+                // ######## INICIO CALCULOS EXACTOS PRO9 ########
+                'bail','required',new \App\Rules\ExactDecimal('0',true),
+                function ($attribute,$value,$fail) { if (is_float($value)) $fail('Transmita el importe decimal como texto.'); },
+                // ######## FIN CALCULOS EXACTOS PRO9 ########
             ],
         ];
     }

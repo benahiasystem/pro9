@@ -160,11 +160,12 @@ class ToPayController extends Controller
         $records = (new ToPay())->getToPay($request->all());
 
         $records = $records->filter(fn($row)=>Decimal::readRequired($row, 'total_to_pay')->isPositive());
-        $records = ReportProjection::money($records, ['total', 'total_to_pay']);
+        $reportSummary = \App\Support\Exact\OutstandingSummary::summarize($records);
+        $records = ReportProjection::money($records, ['total', 'total_to_pay', 'total_ves_equivalent', 'balance_ves_equivalent']);
 
         $company = Company::first();
 
-        $pdf = PDF::loadView('finance::to_pay.report_pdf', compact("records", "company"));
+        $pdf = PDF::loadView('finance::to_pay.report_pdf', compact("records", "company", "reportSummary"));
 
         $filename = 'Reporte_Cuentas_Por_Pagar_'.date('YmdHis');
 

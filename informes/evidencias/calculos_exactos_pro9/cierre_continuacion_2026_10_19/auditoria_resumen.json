@@ -1,0 +1,57 @@
+{
+  "php": {
+    "candidates": 23349,
+    "classified": 5965,
+    "pending": 17384,
+    "parse_errors": [],
+    "registry_errors": [],
+    "coverage_missing": [],
+    "scanned_files": 3628,
+    "check_exit_code": 1,
+    "categories": {
+      "pending": 17384,
+      "technical": 5872,
+      "presentation": 22,
+      "discrete_units": 3,
+      "exact_arithmetic": 6,
+      "validation": 21,
+      "settlement": 12,
+      "storage": 18,
+      "allocation": 11
+    }
+  },
+  "js": {
+    "candidates": 23185,
+    "classified": 3981,
+    "pending": 19204,
+    "parse_errors": [],
+    "registry_errors": [],
+    "coverage_missing": [],
+    "scanned_files": 1953,
+    "check_exit_code": 1,
+    "categories": {
+      "technical": 3755,
+      "pending": 19204,
+      "presentation": 116,
+      "exact_arithmetic": 38,
+      "validation": 51,
+      "settlement": 2,
+      "allocation": 19
+    }
+  },
+  "totals": {
+    "candidates": 46534,
+    "classified": 9946,
+    "pending": 36588
+  },
+  "unique_scanned_files": 4676,
+  "proofs": {
+    "nonnumeric_string_equality": 7465,
+    "strict_type_guard": 1356,
+    "array_union": 71,
+    "known_date_format": 23,
+    "manual": 550,
+    "loose_nonnumeric_string_equality": 481
+  },
+  "scope": "Cobertura sintáctica y revisiones individuales vigentes; no acredita cierre interprocedimental ni aceptación global."
+}

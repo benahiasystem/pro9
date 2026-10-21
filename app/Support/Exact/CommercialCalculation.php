@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 /** Explicit aggregate ownership; never infer or alter unrelated models from their names. */
 final class CommercialCalculation
 {
+    private static array $deferred = [];
     private const OWNERS = [
         'purchase_items' => [\App\Models\Tenant\Purchase::class, 'purchase_id'],
         'sale_note_items' => [\App\Models\Tenant\SaleNote::class, 'sale_note_id'],
@@ -62,6 +63,7 @@ final class CommercialCalculation
     {
         if (!isset(self::OWNERS[$model->getTable()]) || !Persistence::enabled($model)) return;
         [$class, $foreign] = self::OWNERS[$model->getTable()];
+        if (isset(self::$deferred[self::ownerKey($model->getConnection(), $class, $model->$foreign)])) return;
         $owner = $class::query()->lockForUpdate()->find($model->$foreign);
         if (!$owner || !method_exists($owner, 'items')) return;
         self::summarize($owner);
@@ -69,19 +71,23 @@ final class CommercialCalculation
 
     public static function summarize(Model $owner): void
     {
-        $items = $owner->items()->lockForUpdate()->get();
+        if ($owner->getConnection()->transactionLevel() === 0) {
+            $owner->getConnection()->transaction(fn()=>self::summarize($owner));
+            return;
+        }
+        $items = $owner->items()->withoutEagerLoads()->lockForUpdate()->get();
         $sum = fn ($rows, $field) => Decimal::sum($rows->map(fn ($r) => Decimal::read($r, $field)));
         $amount = fn ($v) => Decimal::inputRational(((array)$v)['amount_exact'] ?? ((array)$v)['amount'] ?? 0,'adjustments.amount');
         $discounts = collect((array) ($owner->discounts ?? []));
         $charges = collect((array) ($owner->charges ?? []));
-        $distributed = Decimal::sum($items->flatMap(fn ($line) => collect((array)$line->discounts)->filter(fn ($v) => !empty(((array)$v)['from_global_distribution']))->map($amount)));
-        $global = Decimal::sum($discounts->map($amount))->minus($distributed);
-        if ($global->isNegative()) $global = Decimal::of(0);
-        $taxedDiscount = Decimal::sum($discounts->filter(fn ($v) => in_array(((array)$v)['discount_type_id'] ?? '', ['02','04'], true))->map($amount))->minus($distributed);
-        if ($taxedDiscount->isNegative()) $taxedDiscount = Decimal::of(0);
+        $allocationStats = HeaderAllocation::stats();
+        foreach ($items as $line) HeaderAllocation::add($allocationStats, $line);
+        $remainingDiscounts = HeaderAllocation::discounts($owner->discounts, $allocationStats);
+        $global = $remainingDiscounts['global'];
+        $taxedDiscount = $remainingDiscounts['taxed'];
         $taxed = $sum($items->where('affectation_igv_type_id','10'), 'total_base_igv');
         $exempt = $sum($items->where('affectation_igv_type_id','20'), 'total_base_igv');
-        $exemptDiscount = Decimal::sum($discounts->filter(fn ($v) => (((array)$v)['discount_type_id'] ?? '') === '05')->map($amount));
+        $exemptDiscount = $remainingDiscounts['exempt'];
         if ($taxedDiscount->isGreaterThan($taxed) || $exemptDiscount->isGreaterThan($exempt)) {
             \App\Services\Fiscal\FiscalAmounts::error('discounts', 'El descuento supera su base.');
         }
@@ -96,13 +102,43 @@ final class CommercialCalculation
             'total_exportation'=>$items->contains('affectation_igv_type_id','EXP') ? $value : Decimal::of(0),
             'total_igv'=>$iva, 'total_taxes'=>$taxes, 'total_other_taxes'=>$other,
             'total_discount'=>$sum($items,'total_discount')->plus($global), 'total_charge'=>$sum($items,'total_charge')->plus($globalCharge),
-            'total'=>$value->plus($taxes)->minus($discounts->contains(fn($v)=>in_array(((array)$v)['discount_type_id'] ?? '',['04','05'],true)) ? 0 : Decimal::read($owner,'total_prepayment'))];
+            'total'=>$value->plus($taxes)->minus(HeaderAllocation::includesAdvance($owner->discounts) ? 0 : Decimal::read($owner,'total_prepayment'))];
         if ($values['total']->isNegative()) \App\Services\Fiscal\FiscalAmounts::error('total', 'El total no puede ser negativo.');
         $values['total_payable']=Decimal::of(Decimal::represent($values['total'],2));
         $values['settlement_adjustment']=$values['total_payable']->minus($values['total']);
         $values = array_intersect_key($values, array_flip(Persistence::columns($owner)));
-        $owner->setExactValues($values)->saveQuietly();
+        $owner->setExactValues($values);
+        if ($owner instanceof \App\Models\Tenant\SaleNote) HeaderAllocation::freeze($owner, $items);
+        $owner->saveQuietly();
         LoyaltyPoints::synchronize($owner);
+    }
+
+    /** Replace a document's lines once, rather than re-summarizing every partial set. */
+    public static function defer(Model $owner, callable $operation)
+    {
+        if ($owner->getConnection()->transactionLevel() === 0) return $owner->getConnection()->transaction(fn()=>self::defer($owner, $operation));
+        $key = self::ownerKey($owner->getConnection(), get_class($owner), $owner->getKey());
+        $outer = !isset(self::$deferred[$key]);
+        if ($outer) {
+            $stored = $owner->newQuery()->withoutEagerLoads()->lockForUpdate()->findOrFail($owner->getKey());
+            $owner->setRawAttributes($stored->getAttributes(), true);
+        }
+        self::$deferred[$key] = (self::$deferred[$key] ?? 0) + 1;
+        try {
+            $result = $operation();
+        } finally {
+            if (--self::$deferred[$key] === 0) unset(self::$deferred[$key]);
+        }
+        if ($outer) {
+            self::summarize($owner);
+            $owner->unsetRelation('items');
+        }
+        return $result;
+    }
+
+    private static function ownerKey($connection, string $class, $id): string
+    {
+        return $connection->getName().'|'.$connection->getDatabaseName().'|'.$class.'|'.$id;
     }
 }
 // ######## FIN CALCULOS EXACTOS PRO9 ########

@@ -1,0 +1,134 @@
+{
+  "status": "preparation_tested_persistence_pending",
+  "pending_candidate_ids": [
+    "093496147624497e551b0d6e",
+    "5417f8bf96c6d1acbfd20ae9"
+  ],
+  "scope": "Mapa de este recorrido disponible; no acredita otros grupos ni llamadas indirectas.",
+  "entries": [
+    {
+      "id": "read_route",
+      "file": "routes/web.php",
+      "line": 723,
+      "expression": "Route::post('sale-notes/items', 'Tenant\\SaleNoteController@getItemsFromNotes');",
+      "sha256": "c8f3d8589cca66b4760267df06503baaa6edd0a80139cc21f32a60b6803d2325",
+      "status": "implemented",
+      "effect": "Entrada de preparación; no persiste la conversión."
+    },
+    {
+      "id": "prepare_controller",
+      "file": "app/Http/Controllers/Tenant/SaleNoteController.php",
+      "line": 1584,
+      "expression": "public function getItemsFromNotes(Request $request)",
+      "sha256": "3915f419f7d38e1aad637a29e14c7e000c18d1ba6cbb42303a83c725bf94044b",
+      "status": "implemented",
+      "effect": "Valida IDs y abre ReadSnapshot antes de resolver fuentes."
+    },
+    {
+      "id": "prepare_sources",
+      "file": "app/Support/Exact/SaleNoteConversionLines.php",
+      "line": 26,
+      "expression": "private static function sourceRows(array $ids,array &$rows,?array &$context,bool $selectAll): \\Generator",
+      "sha256": "180f6b0ff018584bbeae8b3450f265fb398794a795a15ddd8c4710c8ab9289ad",
+      "status": "implemented",
+      "effect": "Lee fuentes autorizadas vigentes en lotes de 500; conserva tokens JSON."
+    },
+    {
+      "id": "group",
+      "file": "app/Support/Exact/SaleNoteConversionLines.php",
+      "line": 69,
+      "expression": "public static function group(iterable $rows): array",
+      "sha256": "180f6b0ff018584bbeae8b3450f265fb398794a795a15ddd8c4710c8ab9289ad",
+      "status": "implemented",
+      "effect": "Agrupa condiciones/precios racionales; suma n/d y conserva referencias por partida."
+    },
+    {
+      "id": "frontend_handoff",
+      "file": "resources/js/helpers/sale-note-conversion.js",
+      "line": 6,
+      "expression": "export function storeSaleNoteConversion(storage, {context, client, items, notes}) {",
+      "sha256": "27c7397df83c46e533ba7501ff92ae32e895e2a6ba0a8018ec5a933d6aa498cd",
+      "status": "implemented_user_build_pending",
+      "effect": "Publica contexto después del traslado y limpia claves incompletas si falla."
+    },
+    {
+      "id": "frontend_restore",
+      "file": "resources/js/helpers/sale-note-conversion.js",
+      "line": 23,
+      "expression": "export function restoreSaleNoteContext(view, storage) {",
+      "sha256": "27c7397df83c46e533ba7501ff92ae32e895e2a6ba0a8018ec5a933d6aa498cd",
+      "status": "implemented_user_build_pending",
+      "effect": "Restaura moneda/tasa antes de preparar filas; la persistencia debe reautorizar fuentes."
+    },
+    {
+      "id": "related_notes",
+      "file": "resources/js/views/tenant/documents/invoice.vue",
+      "line": 1282,
+      "expression": "this.form.sale_notes_relateds = JSON.parse(notesNumbersFromNotes);",
+      "sha256": "551c869c292a31891b6bb6950debbf1909f0b4cdb701f1be214b367c3588994c",
+      "status": "persisted_conversion_pending",
+      "effect": "Referencias del navegador; no autorizan cantidades, precios ni snapshots."
+    },
+    {
+      "id": "write_route",
+      "file": "routes/web.php",
+      "line": 406,
+      "expression": "Route::post('documents', 'Tenant\\DocumentController@store');",
+      "sha256": "c8f3d8589cca66b4760267df06503baaa6edd0a80139cc21f32a60b6803d2325",
+      "status": "persisted_conversion_pending",
+      "effect": "La conversión debe reconstruirse al guardar desde fuentes autorizadas."
+    },
+    {
+      "id": "discard_client_results",
+      "file": "app/Http/Middleware/RemoveClientCalculationSnapshots.php",
+      "line": 21,
+      "expression": "unset($values['calculation_snapshot']);",
+      "sha256": "9f89e5411e053182e3f3acbed00c58a9be0f7a2d3c6d66ad56489bf3ad0cb90a",
+      "status": "correct_boundary_source_rehydration_pending",
+      "effect": "Retira resultados del cliente; el escritor debe recuperar fracciones del origen, no sus proyecciones."
+    },
+    {
+      "id": "document_transaction",
+      "file": "app/Http/Controllers/Tenant/DocumentController.php",
+      "line": 941,
+      "expression": "$fact = DB::connection('tenant')->transaction(function () use ($data, $webExportInvoices) {",
+      "sha256": "31bc16d972e66689bf94e99b84ba2461f9fb6a99393cdfa0d55477a3bfb0b79c",
+      "status": "persisted_conversion_pending",
+      "effect": "storeWithData guarda factura/PDF antes de asociar las notas en el llamador."
+    },
+    {
+      "id": "association_call",
+      "file": "app/Http/Controllers/Tenant/DocumentController.php",
+      "line": 827,
+      "expression": "$this->associateSaleNoteToDocument($request, $document_id);",
+      "sha256": "31bc16d972e66689bf94e99b84ba2461f9fb6a99393cdfa0d55477a3bfb0b79c",
+      "status": "persisted_conversion_pending",
+      "effect": "Ocurre después de storeWithData; falta atomicidad conjunta con reconstrucción/bloqueo de fuentes."
+    },
+    {
+      "id": "association_writer",
+      "file": "app/Http/Controllers/Tenant/DocumentController.php",
+      "line": 974,
+      "expression": "private function associateSaleNoteToDocument(Request $request, int $documentId)",
+      "sha256": "31bc16d972e66689bf94e99b84ba2461f9fb6a99393cdfa0d55477a3bfb0b79c",
+      "status": "persisted_conversion_pending",
+      "effect": "Actualiza referencias; no acredita concurrencia, parciales o idempotencia."
+    },
+    {
+      "id": "invoice_generate.vue_restore",
+      "file": "resources/js/views/tenant/documents/invoice_generate.vue",
+      "line": 3311,
+      "sha256": "a02d133e33ec97de440a182bc2bbb82515510172fe94ef087e89c165ced616ad",
+      "status": "implemented_user_build_pending",
+      "effect": "Restaura contexto antes de importar partidas; persistencia pendiente."
+    },
+    {
+      "id": "invoiceupdate.vue_restore",
+      "file": "resources/js/views/tenant/documents/invoiceupdate.vue",
+      "line": 1273,
+      "sha256": "e5d8b347e1d3b043c9b65d0ca526c85a67f820b0a399283216f8a2799061eaff",
+      "status": "implemented_user_build_pending",
+      "effect": "Restaura contexto antes de importar partidas; persistencia pendiente."
+    }
+  ]
+}

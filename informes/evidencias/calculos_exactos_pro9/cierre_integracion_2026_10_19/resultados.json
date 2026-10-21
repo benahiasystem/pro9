@@ -1,0 +1,267 @@
+{
+  "date": "2026-10-19",
+  "status": "incomplete",
+  "global_closure": false,
+  "audit": {
+    "php": {
+      "candidates": 23365,
+      "classified": 5979,
+      "pending": 17386,
+      "parse_errors": [],
+      "registry_errors": [],
+      "coverage_missing": [],
+      "scanned_files": 3629,
+      "check_exit_code": 1,
+      "categories": {
+        "pending": 17386,
+        "technical": 5883,
+        "presentation": 22,
+        "discrete_units": 3,
+        "exact_arithmetic": 6,
+        "validation": 24,
+        "settlement": 12,
+        "storage": 18,
+        "allocation": 11
+      }
+    },
+    "js": {
+      "candidates": 23182,
+      "classified": 4262,
+      "pending": 18920,
+      "parse_errors": [],
+      "registry_errors": [],
+      "coverage_missing": [],
+      "scanned_files": 1954,
+      "check_exit_code": 1,
+      "categories": {
+        "technical": 4036,
+        "pending": 18920,
+        "presentation": 116,
+        "exact_arithmetic": 38,
+        "validation": 51,
+        "settlement": 2,
+        "allocation": 19
+      }
+    },
+    "totals": {
+      "candidates": 46547,
+      "classified": 10241,
+      "pending": 36306
+    },
+    "unique_scanned_files": 4678,
+    "proofs": {
+      "nonnumeric_string_equality": 7470,
+      "strict_type_guard": 1359,
+      "array_union": 72,
+      "known_date_format": 23,
+      "manual": 557,
+      "loose_nonnumeric_string_equality": 481,
+      "nullish_presence_guard": 279
+    },
+    "scope": "Cobertura sintáctica y revisiones individuales vigentes; no acredita cierre interprocedimental ni aceptación global."
+  },
+  "new_classifications": {
+    "count": 295,
+    "proofs": {
+      "nullish_presence_guard": 279,
+      "manual": 7,
+      "nonnumeric_string_equality": 5,
+      "strict_type_guard": 3,
+      "array_union": 1
+    },
+    "evidence": "nuevas_clasificaciones.json"
+  },
+  "completed_end_to_end_flows_this_integration": [],
+  "implemented_preparation": {
+    "route": "POST sale-notes/items",
+    "trace": "nota_conversion_recorrido.json",
+    "persistence_complete": false,
+    "covered": [
+      "server rational grouping",
+      "distinct conserved prices/conditions",
+      "lossless stored JSON decimals",
+      "source currency/rate handoff",
+      "rollback of incomplete browser staging"
+    ],
+    "remaining": [
+      "authoritative locked source reconstruction at invoice save",
+      "headers/payments/stock reconciliation",
+      "partial conversions/concurrency/idempotency",
+      "legacy draft consumers and large/multiple-tab browser handoff"
+    ]
+  },
+  "functional_tests": {
+    "javascript": {
+      "tests": 229,
+      "passed": 229,
+      "failed": 0,
+      "skipped": 0,
+      "evidence": "javascript.log"
+    },
+    "php_group_and_json": {
+      "tests": 14,
+      "assertions": 42,
+      "failed": 0,
+      "evidence": "agrupacion_json_php.log"
+    },
+    "http": {
+      "tests": 1,
+      "assertions": 3306,
+      "failed": 0,
+      "evidence": "http_aceptacion.log"
+    },
+    "php_integral_mysql": {
+      "status": "unit_passed_feature_fixture_failed_then_corrected",
+      "unit_tests": 948,
+      "unit_assertions": 22893,
+      "unit_failures": 0,
+      "unit_errors": 0,
+      "unit_skipped": 0,
+      "integral_exit_code": 1,
+      "integral_failure": "Tests\\Feature\\ExampleTest::testBasicTest required absent developer database multifacturalo_dusk",
+      "integral_evidence": "php_integral_antes_fixture.xml",
+      "feature_recheck": {
+        "tests": 1,
+        "assertions": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "evidence": "php_feature_corregida.xml",
+        "fixture": "System hostname lookup in SQLite memory; middleware retained. This does not certify central MySQL installation."
+      },
+      "aggregate_passing_tests_across_runs": 949,
+      "aggregate_assertions_across_runs": 22896,
+      "full_integral_rerun_after_feature_fixture_change": false,
+      "only_changed_file_after_integral": [
+        "tests/Feature/ExampleTest.php"
+      ],
+      "unit_and_runtime_sources_unchanged_after_integral": true,
+      "integral_manifest": "fuentes_ejecucion_integral.json",
+      "final_manifest": "fuentes_aceptacion.json"
+    }
+  },
+  "performance": {
+    "global_closed": false,
+    "scope": "HTTP real: kernel, rutas, sesión cifrada, CSRF y MySQL 5.7 temporal. Sólo selección de partidas de notas; no acredita facturación/POS/caja ni central separado.",
+    "warmups": 3,
+    "samples": 30,
+    "final_repetition": {
+      "1": {
+        "reference": {
+          "p50_ms": 190.163243,
+          "p95_ms": 224.148494,
+          "queries_max": 14,
+          "memory_peak_bytes": 8388608
+        },
+        "current": {
+          "p50_ms": 202.572245,
+          "p95_ms": 262.978736,
+          "queries_max": 16,
+          "memory_peak_bytes": 8388608
+        },
+        "allowed_p95_ms": 324.148494,
+        "passed": true,
+        "initial_passed": true
+      },
+      "100": {
+        "reference": {
+          "p50_ms": 266.189758,
+          "p95_ms": 348.318954,
+          "queries_max": 14,
+          "memory_peak_bytes": 10485760
+        },
+        "current": {
+          "p50_ms": 268.015827,
+          "p95_ms": 361.410954,
+          "queries_max": 16,
+          "memory_peak_bytes": 10485760
+        },
+        "allowed_p95_ms": 448.318954,
+        "passed": true,
+        "initial_passed": true
+      },
+      "1000": {
+        "reference": {
+          "p50_ms": 476.078341,
+          "p95_ms": 597.025803,
+          "queries_max": 14,
+          "memory_peak_bytes": 44044288
+        },
+        "current": {
+          "p50_ms": 488.271718,
+          "p95_ms": 592.245965,
+          "queries_max": 18,
+          "memory_peak_bytes": 23072768
+        },
+        "allowed_p95_ms": 716.4309636,
+        "passed": true,
+        "initial_passed": true
+      }
+    },
+    "failed_same_php_execution": "http_json_presupuesto_fallo.json",
+    "variability_cause": "not_demonstrated",
+    "remaining": [
+      "reproducibility",
+      "invoice/POS 1/100/1000 lines",
+      "cash/reports 1000/10000 operations",
+      "separate central HTTP installation"
+    ]
+  },
+  "interrupted_runs": [
+    {
+      "evidence": "php_interrumpida_antes_regresion_json.log",
+      "status": "interrupted_not_accepted",
+      "reason": "New numeric JSON regression exposed lost cents."
+    },
+    {
+      "evidence": "php_interrumpida_antes_proteccion_navegador.log",
+      "status": "interrupted_not_accepted",
+      "reason": "New incomplete browser-staging regression; restart after final JS."
+    }
+  ],
+  "limits": {
+    "schema_changes_this_integration": false,
+    "installed_database_mutations": false,
+    "historical_document_recalculation": false,
+    "real_hka_emission_or_charge": false,
+    "frontend_build": "pending_user",
+    "frontend_visual_acceptance": "pending_user",
+    "external_clients": [
+      "Vendeya",
+      "Mozo",
+      "LiveApp"
+    ]
+  },
+  "reference": {
+    "head": "cab49e553230e48d3cf962261e5f6c961f6ffb13",
+    "frozen_sources": 5990,
+    "changed_sources": 19,
+    "php_benchmark_dependencies_unchanged": true,
+    "changed_source_patch": "cambios_integracion.patch.gz"
+  },
+  "source_validation": {
+    "production_and_unit_unchanged_after_integral": true,
+    "only_feature_fixture_rechecked": true
+  },
+  "artifact_validation": {
+    "patch_applies_to_initial_tree": true,
+    "patched_files": 19,
+    "patched_hashes_match_final": true,
+    "final_source_freeze_unchanged": true,
+    "frozen_sources": 5990,
+    "after_integral_only_feature_fixture_changed": true,
+    "runtime_files_modified_during_check": false
+  },
+  "temporary_mysql_cleanup": {
+    "temporary_test_containers_remaining": [],
+    "existing_application_containers": [
+      "pro9-api-bcv",
+      "pro9-mysql",
+      "pro9-nginx",
+      "pro9-php",
+      "pro9-redis"
+    ],
+    "application_containers_modified": false
+  },
+  "report": "../../../calculos_exactos_cierre_consumidores_pro9.md"
+}

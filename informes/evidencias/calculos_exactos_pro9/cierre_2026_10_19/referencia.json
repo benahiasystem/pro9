@@ -1,0 +1,14 @@
+{
+  "git_commit": "cab49e553230e48d3cf962261e5f6c961f6ffb13",
+  "date": "2026-10-19",
+  "php": {
+    "candidates": 23420,
+    "pending": 17754
+  },
+  "javascript": {
+    "candidates": 23185,
+    "pending": 20030
+  },
+  "orphaned_reviews_archived": 3,
+  "status": "baseline_before_implementation"
+}

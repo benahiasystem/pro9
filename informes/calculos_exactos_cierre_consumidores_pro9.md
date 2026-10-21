@@ -1,102 +1,75 @@
 # Consumidores exactos y auditoría de Pro9
 
-17 de octubre de 2026. **Implementación parcial; el plan global sigue abierto.**
+19 de octubre de 2026. **Implementación parcial: el cierre global sigue abierto.**
 
-Esta entrega amplía consumidores y controles reales. No acredita el cierre de todos los módulos ni la clasificación de todos sus redondeos. Las aplicaciones compiladas Vendeya, Mozo y LiveApp mantienen su cierre externo separado; sus servicios presentes en Pro9 siguen dentro del alcance.
+Esta integración prepara y agrupa partidas de notas en servidor, conserva sus fracciones y restaura moneda/tasa en los tres formularios de factura. Corrige la selección del primer precio al agrupar un producto y una pérdida de céntimos al leer descuentos JSON. Incluye pruebas y medición HTTP de esa preparación. Todavía no acredita el guardado de la conversión ni los demás bloques del plan.
 
-## Cambios implementados
-
-| Recorrido | Comportamiento y evidencia |
-| --- | --- |
-| Entrada JSON | `PreserveJsonDecimals` conserva los tokens decimales y exponentes como texto antes de los normalizadores HTTP. Mantiene los bytes originales para firmas y continúa retirando snapshots de resultados enviados por clientes. No recupera precisión perdida dentro de una app externa. `ExactJsonBoundaryTest`. |
-| Lectura y guardado | `Decimal::readRequired` rechaza operandos ausentes y snapshots desconocidos. `HasExactValues` valida proyección, rango y fracción después de `creating`/`updating`, antes del SQL, incluyendo cálculos realizados en `saving`. `ExactLateCalculationTest`, `ExactInputValidationTest`. |
-| Conjunto de reportes | `ReportDataset` conserva una copia temporal privada, permite varias lecturas, filtra y compara fracciones antes de paginar. Ordenación externa estable en lotes de 500 y hasta 32 cabeceras de mezcla por pasada. `ExactReportDatasetTest`. |
-| Ventas consolidadas: partidas | El total se suma desde cada partida guardada y su snapshot; se elimina el producto incorrecto del precio de la primera partida por toda la cantidad. Conserva la unidad, distingue documento/ID, resta NC y excluye notas de venta convertidas. Convierte cada operación USD usando su tasa histórica y expone el desglose original. Una moneda o tasa necesaria ausente produce un error. **Los ajustes que existen sólo en la cabecera siguen pendientes**, como se detalla abajo. `ExactSalesConsolidatedTest`, `ExactConsolidatedConsumersTest`. |
-| Consumidores del consolidado | API, listado, resumen de la página, agrupación por producto/unidad, PDF, tickets de 58/80 mm, Excel y generación en bandeja comparten los DTO exactos. Las vistas dejaron de calcular importes a partir del catálogo. El total del listado se identifica como total de la página. |
-| Presentación de reportes | `ReportProjection` reparte los céntimos de representación por mayores residuos firmados, con desempate estable y sin modificar las fracciones. La suma visible coincide con el total representado. `ExactReportProjectionTest`. |
-| Cuentas por pagar | Compras, gastos y préstamos opcionales se leen en lotes, con pagos precargados y exclusión de reversiones cuando existe su campo. El filtro de saldo positivo precede a la paginación; los resúmenes cubren el conjunto filtrado. Se distinguen total exacto, liquidable, aplicado, saldo y ajuste. Un tercio liquidado en 0,33 no crea una deuda ficticia de 1/300. Listado, PDF, tres exportaciones y el consumidor de cuentas por pagar del libro contable se adaptaron. **El resto del libro contable y la equivalencia consolidada VES de este reporte siguen pendientes.** `ExactPayablesTest`. |
-| Selección de productos | Precios seleccionados por almacén y precio de compra base/con IVA conservan su fracción. Se evita adjuntar un snapshot de stock global a una cantidad de almacén. La primera operación conserva la fracción del precio seleccionado si el usuario no lo cambió. La edición explícita tiene prioridad. **Variaciones y otros productores de precios/stock siguen pendientes.** `ExactProductPricesTest` y regresiones JavaScript. |
-| Lotes e importación de stock | La comparación de cantidades de lotes ya no limita a cuatro posiciones. Stock XLSX se lee desde el lexema OOXML, rechaza fórmulas y calcula el movimiento racional bajo bloqueo. Se probó en MySQL la diferencia periódica y repetir el archivo sin generar otro movimiento. `ExactStockWorkbookTest`, `FiscalEmissionSchemaTest`. |
-| Recetas: vista previa | Costo efectivo, merma, cantidad, costo de producción y precio sugerido conservan fracciones en PHP/JavaScript. Controles editables envían cadenas y validan precisión. **Consumo, preparación y producción completos siguen pendientes.** `ExactSupplyCostTest`, `exact-recipe.test.cjs`. |
-| Excel de estos consumidores | Importes como texto, hoja de numerador/denominador e identidad compuesta del registro. Se rechaza una fracción que exceda el límite de caracteres de Excel antes de que la biblioteca la trunque. `ExactExtensionBoundariesTest`, `ExactConsolidatedConsumersTest`. |
-
-Los cambios conservan las reglas de negocio y el esquema inicial previamente ampliado. Las pruebas de MySQL usan bases efímeras. No se convirtieron bases instaladas, no se recalcularon documentos históricos y no se hicieron emisiones HKA.
-
-Incidencia previa separada de precisión: el antiguo helper etiquetaba los gastos como `sale_note` cuando no había filtro de fechas y como `expense` cuando sí lo había. El DTO identifica ahora su origen como `expense` en ambos casos; esta corrección de identidad no cambia el importe.
-
-## Auditoría individual
-
-Se amplió la búsqueda a aritmética y comparaciones, casts, SQL, escrituras masivas, incrementos/decrementos, controles y expresiones de plantillas. Vue utiliza su AST de plantilla, incluyendo filtros, ramas, clases, eventos, slots y modificadores; no depende de una extracción parcial mediante expresiones regulares. El inventario contiene también operaciones técnicas y falsos positivos explícitos, no sólo redondeos monetarios.
+## Estado actual
 
 | Fuente | Candidatos | Clasificados | Pendientes |
 | --- | ---: | ---: | ---: |
-| PHP y Blade | 23.418 | 5.719 | 17.699 |
-| JavaScript y Vue | 23.169 | 3.306 | 19.863 |
-| Total | **46.587** | **9.025** | **37.562** |
+| PHP/Blade | 23.365 | 5.979 | 17.386 |
+| JavaScript/Vue | 23.182 | 4.262 | 18.920 |
+| **Total** | **46.547** | **10.241** | **36.306** |
 
-El aumento respecto a los 39.912 candidatos anteriores procede de la cobertura ampliada. **37.562 pendientes no equivalen a 37.562 errores monetarios.**
+La referencia de esta integración tenía 46.534 candidatos, 9.946 clasificados y 36.588 pendientes. Ahora hay trece candidatos adicionales y 295 clasificaciones adicionales: **282 pendientes menos**, sin equivaler a 282 errores monetarios corregidos. Se añadieron siete revisiones manuales y 288 pruebas AST individuales, incluidas 279 comparaciones JavaScript de presencia con literal `null`. La revalidación de la evidencia del contrato conservó el código y la prueba previos de `Decimal::represent`. El historial de las ocho revisiones manuales afectadas queda conservado.
 
-Las 9.025 clasificaciones incluyen 8.786 pruebas AST individuales de guardias de tipo o igualdad con texto no numérico y 239 revisiones manuales. Las pruebas AST no aprueban comparaciones numéricas, aritmética, casts ni operaciones anidadas por estar dentro de una guardia aprobada. No hay aprobaciones generales por carpeta.
+Hay 557 revisiones manuales y 9.684 demostraciones AST vigentes. Las pruebas de presencia no aprueban aritmética anidada, comparaciones numéricas, igualdad con booleanos ni el identificador `undefined`; no se trasladan a PHP. No se autorizaron carpetas ni funciones completas.
 
-Cada candidato del [inventario JSONL](calculos_exactos_extension_inventario.jsonl) conserva expresión, línea, símbolo, operación, ID, categoría, explicación y evidencia de su clasificación. El [registro](../config/exact_rounding_registry.json) enlaza las aprobaciones mediante ID estable y hashes SHA-256 de los archivos de evidencia. Una expresión cambiada, evidencia modificada, ancla inexistente o aprobación huérfana no conserva su autorización. Las aprobaciones retiradas se archivan como antecedentes, sin transferirlas a expresiones nuevas.
+Ambos `--check` terminan con código 1 sólo por pendientes; no hay errores de análisis, evidencias inválidas, aprobaciones huérfanas ni fuentes omitidas según la política vigente. Se analizaron 4.678 archivos únicos. Esta cobertura sintáctica no acredita llamadas indirectas o SQL dinámico.
 
-Ambos comandos `--check` terminaron con **código 1 por candidatos pendientes**. Hubo cero errores de análisis, cero aprobaciones huérfanas y cero archivos omitidos respecto a la política de fuentes. Esto acredita cobertura sintáctica de 4.662 archivos únicos, no demuestra por sí solo la trazabilidad interprocedimental o todo SQL dinámico.
+## Cambios de esta integración
 
-La [matriz por módulo y superficie](calculos_exactos_cierre_consumidores_matriz.json) enumera fuentes, rutas, controladores, modelos, comandos, jobs, eventos, importaciones, exportaciones y frontend por ubicación. Es un índice para continuar la revisión; un archivo escaneado o un grupo sin candidatos no acredita un recorrido completo.
+- `POST sale-notes/items` lee fuentes autorizadas y vigentes bajo corte consistente, con partidas en lotes de 500. Conserva `data` y añade `grouped_items`, `conversion_context` y trazabilidad por partida.
+- La agrupación distingue precio racional, unidad/presentación y condiciones fiscales/comerciales. Separa las partidas con lotes/seriales; el stock consultado no determina un grupo de precio.
+- Cantidades e importes, incluidos descuentos fijos, se acumulan desde n/d. Las cachés son locales y acotadas; sus identidades usan JSON, condiciones u operandos completos, nunca representaciones limitadas.
+- Los JSON persistidos se leen lexicalmente antes de operar. Dos descuentos numéricos de `1234567890123.12`, sin `amount_exact`, sumaban `2469135780246.2` en la primera implementación del lector. La regresión HTTP exige ahora `2469135780246.24`. No se reconstruye precisión perdida previamente por MySQL u otros productores.
+- Se conserva la forma de objetos/listas, incluidos objetos vacíos. Un snapshot de versión inválida o un operando ausente se rechaza incluso tras un acierto previo de caché.
+- El modal deja de sumar cantidades con `parseFloat` y de aplicar el primer precio a todas las partidas del mismo producto. Los tres formularios conservan filas, fracciones y metadatos del servidor; restauran moneda y tasa histórica antes de importarlas.
+- Selecciones incompatibles de cliente, sucursal, moneda o tasa se rechazan explícitamente. El modal muestra errores y no sustituye una tasa ausente por la actual.
+- Si falla el almacenamiento de la selección en el navegador, se limpian las claves parciales y no se abre la factura. El contexto se publica después de partidas/notas; las selecciones nuevas eliminan borradores y lotes heredados. Esto no es una transacción entre pestañas ni una aceptación visual del navegador compilado.
 
-## Pendientes concretos para completar el plan
+La preparación **no escribe ni recalcula documentos guardados**. Se preservan los cambios anteriores de cobros/vuelto, saldos, IGTF y controles centrales; su evidencia histórica está en el [informe anterior](/home/benahia/benahia/pro/Pro9/informes/evidencias/calculos_exactos_pro9/cierre_integracion_2026_10_19/informe_anterior.md).
 
-1. **Cabeceras en ventas consolidadas:** distribuir o exponer exactamente descuentos, cargos y anticipos que sólo estén en la cabecera; reconciliar el detalle con el documento. Las partidas ya incorporan sus propios descuentos. No aplicar una proporción indiscriminada: un descuento que sólo afecta base gravada no debe reducir una partida exenta. Faltan casos mixtos de afectación, NC parcial y documentos convertidos con estos ajustes.
-2. **Reportes y saldos restantes:** cuentas por cobrar, Dashboard, indicadores, caja, bancos, comisiones y el resto del libro contable. El resumen de cuentas por pagar conserva VES/USD separados; falta su consolidación VES con tasa histórica. Completar filtros monetarios, ordenación antes de paginar y todas las salidas de los demás reportes.
-3. **Operaciones comerciales y operativas:** productores y consumidores restantes de compras, presentaciones, variaciones, inventario, Kardex, valoración, costos, producción, pedidos, cotizaciones, conversiones, ecommerce, Marketplace, WhatsApp, Offline, restaurante, hotel, suscripciones y servicio técnico. La vista previa de recetas no cierra el consumo y la preparación. Revisar de nuevo Web/POS/Garage al completar esos productores.
-4. **Cobros y proveedores:** completar todos los lectores/productores de pagos, cuotas, vuelto, IGTF, retenciones, garantías, devoluciones y reversión. Terminar pasarelas y checkout central, verificación autorizada de importe/moneda/orden, importe enviado/liquidado/ajuste, idempotencia y concurrencia. No se enviaron cobros de prueba a proveedores reales.
-5. **Entradas y persistencia restantes:** modelos fuera de las bases comunes, pivotes, escrituras SQL directas, mutadores, campos enteros de negocio y controles limitados. `Decimal::of` conserva compatibilidad con entradas `float` heredadas: la validación final y el middleware no convierten por sí solos todos sus productores en exactos. Los consumidores antiguos de `rateMultiply`/`rateDivide` siguen pendientes.
-6. **Intercambio y presentación:** ampliar la lectura lexical a todas las importaciones XLSX y las exportaciones de texto/fracciones a los demás Excel/CSV. Revisar los PDF locales restantes y gráficos. Mantener las reglas del precio unitario PDF 2–12, opción desactivada/default 2, otros importes a dos y originales HKA sin reescritura.
-7. **Clasificación completa:** resolver los 37.562 candidatos restantes, corrigiendo cualquier pérdida intermedia o aportando evidencia individual de su frontera autorizada. Completar la revisión semántica de rutas dinámicas y consumidores indirectos; no sustituirla por coincidencias de nombres.
-8. **Aceptación global y rendimiento:** medir HTTP/facturación/POS con 1/100/1.000 partidas y caja/reportes con 1.000/10.000 operaciones sobre entornos equivalentes, además de los recorridos y casos de aceptación restantes. No se ha cumplido todavía esta matriz global.
+## Rendimiento HTTP del consumidor preparado
 
-## Pruebas y mediciones
+Se conservaron commit, diferencias y fuentes iniciales, incluidas las no confirmadas. La referencia es `cab49e553230e48d3cf962261e5f6c961f6ffb13` más ese árbol inicial. El controlador anterior se carga desde su copia congelada y las dependencias PHP comunes permanecen iguales. Dos servidores HTTP alternan kernel/rutas reales, sesión cifrada, CSRF y MySQL 5.7 temporal, con tres calentamientos y 30 muestras por variante/carga.
 
-Los registros completos están en [resultados.json](evidencias/calculos_exactos_pro9/cierre_consumidores_2026_10_17/resultados.json). Los subconjuntos se solapan y no deben sumarse.
+La última repetición registró:
 
-| Verificación | Resultado |
-| --- | --- |
-| PHP Unit completa | 861 pruebas, 16.302 aserciones, cero fallos/errores; 60 omitidas |
-| JavaScript | 200 pruebas, cero fallos ni omisiones |
-| Pruebas negativas y guardias del auditor | 14 pruebas PHP, 27 aserciones; pruebas Vue/JavaScript incluidas en las 200 |
-| MySQL: cálculos, ciclo comercial, rango central y rollback | 3 pruebas, 42 aserciones |
-| MySQL: instalación tenant, semillas, rollback/repetición y stock XLSX | 2 pruebas, 1.608 aserciones |
-| MySQL: repetición del ciclo comercial con lectura SQL UNION del consolidado | 1 prueba, 12 aserciones; se solapa con el ciclo anterior |
-| Sintaxis PHP | 129 archivos modificados/nuevos, cero errores |
-| Vue | 15 componentes comprobados en memoria, cero errores; sin generar assets |
-| Habilidad de cálculos exactos | Validada |
-| PDF sintético | Tickets 58/80 mm renderizados y revisados visualmente: Bs. 500, total Bs. 503 y USD 1 repartido 0,34/0,33/0,33 |
-
-Las 60 omisiones de la suite general no se presentan como pruebas aprobadas. Se ejecutaron aparte los subconjuntos MySQL indicados; no se reejecutó toda la matriz de concurrencia con MySQL.
-
-Se comparó el antiguo consumidor de cuentas por pagar extraído de Git `fd9e6d18bb2808ea97bf4909044ca6e20ff13966` con el nuevo, usando los modelos actuales, fixtures equivalentes, SQLite temporal, siete muestras y serialización JSON. El anterior devuelve todas las filas; el nuevo devuelve una página con resumen global.
-
-| Operaciones | p50 anterior/actual | p95 anterior/actual | Consultas anterior/actual | Memoria pico anterior/actual |
+| Partidas | Referencia p95 ms | Actual p95 ms | Límite por comparación ms | Consultas actuales máximas |
 | --- | ---: | ---: | ---: | ---: |
-| 1.000 | 193,68 / 205,04 ms | 213,10 / 285,10 ms | 1.001 / 8 | 42,5 / 42,5 MiB |
-| 10.000 | 2.215,71 / 2.135,86 ms | 2.297,05 / 2.222,66 ms | 10.001 / 44 | 68,5 / 64,5 MiB |
+| 1 | 224.15 | 262.98 | 324.15 | 16 |
+| 100 | 348.32 | 361.41 | 448.32 | 16 |
+| 1000 | 597.03 | 592.25 | 716.43 | 18 |
 
-Ambos casos cumplen referencia + max(20 %, 100 ms). El caso de 1.000 operaciones aumenta su p95 en 72 ms, dentro del umbral. Esta medición local no acredita transporte HTTP, MySQL, POS ni otros módulos. La medición pura del motor se conserva por separado y tampoco acredita esos recorridos.
+También cumplió los límites de la primera línea base de esta integración. Con 1.000 partidas, la memoria máxima actual fue 23.072.768 bytes. Los JSON conservan muestras, p50/p95, memoria y consultas. Las consultas cuentan el kernel tras bootstrap; la latencia incluye bootstrap y transporte.
 
-Reproducción de los controles principales:
+**Hay variabilidad sin causa demostrada:** otra ejecución sobre el mismo PHP final falló a 1.000 partidas, con p95 actual 1.152,84 ms frente a 908,80 ms de referencia y límite 1.090,56 ms; también excedió la línea base inicial. Se conservan ese fallo, la repetición satisfactoria y los datos de carga disponibles. Una repetición satisfactoria no certifica estabilidad global ni borra el fallo anterior.
 
-```bash
-DB_HOST=127.0.0.1 DB_PORT=1 vendor/bin/phpunit --testsuite Unit
-node --test tests/js/*.test.cjs
-php scripts/audit_exact_calculations.php --check
-node scripts/audit_exact_calculations.cjs --check
-php scripts/benchmark_exact_consumers.php --baseline-sha=fd9e6d18bb2808ea97bf4909044ca6e20ff13966
-```
+Se conservan además mediciones intermedias que excedieron presupuesto, el error de tratar texto adicional como JSON y la regresión numérica de descuentos. Las optimizaciones reutilizan decodificaciones, claves y racionales repetidos, sin limitar decimales ni añadir tolerancias monetarias.
 
-El puerto 1 impide acceso accidental a bases reales en la suite general; las pruebas de persistencia MySQL usan su configuración aislada con `PRO9_FISCAL_MYSQL_TESTS=1`. Los dos auditores deben seguir fallando mientras existan pendientes. `classify_exact_type_guards.php --write` sólo materializa/revalida sus pruebas AST limitadas; no sirve para aprobar los demás cálculos.
+**Alcance limitado:** selección de 1/100/1.000 partidas de precio 500 con IVA 16 %, más casos funcionales de distintos precios. No certifica facturación/POS, caja/reportes de 1.000/10.000 operaciones, mezclas diversas a escala ni instalación central separada. El fixture HTTP comparte un esquema temporal entre system/tenant. Esta referencia no acredita cambios anteriores ni cierra el bloque completo de ventas/conversiones.
 
-## Entrega y frontend
+## Aceptación
 
-Se actualizaron la [habilidad](../.codex/skills/mantener-calculos-exactos-pro9/SKILL.md), el [contrato](../.codex/skills/mantener-calculos-exactos-pro9/references/contrato.md), el [inventario de campos](calculos_exactos_extension_inventario.json), la matriz y las evidencias. El informe anterior se conserva como antecedente.
+- JavaScript: **229 pruebas**, sin fallos ni omisiones. Ejecutan el modal, los tres importadores, rechazo de contexto inválido y fallos de cuota en las dos variantes de selección; compilan componentes en memoria.
+- Agrupación y fronteras JSON PHP: **14 pruebas y 42 aserciones**, sin fallos. Incluyen precios subdoce, fracciones periódicas, descuentos y rechazo de snapshots/operandos inválidos.
+- HTTP final: **una prueba y 3.306 aserciones**, sin fallos. Incluye autenticación, CSRF, comparación de rendimiento, contextos incompatibles, objetos vacíos y la suma de descuentos JSON numéricos.
+- PHP integral con MySQL habilitado: **948 pruebas Unit y 22.893 aserciones**, sin fallos, errores ni omisiones. La ejecución conjunta de 949 casos falló únicamente en `Feature/ExampleTest`: buscaba la base de desarrollo `multifacturalo_dusk`. Se aisló su consulta de hostnames en SQLite en memoria, conservando el middleware, y se repitió Feature: **una prueba y 3 aserciones**, sin fallos. No se repitió la corrida completa después de cambiar únicamente ese fixture; producción y Unit permanecen idénticos. Se conservan el fallo y la repetición. Las ejecuciones interrumpidas anteriores y las 939 pruebas de otra continuación no se acreditan como esta aceptación.
+- Habilidad validada. Los hashes de las 5.990 fuentes distinguen la ejecución integral y el estado final; sólo cambió después el fixture Feature descrito. Los informes/evidencias se actualizan fuera de ese conjunto. No se ejecutó build/watch ni se modificó `public/build`; compilación y aceptación visual corresponden al usuario.
 
-La compilación y aceptación visual de las fuentes frontend siguen a cargo del usuario, conforme a `frontend-build`. No se ejecutó Vite/build/watch ni se editaron bundles. Se preservaron los assets modificados por el proceso externo activo y el trabajo previo del repositorio. Los PDF de prueba no son comprobantes emitidos.
+## Pendientes para cerrar el plan
+
+1. Resolver y bloquear de nuevo las fuentes al persistir la conversión (ver el [recorrido con referencias verificadas](/home/benahia/benahia/pro/Pro9/informes/evidencias/calculos_exactos_pro9/cierre_integracion_2026_10_19/nota_conversion_recorrido.json)); reconstruir grupos autorizados, reconciliar cabeceras, anticipos, impuestos y cobros, y cubrir parciales, concurrencia e idempotencia. Las dos representaciones nuevas de agrupación siguen pendientes en el auditor por ese recorrido abierto.
+2. Migrar consumidores de borradores heredados `itemsForNotes`; verificar capacidad, recuperación y concurrencia del traslado entre pestañas con frontend compilado. La limpieza de un fallo de almacenamiento no acredita guardado, inventario ni movimiento de dinero.
+3. Completar productores Web/POS/Garage/API y el reemplazo diferido de partidas pendiente en otros controladores. Continuar revisando escrituras de estados comerciales durante lecturas/PDF y aritmética residual.
+4. Completar cobros, tesorería, productos/compras/inventario/costos, Dashboard/contabilidad, administración central/pasarelas y los 77 grupos de la matriz. Sigue pendiente el ciclo central de intento, bloqueo de edición monetaria/nuevo intento, conciliación, verificación de respuesta y reversión.
+5. Completar reportes, PDF/tickets, importaciones/exportaciones, consumidores indirectos y los **36.306 candidatos**. No renovar hashes sin revisión ni aprobar proyecciones que todavía alimentan cálculos.
+6. Ejecutar la matriz HTTP completa y verificar repetibilidad del rendimiento, con aceptación tenant/central, semillas, rollback y reinstalación pendientes de cierre integral. Vendeya, Mozo y LiveApp mantienen cierre externo separado.
+
+## Entrega
+
+La [matriz de consumidores](/home/benahia/benahia/pro/Pro9/informes/calculos_exactos_cierre_consumidores_matriz.json), inventarios JSON/JSONL, registro individual, habilidad y contrato reflejan este estado parcial. La [evidencia de esta integración](/home/benahia/benahia/pro/Pro9/informes/evidencias/calculos_exactos_pro9/cierre_integracion_2026_10_19/) contiene referencia y fuentes comprimidas, parche frente al árbol inicial, clasificaciones individuales nuevas, revisiones manuales históricas, pruebas, comparaciones HTTP y fallos conservados.
+
+No se modificaron migraciones, bases instaladas ni documentos históricos. El fixture de la prueba raíz no certifica una instalación central MySQL. No hubo emisiones HKA ni cobros reales. Se mantiene el PDF local con precio unitario configurable 2–12, desactivado y dos por defecto; demás importes a dos y originales HKA intactos. El cierre final requiere cero pendientes, controles satisfactorios y aceptación integral; **todavía no se cumple**.

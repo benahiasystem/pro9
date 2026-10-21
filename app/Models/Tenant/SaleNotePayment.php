@@ -125,11 +125,17 @@ class SaleNotePayment extends ModelTenant
      * Total de pagos filtrado por id de la nota de venta
      *
      * @param  array $sale_notes_id
-     * @return float
+     * @return \Brick\Math\BigRational
      */
     public static function sumPaymentsBySaleNote($sale_notes_id)
     {
-        return self::whereIn('sale_note_id', $sale_notes_id)->sum('payment');
+        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        $sum = \App\Support\Exact\Decimal::of(0);
+        foreach (self::withoutEagerLoads()->whereIn('sale_note_id', $sale_notes_id)->lazyById(500) as $payment) {
+            $sum = $sum->plus(\App\Support\Exact\Decimal::readRequired($payment,'payment'));
+        }
+        return $sum;
+        // ######## FIN CALCULOS EXACTOS PRO9 ########
     }
 
     public function cashDocumentPayments()

@@ -1,0 +1,9 @@
+{
+  "patch_applies_to_initial_tree": true,
+  "patched_files": 19,
+  "patched_hashes_match_final": true,
+  "final_source_freeze_unchanged": true,
+  "frozen_sources": 5990,
+  "after_integral_only_feature_fixture_changed": true,
+  "runtime_files_modified_during_check": false
+}

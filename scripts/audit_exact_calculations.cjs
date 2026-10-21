@@ -5,7 +5,7 @@ const {parseComponent}=require('vue-template-compiler')
 const auditVueTemplate=require('./exact_vue_audit.cjs')
 const guardProof=require('./exact_guard_proof.cjs')
 const coverage=require('./exact_source_coverage.cjs')
-const {validReview,diagnostics}=require('./exact_audit_registry.cjs')
+const {validReview,diagnostics,matchesProof}=require('./exact_audit_registry.cjs')
 const root=path.resolve(__dirname,'..'), matches=[], errors=[], seen=new Map()
 const registryFile=path.join(root,'config/exact_rounding_registry.json')
 const registry=fs.existsSync(registryFile)?JSON.parse(fs.readFileSync(registryFile,'utf8')):{}
@@ -17,7 +17,7 @@ function finding(file,line,symbol,operation,expression,technical_proof=null) {
     const key=[file,symbol,operation,expression].join('|'), ordinal=seen.get(key)||0
     seen.set(key,ordinal+1)
     const id=crypto.createHash('sha256').update(key+'|'+ordinal).digest('hex').slice(0,24)
-    const review=registry[id], valid=validReview(review,root,evidenceCache) && review.source.file===file && review.source.symbol===symbol && review.source.operation===operation && review.source.operation_language==='javascript'
+    const review=registry[id], valid=validReview(review,root,evidenceCache) && review.source.file===file && review.source.symbol===symbol && review.source.operation===operation && review.source.operation_language==='javascript' && matchesProof(review,technical_proof)
     matches.push({id,file,line,symbol,operation,expression,review:'consumer_or_boundary_review',technical_proof,status:valid?'justified':'pending',classification:valid?review:{category:'pending',justification:null,evidence:[]}})
 }
 function analyze(source,file,offset,context,expression=false) {
@@ -68,11 +68,12 @@ function cleanBlade(source) {
     return source.replace(/@else\b/g,'}else{').replace(/@(?:endif|endforeach|endfor|endwhile|endisset|endunless)\b/g,'}')
 }
 const source_policy=JSON.parse(fs.readFileSync(path.join(root,'config/exact_audit_sources.json'),'utf8'))
-const expectedSources=coverage.sourceFiles(root,source_policy), scanned_files=[]
+const expectedSources=coverage.sourceFiles(root,source_policy), scanned_files=[], source_hashes={}
 for(const file of expectedSources) {
     const entry={name:path.basename(file)}
     scanned_files.push(file)
         let source=fs.readFileSync(path.join(root,file),'utf8');scanned++
+        source_hashes[file]=crypto.createHash('sha256').update(source).digest('hex')
         if(entry.name.endsWith('.blade.php'))source=source.replace(/<!--[\s\S]*?-->/g,part=>part.replace(/[^\n]/g,' '))
             .replace(/@php[\s\S]*?@endphp/g,part=>part.replace(/[^\n]/g,' '))
             .replace(/<\?php[\s\S]*?\?>/g,part=>'0'+part.slice(1).replace(/[^\n]/g,' '))
@@ -94,6 +95,6 @@ const coverage_missing=coverage.missingSources(expectedSources,scanned_files)
 matches.sort((a,b)=>a.file.localeCompare(b.file)||a.line-b.line||a.id.localeCompare(b.id))
 const registry_errors=diagnostics(matches,registry,'javascript')
 const pending=matches.filter(row=>row.status==='pending').length
-process.stdout.write(JSON.stringify({scanned_javascript_templates:scanned,javascript_review:matches,parse_errors:errors,registry_errors,coverage_missing,scanned_files,source_policy,pending},null,2)+'\n')
+process.stdout.write(JSON.stringify({scanned_javascript_templates:scanned,javascript_review:matches,parse_errors:errors,registry_errors,coverage_missing,scanned_files,source_hashes,source_policy,pending},null,2)+'\n')
 if(errors.length || (process.argv.includes('--check') && (pending || registry_errors.length || coverage_missing.length)))process.exitCode=1
 // ######## FIN AUDITORIA CALCULOS EXACTOS PRO9 ########

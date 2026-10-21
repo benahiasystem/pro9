@@ -1,0 +1,2736 @@
+[
+  {
+    "id": "062cfe0e13e4e4b1f201beed",
+    "expression": "D::sum($rows->map(fn($v) => D::readRequired($v, $field)))",
+    "source": {
+      "file": "app/Services/Fiscal/ExactDocumentSummary.php",
+      "symbol": "ExactDocumentSummary::save",
+      "operation": "sum",
+      "operation_language": "php"
+    },
+    "review": "Se releyó el agregado de partidas: readRequired entrega BigRational y sum conserva las fracciones; el guardado de cabecera y reparto permanece transaccional.",
+    "previous": {
+      "category": "exact_arithmetic",
+      "justification": "Decimal::sum recibe fracciones BigRational de las partidas/cargos; no es Collection::sum ni una suma de textos formateados. Expresión revisada: D::sum($rows->map(fn($v) => D::readRequired($v, $field)))",
+      "evidence": [
+        "app/Services/Fiscal/ExactDocumentSummary.php",
+        "tests/Unit/FiscalEmissionSchemaTest.php"
+      ],
+      "source": {
+        "file": "app/Services/Fiscal/ExactDocumentSummary.php",
+        "symbol": "ExactDocumentSummary::save",
+        "operation": "sum",
+        "operation_language": "php"
+      },
+      "evidence_sha256": {
+        "app/Services/Fiscal/ExactDocumentSummary.php": "78b9403e15faaea2e8606a5cc0da217a479283b5aa7fbb5a4d856624a5ac2a06",
+        "tests/Unit/FiscalEmissionSchemaTest.php": "e8979884d62312d254a465a0a3f27154e23dab618a382d8b765f7cd35eb7b09d"
+      }
+    },
+    "current": {
+      "category": "exact_arithmetic",
+      "justification": "Decimal::sum recibe fracciones BigRational de las partidas/cargos; no es Collection::sum ni una suma de textos formateados. Expresión revisada: D::sum($rows->map(fn($v) => D::readRequired($v, $field)))",
+      "evidence": [
+        "app/Services/Fiscal/ExactDocumentSummary.php",
+        "tests/Unit/FiscalEmissionSchemaTest.php"
+      ],
+      "source": {
+        "file": "app/Services/Fiscal/ExactDocumentSummary.php",
+        "symbol": "ExactDocumentSummary::save",
+        "operation": "sum",
+        "operation_language": "php"
+      },
+      "evidence_sha256": {
+        "app/Services/Fiscal/ExactDocumentSummary.php": "78b9403e15faaea2e8606a5cc0da217a479283b5aa7fbb5a4d856624a5ac2a06",
+        "tests/Unit/FiscalEmissionSchemaTest.php": "9d95edc783b8e99f7d784807fdee551e7d979b04564ff8586bdf84707b32237a"
+      }
+    }
+  },
+  {
+    "id": "cbc806e810e6c349464d6a3a",
+    "expression": "D::sum($charges->map($amount))",
+    "source": {
+      "file": "app/Services/Fiscal/ExactDocumentSummary.php",
+      "symbol": "ExactDocumentSummary::save",
+      "operation": "sum",
+      "operation_language": "php"
+    },
+    "review": "Se verificó que el agregado recibe cargos racionales validados, no proyecciones; la ampliación del caso MySQL sólo corrige la expectativa de exportación.",
+    "previous": {
+      "category": "exact_arithmetic",
+      "justification": "Decimal::sum recibe fracciones BigRational de las partidas/cargos; no es Collection::sum ni una suma de textos formateados. Expresión revisada: D::sum($charges->map($amount))",
+      "evidence": [
+        "app/Services/Fiscal/ExactDocumentSummary.php",
+        "tests/Unit/FiscalEmissionSchemaTest.php"
+      ],
+      "source": {
+        "file": "app/Services/Fiscal/ExactDocumentSummary.php",
+        "symbol": "ExactDocumentSummary::save",
+        "operation": "sum",
+        "operation_language": "php"
+      },
+      "evidence_sha256": {
+        "app/Services/Fiscal/ExactDocumentSummary.php": "78b9403e15faaea2e8606a5cc0da217a479283b5aa7fbb5a4d856624a5ac2a06",
+        "tests/Unit/FiscalEmissionSchemaTest.php": "e8979884d62312d254a465a0a3f27154e23dab618a382d8b765f7cd35eb7b09d"
+      }
+    },
+    "current": {
+      "category": "exact_arithmetic",
+      "justification": "Decimal::sum recibe fracciones BigRational de las partidas/cargos; no es Collection::sum ni una suma de textos formateados. Expresión revisada: D::sum($charges->map($amount))",
+      "evidence": [
+        "app/Services/Fiscal/ExactDocumentSummary.php",
+        "tests/Unit/FiscalEmissionSchemaTest.php"
+      ],
+      "source": {
+        "file": "app/Services/Fiscal/ExactDocumentSummary.php",
+        "symbol": "ExactDocumentSummary::save",
+        "operation": "sum",
+        "operation_language": "php"
+      },
+      "evidence_sha256": {
+        "app/Services/Fiscal/ExactDocumentSummary.php": "78b9403e15faaea2e8606a5cc0da217a479283b5aa7fbb5a4d856624a5ac2a06",
+        "tests/Unit/FiscalEmissionSchemaTest.php": "9d95edc783b8e99f7d784807fdee551e7d979b04564ff8586bdf84707b32237a"
+      }
+    }
+  },
+  {
+    "id": "e085172f91bb9ab3b6653986",
+    "expression": "D::represent($values['total'], 2)",
+    "source": {
+      "file": "app/Services/Fiscal/ExactDocumentSummary.php",
+      "symbol": "ExactDocumentSummary::save",
+      "operation": "represent",
+      "operation_language": "php"
+    },
+    "review": "Se verificó la adaptación final de total_payable y el ajuste separado; el total exacto y las participaciones siguen congelados.",
+    "previous": {
+      "category": "settlement",
+      "justification": "Una adaptación final del total exacto al total_payable de dos posiciones; se conserva settlement_adjustment y la fracción original, sin movimiento ficticio. Expresión revisada: D::represent($values['total'], 2)",
+      "evidence": [
+        "app/Services/Fiscal/ExactDocumentSummary.php",
+        "tests/Unit/FiscalEmissionSchemaTest.php"
+      ],
+      "source": {
+        "file": "app/Services/Fiscal/ExactDocumentSummary.php",
+        "symbol": "ExactDocumentSummary::save",
+        "operation": "represent",
+        "operation_language": "php"
+      },
+      "evidence_sha256": {
+        "app/Services/Fiscal/ExactDocumentSummary.php": "78b9403e15faaea2e8606a5cc0da217a479283b5aa7fbb5a4d856624a5ac2a06",
+        "tests/Unit/FiscalEmissionSchemaTest.php": "e8979884d62312d254a465a0a3f27154e23dab618a382d8b765f7cd35eb7b09d"
+      }
+    },
+    "current": {
+      "category": "settlement",
+      "justification": "Una adaptación final del total exacto al total_payable de dos posiciones; se conserva settlement_adjustment y la fracción original, sin movimiento ficticio. Expresión revisada: D::represent($values['total'], 2)",
+      "evidence": [
+        "app/Services/Fiscal/ExactDocumentSummary.php",
+        "tests/Unit/FiscalEmissionSchemaTest.php"
+      ],
+      "source": {
+        "file": "app/Services/Fiscal/ExactDocumentSummary.php",
+        "symbol": "ExactDocumentSummary::save",
+        "operation": "represent",
+        "operation_language": "php"
+      },
+      "evidence_sha256": {
+        "app/Services/Fiscal/ExactDocumentSummary.php": "78b9403e15faaea2e8606a5cc0da217a479283b5aa7fbb5a4d856624a5ac2a06",
+        "tests/Unit/FiscalEmissionSchemaTest.php": "9d95edc783b8e99f7d784807fdee551e7d979b04564ff8586bdf84707b32237a"
+      }
+    }
+  },
+  {
+    "id": "a96414f322d67beee45dd7ed",
+    "expression": "($v['code'] ?? '') === '1000'",
+    "source": {
+      "file": "app/Services/Fiscal/ExactDocumentSummary.php",
+      "symbol": "ExactDocumentSummary::save",
+      "operation": "native_Identical",
+      "operation_language": "php"
+    },
+    "review": "1000 identifica la leyenda del importe en letras; esta igualdad de código no compara dinero.",
+    "previous": {
+      "category": "technical",
+      "justification": "1000 es el código de la leyenda del importe en letras que se reemplaza, no una tolerancia ni un importe. Expresión revisada: ($v['code'] ?? '') === '1000'",
+      "evidence": [
+        "app/Services/Fiscal/ExactDocumentSummary.php",
+        "tests/Unit/FiscalEmissionSchemaTest.php"
+      ],
+      "source": {
+        "file": "app/Services/Fiscal/ExactDocumentSummary.php",
+        "symbol": "ExactDocumentSummary::save",
+        "operation": "native_Identical",
+        "operation_language": "php"
+      },
+      "evidence_sha256": {
+        "app/Services/Fiscal/ExactDocumentSummary.php": "78b9403e15faaea2e8606a5cc0da217a479283b5aa7fbb5a4d856624a5ac2a06",
+        "tests/Unit/FiscalEmissionSchemaTest.php": "e8979884d62312d254a465a0a3f27154e23dab618a382d8b765f7cd35eb7b09d"
+      }
+    },
+    "current": {
+      "category": "technical",
+      "justification": "1000 es el código de la leyenda del importe en letras que se reemplaza, no una tolerancia ni un importe. Expresión revisada: ($v['code'] ?? '') === '1000'",
+      "evidence": [
+        "app/Services/Fiscal/ExactDocumentSummary.php",
+        "tests/Unit/FiscalEmissionSchemaTest.php"
+      ],
+      "source": {
+        "file": "app/Services/Fiscal/ExactDocumentSummary.php",
+        "symbol": "ExactDocumentSummary::save",
+        "operation": "native_Identical",
+        "operation_language": "php"
+      },
+      "evidence_sha256": {
+        "app/Services/Fiscal/ExactDocumentSummary.php": "78b9403e15faaea2e8606a5cc0da217a479283b5aa7fbb5a4d856624a5ac2a06",
+        "tests/Unit/FiscalEmissionSchemaTest.php": "9d95edc783b8e99f7d784807fdee551e7d979b04564ff8586bdf84707b32237a"
+      }
+    }
+  },
+  {
+    "id": "931dba5405e13750b02778cb",
+    "expression": "Decimal::sum($rows->map(fn($r) => Decimal::read($r, $field)))",
+    "source": {
+      "file": "app/Support/Exact/CommercialCalculation.php",
+      "symbol": "CommercialCalculation::summarize",
+      "operation": "sum",
+      "operation_language": "php"
+    },
+    "review": "La consulta carga partidas completas; el agregado llama Decimal::read y suma BigRational. Se verificó el reemplazo diferido y conservación de cabecera.",
+    "previous": {
+      "category": "exact_arithmetic",
+      "justification": "Decimal::sum recibe fracciones BigRational de las partidas/cargos; no es Collection::sum ni una suma de textos formateados. Expresión revisada: Decimal::sum($rows->map(fn($r) => Decimal::read($r, $field)))",
+      "evidence": [
+        "app/Support/Exact/CommercialCalculation.php",
+        "tests/Unit/FiscalEmissionSchemaTest.php"
+      ],
+      "source": {
+        "file": "app/Support/Exact/CommercialCalculation.php",
+        "symbol": "CommercialCalculation::summarize",
+        "operation": "sum",
+        "operation_language": "php"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/CommercialCalculation.php": "55bdb3d3ee0eeda90ecc03489f7ca2bb7cd7c5cf1fcead0d27cac97394749e5f",
+        "tests/Unit/FiscalEmissionSchemaTest.php": "e8979884d62312d254a465a0a3f27154e23dab618a382d8b765f7cd35eb7b09d"
+      }
+    },
+    "current": {
+      "category": "exact_arithmetic",
+      "justification": "Decimal::sum recibe fracciones BigRational de las partidas/cargos; no es Collection::sum ni una suma de textos formateados. Expresión revisada: Decimal::sum($rows->map(fn($r) => Decimal::read($r, $field)))",
+      "evidence": [
+        "app/Support/Exact/CommercialCalculation.php",
+        "tests/Unit/FiscalEmissionSchemaTest.php"
+      ],
+      "source": {
+        "file": "app/Support/Exact/CommercialCalculation.php",
+        "symbol": "CommercialCalculation::summarize",
+        "operation": "sum",
+        "operation_language": "php"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/CommercialCalculation.php": "55bdb3d3ee0eeda90ecc03489f7ca2bb7cd7c5cf1fcead0d27cac97394749e5f",
+        "tests/Unit/FiscalEmissionSchemaTest.php": "9d95edc783b8e99f7d784807fdee551e7d979b04564ff8586bdf84707b32237a"
+      }
+    }
+  },
+  {
+    "id": "8e26392cba6e6bf39d76ba6d",
+    "expression": "Decimal::sum($charges->map($amount))",
+    "source": {
+      "file": "app/Support/Exact/CommercialCalculation.php",
+      "symbol": "CommercialCalculation::summarize",
+      "operation": "sum",
+      "operation_language": "php"
+    },
+    "review": "El cargo autorizado se convierte en racional antes del agregado; la suma no utiliza los textos de cabecera.",
+    "previous": {
+      "category": "exact_arithmetic",
+      "justification": "Decimal::sum recibe fracciones BigRational de las partidas/cargos; no es Collection::sum ni una suma de textos formateados. Expresión revisada: Decimal::sum($charges->map($amount))",
+      "evidence": [
+        "app/Support/Exact/CommercialCalculation.php",
+        "tests/Unit/FiscalEmissionSchemaTest.php"
+      ],
+      "source": {
+        "file": "app/Support/Exact/CommercialCalculation.php",
+        "symbol": "CommercialCalculation::summarize",
+        "operation": "sum",
+        "operation_language": "php"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/CommercialCalculation.php": "55bdb3d3ee0eeda90ecc03489f7ca2bb7cd7c5cf1fcead0d27cac97394749e5f",
+        "tests/Unit/FiscalEmissionSchemaTest.php": "e8979884d62312d254a465a0a3f27154e23dab618a382d8b765f7cd35eb7b09d"
+      }
+    },
+    "current": {
+      "category": "exact_arithmetic",
+      "justification": "Decimal::sum recibe fracciones BigRational de las partidas/cargos; no es Collection::sum ni una suma de textos formateados. Expresión revisada: Decimal::sum($charges->map($amount))",
+      "evidence": [
+        "app/Support/Exact/CommercialCalculation.php",
+        "tests/Unit/FiscalEmissionSchemaTest.php"
+      ],
+      "source": {
+        "file": "app/Support/Exact/CommercialCalculation.php",
+        "symbol": "CommercialCalculation::summarize",
+        "operation": "sum",
+        "operation_language": "php"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/CommercialCalculation.php": "55bdb3d3ee0eeda90ecc03489f7ca2bb7cd7c5cf1fcead0d27cac97394749e5f",
+        "tests/Unit/FiscalEmissionSchemaTest.php": "9d95edc783b8e99f7d784807fdee551e7d979b04564ff8586bdf84707b32237a"
+      }
+    }
+  },
+  {
+    "id": "5a087126db8c726ca37dbf01",
+    "expression": "Decimal::represent($values['total'], 2)",
+    "source": {
+      "file": "app/Support/Exact/CommercialCalculation.php",
+      "symbol": "CommercialCalculation::summarize",
+      "operation": "represent",
+      "operation_language": "php"
+    },
+    "review": "La cabecera conserva total exacto, total_payable final a céntimos y diferencia; no se reutiliza la adaptación para recalcular partidas.",
+    "previous": {
+      "category": "settlement",
+      "justification": "La cabecera conserva total exacto y crea total_payable a céntimos; settlement_adjustment registra la diferencia sin alterar el total original.",
+      "evidence": [
+        "app/Support/Exact/CommercialCalculation.php",
+        "tests/Unit/FiscalEmissionSchemaTest.php"
+      ],
+      "source": {
+        "file": "app/Support/Exact/CommercialCalculation.php",
+        "symbol": "CommercialCalculation::summarize",
+        "operation": "represent",
+        "operation_language": "php"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/CommercialCalculation.php": "55bdb3d3ee0eeda90ecc03489f7ca2bb7cd7c5cf1fcead0d27cac97394749e5f",
+        "tests/Unit/FiscalEmissionSchemaTest.php": "e8979884d62312d254a465a0a3f27154e23dab618a382d8b765f7cd35eb7b09d"
+      }
+    },
+    "current": {
+      "category": "settlement",
+      "justification": "La cabecera conserva total exacto y crea total_payable a céntimos; settlement_adjustment registra la diferencia sin alterar el total original.",
+      "evidence": [
+        "app/Support/Exact/CommercialCalculation.php",
+        "tests/Unit/FiscalEmissionSchemaTest.php"
+      ],
+      "source": {
+        "file": "app/Support/Exact/CommercialCalculation.php",
+        "symbol": "CommercialCalculation::summarize",
+        "operation": "represent",
+        "operation_language": "php"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/CommercialCalculation.php": "55bdb3d3ee0eeda90ecc03489f7ca2bb7cd7c5cf1fcead0d27cac97394749e5f",
+        "tests/Unit/FiscalEmissionSchemaTest.php": "9d95edc783b8e99f7d784807fdee551e7d979b04564ff8586bdf84707b32237a"
+      }
+    }
+  },
+  {
+    "id": "90fc62e447752a6262728c3d",
+    "expression": "self::of($value)->toScale($scale, RoundingMode::HALF_UP)",
+    "source": {
+      "file": "app/Support/Exact/Decimal.php",
+      "symbol": "Decimal::represent",
+      "operation": "toscale",
+      "operation_language": "php"
+    },
+    "review": "Se releyó la operación central que devuelve la proyección finita. Su clasificación sólo acredita esa serialización; sus llamadas conservan candidatos independientes.",
+    "previous": {
+      "category": "storage",
+      "justification": "Implementación central de la proyección finita HALF_UP. La fracción sigue siendo la autoridad; cada consumidor de esta función debe revisarse por separado.",
+      "evidence": [
+        "app/Support/Exact/Decimal.php",
+        "tests/Unit/ExactCalculationTest.php",
+        ".codex/skills/mantener-calculos-exactos-pro9/references/contrato.md"
+      ],
+      "source": {
+        "file": "app/Support/Exact/Decimal.php",
+        "symbol": "Decimal::represent",
+        "operation": "toscale",
+        "operation_language": "php"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/Decimal.php": "43428318292748d6b845ea413a467821eae1e85dd12ef8b071ba2e8811dbca80",
+        "tests/Unit/ExactCalculationTest.php": "4db2afb83a02d7254b25db62dd670f29cb5720760b089e3308860db562913e77",
+        ".codex/skills/mantener-calculos-exactos-pro9/references/contrato.md": "9bad21b1e32497341937a943f93c8ac2982cb06a6c452889b45779ea654853e5"
+      }
+    },
+    "current": {
+      "category": "storage",
+      "justification": "Implementación central de la proyección finita HALF_UP. La fracción sigue siendo la autoridad; cada consumidor de esta función debe revisarse por separado.",
+      "evidence": [
+        "app/Support/Exact/Decimal.php",
+        "tests/Unit/ExactCalculationTest.php",
+        ".codex/skills/mantener-calculos-exactos-pro9/references/contrato.md"
+      ],
+      "source": {
+        "file": "app/Support/Exact/Decimal.php",
+        "symbol": "Decimal::represent",
+        "operation": "toscale",
+        "operation_language": "php"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/Decimal.php": "43428318292748d6b845ea413a467821eae1e85dd12ef8b071ba2e8811dbca80",
+        "tests/Unit/ExactCalculationTest.php": "4db2afb83a02d7254b25db62dd670f29cb5720760b089e3308860db562913e77",
+        ".codex/skills/mantener-calculos-exactos-pro9/references/contrato.md": "d7c96f61b7cdcaa091b18ca822b1cae3c811e7063a512b374aab2501edb818fb"
+      }
+    },
+    "revalidations": [
+      {
+        "reason": "Fuente y expresión revisadas sin cambios; se revalidó la evidencia ampliada de recurso IGTF/diálogo subcéntimo y contrato. Los 13 casos compartidos y la comparación de posición veinte mantienen los operandos originales; no se retiraron aserciones previas.",
+        "previous_evidence_sha256": {
+          "app/Support/Exact/Decimal.php": "43428318292748d6b845ea413a467821eae1e85dd12ef8b071ba2e8811dbca80",
+          "tests/Unit/ExactCalculationTest.php": "4db2afb83a02d7254b25db62dd670f29cb5720760b089e3308860db562913e77",
+          ".codex/skills/mantener-calculos-exactos-pro9/references/contrato.md": "db13c469cd7aeff9f7725e4d4a20354798b0f7c04476f257c90be2c154d407fe"
+        },
+        "evidence_sha256": {
+          "app/Support/Exact/Decimal.php": "43428318292748d6b845ea413a467821eae1e85dd12ef8b071ba2e8811dbca80",
+          "tests/Unit/ExactCalculationTest.php": "4db2afb83a02d7254b25db62dd670f29cb5720760b089e3308860db562913e77",
+          ".codex/skills/mantener-calculos-exactos-pro9/references/contrato.md": "d7c96f61b7cdcaa091b18ca822b1cae3c811e7063a512b374aab2501edb818fb"
+        }
+      }
+    ]
+  },
+  {
+    "id": "551f45b4c85b3e8b0016c592",
+    "expression": "$owner->getConnection()->update('UPDATE ' . $table . ' SET calculation_snapshot = CASE id ' . implode(' ', $cases) . ' ELSE calculation_snapshot END WHERE ' . $foreign . ' = ? AND id IN (' . implode(',', array_fill(0, count($ids), '?')) . ')', array_merge($bindings, $ids))",
+    "source": {
+      "file": "app/Support/Exact/HeaderAllocation.php",
+      "symbol": "HeaderAllocation::freeze",
+      "operation": "bulk_write",
+      "operation_language": "php"
+    },
+    "review": "El CASE SQL acotado escribe snapshots de participaciones, sin calcular con columnas DECIMAL ni cambiar importes históricos; el caso MySQL conserva rollback y reparto.",
+    "previous": {
+      "category": "storage",
+      "justification": "CASE actualiza únicamente JSON de fracciones en lotes con parámetros enlazados y dueño restringido. No realiza CAST ni aritmética SQL. La cabecera se guarda en la misma transacción; rollback probado. Expresión revisada: $owner->getConnection()->update('UPDATE ' . $table . ' SET calculation_snapshot = CASE id ' . implode(' ', $cases) . ' ELSE calculation_snapshot END WHERE ' . $foreign . ' = ? AND id IN (' . implode(',', array_fill(0, count($ids), '?')) . ')', array_merge($bindings, $ids))",
+      "evidence": [
+        "app/Support/Exact/HeaderAllocation.php",
+        "tests/Unit/FiscalEmissionSchemaTest.php"
+      ],
+      "source": {
+        "file": "app/Support/Exact/HeaderAllocation.php",
+        "symbol": "HeaderAllocation::freeze",
+        "operation": "bulk_write",
+        "operation_language": "php"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/HeaderAllocation.php": "efc8b0d85b50053a99cbb2f3d8e2f9b915f8874a3e125eb6bd7f404a1008617b",
+        "tests/Unit/FiscalEmissionSchemaTest.php": "e8979884d62312d254a465a0a3f27154e23dab618a382d8b765f7cd35eb7b09d"
+      }
+    },
+    "current": {
+      "category": "storage",
+      "justification": "CASE actualiza únicamente JSON de fracciones en lotes con parámetros enlazados y dueño restringido. No realiza CAST ni aritmética SQL. La cabecera se guarda en la misma transacción; rollback probado. Expresión revisada: $owner->getConnection()->update('UPDATE ' . $table . ' SET calculation_snapshot = CASE id ' . implode(' ', $cases) . ' ELSE calculation_snapshot END WHERE ' . $foreign . ' = ? AND id IN (' . implode(',', array_fill(0, count($ids), '?')) . ')', array_merge($bindings, $ids))",
+      "evidence": [
+        "app/Support/Exact/HeaderAllocation.php",
+        "tests/Unit/FiscalEmissionSchemaTest.php"
+      ],
+      "source": {
+        "file": "app/Support/Exact/HeaderAllocation.php",
+        "symbol": "HeaderAllocation::freeze",
+        "operation": "bulk_write",
+        "operation_language": "php"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/HeaderAllocation.php": "efc8b0d85b50053a99cbb2f3d8e2f9b915f8874a3e125eb6bd7f404a1008617b",
+        "tests/Unit/FiscalEmissionSchemaTest.php": "9d95edc783b8e99f7d784807fdee551e7d979b04564ff8586bdf84707b32237a"
+      }
+    }
+  },
+  {
+    "id": "abcf9c990948afe21adf71f8",
+    "expression": "Decimal::represent($total, 2)",
+    "source": {
+      "file": "app/Support/Exact/Installments.php",
+      "symbol": "Installments::calculate",
+      "operation": "represent",
+      "operation_language": "php"
+    },
+    "review": "La representación es el importe liquidable del calendario. scheduled_exact conserva cada participación racional y la suma de cuotas se reparte por mayores residuos.",
+    "previous": {
+      "category": "settlement",
+      "justification": "El calendario de cobro usa el importe liquidable a céntimos. Cada cuota conserva scheduled_exact y el ajuste por separado, y las cuotas suman el total liquidable.",
+      "evidence": [
+        "app/Support/Exact/Installments.php",
+        "tests/Unit/ExactExtensionPersistenceTest.php",
+        "tests/Unit/FiscalEmissionSchemaTest.php"
+      ],
+      "source": {
+        "file": "app/Support/Exact/Installments.php",
+        "symbol": "Installments::calculate",
+        "operation": "represent",
+        "operation_language": "php"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/Installments.php": "ee5150da1184af333018de34a3834432114c485ee512dee034567e36b13818db",
+        "tests/Unit/ExactExtensionPersistenceTest.php": "0cab1e8106d2e7edea6d9b13aca9b6757c80ebadbb8bad282625d3f527ddc633",
+        "tests/Unit/FiscalEmissionSchemaTest.php": "e8979884d62312d254a465a0a3f27154e23dab618a382d8b765f7cd35eb7b09d"
+      }
+    },
+    "current": {
+      "category": "settlement",
+      "justification": "El calendario de cobro usa el importe liquidable a céntimos. Cada cuota conserva scheduled_exact y el ajuste por separado, y las cuotas suman el total liquidable.",
+      "evidence": [
+        "app/Support/Exact/Installments.php",
+        "tests/Unit/ExactExtensionPersistenceTest.php",
+        "tests/Unit/FiscalEmissionSchemaTest.php"
+      ],
+      "source": {
+        "file": "app/Support/Exact/Installments.php",
+        "symbol": "Installments::calculate",
+        "operation": "represent",
+        "operation_language": "php"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/Installments.php": "ee5150da1184af333018de34a3834432114c485ee512dee034567e36b13818db",
+        "tests/Unit/ExactExtensionPersistenceTest.php": "0cab1e8106d2e7edea6d9b13aca9b6757c80ebadbb8bad282625d3f527ddc633",
+        "tests/Unit/FiscalEmissionSchemaTest.php": "9d95edc783b8e99f7d784807fdee551e7d979b04564ff8586bdf84707b32237a"
+      }
+    }
+  },
+  {
+    "id": "92211922b5d1725454835008",
+    "expression": "Decimal::represent($snapshot['values'][$field])",
+    "source": {
+      "file": "app/Support/Exact/LineCalculation.php",
+      "symbol": "LineCalculation::fromRecord",
+      "operation": "represent",
+      "operation_language": "php"
+    },
+    "review": "La representación se compara para detectar edición de un operando; si permanece igual se reutiliza la fracción original, no el texto como operando.",
+    "previous": {
+      "category": "validation",
+      "justification": "Compara la proyección de una fracción interna con el atributo guardado para reconocer una entrada sin editar. El cálculo posterior utiliza la fracción preservada.",
+      "evidence": [
+        "app/Support/Exact/LineCalculation.php",
+        "tests/Unit/FiscalEmissionSchemaTest.php"
+      ],
+      "source": {
+        "file": "app/Support/Exact/LineCalculation.php",
+        "symbol": "LineCalculation::fromRecord",
+        "operation": "represent",
+        "operation_language": "php"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/LineCalculation.php": "c7e35c79ddfb7660c90a9febdfe9a72a2879f8dcf6f0ddd2ee8463c94549f3c0",
+        "tests/Unit/FiscalEmissionSchemaTest.php": "e8979884d62312d254a465a0a3f27154e23dab618a382d8b765f7cd35eb7b09d"
+      }
+    },
+    "current": {
+      "category": "validation",
+      "justification": "Compara la proyección de una fracción interna con el atributo guardado para reconocer una entrada sin editar. El cálculo posterior utiliza la fracción preservada.",
+      "evidence": [
+        "app/Support/Exact/LineCalculation.php",
+        "tests/Unit/FiscalEmissionSchemaTest.php"
+      ],
+      "source": {
+        "file": "app/Support/Exact/LineCalculation.php",
+        "symbol": "LineCalculation::fromRecord",
+        "operation": "represent",
+        "operation_language": "php"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/LineCalculation.php": "c7e35c79ddfb7660c90a9febdfe9a72a2879f8dcf6f0ddd2ee8463c94549f3c0",
+        "tests/Unit/FiscalEmissionSchemaTest.php": "9d95edc783b8e99f7d784807fdee551e7d979b04564ff8586bdf84707b32237a"
+      }
+    }
+  },
+  {
+    "id": "a0751e68952b81d2725e43c8",
+    "expression": "Decimal::represent($line[$field])",
+    "source": {
+      "file": "app/Support/Exact/LineCalculation.php",
+      "symbol": "LineCalculation::fromRecord",
+      "operation": "represent",
+      "operation_language": "php"
+    },
+    "review": "La representación del campo sólo detecta cambios frente al snapshot; la rama sin edición conserva los operandos racionales.",
+    "previous": {
+      "category": "validation",
+      "justification": "Normaliza el atributo de un registro interno únicamente para comprobar si corresponde al snapshot conservado. No usa la proyección como resultado del nuevo cálculo.",
+      "evidence": [
+        "app/Support/Exact/LineCalculation.php",
+        "tests/Unit/FiscalEmissionSchemaTest.php"
+      ],
+      "source": {
+        "file": "app/Support/Exact/LineCalculation.php",
+        "symbol": "LineCalculation::fromRecord",
+        "operation": "represent",
+        "operation_language": "php"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/LineCalculation.php": "c7e35c79ddfb7660c90a9febdfe9a72a2879f8dcf6f0ddd2ee8463c94549f3c0",
+        "tests/Unit/FiscalEmissionSchemaTest.php": "e8979884d62312d254a465a0a3f27154e23dab618a382d8b765f7cd35eb7b09d"
+      }
+    },
+    "current": {
+      "category": "validation",
+      "justification": "Normaliza el atributo de un registro interno únicamente para comprobar si corresponde al snapshot conservado. No usa la proyección como resultado del nuevo cálculo.",
+      "evidence": [
+        "app/Support/Exact/LineCalculation.php",
+        "tests/Unit/FiscalEmissionSchemaTest.php"
+      ],
+      "source": {
+        "file": "app/Support/Exact/LineCalculation.php",
+        "symbol": "LineCalculation::fromRecord",
+        "operation": "represent",
+        "operation_language": "php"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/LineCalculation.php": "c7e35c79ddfb7660c90a9febdfe9a72a2879f8dcf6f0ddd2ee8463c94549f3c0",
+        "tests/Unit/FiscalEmissionSchemaTest.php": "9d95edc783b8e99f7d784807fdee551e7d979b04564ff8586bdf84707b32237a"
+      }
+    }
+  },
+  {
+    "id": "1cb2297c08614bf37756ea41",
+    "expression": "Decimal::represent($requested)",
+    "source": {
+      "file": "app/Support/Exact/Settlement.php",
+      "symbol": "Settlement::prepare",
+      "operation": "represent",
+      "operation_language": "php"
+    },
+    "review": "Se verificó que el texto solicitado es trazabilidad y que requested_payment conserva su n/d; el lote nuevo conserva además tendered_amount y change.",
+    "previous": {
+      "category": "storage",
+      "justification": "Representación del pago original para trazabilidad; requested_payment conserva además la fracción exacta del valor solicitado.",
+      "evidence": [
+        "app/Support/Exact/Settlement.php",
+        "tests/Unit/FiscalEmissionSchemaTest.php"
+      ],
+      "source": {
+        "file": "app/Support/Exact/Settlement.php",
+        "symbol": "Settlement::prepare",
+        "operation": "represent",
+        "operation_language": "php"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/Settlement.php": "7d2be8750f3fe44e091d46b1b5314583606a7bb7edf17eec54a7e2f7e6834c3a",
+        "tests/Unit/FiscalEmissionSchemaTest.php": "e8979884d62312d254a465a0a3f27154e23dab618a382d8b765f7cd35eb7b09d"
+      }
+    },
+    "current": {
+      "category": "storage",
+      "justification": "Representación del pago original para trazabilidad; requested_payment conserva además la fracción exacta del valor solicitado.",
+      "evidence": [
+        "app/Support/Exact/Settlement.php",
+        "tests/Unit/FiscalEmissionSchemaTest.php"
+      ],
+      "source": {
+        "file": "app/Support/Exact/Settlement.php",
+        "symbol": "Settlement::prepare",
+        "operation": "represent",
+        "operation_language": "php"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/Settlement.php": "9d9e6b29fd0c377bcfcdb148d4e3c1bb742ead435db5f5ed85116243492f525e",
+        "tests/Unit/FiscalEmissionSchemaTest.php": "9d95edc783b8e99f7d784807fdee551e7d979b04564ff8586bdf84707b32237a"
+      }
+    }
+  },
+  {
+    "id": "77272caf871c2d121aa9152b",
+    "expression": "Decimal::represent($cash)",
+    "source": {
+      "file": "app/Support/Exact/Settlement.php",
+      "symbol": "Settlement::prepare",
+      "operation": "represent",
+      "operation_language": "php"
+    },
+    "review": "Se verificó el guardado del pago ya liquidado; la fracción solicitada y el ajuste permanecen separados y se recuperan en API/diálogo.",
+    "previous": {
+      "category": "storage",
+      "justification": "Serializa un pago ya liquidado a céntimos. No aplica una segunda cuantización ni sustituye el importe solicitado.",
+      "evidence": [
+        "app/Support/Exact/Settlement.php",
+        "tests/Unit/FiscalEmissionSchemaTest.php"
+      ],
+      "source": {
+        "file": "app/Support/Exact/Settlement.php",
+        "symbol": "Settlement::prepare",
+        "operation": "represent",
+        "operation_language": "php"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/Settlement.php": "7d2be8750f3fe44e091d46b1b5314583606a7bb7edf17eec54a7e2f7e6834c3a",
+        "tests/Unit/FiscalEmissionSchemaTest.php": "e8979884d62312d254a465a0a3f27154e23dab618a382d8b765f7cd35eb7b09d"
+      }
+    },
+    "current": {
+      "category": "storage",
+      "justification": "Serializa un pago ya liquidado a céntimos. No aplica una segunda cuantización ni sustituye el importe solicitado.",
+      "evidence": [
+        "app/Support/Exact/Settlement.php",
+        "tests/Unit/FiscalEmissionSchemaTest.php"
+      ],
+      "source": {
+        "file": "app/Support/Exact/Settlement.php",
+        "symbol": "Settlement::prepare",
+        "operation": "represent",
+        "operation_language": "php"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/Settlement.php": "9d9e6b29fd0c377bcfcdb148d4e3c1bb742ead435db5f5ed85116243492f525e",
+        "tests/Unit/FiscalEmissionSchemaTest.php": "9d95edc783b8e99f7d784807fdee551e7d979b04564ff8586bdf84707b32237a"
+      }
+    }
+  },
+  {
+    "id": "afe71427f53c287cb299ae97",
+    "expression": "Decimal::represent($amount, 2)",
+    "source": {
+      "file": "app/Support/Exact/CentralPaymentQuote.php",
+      "symbol": "CentralPaymentQuote::freeze",
+      "operation": "represent",
+      "operation_language": "php"
+    },
+    "review": "Adaptación final de la orden central a céntimos: provider_payable y provider_adjustment se conservan junto al amount racional.",
+    "previous": null,
+    "current": {
+      "category": "settlement",
+      "justification": "Adaptación final de la orden central a céntimos: provider_payable y provider_adjustment se conservan junto al amount racional. Expresión: Decimal::represent($amount, 2)",
+      "evidence": [
+        "app/Support/Exact/CentralPaymentQuote.php",
+        "tests/Unit/ExactCentralQuoteTest.php"
+      ],
+      "source": {
+        "file": "app/Support/Exact/CentralPaymentQuote.php",
+        "symbol": "CentralPaymentQuote::freeze",
+        "operation": "represent",
+        "operation_language": "php"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/CentralPaymentQuote.php": "f6ec61fcf835ae7d38fe01ff6d271229affe22c63a7c40b17c72fcf17b699466",
+        "tests/Unit/ExactCentralQuoteTest.php": "81cd693e421579600956a96d75fc780c857cd78031e078194f1e26ce7094f443"
+      }
+    },
+    "revalidations": [
+      {
+        "reason": "Se releyeron freeze/read sin cambios y se mantuvieron sus cuatro pruebas de fracción, moneda conservada, cotización incoherente y restricción VES. La evidencia añade dos escenarios independientes de notificación del navegador: no retira ni cambia las aserciones monetarias previas.",
+        "previous_evidence_sha256": {
+          "app/Support/Exact/CentralPaymentQuote.php": "f6ec61fcf835ae7d38fe01ff6d271229affe22c63a7c40b17c72fcf17b699466",
+          "tests/Unit/ExactCentralQuoteTest.php": "1cd48f749300c835c9c8de185fa8c404298ae6a3d398d408614b3ec13fd98afa"
+        },
+        "evidence_sha256": {
+          "app/Support/Exact/CentralPaymentQuote.php": "f6ec61fcf835ae7d38fe01ff6d271229affe22c63a7c40b17c72fcf17b699466",
+          "tests/Unit/ExactCentralQuoteTest.php": "81cd693e421579600956a96d75fc780c857cd78031e078194f1e26ce7094f443"
+        }
+      }
+    ]
+  },
+  {
+    "id": "ba3bec85a87514beb674dcd5",
+    "expression": "($snapshot['inputs']['payment_order_uuid'] ?? null) !== $order->uuid",
+    "source": {
+      "file": "app/Support/Exact/CentralPaymentQuote.php",
+      "symbol": "CentralPaymentQuote::read",
+      "operation": "native_NotIdentical",
+      "operation_language": "php"
+    },
+    "review": "Verifica el UUID congelado de la orden contra su propia identidad, sin comparar ni transformar importes.",
+    "previous": null,
+    "current": {
+      "category": "validation",
+      "justification": "Verifica el UUID congelado de la orden contra su propia identidad, sin comparar ni transformar importes. Expresión: ($snapshot['inputs']['payment_order_uuid'] ?? null) !== $order->uuid",
+      "evidence": [
+        "app/Support/Exact/CentralPaymentQuote.php",
+        "tests/Unit/ExactCentralQuoteTest.php"
+      ],
+      "source": {
+        "file": "app/Support/Exact/CentralPaymentQuote.php",
+        "symbol": "CentralPaymentQuote::read",
+        "operation": "native_NotIdentical",
+        "operation_language": "php"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/CentralPaymentQuote.php": "f6ec61fcf835ae7d38fe01ff6d271229affe22c63a7c40b17c72fcf17b699466",
+        "tests/Unit/ExactCentralQuoteTest.php": "81cd693e421579600956a96d75fc780c857cd78031e078194f1e26ce7094f443"
+      }
+    },
+    "revalidations": [
+      {
+        "reason": "Se releyeron freeze/read sin cambios y se mantuvieron sus cuatro pruebas de fracción, moneda conservada, cotización incoherente y restricción VES. La evidencia añade dos escenarios independientes de notificación del navegador: no retira ni cambia las aserciones monetarias previas.",
+        "previous_evidence_sha256": {
+          "app/Support/Exact/CentralPaymentQuote.php": "f6ec61fcf835ae7d38fe01ff6d271229affe22c63a7c40b17c72fcf17b699466",
+          "tests/Unit/ExactCentralQuoteTest.php": "1cd48f749300c835c9c8de185fa8c404298ae6a3d398d408614b3ec13fd98afa"
+        },
+        "evidence_sha256": {
+          "app/Support/Exact/CentralPaymentQuote.php": "f6ec61fcf835ae7d38fe01ff6d271229affe22c63a7c40b17c72fcf17b699466",
+          "tests/Unit/ExactCentralQuoteTest.php": "81cd693e421579600956a96d75fc780c857cd78031e078194f1e26ce7094f443"
+        }
+      }
+    ]
+  },
+  {
+    "id": "184ed8d40b0c5ab8b51a6df8",
+    "expression": "Decimal::represent($amount, 2)",
+    "source": {
+      "file": "app/Support/Exact/CentralPaymentQuote.php",
+      "symbol": "CentralPaymentQuote::read",
+      "operation": "represent",
+      "operation_language": "php"
+    },
+    "review": "Comprueba que el importe liquidable conservado coincide con la única adaptación autorizada; no reemplaza el amount exacto.",
+    "previous": null,
+    "current": {
+      "category": "validation",
+      "justification": "Comprueba que el importe liquidable conservado coincide con la única adaptación autorizada; no reemplaza el amount exacto. Expresión: Decimal::represent($amount, 2)",
+      "evidence": [
+        "app/Support/Exact/CentralPaymentQuote.php",
+        "tests/Unit/ExactCentralQuoteTest.php"
+      ],
+      "source": {
+        "file": "app/Support/Exact/CentralPaymentQuote.php",
+        "symbol": "CentralPaymentQuote::read",
+        "operation": "represent",
+        "operation_language": "php"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/CentralPaymentQuote.php": "f6ec61fcf835ae7d38fe01ff6d271229affe22c63a7c40b17c72fcf17b699466",
+        "tests/Unit/ExactCentralQuoteTest.php": "81cd693e421579600956a96d75fc780c857cd78031e078194f1e26ce7094f443"
+      }
+    },
+    "revalidations": [
+      {
+        "reason": "Se releyeron freeze/read sin cambios y se mantuvieron sus cuatro pruebas de fracción, moneda conservada, cotización incoherente y restricción VES. La evidencia añade dos escenarios independientes de notificación del navegador: no retira ni cambia las aserciones monetarias previas.",
+        "previous_evidence_sha256": {
+          "app/Support/Exact/CentralPaymentQuote.php": "f6ec61fcf835ae7d38fe01ff6d271229affe22c63a7c40b17c72fcf17b699466",
+          "tests/Unit/ExactCentralQuoteTest.php": "1cd48f749300c835c9c8de185fa8c404298ae6a3d398d408614b3ec13fd98afa"
+        },
+        "evidence_sha256": {
+          "app/Support/Exact/CentralPaymentQuote.php": "f6ec61fcf835ae7d38fe01ff6d271229affe22c63a7c40b17c72fcf17b699466",
+          "tests/Unit/ExactCentralQuoteTest.php": "81cd693e421579600956a96d75fc780c857cd78031e078194f1e26ce7094f443"
+        }
+      }
+    ]
+  },
+  {
+    "id": "11c7419c1533b9d6230ed310",
+    "expression": "$payable->multipliedBy(100)->toBigInteger()",
+    "source": {
+      "file": "app/Support/Exact/CentralPaymentQuote.php",
+      "symbol": "CentralPaymentQuote::read",
+      "operation": "tobiginteger",
+      "operation_language": "php"
+    },
+    "review": "El importe ya expresado en céntimos se multiplica exactamente por 100; toBigInteger exige integralidad y se serializa como texto, sin truncar.",
+    "previous": null,
+    "current": {
+      "category": "settlement",
+      "justification": "El importe ya expresado en céntimos se multiplica exactamente por 100; toBigInteger exige integralidad y se serializa como texto, sin truncar. Expresión: $payable->multipliedBy(100)->toBigInteger()",
+      "evidence": [
+        "app/Support/Exact/CentralPaymentQuote.php",
+        "tests/Unit/ExactCentralQuoteTest.php"
+      ],
+      "source": {
+        "file": "app/Support/Exact/CentralPaymentQuote.php",
+        "symbol": "CentralPaymentQuote::read",
+        "operation": "tobiginteger",
+        "operation_language": "php"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/CentralPaymentQuote.php": "f6ec61fcf835ae7d38fe01ff6d271229affe22c63a7c40b17c72fcf17b699466",
+        "tests/Unit/ExactCentralQuoteTest.php": "81cd693e421579600956a96d75fc780c857cd78031e078194f1e26ce7094f443"
+      }
+    },
+    "revalidations": [
+      {
+        "reason": "Se releyeron freeze/read sin cambios y se mantuvieron sus cuatro pruebas de fracción, moneda conservada, cotización incoherente y restricción VES. La evidencia añade dos escenarios independientes de notificación del navegador: no retira ni cambia las aserciones monetarias previas.",
+        "previous_evidence_sha256": {
+          "app/Support/Exact/CentralPaymentQuote.php": "f6ec61fcf835ae7d38fe01ff6d271229affe22c63a7c40b17c72fcf17b699466",
+          "tests/Unit/ExactCentralQuoteTest.php": "1cd48f749300c835c9c8de185fa8c404298ae6a3d398d408614b3ec13fd98afa"
+        },
+        "evidence_sha256": {
+          "app/Support/Exact/CentralPaymentQuote.php": "f6ec61fcf835ae7d38fe01ff6d271229affe22c63a7c40b17c72fcf17b699466",
+          "tests/Unit/ExactCentralQuoteTest.php": "81cd693e421579600956a96d75fc780c857cd78031e078194f1e26ce7094f443"
+        }
+      }
+    ]
+  },
+  {
+    "id": "8fe1bb8e7d37492758c152e9",
+    "expression": "Decimal::represent($total, 2)",
+    "source": {
+      "file": "app/Support/Exact/SaleNoteBalance.php",
+      "symbol": "SaleNoteBalance::values",
+      "operation": "represent",
+      "operation_language": "php"
+    },
+    "review": "Deriva el importe liquidable sólo cuando no está conservado; document_total y el ajuste siguen separados y el lector no escribe históricos.",
+    "previous": null,
+    "current": {
+      "category": "settlement",
+      "justification": "Deriva el importe liquidable sólo cuando no está conservado; document_total y el ajuste siguen separados y el lector no escribe históricos. Expresión: Decimal::represent($total, 2)",
+      "evidence": [
+        "app/Support/Exact/SaleNoteBalance.php",
+        "tests/Unit/ExactTenderConsumersTest.php"
+      ],
+      "source": {
+        "file": "app/Support/Exact/SaleNoteBalance.php",
+        "symbol": "SaleNoteBalance::values",
+        "operation": "represent",
+        "operation_language": "php"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/SaleNoteBalance.php": "e4999077c6a1397f938b3ffc09c74762f5b0795ab5e0964ed919f6ac9084de32",
+        "tests/Unit/ExactTenderConsumersTest.php": "0eb59d6c933b31a9aa2b4bb5b713c4c9f0a607e9f3f4f94acb4c5fe85607f4d6"
+      }
+    }
+  },
+  {
+    "id": "44e1e065326dfe6da680182a",
+    "expression": "Decimal::represent($value, 2)",
+    "source": {
+      "file": "app/Support/Exact/SaleNoteBalance.php",
+      "symbol": "SaleNoteBalance::listing",
+      "operation": "represent",
+      "operation_language": "php"
+    },
+    "review": "El resumen distingue total documental y cobrable; esta adaptación de compatibilidad no modifica el documento ni alimenta su total original.",
+    "previous": null,
+    "current": {
+      "category": "settlement",
+      "justification": "El resumen distingue total documental y cobrable; esta adaptación de compatibilidad no modifica el documento ni alimenta su total original. Expresión: Decimal::represent($value, 2)",
+      "evidence": [
+        "app/Support/Exact/SaleNoteBalance.php",
+        "tests/Unit/ExactTenderConsumersTest.php"
+      ],
+      "source": {
+        "file": "app/Support/Exact/SaleNoteBalance.php",
+        "symbol": "SaleNoteBalance::listing",
+        "operation": "represent",
+        "operation_language": "php"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/SaleNoteBalance.php": "e4999077c6a1397f938b3ffc09c74762f5b0795ab5e0964ed919f6ac9084de32",
+        "tests/Unit/ExactTenderConsumersTest.php": "0eb59d6c933b31a9aa2b4bb5b713c4c9f0a607e9f3f4f94acb4c5fe85607f4d6"
+      }
+    }
+  },
+  {
+    "id": "fcdab107e57376b67298a514",
+    "expression": "Decimal::represent($requested, 2)",
+    "source": {
+      "file": "app/Support/Exact/Settlement.php",
+      "symbol": "Settlement::prepare",
+      "operation": "represent",
+      "operation_language": "php"
+    },
+    "review": "Reconstruye el efectivo liquidable desde el tendered_payment autorizado y conserva el solicitado, el neto, el vuelto y el ajuste. La adaptación no sustituye el cálculo documental.",
+    "previous": {
+      "category": "settlement",
+      "justification": "Única adaptación del pago solicitado a céntimos en este flujo. Conserva requested_payment, payment liquidado y cash_adjustment separados.",
+      "evidence": [
+        "app/Support/Exact/Settlement.php",
+        "tests/Unit/FiscalEmissionSchemaTest.php"
+      ],
+      "source": {
+        "file": "app/Support/Exact/Settlement.php",
+        "symbol": "Settlement::prepare",
+        "operation": "represent",
+        "operation_language": "php"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/Settlement.php": "7d2be8750f3fe44e091d46b1b5314583606a7bb7edf17eec54a7e2f7e6834c3a",
+        "tests/Unit/FiscalEmissionSchemaTest.php": "e8979884d62312d254a465a0a3f27154e23dab618a382d8b765f7cd35eb7b09d"
+      }
+    },
+    "current": {
+      "category": "settlement",
+      "justification": "Reconstruye el efectivo liquidable desde el tendered_payment autorizado y conserva el solicitado, el neto, el vuelto y el ajuste. La adaptación no sustituye el cálculo documental. Expresión: Decimal::represent($requested, 2)",
+      "evidence": [
+        "app/Support/Exact/Settlement.php",
+        "tests/Unit/ExactTenderConsumersTest.php"
+      ],
+      "source": {
+        "file": "app/Support/Exact/Settlement.php",
+        "symbol": "Settlement::prepare",
+        "operation": "represent",
+        "operation_language": "php"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/Settlement.php": "9d9e6b29fd0c377bcfcdb148d4e3c1bb742ead435db5f5ed85116243492f525e",
+        "tests/Unit/ExactTenderConsumersTest.php": "0eb59d6c933b31a9aa2b4bb5b713c4c9f0a607e9f3f4f94acb4c5fe85607f4d6"
+      }
+    }
+  },
+  {
+    "id": "b23e12d685bd330cd38ef211",
+    "expression": "Decimal::represent($change, 2)",
+    "source": {
+      "file": "app/Support/Exact/Settlement.php",
+      "symbol": "Settlement::prepare",
+      "operation": "represent",
+      "operation_language": "php"
+    },
+    "review": "Verifica que el vuelto esté expresado en céntimos antes de comprobar neto más vuelto igual al efectivo recibido; no adapta ni guarda el resultado de esa comparación.",
+    "previous": null,
+    "current": {
+      "category": "validation",
+      "justification": "Verifica que el vuelto esté expresado en céntimos antes de comprobar neto más vuelto igual al efectivo recibido; no adapta ni guarda el resultado de esa comparación. Expresión: Decimal::represent($change, 2)",
+      "evidence": [
+        "app/Support/Exact/Settlement.php",
+        "tests/Unit/ExactTenderConsumersTest.php"
+      ],
+      "source": {
+        "file": "app/Support/Exact/Settlement.php",
+        "symbol": "Settlement::prepare",
+        "operation": "represent",
+        "operation_language": "php"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/Settlement.php": "9d9e6b29fd0c377bcfcdb148d4e3c1bb742ead435db5f5ed85116243492f525e",
+        "tests/Unit/ExactTenderConsumersTest.php": "0eb59d6c933b31a9aa2b4bb5b713c4c9f0a607e9f3f4f94acb4c5fe85607f4d6"
+      }
+    }
+  },
+  {
+    "id": "98534da0a46b7180384592c1",
+    "expression": "Decimal::represent($requested, 2)",
+    "source": {
+      "file": "app/Support/Exact/Settlement.php",
+      "symbol": "Settlement::prepare",
+      "operation": "represent",
+      "operation_language": "php"
+    },
+    "review": "Liquida a céntimos el pago sin reparto de vuelto; conserva requested_payment y cash_adjustment en el mismo snapshot.",
+    "previous": null,
+    "current": {
+      "category": "settlement",
+      "justification": "Liquida a céntimos el pago sin reparto de vuelto; conserva requested_payment y cash_adjustment en el mismo snapshot. Expresión: Decimal::represent($requested, 2)",
+      "evidence": [
+        "app/Support/Exact/Settlement.php",
+        "tests/Unit/ExactTenderConsumersTest.php"
+      ],
+      "source": {
+        "file": "app/Support/Exact/Settlement.php",
+        "symbol": "Settlement::prepare",
+        "operation": "represent",
+        "operation_language": "php"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/Settlement.php": "9d9e6b29fd0c377bcfcdb148d4e3c1bb742ead435db5f5ed85116243492f525e",
+        "tests/Unit/ExactTenderConsumersTest.php": "0eb59d6c933b31a9aa2b4bb5b713c4c9f0a607e9f3f4f94acb4c5fe85607f4d6"
+      }
+    }
+  },
+  {
+    "id": "eadeb10cd050000b01f3645d",
+    "expression": "$db->transactionLevel() === 0",
+    "source": {
+      "file": "app/Support/Exact/Settlement.php",
+      "symbol": "Settlement::defer",
+      "operation": "native_Identical",
+      "operation_language": "php"
+    },
+    "review": "El nivel de transacción es un contador de la conexión; decide si el lote abre su transacción.",
+    "previous": null,
+    "current": {
+      "category": "technical",
+      "justification": "El nivel de transacción es un contador de la conexión; decide si el lote abre su transacción. Expresión: $db->transactionLevel() === 0",
+      "evidence": [
+        "app/Support/Exact/Settlement.php",
+        "tests/Unit/ExactTenderConsumersTest.php"
+      ],
+      "source": {
+        "file": "app/Support/Exact/Settlement.php",
+        "symbol": "Settlement::defer",
+        "operation": "native_Identical",
+        "operation_language": "php"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/Settlement.php": "9d9e6b29fd0c377bcfcdb148d4e3c1bb742ead435db5f5ed85116243492f525e",
+        "tests/Unit/ExactTenderConsumersTest.php": "0eb59d6c933b31a9aa2b4bb5b713c4c9f0a607e9f3f4f94acb4c5fe85607f4d6"
+      }
+    }
+  },
+  {
+    "id": "149d338b5608cf8c55f963c2",
+    "expression": "(self::$deferred[$key] ?? 0) + 1",
+    "source": {
+      "file": "app/Support/Exact/Settlement.php",
+      "symbol": "Settlement::defer",
+      "operation": "native_Plus",
+      "operation_language": "php"
+    },
+    "review": "Incrementa la profundidad del ámbito diferido por propietario; no es un importe ni una cantidad comercial.",
+    "previous": null,
+    "current": {
+      "category": "technical",
+      "justification": "Incrementa la profundidad del ámbito diferido por propietario; no es un importe ni una cantidad comercial. Expresión: (self::$deferred[$key] ?? 0) + 1",
+      "evidence": [
+        "app/Support/Exact/Settlement.php",
+        "tests/Unit/ExactTenderConsumersTest.php"
+      ],
+      "source": {
+        "file": "app/Support/Exact/Settlement.php",
+        "symbol": "Settlement::defer",
+        "operation": "native_Plus",
+        "operation_language": "php"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/Settlement.php": "9d9e6b29fd0c377bcfcdb148d4e3c1bb742ead435db5f5ed85116243492f525e",
+        "tests/Unit/ExactTenderConsumersTest.php": "0eb59d6c933b31a9aa2b4bb5b713c4c9f0a607e9f3f4f94acb4c5fe85607f4d6"
+      }
+    }
+  },
+  {
+    "id": "25b9d5f089d9b09a20c5118d",
+    "expression": "--self::$deferred[$key] === 0",
+    "source": {
+      "file": "app/Support/Exact/Settlement.php",
+      "symbol": "Settlement::defer",
+      "operation": "native_Identical",
+      "operation_language": "php"
+    },
+    "review": "Comprueba el cierre del contador de ámbitos anidados; el bloque finally lo libera también en fallo.",
+    "previous": null,
+    "current": {
+      "category": "technical",
+      "justification": "Comprueba el cierre del contador de ámbitos anidados; el bloque finally lo libera también en fallo. Expresión: --self::$deferred[$key] === 0",
+      "evidence": [
+        "app/Support/Exact/Settlement.php",
+        "tests/Unit/ExactTenderConsumersTest.php"
+      ],
+      "source": {
+        "file": "app/Support/Exact/Settlement.php",
+        "symbol": "Settlement::defer",
+        "operation": "native_Identical",
+        "operation_language": "php"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/Settlement.php": "9d9e6b29fd0c377bcfcdb148d4e3c1bb742ead435db5f5ed85116243492f525e",
+        "tests/Unit/ExactTenderConsumersTest.php": "0eb59d6c933b31a9aa2b4bb5b713c4c9f0a607e9f3f4f94acb4c5fe85607f4d6"
+      }
+    }
+  },
+  {
+    "id": "7e5a31acd721b95ed2e8e25a",
+    "expression": "--self::$deferred[$key]",
+    "source": {
+      "file": "app/Support/Exact/Settlement.php",
+      "symbol": "Settlement::defer",
+      "operation": "native_update",
+      "operation_language": "php"
+    },
+    "review": "Decrementa el contador técnico del ámbito diferido, probado mediante rollback y operación posterior.",
+    "previous": null,
+    "current": {
+      "category": "technical",
+      "justification": "Decrementa el contador técnico del ámbito diferido, probado mediante rollback y operación posterior. Expresión: --self::$deferred[$key]",
+      "evidence": [
+        "app/Support/Exact/Settlement.php",
+        "tests/Unit/ExactTenderConsumersTest.php"
+      ],
+      "source": {
+        "file": "app/Support/Exact/Settlement.php",
+        "symbol": "Settlement::defer",
+        "operation": "native_update",
+        "operation_language": "php"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/Settlement.php": "9d9e6b29fd0c377bcfcdb148d4e3c1bb742ead435db5f5ed85116243492f525e",
+        "tests/Unit/ExactTenderConsumersTest.php": "0eb59d6c933b31a9aa2b4bb5b713c4c9f0a607e9f3f4f94acb4c5fe85607f4d6"
+      }
+    }
+  },
+  {
+    "id": "4fb2d99c8bf70ec11c9cfcbe",
+    "expression": "Decimal::represent($target, 2)",
+    "source": {
+      "file": "app/Support/Exact/TenderAllocation.php",
+      "symbol": "TenderAllocation::calculate",
+      "operation": "represent",
+      "operation_language": "php"
+    },
+    "review": "Exige que el objetivo ya sea un importe liquidable a céntimos; una fracción distinta se rechaza sin cambiarla.",
+    "previous": null,
+    "current": {
+      "category": "validation",
+      "justification": "Exige que el objetivo ya sea un importe liquidable a céntimos; una fracción distinta se rechaza sin cambiarla. Expresión: Decimal::represent($target, 2)",
+      "evidence": [
+        "app/Support/Exact/TenderAllocation.php",
+        "tests/Unit/ExactTenderConsumersTest.php"
+      ],
+      "source": {
+        "file": "app/Support/Exact/TenderAllocation.php",
+        "symbol": "TenderAllocation::calculate",
+        "operation": "represent",
+        "operation_language": "php"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/TenderAllocation.php": "3d565c18abdd630ffbe281f6d647f4bd34814e9e186571fb8d79b84fa7bc7bdf",
+        "tests/Unit/ExactTenderConsumersTest.php": "0eb59d6c933b31a9aa2b4bb5b713c4c9f0a607e9f3f4f94acb4c5fe85607f4d6"
+      }
+    }
+  },
+  {
+    "id": "a1998dda632228991707a0d5",
+    "expression": "Decimal::represent($request, 2)",
+    "source": {
+      "file": "app/Support/Exact/TenderAllocation.php",
+      "symbol": "TenderAllocation::calculate",
+      "operation": "represent",
+      "operation_language": "php"
+    },
+    "review": "Única adaptación del efectivo solicitado a céntimos por recepción; el original y la diferencia quedan en el snapshot.",
+    "previous": null,
+    "current": {
+      "category": "settlement",
+      "justification": "Única adaptación del efectivo solicitado a céntimos por recepción; el original y la diferencia quedan en el snapshot. Expresión: Decimal::represent($request, 2)",
+      "evidence": [
+        "app/Support/Exact/TenderAllocation.php",
+        "tests/Unit/ExactTenderConsumersTest.php"
+      ],
+      "source": {
+        "file": "app/Support/Exact/TenderAllocation.php",
+        "symbol": "TenderAllocation::calculate",
+        "operation": "represent",
+        "operation_language": "php"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/TenderAllocation.php": "3d565c18abdd630ffbe281f6d647f4bd34814e9e186571fb8d79b84fa7bc7bdf",
+        "tests/Unit/ExactTenderConsumersTest.php": "0eb59d6c933b31a9aa2b4bb5b713c4c9f0a607e9f3f4f94acb4c5fe85607f4d6"
+      }
+    }
+  },
+  {
+    "id": "0c6405653ddf4c928f7000c3",
+    "expression": "Decimal::represent($net)",
+    "source": {
+      "file": "app/Support/Exact/TenderAllocation.php",
+      "symbol": "TenderAllocation::calculate",
+      "operation": "represent",
+      "operation_language": "php"
+    },
+    "review": "Serializa el neto ya liquidado; la fracción payment se conserva junto al solicitado, recibido y vuelto.",
+    "previous": null,
+    "current": {
+      "category": "storage",
+      "justification": "Serializa el neto ya liquidado; la fracción payment se conserva junto al solicitado, recibido y vuelto. Expresión: Decimal::represent($net)",
+      "evidence": [
+        "app/Support/Exact/TenderAllocation.php",
+        "tests/Unit/ExactTenderConsumersTest.php"
+      ],
+      "source": {
+        "file": "app/Support/Exact/TenderAllocation.php",
+        "symbol": "TenderAllocation::calculate",
+        "operation": "represent",
+        "operation_language": "php"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/TenderAllocation.php": "3d565c18abdd630ffbe281f6d647f4bd34814e9e186571fb8d79b84fa7bc7bdf",
+        "tests/Unit/ExactTenderConsumersTest.php": "0eb59d6c933b31a9aa2b4bb5b713c4c9f0a607e9f3f4f94acb4c5fe85607f4d6"
+      }
+    }
+  },
+  {
+    "id": "f77a4c23935ebc2594b496b0",
+    "expression": "Decimal::represent($change)",
+    "source": {
+      "file": "app/Support/Exact/TenderAllocation.php",
+      "symbol": "TenderAllocation::calculate",
+      "operation": "represent",
+      "operation_language": "php"
+    },
+    "review": "Serializa el vuelto ya distribuido en céntimos sin exceder el efectivo de la fila; su fracción se conserva.",
+    "previous": null,
+    "current": {
+      "category": "storage",
+      "justification": "Serializa el vuelto ya distribuido en céntimos sin exceder el efectivo de la fila; su fracción se conserva. Expresión: Decimal::represent($change)",
+      "evidence": [
+        "app/Support/Exact/TenderAllocation.php",
+        "tests/Unit/ExactTenderConsumersTest.php"
+      ],
+      "source": {
+        "file": "app/Support/Exact/TenderAllocation.php",
+        "symbol": "TenderAllocation::calculate",
+        "operation": "represent",
+        "operation_language": "php"
+      },
+      "evidence_sha256": {
+        "app/Support/Exact/TenderAllocation.php": "3d565c18abdd630ffbe281f6d647f4bd34814e9e186571fb8d79b84fa7bc7bdf",
+        "tests/Unit/ExactTenderConsumersTest.php": "0eb59d6c933b31a9aa2b4bb5b713c4c9f0a607e9f3f4f94acb4c5fe85607f4d6"
+      }
+    }
+  },
+  {
+    "id": "6e4b1785c2ec44fb8339e15c",
+    "expression": "D::represent($tax, 2)",
+    "source": {
+      "file": "app/Services/Fiscal/FiscalDocumentPersistence.php",
+      "symbol": "FiscalDocumentPersistence::payment",
+      "operation": "represent",
+      "operation_language": "php"
+    },
+    "review": "Adapta el recibo derivado del IGTF a céntimos documentales; converted_principal conserva la conversión exacta y payment_adjustment su diferencia. No produce una segunda entrada de caja.",
+    "previous": null,
+    "current": {
+      "category": "settlement",
+      "justification": "Adapta el recibo derivado del IGTF a céntimos documentales; converted_principal conserva la conversión exacta y payment_adjustment su diferencia. No produce una segunda entrada de caja. Expresión: D::represent($tax, 2)",
+      "evidence": [
+        "app/Services/Fiscal/FiscalDocumentPersistence.php",
+        "tests/Support/SpePersistenceCases.php"
+      ],
+      "source": {
+        "file": "app/Services/Fiscal/FiscalDocumentPersistence.php",
+        "symbol": "FiscalDocumentPersistence::payment",
+        "operation": "represent",
+        "operation_language": "php"
+      },
+      "evidence_sha256": {
+        "app/Services/Fiscal/FiscalDocumentPersistence.php": "e63389f1c7a2ed3bf34b21452414e1bb3d635fb071319b8322e86b963be9b641",
+        "tests/Support/SpePersistenceCases.php": "860437e4561572f72eb2a83dcc41bf6ae423c095f23b95f2c5d80db5424509c3"
+      }
+    },
+    "revalidations": [
+      {
+        "reason": "Fuente y expresión revisadas sin cambios; se revalidó la evidencia ampliada de recurso IGTF/diálogo subcéntimo y contrato. Los 13 casos compartidos y la comparación de posición veinte mantienen los operandos originales; no se retiraron aserciones previas.",
+        "previous_evidence_sha256": {
+          "app/Services/Fiscal/FiscalDocumentPersistence.php": "e63389f1c7a2ed3bf34b21452414e1bb3d635fb071319b8322e86b963be9b641",
+          "tests/Support/SpePersistenceCases.php": "3554017cd6b45e4c11c646faf6e042deb95285031c0a8c329697aa37d11dee17"
+        },
+        "evidence_sha256": {
+          "app/Services/Fiscal/FiscalDocumentPersistence.php": "e63389f1c7a2ed3bf34b21452414e1bb3d635fb071319b8322e86b963be9b641",
+          "tests/Support/SpePersistenceCases.php": "860437e4561572f72eb2a83dcc41bf6ae423c095f23b95f2c5d80db5424509c3"
+        }
+      }
+    ]
+  },
+  {
+    "id": "31ed8745e447263ab0b2fece",
+    "expression": "D::represent($appliedTax)",
+    "source": {
+      "file": "app/Services/Fiscal/FiscalDocumentPersistence.php",
+      "symbol": "FiscalDocumentPersistence::payment",
+      "operation": "represent",
+      "operation_language": "php"
+    },
+    "review": "Escribe el importe derivado ya liquidado, con conversión exacta y ajuste en su mismo snapshot; el caso SPE exige saldo cero de la nota.",
+    "previous": null,
+    "current": {
+      "category": "storage",
+      "justification": "Escribe el importe derivado ya liquidado, con conversión exacta y ajuste en su mismo snapshot; el caso SPE exige saldo cero de la nota. Expresión: D::represent($appliedTax)",
+      "evidence": [
+        "app/Services/Fiscal/FiscalDocumentPersistence.php",
+        "tests/Support/SpePersistenceCases.php"
+      ],
+      "source": {
+        "file": "app/Services/Fiscal/FiscalDocumentPersistence.php",
+        "symbol": "FiscalDocumentPersistence::payment",
+        "operation": "represent",
+        "operation_language": "php"
+      },
+      "evidence_sha256": {
+        "app/Services/Fiscal/FiscalDocumentPersistence.php": "e63389f1c7a2ed3bf34b21452414e1bb3d635fb071319b8322e86b963be9b641",
+        "tests/Support/SpePersistenceCases.php": "860437e4561572f72eb2a83dcc41bf6ae423c095f23b95f2c5d80db5424509c3"
+      }
+    },
+    "revalidations": [
+      {
+        "reason": "Fuente y expresión revisadas sin cambios; se revalidó la evidencia ampliada de recurso IGTF/diálogo subcéntimo y contrato. Los 13 casos compartidos y la comparación de posición veinte mantienen los operandos originales; no se retiraron aserciones previas.",
+        "previous_evidence_sha256": {
+          "app/Services/Fiscal/FiscalDocumentPersistence.php": "e63389f1c7a2ed3bf34b21452414e1bb3d635fb071319b8322e86b963be9b641",
+          "tests/Support/SpePersistenceCases.php": "3554017cd6b45e4c11c646faf6e042deb95285031c0a8c329697aa37d11dee17"
+        },
+        "evidence_sha256": {
+          "app/Services/Fiscal/FiscalDocumentPersistence.php": "e63389f1c7a2ed3bf34b21452414e1bb3d635fb071319b8322e86b963be9b641",
+          "tests/Support/SpePersistenceCases.php": "860437e4561572f72eb2a83dcc41bf6ae423c095f23b95f2c5d80db5424509c3"
+        }
+      }
+    ]
+  },
+  {
+    "id": "1de403fd2b29568f6fb54b75",
+    "expression": "$row->date_of_payment->format('d/m/Y')",
+    "source": {
+      "file": "app/Http/Resources/Tenant/SaleNotePaymentCollection.php",
+      "symbol": "SaleNotePaymentCollection::toArray",
+      "operation": "format",
+      "operation_language": "php"
+    },
+    "review": "Formatea exclusivamente date_of_payment, declarado como fecha por SaleNotePayment; el recurso MySQL ejecuta esta salida sin operar dinero.",
+    "previous": null,
+    "current": {
+      "category": "technical",
+      "justification": "Formatea exclusivamente date_of_payment, declarado como fecha por SaleNotePayment; el recurso MySQL ejecuta esta salida sin operar dinero. Expresión: $row->date_of_payment->format('d/m/Y')",
+      "evidence": [
+        "app/Http/Resources/Tenant/SaleNotePaymentCollection.php",
+        "tests/Unit/ExactMySqlContinuationTest.php"
+      ],
+      "source": {
+        "file": "app/Http/Resources/Tenant/SaleNotePaymentCollection.php",
+        "symbol": "SaleNotePaymentCollection::toArray",
+        "operation": "format",
+        "operation_language": "php"
+      },
+      "evidence_sha256": {
+        "app/Http/Resources/Tenant/SaleNotePaymentCollection.php": "e10188cbe1962d2ae98d0d8021086fdbdecc12555ada428baa4ede3c418b4f33",
+        "tests/Unit/ExactMySqlContinuationTest.php": "b858c00dd73985902b8c517c1b5a318adac627d1ce38f0a19d5bc3527b5b6bd8"
+      }
+    }
+  },
+  {
+    "id": "1a55b889d7b3c5ac960f6da6",
+    "expression": "value === undefined",
+    "source": {
+      "file": "resources/js/components/DataTableSaleNote.vue",
+      "symbol": "formatDecimal",
+      "operation": "native_===",
+      "operation_language": "javascript"
+    },
+    "review": "Guardia de ausencia del parámetro visible; undefined no es un operando monetario.",
+    "previous": null,
+    "current": {
+      "category": "technical",
+      "justification": "Guardia de ausencia del parámetro visible; undefined no es un operando monetario. Expresión: value === undefined",
+      "evidence": [
+        "resources/js/components/DataTableSaleNote.vue",
+        "tests/js/exact-tender-consumers.test.cjs"
+      ],
+      "source": {
+        "file": "resources/js/components/DataTableSaleNote.vue",
+        "symbol": "formatDecimal",
+        "operation": "native_===",
+        "operation_language": "javascript"
+      },
+      "evidence_sha256": {
+        "resources/js/components/DataTableSaleNote.vue": "ef38f8916d50cb1845f8b06ca206651573dcefd530afa639cdc1c1595e47676e",
+        "tests/js/exact-tender-consumers.test.cjs": "7cc323807d720dc49b3e6ba74942927db8c9e4b02e9cbef0c699f4f5963637b0"
+      }
+    },
+    "revalidations": [
+      {
+        "reason": "Fuente y expresión revisadas sin cambios; se revalidó la evidencia ampliada de recurso IGTF/diálogo subcéntimo y contrato. Los 13 casos compartidos y la comparación de posición veinte mantienen los operandos originales; no se retiraron aserciones previas.",
+        "previous_evidence_sha256": {
+          "resources/js/components/DataTableSaleNote.vue": "ef38f8916d50cb1845f8b06ca206651573dcefd530afa639cdc1c1595e47676e",
+          "tests/js/exact-tender-consumers.test.cjs": "e5175e4dce631eea7c258f967215e14858bc41fac7272367e854dcc00bbba5ef"
+        },
+        "evidence_sha256": {
+          "resources/js/components/DataTableSaleNote.vue": "ef38f8916d50cb1845f8b06ca206651573dcefd530afa639cdc1c1595e47676e",
+          "tests/js/exact-tender-consumers.test.cjs": "7cc323807d720dc49b3e6ba74942927db8c9e4b02e9cbef0c699f4f5963637b0"
+        }
+      }
+    ]
+  },
+  {
+    "id": "0bbd9e3b3d9171663003b62a",
+    "expression": "Number(this.decimal_quantity)",
+    "source": {
+      "file": "resources/js/components/DataTableSaleNote.vue",
+      "symbol": "formatDecimal",
+      "operation": "Number",
+      "operation_language": "javascript"
+    },
+    "review": "Convierte únicamente el entero de configuración del número de decimales; el importe permanece en ExactAmount.",
+    "previous": null,
+    "current": {
+      "category": "technical",
+      "justification": "Convierte únicamente el entero de configuración del número de decimales; el importe permanece en ExactAmount. Expresión: Number(this.decimal_quantity)",
+      "evidence": [
+        "resources/js/components/DataTableSaleNote.vue",
+        "tests/js/exact-tender-consumers.test.cjs"
+      ],
+      "source": {
+        "file": "resources/js/components/DataTableSaleNote.vue",
+        "symbol": "formatDecimal",
+        "operation": "Number",
+        "operation_language": "javascript"
+      },
+      "evidence_sha256": {
+        "resources/js/components/DataTableSaleNote.vue": "ef38f8916d50cb1845f8b06ca206651573dcefd530afa639cdc1c1595e47676e",
+        "tests/js/exact-tender-consumers.test.cjs": "7cc323807d720dc49b3e6ba74942927db8c9e4b02e9cbef0c699f4f5963637b0"
+      }
+    },
+    "revalidations": [
+      {
+        "reason": "Fuente y expresión revisadas sin cambios; se revalidó la evidencia ampliada de recurso IGTF/diálogo subcéntimo y contrato. Los 13 casos compartidos y la comparación de posición veinte mantienen los operandos originales; no se retiraron aserciones previas.",
+        "previous_evidence_sha256": {
+          "resources/js/components/DataTableSaleNote.vue": "ef38f8916d50cb1845f8b06ca206651573dcefd530afa639cdc1c1595e47676e",
+          "tests/js/exact-tender-consumers.test.cjs": "e5175e4dce631eea7c258f967215e14858bc41fac7272367e854dcc00bbba5ef"
+        },
+        "evidence_sha256": {
+          "resources/js/components/DataTableSaleNote.vue": "ef38f8916d50cb1845f8b06ca206651573dcefd530afa639cdc1c1595e47676e",
+          "tests/js/exact-tender-consumers.test.cjs": "7cc323807d720dc49b3e6ba74942927db8c9e4b02e9cbef0c699f4f5963637b0"
+        }
+      }
+    ]
+  },
+  {
+    "id": "e26bfbed9c8c1db9404d8a79",
+    "expression": "amount.final(Number(this.decimal_quantity))",
+    "source": {
+      "file": "resources/js/components/DataTableSaleNote.vue",
+      "symbol": "formatDecimal",
+      "operation": "final",
+      "operation_language": "javascript"
+    },
+    "review": "La plantilla imprime el resultado y el formateador obtiene el operando del snapshot. Se probó la diferencia inferior a doce posiciones junto al umbral de medio céntimo.",
+    "previous": null,
+    "current": {
+      "category": "presentation",
+      "justification": "La plantilla imprime el resultado y el formateador obtiene el operando del snapshot. Se probó la diferencia inferior a doce posiciones junto al umbral de medio céntimo. Expresión: amount.final(Number(this.decimal_quantity))",
+      "evidence": [
+        "resources/js/components/DataTableSaleNote.vue",
+        "tests/js/exact-tender-consumers.test.cjs"
+      ],
+      "source": {
+        "file": "resources/js/components/DataTableSaleNote.vue",
+        "symbol": "formatDecimal",
+        "operation": "final",
+        "operation_language": "javascript"
+      },
+      "evidence_sha256": {
+        "resources/js/components/DataTableSaleNote.vue": "ef38f8916d50cb1845f8b06ca206651573dcefd530afa639cdc1c1595e47676e",
+        "tests/js/exact-tender-consumers.test.cjs": "7cc323807d720dc49b3e6ba74942927db8c9e4b02e9cbef0c699f4f5963637b0"
+      }
+    },
+    "revalidations": [
+      {
+        "reason": "Fuente y expresión revisadas sin cambios; se revalidó la evidencia ampliada de recurso IGTF/diálogo subcéntimo y contrato. Los 13 casos compartidos y la comparación de posición veinte mantienen los operandos originales; no se retiraron aserciones previas.",
+        "previous_evidence_sha256": {
+          "resources/js/components/DataTableSaleNote.vue": "ef38f8916d50cb1845f8b06ca206651573dcefd530afa639cdc1c1595e47676e",
+          "tests/js/exact-tender-consumers.test.cjs": "e5175e4dce631eea7c258f967215e14858bc41fac7272367e854dcc00bbba5ef"
+        },
+        "evidence_sha256": {
+          "resources/js/components/DataTableSaleNote.vue": "ef38f8916d50cb1845f8b06ca206651573dcefd530afa639cdc1c1595e47676e",
+          "tests/js/exact-tender-consumers.test.cjs": "7cc323807d720dc49b3e6ba74942927db8c9e4b02e9cbef0c699f4f5963637b0"
+        }
+      }
+    ]
+  },
+  {
+    "id": "637eb2f806ee736a40947dfe",
+    "expression": "exactValue(row, 'cash_adjustment').compare(0) !== 0",
+    "source": {
+      "file": "resources/js/views/tenant/sale_notes/partials/payments.vue",
+      "symbol": "hasCashAdjustment",
+      "operation": "native_!==",
+      "operation_language": "javascript"
+    },
+    "review": "La visibilidad del ajuste usa el resultado entero de comparar su fracción con cero, no el texto limitado.",
+    "previous": null,
+    "current": {
+      "category": "validation",
+      "justification": "La visibilidad del ajuste usa el resultado entero de comparar su fracción con cero, no el texto limitado. Expresión: exactValue(row, 'cash_adjustment').compare(0) !== 0",
+      "evidence": [
+        "resources/js/views/tenant/sale_notes/partials/payments.vue",
+        "tests/js/exact-tender-consumers.test.cjs"
+      ],
+      "source": {
+        "file": "resources/js/views/tenant/sale_notes/partials/payments.vue",
+        "symbol": "hasCashAdjustment",
+        "operation": "native_!==",
+        "operation_language": "javascript"
+      },
+      "evidence_sha256": {
+        "resources/js/views/tenant/sale_notes/partials/payments.vue": "6f365da6c2a07306bd30d5509d0cff89377c297676538e13d194d8a830f4353d",
+        "tests/js/exact-tender-consumers.test.cjs": "7cc323807d720dc49b3e6ba74942927db8c9e4b02e9cbef0c699f4f5963637b0"
+      }
+    },
+    "revalidations": [
+      {
+        "reason": "Fuente y expresión revisadas sin cambios; se revalidó la evidencia ampliada de recurso IGTF/diálogo subcéntimo y contrato. Los 13 casos compartidos y la comparación de posición veinte mantienen los operandos originales; no se retiraron aserciones previas.",
+        "previous_evidence_sha256": {
+          "resources/js/views/tenant/sale_notes/partials/payments.vue": "6f365da6c2a07306bd30d5509d0cff89377c297676538e13d194d8a830f4353d",
+          "tests/js/exact-tender-consumers.test.cjs": "e5175e4dce631eea7c258f967215e14858bc41fac7272367e854dcc00bbba5ef"
+        },
+        "evidence_sha256": {
+          "resources/js/views/tenant/sale_notes/partials/payments.vue": "6f365da6c2a07306bd30d5509d0cff89377c297676538e13d194d8a830f4353d",
+          "tests/js/exact-tender-consumers.test.cjs": "7cc323807d720dc49b3e6ba74942927db8c9e4b02e9cbef0c699f4f5963637b0"
+        }
+      }
+    ]
+  },
+  {
+    "id": "6f770fc7a3dcd3689df39758",
+    "expression": "exactValue(row, 'change').compare(0) !== 0",
+    "source": {
+      "file": "resources/js/views/tenant/sale_notes/partials/payments.vue",
+      "symbol": "hasChange",
+      "operation": "native_!==",
+      "operation_language": "javascript"
+    },
+    "review": "La visibilidad del vuelto compara su fracción con cero; la cadena sólo se imprime.",
+    "previous": null,
+    "current": {
+      "category": "validation",
+      "justification": "La visibilidad del vuelto compara su fracción con cero; la cadena sólo se imprime. Expresión: exactValue(row, 'change').compare(0) !== 0",
+      "evidence": [
+        "resources/js/views/tenant/sale_notes/partials/payments.vue",
+        "tests/js/exact-tender-consumers.test.cjs"
+      ],
+      "source": {
+        "file": "resources/js/views/tenant/sale_notes/partials/payments.vue",
+        "symbol": "hasChange",
+        "operation": "native_!==",
+        "operation_language": "javascript"
+      },
+      "evidence_sha256": {
+        "resources/js/views/tenant/sale_notes/partials/payments.vue": "6f365da6c2a07306bd30d5509d0cff89377c297676538e13d194d8a830f4353d",
+        "tests/js/exact-tender-consumers.test.cjs": "7cc323807d720dc49b3e6ba74942927db8c9e4b02e9cbef0c699f4f5963637b0"
+      }
+    },
+    "revalidations": [
+      {
+        "reason": "Fuente y expresión revisadas sin cambios; se revalidó la evidencia ampliada de recurso IGTF/diálogo subcéntimo y contrato. Los 13 casos compartidos y la comparación de posición veinte mantienen los operandos originales; no se retiraron aserciones previas.",
+        "previous_evidence_sha256": {
+          "resources/js/views/tenant/sale_notes/partials/payments.vue": "6f365da6c2a07306bd30d5509d0cff89377c297676538e13d194d8a830f4353d",
+          "tests/js/exact-tender-consumers.test.cjs": "e5175e4dce631eea7c258f967215e14858bc41fac7272367e854dcc00bbba5ef"
+        },
+        "evidence_sha256": {
+          "resources/js/views/tenant/sale_notes/partials/payments.vue": "6f365da6c2a07306bd30d5509d0cff89377c297676538e13d194d8a830f4353d",
+          "tests/js/exact-tender-consumers.test.cjs": "7cc323807d720dc49b3e6ba74942927db8c9e4b02e9cbef0c699f4f5963637b0"
+        }
+      }
+    ]
+  },
+  {
+    "id": "99c300ce6815f4182577468b",
+    "expression": "value.decimal()",
+    "source": {
+      "file": "resources/js/views/tenant/sale_notes/partials/payments.vue",
+      "symbol": "cashAdjustmentText",
+      "operation": "decimal",
+      "operation_language": "javascript"
+    },
+    "review": "Texto final del ajuste en la celda. Si pierde visibilidad a doce posiciones se imprime n/d; no se reutiliza como importe.",
+    "previous": null,
+    "current": {
+      "category": "presentation",
+      "justification": "Texto final del ajuste en la celda. Si pierde visibilidad a doce posiciones se imprime n/d; no se reutiliza como importe. Expresión: value.decimal()",
+      "evidence": [
+        "resources/js/views/tenant/sale_notes/partials/payments.vue",
+        "tests/js/exact-tender-consumers.test.cjs"
+      ],
+      "source": {
+        "file": "resources/js/views/tenant/sale_notes/partials/payments.vue",
+        "symbol": "cashAdjustmentText",
+        "operation": "decimal",
+        "operation_language": "javascript"
+      },
+      "evidence_sha256": {
+        "resources/js/views/tenant/sale_notes/partials/payments.vue": "6f365da6c2a07306bd30d5509d0cff89377c297676538e13d194d8a830f4353d",
+        "tests/js/exact-tender-consumers.test.cjs": "7cc323807d720dc49b3e6ba74942927db8c9e4b02e9cbef0c699f4f5963637b0"
+      }
+    },
+    "revalidations": [
+      {
+        "reason": "Fuente y expresión revisadas sin cambios; se revalidó la evidencia ampliada de recurso IGTF/diálogo subcéntimo y contrato. Los 13 casos compartidos y la comparación de posición veinte mantienen los operandos originales; no se retiraron aserciones previas.",
+        "previous_evidence_sha256": {
+          "resources/js/views/tenant/sale_notes/partials/payments.vue": "6f365da6c2a07306bd30d5509d0cff89377c297676538e13d194d8a830f4353d",
+          "tests/js/exact-tender-consumers.test.cjs": "e5175e4dce631eea7c258f967215e14858bc41fac7272367e854dcc00bbba5ef"
+        },
+        "evidence_sha256": {
+          "resources/js/views/tenant/sale_notes/partials/payments.vue": "6f365da6c2a07306bd30d5509d0cff89377c297676538e13d194d8a830f4353d",
+          "tests/js/exact-tender-consumers.test.cjs": "7cc323807d720dc49b3e6ba74942927db8c9e4b02e9cbef0c699f4f5963637b0"
+        }
+      }
+    ]
+  },
+  {
+    "id": "80824d1b0e823b1cbe30c6cf",
+    "expression": "text !== '0'",
+    "source": {
+      "file": "resources/js/views/tenant/sale_notes/partials/payments.vue",
+      "symbol": "cashAdjustmentText",
+      "operation": "native_!==",
+      "operation_language": "javascript"
+    },
+    "review": "Selecciona entre texto decimal y fracción para mostrar el ajuste; el signo y la nulidad se comparan desde el racional.",
+    "previous": null,
+    "current": {
+      "category": "presentation",
+      "justification": "Selecciona entre texto decimal y fracción para mostrar el ajuste; el signo y la nulidad se comparan desde el racional. Expresión: text !== '0'",
+      "evidence": [
+        "resources/js/views/tenant/sale_notes/partials/payments.vue",
+        "tests/js/exact-tender-consumers.test.cjs"
+      ],
+      "source": {
+        "file": "resources/js/views/tenant/sale_notes/partials/payments.vue",
+        "symbol": "cashAdjustmentText",
+        "operation": "native_!==",
+        "operation_language": "javascript"
+      },
+      "evidence_sha256": {
+        "resources/js/views/tenant/sale_notes/partials/payments.vue": "6f365da6c2a07306bd30d5509d0cff89377c297676538e13d194d8a830f4353d",
+        "tests/js/exact-tender-consumers.test.cjs": "7cc323807d720dc49b3e6ba74942927db8c9e4b02e9cbef0c699f4f5963637b0"
+      }
+    },
+    "revalidations": [
+      {
+        "reason": "Fuente y expresión revisadas sin cambios; se revalidó la evidencia ampliada de recurso IGTF/diálogo subcéntimo y contrato. Los 13 casos compartidos y la comparación de posición veinte mantienen los operandos originales; no se retiraron aserciones previas.",
+        "previous_evidence_sha256": {
+          "resources/js/views/tenant/sale_notes/partials/payments.vue": "6f365da6c2a07306bd30d5509d0cff89377c297676538e13d194d8a830f4353d",
+          "tests/js/exact-tender-consumers.test.cjs": "e5175e4dce631eea7c258f967215e14858bc41fac7272367e854dcc00bbba5ef"
+        },
+        "evidence_sha256": {
+          "resources/js/views/tenant/sale_notes/partials/payments.vue": "6f365da6c2a07306bd30d5509d0cff89377c297676538e13d194d8a830f4353d",
+          "tests/js/exact-tender-consumers.test.cjs": "7cc323807d720dc49b3e6ba74942927db8c9e4b02e9cbef0c699f4f5963637b0"
+        }
+      }
+    ]
+  },
+  {
+    "id": "bd0eef5552256a8b9bd6b876",
+    "expression": "value.compare(0) === 0",
+    "source": {
+      "file": "resources/js/views/tenant/sale_notes/partials/payments.vue",
+      "symbol": "cashAdjustmentText",
+      "operation": "native_===",
+      "operation_language": "javascript"
+    },
+    "review": "Comprueba la nulidad exacta del ajuste antes de decidir si se necesita n/d visible.",
+    "previous": null,
+    "current": {
+      "category": "validation",
+      "justification": "Comprueba la nulidad exacta del ajuste antes de decidir si se necesita n/d visible. Expresión: value.compare(0) === 0",
+      "evidence": [
+        "resources/js/views/tenant/sale_notes/partials/payments.vue",
+        "tests/js/exact-tender-consumers.test.cjs"
+      ],
+      "source": {
+        "file": "resources/js/views/tenant/sale_notes/partials/payments.vue",
+        "symbol": "cashAdjustmentText",
+        "operation": "native_===",
+        "operation_language": "javascript"
+      },
+      "evidence_sha256": {
+        "resources/js/views/tenant/sale_notes/partials/payments.vue": "6f365da6c2a07306bd30d5509d0cff89377c297676538e13d194d8a830f4353d",
+        "tests/js/exact-tender-consumers.test.cjs": "7cc323807d720dc49b3e6ba74942927db8c9e4b02e9cbef0c699f4f5963637b0"
+      }
+    },
+    "revalidations": [
+      {
+        "reason": "Fuente y expresión revisadas sin cambios; se revalidó la evidencia ampliada de recurso IGTF/diálogo subcéntimo y contrato. Los 13 casos compartidos y la comparación de posición veinte mantienen los operandos originales; no se retiraron aserciones previas.",
+        "previous_evidence_sha256": {
+          "resources/js/views/tenant/sale_notes/partials/payments.vue": "6f365da6c2a07306bd30d5509d0cff89377c297676538e13d194d8a830f4353d",
+          "tests/js/exact-tender-consumers.test.cjs": "e5175e4dce631eea7c258f967215e14858bc41fac7272367e854dcc00bbba5ef"
+        },
+        "evidence_sha256": {
+          "resources/js/views/tenant/sale_notes/partials/payments.vue": "6f365da6c2a07306bd30d5509d0cff89377c297676538e13d194d8a830f4353d",
+          "tests/js/exact-tender-consumers.test.cjs": "7cc323807d720dc49b3e6ba74942927db8c9e4b02e9cbef0c699f4f5963637b0"
+        }
+      }
+    ]
+  },
+  {
+    "id": "4731a70841c85e53edb27b69",
+    "expression": "requested.final(2)",
+    "source": {
+      "file": "resources/js/views/tenant/sale_notes/partials/payments.vue",
+      "symbol": "clickSubmit",
+      "operation": "final",
+      "operation_language": "javascript"
+    },
+    "review": "Previsualiza el importe liquidable de un cobro individual; envía la cadena solicitada al servidor y conserva el cálculo definitivo allí.",
+    "previous": null,
+    "current": {
+      "category": "settlement",
+      "justification": "Previsualiza el importe liquidable de un cobro individual; envía la cadena solicitada al servidor y conserva el cálculo definitivo allí. Expresión: requested.final(2)",
+      "evidence": [
+        "resources/js/views/tenant/sale_notes/partials/payments.vue",
+        "tests/js/exact-tender-consumers.test.cjs"
+      ],
+      "source": {
+        "file": "resources/js/views/tenant/sale_notes/partials/payments.vue",
+        "symbol": "clickSubmit",
+        "operation": "final",
+        "operation_language": "javascript"
+      },
+      "evidence_sha256": {
+        "resources/js/views/tenant/sale_notes/partials/payments.vue": "6f365da6c2a07306bd30d5509d0cff89377c297676538e13d194d8a830f4353d",
+        "tests/js/exact-tender-consumers.test.cjs": "7cc323807d720dc49b3e6ba74942927db8c9e4b02e9cbef0c699f4f5963637b0"
+      }
+    },
+    "revalidations": [
+      {
+        "reason": "Fuente y expresión revisadas sin cambios; se revalidó la evidencia ampliada de recurso IGTF/diálogo subcéntimo y contrato. Los 13 casos compartidos y la comparación de posición veinte mantienen los operandos originales; no se retiraron aserciones previas.",
+        "previous_evidence_sha256": {
+          "resources/js/views/tenant/sale_notes/partials/payments.vue": "6f365da6c2a07306bd30d5509d0cff89377c297676538e13d194d8a830f4353d",
+          "tests/js/exact-tender-consumers.test.cjs": "e5175e4dce631eea7c258f967215e14858bc41fac7272367e854dcc00bbba5ef"
+        },
+        "evidence_sha256": {
+          "resources/js/views/tenant/sale_notes/partials/payments.vue": "6f365da6c2a07306bd30d5509d0cff89377c297676538e13d194d8a830f4353d",
+          "tests/js/exact-tender-consumers.test.cjs": "7cc323807d720dc49b3e6ba74942927db8c9e4b02e9cbef0c699f4f5963637b0"
+        }
+      }
+    ]
+  },
+  {
+    "id": "2d920115e2c71ad9d8b06506",
+    "expression": "requested.compare(0) <= 0",
+    "source": {
+      "file": "resources/js/views/tenant/sale_notes/partials/payments.vue",
+      "symbol": "clickSubmit",
+      "operation": "native_<=",
+      "operation_language": "javascript"
+    },
+    "review": "Rechaza un solicitado no positivo mediante comparación racional.",
+    "previous": null,
+    "current": {
+      "category": "validation",
+      "justification": "Rechaza un solicitado no positivo mediante comparación racional. Expresión: requested.compare(0) <= 0",
+      "evidence": [
+        "resources/js/views/tenant/sale_notes/partials/payments.vue",
+        "tests/js/exact-tender-consumers.test.cjs"
+      ],
+      "source": {
+        "file": "resources/js/views/tenant/sale_notes/partials/payments.vue",
+        "symbol": "clickSubmit",
+        "operation": "native_<=",
+        "operation_language": "javascript"
+      },
+      "evidence_sha256": {
+        "resources/js/views/tenant/sale_notes/partials/payments.vue": "6f365da6c2a07306bd30d5509d0cff89377c297676538e13d194d8a830f4353d",
+        "tests/js/exact-tender-consumers.test.cjs": "7cc323807d720dc49b3e6ba74942927db8c9e4b02e9cbef0c699f4f5963637b0"
+      }
+    },
+    "revalidations": [
+      {
+        "reason": "Fuente y expresión revisadas sin cambios; se revalidó la evidencia ampliada de recurso IGTF/diálogo subcéntimo y contrato. Los 13 casos compartidos y la comparación de posición veinte mantienen los operandos originales; no se retiraron aserciones previas.",
+        "previous_evidence_sha256": {
+          "resources/js/views/tenant/sale_notes/partials/payments.vue": "6f365da6c2a07306bd30d5509d0cff89377c297676538e13d194d8a830f4353d",
+          "tests/js/exact-tender-consumers.test.cjs": "e5175e4dce631eea7c258f967215e14858bc41fac7272367e854dcc00bbba5ef"
+        },
+        "evidence_sha256": {
+          "resources/js/views/tenant/sale_notes/partials/payments.vue": "6f365da6c2a07306bd30d5509d0cff89377c297676538e13d194d8a830f4353d",
+          "tests/js/exact-tender-consumers.test.cjs": "7cc323807d720dc49b3e6ba74942927db8c9e4b02e9cbef0c699f4f5963637b0"
+        }
+      }
+    ]
+  },
+  {
+    "id": "80d1bf28b7d53cef14eaa4ba",
+    "expression": "applied.compare(0) <= 0",
+    "source": {
+      "file": "resources/js/views/tenant/sale_notes/partials/payments.vue",
+      "symbol": "clickSubmit",
+      "operation": "native_<=",
+      "operation_language": "javascript"
+    },
+    "review": "Rechaza una recepción positiva que no sea liquidable a céntimos; no crea efectivo subcéntimo.",
+    "previous": null,
+    "current": {
+      "category": "validation",
+      "justification": "Rechaza una recepción positiva que no sea liquidable a céntimos; no crea efectivo subcéntimo. Expresión: applied.compare(0) <= 0",
+      "evidence": [
+        "resources/js/views/tenant/sale_notes/partials/payments.vue",
+        "tests/js/exact-tender-consumers.test.cjs"
+      ],
+      "source": {
+        "file": "resources/js/views/tenant/sale_notes/partials/payments.vue",
+        "symbol": "clickSubmit",
+        "operation": "native_<=",
+        "operation_language": "javascript"
+      },
+      "evidence_sha256": {
+        "resources/js/views/tenant/sale_notes/partials/payments.vue": "6f365da6c2a07306bd30d5509d0cff89377c297676538e13d194d8a830f4353d",
+        "tests/js/exact-tender-consumers.test.cjs": "7cc323807d720dc49b3e6ba74942927db8c9e4b02e9cbef0c699f4f5963637b0"
+      }
+    },
+    "revalidations": [
+      {
+        "reason": "Fuente y expresión revisadas sin cambios; se revalidó la evidencia ampliada de recurso IGTF/diálogo subcéntimo y contrato. Los 13 casos compartidos y la comparación de posición veinte mantienen los operandos originales; no se retiraron aserciones previas.",
+        "previous_evidence_sha256": {
+          "resources/js/views/tenant/sale_notes/partials/payments.vue": "6f365da6c2a07306bd30d5509d0cff89377c297676538e13d194d8a830f4353d",
+          "tests/js/exact-tender-consumers.test.cjs": "e5175e4dce631eea7c258f967215e14858bc41fac7272367e854dcc00bbba5ef"
+        },
+        "evidence_sha256": {
+          "resources/js/views/tenant/sale_notes/partials/payments.vue": "6f365da6c2a07306bd30d5509d0cff89377c297676538e13d194d8a830f4353d",
+          "tests/js/exact-tender-consumers.test.cjs": "7cc323807d720dc49b3e6ba74942927db8c9e4b02e9cbef0c699f4f5963637b0"
+        }
+      }
+    ]
+  },
+  {
+    "id": "b0644b6264472fbefbafe037",
+    "expression": "applied.compare(exactValue(this.document, 'total_difference')) > 0",
+    "source": {
+      "file": "resources/js/views/tenant/sale_notes/partials/payments.vue",
+      "symbol": "clickSubmit",
+      "operation": "native_>",
+      "operation_language": "javascript"
+    },
+    "review": "Compara el cobro liquidable contra el saldo recuperado del snapshot, incluso cuando el texto del saldo es cero.",
+    "previous": null,
+    "current": {
+      "category": "validation",
+      "justification": "Compara el cobro liquidable contra el saldo recuperado del snapshot, incluso cuando el texto del saldo es cero. Expresión: applied.compare(exactValue(this.document, 'total_difference')) > 0",
+      "evidence": [
+        "resources/js/views/tenant/sale_notes/partials/payments.vue",
+        "tests/js/exact-tender-consumers.test.cjs"
+      ],
+      "source": {
+        "file": "resources/js/views/tenant/sale_notes/partials/payments.vue",
+        "symbol": "clickSubmit",
+        "operation": "native_>",
+        "operation_language": "javascript"
+      },
+      "evidence_sha256": {
+        "resources/js/views/tenant/sale_notes/partials/payments.vue": "6f365da6c2a07306bd30d5509d0cff89377c297676538e13d194d8a830f4353d",
+        "tests/js/exact-tender-consumers.test.cjs": "7cc323807d720dc49b3e6ba74942927db8c9e4b02e9cbef0c699f4f5963637b0"
+      }
+    },
+    "revalidations": [
+      {
+        "reason": "Fuente y expresión revisadas sin cambios; se revalidó la evidencia ampliada de recurso IGTF/diálogo subcéntimo y contrato. Los 13 casos compartidos y la comparación de posición veinte mantienen los operandos originales; no se retiraron aserciones previas.",
+        "previous_evidence_sha256": {
+          "resources/js/views/tenant/sale_notes/partials/payments.vue": "6f365da6c2a07306bd30d5509d0cff89377c297676538e13d194d8a830f4353d",
+          "tests/js/exact-tender-consumers.test.cjs": "e5175e4dce631eea7c258f967215e14858bc41fac7272367e854dcc00bbba5ef"
+        },
+        "evidence_sha256": {
+          "resources/js/views/tenant/sale_notes/partials/payments.vue": "6f365da6c2a07306bd30d5509d0cff89377c297676538e13d194d8a830f4353d",
+          "tests/js/exact-tender-consumers.test.cjs": "7cc323807d720dc49b3e6ba74942927db8c9e4b02e9cbef0c699f4f5963637b0"
+        }
+      }
+    ]
+  },
+  {
+    "id": "2fc3e5bfe9f7d00ee3e77366",
+    "expression": "applied.compare(exactValue(this.document, 'total_difference')) === 0",
+    "source": {
+      "file": "resources/js/views/tenant/sale_notes/partials/payments.vue",
+      "symbol": "clickSubmit",
+      "operation": "native_===",
+      "operation_language": "javascript"
+    },
+    "review": "El estado previsto del cobro compara fracciones; el servidor vuelve a verificar el saldo y no acepta ese booleano como autoridad.",
+    "previous": null,
+    "current": {
+      "category": "validation",
+      "justification": "El estado previsto del cobro compara fracciones; el servidor vuelve a verificar el saldo y no acepta ese booleano como autoridad. Expresión: applied.compare(exactValue(this.document, 'total_difference')) === 0",
+      "evidence": [
+        "resources/js/views/tenant/sale_notes/partials/payments.vue",
+        "tests/js/exact-tender-consumers.test.cjs"
+      ],
+      "source": {
+        "file": "resources/js/views/tenant/sale_notes/partials/payments.vue",
+        "symbol": "clickSubmit",
+        "operation": "native_===",
+        "operation_language": "javascript"
+      },
+      "evidence_sha256": {
+        "resources/js/views/tenant/sale_notes/partials/payments.vue": "6f365da6c2a07306bd30d5509d0cff89377c297676538e13d194d8a830f4353d",
+        "tests/js/exact-tender-consumers.test.cjs": "7cc323807d720dc49b3e6ba74942927db8c9e4b02e9cbef0c699f4f5963637b0"
+      }
+    },
+    "revalidations": [
+      {
+        "reason": "Fuente y expresión revisadas sin cambios; se revalidó la evidencia ampliada de recurso IGTF/diálogo subcéntimo y contrato. Los 13 casos compartidos y la comparación de posición veinte mantienen los operandos originales; no se retiraron aserciones previas.",
+        "previous_evidence_sha256": {
+          "resources/js/views/tenant/sale_notes/partials/payments.vue": "6f365da6c2a07306bd30d5509d0cff89377c297676538e13d194d8a830f4353d",
+          "tests/js/exact-tender-consumers.test.cjs": "e5175e4dce631eea7c258f967215e14858bc41fac7272367e854dcc00bbba5ef"
+        },
+        "evidence_sha256": {
+          "resources/js/views/tenant/sale_notes/partials/payments.vue": "6f365da6c2a07306bd30d5509d0cff89377c297676538e13d194d8a830f4353d",
+          "tests/js/exact-tender-consumers.test.cjs": "7cc323807d720dc49b3e6ba74942927db8c9e4b02e9cbef0c699f4f5963637b0"
+        }
+      }
+    ]
+  },
+  {
+    "id": "aa436e6c48dceaeb2f917bdb",
+    "expression": "error.response.status === 422",
+    "source": {
+      "file": "resources/js/views/tenant/sale_notes/partials/payments.vue",
+      "symbol": "clickSubmit",
+      "operation": "native_===",
+      "operation_language": "javascript"
+    },
+    "review": "422 es el código HTTP de validación, sin participación monetaria.",
+    "previous": null,
+    "current": {
+      "category": "technical",
+      "justification": "422 es el código HTTP de validación, sin participación monetaria. Expresión: error.response.status === 422",
+      "evidence": [
+        "resources/js/views/tenant/sale_notes/partials/payments.vue",
+        "tests/js/exact-tender-consumers.test.cjs"
+      ],
+      "source": {
+        "file": "resources/js/views/tenant/sale_notes/partials/payments.vue",
+        "symbol": "clickSubmit",
+        "operation": "native_===",
+        "operation_language": "javascript"
+      },
+      "evidence_sha256": {
+        "resources/js/views/tenant/sale_notes/partials/payments.vue": "6f365da6c2a07306bd30d5509d0cff89377c297676538e13d194d8a830f4353d",
+        "tests/js/exact-tender-consumers.test.cjs": "7cc323807d720dc49b3e6ba74942927db8c9e4b02e9cbef0c699f4f5963637b0"
+      }
+    },
+    "revalidations": [
+      {
+        "reason": "Fuente y expresión revisadas sin cambios; se revalidó la evidencia ampliada de recurso IGTF/diálogo subcéntimo y contrato. Los 13 casos compartidos y la comparación de posición veinte mantienen los operandos originales; no se retiraron aserciones previas.",
+        "previous_evidence_sha256": {
+          "resources/js/views/tenant/sale_notes/partials/payments.vue": "6f365da6c2a07306bd30d5509d0cff89377c297676538e13d194d8a830f4353d",
+          "tests/js/exact-tender-consumers.test.cjs": "e5175e4dce631eea7c258f967215e14858bc41fac7272367e854dcc00bbba5ef"
+        },
+        "evidence_sha256": {
+          "resources/js/views/tenant/sale_notes/partials/payments.vue": "6f365da6c2a07306bd30d5509d0cff89377c297676538e13d194d8a830f4353d",
+          "tests/js/exact-tender-consumers.test.cjs": "7cc323807d720dc49b3e6ba74942927db8c9e4b02e9cbef0c699f4f5963637b0"
+        }
+      }
+    ]
+  },
+  {
+    "id": "b79e8fabd7df82b63ca8738f",
+    "expression": "target.compare(target.final(2)) !== 0",
+    "source": {
+      "file": "resources/js/helpers/exact-commercial.js",
+      "symbol": "prepareCommercialPayments",
+      "operation": "native_!==",
+      "operation_language": "javascript"
+    },
+    "review": "Verifica por comparación racional que el objetivo ya sea liquidable; no sobrescribe el total documental.",
+    "previous": null,
+    "current": {
+      "category": "validation",
+      "justification": "Verifica por comparación racional que el objetivo ya sea liquidable; no sobrescribe el total documental. Expresión: target.compare(target.final(2)) !== 0",
+      "evidence": [
+        "resources/js/helpers/exact-commercial.js",
+        "tests/js/exact-tender-consumers.test.cjs"
+      ],
+      "source": {
+        "file": "resources/js/helpers/exact-commercial.js",
+        "symbol": "prepareCommercialPayments",
+        "operation": "native_!==",
+        "operation_language": "javascript"
+      },
+      "evidence_sha256": {
+        "resources/js/helpers/exact-commercial.js": "5d9baf8d3ca1ec5c0879cd83718e7c69065d26b25c20bb9cdc810109eb73d35b",
+        "tests/js/exact-tender-consumers.test.cjs": "7cc323807d720dc49b3e6ba74942927db8c9e4b02e9cbef0c699f4f5963637b0"
+      }
+    },
+    "revalidations": [
+      {
+        "reason": "Fuente y expresión revisadas sin cambios; se revalidó la evidencia ampliada de recurso IGTF/diálogo subcéntimo y contrato. Los 13 casos compartidos y la comparación de posición veinte mantienen los operandos originales; no se retiraron aserciones previas.",
+        "previous_evidence_sha256": {
+          "resources/js/helpers/exact-commercial.js": "5d9baf8d3ca1ec5c0879cd83718e7c69065d26b25c20bb9cdc810109eb73d35b",
+          "tests/js/exact-tender-consumers.test.cjs": "e5175e4dce631eea7c258f967215e14858bc41fac7272367e854dcc00bbba5ef"
+        },
+        "evidence_sha256": {
+          "resources/js/helpers/exact-commercial.js": "5d9baf8d3ca1ec5c0879cd83718e7c69065d26b25c20bb9cdc810109eb73d35b",
+          "tests/js/exact-tender-consumers.test.cjs": "7cc323807d720dc49b3e6ba74942927db8c9e4b02e9cbef0c699f4f5963637b0"
+        }
+      }
+    ]
+  },
+  {
+    "id": "b9d1ab988507ec49e340d5a1",
+    "expression": "target.compare(0) < 0",
+    "source": {
+      "file": "resources/js/helpers/exact-commercial.js",
+      "symbol": "prepareCommercialPayments",
+      "operation": "native_<",
+      "operation_language": "javascript"
+    },
+    "review": "Rechaza objetivos liquidables negativos por comparación racional.",
+    "previous": null,
+    "current": {
+      "category": "validation",
+      "justification": "Rechaza objetivos liquidables negativos por comparación racional. Expresión: target.compare(0) < 0",
+      "evidence": [
+        "resources/js/helpers/exact-commercial.js",
+        "tests/js/exact-tender-consumers.test.cjs"
+      ],
+      "source": {
+        "file": "resources/js/helpers/exact-commercial.js",
+        "symbol": "prepareCommercialPayments",
+        "operation": "native_<",
+        "operation_language": "javascript"
+      },
+      "evidence_sha256": {
+        "resources/js/helpers/exact-commercial.js": "5d9baf8d3ca1ec5c0879cd83718e7c69065d26b25c20bb9cdc810109eb73d35b",
+        "tests/js/exact-tender-consumers.test.cjs": "7cc323807d720dc49b3e6ba74942927db8c9e4b02e9cbef0c699f4f5963637b0"
+      }
+    },
+    "revalidations": [
+      {
+        "reason": "Fuente y expresión revisadas sin cambios; se revalidó la evidencia ampliada de recurso IGTF/diálogo subcéntimo y contrato. Los 13 casos compartidos y la comparación de posición veinte mantienen los operandos originales; no se retiraron aserciones previas.",
+        "previous_evidence_sha256": {
+          "resources/js/helpers/exact-commercial.js": "5d9baf8d3ca1ec5c0879cd83718e7c69065d26b25c20bb9cdc810109eb73d35b",
+          "tests/js/exact-tender-consumers.test.cjs": "e5175e4dce631eea7c258f967215e14858bc41fac7272367e854dcc00bbba5ef"
+        },
+        "evidence_sha256": {
+          "resources/js/helpers/exact-commercial.js": "5d9baf8d3ca1ec5c0879cd83718e7c69065d26b25c20bb9cdc810109eb73d35b",
+          "tests/js/exact-tender-consumers.test.cjs": "7cc323807d720dc49b3e6ba74942927db8c9e4b02e9cbef0c699f4f5963637b0"
+        }
+      }
+    ]
+  },
+  {
+    "id": "f242086553b18aa807398a7d",
+    "expression": "target.final(2)",
+    "source": {
+      "file": "resources/js/helpers/exact-commercial.js",
+      "symbol": "prepareCommercialPayments",
+      "operation": "final",
+      "operation_language": "javascript"
+    },
+    "review": "La representación sólo comprueba el límite de céntimos del objetivo y no vuelve a una operación comercial.",
+    "previous": null,
+    "current": {
+      "category": "validation",
+      "justification": "La representación sólo comprueba el límite de céntimos del objetivo y no vuelve a una operación comercial. Expresión: target.final(2)",
+      "evidence": [
+        "resources/js/helpers/exact-commercial.js",
+        "tests/js/exact-tender-consumers.test.cjs"
+      ],
+      "source": {
+        "file": "resources/js/helpers/exact-commercial.js",
+        "symbol": "prepareCommercialPayments",
+        "operation": "final",
+        "operation_language": "javascript"
+      },
+      "evidence_sha256": {
+        "resources/js/helpers/exact-commercial.js": "5d9baf8d3ca1ec5c0879cd83718e7c69065d26b25c20bb9cdc810109eb73d35b",
+        "tests/js/exact-tender-consumers.test.cjs": "7cc323807d720dc49b3e6ba74942927db8c9e4b02e9cbef0c699f4f5963637b0"
+      }
+    },
+    "revalidations": [
+      {
+        "reason": "Fuente y expresión revisadas sin cambios; se revalidó la evidencia ampliada de recurso IGTF/diálogo subcéntimo y contrato. Los 13 casos compartidos y la comparación de posición veinte mantienen los operandos originales; no se retiraron aserciones previas.",
+        "previous_evidence_sha256": {
+          "resources/js/helpers/exact-commercial.js": "5d9baf8d3ca1ec5c0879cd83718e7c69065d26b25c20bb9cdc810109eb73d35b",
+          "tests/js/exact-tender-consumers.test.cjs": "e5175e4dce631eea7c258f967215e14858bc41fac7272367e854dcc00bbba5ef"
+        },
+        "evidence_sha256": {
+          "resources/js/helpers/exact-commercial.js": "5d9baf8d3ca1ec5c0879cd83718e7c69065d26b25c20bb9cdc810109eb73d35b",
+          "tests/js/exact-tender-consumers.test.cjs": "7cc323807d720dc49b3e6ba74942927db8c9e4b02e9cbef0c699f4f5963637b0"
+        }
+      }
+    ]
+  },
+  {
+    "id": "dad4c9b376311540c4544fb3",
+    "expression": "exactAmount(row.payment).compare(0) !== 0",
+    "source": {
+      "file": "resources/js/helpers/exact-commercial.js",
+      "symbol": "prepareCommercialPayments",
+      "operation": "native_!==",
+      "operation_language": "javascript"
+    },
+    "review": "El filtro elimina entradas exactamente cero sin parseFloat ni salto de ceros consecutivos.",
+    "previous": null,
+    "current": {
+      "category": "validation",
+      "justification": "El filtro elimina entradas exactamente cero sin parseFloat ni salto de ceros consecutivos. Expresión: exactAmount(row.payment).compare(0) !== 0",
+      "evidence": [
+        "resources/js/helpers/exact-commercial.js",
+        "tests/js/exact-tender-consumers.test.cjs"
+      ],
+      "source": {
+        "file": "resources/js/helpers/exact-commercial.js",
+        "symbol": "prepareCommercialPayments",
+        "operation": "native_!==",
+        "operation_language": "javascript"
+      },
+      "evidence_sha256": {
+        "resources/js/helpers/exact-commercial.js": "5d9baf8d3ca1ec5c0879cd83718e7c69065d26b25c20bb9cdc810109eb73d35b",
+        "tests/js/exact-tender-consumers.test.cjs": "7cc323807d720dc49b3e6ba74942927db8c9e4b02e9cbef0c699f4f5963637b0"
+      }
+    },
+    "revalidations": [
+      {
+        "reason": "Fuente y expresión revisadas sin cambios; se revalidó la evidencia ampliada de recurso IGTF/diálogo subcéntimo y contrato. Los 13 casos compartidos y la comparación de posición veinte mantienen los operandos originales; no se retiraron aserciones previas.",
+        "previous_evidence_sha256": {
+          "resources/js/helpers/exact-commercial.js": "5d9baf8d3ca1ec5c0879cd83718e7c69065d26b25c20bb9cdc810109eb73d35b",
+          "tests/js/exact-tender-consumers.test.cjs": "e5175e4dce631eea7c258f967215e14858bc41fac7272367e854dcc00bbba5ef"
+        },
+        "evidence_sha256": {
+          "resources/js/helpers/exact-commercial.js": "5d9baf8d3ca1ec5c0879cd83718e7c69065d26b25c20bb9cdc810109eb73d35b",
+          "tests/js/exact-tender-consumers.test.cjs": "7cc323807d720dc49b3e6ba74942927db8c9e4b02e9cbef0c699f4f5963637b0"
+        }
+      }
+    ]
+  },
+  {
+    "id": "9a2485f17453d4013355162c",
+    "expression": "requested.final(2)",
+    "source": {
+      "file": "resources/js/helpers/exact-commercial.js",
+      "symbol": "prepareCommercialPayments",
+      "operation": "final",
+      "operation_language": "javascript"
+    },
+    "review": "Previsualiza una recepción real en céntimos; inputs mantiene el solicitado original para el servidor.",
+    "previous": null,
+    "current": {
+      "category": "settlement",
+      "justification": "Previsualiza una recepción real en céntimos; inputs mantiene el solicitado original para el servidor. Expresión: requested.final(2)",
+      "evidence": [
+        "resources/js/helpers/exact-commercial.js",
+        "tests/js/exact-tender-consumers.test.cjs"
+      ],
+      "source": {
+        "file": "resources/js/helpers/exact-commercial.js",
+        "symbol": "prepareCommercialPayments",
+        "operation": "final",
+        "operation_language": "javascript"
+      },
+      "evidence_sha256": {
+        "resources/js/helpers/exact-commercial.js": "5d9baf8d3ca1ec5c0879cd83718e7c69065d26b25c20bb9cdc810109eb73d35b",
+        "tests/js/exact-tender-consumers.test.cjs": "7cc323807d720dc49b3e6ba74942927db8c9e4b02e9cbef0c699f4f5963637b0"
+      }
+    },
+    "revalidations": [
+      {
+        "reason": "Fuente y expresión revisadas sin cambios; se revalidó la evidencia ampliada de recurso IGTF/diálogo subcéntimo y contrato. Los 13 casos compartidos y la comparación de posición veinte mantienen los operandos originales; no se retiraron aserciones previas.",
+        "previous_evidence_sha256": {
+          "resources/js/helpers/exact-commercial.js": "5d9baf8d3ca1ec5c0879cd83718e7c69065d26b25c20bb9cdc810109eb73d35b",
+          "tests/js/exact-tender-consumers.test.cjs": "e5175e4dce631eea7c258f967215e14858bc41fac7272367e854dcc00bbba5ef"
+        },
+        "evidence_sha256": {
+          "resources/js/helpers/exact-commercial.js": "5d9baf8d3ca1ec5c0879cd83718e7c69065d26b25c20bb9cdc810109eb73d35b",
+          "tests/js/exact-tender-consumers.test.cjs": "7cc323807d720dc49b3e6ba74942927db8c9e4b02e9cbef0c699f4f5963637b0"
+        }
+      }
+    ]
+  },
+  {
+    "id": "11495ec1e4ae0540cf364c5a",
+    "expression": "cash.compare(0) <= 0",
+    "source": {
+      "file": "resources/js/helpers/exact-commercial.js",
+      "symbol": "prepareCommercialPayments",
+      "operation": "native_<=",
+      "operation_language": "javascript"
+    },
+    "review": "Comprueba que la recepción tenga céntimos positivos antes de repartir vuelto.",
+    "previous": null,
+    "current": {
+      "category": "validation",
+      "justification": "Comprueba que la recepción tenga céntimos positivos antes de repartir vuelto. Expresión: cash.compare(0) <= 0",
+      "evidence": [
+        "resources/js/helpers/exact-commercial.js",
+        "tests/js/exact-tender-consumers.test.cjs"
+      ],
+      "source": {
+        "file": "resources/js/helpers/exact-commercial.js",
+        "symbol": "prepareCommercialPayments",
+        "operation": "native_<=",
+        "operation_language": "javascript"
+      },
+      "evidence_sha256": {
+        "resources/js/helpers/exact-commercial.js": "5d9baf8d3ca1ec5c0879cd83718e7c69065d26b25c20bb9cdc810109eb73d35b",
+        "tests/js/exact-tender-consumers.test.cjs": "7cc323807d720dc49b3e6ba74942927db8c9e4b02e9cbef0c699f4f5963637b0"
+      }
+    },
+    "revalidations": [
+      {
+        "reason": "Fuente y expresión revisadas sin cambios; se revalidó la evidencia ampliada de recurso IGTF/diálogo subcéntimo y contrato. Los 13 casos compartidos y la comparación de posición veinte mantienen los operandos originales; no se retiraron aserciones previas.",
+        "previous_evidence_sha256": {
+          "resources/js/helpers/exact-commercial.js": "5d9baf8d3ca1ec5c0879cd83718e7c69065d26b25c20bb9cdc810109eb73d35b",
+          "tests/js/exact-tender-consumers.test.cjs": "e5175e4dce631eea7c258f967215e14858bc41fac7272367e854dcc00bbba5ef"
+        },
+        "evidence_sha256": {
+          "resources/js/helpers/exact-commercial.js": "5d9baf8d3ca1ec5c0879cd83718e7c69065d26b25c20bb9cdc810109eb73d35b",
+          "tests/js/exact-tender-consumers.test.cjs": "7cc323807d720dc49b3e6ba74942927db8c9e4b02e9cbef0c699f4f5963637b0"
+        }
+      }
+    ]
+  },
+  {
+    "id": "1fc4dcc1c64c51037f7fe0ff",
+    "expression": "requested.compare(0) < 0",
+    "source": {
+      "file": "resources/js/helpers/exact-commercial.js",
+      "symbol": "prepareCommercialPayments",
+      "operation": "native_<",
+      "operation_language": "javascript"
+    },
+    "review": "Rechaza importes solicitados negativos mediante ExactAmount.compare.",
+    "previous": null,
+    "current": {
+      "category": "validation",
+      "justification": "Rechaza importes solicitados negativos mediante ExactAmount.compare. Expresión: requested.compare(0) < 0",
+      "evidence": [
+        "resources/js/helpers/exact-commercial.js",
+        "tests/js/exact-tender-consumers.test.cjs"
+      ],
+      "source": {
+        "file": "resources/js/helpers/exact-commercial.js",
+        "symbol": "prepareCommercialPayments",
+        "operation": "native_<",
+        "operation_language": "javascript"
+      },
+      "evidence_sha256": {
+        "resources/js/helpers/exact-commercial.js": "5d9baf8d3ca1ec5c0879cd83718e7c69065d26b25c20bb9cdc810109eb73d35b",
+        "tests/js/exact-tender-consumers.test.cjs": "7cc323807d720dc49b3e6ba74942927db8c9e4b02e9cbef0c699f4f5963637b0"
+      }
+    },
+    "revalidations": [
+      {
+        "reason": "Fuente y expresión revisadas sin cambios; se revalidó la evidencia ampliada de recurso IGTF/diálogo subcéntimo y contrato. Los 13 casos compartidos y la comparación de posición veinte mantienen los operandos originales; no se retiraron aserciones previas.",
+        "previous_evidence_sha256": {
+          "resources/js/helpers/exact-commercial.js": "5d9baf8d3ca1ec5c0879cd83718e7c69065d26b25c20bb9cdc810109eb73d35b",
+          "tests/js/exact-tender-consumers.test.cjs": "e5175e4dce631eea7c258f967215e14858bc41fac7272367e854dcc00bbba5ef"
+        },
+        "evidence_sha256": {
+          "resources/js/helpers/exact-commercial.js": "5d9baf8d3ca1ec5c0879cd83718e7c69065d26b25c20bb9cdc810109eb73d35b",
+          "tests/js/exact-tender-consumers.test.cjs": "7cc323807d720dc49b3e6ba74942927db8c9e4b02e9cbef0c699f4f5963637b0"
+        }
+      }
+    ]
+  },
+  {
+    "id": "a81e3d473c5b7b0264dc070f",
+    "expression": "change.compare(0) < 0",
+    "source": {
+      "file": "resources/js/helpers/exact-commercial.js",
+      "symbol": "prepareCommercialPayments",
+      "operation": "native_<",
+      "operation_language": "javascript"
+    },
+    "review": "Comprueba el signo del exceso racional; una recepción parcial tiene vuelto cero.",
+    "previous": null,
+    "current": {
+      "category": "validation",
+      "justification": "Comprueba el signo del exceso racional; una recepción parcial tiene vuelto cero. Expresión: change.compare(0) < 0",
+      "evidence": [
+        "resources/js/helpers/exact-commercial.js",
+        "tests/js/exact-tender-consumers.test.cjs"
+      ],
+      "source": {
+        "file": "resources/js/helpers/exact-commercial.js",
+        "symbol": "prepareCommercialPayments",
+        "operation": "native_<",
+        "operation_language": "javascript"
+      },
+      "evidence_sha256": {
+        "resources/js/helpers/exact-commercial.js": "5d9baf8d3ca1ec5c0879cd83718e7c69065d26b25c20bb9cdc810109eb73d35b",
+        "tests/js/exact-tender-consumers.test.cjs": "7cc323807d720dc49b3e6ba74942927db8c9e4b02e9cbef0c699f4f5963637b0"
+      }
+    },
+    "revalidations": [
+      {
+        "reason": "Fuente y expresión revisadas sin cambios; se revalidó la evidencia ampliada de recurso IGTF/diálogo subcéntimo y contrato. Los 13 casos compartidos y la comparación de posición veinte mantienen los operandos originales; no se retiraron aserciones previas.",
+        "previous_evidence_sha256": {
+          "resources/js/helpers/exact-commercial.js": "5d9baf8d3ca1ec5c0879cd83718e7c69065d26b25c20bb9cdc810109eb73d35b",
+          "tests/js/exact-tender-consumers.test.cjs": "e5175e4dce631eea7c258f967215e14858bc41fac7272367e854dcc00bbba5ef"
+        },
+        "evidence_sha256": {
+          "resources/js/helpers/exact-commercial.js": "5d9baf8d3ca1ec5c0879cd83718e7c69065d26b25c20bb9cdc810109eb73d35b",
+          "tests/js/exact-tender-consumers.test.cjs": "7cc323807d720dc49b3e6ba74942927db8c9e4b02e9cbef0c699f4f5963637b0"
+        }
+      }
+    ]
+  },
+  {
+    "id": "5fcb750a2ac4b6f69ab3fab7",
+    "expression": "change.compare(cash) > 0",
+    "source": {
+      "file": "resources/js/helpers/exact-commercial.js",
+      "symbol": "prepareCommercialPayments",
+      "operation": "native_>",
+      "operation_language": "javascript"
+    },
+    "review": "Exige efectivo suficiente para el vuelto sin reducir pagos bancarios.",
+    "previous": null,
+    "current": {
+      "category": "validation",
+      "justification": "Exige efectivo suficiente para el vuelto sin reducir pagos bancarios. Expresión: change.compare(cash) > 0",
+      "evidence": [
+        "resources/js/helpers/exact-commercial.js",
+        "tests/js/exact-tender-consumers.test.cjs"
+      ],
+      "source": {
+        "file": "resources/js/helpers/exact-commercial.js",
+        "symbol": "prepareCommercialPayments",
+        "operation": "native_>",
+        "operation_language": "javascript"
+      },
+      "evidence_sha256": {
+        "resources/js/helpers/exact-commercial.js": "5d9baf8d3ca1ec5c0879cd83718e7c69065d26b25c20bb9cdc810109eb73d35b",
+        "tests/js/exact-tender-consumers.test.cjs": "7cc323807d720dc49b3e6ba74942927db8c9e4b02e9cbef0c699f4f5963637b0"
+      }
+    },
+    "revalidations": [
+      {
+        "reason": "Fuente y expresión revisadas sin cambios; se revalidó la evidencia ampliada de recurso IGTF/diálogo subcéntimo y contrato. Los 13 casos compartidos y la comparación de posición veinte mantienen los operandos originales; no se retiraron aserciones previas.",
+        "previous_evidence_sha256": {
+          "resources/js/helpers/exact-commercial.js": "5d9baf8d3ca1ec5c0879cd83718e7c69065d26b25c20bb9cdc810109eb73d35b",
+          "tests/js/exact-tender-consumers.test.cjs": "e5175e4dce631eea7c258f967215e14858bc41fac7272367e854dcc00bbba5ef"
+        },
+        "evidence_sha256": {
+          "resources/js/helpers/exact-commercial.js": "5d9baf8d3ca1ec5c0879cd83718e7c69065d26b25c20bb9cdc810109eb73d35b",
+          "tests/js/exact-tender-consumers.test.cjs": "7cc323807d720dc49b3e6ba74942927db8c9e4b02e9cbef0c699f4f5963637b0"
+        }
+      }
+    ]
+  },
+  {
+    "id": "1d5ddda23ef876261226a6df",
+    "expression": "remaining.compare(received[index]) < 0",
+    "source": {
+      "file": "resources/js/helpers/exact-commercial.js",
+      "symbol": "prepareCommercialPayments",
+      "operation": "native_<",
+      "operation_language": "javascript"
+    },
+    "review": "El mínimo se obtiene comparando fracciones y limita el vuelto al efectivo de su fila, con orden estable.",
+    "previous": null,
+    "current": {
+      "category": "allocation",
+      "justification": "El mínimo se obtiene comparando fracciones y limita el vuelto al efectivo de su fila, con orden estable. Expresión: remaining.compare(received[index]) < 0",
+      "evidence": [
+        "resources/js/helpers/exact-commercial.js",
+        "tests/js/exact-tender-consumers.test.cjs"
+      ],
+      "source": {
+        "file": "resources/js/helpers/exact-commercial.js",
+        "symbol": "prepareCommercialPayments",
+        "operation": "native_<",
+        "operation_language": "javascript"
+      },
+      "evidence_sha256": {
+        "resources/js/helpers/exact-commercial.js": "5d9baf8d3ca1ec5c0879cd83718e7c69065d26b25c20bb9cdc810109eb73d35b",
+        "tests/js/exact-tender-consumers.test.cjs": "7cc323807d720dc49b3e6ba74942927db8c9e4b02e9cbef0c699f4f5963637b0"
+      }
+    },
+    "revalidations": [
+      {
+        "reason": "Fuente y expresión revisadas sin cambios; se revalidó la evidencia ampliada de recurso IGTF/diálogo subcéntimo y contrato. Los 13 casos compartidos y la comparación de posición veinte mantienen los operandos originales; no se retiraron aserciones previas.",
+        "previous_evidence_sha256": {
+          "resources/js/helpers/exact-commercial.js": "5d9baf8d3ca1ec5c0879cd83718e7c69065d26b25c20bb9cdc810109eb73d35b",
+          "tests/js/exact-tender-consumers.test.cjs": "e5175e4dce631eea7c258f967215e14858bc41fac7272367e854dcc00bbba5ef"
+        },
+        "evidence_sha256": {
+          "resources/js/helpers/exact-commercial.js": "5d9baf8d3ca1ec5c0879cd83718e7c69065d26b25c20bb9cdc810109eb73d35b",
+          "tests/js/exact-tender-consumers.test.cjs": "7cc323807d720dc49b3e6ba74942927db8c9e4b02e9cbef0c699f4f5963637b0"
+        }
+      }
+    ]
+  },
+  {
+    "id": "1373d7c0d16bee7f3e376a02",
+    "expression": "received[index].minus(returned).decimal()",
+    "source": {
+      "file": "resources/js/helpers/exact-commercial.js",
+      "symbol": "prepareCommercialPayments",
+      "operation": "decimal",
+      "operation_language": "javascript"
+    },
+    "review": "Representa el neto del simulador ya liquidado. El envío usa inputs originales y el servidor repite el reparto autorizado.",
+    "previous": null,
+    "current": {
+      "category": "presentation",
+      "justification": "Representa el neto del simulador ya liquidado. El envío usa inputs originales y el servidor repite el reparto autorizado. Expresión: received[index].minus(returned).decimal()",
+      "evidence": [
+        "resources/js/helpers/exact-commercial.js",
+        "tests/js/exact-tender-consumers.test.cjs"
+      ],
+      "source": {
+        "file": "resources/js/helpers/exact-commercial.js",
+        "symbol": "prepareCommercialPayments",
+        "operation": "decimal",
+        "operation_language": "javascript"
+      },
+      "evidence_sha256": {
+        "resources/js/helpers/exact-commercial.js": "5d9baf8d3ca1ec5c0879cd83718e7c69065d26b25c20bb9cdc810109eb73d35b",
+        "tests/js/exact-tender-consumers.test.cjs": "7cc323807d720dc49b3e6ba74942927db8c9e4b02e9cbef0c699f4f5963637b0"
+      }
+    },
+    "revalidations": [
+      {
+        "reason": "Fuente y expresión revisadas sin cambios; se revalidó la evidencia ampliada de recurso IGTF/diálogo subcéntimo y contrato. Los 13 casos compartidos y la comparación de posición veinte mantienen los operandos originales; no se retiraron aserciones previas.",
+        "previous_evidence_sha256": {
+          "resources/js/helpers/exact-commercial.js": "5d9baf8d3ca1ec5c0879cd83718e7c69065d26b25c20bb9cdc810109eb73d35b",
+          "tests/js/exact-tender-consumers.test.cjs": "e5175e4dce631eea7c258f967215e14858bc41fac7272367e854dcc00bbba5ef"
+        },
+        "evidence_sha256": {
+          "resources/js/helpers/exact-commercial.js": "5d9baf8d3ca1ec5c0879cd83718e7c69065d26b25c20bb9cdc810109eb73d35b",
+          "tests/js/exact-tender-consumers.test.cjs": "7cc323807d720dc49b3e6ba74942927db8c9e4b02e9cbef0c699f4f5963637b0"
+        }
+      }
+    ]
+  },
+  {
+    "id": "b839c3c112703bf161e93350",
+    "expression": "returned.decimal()",
+    "source": {
+      "file": "resources/js/helpers/exact-commercial.js",
+      "symbol": "prepareCommercialPayments",
+      "operation": "decimal",
+      "operation_language": "javascript"
+    },
+    "review": "Representa el vuelto del simulador ya expresado en céntimos; no se utiliza como entrada del guardado.",
+    "previous": null,
+    "current": {
+      "category": "presentation",
+      "justification": "Representa el vuelto del simulador ya expresado en céntimos; no se utiliza como entrada del guardado. Expresión: returned.decimal()",
+      "evidence": [
+        "resources/js/helpers/exact-commercial.js",
+        "tests/js/exact-tender-consumers.test.cjs"
+      ],
+      "source": {
+        "file": "resources/js/helpers/exact-commercial.js",
+        "symbol": "prepareCommercialPayments",
+        "operation": "decimal",
+        "operation_language": "javascript"
+      },
+      "evidence_sha256": {
+        "resources/js/helpers/exact-commercial.js": "5d9baf8d3ca1ec5c0879cd83718e7c69065d26b25c20bb9cdc810109eb73d35b",
+        "tests/js/exact-tender-consumers.test.cjs": "7cc323807d720dc49b3e6ba74942927db8c9e4b02e9cbef0c699f4f5963637b0"
+      }
+    },
+    "revalidations": [
+      {
+        "reason": "Fuente y expresión revisadas sin cambios; se revalidó la evidencia ampliada de recurso IGTF/diálogo subcéntimo y contrato. Los 13 casos compartidos y la comparación de posición veinte mantienen los operandos originales; no se retiraron aserciones previas.",
+        "previous_evidence_sha256": {
+          "resources/js/helpers/exact-commercial.js": "5d9baf8d3ca1ec5c0879cd83718e7c69065d26b25c20bb9cdc810109eb73d35b",
+          "tests/js/exact-tender-consumers.test.cjs": "e5175e4dce631eea7c258f967215e14858bc41fac7272367e854dcc00bbba5ef"
+        },
+        "evidence_sha256": {
+          "resources/js/helpers/exact-commercial.js": "5d9baf8d3ca1ec5c0879cd83718e7c69065d26b25c20bb9cdc810109eb73d35b",
+          "tests/js/exact-tender-consumers.test.cjs": "7cc323807d720dc49b3e6ba74942927db8c9e4b02e9cbef0c699f4f5963637b0"
+        }
+      }
+    ]
+  },
+  {
+    "id": "4359b97b29a8975c7125f995",
+    "expression": "exactValue(row, 'payment_adjustment').compare(0) !== 0",
+    "source": {
+      "file": "resources/js/views/tenant/documents/partials/payments.vue",
+      "symbol": "hasPaymentAdjustment",
+      "operation": "native_!==",
+      "operation_language": "javascript"
+    },
+    "review": "Compara la fracción del ajuste con cero para decidir su visibilidad, también por debajo de doce posiciones.",
+    "previous": null,
+    "current": {
+      "category": "validation",
+      "justification": "Compara la fracción del ajuste con cero para decidir su visibilidad, también por debajo de doce posiciones. Expresión: exactValue(row, 'payment_adjustment').compare(0) !== 0",
+      "evidence": [
+        "resources/js/views/tenant/documents/partials/payments.vue",
+        "tests/js/exact-tender-consumers.test.cjs"
+      ],
+      "evidence_sha256": {
+        "resources/js/views/tenant/documents/partials/payments.vue": "f90ef281e8970a683e36e37f1c577480734292e69e10ad9b045086c1edd863e5",
+        "tests/js/exact-tender-consumers.test.cjs": "7cc323807d720dc49b3e6ba74942927db8c9e4b02e9cbef0c699f4f5963637b0"
+      },
+      "source": {
+        "file": "resources/js/views/tenant/documents/partials/payments.vue",
+        "symbol": "hasPaymentAdjustment",
+        "operation": "native_!==",
+        "operation_language": "javascript"
+      }
+    }
+  },
+  {
+    "id": "dd9a6f5207c7550b2510c096",
+    "expression": "value.decimal()",
+    "source": {
+      "file": "resources/js/views/tenant/documents/partials/payments.vue",
+      "symbol": "paymentAdjustmentText",
+      "operation": "decimal",
+      "operation_language": "javascript"
+    },
+    "review": "Texto final del ajuste aplicado. Si la proyección es cero y la fracción no, imprime n/d y no devuelve ese texto al cálculo.",
+    "previous": null,
+    "current": {
+      "category": "presentation",
+      "justification": "Texto final del ajuste aplicado. Si la proyección es cero y la fracción no, imprime n/d y no devuelve ese texto al cálculo. Expresión: value.decimal()",
+      "evidence": [
+        "resources/js/views/tenant/documents/partials/payments.vue",
+        "tests/js/exact-tender-consumers.test.cjs"
+      ],
+      "evidence_sha256": {
+        "resources/js/views/tenant/documents/partials/payments.vue": "f90ef281e8970a683e36e37f1c577480734292e69e10ad9b045086c1edd863e5",
+        "tests/js/exact-tender-consumers.test.cjs": "7cc323807d720dc49b3e6ba74942927db8c9e4b02e9cbef0c699f4f5963637b0"
+      },
+      "source": {
+        "file": "resources/js/views/tenant/documents/partials/payments.vue",
+        "symbol": "paymentAdjustmentText",
+        "operation": "decimal",
+        "operation_language": "javascript"
+      }
+    }
+  },
+  {
+    "id": "5c4cf5caf383071be3a7e5d2",
+    "expression": "text !== '0'",
+    "source": {
+      "file": "resources/js/views/tenant/documents/partials/payments.vue",
+      "symbol": "paymentAdjustmentText",
+      "operation": "native_!==",
+      "operation_language": "javascript"
+    },
+    "review": "Selecciona la forma visible decimal/numerador sin cambiar la fracción ni operar con el texto.",
+    "previous": null,
+    "current": {
+      "category": "presentation",
+      "justification": "Selecciona la forma visible decimal/numerador sin cambiar la fracción ni operar con el texto. Expresión: text !== '0'",
+      "evidence": [
+        "resources/js/views/tenant/documents/partials/payments.vue",
+        "tests/js/exact-tender-consumers.test.cjs"
+      ],
+      "evidence_sha256": {
+        "resources/js/views/tenant/documents/partials/payments.vue": "f90ef281e8970a683e36e37f1c577480734292e69e10ad9b045086c1edd863e5",
+        "tests/js/exact-tender-consumers.test.cjs": "7cc323807d720dc49b3e6ba74942927db8c9e4b02e9cbef0c699f4f5963637b0"
+      },
+      "source": {
+        "file": "resources/js/views/tenant/documents/partials/payments.vue",
+        "symbol": "paymentAdjustmentText",
+        "operation": "native_!==",
+        "operation_language": "javascript"
+      }
+    }
+  },
+  {
+    "id": "70e8643ff76ea8991d17aace",
+    "expression": "value.compare(0) === 0",
+    "source": {
+      "file": "resources/js/views/tenant/documents/partials/payments.vue",
+      "symbol": "paymentAdjustmentText",
+      "operation": "native_===",
+      "operation_language": "javascript"
+    },
+    "review": "La nulidad se decide desde ExactAmount.compare; no se infiere del texto limitado.",
+    "previous": null,
+    "current": {
+      "category": "validation",
+      "justification": "La nulidad se decide desde ExactAmount.compare; no se infiere del texto limitado. Expresión: value.compare(0) === 0",
+      "evidence": [
+        "resources/js/views/tenant/documents/partials/payments.vue",
+        "tests/js/exact-tender-consumers.test.cjs"
+      ],
+      "evidence_sha256": {
+        "resources/js/views/tenant/documents/partials/payments.vue": "f90ef281e8970a683e36e37f1c577480734292e69e10ad9b045086c1edd863e5",
+        "tests/js/exact-tender-consumers.test.cjs": "7cc323807d720dc49b3e6ba74942927db8c9e4b02e9cbef0c699f4f5963637b0"
+      },
+      "source": {
+        "file": "resources/js/views/tenant/documents/partials/payments.vue",
+        "symbol": "paymentAdjustmentText",
+        "operation": "native_===",
+        "operation_language": "javascript"
+      }
+    }
+  },
+  {
+    "id": "edc9054a264e2e57e9bb8f34",
+    "expression": "$row->date_of_payment->format('d/m/Y')",
+    "source": {
+      "file": "app/Http/Resources/Tenant/DocumentPaymentCollection.php",
+      "symbol": "DocumentPaymentCollection::toArray",
+      "operation": "format",
+      "operation_language": "php"
+    },
+    "review": "Formato exclusivo de date_of_payment, declarado como date en DocumentPayment y ejecutado por el recurso del caso SPE MySQL.",
+    "previous": null,
+    "current": {
+      "category": "technical",
+      "justification": "Formato exclusivo de date_of_payment, declarado como date en DocumentPayment y ejecutado por el recurso del caso SPE MySQL. Expresión: $row->date_of_payment->format('d/m/Y')",
+      "evidence": [
+        "app/Http/Resources/Tenant/DocumentPaymentCollection.php",
+        "tests/Support/SpePersistenceCases.php"
+      ],
+      "evidence_sha256": {
+        "app/Http/Resources/Tenant/DocumentPaymentCollection.php": "ade30a1ae7e28a281cad5466da564d1525d16685e87affef760625e5870c3160",
+        "tests/Support/SpePersistenceCases.php": "860437e4561572f72eb2a83dcc41bf6ae423c095f23b95f2c5d80db5424509c3"
+      },
+      "source": {
+        "file": "app/Http/Resources/Tenant/DocumentPaymentCollection.php",
+        "symbol": "DocumentPaymentCollection::toArray",
+        "operation": "format",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "4675aa04f74fe6bc81e0a95e",
+    "expression": "\\App\\Support\\Exact\\Decimal::represent($row->calculation_snapshot['values']['payment_adjustment'] ?? 0)",
+    "source": {
+      "file": "app/Http/Resources/Tenant/DocumentPaymentCollection.php",
+      "symbol": "DocumentPaymentCollection::toArray",
+      "operation": "represent",
+      "operation_language": "php"
+    },
+    "review": "Representación de ajuste acompañada del snapshot original. El diálogo usa la fracción para visibilidad y n/d cuando no cabe el texto; no usa la representación como operando.",
+    "previous": null,
+    "current": {
+      "category": "presentation",
+      "justification": "Representación de ajuste acompañada del snapshot original. El diálogo usa la fracción para visibilidad y n/d cuando no cabe el texto; no usa la representación como operando. Expresión: \\App\\Support\\Exact\\Decimal::represent($row->calculation_snapshot['values']['payment_adjustment'] ?? 0)",
+      "evidence": [
+        "app/Http/Resources/Tenant/DocumentPaymentCollection.php",
+        "tests/js/exact-tender-consumers.test.cjs"
+      ],
+      "evidence_sha256": {
+        "app/Http/Resources/Tenant/DocumentPaymentCollection.php": "ade30a1ae7e28a281cad5466da564d1525d16685e87affef760625e5870c3160",
+        "tests/js/exact-tender-consumers.test.cjs": "7cc323807d720dc49b3e6ba74942927db8c9e4b02e9cbef0c699f4f5963637b0"
+      },
+      "source": {
+        "file": "app/Http/Resources/Tenant/DocumentPaymentCollection.php",
+        "symbol": "DocumentPaymentCollection::toArray",
+        "operation": "represent",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "b715d8ee89de66556760330a",
+    "expression": "(int) $order->order_state_id",
+    "source": {
+      "file": "app/Http/Controllers/System/PaymentOrderController.php",
+      "symbol": "PaymentOrderController::paymentViewPay",
+      "operation": "integer_cast",
+      "operation_language": "php"
+    },
+    "review": "Convierte exclusivamente el identificador entero de payment_order_states a entero para informar el estado conservado. No convierte importes. La prueba rechaza cuatro textos de éxito del navegador sin SQL de escritura y conserva una orden previamente pagada.",
+    "previous": null,
+    "current": {
+      "category": "technical",
+      "justification": "Convierte exclusivamente el identificador entero de payment_order_states a entero para informar el estado conservado. No convierte importes. La prueba rechaza cuatro textos de éxito del navegador sin SQL de escritura y conserva una orden previamente pagada. Expresión: (int) $order->order_state_id",
+      "evidence": [
+        "app/Http/Controllers/System/PaymentOrderController.php",
+        "tests/Unit/ExactCentralQuoteTest.php#test_browser_success_text_cannot_mark_an_order_paid_or_repeat_the_payment"
+      ],
+      "evidence_sha256": {
+        "app/Http/Controllers/System/PaymentOrderController.php": "5e547eb6ffd6e30ff4e1cae152680c281b4f4be09565c3e87856cff4ea2e859a",
+        "tests/Unit/ExactCentralQuoteTest.php": "81cd693e421579600956a96d75fc780c857cd78031e078194f1e26ce7094f443"
+      },
+      "source": {
+        "file": "app/Http/Controllers/System/PaymentOrderController.php",
+        "symbol": "PaymentOrderController::paymentViewPay",
+        "operation": "integer_cast",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "07d230202f6541fb76c36584",
+    "expression": "(int) $order->order_state_id === 2",
+    "source": {
+      "file": "app/Http/Controllers/System/PaymentOrderController.php",
+      "symbol": "PaymentOrderController::paymentViewPay",
+      "operation": "native_Identical",
+      "operation_language": "php"
+    },
+    "review": "Compara el identificador entero de estado con el código 2 (pagado), sin decidirlo por un texto de éxito ni operar dinero. Las consultas del endpoint son sólo SELECT; la recepción y confirmación autorizadas siguen pendientes en sus adaptadores.",
+    "previous": null,
+    "current": {
+      "category": "technical",
+      "justification": "Compara el identificador entero de estado con el código 2 (pagado), sin decidirlo por un texto de éxito ni operar dinero. Las consultas del endpoint son sólo SELECT; la recepción y confirmación autorizadas siguen pendientes en sus adaptadores. Expresión: (int) $order->order_state_id === 2",
+      "evidence": [
+        "app/Http/Controllers/System/PaymentOrderController.php",
+        "tests/Unit/ExactCentralQuoteTest.php#test_browser_success_text_cannot_mark_an_order_paid_or_repeat_the_payment"
+      ],
+      "evidence_sha256": {
+        "app/Http/Controllers/System/PaymentOrderController.php": "5e547eb6ffd6e30ff4e1cae152680c281b4f4be09565c3e87856cff4ea2e859a",
+        "tests/Unit/ExactCentralQuoteTest.php": "81cd693e421579600956a96d75fc780c857cd78031e078194f1e26ce7094f443"
+      },
+      "source": {
+        "file": "app/Http/Controllers/System/PaymentOrderController.php",
+        "symbol": "PaymentOrderController::paymentViewPay",
+        "operation": "native_Identical",
+        "operation_language": "php"
+      }
+    }
+  }
+]

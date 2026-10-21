@@ -34,7 +34,7 @@
                                     <td>{{ row.payment_method_type_description }}</td>
                                     <td>{{ row.destination_description }}</td>
                                     <!-- <td>{{ row.reference }}</td> -->
-                                    <td class="text-center">{{ row.payment }} aplicado<br><small>{{ row.currency_type_id }} {{ row.original_amount }} recibido; IGTF {{ row.tax_amount }}</small><br><small v-if="row.payment_adjustment && row.payment_adjustment !== '0'">Ajuste de liquidación: {{ row.payment_adjustment }}</small><br><small v-if="row.reversed_at">Revertido</small></td>
+                                    <td class="text-center">{{ row.payment }} aplicado<br><small v-if="row.receipt_parent_id">IGTF del cobro PAGO-{{ row.receipt_parent_id }}</small><small v-else>{{ row.currency_type_id }} {{ row.original_amount }} recibido; IGTF {{ row.tax_amount }}</small><br><small v-if="hasPaymentAdjustment(row)">Ajuste de liquidación: {{ paymentAdjustmentText(row) }}</small><br><small v-if="row.reversed_at">Revertido</small></td>
 
                                     <td class="text-left">
 
@@ -257,7 +257,7 @@
 </template>
 
 <script>
-import {exactAmount} from '../../../../helpers/exchange-rate-math'
+import {exactAmount, exactValue} from '../../../../helpers/exchange-rate-math'
 import IgtfPaymentFields from "./igtf_fields.vue"
 
     import {deletable} from '../../../../mixins/deletable'
@@ -312,6 +312,16 @@ import IgtfPaymentFields from "./igtf_fields.vue"
         //     }
         // },
         methods: {
+            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            hasPaymentAdjustment(row) { return exactValue(row, 'payment_adjustment').compare(0) !== 0; },
+            paymentAdjustmentText(row) {
+                const value = exactValue(row, 'payment_adjustment');
+                const text = value.decimal();
+                if (text !== '0' || value.compare(0) === 0) return text;
+                const fraction = value.fraction();
+                return `${fraction.n}/${fraction.d}`;
+            },
+            // ######## FIN CALCULOS EXACTOS PRO9 ########
             events(){
                 this.$eventHub.$on('reloadDataPayments', ()=>{
                     this.getData()

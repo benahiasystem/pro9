@@ -987,6 +987,8 @@
 }
 </style>
 <script>
+import {restoreSaleNoteContext} from "../../../helpers/sale-note-conversion"
+
 import {exactAmount, exactSum} from '../../../helpers/exchange-rate-math'
 
 import {applyCommercialTotals, allocateCommercialRows} from '../../../helpers/exact-commercial'
@@ -1233,6 +1235,7 @@ export default {
             });
         }
 
+        restoreSaleNoteContext(this, localStorage);
         const itemsFromNotes = localStorage.getItem('itemsForNotes');
         if (itemsFromNotes) {
             const itemsParsed = JSON.parse(itemsFromNotes);

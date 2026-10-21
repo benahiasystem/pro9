@@ -26,6 +26,9 @@ class DocumentPaymentCollection extends ResourceCollection
                 'currency_type_id' => $row->currency_type_id,
                 'original_amount' => $row->original_amount,
                 'tax_amount' => $row->tax_amount,
+                // ######## INICIO CALCULOS EXACTOS PRO9 ########
+                'receipt_parent_id' => $row->receipt_parent_id,
+                // ######## FIN CALCULOS EXACTOS PRO9 ########
                 'payment_adjustment' => \App\Support\Exact\Decimal::represent($row->calculation_snapshot['values']['payment_adjustment'] ?? 0),
                 'calculation_snapshot' => $row->calculation_snapshot,
                 'reversed_at' => $row->reversed_at,

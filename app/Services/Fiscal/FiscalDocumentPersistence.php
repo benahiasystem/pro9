@@ -229,28 +229,28 @@ final class FiscalDocumentPersistence
                 return $existing;
             }
             PaymentMethodType::assertActiveForPayment($input['payment_method_type_id'] ?? null);
-            if (!$initial && $values['tax_amount'] > 0 && \App\Services\ExportInvoicePolicy::isExport($document->invoice->operation_type_id ?? '')) {
+            if (!$initial && D::readRequired($values, 'tax_amount')->isPositive() && \App\Services\ExportInvoicePolicy::isExport($document->invoice->operation_type_id ?? '')) {
                 FiscalAmounts::error('payment', 'El IGTF de un cobro posterior requiere una nota de exportación; ese flujo todavía no está habilitado.');
             }
-            if (!$initial && !FiscalNote::ordinary($document) && $values['tax_amount'] > 0 && \App\Services\SpecialTaxRegimePolicy::applies($document)) FiscalAmounts::error('payment', 'El IGTF posterior requiere una nota vinculada a régimen especial; ese flujo todavía no está habilitado.');
-            if (!$initial && !FiscalNote::ordinary($document) && $values['tax_amount'] > 0 && \App\Services\ThirdPartyInvoicePolicy::isThirdParty($document)) FiscalAmounts::error('payment', 'El IGTF de un cobro posterior requiere una nota por cuenta de terceros; ese flujo todavía no está habilitado.');
+            if (!$initial && !FiscalNote::ordinary($document) && D::readRequired($values, 'tax_amount')->isPositive() && \App\Services\SpecialTaxRegimePolicy::applies($document)) FiscalAmounts::error('payment', 'El IGTF posterior requiere una nota vinculada a régimen especial; ese flujo todavía no está habilitado.');
+            if (!$initial && !FiscalNote::ordinary($document) && D::readRequired($values, 'tax_amount')->isPositive() && \App\Services\ThirdPartyInvoicePolicy::isThirdParty($document)) FiscalAmounts::error('payment', 'El IGTF de un cobro posterior requiere una nota por cuenta de terceros; ese flujo todavía no está habilitado.');
             $method = PaymentMethodType::findOrFail($input['payment_method_type_id']);
             if ($document->document_type_id === '07') FiscalAmounts::error('document','Las NC no reciben cobros; utilice Registrar devolución.');
             $balance=$document->exactBalance();
-            $principal=D::of($values['payment']);
+            $principal=D::readRequired($values, 'payment');
             if (!$principal->isEqualTo($balance) && $principal->isEqualTo(D::of(D::represent($balance,2)))) {
                 $values['payment']=D::represent($balance);
                 $values['calculation_snapshot']['values']['payment']=D::fraction($balance);
                 $values['calculation_snapshot']['values']['payment_adjustment']=D::fraction($balance->minus(D::of($values['calculation_snapshot']['values']['converted_principal'])));
             }
-            if (!$initial && D::of($values['payment'])->isGreaterThan($balance)) FiscalAmounts::error('payment', 'El pago supera el saldo disponible.');
+            if (!$initial && D::readRequired($values, 'payment')->isGreaterThan($balance)) FiscalAmounts::error('payment', 'El pago supera el saldo disponible.');
             if ($initial && $document->emission()->where('status', '!=', 'not_requested')->exists()) FiscalAmounts::error('emission','No se modifican los pagos de una operación preparada.');
             if (!empty($input['id'])) FiscalAmounts::error('id', 'Revierta el pago y registre uno nuevo; no se editan pagos contabilizados.');
             validator($input, ['date_of_payment'=>'required|date','exchange_rate_source'=>'nullable|string|max:255','exchange_rate_date'=>'nullable|date','exemption_reason'=>'nullable|string|max:255'])->validate();
             $fields = array_intersect_key($input, array_flip(['date_of_payment','payment_method_type_id','has_card','card_brand_id','reference','payment_received','change']));
 
-            if ($initial && D::of($values['payment'])->isGreaterThan($document->exactBalance())) {
-                $residual = D::of($values['payment'])->minus($document->exactBalance());
+            if ($initial && D::readRequired($values, 'payment')->isGreaterThan($document->exactBalance())) {
+                $residual = D::readRequired($values, 'payment')->minus($document->exactBalance());
                 $cashResidual = D::convert($residual, $document->currency_type_id, $values['currency_type_id'], $values['exchange_rate']);
                 if (D::of(D::represent($cashResidual, 2))->isZero()) {
                     $values['payment'] = D::represent($document->exactBalance());
@@ -263,7 +263,7 @@ final class FiscalDocumentPersistence
             $payment = $document->payments()->create($values + $fields + $context + [
                 'operation_key' => $key, 'payment_method_snapshot' => $method->only(['id','description','hka_code']),
                 ]);
-            if ($values['tax_amount'] > 0) {
+            if (D::readRequired($values, 'tax_amount')->isPositive()) {
                 $target = $initial ? $document : self::igtfNote($document, $payment);
                 $base = D::convert($values['original_amount'], $values['currency_type_id'], $target->currency_type_id, $values['exchange_rate']);
                 $tax = D::convert($values['tax_amount'], $values['currency_type_id'], $target->currency_type_id, $values['exchange_rate']);
@@ -272,10 +272,16 @@ final class FiscalDocumentPersistence
                     'base_ves' => D::convert($values['original_amount'], $values['currency_type_id'], 'VES', $values['exchange_rate']),
                     'amount_ves' => D::convert($values['tax_amount'], $values['currency_type_id'], 'VES', $values['exchange_rate'])]);
                 self::summarize($target);
+                // ######## INICIO CALCULOS EXACTOS PRO9 ########
+                $appliedTax = D::of(D::represent($tax, 2));
+                $derivedValues = ['original_amount'=>$payment->exactValue('tax_amount'), 'payment'=>$appliedTax,
+                    'tax_amount'=>D::of(0), 'converted_principal'=>$tax, 'payment_adjustment'=>$appliedTax->minus($tax)];
                 $target->payments()->create(['date_of_payment'=>$payment->date_of_payment,'payment_method_type_id'=>$payment->payment_method_type_id,
                         'currency_type_id'=>$payment->currency_type_id,'exchange_rate'=>$payment->exchange_rate,
-                        'original_amount'=>$payment->tax_amount,'payment'=>$tax,'tax_amount'=>0,'receipt_parent_id'=>$payment->id,
+                        'original_amount'=>$payment->tax_amount,'payment'=>D::represent($appliedTax),'tax_amount'=>0,'receipt_parent_id'=>$payment->id,
+                        'calculation_snapshot'=>D::snapshot($derivedValues),
                         'operation_key'=>(string) Str::uuid(),'payment_method_snapshot'=>$payment->payment_method_snapshot]);
+                // ######## FIN CALCULOS EXACTOS PRO9 ########
                 self::updateSettlementState($target);
                 if (!$initial && HkaIgtfNote::applies($target)) HkaIgtfNote::afterCommit($target);
             }

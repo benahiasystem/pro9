@@ -155,7 +155,11 @@
                                     <div class="col-md-1 text-end">
                                     </div>
 
-                                    <div class="col-md-2 text-end">
+                                    <!-- ######## INICIO CALCULOS EXACTOS PRO9 ######## -->
+                                        <div class="col-12 mt-3"><strong>Saldo consolidado (Bs.): {{ summary.consolidated_balance_ves ?? '0' }}</strong>
+                                            <span class="ms-3">Total documental equivalente (Bs.): {{ summary.consolidated_total_ves ?? '0' }}</span></div>
+                                        <!-- ######## FIN CALCULOS EXACTOS PRO9 ######## -->
+                                        <div class="col-md-2 text-end">
                                         <el-badge :value="getTotalRowsUnpaid" class="item">
                                         <span size="small">Total comprobantes</span>
                                         </el-badge>
@@ -241,9 +245,9 @@
                                                     </el-popover>
                                                 </td>
                                                     <td>{{row.currency_type_id}}</td>
-                                                <td class="text-end text-danger">{{ row.total_to_pay }}</td>
-                                                <td class="text-end">{{ row.total }}
-                                                    <small v-if="row.settlement_adjustment !== '0'" class="d-block">Liquidable: {{ row.total_payable }} · Ajuste: {{ row.settlement_adjustment }}</small>
+                                                <td class="text-end text-danger">{{ row.total_to_pay }}<small v-if="row.currency_type_id === 'USD'" class="d-block">Bs. {{ row.balance_ves_equivalent }}</small></td>
+                                                <td class="text-end">{{ row.total }}<small v-if="row.currency_type_id === 'USD'" class="d-block">Bs. {{ row.total_ves_equivalent }}</small>
+                                                    <small v-if="hasSettlementAdjustment(row)" class="d-block">Liquidable: {{ row.total_payable }} · Ajuste: {{ settlementAdjustmentText(row) }}</small>
                                                 </td>
                                                 <td class="text-end">
                                                     <template v-if="row.type === 'purchase'">
@@ -297,6 +301,7 @@
 </template>
 
 <script>
+import {exactValue} from '../../../../../../../resources/js/helpers/exchange-rate-math';
 
     import ExpensePayments from "@viewsModuleExpense/expense_payments/payments.vue";
     import PurchasePayments from "@viewsModulePurchase/purchase_payments/payments.vue";
@@ -369,6 +374,14 @@
             });
         },
         methods: {
+            hasSettlementAdjustment(row) { return exactValue(row, 'settlement_adjustment').compare('0') !== 0; },
+            settlementAdjustmentText(row) {
+                const amount = exactValue(row, 'settlement_adjustment');
+                const text = amount.decimal();
+                if (text !== '0' || amount.compare('0') === 0) return text;
+                const fraction = amount.fraction();
+                return `${fraction.n}/${fraction.d}`;
+            },
             checkScrollShadows() {
                 const el = this.$refs.scrollContainer;
                 if (!el) return;

@@ -100,8 +100,8 @@
                                         <td class="celda">{{$value['number_full']}}</td>
 
                                         <td class="celda">{{$value['supplier_name']}}</td>
-                                        <td class="celda">{{\App\Support\Exact\Decimal::format($value['display']['total_to_pay'], 2)}}</td>
-                                        <td class="celda">{{\App\Support\Exact\Decimal::format($value['display']['total'], 2)}}</td>
+                                        <td class="celda">{{$value['currency_type_id']}} {{\App\Support\Exact\Decimal::format($value['display']['total_to_pay'], 2)}}@if($value['currency_type_id'] === 'USD')<br><small>Bs. {{ $value['display']['balance_ves_equivalent'] }}</small>@endif</td>
+                                        <td class="celda">{{$value['currency_type_id']}} {{\App\Support\Exact\Decimal::format($value['display']['total'], 2)}}@if($value['currency_type_id'] === 'USD')<br><small>Bs. {{ $value['display']['total_ves_equivalent'] }}</small>@endif</td>
                                     </tr>
                                 @endif
                             @endforeach
@@ -114,5 +114,8 @@
                 <p>No se encontraron registros.</p>
             </div>
         @endif
-    </body>
+    @isset($reportSummary)
+@include('partials.exact_outstanding_summary', ['excel'=>false])
+@endisset
+</body>
 </html>

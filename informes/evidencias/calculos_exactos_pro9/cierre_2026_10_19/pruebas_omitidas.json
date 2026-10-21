@@ -1,0 +1,560 @@
+[
+  {
+    "class": "Tests\\Unit\\BcvMySqlConcurrencyTest",
+    "name": "test_parallel_queries_keep_the_first_daily_rate",
+    "file": "/home/benahia/benahia/pro/Pro9/tests/Unit/BcvMySqlConcurrencyTest.php",
+    "reason": "Requiere MySQL temporal aislado.",
+    "reason_origin": "source_guard",
+    "guard": "PRO9_FISCAL_MYSQL_TESTS != 1",
+    "guard_source": "tests/Unit/BcvMySqlConcurrencyTest.php"
+  },
+  {
+    "class": "Tests\\Unit\\ExchangeRatePrecisionUpgradeTest",
+    "name": "test_upgrade_preserves_values_defaults_and_other_columns",
+    "file": "/home/benahia/benahia/pro/Pro9/tests/Unit/ExchangeRatePrecisionUpgradeTest.php",
+    "reason": "Requiere MySQL temporal.",
+    "reason_origin": "source_guard",
+    "guard": "PRO9_FISCAL_MYSQL_TESTS != 1",
+    "guard_source": "tests/Unit/ExchangeRatePrecisionUpgradeTest.php"
+  },
+  {
+    "class": "Tests\\Unit\\FiscalEmissionSchemaTest",
+    "name": "test_central_exact_schema_range_snapshot_rollback_and_repeat_in_mysql",
+    "file": "/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php",
+    "reason": "Active PRO9_FISCAL_MYSQL_TESTS=1 para usar una base MySQL temporal aislada.",
+    "reason_origin": "source_guard",
+    "guard": "PRO9_FISCAL_MYSQL_TESTS != 1",
+    "guard_source": "tests/Unit/FiscalEmissionSchemaTest.php"
+  },
+  {
+    "class": "Tests\\Unit\\FiscalEmissionSchemaTest",
+    "name": "test_fresh_tenant_migrations_seed_rollback_and_repeat",
+    "file": "/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php",
+    "reason": "Active PRO9_FISCAL_MYSQL_TESTS=1 para usar una base MySQL temporal aislada.",
+    "reason_origin": "source_guard",
+    "guard": "PRO9_FISCAL_MYSQL_TESTS != 1",
+    "guard_source": "tests/Unit/FiscalEmissionSchemaTest.php"
+  },
+  {
+    "class": "Tests\\Unit\\FiscalEmissionSchemaTest",
+    "name": "test_concurrent_payments_igtf_and_retention_applications_are_serialized",
+    "file": "/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php",
+    "reason": "Active PRO9_FISCAL_MYSQL_TESTS=1 para usar una base MySQL temporal aislada.",
+    "reason_origin": "source_guard",
+    "guard": "PRO9_FISCAL_MYSQL_TESTS != 1",
+    "guard_source": "tests/Unit/FiscalEmissionSchemaTest.php"
+  },
+  {
+    "class": "Tests\\Unit\\FiscalEmissionSchemaTest",
+    "name": "test_special_tax_regimes_persist_settle_edit_freeze_and_emit_after_commit",
+    "file": "/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php",
+    "reason": "Active PRO9_FISCAL_MYSQL_TESTS=1 para usar una base MySQL temporal aislada.",
+    "reason_origin": "source_guard",
+    "guard": "PRO9_FISCAL_MYSQL_TESTS != 1",
+    "guard_source": "tests/Unit/FiscalEmissionSchemaTest.php"
+  },
+  {
+    "class": "Tests\\Unit\\FiscalEmissionSchemaTest",
+    "name": "test_third_party_invoices_persist_freeze_edit_and_emit_after_commit",
+    "file": "/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php",
+    "reason": "Active PRO9_FISCAL_MYSQL_TESTS=1 para usar una base MySQL temporal aislada.",
+    "reason_origin": "source_guard",
+    "guard": "PRO9_FISCAL_MYSQL_TESTS != 1",
+    "guard_source": "tests/Unit/FiscalEmissionSchemaTest.php"
+  },
+  {
+    "class": "Tests\\Unit\\FiscalEmissionSchemaTest",
+    "name": "test_export_invoices_persist_freeze_edit_and_emit_after_commit",
+    "file": "/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php",
+    "reason": "Active PRO9_FISCAL_MYSQL_TESTS=1 para usar una base MySQL temporal aislada.",
+    "reason_origin": "source_guard",
+    "guard": "PRO9_FISCAL_MYSQL_TESTS != 1",
+    "guard_source": "tests/Unit/FiscalEmissionSchemaTest.php"
+  },
+  {
+    "class": "Tests\\Unit\\FiscalEmissionSchemaTest",
+    "name": "test_hka_legal_identity_is_saved_and_missing_pending_mapping_recovers_from_frozen_customer",
+    "file": "/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php",
+    "reason": "Active PRO9_FISCAL_MYSQL_TESTS=1 para usar una base MySQL temporal aislada.",
+    "reason_origin": "source_guard",
+    "guard": "PRO9_FISCAL_MYSQL_TESTS != 1",
+    "guard_source": "tests/Unit/FiscalEmissionSchemaTest.php"
+  },
+  {
+    "class": "Tests\\Unit\\FiscalEmissionSchemaTest",
+    "name": "test_exact_calculations_survive_mysql_reads_grouping_discounts_and_rollback",
+    "file": "/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php",
+    "reason": "Active PRO9_FISCAL_MYSQL_TESTS=1 para usar una base MySQL temporal aislada.",
+    "reason_origin": "source_guard",
+    "guard": "PRO9_FISCAL_MYSQL_TESTS != 1",
+    "guard_source": "tests/Unit/FiscalEmissionSchemaTest.php"
+  },
+  {
+    "class": "Tests\\Unit\\FiscalEmissionSchemaTest",
+    "name": "test_exact_commercial_lifecycle_preserves_quantities_and_reverses_stock",
+    "file": "/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php",
+    "reason": "Active PRO9_FISCAL_MYSQL_TESTS=1 para usar una base MySQL temporal aislada.",
+    "reason_origin": "source_guard",
+    "guard": "PRO9_FISCAL_MYSQL_TESTS != 1",
+    "guard_source": "tests/Unit/FiscalEmissionSchemaTest.php"
+  },
+  {
+    "class": "Tests\\Unit\\FiscalEmissionSchemaTest",
+    "name": "test_exact_stock_import_retains_periodic_delta_and_repeating_the_file_does_not_move_stock",
+    "file": "/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php",
+    "reason": "Active PRO9_FISCAL_MYSQL_TESTS=1 para usar una base MySQL temporal aislada.",
+    "reason_origin": "source_guard",
+    "guard": "PRO9_FISCAL_MYSQL_TESTS != 1",
+    "guard_source": "tests/Unit/FiscalEmissionSchemaTest.php"
+  },
+  {
+    "class": "Tests\\Unit\\FiscalEmissionSchemaTest",
+    "name": "test_hka_emission_runs_after_outer_commit_and_recovers_without_duplicate_sales",
+    "file": "/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php",
+    "reason": "Active PRO9_FISCAL_MYSQL_TESTS=1 para usar una base MySQL temporal aislada.",
+    "reason_origin": "source_guard",
+    "guard": "PRO9_FISCAL_MYSQL_TESTS != 1",
+    "guard_source": "tests/Unit/FiscalEmissionSchemaTest.php"
+  },
+  {
+    "class": "Tests\\Unit\\FiscalEmissionSchemaTest",
+    "name": "test_fresh_system_migrations_do_not_create_fiscal_transport_configuration",
+    "file": "/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php",
+    "reason": "Active PRO9_FISCAL_MYSQL_TESTS=1 para usar una base MySQL temporal aislada.",
+    "reason_origin": "source_guard",
+    "guard": "PRO9_FISCAL_MYSQL_TESTS != 1",
+    "guard_source": "tests/Unit/FiscalEmissionSchemaTest.php"
+  },
+  {
+    "class": "Tests\\Unit\\FiscalEmissionSchemaTest",
+    "name": "test_dispatch_automatic_hka_idempotency_snapshots_pdf_and_outer_commit",
+    "file": "/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php",
+    "reason": "Active PRO9_FISCAL_MYSQL_TESTS=1 para usar una base MySQL temporal aislada.",
+    "reason_origin": "source_guard",
+    "guard": "PRO9_FISCAL_MYSQL_TESTS != 1",
+    "guard_source": "tests/Unit/FiscalEmissionSchemaTest.php"
+  },
+  {
+    "class": "Tests\\Unit\\FiscalEmissionSchemaTest",
+    "name": "test_dispatch_stock_uses_its_branch_and_edits_reverse_once",
+    "file": "/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php",
+    "reason": "Active PRO9_FISCAL_MYSQL_TESTS=1 para usar una base MySQL temporal aislada.",
+    "reason_origin": "source_guard",
+    "guard": "PRO9_FISCAL_MYSQL_TESTS != 1",
+    "guard_source": "tests/Unit/FiscalEmissionSchemaTest.php"
+  },
+  {
+    "class": "Tests\\Unit\\FiscalEmissionSchemaTest",
+    "name": "test_dispatch_timeout_and_absence_reconcile_same_operation",
+    "file": "/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php",
+    "reason": "Active PRO9_FISCAL_MYSQL_TESTS=1 para usar una base MySQL temporal aislada.",
+    "reason_origin": "source_guard",
+    "guard": "PRO9_FISCAL_MYSQL_TESTS != 1",
+    "guard_source": "tests/Unit/FiscalEmissionSchemaTest.php"
+  },
+  {
+    "class": "Tests\\Unit\\FiscalEmissionSchemaTest",
+    "name": "test_dispatch_customer_destinations_match_server_resolution_and_new_address_keeps_location",
+    "file": "/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php",
+    "reason": "Active PRO9_FISCAL_MYSQL_TESTS=1 para usar una base MySQL temporal aislada.",
+    "reason_origin": "source_guard",
+    "guard": "PRO9_FISCAL_MYSQL_TESTS != 1",
+    "guard_source": "tests/Unit/FiscalEmissionSchemaTest.php"
+  },
+  {
+    "class": "Tests\\Unit\\FiscalEmissionSchemaTest",
+    "name": "test_dispatch_server_rejects_foreign_addresses_and_invalid_weight_before_network",
+    "file": "/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php",
+    "reason": "Active PRO9_FISCAL_MYSQL_TESTS=1 para usar una base MySQL temporal aislada.",
+    "reason_origin": "source_guard",
+    "guard": "PRO9_FISCAL_MYSQL_TESTS != 1",
+    "guard_source": "tests/Unit/FiscalEmissionSchemaTest.php"
+  },
+  {
+    "class": "Tests\\Unit\\FiscalEmissionSchemaTest",
+    "name": "test_dispatch_concurrent_creation_keeps_one_order_and_stock_effect_per_key",
+    "file": "/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php",
+    "reason": "Active PRO9_FISCAL_MYSQL_TESTS=1 para usar una base MySQL temporal aislada.",
+    "reason_origin": "source_guard",
+    "guard": "PRO9_FISCAL_MYSQL_TESTS != 1",
+    "guard_source": "tests/Unit/FiscalEmissionSchemaTest.php"
+  },
+  {
+    "class": "Tests\\Unit\\FiscalEmissionSchemaTest",
+    "name": "test_dispatch_multi_order_invoice_moves_only_the_pending_quantities",
+    "file": "/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php",
+    "reason": "Active PRO9_FISCAL_MYSQL_TESTS=1 para usar una base MySQL temporal aislada.",
+    "reason_origin": "source_guard",
+    "guard": "PRO9_FISCAL_MYSQL_TESTS != 1",
+    "guard_source": "tests/Unit/FiscalEmissionSchemaTest.php"
+  },
+  {
+    "class": "Tests\\Unit\\FiscalEmissionSchemaTest",
+    "name": "test_note_credit_limits_inventory_idempotency_and_hka_mapping",
+    "file": "/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php",
+    "reason": "Active PRO9_FISCAL_MYSQL_TESTS=1 para usar una base MySQL temporal aislada.",
+    "reason_origin": "source_guard",
+    "guard": "PRO9_FISCAL_MYSQL_TESTS != 1",
+    "guard_source": "tests/Unit/FiscalEmissionSchemaTest.php"
+  },
+  {
+    "class": "Tests\\Unit\\FiscalEmissionSchemaTest",
+    "name": "test_note_debit_is_a_separate_receivable_without_inventory",
+    "file": "/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php",
+    "reason": "Active PRO9_FISCAL_MYSQL_TESTS=1 para usar una base MySQL temporal aislada.",
+    "reason_origin": "source_guard",
+    "guard": "PRO9_FISCAL_MYSQL_TESTS != 1",
+    "guard_source": "tests/Unit/FiscalEmissionSchemaTest.php"
+  },
+  {
+    "class": "Tests\\Unit\\FiscalEmissionSchemaTest",
+    "name": "test_note_currency_regime_and_service_matrix",
+    "file": "/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php",
+    "reason": "Active PRO9_FISCAL_MYSQL_TESTS=1 para usar una base MySQL temporal aislada.",
+    "reason_origin": "source_guard",
+    "guard": "PRO9_FISCAL_MYSQL_TESTS != 1",
+    "guard_source": "tests/Unit/FiscalEmissionSchemaTest.php"
+  },
+  {
+    "class": "Tests\\Unit\\FiscalEmissionSchemaTest",
+    "name": "test_note_pending_igtf_and_fund_adjustments_have_no_cash_effect",
+    "file": "/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php",
+    "reason": "Active PRO9_FISCAL_MYSQL_TESTS=1 para usar una base MySQL temporal aislada.",
+    "reason_origin": "source_guard",
+    "guard": "PRO9_FISCAL_MYSQL_TESTS != 1",
+    "guard_source": "tests/Unit/FiscalEmissionSchemaTest.php"
+  },
+  {
+    "class": "Tests\\Unit\\FiscalEmissionSchemaTest",
+    "name": "test_note_iva_replacement_preserves_real_vouchers_without_fake_cash",
+    "file": "/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php",
+    "reason": "Active PRO9_FISCAL_MYSQL_TESTS=1 para usar una base MySQL temporal aislada.",
+    "reason_origin": "source_guard",
+    "guard": "PRO9_FISCAL_MYSQL_TESTS != 1",
+    "guard_source": "tests/Unit/FiscalEmissionSchemaTest.php"
+  },
+  {
+    "class": "Tests\\Unit\\FiscalEmissionSchemaTest",
+    "name": "test_note_refund_preserves_collections_and_reverses_once",
+    "file": "/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php",
+    "reason": "Active PRO9_FISCAL_MYSQL_TESTS=1 para usar una base MySQL temporal aislada.",
+    "reason_origin": "source_guard",
+    "guard": "PRO9_FISCAL_MYSQL_TESTS != 1",
+    "guard_source": "tests/Unit/FiscalEmissionSchemaTest.php"
+  },
+  {
+    "class": "Tests\\Unit\\FiscalEmissionSchemaTest",
+    "name": "test_note_original_packs_presentations_lots_serials_and_stock_rollback",
+    "file": "/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php",
+    "reason": "Active PRO9_FISCAL_MYSQL_TESTS=1 para usar una base MySQL temporal aislada.",
+    "reason_origin": "source_guard",
+    "guard": "PRO9_FISCAL_MYSQL_TESTS != 1",
+    "guard_source": "tests/Unit/FiscalEmissionSchemaTest.php"
+  },
+  {
+    "class": "Tests\\Unit\\FiscalEmissionSchemaTest",
+    "name": "test_note_concurrent_retention_corrections_preserve_uncertain_effects",
+    "file": "/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php",
+    "reason": "Active PRO9_FISCAL_MYSQL_TESTS=1 para usar una base MySQL temporal aislada.",
+    "reason_origin": "source_guard",
+    "guard": "PRO9_FISCAL_MYSQL_TESTS != 1",
+    "guard_source": "tests/Unit/FiscalEmissionSchemaTest.php"
+  },
+  {
+    "class": "Tests\\Unit\\FiscalEmissionSchemaTest",
+    "name": "test_note_concurrent_creation_and_refunds_use_one_effect_and_real_currency",
+    "file": "/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php",
+    "reason": "Active PRO9_FISCAL_MYSQL_TESTS=1 para usar una base MySQL temporal aislada.",
+    "reason_origin": "source_guard",
+    "guard": "PRO9_FISCAL_MYSQL_TESTS != 1",
+    "guard_source": "tests/Unit/FiscalEmissionSchemaTest.php"
+  },
+  {
+    "class": "Tests\\Unit\\FiscalEmissionSchemaTest",
+    "name": "test_note_annulment_reverses_stock_and_credit_once_and_cancels_unsent_debit_locally",
+    "file": "/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php",
+    "reason": "Active PRO9_FISCAL_MYSQL_TESTS=1 para usar una base MySQL temporal aislada.",
+    "reason_origin": "source_guard",
+    "guard": "PRO9_FISCAL_MYSQL_TESTS != 1",
+    "guard_source": "tests/Unit/FiscalEmissionSchemaTest.php"
+  },
+  {
+    "class": "Tests\\Unit\\FiscalEmissionSchemaTest",
+    "name": "test_note_annulment_rejection_preserves_effects_and_audits_codes_without_private_text",
+    "file": "/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php",
+    "reason": "Active PRO9_FISCAL_MYSQL_TESTS=1 para usar una base MySQL temporal aislada.",
+    "reason_origin": "source_guard",
+    "guard": "PRO9_FISCAL_MYSQL_TESTS != 1",
+    "guard_source": "tests/Unit/FiscalEmissionSchemaTest.php"
+  },
+  {
+    "class": "Tests\\Unit\\FiscalEmissionSchemaTest",
+    "name": "test_note_annulment_timeout_preserves_limits_and_uses_paginated_or_uuid_recovery",
+    "file": "/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php",
+    "reason": "Active PRO9_FISCAL_MYSQL_TESTS=1 para usar una base MySQL temporal aislada.",
+    "reason_origin": "source_guard",
+    "guard": "PRO9_FISCAL_MYSQL_TESTS != 1",
+    "guard_source": "tests/Unit/FiscalEmissionSchemaTest.php"
+  },
+  {
+    "class": "Tests\\Unit\\FiscalEmissionSchemaTest",
+    "name": "test_note_annulment_remote_success_can_finish_commercially_after_stock_race",
+    "file": "/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php",
+    "reason": "Active PRO9_FISCAL_MYSQL_TESTS=1 para usar una base MySQL temporal aislada.",
+    "reason_origin": "source_guard",
+    "guard": "PRO9_FISCAL_MYSQL_TESTS != 1",
+    "guard_source": "tests/Unit/FiscalEmissionSchemaTest.php"
+  },
+  {
+    "class": "Tests\\Unit\\FiscalEmissionSchemaTest",
+    "name": "test_note_cash_debit_requires_real_destination_and_payments_and_blocks_annulment_until_reversed",
+    "file": "/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php",
+    "reason": "Active PRO9_FISCAL_MYSQL_TESTS=1 para usar una base MySQL temporal aislada.",
+    "reason_origin": "source_guard",
+    "guard": "PRO9_FISCAL_MYSQL_TESTS != 1",
+    "guard_source": "tests/Unit/FiscalEmissionSchemaTest.php"
+  },
+  {
+    "class": "Tests\\Unit\\FiscalEmissionSchemaTest",
+    "name": "test_note_concurrent_annulment_transmits_and_releases_credit_once",
+    "file": "/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php",
+    "reason": "Active PRO9_FISCAL_MYSQL_TESTS=1 para usar una base MySQL temporal aislada.",
+    "reason_origin": "source_guard",
+    "guard": "PRO9_FISCAL_MYSQL_TESTS != 1",
+    "guard_source": "tests/Unit/FiscalEmissionSchemaTest.php"
+  },
+  {
+    "class": "Tests\\Unit\\FiscalEmissionSchemaTest",
+    "name": "test_spe_buyer_and_commercial_issuer_matrix_in_common_web_pos_garage_persistence",
+    "file": "/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php",
+    "reason": "Active PRO9_FISCAL_MYSQL_TESTS=1 para usar una base MySQL temporal aislada.",
+    "reason_origin": "source_guard",
+    "guard": "PRO9_FISCAL_MYSQL_TESTS != 1",
+    "guard_source": "tests/Unit/FiscalEmissionSchemaTest.php"
+  },
+  {
+    "class": "Tests\\Unit\\FiscalEmissionSchemaTest",
+    "name": "test_spe_real_collection_context_retentions_notes_freeze_and_recovery",
+    "file": "/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php",
+    "reason": "Active PRO9_FISCAL_MYSQL_TESTS=1 para usar una base MySQL temporal aislada.",
+    "reason_origin": "source_guard",
+    "guard": "PRO9_FISCAL_MYSQL_TESTS != 1",
+    "guard_source": "tests/Unit/FiscalEmissionSchemaTest.php"
+  },
+  {
+    "class": "Tests\\Unit\\FiscalEmissionSchemaTest",
+    "name": "test_spe_profile_admin_history_and_transaction_rollback",
+    "file": "/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php",
+    "reason": "Active PRO9_FISCAL_MYSQL_TESTS=1 para usar una base MySQL temporal aislada.",
+    "reason_origin": "source_guard",
+    "guard": "PRO9_FISCAL_MYSQL_TESTS != 1",
+    "guard_source": "tests/Unit/FiscalEmissionSchemaTest.php"
+  },
+  {
+    "class": "Tests\\Unit\\FiscalEmissionSchemaTest",
+    "name": "test_iva_net_forecast_idempotence_hka_and_audited_replacement",
+    "file": "/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php",
+    "reason": "Active PRO9_FISCAL_MYSQL_TESTS=1 para usar una base MySQL temporal aislada.",
+    "reason_origin": "source_guard",
+    "guard": "PRO9_FISCAL_MYSQL_TESTS != 1",
+    "guard_source": "tests/Unit/FiscalEmissionSchemaTest.php"
+  },
+  {
+    "class": "Tests\\Unit\\FiscalEmissionSchemaTest",
+    "name": "test_iva_voucher_staged_during_creation_consumes_upload_only_after_commit",
+    "file": "/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php",
+    "reason": "Active PRO9_FISCAL_MYSQL_TESTS=1 para usar una base MySQL temporal aislada.",
+    "reason_origin": "source_guard",
+    "guard": "PRO9_FISCAL_MYSQL_TESTS != 1",
+    "guard_source": "tests/Unit/FiscalEmissionSchemaTest.php"
+  },
+  {
+    "class": "Tests\\Unit\\FiscalEmissionSchemaTest",
+    "name": "test_iva_ambiguous_write_removal_conflicts_and_definitive_rejections",
+    "file": "/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php",
+    "reason": "Active PRO9_FISCAL_MYSQL_TESTS=1 para usar una base MySQL temporal aislada.",
+    "reason_origin": "source_guard",
+    "guard": "PRO9_FISCAL_MYSQL_TESTS != 1",
+    "guard_source": "tests/Unit/FiscalEmissionSchemaTest.php"
+  },
+  {
+    "class": "Tests\\Unit\\FiscalEmissionSchemaTest",
+    "name": "test_iva_staged_reference_mismatch_permissions_and_expired_support",
+    "file": "/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php",
+    "reason": "Active PRO9_FISCAL_MYSQL_TESTS=1 para usar una base MySQL temporal aislada.",
+    "reason_origin": "source_guard",
+    "guard": "PRO9_FISCAL_MYSQL_TESTS != 1",
+    "guard_source": "tests/Unit/FiscalEmissionSchemaTest.php"
+  },
+  {
+    "class": "Tests\\Unit\\FiscalEmissionSchemaTest",
+    "name": "test_iva_two_processes_register_one_active_voucher",
+    "file": "/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php",
+    "reason": "Active PRO9_FISCAL_MYSQL_TESTS=1 para usar una base MySQL temporal aislada.",
+    "reason_origin": "source_guard",
+    "guard": "PRO9_FISCAL_MYSQL_TESTS != 1",
+    "guard_source": "tests/Unit/FiscalEmissionSchemaTest.php"
+  },
+  {
+    "class": "Tests\\Unit\\FiscalEmissionSchemaTest",
+    "name": "test_iva_fiscal_ves_is_independent_from_usd_settlement_rate",
+    "file": "/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php",
+    "reason": "Active PRO9_FISCAL_MYSQL_TESTS=1 para usar una base MySQL temporal aislada.",
+    "reason_origin": "source_guard",
+    "guard": "PRO9_FISCAL_MYSQL_TESTS != 1",
+    "guard_source": "tests/Unit/FiscalEmissionSchemaTest.php"
+  },
+  {
+    "class": "Tests\\Unit\\FiscalEmissionSchemaTest",
+    "name": "test_islr_coexists_with_iva_idempotence_replacement_cash_and_hka",
+    "file": "/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php",
+    "reason": "Active PRO9_FISCAL_MYSQL_TESTS=1 para usar una base MySQL temporal aislada.",
+    "reason_origin": "source_guard",
+    "guard": "PRO9_FISCAL_MYSQL_TESTS != 1",
+    "guard_source": "tests/Unit/FiscalEmissionSchemaTest.php"
+  },
+  {
+    "class": "Tests\\Unit\\FiscalEmissionSchemaTest",
+    "name": "test_islr_pending_support_reference_rollback_and_recovery",
+    "file": "/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php",
+    "reason": "Active PRO9_FISCAL_MYSQL_TESTS=1 para usar una base MySQL temporal aislada.",
+    "reason_origin": "source_guard",
+    "guard": "PRO9_FISCAL_MYSQL_TESTS != 1",
+    "guard_source": "tests/Unit/FiscalEmissionSchemaTest.php"
+  },
+  {
+    "class": "Tests\\Unit\\FiscalEmissionSchemaTest",
+    "name": "test_islr_different_rates_declared_authority_and_net_capability",
+    "file": "/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php",
+    "reason": "Active PRO9_FISCAL_MYSQL_TESTS=1 para usar una base MySQL temporal aislada.",
+    "reason_origin": "source_guard",
+    "guard": "PRO9_FISCAL_MYSQL_TESTS != 1",
+    "guard_source": "tests/Unit/FiscalEmissionSchemaTest.php"
+  },
+  {
+    "class": "Tests\\Unit\\FiscalEmissionSchemaTest",
+    "name": "test_islr_voucher_creation_upload_scope_and_activation_savepoint",
+    "file": "/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php",
+    "reason": "Active PRO9_FISCAL_MYSQL_TESTS=1 para usar una base MySQL temporal aislada.",
+    "reason_origin": "source_guard",
+    "guard": "PRO9_FISCAL_MYSQL_TESTS != 1",
+    "guard_source": "tests/Unit/FiscalEmissionSchemaTest.php"
+  },
+  {
+    "class": "Tests\\Unit\\FiscalEmissionSchemaTest",
+    "name": "test_islr_hka_rejection_foreign_conflict_and_adopted_reversal",
+    "file": "/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php",
+    "reason": "Active PRO9_FISCAL_MYSQL_TESTS=1 para usar una base MySQL temporal aislada.",
+    "reason_origin": "source_guard",
+    "guard": "PRO9_FISCAL_MYSQL_TESTS != 1",
+    "guard_source": "tests/Unit/FiscalEmissionSchemaTest.php"
+  },
+  {
+    "class": "Tests\\Unit\\FiscalEmissionSchemaTest",
+    "name": "test_islr_concurrent_registration_collection_and_reversal",
+    "file": "/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php",
+    "reason": "Active PRO9_FISCAL_MYSQL_TESTS=1 para usar una base MySQL temporal aislada.",
+    "reason_origin": "source_guard",
+    "guard": "PRO9_FISCAL_MYSQL_TESTS != 1",
+    "guard_source": "tests/Unit/FiscalEmissionSchemaTest.php"
+  },
+  {
+    "class": "Tests\\Unit\\FiscalEmissionSchemaTest",
+    "name": "test_hka_auto_send_configuration_requires_admin_and_valid_boolean",
+    "file": "/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php",
+    "reason": "Active PRO9_FISCAL_MYSQL_TESTS=1 para usar una base MySQL temporal aislada.",
+    "reason_origin": "source_guard",
+    "guard": "PRO9_FISCAL_MYSQL_TESTS != 1",
+    "guard_source": "tests/Unit/FiscalEmissionSchemaTest.php"
+  },
+  {
+    "class": "Tests\\Unit\\FiscalEmissionSchemaTest",
+    "name": "test_hka_auto_send_off_preserves_sale_and_requires_manual_send_after_reactivation",
+    "file": "/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php",
+    "reason": "Active PRO9_FISCAL_MYSQL_TESTS=1 para usar una base MySQL temporal aislada.",
+    "reason_origin": "source_guard",
+    "guard": "PRO9_FISCAL_MYSQL_TESTS != 1",
+    "guard_source": "tests/Unit/FiscalEmissionSchemaTest.php"
+  },
+  {
+    "class": "Tests\\Unit\\FiscalEmissionSchemaTest",
+    "name": "test_hka_auto_send_off_blocks_igtf_callbacks_and_later_resume",
+    "file": "/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php",
+    "reason": "Active PRO9_FISCAL_MYSQL_TESTS=1 para usar una base MySQL temporal aislada.",
+    "reason_origin": "source_guard",
+    "guard": "PRO9_FISCAL_MYSQL_TESTS != 1",
+    "guard_source": "tests/Unit/FiscalEmissionSchemaTest.php"
+  },
+  {
+    "class": "Tests\\Unit\\FiscalEmissionSchemaTest",
+    "name": "test_hka_auto_send_additive_upgrade_preserves_existing_data_and_is_idempotent",
+    "file": "/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php",
+    "reason": "Active PRO9_FISCAL_MYSQL_TESTS=1 para usar una base MySQL temporal aislada.",
+    "reason_origin": "source_guard",
+    "guard": "PRO9_FISCAL_MYSQL_TESTS != 1",
+    "guard_source": "tests/Unit/FiscalEmissionSchemaTest.php"
+  },
+  {
+    "class": "Tests\\Unit\\SeriesMySqlConcurrencyTest",
+    "name": "test_parallel_saves_wait_for_the_issuer_and_never_duplicate with data set #0",
+    "file": "/home/benahia/benahia/pro/Pro9/tests/Unit/SeriesMySqlConcurrencyTest.php",
+    "reason": "Requires an isolated temporary MySQL database.",
+    "reason_origin": "source_guard",
+    "guard": "PRO9_FISCAL_MYSQL_TESTS != 1",
+    "guard_source": "tests/Unit/SeriesMySqlConcurrencyTest.php"
+  },
+  {
+    "class": "Tests\\Unit\\SeriesMySqlConcurrencyTest",
+    "name": "test_parallel_saves_wait_for_the_issuer_and_never_duplicate with data set #1",
+    "file": "/home/benahia/benahia/pro/Pro9/tests/Unit/SeriesMySqlConcurrencyTest.php",
+    "reason": "Requires an isolated temporary MySQL database.",
+    "reason_origin": "source_guard",
+    "guard": "PRO9_FISCAL_MYSQL_TESTS != 1",
+    "guard_source": "tests/Unit/SeriesMySqlConcurrencyTest.php"
+  },
+  {
+    "class": "Tests\\Unit\\SeriesMySqlConcurrencyTest",
+    "name": "test_parallel_saves_wait_for_the_issuer_and_never_duplicate with data set #2",
+    "file": "/home/benahia/benahia/pro/Pro9/tests/Unit/SeriesMySqlConcurrencyTest.php",
+    "reason": "Requires an isolated temporary MySQL database.",
+    "reason_origin": "source_guard",
+    "guard": "PRO9_FISCAL_MYSQL_TESTS != 1",
+    "guard_source": "tests/Unit/SeriesMySqlConcurrencyTest.php"
+  },
+  {
+    "class": "Tests\\Unit\\SeriesMySqlConcurrencyTest",
+    "name": "test_parallel_saves_wait_for_the_issuer_and_never_duplicate with data set #3",
+    "file": "/home/benahia/benahia/pro/Pro9/tests/Unit/SeriesMySqlConcurrencyTest.php",
+    "reason": "Requires an isolated temporary MySQL database.",
+    "reason_origin": "source_guard",
+    "guard": "PRO9_FISCAL_MYSQL_TESTS != 1",
+    "guard_source": "tests/Unit/SeriesMySqlConcurrencyTest.php"
+  },
+  {
+    "class": "Tests\\Unit\\SeriesMySqlConcurrencyTest",
+    "name": "test_parallel_saves_wait_for_the_issuer_and_never_duplicate with data set #4",
+    "file": "/home/benahia/benahia/pro/Pro9/tests/Unit/SeriesMySqlConcurrencyTest.php",
+    "reason": "Requires an isolated temporary MySQL database.",
+    "reason_origin": "source_guard",
+    "guard": "PRO9_FISCAL_MYSQL_TESTS != 1",
+    "guard_source": "tests/Unit/SeriesMySqlConcurrencyTest.php"
+  },
+  {
+    "class": "Tests\\Unit\\SeriesMySqlConcurrencyTest",
+    "name": "test_parallel_saves_wait_for_the_issuer_and_never_duplicate with data set #5",
+    "file": "/home/benahia/benahia/pro/Pro9/tests/Unit/SeriesMySqlConcurrencyTest.php",
+    "reason": "Requires an isolated temporary MySQL database.",
+    "reason_origin": "source_guard",
+    "guard": "PRO9_FISCAL_MYSQL_TESTS != 1",
+    "guard_source": "tests/Unit/SeriesMySqlConcurrencyTest.php"
+  },
+  {
+    "class": "Tests\\Unit\\SeriesMySqlConcurrencyTest",
+    "name": "test_delete_waits_for_an_in_progress_document_and_preserves_the_used_series",
+    "file": "/home/benahia/benahia/pro/Pro9/tests/Unit/SeriesMySqlConcurrencyTest.php",
+    "reason": "Requires an isolated temporary MySQL database.",
+    "reason_origin": "source_guard",
+    "guard": "PRO9_FISCAL_MYSQL_TESTS != 1",
+    "guard_source": "tests/Unit/SeriesMySqlConcurrencyTest.php"
+  }
+]

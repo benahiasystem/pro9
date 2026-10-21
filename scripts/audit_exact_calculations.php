@@ -28,7 +28,7 @@ $scan=function(string $source,string $file,int $lineOffset=-1,string $context='{
             elseif($node instanceof PhpParser\Node\Expr\UnaryMinus || $node instanceof PhpParser\Node\Expr\UnaryPlus)$operation='native_unary';
             elseif($node instanceof PhpParser\Node\Expr\PreInc || $node instanceof PhpParser\Node\Expr\PostInc || $node instanceof PhpParser\Node\Expr\PreDec || $node instanceof PhpParser\Node\Expr\PostDec)$operation='native_update';
             elseif($node instanceof PhpParser\Node\Expr\FuncCall && $node->name instanceof PhpParser\Node\Name){$name=strtolower($node->name->toString());if(in_array($name,['round','number_format','floatval','intval','floor','ceil','sprintf','printf','abs','min','max','pow','fmod','intdiv','bcadd','bcsub','bcmul','bcdiv','bcpow','bcmod','bcscale'],true))$operation=$name;}
-            elseif($node instanceof PhpParser\Node\Expr\MethodCall || $node instanceof PhpParser\Node\Expr\StaticCall){
+            elseif($node instanceof PhpParser\Node\Expr\MethodCall || $node instanceof PhpParser\Node\Expr\NullsafeMethodCall || $node instanceof PhpParser\Node\Expr\StaticCall){
                 $name=$node->name instanceof PhpParser\Node\Identifier ? strtolower($node->name->toString()) : '';
                 if(in_array($name,['sum','avg','average','increment','decrement','toscale','represent','format','finalamount','quotient','toint','tofloat','tobiginteger'],true))$operation=$name;
                 elseif(in_array($name,['decimal','double','float'],true) && preg_match('~/migrations/~i','/'.$this->file))$operation='schema_numeric_type';
@@ -59,12 +59,17 @@ $scan=function(string $source,string $file,int $lineOffset=-1,string $context='{
         }
         public function leaveNode(PhpParser\Node $node){if($node instanceof PhpParser\Node\Stmt\Class_ || $node instanceof PhpParser\Node\Stmt\ClassMethod || $node instanceof PhpParser\Node\Stmt\Function_)array_pop($this->frames);return null;}
     };
-    $traverser=new PhpParser\NodeTraverser();$traverser->addVisitor($visitor);$traverser->traverse($nodes);
+    $traverser=new PhpParser\NodeTraverser();
+    $traverser->addVisitor(new PhpParser\NodeVisitor\NameResolver(null,['replaceNodes'=>false]));
+    $traverser->addVisitor($visitor);
+    try {$traverser->traverse($nodes);}
+    catch (PhpParser\Error $error) {$errors[]=['file'=>$file,'line'=>$error->getStartLine()+$lineOffset,'message'=>$error->getRawMessage()];}
 };
 $policy=json_decode(file_get_contents($root.'/config/exact_audit_sources.json'),true,512,JSON_THROW_ON_ERROR);
-$expectedSources=exactAuditSourceFiles($root,$policy,'php');$scannedFiles=[];
+$expectedSources=exactAuditSourceFiles($root,$policy,'php');$scannedFiles=[];$sourceHashes=[];
 foreach($expectedSources as $path){
     $source=file_get_contents($root.'/'.$path);$scanned++;$scannedFiles[]=$path;
+    $sourceHashes[$path]=hash('sha256',$source);
     if(str_ends_with($path,'.blade.php')) {
         $original=preg_replace_callback('/\{\{--[\s\S]*?--\}\}/',fn($m)=>preg_replace('/[^\n]/',' ',$m[0]),$source);
         $scan($blade->compileString($source),$path,0,'{blade}',$original);
@@ -74,7 +79,7 @@ $missingSources=exactAuditMissingSources($expectedSources,$scannedFiles);
 $matches=exactAuditClassify($matches,$root);
 $registryErrors=exactAuditRegistryDiagnostics($matches,$root,'php');
 $pending=count(array_filter($matches,fn($row)=>$row['status']==='pending'));
-$result=['contract_version'=>1,'tables'=>count($inventory),'columns'=>array_sum(array_map('count',$inventory)),'decimal_columns'=>$inventory,'system_decimal_columns'=>$central,'scanned_php_files'=>$scanned,'php_review'=>$matches,'parse_errors'=>$errors,'registry_errors'=>$registryErrors,'coverage_missing'=>$missingSources,'scanned_files'=>$scannedFiles,'source_policy'=>$policy,'pending'=>$pending];
+$result=['contract_version'=>1,'tables'=>count($inventory),'columns'=>array_sum(array_map('count',$inventory)),'decimal_columns'=>$inventory,'system_decimal_columns'=>$central,'scanned_php_files'=>$scanned,'php_review'=>$matches,'parse_errors'=>$errors,'registry_errors'=>$registryErrors,'coverage_missing'=>$missingSources,'scanned_files'=>$scannedFiles,'source_hashes'=>$sourceHashes,'source_policy'=>$policy,'pending'=>$pending];
 echo json_encode($result,JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR).PHP_EOL;
 if($errors || (in_array('--check',$argv,true) && ($pending || $registryErrors || $missingSources)))exit(1);
 // ######## FIN AUDITORIA CALCULOS EXACTOS PRO9 ########

@@ -65,12 +65,12 @@ class ReportSaleConsolidatedController extends Controller
     {
         $request->validate(['page'=>'sometimes|integer|min:1']);
         $query = $this->getRecordsSalesConsolidated($request->all());
-        return $query->getModel()->getConnection()->transaction(function () use ($query, $request) {
+        return \App\Support\Exact\ReadSnapshot::run($query->getModel()->getConnection(), function () use ($query, $request) {
             $perPage = max(1, min(500, (int)config('tenant.items_per_page', 50)));
             $page = $query->reorder()->orderByDesc('id')->orderBy('source_type')->withoutEagerLoads()
-                ->with(['relation_item'=>fn($q)=>$q->withoutEagerLoads()->with(['brand', 'category'])])
+                ->with(['relation_item'=>fn($q)=>$q->withoutEagerLoads()->select(['id','internal_id','unit_type_id','brand_id','category_id'])->with(['brand:id,name','category:id,name'])])
                 ->paginate($perPage, ['*'], 'page', (int)$request->input('page', 1));
-            $rows = $page->getCollection()->map(fn($row)=>SalesConsolidated::line($row));
+            $rows = collect(iterator_to_array((new \App\Support\Exact\ConsolidatedLines($query->getModel()->getConnection()))->rows($page->getCollection()), false));
             $page->setCollection($rows);
             return (new SaleConsolidatedCollection($page))->additional(['summary'=>SalesConsolidated::summary($rows)]);
         });
@@ -78,21 +78,27 @@ class ReportSaleConsolidatedController extends Controller
 
     private function sourceLines($query): \Generator
     {
-        $source = (clone $query)->withoutEagerLoads()->with(['relation_item'=>fn($q)=>$q->withoutEagerLoads()->with(['brand', 'category'])])->reorder()
+        $source = (clone $query)->withoutEagerLoads()->with(['relation_item'=>fn($q)=>$q->withoutEagerLoads()->select(['id','internal_id','unit_type_id','brand_id','category_id'])->with(['brand:id,name','category:id,name'])])->reorder()
             ->orderBy('source_type')->orderBy('id');
-        foreach ($source->lazy(500) as $record) yield SalesConsolidated::line($record);
+        $reader = new \App\Support\Exact\ConsolidatedLines($source->getModel()->getConnection());
+        $batch = [];
+        foreach ($source->lazy(500) as $record) {
+            $batch[] = $record;
+            if (count($batch) === 500) { yield from $reader->rows($batch); $batch = []; }
+        }
+        if ($batch) yield from $reader->rows($batch);
     }
 
     public function detailRecords(array $params)
     {
         $query = $this->getRecordsSalesConsolidated($params);
-        return $query->getModel()->getConnection()->transaction(fn()=>new ReportDataset($this->sourceLines($query)));
+        return \App\Support\Exact\ReadSnapshot::run($query->getModel()->getConnection(), fn()=>new ReportDataset($this->sourceLines($query)));
     }
 
     public function totalsByItem(Request $request)
     {
         $query = $this->getRecordsSalesConsolidated($request->all());
-        return $query->getModel()->getConnection()->transaction(fn()=>SalesConsolidated::groupedDataset($this->sourceLines($query)));
+        return \App\Support\Exact\ReadSnapshot::run($query->getModel()->getConnection(), fn()=>SalesConsolidated::groupedDataset($this->sourceLines($query)));
     }
     // ######## FIN CALCULOS EXACTOS PRO9 ########
 
@@ -133,6 +139,10 @@ class ReportSaleConsolidatedController extends Controller
 
     private function dataSalesConsolidated($request)
     {
+        $request['date_range_type_id'] ??= 'date_of_issue';
+        if (!in_array($request['date_range_type_id'],array_column($this->getDateRangeTypes(true),'id'),true)) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['date_range_type_id'=>'Seleccione un campo de fecha permitido para el consolidado.']);
+        }
 
         $document_types = isset($request['document_type_id']) ? json_decode($request['document_type_id']) : [];
         $document_items = DocumentItem::whereDefaultDocumentType($request);

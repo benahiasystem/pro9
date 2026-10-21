@@ -1,4 +1,4 @@
-import {exactAmount, exactValue, exactSum, allocateExact} from './exchange-rate-math'
+import {exactAmount, exactInput, exactValue, exactSum, allocateExact} from './exchange-rate-math'
 import {documentTotals} from './exact-document'
 
 // ######## INICIO CALCULOS EXACTOS PRO9 ########
@@ -55,6 +55,35 @@ export function allocateCommercialRows(rows, field, total) {
         row[field] = amounts[index]
         if (field === 'amount') row.allocation_weight = '1'
     })
+}
+
+// The requested strings remain inputs; this preview never submits net cash as tender.
+export function prepareCommercialPayments(payable, rows) {
+    const target = exactAmount(payable)
+    if (target.compare(0) < 0 || target.compare(target.final(2)) !== 0) throw new Error('Importe liquidable inválido')
+    const inputs = rows.map(row => {
+        if (typeof row.payment === 'number' && !Number.isSafeInteger(row.payment)) throw new Error('Transmita el decimal como texto')
+        return {...row, payment: exactInput(String(row.payment ?? ''))}
+    })
+        .filter(row => exactAmount(row.payment).compare(0) !== 0)
+    const received = inputs.map(row => {
+        const requested = exactAmount(row.payment), cash = exactAmount(requested.final(2))
+        if (requested.compare(0) < 0 || cash.compare(0) <= 0) throw new Error('Cobro no liquidable en céntimos')
+        return cash
+    })
+    const total = exactSum(received)
+    let change = total.minus(target)
+    if (change.compare(0) < 0) change = exactAmount('0')
+    const cash = exactSum(received.filter((_, index) => ['01','10'].includes(inputs[index].payment_method_type_id)))
+    if (change.compare(cash) > 0) throw new Error('El exceso sólo puede devolverse desde el efectivo recibido')
+    let remaining = change
+    const payments = inputs.map((row, index) => {
+        const returned = ['01','10'].includes(row.payment_method_type_id)
+            ? (remaining.compare(received[index]) < 0 ? remaining : received[index]) : exactAmount('0')
+        remaining = remaining.minus(returned)
+        return {...row, payment: received[index].minus(returned).decimal(), change: returned.decimal()}
+    })
+    return {inputs, payments, total, change}
 }
 
 export function checkoutTotals(vm) {

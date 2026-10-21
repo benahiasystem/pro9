@@ -38,6 +38,9 @@ use App\CoreFacturalo\Template;
 use App\CoreFacturalo\Helpers\Storage\StorageDocument;
 use App\CoreFacturalo\Helpers\Functions\GeneralPdfHelper;
 use Illuminate\Support\Str;
+// ######## INICIO CALCULOS EXACTOS PRO9 ########
+use Illuminate\Support\Facades\DB;
+// ######## FIN CALCULOS EXACTOS PRO9 ########
 
 
 class UnpaidController extends Controller
@@ -89,12 +92,19 @@ class UnpaidController extends Controller
 
     public function records(Request $request)
     {
-
-        $records = (new DashboardView())->getUnpaidFilterUser($request->all());
-        $config = Configuration::first();
-        return (new UnpaidCollection($records->paginate(config('tenant.items_per_page'))))->additional([
-            'configuration' => $config->finances
-        ]);
+        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        $request->validate(['page'=>'sometimes|integer|min:1','limit'=>'sometimes|integer|between:1,500']);
+        return \App\Support\Exact\ReadSnapshot::run(DB::connection('tenant'),function () use ($request) {
+            $records = DashboardView::getUnpaidFilterUser($request->all())->sortBy('delay_payment');
+            $summary = \App\Support\Exact\OutstandingSummary::summarize($records);
+            $page = $records->paginate((int)$request->input('limit', min(500,max(1,(int)config('tenant.items_per_page',50)))),
+                (int)$request->input('page',1), ['path'=>$request->url()]);
+            // Configuration and server-calculated arrears belong to the same report cut.
+            $raw = DB::connection('tenant')->table('configurations')->value('finances');
+            return (new UnpaidCollection($page))->additional(['summary'=>$summary,
+                'configuration'=>$raw ? \App\Support\Exact\JsonDecimals::decode($raw) : ['apply_arrears'=>false,'arrears_amount'=>'0']]);
+        });
+        // ######## FIN CALCULOS EXACTOS PRO9 ########
 
     }
 
@@ -107,12 +117,7 @@ class UnpaidController extends Controller
     public function reportPaymentMethodDays(Request $request)
     {
 
-        $all_records = $this->transformRecords((new DashboardView())->getUnpaidFilterUser($request->all())->get());
-
-        $records = collect($all_records)->where('total_to_pay', '>', 0)->where('type', 'document')->map(function($row){
-            $row['difference_days'] = Carbon::parse($row['date_of_issue'])->diffInDays($row['date_of_due']);
-            return $row;
-        });
+        $records = DashboardView::getUnpaidFilterUser($request->all())->filter(fn($row)=>$row['type'] === 'document');
 
         $company = Company::first();
 
@@ -127,11 +132,13 @@ class UnpaidController extends Controller
 
     public function pdf(Request $request) {
 
-        $records = $this->transformRecords((new DashboardView())->getUnpaidFilterUser($request->all())->get());
+        $records = DashboardView::getUnpaidFilterUser($request->all());
+        $reportSummary = \App\Support\Exact\OutstandingSummary::summarize($records);
+        $records = \App\Support\Exact\ReportProjection::money($records, ['total','total_to_pay','total_ves_equivalent','balance_ves_equivalent']);
 
         $company = Company::first();
 
-        $pdf = PDF::loadView('finance::unpaid.reports.report_pdf', compact("records", "company"));
+        $pdf = PDF::loadView('finance::unpaid.reports.report_pdf', compact("records", "company", "reportSummary"));
 
         $filename = 'Reporte_Cuentas_Por_Cobrar_'.date('YmdHis');
 
@@ -287,72 +294,15 @@ class UnpaidController extends Controller
     // Customizado unicamente para boleta,factura y nota de venta
     public function customerExpiredDays($customer_id, Request $request)
     {
-        try {
-            $model = $request->query('model');
-            if (!in_array($model,['document','sale_note'],true)) return response()->json(['error'=>'Modelo no soportado'],400);
-            $model_plural = Str::plural($model);
-            // Pagos realizados por documento
-            $document_payments = \DB::connection('tenant')
-                ->table($model.'_payments')
-                ->select($model.'_id', \DB::raw('SUM(payment) as total_payment'))
-                ->groupBy($model.'_id');
-
-            if ($model==='document') $document_payments->whereNull('reversed_at');
-            // Comprobantes con saldo pendiente, uniendo con invoices para obtener date_of_due
-
-            $comprobantes = \DB::connection('tenant')
-                ->table($model_plural)
-                ->leftJoinSub($document_payments, 'payments', function ($join) use($model_plural, $model) {
-                    $join->on($model_plural.'.id', '=', 'payments.'.$model.'_id');
-                })
-                ->where($model_plural.'.customer_id', $customer_id)
-                ->whereIn($model_plural.'.state_type_id', ['01','03','05','07','13']);
-
-            if ($model === 'document') {
-                $comprobantes = $comprobantes
-                            ->leftJoin('invoices', 'documents.id', '=', 'invoices.document_id')
-                            ->whereIn('documents.document_type_id', ['01','08']) // model document
-                            ->select(
-                                $model_plural.'.id',
-                                $model_plural.'.total',
-                                'invoices.date_of_due',
-                                \DB::raw('IFNULL(payments.total_payment, 0) as total_payment')
-                            )
-                            ->whereRaw(\App\Services\Fiscal\FiscalNoteBalance::sql().' > 0');
-            } else if ($model === 'sale_note') {
-                $comprobantes = $comprobantes
-                            ->select(
-                                $model_plural.'.id',
-                                $model_plural.'.total',
-                                $model_plural.'.due_date as date_of_due',
-                                \DB::raw('IFNULL(payments.total_payment, 0) as total_payment')
-                            )
-                            ->whereRaw($model_plural. '.total - IFNULL(payments.total_payment, 0) > 0');
-            } else {
-                return response()->json(['error' => 'Modelo no soportado'], 400);
-
-            }
-
-
-            $comprobantes = $comprobantes->get();
-
-            // Calcular el mayor número de días vencidos
-            $max_days = 0;
-            foreach ($comprobantes as $comprobante) {
-                if ($comprobante->date_of_due && $comprobante->date_of_due < now()) {
-                    $dias_vencidos = now()->diffInDays(\Carbon\Carbon::parse($comprobante->date_of_due));
-                    if ($dias_vencidos > $max_days) {
-                        $max_days = $dias_vencidos;
-                    }
-                }
-            }
-
-            return response()->json([
-                'max_expired_days' => (int)$max_days
-            ]);
-        } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
-        }
+        $model = $request->query('model');
+        if (!in_array($model,['document','sale_note'],true)) return response()->json(['error'=>'Modelo no soportado'],400);
+        validator(['customer_id'=>$customer_id],['customer_id'=>'required|integer|min:1'])->validate();
+        // Credit eligibility has always considered this customer's debts across branches.
+        // Filter the indexed customer/source before reading exact balances in bounded batches.
+        $rows = \App\Support\Exact\Receivables::dataset(['customer_id'=>$customer_id,'source_type'=>$model],true);
+        $maximum = 0;
+        foreach ($rows as $row) $maximum = max($maximum,$row['delay_payment']);
+        return response()->json(['max_expired_days'=>$maximum]);
     }
 
 }

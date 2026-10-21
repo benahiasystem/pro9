@@ -2152,9 +2152,9 @@ header .head-notes > div {
 </style>
 
 <script>
-import {exactAmount} from '../../../helpers/exchange-rate-math'
+import {exactAmount, exactValue} from '../../../helpers/exchange-rate-math'
 
-import {applyCommercialTotals, allocateCommercialRows} from '../../../helpers/exact-commercial'
+import {applyCommercialTotals, allocateCommercialRows, prepareCommercialPayments} from '../../../helpers/exact-commercial'
 
 import SaleNotesFormItem from "./partials/item.vue";
 import PersonForm from "../persons/form.vue";
@@ -3235,7 +3235,6 @@ export default {
 
             let validate = await this.validate_payments();
             if (
-                validate.acum_total > parseFloat(this.form.total) ||
                 validate.error_by_item > 0
             ) {
                 return this.$message.error(
@@ -3254,9 +3253,9 @@ export default {
                     this.form.quantity_period > 0 ? true : false;
             }
 
-            if (validate.acum_total == parseFloat(this.form.total)) {
-                this.form.paid = true;
-            }
+            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            this.form.paid = validate.acum_total.compare(exactValue(this.form, 'total_payable')) >= 0;
+            // ######## FIN CALCULOS EXACTOS PRO9 ########
 
             let validate_payment_destination = await this.validatePaymentDestination();
 
@@ -3314,23 +3313,15 @@ export default {
                 });
         },
         validate_payments() {
-            for (let index = 0; index < this.form.payments.length; index++) {
-                if (parseFloat(this.form.payments[index].payment) === 0)
-                    this.form.payments.splice(index, 1);
+            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            try {
+                const prepared = prepareCommercialPayments(exactValue(this.form, 'total_payable'), this.form.payments);
+                this.form.payments = prepared.inputs;
+                return {error_by_item: 0, acum_total: prepared.total};
+            } catch (error) {
+                return {error_by_item: 1, acum_total: exactAmount('0')};
             }
-
-            let error_by_item = 0;
-            let acum_total = 0;
-
-            this.form.payments.forEach(item => {
-                acum_total += parseFloat(item.payment);
-                if (item.payment <= 0 || item.payment == null) error_by_item++;
-            });
-
-            return {
-                error_by_item: error_by_item,
-                acum_total: acum_total
-            };
+            // ######## FIN CALCULOS EXACTOS PRO9 ########
         },
         close() {
             location.href = "/sale-notes";

@@ -15,24 +15,24 @@
         <div style="margin-top:20px; margin-bottom:15px;">
             <table>
                 <tr>
-                    <td>
+                    <td data-type="s">
                         <p><b>Empresa: </b></p>
                     </td>
-                    <td align="center">
+                    <td data-type="s" align="center">
                         <p>@include('partials.report_company_header', ['showEmpresaLabel' => false])</p>
                     </td>
-                    <td>
+                    <td data-type="s">
                         <p><strong>Fecha: </strong></p>
                     </td>
-                    <td align="center">
+                    <td data-type="s" align="center">
                         <p><strong>{{date('Y-m-d')}}</strong></p>
                     </td>
                 </tr>
                 <tr>
-                    <td>
+                    <td data-type="s">
                         <p><strong>RIF: </strong></p>
                     </td>
-                    <td align="center">{{$company->number}}</td>
+                    <td data-type="s" align="center">{{$company->number}}</td>
 
                 </tr>
             </table>
@@ -55,31 +55,35 @@
                                 <th class="text-right">Total N. Crédito</th>
                                 <th class="text-right">Monto retención</th>
                                 <th>Total</th>
+                                <th>Saldo equivalente (Bs.)</th>
+                                <th>Total documental equivalente (Bs.)</th>
 
 
                             </tr>
                         </thead>
                         <tbody>
                             @foreach($records as $key => $value)
-                                @if($value['total_to_pay'] > 0)
+                                @if(\App\Support\Exact\Decimal::readRequired($value, 'total_to_pay')->isPositive())
                                     <tr>
-                                        <td class="celda">{{$loop->iteration}}</td>
-                                        <td class="celda">{{$value['date_of_issue']}}</td>
-                                        <td class="celda">{{$value['number_full']}}</td>
-                                        <td class="celda">{{$value['customer_name']}}</td>
-                                        <td class="celda">{{$value['currency_type_id']}}</td>
-                                        <td class="celda">
+                                        <td data-type="s" class="celda">{{$loop->iteration}}</td>
+                                        <td data-type="s" class="celda">{{$value['date_of_issue']}}</td>
+                                        <td data-type="s" class="celda">{{$value['number_full']}}</td>
+                                        <td data-type="s" class="celda">{{$value['customer_name']}}</td>
+                                        <td data-type="s" class="celda">{{$value['currency_type_id']}}</td>
+                                        <td data-type="s" class="celda">
                                             @if(isset($value['web_platforms']))
                                             @foreach($value['web_platforms'] as $platform)
-                                                <label > {{$platform->name}}</label>
+                                                <label > {{$platform['name']}}</label>
                                                 @endforeach
                                                 @endif
                                         </td>
-                                        <td class="celda">{{$value['purchase_order']}}</td>
-                                        <td class="celda">{{$value['total_to_pay']}}</td>
-                                        <td class="celda">{{$value['total_credit_notes']}}</td>
-                                        <td class="celda">{{$value['retention_amount']}}</td>
-                                        <td class="celda">{{$value['total']}}</td>
+                                        <td data-type="s" class="celda">{{$value['purchase_order']}}</td>
+                                        <td data-type="s" class="celda">{{$value['total_to_pay']}}</td>
+                                        <td data-type="s" class="celda">{{$value['total_credit_notes']}}</td>
+                                        <td data-type="s" class="celda">{{$value['retention_amount']}}</td>
+                                        <td data-type="s" class="celda">{{$value['total']}}</td>
+                                        <td data-type="s" class="celda">{{$value['balance_ves_equivalent']}}</td>
+                                        <td data-type="s" class="celda">{{$value['total_ves_equivalent']}}</td>
                                     </tr>
                                 @endif
                             @endforeach
@@ -92,5 +96,8 @@
                 <p>No se encontraron registros.</p>
             </div>
         @endif
-    </body>
+    @isset($reportSummary)
+@include('partials.exact_outstanding_summary', ['excel'=>true])
+@endisset
+</body>
 </html>

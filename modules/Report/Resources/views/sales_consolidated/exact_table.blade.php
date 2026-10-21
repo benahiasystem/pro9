@@ -33,6 +33,7 @@
         </tr>
     </tbody>
 </table>
+@include('report::sales_consolidated.header_components')
 @else
 <p>No se encontraron registros.</p>
 @endif

@@ -46,23 +46,13 @@ class SaleNotePaymentProvider extends ServiceProvider
     }
  
     private function transaction_payment($sale_note_payment){
-
-        $sale_note = $sale_note_payment->associated_record_payment;
-
-        $total_payments = $sale_note->payments->sum('payment');
-
-        $balance = $sale_note->total - $total_payments;
-
-        if($balance <= 0){
-
-            $sale_note->total_canceled = true;
-            $sale_note->update();
-
-        }else{
-            
-            $sale_note->total_canceled = false;
-            $sale_note->update();
-        }
-
+        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ModelTenant's saved hook owns exact settlement, including deferred batches.
+        if (\App\Support\Exact\Persistence::enabled($sale_note_payment)) return;
+        $sale_note = SaleNote::withoutEagerLoads()->findOrFail($sale_note_payment->sale_note_id);
+        $values = \App\Support\Exact\SaleNoteBalance::values($sale_note);
+        $sale_note->total_canceled = !$values['total_difference']->isPositive();
+        $sale_note->save();
+        // ######## FIN CALCULOS EXACTOS PRO9 ########
     }
 }

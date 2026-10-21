@@ -1,0 +1,77 @@
+[
+  {
+    "id": "17366840fbd57ce03acaab18",
+    "review": {
+      "category": "technical",
+      "justification": "Igualdad con literal de texto no numérico; comprueba una categoría sin adaptar valores decimales: ($row->type ?? '') === 'document'",
+      "evidence": [
+        "modules/Dashboard/Helpers/DashboardData.php",
+        "scripts/exact_guard_proof.php",
+        "tests/Unit/ExactGuardProofTest.php#test_only_type_or_nonnumeric_string_guards_are_proven"
+      ],
+      "evidence_sha256": {
+        "modules/Dashboard/Helpers/DashboardData.php": "5636bc761b36f976eb79c2e6e46c560f49ee8dedc600fddb125c93908724f613",
+        "scripts/exact_guard_proof.php": "3776c0fd557cf7863297358a2d827b12da101937e492b7d918f62ce0f9fc2c56",
+        "tests/Unit/ExactGuardProofTest.php": "e758abc24cc0fbb778d6c2895bec3c114ec8712d06e4b85615346b6afa49b381"
+      },
+      "proof": "nonnumeric_string_equality",
+      "source": {
+        "file": "modules/Dashboard/Helpers/DashboardData.php",
+        "symbol": "DashboardData::debtors",
+        "operation": "native_Identical",
+        "operation_language": "php"
+      }
+    },
+    "reason": "La expresión ya no existe en el recorrido sustituido; no se transfiere a otro ID."
+  },
+  {
+    "id": "21520d7477cd5bcea99a27e1",
+    "review": {
+      "category": "technical",
+      "justification": "El operador + de PHP tiene un literal de arreglo: une claves de arreglos o falla por tipo; sus operandos anidados se revisan individualmente: D::values($values) + ['calculation_snapshot' => array_replace($document->calculation_snapshot ?? [], D::snapshot($values))]",
+      "evidence": [
+        "app/Services/Fiscal/ExactDocumentSummary.php",
+        "scripts/exact_guard_proof.php",
+        "tests/Unit/ExactArrayUnionProofTest.php#test_only_array_literal_unions_have_a_structural_proof"
+      ],
+      "evidence_sha256": {
+        "app/Services/Fiscal/ExactDocumentSummary.php": "5213f0eb7faf26e2f97eba9b83c4905b3cdb09731fd7bc746c9ad331dd1b6492",
+        "scripts/exact_guard_proof.php": "72fcf3c54b46e472d9ca1869db0941cfe29c0c3951a6ff613bc2f86ff31f8eb0",
+        "tests/Unit/ExactArrayUnionProofTest.php": "0425be414024106f490fd3297f7dbc0fa2ca5b3a08ae0a895d80989e37c78fa5"
+      },
+      "proof": "array_union",
+      "source": {
+        "file": "app/Services/Fiscal/ExactDocumentSummary.php",
+        "symbol": "ExactDocumentSummary::save",
+        "operation": "native_Plus",
+        "operation_language": "php"
+      }
+    },
+    "reason": "La expresión ya no existe en el recorrido sustituido; no se transfiere a otro ID."
+  },
+  {
+    "id": "31db0b29e1cd9caa103af673",
+    "review": {
+      "category": "technical",
+      "justification": "Igualdad con literal de texto no numérico; comprueba una categoría sin adaptar valores decimales: $row->currency_type_id == 'USD'",
+      "evidence": [
+        "modules/Dashboard/Helpers/DashboardData.php",
+        "scripts/exact_guard_proof.php",
+        "tests/Unit/ExactGuardProofTest.php#test_only_type_or_nonnumeric_string_guards_are_proven"
+      ],
+      "evidence_sha256": {
+        "modules/Dashboard/Helpers/DashboardData.php": "5636bc761b36f976eb79c2e6e46c560f49ee8dedc600fddb125c93908724f613",
+        "scripts/exact_guard_proof.php": "3776c0fd557cf7863297358a2d827b12da101937e492b7d918f62ce0f9fc2c56",
+        "tests/Unit/ExactGuardProofTest.php": "e758abc24cc0fbb778d6c2895bec3c114ec8712d06e4b85615346b6afa49b381"
+      },
+      "proof": "nonnumeric_string_equality",
+      "source": {
+        "file": "modules/Dashboard/Helpers/DashboardData.php",
+        "symbol": "DashboardData::debtors",
+        "operation": "native_Equal",
+        "operation_language": "php"
+      }
+    },
+    "reason": "La expresión ya no existe en el recorrido sustituido; no se transfiere a otro ID."
+  }
+]

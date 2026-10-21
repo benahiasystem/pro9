@@ -278,8 +278,11 @@
             }
             $destination = $this->destination;
             try {
+                if (!$destination) return '';
                 $bank_id = $destination->bank_id;
-                $bank = Bank::find($bank_id);
+                // ######## INICIO CALCULOS EXACTOS PRO9 ########
+                $bank = $destination->relationLoaded('bank') ? $destination->getRelation('bank') : Bank::find($bank_id);
+                // ######## FIN CALCULOS EXACTOS PRO9 ########
                 if ($bank !== null) {
 
                     try {

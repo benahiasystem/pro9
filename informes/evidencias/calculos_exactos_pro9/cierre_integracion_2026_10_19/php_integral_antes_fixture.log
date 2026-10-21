@@ -1,0 +1,126 @@
+MySQL 5.7 temporal aislado; sin cambios en la instancia de la aplicación.
+PHPUnit 9.6.34 by Sebastian Bergmann and contributors.
+
+Warning:       Your XML configuration validates against a deprecated schema.
+Suggestion:    Migrate your XML configuration using "--migrate-configuration"!
+
+...............................................................  63 / 949 (  6%)
+............................................................... 126 / 949 ( 13%)
+............................................................... 189 / 949 ( 19%)
+............................................................... 252 / 949 ( 26%)
+............................................................... 315 / 949 ( 33%)
+............................................................... 378 / 949 ( 39%)
+............................................................... 441 / 949 ( 46%)
+............................................................... 504 / 949 ( 53%)
+............................................................... 567 / 949 ( 59%)
+............................................................... 630 / 949 ( 66%)
+............................................................... 693 / 949 ( 73%)
+............................................................... 756 / 949 ( 79%)
+............................................................... 819 / 949 ( 86%)
+............................................................... 882 / 949 ( 92%)
+............................................................... 945 / 949 ( 99%)
+...F                                                            949 / 949 (100%)
+
+Time: 20:19.820, Memory: 820.00 MB
+
+There was 1 failure:
+
+1) Tests\Feature\ExampleTest::testBasicTest
+Expected response status code [201, 301, 302, 303, 307, 308] but received 500.
+Failed asserting that false is true.
+
+The following exception occurred during the last request:
+
+PDOException: SQLSTATE[HY000] [1049] Unknown database 'multifacturalo_dusk' in /home/benahia/benahia/pro/Pro9/vendor/laravel/framework/src/Illuminate/Database/Connectors/Connector.php:70
+Stack trace:
+#0 /home/benahia/benahia/pro/Pro9/vendor/laravel/framework/src/Illuminate/Database/Connectors/Connector.php(70): PDO->__construct()
+#1 /home/benahia/benahia/pro/Pro9/vendor/laravel/framework/src/Illuminate/Database/Connectors/Connector.php(45): Illuminate\Database\Connectors\Connector->createPdoConnection()
+#2 /home/benahia/benahia/pro/Pro9/vendor/laravel/framework/src/Illuminate/Database/Connectors/MySqlConnector.php(24): Illuminate\Database\Connectors\Connector->createConnection()
+#3 /home/benahia/benahia/pro/Pro9/vendor/laravel/framework/src/Illuminate/Database/Connectors/ConnectionFactory.php(184): Illuminate\Database\Connectors\MySqlConnector->connect()
+#4 [internal function]: Illuminate\Database\Connectors\ConnectionFactory->Illuminate\Database\Connectors\{closure}()
+#5 /home/benahia/benahia/pro/Pro9/vendor/laravel/framework/src/Illuminate/Database/Connection.php(1181): call_user_func()
+#6 /home/benahia/benahia/pro/Pro9/vendor/laravel/framework/src/Illuminate/Database/Connection.php(1217): Illuminate\Database\Connection->getPdo()
+#7 /home/benahia/benahia/pro/Pro9/vendor/laravel/framework/src/Illuminate/Database/Connection.php(486): Illuminate\Database\Connection->getReadPdo()
+#8 /home/benahia/benahia/pro/Pro9/vendor/laravel/framework/src/Illuminate/Database/Connection.php(414): Illuminate\Database\Connection->getPdoForSelect()
+#9 /home/benahia/benahia/pro/Pro9/vendor/laravel/framework/src/Illuminate/Database/Connection.php(753): Illuminate\Database\Connection->Illuminate\Database\{closure}()
+#10 /home/benahia/benahia/pro/Pro9/vendor/laravel/framework/src/Illuminate/Database/Connection.php(720): Illuminate\Database\Connection->runQueryCallback()
+#11 /home/benahia/benahia/pro/Pro9/vendor/laravel/framework/src/Illuminate/Database/Connection.php(405): Illuminate\Database\Connection->run()
+#12 /home/benahia/benahia/pro/Pro9/vendor/laravel/framework/src/Illuminate/Database/Query/Builder.php(2705): Illuminate\Database\Connection->select()
+#13 /home/benahia/benahia/pro/Pro9/vendor/laravel/framework/src/Illuminate/Database/Query/Builder.php(2694): Illuminate\Database\Query\Builder->runSelect()
+#14 /home/benahia/benahia/pro/Pro9/vendor/laravel/framework/src/Illuminate/Database/Query/Builder.php(3230): Illuminate\Database\Query\Builder->Illuminate\Database\Query\{closure}()
+#15 /home/benahia/benahia/pro/Pro9/vendor/laravel/framework/src/Illuminate/Database/Query/Builder.php(2693): Illuminate\Database\Query\Builder->onceWithColumns()
+#16 /home/benahia/benahia/pro/Pro9/vendor/laravel/framework/src/Illuminate/Database/Eloquent/Builder.php(710): Illuminate\Database\Query\Builder->get()
+#17 /home/benahia/benahia/pro/Pro9/vendor/laravel/framework/src/Illuminate/Database/Eloquent/Builder.php(694): Illuminate\Database\Eloquent\Builder->getModels()
+#18 /home/benahia/benahia/pro/Pro9/vendor/laravel/framework/src/Illuminate/Database/Concerns/BuildsQueries.php(296): Illuminate\Database\Eloquent\Builder->get()
+#19 /home/benahia/benahia/pro/Pro9/app/Http/Middleware/EnsureTenantConnection.php(25): Illuminate\Database\Eloquent\Builder->first()
+#20 /home/benahia/benahia/pro/Pro9/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(180): App\Http\Middleware\EnsureTenantConnection->handle()
+#21 /home/benahia/benahia/pro/Pro9/vendor/hyn/multi-tenant/src/Middleware/EagerIdentification.php(29): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
+#22 /home/benahia/benahia/pro/Pro9/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(180): Hyn\Tenancy\Middleware\EagerIdentification->handle()
+#23 /home/benahia/benahia/pro/Pro9/vendor/hyn/multi-tenant/src/Middleware/HostnameActions.php(74): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
+#24 /home/benahia/benahia/pro/Pro9/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(180): Hyn\Tenancy\Middleware\HostnameActions->handle()
+#25 /home/benahia/benahia/pro/Pro9/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(116): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
+#26 /home/benahia/benahia/pro/Pro9/vendor/laravel/framework/src/Illuminate/Foundation/Http/Kernel.php(165): Illuminate\Pipeline\Pipeline->then()
+#27 /home/benahia/benahia/pro/Pro9/vendor/laravel/framework/src/Illuminate/Foundation/Http/Kernel.php(134): Illuminate\Foundation\Http\Kernel->sendRequestThroughRouter()
+#28 /home/benahia/benahia/pro/Pro9/vendor/laravel/framework/src/Illuminate/Foundation/Testing/Concerns/MakesHttpRequests.php(556): Illuminate\Foundation\Http\Kernel->handle()
+#29 /home/benahia/benahia/pro/Pro9/vendor/laravel/framework/src/Illuminate/Foundation/Testing/Concerns/MakesHttpRequests.php(324): Illuminate\Foundation\Testing\TestCase->call()
+#30 /home/benahia/benahia/pro/Pro9/tests/Feature/ExampleTest.php(18): Illuminate\Foundation\Testing\TestCase->get()
+#31 /home/benahia/benahia/pro/Pro9/vendor/phpunit/phpunit/src/Framework/TestCase.php(1617): Tests\Feature\ExampleTest->testBasicTest()
+#32 /home/benahia/benahia/pro/Pro9/vendor/phpunit/phpunit/src/Framework/TestCase.php(1223): PHPUnit\Framework\TestCase->runTest()
+#33 /home/benahia/benahia/pro/Pro9/vendor/phpunit/phpunit/src/Framework/TestResult.php(729): PHPUnit\Framework\TestCase->runBare()
+#34 /home/benahia/benahia/pro/Pro9/vendor/phpunit/phpunit/src/Framework/TestCase.php(973): PHPUnit\Framework\TestResult->run()
+#35 /home/benahia/benahia/pro/Pro9/vendor/phpunit/phpunit/src/Framework/TestSuite.php(685): PHPUnit\Framework\TestCase->run()
+#36 /home/benahia/benahia/pro/Pro9/vendor/phpunit/phpunit/src/Framework/TestSuite.php(685): PHPUnit\Framework\TestSuite->run()
+#37 /home/benahia/benahia/pro/Pro9/vendor/phpunit/phpunit/src/Framework/TestSuite.php(685): PHPUnit\Framework\TestSuite->run()
+#38 /home/benahia/benahia/pro/Pro9/vendor/phpunit/phpunit/src/TextUI/TestRunner.php(651): PHPUnit\Framework\TestSuite->run()
+#39 /home/benahia/benahia/pro/Pro9/vendor/phpunit/phpunit/src/TextUI/Command.php(146): PHPUnit\TextUI\TestRunner->run()
+#40 /home/benahia/benahia/pro/Pro9/vendor/phpunit/phpunit/src/TextUI/Command.php(99): PHPUnit\TextUI\Command->run()
+#41 /home/benahia/benahia/pro/Pro9/vendor/phpunit/phpunit/phpunit(107): PHPUnit\TextUI\Command::main()
+#42 /home/benahia/benahia/pro/Pro9/vendor/bin/phpunit(122): include('...')
+#43 {main}
+
+Next Illuminate\Database\QueryException: SQLSTATE[HY000] [1049] Unknown database 'multifacturalo_dusk' (SQL: select * from `hostnames` where `fqdn` = localhost and `hostnames`.`deleted_at` is null limit 1) in /home/benahia/benahia/pro/Pro9/vendor/laravel/framework/src/Illuminate/Database/Connection.php:760
+Stack trace:
+#0 /home/benahia/benahia/pro/Pro9/vendor/laravel/framework/src/Illuminate/Database/Connection.php(720): Illuminate\Database\Connection->runQueryCallback()
+#1 /home/benahia/benahia/pro/Pro9/vendor/laravel/framework/src/Illuminate/Database/Connection.php(405): Illuminate\Database\Connection->run()
+#2 /home/benahia/benahia/pro/Pro9/vendor/laravel/framework/src/Illuminate/Database/Query/Builder.php(2705): Illuminate\Database\Connection->select()
+#3 /home/benahia/benahia/pro/Pro9/vendor/laravel/framework/src/Illuminate/Database/Query/Builder.php(2694): Illuminate\Database\Query\Builder->runSelect()
+#4 /home/benahia/benahia/pro/Pro9/vendor/laravel/framework/src/Illuminate/Database/Query/Builder.php(3230): Illuminate\Database\Query\Builder->Illuminate\Database\Query\{closure}()
+#5 /home/benahia/benahia/pro/Pro9/vendor/laravel/framework/src/Illuminate/Database/Query/Builder.php(2693): Illuminate\Database\Query\Builder->onceWithColumns()
+#6 /home/benahia/benahia/pro/Pro9/vendor/laravel/framework/src/Illuminate/Database/Eloquent/Builder.php(710): Illuminate\Database\Query\Builder->get()
+#7 /home/benahia/benahia/pro/Pro9/vendor/laravel/framework/src/Illuminate/Database/Eloquent/Builder.php(694): Illuminate\Database\Eloquent\Builder->getModels()
+#8 /home/benahia/benahia/pro/Pro9/vendor/laravel/framework/src/Illuminate/Database/Concerns/BuildsQueries.php(296): Illuminate\Database\Eloquent\Builder->get()
+#9 /home/benahia/benahia/pro/Pro9/app/Http/Middleware/EnsureTenantConnection.php(25): Illuminate\Database\Eloquent\Builder->first()
+#10 /home/benahia/benahia/pro/Pro9/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(180): App\Http\Middleware\EnsureTenantConnection->handle()
+#11 /home/benahia/benahia/pro/Pro9/vendor/hyn/multi-tenant/src/Middleware/EagerIdentification.php(29): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
+#12 /home/benahia/benahia/pro/Pro9/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(180): Hyn\Tenancy\Middleware\EagerIdentification->handle()
+#13 /home/benahia/benahia/pro/Pro9/vendor/hyn/multi-tenant/src/Middleware/HostnameActions.php(74): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
+#14 /home/benahia/benahia/pro/Pro9/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(180): Hyn\Tenancy\Middleware\HostnameActions->handle()
+#15 /home/benahia/benahia/pro/Pro9/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(116): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
+#16 /home/benahia/benahia/pro/Pro9/vendor/laravel/framework/src/Illuminate/Foundation/Http/Kernel.php(165): Illuminate\Pipeline\Pipeline->then()
+#17 /home/benahia/benahia/pro/Pro9/vendor/laravel/framework/src/Illuminate/Foundation/Http/Kernel.php(134): Illuminate\Foundation\Http\Kernel->sendRequestThroughRouter()
+#18 /home/benahia/benahia/pro/Pro9/vendor/laravel/framework/src/Illuminate/Foundation/Testing/Concerns/MakesHttpRequests.php(556): Illuminate\Foundation\Http\Kernel->handle()
+#19 /home/benahia/benahia/pro/Pro9/vendor/laravel/framework/src/Illuminate/Foundation/Testing/Concerns/MakesHttpRequests.php(324): Illuminate\Foundation\Testing\TestCase->call()
+#20 /home/benahia/benahia/pro/Pro9/tests/Feature/ExampleTest.php(18): Illuminate\Foundation\Testing\TestCase->get()
+#21 /home/benahia/benahia/pro/Pro9/vendor/phpunit/phpunit/src/Framework/TestCase.php(1617): Tests\Feature\ExampleTest->testBasicTest()
+#22 /home/benahia/benahia/pro/Pro9/vendor/phpunit/phpunit/src/Framework/TestCase.php(1223): PHPUnit\Framework\TestCase->runTest()
+#23 /home/benahia/benahia/pro/Pro9/vendor/phpunit/phpunit/src/Framework/TestResult.php(729): PHPUnit\Framework\TestCase->runBare()
+#24 /home/benahia/benahia/pro/Pro9/vendor/phpunit/phpunit/src/Framework/TestCase.php(973): PHPUnit\Framework\TestResult->run()
+#25 /home/benahia/benahia/pro/Pro9/vendor/phpunit/phpunit/src/Framework/TestSuite.php(685): PHPUnit\Framework\TestCase->run()
+#26 /home/benahia/benahia/pro/Pro9/vendor/phpunit/phpunit/src/Framework/TestSuite.php(685): PHPUnit\Framework\TestSuite->run()
+#27 /home/benahia/benahia/pro/Pro9/vendor/phpunit/phpunit/src/Framework/TestSuite.php(685): PHPUnit\Framework\TestSuite->run()
+#28 /home/benahia/benahia/pro/Pro9/vendor/phpunit/phpunit/src/TextUI/TestRunner.php(651): PHPUnit\Framework\TestSuite->run()
+#29 /home/benahia/benahia/pro/Pro9/vendor/phpunit/phpunit/src/TextUI/Command.php(146): PHPUnit\TextUI\TestRunner->run()
+#30 /home/benahia/benahia/pro/Pro9/vendor/phpunit/phpunit/src/TextUI/Command.php(99): PHPUnit\TextUI\Command->run()
+#31 /home/benahia/benahia/pro/Pro9/vendor/phpunit/phpunit/phpunit(107): PHPUnit\TextUI\Command::main()
+#32 /home/benahia/benahia/pro/Pro9/vendor/bin/phpunit(122): include('...')
+#33 {main}
+
+----------------------------------------------------------------------------------
+
+SQLSTATE[HY000] [1049] Unknown database 'multifacturalo_dusk' (SQL: select * from `hostnames` where `fqdn` = localhost and `hostnames`.`deleted_at` is null limit 1)
+
+/home/benahia/benahia/pro/Pro9/vendor/laravel/framework/src/Illuminate/Testing/TestResponse.php:148
+/home/benahia/benahia/pro/Pro9/tests/Feature/ExampleTest.php:20
+
+FAILURES!
+Tests: 949, Assertions: 22894, Failures: 1.

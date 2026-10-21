@@ -52,10 +52,11 @@
 
           <div v-if="row.debts_count > 1" class="db-detail">
             <div class="db-detail-inner">
-              <div v-for="debt in row.debts" :key="`${debt.id}-${debt.number}`" class="db-debt" :class="debtClass(debt.status)">
+              <div v-for="debt in row.debts" :key="debt.report_key" class="db-debt" :class="debtClass(debt.status)">
                 <div class="db-debt-main">
                   <strong>Bs. {{ debt.total_to_pay | dbMoney }}</strong>
                   <small class="text-muted">{{ debt.number }} · {{ debt.due_text }}</small>
+                  <small v-if="debt.currency_type_id === 'USD'" class="text-muted">USD {{ debt.original_balance | dbMoney }}</small>
                 </div>
                 <span class="db-badge" :class="badgeClass(debt.status)">{{ badgeText(debt) }}</span>
               </div>
@@ -71,10 +72,11 @@
             <strong>Bs. {{ group.total | dbMoney }}</strong>
           </div>
 
-          <div v-for="debt in group.items" :key="`${debt.customer}-${debt.id}-${debt.number}`" class="db-date-row">
+          <div v-for="debt in group.items" :key="debt.report_key" class="db-date-row">
             <div class="db-info">
               <span class="db-name text-truncate">{{ debt.customer }}</span>
               <small class="text-muted">{{ debt.number }} · {{ debt.due_text }}</small>
+              <small v-if="debt.currency_type_id === 'USD'" class="text-muted">USD {{ debt.original_balance | dbMoney }}</small>
             </div>
             <strong>Bs. {{ debt.total_to_pay | dbMoney }}</strong>
           </div>
@@ -87,6 +89,7 @@
 </template>
 
 <script>
+import {exactAmount, exactValue} from "../../../../../../../resources/js/helpers/exchange-rate-math";
 export default {
   name: "Debtors",
   props: {
@@ -115,7 +118,7 @@ export default {
       return this.visibleDebts.filter((debt) => debt.due_days !== null && debt.due_days !== undefined && Number(debt.due_days) <= 0);
     },
     urgentTotal() {
-      return this.urgentDebts.reduce((sum, debt) => sum + Number(debt.total_to_pay || 0), 0);
+      return this.urgentDebts.reduce((sum, debt) => sum.plus(exactValue(debt, "total_to_pay")), exactAmount("0"));
     },
     dateGroups() {
       const groups = [
@@ -126,7 +129,7 @@ export default {
 
       groups.forEach((group) => {
         group.items = this.visibleDebts.filter((debt) => debt.status === group.status);
-        group.total = group.items.reduce((sum, debt) => sum + Number(debt.total_to_pay || 0), 0);
+        group.total = group.items.reduce((sum, debt) => sum.plus(exactValue(debt, "total_to_pay")), exactAmount("0"));
       });
 
       return groups.filter((group) => group.items.length);
@@ -182,10 +185,8 @@ export default {
   },
   filters: {
     dbMoney(value) {
-      return (Number(value) || 0).toLocaleString("es-PE", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      });
+      const [integer, fraction] = exactAmount(value).decimal().split(".");
+      return integer.replace(/\B(?=(\d{3})+(?!\d))/g, ".") + (fraction ? "," + fraction : "");
     },
   },
 };

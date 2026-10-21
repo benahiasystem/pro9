@@ -323,7 +323,11 @@
                 documents.date_of_issue as date_of_issue, document_items.unit_price as unit_price,
                 document_items.total as total, document_items.calculation_snapshot as calculation_snapshot,
                 documents.currency_type_id as currency_type_id, documents.exchange_rate_sale as exchange_rate_sale,
-                documents.document_type_id as document_type_id, 'document' as source_type");
+                documents.document_type_id as document_type_id, 'document' as source_type,
+                document_items.document_id as source_id, document_items.affectation_igv_type_id,
+                document_items.total_value, document_items.total_base_igv, document_items.total_igv,
+                document_items.total_other_taxes, document_items.total_discount, document_items.total_charge,
+                document_items.discounts");
             // ######## FIN CALCULOS EXACTOS PRO9 ########
 
             if (isset($params['series'])) {

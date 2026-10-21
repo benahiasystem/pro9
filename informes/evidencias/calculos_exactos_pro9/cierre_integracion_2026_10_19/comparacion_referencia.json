@@ -1,0 +1,11 @@
+{
+  "reference_controller_sha256": "0d2d41c9daae4b4cd85e21af53630c67b0b831661dbff587f6988f81db5dc489",
+  "initial_controller_sha256": "0d2d41c9daae4b4cd85e21af53630c67b0b831661dbff587f6988f81db5dc489",
+  "changed_existing_runtime_php": [
+    "app/Http/Controllers/Tenant/SaleNoteController.php"
+  ],
+  "new_runtime_php": [
+    "app/Support/Exact/SaleNoteConversionLines.php"
+  ],
+  "scope": "El controlador de referencia se carga desde la copia congelada. Las dependencias PHP comunes iniciales permanecen iguales; las fuentes nuevas sólo participan en el recorrido actual. El ensayo HTTP usa conexiones system/tenant al mismo esquema temporal; no acredita una instalación central separada."
+}

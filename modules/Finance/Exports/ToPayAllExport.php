@@ -29,6 +29,7 @@ class ToPayAllExport implements FromView, \Maatwebsite\Excel\Concerns\WithEvents
         $company = DB::connection('tenant')->table('companies')->select('name', 'number')->get();
 
         return view('finance::to_pay.reportall_excel',['records' => $records,
+            'reportSummary'=>\App\Support\Exact\OutstandingSummary::summarize($records),
             'companies' => $company ]);
          
     }
@@ -38,7 +39,7 @@ class ToPayAllExport implements FromView, \Maatwebsite\Excel\Concerns\WithEvents
     {
         return [\Maatwebsite\Excel\Events\AfterSheet::class=>function ($event) {
             \App\Support\Exact\FractionSheet::append($event->sheet->getDelegate(), $this->records,
-                ['total', 'total_payable', 'total_payment', 'total_to_pay', 'exact_balance', 'settlement_adjustment']);
+                ['total', 'total_payable', 'total_payment', 'total_to_pay', 'exact_balance', 'settlement_adjustment', 'total_ves_equivalent', 'balance_ves_equivalent']);
         }];
     }
     // ######## FIN CALCULOS EXACTOS PRO9 ########

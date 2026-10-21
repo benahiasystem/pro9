@@ -9,7 +9,7 @@
       <ul class="ls-list stock">
         <li v-for="(row, index) in items" :key="index" class="ls-item">
           <span class="ls-name text-truncate">{{ row.product }}</span>
-          <span class="ls-ratio">{{ row.stock | lsNum }}</span>
+          <span class="ls-ratio">{{ stockText(row) }}</span>
         </li>
       </ul>
 
@@ -19,6 +19,7 @@
 </template>
 
 <script>
+import {exactValue} from "../../../../../../../resources/js/helpers/exchange-rate-math";
 export default {
   name: "LowStock",
   props: {
@@ -42,18 +43,13 @@ export default {
     },
   },
   methods: {
+    stockText(row) { return exactValue(row, "stock").decimal(); },
     fetchData() {
       this.$http.get("/dashboard/low-stock", { params: this.filters || {} }).then((response) => {
         const data = response.data;
         this.items = data.items || [];
         this.total = data.total || 0;
       });
-    },
-  },
-  filters: {
-    lsNum(value) {
-      const num = Number(value) || 0;
-      return Number.isInteger(num) ? num : num.toLocaleString("es-PE", { maximumFractionDigits: 2 });
     },
   },
 };

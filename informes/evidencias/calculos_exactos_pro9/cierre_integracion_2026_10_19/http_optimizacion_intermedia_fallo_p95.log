@@ -1,0 +1,20 @@
+MySQL 5.7 temporal aislado; sin cambios en la instancia de la aplicación.
+PHPUnit 9.6.34 by Sebastian Bergmann and contributors.
+
+Warning:       Your XML configuration validates against a deprecated schema.
+Suggestion:    Migrate your XML configuration using "--migrate-configuration"!
+
+F                                                                   1 / 1 (100%)
+
+Time: 01:17.037, Memory: 71.10 MB
+
+There was 1 failure:
+
+1) Tests\Unit\ExactHttpAcceptanceTest::test_production_kernel_routes_and_api_authentication_run_against_disposable_mysql
+El p95 excede el presupuesto HTTP.
+Failed asserting that false is true.
+
+/home/benahia/benahia/pro/Pro9/tests/Unit/ExactHttpAcceptanceTest.php:151
+
+FAILURES!
+Tests: 1, Assertions: 3290, Failures: 1.

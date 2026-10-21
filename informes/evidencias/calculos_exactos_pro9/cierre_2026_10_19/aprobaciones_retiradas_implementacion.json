@@ -1,0 +1,424 @@
+[
+  {
+    "id": "023fcf6cbaa6aba78cd33865",
+    "reason": "Expresión sustituida al integrar consumidores exactos; sin transferencia de aprobación.",
+    "review": {
+      "category": "technical",
+      "justification": "Igualdad con literal de texto no numérico; comprueba una categoría sin adaptar valores decimales: $request['estado'] === 'vencido'",
+      "evidence": [
+        "modules/Dashboard/Helpers/DashboardView.php",
+        "scripts/exact_guard_proof.php",
+        "tests/Unit/ExactGuardProofTest.php#test_only_type_or_nonnumeric_string_guards_are_proven"
+      ],
+      "evidence_sha256": {
+        "modules/Dashboard/Helpers/DashboardView.php": "0985a4c6c7f0d0fdfe774e72bffcf7161a97de46c4d48c49d354c3f7595778ab",
+        "scripts/exact_guard_proof.php": "e0bc05e58c14466ce4864913b0d8757f60aecf5193b44a706fa8a25b863a845c",
+        "tests/Unit/ExactGuardProofTest.php": "e758abc24cc0fbb778d6c2895bec3c114ec8712d06e4b85615346b6afa49b381"
+      },
+      "proof": "nonnumeric_string_equality",
+      "source": {
+        "file": "modules/Dashboard/Helpers/DashboardView.php",
+        "symbol": "DashboardView::getUnpaidFilterUser",
+        "operation": "native_Identical",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "0f7cc81233171b658e69c69d",
+    "reason": "Expresión sustituida al integrar consumidores exactos; sin transferencia de aprobación.",
+    "review": {
+      "category": "technical",
+      "justification": "Igualdad con literal de texto no numérico; comprueba una categoría sin adaptar valores decimales: $row->type == 'sale_note'",
+      "evidence": [
+        "modules/Finance/Traits/UnpaidTrait.php",
+        "scripts/exact_guard_proof.php",
+        "tests/Unit/ExactGuardProofTest.php#test_only_type_or_nonnumeric_string_guards_are_proven"
+      ],
+      "evidence_sha256": {
+        "modules/Finance/Traits/UnpaidTrait.php": "b8ed9afc7c65d39a4adb12dc53d0274321b80ebdd367624a9cdfc15f289703f6",
+        "scripts/exact_guard_proof.php": "e0bc05e58c14466ce4864913b0d8757f60aecf5193b44a706fa8a25b863a845c",
+        "tests/Unit/ExactGuardProofTest.php": "e758abc24cc0fbb778d6c2895bec3c114ec8712d06e4b85615346b6afa49b381"
+      },
+      "proof": "nonnumeric_string_equality",
+      "source": {
+        "file": "modules/Finance/Traits/UnpaidTrait.php",
+        "symbol": "transformRecords",
+        "operation": "native_Equal",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "1fbf16c54a504790abe2457d",
+    "reason": "Expresión sustituida al integrar consumidores exactos; sin transferencia de aprobación.",
+    "review": {
+      "category": "technical",
+      "justification": "Igualdad con literal de texto no numérico; comprueba una categoría sin adaptar valores decimales: $user_type == 'admin'",
+      "evidence": [
+        "modules/Dashboard/Helpers/DashboardView.php",
+        "scripts/exact_guard_proof.php",
+        "tests/Unit/ExactGuardProofTest.php#test_only_type_or_nonnumeric_string_guards_are_proven"
+      ],
+      "evidence_sha256": {
+        "modules/Dashboard/Helpers/DashboardView.php": "0985a4c6c7f0d0fdfe774e72bffcf7161a97de46c4d48c49d354c3f7595778ab",
+        "scripts/exact_guard_proof.php": "e0bc05e58c14466ce4864913b0d8757f60aecf5193b44a706fa8a25b863a845c",
+        "tests/Unit/ExactGuardProofTest.php": "e758abc24cc0fbb778d6c2895bec3c114ec8712d06e4b85615346b6afa49b381"
+      },
+      "proof": "nonnumeric_string_equality",
+      "source": {
+        "file": "modules/Dashboard/Helpers/DashboardView.php",
+        "symbol": "DashboardView::getUnpaidFilterUser",
+        "operation": "native_Equal",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "222730143ad3f0f08f8b92b6",
+    "reason": "Expresión sustituida al integrar consumidores exactos; sin transferencia de aprobación.",
+    "review": {
+      "category": "technical",
+      "justification": "Igualdad con literal de texto no numérico; comprueba una categoría sin adaptar valores decimales: ($row->type ?? '') === 'document'",
+      "evidence": [
+        "modules/Finance/Traits/UnpaidTrait.php",
+        "scripts/exact_guard_proof.php",
+        "tests/Unit/ExactGuardProofTest.php#test_only_type_or_nonnumeric_string_guards_are_proven"
+      ],
+      "evidence_sha256": {
+        "modules/Finance/Traits/UnpaidTrait.php": "b8ed9afc7c65d39a4adb12dc53d0274321b80ebdd367624a9cdfc15f289703f6",
+        "scripts/exact_guard_proof.php": "e0bc05e58c14466ce4864913b0d8757f60aecf5193b44a706fa8a25b863a845c",
+        "tests/Unit/ExactGuardProofTest.php": "e758abc24cc0fbb778d6c2895bec3c114ec8712d06e4b85615346b6afa49b381"
+      },
+      "proof": "nonnumeric_string_equality",
+      "source": {
+        "file": "modules/Finance/Traits/UnpaidTrait.php",
+        "symbol": "getTotalToPay",
+        "operation": "native_Identical",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "349fefea4363c585de8fe24e",
+    "reason": "Expresión sustituida al integrar consumidores exactos; sin transferencia de aprobación.",
+    "review": {
+      "category": "technical",
+      "justification": "Igualdad con literal de texto no numérico; comprueba una categoría sin adaptar valores decimales: $row->type == 'document'",
+      "evidence": [
+        "modules/Finance/Traits/UnpaidTrait.php",
+        "scripts/exact_guard_proof.php",
+        "tests/Unit/ExactGuardProofTest.php#test_only_type_or_nonnumeric_string_guards_are_proven"
+      ],
+      "evidence_sha256": {
+        "modules/Finance/Traits/UnpaidTrait.php": "b8ed9afc7c65d39a4adb12dc53d0274321b80ebdd367624a9cdfc15f289703f6",
+        "scripts/exact_guard_proof.php": "e0bc05e58c14466ce4864913b0d8757f60aecf5193b44a706fa8a25b863a845c",
+        "tests/Unit/ExactGuardProofTest.php": "e758abc24cc0fbb778d6c2895bec3c114ec8712d06e4b85615346b6afa49b381"
+      },
+      "proof": "nonnumeric_string_equality",
+      "source": {
+        "file": "modules/Finance/Traits/UnpaidTrait.php",
+        "symbol": "transformRecords",
+        "operation": "native_Equal",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "43b3fac76a21a8e319bbb5b1",
+    "reason": "Expresión sustituida al integrar consumidores exactos; sin transferencia de aprobación.",
+    "review": {
+      "category": "technical",
+      "justification": "Igualdad con literal de texto no numérico; comprueba una categoría sin adaptar valores decimales: $user_type == 'seller'",
+      "evidence": [
+        "modules/Dashboard/Helpers/DashboardView.php",
+        "scripts/exact_guard_proof.php",
+        "tests/Unit/ExactGuardProofTest.php#test_only_type_or_nonnumeric_string_guards_are_proven"
+      ],
+      "evidence_sha256": {
+        "modules/Dashboard/Helpers/DashboardView.php": "0985a4c6c7f0d0fdfe774e72bffcf7161a97de46c4d48c49d354c3f7595778ab",
+        "scripts/exact_guard_proof.php": "e0bc05e58c14466ce4864913b0d8757f60aecf5193b44a706fa8a25b863a845c",
+        "tests/Unit/ExactGuardProofTest.php": "e758abc24cc0fbb778d6c2895bec3c114ec8712d06e4b85615346b6afa49b381"
+      },
+      "proof": "nonnumeric_string_equality",
+      "source": {
+        "file": "modules/Dashboard/Helpers/DashboardView.php",
+        "symbol": "DashboardView::getUnpaidFilterUser",
+        "operation": "native_Equal",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "475e866b1e3e54b6f9c4ff3f",
+    "reason": "Expresión sustituida al integrar consumidores exactos; sin transferencia de aprobación.",
+    "review": {
+      "category": "technical",
+      "justification": "Igualdad con literal de texto no numérico; comprueba una categoría sin adaptar valores decimales: $date_type === 'due'",
+      "evidence": [
+        "modules/Dashboard/Helpers/DashboardView.php",
+        "scripts/exact_guard_proof.php",
+        "tests/Unit/ExactGuardProofTest.php#test_only_type_or_nonnumeric_string_guards_are_proven"
+      ],
+      "evidence_sha256": {
+        "modules/Dashboard/Helpers/DashboardView.php": "0985a4c6c7f0d0fdfe774e72bffcf7161a97de46c4d48c49d354c3f7595778ab",
+        "scripts/exact_guard_proof.php": "e0bc05e58c14466ce4864913b0d8757f60aecf5193b44a706fa8a25b863a845c",
+        "tests/Unit/ExactGuardProofTest.php": "e758abc24cc0fbb778d6c2895bec3c114ec8712d06e4b85615346b6afa49b381"
+      },
+      "proof": "nonnumeric_string_equality",
+      "source": {
+        "file": "modules/Dashboard/Helpers/DashboardView.php",
+        "symbol": "DashboardView::getUnpaidFilterUser",
+        "operation": "native_Identical",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "61828560ed51df8deee3b6a7",
+    "reason": "Expresión sustituida al integrar consumidores exactos; sin transferencia de aprobación.",
+    "review": {
+      "category": "technical",
+      "justification": "Igualdad con literal de texto no numérico; comprueba una categoría sin adaptar valores decimales: $row->type == 'sale_note'",
+      "evidence": [
+        "app/Exports/AccountsReceivable.php",
+        "scripts/exact_guard_proof.php",
+        "tests/Unit/ExactGuardProofTest.php#test_only_type_or_nonnumeric_string_guards_are_proven"
+      ],
+      "evidence_sha256": {
+        "app/Exports/AccountsReceivable.php": "215df30c9f05f6c1bb8701e50905b7710d3e9f177c1e6b6e50af6dd1260f67db",
+        "scripts/exact_guard_proof.php": "e0bc05e58c14466ce4864913b0d8757f60aecf5193b44a706fa8a25b863a845c",
+        "tests/Unit/ExactGuardProofTest.php": "e758abc24cc0fbb778d6c2895bec3c114ec8712d06e4b85615346b6afa49b381"
+      },
+      "proof": "nonnumeric_string_equality",
+      "source": {
+        "file": "app/Exports/AccountsReceivable.php",
+        "symbol": "AccountsReceivable::view",
+        "operation": "native_Equal",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "6efafa1191ed35761adf480f",
+    "reason": "Expresión sustituida al integrar consumidores exactos; sin transferencia de aprobación.",
+    "review": {
+      "category": "technical",
+      "justification": "Igualdad con literal de texto no numérico; comprueba una categoría sin adaptar valores decimales: $row->type == 'document'",
+      "evidence": [
+        "modules/Finance/Http/Resources/UnpaidCollection.php",
+        "scripts/exact_guard_proof.php",
+        "tests/Unit/ExactGuardProofTest.php#test_only_type_or_nonnumeric_string_guards_are_proven"
+      ],
+      "evidence_sha256": {
+        "modules/Finance/Http/Resources/UnpaidCollection.php": "5e8e80c9087fa9ff18f01f31fac630c1eff11e67a3dd11560b1b95142e9d6f1c",
+        "scripts/exact_guard_proof.php": "e0bc05e58c14466ce4864913b0d8757f60aecf5193b44a706fa8a25b863a845c",
+        "tests/Unit/ExactGuardProofTest.php": "e758abc24cc0fbb778d6c2895bec3c114ec8712d06e4b85615346b6afa49b381"
+      },
+      "proof": "nonnumeric_string_equality",
+      "source": {
+        "file": "modules/Finance/Http/Resources/UnpaidCollection.php",
+        "symbol": "UnpaidCollection::toArray",
+        "operation": "native_Equal",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "7d76a138d43583ecf9aa8f07",
+    "reason": "Expresión sustituida al integrar consumidores exactos; sin transferencia de aprobación.",
+    "review": {
+      "category": "technical",
+      "justification": "Comparación estricta con null/booleano; comprueba tipo o presencia sin calcular un importe: $purchase_order !== null",
+      "evidence": [
+        "modules/Dashboard/Helpers/DashboardView.php",
+        "scripts/exact_guard_proof.php",
+        "tests/Unit/ExactGuardProofTest.php#test_only_type_or_nonnumeric_string_guards_are_proven"
+      ],
+      "evidence_sha256": {
+        "modules/Dashboard/Helpers/DashboardView.php": "0985a4c6c7f0d0fdfe774e72bffcf7161a97de46c4d48c49d354c3f7595778ab",
+        "scripts/exact_guard_proof.php": "e0bc05e58c14466ce4864913b0d8757f60aecf5193b44a706fa8a25b863a845c",
+        "tests/Unit/ExactGuardProofTest.php": "e758abc24cc0fbb778d6c2895bec3c114ec8712d06e4b85615346b6afa49b381"
+      },
+      "proof": "strict_type_guard",
+      "source": {
+        "file": "modules/Dashboard/Helpers/DashboardView.php",
+        "symbol": "DashboardView::getUnpaidFilterUser",
+        "operation": "native_NotIdentical",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "8965ba3829f1a211f82311fc",
+    "reason": "Expresión sustituida al integrar consumidores exactos; sin transferencia de aprobación.",
+    "review": {
+      "category": "technical",
+      "justification": "Comparación estricta con null/booleano; comprueba tipo o presencia sin calcular un importe: null === $user",
+      "evidence": [
+        "modules/Dashboard/Helpers/DashboardView.php",
+        "scripts/exact_guard_proof.php",
+        "tests/Unit/ExactGuardProofTest.php#test_only_type_or_nonnumeric_string_guards_are_proven"
+      ],
+      "evidence_sha256": {
+        "modules/Dashboard/Helpers/DashboardView.php": "0985a4c6c7f0d0fdfe774e72bffcf7161a97de46c4d48c49d354c3f7595778ab",
+        "scripts/exact_guard_proof.php": "e0bc05e58c14466ce4864913b0d8757f60aecf5193b44a706fa8a25b863a845c",
+        "tests/Unit/ExactGuardProofTest.php": "e758abc24cc0fbb778d6c2895bec3c114ec8712d06e4b85615346b6afa49b381"
+      },
+      "proof": "strict_type_guard",
+      "source": {
+        "file": "modules/Dashboard/Helpers/DashboardView.php",
+        "symbol": "DashboardView::getUnpaidFilterUser",
+        "operation": "native_Identical",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "ac53b004b340d33632723c38",
+    "reason": "Expresión sustituida al integrar consumidores exactos; sin transferencia de aprobación.",
+    "review": {
+      "category": "technical",
+      "justification": "Igualdad con literal de texto no numérico; comprueba una categoría sin adaptar valores decimales: $request['estado'] === 'vigente'",
+      "evidence": [
+        "modules/Dashboard/Helpers/DashboardView.php",
+        "scripts/exact_guard_proof.php",
+        "tests/Unit/ExactGuardProofTest.php#test_only_type_or_nonnumeric_string_guards_are_proven"
+      ],
+      "evidence_sha256": {
+        "modules/Dashboard/Helpers/DashboardView.php": "0985a4c6c7f0d0fdfe774e72bffcf7161a97de46c4d48c49d354c3f7595778ab",
+        "scripts/exact_guard_proof.php": "e0bc05e58c14466ce4864913b0d8757f60aecf5193b44a706fa8a25b863a845c",
+        "tests/Unit/ExactGuardProofTest.php": "e758abc24cc0fbb778d6c2895bec3c114ec8712d06e4b85615346b6afa49b381"
+      },
+      "proof": "nonnumeric_string_equality",
+      "source": {
+        "file": "modules/Dashboard/Helpers/DashboardView.php",
+        "symbol": "DashboardView::getUnpaidFilterUser",
+        "operation": "native_Identical",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "ad6618a529af4c5ed6e7b973",
+    "reason": "Expresión sustituida al integrar consumidores exactos; sin transferencia de aprobación.",
+    "review": {
+      "category": "technical",
+      "justification": "Igualdad con literal de texto no numérico; comprueba una categoría sin adaptar valores decimales: $row->type === 'document'",
+      "evidence": [
+        "app/Exports/AccountsReceivable.php",
+        "scripts/exact_guard_proof.php",
+        "tests/Unit/ExactGuardProofTest.php#test_only_type_or_nonnumeric_string_guards_are_proven"
+      ],
+      "evidence_sha256": {
+        "app/Exports/AccountsReceivable.php": "215df30c9f05f6c1bb8701e50905b7710d3e9f177c1e6b6e50af6dd1260f67db",
+        "scripts/exact_guard_proof.php": "e0bc05e58c14466ce4864913b0d8757f60aecf5193b44a706fa8a25b863a845c",
+        "tests/Unit/ExactGuardProofTest.php": "e758abc24cc0fbb778d6c2895bec3c114ec8712d06e4b85615346b6afa49b381"
+      },
+      "proof": "nonnumeric_string_equality",
+      "source": {
+        "file": "app/Exports/AccountsReceivable.php",
+        "symbol": "AccountsReceivable::view",
+        "operation": "native_Identical",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "bdfa9c2ef64f2d210a5a8366",
+    "reason": "Expresión sustituida al integrar consumidores exactos; sin transferencia de aprobación.",
+    "review": {
+      "category": "technical",
+      "justification": "Igualdad con literal de texto no numérico; comprueba una categoría sin adaptar valores decimales: $row->type === 'document'",
+      "evidence": [
+        "modules/Dashboard/Helpers/DashboardView.php",
+        "scripts/exact_guard_proof.php",
+        "tests/Unit/ExactGuardProofTest.php#test_only_type_or_nonnumeric_string_guards_are_proven"
+      ],
+      "evidence_sha256": {
+        "modules/Dashboard/Helpers/DashboardView.php": "0985a4c6c7f0d0fdfe774e72bffcf7161a97de46c4d48c49d354c3f7595778ab",
+        "scripts/exact_guard_proof.php": "e0bc05e58c14466ce4864913b0d8757f60aecf5193b44a706fa8a25b863a845c",
+        "tests/Unit/ExactGuardProofTest.php": "e758abc24cc0fbb778d6c2895bec3c114ec8712d06e4b85615346b6afa49b381"
+      },
+      "proof": "nonnumeric_string_equality",
+      "source": {
+        "file": "modules/Dashboard/Helpers/DashboardView.php",
+        "symbol": "DashboardView::getUnpaid",
+        "operation": "native_Identical",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "bfe9688215cbb50b77152d23",
+    "reason": "Expresión sustituida al integrar consumidores exactos; sin transferencia de aprobación.",
+    "review": {
+      "category": "technical",
+      "justification": "Igualdad con literal de texto no numérico; comprueba una categoría sin adaptar valores decimales: $row->type == 'sale_note'",
+      "evidence": [
+        "modules/Finance/Http/Resources/UnpaidCollection.php",
+        "scripts/exact_guard_proof.php",
+        "tests/Unit/ExactGuardProofTest.php#test_only_type_or_nonnumeric_string_guards_are_proven"
+      ],
+      "evidence_sha256": {
+        "modules/Finance/Http/Resources/UnpaidCollection.php": "5e8e80c9087fa9ff18f01f31fac630c1eff11e67a3dd11560b1b95142e9d6f1c",
+        "scripts/exact_guard_proof.php": "e0bc05e58c14466ce4864913b0d8757f60aecf5193b44a706fa8a25b863a845c",
+        "tests/Unit/ExactGuardProofTest.php": "e758abc24cc0fbb778d6c2895bec3c114ec8712d06e4b85615346b6afa49b381"
+      },
+      "proof": "nonnumeric_string_equality",
+      "source": {
+        "file": "modules/Finance/Http/Resources/UnpaidCollection.php",
+        "symbol": "UnpaidCollection::toArray",
+        "operation": "native_Equal",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "c26d2784c0f3eee160dda79e",
+    "reason": "Expresión sustituida al integrar consumidores exactos; sin transferencia de aprobación.",
+    "review": {
+      "category": "technical",
+      "justification": "Igualdad con literal de texto no numérico; comprueba una categoría sin adaptar valores decimales: $row->type == 'document'",
+      "evidence": [
+        "app/Exports/AccountsReceivable.php",
+        "scripts/exact_guard_proof.php",
+        "tests/Unit/ExactGuardProofTest.php#test_only_type_or_nonnumeric_string_guards_are_proven"
+      ],
+      "evidence_sha256": {
+        "app/Exports/AccountsReceivable.php": "215df30c9f05f6c1bb8701e50905b7710d3e9f177c1e6b6e50af6dd1260f67db",
+        "scripts/exact_guard_proof.php": "e0bc05e58c14466ce4864913b0d8757f60aecf5193b44a706fa8a25b863a845c",
+        "tests/Unit/ExactGuardProofTest.php": "e758abc24cc0fbb778d6c2895bec3c114ec8712d06e4b85615346b6afa49b381"
+      },
+      "proof": "nonnumeric_string_equality",
+      "source": {
+        "file": "app/Exports/AccountsReceivable.php",
+        "symbol": "AccountsReceivable::view",
+        "operation": "native_Equal",
+        "operation_language": "php"
+      }
+    }
+  },
+  {
+    "id": "de9b3e254a9c158be1d7a4a9",
+    "reason": "Expresión sustituida al integrar consumidores exactos; sin transferencia de aprobación.",
+    "review": {
+      "category": "technical",
+      "justification": "Los operandos monetarios se recuperan del snapshot. IDs, fechas, fuentes, límites de lote y contadores no adaptan importes. Expresión revisada: $count++",
+      "evidence": [
+        "app/Support/Exact/Payables.php",
+        "tests/Unit/ExactPayablesTest.php"
+      ],
+      "evidence_sha256": {
+        "app/Support/Exact/Payables.php": "b8843f9c412ccd2bac4300a8e2bc8b5b61a81cd6e9bf614082aca3133a07dcb1",
+        "tests/Unit/ExactPayablesTest.php": "8f5327979e879aed97674edf765c9f844ee9c2748ded65bdda687374e8d06be9"
+      },
+      "source": {
+        "file": "app/Support/Exact/Payables.php",
+        "symbol": "Payables::summary",
+        "operation": "native_update",
+        "operation_language": "php"
+      }
+    }
+  }
+]

@@ -24,12 +24,15 @@ function validReview(review, root, contents = new Map()) {
 }
 function diagnostics(rows, registry, language) {
     const ids = new Set(rows.map(row => row.id)), errors = []
+    const current = new Map(rows.map(row => [row.id,row]))
     for (const [id, review] of Object.entries(registry)) {
         if (!review?.source?.file) { errors.push({id, reason:'missing_source'}); continue }
         const belongs = language === 'php' ? review.source.operation_language === 'php' : review.source.operation_language === 'javascript'
         if (belongs && !ids.has(id)) errors.push({id, reason:'orphaned_review', source:review.source})
+        else if (belongs && current.get(id)?.status === 'pending') errors.push({id, reason:'invalid_or_stale_review', source:review.source})
     }
     return errors
 }
-module.exports = {validReview, diagnostics}
+function matchesProof(review, proof) { return !review?.proof || review.proof === proof }
+module.exports = {validReview, diagnostics, matchesProof}
 // ######## FIN AUDITORIA CALCULOS EXACTOS PRO9 ########

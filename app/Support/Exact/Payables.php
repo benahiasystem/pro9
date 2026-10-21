@@ -11,7 +11,7 @@ final class Payables
     public static function dataset(array $filters, bool $unfiltered = false): ReportDataset
     {
         $db = DB::connection('tenant');
-        return $db->transaction(function () use ($db, $filters, $unfiltered) {
+        return ReadSnapshot::run($db, function () use ($db, $filters, $unfiltered) {
             return new ReportDataset((function () use ($db, $filters, $unfiltered) {
                 $sources = [['purchases','purchase_payments','purchase_id','purchase'], ['expenses','expense_payments','expense_id','expense']];
                 if (!empty($filters['withBankLoan'])) $sources[] = ['bank_loans','bank_loan_payments','bank_loan_id','bank_loans'];
@@ -23,7 +23,8 @@ final class Payables
                             ->join('banks', 'banks.id', '=', 'bank_loans.bank_id')
                             ->addSelect('banks.description as bank_name', 'bank_accounts.description as bank_account_name', 'bank_accounts.id as supplier_id');
                     } else {
-                        $query->join('persons', 'persons.id', '=', $table.'.supplier_id')->addSelect('persons.name as supplier_name');
+                        $query->join('persons', 'persons.id', '=', $table.'.supplier_id')->addSelect('persons.name as supplier_name')
+                            ->leftJoin('users', 'users.id', '=', $table.'.user_id')->addSelect('users.name as creator_name');
                         if ($table === 'purchases') $query->whereIn('purchases.document_type_id', ['01','GU75','NE76']);
                         if (!empty($filters['supplier_id'])) $query->where($table.'.supplier_id', $filters['supplier_id']);
                         if (empty($filters['stablishmentTopaidAll']) && !empty($filters['establishment_id'])) $query->where($table.'.establishment_id', $filters['establishment_id']);
@@ -65,12 +66,14 @@ final class Payables
         $balance = $payable->minus($paid)->simplified();
         $values = ['total'=>$total, 'total_payable'=>$payable, 'total_payment'=>$paid, 'total_to_pay'=>$balance,
             'total_subtraction'=>$paid->minus($payable), 'exact_balance'=>$total->minus($paid), 'settlement_adjustment'=>$payable->minus($total)];
+        $values = array_merge($values,OutstandingSummary::equivalentValues($total,$balance,$row->currency_type_id,$row->exchange_rate_sale));
         $due = !empty($row->date_of_due) ? Carbon::parse($row->date_of_due) : null;
         return array_merge([
             'id'=>$row->id, 'report_key'=>$type.':'.$row->id, 'user_id'=>$row->user_id ?? null,
             'date_of_issue'=>Carbon::parse($row->date_of_issue)->format('Y/m/d'),
             'date_of_due'=>$due ? $due->format('Y/m/d') : null,
             'supplier_id'=>$row->supplier_id,
+            'creator_name'=>$row->creator_name ?? '',
             'supplier_name'=>$type === 'bank_loans' ? $row->bank_name.' - '.$row->bank_account_name : $row->supplier_name,
             'number_full'=>$type === 'purchase' ? $row->series.'-'.$row->number : $row->number,
             'type'=>$type, 'date_payment_last'=>$lastPayment ? Carbon::parse($lastPayment)->format('Y-m-d') : null,
@@ -83,19 +86,7 @@ final class Payables
 
     public static function summary(iterable $rows): array
     {
-        $totals = ['VES'=>['total'=>Decimal::of(0),'balance'=>Decimal::of(0)], 'USD'=>['total'=>Decimal::of(0),'balance'=>Decimal::of(0)]];
-        $count = 0;
-        foreach ($rows as $row) {
-            if (!Decimal::readRequired($row, 'total_to_pay')->isPositive()) continue;
-            $currency = $row['currency_type_id'];
-            if (!isset($totals[$currency])) throw new \UnexpectedValueException('Moneda inválida en cuentas por pagar.');
-            $totals[$currency]['total'] = $totals[$currency]['total']->plus(Decimal::readRequired($row, 'total'))->simplified();
-            $totals[$currency]['balance'] = $totals[$currency]['balance']->plus(Decimal::readRequired($row, 'total_to_pay'))->simplified();
-            $count++;
-        }
-        $values = [];
-        foreach ($totals as $currency=>$fields) foreach ($fields as $field=>$value) $values[$currency.'_'.$field] = $value;
-        return array_merge(Decimal::values($values), ['count'=>$count, 'calculation_snapshot'=>Decimal::snapshot($values)]);
+        return OutstandingSummary::summarize($rows);
     }
 
     private static function dates(array $filters): array

@@ -52,27 +52,25 @@
                                 <th>Moneda</th>
                                 <th>Por Pagar</th>
                                 <th>Total</th>
+                                <th>Saldo equivalente (Bs.)</th>
+                                <th>Total documental equivalente (Bs.)</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach($records as $key => $value)
-                                <?php
-                                $user = \App\Models\Tenant\User::find($value['user_id']);
-                                $user_name = null;
-                                if(!empty($user)){
-                                    $user_name = $user->getName();
-                                }
-                                ?>
+
                                 @if(\App\Support\Exact\Decimal::readRequired($value, 'total_to_pay')->isPositive())
                                     <tr>
                                         <td class="celda" data-type="s">{{$loop->iteration}}</td>
                                         <td class="celda" data-type="s">{{$value['date_of_issue']}}</td>
                                         <td class="celda" data-type="s">{{$value['number_full']}}</td>
                                         <td class="celda" data-type="s">{{$value['supplier_name']}}</td>
-                                        <td class="celda" data-type="s">{{$user_name}}</td>
+                                        <td class="celda" data-type="s">{{ $value['creator_name'] }}</td>
                                         <td class="celda" data-type="s">{{$value['currency_type_id']}}</td>
                                         <td class="celda" data-type="s">{{$value['total_to_pay']}}</td>
                                         <td class="celda" data-type="s">{{$value['total']}}</td>
+                                        <td data-type="s" class="celda">{{$value['balance_ves_equivalent']}}</td>
+                                        <td data-type="s" class="celda">{{$value['total_ves_equivalent']}}</td>
                                     </tr>
                                 @endif
                             @endforeach
@@ -85,5 +83,8 @@
                 <p>No se encontraron registros.</p>
             </div>
         @endif
-    </body>
+    @isset($reportSummary)
+@include('partials.exact_outstanding_summary', ['excel'=>true])
+@endisset
+</body>
 </html>

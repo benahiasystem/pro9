@@ -1059,7 +1059,11 @@ class FiscalEmissionSchemaTest extends TestCase
             self::assertEquals(0, $document->total_exonerated);
             self::assertEquals(0, $document->total_igv);
             self::assertEquals(195, $document->total);
-            self::assertEquals($currency==='USD' ? 7824.07 : 195, $document->currency_totals->exportation);
+            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            // Stored equivalence retains 195 * 40.12345678; cents belong to the provider copy.
+            self::assertSame($currency==='USD' ? '7824.0740721' : '195',
+                \App\Support\Exact\Decimal::represent($document->currency_totals->exactValue('exportation')));
+            // ######## FIN CALCULOS EXACTOS PRO9 ########
             self::assertSame('CO', $document->customer->country_id);
             self::assertSame('NIT', $document->customer->hka_identity_code);
             $before = $transmissions;
@@ -1154,7 +1158,9 @@ class FiscalEmissionSchemaTest extends TestCase
             self::assertSame('confirmed',$after->emission->status);
             $header = $after->emission->payload['documentoElectronico']['encabezado'];
             self::assertSame(\App\Services\ExportInvoicePolicy::INCOTERMS[$after->invoice->operation_type_id],$header['identificacionDocumento']['tipoDeVenta']);
-            self::assertEquals($after->total,$header['totales']['totalAPagar']);
+            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            self::assertTrue(\App\Support\Exact\Decimal::of($header['totales']['totalAPagar'])->isEqualTo($after->exactValue('total')));
+            // ######## FIN CALCULOS EXACTOS PRO9 ########
             self::assertEquals($payments,$db->table('document_payments')->where('document_id',$race->id)->get()->toArray());
         } finally { unlink($log); }
     }
@@ -1323,6 +1329,84 @@ class FiscalEmissionSchemaTest extends TestCase
         self::assertSame($before, $db->table('documents')->count());
         self::assertSame($stock, $db->table('item_warehouse')->value('stock'));
 
+        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        $mixed = array_replace($input, ['external_id'=>(string)\Illuminate\Support\Str::uuid(),
+            'date_of_issue'=>'2026-10-19','total_prepayment'=>'10',
+            'discounts'=>[['discount_type_id'=>'02','amount'=>'10']],
+            'charges'=>[['charge_type_id'=>'50','amount'=>'6']]]);
+        $mixed['items'][0]['unit_price'] = '116';
+        $mixed['items'][0]['quantity'] = '1';
+        $mixed['items'][] = array_replace($mixed['items'][0], ['unit_price'=>'100','affectation_igv_type_id'=>'20']);
+        $mixedDocument = (new \App\CoreFacturalo\Facturalo())->save($mixed)->getDocument()->fresh();
+        self::assertSame('200.4',$D::represent($mixedDocument->exactValue('total')));
+        $exemptLine = $mixedDocument->items()->where('affectation_igv_type_id','20')->firstOrFail();
+        self::assertTrue($D::readRequired($exemptLine,'header_discount')->isZero());
+        self::assertSame('100',$D::represent($exemptLine->exactValue('total_base_igv')));
+        $usd = array_replace($input,['external_id'=>(string)\Illuminate\Support\Str::uuid(),
+            'date_of_issue'=>'2026-10-19','currency_type_id'=>'USD','exchange_rate_sale'=>'3.00000000']);
+        $usd['items'][0]['price_input'] = ['amount'=>'1','currency_type_id'=>'VES','includes_iva'=>true];
+        $usdDocument = (new \App\CoreFacturalo\Facturalo())->save($usd)->getDocument()->fresh();
+        self::assertSame('1/3',(string)$usdDocument->exactValue('total'));
+        $report = (new \Modules\Report\Http\Controllers\ReportSaleConsolidatedController())->detailRecords([
+            'document_type_id'=>'[]','date_range_type_id'=>'date_of_issue','date_start'=>'2026-10-19','date_end'=>'2026-10-19','person_id'=>null]);
+        $summary = \App\Support\Exact\SalesConsolidated::summary($report);
+        self::assertSame('201.4',$summary['total_sale']);
+        self::assertSame('10',$summary['header_discount']);
+        self::assertSame('10',$summary['header_prepayment']);
+        self::assertSame('-1.6',$summary['header_iva_adjustment']);
+        $receivables = collect(iterator_to_array(\App\Support\Exact\Receivables::dataset(['stablishmentUnpaidAll'=>1,
+            'period'=>'date','date_start'=>'2026-10-19'])))->keyBy('report_key');
+        self::assertTrue($D::readRequired($receivables['document:'.$mixedDocument->id],'total_to_pay')->isEqualTo($mixedDocument->exactBalance()));
+        self::assertSame('-1/300',(string)$D::readRequired($receivables['document:'.$usdDocument->id],'settlement_adjustment'));
+        $balanceSummary = \App\Support\Exact\OutstandingSummary::summarize($receivables);
+        self::assertSame('201.39',$balanceSummary['consolidated_balance_ves']);
+        self::assertSame('201.4',$balanceSummary['consolidated_total_ves']);
+        // A payment committed between the source and payment queries must not split a report's cut.
+        $this->capsule->addConnection($db->getConfig(),'exact_report_writer');
+        $writer = $this->capsule->getConnection('exact_report_writer');
+        $interleaved = false;
+        $db->listen(function ($query) use (&$interleaved,$writer,$mixedDocument) {
+            if ($interleaved || $query->connectionName !== 'tenant' || !str_contains($query->sql,'from `documents`') || !str_contains($query->sql,'limit 500')) return;
+            $interleaved = true;
+            $writer->table('document_payments')->insert(['document_id'=>$mixedDocument->id,'date_of_payment'=>'2026-10-19',
+                'payment_method_type_id'=>'01','payment'=>'33.4','currency_type_id'=>'VES','exchange_rate'=>'1.00000000',
+                'original_amount'=>'33.4','payment_method_snapshot'=>json_encode(['id'=>'01','description'=>'Efectivo']),
+                'operation_key'=>(string)\Illuminate\Support\Str::uuid(),
+                'calculation_snapshot'=>json_encode(\App\Support\Exact\Decimal::snapshot(['payment'=>'33.4','original_amount'=>'33.4','tax_amount'=>'0']))]);
+        });
+        $stable = collect(iterator_to_array(\App\Support\Exact\Receivables::dataset(['stablishmentUnpaidAll'=>1,
+            'period'=>'date','date_start'=>'2026-10-19'])))->keyBy('report_key');
+        self::assertTrue($interleaved);
+        self::assertSame('200.4',$stable['document:'.$mixedDocument->id]['total_to_pay']);
+        self::assertSame('167',$mixedDocument->fresh()->balance);
+        $widget = (new \Modules\Dashboard\Helpers\DashboardData())->debtors(['period'=>'date','date_start'=>'2026-10-19']);
+        self::assertSame('167.99',$widget['total']);
+        self::assertSame($widget['total'],$widget['summary']['consolidated_balance_ves']);
+        $db->table('item_warehouse')->where('item_id',$input['items'][0]['item_id'])->update([
+            'stock'=>'0.333333333333','calculation_snapshot'=>json_encode($D::snapshot(['stock'=>'1/3']))]);
+        $stockRows = iterator_to_array(\App\Support\Exact\DashboardStock::dataset($input['establishment_id']));
+        $stockRows = array_values(array_filter($stockRows,fn($row)=>$row['item_id'] === $input['items'][0]['item_id']));
+        self::assertCount(1,$stockRows);
+        self::assertSame('1/3',(string)$D::readRequired($stockRows[0],'stock'));
+        $db->table('item_warehouse')->where('item_id',$input['items'][0]['item_id'])->update([
+            'stock'=>'10','calculation_snapshot'=>json_encode($D::snapshot(['stock'=>'10']))]);
+        $periodic = array_replace($input,['external_id'=>(string)\Illuminate\Support\Str::uuid()]);
+        $periodic['items'][0]['affectation_igv_type_id']='20';$periodic['items'][0]['unit_price']='1';
+        $advanceDocument=(new \App\CoreFacturalo\Facturalo())->save($periodic)->getDocument()->fresh();
+        $advanceDocument->total_prepayment=$D::of('1/3');
+        \App\Services\Fiscal\ExactDocumentSummary::save($advanceDocument);
+        self::assertSame('1/3',(string)$advanceDocument->fresh()->exactValue('total_prepayment'));
+        self::assertSame('2/3',(string)$advanceDocument->fresh()->exactValue('total'));
+        self::assertSame('1/3',(string)$D::readRequired($advanceDocument->fresh()->items()->first(),'header_prepayment'));
+        $finances='{"apply_arrears":true,"arrears_amount":"0.123456789012"}';
+        $db->table('configurations')->update(['finances'=>$finances]);
+        \App\Support\Exact\ReadSnapshot::run($db,function () use ($db,$writer,$finances,$D) {
+            $rows=\App\Support\Exact\Receivables::dataset(['stablishmentUnpaidAll'=>1,'period'=>'date','date_start'=>'2026-10-19']);
+            $writer->table('configurations')->update(['finances'=>'{"apply_arrears":true,"arrears_amount":"99"}']);
+            self::assertEquals(json_decode($finances,true),json_decode($db->table('configurations')->value('finances'),true));
+            foreach ($rows as $row) self::assertTrue($D::readRequired($row,'arrears')->isEqualTo($D::of('0.123456789012')->multipliedBy($row['delay_payment'])));
+        });
+        // ######## FIN CALCULOS EXACTOS PRO9 ########
     }
 
     public function test_exact_commercial_lifecycle_preserves_quantities_and_reverses_stock(): void

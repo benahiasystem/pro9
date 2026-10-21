@@ -23,7 +23,7 @@
                                 <th  class="text-center">Categoria</th>
                                 <th  class="text-center">Producto</th>
                                 <th  class="text-center">Cantidad</th>
-                                <th  class="text-center">Total de venta (Bs.) / moneda original</th>
+                                <th  class="text-center">Total documental (Bs.) / moneda original</th>
                             </tr>
                             <tr slot-scope="{ index, row }">
                                 <td>{{ index }}</td>
@@ -34,7 +34,14 @@
                                 <td  class="text-center">{{ row.category_name }}</td>
                                 <td  class="text-center">{{row.item_description}}</td>
                                 <td  class="text-center">{{row.item_quantity}}</td>
-                                <td  class="text-center">{{row.total_sale}} Bs.<br><small>{{row.currency_type_id}} {{row.total_original}}</small></td>
+                                <td class="text-center">
+                                    {{row.total_sale}} Bs.<br><small>{{row.currency_type_id}} {{row.total_original}}</small>
+                                    <!-- ######## INICIO CALCULOS EXACTOS PRO9 ######## -->
+                                    <details class="text-start"><summary>Desglose en Bs.</summary>
+                                        <div v-for="(label, field) in componentLabels" :key="field">{{ label }}: {{ row[field] }}</div>
+                                    </details>
+                                    <!-- ######## FIN CALCULOS EXACTOS PRO9 ######## -->
+                                </td>
                             </tr>
                         </data-table>
     
@@ -56,6 +63,11 @@ import { documentNumberFull } from "../../../../../../../resources/js/helpers/do
             return {
                 resource: 'reports/sales-consolidated',
                 form: {},
+                // ######## INICIO CALCULOS EXACTOS PRO9 ########
+                componentLabels: {line_total: 'Partidas', header_discount: 'Descuentos de cabecera (restar)',
+                    header_charge: 'Cargos de cabecera', header_iva_adjustment: 'Ajuste de IVA',
+                    header_other_taxes: 'Otros impuestos de cabecera', header_prepayment: 'Anticipos (restar)'},
+                // ######## FIN CALCULOS EXACTOS PRO9 ########
 
             }
         },

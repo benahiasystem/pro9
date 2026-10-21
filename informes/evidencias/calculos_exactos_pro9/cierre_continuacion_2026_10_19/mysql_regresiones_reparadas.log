@@ -1,0 +1,11 @@
+MySQL 5.7 temporal aislado; sin cambios en la instancia de la aplicación.
+PHPUnit 9.6.34 by Sebastian Bergmann and contributors.
+
+Warning:       Your XML configuration validates against a deprecated schema.
+Suggestion:    Migrate your XML configuration using "--migrate-configuration"!
+
+....                                                                4 / 4 (100%)
+
+Time: 00:39.027, Memory: 98.50 MB
+
+OK (4 tests, 242 assertions)

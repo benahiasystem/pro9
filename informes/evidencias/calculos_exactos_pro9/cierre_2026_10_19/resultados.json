@@ -1,0 +1,107 @@
+{
+  "date": "2026-10-19",
+  "status": "incomplete",
+  "baseline_git_commit": "cab49e553230e48d3cf962261e5f6c961f6ffb13",
+  "audit": {
+    "php": {
+      "candidates": 23383,
+      "classified": 5940,
+      "pending": 17443,
+      "parse_errors": [],
+      "registry_errors": [],
+      "coverage_missing": [],
+      "scanned_files": 3624,
+      "check_exit_code": 1,
+      "categories": {
+        "pending": 17443,
+        "technical": 5862,
+        "discrete_units": 3,
+        "exact_arithmetic": 6,
+        "validation": 17,
+        "settlement": 5,
+        "storage": 15,
+        "presentation": 21,
+        "allocation": 11
+      }
+    },
+    "js": {
+      "candidates": 23170,
+      "classified": 3469,
+      "pending": 19701,
+      "parse_errors": [],
+      "registry_errors": [],
+      "coverage_missing": [],
+      "scanned_files": 1953,
+      "check_exit_code": 1,
+      "categories": {
+        "technical": 3270,
+        "pending": 19701,
+        "presentation": 109,
+        "exact_arithmetic": 38,
+        "validation": 34,
+        "allocation": 18
+      }
+    }
+  },
+  "audit_totals": {
+    "candidates": 46553,
+    "classified": 9409,
+    "pending": 37144
+  },
+  "unique_scanned_files": 4672,
+  "classification_proofs": {
+    "nonnumeric_string_equality": 7463,
+    "strict_type_guard": 1356,
+    "array_union": 70,
+    "known_date_format": 23,
+    "manual": 497
+  },
+  "manual_existing_invalid": 0,
+  "php_unit": {
+    "tests": 926,
+    "assertions": 16745,
+    "skipped": 62,
+    "failures": 0,
+    "errors": 0
+  },
+  "javascript": {
+    "tests": 215,
+    "passed": 215,
+    "failed": 0,
+    "skipped": 0
+  },
+  "mysql": {
+    "tests": 4,
+    "assertions": 1671,
+    "failed": 0,
+    "scope": "instalación/semillas/rollback/repetición tenant y central; cantidades/cabeceras/saldos/corte consistente/comercial. Se ejecutó antes de añadir el filtro opcional por cliente/origen, cubierto además en SQLite y suite general."
+  },
+  "lint": {
+    "files": 62,
+    "errors": []
+  },
+  "skill_valid": true,
+  "frontend_build": "not_run_user_responsibility",
+  "mysql_performance": "rendimiento_mysql_optimizado.json",
+  "mysql_performance_sources_match_current": true,
+  "mysql_performance_scope": "backend_only_not_http_pos_cash",
+  "pdfs": [
+    "output/pdf/calculos-exactos-cierre-2026-10-19/calculos-exactos-ticket-58mm.pdf",
+    "output/pdf/calculos-exactos-cierre-2026-10-19/calculos-exactos-ticket-80mm.pdf",
+    "output/pdf/calculos-exactos-cierre-2026-10-19/cuentas-por-cobrar.pdf",
+    "output/pdf/calculos-exactos-cierre-2026-10-19/cuentas-por-pagar.pdf"
+  ],
+  "production_schema_changes": false,
+  "historical_recalculation": false,
+  "external_hka_emission": false,
+  "real_provider_payments": false,
+  "skipped_tests_file": "pruebas_omitidas.json",
+  "skipped_tests_enumerated": 62,
+  "skipped_tests_reexecuted_mysql": 4,
+  "skipped_mysql_cases_not_reexecuted": 58,
+  "audit_output_sha256": {
+    "php": "0f72db0d4f83169f669fba32cbf9122999798788fa59a7267df30d3d262f1535",
+    "js": "6aa2e3319e13bb544decfbc7c2c289f951f0a7a76072c85def5ad9597caaeba1"
+  },
+  "registry_sha256": "22159b68e61cd3286350ff27dbbc559008cca333f7e2311404dec1a9f271a9e0"
+}
