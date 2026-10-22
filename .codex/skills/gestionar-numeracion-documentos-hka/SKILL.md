@@ -24,13 +24,25 @@ Leer [referencia HKA](../../../informes/imprenta_digital_hka_api.md) y contrasta
 - Timeout o respuesta incompleta de una mutación no acredita rechazo: resolver el resultado antes de reenviar, sin reintentos automáticos que dupliquen operaciones. Las consultas son de lectura; no confirman emisión por sí solas.
 - Swagger no publica liberación de controles reservados. El borrado local no los libera; `Anular` trata documentos, no liberación de reservaciones.
 
-## Pruebas futuras
+## Conflictos de numeración de NC
+
+Aplicar [contrato y evidencia del conflicto](../../../informes/notas_credito_debito_hka.md#conflicto-de-numeración-en-nc--21102026). Para NC ordinarias internas `07` / HKA `02`, digitales DEMO, la ausencia acreditada por `transaccionId` requiere consultar también por tipo, serie y número originales antes de permitir otro envío. `HkaCreditNumbering` confirma conflicto sólo con tipo y número coincidentes, control válido y transacción remota presente y diferente; cotejar la serie si HKA la devuelve. Que la otra operación esté Anulada no libera el número.
+
+Conservar la evidencia ligada al UUID e intento actuales en el JSON de emisión. Un conflicto verificado permanece ante consultas fallidas: mantener `uncertain` y bloquear el reenvío en servidor y cliente. La recuperación confirmada de la operación original desactiva el conflicto; encontrar la operación propia invalida su evidencia anterior de ausencia. No adoptar el control ajeno ni cambiar correlativos, UUID, importes o inventario para resolver el diagnóstico.
+
+Sólo la ausencia acreditada en ambas consultas permite el reintento existente después de30 segundos. Timeout, respuesta incompleta o identidad contradictoria conservan incertidumbre y bloqueo, sin afirmar duplicidad. Distinguir autorización de reenvío y ausencia de la operación actual: esta última puede permitir anulación exclusivamente local aun con conflicto, respetando las dependencias comerciales y sin llamar a Anular sobre la operación ajena.
+
+Verificar `HkaCreditNumberingTest`, los casos MySQL `test_note_numbering_*` de `FiscalEmissionSchemaTest` y `tests/js/hka-emission-ui.test.cjs`; los comprobantes y controles concretos de evidencia permanecen en el informe.
+
+## Pruebas de nuevas operaciones
 
 Usar HTTP simulado y bases temporales para cualquier nueva integración. La consulta o asignación real necesita autorización correspondiente y credenciales del ambiente. No probar enviando documentos ni alterando configuraciones de tenants reales.
 
 ## Anulación de notas ordinarias verificada en DEMO
 
 Leer [contrato y evidencia](../../../informes/notas_credito_debito_hka.md#anulación). `NoteAnnulment` integra Anular para NC02/ND03 ordinarias, con identidad congelada, administrador y motivo; facturas y ND98 siguen fuera. Usa JSON de emisión, sin nuevas tablas. Bloquear cobros, reembolsos y ajustes activos; no revertirlos automáticamente ni utilizar rutas antiguas para cambiar estado.
+
+Cuando existan devoluciones de dinero activas, conservar el diagnóstico de `NoteAnnulment`: **«Para anular esta nota de crédito, primero regularice las devoluciones de dinero asociadas».** Es un impedimento para anular; no presentar una devolución registrada como un error que deba corregirse fuera de esa acción. Para su ubicación en detalle/listado aplicar [acciones de comprobantes](../distribuir-documentos-hka/SKILL.md#acciones-del-listado-de-comprobantes).
 
 HKA devuelve200 al aceptar Anular. Ante resultado desconocido conservar efectos y conciliar sin repetir la mutación. ListadoDocumentos201 vacío no prueba ausencia: DEMO no lista algunas notas anuladas. EstadoDocumento200/Anulada con UUID, tipo, número y control exactos verifica el resultado. No convertir estados desconocidos o203 genérico en autorización para otro intento.
 

@@ -7,7 +7,7 @@ description: Mantener el guardado transaccional de facturas y notas de Pro9, sna
 
 ## Facturas nuevas a crédito sin abono — 21/10/2026
 
-Aplicar [contrato y evidencia](../../../informes/facturas_credito_sin_abono_hka.md). La declaración99 de `HkaCreditInvoice` es exclusivamente fiscal: no inserta document_payments/global_payments, no liquida cuotas, no reduce saldo ni genera IGTF. Sólo el guardado web nuevo elegible captura la versión en response; una edición conserva la marca existente y nunca incorpora históricos. El contrato se vuelve a validar antes de preparar, excluyendo cobros, anticipos, retenciones/previsiones y fondos. El cobro posterior usa el flujo actual y conserva el payload confirmado. No hay cambios de esquema ni backfill; la factura00000723 queda intacta.
+Aplicar [contrato y evidencia](../../../informes/facturas_credito_sin_abono_hka.md). La declaración99 de `HkaCreditInvoice` es exclusivamente fiscal: no inserta document_payments/global_payments, no liquida cuotas, no reduce saldo ni genera IGTF. Sólo el guardado web nuevo elegible captura la versión en response; una edición conserva la marca existente y nunca incorpora históricos. El contrato se vuelve a validar antes de preparar, excluyendo cobros, anticipos, retenciones/previsiones y fondos. El cobro posterior usa el flujo actual y conserva el payload confirmado. No hay cambios de esquema ni backfill; los documentos anteriores conservan su emisión, con los casos concretos en el informe.
 
 ## Precisión exacta — contrato del 16/10/2026
 
@@ -109,6 +109,16 @@ Recalcular IVA, bases y valor a partir de la factura y NC anteriores, distribuye
 
 `Document::balance` y `FiscalNoteBalance` unifican factura menos NC/cobros/retenciones/fondo ajustado más reembolsos principales. Cada ND conserva saldo/cobros propios. La NC no tiene cobros ni saldo cobrable. `NoteRefund` requiere confirmación/control coherente, permiso y cobro real; salida independiente VES/USD, tasa explícita de ocho decimales, UUID y reversión auditada. No borrar cobros originales. Conservar la parte atribuible a retenciones/fondos fuera del efectivo reembolsable hasta su ajuste respaldado. Caja/banco y reportes cuentan salidas vigentes, excluyen reversión y evitan simular efectivo mediante el importe de la NC.
 
+### Interfaz de devoluciones y ajustes
+
+En `note-operations.vue`, inicializar la fecha de devolución con el día actual y obtener su tasa mediante el mixin `exchangeRate` y `/services/exchange/{fecha}`. Al cambiar la fecha, consultar la correspondiente, sin sustituirla por la tasa original de la factura. Conservar la cadena de ocho decimales y fuente `BCV`; una edición manual cambia la fuente a `manual`. Si falla la consulta, explicar el fallo y permitir ingreso manual, sin inventar una tasa ni descartar el formulario o su UUID.
+
+Mientras carga la tasa, bloquear el registro de devolución. Descartar respuestas de otra fecha, nota, formulario o sesión del diálogo; al reabrir un formulario incompleto, reintentar sólo la tasa faltante sin borrar los datos introducidos. El acceso desde el listado sigue [distribución HKA](../distribuir-documentos-hka/SKILL.md#acciones-del-listado-de-comprobantes).
+
+No realizar GET/POST de devoluciones o ajustes con identificador ausente o diálogo cerrado. Mostrar mensajes propios para401/403/404 y errores internos o de conexión; no imprimir `No query results`, nombres de modelos ni trazas de respuestas404/500. Conservar los mensajes de negocio409/422, tanto errores planos como envueltos en `errors`. Ante resultado desconocido, mantener la misma solicitud/UUID. Verificar `tests/js/note-refund-rate.test.cjs` y `tests/js/fiscal-note-operations.test.cjs`.
+
+### Ajustes y dependencias
+
 `NoteAdjustment` coordina IVA/ISLR, fondos e IGTF con diagnóstico propio. Retenciones conservan su efecto hasta ausencia remota verificada y luego admiten el comprobante corregido real. `withNoteReplacement` es un ámbito interno bajo bloqueo que admite el exceso real reembolsable, sin fabricar pagos; sus límites siguen usando IVA/neto restante. Fondos se reducen por movimientos auditados sin modificar el importe original. IGTF vincula impuesto/cobro originales, incluidos cargos de ND relacionadas; permanece bloqueado sin contrato fiscal acreditado y no habilita reembolso de ese componente.
 
 Esquema inicial:345 tablas de aplicación/346 archivos tenant, sin conversión de instalaciones existentes. Ejecutar casos `test_note_*`, regresiones IVA/ISLR/emisión e instalación/rollback en MySQL temporal. Ver restricciones DEMO y evidencia en el informe.
@@ -118,3 +128,5 @@ El cobro posterior de una ND ordinaria puede generar el cargo IGTF98 con tasa/pe
 ## Emisión y anulación de notas — contrato corregido
 
 Aplicar [informe de notas](../../../informes/notas_credito_debito_hka.md). NC y saldos ND a crédito declaran99 fiscal sin insertar recibos. ND Contado requiere cobros reales completos y destino de moneda/sucursal, UUID y permiso; no reinterpretar notas Contado sin cobrar como Crédito. La anulación conserva sus dependencias hasta regularización y sus efectos hasta confirmación. Usar NoteAnnulment para reversión idempotente, stock original y saldo SQL/modelo; nunca los listeners antiguos de anulación. El JSON mantiene actor/UUID/intentos/historial y códigos saneados del proveedor, sin DDL o conversión de tenants. Con incertidumbre o reversión comercial pendiente, no mutar notas/cobros/retenciones/ajustes relacionados.
+
+Para conflictos de numeración y anulación exclusivamente local por ausencia acreditada, aplicar [numeración HKA](../gestionar-numeracion-documentos-hka/SKILL.md#conflictos-de-numeración-de-nc); no confundir el bloqueo de reenvío con las condiciones para revertir comercialmente una nota.
