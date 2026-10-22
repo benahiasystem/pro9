@@ -37,10 +37,12 @@
                     <small class="text-muted">#{{ record.id }}</small>
                 </div>
 
-                <el-alert v-if="record.edit_block_reason" :title="record.edit_block_reason" type="info" :closable="false" show-icon />
+                <!-- ######## INICIO AVISO CLARO DE ANULACION NC ######## -->
+                <el-alert v-if="noteAnnulmentWarning || record.edit_block_reason" :title="noteAnnulmentWarning || record.edit_block_reason" :type="noteAnnulmentWarning ? 'warning' : 'info'" :closable="false" show-icon />
+                <!-- ######## FIN AVISO CLARO DE ANULACION NC ######## -->
                 <el-alert v-if="record.fiscal_emission && record.fiscal_emission.status && record.fiscal_emission.diagnostic"
                           :title="record.fiscal_emission.diagnostic"
-                          :type="record.fiscal_emission.status === 'confirmed' ? 'success' : record.fiscal_emission.status === 'rejected' ? 'error' : 'warning'"
+                          :type="record.fiscal_emission.status === 'confirmed' ? 'success' : record.fiscal_emission.numbering_conflict || record.fiscal_emission.status === 'rejected' ? 'error' : 'warning'"
                           :closable="false" show-icon />
 
                 <div class="detail-drawer__body document-detail-drawer__body">
@@ -304,6 +306,13 @@ export default {
         };
     },
     computed: {
+        // ######## INICIO AVISO CLARO DE ANULACION NC ########
+        noteAnnulmentWarning() {
+            const annulment = this.record?.fiscal_emission?.annulment;
+            if (this.record?.document_type_id !== '07' || !annulment?.available) return '';
+            return (annulment.dependencies || []).join(' ');
+        },
+        // ######## FIN AVISO CLARO DE ANULACION NC ########
         fiscalRecord() {
             return this.record;
         },

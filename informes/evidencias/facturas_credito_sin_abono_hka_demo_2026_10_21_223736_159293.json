@@ -1,0 +1,140 @@
+{
+    "date": "2026-10-21T22:37:36-04:00",
+    "environment": "demo",
+    "contract": "hka-ve-v1:f2ddb07c239b04319df1fc9b1e6b4db137f89b51f063fa4989fd1bc836d10f04",
+    "credit_contract": "no_advance_v1",
+    "synthetic_commercial_data": true,
+    "email_sent": false,
+    "cases": [
+        {
+            "currency": "VES",
+            "mixed_iva": false,
+            "number": 1188139386,
+            "status": "confirmed",
+            "code": "200",
+            "validation_codes": [],
+            "diagnostic": "Factura confirmada por HKA.",
+            "control": "00-00000726",
+            "commercial_total": "232",
+            "commercial_balance": "232",
+            "payments_count": 0,
+            "financial_counts_unchanged": true,
+            "queried_status": "confirmed",
+            "tipo_de_pago": "Crédito",
+            "fiscal_forms": [
+                {
+                    "fecha": "21/10/2026",
+                    "forma": "99",
+                    "monto": "232.00",
+                    "moneda": "VES",
+                    "tipoCambio": "50.12345678",
+                    "descripcion": "Crédito comercial pendiente de cobro"
+                }
+            ],
+            "fiscal_total": "232.00",
+            "due_date": "20/11/2026",
+            "a4_bytes": 70164,
+            "a5_bytes": 81055,
+            "a4_sha256": "f61e6fe2fc2d5995beee880b3a89d43a0ca443934dd211adca19ab4723e63f43",
+            "payload_unchanged_after_query": true
+        },
+        {
+            "currency": "VES",
+            "mixed_iva": true,
+            "number": 1188139387,
+            "status": "confirmed",
+            "code": "200",
+            "validation_codes": [],
+            "diagnostic": "Factura confirmada por HKA.",
+            "control": "00-00000727",
+            "commercial_total": "282",
+            "commercial_balance": "282",
+            "payments_count": 0,
+            "financial_counts_unchanged": true,
+            "queried_status": "confirmed",
+            "tipo_de_pago": "Crédito",
+            "fiscal_forms": [
+                {
+                    "fecha": "21/10/2026",
+                    "forma": "99",
+                    "monto": "282.00",
+                    "moneda": "VES",
+                    "tipoCambio": "50.12345678",
+                    "descripcion": "Crédito comercial pendiente de cobro"
+                }
+            ],
+            "fiscal_total": "282.00",
+            "due_date": "20/11/2026",
+            "a4_bytes": 70279,
+            "a5_bytes": 81237,
+            "a4_sha256": "10c3bdc34dab8dca74b3080272400063d0b4a87aae2070f0f52b1bb7339e2ab6",
+            "payload_unchanged_after_query": true
+        },
+        {
+            "currency": "USD",
+            "mixed_iva": false,
+            "number": 1188139388,
+            "status": "confirmed",
+            "code": "200",
+            "validation_codes": [],
+            "diagnostic": "Factura confirmada por HKA.",
+            "control": "00-00000728",
+            "commercial_total": "232",
+            "commercial_balance": "232",
+            "payments_count": 0,
+            "financial_counts_unchanged": true,
+            "queried_status": "confirmed",
+            "tipo_de_pago": "Crédito",
+            "fiscal_forms": [
+                {
+                    "fecha": "21/10/2026",
+                    "forma": "99",
+                    "monto": "11628.64",
+                    "moneda": "VES",
+                    "tipoCambio": "50.12345678",
+                    "descripcion": "Crédito comercial pendiente de cobro"
+                }
+            ],
+            "fiscal_total": "11628.64",
+            "due_date": "20/11/2026",
+            "a4_bytes": 71958,
+            "a5_bytes": 87926,
+            "a4_sha256": "12231beaca043c60e721a94218fbe9b7bd19296a46442790620faf02a96db59e",
+            "payload_unchanged_after_query": true
+        },
+        {
+            "currency": "USD",
+            "mixed_iva": true,
+            "number": 1188139389,
+            "status": "confirmed",
+            "code": "200",
+            "validation_codes": [],
+            "diagnostic": "Factura confirmada por HKA.",
+            "control": "00-00000729",
+            "commercial_total": "282",
+            "commercial_balance": "282",
+            "payments_count": 0,
+            "financial_counts_unchanged": true,
+            "queried_status": "confirmed",
+            "tipo_de_pago": "Crédito",
+            "fiscal_forms": [
+                {
+                    "fecha": "21/10/2026",
+                    "forma": "99",
+                    "monto": "14134.81",
+                    "moneda": "VES",
+                    "tipoCambio": "50.12345678",
+                    "descripcion": "Crédito comercial pendiente de cobro"
+                }
+            ],
+            "fiscal_total": "14134.81",
+            "due_date": "20/11/2026",
+            "a4_bytes": 72059,
+            "a5_bytes": 88140,
+            "a4_sha256": "f6238a6630a5a6d4541b9f1035de36a858393004099a6d3d0330d402ca92e705",
+            "payload_unchanged_after_query": true
+        }
+    ],
+    "source_tenant_unchanged": true,
+    "accepted": true
+}

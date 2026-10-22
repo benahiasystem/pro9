@@ -12,7 +12,8 @@ const { mergeDocumentColumns } = loadModule(path.resolve('resources/js/helpers/d
 
 function load(file) {
     const parsed = compiler.parseComponent(fs.readFileSync(file, 'utf8'));
-    assert.deepEqual(compiler.compile(parsed.template.content).errors, [], file);
+    const template = parsed.template ? parsed.template.content : '';
+    if (template) assert.deepEqual(compiler.compile(template).errors, [], file);
     const exports = {};
     vm.runInNewContext(babel.transformSync(parsed.script.content, {
         configFile: false, babelrc: false, plugins: ['@babel/plugin-transform-modules-commonjs']
@@ -30,11 +31,13 @@ function load(file) {
             return name === 'moment' ? require('moment') : {};
         },
     });
-    return { component: exports.default, template: parsed.template.content };
+    return { component: exports.default, template };
 }
 const list = load('resources/js/views/tenant/documents/index.vue');
 const drawer = load('resources/js/views/tenant/documents/partials/detail-drawer.vue');
 const options = load('resources/js/views/tenant/documents/partials/options.vue');
+const noteAnnulmentAction = load('resources/js/views/tenant/documents/partials/note-annulment-action.vue');
+const documentSendAction = load('resources/js/views/tenant/documents/partials/document-send-action.vue');
 const system = load('resources/js/views/system/configuration/visibleColumns.vue');
 const result = (extra = {}) => ({ status: 'confirmed', description: 'Confirmado', control_number: '00-00000002', can_query: true, ...extra });
 function context(component, post, record = {}) {
@@ -130,6 +133,31 @@ test('local rejection does not reuse an unrelated fiscal diagnostic', () => {
     assert.equal(display.rejected, true);
     assert.equal(display.rejectionReason, 'Motivo de rechazo no disponible');
 });
+// ######## INICIO CONFLICTO NUMERACION NC HKA ########
+test('numbering conflict is shown as an error in list, detail and PDF options without claiming rejection', () => {
+    const diagnostic='HKA ya tiene registrada la nota de crédito 00000002 en otra operación, con control 00-00000712 y estado Anulada.';
+    const record={id:9,number:'00000002',document_type_id:'07',fiscal_emission_mode:'digital',state_type_id:'01',
+        fiscal_emission:result({status:'uncertain',description:'Conflicto de numeración',numbering_conflict:true,can_send:false,control_number:null,diagnostic})};
+    const status=documentStatus(record);
+    assert.equal(status.label,'Conflicto de numeración');assert.match(status.badgeClass,/danger/);
+    assert.equal(status.rejected,false);assert.equal(status.numberingConflict,true);
+    const notice=options.component.computed.fiscalEmissionNotice.call({form:record});
+    assert.equal(notice.type,'error');assert.equal(notice.description,diagnostic);
+    assert.doesNotMatch(notice.title,/rechazada|aceptada/);
+    const start=drawer.template.indexOf('<el-alert v-if="record.fiscal_emission');
+    const alert=drawer.template.slice(start,drawer.template.indexOf('/>',start)+2);
+    const detailInstance=new Vue({data:()=>({record}),render:new Function(compiler.compile(alert).render)});
+    const rendered=detailInstance._render();
+    assert.equal(rendered.data.attrs.type,'error');assert.equal(rendered.data.attrs.title,diagnostic);
+    const cell=list.template.match(/<td v-if="col.visible && col.key === 'state_type'"[\s\S]*?<\/td>/)[0];
+    const compiled=compiler.compile('<table><tbody><tr>'+cell+'</tr></tbody></table>');
+    const instance=new Vue({data:()=>({row:record,col:{key:'state_type',visible:true}}),methods:{documentStatus},render:new Function(compiled.render)});
+    const text=node=>(node.text||'')+(node.children||[]).map(text).join('');
+    assert.ok(text(instance._render()).includes(diagnostic));
+    assert.doesNotMatch(compiled.render,/domProps/);
+    assert.equal(documentStatus({...record,state_type_id:'11',state_type_description:'Anulado'}).numberingConflict,false);
+});
+// ######## FIN CONFLICTO NUMERACION NC HKA ########
 test('list retains mobile PDF and edit permissions without a download column or blocked-edit notice', () => {
     assert.doesNotMatch(list.template, /col.key === 'downloads'|Edición bloqueada|row.edit_block_reason/);
     assert.match(list.template, /class="mobile-item-only"[\s\S]*clickDownload\(row.download_pdf\)[\s\S]*Descargar PDF/);
@@ -150,7 +178,7 @@ test('type is visible after customer; HKA actions and the old column leave the t
     assert.match(drawer.template, /can_query[\s\S]*runFiscalAction\('query'\)[\s\S]*Consultar comprobante/);
     assert.ok(drawer.template.indexOf("runFiscalAction('query')") < drawer.template.indexOf('clickDownload(record.download_pdf)'));
     assert.match(drawer.template, /icon-tabler-search/);
-    assert.match(options.template, /can_send[\s\S]*runFiscalAction\('send'\).*Enviar HKA/);
+    assert.doesNotMatch(options.template, /runFiscalAction\('send'\)|Enviar HKA/);
 });
 test('old preferences keep visibility, custom fields and relative order while inserting type after customer', () => {
     const defaults = list.component.data().columns;
@@ -344,6 +372,113 @@ test('options refresh cannot restore a previous window session or reopen dispatc
     await ctx.refreshFiscalDocument();
     assert.equal(ctx.form.number, 'Fresh');
 });
+// ######## INICIO ACCESO DIRECTO DEVOLUCIONES NC ########
+test('the actual refunds action opens its own dialog directly and preserves the selected note', () => {
+    const action = list.template.match(/<el-dropdown-item v-if="row.btn_note_operations"[\s\S]*?<\/el-dropdown-item>/)[0];
+    const dialog = list.template.match(/<note-operations\b[\s\S]*?<\/note-operations>/)[0];
+    const instance = new Vue({
+        data: () => ({...list.component.data(),row:{id:13,btn_note_operations:true}}),
+        methods: list.component.methods,
+        render: new Function(compiler.compile(action).render),
+    });
+    instance._render().data.nativeOn.click();
+    assert.equal(instance.showDialogNoteOperations,true);
+    assert.equal(instance.showDialogOptions,false);
+    assert.equal(instance.recordId,null);
+    const renderDialog = new Function(compiler.compile(dialog).render);
+    let node = renderDialog.call(instance);
+    assert.equal(node.data.attrs.documentId,13);
+    assert.equal(node.data.attrs.showDialog,true);
+    assert.equal(node.data.attrs['allow-retention-management'],true);
+    node.data.on['update:showDialog'](false);
+    assert.equal(instance.showDialogNoteOperations,false);
+    instance.row.id=14;
+    instance._render().data.nativeOn.click();
+    node=renderDialog.call(instance);
+    assert.equal(node.data.attrs.documentId,14);
+    assert.equal(node.data.attrs.showDialog,true);
+    assert.equal(instance.showDialogOptions,false);
+    instance.row.btn_note_operations=false;
+    assert.equal(instance._render().isComment,true);
+});
+test('PDF options no longer contain refunds or annul buttons', () => {
+    assert.doesNotMatch(options.template,/Devoluciones y ajustes|<note-operations\b|showNoteOperations/);
+    assert.equal(options.component.components.NoteOperations,undefined);
+    assert.doesNotMatch(options.template,/>\s*Anular\s*<|@click="requestNoteAnnulment"/);
+    assert.match(options.template,/clickDownload\('a4'\)|clickPrint\('a4'\)/);
+});
+// ######## FIN ACCESO DIRECTO DEVOLUCIONES NC ########
+// ######## INICIO ANULACION DIRECTA DESDE LISTADO ########
+test('the actual list annul action invokes annulment directly without opening PDF options', () => {
+    const tag = list.template.match(/<el-dropdown-item v-if="row.fiscal_emission && row.fiscal_emission.annulment[^>]*>Anular<\/el-dropdown-item>/)[0];
+    let id;
+    const instance = new Vue({
+        data: () => ({...list.component.data(),row:{id:13,fiscal_emission:{annulment:{available:true}}}}),
+        methods: list.component.methods,
+        render: new Function(compiler.compile(tag).render),
+    });
+    instance.$refs.noteAnnulmentAction={open:recordId=>{id=recordId;}};
+    instance._render().data.nativeOn.click();
+    assert.equal(id,13);
+    assert.equal(instance.showDialogOptions,false);
+    assert.equal(instance.recordId,null);
+});
+
+function directAnnulment(canRequest=true,post) {
+    const ctx=context(noteAnnulmentAction.component,post);
+    ctx.alerts=[];
+    ctx.$alert=async message=>{ctx.alerts.push(message);};
+    ctx.$prompt=async()=>({value:'Registro incorrecto'});
+    ctx.$http.get=async url=>{
+        ctx.gets.push(url);
+        return {data:{data:{id:13,document_type_id:'07',fiscal_emission:result({annulment:{available:true,can_request:canRequest,
+            diagnostic:canRequest ? '' : 'Para anular esta nota de crédito, primero regularice las devoluciones de dinero asociadas.'}})}}};
+    };
+    return ctx;
+}
+test('direct annulment requests a reason, posts once and refreshes the fiscal result',async()=>{
+    const posts=[];
+    const ctx=directAnnulment(true,async(url,body)=>{posts.push({url,body});return {data:{fiscal_emission:result({status:'cancelled',annulment:{status:'completed',diagnostic:'Nota anulada.'}})}};});
+    await ctx.open(13);
+    assert.equal(posts.length,1);
+    assert.equal(posts[0].url,'/documents/13/annul');
+    assert.equal(posts[0].body.reason,'Registro incorrecto');
+    assert.ok(posts[0].body.operation_key);
+    assert.equal(ctx.events[0][0],'fiscal-updated');
+    assert.deepEqual(ctx.gets,['/documents/record/13','/documents/record/13']);
+    assert.equal(ctx.active,false);
+});
+test('direct annulment displays the blocking reason and sends nothing for active refunds',async()=>{
+    const ctx=directAnnulment(false,()=>assert.fail('Blocked annulment must not send'));
+    ctx.$prompt=()=>assert.fail('Blocked annulment must not ask to confirm');
+    await ctx.open(13);
+    assert.match(ctx.alerts[0],/Para anular esta nota de crédito/);
+    assert.equal(ctx.active,false);
+});
+test('cancelling direct annulment does not send and duplicate clicks show one prompt',async()=>{
+    const pending=deferred();let prompts=0;
+    const ctx=directAnnulment(true,()=>assert.fail('Cancellation must not send'));
+    ctx.$prompt=()=>{prompts++;return pending.promise;};
+    const first=ctx.open(13);
+    await Promise.resolve();
+    await ctx.open(13);
+    assert.equal(prompts,1);
+    pending.reject('cancel');
+    await first;
+    assert.equal(ctx.active,false);
+});
+test('direct annulment retains its request UUID after a lost response',async()=>{
+    const bodies=[];
+    const ctx=directAnnulment(true,async(url,body)=>{bodies.push(body);throw new Error('Lost response');});
+    let prompts=0;ctx.$prompt=async()=>{prompts++;return {value:'Registro incorrecto'};};
+    await ctx.open(13);
+    await ctx.open(13);
+    assert.equal(prompts,1);
+    assert.equal(bodies.length,2);
+    assert.equal(bodies[0].operation_key,bodies[1].operation_key);
+    assert.equal(ctx.fiscalActionBusy,false);
+});
+// ######## FIN ANULACION DIRECTA DESDE LISTADO ########
 test('fiscal events refresh the list without applying another document result to the detail snapshot', () => {
     const ctx = context(list.component);
     const events = [];
@@ -356,20 +491,103 @@ test('fiscal events refresh the list without applying another document result to
     assert.deepEqual(events, ['reloadData', 'reloadData']);
 });
 
-test('actual options render credit and debit fiscal notices with a visible send action', () => {
+test('actual options render fiscal notices without a send action for invoices and notes', () => {
     const start=options.template.indexOf('<div v-if="fiscalEmissionNotice"');
     const end=options.template.indexOf('<div v-else-if="form.response_message"',start);
     const compiled=compiler.compile('<div>'+options.template.slice(start,end)+'</div>');
     assert.deepEqual(compiled.errors,[]);
-    for(const type of ['07','08']) for(const canSend of [true,false]) {
+    for(const type of ['01','07','08']) for(const canSend of [true,false]) {
         const form={id:4,document_type_id:type,number:'00000004',fiscal_emission_mode:'digital',fiscal_emission:{status:'not_requested',show_send:true,can_send:canSend,diagnostic:'Pendiente'}};
         const instance=new Vue({data:()=>({form,loading:false,fiscalActionBusy:false}),computed:{fiscalEmissionNotice:options.component.computed.fiscalEmissionNotice},methods:{runFiscalAction(){}},render:new Function(compiled.render)});
         const tree=instance._render();const nodes=[];
         (function walk(node){nodes.push(node);for(const child of node.children||[])walk(child);})(tree);
-        const button=nodes.find(node=>node.tag==='el-button');assert.ok(button,'Send exists for notes');assert.equal(button.data.attrs.disabled,!canSend);
-        assert.match(instance.fiscalEmissionNotice.title,type==='07'?/Nota de crédito/:/Nota de débito/);
+        assert.equal(nodes.some(node=>node.tag==='el-button'),false);
+        assert.match(instance.fiscalEmissionNotice.title,{'01':/Factura/,'07':/Nota de crédito/,'08':/Nota de débito/}[type]);
     }
 });
+// ######## INICIO ENVIO HKA DESDE ACCIONES DEL LISTADO ########
+test('send document is the first list action when applicable and respects availability and busy state', () => {
+    const opening='<el-dropdown-menu slot="dropdown">';
+    const marker=list.template.indexOf('<!-- ######## INICIO ENVIO HKA DESDE ACCIONES DEL LISTADO ######## -->');
+    const start=list.template.lastIndexOf(opening,marker)+opening.length;
+    const end=list.template.indexOf('<el-dropdown-item divided',start);
+    const compiled=compiler.compile('<div>'+list.template.slice(start,end)+'</div>');
+    assert.deepEqual(compiled.errors,[]);
+    const text=node=>(node.text||'')+(node.children||[]).map(text).join('');
+    for(const documentType of ['01','07','08'])for(const [showSend,canSend] of [[true,true],[true,false],[false,false]]){
+        let selected;
+        const instance=new Vue({data:()=>({row:{id:13,document_type_id:documentType,fiscal_emission:{show_send:showSend,can_send:canSend}},sendingDocumentId:null}),
+            methods:{clickSendDocument:id=>{selected=id;},clickDetail(){}},render:new Function(compiled.render)});
+        let items=instance._render().children.filter(node=>node.tag);
+        assert.match(text(items[0]),showSend?/Enviar comprobante/:/Ver detalle/);
+        if(showSend){
+            assert.equal(items[0].data.attrs.disabled,!canSend);
+            if(canSend){items[0].data.nativeOn.click();assert.equal(selected,13);}
+            instance.sendingDocumentId=13;
+            items=instance._render().children.filter(node=>node.tag);
+            assert.equal(items[0].data.attrs.disabled,true);
+        }
+    }
+});
+test('clicking send from the list bypasses PDF options and prevents overlapping sends',async()=>{
+    const pending=deferred();const ids=[];
+    const ctx=context(list.component);
+    ctx.$refs={documentSendAction:{open:id=>{ids.push(id);return pending.promise;}}};
+    ctx.showDialogOptions=false;
+    const first=ctx.clickSendDocument(13);await ctx.clickSendDocument(14);
+    assert.deepEqual(ids,[13]);assert.equal(ctx.showDialogOptions,false);assert.equal(ctx.sendingDocumentId,13);
+    pending.resolve();await first;assert.equal(ctx.sendingDocumentId,null);
+});
+function directSend(canSend,post) {
+    const ctx=context(documentSendAction.component,post);
+    ctx.$message.warning=m=>ctx.messages.push(m);
+    ctx.$http.get=async url=>{ctx.gets.push(url);return {data:{data:{id:13,fiscal_emission:result({status:'prepared',can_send:canSend,diagnostic:'Envío bloqueado.'})}}};};
+    return ctx;
+}
+test('direct send reloads current permissions, posts to HKA and refreshes the list through its event',async()=>{
+    const posts=[];
+    const ctx=directSend(true,async(url,body)=>{posts.push({url,body});return {data:{fiscal_emission:result()}};});
+    await ctx.open(13);
+    assert.equal(posts.length,1);assert.equal(posts[0].url,'/documents/13/send-hka');
+    assert.deepEqual(ctx.gets,['/documents/record/13','/documents/record/13']);
+    assert.equal(ctx.events[0][0],'fiscal-updated');assert.equal(ctx.active,false);
+});
+test('direct send refuses a document whose refreshed capability no longer allows sending',async()=>{
+    const ctx=directSend(false,()=>assert.fail('Blocked document must not send'));
+    await ctx.open(13);
+    assert.deepEqual(ctx.messages,['Envío bloqueado.']);assert.equal(ctx.active,false);
+});
+test('credit invoices display their contract block and never post when capability is disabled',async()=>{
+    const ctx=directSend(false,()=>assert.fail('Unverified credit contract must not send'));
+    const diagnostic='La emisión de facturas a crédito sin abono espera la validación de su contrato en HKA DEMO.';
+    ctx.$http.get=async()=>({data:{data:{id:13,document_type_id:'01',payment_condition_id:'02',balance:'500.00',
+        fiscal_emission:result({status:'not_requested',show_send:true,can_send:false,diagnostic})}}});
+    await ctx.open(13);
+    assert.deepEqual(ctx.messages,[diagnostic]);assert.equal(ctx.events.length,0);
+});
+test('confirmed credit invoices retain their unpaid balance after the fiscal refresh',async()=>{
+    const ctx=directSend(true,async()=>({data:{fiscal_emission:result()}}));
+    ctx.$http.get=async()=>({data:{data:{id:13,document_type_id:'01',payment_condition_id:'02',balance:'500.00',
+        fiscal_emission:result({can_send:true})}}});
+    await ctx.open(13);
+    assert.equal(ctx.record.balance,'500.00');assert.equal(ctx.record.payment_condition_id,'02');
+    assert.equal(ctx.events[0][0],'fiscal-updated');
+});
+test('direct send ignores duplicate clicks and a response after destroying the action',async()=>{
+    const pending=deferred();let sends=0;
+    const ctx=directSend(true,()=>{sends++;return pending.promise;});
+    const first=ctx.open(13);await Promise.resolve();await ctx.open(13);
+    assert.equal(sends,1);
+    documentSendAction.component.beforeDestroy.call(ctx);
+    pending.resolve({data:{fiscal_emission:result()}});await first;
+    assert.equal(ctx.events.length,0);assert.equal(ctx.active,false);
+});
+test('direct send releases the action after a network failure',async()=>{
+    const ctx=directSend(true,async()=>{throw new Error('network');});
+    await ctx.open(13);
+    assert.equal(ctx.active,false);assert.equal(ctx.fiscalActionBusy,false);assert.equal(ctx.messages.length,1);
+});
+// ######## FIN ENVIO HKA DESDE ACCIONES DEL LISTADO ########
 test('annulment requests preserve their UUID and reason after a lost response', async () => {
     const ctx=context(options.component,async()=>{throw new Error('lost');},{document_type_id:'07',fiscal_emission:result({annulment:{available:true,can_request:true}})});
     ctx.annulmentDocumentId=13;ctx.annulmentRequest={operation_key:'stable-note-annulment',reason:'Registro incorrecto'};

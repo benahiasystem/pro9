@@ -5,6 +5,10 @@ description: Mantener payloads HKA de facturas y notas desde snapshots y la emis
 
 # Facturas y notas HKA
 
+## Crédito sin abono — 21/10/2026
+
+Aplicar [contrato y evidencia de facturas nuevas a crédito](../../../informes/facturas_credito_sin_abono_hka.md): sólo Comprobantes web,01/0101, transacción01, digital DEMO y VES/USD. `HkaCreditInvoice` declara99 por el principal final después de adaptar moneda, sin crear cobros ni reducir saldo. Requiere `response.credit_invoice_contract=no_advance_v1`, capturada únicamente al crear desde el flujo web autorizado, y `hka_credit_invoices.demo_no_advance_verified`. Conservar la marca al invalidar por edición; jamás añadirla a históricos o desde el navegador. La factura00000723 conserva su envío previo. Volver a comprobar ausencia de cobros antes de preparar; abonos, anticipos, retenciones/previsiones, fondos, terceros, regímenes, exportación, otros canales y producción quedan fuera. Cobros posteriores no reescriben el payload confirmado. Esta aceptación no amplía las matrices de crédito de terceros, exportaciones ni retenciones descritas más abajo. Ejecutar HkaCreditInvoiceTest, casos MySQL `test_credit_invoice_*` y regresiones de emisión/edición/interfaz; el script real crea cuatro comprobantes DEMO y requiere autorización de emisión.
+
 ## Envío automático configurable — 14/10/2026
 
 Aplicar [el contrato vigente](../../../informes/envio_automatico_hka.md): `configurations.auto_send_hka` inicia activado y sólo admin puede cambiarlo. Facturalo y callbacks/reanudaciones IGTF usan `HkaEmission::sendAutomatic`, después del commit, con intención inicial `response.auto_send_requested` y comprobación de configuración actual. Apagado conserva `not_requested` sin preparación/HTTP; reactivación no opta documentos manuales anteriores ni reintentos por UUID. `send` manual sigue independiente y limitado a DEMO. La edición conserva envío explícito. El ticket local sin confirmación ya no requiere URL HKA; después de confirmar sí conserva los controles de QR/configuración. Esta regla sustituye los bloqueos históricos de 80MM antes de confirmar, sin cambiar A4/A5 ni correo.

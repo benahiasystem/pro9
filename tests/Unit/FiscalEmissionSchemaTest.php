@@ -15,6 +15,8 @@ class FiscalEmissionSchemaTest extends TestCase
 {
     use \Tests\Support\DispatchPersistenceCases;
     use \Tests\Support\NotePersistenceCases;
+    use \Tests\Support\CreditNumberingPersistenceCases;
+    use \Tests\Support\CreditInvoicePersistenceCases;
     use \Tests\Support\SpePersistenceCases;
     use \Tests\Support\IvaRetentionPersistenceCases;
     use \Tests\Support\IslrRetentionPersistenceCases;
@@ -1817,7 +1819,7 @@ class FiscalEmissionSchemaTest extends TestCase
             $emission->update(['status' => 'pending', 'response' => array_replace($emission->response, ['attempt_id' => 'new-attempt'])]);
             $finish = new \ReflectionMethod(\App\Services\Fiscal\HkaEmission::class, 'finish');
             $finish->setAccessible(true);
-            $finish->invoke(app(\App\Services\Fiscal\HkaEmission::class), $document, 'old-attempt', ['status' => 'confirmed', 'control_number' => '00-99999999']);
+            $finish->invoke(app(\App\Services\Fiscal\HkaEmission::class), $document, 'old-attempt', ['status' => 'confirmed', 'control_number' => '00-99999999'], 'send', $emission->operation_key);
             self::assertSame('pending', $document->fresh()->emission->status);
             self::assertNull($document->fresh()->control_number);
             $emission->update(['status' => 'not_requested']);

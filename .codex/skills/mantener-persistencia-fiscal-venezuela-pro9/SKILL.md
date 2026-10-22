@@ -5,6 +5,10 @@ description: Mantener el guardado transaccional de facturas y notas de Pro9, sna
 
 # Persistencia fiscal y cobros de Pro9
 
+## Facturas nuevas a crédito sin abono — 21/10/2026
+
+Aplicar [contrato y evidencia](../../../informes/facturas_credito_sin_abono_hka.md). La declaración99 de `HkaCreditInvoice` es exclusivamente fiscal: no inserta document_payments/global_payments, no liquida cuotas, no reduce saldo ni genera IGTF. Sólo el guardado web nuevo elegible captura la versión en response; una edición conserva la marca existente y nunca incorpora históricos. El contrato se vuelve a validar antes de preparar, excluyendo cobros, anticipos, retenciones/previsiones y fondos. El cobro posterior usa el flujo actual y conserva el payload confirmado. No hay cambios de esquema ni backfill; la factura00000723 queda intacta.
+
 ## Precisión exacta — contrato del 16/10/2026
 
 Aplicar [cálculos exactos](../mantener-calculos-exactos-pro9/SKILL.md). Para instalaciones nuevas esta instrucción sustituye las precisiones de dos/cuatro/seis decimales y redondeos intermedios descritos anteriormente: operar con fracciones exactas, conservar snapshots y representar hasta 12 posiciones; tasas con ocho exactas. Dos decimales sólo en liquidación/presentación que lo requiera. Precio unitario PDF configurable de 2 a 12, con dos por defecto. No convertir tenants ni recalcular históricos. Consultar el informe de cálculos para el estado real de adopción por consumidor.

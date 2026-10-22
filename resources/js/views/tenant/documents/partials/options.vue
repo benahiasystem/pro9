@@ -33,7 +33,6 @@
         </div>
         <Keypress key-event="keyup" :multiple-keys="multiple" @success="checkKeyWithAlt"/>
         <div v-loading="loading">
-            <el-button v-if="form.note_refunds && form.note_refunds.available" class="mb-3" @click="showNoteOperations=true">Devoluciones y ajustes</el-button>
             <div v-if="fiscalEmissionNotice" class="row mb-4" data-testid="invoice-fiscal-result">
                 <div class="col-md-12">
                     <el-alert :title="fiscalEmissionNotice.title"
@@ -41,10 +40,6 @@
                               :type="fiscalEmissionNotice.type"
                               :closable="false"
                               show-icon />
-                    <el-button v-if="form.fiscal_emission && (form.fiscal_emission.show_send || form.fiscal_emission.can_send)"
-                               class="mt-2" type="primary" icon="el-icon-upload2"
-                               :loading="fiscalActionBusy" :disabled="loading || fiscalActionBusy || !form.fiscal_emission.can_send"
-                               @click="runFiscalAction('send')">Enviar HKA</el-button>
                 </div>
             </div>
             <div v-else-if="form.response_message"
@@ -82,7 +77,6 @@
 
             <div v-if="form.fiscal_emission && form.fiscal_emission.annulment && form.fiscal_emission.annulment.available" class="mb-3" data-testid="note-annulment">
                 <el-alert v-if="form.fiscal_emission.annulment.diagnostic" :title="form.fiscal_emission.annulment.diagnostic" type="warning" :closable="false" show-icon />
-                <el-button v-if="!form.fiscal_emission.annulment.status || form.fiscal_emission.annulment.status === 'rejected'" type="danger" class="mt-2" :disabled="loading || fiscalActionBusy || annulmentPromptBusy || !form.fiscal_emission.annulment.can_request" :loading="fiscalActionBusy" @click="requestNoteAnnulment">Anular</el-button>
                 <el-button v-if="form.fiscal_emission.annulment.can_query" class="mt-2" :disabled="loading || fiscalActionBusy" :loading="fiscalActionBusy" @click="runFiscalAction('query-annulment')">Consultar anulación HKA</el-button>
                 <el-button v-if="form.fiscal_emission.annulment.can_complete" class="mt-2" :disabled="loading || fiscalActionBusy" :loading="fiscalActionBusy" @click="runFiscalAction('complete-annulment')">Completar reversión comercial</el-button>
             </div>
@@ -223,12 +217,10 @@
                 </el-popover>
             </template>
         </span>
-        <note-operations :showDialog.sync="showNoteOperations" :documentId="form.id" :allow-retention-management="allowRetentionManagement" @changed="create"/>
     </el-dialog>
 </template>
 
 <script>
-import NoteOperations from './note-operations.vue';
 import {documentPdf} from "@mixins/document-pdf";
 import {documentEmail} from "@mixins/document-email";
 import {documentFiscal} from "@mixins/document-fiscal";
@@ -240,7 +232,6 @@ import QrChatWsapp from '@viewsModuleQrChatBuho/ButtonSend.vue'
 
 export default {
     props: {
-        annulOnOpen: {},
         showDialog: {},
         recordId: {},
         showClose: {},
@@ -254,14 +245,13 @@ export default {
         failsMessage: {},
         allowRetentionManagement: Boolean,
     },
-    components: {NoteOperations,
+    components: {
         Keypress,
         QrApi,
         QrChatWsapp
     },
     data() {
         return {
-            showNoteOperations:false,
             ...documentPdf.data(),
             ...documentFiscal.data(),
             recordRequestSequence: 0,
@@ -318,6 +308,11 @@ export default {
                 return {type: 'success', title: `La ${label} ${number} ha sido aceptada por HKA.`,
                     description: emission.control_number ? `Número de control: ${emission.control_number}` : ''};
             }
+            // ######## INICIO CONFLICTO NUMERACION NC HKA ########
+            if (emission.numbering_conflict) {
+                return {type:'error', title:`${caption} ${number}: conflicto de numeración en HKA.`, description:emission.diagnostic};
+            }
+            // ######## FIN CONFLICTO NUMERACION NC HKA ########
             if (emission.status === 'rejected') {
                 return {type: 'error', title: `La ${label} ${number} ha sido rechazada por HKA.`,
                     description: emission.diagnostic || 'La venta sigue guardada.'};
@@ -368,7 +363,6 @@ export default {
             }
         },
         recordId() {
-            this.showNoteOperations=false;
             this.resetFiscalAction();
             this.recordRequestSequence += 1;
         },
@@ -433,7 +427,6 @@ export default {
             await this.$http.get(`/${this.resource}/locked_emission`).then(response => {
                 if (isCurrent()) this.locked_emission = response.data
             }).finally(() => { if (isCurrent()) this.loading = false; });
-            if (isCurrent() && this.annulOnOpen) await this.requestNoteAnnulment();
         },
         async getCompany() {
             this.loading = true;
@@ -482,7 +475,6 @@ export default {
             }
         },
         clickClose() {
-            this.showNoteOperations=false;
             this.$emit('update:showDialog', false)
             this.initForm()
         },

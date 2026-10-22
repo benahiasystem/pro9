@@ -188,6 +188,7 @@ final class HkaPayloadBuilder
         }
         if ($ordinaryNote || $thirdParty || $specialRegime || (!$exportation && ($d['document_type_id'] === '01' || $transaction === '98') && ($d['currency_type_id'] === 'USD' || $igtf->isGreaterThan(0)))) $payload = HkaDomesticMoney::adapt($payload, $d);
         $payload=HkaNotePayments::reconcile($payload,$d);
+        $payload=HkaCreditInvoice::append($payload,$d);
         (new HkaSchemaValidator())->validate($payload);
         return $payload;
     }

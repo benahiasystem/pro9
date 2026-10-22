@@ -16,9 +16,11 @@ final class HkaEmissionPreparation
             if($emission->status!=='not_requested') FiscalAmounts::error('emission','La operación fiscal ya está en curso.');
             if (FiscalNote::ordinary($document)) NoteAnnulment::assertNotBusy($document);
             if ($reason=HkaNoteCapability::reason($document)) FiscalAmounts::error('note',$reason);
-            $document->load(['items','payments','taxes','currency_totals','fiscal_data','note','invoice','received_retentions']);
+            if ($reason=HkaCreditInvoice::reason($document)) FiscalAmounts::error('credit_invoice',$reason);
+            $document->load(['items','payments','taxes','currency_totals','fiscal_data','note','invoice','received_retentions','guarantee_fund']);
             $snapshot=json_decode(json_encode($document->toArray(), JSON_THROW_ON_ERROR), true, 512, JSON_THROW_ON_ERROR);
             $snapshot['operation_key']=$emission->operation_key;
+            $snapshot[HkaCreditInvoice::KEY]=$emission->response[HkaCreditInvoice::KEY] ?? null;
             // Recover missing adapter metadata from the frozen identity, never from the current customer.
             if (empty($snapshot['customer']['hka_identity_code'])) {
                 $snapshot['customer'] = FiscalDocumentPersistence::withHkaIdentity($snapshot['customer']);

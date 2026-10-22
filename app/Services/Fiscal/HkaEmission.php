@@ -49,6 +49,9 @@ final class HkaEmission
                 FiscalAmounts::error('reference', 'Cobro conservado. La nota IGTF espera la confirmación y el control real de la factura original.');
             }
             if (in_array($emission->status, ['confirmed', 'rejected', 'cancelled'], true)) return DocumentEmissionView::forDocument($document);
+            // ######## INICIO CONFLICTO NUMERACION NC HKA ########
+            if (HkaCreditNumbering::conflict($emission)) return DocumentEmissionView::forDocument($document);
+            // ######## FIN CONFLICTO NUMERACION NC HKA ########
             if (in_array($emission->status, ['pending', 'uncertain'], true)) {
                 $this->query($document);
                 $document = $document->fresh();
@@ -57,6 +60,7 @@ final class HkaEmission
             if ($reason = HkaNoteCapability::reason($document)) FiscalAmounts::error('note',$reason);
             if ($reason = HkaIslrRetentionCapability::reason($document)) FiscalAmounts::error('islr_retention',$reason);
             if ($reason = HkaIvaRetentionCapability::reason($document)) FiscalAmounts::error('iva_retention',$reason);
+            if ($reason = HkaCreditInvoice::reason($document)) FiscalAmounts::error('credit_invoice',$reason);
             $token = app(HkaTransport::class)->token($company);
             if ($automatic && !$this->automaticAllowed($document->fresh())) return $this->deferredView($document->fresh());
             if ($document->emission->status === 'not_requested') (new HkaEmissionPreparation)->prepare($document, $operationKey);
@@ -67,6 +71,7 @@ final class HkaEmission
                 if ($this->context($currentCompany) !== $this->context($company)) FiscalAmounts::error('emission', 'La configuración cambió durante la autenticación. Intente de nuevo.');
                 $emission = $locked->emission()->lockForUpdate()->firstOrFail();
                 if ($emission->operation_key !== $operationKey) return null;
+                if (HkaCreditNumbering::conflict($emission)) return null;
                 if ($automatic && !$this->automaticAllowed($locked)) return null;
                 $retry = $emission->status === 'uncertain' && !empty($emission->response['retry_allowed'])
                     && time() - ($emission->response['started_at'] ?? time()) >= 30;
@@ -84,7 +89,7 @@ final class HkaEmission
             $identity = $attempt['payload']['documentoElectronico']['encabezado']['identificacionDocumento'];
             $response = app(HkaTransport::class)->emission($token, $attempt['payload']);
             $result = HkaResponse::interpret($response->status(), $response->json(), $identity);
-            $this->finish($document, $attempt['id'], $result);
+            $this->finish($document, $attempt['id'], $result, 'send', $operationKey);
             if (($result['code'] ?? null) === '201') $this->query($document->fresh());
         } catch (\Throwable $exception) {
             $this->failure($document, $attempt['id'] ?? null, $exception, $operationKey);
@@ -106,7 +111,7 @@ final class HkaEmission
                 if (!in_array($emission->status, ['pending', 'uncertain', 'confirmed'], true) || !$emission->payload) return null;
                 if ($emission->status === 'pending' && time() - ($emission->response['started_at'] ?? time()) < 40) return null;
                 if (($emission->response['context'] ?? null) !== $this->context($company)) FiscalAmounts::error('emission', 'La configuración HKA no corresponde a la operación enviada.');
-                $query = ['id' => $emission->response['attempt_id'] ?? null, 'payload' => $emission->payload];
+                $query = ['id' => $emission->response['attempt_id'] ?? null, 'payload' => $emission->payload, 'operation_key'=>$emission->operation_key];
                 if ($emission->status === 'pending') $emission->update(['status' => 'uncertain']);
                 return $query;
             });
@@ -115,10 +120,34 @@ final class HkaEmission
                 $token = app(HkaTransport::class)->token($company);
                 $response = app(HkaTransport::class)->status($token, $identity);
                 $result = HkaResponse::interpret($response->status(), $response->json(), $identity, true);
-                $this->finish($document, $query['id'], $result);
+                // ######## INICIO CONFLICTO NUMERACION NC HKA ########
+                $transactionResult = $result;
+                $result['query_result'] = ['transaction'=>$transactionResult];
+                if (($response->json()['estado']['transaccionId'] ?? null) === ($identity['transaccionId'] ?? null)
+                    && !empty($identity['transaccionId'])) $result['transaction_absence'] = null;
+                if (HkaCreditNumbering::applies($document) && !empty($identity['transaccionId']) && $result['retry_allowed']) {
+                    $result['transaction_absence'] = ['verified'=>true, 'operation_key'=>$query['operation_key'],
+                        'attempt_id'=>$query['id'], 'checked_at'=>time()];
+                    $numberIdentity = $identity;
+                    unset($numberIdentity['transaccionId']);
+                    try {
+                        $numberResponse = app(HkaTransport::class)->status($token, $numberIdentity);
+                        $numberResult = HkaCreditNumbering::interpret($numberResponse->status(), $numberResponse->json(), $identity);
+                        if (($numberResponse->json()['estado']['transaccionId'] ?? null) === $identity['transaccionId']) {
+                            $result['transaction_absence'] = null;
+                        }
+                    } catch (\Throwable $exception) {
+                        $numberResult = ['status'=>'uncertain', 'retry_allowed'=>false,
+                            'diagnostic'=>'No se pudo verificar si el número de la nota de crédito está disponible en HKA. Consulte nuevamente antes de reenviar.'];
+                    }
+                    $result = array_replace($result, $numberResult);
+                    $result['query_result']['number'] = $numberResult;
+                }
+                $this->finish($document, $query['id'], $result, 'query', $query['operation_key']);
+                // ######## FIN CONFLICTO NUMERACION NC HKA ########
             }
         } catch (\Throwable $exception) {
-            $this->failure($document, $query['id'] ?? null, $exception);
+            $this->failure($document, $query['id'] ?? null, $exception, $query['operation_key'] ?? null, 'query');
         }
         return DocumentEmissionView::forDocument($document->fresh());
     }
@@ -152,17 +181,37 @@ final class HkaEmission
             'credentials_fingerprint' => hash_hmac('sha256', json_encode(HkaAuthentication::credentials($company)), (string) config('app.key'))];
     }
 
-    private function finish(Document $document, ?string $attempt, array $result): void
+    private function finish(Document $document, ?string $attempt, array $result, string $source, ?string $operationKey): void
     {
-        $document->getConnection()->transaction(function () use ($document, $attempt, $result) {
+        $document->getConnection()->transaction(function () use ($document, $attempt, $result, $source, $operationKey) {
             Company::query()->lockForUpdate()->firstOrFail();
             $locked = Document::query()->lockForUpdate()->findOrFail($document->id);
             $emission = $locked->emission()->lockForUpdate()->firstOrFail();
+            if ($emission->operation_key !== $operationKey) return;
             if (($emission->response['attempt_id'] ?? null) !== $attempt) return;
             if (!in_array($emission->status, ['pending', 'uncertain', 'confirmed'], true)) return;
+            // ######## INICIO CONFLICTO NUMERACION NC HKA ########
+            if ($source === 'send') $result['send_result'] = $result + ['operation_key'=>$operationKey, 'attempt_id'=>$attempt, 'checked_at'=>time()];
+            if ($source === 'query') $result['query_result'] += ['operation_key'=>$operationKey, 'attempt_id'=>$attempt, 'checked_at'=>time()];
+            $conflict = HkaCreditNumbering::conflict($emission);
+            if ($result['status'] !== 'confirmed') {
+                if (!empty($result['numbering_conflict'])) {
+                    $result['numbering_conflict'] += ['operation_key'=>$operationKey, 'attempt_id'=>$attempt, 'checked_at'=>time()];
+                    $conflict = $result['numbering_conflict'];
+                }
+                if ($conflict) {
+                    $result['numbering_conflict'] = $conflict;
+                    $result['status'] = 'uncertain'; $result['retry_allowed'] = false;
+                    $result['diagnostic'] = HkaCreditNumbering::diagnostic($emission->payload['documentoElectronico']['encabezado']['identificacionDocumento'], $conflict);
+                }
+            } else {
+                $result['numbering_conflict'] = null; $result['transaction_absence'] = null;
+            }
+            // ######## FIN CONFLICTO NUMERACION NC HKA ########
             // A failed later consultation cannot undo a confirmed fiscal fact.
             if ($emission->status === 'confirmed' && $result['status'] !== 'confirmed') {
-                $emission->update(['response' => array_replace($emission->response ?? [], ['diagnostic' => 'Factura confirmada. La última consulta no pudo verificarse.'])]);
+                $metadata = $source === 'query' ? ['query_result'=>$result['query_result']] : ['send_result'=>$result['send_result']];
+                $emission->update(['response' => array_replace($emission->response ?? [], $metadata, ['diagnostic' => 'Factura confirmada. La última consulta no pudo verificarse.'])]);
                 return;
             }
             if ($result['status'] === 'confirmed') {
@@ -194,7 +243,7 @@ final class HkaEmission
         }
     }
 
-    private function failure(Document $document, ?string $attempt, \Throwable $exception, ?string $operationKey = null): void
+    private function failure(Document $document, ?string $attempt, \Throwable $exception, ?string $operationKey = null, string $source = 'send'): void
     {
         $diagnostic = $attempt ? 'No se pudo confirmar la emisión. Consulte HKA antes de reenviar.'
             : 'La venta está guardada. No se pudo preparar o conectar con HKA.';
@@ -203,15 +252,23 @@ final class HkaEmission
             $diagnostic = implode(' ', array_merge(...array_values($exception->errors())));
         }
         try {
-            $document->getConnection()->transaction(function () use ($document, $attempt, $diagnostic, $operationKey) {
+            $document->getConnection()->transaction(function () use ($document, $attempt, $diagnostic, $operationKey, $source) {
                 Company::query()->lockForUpdate()->firstOrFail();
                 Document::query()->lockForUpdate()->findOrFail($document->id);
                 $emission = $document->emission()->lockForUpdate()->firstOrFail();
                 if ($operationKey && $emission->operation_key !== $operationKey) return;
                 if ($attempt && ($emission->response['attempt_id'] ?? null) !== $attempt) return;
                 if (!$attempt && !in_array($emission->status, ['not_requested', 'prepared'], true)) return;
+                // ######## INICIO CONFLICTO NUMERACION NC HKA ########
+                if ($conflict = HkaCreditNumbering::conflict($emission)) {
+                    $diagnostic = HkaCreditNumbering::diagnostic($emission->payload['documentoElectronico']['encabezado']['identificacionDocumento'], $conflict);
+                }
+                $response = $emission->response ?? [];
+                $response[$source.'_result'] = ['status'=>'uncertain', 'retry_allowed'=>false, 'operation_key'=>$emission->operation_key,
+                    'attempt_id'=>$attempt, 'checked_at'=>time(), 'diagnostic'=>$diagnostic];
+                // ######## FIN CONFLICTO NUMERACION NC HKA ########
                 if ($attempt && $emission->status !== 'confirmed') $emission->status = 'uncertain';
-                $emission->response = array_replace($emission->response ?? [], ['retry_allowed' => false,
+                $emission->response = array_replace($response, ['retry_allowed' => false,
                     'diagnostic' => mb_substr($diagnostic, 0, 1000)]);
                 $emission->save();
             });

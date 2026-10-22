@@ -508,7 +508,11 @@ El contrato vigente de notas domésticas, devoluciones y ajustes está en [notas
 
 ## Emisión y anulación de notas — corrección del 13/10/2026
 
-El [contrato actualizado de NC/ND](notas_credito_debito_hka.md#corrección-de-envío-y-anulación--13102026) incorpora declaraciones fiscales99 de crédito comercial, cobros reales de ND al contado y anulación ordinaria DEMO con conciliación y reversión local idempotente. Sustituye el bloqueo histórico1015 de notas sin formas de pago; no habilita facturas a crédito, exportaciones, producción ni el circuito especializado IGTF. El esquema existente y los documentos confirmados se conservan. Consultar el informe y su evidencia consolidada para resultados, interfaces y límites.
+El [contrato actualizado de NC/ND](notas_credito_debito_hka.md#corrección-de-envío-y-anulación--13102026) incorpora declaraciones fiscales99 de crédito comercial, cobros reales de ND al contado y anulación ordinaria DEMO con conciliación y reversión local idempotente. Sustituye el bloqueo histórico1015 de notas sin formas de pago; por sí solo no habilita facturas a crédito, exportaciones, producción ni el circuito especializado IGTF. El esquema existente y los documentos confirmados se conservan. Consultar el informe y su evidencia consolidada para resultados, interfaces y límites.
+
+### Facturas nuevas a crédito sin abono — 21/10/2026
+
+El [contrato específico y su evidencia](facturas_credito_sin_abono_hka.md) habilita únicamente facturas nuevas web nacionales ordinarias01/0101, transacción01, digital DEMO y VES/USD, sin abonos ni aplicaciones. Cuatro casos reales fueron confirmados/consultados con A4/A5, saldo íntegro y cero cobros. HkaCreditInvoice declara99 sobre el total principal final y exige una marca interna de creación nueva. No incorpora históricos, incluida la factura00000723, ni amplía crédito con abono, terceros, regímenes, exportación o producción.
 
 ## Órdenes de entrega 04 — verificación DEMO de octubre de 2026
 

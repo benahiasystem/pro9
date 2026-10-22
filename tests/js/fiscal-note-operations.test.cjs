@@ -27,13 +27,13 @@ test('double click and a lost save response preserve the creation UUID',async()=
     assert.equal(state.form.note_creation_key,'original-uuid');assert.equal(state.busy,false);
 });
 test('a refund timeout preserves its UUID and releases the action',async()=>{
-    const state=bind(operations,{busy:false,sequence:1,refundForm:{operation_key:'refund-uuid'},documentId:4,
+    const state=bind(operations,{busy:false,sequence:1,showDialog:true,refundForm:{operation_key:'refund-uuid'},documentId:4,
         $http:{post:()=>Promise.reject(new Error('response lost'))}});
     await state.refund();assert.equal(state.refundForm.operation_key,'refund-uuid');assert.equal(state.busy,false);
 });
 test('a response for a previous note cannot overwrite the newly selected note',async()=>{
     const network=deferred();let updates=0;
-    const state=bind(operations,{busy:false,sequence:1,refunds:{marker:'new note'},$http:{post:()=>network.promise},
+    const state=bind(operations,{busy:false,sequence:1,showDialog:true,documentId:4,refunds:{marker:'new note'},$http:{post:()=>network.promise},
         $eventHub:{$emit(){updates++;}},$emit(){updates++;}});
     const first=state.mutate('/documents/4/refunds',{operation_key:'stable-uuid'});state.sequence=2;
     network.resolve({data:{refunds:{marker:'old note'},adjustments:{},invoice_id:1}});
@@ -46,6 +46,47 @@ test('switching notes clears the previous receipt, adjustment and reversal keys'
     assert.equal(Object.keys(state.refundForm).length,0);assert.equal(Object.keys(state.reverseKeys).length,0);
     assert.equal(state.replacementEndpoint,null);assert.equal(state.showRetention,false);
 });
+
+// ######## INICIO CONSULTAS VALIDAS DE DEVOLUCIONES NC ########
+test('refunds never load or mutate a missing document or a closed dialog',async()=>{
+    for(const [documentId,showDialog] of [[null,true],[undefined,true],[4,false]]){
+        const state=bind(operations,{...operations.data(),documentId,showDialog,
+            $http:{get:()=>assert.fail('Invalid refund GET'),post:()=>assert.fail('Invalid refund POST')}});
+        await state.load();
+        assert.equal(await state.mutate(`/documents/${documentId}/refunds`,{}),false);
+        assert.equal(state.busy,false);
+        assert.equal(state.error,'');
+    }
+});
+test('model and server failures show a readable message without internal details',async()=>{
+    for(const status of [404,500]){
+        const state=bind(operations,{...operations.data(),documentId:4,showDialog:true,
+            $http:{get:async()=>{throw {response:{status,data:{message:'No query results for model [App\\Models\\Tenant\\Document] null',trace:['private trace']}}};}}});
+        await state.load();
+        assert.ok(state.error);
+        assert.doesNotMatch(state.error,/query results|Models|Document|private trace/);
+        assert.equal(state.busy,false);
+    }
+});
+test('refund errors keep business validation messages in both response formats',()=>{
+    const state=bind(operations,{});
+    for(const data of [{errors:{original_amount:['La devolución supera el importe disponible.']}},{original_amount:['La devolución supera el importe disponible.']}]){
+        assert.equal(state.message({response:{status:422,data}}),'La devolución supera el importe disponible.');
+    }
+    assert.equal(state.message({response:{status:409,data:{message:'La clave pertenece a otra operación.'}}}),'La clave pertenece a otra operación.');
+});
+test('a registered refund stays visible after notifying the parent',async()=>{
+    let changed=0;
+    const state=bind(operations,{...operations.data(),showDialog:true,documentId:4,
+        $http:{post:async()=>({data:{invoice_id:1,refunds:{records:[{id:9,amount:'400'}]},adjustments:{}}})},
+        $eventHub:{$emit(){}},$emit(event){if(event==='changed')changed++;}});
+    assert.equal(await state.mutate('/documents/4/refunds',{operation_key:'stable'}),true);
+    assert.equal(state.refunds.records[0].id,9);
+    assert.equal(state.documentId,4);
+    assert.equal(state.error,'');
+    assert.equal(changed,1);
+});
+// ######## FIN CONSULTAS VALIDAS DE DEVOLUCIONES NC ########
 
 const cashPayments=component('resources/js/views/tenant/documents/partials/note-payments.vue');
 test('cash debit payment rows start empty and require a permitted explicit collection',()=>{

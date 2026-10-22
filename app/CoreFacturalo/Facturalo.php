@@ -186,6 +186,7 @@ class Facturalo
                 \App\Services\Fiscal\FiscalDocumentPersistence::applySettlements($document, $inputs);
                 // ######## FIN PERSISTENCIA FISCAL VENEZUELA ########
                 \App\Services\Fiscal\HkaDispatchRelations::attach($document,$inputs);
+                \App\Services\Fiscal\HkaCreditInvoice::captureCreation($document, $this->webDocuments);
                 $this->document = Document::find($document->id);
                 break;
             case 'voided':

@@ -4,7 +4,9 @@ export function documentStatus(record = {}) {
     const localState = String(record.state_type_id || '');
     const useFiscal = Boolean(emission.status) && !['09', '11', '13'].includes(localState);
     const rejected = localState === '09' || (useFiscal && emission.status === 'rejected');
-    const color = useFiscal
+    // ######## INICIO CONFLICTO NUMERACION NC HKA ########
+    const numberingConflict = useFiscal && emission.numbering_conflict === true;
+    const color = numberingConflict ? 'danger' : useFiscal
         ? ({ confirmed: 'success', rejected: 'danger', pending: 'warning', uncertain: 'warning', cancelled: 'dark' }[emission.status] || 'secondary')
         : ({ '03': 'info', '05': 'success', '07': 'warning', '09': 'danger', '11': 'danger', '13': 'warning' }[localState] || 'secondary');
 
@@ -15,5 +17,7 @@ export function documentStatus(record = {}) {
         rejectionReason: (rejected && emission.status === 'rejected' && emission.diagnostic)
             || 'Motivo de rechazo no disponible',
         rejected,
+        numberingConflict,
+        // ######## FIN CONFLICTO NUMERACION NC HKA ########
     };
 }

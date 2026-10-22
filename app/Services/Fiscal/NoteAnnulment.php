@@ -29,7 +29,9 @@ final class NoteAnnulment
     {
         $reasons=[];
         if ($note->payments()->whereNull('reversed_at')->whereNull('receipt_parent_id')->exists()) $reasons[]='Revierta los cobros reales activos de la ND desde Pagos.';
-        if (DocumentNoteRefund::where('document_id',$note->id)->whereNull('reversed_at')->exists()) $reasons[]='Regularice las devoluciones de dinero activas de esta NC.';
+        // ######## INICIO AVISO CLARO DE ANULACION NC ########
+        if (DocumentNoteRefund::where('document_id',$note->id)->whereNull('reversed_at')->exists()) $reasons[]='Para anular esta nota de crédito, primero regularice las devoluciones de dinero asociadas.';
+        // ######## FIN AVISO CLARO DE ANULACION NC ########
         if (DocumentNoteAdjustment::where('document_id',$note->id)->whereNull('reversed_at')->exists()) $reasons[]='Regularice los ajustes de retenciones, fondos o IGTF relacionados; no se revierten automáticamente.';
         return $reasons;
     }
@@ -39,7 +41,10 @@ final class NoteAnnulment
         $e=$note->emission;if (!$e) return false;
         return !$note->control_number && !$e->control_number && (
             (in_array($e->status,['not_requested','prepared'],true) && empty($e->response['attempt_id']))
-            || ($e->status === 'uncertain' && !empty($e->response['retry_allowed'])));
+            // ######## INICIO CONFLICTO NUMERACION NC HKA ########
+            || ($e->status === 'uncertain' && (!empty($e->response['retry_allowed'])
+                || (HkaCreditNumbering::applies($note) && HkaCreditNumbering::canCancelLocally($e)))));
+            // ######## FIN CONFLICTO NUMERACION NC HKA ########
     }
 
     public static function view(Document $note): array

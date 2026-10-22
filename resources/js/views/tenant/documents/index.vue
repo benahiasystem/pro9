@@ -264,7 +264,10 @@
                         <td v-if="col.visible && col.key === 'state_type'" :key="col.key" class="document-column-compact">
                             <el-popover placement="top" trigger="hover">
                                 <div>N° de control: {{ documentStatus(row).controlNumber }}</div>
-                                <div v-if="documentStatus(row).rejected" class="document-status-reason">Motivo de rechazo: {{ documentStatus(row).rejectionReason }}</div>
+                                <!-- ######## INICIO CONFLICTO NUMERACION NC HKA ######## -->
+                                <div v-if="documentStatus(row).numberingConflict" class="document-status-reason">{{ row.fiscal_emission.diagnostic }}</div>
+                                <div v-else-if="documentStatus(row).rejected" class="document-status-reason">Motivo de rechazo: {{ documentStatus(row).rejectionReason }}</div>
+                                <!-- ######## FIN CONFLICTO NUMERACION NC HKA ######## -->
                                 <div v-else>Estado: {{ documentStatus(row).label }}</div>
                                 <span slot="reference" class="badge" :class="documentStatus(row).badgeClass" tabindex="0">{{ documentStatus(row).label }}</span>
                             </el-popover>
@@ -322,6 +325,13 @@
                                 <i class="fas fa-ellipsis-h" style="display: none;"></i>
                             </el-button>
                             <el-dropdown-menu slot="dropdown">
+                              <!-- ######## INICIO ENVIO HKA DESDE ACCIONES DEL LISTADO ######## -->
+                              <el-dropdown-item v-if="row.fiscal_emission && (row.fiscal_emission.show_send || row.fiscal_emission.can_send)"
+                                                :disabled="sendingDocumentId !== null || !row.fiscal_emission.can_send"
+                                                @click.native="clickSendDocument(row.id)">
+                                <i class="el-icon-upload2 me-2"></i>Enviar comprobante
+                              </el-dropdown-item>
+                              <!-- ######## FIN ENVIO HKA DESDE ACCIONES DEL LISTADO ######## -->
                               <el-dropdown-item @click.native="clickDetail(row)">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-eye me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /><path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6" /></svg>
                                 Ver detalle
@@ -420,7 +430,9 @@
                               <!-- ########## INICIO SIN DETRACCIONES E ISC -->
                               <!-- ######### FIN SIN DETRACCIONES E ISC -->
 
-                              <el-dropdown-item v-if="row.btn_note_operations" @click.native="clickOptions(row.id)">Devoluciones y ajustes de NC</el-dropdown-item>
+                              <!-- ######## INICIO ACCESO DIRECTO DEVOLUCIONES NC ######## -->
+                              <el-dropdown-item v-if="row.btn_note_operations" @click.native="clickNoteOperations(row.id)">Devoluciones y ajustes de NC</el-dropdown-item>
+                              <!-- ######## FIN ACCESO DIRECTO DEVOLUCIONES NC ######## -->
                               <el-dropdown-item
                                 divided
                                 v-if="row.btn_note || row.btn_guide"
@@ -458,7 +470,9 @@
                                 Link de pago
                               </el-dropdown-item>
 
-                              <el-dropdown-item v-if="row.fiscal_emission && row.fiscal_emission.annulment && row.fiscal_emission.annulment.available" @click.native="clickOptions(row.id, true)" class="text-danger">Anular</el-dropdown-item>
+                              <!-- ######## INICIO ANULACION DIRECTA DESDE LISTADO ######## -->
+                              <el-dropdown-item v-if="row.fiscal_emission && row.fiscal_emission.annulment && row.fiscal_emission.annulment.available" @click.native="clickNoteAnnulment(row.id)" class="text-danger">Anular</el-dropdown-item>
+                              <!-- ######## FIN ANULACION DIRECTA DESDE LISTADO ######## -->
                               <el-dropdown-item
                                 v-if="row.btn_voided"
                                 @click.native="clickVoided(row.id)"
@@ -523,10 +537,23 @@
             :recordId="recordId"
             :showClose="true"
             :configuration="configuration"
-            :annul-on-open="noteAnnulOnOpen"
             :allow-retention-management="true"
             @fiscal-updated="onFiscalUpdated"
         ></document-options>
+        <!-- ######## INICIO ENVIO HKA DESDE ACCIONES DEL LISTADO ######## -->
+        <document-send-action ref="documentSendAction" @fiscal-updated="onFiscalUpdated" />
+        <!-- ######## FIN ENVIO HKA DESDE ACCIONES DEL LISTADO ######## -->
+        <!-- ######## INICIO ANULACION DIRECTA DESDE LISTADO ######## -->
+        <note-annulment-action ref="noteAnnulmentAction" @fiscal-updated="onFiscalUpdated" />
+        <!-- ######## FIN ANULACION DIRECTA DESDE LISTADO ######## -->
+
+        <!-- ######## INICIO ACCESO DIRECTO DEVOLUCIONES NC ######## -->
+        <note-operations
+            :showDialog.sync="showDialogNoteOperations"
+            :documentId="noteOperationsDocumentId"
+            :allow-retention-management="true"
+        ></note-operations>
+        <!-- ######## FIN ACCESO DIRECTO DEVOLUCIONES NC ######## -->
 
         <document-payments
             :showDialog.sync="showDialogPayments"
@@ -653,6 +680,13 @@ import {exactAmount} from "../../../helpers/exchange-rate-math"
 
 import DocumentsVoided from "./partials/voided.vue";
 import DocumentOptions from "./partials/options.vue";
+// ######## INICIO ACCESO DIRECTO DEVOLUCIONES NC ########
+import NoteOperations from "./partials/note-operations.vue";
+import NoteAnnulmentAction from "./partials/note-annulment-action.vue";
+// ######## INICIO ENVIO HKA DESDE ACCIONES DEL LISTADO ########
+import DocumentSendAction from "./partials/document-send-action.vue";
+// ######## FIN ENVIO HKA DESDE ACCIONES DEL LISTADO ########
+// ######## FIN ACCESO DIRECTO DEVOLUCIONES NC ########
 import DocumentPayments from "./partials/payments.vue";
 import DocumentImportSecond from "./partials/import_second.vue";
 import DocumentImportExcel from "./partials/ImportExcel.vue";
@@ -701,6 +735,13 @@ export default {
         ItemsImport,
         DocumentImportSecond,
         DocumentOptions,
+        // ######## INICIO ACCESO DIRECTO DEVOLUCIONES NC ########
+        NoteOperations,
+        NoteAnnulmentAction,
+        // ######## INICIO ENVIO HKA DESDE ACCIONES DEL LISTADO ########
+        DocumentSendAction,
+        // ######## FIN ENVIO HKA DESDE ACCIONES DEL LISTADO ########
+        // ######## FIN ACCESO DIRECTO DEVOLUCIONES NC ########
         DocumentPayments,
         DataTable,
         // ########## INICIO SIN DETRACCIONES E ISC
@@ -734,7 +775,13 @@ export default {
             resource: "documents",
             recordId: null,
             showDialogOptions: false,
-            noteAnnulOnOpen: false,
+            // ######## INICIO ENVIO HKA DESDE ACCIONES DEL LISTADO ########
+            sendingDocumentId: null,
+            // ######## FIN ENVIO HKA DESDE ACCIONES DEL LISTADO ########
+            // ######## INICIO ACCESO DIRECTO DEVOLUCIONES NC ########
+            showDialogNoteOperations: false,
+            noteOperationsDocumentId: null,
+            // ######## FIN ACCESO DIRECTO DEVOLUCIONES NC ########
             showDialogPayments: false,
             columns: {
                 fiscal_environment_type:          { title: "Ambiente",                           visible: false, order: 0  },
@@ -897,11 +944,30 @@ export default {
         },
         // ########## INICIO SIN DETRACCIONES E ISC
         // ######### FIN SIN DETRACCIONES E ISC
-        clickOptions(recordId = null, annul = false) {
-            this.noteAnnulOnOpen = annul;
+        clickOptions(recordId = null) {
             this.recordId = recordId;
             this.showDialogOptions = true;
         },
+        // ######## INICIO ENVIO HKA DESDE ACCIONES DEL LISTADO ########
+        async clickSendDocument(recordId) {
+            if (this.sendingDocumentId !== null) return;
+            this.sendingDocumentId=recordId;
+            try { await this.$refs.documentSendAction.open(recordId); }
+            finally { this.sendingDocumentId=null; }
+        },
+        // ######## FIN ENVIO HKA DESDE ACCIONES DEL LISTADO ########
+        // ######## INICIO ANULACION DIRECTA DESDE LISTADO ########
+        clickNoteAnnulment(recordId) {
+            return this.$refs.noteAnnulmentAction.open(recordId);
+        },
+        // ######## FIN ANULACION DIRECTA DESDE LISTADO ########
+        // ######## INICIO ACCESO DIRECTO DEVOLUCIONES NC ########
+        clickNoteOperations(recordId) {
+            if (!recordId) return;
+            this.noteOperationsDocumentId = recordId;
+            this.showDialogNoteOperations = true;
+        },
+        // ######## FIN ACCESO DIRECTO DEVOLUCIONES NC ########
         clickPaymentLink(document_id) {
             this.$http
                 .post(`/payment-links/store-from-document`, { document_id })

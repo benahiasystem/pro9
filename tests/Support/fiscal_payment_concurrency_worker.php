@@ -9,6 +9,7 @@ $app=new Illuminate\Foundation\Application(dirname(__DIR__,2));
 Illuminate\Container\Container::setInstance($app);
 Illuminate\Support\Facades\Facade::setFacadeApplication($app);
 $app->instance('config',new Illuminate\Config\Repository(['fiscal_emission'=>require dirname(__DIR__,2).'/config/fiscal_emission.php','venezuela'=>require dirname(__DIR__,2).'/config/venezuela.php']));
+if (($input['data']['credit_invoice_verified'] ?? false) === true) config(['hka_credit_invoices.demo_no_advance_verified'=>true]);
 $app->instance('validator',new Illuminate\Validation\Factory(new Illuminate\Translation\Translator(new Illuminate\Translation\ArrayLoader(),'es'),$app));
 $app->instance('request',Illuminate\Http\Request::create('/'));
 $app->instance('files',new Illuminate\Filesystem\Filesystem());

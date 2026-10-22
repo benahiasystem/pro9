@@ -23,6 +23,7 @@ class DocumentCollection extends ResourceCollection
             fn ($row) => $row instanceof \Illuminate\Http\Resources\Json\JsonResource ? $row->resource : $row
         )->all());
         $this->collection->loadMissing('emission');
+        \App\Services\Fiscal\HkaCreditInvoice::preload($this->collection);
         if (\App\Services\Fiscal\IslrRetentionService::available()) $this->collection->loadMissing(['received_retentions.islr_operations']);
         if (\App\Services\Fiscal\IvaRetentionService::available()) $this->collection->loadMissing(['fiscal_data','received_retentions.operations']);
         \App\Services\Fiscal\FiscalIdentity::preload($this->collection);

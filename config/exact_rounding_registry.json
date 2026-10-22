@@ -5761,6 +5761,26 @@
             "operation_language": "javascript"
         }
     },
+    "06c08ee192031043e4c80b6b": {
+        "category": "technical",
+        "justification": "Comparación estricta de códigos documentales, condición de pago, ambiente, modalidad, tributo, versión o bandera de capacidad. Los literales numéricos son identificadores opacos; no compara importes ni convierte decimales. Expresión: $document->payment_condition_id !== '02'",
+        "evidence": [
+            "app/Services/Fiscal/HkaCreditInvoice.php",
+            "tests/Unit/HkaCreditInvoiceTest.php",
+            "tests/Support/CreditInvoicePersistenceCases.php"
+        ],
+        "evidence_sha256": {
+            "app/Services/Fiscal/HkaCreditInvoice.php": "112b72c1d8ca5d065f1c63886bc00fcc6ea96692fecc89fa35e446b6a3e57947",
+            "tests/Unit/HkaCreditInvoiceTest.php": "657e3a410121720890ae41275de38ed34345cb4872867a19b3513ee09625f8f6",
+            "tests/Support/CreditInvoicePersistenceCases.php": "a1311f9c674676b6385e42d935074d1605274aeac8ccb82d08b0f3152257ac8d"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/HkaCreditInvoice.php",
+            "symbol": "HkaCreditInvoice::reason",
+            "operation": "native_NotIdentical",
+            "operation_language": "php"
+        }
+    },
     "06c50ed11081649102ace139": {
         "category": "technical",
         "justification": "Igualdad con literal de texto no numérico; comprueba una categoría sin adaptar valores decimales: filter === 'contingency'",
@@ -8323,6 +8343,26 @@
             "operation_language": "php"
         }
     },
+    "0955d8c90fcd747f3da828be": {
+        "category": "technical",
+        "justification": "Comparación estricta de códigos documentales, condición de pago, ambiente, modalidad, tributo, versión o bandera de capacidad. Los literales numéricos son identificadores opacos; no compara importes ni convierte decimales. Expresión: ($d['document_type_id'] ?? '') !== '01'",
+        "evidence": [
+            "app/Services/Fiscal/HkaCreditInvoice.php",
+            "tests/Unit/HkaCreditInvoiceTest.php",
+            "tests/Support/CreditInvoicePersistenceCases.php"
+        ],
+        "evidence_sha256": {
+            "app/Services/Fiscal/HkaCreditInvoice.php": "112b72c1d8ca5d065f1c63886bc00fcc6ea96692fecc89fa35e446b6a3e57947",
+            "tests/Unit/HkaCreditInvoiceTest.php": "657e3a410121720890ae41275de38ed34345cb4872867a19b3513ee09625f8f6",
+            "tests/Support/CreditInvoicePersistenceCases.php": "a1311f9c674676b6385e42d935074d1605274aeac8ccb82d08b0f3152257ac8d"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/HkaCreditInvoice.php",
+            "symbol": "HkaCreditInvoice::eligible",
+            "operation": "native_NotIdentical",
+            "operation_language": "php"
+        }
+    },
     "095f3ddbc4ce433582055e20": {
         "category": "technical",
         "justification": "Igualdad con literal de texto no numérico; comprueba una categoría sin adaptar valores decimales: col.key === 'total_free'",
@@ -8467,6 +8507,26 @@
             "file": "app/Http/Controllers/Tenant/NoteOperationController.php",
             "symbol": "NoteOperationController::refund",
             "operation": "native_Plus",
+            "operation_language": "php"
+        }
+    },
+    "098ecd02a98ba6e8434ebecd": {
+        "category": "technical",
+        "justification": "Persistencia de metadatos de emisión: versión del contrato, estado, UUID, historial y campos de autorización. No escribe importes, pagos, inventario ni saldos. Expresión: $emission->update(['status' => 'not_requested', 'operation_key' => (string) Str::uuid(), 'payload' => null, 'response' => array_replace(['edit_history' => $history, 'auto_send_requested' => false], array_intersect_key($emission->response ?? [], [HkaCreditInvoice::KEY => true])), 'authorization' => null, 'consulta_url' => null, 'assigned_at' => null, 'control_assigned_at' => null])",
+        "evidence": [
+            "app/Services/Fiscal/DocumentEditPolicy.php",
+            "tests/Unit/HkaCreditInvoiceTest.php",
+            "tests/Support/CreditInvoicePersistenceCases.php"
+        ],
+        "evidence_sha256": {
+            "app/Services/Fiscal/DocumentEditPolicy.php": "1a944985f1404d9eda22e51446f99c36afb964491f7c939946448703864765a8",
+            "tests/Unit/HkaCreditInvoiceTest.php": "657e3a410121720890ae41275de38ed34345cb4872867a19b3513ee09625f8f6",
+            "tests/Support/CreditInvoicePersistenceCases.php": "a1311f9c674676b6385e42d935074d1605274aeac8ccb82d08b0f3152257ac8d"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/DocumentEditPolicy.php",
+            "symbol": "DocumentEditPolicy::invalidate",
+            "operation": "bulk_write",
             "operation_language": "php"
         }
     },
@@ -41217,6 +41277,26 @@
             "operation_language": "php"
         }
     },
+    "2f8fa453cf3e9bcfb1b36b44": {
+        "category": "technical",
+        "justification": "Comparación estricta de códigos documentales, condición de pago, ambiente, modalidad, tributo, versión o bandera de capacidad. Los literales numéricos son identificadores opacos; no compara importes ni convierte decimales. Expresión: $d->payment_condition_id === '02'",
+        "evidence": [
+            "app/Services/Fiscal/HkaCreditInvoice.php",
+            "tests/Unit/HkaCreditInvoiceTest.php",
+            "tests/Support/CreditInvoicePersistenceCases.php"
+        ],
+        "evidence_sha256": {
+            "app/Services/Fiscal/HkaCreditInvoice.php": "112b72c1d8ca5d065f1c63886bc00fcc6ea96692fecc89fa35e446b6a3e57947",
+            "tests/Unit/HkaCreditInvoiceTest.php": "657e3a410121720890ae41275de38ed34345cb4872867a19b3513ee09625f8f6",
+            "tests/Support/CreditInvoicePersistenceCases.php": "a1311f9c674676b6385e42d935074d1605274aeac8ccb82d08b0f3152257ac8d"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/HkaCreditInvoice.php",
+            "symbol": "HkaCreditInvoice::preload",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        }
+    },
     "2f9322270b27c27b57c0b5e6": {
         "category": "technical",
         "justification": "Comparación estricta con null/booleano; comprueba tipo o presencia sin calcular un importe: from_documents === false",
@@ -41736,6 +41816,26 @@
             "file": "modules/Report/Traits/MassiveDownloadTrait.php",
             "symbol": "createPdf",
             "operation": "native_Identical",
+            "operation_language": "php"
+        }
+    },
+    "3027ee670c2c14702874fd70": {
+        "category": "technical",
+        "justification": "Persistencia de metadatos de emisión: versión del contrato, estado, UUID, historial y campos de autorización. No escribe importes, pagos, inventario ni saldos. Expresión: $emission->update(['response' => array_replace($emission->response ?? [], [self::KEY => self::VERSION])])",
+        "evidence": [
+            "app/Services/Fiscal/HkaCreditInvoice.php",
+            "tests/Unit/HkaCreditInvoiceTest.php",
+            "tests/Support/CreditInvoicePersistenceCases.php"
+        ],
+        "evidence_sha256": {
+            "app/Services/Fiscal/HkaCreditInvoice.php": "112b72c1d8ca5d065f1c63886bc00fcc6ea96692fecc89fa35e446b6a3e57947",
+            "tests/Unit/HkaCreditInvoiceTest.php": "657e3a410121720890ae41275de38ed34345cb4872867a19b3513ee09625f8f6",
+            "tests/Support/CreditInvoicePersistenceCases.php": "a1311f9c674676b6385e42d935074d1605274aeac8ccb82d08b0f3152257ac8d"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/HkaCreditInvoice.php",
+            "symbol": "HkaCreditInvoice::captureCreation",
+            "operation": "bulk_write",
             "operation_language": "php"
         }
     },
@@ -42275,6 +42375,26 @@
             "symbol": "mounted",
             "operation": "native_===",
             "operation_language": "javascript"
+        }
+    },
+    "30e863759381cdd0c74ae5cb": {
+        "category": "technical",
+        "justification": "Comparación estricta de códigos documentales, condición de pago, ambiente, modalidad, tributo, versión o bandera de capacidad. Los literales numéricos son identificadores opacos; no compara importes ni convierte decimales. Expresión: ($snapshot[self::KEY] ?? null) !== self::VERSION",
+        "evidence": [
+            "app/Services/Fiscal/HkaCreditInvoice.php",
+            "tests/Unit/HkaCreditInvoiceTest.php",
+            "tests/Support/CreditInvoicePersistenceCases.php"
+        ],
+        "evidence_sha256": {
+            "app/Services/Fiscal/HkaCreditInvoice.php": "112b72c1d8ca5d065f1c63886bc00fcc6ea96692fecc89fa35e446b6a3e57947",
+            "tests/Unit/HkaCreditInvoiceTest.php": "657e3a410121720890ae41275de38ed34345cb4872867a19b3513ee09625f8f6",
+            "tests/Support/CreditInvoicePersistenceCases.php": "a1311f9c674676b6385e42d935074d1605274aeac8ccb82d08b0f3152257ac8d"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/HkaCreditInvoice.php",
+            "symbol": "HkaCreditInvoice::append",
+            "operation": "native_NotIdentical",
+            "operation_language": "php"
         }
     },
     "30ee3d68b4a4660e6ad9e4a3": {
@@ -52662,6 +52782,26 @@
             "file": "modules/DocumentaryProcedure/Models/DocumentaryFile.php",
             "symbol": "DocumentaryFile::getCollectionData",
             "operation": "native_Identical",
+            "operation_language": "php"
+        }
+    },
+    "3df9ef25005b3d07f6a44f74": {
+        "category": "technical",
+        "justification": "Comparación estricta de códigos documentales, condición de pago, ambiente, modalidad, tributo, versión o bandera de capacidad. Los literales numéricos son identificadores opacos; no compara importes ni convierte decimales. Expresión: $document->payment_condition_id !== '02'",
+        "evidence": [
+            "app/Services/Fiscal/HkaCreditInvoice.php",
+            "tests/Unit/HkaCreditInvoiceTest.php",
+            "tests/Support/CreditInvoicePersistenceCases.php"
+        ],
+        "evidence_sha256": {
+            "app/Services/Fiscal/HkaCreditInvoice.php": "112b72c1d8ca5d065f1c63886bc00fcc6ea96692fecc89fa35e446b6a3e57947",
+            "tests/Unit/HkaCreditInvoiceTest.php": "657e3a410121720890ae41275de38ed34345cb4872867a19b3513ee09625f8f6",
+            "tests/Support/CreditInvoicePersistenceCases.php": "a1311f9c674676b6385e42d935074d1605274aeac8ccb82d08b0f3152257ac8d"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/HkaCreditInvoice.php",
+            "symbol": "HkaCreditInvoice::captureCreation",
+            "operation": "native_NotIdentical",
             "operation_language": "php"
         }
     },
@@ -74176,6 +74316,26 @@
             "operation_language": "php"
         }
     },
+    "57bb7e23d699293620e2fd06": {
+        "category": "technical",
+        "justification": "Comparación estricta de códigos documentales, condición de pago, ambiente, modalidad, tributo, versión o bandera de capacidad. Los literales numéricos son identificadores opacos; no compara importes ni convierte decimales. Expresión: $document->fiscal_emission_mode !== 'digital'",
+        "evidence": [
+            "app/Services/Fiscal/HkaCreditInvoice.php",
+            "tests/Unit/HkaCreditInvoiceTest.php",
+            "tests/Support/CreditInvoicePersistenceCases.php"
+        ],
+        "evidence_sha256": {
+            "app/Services/Fiscal/HkaCreditInvoice.php": "112b72c1d8ca5d065f1c63886bc00fcc6ea96692fecc89fa35e446b6a3e57947",
+            "tests/Unit/HkaCreditInvoiceTest.php": "657e3a410121720890ae41275de38ed34345cb4872867a19b3513ee09625f8f6",
+            "tests/Support/CreditInvoicePersistenceCases.php": "a1311f9c674676b6385e42d935074d1605274aeac8ccb82d08b0f3152257ac8d"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/HkaCreditInvoice.php",
+            "symbol": "HkaCreditInvoice::captureCreation",
+            "operation": "native_NotIdentical",
+            "operation_language": "php"
+        }
+    },
     "57c1b7291a951a5226901783": {
         "category": "technical",
         "justification": "Igualdad con literal de texto no numérico; comprueba una categoría sin adaptar valores decimales: $establishment->district_id !== '-'",
@@ -78077,6 +78237,26 @@
             "symbol": "paymentAdjustmentText",
             "operation": "native_!==",
             "operation_language": "javascript"
+        }
+    },
+    "5c57fc12f4c617284e8b4f73": {
+        "category": "technical",
+        "justification": "Comparación estricta de códigos documentales, condición de pago, ambiente, modalidad, tributo, versión o bandera de capacidad. Los literales numéricos son identificadores opacos; no compara importes ni convierte decimales. Expresión: $emission->status !== 'not_requested'",
+        "evidence": [
+            "app/Services/Fiscal/HkaCreditInvoice.php",
+            "tests/Unit/HkaCreditInvoiceTest.php",
+            "tests/Support/CreditInvoicePersistenceCases.php"
+        ],
+        "evidence_sha256": {
+            "app/Services/Fiscal/HkaCreditInvoice.php": "112b72c1d8ca5d065f1c63886bc00fcc6ea96692fecc89fa35e446b6a3e57947",
+            "tests/Unit/HkaCreditInvoiceTest.php": "657e3a410121720890ae41275de38ed34345cb4872867a19b3513ee09625f8f6",
+            "tests/Support/CreditInvoicePersistenceCases.php": "a1311f9c674676b6385e42d935074d1605274aeac8ccb82d08b0f3152257ac8d"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/HkaCreditInvoice.php",
+            "symbol": "HkaCreditInvoice::reason",
+            "operation": "native_NotIdentical",
+            "operation_language": "php"
         }
     },
     "5c5c99987db1905c1a2939fa": {
@@ -82047,6 +82227,26 @@
         "source": {
             "file": "app/Services/SeriesNumbering.php",
             "symbol": "SeriesNumbering::next",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        }
+    },
+    "61958c67726c6605d81bb4b7": {
+        "category": "technical",
+        "justification": "Comparación estricta de códigos documentales, condición de pago, ambiente, modalidad, tributo, versión o bandera de capacidad. Los literales numéricos son identificadores opacos; no compara importes ni convierte decimales. Expresión: $d->emission->status === 'not_requested'",
+        "evidence": [
+            "app/Services/Fiscal/HkaCreditInvoice.php",
+            "tests/Unit/HkaCreditInvoiceTest.php",
+            "tests/Support/CreditInvoicePersistenceCases.php"
+        ],
+        "evidence_sha256": {
+            "app/Services/Fiscal/HkaCreditInvoice.php": "112b72c1d8ca5d065f1c63886bc00fcc6ea96692fecc89fa35e446b6a3e57947",
+            "tests/Unit/HkaCreditInvoiceTest.php": "657e3a410121720890ae41275de38ed34345cb4872867a19b3513ee09625f8f6",
+            "tests/Support/CreditInvoicePersistenceCases.php": "a1311f9c674676b6385e42d935074d1605274aeac8ccb82d08b0f3152257ac8d"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/HkaCreditInvoice.php",
+            "symbol": "HkaCreditInvoice::preload",
             "operation": "native_Identical",
             "operation_language": "php"
         }
@@ -122743,6 +122943,26 @@
             "operation_language": "javascript"
         }
     },
+    "91173847b19850b8b0af8890": {
+        "category": "technical",
+        "justification": "Comparación estricta de códigos documentales, condición de pago, ambiente, modalidad, tributo, versión o bandera de capacidad. Los literales numéricos son identificadores opacos; no compara importes ni convierte decimales. Expresión: ($tax['tax_kind'] ?? '') !== 'IVA'",
+        "evidence": [
+            "app/Services/Fiscal/HkaCreditInvoice.php",
+            "tests/Unit/HkaCreditInvoiceTest.php",
+            "tests/Support/CreditInvoicePersistenceCases.php"
+        ],
+        "evidence_sha256": {
+            "app/Services/Fiscal/HkaCreditInvoice.php": "112b72c1d8ca5d065f1c63886bc00fcc6ea96692fecc89fa35e446b6a3e57947",
+            "tests/Unit/HkaCreditInvoiceTest.php": "657e3a410121720890ae41275de38ed34345cb4872867a19b3513ee09625f8f6",
+            "tests/Support/CreditInvoicePersistenceCases.php": "a1311f9c674676b6385e42d935074d1605274aeac8ccb82d08b0f3152257ac8d"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/HkaCreditInvoice.php",
+            "symbol": "HkaCreditInvoice::eligible",
+            "operation": "native_NotIdentical",
+            "operation_language": "php"
+        }
+    },
     "911bcb6c6a45a07cb512035b": {
         "category": "technical",
         "justification": "Igualdad con literal de texto no numérico; comprueba una categoría sin adaptar valores decimales: $path[0] === 'persons'",
@@ -124581,6 +124801,26 @@
         "source": {
             "file": "app/CoreFacturalo/Templates/pdf/marca_de_agua/sale_opportunity_a4.blade.php",
             "symbol": "{blade}",
+            "operation": "native_NotIdentical",
+            "operation_language": "php"
+        }
+    },
+    "937586400844034974c9b110": {
+        "category": "technical",
+        "justification": "Comparación estricta de códigos documentales, condición de pago, ambiente, modalidad, tributo, versión o bandera de capacidad. Los literales numéricos son identificadores opacos; no compara importes ni convierte decimales. Expresión: ($snapshot['payment_condition_id'] ?? '') !== '02'",
+        "evidence": [
+            "app/Services/Fiscal/HkaCreditInvoice.php",
+            "tests/Unit/HkaCreditInvoiceTest.php",
+            "tests/Support/CreditInvoicePersistenceCases.php"
+        ],
+        "evidence_sha256": {
+            "app/Services/Fiscal/HkaCreditInvoice.php": "112b72c1d8ca5d065f1c63886bc00fcc6ea96692fecc89fa35e446b6a3e57947",
+            "tests/Unit/HkaCreditInvoiceTest.php": "657e3a410121720890ae41275de38ed34345cb4872867a19b3513ee09625f8f6",
+            "tests/Support/CreditInvoicePersistenceCases.php": "a1311f9c674676b6385e42d935074d1605274aeac8ccb82d08b0f3152257ac8d"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/HkaCreditInvoice.php",
+            "symbol": "HkaCreditInvoice::append",
             "operation": "native_NotIdentical",
             "operation_language": "php"
         }
@@ -132558,6 +132798,26 @@
             "symbol": "created",
             "operation": "native_!==",
             "operation_language": "javascript"
+        }
+    },
+    "9cfefd5375cbce7499bc9b6a": {
+        "category": "technical",
+        "justification": "Comparación estricta de códigos documentales, condición de pago, ambiente, modalidad, tributo, versión o bandera de capacidad. Los literales numéricos son identificadores opacos; no compara importes ni convierte decimales. Expresión: $document->document_type_id !== '01'",
+        "evidence": [
+            "app/Services/Fiscal/HkaCreditInvoice.php",
+            "tests/Unit/HkaCreditInvoiceTest.php",
+            "tests/Support/CreditInvoicePersistenceCases.php"
+        ],
+        "evidence_sha256": {
+            "app/Services/Fiscal/HkaCreditInvoice.php": "112b72c1d8ca5d065f1c63886bc00fcc6ea96692fecc89fa35e446b6a3e57947",
+            "tests/Unit/HkaCreditInvoiceTest.php": "657e3a410121720890ae41275de38ed34345cb4872867a19b3513ee09625f8f6",
+            "tests/Support/CreditInvoicePersistenceCases.php": "a1311f9c674676b6385e42d935074d1605274aeac8ccb82d08b0f3152257ac8d"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/HkaCreditInvoice.php",
+            "symbol": "HkaCreditInvoice::captureCreation",
+            "operation": "native_NotIdentical",
+            "operation_language": "php"
         }
     },
     "9d09444ddcd86d94c4418c63": {
@@ -149516,6 +149776,26 @@
             "operation_language": "php"
         }
     },
+    "b0a54c19dbbc55706d6361af": {
+        "category": "technical",
+        "justification": "Comparación estricta de códigos documentales, condición de pago, ambiente, modalidad, tributo, versión o bandera de capacidad. Los literales numéricos son identificadores opacos; no compara importes ni convierte decimales. Expresión: ($d['fiscal_environment'] ?? '') !== 'demo'",
+        "evidence": [
+            "app/Services/Fiscal/HkaCreditInvoice.php",
+            "tests/Unit/HkaCreditInvoiceTest.php",
+            "tests/Support/CreditInvoicePersistenceCases.php"
+        ],
+        "evidence_sha256": {
+            "app/Services/Fiscal/HkaCreditInvoice.php": "112b72c1d8ca5d065f1c63886bc00fcc6ea96692fecc89fa35e446b6a3e57947",
+            "tests/Unit/HkaCreditInvoiceTest.php": "657e3a410121720890ae41275de38ed34345cb4872867a19b3513ee09625f8f6",
+            "tests/Support/CreditInvoicePersistenceCases.php": "a1311f9c674676b6385e42d935074d1605274aeac8ccb82d08b0f3152257ac8d"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/HkaCreditInvoice.php",
+            "symbol": "HkaCreditInvoice::eligible",
+            "operation": "native_NotIdentical",
+            "operation_language": "php"
+        }
+    },
     "b0a867fb5211fd8aaaf06741": {
         "category": "technical",
         "justification": "Igualdad con literal de texto no numérico; comprueba una categoría sin adaptar valores decimales: $base_pdf_template === 'blank'",
@@ -153807,6 +154087,26 @@
             "symbol": "{template}",
             "operation": "native_==",
             "operation_language": "javascript"
+        }
+    },
+    "b5e06c08ffb16c411f055c90": {
+        "category": "technical",
+        "justification": "Formato de la fecha documental con Carbon para HKA; no redondea ni calcula dinero. Expresión: \\Carbon\\Carbon::parse($snapshot['date_of_issue'])->format('d/m/Y')",
+        "evidence": [
+            "app/Services/Fiscal/HkaCreditInvoice.php",
+            "tests/Unit/HkaCreditInvoiceTest.php",
+            "tests/Support/CreditInvoicePersistenceCases.php"
+        ],
+        "evidence_sha256": {
+            "app/Services/Fiscal/HkaCreditInvoice.php": "112b72c1d8ca5d065f1c63886bc00fcc6ea96692fecc89fa35e446b6a3e57947",
+            "tests/Unit/HkaCreditInvoiceTest.php": "657e3a410121720890ae41275de38ed34345cb4872867a19b3513ee09625f8f6",
+            "tests/Support/CreditInvoicePersistenceCases.php": "a1311f9c674676b6385e42d935074d1605274aeac8ccb82d08b0f3152257ac8d"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/HkaCreditInvoice.php",
+            "symbol": "HkaCreditInvoice::append",
+            "operation": "format",
+            "operation_language": "php"
         }
     },
     "b5ea1caef4c2aa45dea6f371": {
@@ -158461,6 +158761,26 @@
             "operation_language": "php"
         }
     },
+    "bb40cb6f98c1a4c4e20c4c59": {
+        "category": "technical",
+        "justification": "Comparación estricta de códigos documentales, condición de pago, ambiente, modalidad, tributo, versión o bandera de capacidad. Los literales numéricos son identificadores opacos; no compara importes ni convierte decimales. Expresión: ($d['invoice']['operation_type_id'] ?? '') !== '0101'",
+        "evidence": [
+            "app/Services/Fiscal/HkaCreditInvoice.php",
+            "tests/Unit/HkaCreditInvoiceTest.php",
+            "tests/Support/CreditInvoicePersistenceCases.php"
+        ],
+        "evidence_sha256": {
+            "app/Services/Fiscal/HkaCreditInvoice.php": "112b72c1d8ca5d065f1c63886bc00fcc6ea96692fecc89fa35e446b6a3e57947",
+            "tests/Unit/HkaCreditInvoiceTest.php": "657e3a410121720890ae41275de38ed34345cb4872867a19b3513ee09625f8f6",
+            "tests/Support/CreditInvoicePersistenceCases.php": "a1311f9c674676b6385e42d935074d1605274aeac8ccb82d08b0f3152257ac8d"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/HkaCreditInvoice.php",
+            "symbol": "HkaCreditInvoice::eligible",
+            "operation": "native_NotIdentical",
+            "operation_language": "php"
+        }
+    },
     "bb49aa2114e60e03ec7ed202": {
         "category": "technical",
         "justification": "Igualdad con literal de texto no numérico; comprueba una categoría sin adaptar valores decimales: $defaultImage === 'imagen-no-disponible.jpg'",
@@ -160086,6 +160406,26 @@
         "source": {
             "file": "modules/DocumentaryProcedure/Resources/views/exports/report_detailed_excel.blade.php",
             "symbol": "{blade}",
+            "operation": "native_NotIdentical",
+            "operation_language": "php"
+        }
+    },
+    "bd6c8e01675de43b17bd5104": {
+        "category": "technical",
+        "justification": "Comparación estricta de códigos documentales, condición de pago, ambiente, modalidad, tributo, versión o bandera de capacidad. Los literales numéricos son identificadores opacos; no compara importes ni convierte decimales. Expresión: $document->fiscal_environment !== 'demo'",
+        "evidence": [
+            "app/Services/Fiscal/HkaCreditInvoice.php",
+            "tests/Unit/HkaCreditInvoiceTest.php",
+            "tests/Support/CreditInvoicePersistenceCases.php"
+        ],
+        "evidence_sha256": {
+            "app/Services/Fiscal/HkaCreditInvoice.php": "112b72c1d8ca5d065f1c63886bc00fcc6ea96692fecc89fa35e446b6a3e57947",
+            "tests/Unit/HkaCreditInvoiceTest.php": "657e3a410121720890ae41275de38ed34345cb4872867a19b3513ee09625f8f6",
+            "tests/Support/CreditInvoicePersistenceCases.php": "a1311f9c674676b6385e42d935074d1605274aeac8ccb82d08b0f3152257ac8d"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/HkaCreditInvoice.php",
+            "symbol": "HkaCreditInvoice::captureCreation",
             "operation": "native_NotIdentical",
             "operation_language": "php"
         }
@@ -162935,6 +163275,26 @@
             "file": "app/Services/Fiscal/HkaPayloadBuilder.php",
             "symbol": "HkaPayloadBuilder::build",
             "operation": "native_Identical",
+            "operation_language": "php"
+        }
+    },
+    "c0b5be747aaa93a51bcf9712": {
+        "category": "technical",
+        "justification": "Comparación estricta de códigos documentales, condición de pago, ambiente, modalidad, tributo, versión o bandera de capacidad. Los literales numéricos son identificadores opacos; no compara importes ni convierte decimales. Expresión: ($d['payment_condition_id'] ?? '') !== '02'",
+        "evidence": [
+            "app/Services/Fiscal/HkaCreditInvoice.php",
+            "tests/Unit/HkaCreditInvoiceTest.php",
+            "tests/Support/CreditInvoicePersistenceCases.php"
+        ],
+        "evidence_sha256": {
+            "app/Services/Fiscal/HkaCreditInvoice.php": "112b72c1d8ca5d065f1c63886bc00fcc6ea96692fecc89fa35e446b6a3e57947",
+            "tests/Unit/HkaCreditInvoiceTest.php": "657e3a410121720890ae41275de38ed34345cb4872867a19b3513ee09625f8f6",
+            "tests/Support/CreditInvoicePersistenceCases.php": "a1311f9c674676b6385e42d935074d1605274aeac8ccb82d08b0f3152257ac8d"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/HkaCreditInvoice.php",
+            "symbol": "HkaCreditInvoice::eligible",
+            "operation": "native_NotIdentical",
             "operation_language": "php"
         }
     },
@@ -168483,6 +168843,26 @@
             "operation_language": "php"
         }
     },
+    "c72f17e40ba7c9548feb52b0": {
+        "category": "technical",
+        "justification": "Comparación estricta de códigos documentales, condición de pago, ambiente, modalidad, tributo, versión o bandera de capacidad. Los literales numéricos son identificadores opacos; no compara importes ni convierte decimales. Expresión: ($d['fiscal_emission_mode'] ?? '') !== 'digital'",
+        "evidence": [
+            "app/Services/Fiscal/HkaCreditInvoice.php",
+            "tests/Unit/HkaCreditInvoiceTest.php",
+            "tests/Support/CreditInvoicePersistenceCases.php"
+        ],
+        "evidence_sha256": {
+            "app/Services/Fiscal/HkaCreditInvoice.php": "112b72c1d8ca5d065f1c63886bc00fcc6ea96692fecc89fa35e446b6a3e57947",
+            "tests/Unit/HkaCreditInvoiceTest.php": "657e3a410121720890ae41275de38ed34345cb4872867a19b3513ee09625f8f6",
+            "tests/Support/CreditInvoicePersistenceCases.php": "a1311f9c674676b6385e42d935074d1605274aeac8ccb82d08b0f3152257ac8d"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/HkaCreditInvoice.php",
+            "symbol": "HkaCreditInvoice::eligible",
+            "operation": "native_NotIdentical",
+            "operation_language": "php"
+        }
+    },
     "c7418209bb062c092ea8ffdd": {
         "category": "technical",
         "justification": "Igualdad con literal de texto no numérico; comprueba una categoría sin adaptar valores decimales: $establishment->web_address !== '-'",
@@ -170151,6 +170531,26 @@
             "file": "app/Http/Middleware/RedirectModuleLevel.php",
             "symbol": "RedirectModuleLevel::getGroup",
             "operation": "native_Equal",
+            "operation_language": "php"
+        }
+    },
+    "c9621ad989cc97b2f891702f": {
+        "category": "technical",
+        "justification": "Comparación estricta de códigos documentales, condición de pago, ambiente, modalidad, tributo, versión o bandera de capacidad. Los literales numéricos son identificadores opacos; no compara importes ni convierte decimales. Expresión: ($d->emission->response[self::KEY] ?? null) === self::VERSION",
+        "evidence": [
+            "app/Services/Fiscal/HkaCreditInvoice.php",
+            "tests/Unit/HkaCreditInvoiceTest.php",
+            "tests/Support/CreditInvoicePersistenceCases.php"
+        ],
+        "evidence_sha256": {
+            "app/Services/Fiscal/HkaCreditInvoice.php": "112b72c1d8ca5d065f1c63886bc00fcc6ea96692fecc89fa35e446b6a3e57947",
+            "tests/Unit/HkaCreditInvoiceTest.php": "657e3a410121720890ae41275de38ed34345cb4872867a19b3513ee09625f8f6",
+            "tests/Support/CreditInvoicePersistenceCases.php": "a1311f9c674676b6385e42d935074d1605274aeac8ccb82d08b0f3152257ac8d"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/HkaCreditInvoice.php",
+            "symbol": "HkaCreditInvoice::preload",
+            "operation": "native_Identical",
             "operation_language": "php"
         }
     },
@@ -173202,6 +173602,26 @@
             "symbol": "{script}",
             "operation": "native_===",
             "operation_language": "javascript"
+        }
+    },
+    "cd0dc57a362ebae7752d08ee": {
+        "category": "technical",
+        "justification": "Comparación estricta de códigos documentales, condición de pago, ambiente, modalidad, tributo, versión o bandera de capacidad. Los literales numéricos son identificadores opacos; no compara importes ni convierte decimales. Expresión: ($d['fiscal_data']['transaction_type_id'] ?? '01') !== '01'",
+        "evidence": [
+            "app/Services/Fiscal/HkaCreditInvoice.php",
+            "tests/Unit/HkaCreditInvoiceTest.php",
+            "tests/Support/CreditInvoicePersistenceCases.php"
+        ],
+        "evidence_sha256": {
+            "app/Services/Fiscal/HkaCreditInvoice.php": "112b72c1d8ca5d065f1c63886bc00fcc6ea96692fecc89fa35e446b6a3e57947",
+            "tests/Unit/HkaCreditInvoiceTest.php": "657e3a410121720890ae41275de38ed34345cb4872867a19b3513ee09625f8f6",
+            "tests/Support/CreditInvoicePersistenceCases.php": "a1311f9c674676b6385e42d935074d1605274aeac8ccb82d08b0f3152257ac8d"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/HkaCreditInvoice.php",
+            "symbol": "HkaCreditInvoice::eligible",
+            "operation": "native_NotIdentical",
+            "operation_language": "php"
         }
     },
     "cd0df0e4800168e8257a3be3": {
@@ -185012,6 +185432,26 @@
             "operation_language": "php"
         }
     },
+    "dbaa4472720b1b5e194f23b8": {
+        "category": "technical",
+        "justification": "Comparación estricta de códigos documentales, condición de pago, ambiente, modalidad, tributo, versión o bandera de capacidad. Los literales numéricos son identificadores opacos; no compara importes ni convierte decimales. Expresión: config('hka_credit_invoices.demo_no_advance_verified', false) === true",
+        "evidence": [
+            "app/Services/Fiscal/HkaCreditInvoice.php",
+            "tests/Unit/HkaCreditInvoiceTest.php",
+            "tests/Support/CreditInvoicePersistenceCases.php"
+        ],
+        "evidence_sha256": {
+            "app/Services/Fiscal/HkaCreditInvoice.php": "112b72c1d8ca5d065f1c63886bc00fcc6ea96692fecc89fa35e446b6a3e57947",
+            "tests/Unit/HkaCreditInvoiceTest.php": "657e3a410121720890ae41275de38ed34345cb4872867a19b3513ee09625f8f6",
+            "tests/Support/CreditInvoicePersistenceCases.php": "a1311f9c674676b6385e42d935074d1605274aeac8ccb82d08b0f3152257ac8d"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/HkaCreditInvoice.php",
+            "symbol": "HkaCreditInvoice::verified",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        }
+    },
     "dbb4c255de62803b20779d25": {
         "category": "technical",
         "justification": "Igualdad con literal de texto no numérico; comprueba una categoría sin adaptar valores decimales: $establishment->trade_address !== '-'",
@@ -193701,6 +194141,26 @@
             "symbol": "{template}",
             "operation": "native_===",
             "operation_language": "javascript"
+        }
+    },
+    "e699d5830488c3e23b8add8e": {
+        "category": "technical",
+        "justification": "Comparación estricta de códigos documentales, condición de pago, ambiente, modalidad, tributo, versión o bandera de capacidad. Los literales numéricos son identificadores opacos; no compara importes ni convierte decimales. Expresión: ($emission->response[self::KEY] ?? null) !== self::VERSION",
+        "evidence": [
+            "app/Services/Fiscal/HkaCreditInvoice.php",
+            "tests/Unit/HkaCreditInvoiceTest.php",
+            "tests/Support/CreditInvoicePersistenceCases.php"
+        ],
+        "evidence_sha256": {
+            "app/Services/Fiscal/HkaCreditInvoice.php": "112b72c1d8ca5d065f1c63886bc00fcc6ea96692fecc89fa35e446b6a3e57947",
+            "tests/Unit/HkaCreditInvoiceTest.php": "657e3a410121720890ae41275de38ed34345cb4872867a19b3513ee09625f8f6",
+            "tests/Support/CreditInvoicePersistenceCases.php": "a1311f9c674676b6385e42d935074d1605274aeac8ccb82d08b0f3152257ac8d"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/HkaCreditInvoice.php",
+            "symbol": "HkaCreditInvoice::reason",
+            "operation": "native_NotIdentical",
+            "operation_language": "php"
         }
     },
     "e69daa6f0fc38c9843c62d5d": {

@@ -33,8 +33,11 @@ final class DocumentEmissionView
         $emission = $document->emission;
         $status = $applies ? ($emission->status ?? 'not_requested') : null;
         $response = $emission->response ?? [];
+        // ######## INICIO CONFLICTO NUMERACION NC HKA ########
+        $numberingConflict = HkaCreditNumbering::applies($document) && HkaCreditNumbering::conflict($emission) !== null;
+        // ######## FIN CONFLICTO NUMERACION NC HKA ########
         $enabled = $applies && $document->fiscal_environment === 'demo' && !$document->isVoidedOrRejected();
-        $ivaBlock = in_array($status,['not_requested','prepared'],true) ? (HkaNoteCapability::reason($document) ?? HkaIvaRetentionCapability::reason($document) ?? HkaIslrRetentionCapability::reason($document)) : null;
+        $ivaBlock = in_array($status,['not_requested','prepared'],true) ? (HkaNoteCapability::reason($document) ?? HkaIvaRetentionCapability::reason($document) ?? HkaIslrRetentionCapability::reason($document) ?? HkaCreditInvoice::reason($document)) : null;
         $annulBusy=FiscalNote::ordinary($document) && NoteAnnulment::busy($document);
         $diagnostic=$response['annulment']['diagnostic'] ?? $ivaBlock ?? $response['diagnostic'] ?? ($applies && !$enabled ? 'El envío está habilitado únicamente para documentos vigentes en DEMO.' : null);
         if (!$ivaBlock && $status === 'not_requested' && FiscalNote::ordinary($document) && in_array($diagnostic,[HkaNoteCapability::CREDIT_REASON,HkaNoteCapability::DEBIT_REASON],true)) $diagnostic='Nota guardada; puede solicitar su emisión mediante Enviar HKA.';
@@ -47,9 +50,10 @@ final class DocumentEmissionView
             && ($user->type === 'admin' || (int) $user->establishment_id === (int) $document->establishment_id);
         return [
             'status' => $status,
-            'description' => [null => 'No aplica', 'not_requested' => 'Sin solicitar', 'prepared' => 'Preparado',
+            'description' => $numberingConflict ? 'Conflicto de numeración' : ([null => 'No aplica', 'not_requested' => 'Sin solicitar', 'prepared' => 'Preparado',
                 'pending' => 'Enviando', 'confirmed' => 'Confirmado', 'rejected' => 'Rechazado',
-                'uncertain' => 'Por conciliar', 'cancelled' => 'Cancelado'][$status] ?? 'Por conciliar',
+                'uncertain' => 'Por conciliar', 'cancelled' => 'Cancelado'][$status] ?? 'Por conciliar'),
+            'numbering_conflict' => $numberingConflict,
             'environment' => $document->fiscal_environment,
             'control_number' => $document->control_number,
             'code' => $response['code'] ?? null,
@@ -57,7 +61,7 @@ final class DocumentEmissionView
             'diagnostic' => $diagnostic,
             'show_send' => $enabled && $scope && $user->type === 'admin' && in_array($status,['not_requested','prepared','uncertain'],true),
             'annulment' => NoteAnnulment::view($document),
-            'can_send' => !$annulBusy && !$ivaBlock && $enabled && $scope && $user->type === 'admin'
+            'can_send' => !$numberingConflict && !$annulBusy && !$ivaBlock && $enabled && $scope && $user->type === 'admin'
                 && (in_array($status, ['not_requested', 'prepared'], true)
                     || ($status === 'uncertain' && !empty($response['retry_allowed']) && time() - ($response['started_at'] ?? time()) >= 30)),
             'can_query' => !$annulBusy && $enabled && $scope && in_array($status, ['pending', 'uncertain', 'confirmed'], true),
