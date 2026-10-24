@@ -8,9 +8,17 @@ Se reutiliza **Comprobantes → Acciones → Nota** para guardar los siete motiv
 
 La corrección de emisión/anulación del 13/10/2026 supera el rechazo inicial1015: HKA acepta `formasPago`99 con descripción explícita de crédito comercial para NC y saldos pendientes de ND. Estas declaraciones fiscales no crean cobros ni reembolsos. La matriz consolidada cubre104 combinaciones previstas, más ND cobradas y seis abonos entre monedas. Las36 NC rechazadas previamente describen la implementación anterior, sin esas declaraciones.
 
-`config/hka_notes.php` habilita `demo_non_cash_notes_verified` y `demo_annulment_verified` únicamente en DEMO, según la evidencia consolidada. Las ND al contado requieren cobros reales completos; las NC conservan la devolución de dinero como operación separada después de confirmar. Producción, exportación, anulación de facturas y circuito especializado IGTF siguen fuera.
+`config/hka_notes.php` habilita `demo_non_cash_notes_verified` y `demo_annulment_verified` únicamente en DEMO, según la evidencia consolidada. Desde el 22/10/2026 las ND ordinarias nuevas se crean exclusivamente a crédito y sin cobros iniciales; las ND al contado existentes conservan sus reglas de cobro completo; las NC conservan la devolución de dinero como operación separada después de confirmar. Producción, exportación, anulación de facturas y circuito especializado IGTF siguen fuera.
 
 Ver [aceptación consolidada de emisión y anulación](evidencias/notas_hka_emision_anulacion_2026_10_13.json). Los resultados históricos permanecen como trazabilidad, sin atribuir aceptación a las pruebas antiguas.
+
+## Creación de notas de débito a crédito — 22/10/2026
+
+Las ND ordinarias nuevas se guardan con `payment_condition_id=02` y sin cobros iniciales. El formulario no ofrece condición de pago ni captura cobros; cambiar el tipo y enviar restablecen crédito y `payments=[]`. El servidor asigna crédito si se omite la condición y rechaza contado o cobros iniciales antes de guardar. No descarta dinero publicado silenciosamente. Los reintentos con el mismo UUID y los mismos datos, incluidos los valores omitidos, devuelven la misma nota.
+
+La nota conserva todo su saldo por cobrar; no genera pagos ni ingresos de caja/bancos al crearla. Los abonos se registran después mediante Pagos o Cuentas por cobrar. HKA conserva la declaración fiscal99 del crédito, que no constituye un cobro. Un abono posterior no reescribe el payload preparado/confirmado. No se modifican notas existentes ni el flujo automático exclusivo IGTF08/98; las NC conservan su operación.
+
+Verificación: `tests/js/fiscal-note-operations.test.cjs`, `HkaNotePaymentsTest`, `HkaPayloadBuilderTest` y casos `test_note_debit_*` de `FiscalEmissionSchemaTest` en una base MySQL temporal, con HTTP simulado. La compilación sigue a cargo del usuario.
 
 ## Referencias
 
@@ -106,7 +114,7 @@ Dos fallos preexistentes de `QuotationStorefrontCorrelativeTest` esperan COT-12 
 
 `HkaNotePayments` construye declaraciones99 desde el importe de la NC o el saldo pendiente de una ND a crédito. Conserva los cobros reales y excluye sus recibos IGTF derivados para no duplicar dinero. Si la conversión de un abono y su crédito deja un centavo de diferencia, expresa solamente el crédito fiscal en la moneda principal HKA por el complemento exacto; conserva recibos, importes locales y tasa original de ocho decimales. La matriz real comprobó los tres motivos ND con abonos VES/USD y monedas recibidas distintas.
 
-El formulario ND al contado incorpora cobros explícitos con UUID, fecha, medio, destino y campos de moneda/IGTF compartidos con facturas. El servidor exige permisos de pagos, destino de la sucursal/moneda y principal completo. Un fallo revierte la creación antes de llamar a HKA. Los medios `is_credit` no crean cobros reales.
+La versión del 13/10/2026 del formulario ND al contado incorporaba cobros explícitos con UUID, fecha, medio, destino y campos de moneda/IGTF compartidos con facturas. Ese flujo exigía permisos de pagos, destino de la sucursal/moneda y principal completo; desde el 22/10/2026 la creación ordinaria es exclusivamente a crédito, según el contrato anterior. Un fallo revierte la creación antes de llamar a HKA. Los medios `is_credit` no crean cobros reales.
 
 `fiscal_emission.show_send` conserva visible Enviar HKA aunque un impedimento lo deshabilite; `can_send` mantiene los permisos y las validaciones. Opciones presenta Factura/NC/ND con sus nombres y resultado fiscal. Los diagnósticos antiguos de capacidad resuelta dejan de ocultar la disponibilidad actual, sin reescribir registros.
 

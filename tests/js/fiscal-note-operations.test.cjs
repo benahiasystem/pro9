@@ -88,16 +88,24 @@ test('a registered refund stays visible after notifying the parent',async()=>{
 });
 // ######## FIN CONSULTAS VALIDAS DE DEVOLUCIONES NC ########
 
-const cashPayments=component('resources/js/views/tenant/documents/partials/note-payments.vue');
-test('cash debit payment rows start empty and require a permitted explicit collection',()=>{
-    const state=bind(cashPayments,{payments:[],canRegister:false,currency:'VES',rate:'50.12345678',date:'2026-10-13'});
-    state.add();assert.equal(state.payments.length,0);state.canRegister=true;state.add();
-    assert.equal(state.payments.length,1);assert.equal(state.payments[0].payment,'');assert.equal(state.payments[0].payment_destination_id,null);
-    assert.equal(state.payments[0].exchange_rate,'50.12345678');assert.ok(state.payments[0].operation_key);
-    const payment=state.payments[0];payment.payment='10.50';state.setPrincipal(payment);assert.equal(payment.original_amount,'10.50');
-    payment.currency_type_id='USD';payment.original_amount='1.25';state.setPrincipal(payment);assert.equal(payment.original_amount,'1.25');
+test('debit creation has no payment selector or initial collection component',()=>{
+    const template=compiler.parseComponent(fs.readFileSync('resources/js/views/tenant/documents/note.vue','utf8')).template.content;
+    assert.doesNotMatch(template,/Condición de pago|note-payments|Agregar cobro real/);
 });
-test('cash collections exclude credit declarations and changing condition clears unsaved cash rows',()=>{
-    assert.deepEqual(Array.from(cashPayments.computed.realMethods.call({methods:[{id:'09',is_credit:1},{id:'01',is_credit:0}]}),r=>r.id),['01']);
-    const state={form:{payments:[{operation_key:'cash-row'}]}};note.watch['form.payment_condition_id'].call(state,'02','01');assert.equal(state.form.payments.length,0);
+test('switching note types resets initial payments and selects credit for debits',()=>{
+    for(const credit of [false,true,false]) {
+        const state=bind(note,{credit,form:{payments:[{payment:'10'}]},series:[{id:5}],changeDate(){}});
+        state.changeDate=()=>{};
+        state.changeType();
+        assert.equal(state.form.payment_condition_id,credit?null:'02');
+        assert.equal(state.form.payments.length,0);
+    }
+});
+test('submit always posts debits on credit without stale initial collections',async()=>{
+    let posted;
+    const state=bind(note,{credit:false,busy:false,form:{note_creation_key:'stable',payment_condition_id:'01',payments:[{payment:'10'}]},
+        $message:{error(){}},$http:{post:async(url,data)=>{posted=JSON.parse(JSON.stringify(data));throw new Error('response lost');}}});
+    await state.submit();
+    assert.equal(posted.payment_condition_id,'02');assert.deepEqual(posted.payments,[]);
+    assert.equal(state.form.note_creation_key,'stable');assert.equal(state.busy,false);
 });

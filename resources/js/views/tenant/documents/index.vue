@@ -233,7 +233,7 @@
                         </td>
                         <td v-if="col.visible && col.key === 'document_type'" :key="col.key" class="document-column-compact document-column-type">{{ row.document_type_description }}<template v-if="row.special_tax_regime_description"><br><small>{{ row.special_tax_regime_description }}</small></template><template v-if="row.is_third_party_invoice"><br><small>Venta por cuenta de terceros</small><br><small>{{ row.third_party.rif }} · {{ row.third_party.name }}</small></template></td>
                         <td v-if="col.visible && col.key === 'number'" :key="col.key" class="document-column-compact document-column-number">
-                            <span class="badge" :class="{ 'bg-invoices': row.document_type_id === '01', 'bg-tickets': row.document_type_id === '03', 'bg-credit-notes': row.document_type_id === '07' }" style="font-size: 11px; cursor: pointer;" @click="clickDetail(row)">
+                            <span class="badge" :class="{ 'bg-invoices': row.document_type_id === '01', 'bg-tickets': row.document_type_id === '03', 'bg-credit-notes': row.document_type_id === '07', 'bg-debit-notes': row.document_type_id === '08' }" style="font-size: 11px; cursor: pointer;" @click="clickDetail(row)">
                                 <svg data-v-e4dd5c75="" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-list-details" style="margin-top: -4px;"><path data-v-e4dd5c75="" stroke="none" d="M0 0h24v24H0z" fill="none"></path><path data-v-e4dd5c75="" d="M13 5h8"></path><path data-v-e4dd5c75="" d="M13 9h5"></path><path data-v-e4dd5c75="" d="M13 15h8"></path><path data-v-e4dd5c75="" d="M13 19h5"></path><path data-v-e4dd5c75="" d="M3 5a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4"></path><path data-v-e4dd5c75="" d="M3 15a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4"></path></svg>
                                 {{ row.number }}
                             </span>
@@ -635,6 +635,11 @@
     background-color: color-mix(in srgb, var(--info) 10%, #ffffff) !important;
     border: 1px solid var(--info);
     color: var(--info);
+}
+.documents .bg-debit-notes {
+    background-color: color-mix(in srgb, var(--primary) 10%, #ffffff) !important;
+    border: 1px solid var(--primary);
+    color: var(--primary);
 }
 .icon-date-issue.dot {
     width: 25px !important;

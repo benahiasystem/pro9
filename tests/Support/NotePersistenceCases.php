@@ -85,11 +85,20 @@ trait NotePersistenceCases
         self::assertEquals($stock,$db->table('item_warehouse')->where('item_id',$line->item_id)->value('stock'));
         self::assertSame('03',$note->emission->payload['documentoElectronico']['encabezado']['identificacionDocumento']['tipoDocumento']);
         self::assertSame('02',$note->fiscal_data->transaction_type_id);
-        $paid=$data;$paid['note_creation_key']=(string)Str::uuid();$paid['external_id']=(string)Str::uuid();
-        $bank=$db->table('bank_accounts')->insertGetId(['description'=>'ND test','number'=>'nd','bank_id'=>1,'currency_type_id'=>'VES','establishment_id'=>$invoice->establishment_id]);
-        $paid['payments']=[['operation_key'=>(string)Str::uuid(),'payment_destination_id'=>$bank,'payment'=>11.60,'date_of_payment'=>'2026-09-10','payment_method_type_id'=>'01']];
-        $collected=(new Facturalo)->forWebDocuments()->save($paid)->getDocument()->fresh();
-        self::assertEquals(0,$collected->balance);self::assertSame('confirmed',$collected->emission->status);
+        self::assertSame('02',$note->payment_condition_id);
+        self::assertSame(0,$note->payments()->count());
+        $payload=$note->emission->payload;
+        $receipt=\App\Services\Fiscal\FiscalDocumentPersistence::payment($note,[
+            'operation_key'=>(string)Str::uuid(),'payment'=>5,'date_of_payment'=>'2026-09-10','payment_method_type_id'=>'01']);
+        self::assertEquals(6.60,$note->fresh()->balance);
+        $receivable=null;
+        foreach (\App\Support\Exact\Receivables::dataset(['stablishmentUnpaidAll'=>1]) as $row) {
+            if ($row['type']==='document' && $row['id']===$note->id) {$receivable=$row;break;}
+        }
+        self::assertNotNull($receivable);self::assertEquals(6.60,$receivable['total_to_pay']);
+        self::assertEquals($payload,$note->fresh()->emission->payload);
+        self::assertEquals(0,$invoice->fresh()->balance);
+        self::assertEquals(5,$receipt->payment);
     }
 
     public function test_note_currency_regime_and_service_matrix(): void
@@ -447,25 +456,38 @@ trait NotePersistenceCases
         $service->complete($note->fresh());self::assertSame(1,$calls);
     }
 
-    public function test_note_cash_debit_requires_real_destination_and_payments_and_blocks_annulment_until_reversed(): void
+    public function test_note_debit_is_created_on_credit_without_cash_effects_and_collects_later(): void
     {
         [$db,$app,$input,$invoice]=$this->noteFixture();$line=$invoice->items->first();
         $bank=$db->table('bank_accounts')->insertGetId(['description'=>'USD ND','number'=>'cash-nd','bank_id'=>1,'currency_type_id'=>'USD','establishment_id'=>$invoice->establishment_id]);
-        $data=$this->noteInput($input,$invoice,'08','02',[['affected_document_item_id'=>$line->id,'adjustment_amount'=>11.60]]);$data['payment_condition_id']='01';
-        $count=$db->table('documents')->count();$calls=$app->make(\Illuminate\Http\Client\Factory::class)->recorded()->count();
-        try {(new Facturalo)->forWebDocuments()->save($data);self::fail('Cash ND requires collections');}
-        catch(\Illuminate\Validation\ValidationException $e){self::assertArrayHasKey('payments',$e->errors());}
-        self::assertSame($count,$db->table('documents')->count());self::assertSame($calls,$app->make(\Illuminate\Http\Client\Factory::class)->recorded()->count());
-        $data['payments']=[['operation_key'=>(string)Str::uuid(),'payment'=>11.60,'original_amount'=>'5.80','currency_type_id'=>'USD','exchange_rate'=>'2.00000001',
-            'date_of_payment'=>'2026-09-10','payment_method_type_id'=>'01','payment_destination_id'=>$bank,'igtf_status'=>'not_applicable','financial_intermediation'=>'financial_institution']];
-        $bad=$data;$bad['payments'][0]['payment_destination_id']=999999;
-        try {(new Facturalo)->forWebDocuments()->save($bad);self::fail('Foreign or missing destination rejected');}
-        catch(\Illuminate\Validation\ValidationException $e){self::assertArrayHasKey('payment_destination_id',$e->errors());}
-        self::assertSame($count,$db->table('documents')->count());
-        $note=(new Facturalo)->forWebDocuments()->save($data)->getDocument()->fresh();$payment=$note->payments->first();
-        self::assertEquals(0,$note->balance);self::assertSame('confirmed',$note->emission->status);self::assertSame('2.00000001',$payment->exchange_rate);
+        $data=$this->noteInput($input,$invoice,'08','02',[['affected_document_item_id'=>$line->id,'adjustment_amount'=>11.60]]);
+        unset($data['payment_condition_id'],$data['payments']);
+        $counts=[];
+        foreach (['documents','document_payments','global_payments','cash_documents','cash_document_payments'] as $table) $counts[$table]=$db->table($table)->count();
+        $calls=$app->make(\Illuminate\Http\Client\Factory::class)->recorded()->count();
+        $initialPayment=['operation_key'=>(string)Str::uuid(),'payment'=>11.60,'original_amount'=>'5.80','currency_type_id'=>'USD','exchange_rate'=>'2.00000001',
+            'date_of_payment'=>'2026-09-10','payment_method_type_id'=>'01','payment_destination_id'=>$bank,'igtf_status'=>'not_applicable','financial_intermediation'=>'financial_institution'];
+        foreach ([['payment_condition_id'=>'01'],['payments'=>[$initialPayment]],['payment_condition_id'=>'02','payments'=>[$initialPayment]]] as $invalid) {
+            try {(new Facturalo)->forWebDocuments()->save(array_replace($data,$invalid));self::fail('Initial cash debit or collection must be rejected');}
+            catch(\Illuminate\Validation\ValidationException $e){self::assertArrayHasKey(isset($invalid['payments'])?'payments':'payment_condition_id',$e->errors());}
+            foreach ($counts as $table=>$count) self::assertSame($count,$db->table($table)->count(),$table);
+            self::assertSame($calls,$app->make(\Illuminate\Http\Client\Factory::class)->recorded()->count());
+        }
+        $note=(new Facturalo)->forWebDocuments()->save($data)->getDocument()->fresh();
+        self::assertSame('02',$note->payment_condition_id);self::assertEquals(11.60,$note->balance);self::assertSame(0,$note->payments()->count());
+        foreach (['document_payments','global_payments','cash_documents','cash_document_payments'] as $table) self::assertSame($counts[$table],$db->table($table)->count(),$table);
+        self::assertSame($note->id,(new Facturalo)->forWebDocuments()->save($data)->getDocument()->id);
+        self::assertSame($counts['documents']+1,$db->table('documents')->count());
+        $payload=$note->emission->payload;
+        $forms=$payload['documentoElectronico']['encabezado']['totales']['formasPago'];
+        self::assertCount(1,$forms);self::assertSame('99',$forms[0]['forma']);
+        self::assertSame('confirmed',$note->emission->status);
+        $payment=\App\Services\Fiscal\FiscalDocumentPersistence::payment($note,$initialPayment);
+        $finance=new class { use \Modules\Finance\Traits\FinanceTrait; };
+        $finance->createGlobalPayment($payment,$initialPayment);
+        self::assertEquals(0,$note->fresh()->balance);self::assertSame('2.00000001',$payment->exchange_rate);
         self::assertSame($bank,$payment->global_payment->destination_id);self::assertSame('USD',$payment->currency_type_id);
-        self::assertSame($note->id,(new Facturalo)->forWebDocuments()->save($data)->getDocument()->id);self::assertSame(1,$note->payments()->count());
+        self::assertSame(1,$note->payments()->count());self::assertEquals($payload,$note->fresh()->emission->payload);
         self::assertFalse(\App\Services\Fiscal\NoteAnnulment::view($note)['can_request']);
         $service=app(\App\Services\Fiscal\NoteAnnulment::class);
         try {$service->request($note,['operation_key'=>(string)Str::uuid(),'reason'=>'No debe revertir cobros automáticamente']);self::fail('Active collections block cancellation');}

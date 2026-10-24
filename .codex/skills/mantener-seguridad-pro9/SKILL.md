@@ -57,6 +57,12 @@ Puntos históricos: MultiUserController::changeClient, AutoLoginHelper::getMulti
 - Para impresión/descarga pública usa un contrato de acceso deliberado, preferentemente capacidad firmada/expirable; mantén autorización y separación por tenant. No uses el ID numérico como secreto.
 - La auditoría rechazó una imagen .php bajo la regla probada: no afirmar RCE por upload sin demostrar validación, persistencia y ejecución efectivas.
 
+### Límite de carga de vouchers en Docker
+
+Ante `413 Request Entity Too Large` al cargar un voucher por `/finances/payment-file/upload`, revisar Nginx antes de atribuir el fallo al PNG o al nombre del archivo. `docker/nginx.conf` declara `client_max_body_size 8m`, alineado con el `post_max_size=8M` observado en PHP; sin esa directiva Nginx aplicaba 1 MB y rechazaba un PNG válido de 1,53 MB antes de Laravel. `upload_max_filesize=2M` sigue siendo el límite observado por archivo: 8 MB para la petición no significa 8 MB por archivo ni elimina las validaciones de la aplicación. Revalidar los valores efectivos cuando cambie el entorno.
+
+Validar con `docker exec pro9-nginx nginx -t` antes de recargar Nginx al aplicar una corrección autorizada. Probar el archivo original conservando nombre y contenido, sin registrar un pago para probar la carga. Un `419` en un POST sin sesión/CSRF acredita que se superó el bloqueo Nginx, no una carga autenticada exitosa; verificar además el procesamiento de `PaymentFileController::uploadAttached` y distinguir una prueba aislada del controlador de una prueba integral desde el navegador. La corrección de este límite no resuelve los hallazgos de autorización, rutas temporales o almacenamiento descritos arriba y no requiere compilar assets.
+
 ## Webhooks y red — 011
 
 - Autoriza administrar suscripciones y consultar entregas.
