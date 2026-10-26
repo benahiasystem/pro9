@@ -894,11 +894,33 @@
                                     </div>
                                 </div>
                                 <div class="row mx-0 adv-conf-container">
-                                    <div v-if="typeUser != 'integrator'" class="inputs-column">
-                                        <label class="control-label">Impuesto bolsa plástica</label>
-
+                                    <!-- ######## INICIO PERSISTENCIA FISCAL VENEZUELA ######## -->
+                                    <div class="inputs-column">
+                                        <div class="d-flex flex-column w-100">
+                                            <label class="control-label fw-semibold">Percepción IGTF</label>
+                                            <p v-if="igtfLoading" class="text-muted" role="status">Cargando configuración IGTF…</p>
+                                            <div v-if="igtfLoadError" class="text-danger" role="alert">
+                                                {{ igtfLoadError }}
+                                                <el-button type="text" native-type="button" @click="loadIgtf">Reintentar</el-button>
+                                            </div>
+                                            <div class="form-group" :class="{ 'has-danger': igtfErrors.enabled }">
+                                                <el-switch v-model="igtf.enabled" active-text="Habilitar IGTF" @change="saveIgtf"
+                                                    :disabled="typeUser !== 'admin' || !igtfLoaded || igtfLoading || igtfSaving" />
+                                                <small v-if="igtfErrors.enabled" class="form-control-feedback">{{ igtfErrors.enabled[0] }}</small>
+                                            </div>
+                                            <label class="control-label" for="igtf_rate">Porcentaje IGTF</label>
+                                            <div class="form-group w-50" :class="{ 'has-danger': igtfErrors.rate }">
+                                                <el-input-number id="igtf_rate" v-model="igtf.rate" :min="0.01" :max="100"
+                                                    @change="saveIgtf"
+                                                    :disabled="!igtf.enabled || typeUser !== 'admin' || !igtfLoaded || igtfLoading || igtfSaving" />
+                                                <small v-if="igtfErrors.rate" class="form-control-feedback">{{ igtfErrors.rate[0] }}</small>
+                                            </div>
+                                            <p v-if="igtfSaving" class="text-muted" role="status">Guardando IGTF…</p>
+                                            <p v-if="igtfSaveError" class="text-danger" role="alert">{{ igtfSaveError }}</p>
+                                            <small v-if="typeUser !== 'admin'" class="text-muted">Solo el administrador puede modificar la configuración IGTF.</small>
+                                        </div>
                                     </div>
-
+                                    <!-- ######## FIN PERSISTENCIA FISCAL VENEZUELA ######## -->
                                     <div v-if="!form.global_igv_handling" class="col-12">
                                         <label class="control-label">Impuesto incluido en registro de productos
                                             <el-tooltip class="item" content="Se asignará automáticamente la opción 'Incluye IVA' al registrar un producto" effect="dark"
@@ -3298,6 +3320,7 @@ html.sidebarMode-dark .advanced-search-control.el-input .el-input__suffix {
 </style>
 
 <script>
+import {setIgtfSettings} from "../../../helpers/igtf-settings"
 
 import TermsCondition from '@views/quotations/partials/terms_condition.vue'
 import TermsConditionSale from '@views/documents/partials/terms_condition.vue'
@@ -3363,6 +3386,15 @@ export default {
             showDialogPriceLabels: false,
             loading_submit: false,
             loading_test: false,
+            // ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
+            igtf: { enabled: false, rate: null },
+            igtfLoaded: false,
+            igtfLoading: false,
+            igtfSaving: false,
+            igtfErrors: {},
+            igtfLoadError: '',
+            igtfSaveError: '',
+            // ######## FIN PERSISTENCIA FISCAL VENEZUELA ########
             resource: 'configurations',
             errors: {},
             form: {
@@ -3389,6 +3421,7 @@ export default {
         }
     },
     created() {
+        this.loadIgtf()
         this.$store.commit('setConfiguration', this.configuration)
         this.$store.commit('setTypeUser', this.typeUser)
         this.loadConfiguration()
@@ -3420,6 +3453,50 @@ export default {
         }
     },
     methods: {
+        // ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
+        async loadIgtf() {
+            if (this.igtfLoading || this.igtfSaving) return
+            this.igtfLoading = true
+            this.igtfLoadError = ''
+            try {
+                const response = await this.$http.get('/companies/igtf')
+                const settings = response.data.data
+                this.igtf = {
+                    enabled: settings.enabled,
+                    rate: settings.rate == null ? undefined : Number(settings.rate),
+                }
+                setIgtfSettings(settings)
+                this.igtfLoaded = true
+            } catch (error) {
+                this.igtfLoaded = false
+                this.igtfLoadError = 'No se pudo cargar la configuración IGTF. Intente nuevamente.'
+            } finally {
+                this.igtfLoading = false
+            }
+        },
+        async saveIgtf() {
+            if (this.typeUser !== 'admin' || !this.igtfLoaded || this.igtfLoading || this.igtfSaving) return
+            this.igtfSaving = true
+            this.igtfErrors = {}
+            this.igtfSaveError = ''
+            try {
+                const response = await this.$http.post('/companies/igtf', {
+                    enabled: this.igtf.enabled,
+                    rate: this.igtf.rate == null || this.igtf.rate === '' ? null : this.igtf.rate,
+                })
+                setIgtfSettings(this.igtf)
+                this.$message.success(response.data.message)
+            } catch (error) {
+                const response = error.response
+                this.igtfErrors = (response && response.status === 422 && response.data.errors) || {}
+                this.igtfSaveError = response && response.status === 403
+                    ? 'Solo el administrador puede modificar la configuración IGTF.'
+                    : 'No se pudo guardar IGTF. Revise los campos e intente nuevamente.'
+            } finally {
+                this.igtfSaving = false
+            }
+        },
+        // ######## FIN PERSISTENCIA FISCAL VENEZUELA ########
 
         ...mapActions([
             'loadConfiguration',

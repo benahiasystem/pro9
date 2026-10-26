@@ -156,3 +156,20 @@ Con autorización derivada de la solicitud explícita de corregir el error, `npm
 ## Corrección de carga de creación de documentos — 10 de septiembre de 2026
 
 `GET /documents/create` quedaba vacío porque la solicitud `documents/tables` fallaba con `DocumentController::getIsClient does not exist`. Al retirar envíos históricos entre servidores se había eliminado `OfflineTrait` del controlador, aunque `index`, `tables` e `item_tables` conservan el uso vigente de la bandera `is_client`. Se restauró únicamente el trait compartido en `DocumentController`; no se recuperaron rutas, estados ni descargas fiscales. `LocalFiscalDocumentPolicyTest` protege la disponibilidad del método para estas acciones.
+
+
+## Cierre de restos del impuesto a la bolsa plástica — 24 de octubre de 2026
+
+Se retira la etiqueta y el contenedor vacío de Contable → Impuestos y Tributación; la ruta POST `configurations/icbper` y sus métodos de configuración tenant/restaurante; las propiedades y lecturas `factor_icbper`/`total_icbper` de guías y preparación de plantillas; la clave del exportador Adsoft, la celda de ese reporte y su colspan; las cabeceras del impuesto en EJB y reporte general de artículos; y comentarios de compatibilidad histórica sin consumidores. No se modifican IVA, IGTF, retenciones, cálculos ni bases existentes.
+
+EJB pierde la columna del impuesto tanto en encabezados como en datos; se desplazan los formatos y el enlace de valores de las columnas posteriores, preservando referencia y subdiario como texto. La variante Blade tenía además una cabecera ISC sin celda correspondiente: se alinea con el cero que ya usaba el exportador XLSX, sin ampliar el alcance a ISC. Adsoft ya omitía la cabecera del impuesto; retirar su celda sobrante deja 28 encabezados y 28 datos. El reporte de artículos ya omitía el dato del impuesto y ahora pierde su cabecera sobrante.
+
+Verificación ejecutada:
+
+- Búsqueda sin coincidencias de `icbper`, `plastic.?bag`, impuesto a bolsas y bolsa plástica en `app`, `modules`, `resources`, `database`, `routes` y `config`, incluidos archivos ocultos. Sin campos activos encontrados en modelos, cálculos, API, esquema consolidado o semillas; no se requieren migraciones. Las menciones de documentación y pruebas de ausencia son intencionales.
+- `vendor/bin/phpunit --filter 'LocalFiscalDocumentPolicyTest|JiraInProgressMigrationContractTest|VenezuelaIvaContractTest|CurrentPdfTemplateContractTest|CurrentPdfRenderingTest'`: **41 pruebas, 1371 aserciones, correctas**.
+- `vendor/bin/phpunit tests/Unit/RetiredBagTaxExportTest.php`: **4 pruebas, 88 aserciones, correctas**. Genera y vuelve a leer un XLSX temporal, verifica columnas y ceros iniciales, renderiza las variantes Blade EJB/Adsoft y comprueba la ausencia de ruta y métodos. El archivo temporal se elimina al finalizar.
+- `node --test tests/js/fiscal-payment-ui.test.cjs tests/js/fiscal-row.test.cjs`: **12 pruebas correctas** para IVA, conversiones, propuestas IGTF y consumidores Vue.
+- Compilación de plantillas en memoria y análisis de scripts de **15 fuentes Vue/JavaScript** modificados; sintaxis PHP y `git diff --check` correctos.
+
+No se ejecutó build ni se editaron bundles generados. Conforme al alcance elegido, Vende Ya, Mozo y LiveApp desplegados en `public/` quedan fuera de esta limpieza. Queda pendiente actualizar los assets y comprobar visualmente Contable; las pruebas en memoria y el renderizado PDF no acreditan el bundle del navegador.

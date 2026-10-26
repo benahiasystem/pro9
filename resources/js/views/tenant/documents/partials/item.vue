@@ -284,9 +284,7 @@
                                         <br />
                                     </template>
                                 </template>
-                                <!-- ########## INICIO CAMBIO: OCULTAR IMPUESTO A LA BOLSA PLÁSTICA -->
-                                <!-- El control se omite; el valor histórico permanece en el formulario. -->
-                                <!-- ######### FIN CAMBIO: OCULTAR IMPUESTO A LA BOLSA PLÁSTICA -->
+
                                 <small
                                     v-if="errors.item_id"
                                     class="form-control-feedback"

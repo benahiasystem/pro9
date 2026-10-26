@@ -491,7 +491,7 @@ export const operationsForDiscounts = {
                     this.form.total_value = this.form.total_taxed
                     this.form.total_igv = _.round(this.form.total_taxed * (percentage_igv / 100), 2)
 
-                    //impuestos (isc + igv + icbper)
+                    // Impuesto IVA
 
 
                     this.form.total_taxes = _.round(this.form.total_igv, 2)

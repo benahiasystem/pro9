@@ -522,7 +522,9 @@
                                                                 :label="option.description"
                                                                 :value="option.id"></el-option>
                                                         </el-select>
-<igtf-payment-fields :payment="row" />
+<igtf-settings-status v-if="fiscalPaymentsApplicable" />
+<igtf-payment-fields v-if="fiscalPaymentsApplicable && !row.id" :igtf-enabled="igtfEnabled" :settings-version="igtfSettings.revision"
+    :payment="row" :document-currency="form.currency_type_id" :document-rate="form.exchange_rate_sale" :customer-id="form.customer_id" />
                                                     </td>
                                                     <template v-if="enabled_payments">
                                                         <td>
@@ -987,6 +989,7 @@
 }
 </style>
 <script>
+import fiscalPaymentSettings from "@mixins/fiscal-payment-settings"
 import {restoreSaleNoteContext} from "../../../helpers/sale-note-conversion"
 
 import {exactAmount, exactSum} from '../../../helpers/exchange-rate-math'
@@ -1030,7 +1033,7 @@ export default {
         // ######### FIN SIN DETRACCIONES E ISC
         DocumentTransportForm
     },
-    mixins: [functions, exchangeRate, buhoprinter],
+    mixins: [fiscalPaymentSettings, functions, exchangeRate, buhoprinter],
     data() {
         return {
             datEmision: {
@@ -2549,6 +2552,8 @@ export default {
             if (!this.enabled_payments) {
                 this.form.payments = []
             }
+
+            if (!await this.ensureFiscalPaymentsReady(this.form.payments)) return
 
             this.loading_submit = true
             let path = `/${this.resource}`;

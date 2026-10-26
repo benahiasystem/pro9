@@ -122,7 +122,6 @@ class TemplateData
         $model->total_igv = $record->document->total_igv;
         $model->total_base_other_taxes = $record->document->total_base_other_taxes;
         $model->total_other_taxes = $record->document->total_other_taxes;
-        $model->total_icbper = $record->document->total_icbper;
         $model->total_taxes = $record->document->total_taxes;
         $model->total_value = $record->document->total_value;
         $model->total_price = $record->document->total_price;
@@ -162,8 +161,6 @@ class TemplateData
             $document_item->total_base_other_taxes = $item->total_base_other_taxes;
             $document_item->percentage_other_taxes = $item->percentage_other_taxes;
             $document_item->total_other_taxes = $item->total_other_taxes;
-            $document_item->factor_icbper = $item->factor_icbper;
-            $document_item->total_icbper = $item->total_icbper;
             $document_item->total_taxes = $item->total_taxes;
             $document_item->total_value = $item->total_value;
             $document_item->total_charge = $item->total_charge;

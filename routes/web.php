@@ -158,7 +158,6 @@ if ($hostname) {
             Route::post('whatsapp-bot/commands', 'Tenant\WhatsAppBotController@storeCommands');
             Route::get('whatsapp-bot/waha-servers', 'Tenant\WhatsAppBotController@wahaServers');
             Route::post('configurations/apiruc', 'Tenant\ConfigurationController@storeApiRuc');
-            Route::post('configurations/icbper', 'Tenant\ConfigurationController@icbper');
             Route::post('configurations/changeFormat', 'Tenant\ConfigurationController@changeFormat');
             Route::post('configurations/saveColumnsConfig', 'Tenant\ConfigurationController@saveColumnsConfig');
             Route::get('configurations/getColumnsConfig', 'Tenant\ConfigurationController@getColumnsConfig');

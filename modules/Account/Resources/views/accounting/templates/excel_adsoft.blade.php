@@ -10,7 +10,7 @@
     <table>
         <thead>
             <tr>
-                <th colspan="29" style="text-align: center; font-size: 10px; font-weight: bold">REGISTRO DE VENTAS</th>
+                <th colspan="28" style="text-align: center; font-size: 10px; font-weight: bold">REGISTRO DE VENTAS</th>
             </tr>
             <tr>
                 <th style="background-color: #0070c0; font-weight: bold; font-size: 9px; color: #FFFFFF; text-align: center;">SERIE</th>
@@ -57,7 +57,6 @@
             <td style="min-width: 100px; font-size: 9px;">{{ $row['detrac'] }}</td>
             <td style="min-width: 100px; font-size: 9px;">{{ $row['imp_vta'] }}</td>
             <td style="min-width: 100px; font-size: 9px;">{{ $row['isc'] }}</td>
-            <td style="min-width: 100px; font-size: 9px;">{{ $row['icbper'] }}</td>
             <td style="min-width: 100px; font-size: 9px;">{{ $row['imp_ina'] }}</td>
             <td style="min-width: 100px; font-size: 9px;">{{ $row['imp_exo'] }}</td>
             <td style="min-width: 100px; font-size: 9px;">{{ $row['imp_exp'] }}</td>

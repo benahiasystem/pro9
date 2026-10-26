@@ -113,7 +113,12 @@
             </div>
         </div>
 
-        <igtf-payment-fields v-for="(row, fiscalIndex) in form.payments" :key="'fiscal-' + fiscalIndex" :payment="row" :document-currency="form.currency_type_id" :document-rate="form.exchange_rate_sale" :customer-id="form.customer_id" />
+        <div v-if="fiscalPaymentsApplicable" class="col-12">
+            <igtf-settings-status />
+            <igtf-payment-fields v-for="(row, fiscalIndex) in form.payments" v-if="!row.id" :key="'fiscal-' + fiscalIndex"
+                :payment="row" :igtf-enabled="igtfEnabled" :settings-version="igtfSettings.revision" :document-currency="form.currency_type_id"
+                :document-rate="form.exchange_rate_sale" :customer-id="form.customer_id" />
+        </div>
         <!-- Botón Pagar -->
         <div class="px-1 pt-1 pb-1">
             <el-button
@@ -194,7 +199,7 @@
 
     <multiple-payment-form
         :payments="payments"
-        :currency-type-id="form.currency_type_id" :exchange-rate-sale="form.exchange_rate_sale" :customer-id="form.customer_id" :payment-condition-id="form.payment_condition_id"
+        :currency-type-id="form.currency_type_id" :exchange-rate-sale="form.exchange_rate_sale" :customer-id="form.customer_id" :payment-condition-id="form.payment_condition_id" :document-type-id="form.document_type_id"
         :showDialog.sync="showDialogMultiplePayment"
         :total="collectionTarget"
         @add="addRow"
@@ -240,6 +245,7 @@
 </style>
 
 <script>
+import fiscalPaymentSettings from "@mixins/fiscal-payment-settings"
 import {withoutDraftRetentions} from "@helpers/document-creation"
 import {exactAmount,exactSum} from '../../../../helpers/exchange-rate-math'
 
@@ -258,7 +264,7 @@ import { buhoprinter } from '@mixins/buhoprinter'
 
 export default {
     components: {IgtfPaymentFields,OptionsForm, CardBrandsForm, SaleNotesOptions, MultiplePaymentForm, Keypress, PersonForm},
-    mixins: [documentCreationMixin,buhoprinter],
+    mixins: [fiscalPaymentSettings, documentCreationMixin,buhoprinter],
 
     props: [
         'form',
@@ -1071,6 +1077,8 @@ export default {
             if (this.configuration.show_terms_condition_pos) {
                 this.form.terms_condition = this.configuration.terms_condition_sale;
             }
+
+            if (!await this.ensureFiscalPaymentsReady(this.form.payments)) return
 
             this.loading_submit = true
             this.locked_submit = true

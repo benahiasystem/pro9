@@ -2137,7 +2137,9 @@
                                                                     "
                                                                 ></el-option>
                                                             </el-select>
-<igtf-payment-fields :payment="row" :document-currency="form.currency_type_id" :document-rate="form.exchange_rate_sale" :customer-id="form.customer_id" />
+<igtf-settings-status v-if="fiscalPaymentsApplicable" />
+<igtf-payment-fields v-if="fiscalPaymentsApplicable && !row.id" :igtf-enabled="igtfEnabled" :settings-version="igtfSettings.revision"
+    :payment="row" :document-currency="form.currency_type_id" :document-rate="form.exchange_rate_sale" :customer-id="form.customer_id" />
                                                         </td>
                                                         <template
                                                             v-if="
@@ -2618,6 +2620,7 @@
 </style>
     <!-- ######## FIN CAMBIO GEOPOLITICO VENEZUELA -->
 <script>
+import fiscalPaymentSettings from "@mixins/fiscal-payment-settings"
 import {restoreSaleNoteContext} from "../../../helpers/sale-note-conversion"
 
 import {withoutDraftRetentions, suggestRemainingPayment, markPaymentEdited} from "@helpers/document-creation"
@@ -2732,7 +2735,7 @@ export default {
         RemoteSlot,
         MiniTour,
     },
-    mixins: [documentCreationMixin,
+    mixins: [fiscalPaymentSettings, documentCreationMixin,
         functions,
         exchangeRate,
         pointSystemFunctions,
@@ -5887,6 +5890,8 @@ export default {
 
             // Capturar el cliente antes del submit, ya que resetForm() limpia el customer
             this.customerCurrent = this.getCustomer;
+
+            if (!await this.ensureFiscalPaymentsReady(this.documentSubmission().payments)) return
 
             this.loading_submit = true;
             this.is_consumption_charge = false;

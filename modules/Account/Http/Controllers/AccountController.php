@@ -271,7 +271,6 @@ class AccountController extends Controller
                 'tipmon' => strtoupper($row->currency_type->description),
                 'detrac' => '',
                 'isc' => $row->state_type_id == '11' ? 0 : number_format(0, 2, '.', ''),
-                'icbper' => '',
                 'imp_ina' => 0,
                 'imp_exp' => '',
                 'recargo' => '',

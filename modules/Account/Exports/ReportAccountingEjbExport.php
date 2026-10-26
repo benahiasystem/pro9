@@ -42,7 +42,6 @@ class ReportAccountingEjbExport extends DefaultValueBinder implements FromArray,
             'importe inafecto',
             'importe ISC',
             'Otros',
-            'impuesto Bolsas',
             'Cuenta de venta',
             'Fecha documento Ref',
             'Tipo documento Ref',
@@ -78,7 +77,6 @@ class ReportAccountingEjbExport extends DefaultValueBinder implements FromArray,
                 $row['total_unaffected'],
                 0,
                 $row['others'],
-                0,
                 $row['income_account'],
                 $row['ref_date_excel'],
                 $row['ref_document_type'],
@@ -104,15 +102,15 @@ class ReportAccountingEjbExport extends DefaultValueBinder implements FromArray,
         return [
             'A' => NumberFormat::FORMAT_TEXT,
             'D' => NumberFormat::FORMAT_TEXT,
-            'R' => NumberFormat::FORMAT_TEXT,
+            'Q' => NumberFormat::FORMAT_TEXT,
+            'S' => NumberFormat::FORMAT_TEXT,
             'T' => NumberFormat::FORMAT_TEXT,
-            'U' => NumberFormat::FORMAT_TEXT,
         ];
     }
 
     public function bindValue(Cell $cell, $value)
     {
-        if (in_array($cell->getColumn(), ['A', 'D', 'R', 'T'])) {
+        if (in_array($cell->getColumn(), ['A', 'D', 'Q', 'S'])) {
             $cell->setValueExplicit((string) $value, DataType::TYPE_STRING);
 
             return true;

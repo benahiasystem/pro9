@@ -217,9 +217,6 @@
                                         </div>
                                     </div>
 
-                                    <!-- ########## INICIO CAMBIO: OCULTAR IMPUESTO A LA BOLSA PLÁSTICA -->
-                                    <!-- El POS conserva el dato compatible sin ofrecer el control. -->
-                                    <!-- ######### FIN CAMBIO: OCULTAR IMPUESTO A LA BOLSA PLÁSTICA -->
 
 
 

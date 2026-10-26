@@ -27,8 +27,6 @@ class GuideItemEntity
     public $total_base_other_taxes;
     public $percentage_other_taxes;
     public $total_other_taxes;
-    public $factor_icbper;
-    public $total_icbper;
     public $total_taxes;
     public $total_value;
     public $total_charge;

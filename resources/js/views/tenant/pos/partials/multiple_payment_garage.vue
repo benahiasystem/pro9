@@ -45,7 +45,9 @@
                                               @click.native="valueInputSelect"></el-input>
                                 </div>
                             </td>
-                            <td><igtf-payment-fields :payment="row" :document-currency="currencyTypeId || 'VES'" :document-rate="exchangeRateSale || '1'" :customer-id="customerId" /></td>
+                            <td><igtf-settings-status v-if="fiscalPaymentsApplicable" />
+                            <igtf-payment-fields v-if="fiscalPaymentsApplicable && !row.id" :igtf-enabled="igtfEnabled" :settings-version="igtfSettings.revision"
+                                :payment="row" :document-currency="currencyTypeId || 'VES'" :document-rate="exchangeRateSale || '1'" :customer-id="customerId" /></td>
                             <td class="series-table-actions text-center">
                                 <button  type="button" class="btn waves-effect waves-light btn-xs btn-danger" @click.prevent="clickCancel(index)">
                                     <i class="fa fa-trash"></i>
@@ -79,12 +81,14 @@
 </style>
 
 <script>
+import fiscalPaymentSettings from "@mixins/fiscal-payment-settings"
 import {suggestRemainingPayment} from "@helpers/document-creation"
 
 import IgtfPaymentFields from "../../documents/partials/igtf_fields.vue"
     export default {
+        mixins: [fiscalPaymentSettings],
         components: {IgtfPaymentFields},
-        props: ['showDialog', 'payments', 'total', 'currencyTypeId', 'exchangeRateSale', 'customerId', 'paymentConditionId'],
+        props: ['showDialog', 'payments', 'total', 'currencyTypeId', 'exchangeRateSale', 'customerId', 'paymentConditionId', 'documentTypeId'],
         data() {
             return {
                 titleDialog: 'Pagos',

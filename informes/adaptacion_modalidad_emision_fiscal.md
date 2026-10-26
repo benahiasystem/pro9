@@ -96,3 +96,35 @@ La modalidad guardada en el documento controla el pie del PDF: las facturas `dig
 
 
 Actualización 2026-10-08: las facturas digitales no renderizan ni guardan A4/A5 locales. A4 se obtiene de HKA después de commit/confirmación y A5 se deriva bajo demanda, con copias privadas por operación/formato. La vista previa del formulario anterior a emitir fuerza 80MM local; no se añade al diálogo de comprobante generado. Ver [almacenamiento y evidencia de interfaz](imprenta_digital_hka_api.md). Se verificó el navegador local con assets actualizados por el watcher externo del usuario, sin ejecutar build.
+
+
+## Ubicación de Percepción IGTF — 24 de octubre de 2026
+
+La configuración operativa IGTF se traslada de `/companies/create` a `/advanced` → Contable → Impuestos y Tributación. Conserva `GET/POST /companies/igtf`, los valores en `companies`, la validación y la auditoría del servidor. El bloque permite edición administrativa y lectura a los demás usuarios, con carga independiente, reintento, errores visibles y bloqueo durante el guardado. La modalidad fiscal ya no carga ni guarda IGTF.
+
+Verificación mediante Node en memoria, usando `vue-template-compiler`, Babel y clientes HTTP simulados: ambas plantillas compilan; se comprueban carga y envío de valores, permisos, bloqueo de envíos repetidos, errores 422/403/red, ubicación dentro del contenedor del buscador y carga de modalidad sin petición IGTF. `git diff --check` sin errores en los archivos modificados. No se ejecutó build ni se modificaron bundles; queda pendiente la comprobación visual y HTTP real en navegador con assets actualizados.
+
+
+### Ajuste de controles IGTF — 24 de octubre de 2026
+
+Por solicitud del usuario, el switch precede al porcentaje IGTF en disposición vertical. El porcentaje usa `el-input-number`, con los botones de incremento/decremento y el ancho del campo Porcentaje retención IVA; conserva el límite del servidor de 100 %. Ambos controles guardan automáticamente al cambiar mediante el endpoint IGTF, sin botón Guardar. Se normaliza la tasa recibida a número para el control numérico y la tasa vacía a null para el servidor. Se conservan permisos, bloqueo durante carga/envío y errores visibles. Validación de plantilla y manejadores en memoria, sin compilación de assets ni validación visual del bundle.
+
+
+## Visibilidad de campos de cobro IGTF — 24 de octubre de 2026
+
+La habilitación guardada en Configuración avanzada controla los campos de clasificación, excepción, propuesta e importe IGTF. Moneda recibida, conversión e intermediación permanecen disponibles independientemente del switch. Se aplica a Factura y ND con cobros admitidos en Web, POS normal/rápido, Garage y el diálogo de cobros posteriores compartido por Comprobantes y Cuentas por cobrar. Las notas de venta y NC no incorporan este editor. Los desgloses de recibos históricos, incluidos los derivados de IGTF, se conservan.
+
+`helpers/igtf-settings.js` mantiene un estado Vue reactivo y comparte una solicitud GET `/companies/igtf` entre consumidores simultáneos. El mixin `fiscal-payment-settings` actualiza al entrar/reabrir el cobro y antes de enviarlo. Configuración avanzada publica en ese estado únicamente lecturas y guardados confirmados; una respuesta anterior no revierte una configuración recién guardada. La nueva propiedad booleana `igtfEnabled` del editor compartido controla sus campos IGTF; `settingsVersion` reevalúa la propuesta al refrescar la configuración, aunque la habilitación no cambie. El POS normal incorpora el editor al área de formas de pago, además del diálogo múltiple.
+
+La carga tiene estado visible, error y reintento. Un fallo bloquea cobros nuevos, conservando Crédito sin abonos. Desactivar IGTF no borra datos del borrador: si conserva clasificación/importe fiscal oculto, se explica la incompatibilidad y se impide el envío. Se descartan propuestas de otro pago, cliente, moneda o documento y prevalidaciones terminadas después de cerrar/cambiar el formulario. Se evita un segundo envío mientras se consulta la configuración. Las validaciones del servidor y las condiciones SPE, moneda e intermediación siguen vigentes.
+
+El diálogo de cobros posteriores ahora transmite los campos que ya recogía el editor: moneda/importe recibidos, tasa, UUID, clasificación, intermediación y fundamento. Antes los omitía al construir el POST. El principal recibido en la misma moneda se sincroniza antes de esperar la propuesta, sin alterar cálculos ni redondeos. Se conservan el endpoint, permisos y esquema; no hay migraciones ni emisión HKA real.
+
+Verificación:
+
+- Suite Node de interfaz IGTF, pagos fiscales, POS, edición, totales, envío configurable, retenciones, terceros y regímenes: **90 pruebas correctas**. La prueba nueva renderiza VNodes de IGTF encendido/apagado y del historial; prueba solicitudes compartidas, reintentos, lectura antigua frente a guardado confirmado, borradores, prevalidación concurrente, reapertura, cambio de contexto y envío de los campos fiscales en cobros posteriores. Los cargadores aislados de pruebas se ajustan al nuevo preflight y al mixin nombrado de tasas.
+- `SpecialTaxpayerPolicyTest`, `HkaPayloadBuilderTest` y `FiscalApiPaymentTransformTest`: **27 pruebas, 121 aserciones, correctas**.
+- Con `DB_HOST=127.0.0.1 PRO9_FISCAL_MYSQL_TESTS=1`, los dos casos SPE seleccionados se ejecutan sobre bases temporales `pro9_fiscal_test_*`. El caso `test_spe_real_collection_context_retentions_notes_freeze_and_recovery` pasa. La matriz `test_spe_buyer_and_commercial_issuer_matrix_in_common_web_pos_garage_persistence` falla en `natural WEB VES 02`: esperaba `confirmed` y obtiene `not_requested` (80 aserciones entre ambos casos). Los servicios PHP y estas pruebas no se modificaron en este cambio; no se declara superada la matriz de crédito. La primera ejecución desde el host no resolvía `mysql`; se repitió con la dirección local publicada por Docker.
+- Análisis de scripts y compilación de plantillas en memoria: **23 fuentes Vue/JavaScript modificados o nuevos** en el diff acumulado; `git diff --check` correcto.
+
+No se ejecutó build ni se editaron bundles. Queda pendiente la revisión visual de las entradas con assets actualizados; las pruebas de VNodes no acreditan el navegador desplegado. Los bundles externos de Vende Ya, Mozo y LiveApp permanecen fuera del alcance.

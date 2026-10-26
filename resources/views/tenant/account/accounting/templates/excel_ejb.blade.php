@@ -12,7 +12,6 @@
         <th>importe inafecto</th>
         <th>importe ISC</th>
         <th>Otros</th>
-        <th>impuesto Bolsas</th>
         <th>Cuenta de venta</th>
         <th>Fecha documento Ref</th>
         <th>Tipo documento Ref</th>
@@ -42,6 +41,7 @@
             <td>{{ $row['total_igv'] }}</td>
             <td>{{ $row['total'] }}</td>
             <td>{{ $row['total_unaffected'] }}</td>
+            <td>0</td>
 
             <td>{{ $row['others'] }}</td>
 

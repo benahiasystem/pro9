@@ -196,9 +196,7 @@
                         <el-checkbox v-model="form.has_igv">Sí</el-checkbox>
                     </div>
                 </template>
-                <!-- ########## INICIO CAMBIO: OCULTAR IMPUESTO A LA BOLSA PLÁSTICA -->
-                <!-- El campo fijado no ofrece un control interactivo. -->
-                <!-- ######### FIN CAMBIO: OCULTAR IMPUESTO A LA BOLSA PLÁSTICA -->
+
                 <template #calculate_quantity>
                     <div :class="{'has-danger': errors.calculate_quantity}" class="form-group">
                         <label class="control-label">Calcular cantidad por precio</label>
@@ -369,9 +367,7 @@
                             </div>
                             <button v-if="editingLayout" type="button" class="pin-from-form-btn" @click.prevent="pinFromForm('has_igv')"><i class="el-icon-top"></i> Fijar arriba</button>
                         </div>
-                        <!-- ########## INICIO CAMBIO: OCULTAR IMPUESTO A LA BOLSA PLÁSTICA -->
-                        <!-- El campo se conserva en el estado, pero no se renderiza ni puede fijarse. -->
-                        <!-- ######### FIN CAMBIO: OCULTAR IMPUESTO A LA BOLSA PLÁSTICA -->
+
                         <div v-show="!isPinned('calculate_quantity')" class="col-md-5 field-pinnable">
                             <div v-show="['KGM', 'LTR', 'MTR', 'GLL'].includes(form.unit_type_id)"
                                  class="">

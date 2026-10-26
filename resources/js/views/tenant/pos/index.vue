@@ -1009,7 +1009,6 @@
                     </div>
 
                     <!-- ########## INICIO SIN DETRACCIONES E ISC -->
-                    <!-- ISC e impuesto a bolsas se conservan en datos históricos, sin presentación activa. -->
                     <!-- ######### FIN SIN DETRACCIONES E ISC -->
 
                     <div class="pos-cart__total-row pos-cart__total-row--grand">

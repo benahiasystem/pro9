@@ -64,7 +64,6 @@
 {{-- ########## INICIO SIN DETRACCIONES E ISC --}}
 
 {{-- ######### FIN SIN DETRACCIONES E ISC --}}
-<th> IMPUESTO BOLSAS</th>
 <th> TOTAL</th>
 @if($type == 'sale')
     <th> TOTAL COMPRA</th>

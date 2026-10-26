@@ -104,7 +104,9 @@
                                     <td>
                                         <div class="form-group mb-0" :class="{'has-danger': row.errors.payment_method_type_id}">
                                             <!-- ######## INICIO PERSISTENCIA FISCAL VENEZUELA ######## -->
-                                            <igtf-payment-fields :payment="row" :document-currency="document.currency_type_id" :document-rate="document.exchange_rate_sale" :document-id="documentId" />
+                                            <igtf-settings-status v-if="fiscalPaymentsApplicable" />
+                                            <igtf-payment-fields v-if="fiscalPaymentsApplicable && !row.id" :igtf-enabled="igtfEnabled" :settings-version="igtfSettings.revision"
+                                                :payment="row" :document-currency="document.currency_type_id" :document-rate="document.exchange_rate_sale" :document-id="documentId" />
                                             <!-- ######## FIN PERSISTENCIA FISCAL VENEZUELA ######## -->
                                             <el-select v-model="row.payment_method_type_id">
                                                 <el-option v-for="option in payment_method_types" v-show="option.id != '09'" :key="option.id" :value="option.id" :label="option.description"></el-option>
@@ -257,6 +259,7 @@
 </template>
 
 <script>
+import fiscalPaymentSettings from "@mixins/fiscal-payment-settings"
 import {exactAmount, exactValue} from '../../../../helpers/exchange-rate-math'
 import IgtfPaymentFields from "./igtf_fields.vue"
 
@@ -265,7 +268,7 @@ import IgtfPaymentFields from "./igtf_fields.vue"
     import DocumentOptions from '../../../../../../modules/Finance/Resources/assets/js/views/unpaid/partials/options.vue'
     export default {
         props: ['showDialog', 'documentId', 'external','configuration'],
-        mixins: [deletable],
+        mixins: [fiscalPaymentSettings, deletable],
         components: {IgtfPaymentFields,
             DialogLinkPayment,
             DocumentOptions
@@ -467,28 +470,46 @@ import IgtfPaymentFields from "./igtf_fields.vue"
                 this.fileList = []
                 this.showAddButton = true;
             },
-            clickSubmit(index) {
+            async clickSubmit(index) {
+                const row = this.records[index]
+                const documentId = this.documentId
+                if (row.loading) return
 
-                if(exactAmount(this.records[index].payment).compare(this.document.amount_payable || this.document.total_difference) > 0) {
+                if(exactAmount(row.payment).compare(this.document.amount_payable || this.document.total_difference) > 0) {
                     this.$message.error('El monto ingresado supera al monto pendiente de pago, verifique.');
                     return;
                 }
 
+                if (!await this.ensureFiscalPaymentsReady([row])) return
+                if (this.documentId !== documentId || this.records[index] !== row || this.showDialog === false) return
+
                 let form = {
-                    id: this.records[index].id,
-                    document_id: this.documentId,
-                    date_of_payment: this.records[index].date_of_payment,
-                    payment_method_type_id: this.records[index].payment_method_type_id,
-                    payment_destination_id: this.records[index].payment_destination_id,
-                    reference: this.records[index].reference,
-                    filename: this.records[index].filename,
-                    temp_path: this.records[index].temp_path,
-                    payment: this.records[index].payment,
-                    payment_received: this.records[index].payment_received,
+                    id: row.id,
+                    document_id: documentId,
+                    date_of_payment: row.date_of_payment,
+                    payment_method_type_id: row.payment_method_type_id,
+                    payment_destination_id: row.payment_destination_id,
+                    reference: row.reference,
+                    filename: row.filename,
+                    temp_path: row.temp_path,
+                    payment: row.payment,
+                    payment_received: row.payment_received,
+                    currency_type_id: row.currency_type_id,
+                    original_amount: !row.currency_type_id || row.currency_type_id === this.document.currency_type_id ? row.payment : row.original_amount,
+                    exchange_rate: row.exchange_rate,
+                    exchange_rate_source: row.exchange_rate_source,
+                    exchange_rate_date: row.exchange_rate_date,
+                    operation_key: row.operation_key,
+                    igtf_status: row.igtf_status,
+                    financial_intermediation: row.financial_intermediation,
+                    exemption_reason: row.exemption_reason,
+                    exception_basis: row.exception_basis,
                 };
 
-                this.$http.post(`/${this.resource}`, form)
+                row.loading = true
+                return this.$http.post(`/${this.resource}`, form)
                     .then(response => {
+                        if (this.documentId !== documentId || !this.records.includes(row)) return
                         if (response.data.success) {
                             this.$message.success(response.data.message);
                             this.initForm();
@@ -501,12 +522,14 @@ import IgtfPaymentFields from "./igtf_fields.vue"
                         }
                     })
                     .catch(error => {
+                        if (this.documentId !== documentId || !this.records.includes(row)) return
                         if (error.response && error.response.status === 422 && error.response.data && !error.response.data.message) {
-                            this.records[index].errors = error.response.data;
+                            row.errors = error.response.data;
                         } else {
                             this.$message.error(this.getRequestErrorMessage(error))
                         }
                     })
+                    .finally(() => { row.loading = false })
             },
             // filterDocumentType(row){
             //

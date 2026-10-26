@@ -41,9 +41,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                <!-- ########## INICIO CAMBIO: OCULTAR IMPUESTO A LA BOLSA PLÁSTICA -->
-                                <!-- El control se omite sin alterar el dato histórico. -->
-                                <!-- ######### FIN CAMBIO: OCULTAR IMPUESTO A LA BOLSA PLÁSTICA -->
+
                                 <div class="col-md-6">
                                     <div :class="{'has-danger': errors.description}"
                                         class="form-group">

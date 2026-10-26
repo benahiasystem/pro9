@@ -82,9 +82,7 @@ const FIELDS = [
         defaultWidth: 3,
         availableForVariants: ALL_VARIANTS,
     },
-    // ########## INICIO CAMBIO: OCULTAR IMPUESTO A LA BOLSA PLÁSTICA
-    // El campo no se ofrece en el editor de disposición; el dato compatible se conserva.
-    // ######### FIN CAMBIO: OCULTAR IMPUESTO A LA BOLSA PLÁSTICA
+
     {
         key: 'calculate_quantity',
         label: 'Calcular cantidad por precio',

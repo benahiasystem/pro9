@@ -81,7 +81,6 @@
                     <span>{{ currencyTypeActive.symbol }} {{ money(form.total_igv) }}</span>
                 </div>
                 <!-- ########## INICIO SIN DETRACCIONES E ISC -->
-                <!-- ISC e impuesto a bolsas se conservan en datos históricos, sin presentación activa. -->
                 <!-- ######### FIN SIN DETRACCIONES E ISC -->
                 <div class="pos-checkout__total-row" v-if="form.total_discount > 0">
                     <span>Descuento</span>
@@ -302,6 +301,12 @@
                         Aún no se ha registrado ninguna forma de pago.
                     </li>
                 </ul>
+                <div v-if="fiscalPaymentsApplicable" class="mt-2">
+                    <igtf-settings-status />
+                    <igtf-payment-fields v-for="(row, fiscalIndex) in form.payments" v-if="!row.id" :key="'fiscal-' + fiscalIndex"
+                        :payment="row" :igtf-enabled="igtfEnabled" :settings-version="igtfSettings.revision" :document-currency="form.currency_type_id"
+                        :document-rate="form.exchange_rate_sale" :customer-id="form.customer_id" />
+                </div>
             </section>
 
             <!-- Datos adicionales -->
@@ -347,7 +352,7 @@
     <div v-if="form.document_type_id === '01'"><label>Condición de pago</label><el-select :value="form.payment_condition_id || '01'" @change="changeFiscalPaymentCondition"><el-option value="01" label="Contado"/><el-option value="02" label="Crédito (registrar sólo abonos reales)"/></el-select></div>
         <multiple-payment-form
         :payments="payments"
-        :currency-type-id="form.currency_type_id" :exchange-rate-sale="form.exchange_rate_sale" :customer-id="form.customer_id" :payment-condition-id="form.payment_condition_id"
+        :currency-type-id="form.currency_type_id" :exchange-rate-sale="form.exchange_rate_sale" :customer-id="form.customer_id" :payment-condition-id="form.payment_condition_id" :document-type-id="form.document_type_id"
         :showDialog.sync="showDialogMultiplePayment"
         :total="getTotal()"
         @add="addRow"
@@ -368,6 +373,8 @@
 </template>
 
 <script>
+import IgtfPaymentFields from "../../documents/partials/igtf_fields.vue"
+import fiscalPaymentSettings from "@mixins/fiscal-payment-settings"
 import {withoutDraftRetentions, suggestRemainingPayment} from "@helpers/document-creation"
 import {checkoutTotals} from '../../../../helpers/exact-commercial'
 
@@ -389,8 +396,8 @@ import SearchAgent from '@components/SearchAgent.vue'
 
 
 export default {
-    components: {OptionsForm, CardBrandsForm, SaleNotesOptions, MultiplePaymentForm, Keypress, DiscountPermissionForm, SearchAgent},
-    mixins: [documentCreationMixin,pointSystemFunctions, buhoprinter],
+    components: {IgtfPaymentFields,OptionsForm, CardBrandsForm, SaleNotesOptions, MultiplePaymentForm, Keypress, DiscountPermissionForm, SearchAgent},
+    mixins: [fiscalPaymentSettings, documentCreationMixin,pointSystemFunctions, buhoprinter],
 
     props: [
         'form',
@@ -1174,6 +1181,8 @@ export default {
             }
 
             ;
+
+            if (!await this.ensureFiscalPaymentsReady(this.form.payments)) return
 
             this.loading_submit = true
             this.locked_submit = true

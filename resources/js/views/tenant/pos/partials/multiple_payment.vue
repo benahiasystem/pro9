@@ -25,7 +25,9 @@
                                     <el-select v-model="row.payment_method_type_id" @change="changePaymentMethodType(index)">
                                         <el-option v-for="option in payment_method_types" :key="option.id" :value="option.id" :label="option.description"></el-option>
                                     </el-select>
-<igtf-payment-fields :payment="row" :document-currency="currencyTypeId || 'VES'" :document-rate="exchangeRateSale || '1'" :customer-id="customerId" />
+<igtf-settings-status v-if="fiscalPaymentsApplicable" />
+<igtf-payment-fields v-if="fiscalPaymentsApplicable && !row.id" :igtf-enabled="igtfEnabled" :settings-version="igtfSettings.revision"
+    :payment="row" :document-currency="currencyTypeId || 'VES'" :document-rate="exchangeRateSale || '1'" :customer-id="customerId" />
                                 </div>
                             </td>
                             <template v-if="enabled_payments">
@@ -85,12 +87,14 @@
 </style>
 
 <script>
+import fiscalPaymentSettings from "@mixins/fiscal-payment-settings"
 import {suggestRemainingPayment} from "@helpers/document-creation"
 import IgtfPaymentFields from "./../../documents/partials/igtf_fields.vue"
 
     export default {
+        mixins: [fiscalPaymentSettings],
         components: { IgtfPaymentFields },
-        props: ['showDialog', 'payments', 'total', 'currencyTypeId', 'exchangeRateSale', 'customerId', 'paymentConditionId'],
+        props: ['showDialog', 'payments', 'total', 'currencyTypeId', 'exchangeRateSale', 'customerId', 'paymentConditionId', 'documentTypeId'],
         data() {
             return {
                 titleDialog: 'Pagos',

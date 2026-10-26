@@ -112,9 +112,7 @@
                                 </el-checkbox>
                                 <br>
                             </template>
-                            <!-- ########## INICIO CAMBIO: OCULTAR IMPUESTO A LA BOLSA PLÁSTICA -->
-                            <!-- El control se omite; el valor histórico permanece en el formulario. -->
-                            <!-- ######### FIN CAMBIO: OCULTAR IMPUESTO A LA BOLSA PLÁSTICA -->
+
                             <small v-if="errors.item_id"
                                    class="form-control-feedback"
                                    v-text="errors.item_id[0]"></small>

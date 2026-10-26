@@ -9,7 +9,7 @@ function load(path, globals = {}) {
     const file = compiler.parseComponent(fs.readFileSync(path, 'utf8')), exports = {};
     assert.deepEqual(compiler.compile(file.template.content).errors, [], path);
     vm.runInNewContext(babel.transformSync(file.script.content, {configFile: false, babelrc: false, plugins: ['@babel/plugin-transform-modules-commonjs']}).code,
-        {exports, require: name => exactRuntime(name) || (name === 'moment' ? require('moment') : name.includes('vuex') ? {mapActions: () => ({}), mapState: () => ({})} : {}), window: {crypto: webcrypto}, FormData, ...globals});
+        {exports, require: name => exactRuntime(name) || (name === 'moment' ? require('moment') : name.endsWith('mixins/functions') ? {exchangeRate: {}} : name.includes('vuex') ? {mapActions: () => ({}), mapState: () => ({})} : {}), window: {crypto: webcrypto}, FormData, ...globals});
     return {component: exports.default, template: file.template.content};
 }
 const retention = load('resources/js/views/tenant/documents/partials/retention.vue');

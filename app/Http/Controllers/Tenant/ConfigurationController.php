@@ -6,7 +6,6 @@ use App\Helpers\CacheHelper;
 use App\Http\Requests\Tenant\ConfigurationRequest;
 use App\Http\Resources\Tenant\ConfigurationResource;
 use App\Models\Tenant\Configuration;
-use App\Models\Tenant\Item;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -573,26 +572,6 @@ class ConfigurationController extends Controller
             'success' => true,
             'configuration' => $configuration->getCollectionData(),
             'message' => 'Configuración actualizada',
-        ];
-    }
-
-    public function icbper(Request $request)
-    {
-        DB::connection('tenant')->transaction(function () use ($request) {
-            $id = $request->input('id');
-            $configuration = Configuration::find($id);
-            $configuration->save();
-
-            $items = Item::get(['id']);
-
-            foreach ($items as $item) {
-                $item->update();
-            }
-        });
-
-        return [
-            'success' => true,
-            'message' => 'Configuración actualizada'
         ];
     }
 

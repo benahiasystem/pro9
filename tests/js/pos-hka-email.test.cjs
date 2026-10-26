@@ -80,7 +80,7 @@ for(const file of ['payment.vue','fast_payment_garage.vue']) {
   for(const[name,fn]of Object.entries(payment.methods))ctx[name]=fn.bind(ctx);
   ctx.form.iva_retention_prevision={enabled:true,amount:12};ctx.form.islr_retention_prevision={enabled:true,amount:3};ctx.form.received_retentions=[{tax_kind:'IVA'}];
   for(const name of ['asignPlateNumberToItems','saveCashDocument','cleanLocalStoragePayment','initDataComponent'])ctx[name]=()=>{};
-  ctx.validateRestrictSaleItemsCpe=ctx.validateRestrictSellerDiscount=()=>({success:true});
+  ctx.ensureFiscalPaymentsReady=async()=>true;ctx.validateRestrictSaleItemsCpe=ctx.validateRestrictSellerDiscount=()=>({success:true});
   await ctx.clickPayment();assert.equal(requests.length,1);assert.equal(requests[0].url,'/documents');assert.equal(requests[0].form.series_id,2);assert.equal(ctx.documentNewId,44);assert.equal(ctx.showDialogOptions,true);assert.equal(ctx.loading_submit,false);
   for(const key of ['iva_retention_prevision','islr_retention_prevision','received_retentions'])assert.equal(Object.hasOwn(requests[0].form,key),false);
  });
@@ -88,7 +88,7 @@ for(const file of ['payment.vue','fast_payment_garage.vue']) {
   const messages=[],ctx={form:{document_type_id:'01',series_id:2,customer_id:10,date_of_issue:moment().format('YYYY-MM-DD'),items:[{quantity:1,unit_type_id:'UND'}],payments:[{payment:100}],total:100},config:{},configuration:{},businessTurns:{active:false},rowsItems:1,
    $message:{error:m=>messages.push(m),warning:m=>messages.push(m)},$http:{post:async()=>{throw Error('network')}},$eventHub:{$emit(){}}};
   for(const[name,fn]of Object.entries(payment.methods))ctx[name]=fn.bind(ctx);
-  ctx.validateRestrictSaleItemsCpe=ctx.validateRestrictSellerDiscount=()=>({success:true});ctx.asignPlateNumberToItems=()=>{};
+  ctx.ensureFiscalPaymentsReady=async()=>true;ctx.validateRestrictSaleItemsCpe=ctx.validateRestrictSellerDiscount=()=>({success:true});ctx.asignPlateNumberToItems=()=>{};
   await ctx.clickPayment();assert.match(messages[0],/Consulte el listado/);assert.equal(ctx.loading_submit,false);
  });
 }
