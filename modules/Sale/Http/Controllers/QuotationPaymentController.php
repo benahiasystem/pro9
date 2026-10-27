@@ -43,6 +43,9 @@ class QuotationPaymentController extends Controller
 
         return [
             'number_full' => $record->identifier,
+            // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+            'currency_type_id' => $record->currency_type_id,
+            // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
             'total_paid' => $total_paid,
             'total' => $total,
             'total_difference' => $total_difference,

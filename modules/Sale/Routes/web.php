@@ -69,9 +69,15 @@ if($current_hostname) {
 
             Route::prefix('payment-method-types')->group(function () {
 
+                // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+                Route::post('/active', 'PaymentMethodTypeController@active');
+                // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
                 Route::get('/records', 'PaymentMethodTypeController@records');
                 Route::get('/record/{id}', 'PaymentMethodTypeController@record');
                 Route::post('', 'PaymentMethodTypeController@store');
+                // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+                Route::put('/{id}', 'PaymentMethodTypeController@update');
+                // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
                 Route::delete('/{id}', 'PaymentMethodTypeController@destroy');
 
             });

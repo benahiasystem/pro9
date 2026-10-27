@@ -1,0 +1,147 @@
+{
+  "php": {
+    "scoped_expressions": 139,
+    "scoped_pending": 0,
+    "global_pending": 17744,
+    "global_registry_errors": 436,
+    "parse_errors": 0,
+    "coverage_missing": 0
+  },
+  "js": {
+    "scoped_expressions": 39,
+    "scoped_pending": 0,
+    "global_pending": 19995,
+    "global_registry_errors": 1035,
+    "parse_errors": 0,
+    "coverage_missing": 0
+  },
+  "scope": "Exclusivamente instalaciones nuevas; clasificación y caja VES/USD desde consolidado y semillas. Sin comando de actualización ni infraestructura de activación/históricos añadida para este cambio.",
+  "checks": {
+    "classification_feature": {
+      "tests": 9,
+      "assertions": 35,
+      "status": "passed"
+    },
+    "method_creation": {
+      "tests": 2,
+      "assertions": 18,
+      "status": "passed"
+    },
+    "tender_regression": {
+      "tests": 7,
+      "assertions": 88,
+      "status": "passed"
+    },
+    "initial_seed_contract": {
+      "tests": 3,
+      "assertions": 257,
+      "status": "passed"
+    },
+    "catalog_contract": {
+      "tests": 9,
+      "assertions": 166,
+      "status": "passed"
+    },
+    "mysql_real_refund": {
+      "tests": 1,
+      "assertions": 25,
+      "status": "passed"
+    },
+    "mysql_current_receipts_reports_conversion": {
+      "tests": 3,
+      "assertions": 48,
+      "status": "passed"
+    },
+    "mysql_spe_matrix": {
+      "tests": 1,
+      "assertions": 1454,
+      "status": "passed"
+    },
+    "mysql_exact_continuation": {
+      "tests": 1,
+      "assertions": 17,
+      "status": "passed"
+    },
+    "mysql_full_regression": {
+      "tests": 70,
+      "assertions": 3807,
+      "first_run_errors": 12,
+      "first_run_failures": 2,
+      "optional_benchmark_skipped": 1,
+      "scope": "MySQL temporal desde esquema inicial; los casos fallidos se corrigieron y revalidaron en los conjuntos siguientes."
+    },
+    "mysql_revalidation_set": {
+      "tests": 18,
+      "assertions": 2429,
+      "passed_in_set": 16,
+      "rechecked_separately": [
+        "test_note_refund_preserves_collections_and_reverses_once",
+        "test_classified_invoice_receipts_keep_received_currency_and_bank_money_outside_physical_cash"
+      ],
+      "status": "covered_by_set_and_successful_isolated_rechecks"
+    },
+    "mysql_special_regime_third_party": {
+      "tests": 2,
+      "status": "passed_in_three_test_matrix",
+      "three_test_matrix_assertions": 651,
+      "other_test": "SPE matriz revalidada por separado: 1 prueba/1454 aserciones"
+    },
+    "javascript": {
+      "tests": 12,
+      "failures": 0
+    },
+    "vue_sources": {
+      "files": 42,
+      "errors": 0
+    },
+    "php_lint": {
+      "files": 73,
+      "errors": 0
+    }
+  },
+  "fiscal_regression_revalidated_cases": [
+    "test_special_tax_regimes_persist_settle_edit_freeze_and_emit_after_commit",
+    "test_third_party_invoices_persist_freeze_edit_and_emit_after_commit",
+    "test_note_currency_regime_and_service_matrix",
+    "test_note_pending_igtf_and_fund_adjustments_have_no_cash_effect",
+    "test_note_refund_preserves_collections_and_reverses_once",
+    "test_note_concurrent_creation_and_refunds_use_one_effect_and_real_currency",
+    "test_credit_invoice_confirmation_preserves_full_receivable_and_later_collection",
+    "test_spe_real_collection_context_retentions_notes_freeze_and_recovery",
+    "test_iva_net_forecast_idempotence_hka_and_audited_replacement",
+    "test_iva_fiscal_ves_is_independent_from_usd_settlement_rate",
+    "test_islr_different_rates_declared_authority_and_net_capability",
+    "test_hka_auto_send_off_blocks_igtf_callbacks_and_later_resume",
+    "test_note_debit_is_created_on_credit_without_cash_effects_and_collects_later",
+    "test_spe_buyer_and_commercial_issuer_matrix_in_common_web_pos_garage_persistence"
+  ],
+  "known_failing_cases_remaining": [],
+  "initial_inventory": {
+    "application_tables": 347,
+    "tenant_migrations": 348,
+    "seeded_catalogs": 80,
+    "seeded_rows": 957
+  },
+  "runtime_contract": {
+    "payment_reporting_settings_table": false,
+    "cash_report_version_column": false,
+    "upgrade_command": false,
+    "legacy_catalog_reader": false,
+    "snapshot_format_version": 2
+  },
+  "limits": [
+    "La auditoría global conserva pendientes ajenos a las expresiones revisadas; no se acredita un cierre global de Pro9.",
+    "La compilación de assets corresponde al usuario.",
+    "No se eliminaron ni actualizaron instalaciones reales."
+  ],
+  "source_sha256": {
+    "app/Models/Tenant/ModelTenant.php": "bd38c15b9508d912fb54d9de527fecfdb27ddb964918e71ee7530196609bac1b",
+    "app/Services/Payments/Movement.php": "6d717e3912fc9d0becde3ac6a3e9509e310f46efa24fffd993622d5af2bcc77d",
+    "app/Services/Payments/ReceiptDestination.php": "af3d5c5aef97cc7b97214921a2fe8f9e345e54f02ea7830ae09689e68013fed0",
+    "app/Http/Controllers/Tenant/SaleNoteController.php": "6eb3115d7302a76d7612036503245c3fecdcabf979f5c0a29192d766affa21c2",
+    "app/Support/Exact/TenderAllocation.php": "e5d4d9e63a127f1c672605976850f4eb7c6592ff3438194924dcc4bc079f9ba2",
+    "tests/Support/PaymentClassificationPersistenceCases.php": "fff156134295fb8407be65309cad24ff56a22e3b5762ddbf826bbb283fcee483",
+    "tests/Feature/PaymentClassificationTest.php": "2ccb1532bbd0ba9f1c337e069f45c69a17e4de4c91547427bbf7a130206e9b93",
+    "tests/Unit/TenantMigrationDataSeederTest.php": "e788121bd2d237732307d3676c9e775e04a08d413b3f0ef5189ad5cfc7d139bd"
+  }
+}

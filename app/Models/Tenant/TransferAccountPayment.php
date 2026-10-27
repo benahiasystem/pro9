@@ -75,6 +75,13 @@
             });
         }
 
+        // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+        public function global_payment()
+        {
+            return $this->morphOne(GlobalPayment::class, 'payment');
+        }
+        // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
+
         /**
          * @return int|null
          */

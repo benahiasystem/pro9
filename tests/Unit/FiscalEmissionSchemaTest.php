@@ -21,6 +21,7 @@ class FiscalEmissionSchemaTest extends TestCase
     use \Tests\Support\IvaRetentionPersistenceCases;
     use \Tests\Support\IslrRetentionPersistenceCases;
     use \Tests\Support\HkaAutoSendPersistenceCases;
+    use \Tests\Support\PaymentClassificationPersistenceCases;
     private $previousContainer;
     private $previousFacade;
     private $capsule;
@@ -181,13 +182,16 @@ class FiscalEmissionSchemaTest extends TestCase
                 self::assertTrue($db->getSchemaBuilder()->hasColumn($table, 'control_number'));
             }
             // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
-            $methods = $db->table('payment_method_types')->orderBy('id')->get(['id', 'hka_code', 'is_active']);
+            $methods = $db->table('payment_method_types')->orderBy('id')->get(['id', 'hka_code', 'is_active', 'has_card']);
             self::assertCount(25, $methods);
             self::assertSame(19, $methods->pluck('hka_code')->unique()->count());
             self::assertSame(7, $methods->where('hka_code', '99')->count());
             self::assertSame(9, $methods->where('is_active', 1)->count());
             self::assertSame(0, $methods->where('id', '14')->first()->is_active);
             self::assertSame(0, $methods->where('id', '26')->first()->is_active);
+            self::assertSame(0, $methods->where('id', '09')->first()->has_card);
+            self::assertSame(1, $methods->where('id', '02')->first()->has_card);
+            self::assertSame(1, $methods->where('id', '03')->first()->has_card);
             self::assertSame(9, \App\Models\Tenant\PaymentMethodType::getPaymentMethodTypes()->count());
             $paymentRules = (new \App\Http\Requests\Tenant\DocumentPaymentRequest())->rules();
             unset($paymentRules['document_id']); // This assertion isolates payment-method eligibility.
@@ -212,7 +216,7 @@ class FiscalEmissionSchemaTest extends TestCase
             self::assertCount(1, $hkaIndex);
             self::assertSame(1, (int) $hkaIndex[0]->Non_unique);
             $customMethod = \Modules\Sale\Http\Requests\PaymentMethodTypeRequest::create('/', 'POST', [
-                'id' => '27', 'description' => 'Método local de prueba', 'is_active' => 1,
+                'id' => '27', 'description' => 'Método local de prueba', 'is_active' => 1, 'collection_kind'=>'account',
             ]);
             app(\Modules\Sale\Http\Controllers\PaymentMethodTypeController::class)->store($customMethod);
             self::assertSame('99', $db->table('payment_method_types')->where('id', '27')->value('hka_code'));
@@ -220,6 +224,14 @@ class FiscalEmissionSchemaTest extends TestCase
             // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
             // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
             // ########## INICIO CAMBIO AFECTACIÓN IVA
+            self::assertSame([
+                ['IVA', 'Impuesto al valor agregado - IVA'],
+                ['ISLR', 'Impuesto sobre la renta - ISLR'],
+                ['MUNICIPAL', 'Impuesto Municipal o Estadal'],
+                ['IGTF', 'Impuesto a las grandes transacciones'],
+                ['LISAEA', 'Impuesto sobre Alcohol y Especies Alcohólicas - LISAEA'],
+            ], $db->table('cat_taxes_types')->orderByRaw("FIELD(id, 'IVA', 'ISLR', 'MUNICIPAL', 'IGTF', 'LISAEA')")
+                ->get(['id', 'description'])->map(static fn ($row): array => [$row->id, $row->description])->all());
             self::assertSame([
                 ['A', 'Alícuota Adicional (suntuario)', '31.00', 'IVA'],
                 ['E', 'Exento, Exonerado o No Gravado', '0.00', 'IVA'],
@@ -230,6 +242,22 @@ class FiscalEmissionSchemaTest extends TestCase
             ], $db->table('cat_iva_rate_types')->orderBy('id')->get(['id', 'description', 'percentage', 'tax_kind'])
                 ->map(static fn ($row): array => [$row->id, $row->description, number_format((float) $row->percentage, 2, '.', ''), $row->tax_kind])->all());
             self::assertCount(1, $db->select("SHOW INDEX FROM `cat_iva_rate_types` WHERE Key_name = 'PRIMARY'"));
+            $taxKey = $db->selectOne('SELECT REFERENCED_TABLE_NAME AS ref_table, REFERENCED_COLUMN_NAME AS ref_column FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND CONSTRAINT_NAME = ?', [$this->database, 'cat_iva_rate_types', 'cat_iva_rate_types_tax_kind_foreign']);
+            self::assertSame('cat_taxes_types', $taxKey->ref_table);
+            self::assertSame('id', $taxKey->ref_column);
+            foreach ([
+                fn () => $db->table('cat_iva_rate_types')->where('id', 'G')->update(['tax_kind' => 'NO_EXISTE']),
+                fn () => $db->table('cat_taxes_types')->where('id', 'IVA')->delete(),
+                fn () => $db->table('cat_taxes_types')->where('id', 'IVA')->update(['id' => 'IVA_NUEVO']),
+            ] as $operation) {
+                try {
+                    $operation();
+                    self::fail('La clave foránea debe rechazar la operación.');
+                } catch (\Illuminate\Database\QueryException $error) {
+                    self::assertSame('23000', $error->getCode());
+                }
+            }
+            self::assertSame('IVA', $db->table('cat_iva_rate_types')->where('id', 'G')->value('tax_kind'));
             // ######### FIN CAMBIO AFECTACIÓN IVA
             self::assertTrue($db->getSchemaBuilder()->hasColumn('cat_identity_document_types', 'external_document_examples'));
             self::assertSame(9, $db->table('cat_identity_document_types')->count());
@@ -396,7 +424,7 @@ class FiscalEmissionSchemaTest extends TestCase
             $seedSnapshot = $currentSeeds;
             $this->assertProductAndVariationPersistence($db);
             $this->assertTransferReasonPersistence($db);
-            if ($cycle === 0) $this->assertLegacyDocumentPersistence($db);
+            if ($cycle === 0) $this->assertCommercialDocumentPersistence($db);
             $db->table('companies')->insert([
                 'id' => 1, 'identity_document_type_id' => '6', 'number' => 'J123456789',
                 'name' => 'Test fiscal', 'trade_name' => 'Test fiscal',
@@ -416,7 +444,7 @@ class FiscalEmissionSchemaTest extends TestCase
         }
     }
 
-    private function assertLegacyDocumentPersistence(Connection $db): void
+    private function assertCommercialDocumentPersistence(Connection $db): void
     {
         $previousAuth = app('auth');
         $previousDispatcher = \Illuminate\Database\Eloquent\Model::getEventDispatcher();
@@ -466,6 +494,8 @@ class FiscalEmissionSchemaTest extends TestCase
             \App\Models\Tenant\Document::observe(\App\Observers\DocumentObserver::class);
             (new \Modules\Inventory\Providers\InventoryKardexServiceProvider($app))->boot();
             (new \Modules\Inventory\Providers\InventoryVoidedServiceProvider($app))->boot();
+            $cash=\App\Models\Tenant\Cash::create(['user_id'=>$userId,'state'=>true,'date_opening'=>'2026-09-10','time_opening'=>'12:00:00','beginning_balance'=>'0']);
+            $db->transaction(fn()=>\App\Services\Payments\CashLedger::open($cash,[]));
             $first = (new \App\CoreFacturalo\Facturalo())->save($input)->getDocument();
             self::assertSame('FF01-00000100', $first->number_full);
             $input['external_id'] = \Illuminate\Support\Str::uuid()->toString();
@@ -496,7 +526,6 @@ class FiscalEmissionSchemaTest extends TestCase
             $second->save();
             self::assertSame('00-00000021', \App\Services\Fiscal\FiscalPdfData::forDocument($second)['control_number']);
             self::assertSame('FF01-00000100', $first->number_full);
-            $db->table('cash')->insert(['user_id' => $userId, 'date_opening' => '2026-09-10', 'time_opening' => '12:00:00', 'state' => true]);
             // Exercise the commercial NV input path, not a fake counter subject.
             $saleInput = array_replace($input, ['id' => null, 'series' => 'NV01', 'document_type_id' => '80', 'prefix' => 'NV']);
             $saleController = new \App\Http\Controllers\Tenant\SaleNoteController();
@@ -644,7 +673,7 @@ class FiscalEmissionSchemaTest extends TestCase
         $company->forceFill(['igtf_enabled'=>true,'igtf_rate'=>3])->save();
         \Tests\Support\SpeProfiles::versions($db, $company->id, $input['customer_id']);
         $key=(string)\Illuminate\Support\Str::uuid();
-        $paymentInput=['date_of_payment'=>'2026-09-11','payment_method_type_id'=>'01','original_amount'=>5,
+        $paymentInput=['date_of_payment'=>'2026-09-11','payment_method_type_id'=>'10','original_amount'=>5,
             'currency_type_id'=>'USD','exchange_rate'=>10,'igtf_status'=>'subject','financial_intermediation'=>'none','operation_key'=>$key];
         $payment=$service::payment($document,$paymentInput);
         self::assertEquals(50,$payment->payment);self::assertEquals(0.15,$payment->tax_amount);
@@ -664,7 +693,7 @@ class FiscalEmissionSchemaTest extends TestCase
         self::assertNotNull($payment->fresh()->reversed_at);
         self::assertSame('11',$note->fresh()->state_type_id);
         $fx=array_replace($input,['external_id'=>(string)\Illuminate\Support\Str::uuid(),'currency_type_id'=>'USD',
-            'exchange_rate_sale'=>10.123,'payments'=>[['date_of_payment'=>'2026-09-10','payment_method_type_id'=>'01','payment'=>232,'igtf_status'=>'subject','financial_intermediation'=>'none']]]);
+            'exchange_rate_sale'=>10.123,'payments'=>[['date_of_payment'=>'2026-09-10','payment_method_type_id'=>'10','payment'=>232,'igtf_status'=>'subject','financial_intermediation'=>'none']]]);
         $paid=(new \App\CoreFacturalo\Facturalo())->save($fx)->getDocument();
         self::assertEquals(238.96,$paid->total);self::assertTrue((bool)$paid->total_canceled);self::assertEquals(238.96,$paid->payments->sum('payment'));self::assertEquals(0,$paid->balance);
         self::assertEquals(6.96,$paid->taxes()->where('tax_kind','IGTF')->sum('amount'));
@@ -672,7 +701,7 @@ class FiscalEmissionSchemaTest extends TestCase
         self::assertEquals(232,$paid->payments->whereNull('receipt_parent_id')->first()->payment);
         $company->forceFill(['igtf_enabled'=>false])->save();
         self::assertSame($paid->payments->whereNull('receipt_parent_id')->first()->id,$service::payment($paid,[
-            'date_of_payment'=>'2026-09-10','payment_method_type_id'=>'01','payment'=>232,'igtf_status'=>'subject','financial_intermediation'=>'none',
+            'date_of_payment'=>'2026-09-10','payment_method_type_id'=>'10','payment'=>232,'igtf_status'=>'subject','financial_intermediation'=>'none',
             'operation_key'=>$paid->payments->whereNull('receipt_parent_id')->first()->operation_key],true)->id);
         $company->forceFill(['igtf_enabled'=>true])->save();
         $discounted=(new \App\CoreFacturalo\Facturalo())->save(array_replace($input,[
@@ -759,8 +788,9 @@ class FiscalEmissionSchemaTest extends TestCase
             'currency_type_id'=>'VES','exchange_rate_sale'=>1,'total_value'=>100,'total'=>100]);
         $db->table('documents')->where('id',$id)->update(['control_number'=>'00-00000999']);
         $db->table('document_emissions')->insert(['document_id'=>$id,'fiscal_environment'=>'demo','operation_key'=>(string)\Illuminate\Support\Str::uuid(),'status'=>'confirmed','payload'=>json_encode(['documentoElectronico'=>['encabezado'=>['identificacionDocumento'=>['tipoDocumento'=>'01','serie'=>'FF01','numeroDocumento'=>'1','moneda'=>'VES']]]])]);
+        $db->table('cash')->insert(['user_id'=>1,'state'=>true,'date_opening'=>'2026-09-10','time_opening'=>'12:00:00']);
         $key=(string)\Illuminate\Support\Str::uuid();
-        $payment=['date_of_payment'=>'2026-09-10','payment_method_type_id'=>'01','currency_type_id'=>'USD','exchange_rate'=>10,
+        $payment=['date_of_payment'=>'2026-09-10','payment_method_type_id'=>'10','currency_type_id'=>'USD','exchange_rate'=>10,
             'original_amount'=>8,'igtf_status'=>'subject','financial_intermediation'=>'none','operation_key'=>$key];
         $result=$this->runFiscalWorkers($id,'payment',[$payment,$payment]);
         self::assertArrayHasKey('id',$result[0],json_encode($result));
@@ -852,6 +882,7 @@ class FiscalEmissionSchemaTest extends TestCase
         foreach(\App\Services\SpecialTaxRegimePolicy::NAMES as $id=>$name)foreach(['VES','USD'] as $currency)foreach([false,true] as $third){
             $case=array_replace($input,['fiscal_data'=>['special_tax_regime_id'=>$id],'currency_type_id'=>$currency,'third_party_id'=>$third?$party->id:null,
                 'external_id'=>(string)\Illuminate\Support\Str::uuid()]);
+            $case['payments'][0]['payment_method_type_id']=$currency === 'USD' ? '10' : '01';
             $db->beginTransaction();$doc=(new \App\CoreFacturalo\Facturalo)->forWebDocuments()->save($case)->getDocument()->fresh();
             $prior=$count;self::assertSame('not_requested',$doc->emission->status);$db->commit();$doc=$doc->fresh();
             self::assertSame($prior+1,$count);self::assertSame('confirmed',$doc->emission->status);self::assertNotEmpty($doc->control_number);
@@ -890,7 +921,7 @@ class FiscalEmissionSchemaTest extends TestCase
         catch(\Illuminate\Validation\ValidationException $e){self::assertArrayHasKey('note',$e->errors());}
         $company->forceFill(['igtf_enabled'=>true,'igtf_rate'=>3])->save();
         \Tests\Support\SpeProfiles::versions($db, $company->id, $input['customer_id']);
-        try{\App\Services\Fiscal\FiscalDocumentPersistence::payment($doc,['date_of_payment'=>'2026-09-10','payment_method_type_id'=>'01','original_amount'=>1,'currency_type_id'=>'USD','exchange_rate'=>'40.12345678','igtf_status'=>'subject','financial_intermediation'=>'none']);self::fail('Later IGTF requires excluded note');}
+        try{\App\Services\Fiscal\FiscalDocumentPersistence::payment($doc,['date_of_payment'=>'2026-09-10','payment_method_type_id'=>'10','original_amount'=>1,'currency_type_id'=>'USD','exchange_rate'=>'40.12345678','igtf_status'=>'subject','financial_intermediation'=>'none']);self::fail('Later IGTF requires excluded note');}
         catch(\Illuminate\Validation\ValidationException $e){self::assertArrayHasKey('payment',$e->errors());}
         (new \App\Services\Fiscal\HkaEmissionPreparation)->prepare($doc);$doc=$doc->fresh();$preparedKey=$doc->emission->operation_key;
         $edit['fiscal_data']=['special_tax_regime_id'=>4];(new \App\CoreFacturalo\Facturalo)->forWebDocuments()->update($edit,$doc->id);$doc=$doc->fresh();
@@ -939,6 +970,7 @@ class FiscalEmissionSchemaTest extends TestCase
         self::assertEquals($beforeStock,$db->table('item_warehouse')->where('item_id',$input['items'][0]['item_id'])->value('stock'));
         foreach($parties as $party)foreach(['VES','USD'] as $currency){
             $case=array_replace($third,['third_party_id'=>$party->id,'currency_type_id'=>$currency,'external_id'=>(string)\Illuminate\Support\Str::uuid()]);
+            $case['payments'][0]['payment_method_type_id']=$currency === 'USD' ? '10' : '01';
             $db->beginTransaction();$doc=(new \App\CoreFacturalo\Facturalo)->forWebDocuments()->save($case)->getDocument()->fresh();
             $prior=$transmissions;$db->commit();$doc=$doc->fresh();
             self::assertSame($prior+1,$transmissions);self::assertSame('confirmed',$doc->emission->status);
@@ -982,13 +1014,13 @@ class FiscalEmissionSchemaTest extends TestCase
         self::assertSame($count,$db->table('documents')->count());self::assertEquals($stock,$db->table('item_warehouse')->where('item_id',$input['items'][0]['item_id'])->value('stock'));
         $company->igtf_enabled=true;$company->igtf_rate=3;$company->save();
         \Tests\Support\SpeProfiles::versions($db, $company->id, $input['customer_id']);
-        $igtfInput=array_replace($third,['currency_type_id'=>'USD']);$igtfInput['payments'][0]['igtf_status']='subject';$igtfInput['payments'][0]['financial_intermediation']='none';
+        $igtfInput=array_replace($third,['currency_type_id'=>'USD']);$igtfInput['payments'][0]['payment_method_type_id']='10';$igtfInput['payments'][0]['igtf_status']='subject';$igtfInput['payments'][0]['financial_intermediation']='none';
         $igtfDoc=(new \App\CoreFacturalo\Facturalo)->forWebDocuments()->save($igtfInput)->getDocument()->fresh();
         self::assertEquals(238.96,$igtfDoc->total);self::assertEquals(0,$igtfDoc->balance);
         $prepared=(new \App\Services\Fiscal\HkaEmissionPreparation)->prepare($igtfDoc);
         self::assertContains('IGTF',array_column($prepared->payload['documentoElectronico']['encabezado']['totales']['impuestosSubtotal'],'codigoTotalImp'));
         $notesBefore=$db->table('documents')->where('document_type_id','08')->count();
-        try{\App\Services\Fiscal\FiscalDocumentPersistence::payment($igtfDoc,['date_of_payment'=>'2026-09-10','payment_method_type_id'=>'01','original_amount'=>1,'currency_type_id'=>'USD','exchange_rate'=>'40.12345678','igtf_status'=>'subject','financial_intermediation'=>'none']);self::fail('A later IGTF debit note is outside this stage');}
+        try{\App\Services\Fiscal\FiscalDocumentPersistence::payment($igtfDoc,['date_of_payment'=>'2026-09-10','payment_method_type_id'=>'10','original_amount'=>1,'currency_type_id'=>'USD','exchange_rate'=>'40.12345678','igtf_status'=>'subject','financial_intermediation'=>'none']);self::fail('A later IGTF debit note is outside this stage');}
         catch(\Illuminate\Validation\ValidationException $e){self::assertArrayHasKey('payment',$e->errors());}
         self::assertSame($notesBefore,$db->table('documents')->where('document_type_id','08')->count());
         (new \App\Services\Fiscal\HkaEmissionPreparation)->prepare($doc);
@@ -1214,7 +1246,7 @@ class FiscalEmissionSchemaTest extends TestCase
         }
     }
 
-    private function bootHkaFixture(): array
+    private function bootHkaFixture(bool $openCash = true): array
     {
         $db = $this->capsule->getConnection('tenant');
         foreach ($this->migrations('migrations/tenant/*.php') as $migration) $migration->up();
@@ -1274,6 +1306,10 @@ class FiscalEmissionSchemaTest extends TestCase
         $customer->forceFill(['email' => 'receiver@example.test', 'telephone' => '04121234567'])->save();
         $input['customer'] = $customer->toArray();
         $input['payment_condition_id'] = '01';
+        if ($openCash) {
+            $cash=\App\Models\Tenant\Cash::create(['user_id'=>$userId,'state'=>true,'date_opening'=>'2026-09-10','time_opening'=>'12:00:00','beginning_balance'=>'0']);
+            $db->transaction(fn()=>\App\Services\Payments\CashLedger::open($cash,[]));
+        }
         return [$db, $app, $input];
     }
 
@@ -1421,7 +1457,6 @@ class FiscalEmissionSchemaTest extends TestCase
         // Commercial documents also recalculate their headers on the server.
         $saleNote = new \App\Models\Tenant\SaleNote();
         $saleNote->fill(array_intersect_key($input,array_flip($saleNote->getFillable())));
-        $db->table('cash')->insert(['user_id'=>auth()->id(),'date_opening'=>'2026-09-10','time_opening'=>'12:00:00','state'=>true]);
         $saleNote->forceFill(['prefix'=>'NV','document_type_id'=>'80','series'=>'NV01','number'=>'#','total'=>'0','external_id'=>(string)\Illuminate\Support\Str::uuid(),
             'user_id'=>auth()->id(),'state_type_id'=>'01'])->save();
         $commercialLine = array_replace($input['items'][0],['unit_price'=>'500','total'=>'499.99','price_type_id'=>'01']);

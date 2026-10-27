@@ -47,7 +47,7 @@ class CashReportRegistry
         return [
             'cash_summary' => [
                 'label' => 'Reporte de caja',
-                'description' => 'Detalle completo de documentos, pagos y productos.',
+                'description' => 'Movimientos del turno, medios de pago, efectivo y saldos por moneda.',
                 'category' => 'cash',
                 'builder' => Builders\CashSummaryBuilder::class,
                 'views' => [

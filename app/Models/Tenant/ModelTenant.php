@@ -30,6 +30,34 @@
         // ######## INICIO CALCULOS EXACTOS PRO9 ########
         protected static function booted()
         {
+            // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+            static::saving(function ($model) {
+                if ($model instanceof PaymentMethodType) {
+                    $values=\App\Services\Payments\Classification::values($model->collection_kind ?? 'unclassified',$model->cash_currency_type_id);
+                    if (($model->is_active ?? true) && $values['collection_kind'] === 'unclassified') \App\Services\Payments\Classification::error('collection_kind','Clasifique el método antes de activarlo.');
+                    if (PaymentMethodType::isInitialPaymentMethodId($model->id)) {
+                        $initial=\App\Services\Payments\Classification::initial((string)$model->id);
+                        if ($values !== $initial) \App\Services\Payments\Classification::error('collection_kind','La naturaleza y moneda de este medio inicial están definidas por el catálogo.');
+                    }
+                    foreach ($values as $key=>$value) $model->setAttribute($key,$value);
+                }
+                if ($model instanceof \Modules\Finance\Models\GlobalPayment && $model->exists && ($model->getOriginal('report_context')['version'] ?? null) === 2 && $model->isDirty(['destination_id','destination_type','cash_session_id','report_context','payment_type','payment_id'])) {
+                    \App\Services\Payments\Classification::error('payment','El movimiento contabilizado es inmutable; revierta el pago.');
+                }
+            });
+            static::creating(function ($model) {
+                if ($model instanceof \Modules\Finance\Models\GlobalPayment) \App\Services\Payments\Movement::capture($model);
+                if ($model instanceof Cash && $model->state) {
+                    // Serialize openings per user without an activation/settings row.
+                    User::withoutEagerLoads()->whereKey($model->user_id)->lockForUpdate()->firstOrFail();
+                    if (Cash::where('user_id',$model->user_id)->where('state',true)->lockForUpdate()->exists()) {
+                        \App\Services\Payments\Classification::error('cash','El usuario ya tiene una caja abierta.');
+                    }
+                }
+            });
+            static::updating(fn($model)=>\App\Services\Payments\Movement::beforeSourceChange($model));
+            static::deleting(fn($model)=>\App\Services\Payments\Movement::beforeSourceChange($model,true));
+            // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
             static::saved(fn ($model) => \App\Support\Exact\CommercialCalculation::afterLine($model));
             static::deleted(fn ($model) => \App\Support\Exact\CommercialCalculation::afterLine($model));
             static::saved(fn ($model) => \App\Support\Exact\Settlement::afterPayment($model));
@@ -71,7 +99,7 @@
 
         public function save(array $options = [])
         {
-            if (\App\Support\Exact\Persistence::enabled($this) && $this->getConnection()->transactionLevel() === 0) {
+            if (($this instanceof \Modules\Finance\Models\GlobalPayment || $this instanceof Cash || \App\Support\Exact\Persistence::enabled($this)) && $this->getConnection()->transactionLevel() === 0) {
                 return $this->getConnection()->transaction(fn () => $this->saveWithExactCalculation($options));
             }
             return $this->saveWithExactCalculation($options);

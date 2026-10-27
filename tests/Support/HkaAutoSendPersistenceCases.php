@@ -123,7 +123,7 @@ trait HkaAutoSendPersistenceCases
         $http = new Factory(); $http->preventStrayRequests(); \Illuminate\Support\Facades\Http::swap($http);
         $db->beginTransaction();
         $payment = FiscalDocumentPersistence::payment($invoice, [
-            'date_of_payment' => '2026-09-10', 'payment_method_type_id' => '01', 'currency_type_id' => 'USD',
+            'date_of_payment' => '2026-09-10', 'payment_method_type_id' => '10', 'currency_type_id' => 'USD',
             'exchange_rate' => '10.00000001', 'original_amount' => 5, 'financial_intermediation' => 'none', 'operation_key' => (string) Str::uuid(),
         ]);
         $db->commit();

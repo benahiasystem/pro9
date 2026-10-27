@@ -8,6 +8,7 @@
         "barryvdh/laravel-dompdf": "^2.0",
         "binarytorch/larecipe": "^2.6",
         "culqi/culqi-php": "2.0.4",
+        "enshrined/svg-sanitize": "^1.1",
         "fabpot/goutte": "^4.0",
         "fideloper/proxy": "^4.0",
         "fruitcake/laravel-cors": "^2.0.5",

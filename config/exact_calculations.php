@@ -31,6 +31,9 @@ return [
     'tips' => ['total'],
     'persons' => ['accumulated_points', 'percentage_perception', 'discount_amount'],
     'bank_accounts' => ['initial_balance'],
+    // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+    'cash_currency_balances' => ['beginning_balance','income','egress','final_balance'],
+    // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
     'cash' => ['beginning_balance', 'final_balance', 'income'],
     'claims' => ['receipt_amount'],
     'expenses' => ['total'],

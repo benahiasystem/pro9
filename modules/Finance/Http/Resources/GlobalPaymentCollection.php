@@ -14,7 +14,7 @@ class GlobalPaymentCollection extends ResourceCollection
      */
     public function toArray($request)
     {
-        return $this->collection->transform(function ($row, $key) {
+        return $this->collection->filter(fn($row)=>\App\Services\Payments\Movement::row($row) !== null)->values()->map(function ($row, $key) {
 
             $data_person = $row->data_person;
 
@@ -44,7 +44,9 @@ class GlobalPaymentCollection extends ResourceCollection
                 }
             }
 
+            $movement=\App\Services\Payments\Movement::row($row);
             return [
+                'report_version' => 2,
                 'id' => $row->id,
                 'destination_description' => $row->getDestinationDescriptionPayment(),
                 // 'destination_description' => $row->destination_description,
@@ -52,9 +54,9 @@ class GlobalPaymentCollection extends ResourceCollection
                 'date_of_payment' => ($payment !== null && $row->payment->date_of_payment !== null) ? $row->payment->date_of_payment->format('d-m-Y') : '',
                 'payment_method_type_description' => $this->getPaymentMethodTypeDescription($row),
                 'reference' => ($payment !== null) ? $row->payment->reference : '',
-                'total' => $payment instanceof \App\Models\Tenant\DocumentPayment ? ($payment->reversed_at ? 0 : $payment->cash_received_amount) : (($payment !== null) ? $payment->payment : 0),
+                'total' => $movement['amount'],
                 'number_full' => ($payment !== null && $row->payment->associated_record_payment) ? $row->payment->associated_record_payment->number_full : '',
-                'currency_type_id' => $payment instanceof \App\Models\Tenant\DocumentPayment ? $payment->currency_type_id : (($payment !== null && $row->payment->associated_record_payment != null) ? $row->payment->associated_record_payment->currency_type_id : ''),
+                'currency_type_id' => $movement['currency_type_id'],
                 // 'document_type_description' => ($row->payment->associated_record_payment->document_type) ? $row->payment->associated_record_payment->document_type->description:'NV',
                 'document_type_description' => $document_type,
                 'person_name' => $personName,
@@ -70,21 +72,17 @@ class GlobalPaymentCollection extends ResourceCollection
         });
     }
 
+    // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+    public function with($request)
+    {
+        return ['totals_by_version'=>\App\Services\Payments\FinancialReport::totals($this->collection)];
+    }
+    // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
+
 
     public function getPaymentMethodTypeDescription($row)
     {
-
-        $payment_method_type_description = '';
-
-        if ($row->payment !== null && $row->payment->payment_method_type) {
-
-            $payment_method_type_description = $row->payment->payment_method_type->description;
-
-        } else {
-            $payment_method_type_description = ($row->payment !== null && $row->payment->expense_method_type !== null) ? $row->payment->expense_method_type->description : '';
-        }
-
-        return $payment_method_type_description;
+        return $row->report_context['method']['description'];
     }
 
 

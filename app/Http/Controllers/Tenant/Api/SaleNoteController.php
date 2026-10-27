@@ -135,7 +135,9 @@ class SaleNoteController extends Controller
                 $data
             );
 
-            $this->sale_note->payments()->delete();
+            // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+            $this->sale_note->payments()->get()->each->delete();
+            // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
 
             foreach ($data['items'] as $row) {
                 $item_id = isset($row['id']) ? $row['id'] : null;

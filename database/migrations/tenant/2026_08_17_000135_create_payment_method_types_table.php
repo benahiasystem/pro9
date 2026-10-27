@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\DB;
 /**
  * Estructura inicial de `payment_method_types` para instalaciones nuevas.
  * Inventario de columnas:
+ * - `collection_kind` varchar(16) NOT NULL DEFAULT 'unclassified'
+ * - `cash_currency_type_id` char(3) DEFAULT NULL
  * - `id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `hka_code` char(2) COLLATE utf8mb4_unicode_ci NOT NULL
@@ -27,6 +29,8 @@ CREATE TABLE `payment_method_types` (
   `id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL,
   `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `hka_code` char(2) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `collection_kind` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'unclassified',
+  `cash_currency_type_id` char(3) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `has_card` tinyint(1) NOT NULL DEFAULT '0',
   `charge` decimal(30,12) DEFAULT NULL,
   `number_days` int(11) DEFAULT NULL,

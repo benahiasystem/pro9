@@ -36,6 +36,7 @@ trait SpePersistenceCases
     public function test_spe_buyer_and_commercial_issuer_matrix_in_common_web_pos_garage_persistence(): void
     {
         [$db,$app,$input]=$this->bootHkaFixture();$sent=[];$mode='confirmed';$this->fakeSpeHka($db,$app,$sent,$mode);
+        config(['hka_credit_invoices.demo_no_advance_verified'=>true]);
         $company=Company::firstOrFail();$company->forceFill(['igtf_enabled'=>true,'igtf_rate'=>3])->save();
         FiscalProfileService::store($company,SpeProfiles::profile());
         $profiles=[
@@ -52,7 +53,7 @@ trait SpePersistenceCases
         }
         foreach($buyers as $name=>$buyer) foreach(['WEB','POS','GARAGE'] as $channel) foreach(['VES','USD'] as $currency) foreach(['01','02'] as $condition){
             $case=array_replace($input,['source_module'=>$channel,'customer_id'=>$buyer->id,'customer'=>$buyer->toArray(),'currency_type_id'=>$currency,'exchange_rate_sale'=>'40.12345678',
-                'payment_condition_id'=>$condition,'external_id'=>(string)Str::uuid(), 'payments'=>$condition==='02'?[]:[['payment'=>232,'date_of_payment'=>'2026-09-10','payment_method_type_id'=>'01','financial_intermediation'=>'none']],
+                'payment_condition_id'=>$condition,'external_id'=>(string)Str::uuid(), 'payments'=>$condition==='02'?[]:[['payment'=>232,'date_of_payment'=>'2026-09-10','payment_method_type_id'=>$currency==='USD'?'10':'01','financial_intermediation'=>'none']],
                 'fee'=>$condition==='02'?[['date'=>'2026-10-10','currency_type_id'=>$currency,'amount'=>232]]:[]]);
             $db->beginTransaction();$before=count($sent);$engine=new \App\CoreFacturalo\Facturalo();if($channel==='WEB')$engine->forWebDocuments();
             $doc=$engine->save($case)->getDocument()->fresh();self::assertSame($before,count($sent));$db->commit();$doc=$doc->fresh();
@@ -73,7 +74,7 @@ trait SpePersistenceCases
             FiscalProfileService::store($company,SpeProfiles::profile(['rif'=>($nature==='legal'?'J':'V').'-12345678-9','nature'=>$nature==='legal'?'legal':'natural','personal_firm'=>$nature==='personal_firm','iva_agent_basis'=>$nature==='natural'?'none':'SNAT/2025/000054']));
             foreach(['WEB','POS','GARAGE'] as $channel)foreach(['VES','USD']as$currency)foreach(['01','02']as$condition){
                 $case=array_replace($input,['source_module'=>$channel,'currency_type_id'=>$currency,'payment_condition_id'=>$condition,'external_id'=>(string)Str::uuid(),
-                    'payments'=>$condition==='02'?[]:[['date_of_payment'=>'2026-09-10','payment_method_type_id'=>'01','payment'=>232,'financial_intermediation'=>'none']]]);
+                    'payments'=>$condition==='02'?[]:[['date_of_payment'=>'2026-09-10','payment_method_type_id'=>$currency==='USD'?'10':'01','payment'=>232,'financial_intermediation'=>'none']]]);
                 $doc=(new \App\CoreFacturalo\Facturalo)->save($case)->getDocument()->fresh();self::assertSame('confirmed',$doc->emission->status);self::assertSame($nature==='legal'?'legal':'natural',$doc->issuer['fiscal_profile']['nature']);
             }
         }
@@ -98,7 +99,7 @@ trait SpePersistenceCases
         foreach(['duplicate'=>['operation_key'=>(string)Str::uuid()], 'wrong_rate'=>['voucher_number'=>'20260900000002','percentage'=>50,'amount'=>16], 'wrong_rif'=>['voucher_number'=>'20260900000003','agent_rif'=>'J-99999999-9'], 'wrong_control'=>['invoice_control'=>'00-00000001'], 'missing_support'=>['attachment'=>null], 'excess_75'=>['voucher_number'=>'20260900000004','base'=>8,'amount'=>6]]as$changes){
             try{FiscalDocumentPersistence::retention($doc,array_replace($voucher,$changes));self::fail('Invalid voucher persisted');}catch(ValidationException $e){self::assertNotEmpty($e->errors());}
         }
-        $pay=['date_of_payment'=>'2026-09-10','payment_method_type_id'=>'01','currency_type_id'=>'USD','exchange_rate'=>'10.00000001','original_amount'=>5,'financial_intermediation'=>'none','operation_key'=>(string)Str::uuid()];
+        $pay=['date_of_payment'=>'2026-09-10','payment_method_type_id'=>'10','currency_type_id'=>'USD','exchange_rate'=>'10.00000001','original_amount'=>5,'financial_intermediation'=>'none','operation_key'=>(string)Str::uuid()];
         $before=count($sent);$db->beginTransaction();$payment=FiscalDocumentPersistence::payment($doc,$pay);self::assertSame($before,count($sent));$db->commit();
         $tax=\App\Models\Tenant\DocumentTax::where('document_payment_id',$payment->id)->firstOrFail();$note=Document::findOrFail($tax->document_id);
         self::assertSame('confirmed',$note->emission->status);self::assertTrue(HkaIgtfNote::applies($note));self::assertCount(0,$note->items);self::assertEquals(0,$note->total_igv);self::assertSame('1.5000000015',$note->total);self::assertEquals(158,$doc->fresh()->balance);

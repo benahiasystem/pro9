@@ -24,7 +24,7 @@ class ExactMySqlContinuationTest extends TestCase
             $factory->method('json')->willReturnCallback(fn($data,$status=200)=>new JsonResponse($data,$status));
             $app->instance(\Illuminate\Contracts\Routing\ResponseFactory::class,$factory);
             \Carbon\Carbon::setTestNow('2026-10-19 12:00:00');
-            $db->table('cash')->insert(['user_id'=>auth()->id(),'date_opening'=>'2026-10-19','time_opening'=>'12:00:00','state'=>true]);
+            $bankId=$db->table('bank_accounts')->insertGetId(['description'=>'Cuenta VES de prueba','number'=>'test-tender','bank_id'=>1,'currency_type_id'=>'VES']);
             $note=new SaleNote();$note->fill(array_intersect_key($input,array_flip($note->getFillable())));
             $note->forceFill(['prefix'=>'NV','document_type_id'=>'80','series'=>'NV01','number'=>'#','total'=>'0',
                 'external_id'=>(string)\Illuminate\Support\Str::uuid(),'user_id'=>auth()->id(),'state_type_id'=>'01',
@@ -36,7 +36,7 @@ class ExactMySqlContinuationTest extends TestCase
             $request=Request::create('/','GET',['model'=>'sale_note']);
             self::assertSame(18,$credit->customerExpiredDays($input['customer_id'],$request)->getData(true)['max_expired_days']);
             (new \App\Http\Controllers\Tenant\SaleNoteController())->savePayments($note,[
-                ['payment'=>'400','payment_method_type_id'=>'04','date_of_payment'=>'2026-10-19'],
+                ['payment'=>'400','payment_method_type_id'=>'04','payment_destination_id'=>$bankId,'date_of_payment'=>'2026-10-19'],
                 ['payment'=>'10','payment_method_type_id'=>'01','date_of_payment'=>'2026-10-19'],
                 ['payment'=>'100.004','payment_method_type_id'=>'01','date_of_payment'=>'2026-10-19'],
             ]);
@@ -71,7 +71,7 @@ class ExactMySqlContinuationTest extends TestCase
             self::assertTrue($closing->exactBalance()->isEqualTo(D::of(1)->minus($tiny)));
             $receipt=\App\Services\Fiscal\FiscalDocumentPersistence::payment($closing,[
                 'original_amount'=>'1','currency_type_id'=>'USD','exchange_rate'=>'3.00000000',
-                'payment_method_type_id'=>'01','date_of_payment'=>'2026-10-19','financial_intermediation'=>'none',
+                'payment_method_type_id'=>'10','date_of_payment'=>'2026-10-19','financial_intermediation'=>'none',
                 'operation_key'=>(string)\Illuminate\Support\Str::uuid(),
             ]);
             self::assertTrue($receipt->exactValue('payment')->isEqualTo(D::of(1)->minus($tiny)));

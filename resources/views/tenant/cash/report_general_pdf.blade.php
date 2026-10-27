@@ -1,14 +1,3 @@
-@php
-
-$final_balance = 0;
-$cash_income = 0;
-$cash_egress = 0;
-$cash_final_balance = 0;
-
-
-
-
-@endphp
 <!DOCTYPE html>
 <html lang="en">
     <head>
@@ -85,138 +74,13 @@ $cash_final_balance = 0;
 
             </table>
         </div>
-        @if($cash_documents->count())
-            <div class="">
-                <div class=" ">
-                    <table class="">
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>Tipo transacción</th>
-                                <th>Tipo documento</th>
-                                <th>Documento</th>
-                                <th>Fecha emisión</th>
-                                <th>Cliente/Proveedor</th>
-                                <th>N° Documento</th>
-                                <th>Moneda</th>
-                                <th>Total</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @php
-                                $all_documents = [];
-                                foreach ($cash_documents as $key => $value) {
-                                    if($value->sale_note){
-                                        $all_documents[] = $value;
-                                    }else if($value->document){
-                                        $all_documents[] = $value;
-                                    }else if($value->expense_payment){
-                                        if($value->expense_payment->expense->state_type_id == '05'){
-                                            $all_documents[] = $value;
-                                        }
-                                    }else if($value->purchase){
-                                        $all_documents[] = $value;
-                                    }
-                                }
-                            @endphp
-                            @foreach($all_documents as $key => $value)
-                                <tr>
-                                    @php
-
-                                        $type_transaction =  null;
-                                        $document_type_description = null;
-                                        $number = null;
-                                        $date_of_issue = null;
-                                        $customer_name = null;
-                                        $customer_number = null;
-                                        $currency_type_id = null;
-                                        $total = null;
-
-                                        if($value->sale_note){
-
-                                            $type_transaction =  'Venta';
-                                            $document_type_description =  'NOTA DE VENTA';
-                                            $number = $value->sale_note->identifier;
-                                            $date_of_issue = $value->sale_note->date_of_issue->format('Y-m-d');
-                                            $customer_name = $value->sale_note->customer->name;
-                                            $customer_number = format_person_identity_document($value->sale_note->customer);
-                                            $total = $value->sale_note->total;
-                                            
-                                            if(!in_array($value->sale_note->state_type_id, ['01','03','05','07','13'])){
-                                                $total = 0;
-                                            }
-
-                                            $currency_type_id = $value->sale_note->currency_type_id;
-
-                                        }
-                                        else if($value->document){
-
-                                            $type_transaction =  'Venta';
-                                            $document_type_description =  $value->document->document_type->description;
-                                            $number = $value->document->number_full;
-                                            $date_of_issue = $value->document->date_of_issue->format('Y-m-d');
-                                            $customer_name = $value->document->customer->name;
-                                            $customer_number = format_person_identity_document($value->document->customer);
-                                            $total = $value->document->total;
-                                            
-                                            if(!in_array($value->document->state_type_id, ['01','03','05','07','13'])){
-                                                $total = 0;
-                                            }
-
-                                            $currency_type_id = $value->document->currency_type_id;
-
-                                        }
-                                        else if($value->expense_payment){
-
-                                            $type_transaction =  'Gasto';
-                                            $document_type_description =  $value->expense_payment->expense->expense_type->description;
-                                            $number = $value->expense_payment->expense->number;
-                                            $date_of_issue = $value->expense_payment->expense->date_of_issue->format('Y-m-d');
-                                            $customer_name = $value->expense_payment->expense->supplier->name;
-                                            $customer_number = format_person_identity_document($value->expense_payment->expense->supplier);
-                                            $total = -$value->expense_payment->payment;
-                                            $currency_type_id = $value->expense_payment->expense->currency_type_id;
-
-                                        }
-                                        else if($value->purchase){
-
-                                            $type_transaction =  'Compra';
-                                            $document_type_description =  $value->purchase->document_type->description;
-                                            $number = $value->purchase->number_full;
-                                            $date_of_issue = $value->purchase->date_of_issue->format('Y-m-d');
-                                            $customer_name = $value->purchase->supplier->name;
-                                            $customer_number = format_person_identity_document($value->purchase->supplier);
-                                            $total = -$value->purchase->total;
-                                            $currency_type_id = $value->purchase->currency_type_id;
-
-                                            if(!in_array($value->purchase->state_type_id, ['01','03','05','07','13'])){
-                                                $total = 0;
-                                            }
-                                        }
-
-                                    @endphp
-
-
-                                    <td class="celda">{{ $loop->iteration }}</td>
-                                    <td class="celda">{{ $type_transaction }}</td>
-                                    <td class="celda">{{ $document_type_description }}</td>
-                                    <td class="celda">{{ $number }}</td>
-                                    <td class="celda">{{ $date_of_issue}}</td>
-                                    <td class="celda">{{ $customer_name }}</td>
-                                    <td class="celda">{{$customer_number }}</td>
-                                    <td class="celda">{{ $currency_type_id }}</td>
-                                    <td class="celda">{{ number_format($total,2, ".", "") }}</td>
-
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        @else
-            <div class="callout callout-info">
-                <p>No se encontraron registros.</p>
-            </div>
-        @endif
+        @if(empty($classified_sessions))<p>No se encontraron registros.</p>@endif
+        {{-- ######## INICIO CLASIFICACION DE COBROS Y CAJA ######## --}}
+        @foreach(($classified_sessions ?? []) as $session)
+            <h3>Caja {{ $session['cash']->id }} · {{ $session['header']['cash_user_name'] }}</h3>
+            @include('cashreport::reports.partials.classified_balances',['classified'=>$session['classified']])
+            @include('cashreport::reports.partials.classified_movements',['classified'=>$session['classified']])
+        @endforeach
+        {{-- ######## FIN CLASIFICACION DE COBROS Y CAJA ######## --}}
     </body>
 </html>

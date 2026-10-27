@@ -992,16 +992,25 @@ class Facturalo
             $values = \App\Services\Fiscal\FiscalAmounts::payment($row, $document->currency_type_id, $document->exchange_rate_sale, (bool)$company->igtf_enabled, $company->igtf_rate);
             $normalized[] = array_merge($row, $values);
         }
-        $excess = \App\Support\Exact\Decimal::sum(array_column($normalized, 'payment'))->minus(\App\Support\Exact\Decimal::of($document->total_payable ?? $document->total));
-        if ($excess->isGreaterThan(0)) {
-            $index = 0;
-            foreach ($normalized as $i => $row) if ($row['payment_method_type_id'] === '01') { $index = $i; break; }
-            $row = $normalized[$index];
-            if (\App\Support\Exact\Decimal::of($row['payment'])->isLessThanOrEqualTo($excess)) \App\Services\Fiscal\FiscalAmounts::error('payments','El exceso supera el pago seleccionado para vuelto.');
-            $row['change'] = \App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::convert($excess, $document->currency_type_id, $row['currency_type_id'], $row['exchange_rate']), 2);
-            $row['original_amount'] = \App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::of($row['original_amount'])->minus(\App\Support\Exact\Decimal::of($row['change'])));
-            $normalized[$index] = $row;
+        // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+        $excess=\App\Support\Exact\Decimal::sum(array_map(fn($row)=>\App\Support\Exact\Decimal::readRequired($row,'payment'),$normalized))->minus(\App\Support\Exact\Decimal::readRequired($document,$document->total_payable === null ? 'total' : 'total_payable'));
+        if ($excess->isPositive()) {
+            $remaining=$excess; $cashMethods=\App\Services\Payments\Classification::cashIds();
+            foreach ($normalized as $index=>$row) {
+                if (!in_array($row['payment_method_type_id'],$cashMethods,true) || !$remaining->isPositive()) continue;
+                $applied=\App\Support\Exact\Decimal::min($remaining,\App\Support\Exact\Decimal::readRequired($row,'payment'));
+                $change=\App\Support\Exact\Decimal::convert($applied,$document->currency_type_id,$row['currency_type_id'],$row['exchange_rate']);
+                $row['change']=\App\Support\Exact\Decimal::represent($change,2);
+                if (!\App\Support\Exact\Decimal::of($row['change'])->isEqualTo($change)) \App\Services\Fiscal\FiscalAmounts::error('payments','El vuelto convertido requiere un importe liquidable en céntimos.');
+                $net=\App\Support\Exact\Decimal::readRequired($row,'original_amount')->minus($change);
+                if ($net->isNegative()) \App\Services\Fiscal\FiscalAmounts::error('payments','El vuelto supera el efectivo recibido.');
+                $row['original_amount']=\App\Support\Exact\Decimal::represent($net);
+                $row['payment']=\App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::readRequired($row,'payment')->minus($applied));
+                $normalized[$index]=$row; $remaining=$remaining->minus($applied);
+            }
+            if ($remaining->isPositive()) \App\Services\Fiscal\FiscalAmounts::error('payments','El exceso sólo puede devolverse desde el efectivo recibido.');
         }
+        // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
         foreach ($normalized as $row) {
             $record = \App\Services\Fiscal\FiscalDocumentPersistence::payment($document, $row, true);
             $this->saveFilesFromPayments($row, $record, 'documents');

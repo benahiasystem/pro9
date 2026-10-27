@@ -59,6 +59,9 @@ class SaleNotePaymentController extends Controller
             'identifier' => $sale_note->identifier,
             'full_number' => $sale_note->getNumberFullAttribute(),
             'number_full' => $sale_note->getNumberFullAttribute(),
+            // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+            'currency_type_id' => $sale_note->currency_type_id,
+            // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
             'total_paid' => $totals['total_paid'],
             'total' => $totals['total'],
             'total_difference' => $totals['total_difference'],

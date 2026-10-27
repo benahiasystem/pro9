@@ -59,9 +59,10 @@ trait IvaRetentionPersistenceCases
     public function test_iva_net_forecast_idempotence_hka_and_audited_replacement(): void
     {
         [$db,$app,$input] = $this->bootIvaFixture();
-        $cashId=$db->table('cash')->insertGetId(['user_id'=>auth()->id(),'date_opening'=>'2026-09-10','time_opening'=>'12:00:00','state'=>1]);
+        $cashId=$db->table('cash')->where('user_id',auth()->id())->where('state',true)->value('id');
         foreach (['WEB','POS','VENDEYA'] as $source) foreach (['VES','USD'] as $currency) {
             $case = array_replace($input,['source_module'=>$source,'external_id'=>(string)Str::uuid(),'currency_type_id'=>$currency,'exchange_rate_sale'=>'10.12345678']);
+            $case['payments'][0]['payment_method_type_id']=$currency==='USD'?'10':'01';
             $doc = (new Facturalo)->save($case)->getDocument()->fresh();
             self::assertEquals(24,$doc->balance);self::assertEquals(208,$doc->payments->sum('payment'));self::assertEquals(232,$doc->total);
             self::assertEquals(24,$doc->fiscal_data->iva_retention_prevision['amount']);
@@ -256,7 +257,7 @@ trait IvaRetentionPersistenceCases
     public function test_iva_fiscal_ves_is_independent_from_usd_settlement_rate(): void
     {
         [$db,$app,$input] = $this->bootIvaFixture();
-        $input['currency_type_id']='USD';$input['exchange_rate_sale']='10.00000000';
+        $input['currency_type_id']='USD';$input['exchange_rate_sale']='10.00000000';$input['payments'][0]['payment_method_type_id']='10';
         $doc=(new Facturalo)->save($input)->getDocument()->fresh();
         $row=IvaRetentionService::store($doc,$this->ivaVoucher($doc,['base'=>320,'amount'=>240,'currency_type_id'=>'VES','exchange_rate'=>'20.00000000']));
         self::assertEquals(12,$row->applied_amount);self::assertEquals(12,$doc->fresh()->balance);

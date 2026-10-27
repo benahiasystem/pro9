@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\DB;
  * - `id` varchar(4) COLLATE utf8mb4_unicode_ci NOT NULL, código HKA
  * - `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `percentage` decimal(30,12) NOT NULL, valor de referencia del manual
- * - `tax_kind` varchar(4) COLLATE utf8mb4_unicode_ci NOT NULL, IVA o IGTF
+ * - `tax_kind` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL, familia de impuesto
  * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
@@ -23,7 +23,7 @@ CREATE TABLE `cat_iva_rate_types` (
   `id` varchar(4) COLLATE utf8mb4_unicode_ci NOT NULL,
   `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `percentage` decimal(30,12) NOT NULL,
-  `tax_kind` varchar(4) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `tax_kind` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL,
   `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci

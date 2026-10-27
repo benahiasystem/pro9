@@ -190,7 +190,7 @@
                                         <td>
                                             <div class="form-group mb-2 me-2">
                                                 <el-select v-model="row.payment_destination_id" filterable>
-                                                    <el-option v-for="option in payment_destinations" :key="option.id"
+                                                    <el-option v-for="option in classifiedPaymentDestinations(payment_destinations, row)" :key="option.id"
                                                                :value="option.id"
                                                                :label="option.description"></el-option>
                                                 </el-select>

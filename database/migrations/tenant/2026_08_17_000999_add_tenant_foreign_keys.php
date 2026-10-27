@@ -8,6 +8,13 @@ return new class extends Migration
 {
     public function up(): void
     {
+        // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+        DB::unprepared("ALTER TABLE `cat_iva_rate_types` ADD CONSTRAINT `cat_iva_rate_types_tax_kind_foreign` FOREIGN KEY (`tax_kind`) REFERENCES `cat_taxes_types` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT");
+        // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
+        // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+        DB::unprepared("ALTER TABLE cash_currency_balances ADD CONSTRAINT cash_currency_balances_cash_fk FOREIGN KEY (cash_id) REFERENCES cash(id), ADD CONSTRAINT cash_currency_balances_currency_fk FOREIGN KEY (currency_type_id) REFERENCES cat_currency_types(id)");
+        DB::unprepared("ALTER TABLE global_payments ADD CONSTRAINT global_payments_cash_session_fk FOREIGN KEY (cash_session_id) REFERENCES cash(id)");
+        // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
         // ######## INICIO NOTAS HKA ########
         // ######## INICIO ORDENES HKA DEMO ########
         DB::unprepared("ALTER TABLE `dispatch_emissions` ADD CONSTRAINT `dispatch_emissions_dispatch_foreign` FOREIGN KEY (`dispatch_id`) REFERENCES `dispatches` (`id`)");
@@ -563,6 +570,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+        DB::unprepared("ALTER TABLE global_payments DROP FOREIGN KEY global_payments_cash_session_fk");
+        DB::unprepared("ALTER TABLE cash_currency_balances DROP FOREIGN KEY cash_currency_balances_currency_fk, DROP FOREIGN KEY cash_currency_balances_cash_fk");
+        // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
         // ######## INICIO NOTAS HKA ########
         DB::unprepared("ALTER TABLE `dispatch_emissions` DROP FOREIGN KEY `dispatch_emissions_environment_foreign`");
         DB::unprepared("ALTER TABLE `dispatch_emissions` DROP FOREIGN KEY `dispatch_emissions_dispatch_foreign`");
@@ -1112,6 +1123,9 @@ return new class extends Migration
         DB::unprepared("ALTER TABLE `bank_accounts` DROP FOREIGN KEY `bank_accounts_bank_id_foreign`");
         DB::unprepared("ALTER TABLE `authorized_discount_users` DROP FOREIGN KEY `authorized_discount_users_user_id_foreign`");
         DB::unprepared("ALTER TABLE `authorized_discount_users` DROP FOREIGN KEY `authorized_discount_users_seller_id_foreign`");
+        // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+        DB::unprepared("ALTER TABLE `cat_iva_rate_types` DROP FOREIGN KEY `cat_iva_rate_types_tax_kind_foreign`");
+        // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
     }
 };
 // ######## FIN ESQUEMA INICIAL VENEZUELA ########

@@ -14,21 +14,41 @@ class ExactTenderConsumersTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp(); DB::purge('tenant');
+        config(['fiscal_emission.operation_tables'=>[]]);
         config(['database.connections.tenant'=>['driver'=>'sqlite','database'=>':memory:','prefix'=>'']]);
         Schema::connection('tenant')->create('sale_notes',function ($t) {
             $t->increments('id'); $t->text('total'); $t->text('total_payable'); $t->json('calculation_snapshot')->nullable();
             $t->boolean('total_canceled')->default(false); $t->timestamps();
+            $t->integer('user_id')->default(1);$t->string('currency_type_id')->default('VES');$t->string('exchange_rate_sale')->default('1');
+            $t->string('state_type_id')->default('01');$t->string('fiscal_environment')->default('demo');
         });
         Schema::connection('tenant')->create('sale_note_payments',function ($t) {
             $t->increments('id'); $t->integer('sale_note_id'); $t->text('payment'); $t->text('change')->nullable();
             $t->string('payment_method_type_id')->nullable(); $t->json('calculation_snapshot')->nullable();
         });
         Schema::connection('tenant')->create('payment_method_types',function ($t) {
-            $t->string('id'); $t->boolean('is_active')->default(true);
+            $t->string('id'); $t->boolean('is_active')->default(true);$t->string('description')->default('Prueba');
+            $t->string('hka_code')->default('99');$t->string('collection_kind');$t->string('cash_currency_type_id')->nullable();
         });
-        DB::connection('tenant')->table('payment_method_types')->insert([['id'=>'01'],['id'=>'04']]);
+        DB::connection('tenant')->table('payment_method_types')->insert([['id'=>'01','collection_kind'=>'cash','cash_currency_type_id'=>'VES'],['id'=>'10','collection_kind'=>'cash','cash_currency_type_id'=>'USD'],['id'=>'04','collection_kind'=>'account','cash_currency_type_id'=>null]]);
+        Schema::connection('tenant')->create('companies',function($t) {$t->increments('id');$t->string('fiscal_environment')->default('demo');$t->string('fiscal_emission_mode')->default('digital');});
+        DB::connection('tenant')->table('companies')->insert(['id'=>1]);
+        Schema::connection('tenant')->create('cash',function($t) {$t->increments('id');$t->integer('user_id');$t->boolean('state');});
+        DB::connection('tenant')->table('cash')->insert(['id'=>1,'user_id'=>1,'state'=>true]);
+        Schema::connection('tenant')->create('bank_accounts',function($t) {$t->increments('id');$t->string('description')->default('Cuenta VES');$t->string('currency_type_id')->default('VES');$t->boolean('status')->default(true);});
+        DB::connection('tenant')->table('bank_accounts')->insert(['id'=>1]);
+        Schema::connection('tenant')->create('document_payments',function($t) {$t->increments('id');$t->json('payment_method_snapshot')->nullable();$t->dateTime('reversed_at')->nullable();});
+        Schema::connection('tenant')->create('users',function($t) {$t->increments('id');});
+        DB::connection('tenant')->table('users')->insert(['id'=>1]);
+        Schema::connection('tenant')->create('establishments',function($t) {$t->increments('id');});
+        foreach (['fiscal_environments','state_types','cat_currency_types','card_brands'] as $table) Schema::connection('tenant')->create($table,function($t) {$t->string('id');});
+        Schema::connection('tenant')->create('sale_note_items',function($t) {$t->increments('id');$t->integer('sale_note_id');});
         foreach (['global_payments','payment_files','payment_link_payments'] as $name) Schema::connection('tenant')->create($name,function ($t) {
             $t->increments('id'); $t->string('payment_type'); $t->integer('payment_id');
+            if ($t->getTable() === 'global_payments') {
+                $t->string('destination_type');$t->integer('destination_id');$t->integer('user_id');$t->string('fiscal_environment');
+                $t->integer('cash_session_id')->nullable();$t->json('report_context')->nullable();$t->timestamps();
+            }
         });
     }
 
@@ -57,7 +77,7 @@ class ExactTenderConsumersTest extends TestCase
         $note = SaleNote::withoutEagerLoads()->findOrFail(1);
         DB::connection('tenant')->transaction(function () use ($note) {
             (new \App\Http\Controllers\Tenant\SaleNoteController())->savePayments($note,[
-                ['payment'=>'400','payment_method_type_id'=>'04'],['payment'=>'10','payment_method_type_id'=>'01'],
+                ['payment'=>'400','payment_method_type_id'=>'04','payment_destination_id'=>1],['payment'=>'10','payment_method_type_id'=>'01'],
                 ['payment'=>'100.004','payment_method_type_id'=>'01']]);
         });
         $values = SaleNoteBalance::values($note);
@@ -92,7 +112,7 @@ class ExactTenderConsumersTest extends TestCase
         DB::connection('tenant')->table('sale_notes')->insert(['id'=>1,'total'=>'500','total_payable'=>'500']);
         try {
             DB::connection('tenant')->transaction(fn()=>(new \App\Http\Controllers\Tenant\SaleNoteController())->savePayments(
-                SaleNote::withoutEagerLoads()->findOrFail(1),[['payment'=>'501','payment_method_type_id'=>'04']]));
+                SaleNote::withoutEagerLoads()->findOrFail(1),[['payment'=>'501','payment_method_type_id'=>'04','payment_destination_id'=>1]]));
             self::fail('No se puede convertir transferencia excedente en efectivo.');
         } catch (ValidationException $error) { self::assertSame(0,DB::connection('tenant')->table('sale_note_payments')->count()); }
     }

@@ -8,7 +8,7 @@ use Maatwebsite\Excel\Concerns\Exportable;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\FromCollection;
 
-class PaymentMethodTypeExport implements  FromView, ShouldAutoSize
+class PaymentMethodTypeExport implements  FromView, ShouldAutoSize, \Maatwebsite\Excel\Concerns\WithEvents
 {
     use Exportable;
     
@@ -37,4 +37,14 @@ class PaymentMethodTypeExport implements  FromView, ShouldAutoSize
             'establishment'=>$this->establishment
         ]);
     }
+
+    // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+    public function registerEvents(): array
+    {
+        return [\Maatwebsite\Excel\Events\AfterSheet::class=>function($event) {
+            $rows=$this->records['classified'] ?? [];
+            if (count($rows)) \App\Support\Exact\FractionSheet::append($event->sheet->getDelegate(),$rows,['opening','income','egress','balance']);
+        }];
+    }
+    // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
 }

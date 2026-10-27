@@ -25,7 +25,7 @@ test('payment currency conversions preserve eight-decimal rates and separate IGT
     const payment = {currency_type_id:'USD',original_amount:'5',exchange_rate:'40.12345678'};
     const instance = {payment,documentCurrency:'VES',error:'',evaluate:()=>{}};
     component.methods.convertPrincipal.call(instance);
-    assert.equal(payment.payment,200.62); assert.equal(payment.exchange_rate,'40.12345678');
+    assert.equal(payment.payment,'200.62'); assert.equal(payment.exchange_rate,'40.12345678');
     assert.equal(Object.hasOwn(payment,'tax_amount'),false);
 });
 test('a stale proposal cannot overwrite the current collection', async()=>{

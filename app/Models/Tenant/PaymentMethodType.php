@@ -52,6 +52,7 @@
      */
     class PaymentMethodType extends ModelTenant
     {
+        protected $keyType = 'string';
         public $incrementing = false;
         public $timestamps = false;
 
@@ -75,6 +76,8 @@
         protected $fillable = [
             'id',
             'description',
+            'collection_kind',
+            'cash_currency_type_id',
             'has_card',
             'charge',
             'number_days',
@@ -432,7 +435,7 @@
                         ->active()
                         ->select([
                             'id',
-                            'description'
+                            'description', 'collection_kind', 'cash_currency_type_id'
                         ])
                         ->get();
         }

@@ -75,23 +75,22 @@ class ProcessGlobalPaymentReport implements ShouldQueue
             $filename = $this->getReportFilename($download_tray->module, 'Reporte_Pagos');
 
             // data
-            $records = app(GlobalPaymentController::class)->getRecords($this->params , GlobalPayment::class)->get();
-            $company = $this->getDataCompany();
-            $establishment = $this->getDataEstablishment($this->params['establishment_id']);
+            // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+            [$records,$company,$establishment]=\App\Support\Exact\ReadSnapshot::run(DB::connection('tenant'),function() {
+                $records=app(GlobalPaymentController::class)->getRecords($this->params,GlobalPayment::class)->get();
+                \App\Services\Payments\Movement::preload($records);
+                return [$records,$this->getDataCompany(),$this->getDataEstablishment($this->params['establishment_id'])];
+            });
+            // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
 
 
             // procesar reporte
             if($format === 'pdf')
             {
-                //@todo revisar formato, genera error
-                // ini_set("pcre.backtrack_limit", "50000000");
-
-                // $this->showLogInfo('Render pdf init');
-                // $pdf = PDF::loadView('finance::global_payments.report_pdf', compact('records', 'company', 'establishment'))->setPaper('a4', 'landscape');
-
-                // $this->showLogInfo('Upload pdf init');
-                // $this->uploadStorage($filename, $pdf->stream($filename.'.'.$format), $path);
-                // $this->showLogInfo('Upload pdf finish');
+                // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+                $pdf = PDF::loadView('finance::global_payments.report_pdf', compact('records', 'company', 'establishment'))->setPaper('a4', 'landscape');
+                $this->uploadStorage($filename, $pdf->output(), $path);
+                // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
             }
             else
             {

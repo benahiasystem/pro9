@@ -58,8 +58,8 @@
                                     </td>
                                     <td>
                                         <div class="form-group mb-0" :class="{'has-danger': row.errors.payment_destination_id}">
-                                            <el-select v-model="row.payment_destination_id" filterable :disabled="row.payment_destination_disabled">
-                                                <el-option v-for="option in payment_destinations" :key="option.id" :value="option.id" :label="option.description"></el-option>
+                                            <el-select v-model="row.payment_destination_id" filterable :disabled="classifiedPaymentDestinationDisabled(payment_destinations, row)">
+                                                <el-option v-for="option in classifiedPaymentDestinations(payment_destinations, row)" :key="option.id" :value="option.id" :label="option.description"></el-option>
                                             </el-select>
                                             <small class="form-control-feedback" v-if="row.errors.payment_destination_id" v-text="row.errors.payment_destination_id[0]"></small>
                                         </div>

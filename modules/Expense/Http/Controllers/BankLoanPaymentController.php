@@ -44,7 +44,10 @@
 
             return [
                 'number_full' => $expense->number,
-                'total_paid' => $total_paid,
+                // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+            'currency_type_id' => $expense->currency_type_id,
+            // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
+            'total_paid' => $total_paid,
                 'total' => $total,
                 'total_difference' => $total_difference,
                 'payment_destination_id'=> (int)$expense->bank_account_id

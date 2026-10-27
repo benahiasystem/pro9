@@ -227,37 +227,16 @@ class Cash extends ModelTenant
      */
     public function getApiRowResource()
     {
-        // Mientras la caja está abierta, income/final_balance persistidos están en 0
-        // (solo se calculan al cerrar). Para la app calculamos los montos al vuelo.
-        // Si está cerrada, reutilizamos lo persistido para no recalcular en cada fila.
-        if ($this->state) {
-            $current_totals = $this->getCurrentTotals();
-            $current_income = $current_totals['income'];
-            $current_final_balance = $current_totals['final_balance'];
-        } else {
-            $current_income = (float) $this->income;
-            $current_final_balance = (float) $this->final_balance;
-        }
-
-        return [
-            'id' => $this->id,
-            'user_id' => $this->user_id,
-            'user_name' => $this->user->name,
-            'date_opening' => $this->date_opening,
-            'time_opening' => $this->time_opening,
-            'opening' => "{$this->date_opening} {$this->time_opening}",
-            'date_closed' => $this->date_closed,
-            'time_closed' => $this->time_closed,
-            'closed' => !$this->state ? "{$this->date_closed} {$this->time_closed}" : null,
-            'beginning_balance' => (float) $this->beginning_balance,
-            'final_balance' => (float) $this->final_balance,
-            'income' => (float) $this->income,
-            'current_income' => $current_income,
-            'current_final_balance' => $current_final_balance,
-            'state' => (bool) $this->state,
-            'state_description' => $this->state_description,
-            'reference_number' => $this->reference_number,
-        ];
+        // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+        $balances=\App\Services\Payments\CashLedger::report($this)['balances_by_currency'];
+        $net=\App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::readRequired($balances['VES'],'income')->minus(\App\Support\Exact\Decimal::readRequired($balances['VES'],'egress')));
+        return ['id'=>$this->id,'user_id'=>$this->user_id,'user_name'=>$this->user->name,'date_opening'=>$this->date_opening,'time_opening'=>$this->time_opening,
+            'opening'=>"{$this->date_opening} {$this->time_opening}",'date_closed'=>$this->date_closed,'time_closed'=>$this->time_closed,
+            'closed'=>$this->state ? null : "{$this->date_closed} {$this->time_closed}",'report_version'=>2,'balances_by_currency'=>$balances,
+            'beginning_balance'=>$balances['VES']['beginning_balance'],'final_balance'=>$balances['VES']['final_balance'],'income'=>$net,
+            'current_income'=>$net,'current_final_balance'=>$balances['VES']['final_balance'],'state'=>(bool)$this->state,
+            'state_description'=>$this->state_description,'reference_number'=>$this->reference_number];
+        // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
     }
 
 
@@ -273,89 +252,10 @@ class Cash extends ModelTenant
      */
     public function getCurrentTotals()
     {
-        $id = $this->id;
-        $final_balance = 0;
-        $valid_states = ['01', '03', '05', '07', '13'];
-
-        foreach ($this->cash_documents as $cash_document) {
-
-            if ($cash_document->sale_note) {
-
-                if (in_array($cash_document->sale_note->state_type_id, $valid_states)) {
-                    $balance = $cash_document->sale_note->payments()
-                        ->whereHas('cashDocumentPayments', function ($query) use ($id) {
-                            $query->where('cash_id', $id);
-                        })
-                        ->sum('payment');
-
-                    $final_balance = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($final_balance)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational(($cash_document->sale_note->currency_type_id == 'VES')
-                        ? $balance
-                        : ((\App\Services\ExchangeRates\ExchangeRateMath::rational($balance)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($cash_document->sale_note->exchange_rate_sale)))->toBigDecimal())))->toBigDecimal();
-                }
-
-            }
-            else if ($cash_document->document) {
-                if (in_array($cash_document->document->state_type_id, ['01','03','05','07','13'])) {
-                    $final_balance = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($final_balance)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational($cash_document->document->payments()
-                        ->whereHas('cashDocumentPayments', fn ($query) => $query->where('cash_id', $id))
-                        ->get()->sum(fn ($payment) => \App\Services\Fiscal\FiscalAmounts::convert(
-                            $payment->cash_received_amount, $payment->currency_type_id, 'VES', $payment->exchange_rate))))->toBigDecimal();
-                }
-            }
-            else if ($cash_document->expense_payment) {
-
-                $expense = $cash_document->expense_payment->expense;
-                if ($expense->state_type_id == '05') {
-                    $final_balance = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($final_balance)->minus(\App\Services\ExchangeRates\ExchangeRateMath::rational(($expense->currency_type_id == 'VES')
-                        ? $cash_document->expense_payment->payment
-                        : ((\App\Services\ExchangeRates\ExchangeRateMath::rational($cash_document->expense_payment->payment)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($expense->exchange_rate_sale)))->toBigDecimal())))->toBigDecimal();
-                }
-
-            }
-            else if ($cash_document->purchase) {
-
-                if (in_array($cash_document->purchase->state_type_id, $valid_states)) {
-                    if ($cash_document->purchase->total_canceled == 1) {
-                        $final_balance = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($final_balance)->minus(\App\Services\ExchangeRates\ExchangeRateMath::rational(($cash_document->purchase->currency_type_id == 'VES')
-                            ? $cash_document->purchase->total
-                            : ((\App\Services\ExchangeRates\ExchangeRateMath::rational($cash_document->purchase->total)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($cash_document->purchase->exchange_rate_sale)))->toBigDecimal())))->toBigDecimal();
-                    }
-                }
-
-            }
-            else if ($cash_document->quotation) {
-
-                $final_balance = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($final_balance)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational(($cash_document->quotation->applyQuotationToCash())
-                    ? $cash_document->quotation->getTransformTotal()
-                    : 0))->toBigDecimal();
-
-            }
-
-        }
-
-        // Ingresos (finanzas): si la caja sigue abierta, usamos la fecha/hora actual como tope
-        $date_closed = $this->date_closed ?: date('Y-m-d');
-        $time_closed = $this->time_closed ?: date('H:i:s');
-
-        $incomes = \Modules\Finance\Models\Income::where('user_id', $this->user_id)
-            ->whereTypeUser()
-            ->whereBetween('date_of_issue', [$this->date_opening, $date_closed])
-            ->whereBetween('time_of_issue', [$this->time_opening, $time_closed])
-            ->get();
-
-        foreach ($incomes as $income) {
-            if (in_array($income->state_type_id, $valid_states)) {
-                $final_balance = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($final_balance)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational(($income->currency_type_id == 'VES')
-                    ? $income->total
-                    : ((\App\Services\ExchangeRates\ExchangeRateMath::rational($income->total)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($income->exchange_rate_sale)))->toBigDecimal())))->toBigDecimal();
-            }
-        }
-
-        $final_balance -= $this->noteRefundTotal();
-        return [
-            'income' => round((float) \App\Services\ExchangeRates\ExchangeRateMath::finalAmount($final_balance, 2), 2),
-            'final_balance' => round($final_balance + $this->beginning_balance, 2),
-        ];
+        // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+        $balances=\App\Services\Payments\CashLedger::report($this)['balances_by_currency'];
+        return ['income'=>\App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::readRequired($balances['VES'],'income')->minus(\App\Support\Exact\Decimal::readRequired($balances['VES'],'egress'))),'final_balance'=>$balances['VES']['final_balance'],'balances_by_currency'=>$balances];
+        // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
     }
 
     public function noteRefunds()

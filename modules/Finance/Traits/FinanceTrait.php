@@ -35,17 +35,11 @@
          */
         public function getPaymentDestinations()
         {
-
-            $bank_accounts = self::getBankAccounts();
-            $cash = $this->getCash();
-
-            // dd($cash);
-            if ($cash) {
-                return $bank_accounts->push($cash);
-            }
-
-            return $bank_accounts;
-
+            // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+            $destinations=self::getBankAccounts()->map(fn($row)=>$row+['report_version'=>2]);
+            $cash=$this->getCash();
+            return $cash ? $destinations->push($cash+['report_version'=>2]) : $destinations;
+            // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
         }
 
 
@@ -56,6 +50,7 @@
                 return [
                     'id' => $row->id,
                     'cash_id' => null,
+                    'currency_type_id' => $row->currency_type_id,
                     'description' => "{$row->bank->description} - {$row->currency_type_id} - {$row->description}",
                 ];
             });
@@ -147,22 +142,9 @@
 
         public function createGlobalPayment($model, $row)
         {
-            $destination = $this->getDestinationRecord($row);
-            $company = Company::active();
-            // ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
-            if ($model instanceof DocumentPayment && $destination['destination_type'] === BankAccount::class) {
-                $account = BankAccount::findOrFail($destination['destination_id']);
-                if ($account->currency_type_id !== $model->currency_type_id) {
-                    \App\Services\Fiscal\FiscalAmounts::error('payment_destination_id','La moneda del pago debe coincidir con la cuenta bancaria.');
-                }
-            }
-            // ######## FIN PERSISTENCIA FISCAL VENEZUELA ########
-            $model->global_payment()->create([
-                'user_id' => auth()->id(),
-                'fiscal_environment' => $company->fiscal_environment,
-                'destination_id' => $destination['destination_id'],
-                'destination_type' => $destination['destination_type'],
-            ]);
+            // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+            \App\Services\Payments\ReceiptDestination::attach($model,$row);
+            // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
         }
 
         public function getDestinationRecord($row)
@@ -194,6 +176,17 @@
 
         public function createCashDocumentPayment($payment, $isDocument = true)
         {
+            // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+            $global=$payment->global_payment;
+            if (($global?->report_context['version'] ?? null) === 2) {
+                if (!$global->cash_session_id) return;
+                $field=$isDocument ? 'document_id' : 'sale_note_id';
+                $document=$isDocument ? $payment->document_id : $payment->sale_note_id;
+                CashDocumentPayment::updateOrCreate(['cash_id'=>$global->cash_session_id,$isDocument ? 'document_payment_id' : 'sale_note_payment_id'=>$payment->id],
+                    ['cash_document_id'=>CashDocument::where($field,$document)->value('id'),'cash_document_credit_id'=>CashDocumentCredit::where($field,$document)->value('id')]);
+                return;
+            }
+            // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
 
             $cash = Cash::where([
                 ['user_id', auth()->user()->id],
@@ -331,7 +324,7 @@
             // $contract_payment = 0; //$this->getSumPayment($cash, ContractPayment::class);
             $contract_payment = $this->getSumPayment($cash, ContractPayment::class, $requestCurrencyTipeId);
             $income_payment = $this->getSumPayment($cash, IncomePayment::class, $requestCurrencyTipeId);
-            $cash_pos = $this->getSumPaymentCashPos($cash, CashTransaction::class);
+            $cash_pos = $this->getSumPaymentCashPos($cash, CashTransaction::class, $requestCurrencyTipeId);
             $technical_service_payment = $this->getSumPayment($cash, TechnicalServicePayment::class, $requestCurrencyTipeId);
             $purchase__settlement_payment = $this->getSumPayment($cash, PurchaseSettlementPayment::class, $requestCurrencyTipeId);
             $cash_ids = $cash->pluck('destination_id')->unique();
@@ -384,17 +377,13 @@
         // ######## INICIO CALCULOS EXACTOS PRO9 ########
         public function getSumPayment($record, $model, $requestCurrencyTipeId = 'VES')
         {
-            return ExactDecimal::sum($record->where('payment_type', $model)->map(function ($row) use ($requestCurrencyTipeId) {
-                $receipt = $row->payment;
-                if (!$receipt || $receipt->reversed_at) return ExactDecimal::of(0);
-                if ($receipt instanceof \App\Models\Tenant\DocumentPayment || $receipt instanceof \App\Models\Tenant\DocumentNoteRefund) {
-                    return ExactDecimal::convert($receipt->cash_received_amount, $receipt->currency_type_id, $requestCurrencyTipeId, $receipt->exchange_rate);
-                }
-                $parent = $receipt->associated_record_payment;
-                if (!$parent) return ExactDecimal::read($receipt, 'payment');
-                $credit = $row->instance_type === 'document' ? $this->getTotalCreditNotes($parent, $requestCurrencyTipeId) : ExactDecimal::of(0);
-                return $this->calculateTotalCurrencyType($parent, ExactDecimal::read($receipt, 'payment'), $requestCurrencyTipeId)->minus($credit);
+            // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+            return ExactDecimal::sum($record->where('payment_type',$model)->map(function($global) use($requestCurrencyTipeId) {
+                $movement=\App\Services\Payments\Movement::row($global);
+                if (!$movement || ($global->destination_type === Cash::class && $movement['currency_type_id'] !== $requestCurrencyTipeId)) return ExactDecimal::of(0);
+                return ExactDecimal::convert(ExactDecimal::readRequired($movement,'amount'),$movement['currency_type_id'],$requestCurrencyTipeId,$movement['exchange_rate']);
             }));
+            // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
         }
 
         public function getTotalCreditNotes($record, $requestCurrencyTipeId = 'VES')
@@ -410,9 +399,14 @@
             return ExactDecimal::convert($payment, $record->currency_type_id, $requestCurrencyTipeId, $record->exchange_rate_sale);
         }
 
-        public function getSumPaymentCashPos($record, $model)
+        public function getSumPaymentCashPos($record, $model, $currency = 'VES')
         {
-            return ExactDecimal::sum($record->where('payment_type', $model)->map(fn ($row) => ExactDecimal::read($row->payment, 'payment')));
+            // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+            return ExactDecimal::sum($record->where('payment_type',$model)->map(function($global) use($currency) {
+                $movement=\App\Services\Payments\Movement::row($global);
+                return $movement && $movement['currency_type_id'] === $currency ? ExactDecimal::readRequired($movement,'amount') : ExactDecimal::of(0);
+            }));
+            // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
         }
         // ######## FIN CALCULOS EXACTOS PRO9 ########
 
@@ -430,7 +424,8 @@
                 'destiny_id' => $model->id,
                 'destiny_type' => get_class($model),
             ];
-            return ExactDecimal::sum(TransferAccountPayment::where($filter)->get()->map(fn ($row) => $row->exactValue('amount')));
+            $query=TransferAccountPayment::where($filter);
+            return ExactDecimal::sum($query->get()->map(fn ($row) => $row->exactValue('amount')));
         }
 
         /**

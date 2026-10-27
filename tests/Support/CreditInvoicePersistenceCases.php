@@ -34,7 +34,7 @@ trait CreditInvoicePersistenceCases
             $frozen=$doc->emission->payload;$stock=$db->table('item_warehouse')->value('stock');
             $emissions=count($sent);
             $payment=FiscalDocumentPersistence::payment($doc,['operation_key'=>(string)Str::uuid(),
-                'date_of_payment'=>$input['date_of_issue'],'payment_method_type_id'=>'01','payment'=>40,'reference'=>'Real later collection']);
+                'date_of_payment'=>$input['date_of_issue'],'payment_method_type_id'=>$currency==='USD'?'10':'01','payment'=>40,'reference'=>'Real later collection']);
             self::assertEquals(40,$payment->payment);
             self::assertEquals(192,$doc->fresh()->balance);
             self::assertSame($frozen,$doc->fresh()->emission->payload);

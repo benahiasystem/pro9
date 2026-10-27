@@ -96,7 +96,9 @@ class CashSummaryBuilder implements CashReportBuilderInterface
             return $row->id;
         })->toArray();
 
-        $methods_payment = collect(PaymentMethodType::all())->transform(function ($row) {
+        // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+        $methods_payment = PaymentMethodType::all()->transform(function ($row) {
+        // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
             return (object)[
                 'id'   => $row->id,
                 'name' => $row->description,

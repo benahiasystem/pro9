@@ -190,10 +190,10 @@
                                         <el-select
                                             v-model="row.payment_destination_id"
                                             filterable
-                                            :disabled="row.payment_destination_disabled"
+                                            :disabled="classifiedPaymentDestinationDisabled(payment_destinations, row)"
                                         >
                                             <el-option
-                                                v-for="option in payment_destinations"
+                                                v-for="option in classifiedPaymentDestinations(payment_destinations, row)"
                                                 :key="option.id"
                                                 :value="option.id"
                                                 :label="option.description"

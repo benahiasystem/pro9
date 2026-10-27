@@ -124,6 +124,9 @@ class HotelRentController extends Controller
 				'reference' => $rent_payment['reference'],
 				'payment' => $rent_payment['payment'],
 			]);
+            // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+            \App\Services\Payments\ReceiptDestination::attach($record,$rent_payment);
+            // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
 		}
 	}
 

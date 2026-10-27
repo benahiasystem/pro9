@@ -8,7 +8,7 @@ use Maatwebsite\Excel\Concerns\Exportable;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\FromCollection;
 
-class GlobalPaymentExport implements  FromView, ShouldAutoSize
+class GlobalPaymentExport implements  FromView, ShouldAutoSize, \Maatwebsite\Excel\Concerns\WithEvents
 {
     use Exportable;
     
@@ -37,4 +37,14 @@ class GlobalPaymentExport implements  FromView, ShouldAutoSize
             'establishment'=>$this->establishment
         ]);
     }
+
+    // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+    public function registerEvents(): array
+    {
+        return [\Maatwebsite\Excel\Events\AfterSheet::class=>function($event) {
+            $rows=collect($this->records)->map(fn($global)=>\App\Services\Payments\Movement::row($global))->filter();
+            if (count($rows)) \App\Support\Exact\FractionSheet::append($event->sheet->getDelegate(),$rows,['principal','tax','amount']);
+        }];
+    }
+    // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
 }

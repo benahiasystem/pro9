@@ -1864,7 +1864,7 @@
                                                                     filterable
                                                                 >
                                                                     <el-option
-                                                                        v-for="option in payment_destinations"
+                                                                        v-for="option in classifiedPaymentDestinations(payment_destinations, row)"
                                                                         :key="
                                                                             option.id
                                                                         "

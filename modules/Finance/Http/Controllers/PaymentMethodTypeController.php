@@ -53,26 +53,18 @@ class PaymentMethodTypeController extends Controller
      * @return array
      */
     public function getRecords($request = []) {
+        return \App\Support\Exact\ReadSnapshot::run(\Illuminate\Support\Facades\DB::connection('tenant'),fn()=>$this->readRecords($request));
+    }
 
-        $data_of_period = $this->getDatesOfPeriod($request);
-
-        $params = (object)[
-            'date_start' => $data_of_period['d_start'],
-            'date_end'   => $data_of_period['d_end'],
-        ];
-
-        $payment_method_types = PaymentMethodType::whereFilterPayments($params)->get();
-        $expense_method_types = ExpenseMethodType::whereFilterPayments($params)->get();
-
-        $records_by_pmt = $this->getRecordsByPaymentMethodTypes($payment_method_types);
-        $records_by_emt = $this->getRecordsByExpenseMethodTypes($expense_method_types);
-        $totals = $this->getTotalsPaymentMethodType($records_by_pmt, $records_by_emt);
-
+    private function readRecords($request)
+    {
+        // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+        $dates=$this->getDatesOfPeriod($request);
         return [
-            'records' => $records_by_pmt->merge($records_by_emt),
-            'totals'  => $totals,
+            'records'=>collect(),'totals'=>[],
+            'classified'=>\App\Services\Payments\FinancialReport::groups($dates['d_start'],$dates['d_end'],auth()->user()->type === 'seller' ? auth()->id() : null),
         ];
-
+        // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
     }
 
 

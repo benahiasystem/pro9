@@ -91,7 +91,7 @@ trait IslrRetentionPersistenceCases
     public function test_islr_different_rates_declared_authority_and_net_capability():void
     {
         [$db,$app,$input,$state]=$this->bootIslrFixture();
-        unset($input['iva_retention_prevision']);$input['currency_type_id']='USD';$input['exchange_rate_sale']='10.12345678';
+        unset($input['iva_retention_prevision']);$input['currency_type_id']='USD';$input['payments'][0]['payment_method_type_id']='10';$input['exchange_rate_sale']='10.12345678';
         $input['payments'][0]['payment']=220;$input['islr_retention_prevision']['percentage']=4;
         $doc=(new Facturalo)->save($input)->getDocument()->fresh();
         $row=IslrRetentionService::store($doc,$this->islrVoucher($doc,['base'=>2000,'percentage'=>4,'subtrahend'=>20,'amount'=>60,'exchange_rate'=>'20.00000000']));

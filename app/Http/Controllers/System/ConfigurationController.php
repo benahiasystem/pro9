@@ -2,6 +2,9 @@
 namespace App\Http\Controllers\System;
 
 use App\Http\Controllers\Controller;
+use App\Services\System\LoginSvgSanitizer;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Exception;
 use Illuminate\Http\Request;
 use App\Models\System\Configuration;
@@ -196,13 +199,24 @@ class ConfigurationController extends Controller
         $config = Configuration::first();
         if (request()->hasFile('image') && request()->file('image')->isValid()) {
             $file = request()->file('image');
-            $ext = $file->getClientOriginalExtension();
-            $name = time() . '.' . $ext;
+            $ext = strtolower($file->getClientOriginalExtension());
+            $name = Str::random(40) . '.' . $ext;
             $path = 'public/uploads/login';
 
-            UploadFileHelper::checkIfValidFile($name, $file->getPathName(), true);
+            if ($ext === 'svg') {
+                if (mime_content_type($file->getPathName()) !== 'image/svg+xml') {
+                    throw ValidationException::withMessages(['image' => 'El archivo SVG no es válido.']);
+                }
 
-            $file->storeAs($path, $name);
+                // Los SVG son documentos activos: solo se publica el contenido saneado.
+                $clean = app(LoginSvgSanitizer::class)->sanitize(file_get_contents($file->getPathName()));
+                if (!Storage::put($path . '/' . $name, $clean)) {
+                    throw new Exception('No se pudo guardar la imagen.');
+                }
+            } else {
+                UploadFileHelper::checkIfValidFile($name, $file->getPathName(), true);
+                $file->storeAs($path, $name);
+            }
 
             $loginConfig = $config->login;
             $basePathStorage = 'storage/uploads/login/';

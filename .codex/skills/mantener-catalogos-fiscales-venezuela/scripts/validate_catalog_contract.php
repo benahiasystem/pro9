@@ -49,6 +49,17 @@ try {
     ]);
 
     $schema = DB::connection('tenant')->getSchemaBuilder();
+    // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+    assertSame([
+        'IVA' => 'Impuesto al valor agregado - IVA',
+        'ISLR' => 'Impuesto sobre la renta - ISLR',
+        'MUNICIPAL' => 'Impuesto Municipal o Estadal',
+        'IGTF' => 'Impuesto a las grandes transacciones',
+        'LISAEA' => 'Impuesto sobre Alcohol y Especies Alcohólicas - LISAEA',
+    ], DB::connection('tenant')->table('cat_taxes_types')
+        ->orderByRaw("FIELD(id, 'IVA', 'ISLR', 'MUNICIPAL', 'IGTF', 'LISAEA')")->pluck('description', 'id')->all(),
+        'Las familias de impuestos no coinciden con el catálogo inicial.');
+    // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
     foreach ([
         'cat_other_tax_concept_types', 'cat_perception_types',
         'cat_related_documents_types', 'cat_related_tax_document_types',
@@ -69,6 +80,7 @@ try {
         // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
         'cat_identity_document_types' => 9,
         'cat_iva_rate_types' => 6,
+        'cat_taxes_types' => 5,
         'cat_legend_types' => 1,
         'cat_note_credit_types' => 4,
         'cat_note_debit_types' => 4,

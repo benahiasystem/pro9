@@ -32,40 +32,40 @@ class CashReportRenderer
     }
 
     /**
-     * Contenido binario del PDF, para los métodos legacy que arman su propia respuesta.
+     * Contenido binario del PDF, para los controladores que arman su propia respuesta.
      */
     public function pdfContent(string $type, Cash $cash, array $options = []): string
     {
         [$report, $options, $payload] = $this->prepare($type, $cash, $options);
 
         $pdf = $this->makeMpdf($options['paper']);
-        $pdf->WriteHTML(view($this->pdfView($report, $options['paper']), $payload)->render());
+        $pdf->WriteHTML(view($this->pdfView($report,$options['paper']),$payload)->render());
 
         return $pdf->output('', 'S');
     }
 
     /**
-     * Exportador Excel listo para ->download() o ->store(), para los métodos legacy.
+     * Exportador Excel listo para ->download() o ->store(), para los controladores.
      */
     public function excelExport(string $type, Cash $cash, array $options = []): GeneralFormatExport
     {
         $options['format'] = CashReportRegistry::FORMAT_EXCEL;
         [$report, $options, $payload] = $this->prepare($type, $cash, $options);
 
-        return (new GeneralFormatExport())->view_name($report['views']['excel'])->data($payload);
+        return (new ClassifiedCashExport())->view_name($report['views']['excel'])->data($payload);
     }
 
     public function pdf(string $view, array $data, string $paper, string $action, string $filename)
     {
         $pdf = $this->makeMpdf($paper);
-        $pdf->WriteHTML(view($view, $data)->render());
+        $pdf->WriteHTML(view($view,$data)->render());
 
         return $this->pdfResponse($pdf->output('', 'S'), $filename, $action);
     }
 
     public function excel(string $view, array $data, string $filename)
     {
-        return (new GeneralFormatExport())->view_name($view)->data($data)->download($filename.'.xlsx');
+        return (isset($data['classified']) ? new ClassifiedCashExport() : new GeneralFormatExport())->view_name($view)->data($data)->download($filename.'.xlsx');
     }
 
     /**
@@ -89,7 +89,16 @@ class CashReportRenderer
         }
 
         $options = $this->normalizeOptions($report, $options);
-        $payload = app($report['builder'])->build($cash, $options);
+        // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+        if (!in_array($type,['products','products_garage'],true)) {
+            $payload=app(ClassifiedCashReport::class)->build($cash,$type,$options);
+            $report['views']=['pdf'=>'cashreport::reports.classified_a4','ticket'=>'cashreport::reports.classified_ticket','excel'=>'cashreport::reports.classified_excel'];
+        } else {
+            $payload = app($report['builder'])->build($cash,$options);
+            $payload += app(ClassifiedCashReport::class)->build($cash,$type,$options);
+        }
+        // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
+        $payload['report_version']=2;
         $payload['options'] = $options;
 
         return [$report, $options, $payload];

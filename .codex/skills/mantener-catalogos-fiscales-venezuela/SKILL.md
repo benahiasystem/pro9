@@ -14,6 +14,7 @@ Antes de cambiar cualquier categoría cubierta por esta skill, leer el inventari
 - Tratar los IDs conservados como contratos estables: no reasignar códigos. Para motivos de traslado se conserva `04` y los códigos locales venezolanos son `21`, `22`, `23` y `24`; HKA no publica códigos para este catálogo.
 - `cat_identity_document_types` contiene exactamente `0`, `1`, `6`, `7`, `E`, `C`, `G` y `R`, en ese orden y todos con `active = 1`. Mantener sincronizados la fuente central, el seeder y los consumidores sin crear un backfill para tenants existentes.
 - Tratar `expense_reasons` como un catálogo inicial nuevo sin históricos: sus IDs contractuales son `1` a `30` y no representan una reclasificación de gastos preexistentes.
+- `cat_taxes_types` contiene las cinco familias del inventario; `cat_iva_rate_types.tax_kind` referencia su `id` con integridad restrictiva. Los valores IVA e IGTF y sus alícuotas HKA se conservan. El catálogo es de referencia y no habilita cálculos ni emisión para nuevas familias.
 - El estado inicial venezolano es una depuración total de los catálogos enumerados en el inventario. No reintroducir filas retiradas como inactivas.
 - No conservar Boletas, series BB/BC/BD ni resúmenes fiscales de Boletas. Aplicar `mantener-facturas-notas-venta-sin-boleta` a creación, consultas, reportes y PDF.
 - Usar los tipos del inventario vigente: Factura de venta, notas de crédito/débito, Orden de entrega, Retención, Nota de venta y notas de almacén. No reintroducir códigos retirados sólo para resolver datos antiguos.

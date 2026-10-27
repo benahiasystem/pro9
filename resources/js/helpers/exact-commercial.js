@@ -74,11 +74,11 @@ export function prepareCommercialPayments(payable, rows) {
     const total = exactSum(received)
     let change = total.minus(target)
     if (change.compare(0) < 0) change = exactAmount('0')
-    const cash = exactSum(received.filter((_, index) => ['01','10'].includes(inputs[index].payment_method_type_id)))
+    const cash = exactSum(received.filter((_, index) => (inputs[index].collection_kind ? inputs[index].collection_kind === 'cash' : ['01','10'].includes(inputs[index].payment_method_type_id))))
     if (change.compare(cash) > 0) throw new Error('El exceso sólo puede devolverse desde el efectivo recibido')
     let remaining = change
     const payments = inputs.map((row, index) => {
-        const returned = ['01','10'].includes(row.payment_method_type_id)
+        const returned = (row.collection_kind ? row.collection_kind === 'cash' : ['01','10'].includes(row.payment_method_type_id))
             ? (remaining.compare(received[index]) < 0 ? remaining : received[index]) : exactAmount('0')
         remaining = remaining.minus(returned)
         return {...row, payment: received[index].minus(returned).decimal(), change: returned.decimal()}

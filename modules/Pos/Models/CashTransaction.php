@@ -16,6 +16,7 @@ class CashTransaction extends ModelTenant
     
     protected $fillable = [
         'cash_id',
+        'currency_type_id',
         'payment_method_type_id',  
         'date',  
         'description',  

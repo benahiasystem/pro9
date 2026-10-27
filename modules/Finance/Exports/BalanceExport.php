@@ -8,9 +8,24 @@ use Maatwebsite\Excel\Concerns\Exportable;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\FromCollection;
 
-class BalanceExport implements  FromView, ShouldAutoSize
+class BalanceExport implements  FromView, ShouldAutoSize, \Maatwebsite\Excel\Concerns\WithEvents
 {
     use Exportable;
+
+    // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+    protected $records;
+    protected $data = [];
+    protected $company;
+    protected $establishment;
+
+    public function registerEvents(): array
+    {
+        return [\Maatwebsite\Excel\Events\AfterSheet::class=>function($event) {
+            $rows=$this->data['classified'] ?? [];
+            if (count($rows)) \App\Support\Exact\FractionSheet::append($event->sheet->getDelegate(),$rows,['opening','income','egress','balance']);
+        }];
+    }
+    // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
 
     public function records($records) {
         $this->records = $records;

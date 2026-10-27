@@ -126,7 +126,7 @@
                             type="primary"
                             @click.prevent="getRecordsByFilter">Buscar
                         </el-button>
-                        <template v-if="records.length>0">
+                        <template v-if="records.length>0 || classified.length>0">
                             <el-button
                                 class="submit me-2"
                                 icon="el-icon-tickets"
@@ -150,7 +150,7 @@
                 <div class="scroll-shadow shadow-left" v-show="showLeftShadow"></div>
                 <div class="scroll-shadow shadow-right" v-show="showRightShadow"></div>
 
-                <div class="table-responsive" ref="scrollContainer">
+                <div class="table-responsive" ref="scrollContainer" v-if="records.length">
                     <table class="table">
                         <thead class="">
                         <tr>
@@ -221,6 +221,14 @@
                 </div>
             </div>
         </div>
+        <!-- ######## INICIO CLASIFICACION DE COBROS Y CAJA ######## -->
+        <div v-if="classified.length" class="table-responsive mt-3">
+            <h4>Movimientos por cuenta y moneda</h4>
+            <table class="table"><thead><tr><th>Medio</th><th>Destino</th><th>Moneda</th><th>Apertura</th><th>Entradas</th><th>Salidas</th><th>Saldo</th></tr></thead>
+                <tbody><tr v-for="(row,index) in classified" :key="index"><td>{{ row.method.description }}</td><td>{{ row.destination_label }}</td><td>{{ row.currency_type_id }}</td><td>{{ row.opening | DecimalText }}</td><td>{{ row.income | DecimalText }}</td><td>{{ row.egress | DecimalText }}</td><td>{{ row.balance | DecimalText }}</td></tr></tbody>
+            </table>
+        </div>
+        <!-- ######## FIN CLASIFICACION DE COBROS Y CAJA ######## -->
         <tenant-finance-modal-transfer-between-accounts
             :showDialogTransfer.sync="showDialogTransfer"
             :reloadAccounts="getRecordsByFilter"
@@ -252,6 +260,7 @@ export default {
             loading_search: false,
             showDialogTransfer: false,
             records: [],
+            classified: [],
             pagination: {},
             search: {},
             totals: {},
@@ -347,6 +356,7 @@ export default {
             this.loading_submit = await false
         },
         getRecords() {
+            this.classified = [];
             this.records = [];
             this.loading_submit = true
             this.totals.t_initial_balance = 0;
@@ -363,6 +373,7 @@ export default {
             return this.$http.get(`/${this.resource}/records?${this.getQueryParameters()}`)
                 .then((response) => {
                     let data = response.data;
+                    this.classified = data.classified || []
                     this.records = data.records
                     this.totals = data.totals
                 })

@@ -99,6 +99,13 @@ $desiredRows = [
     ],
     // ######### FIN CATÁLOGO IDENTIDADES ACTIVAS VENEZUELA #########
     // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+    'cat_taxes_types' => [
+        ['id' => 'IVA', 'description' => 'Impuesto al valor agregado - IVA'],
+        ['id' => 'ISLR', 'description' => 'Impuesto sobre la renta - ISLR'],
+        ['id' => 'MUNICIPAL', 'description' => 'Impuesto Municipal o Estadal'],
+        ['id' => 'IGTF', 'description' => 'Impuesto a las grandes transacciones'],
+        ['id' => 'LISAEA', 'description' => 'Impuesto sobre Alcohol y Especies Alcohólicas - LISAEA'],
+    ],
     'cat_iva_rate_types' => [
         ['id' => 'R', 'description' => 'Alícuota Reducida', 'percentage' => '8.00', 'tax_kind' => 'IVA'],
         ['id' => 'G', 'description' => 'Alícuota General', 'percentage' => '16.00', 'tax_kind' => 'IVA'],

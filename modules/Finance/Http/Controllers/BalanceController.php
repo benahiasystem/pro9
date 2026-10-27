@@ -57,7 +57,7 @@
          */
         public function records(Request $request)
         {   
-            return $this->setTotals([], $this->getRecords($request->all()));
+            return $this->reportData($request->all());
         }
 
         /**
@@ -117,6 +117,28 @@
 
         }
 
+        // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+        private function reportData(array $request): array
+        {
+            // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+            $currency=$request['currency_type_id'] ?? 'VES';
+            abort_unless(in_array($currency,['VES','USD'],true),422,'Moneda de reporte inválida.');
+            return \App\Support\Exact\ReadSnapshot::run(\Illuminate\Support\Facades\DB::connection('tenant'),function() use($request,$currency) {
+                $dates=$this->getDatesOfPeriod($request);
+                $groups=array_values(array_filter(\App\Services\Payments\FinancialReport::groups($dates['d_start'],$dates['d_end']),fn($row)=>$row['currency_type_id']===$currency));
+                foreach (BankAccount::where('currency_type_id',$currency)->get() as $account) {
+                    $initial=$account->exactValue('initial_balance');
+                    if ($initial->isZero()) continue;
+                    $groups[]=['method'=>['catalog'=>'bank_accounts','id'=>(string)$account->id,'description'=>'Saldo inicial de cuenta','collection_kind'=>'account'],
+                        'destination_label'=>$account->description,'destination_id'=>$account->id,'currency_type_id'=>$currency,
+                        'opening'=>\App\Support\Exact\Decimal::represent($initial),'income'=>'0','egress'=>'0','balance'=>\App\Support\Exact\Decimal::represent($initial),
+                        'calculation_snapshot'=>\App\Support\Exact\Decimal::snapshot(['opening'=>$initial,'income'=>0,'egress'=>0,'balance'=>$initial])];
+                }
+                return ['records'=>collect(),'totals'=>[],'currency_type_id'=>$currency,'classified'=>$groups];
+            });
+            // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
+        }
+        // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
 
         /**
          * @param Request $request
@@ -130,8 +152,8 @@
             $establishment = ($request->establishment_id)
                 ? Establishment::findOrFail($request->establishment_id)
                 : auth()->user()->establishment;
-            $records = $this->getRecords($request->all());
-            $data = $this->setTotals([], $records);
+            $data = $this->reportData($request->all());
+            $records = $data['records'];
             $pdf = PDF::loadView('finance::balance.report_pdf', compact('records', 'company', 'establishment', 'data'));
             $filename = 'Balance_' . date('YmdHis');
 
@@ -151,8 +173,8 @@
             $establishment = ($request->establishment_id)
                 ? Establishment::findOrFail($request->establishment_id)
                 : auth()->user()->establishment;
-            $records = $this->getRecords($request->all());
-            $data = $this->setTotals([], $records);
+            $data = $this->reportData($request->all());
+            $records = $data['records'];
             $balance = new BalanceExport();
             $balance
                 ->records($records)
@@ -212,6 +234,11 @@
 
         public function makeTransfer(Request $request)
         {
+            return \Illuminate\Support\Facades\DB::connection('tenant')->transaction(fn()=>$this->makeTransferWithinTransaction($request));
+        }
+
+        private function makeTransferWithinTransaction(Request $request)
+        {
 
             $return = $request->toArray();
             if ($request->has('data')) {
@@ -247,7 +274,7 @@
                             $transfer_minus->TransforFromCashToCash(
                                 $destiny->id,
                                 $origin->id,
-                                $amount_transform_temp * (-1)
+                                \App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::of($amount_transform_temp)->negated())
                             );
                         } elseif (get_class($origin) == BankAccount::class) {
                             $transfer->TransforFromBankToBank(
@@ -258,7 +285,7 @@
                             $transfer_minus->TransforFromBankToBank(
                                 $destiny->id,
                                 $origin->id,
-                                $amount_transform_temp * (-1)
+                                \App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::of($amount_transform_temp)->negated())
                             );
                         }
                     } else {
@@ -271,7 +298,7 @@
                             $transfer_minus->TransforFromBankToCash(
                                 $destiny->id,
                                 $origin->id,
-                                $amount_transform_temp * (-1)
+                                \App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::of($amount_transform_temp)->negated())
                             );
                         } elseif (get_class($origin) == BankAccount::class) {
                             $transfer->TransforFromBankToCash(
@@ -282,7 +309,7 @@
                             $transfer_minus->TransforFromCashToBank(
                                 $destiny->id,
                                 $origin->id,
-                                $amount_transform_temp * (-1)
+                                \App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::of($amount_transform_temp)->negated())
                             );
                         }
                     }

@@ -14,6 +14,7 @@ class CashResource extends JsonResource
      */
     public function toArray($request)
     {
+            $balances=\App\Services\Payments\CashLedger::report($this->resource)['balances_by_currency'];
             return [
                 'id' => $this->id,
                 'user_id' => $this->user_id,
@@ -24,9 +25,13 @@ class CashResource extends JsonResource
                 'date_closed' => $this->date_closed,
                 'time_closed' => $this->time_closed, 
                 'closed' => "{$this->date_closed} {$this->time_closed}",
-                'beginning_balance' => $this->beginning_balance,
-                'final_balance' => $this->final_balance,
-                'income' => $this->income,
+                // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+                'report_version' => 2,
+                'balances_by_currency' => $balances,
+                // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
+                'beginning_balance' => $balances['VES']['beginning_balance'],
+                'final_balance' => $balances['VES']['final_balance'],
+                'income' => \App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::readRequired($balances['VES'],'income')->minus(\App\Support\Exact\Decimal::readRequired($balances['VES'],'egress'))),
                 'expense' => $this->expense,
                 'filename' => $this->filename,
                 'state_description' => ($this->state) ? 'Aperturada':'Cerrada', 

@@ -55,6 +55,9 @@ table {
 @endsection
 
 @section('content')
+{{-- ######## INICIO CLASIFICACION DE COBROS Y CAJA ######## --}}
+@isset($classified) @include('cashreport::reports.partials.classified_balances') @endisset
+{{-- ######## FIN CLASIFICACION DE COBROS Y CAJA ######## --}}
 @if($documents->count())
     @php
         $total = 0;

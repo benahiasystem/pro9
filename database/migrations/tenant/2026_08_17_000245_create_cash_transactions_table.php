@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\DB;
 /**
  * Estructura inicial de `cash_transactions` para instalaciones nuevas.
  * Inventario de columnas:
+ * - `currency_type_id` char(3) DEFAULT NULL
  * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
  * - `cash_id` int(10) unsigned NOT NULL
  * - `payment_method_type_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL
@@ -24,6 +25,7 @@ CREATE TABLE `cash_transactions` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `cash_id` int(10) unsigned NOT NULL,
   `payment_method_type_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `currency_type_id` char(3) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `date` date NOT NULL,
   `description` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `payment` decimal(30,12) NOT NULL,

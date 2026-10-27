@@ -141,8 +141,8 @@
                                         </td>
                                         <td>
                                             <div class="form-group mb-2 me-2">
-                                                <el-select v-model="row.payment_destination_id" filterable :disabled="row.payment_destination_disabled">
-                                                    <el-option v-for="option in payment_destinations" :key="option.id" :value="option.id" :label="option.description"></el-option>
+                                                <el-select v-model="row.payment_destination_id" filterable :disabled="classifiedPaymentDestinationDisabled(payment_destinations, row)">
+                                                    <el-option v-for="option in classifiedPaymentDestinations(payment_destinations, row)" :key="option.id" :value="option.id" :label="option.description"></el-option>
                                                 </el-select>
                                             </div>
                                         </td>

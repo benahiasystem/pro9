@@ -89,8 +89,8 @@
                         </td>
                         <td class="text-start">{{ formatDate(row.opening) }}</td>
                         <td class="text-start">{{ formatDate(row.closed) }}</td>
-                        <td class="text-end">{{ row.beginning_balance }}</td>
-                        <td class="text-end">{{ row.final_balance }}</td>
+                        <td class="text-end"><template v-if="row.balances_by_currency">Bs. {{ row.balances_by_currency.VES.beginning_balance }}<br>USD {{ row.balances_by_currency.USD.beginning_balance }}</template><template v-else>{{ row.beginning_balance }}</template></td>
+                        <td class="text-end"><template v-if="row.balances_by_currency">Bs. {{ row.balances_by_currency.VES.final_balance }}<br>USD {{ row.balances_by_currency.USD.final_balance }}</template><template v-else>{{ row.final_balance }}</template></td>
                         <!-- <td>{{ row.income }}</td>
                         <td>{{ row.expense }}</td> -->
                         <td>{{ row.state_description }}</td>
@@ -113,7 +113,7 @@
                                     Cerrar caja
                                 </button>
                                 <button
-                                    v-if="typeUser === 'admin'"
+                                    v-if="typeUser === 'admin' && row.state"
                                     type="button"
                                     class="btn waves-effect waves-light btn-xs btn-info me-1"
                                     @click.prevent="clickCreate(row.id)"

@@ -1477,7 +1477,8 @@ class SaleNoteController extends Controller
         // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
         // ######## INICIO CALCULOS EXACTOS PRO9 ########
         $methods = array_values(array_unique(array_map(fn($row)=>(string)($row['payment_method_type_id'] ?? ''), $payments)));
-        $active = PaymentMethodType::active()->whereIn('id',$methods)->pluck('id')->all();
+        $activeMethods = PaymentMethodType::active()->whereIn('id',$methods)->get()->keyBy('id');
+        $active = $activeMethods->keys()->map(fn($id)=>(string)$id)->all();
         if (array_diff($methods, $active)) {
             \App\Services\Fiscal\FiscalAmounts::error('payment_method_type_id','La forma de pago seleccionada no está disponible.');
         }
@@ -1486,22 +1487,23 @@ class SaleNoteController extends Controller
 
         // ######## INICIO CALCULOS EXACTOS PRO9 ########
         $paid = \App\Support\Exact\SaleNoteBalance::values($sale_note);
-        $payments = \App\Support\Exact\TenderAllocation::calculate($paid['total_difference'], array_values($payments));
+        $cashMethods=$activeMethods->where('collection_kind','cash')->keys()->map(fn($id)=>(string)$id)->all();
+        $payments = \App\Support\Exact\TenderAllocation::calculate($paid['total_difference'], array_values($payments), $cashMethods);
         // ######## FIN CALCULOS EXACTOS PRO9 ########
 
         foreach ($payments as $row) {
 
             // ######## INICIO CALCULOS EXACTOS PRO9 ########
             $record_payment = $sale_note->payments()->make($row);
+            $record_payment->setRelation('associated_record_payment',$sale_note);
+            $record_payment->setRelation('payment_method_type',$activeMethods->get($row['payment_method_type_id']));
             $record_payment->calculation_snapshot = $row['calculation_snapshot'];
             $record_payment->save();
             // ######## FIN CALCULOS EXACTOS PRO9 ########
 
-            if(isset($row['payment_destination_id'])){
-                $this->createGlobalPayment($record_payment, $row);
-                if($isUpdate){
-                    $this->createCashDocumentPayment($record_payment,false);
-                }
+            $this->createGlobalPayment($record_payment, $row);
+            if($isUpdate){
+                $this->createCashDocumentPayment($record_payment,false);
             }
 
             if(isset($row['payment_filename'])){

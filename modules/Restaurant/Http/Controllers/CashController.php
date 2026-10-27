@@ -79,7 +79,7 @@ class CashController extends Controller
                 break;
         }
 
-        return compact('users', 'user');
+        return compact('users', 'user') + ['report_version'=>2];
     }
 
     public function opening_cash()
@@ -111,7 +111,16 @@ class CashController extends Controller
         DB::connection('tenant')->transaction(function () use ($id, $request) {
 
             $cash = Cash::firstOrNew(['id' => $id]);
-            $cash->fill($request->all());
+            // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+            if ($cash->exists) $cash=Cash::whereKey($cash->id)->lockForUpdate()->firstOrFail();
+            if ($cash->exists) \App\Services\Payments\CashLedger::authorize($cash);
+            if (!$cash->exists && auth()->user()->type !== 'admin' && (string)$request->input('user_id',auth()->id()) !== (string)auth()->id()) abort(403);
+            $cash->fill($cash->exists ? $request->except(['beginning_balance','final_balance','income','state','user_id','date_opening','time_opening','date_closed','time_closed']) : $request->all());
+            if (!$cash->exists) {
+                $cash->beginning_balance=$request->input('opening_balances.VES',$request->input('beginning_balance','0'));
+                $cash->final_balance='0'; $cash->income='0'; $cash->state=true;
+            }
+            // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
 
             if(!$id){
                 $cash->date_opening = date('Y-m-d');
@@ -133,96 +142,20 @@ class CashController extends Controller
     }
 
 
-    public function createCashTransaction($cash, $request){
-
-        $this->destroyCashTransaction($cash);
-
-        $data = [
-            'date' => date('Y-m-d'),
-            'description' => 'Saldo inicial',
-            'payment_method_type_id' => '01',
-            'payment' => $request->beginning_balance,
-            'payment_destination_id' => 'cash',
-            'user_id' => $request->user_id,
-        ];
-
-        $cash_transaction = $cash->cash_transaction()->create($data);
-
-        $this->createGlobalPaymentTransaction($cash_transaction, $data);
-
+    public function createCashTransaction($cash, $request)
+    {
+        // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+        \App\Services\Payments\CashLedger::open($cash,$request->all());
+        // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
     }
 
 
-    public function close($id) {
-
-        $cash = Cash::findOrFail($id);
-
-        // dd($cash->cash_documents);
-
-        $cash->date_closed = date('Y-m-d');
-        $cash->time_closed = date('H:i:s');
-
-        $final_balance = 0;
-        $income = 0;
-
-        foreach ($cash->cash_documents as $cash_document) {
-
-
-            if($cash_document->sale_note){
-
-                if(in_array($cash_document->sale_note->state_type_id, ['01','03','05','07','13'])){
-                    $final_balance = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($final_balance)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational(($cash_document->sale_note->currency_type_id == 'VES') ? $cash_document->sale_note->total : ((\App\Services\ExchangeRates\ExchangeRateMath::rational($cash_document->sale_note->total)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($cash_document->sale_note->exchange_rate_sale)))->toBigDecimal())))->toBigDecimal();
-                }
-
-                // $final_balance += $cash_document->sale_note->total;
-
-            }
-            else if($cash_document->document){
-
-                if(in_array($cash_document->document->state_type_id, ['01','03','05','07','13'])){
-                    $final_balance = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($final_balance)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational(($cash_document->document->currency_type_id == 'VES') ? $cash_document->document->total : ((\App\Services\ExchangeRates\ExchangeRateMath::rational($cash_document->document->total)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($cash_document->document->exchange_rate_sale)))->toBigDecimal())))->toBigDecimal();
-                }
-
-                // $final_balance += $cash_document->document->total;
-
-            }
-            else if($cash_document->expense_payment){
-
-                if($cash_document->expense_payment->expense->state_type_id == '05'){
-                    $final_balance = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($final_balance)->minus(\App\Services\ExchangeRates\ExchangeRateMath::rational(($cash_document->expense_payment->expense->currency_type_id == 'VES') ? $cash_document->expense_payment->payment:((\App\Services\ExchangeRates\ExchangeRateMath::rational($cash_document->expense_payment->payment)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($cash_document->expense_payment->expense->exchange_rate_sale)))->toBigDecimal())))->toBigDecimal();
-                }
-
-                // $final_balance -= $cash_document->expense_payment->payment;
-
-            }
-            else if($cash_document->purchase){
-                if(in_array($cash_document->purchase->state_type_id, ['01','03','05','07','13'])){
-                    if($cash_document->purchase->total_canceled == 1) {
-                        $final_balance = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($final_balance)->minus(\App\Services\ExchangeRates\ExchangeRateMath::rational(($cash_document->purchase->currency_type_id == 'VES') ? $cash_document->purchase->total : ((\App\Services\ExchangeRates\ExchangeRateMath::rational($cash_document->purchase->total)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($cash_document->purchase->exchange_rate_sale)))->toBigDecimal())))->toBigDecimal();
-                    }
-
-                }
-            }
-
-            // else if($cash_document->purchase){
-            //     $final_balance -= $cash_document->purchase->total;
-            // }
-            // else if($cash_document->expense){
-            //     $final_balance -= $cash_document->expense->total;
-            // }
-
-        }
-
-        $cash->final_balance = (float) \App\Services\ExchangeRates\ExchangeRateMath::finalAmount(\App\Services\ExchangeRates\ExchangeRateMath::rational($final_balance)->plus($cash->beginning_balance), 2);
-        $cash->income = round((float) \App\Services\ExchangeRates\ExchangeRateMath::finalAmount($final_balance, 2), 2);
-        $cash->state = false;
-        $cash->save();
-
-        return [
-            'success' => true,
-            'message' => 'Caja cerrada con éxito',
-        ];
-
+    public function close($id)
+    {
+        // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+        $cash=Cash::findOrFail($id);
+        return \App\Services\Payments\CashLedger::close($cash);
+        // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
     }
 
     /**
@@ -295,108 +228,56 @@ class CashController extends Controller
 
     public function destroy($id)
     {
-
-        $data = DB::connection('tenant')->transaction(function () use ($id) {
-
-            $cash = Cash::findOrFail($id);
-
-            if($cash->global_destination()->where('payment_type', '!=', CashTransaction::class)->count() > 0){
-                return [
-                    'success' => false,
-                    'message' => 'No puede eliminar la caja, tiene transacciones relacionadas'
-                ];
-            }
-
-            $this->destroyCashTransaction($cash);
+        // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+        return DB::connection('tenant')->transaction(function() use($id) {
+            $cash=Cash::whereKey($id)->lockForUpdate()->firstOrFail();
+            \App\Services\Payments\CashLedger::authorize($cash);
+            $receipts=\Modules\Finance\Models\GlobalPayment::where('cash_session_id',$id);
+            if ((clone $receipts)->where('payment_type','!=',CashTransaction::class)->exists() || $cash->cash_documents()->exists()) return ['success'=>false,'message'=>'La caja tiene movimientos o documentos relacionados.'];
+            $receipts->delete();
+            CashTransaction::where('cash_id',$id)->delete();
+            $cash->getConnection()->table('cash_currency_balances')->where('cash_id',$id)->delete();
             $cash->delete();
-
-            return [
-                'success' => true,
-                'message' => 'Caja eliminada con éxito'
-            ];
-
+            return ['success'=>true,'message'=>'Caja eliminada con éxito'];
         });
-
-        return $data;
-
+        // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
     }
 
 
-    public function destroyCashTransaction($cash){
-
-        $ini_cash_transaction = $cash->cash_transaction;
-
-        if($ini_cash_transaction){
-            CashTransaction::find($ini_cash_transaction->id)->delete();
-        }
-
-    }
 
 
-    public function report($cash) {
 
-
-        $cash = Cash::query()->findOrFail($cash);
-        $company = Company::query()->first();
-
-        $methods_payment = collect(PaymentMethodType::all())->transform(function($row){
-            return (object)[
-                'id' => $row->id,
-                'name' => $row->description,
-                'sum' => 0
-            ];
-        });
-
-        set_time_limit(0);
-
-        $pdf = PDF::loadView('tenant.cash.report_pdf', compact("cash", "company", "methods_payment"));
-
-        $filename = "Reporte_POS - {$cash->user->name} - {$cash->date_opening} {$cash->time_opening}";
-
-        return $pdf->stream($filename.'.pdf');
+    public function report($cash)
+    {
+        // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+        return app(\Modules\CashReport\Services\CashReportRenderer::class)->render('cash_summary',Cash::findOrFail($cash),[]);
+        // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
     }
 
     public function report_general()
     {
-        $cashes = Cash::select('id')->where('apply_restaurant', 1)->whereDate('date_opening', date('Y-m-d'))->pluck('id');
-        $cash_documents =  CashDocument::whereIn('cash_id', $cashes)->get();
-        // dd($cash_documents);
-
-        $company = Company::first();
-        set_time_limit(0);
-
-        $pdf = PDF::loadView('tenant.cash.report_general_pdf', compact("cash_documents", "company"));
-        $filename = "Reporte_POS";
-        return $pdf->download($filename.'.pdf');
-
+        // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+        $sessions=Cash::whereTypeUser()->where('apply_restaurant',1)->whereDate('date_opening',date('Y-m-d'))->get();
+        $classified_sessions=[];
+        foreach ($sessions as $session) $classified_sessions[]=(new \Modules\CashReport\Services\ClassifiedCashReport())->build($session,'cash_summary',[]);
+        $company=Company::first();
+        $pdf=PDF::loadView('tenant.cash.report_general_pdf',compact('company','classified_sessions'));
+        return $pdf->download('Reporte_POS.pdf');
+        // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
     }
 
     public function report_products($id)
     {
-
-        $data = $this->getDataReport($id);
-        $pdf = PDF::loadView('tenant.cash.report_product_pdf', $data);
-        $filename = "Reporte_POS_PRODUCTOS - {$data['cash']->user->name} - {$data['cash']->date_opening} {$data['cash']->time_opening}";
-
-        return $pdf->stream($filename.'.pdf');
-
+        // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+        return app(\Modules\CashReport\Services\CashReportRenderer::class)->render('products',Cash::findOrFail($id),[]);
+        // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
     }
 
     public function report_products_excel($id)
     {
-
-        $data = $this->getDataReport($id);
-        $filename = "Reporte_POS_PRODUCTOS - {$data['cash']->user->name} - {$data['cash']->date_opening} {$data['cash']->time_opening}";
-
-        $cashProductExport = new CashProductExport();
-        $cashProductExport
-            ->documents($data['documents'])
-            ->company($data['company'])
-            ->cash($data['cash']);
-        // return $cashProductExport->view();
-        return $cashProductExport
-                ->download($filename.'.xlsx');
-
+        // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+        return app(\Modules\CashReport\Services\CashReportRenderer::class)->render('products',Cash::findOrFail($id),['format'=>'excel']);
+        // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
     }
 
 

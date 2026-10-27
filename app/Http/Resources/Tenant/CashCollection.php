@@ -19,6 +19,7 @@ class CashCollection extends ResourceCollection
     {
         return $this->collection->transform(function($row, $key) {
 
+            $balances=\App\Services\Payments\CashLedger::report($row)['balances_by_currency'];
             return [
                 'id' => $row->id,
                 'user_id' => $row->user_id,
@@ -29,9 +30,13 @@ class CashCollection extends ResourceCollection
                 'date_closed' => $row->date_closed,
                 'time_closed' => $row->time_closed, 
                 'closed' => "{$row->date_closed} {$row->time_closed}",
-                'beginning_balance' => $row->beginning_balance,
-                'final_balance' => $row->final_balance,
-                'income' => $row->income,
+                // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+                'report_version' => 2,
+                'balances_by_currency' => $balances,
+                // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
+                'beginning_balance' => $balances['VES']['beginning_balance'],
+                'final_balance' => $balances['VES']['final_balance'],
+                'income' => \App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::readRequired($balances['VES'],'income')->minus(\App\Support\Exact\Decimal::readRequired($balances['VES'],'egress'))),
                 'expense' => $row->expense,
                 'filename' => $row->filename,
                 'state' => (bool) $row->state, 

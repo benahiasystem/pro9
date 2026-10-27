@@ -62,7 +62,7 @@ export default {
             try {
                 const p = this.payment
                 p.payment = p.currency_type_id === this.documentCurrency ? p.original_amount
-                    : Number(p.currency_type_id === 'USD' ? rateMultiply(p.original_amount, p.exchange_rate) : rateDivide(p.original_amount, p.exchange_rate))
+                    : (p.currency_type_id === 'USD' ? rateMultiply(p.original_amount, p.exchange_rate) : rateDivide(p.original_amount, p.exchange_rate))
                 this.error = ''; this.evaluate()
             } catch (e) { this.error = e.message }
         },

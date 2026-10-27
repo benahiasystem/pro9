@@ -101,6 +101,7 @@
                         <tbody>
 
                             @foreach($records as $key => $value)
+                @continue(\App\Services\Payments\Movement::row($value) === null)
 
                                 <tr>
                                     @php
@@ -168,7 +169,15 @@
                             'user_name' => optional($value->user)->name,
                         ];
 
-                                    @endphp
+                                    // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+                        $movement=\App\Services\Payments\Movement::row($value);
+                        {
+                            $data['total']=$movement['amount'] ?? '0';
+                            $data['currency_type_id']=$value->report_context['currency_type_id'];
+                            $data['payment_method_type_description']=$value->report_context['method']['description'];
+                        }
+                        // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
+                        @endphp
                                     <td class="celda">{{$loop->iteration}}</td>
                         <td class="celda">{{$data['person_name']}}</td>
                         <td class="celda">{{$data['person_number']}}</td>
@@ -189,19 +198,7 @@
 
                             @endforeach
                         </tbody>
-                        <tfoot>
-                            <tr>
-                                <td class="celda" colspan="12"></td>
-                                <td class="celda"><strong>Totales VES</strong></td>
-                                <td class="celda">{{ $records->where('payment.associated_record_payment.currency_type_id', 'VES')->sum('payment.payment') }}</td>
-                            </tr>
-                            <tr>
-                    <td colspan="12"></td>
-                                <td class="celda"><strong>Totales USD</strong></td>
-                                <td class="celda">{{ $records->where('payment.associated_record_payment.currency_type_id', 'USD')->sum('payment.payment') }}</td>
 
-                            </tr>
-                        </tfoot>
                     </table>
                 </div>
             </div>
@@ -210,7 +207,11 @@
                 <p>No se encontraron registros.</p>
             </div>
         @endif
-    </body>
+    {{-- ######## INICIO CLASIFICACION DE COBROS Y CAJA ######## --}}
+<table>@foreach(\App\Services\Payments\FinancialReport::totals($records) as $summary)<tr><td>Total · {{ $summary['currency_type_id'] }}</td><td style="mso-number-format:'\@'">{{ $summary['total'] }}</td></tr> @endforeach</table>
+{{-- ######## FIN CLASIFICACION DE COBROS Y CAJA ######## --}}
+
+</body>
 </html>
 
 {{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

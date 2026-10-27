@@ -21,6 +21,7 @@
                         <th>Código</th>
                         <th>Descripción</th>
                         <th>Condición de pago</th>
+                        <th>Naturaleza</th>
                         <th>Estado</th>
                         <th class="text-end">Acciones</th>
                     </tr>
@@ -31,8 +32,9 @@
                         <td>{{ row.id }}</td>
                         <td>{{ row.description }}</td>
                         <td>{{ (row.is_credit == 1)?'Crédito':'Contado' }}</td>
+                        <td>{{ {cash:'Efectivo físico',account:'Bancario / electrónico',credit:'Crédito',unclassified:'Sin clasificar'}[row.collection_kind] || 'Sin clasificar' }} {{ row.cash_currency_type_id || '' }}</td>
                         <td>
-                            <el-switch v-model="row.is_active" @change="clickActive(row)"></el-switch>
+                            <el-switch :disabled="row.collection_kind === 'unclassified'" v-model="row.is_active" @change="clickActive(row)"></el-switch>
                         </td>
                         <td class="text-end">
 
@@ -116,7 +118,8 @@
                         }
                     })
                     .catch(error => {
-                        this.$message.error('Error al actualizar')
+                        row.is_active = !row.is_active
+                        this.$message.error(error.response?.data?.message || 'Error al actualizar')
                     })
             }
         }

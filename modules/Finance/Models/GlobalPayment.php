@@ -85,9 +85,12 @@
             'payment_id',
             'payment_type',
             'user_id',
+            'cash_session_id',
+            'report_context',
         ];
 
         protected $casts = [
+            'report_context' => 'array',
             'destination_id' => 'int',
             'payment_id' => 'int',
             'user_id' => 'int'
@@ -797,8 +800,14 @@
          */
         public function scopeWhereFilterReportPayments(Builder $query, $params)
         {
-            return $query->applyFiltersForPerformance()
-                        ->whereFilterPaymentType($params);
+            // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+            $query->with(['payment','user','destination'])->where('report_context->version',2)->whereNull('report_context->reversal');
+            if ($params->date_start) $query->where('report_context->date','>=',$params->date_start);
+            if ($params->date_end) $query->where('report_context->date','<=',$params->date_end);
+            $userId=$params->user_id ?? (auth()->user()?->type === 'seller' ? auth()->id() : null);
+            if ($userId) $query->where('user_id',$userId);
+            return $query;
+            // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
         }
 
 

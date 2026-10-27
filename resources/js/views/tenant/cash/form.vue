@@ -17,7 +17,10 @@
                     <div class="col-md-6">
                         <div class="form-group" :class="{'has-danger': errors.beginning_balance}">
                             <label class="control-label">Saldo inicial</label>
-                            <el-input v-model="form.beginning_balance"></el-input>
+                            <!-- ######## INICIO CLASIFICACION DE COBROS Y CAJA ######## -->
+                                <label>Bolívares (Bs.)</label><el-input v-model="form.opening_balances.VES" :disabled="!!recordId"/>
+                                <label>Dólares (USD)</label><el-input v-model="form.opening_balances.USD" :disabled="!!recordId"/>
+                            <!-- ######## FIN CLASIFICACION DE COBROS Y CAJA ######## -->
                             <small class="form-control-feedback" v-if="errors.beginning_balance" v-text="errors.beginning_balance[0]"></small>
                         </div>
                     </div>
@@ -28,7 +31,7 @@
                             <small class="form-control-feedback" v-if="errors.reference_number" v-text="errors.reference_number[0]"></small>
                         </div>
                     </div>
-                </div> 
+                </div>
             </div>
             <div class="form-actions text-end mt-4">
                 <el-button class="second-buton me-2" @click.prevent="handleCloseDialog()">Cancelar</el-button>
@@ -114,9 +117,10 @@
                     time_opening: null,
                     date_closed: null,
                     time_closed: null,
-                    beginning_balance: 0,
+                    opening_balances: {VES: '0', USD: '0'},
+                    beginning_balance: '0',
                     final_balance: 0,
-                    income: 0, 
+                    income: 0,
                     state: true,
                     reference_number: null
                 }
@@ -127,9 +131,10 @@
                 if (this.recordId) {
                     this.$http.get(`/${this.resource}/record/${this.recordId}`)
                         .then(response => {
-                            this.form = response.data.data 
+                            this.form = response.data.data
+                            if (this.form.balances_by_currency) this.$set(this.form,'opening_balances',{VES: this.form.balances_by_currency.VES.beginning_balance,USD: this.form.balances_by_currency.USD.beginning_balance})
                         })
-                }else{                    
+                }else{
                     this.form.user_id = this.user.id //sesion
                     //this.form.user = this.user.name
                 }
@@ -138,8 +143,8 @@
             {
                 let response =  await this.$http.get(`/${this.resource}/opening_cash_check/${this.form.user_id}`)
                     .then(response => {
-                        let cash = response.data.cash 
-                        return (cash) ? true : false                   
+                        let cash = response.data.cash
+                        return (cash) ? true : false
                     })
                 return response
             },
@@ -164,8 +169,8 @@
                     .then(response => {
                         if (response.data.success) {
                             this.$message.success(response.data.message)
-                            if(this.form.user_id === this.user.id) this.$eventHub.$emit('openCash')   
-                            this.$eventHub.$emit('reloadData')                                                      
+                            if(this.form.user_id === this.user.id) this.$eventHub.$emit('openCash')
+                            this.$eventHub.$emit('reloadData')
                             // window.open('/pos/init')
                             this.close()
                         } else {
@@ -186,7 +191,7 @@
             close() {
                 this.$emit('update:showDialog', false)
                 this.initForm()
-            } 
+            }
         }
     }
 </script>

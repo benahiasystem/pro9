@@ -80,7 +80,12 @@ class DocumentPaymentController extends Controller
             $document = Document::findOrFail($request->input('document_id'));
             DocumentFiscalController::authorizeDocument($document);
             $record = \App\Services\Fiscal\FiscalDocumentPersistence::payment($document, $request->all());
-            if (!$record->global_payment && $request->filled('payment_destination_id')) {
+            // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+            if (($record->global_payment?->report_context['version'] ?? null) === 2) {
+                if ($record->wasRecentlyCreated) $this->saveFiles($record,$request->all(),'documents');
+                $this->createCashDocumentPayment($record,true);
+            } elseif (!$record->global_payment && $request->filled('payment_destination_id')) {
+            // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
                 $this->createGlobalPayment($record, $request->all());
                 $this->saveFiles($record, $request, 'documents');
                 $this->createCashDocumentPayment($record,true);

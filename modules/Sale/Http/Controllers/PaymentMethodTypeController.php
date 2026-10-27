@@ -13,6 +13,27 @@ use Modules\Sale\Http\Requests\PaymentMethodTypeRequest;
 class PaymentMethodTypeController extends Controller
 {
 
+    // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+
+
+    public function active(Request $request)
+    {
+        abort_unless(auth()->user()?->type === 'admin',403);
+        $data=$request->validate(['id'=>['required','string','max:2'],'is_active'=>['required','boolean']]);
+        $record=PaymentMethodType::findOrFail($data['id']);
+        if (in_array((string)$record->id,PaymentMethodType::HKA_REFERENCE_PAYMENT_METHOD_IDS,true)) return response()->json(['success'=>false,'message'=>'Los métodos HKA de referencia permanecen inactivos.'],409);
+        $record->is_active=$data['is_active'];$record->save();
+        return ['success'=>true,'message'=>'Disponibilidad actualizada'];
+    }
+
+    private function methodInput(PaymentMethodTypeRequest $request): array
+    {
+        $fields=['id','description','number_days','has_card','is_active'];
+        $fields=array_merge($fields,['collection_kind','cash_currency_type_id']);
+        return $request->only($fields);
+    }
+    // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
+
     public function records(Request $request)
     {
         $records = PaymentMethodType::get();
@@ -25,32 +46,42 @@ class PaymentMethodTypeController extends Controller
     {
         $record = PaymentMethodType::findOrFail($id);
 
-        return $record;
+        return $record->toArray()+['classification_editable'=>!PaymentMethodType::isInitialPaymentMethodId($record->id)];
     }
 
     public function store(PaymentMethodTypeRequest $request)
     {
-
-        $id = $request->input('id');
         // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+        $id = $request->input('id');
         if (in_array((string) $id, PaymentMethodType::HKA_REFERENCE_PAYMENT_METHOD_IDS, true)) {
             return response()->json(['success' => false, 'message' => 'Los métodos HKA de referencia no se pueden editar ni activar'], 409);
         }
-        // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
-        $record = PaymentMethodType::firstOrNew(['id' => $id]);
-        $record->fill($request->all());
-        if (!$record->exists) {
-            $record->hka_code = '99';
-        }
+        $record = new PaymentMethodType();
+        $record->fill($this->methodInput($request));
+        $record->hka_code = '99';
         $record->save();
 
-
-        return [
-            'success' => true,
-            'message' => ($id)?'Método de pago editado con éxito':'Método de pago registrado con éxito',
-        ];
-
+        return ['success' => true, 'message' => 'Método de pago registrado con éxito'];
+        // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
     }
+
+    // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+    public function update(PaymentMethodTypeRequest $request, $id)
+    {
+        if (in_array((string) $id, PaymentMethodType::HKA_REFERENCE_PAYMENT_METHOD_IDS, true)) {
+            return response()->json(['success' => false, 'message' => 'Los métodos HKA de referencia no se pueden editar ni activar'], 409);
+        }
+
+        $record = PaymentMethodType::find($id);
+        if (!$record) {
+            return response()->json(['success' => false, 'message' => 'No se encontró el método de pago'], 404);
+        }
+        $record->fill(array_diff_key($this->methodInput($request),['id'=>true]));
+        $record->save();
+
+        return ['success' => true, 'message' => 'Método de pago editado con éxito'];
+    }
+    // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
 
     public function destroy($id)
     {

@@ -8,7 +8,7 @@ use Illuminate\Support\Str;
 
 trait NotePersistenceCases
 {
-    private function noteFixture(): array
+    private function noteFixture(bool $withIgtf = false): array
     {
         [$db,$app,$input]=$this->bootHkaFixture(); $calls=0;
         config(['hka_notes.contract_probe'=>true]); // Doubles test protocol, never enable runtime capabilities.
@@ -29,6 +29,11 @@ trait NotePersistenceCases
             return \Illuminate\Support\Facades\Http::response(['codigo'=>'200','validaciones'=>[],
                 'resultado'=>$id+['numeroControl'=>'00-'.str_pad((string)$calls,8,'0',STR_PAD_LEFT),'urlConsulta'=>'https://example.test/consulta/'.$calls]]);
         });
+        if ($withIgtf) {
+            \Tests\Support\SpeProfiles::versions($db,1,$input['customer_id']);
+            $db->table('companies')->update(['igtf_enabled'=>1,'igtf_rate'=>3]);
+            $input['payments'][0]=array_replace($input['payments'][0],['payment_method_type_id'=>'10','currency_type_id'=>'USD','original_amount'=>'23.20','exchange_rate'=>'10.00000000','financial_intermediation'=>'none']);
+        }
         $invoice=(new Facturalo)->forWebDocuments()->save($input)->getDocument()->fresh();
         self::assertSame('confirmed',$invoice->emission->status);
         return [$db,$app,$input,$invoice];
@@ -107,7 +112,7 @@ trait NotePersistenceCases
         $party=['person_id'=>$first->customer_id,'rif'=>'J000000004','name'=>'Tercero de prueba','address'=>'Caracas','country_id'=>'VE','activity'=>'Comercio'];
         foreach (['VES','USD'] as $currency) {
             foreach ([null,1,2,3,4,5,6,7] as $regime) {
-                $source=$input;$source['currency_type_id']=$currency;$source['exchange_rate_sale']='10.12345678';
+                $source=$input;$source['currency_type_id']=$currency;$source['exchange_rate_sale']='10.12345678';$source['payments'][0]['payment_method_type_id']=$currency==='USD'?'10':'01';
                 $invoice=(new Facturalo)->forWebDocuments()->save($source)->getDocument()->fresh();
                 if ($regime) $invoice->fiscal_data->update(['special_tax_regime_id'=>$regime,'catalog_snapshot'=>['special_tax_regime_id'=>['id'=>$regime,'description'=>\App\Services\SpecialTaxRegimePolicy::NAMES[$regime]]]]);
                 $line=$invoice->items->first();
@@ -138,7 +143,7 @@ trait NotePersistenceCases
 
     public function test_note_pending_igtf_and_fund_adjustments_have_no_cash_effect(): void
     {
-        [$db,$app,$input,$invoice]=$this->noteFixture();$line=$invoice->items->first();
+        [$db,$app,$input,$invoice]=$this->noteFixture(true);$line=$invoice->items->first();
         $data=$this->noteInput($input,$invoice,'07','09',[['affected_document_item_id'=>$line->id,'adjustment_amount'=>23.20]]);
         $note=(new Facturalo)->forWebDocuments()->save($data)->getDocument()->fresh();
         $fund=$invoice->guarantee_fund()->create(['base'=>100,'percentage'=>10,'amount'=>10]);
@@ -147,12 +152,13 @@ trait NotePersistenceCases
         $adjustment=NoteAdjustment::register($note,$request);
         self::assertSame($adjustment->id,NoteAdjustment::register($note,$request)->id);
         self::assertEquals(5,$invoice->fresh()->guarantee_amount);self::assertEquals($original,$fund->fresh()->toArray());
-        $payment=$invoice->payments->first();$payment->forceFill(['tax_amount'=>3])->save();
-        $tax=$invoice->taxes()->create(['tax_kind'=>'IGTF','code'=>'IGTF','percentage'=>3,'base'=>100,'amount'=>3,'base_ves'=>100,'amount_ves'=>3,'document_payment_id'=>$payment->id]);
+        $payment=$invoice->payments->whereNull('receipt_parent_id')->first();
+        $tax=$invoice->taxes()->where('tax_kind','IGTF')->where('document_payment_id',$payment->id)->firstOrFail();
+        $originalTax=$tax->amount;
         $cash=$db->table('global_payments')->count();
         $igtf=NoteAdjustment::register($note,['kind'=>'IGTF','source_id'=>$tax->id,'operation_key'=>(string)Str::uuid(),'amount'=>3,'reason'=>'Impuesto del cobro devuelto']);
         self::assertSame('blocked',$igtf->status);self::assertSame($cash,$db->table('global_payments')->count());
-        self::assertEquals(3,$tax->fresh()->amount);
+        self::assertEquals($originalTax,$tax->fresh()->amount);
         config(['hka_notes.contract_probe'=>false,'hka_notes.demo_non_cash_notes_verified'=>false]);
         self::assertSame(\App\Services\Fiscal\HkaNoteCapability::CREDIT_REASON,\App\Services\Fiscal\HkaNoteCapability::reason($note));
         self::assertFalse(\App\Services\Fiscal\NoteRefund::view($note)['can_create'] && $note->emission->status !== 'confirmed');
@@ -160,7 +166,7 @@ trait NotePersistenceCases
         $invoice->fiscal_data->update(['special_tax_regime_id'=>7,'catalog_snapshot'=>['special_tax_regime_id'=>['id'=>7,'description'=>\App\Services\SpecialTaxRegimePolicy::NAMES[7]]]]);
         $debitInput=$this->noteInput($input,$invoice->fresh(),'08','02',[['affected_document_item_id'=>$line->id,'adjustment_amount'=>11.60]]);
         $debit=(new Facturalo)->forWebDocuments()->save($debitInput)->getDocument()->fresh();
-        $receipt=\App\Services\Fiscal\FiscalDocumentPersistence::payment($debit,['date_of_payment'=>'2026-09-10','payment_method_type_id'=>'01',
+        $receipt=\App\Services\Fiscal\FiscalDocumentPersistence::payment($debit,['date_of_payment'=>'2026-09-10','payment_method_type_id'=>'10',
             'operation_key'=>(string)Str::uuid(),'currency_type_id'=>'USD','original_amount'=>1.16,'exchange_rate'=>'10.00000000','financial_intermediation'=>'none']);
         self::assertEquals(7,$debit->fresh()->fiscal_data->special_tax_regime_id,'Ordinary ND snapshot retains regime');
         self::assertEquals(0,$debit->fresh()->balance);self::assertEquals(0.03,$receipt->tax_amount);
@@ -171,7 +177,7 @@ trait NotePersistenceCases
         $pending=NoteAdjustment::register($note,['kind'=>'IGTF','source_id'=>$taxNote->taxes->first()->id,'operation_key'=>(string)Str::uuid(),'amount'=>0.30,'reason'=>'IGTF del cargo posterior']);
         self::assertSame('blocked',$pending->status);
         config(['hka_notes.contract_probe'=>true]);
-        $initial=$input;$initial['external_id']=(string)Str::uuid();$initial['payments']=[['date_of_payment'=>'2026-09-10','payment_method_type_id'=>'01','currency_type_id'=>'USD',
+        $initial=$input;$initial['external_id']=(string)Str::uuid();$initial['payments']=[['date_of_payment'=>'2026-09-10','payment_method_type_id'=>'10','currency_type_id'=>'USD',
             'original_amount'=>23.20,'exchange_rate'=>'10.00000000','financial_intermediation'=>'none']];
         $taxed=(new Facturalo)->forWebDocuments()->save($initial)->getDocument()->fresh();
         self::assertEquals(239,$taxed->total);self::assertEquals(0,$taxed->balance);
@@ -215,7 +221,7 @@ trait NotePersistenceCases
         $note=(new Facturalo)->forWebDocuments()->save($data)->getDocument()->fresh();
         $bankId=$db->table('bank_accounts')->insertGetId(['description'=>'Refund test','number'=>'test','bank_id'=>1,'currency_type_id'=>'VES','establishment_id'=>$invoice->establishment_id]);
         $refund=['operation_key'=>(string)Str::uuid(),'component'=>'principal','document_payment_id'=>$invoice->payments->first()->id,
-            'date_of_payment'=>'2026-09-10','payment_method_type_id'=>'01','payment_destination_id'=>$bankId,
+            'date_of_payment'=>'2026-09-10','payment_method_type_id'=>'04','payment_destination_id'=>$bankId,
             'currency_type_id'=>'VES','original_amount'=>10,'exchange_rate'=>'1.00000000','exchange_rate_source'=>'manual'];
         $before=$invoice->payments->first()->getAttributes();
         $excess=array_replace($refund,['operation_key'=>(string)Str::uuid(),'original_amount'=>24]);
@@ -232,8 +238,8 @@ trait NotePersistenceCases
         $reverse=['operation_key'=>(string)Str::uuid(),'reason'=>'Corrección del registro de devolución'];
         (new NoteRefund)->reverse($note,$record,$reverse);(new NoteRefund)->reverse($note,$record,$reverse);
         self::assertEquals(-23.20,$invoice->fresh()->balance);self::assertEquals(23.20,NoteRefund::available($note));
-        $cash=\App\Models\Tenant\Cash::create(['user_id'=>auth()->id(),'date_opening'=>'2026-09-10','time_opening'=>'12:00:00','state'=>true]);
-        $cashRefund=array_replace($refund,['operation_key'=>(string)Str::uuid(),'original_amount'=>5,'payment_destination_id'=>'cash']);
+        $cash=\App\Models\Tenant\Cash::where('user_id',auth()->id())->where('state',true)->firstOrFail();
+        $cashRefund=array_replace($refund,['operation_key'=>(string)Str::uuid(),'original_amount'=>5,'payment_destination_id'=>'cash','payment_method_type_id'=>'01']);
         $out=(new NoteRefund)->register($note->fresh(),$cashRefund);
         self::assertEquals(5,$cash->noteRefundTotal());self::assertSame('egress',$out->getDataCashPaymentReport()['type_transaction']);
         self::assertEquals(-5,$out->getRowIncomeSummaryPayment()['payment_for_calculate']);
@@ -326,7 +332,7 @@ trait NotePersistenceCases
         $note->forceFill(['control_number'=>'00-00999999'])->save();$note->emission->update(['status'=>'confirmed','control_number'=>$note->control_number]);
         $bankId=$db->table('bank_accounts')->insertGetId(['description'=>'USD refund','number'=>'usd','bank_id'=>1,'currency_type_id'=>'USD','establishment_id'=>$invoice->establishment_id]);
         $refund=['operation_key'=>(string)Str::uuid(),'component'=>'principal','document_payment_id'=>$invoice->payments->first()->id,
-            'date_of_payment'=>'2026-09-10','payment_method_type_id'=>'01','payment_destination_id'=>$bankId,
+            'date_of_payment'=>'2026-09-10','payment_method_type_id'=>'04','payment_destination_id'=>$bankId,
             'currency_type_id'=>'USD','original_amount'=>1,'exchange_rate'=>'10.12345678','exchange_rate_source'=>'manual'];
         $results=$this->runFiscalWorkers($note->id,'note-refund',[$refund,$refund]);
         self::assertSame($results[0]['id'],$results[1]['id']);
@@ -466,7 +472,7 @@ trait NotePersistenceCases
         foreach (['documents','document_payments','global_payments','cash_documents','cash_document_payments'] as $table) $counts[$table]=$db->table($table)->count();
         $calls=$app->make(\Illuminate\Http\Client\Factory::class)->recorded()->count();
         $initialPayment=['operation_key'=>(string)Str::uuid(),'payment'=>11.60,'original_amount'=>'5.80','currency_type_id'=>'USD','exchange_rate'=>'2.00000001',
-            'date_of_payment'=>'2026-09-10','payment_method_type_id'=>'01','payment_destination_id'=>$bank,'igtf_status'=>'not_applicable','financial_intermediation'=>'financial_institution'];
+            'date_of_payment'=>'2026-09-10','payment_method_type_id'=>'04','payment_destination_id'=>$bank,'igtf_status'=>'not_applicable','financial_intermediation'=>'financial_institution'];
         foreach ([['payment_condition_id'=>'01'],['payments'=>[$initialPayment]],['payment_condition_id'=>'02','payments'=>[$initialPayment]]] as $invalid) {
             try {(new Facturalo)->forWebDocuments()->save(array_replace($data,$invalid));self::fail('Initial cash debit or collection must be rejected');}
             catch(\Illuminate\Validation\ValidationException $e){self::assertArrayHasKey(isset($invalid['payments'])?'payments':'payment_condition_id',$e->errors());}
@@ -475,7 +481,9 @@ trait NotePersistenceCases
         }
         $note=(new Facturalo)->forWebDocuments()->save($data)->getDocument()->fresh();
         self::assertSame('02',$note->payment_condition_id);self::assertEquals(11.60,$note->balance);self::assertSame(0,$note->payments()->count());
-        foreach (['document_payments','global_payments','cash_documents','cash_document_payments'] as $table) self::assertSame($counts[$table],$db->table($table)->count(),$table);
+        foreach (['document_payments','global_payments','cash_document_payments'] as $table) self::assertSame($counts[$table],$db->table($table)->count(),$table);
+        self::assertSame($counts['cash_documents']+1,$db->table('cash_documents')->count());
+        self::assertTrue($db->table('cash_documents')->where('document_id',$note->id)->exists());
         self::assertSame($note->id,(new Facturalo)->forWebDocuments()->save($data)->getDocument()->id);
         self::assertSame($counts['documents']+1,$db->table('documents')->count());
         $payload=$note->emission->payload;

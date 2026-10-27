@@ -29,60 +29,12 @@ class CashController extends Controller
      * timeOpening: "H:m:s"
      * internalsId: [{external_id: String, type: String NOTA|BOLETA|'' }]
      */
-    public function storeRestaurant(Request $request) {
-
-        $cash = new Cash();
-        $cash->user_id = auth()->user()->id;
-        $cash->date_opening = $request->dateOpening;
-        $cash->time_opening = $request->timeOpening;
-        $cash->date_closed = date('Y-m-d');
-        $cash->time_closed = date('H:i:s');
-        $cash->beginning_balance = (float)$request->beginningBalance;
-        $cash->final_balance = 0;
-        $cash->income = 0;
-        $cash->state = 0;
-        $cash->reference_number = $request->referenceNumber;
-        $cash->apply_restaurant = 1;
-
-        $cash->save();
-
-        $total_documents = 0;
-
-        // se recorren todos los externals id de la caja anteriormente creada
-        // para registrar la relación con ella y acumular el monto total
-        foreach ($request->internalsId as $row) {
-            if($row['type'] == 'NOTA'){
-                $sale_note = SaleNote::where('external_id', $row['external_id'])->first();
-                $total_documents += (float)$sale_note->total;
-
-                CashDocument::create([
-                    'cash_id' => $cash->id,
-                    'sale_note_id' => $sale_note->id,
-                ]);
-            } else {
-                $document = Document::where('external_id', $row['external_id'])->first();
-                $total_documents += (float)$document->total;
-
-                CashDocument::create([
-                    'cash_id' => $cash->id,
-                    'document_id' => $document->id,
-                ]);
-            }
-        }
-
-        // se toman los montos anteriores para cerrar la caja
-        $cash->income = $total_documents;
-        $cash->final_balance = $cash->beginning_balance + $cash->income;
-        $cash->save();
-
-
-
-
-
-        return [
-            'success' => true,
-            'message' => 'Caja creada con éxito'
-        ];
+    public function storeRestaurant(Request $request)
+    {
+        // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+        $request->validate(['dateOpening'=>'required|date_format:Y-m-d','timeOpening'=>'required|date_format:H:i:s','internalsId'=>'required|array','internalsId.*.external_id'=>'required|uuid','internalsId.*.type'=>'required|string']);
+        return \App\Services\Payments\RestaurantCashImport::store($request->all());
+        // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
     }
 
     public function cash_document(Request $request) {
@@ -135,7 +87,7 @@ class CashController extends Controller
             'message' => 'Verificar si existe caja abierta',
             'data' => [
                 'cash_id' => ($cash)?$cash->id:null,
-                'cash' => $cash,
+                'cash' => $cash ? $cash->getApiRowResource() : null,
                 'description' => ($cash)?$cash->reference_number . " " . $cash->date_opening . " (" . $cash->user->name . ")":'',
             ]
         ];
@@ -174,79 +126,13 @@ class CashController extends Controller
         ];
     }
 
-    public function close() {
-
-
-        $cash = Cash::where('user_id',auth()->user()->id)->where('state',1)->first();
-
-        if(!$cash){
-            return [
-                'success' => false,
-                'message' => 'Caja no encontrada',
-            ];
-        }
-
-        $cash->date_closed = date('Y-m-d');
-        $cash->time_closed = date('H:i:s');
-
-        $final_balance = 0;
-        $income = 0;
-
-        foreach ($cash->cash_documents as $cash_document) {
-
-
-            if($cash_document->sale_note){
-
-                if(in_array($cash_document->sale_note->state_type_id, ['01','03','05','07','13'])){
-                    $final_balance = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($final_balance)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational(($cash_document->sale_note->currency_type_id == 'VES') ? $cash_document->sale_note->total : ((\App\Services\ExchangeRates\ExchangeRateMath::rational($cash_document->sale_note->total)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($cash_document->sale_note->exchange_rate_sale)))->toBigDecimal())))->toBigDecimal();
-                }
-
-                // $final_balance += $cash_document->sale_note->total;
-
-            }
-            else if($cash_document->document){
-
-                if(in_array($cash_document->document->state_type_id, ['01','03','05','07','13'])){
-                    $final_balance = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($final_balance)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational(($cash_document->document->currency_type_id == 'VES') ? $cash_document->document->total : ((\App\Services\ExchangeRates\ExchangeRateMath::rational($cash_document->document->total)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($cash_document->document->exchange_rate_sale)))->toBigDecimal())))->toBigDecimal();
-                }
-
-                // $final_balance += $cash_document->document->total;
-
-            }
-            else if($cash_document->expense_payment){
-
-                if($cash_document->expense_payment->expense->state_type_id == '05'){
-                    $final_balance = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($final_balance)->minus(\App\Services\ExchangeRates\ExchangeRateMath::rational(($cash_document->expense_payment->expense->currency_type_id == 'VES') ? $cash_document->expense_payment->payment:((\App\Services\ExchangeRates\ExchangeRateMath::rational($cash_document->expense_payment->payment)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($cash_document->expense_payment->expense->exchange_rate_sale)))->toBigDecimal())))->toBigDecimal();
-                }
-
-                // $final_balance -= $cash_document->expense_payment->payment;
-
-            }
-            else if($cash_document->purchase){
-                if(in_array($cash_document->purchase->state_type_id, ['01','03','05','07','13'])){
-                    if($cash_document->purchase->total_canceled == 1) {
-                        $final_balance = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($final_balance)->minus(\App\Services\ExchangeRates\ExchangeRateMath::rational(($cash_document->purchase->currency_type_id == 'VES') ? $cash_document->purchase->total : ((\App\Services\ExchangeRates\ExchangeRateMath::rational($cash_document->purchase->total)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($cash_document->purchase->exchange_rate_sale)))->toBigDecimal())))->toBigDecimal();
-                    }
-                }
-            }
-            // cotizacion
-            else if($cash_document->quotation)
-            {
-                $final_balance = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($final_balance)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational(($cash_document->quotation->applyQuotationToCash()) ? $cash_document->quotation->getTransformTotal() : 0))->toBigDecimal();
-            }
-
-        }
-
-        $cash->final_balance = (float) \App\Services\ExchangeRates\ExchangeRateMath::finalAmount(\App\Services\ExchangeRates\ExchangeRateMath::rational($final_balance)->plus($cash->beginning_balance), 2);
-        $cash->income = round((float) \App\Services\ExchangeRates\ExchangeRateMath::finalAmount($final_balance, 2), 2);
-        $cash->state = false;
-        $cash->save();
-
-        return [
-            'success' => true,
-            'message' => 'Caja cerrada con éxito',
-        ];
-
+    public function close()
+    {
+        // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+        $cash=Cash::where('user_id',auth()->id())->where('state',true)->first();
+        if (!$cash) return ['success'=>false,'message'=>'Caja no encontrada'];
+        return \App\Services\Payments\CashLedger::close($cash);
+        // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
     }
 
 }

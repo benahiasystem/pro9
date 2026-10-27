@@ -19,6 +19,10 @@ if (!window.jQuery && !window.$) {
 // } catch (e) {}
 
 import axios from 'axios';
+// ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+import paymentClassification from './helpers/payment-classification';
+Vue.mixin(paymentClassification);
+// ######## FIN CLASIFICACION DE COBROS Y CAJA ########
 
 axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 

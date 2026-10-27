@@ -942,9 +942,7 @@ class QuotationController extends Controller
             PaymentMethodType::assertActiveForPayment($payment['payment_method_type_id'] ?? null);
             $record_payment = $quotation->payments()->create($payment);
 
-            if (isset($payment['payment_destination_id'])) {
-                $this->createGlobalPayment($record_payment, $payment);
-            }
+            $this->createGlobalPayment($record_payment, $payment);
         }
     }
 

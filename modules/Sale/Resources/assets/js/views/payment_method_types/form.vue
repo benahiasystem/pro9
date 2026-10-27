@@ -17,30 +17,20 @@
                             <small class="form-control-feedback" v-if="errors.description" v-text="errors.description[0]"></small>
                         </div>
                     </div>
+                    <!-- ######## INICIO CLASIFICACION DE COBROS Y CAJA ######## -->
                     <div class="col-md-4">
-                        <div class="form-group" :class="{'has-danger': errors.is_credit}">
-                            <label class="control-label">Tipo de pago</label>
-
-                            <el-select
-                                v-model="form.is_credit"
-                                clearable
-                                placeholder=""
-                            >
-                                <el-option
-                                    v-for="of in is_credit_text"
-                                    :key="of.id"
-                                    :value="of.id"
-                                    :label="of.name"
-                                ></el-option>
-                            </el-select>
-
-                            <small
-                                class="form-control-feedback"
-                                v-if="errors.is_credit"
-                                v-text="errors.is_credit[0]"
-                            ></small>
-                        </div>
+                        <label>Naturaleza del medio</label>
+                        <el-select v-model="form.collection_kind" :disabled="form.classification_editable === false" @change="changeCollectionKind">
+                            <el-option value="cash" label="Efectivo físico"/><el-option value="account" label="Bancario / electrónico"/>
+                            <el-option value="credit" label="Crédito"/><el-option value="unclassified" label="Sin clasificar"/>
+                        </el-select>
+                        <small class="text-danger" v-if="errors.collection_kind">{{ errors.collection_kind[0] }}</small>
                     </div>
+                    <div class="col-md-4" v-if="form.collection_kind === 'cash'">
+                        <label>Moneda del efectivo</label><el-select v-model="form.cash_currency_type_id" :disabled="form.classification_editable === false"><el-option value="VES" label="Bolívares"/><el-option value="USD" label="Dólares"/></el-select>
+                    </div>
+                    <div class="col-md-4"><el-checkbox v-model="form.is_active" :disabled="form.collection_kind === 'unclassified'">Disponible</el-checkbox><el-checkbox v-model="form.has_card">Solicitar datos de tarjeta</el-checkbox></div>
+                    <!-- ######## FIN CLASIFICACION DE COBROS Y CAJA ######## -->
                     <div class="col-md-3" v-show="form.is_credit">
                         <label class="control-label">Número de dias</label>
                         <el-input v-model="form.number_days" :maxlength="3"></el-input>
@@ -63,16 +53,6 @@
             return {
                 loading_submit: false,
                 titleDialog: null,
-                is_credit_text: [
-                    {
-                        'id': 0,
-                        'name': 'Contado',
-                    },
-                    {
-                        'id': 1,
-                        'name': 'Crédito',
-                    }
-                ],
                 resource: 'payment-method-types',
                 errors: {},
                 form: {},
@@ -83,11 +63,19 @@
             this.initForm()
         },
         methods: {
+            changeCollectionKind() {
+                this.form.is_credit = this.form.collection_kind === 'credit' ? 1 : 0
+                this.form.cash_currency_type_id = this.form.collection_kind === 'cash' ? (this.form.cash_currency_type_id || 'VES') : null
+                if (this.form.collection_kind === 'unclassified') this.form.is_active = false
+            },
             initForm() {
                 this.errors = {}
                 this.form = {
                     id: null,
                     description: null,
+                    collection_kind: 'account',
+                    cash_currency_type_id: null,
+                    is_active: true, has_card: false,
                     is_credit: 0,
                     number_days: 0,
                 }
@@ -97,13 +85,18 @@
                 if (this.recordId) {
                     this.$http.get(`/${this.resource}/record/${this.recordId}`)
                         .then(response => {
-                            this.form = response.data
+                            this.form = {...response.data, is_active: !!response.data.is_active, has_card: !!response.data.has_card}
                         })
                 }
             },
             submit() {
                 this.loading_submit = true
-                this.$http.post(`/${this.resource}`, this.form)
+                // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+                this.errors = {}
+                const request = this.recordId !== null
+                    ? this.$http.put(`/${this.resource}/${encodeURIComponent(this.recordId)}`, this.form)
+                    : this.$http.post(`/${this.resource}`, this.form)
+                request
                     .then(response => {
                         if (response.data.success) {
                             this.$message.success(response.data.message)
@@ -114,12 +107,14 @@
                         }
                     })
                     .catch(error => {
-                        if (error.response.status === 422) {
-                            this.errors = error.response.data
+                        if (error.response && error.response.status === 422) {
+                            const data = error.response.data
+                            this.errors = data.errors || (typeof data.message === 'object' ? data.message : data)
                         } else {
-                            console.log(error)
+                            this.$message.error(error.response?.data?.message || 'No se pudo guardar el método de pago')
                         }
                     })
+                // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
                     .then(() => {
                         this.loading_submit = false
                     })

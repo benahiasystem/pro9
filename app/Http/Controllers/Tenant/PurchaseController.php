@@ -427,9 +427,7 @@ use Modules\Purchase\Helpers\WeightedAverageCostHelper;
                         PaymentMethodType::assertActiveForPayment($payment['payment_method_type_id'] ?? null);
                         $record_payment = $doc->purchase_payments()->create($payment);
 
-                        if (isset($payment['payment_destination_id'])) {
-                            $this->createGlobalPayment($record_payment, $payment);
-                        }
+                        $this->createGlobalPayment($record_payment, $payment);
                     }
 
                     $this->savePurchaseFee($doc, $data['fee']);
@@ -715,9 +713,7 @@ use Modules\Purchase\Helpers\WeightedAverageCostHelper;
                     PaymentMethodType::assertActiveForPayment($payment['payment_method_type_id'] ?? null);
                     $record_payment = $doc->purchase_payments()->create($payment);
 
-                    if (isset($payment['payment_destination_id'])) {
-                        $this->createGlobalPayment($record_payment, $payment);
-                    }
+                    $this->createGlobalPayment($record_payment, $payment);
 
                     if (isset($payment['payment_filename'])) {
                         $record_payment->payment_file()->create([

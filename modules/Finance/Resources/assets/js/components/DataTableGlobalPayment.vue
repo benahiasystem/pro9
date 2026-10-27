@@ -113,16 +113,10 @@
                             <slot v-for="(row, index) in records" :row="row" :index="customIndex(index)"></slot>
                         </tbody>
                         <tfoot v-if="resource == 'finances/global-payments'">
-                            <tr>
+                            <tr v-for="summary in totalsByVersion" :key="`${summary.version}:${summary.currency_type_id}`">
                                 <td colspan="9"></td>
-                                <td ><strong>Totales VES</strong></td>
-                                <td>{{totals.total_pen}}</td>
-                            </tr>
-                            <tr>
-                                <td colspan="9"></td>
-                                <td ><strong>Totales USD</strong></td>
-                                <td>{{totals.total_usd}}</td>
-
+                                <td><strong>Total de página · {{ summary.currency_type_id }}</strong></td>
+                                <td>{{ summary.total | DecimalText }}</td>
                             </tr>
                         </tfoot>
                     </table>
@@ -161,6 +155,7 @@
             return {
                 isVisible: false,
                 loading_submit:false,
+                totalsByVersion: [],
                 loading_search:false,
                 loading: false,
                 columns: [],
@@ -306,17 +301,10 @@
                     this.records = response.data.data
                     this.pagination = response.data.meta
                     this.pagination.per_page = parseInt(response.data.meta.per_page)
-                    this.getTotals(response.data.data)
+                    this.totalsByVersion = response.data.totals_by_version || []
                     this.loading_submit = false
                 });
 
-
-            },
-            getTotals(records){
-
-                this.initTotals()
-                this.totals.total_pen = _.round(_.sumBy(_.filter(records, {currency_type_id : 'VES'}), (row) => { return parseFloat(row.total) }), 2)
-                this.totals.total_usd = _.round(_.sumBy(_.filter(records, {currency_type_id : 'USD'}), (row) => { return parseFloat(row.total) }), 2)
 
             },
             getQueryParameters() {

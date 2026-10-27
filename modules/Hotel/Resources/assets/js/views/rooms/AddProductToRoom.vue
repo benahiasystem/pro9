@@ -113,7 +113,7 @@
                                                     :disabled="p.is_registered"
                                                 >
                                                     <el-option
-                                                        v-for="option in payment_destinations"
+                                                        v-for="option in classifiedPaymentDestinations(payment_destinations, p.rent_payment)"
                                                         :key="option.id"
                                                         :value="option.id"
                                                         :label="option.description"
@@ -314,6 +314,9 @@ export default {
     },
     data() {
         return {
+            // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+            paymentCurrency: "VES",
+            // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
             title: "",
             showDialogAddItem: false,
             recordItem: null,

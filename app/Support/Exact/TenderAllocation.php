@@ -6,9 +6,10 @@ namespace App\Support\Exact;
 /** Actual tender and change are cents; retain the original request independently. */
 final class TenderAllocation
 {
-    private const CASH_METHODS = ['01','10'];
-    public static function calculate($payable, array $rows): array
+
+    public static function calculate($payable, array $rows, ?array $cashMethods = null): array
     {
+        $cashMethods ??= \App\Services\Payments\Classification::cashIds();
         $target = Decimal::of($payable);
         if ($target->isNegative() || !$target->isEqualTo(Decimal::represent($target, 2))) {
             \App\Services\Fiscal\FiscalAmounts::error('total_payable', 'El importe liquidable debe ser no negativo y expresarse en céntimos.');
@@ -26,7 +27,7 @@ final class TenderAllocation
             $rows[$i]['requested'] = $request;
             $rows[$i]['received'] = $amount;
             $received = $received->plus($amount);
-            if (in_array($row['payment_method_type_id'] ?? null, self::CASH_METHODS, true)) $cash = $cash->plus($amount);
+            if (in_array($row['payment_method_type_id'] ?? null, $cashMethods, true)) $cash = $cash->plus($amount);
         }
         $remaining = $received->minus($target);
         if ($remaining->isNegative()) $remaining = Decimal::of(0);
@@ -34,7 +35,7 @@ final class TenderAllocation
             \App\Services\Fiscal\FiscalAmounts::error('payments', 'El exceso sólo puede devolverse desde el efectivo recibido.');
         }
         foreach ($rows as $i => $row) {
-            $change = in_array($row['payment_method_type_id'] ?? null, self::CASH_METHODS, true)
+            $change = in_array($row['payment_method_type_id'] ?? null, $cashMethods, true)
                 ? ($remaining->isLessThan($row['received']) ? $remaining : $row['received']) : Decimal::of(0);
             $remaining = $remaining->minus($change);
             $net = $row['received']->minus($change);

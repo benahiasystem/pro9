@@ -48,7 +48,9 @@ class GlobalPaymentServiceProvider extends ServiceProvider
 
         $model::deleting(function ($record) {
             
-            if($record->global_payment){
+            // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+            if($record->global_payment && ($record->global_payment->report_context['version'] ?? null) !== 2){
+            // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
                 $record->global_payment()->delete();
             }
 

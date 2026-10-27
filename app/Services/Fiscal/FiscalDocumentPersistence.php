@@ -228,7 +228,8 @@ final class FiscalDocumentPersistence
                 }
                 return $existing;
             }
-            PaymentMethodType::assertActiveForPayment($input['payment_method_type_id'] ?? null);
+            $receiptOrigin=$initial ? \App\Services\Payments\ConvertedReceipt::resolve($document,$input) : null;
+            if (!$receiptOrigin) PaymentMethodType::assertActiveForPayment($input['payment_method_type_id'] ?? null);
             if (!$initial && D::readRequired($values, 'tax_amount')->isPositive() && \App\Services\ExportInvoicePolicy::isExport($document->invoice->operation_type_id ?? '')) {
                 FiscalAmounts::error('payment', 'El IGTF de un cobro posterior requiere una nota de exportación; ese flujo todavía no está habilitado.');
             }
@@ -245,7 +246,7 @@ final class FiscalDocumentPersistence
             }
             if (!$initial && D::readRequired($values, 'payment')->isGreaterThan($balance)) FiscalAmounts::error('payment', 'El pago supera el saldo disponible.');
             if ($initial && $document->emission()->where('status', '!=', 'not_requested')->exists()) FiscalAmounts::error('emission','No se modifican los pagos de una operación preparada.');
-            if (!empty($input['id'])) FiscalAmounts::error('id', 'Revierta el pago y registre uno nuevo; no se editan pagos contabilizados.');
+            if (!empty($input['id']) && !$receiptOrigin) FiscalAmounts::error('id', 'Revierta el pago y registre uno nuevo; no se editan pagos contabilizados.');
             validator($input, ['date_of_payment'=>'required|date','exchange_rate_source'=>'nullable|string|max:255','exchange_rate_date'=>'nullable|date','exemption_reason'=>'nullable|string|max:255'])->validate();
             $fields = array_intersect_key($input, array_flip(['date_of_payment','payment_method_type_id','has_card','card_brand_id','reference','payment_received','change']));
 
@@ -261,8 +262,15 @@ final class FiscalDocumentPersistence
             $context = $document->getConnection()->getSchemaBuilder()->hasColumn('document_payments', 'fiscal_context')
                 ? ['fiscal_context'=>['issuer'=>$issuer, 'buyer'=>$buyer, 'decision'=>$decision, 'date'=>$date]] : [];
             $payment = $document->payments()->create($values + $fields + $context + [
-                'operation_key' => $key, 'payment_method_snapshot' => $method->only(['id','description','hka_code']),
+                'operation_key' => $key, 'payment_method_snapshot' => $method->only(['id','description','hka_code','collection_kind','cash_currency_type_id','is_cash','is_credit']),
                 ]);
+            if ($receiptOrigin) {
+                if (D::readRequired($values,'tax_amount')->isPositive()) FiscalAmounts::error('source_sale_note_payment_id','La reutilización de un cobro no genera otro IGTF.');
+                $sourceMethod=$receiptOrigin['method_snapshot'] ?? $payment->payment_method_snapshot;
+                unset($receiptOrigin['method_snapshot']);
+                $payment->payment_method_snapshot=array_merge($sourceMethod,['receipt_origin'=>$receiptOrigin]);
+                $payment->save();
+            }
             if (D::readRequired($values, 'tax_amount')->isPositive()) {
                 $target = $initial ? $document : self::igtfNote($document, $payment);
                 $base = D::convert($values['original_amount'], $values['currency_type_id'], $target->currency_type_id, $values['exchange_rate']);
@@ -285,6 +293,9 @@ final class FiscalDocumentPersistence
                 self::updateSettlementState($target);
                 if (!$initial && HkaIgtfNote::applies($target)) HkaIgtfNote::afterCommit($target);
             }
+            // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+            \App\Services\Payments\ReceiptDestination::attach($payment,$input);
+            // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
             self::updateSettlementState($document);
             return $payment;
         });

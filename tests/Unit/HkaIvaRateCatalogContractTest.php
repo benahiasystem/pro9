@@ -8,6 +8,26 @@ use Tests\TestCase;
 // ########## INICIO CAMBIO AFECTACIÓN IVA
 class HkaIvaRateCatalogContractTest extends TestCase
 {
+    // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+    public function test_tax_family_catalog_and_rate_assignments_are_consistent(): void
+    {
+        $tables = (require database_path('seeders/data/tenant_initial_data.php'))['tables'];
+        self::assertSame(['id'], $tables['cat_taxes_types']['key_columns']);
+        self::assertSame([
+            ['id' => 'IVA', 'description' => 'Impuesto al valor agregado - IVA'],
+            ['id' => 'ISLR', 'description' => 'Impuesto sobre la renta - ISLR'],
+            ['id' => 'MUNICIPAL', 'description' => 'Impuesto Municipal o Estadal'],
+            ['id' => 'IGTF', 'description' => 'Impuesto a las grandes transacciones'],
+            ['id' => 'LISAEA', 'description' => 'Impuesto sobre Alcohol y Especies Alcohólicas - LISAEA'],
+        ], $tables['cat_taxes_types']['rows']);
+        $families = array_column($tables['cat_taxes_types']['rows'], 'id');
+        foreach ($tables['cat_iva_rate_types']['rows'] as $rate) {
+            self::assertContains($rate['tax_kind'], $families);
+            self::assertSame($rate['id'] === 'IGTF' ? 'IGTF' : 'IVA', $rate['tax_kind']);
+        }
+    }
+    // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
+
     public function test_hka_rate_catalog_has_exactly_the_six_historical_reference_rows(): void
     {
         $tables = (require database_path('seeders/data/tenant_initial_data.php'))['tables'];

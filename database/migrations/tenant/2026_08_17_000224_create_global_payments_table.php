@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\DB;
 /**
  * Estructura inicial de `global_payments` para instalaciones nuevas.
  * Inventario de columnas:
+ * - `cash_session_id` int unsigned DEFAULT NULL (FK cash; index cash_session_id,id)
+ * - `report_context` json DEFAULT NULL (clasificación conservada por operación)
  * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
  * - `fiscal_environment` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `destination_id` int(11) DEFAULT NULL
@@ -30,6 +32,9 @@ CREATE TABLE `global_payments` (
   `payment_id` int(11) NOT NULL,
   `payment_type` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `user_id` int(10) unsigned DEFAULT NULL,
+  `cash_session_id` int unsigned DEFAULT NULL,
+  `report_context` json DEFAULT NULL,
+  KEY `global_payments_cash_session_index` (`cash_session_id`,`id`),
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),

@@ -111,7 +111,7 @@
                                                clearable
                                                filterable>
                                         <el-option
-                                            v-for="option in payment_destinations"
+                                            v-for="option in classifiedPaymentDestinations(payment_destinations, form)"
                                             :key="option.id"
                                             :label="option.description"
                                             :value="option.id"
