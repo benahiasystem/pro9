@@ -78,3 +78,7 @@ Seguir [perfiles SPE](../mantener-sujetos-pasivos-especiales-pro9/SKILL.md): la 
 Aplicar [retenciones IVA recibidas](../mantener-retenciones-iva-recibidas-pro9/SKILL.md). `base` es IVA sujeto, `taxable_base` es base imponible y `amount` importe retenido; `applied_amount` reduce saldo documental con tasa del comprobante. Comparar límites fiscales en VES con los importes/tasa de emisión conservados, sin confundirlos con equivalencia de liquidación.
 
 `HkaIvaRetentionPayload` convierte directamente desde moneda del comprobante a moneda fiscal confirmada; VES→VES permanece exacto aun con factura USD y tasas distintas. No convertir primero al importe aplicado USD y luego usar tasa de emisión. Ejemplo probado: IVA fiscal 320 VES, retención 240 VES, factura USD con tasa 10 y comprobante con tasa 20: aplicar 12 USD y enviar 320/240 VES. El comprobante no crea efectivo ni base IGTF; previsión y estados inactivos aplican cero. Verificar `HkaIvaRetentionPayloadTest` y `test_iva_fiscal_ves*` en MySQL temporal.
+
+## Moneda e IGTF en métodos de pago
+
+`payment_method_types.currency_type_id` referencia la moneda activa seleccionada, obligatoria al guardar; VES es el valor inicial del formulario. Inicialmente 10/Efectivo Dólares y 13/Zelle usan USD; los demás VES. En efectivo sincronizar `cash_currency_type_id` y mantener sus validaciones de cobro. `iva_rate_type_id` permite asociar IGTF opcional como referencia sin alterar las reglas fiscales ni los snapshots de pagos. Sólo instalaciones nuevas, sin conversión de tenants existentes.

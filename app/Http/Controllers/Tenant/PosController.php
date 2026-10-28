@@ -13,7 +13,6 @@ use App\Models\Tenant\Establishment;
 use App\Models\Tenant\Series;
 use App\Services\SeriesResolver;
 use App\Models\Tenant\PaymentMethodType;
-use App\Models\Tenant\CardBrand;
 use App\Models\Tenant\Catalogs\CurrencyType;
 use App\Models\Tenant\User;
 use Modules\Inventory\Models\Warehouse;
@@ -212,14 +211,14 @@ class PosController extends Controller
         // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
 
         $payment_method_types = PaymentMethodType::active()->NotCredit()->get();
-        $cards_brand = CardBrand::all();
+
         $payment_destinations = $this->getPaymentDestinations();
         // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
         $global_discount_types = ChargeDiscountType::getGlobalDiscounts();
         // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
 
 
-        return compact('series', 'payment_method_types', 'cards_brand', 'payment_destinations', 'global_discount_types');
+        return compact('series', 'payment_method_types', 'payment_destinations', 'global_discount_types');
 
     }
 
@@ -387,14 +386,6 @@ class PosController extends Controller
                     ];
                 });
             return $items;
-        }
-
-
-        if ($table === 'card_brands') {
-
-            $card_brands = CardBrand::all();
-            return $card_brands;
-
         }
 
         return [];

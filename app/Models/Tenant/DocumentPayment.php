@@ -14,7 +14,7 @@ class DocumentPayment extends ModelTenant
 {
     use PaymentModelHelperTrait;
 
-    protected $with = ['payment_method_type', 'card_brand'];
+    protected $with = ['payment_method_type'];
     public $timestamps = false;
 
     protected $fillable = [
@@ -22,8 +22,6 @@ class DocumentPayment extends ModelTenant
         'calculation_snapshot',
         'date_of_payment',
         'payment_method_type_id',
-        'has_card',
-        'card_brand_id',
         'reference',
         'change',
         'payment',
@@ -49,11 +47,6 @@ class DocumentPayment extends ModelTenant
     public function payment_method_type()
     {
         return $this->belongsTo(PaymentMethodType::class);
-    }
-
-    public function card_brand()
-    {
-        return $this->belongsTo(CardBrand::class);
     }
 
     public function document()

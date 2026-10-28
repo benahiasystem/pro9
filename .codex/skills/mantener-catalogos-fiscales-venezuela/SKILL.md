@@ -53,3 +53,18 @@ Antes de cambiar cualquier categoría cubierta por esta skill, leer el inventari
 ## Motivos de notas habilitados (13/10/2026)
 
 Mantener los IDs existentes y selector exclusivo por tipo: NC01 anulación,07 devolución,04 descuento,09 disminución de precios/cálculos; ND02 incremento,01 intereses,03 despacho/fletes/seguros/embalaje. IGTF es exclusivo del flujo especializado, nunca motivo manual ordinario. Mapeos de transacción HKA y capacidades verificadas se documentan en [notas](../../../informes/notas_credito_debito_hka.md); no cambiar códigos ante rechazos1015 ni confundir catálogo local con aceptación fiscal. No se modifican semillas de motivos en esta entrega.
+
+## Métodos de pago iniciales
+
+- Sembrar únicamente los 10 IDs clasificados `01`–`05` y `09`–`13`; no sembrar `06`, `07` ni `14`–`26` ni crear `payment_method_types.charge`. Los IDs retirados quedan disponibles para métodos personalizados.
+- Todos los métodos se editan desde el listado, incluyendo naturaleza y moneda, conservando ID y código HKA; los iniciales siguen protegidos contra eliminación. Los métodos personalizados sin clasificar permanecen inactivos. Las ediciones no alteran snapshots de movimientos. Aplicar exclusivamente al esquema y datos de instalaciones nuevas; sin conversión de tenants existentes.
+- Los métodos nuevos se crean disponibles automáticamente en servidor y exigen naturaleza clasificada. Los formularios de creación y edición no muestran la casilla de disponibilidad; esta se cambia desde el listado. Los métodos sin clasificar permanecen inactivos.
+
+## Moneda e impuesto del método de pago
+
+- Cada método tiene `currency_type_id` obligatorio con FK al catálogo de monedas; los IDs iniciales 10 y 13 usan USD y los demás VES. La moneda se selecciona entre activas, con VES por defecto al crear. Para efectivo, sincronizar `cash_currency_type_id`.
+- `iva_rate_type_id` es opcional y referencia exclusivamente IGTF. Esta asociación es informativa y no habilita ni altera el cálculo de IGTF. Conservar snapshots de cobros y aplicar el esquema sólo a instalaciones nuevas.
+
+## Datos de tarjeta retirados
+
+- No reintroducir la opción «Solicitar datos de tarjeta», `has_card`, `card_brand_id` ni el catálogo de marcas en los pagos comerciales tenant. Conservar los métodos de tarjeta y los datos independientes de pagos de suscripciones del sistema. Aplicar al esquema inicial, sin conversión de tenants existentes.

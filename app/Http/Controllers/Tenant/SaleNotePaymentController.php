@@ -85,7 +85,7 @@ class SaleNotePaymentController extends Controller
             $record = $id ? $sale_note->payments()->whereKey($id)->firstOrFail() : $sale_note->payments()->make();
             // ######## FIN CALCULOS EXACTOS PRO9 ########
             // ######## INICIO CALCULOS EXACTOS PRO9 ########
-            $record->fill($request->only(['date_of_payment','payment_method_type_id','reference','payment','has_card','card_brand_id']));
+            $record->fill($request->only(['date_of_payment','payment_method_type_id','reference','payment']));
             if ($record->exists && isset($record->calculation_snapshot['inputs']['tendered_payment'])
                 && $record->isDirty(['payment','payment_method_type_id'])) {
                 \App\Services\Fiscal\FiscalAmounts::error('payment','Revierta el cobro inicial antes de registrar otro importe o medio de pago.');

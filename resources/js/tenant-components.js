@@ -91,7 +91,6 @@ import TenantSaleNotesIndex from './views/tenant/sale_notes/index.vue'
 import TenantSaleNotesForm from './views/tenant/sale_notes/form.vue'
 import TenantPosIndex from './views/tenant/pos/index.vue'
 import CashIndex from './views/tenant/cash/index.vue'
-import TenantCardBrandsIndex from './views/tenant/card_brands/index.vue'
 import TenantPosFast from './views/tenant/pos/fast.vue'
 import TenantPosGarage from './views/tenant/pos/garage.vue'
 
@@ -497,7 +496,6 @@ Vue.component('tenant-sale-notes-index', TenantSaleNotesIndex)
 Vue.component('tenant-sale-notes-form', TenantSaleNotesForm)
 Vue.component('tenant-pos-index', TenantPosIndex)
 Vue.component('cash-index', CashIndex)
-Vue.component('tenant-card-brands-index', TenantCardBrandsIndex)
 Vue.component('tenant-pos-fast', TenantPosFast)
 Vue.component('tenant-pos-garage', TenantPosGarage)
 

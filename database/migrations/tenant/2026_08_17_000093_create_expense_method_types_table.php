@@ -9,7 +9,6 @@ use Illuminate\Support\Facades\DB;
  * Inventario de columnas:
  * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
  * - `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `has_card` tinyint(1) NOT NULL DEFAULT '0'
  */
 return new class extends Migration
 {
@@ -19,7 +18,6 @@ return new class extends Migration
 CREATE TABLE `expense_method_types` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `has_card` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL);

@@ -11,8 +11,6 @@ use Illuminate\Support\Facades\DB;
  * - `bank_loan_id` int(10) unsigned NOT NULL
  * - `date_of_payment` date NOT NULL
  * - `payment_method_type_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `has_card` tinyint(1) NOT NULL DEFAULT '0'
- * - `card_brand_id` char(2) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `reference` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `payment` decimal(30,12) NOT NULL
  * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
@@ -27,8 +25,6 @@ CREATE TABLE `bank_loan_payments` (
   `bank_loan_id` int(10) unsigned NOT NULL,
   `date_of_payment` date NOT NULL,
   `payment_method_type_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `has_card` tinyint(1) NOT NULL DEFAULT '0',
-  `card_brand_id` char(2) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `reference` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `payment` decimal(30,12) NOT NULL,
   `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',

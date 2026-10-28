@@ -18,7 +18,6 @@
      * @property int                                                       $id
      * @property string                                                    $description
      * @property string                                                    $hka_code
-     * @property bool                                                      $has_card
      * @property-read CollectionAlias|CashTransaction[]                    $cash_transactions
      * @property-read int|null                                             $cash_transactions_count
      * @property-read CollectionAlias|ContractPayment[]                    $contract_payments
@@ -63,8 +62,6 @@
             //'03', // Tarjeta de débito
             //'04', // Transferencia Bancaria
             //'05', // Crédito a 30 días
-            //'06', // Tarjeta Internacional
-            //'07', // Delivery / Pago en Sitio
             //'09', // Crédito
             //'10', // Efectivo Dólares
             //'11', // Pago Móvil
@@ -77,9 +74,9 @@
             'id',
             'description',
             'collection_kind',
+            'currency_type_id',
+            'iva_rate_type_id',
             'cash_currency_type_id',
-            'has_card',
-            'charge',
             'number_days',
             'is_credit',
             'is_cash',
@@ -97,15 +94,8 @@
 
         // ######### INICIO PROTECCIÓN MÉTODOS INICIALES VENEZUELA #########
         public const INITIAL_PAYMENT_METHOD_IDS = [
-            '01', '02', '03', '04', '05', '06', '07',
+            '01', '02', '03', '04', '05',
             '09', '10', '11', '12', '13',
-            '14', '15', '16', '17', '18', '19', '20',
-            '21', '22', '23', '24', '25', '26',
-        ];
-
-        public const HKA_REFERENCE_PAYMENT_METHOD_IDS = [
-            '14', '15', '16', '17', '18', '19', '20',
-            '21', '22', '23', '24', '25', '26',
         ];
 
         public static function isInitialPaymentMethodId($id): bool
@@ -132,7 +122,6 @@
          * //'03', // Tarjeta de débito
          * //'04', // Transferencia Bancaria
          * //'05', // Crédito a 30 días
-         * //'06', // Tarjeta Internacional
          * //'07', // Delivery / Pago en Sitio
          * //'09', // Crédito
          * //'10', // Efectivo Dólares
@@ -153,12 +142,9 @@
                 ->transform(function ($row) {
                     $row->id = (string)$row->id;
                     $row->number_days = (int)$row->number_days;
-                    $row->has_card = (bool)$row->has_card;
                     $row->is_credit = (bool)$row->is_credit;
-                    $row->has_card = (bool)$row->has_card;
                     $row->is_cash = (bool)$row->is_cash;
                     $row->is_active = (bool)$row->is_active;
-                    $row->charge = (float)$row->charge;
                     $row->description = (string)$row->description;
                     return $row;
                 });

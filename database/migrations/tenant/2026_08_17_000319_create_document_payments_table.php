@@ -12,8 +12,6 @@ use Illuminate\Support\Facades\DB;
  * - `document_id` int(10) unsigned NOT NULL
  * - `date_of_payment` date NOT NULL
  * - `payment_method_type_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `has_card` tinyint(1) NOT NULL DEFAULT '0'
- * - `card_brand_id` char(2) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `reference` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `payment_received` tinyint(1) DEFAULT NULL
  * - `change` decimal(30,12) DEFAULT NULL
@@ -45,8 +43,6 @@ CREATE TABLE `document_payments` (
   `document_id` int(10) unsigned NOT NULL,
   `date_of_payment` date NOT NULL,
   `payment_method_type_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `has_card` tinyint(1) NOT NULL DEFAULT '0',
-  `card_brand_id` char(2) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `reference` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `payment_received` tinyint(1) DEFAULT NULL,
   `change` decimal(30,12) DEFAULT NULL,
@@ -72,7 +68,6 @@ CREATE TABLE `document_payments` (
   `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`),
   KEY `document_payments_document_id_foreign` (`document_id`),
-  KEY `document_payments_card_brand_id_foreign` (`card_brand_id`),
   KEY `document_payments_payment_method_type_id_foreign` (`payment_method_type_id`),
   KEY `document_payments_date_of_payment_index` (`date_of_payment`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci

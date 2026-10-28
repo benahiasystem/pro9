@@ -34,13 +34,15 @@ Se retiraron las 17 filas que tenían `active = 0`.
 
 ### Formas de pago Pro9 y HKA (`payment_method_types`)
 
-La tabla operativa conserva los doce IDs locales `01`–`07`, `09`–`13`; su columna `hka_code char(2) NOT NULL` almacena el código del catálogo 11 de HKA. Los métodos locales sin equivalente específico (`05`, `06`, `07`, `09`, `12`, `13`) usan `99` Otros medios de pago. Las equivalencias específicas son `01→08`, `02→06`, `03→05`, `04→03`, `10→09` y `11→02`.
+La tabla operativa siembra diez IDs locales `01`–`05`, `09`–`13`. Su `hka_code char(2) NOT NULL` almacena el código HKA: `01→08`, `02→06`, `03→05`, `04→03`, `10→09`, `11→02`; los demás usan `99`. Los IDs `06`, `07` y `14`–`26` no se siembran y pueden utilizarse para métodos personalizados. El código `99` no es único y el servidor lo asigna a métodos nuevos.
 
-Los IDs locales `14`–`26` cubren, en orden, los códigos HKA `01`, `04`, `07`, `10`–`18` y `99`. Son trece filas iniciales inactivas de referencia, protegidas contra edición y eliminación. El código `99` se repite en siete filas, por lo que `hka_code` no es único. Los métodos locales que se creen después reciben `99` desde el servidor; el formulario no puede modificar `hka_code`. El catálogo no habilita por sí mismo pagos nuevos ni envío a HKA.
+Se retiró del estado inicial `06 — Tarjeta Internacional`; no reasignar automáticamente ese código a otro método inicial.
 
-La creación valida que el código local `id` no exista, incluso si el método está inactivo; la edición usa una operación separada y conserva el código original.
+Cada método inicial tiene moneda: USD para `10` Efectivo Dólares y `13` Zelle, VES para los demás. La moneda se selecciona del catálogo activo; IGTF puede asociarse como referencia opcional sin modificar el cálculo fiscal.
 
-El método inicial `09` Crédito tiene `has_card = 0`; las tarjetas de crédito y débito (`02` y `03`) conservan `has_card = 1`.
+La creación valida que el código local `id` no exista, incluso si el método está inactivo, exige naturaleza clasificada y guarda el método disponible automáticamente; la edición usa una operación separada y conserva el código original. Los formularios no muestran la casilla de disponibilidad; esta se cambia desde el listado.
+
+Los métodos de tarjeta conservan sus códigos; no solicitan ni registran marcas de tarjeta en los flujos comerciales.
 
 ### Familias de impuestos (`cat_taxes_types`)
 
@@ -290,6 +292,6 @@ Sin alterar filas ni IDs, el formulario y persistencia habilitan NC01/07/04/09 y
 
 ### Clasificación de cobros y caja — 26/10/2026
 
-`payment_method_types.collection_kind` separa efectivo físico (`cash`), bancario/electrónico (`account`), crédito (`credit`) y sin clasificar (`unclassified`). `is_cash`/`is_credit` se derivan en servidor; la moneda fija del efectivo es `cash_currency_type_id`. 01/VES y 10/USD son los únicos efectivos iniciales; 02/03/04/06/11/12/13 son bancarios; 05/09 son crédito; 07 y referencias 14–26 quedan inactivos. Se mantienen IDs, HKA y disponibilidad previa. Ver [contrato de instalación nueva](../../../../informes/clasificacion_medios_pago_caja.md).
+`payment_method_types.collection_kind` separa efectivo físico (`cash`), bancario/electrónico (`account`), crédito (`credit`) y sin clasificar (`unclassified`). `is_cash`/`is_credit` se derivan en servidor; la moneda fija del efectivo es `cash_currency_type_id`. 01/VES y 10/USD son los efectivos iniciales; 02/03/04/11/12/13 son bancarios; 05/09 son crédito. No se siembran métodos sin clasificar ni la columna `charge`. Todos los métodos son editables, con ID y HKA inmutables; los iniciales no se pueden eliminar. Ver [contrato de instalación nueva](../../../../informes/clasificacion_medios_pago_caja.md).
 
-La instrucción vigente del usuario limita este cambio exclusivamente a instalaciones nuevas. El consolidado y las semillas contienen directamente la clasificación; no hay actualización de tenants, activación diferida ni lectores del catálogo anterior. Inventario nuevo: 347 tablas, 348 migraciones, 80 catálogos y 957 filas iniciales. La tabla `cash_currency_balances` se crea en 000343; no se crea una tabla de activación/versiones de instalación.
+La instrucción vigente del usuario limita este cambio exclusivamente a instalaciones nuevas. El consolidado y las semillas contienen directamente la clasificación; no hay actualización de tenants, activación diferida ni lectores del catálogo anterior. Inventario nuevo: 348 tablas, 349 migraciones, 81 catálogos y 948 filas iniciales. La tabla `cash_currency_balances` se crea en 000343; no se crea una tabla de activación/versiones de instalación.

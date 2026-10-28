@@ -2,7 +2,6 @@
 
     namespace Modules\Expense\Models;
 
-    use App\Models\Tenant\CardBrand;
     use App\Models\Tenant\CashDocument;
     use App\Models\Tenant\ModelTenant;
     use Carbon\Carbon;
@@ -24,11 +23,8 @@
      * @property int                                  $expense_id
      * @property Carbon                               $date_of_payment
      * @property int                                  $expense_method_type_id
-     * @property bool                                 $has_card
-     * @property string|null                          $card_brand_id
      * @property string|null               $reference
      * @property float                     $payment
-     * @property CardBrand|null            $card_brand
      * @property Expense                   $expense
      * @property ExpenseMethodType         $expense_method_type
      * @property Collection|CashDocument[] $cash_documents
@@ -45,13 +41,12 @@
     {
         use UsesTenantConnection;
 
-        // protected $with = ['payment_method_type', 'card_brand'];
+        // protected $with = ['payment_method_type'];
         public $timestamps = false;
 
         protected $casts = [
             'expense_id' => 'int',
             'expense_method_type_id' => 'int',
-            'has_card' => 'bool',
             'date_of_payment' => 'date',
             'payment' => 'float'
         ];
@@ -60,8 +55,6 @@
             'expense_id',
             'date_of_payment',
             'expense_method_type_id',
-            'has_card',
-            'card_brand_id',
             'reference',
             'payment',
         ];
@@ -80,14 +73,6 @@
         public function expense_method_type()
         {
             return $this->belongsTo(ExpenseMethodType::class);
-        }
-
-        /**
-         * @return BelongsTo
-         */
-        public function card_brand()
-        {
-            return $this->belongsTo(CardBrand::class);
         }
 
         /**

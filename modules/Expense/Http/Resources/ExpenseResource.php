@@ -47,8 +47,6 @@ class ExpenseResource extends JsonResource
                 'expense_id' => $row->expense_id, 
                 'date_of_payment' => $row->date_of_payment->format('Y-m-d'), 
                 'expense_method_type_id' => $row->expense_method_type_id, 
-                'has_card' => $row->has_card, 
-                'card_brand_id' => $row->card_brand_id, 
                 'reference' => $row->reference, 
                 'payment' => $row->payment, 
                 'expense_method_type' => $row->expense_method_type, 

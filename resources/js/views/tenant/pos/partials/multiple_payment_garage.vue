@@ -100,7 +100,6 @@ import IgtfPaymentFields from "../../documents/partials/igtf_fields.vue"
                 activeName: 'first',
                 payment_method_types:[],
                 payment_destinations: [],
-                cards_brand:[],
                 draftPayments: [],
                 paymentsSnapshot: [],
             }
@@ -110,7 +109,6 @@ import IgtfPaymentFields from "../../documents/partials/igtf_fields.vue"
             await this.$http.get(`/pos/payment_tables`)
                 .then(response => {
                     this.payment_method_types = response.data.payment_method_types
-                    this.cards_brand = response.data.cards_brand
                     this.payment_destinations = response.data.payment_destinations
                     this.getFormPosLocalStorage()
                 })

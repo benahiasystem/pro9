@@ -28,7 +28,7 @@ class PaymentClassificationTest extends TestCase
         $schema->create('payment_method_types',function(Blueprint $t) {
             $t->string('id')->primary();$t->string('description');$t->string('hka_code')->default('99');
             $t->string('collection_kind')->default('unclassified');$t->string('cash_currency_type_id')->nullable();
-            foreach(['is_cash','is_credit','has_card'] as $f)$t->boolean($f)->default(false);$t->boolean('is_active')->default(true);
+            foreach(['is_cash','is_credit'] as $f)$t->boolean($f)->default(false);$t->boolean('is_active')->default(true);
         });
         $schema->create('cash',function(Blueprint $t) {
             $t->increments('id');$t->integer('user_id');$t->boolean('state')->default(true);
@@ -39,12 +39,11 @@ class PaymentClassificationTest extends TestCase
         $schema->create('cash_currency_balances',function(Blueprint $t) { $t->integer('cash_id');$t->string('currency_type_id');foreach(['beginning_balance','income','egress','final_balance'] as $f)$t->string($f)->default('0');$t->json('calculation_snapshot');$t->primary(['cash_id','currency_type_id']); });
         $schema->create('bank_accounts',function(Blueprint $t) {$t->increments('id');$t->string('currency_type_id');$t->integer('status')->default(1);});
         $schema->create('income',function(Blueprint $t) {$t->increments('id');$t->integer('user_id');$t->string('currency_type_id');$t->string('exchange_rate_sale')->default('1');$t->string('state_type_id')->default('05');$t->integer('number')->default(1);$t->date('date_of_issue')->default('2026-10-26');});
-        $schema->create('income_payments',function(Blueprint $t) {$t->increments('id');$t->integer('income_id');$t->string('payment_method_type_id');$t->integer('card_brand_id')->nullable();$t->date('date_of_payment');$t->string('payment');$t->json('calculation_snapshot')->nullable();$t->dateTime('reversed_at')->nullable();});
-        $schema->create('card_brands',fn(Blueprint $t)=>$t->string('id'));
+        $schema->create('income_payments',function(Blueprint $t) {$t->increments('id');$t->integer('income_id');$t->string('payment_method_type_id');$t->date('date_of_payment');$t->string('payment');$t->json('calculation_snapshot')->nullable();$t->dateTime('reversed_at')->nullable();});
         $schema->create('document_payments',function(Blueprint $t) {$t->increments('id');foreach(['currency_type_id','original_amount','tax_amount','exchange_rate'] as $field)$t->string($field);$t->json('payment_method_snapshot')->nullable();$t->dateTime('reversed_at')->nullable();});
         $schema->create('global_payments',function(Blueprint $t) {$t->increments('id');$t->integer('payment_id');$t->string('payment_type');$t->integer('destination_id');$t->string('destination_type');$t->integer('user_id')->nullable();$t->string('fiscal_environment');$t->integer('cash_session_id')->nullable();$t->json('report_context')->nullable();$t->timestamps();});
         $initial=(require database_path('seeders/data/tenant_initial_data.php'))['tables']['payment_method_types']['rows'];
-        foreach($initial as $row) DB::connection('tenant')->table('payment_method_types')->insert(array_intersect_key($row,array_flip(['id','description','hka_code','collection_kind','cash_currency_type_id','is_cash','is_credit','has_card','is_active'])));
+        foreach($initial as $row) DB::connection('tenant')->table('payment_method_types')->insert(array_intersect_key($row,array_flip(['id','description','hka_code','collection_kind','cash_currency_type_id','is_cash','is_credit','is_active'])));
     }
 
     private function cash(): Cash { return Cash::create(['user_id'=>1,'date_opening'=>'2026-10-26','time_opening'=>'09:00:00','state'=>true,'beginning_balance'=>'100']); }
@@ -90,6 +89,7 @@ class PaymentClassificationTest extends TestCase
     public function test_credit_and_unclassified_methods_do_not_create_receipts(): void
     {
         $cash=$this->cash();
+        PaymentMethodType::create(['id'=>'07','description'=>'Sin clasificar','collection_kind'=>'unclassified','is_active'=>false]);
         foreach(['05','07'] as $method)try{$this->receipt($method,'5','VES',$cash->id);self::fail('No representa recepción.');}catch(ValidationException $expected){}
         self::assertSame(0,DB::connection('tenant')->table('income_payments')->count());
     }
@@ -137,11 +137,11 @@ class PaymentClassificationTest extends TestCase
         $payment->receipt_parent_id=null;$payment->reversed_at='2026-10-26';self::assertNull(Movement::row($global));
     }
 
-    public function test_reclassifying_a_custom_method_changes_only_future_movements(): void
+    public function test_reclassifying_an_initial_method_changes_only_future_movements(): void
     {
         $cash=$this->cash();$bank=BankAccount::create(['currency_type_id'=>'VES']);
-        $method=PaymentMethodType::create(['id'=>'27','description'=>'Personalizado','collection_kind'=>'account','is_active'=>true]);
-        $global=$this->receipt('27','5','VES',$bank->id);
+        $method=PaymentMethodType::findOrFail('04');
+        $global=$this->receipt('04','5','VES',$bank->id);
         $method->update(['collection_kind'=>'cash','cash_currency_type_id'=>'VES']);
         self::assertSame('account',Movement::row($global->fresh())['method']['collection_kind']);
         self::assertSame('0',CashLedger::summarize(CashLedger::rows($cash),[])['VES']['income']);

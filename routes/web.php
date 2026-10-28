@@ -51,7 +51,6 @@ if ($hostname) {
             Route::get('list-banks', 'Tenant\SettingController@listBanks');
             Route::get('list-bank-accounts', 'Tenant\SettingController@listAccountBanks');
             Route::get('list-currencies', 'Tenant\SettingController@listCurrencies');
-            Route::get('list-cards', 'Tenant\SettingController@listCards');
             Route::get('list-platforms', 'Tenant\SettingController@listPlatforms');
             Route::get('list-attributes', 'Tenant\SettingController@listAttributes');
             // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
@@ -126,10 +125,6 @@ if ($hostname) {
 
 
             //Card Brands
-            Route::get('card_brands/records', 'Tenant\CardBrandController@records');
-            Route::get('card_brands/record/{card_brand}', 'Tenant\CardBrandController@record');
-            Route::post('card_brands', 'Tenant\CardBrandController@store');
-            Route::delete('card_brands/{card_brand}', 'Tenant\CardBrandController@destroy');
 
             //Configurations
             Route::get('configurations/addSeeder', 'Tenant\ConfigurationController@addSeeder');

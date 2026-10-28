@@ -1808,7 +1808,7 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
                 @endif
                 @if(in_array('configuration', $vc_modules))
                     <li
-                        class="{{in_array($firstLevel, ['list-platforms', 'list-cards', 'list-currencies', 'list-bank-accounts', 'list-banks', 'list-attributes', 'list-units', 'list-payment-methods', 'list-incomes', 'company_accounts', 'list-vouchers-type', 'companies', 'advanced', 'tasks', 'inventories', 'bussiness_turns', 'offline-configurations', 'series-configurations', 'configurations', 'login-page', 'list-settings']) ? 'nav-active' : ''}}">
+                        class="{{in_array($firstLevel, ['list-platforms', 'list-currencies', 'list-bank-accounts', 'list-banks', 'list-attributes', 'list-units', 'list-payment-methods', 'list-incomes', 'company_accounts', 'list-vouchers-type', 'companies', 'advanced', 'tasks', 'inventories', 'bussiness_turns', 'offline-configurations', 'series-configurations', 'configurations', 'login-page', 'list-settings']) ? 'nav-active' : ''}}">
                         <a class="nav-link" href="{{ url('list-settings') }}">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                                 stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"

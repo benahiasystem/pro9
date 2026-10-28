@@ -124,3 +124,7 @@ Inventario vigente:346 tablas de aplicación/347 migraciones tenant. 000318 inco
 ## Clasificación inicial de cobros — 26/10/2026
 
 La instrucción vigente del usuario limita [clasificación y caja por moneda](../../../informes/clasificacion_medios_pago_caja.md) exclusivamente a instalaciones nuevas. Definir la naturaleza del medio, contexto y vínculo de turno en movimientos, moneda de aperturas y `cash_currency_balances` directamente en las creaciones consolidadas y semillas. No preparar comandos de actualización, activaciones por tenant, copias de catálogo previo ni lectores de cajas anteriores para este cambio. Las instalaciones actuales se sustituirán por nuevas; su eliminación y recreación no forman parte de esta implementación. La caja se crea con el cálculo VES/USD disponible desde la instalación.
+
+## Datos de tarjeta comerciales retirados
+
+- El esquema inicial tenant no crea el catálogo de marcas ni las columnas `has_card` y `card_brand_id` de pagos comerciales; `account_payments` conserva los datos vinculados al registro de suscripciones del sistema. Sin migración incremental.

@@ -8,14 +8,14 @@ La clasificación y el cálculo VES/USD están disponibles desde el alta, sin co
 
 ## Clasificación
 
-`payment_method_types.collection_kind` admite `cash`, `account`, `credit` y `unclassified`. El servidor deriva `is_cash` e `is_credit`; no acepta estos indicadores como clasificación independiente. `cash_currency_type_id` corresponde exclusivamente al efectivo y admite VES/USD. Los IDs iniciales conservan su naturaleza y moneda; los personalizados pueden cambiar para operaciones futuras.
+`payment_method_types.collection_kind` admite `cash`, `account`, `credit` y `unclassified`. El servidor deriva `is_cash` e `is_credit`; no acepta estos indicadores como clasificación independiente. `cash_currency_type_id` corresponde exclusivamente al efectivo y admite VES/USD. Todos los métodos registran una moneda; inicialmente `10` y `13` usan USD y los demás VES. El IGTF opcional del método es informativo y no modifica el cálculo fiscal. Todos los métodos pueden cambiar naturaleza y moneda para operaciones futuras; los movimientos registrados conservan sus snapshots.
 
 - Efectivo: 01/VES y 10/USD.
-- Bancario/electrónico: 02, 03, 04, 06, 11, 12 y 13.
+- Bancario/electrónico: 02, 03, 04, 11, 12 y 13.
 - Crédito: 05 y 09; no representa recepción de dinero.
-- Delivery 07 y referencias HKA 14–26 permanecen inactivos y sin clasificar.
+- Los IDs 06, 07 y 14–26 no se siembran y pueden usarse para métodos personalizados.
 
-Se conservan IDs, `hka_code`, disponibilidad inicial y `has_card`. Los métodos nuevos reciben HKA 99 desde el servidor. Los métodos sin clasificar no pueden activarse. Configuración y disponibilidad exigen administrador; las referencias HKA no pueden activarse.
+Se conservan IDs, `hka_code`, disponibilidad inicial y `has_card`. Los métodos nuevos reciben HKA 99 desde el servidor. Los métodos sin clasificar no pueden activarse. Configuración y disponibilidad exigen administrador. Los métodos iniciales no pueden eliminarse.
 
 ## Movimiento financiero
 
@@ -41,7 +41,7 @@ El XLSX utiliza celdas de texto y una hoja **Fracciones exactas** con numerador 
 
 ## Esquema inicial
 
-El consolidado contiene 347 tablas de aplicación y 348 migraciones; las semillas contienen 80 catálogos y 957 filas. Las creadoras de `payment_method_types`, `cash_transactions` y `global_payments` incorporan directamente sus campos nuevos. `000343_create_cash_currency_balances_table.php` crea los saldos por moneda; sus FKs y las de los movimientos se agregan y retiran en la migración final. `cash` no contiene un selector de lógica histórica por instalación.
+El consolidado contiene 348 tablas de aplicación y 349 migraciones; las semillas contienen 81 catálogos y 948 filas. Las creadoras de `payment_method_types`, `cash_transactions` y `global_payments` incorporan directamente sus campos nuevos. `000343_create_cash_currency_balances_table.php` crea los saldos por moneda; sus FKs y las de los movimientos se agregan y retiran en la migración final. `cash` no contiene un selector de lógica histórica por instalación.
 
 Las interfaces se entregan en fuentes; la compilación sigue el procedimiento del proyecto y la ejecuta el usuario.
 

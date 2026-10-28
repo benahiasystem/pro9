@@ -2,7 +2,6 @@
 
     namespace Modules\Expense\Models;
 
-    use App\Models\Tenant\CardBrand;
     use App\Models\Tenant\CashDocument;
     use App\Models\Tenant\ModelTenant;
     use App\Models\Tenant\PaymentMethodType;
@@ -22,12 +21,9 @@
      * @property int                                   $bank_loan_id
      * @property Carbon|null                           $date_of_payment
      * @property string                                $payment_method_type_id
-     * @property bool                                  $has_card
-     * @property string|null                           $card_brand_id
      * @property string|null                           $reference
      * @property float                                 $payment
      * @property BankLoan                  $bank_loan
-     * @property CardBrand|null            $card_brand
      * @property PaymentMethodType         $payment_method_type
      * @property Collection|CashDocument[] $cash_documents
      * @mixin ModelTenant
@@ -46,7 +42,6 @@
         public $timestamps = false;
         protected $casts = [
             'bank_loan_id' => 'int',
-            'has_card' => 'bool',
             'payment' => 'float',
             'date_of_payment' => 'date',
         ];
@@ -54,8 +49,6 @@
             'bank_loan_id',
             'date_of_payment',
             'payment_method_type_id',
-            'has_card',
-            'card_brand_id',
             'reference',
             'payment',
         ];
@@ -99,43 +92,6 @@
         }
 
 
-        /**
-         * @return bool
-         */
-        public function isHasCard(): bool
-        {
-            return $this->has_card;
-        }
-
-        /**
-         * @param bool $has_card
-         *
-         * @return BankLoanPayment
-         */
-        public function setHasCard(bool $has_card): BankLoanPayment
-        {
-            $this->has_card = $has_card;
-            return $this;
-        }
-
-        /**
-         * @return string|null
-         */
-        public function getCardBrandId(): ?string
-        {
-            return $this->card_brand_id;
-        }
-
-        /**
-         * @param string|null $card_brand_id
-         *
-         * @return BankLoanPayment
-         */
-        public function setCardBrandId(?string $card_brand_id): BankLoanPayment
-        {
-            $this->card_brand_id = $card_brand_id;
-            return $this;
-        }
 
         /**
          * @return string|null
@@ -194,24 +150,6 @@
             return $this;
         }
 
-        /**
-         * @return CardBrand|null
-         */
-        public function getCardBrand(): ?CardBrand
-        {
-            return $this->card_brand;
-        }
-
-        /**
-         * @param CardBrand|null $card_brand
-         *
-         * @return BankLoanPayment
-         */
-        public function setCardBrand(?CardBrand $card_brand): BankLoanPayment
-        {
-            $this->card_brand = $card_brand;
-            return $this;
-        }
 
         /**
          * @return CashDocument[]|Collection
@@ -238,14 +176,6 @@
         public function bank_loan()
         {
             return $this->belongsTo(BankLoan::class);
-        }
-
-        /**
-         * @return BelongsTo
-         */
-        public function card_brand()
-        {
-            return $this->belongsTo(CardBrand::class, 'card_brand_id', 'id');
         }
 
         /**

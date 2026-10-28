@@ -11,15 +11,13 @@ class PurchasePayment extends ModelTenant
 {
     use PaymentModelHelperTrait;
 
-    protected $with = ['payment_method_type', 'card_brand'];
+    protected $with = ['payment_method_type'];
     public $timestamps = false;
 
     protected $fillable = [
         'purchase_id',
         'date_of_payment',
         'payment_method_type_id',
-        'has_card',
-        'card_brand_id',
         'reference',
         'payment',
     ];
@@ -33,11 +31,6 @@ class PurchasePayment extends ModelTenant
         return $this->belongsTo(PaymentMethodType::class);
     }
 
-    public function card_brand()
-    {
-        return $this->belongsTo(CardBrand::class);
-    }
-    
     public function global_payment()
     {
         return $this->morphOne(GlobalPayment::class, 'payment');

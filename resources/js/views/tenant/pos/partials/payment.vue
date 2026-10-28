@@ -360,10 +360,6 @@
 
     ></multiple-payment-form>
 
-    <card-brands-form :external="true"
-                      :recordId="null"
-                      :showDialog.sync="showDialogNewCardBrand"></card-brands-form>
-
     <discount-permission-form
                 :showDialog.sync="showDialogDiscountPermission"
                 :totalDiscountPercentage ="totalDiscountPercentage"
@@ -384,7 +380,6 @@ import {exactAmount, exactSum} from "../../../../helpers/exchange-rate-math"
 import documentCreationMixin from "@mixins/document-creation"
 import Keypress from 'vue-keypress'
 
-import CardBrandsForm from '../../card_brands/form.vue'
 import SaleNotesOptions from '../../sale_notes/partials/options.vue'
 import OptionsForm from './options.vue'
 import MultiplePaymentForm from './multiple_payment.vue'
@@ -396,7 +391,7 @@ import SearchAgent from '@components/SearchAgent.vue'
 
 
 export default {
-    components: {IgtfPaymentFields,OptionsForm, CardBrandsForm, SaleNotesOptions, MultiplePaymentForm, Keypress, DiscountPermissionForm, SearchAgent},
+    components: {IgtfPaymentFields,OptionsForm, SaleNotesOptions, MultiplePaymentForm, Keypress, DiscountPermissionForm, SearchAgent},
     mixins: [fiscalPaymentSettings, documentCreationMixin,pointSystemFunctions, buhoprinter],
 
     props: [
@@ -429,11 +424,9 @@ export default {
             showDialogOptions: false,
             showDialogMultiplePayment: false,
             showDialogSaleNote: false,
-            showDialogNewCardBrand: false,
             documentNewId: null,
             saleNotesNewId: null,
             resource_options: null,
-            has_card: false,
             resource: 'pos',
             resource_documents: 'documents',
             resource_payments: 'document_payments',
@@ -446,7 +439,6 @@ export default {
             responseForm: {},
             series: [],
             all_series: [],
-            cards_brand: [],
             cancel: false,
             form_cash_document: {},
             statusDocument: {},
@@ -469,9 +461,7 @@ export default {
         this.initFormPayment()
         this.inputAmount()
         if (!Array.isArray(this.form.payments)) this.$set(this.form,'payments',[])
-        this.$eventHub.$on('reloadDataCardBrands', (card_brand_id) => {
-            this.reloadDataCardBrands(card_brand_id)
-        })
+
 
         this.$eventHub.$on('localSPayments', (payments) => {
             this.payments = payments
@@ -848,23 +838,13 @@ export default {
             this.payments = JSON.parse(JSON.stringify(this.form.payments || []))
             this.showDialogMultiplePayment = true
         },
-        reloadDataCardBrands(card_brand_id) {
-            this.$http.get(`/${this.resource}/table/card_brands`).then((response) => {
-                this.cards_brand = response.data
-                this.form_payment.card_brand_id = card_brand_id
-                this.changePaymentMethodType()
-            })
-        },
+
         getDescriptionPaymentMethodType(id) {
             let payment_method_type = _.find(this.payment_method_types, {'id': id})
             return (payment_method_type) ? payment_method_type.description : ''
 
         },
-        changePaymentMethodType() {
-            let payment_method_type = _.find(this.payment_method_types, {'id': this.form_payment.payment_method_type_id})
-            this.has_card = payment_method_type.has_card
-            this.form_payment.card_brand_id = (payment_method_type.has_card) ? this.form_payment.card_brand_id : null
-        },
+
         addRow(payments) {
             this.form.payments=payments;
             this.setAmount(exactSum(payments.map(row=>row.payment || '0')).decimal());
@@ -979,7 +959,6 @@ export default {
                 date_of_payment: moment().format('YYYY-MM-DD'),
                 payment_method_type_id: '01',
                 reference: null,
-                card_brand_id: null,
                 document_id: null,
                 sale_note_id: null,
                 payment: this.getTotal(),
@@ -1361,7 +1340,6 @@ export default {
                 .then(response => {
                     this.all_series = response.data.series
                     this.payment_method_types = response.data.payment_method_types
-                    this.cards_brand = response.data.cards_brand
                     this.global_discount_types = response.data.global_discount_types
                     this.filterSeries()
                     this.setConfigGlobalDiscountType()

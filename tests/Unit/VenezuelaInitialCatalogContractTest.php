@@ -8,8 +8,6 @@ use App\Models\Tenant\Catalogs\TransferReasonType;
 use App\Models\Tenant\Dispatch;
 use App\Models\Tenant\PaymentMethodType;
 use Modules\Sale\Http\Controllers\PaymentMethodTypeController;
-use Modules\Sale\Http\Requests\PaymentMethodTypeRequest;
-use Modules\Finance\Http\Controllers\PaymentMethodTypeController as FinancePaymentMethodTypeController;
 use Illuminate\Http\Request;
 use Modules\Order\Http\Requests\OrderFormRequest;
 use Tests\TestCase;
@@ -272,43 +270,25 @@ class VenezuelaInitialCatalogContractTest extends TestCase
     {
         // ######### INICIO CONTRATO MÉTODOS DE PAGO VENEZUELA #########
         self::assertSame([
-            ['id' => '01', 'description' => 'Efectivo Bolivares', 'hka_code' => '08', 'collection_kind' => 'cash', 'cash_currency_type_id' => 'VES', 'has_card' => 0, 'charge' => null, 'number_days' => null, 'is_credit' => 0, 'is_cash' => 1, 'is_active' => 1],
-            ['id' => '02', 'description' => 'Tarjeta de crédito', 'hka_code' => '06', 'collection_kind' => 'account', 'cash_currency_type_id' => null, 'has_card' => 1, 'charge' => null, 'number_days' => null, 'is_credit' => 0, 'is_cash' => 0, 'is_active' => 1],
-            ['id' => '03', 'description' => 'Tarjeta de débito', 'hka_code' => '05', 'collection_kind' => 'account', 'cash_currency_type_id' => null, 'has_card' => 1, 'charge' => null, 'number_days' => null, 'is_credit' => 0, 'is_cash' => 0, 'is_active' => 1],
-            ['id' => '04', 'description' => 'Transferencia Bancaria', 'hka_code' => '03', 'collection_kind' => 'account', 'cash_currency_type_id' => null, 'has_card' => 0, 'charge' => null, 'number_days' => null, 'is_credit' => 0, 'is_cash' => 0, 'is_active' => 1],
-            ['id' => '05', 'description' => 'Crédito a 30 días', 'hka_code' => '99', 'collection_kind' => 'credit', 'cash_currency_type_id' => null, 'has_card' => 0, 'charge' => null, 'number_days' => 30, 'is_credit' => 1, 'is_cash' => 0, 'is_active' => 1],
-            ['id' => '06', 'description' => 'Tarjeta Internacional', 'hka_code' => '99', 'collection_kind' => 'account', 'cash_currency_type_id' => null, 'has_card' => 1, 'charge' => null, 'number_days' => null, 'is_credit' => 0, 'is_cash' => 0, 'is_active' => 0],
-            ['id' => '07', 'description' => 'Delivery / Pago en Sitio', 'hka_code' => '99', 'collection_kind' => 'unclassified', 'cash_currency_type_id' => null, 'has_card' => 0, 'charge' => null, 'number_days' => null, 'is_credit' => 0, 'is_cash' => 0, 'is_active' => 0],
+            ['id' => '01', 'description' => 'Efectivo Bolivares', 'hka_code' => '08', 'collection_kind' => 'cash', 'currency_type_id' => 'VES', 'iva_rate_type_id' => null, 'cash_currency_type_id' => 'VES', 'number_days' => null, 'is_credit' => 0, 'is_cash' => 1, 'is_active' => 1],
+            ['id' => '02', 'description' => 'Tarjeta de crédito', 'hka_code' => '06', 'collection_kind' => 'account', 'currency_type_id' => 'VES', 'iva_rate_type_id' => null, 'cash_currency_type_id' => null, 'number_days' => null, 'is_credit' => 0, 'is_cash' => 0, 'is_active' => 1],
+            ['id' => '03', 'description' => 'Tarjeta de débito', 'hka_code' => '05', 'collection_kind' => 'account', 'currency_type_id' => 'VES', 'iva_rate_type_id' => null, 'cash_currency_type_id' => null, 'number_days' => null, 'is_credit' => 0, 'is_cash' => 0, 'is_active' => 1],
+            ['id' => '04', 'description' => 'Transferencia Bancaria', 'hka_code' => '03', 'collection_kind' => 'account', 'currency_type_id' => 'VES', 'iva_rate_type_id' => null, 'cash_currency_type_id' => null, 'number_days' => null, 'is_credit' => 0, 'is_cash' => 0, 'is_active' => 1],
+            ['id' => '05', 'description' => 'Crédito a 30 días', 'hka_code' => '99', 'collection_kind' => 'credit', 'currency_type_id' => 'VES', 'iva_rate_type_id' => null, 'cash_currency_type_id' => null, 'number_days' => 30, 'is_credit' => 1, 'is_cash' => 0, 'is_active' => 1],
             // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
-            ['id' => '09', 'description' => 'Crédito', 'hka_code' => '99', 'collection_kind' => 'credit', 'cash_currency_type_id' => null, 'has_card' => 0, 'charge' => null, 'number_days' => null, 'is_credit' => 1, 'is_cash' => 0, 'is_active' => 1],
+            ['id' => '09', 'description' => 'Crédito', 'hka_code' => '99', 'collection_kind' => 'credit', 'currency_type_id' => 'VES', 'iva_rate_type_id' => null, 'cash_currency_type_id' => null, 'number_days' => null, 'is_credit' => 1, 'is_cash' => 0, 'is_active' => 1],
             // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
-            ['id' => '10', 'description' => 'Efectivo Dólares', 'hka_code' => '09', 'collection_kind' => 'cash', 'cash_currency_type_id' => 'USD', 'has_card' => 0, 'charge' => null, 'number_days' => null, 'is_credit' => 0, 'is_cash' => 1, 'is_active' => 1],
-            ['id' => '11', 'description' => 'Pago Móvil', 'hka_code' => '02', 'collection_kind' => 'account', 'cash_currency_type_id' => null, 'has_card' => 0, 'charge' => null, 'number_days' => null, 'is_credit' => 0, 'is_cash' => 0, 'is_active' => 1],
-            ['id' => '12', 'description' => 'Biopago', 'hka_code' => '99', 'collection_kind' => 'account', 'cash_currency_type_id' => null, 'has_card' => 0, 'charge' => null, 'number_days' => null, 'is_credit' => 0, 'is_cash' => 0, 'is_active' => 1],
-            ['id' => '13', 'description' => 'Zelle', 'hka_code' => '99', 'collection_kind' => 'account', 'cash_currency_type_id' => null, 'has_card' => 0, 'charge' => null, 'number_days' => null, 'is_credit' => 0, 'is_cash' => 0, 'is_active' => 0],
-            ['id' => '14', 'description' => 'Depósito en cuenta', 'hka_code' => '01', 'collection_kind' => 'unclassified', 'cash_currency_type_id' => null, 'has_card' => 0, 'charge' => null, 'number_days' => null, 'is_credit' => 0, 'is_cash' => 0, 'is_active' => 0],
-            ['id' => '15', 'description' => 'Orden de Pago', 'hka_code' => '04', 'collection_kind' => 'unclassified', 'cash_currency_type_id' => null, 'has_card' => 0, 'charge' => null, 'number_days' => null, 'is_credit' => 0, 'is_cash' => 0, 'is_active' => 0],
-            ['id' => '16', 'description' => 'Cheques con cláusula «NO NEGOCIABLE», «INTRANSFERIBLES», «NO A LA ORDEN» o equivalente', 'hka_code' => '07', 'collection_kind' => 'unclassified', 'cash_currency_type_id' => null, 'has_card' => 0, 'charge' => null, 'number_days' => null, 'is_credit' => 0, 'is_cash' => 0, 'is_active' => 0],
-            ['id' => '17', 'description' => 'Medios de pago usados en comercio exterior', 'hka_code' => '10', 'collection_kind' => 'unclassified', 'cash_currency_type_id' => null, 'has_card' => 0, 'charge' => null, 'number_days' => null, 'is_credit' => 0, 'is_cash' => 0, 'is_active' => 0],
-            ['id' => '18', 'description' => 'Transferencias – Comercio exterior', 'hka_code' => '11', 'collection_kind' => 'unclassified', 'cash_currency_type_id' => null, 'has_card' => 0, 'charge' => null, 'number_days' => null, 'is_credit' => 0, 'is_cash' => 0, 'is_active' => 0],
-            ['id' => '19', 'description' => 'Cheques bancarios – Comercio exterior', 'hka_code' => '12', 'collection_kind' => 'unclassified', 'cash_currency_type_id' => null, 'has_card' => 0, 'charge' => null, 'number_days' => null, 'is_credit' => 0, 'is_cash' => 0, 'is_active' => 0],
-            ['id' => '20', 'description' => 'Orden de pago simple – Comercio exterior', 'hka_code' => '13', 'collection_kind' => 'unclassified', 'cash_currency_type_id' => null, 'has_card' => 0, 'charge' => null, 'number_days' => null, 'is_credit' => 0, 'is_cash' => 0, 'is_active' => 0],
-            ['id' => '21', 'description' => 'Orden de pago documentario – Comercio exterior', 'hka_code' => '14', 'collection_kind' => 'unclassified', 'cash_currency_type_id' => null, 'has_card' => 0, 'charge' => null, 'number_days' => null, 'is_credit' => 0, 'is_cash' => 0, 'is_active' => 0],
-            ['id' => '22', 'description' => 'Remesa simple – Comercio exterior', 'hka_code' => '15', 'collection_kind' => 'unclassified', 'cash_currency_type_id' => null, 'has_card' => 0, 'charge' => null, 'number_days' => null, 'is_credit' => 0, 'is_cash' => 0, 'is_active' => 0],
-            ['id' => '23', 'description' => 'Remesa documentaria – Comercio exterior', 'hka_code' => '16', 'collection_kind' => 'unclassified', 'cash_currency_type_id' => null, 'has_card' => 0, 'charge' => null, 'number_days' => null, 'is_credit' => 0, 'is_cash' => 0, 'is_active' => 0],
-            ['id' => '24', 'description' => 'Carta de crédito simple – Comercio exterior', 'hka_code' => '17', 'collection_kind' => 'unclassified', 'cash_currency_type_id' => null, 'has_card' => 0, 'charge' => null, 'number_days' => null, 'is_credit' => 0, 'is_cash' => 0, 'is_active' => 0],
-            ['id' => '25', 'description' => 'Carta de crédito documentario – Comercio exterior', 'hka_code' => '18', 'collection_kind' => 'unclassified', 'cash_currency_type_id' => null, 'has_card' => 0, 'charge' => null, 'number_days' => null, 'is_credit' => 0, 'is_cash' => 0, 'is_active' => 0],
-            ['id' => '26', 'description' => 'Otros medios de pago', 'hka_code' => '99', 'collection_kind' => 'unclassified', 'cash_currency_type_id' => null, 'has_card' => 0, 'charge' => null, 'number_days' => null, 'is_credit' => 0, 'is_cash' => 0, 'is_active' => 0],
+            ['id' => '10', 'description' => 'Efectivo Dólares', 'hka_code' => '09', 'collection_kind' => 'cash', 'currency_type_id' => 'USD', 'iva_rate_type_id' => null, 'cash_currency_type_id' => 'USD', 'number_days' => null, 'is_credit' => 0, 'is_cash' => 1, 'is_active' => 1],
+            ['id' => '11', 'description' => 'Pago Móvil', 'hka_code' => '02', 'collection_kind' => 'account', 'currency_type_id' => 'VES', 'iva_rate_type_id' => null, 'cash_currency_type_id' => null, 'number_days' => null, 'is_credit' => 0, 'is_cash' => 0, 'is_active' => 1],
+            ['id' => '12', 'description' => 'Biopago', 'hka_code' => '99', 'collection_kind' => 'account', 'currency_type_id' => 'VES', 'iva_rate_type_id' => null, 'cash_currency_type_id' => null, 'number_days' => null, 'is_credit' => 0, 'is_cash' => 0, 'is_active' => 1],
+            ['id' => '13', 'description' => 'Zelle', 'hka_code' => '99', 'collection_kind' => 'account', 'currency_type_id' => 'USD', 'iva_rate_type_id' => null, 'cash_currency_type_id' => null, 'number_days' => null, 'is_credit' => 0, 'is_cash' => 0, 'is_active' => 0],
         ], $this->rows('payment_method_types'));
         $methods = $this->rows('payment_method_types');
         $codes = array_values(array_unique(array_column($methods, 'hka_code')));
         sort($codes);
-        self::assertSame([
-            '01', '02', '03', '04', '05', '06', '07', '08', '09',
-            '10', '11', '12', '13', '14', '15', '16', '17', '18', '99',
-        ], $codes);
-        self::assertSame(7, count(array_filter($methods, static fn (array $row): bool => $row['hka_code'] === '99')));
-        self::assertSame([], array_filter(array_slice($methods, 12), static fn (array $row): bool => $row['is_active'] !== 0));
+        self::assertSame(['02', '03', '05', '06', '08', '09', '99'], $codes);
+        self::assertSame(4, count(array_filter($methods, static fn (array $row): bool => $row['hka_code'] === '99')));
+        self::assertSame([], array_filter($methods, static fn (array $row): bool => $row['collection_kind'] === 'unclassified' || array_key_exists('charge', $row)));
         // ######### FIN CONTRATO MÉTODOS DE PAGO VENEZUELA #########
     }
 
@@ -317,34 +297,22 @@ class VenezuelaInitialCatalogContractTest extends TestCase
     {
         // ######### INICIO PROTECCIÓN MÉTODOS INICIALES VENEZUELA #########
         self::assertSame([
-            '01', '02', '03', '04', '05', '06', '07',
+            '01', '02', '03', '04', '05',
             '09', '10', '11', '12', '13',
-            '14', '15', '16', '17', '18', '19', '20',
-            '21', '22', '23', '24', '25', '26',
         ], PaymentMethodType::INITIAL_PAYMENT_METHOD_IDS);
 
         foreach (PaymentMethodType::INITIAL_PAYMENT_METHOD_IDS as $id) {
             self::assertTrue(PaymentMethodType::isInitialPaymentMethodId($id), $id);
         }
 
+        self::assertFalse(PaymentMethodType::isInitialPaymentMethodId('06'));
         self::assertFalse(PaymentMethodType::isInitialPaymentMethodId('08'));
-        self::assertTrue(PaymentMethodType::isInitialPaymentMethodId('14'));
+        self::assertFalse(PaymentMethodType::isInitialPaymentMethodId('14'));
 
         $response = app(PaymentMethodTypeController::class)->destroy('11');
         self::assertFalse($response['success']);
         self::assertSame('Los métodos de pago iniciales no se pueden eliminar', $response['message']);
         // ######### FIN PROTECCIÓN MÉTODOS INICIALES VENEZUELA #########
-    }
-
-    /** @test */
-    public function hka_reference_payment_methods_cannot_be_edited_or_activated(): void
-    {
-        // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
-        $edit = PaymentMethodTypeRequest::create('/', 'POST', ['id' => '14', 'is_active' => 1]);
-        self::assertSame(409, app(PaymentMethodTypeController::class)->store($edit)->getStatusCode());
-        $activate = Request::create('/', 'POST', ['id' => '14', 'is_active' => 1]);
-        self::assertSame(409, app(FinancePaymentMethodTypeController::class)->active($activate)->getStatusCode());
-        // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
     }
 
     /** @test */

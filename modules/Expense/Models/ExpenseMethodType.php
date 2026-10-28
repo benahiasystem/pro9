@@ -13,7 +13,6 @@
      *
      * @property int                         $id
      * @property string                      $description
-     * @property bool                        $has_card
      * @property Collection|ExpensePayment[] $expense_payments
      * @property-read int|null               $expense_payments_count
      * @mixin ModelTenant
@@ -31,11 +30,9 @@
 
         protected $fillable = [
             'description',
-            'has_card',
         ];
         /*
         protected $casts = [
-            'has_card' => 'bool'
         ];
         */
 

@@ -45,13 +45,6 @@
             return view('tenant.settings.list_currencies');
         }
 
-        /**
-         * @return Factory|Application|View
-         */
-        public function listCards()
-        {
-            return view('tenant.settings.list_cards');
-        }
 
         /**
          * @return Factory|Application|View

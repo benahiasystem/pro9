@@ -11,6 +11,9 @@ return new class extends Migration
         // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
         DB::unprepared("ALTER TABLE `cat_iva_rate_types` ADD CONSTRAINT `cat_iva_rate_types_tax_kind_foreign` FOREIGN KEY (`tax_kind`) REFERENCES `cat_taxes_types` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT");
         // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
+        // ######## INICIO MONEDA E IMPUESTO DE MEDIOS ########
+        DB::unprepared("ALTER TABLE `payment_method_types` ADD CONSTRAINT `payment_method_currency_fk` FOREIGN KEY (`currency_type_id`) REFERENCES `cat_currency_types` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT, ADD CONSTRAINT `payment_method_tax_fk` FOREIGN KEY (`iva_rate_type_id`) REFERENCES `cat_iva_rate_types` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT");
+        // ######## FIN MONEDA E IMPUESTO DE MEDIOS ########
         // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
         DB::unprepared("ALTER TABLE cash_currency_balances ADD CONSTRAINT cash_currency_balances_cash_fk FOREIGN KEY (cash_id) REFERENCES cash(id), ADD CONSTRAINT cash_currency_balances_currency_fk FOREIGN KEY (currency_type_id) REFERENCES cat_currency_types(id)");
         DB::unprepared("ALTER TABLE global_payments ADD CONSTRAINT global_payments_cash_session_fk FOREIGN KEY (cash_session_id) REFERENCES cash(id)");
@@ -109,7 +112,6 @@ return new class extends Migration
         DB::unprepared("ALTER TABLE `contract_items` ADD CONSTRAINT `contract_items_contract_id_foreign` FOREIGN KEY (`contract_id`) REFERENCES `contracts` (`id`) ON DELETE CASCADE");
         DB::unprepared("ALTER TABLE `contract_items` ADD CONSTRAINT `contract_items_item_id_foreign` FOREIGN KEY (`item_id`) REFERENCES `items` (`id`)");
         DB::unprepared("ALTER TABLE `contract_items` ADD CONSTRAINT `contract_items_price_type_id_foreign` FOREIGN KEY (`price_type_id`) REFERENCES `cat_price_types` (`id`)");
-        DB::unprepared("ALTER TABLE `contract_payments` ADD CONSTRAINT `contract_payments_card_brand_id_foreign` FOREIGN KEY (`card_brand_id`) REFERENCES `card_brands` (`id`)");
         DB::unprepared("ALTER TABLE `contract_payments` ADD CONSTRAINT `contract_payments_contract_id_foreign` FOREIGN KEY (`contract_id`) REFERENCES `contracts` (`id`) ON DELETE CASCADE");
         DB::unprepared("ALTER TABLE `contract_payments` ADD CONSTRAINT `contract_payments_payment_method_type_id_foreign` FOREIGN KEY (`payment_method_type_id`) REFERENCES `payment_method_types` (`id`)");
         DB::unprepared("ALTER TABLE `contracts` ADD CONSTRAINT `contracts_currency_type_id_foreign` FOREIGN KEY (`currency_type_id`) REFERENCES `cat_currency_types` (`id`)");
@@ -165,7 +167,6 @@ return new class extends Migration
         DB::unprepared("ALTER TABLE `document_items` ADD CONSTRAINT `document_items_item_id_foreign` FOREIGN KEY (`item_id`) REFERENCES `items` (`id`)");
         DB::unprepared("ALTER TABLE `document_items` ADD CONSTRAINT `document_items_price_type_id_foreign` FOREIGN KEY (`price_type_id`) REFERENCES `cat_price_types` (`id`)");
         DB::unprepared("ALTER TABLE `document_items` ADD CONSTRAINT `document_items_warehouse_id_foreign` FOREIGN KEY (`warehouse_id`) REFERENCES `warehouses` (`id`)");
-        DB::unprepared("ALTER TABLE `document_payments` ADD CONSTRAINT `document_payments_card_brand_id_foreign` FOREIGN KEY (`card_brand_id`) REFERENCES `card_brands` (`id`)");
         DB::unprepared("ALTER TABLE `document_payments` ADD CONSTRAINT `document_payments_document_id_foreign` FOREIGN KEY (`document_id`) REFERENCES `documents` (`id`) ON DELETE CASCADE");
         DB::unprepared("ALTER TABLE `document_payments` ADD CONSTRAINT `document_payments_payment_method_type_id_foreign` FOREIGN KEY (`payment_method_type_id`) REFERENCES `payment_method_types` (`id`)");
         DB::unprepared("ALTER TABLE `document_transports` ADD CONSTRAINT `document_transports_document_id_foreign` FOREIGN KEY (`document_id`) REFERENCES `documents` (`id`) ON DELETE CASCADE");
@@ -201,7 +202,6 @@ return new class extends Migration
         DB::unprepared("ALTER TABLE `establishments` ADD CONSTRAINT `establishments_district_id_foreign` FOREIGN KEY (`district_id`) REFERENCES `districts` (`id`)");
         DB::unprepared("ALTER TABLE `establishments` ADD CONSTRAINT `establishments_province_id_foreign` FOREIGN KEY (`province_id`) REFERENCES `provinces` (`id`)");
         DB::unprepared("ALTER TABLE `expense_items` ADD CONSTRAINT `expense_items_expense_id_foreign` FOREIGN KEY (`expense_id`) REFERENCES `expenses` (`id`) ON DELETE CASCADE");
-        DB::unprepared("ALTER TABLE `expense_payments` ADD CONSTRAINT `expense_payments_card_brand_id_foreign` FOREIGN KEY (`card_brand_id`) REFERENCES `card_brands` (`id`)");
         DB::unprepared("ALTER TABLE `expense_payments` ADD CONSTRAINT `expense_payments_expense_id_foreign` FOREIGN KEY (`expense_id`) REFERENCES `expenses` (`id`) ON DELETE CASCADE");
         DB::unprepared("ALTER TABLE `expense_payments` ADD CONSTRAINT `expense_payments_expense_method_type_id_foreign` FOREIGN KEY (`expense_method_type_id`) REFERENCES `expense_method_types` (`id`)");
         DB::unprepared("ALTER TABLE `expenses` ADD CONSTRAINT `expenses_currency_type_id_foreign` FOREIGN KEY (`currency_type_id`) REFERENCES `cat_currency_types` (`id`)");
@@ -267,7 +267,6 @@ return new class extends Migration
         DB::unprepared("ALTER TABLE `income` ADD CONSTRAINT `income_state_type_id_foreign` FOREIGN KEY (`state_type_id`) REFERENCES `state_types` (`id`)");
         DB::unprepared("ALTER TABLE `income` ADD CONSTRAINT `income_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)");
         DB::unprepared("ALTER TABLE `income_items` ADD CONSTRAINT `income_items_income_id_foreign` FOREIGN KEY (`income_id`) REFERENCES `income` (`id`) ON DELETE CASCADE");
-        DB::unprepared("ALTER TABLE `income_payments` ADD CONSTRAINT `income_payments_card_brand_id_foreign` FOREIGN KEY (`card_brand_id`) REFERENCES `card_brands` (`id`)");
         DB::unprepared("ALTER TABLE `income_payments` ADD CONSTRAINT `income_payments_income_id_foreign` FOREIGN KEY (`income_id`) REFERENCES `income` (`id`) ON DELETE CASCADE");
         DB::unprepared("ALTER TABLE `income_payments` ADD CONSTRAINT `income_payments_payment_method_type_id_foreign` FOREIGN KEY (`payment_method_type_id`) REFERENCES `payment_method_types` (`id`)");
         DB::unprepared("ALTER TABLE `inventories` ADD CONSTRAINT `inventories_inventories_transfer_id_foreign` FOREIGN KEY (`inventories_transfer_id`) REFERENCES `inventories_transfer` (`id`)");
@@ -424,7 +423,6 @@ return new class extends Migration
         DB::unprepared("ALTER TABLE `purchase_orders` ADD CONSTRAINT `purchase_orders_state_type_id_foreign` FOREIGN KEY (`state_type_id`) REFERENCES `state_types` (`id`)");
         DB::unprepared("ALTER TABLE `purchase_orders` ADD CONSTRAINT `purchase_orders_supplier_id_foreign` FOREIGN KEY (`supplier_id`) REFERENCES `persons` (`id`)");
         DB::unprepared("ALTER TABLE `purchase_orders` ADD CONSTRAINT `purchase_orders_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)");
-        DB::unprepared("ALTER TABLE `purchase_payments` ADD CONSTRAINT `purchase_payments_card_brand_id_foreign` FOREIGN KEY (`card_brand_id`) REFERENCES `card_brands` (`id`)");
         DB::unprepared("ALTER TABLE `purchase_payments` ADD CONSTRAINT `purchase_payments_payment_method_type_id_foreign` FOREIGN KEY (`payment_method_type_id`) REFERENCES `payment_method_types` (`id`)");
         DB::unprepared("ALTER TABLE `purchase_payments` ADD CONSTRAINT `purchase_payments_purchase_id_foreign` FOREIGN KEY (`purchase_id`) REFERENCES `purchases` (`id`) ON DELETE CASCADE");
         DB::unprepared("ALTER TABLE `purchase_quotation_items` ADD CONSTRAINT `purchase_quotation_items_item_id_foreign` FOREIGN KEY (`item_id`) REFERENCES `items` (`id`)");
@@ -466,7 +464,6 @@ return new class extends Migration
         DB::unprepared("ALTER TABLE `quotation_items` ADD CONSTRAINT `quotation_items_item_id_foreign` FOREIGN KEY (`item_id`) REFERENCES `items` (`id`)");
         DB::unprepared("ALTER TABLE `quotation_items` ADD CONSTRAINT `quotation_items_price_type_id_foreign` FOREIGN KEY (`price_type_id`) REFERENCES `cat_price_types` (`id`)");
         DB::unprepared("ALTER TABLE `quotation_items` ADD CONSTRAINT `quotation_items_quotation_id_foreign` FOREIGN KEY (`quotation_id`) REFERENCES `quotations` (`id`) ON DELETE CASCADE");
-        DB::unprepared("ALTER TABLE `quotation_payments` ADD CONSTRAINT `quotation_payments_card_brand_id_foreign` FOREIGN KEY (`card_brand_id`) REFERENCES `card_brands` (`id`)");
         DB::unprepared("ALTER TABLE `quotation_payments` ADD CONSTRAINT `quotation_payments_payment_method_type_id_foreign` FOREIGN KEY (`payment_method_type_id`) REFERENCES `payment_method_types` (`id`)");
         DB::unprepared("ALTER TABLE `quotation_payments` ADD CONSTRAINT `quotation_payments_quotation_id_foreign` FOREIGN KEY (`quotation_id`) REFERENCES `quotations` (`id`) ON DELETE CASCADE");
         DB::unprepared("ALTER TABLE `quotations` ADD CONSTRAINT `quotations_currency_type_id_foreign` FOREIGN KEY (`currency_type_id`) REFERENCES `cat_currency_types` (`id`)");
@@ -501,7 +498,6 @@ return new class extends Migration
         DB::unprepared("ALTER TABLE `sale_note_items` ADD CONSTRAINT `sale_note_items_price_type_id_foreign` FOREIGN KEY (`price_type_id`) REFERENCES `cat_price_types` (`id`)");
         DB::unprepared("ALTER TABLE `sale_note_items` ADD CONSTRAINT `sale_note_items_sale_note_id_foreign` FOREIGN KEY (`sale_note_id`) REFERENCES `sale_notes` (`id`) ON DELETE CASCADE");
         DB::unprepared("ALTER TABLE `sale_note_items` ADD CONSTRAINT `sale_note_items_warehouse_id_foreign` FOREIGN KEY (`warehouse_id`) REFERENCES `warehouses` (`id`)");
-        DB::unprepared("ALTER TABLE `sale_note_payments` ADD CONSTRAINT `sale_note_payments_card_brand_id_foreign` FOREIGN KEY (`card_brand_id`) REFERENCES `card_brands` (`id`)");
         DB::unprepared("ALTER TABLE `sale_note_payments` ADD CONSTRAINT `sale_note_payments_payment_method_type_id_foreign` FOREIGN KEY (`payment_method_type_id`) REFERENCES `payment_method_types` (`id`)");
         DB::unprepared("ALTER TABLE `sale_note_payments` ADD CONSTRAINT `sale_note_payments_sale_note_id_foreign` FOREIGN KEY (`sale_note_id`) REFERENCES `sale_notes` (`id`) ON DELETE CASCADE");
         DB::unprepared("ALTER TABLE `sale_notes` ADD CONSTRAINT `sale_notes_agent_id_foreign` FOREIGN KEY (`agent_id`) REFERENCES `agents` (`id`)");
@@ -692,7 +688,6 @@ return new class extends Migration
         DB::unprepared("ALTER TABLE `sale_notes` DROP FOREIGN KEY `sale_notes_agent_id_foreign`");
         DB::unprepared("ALTER TABLE `sale_note_payments` DROP FOREIGN KEY `sale_note_payments_sale_note_id_foreign`");
         DB::unprepared("ALTER TABLE `sale_note_payments` DROP FOREIGN KEY `sale_note_payments_payment_method_type_id_foreign`");
-        DB::unprepared("ALTER TABLE `sale_note_payments` DROP FOREIGN KEY `sale_note_payments_card_brand_id_foreign`");
         DB::unprepared("ALTER TABLE `sale_note_items` DROP FOREIGN KEY `sale_note_items_warehouse_id_foreign`");
         DB::unprepared("ALTER TABLE `sale_note_items` DROP FOREIGN KEY `sale_note_items_sale_note_id_foreign`");
         DB::unprepared("ALTER TABLE `sale_note_items` DROP FOREIGN KEY `sale_note_items_price_type_id_foreign`");
@@ -727,7 +722,6 @@ return new class extends Migration
         DB::unprepared("ALTER TABLE `quotations` DROP FOREIGN KEY `quotations_currency_type_id_foreign`");
         DB::unprepared("ALTER TABLE `quotation_payments` DROP FOREIGN KEY `quotation_payments_quotation_id_foreign`");
         DB::unprepared("ALTER TABLE `quotation_payments` DROP FOREIGN KEY `quotation_payments_payment_method_type_id_foreign`");
-        DB::unprepared("ALTER TABLE `quotation_payments` DROP FOREIGN KEY `quotation_payments_card_brand_id_foreign`");
         DB::unprepared("ALTER TABLE `quotation_items` DROP FOREIGN KEY `quotation_items_quotation_id_foreign`");
         DB::unprepared("ALTER TABLE `quotation_items` DROP FOREIGN KEY `quotation_items_price_type_id_foreign`");
         DB::unprepared("ALTER TABLE `quotation_items` DROP FOREIGN KEY `quotation_items_item_id_foreign`");
@@ -769,7 +763,6 @@ return new class extends Migration
         DB::unprepared("ALTER TABLE `purchase_quotation_items` DROP FOREIGN KEY `purchase_quotation_items_item_id_foreign`");
         DB::unprepared("ALTER TABLE `purchase_payments` DROP FOREIGN KEY `purchase_payments_purchase_id_foreign`");
         DB::unprepared("ALTER TABLE `purchase_payments` DROP FOREIGN KEY `purchase_payments_payment_method_type_id_foreign`");
-        DB::unprepared("ALTER TABLE `purchase_payments` DROP FOREIGN KEY `purchase_payments_card_brand_id_foreign`");
         DB::unprepared("ALTER TABLE `purchase_orders` DROP FOREIGN KEY `purchase_orders_user_id_foreign`");
         DB::unprepared("ALTER TABLE `purchase_orders` DROP FOREIGN KEY `purchase_orders_supplier_id_foreign`");
         DB::unprepared("ALTER TABLE `purchase_orders` DROP FOREIGN KEY `purchase_orders_state_type_id_foreign`");
@@ -926,7 +919,6 @@ return new class extends Migration
         DB::unprepared("ALTER TABLE `inventories` DROP FOREIGN KEY `inventories_inventories_transfer_id_foreign`");
         DB::unprepared("ALTER TABLE `income_payments` DROP FOREIGN KEY `income_payments_payment_method_type_id_foreign`");
         DB::unprepared("ALTER TABLE `income_payments` DROP FOREIGN KEY `income_payments_income_id_foreign`");
-        DB::unprepared("ALTER TABLE `income_payments` DROP FOREIGN KEY `income_payments_card_brand_id_foreign`");
         DB::unprepared("ALTER TABLE `income_items` DROP FOREIGN KEY `income_items_income_id_foreign`");
         DB::unprepared("ALTER TABLE `income` DROP FOREIGN KEY `income_user_id_foreign`");
         DB::unprepared("ALTER TABLE `income` DROP FOREIGN KEY `income_state_type_id_foreign`");
@@ -992,7 +984,6 @@ return new class extends Migration
         DB::unprepared("ALTER TABLE `expenses` DROP FOREIGN KEY `expenses_currency_type_id_foreign`");
         DB::unprepared("ALTER TABLE `expense_payments` DROP FOREIGN KEY `expense_payments_expense_method_type_id_foreign`");
         DB::unprepared("ALTER TABLE `expense_payments` DROP FOREIGN KEY `expense_payments_expense_id_foreign`");
-        DB::unprepared("ALTER TABLE `expense_payments` DROP FOREIGN KEY `expense_payments_card_brand_id_foreign`");
         DB::unprepared("ALTER TABLE `expense_items` DROP FOREIGN KEY `expense_items_expense_id_foreign`");
         DB::unprepared("ALTER TABLE `establishments` DROP FOREIGN KEY `establishments_province_id_foreign`");
         DB::unprepared("ALTER TABLE `establishments` DROP FOREIGN KEY `establishments_district_id_foreign`");
@@ -1028,7 +1019,6 @@ return new class extends Migration
         DB::unprepared("ALTER TABLE `document_transports` DROP FOREIGN KEY `document_transports_document_id_foreign`");
         DB::unprepared("ALTER TABLE `document_payments` DROP FOREIGN KEY `document_payments_payment_method_type_id_foreign`");
         DB::unprepared("ALTER TABLE `document_payments` DROP FOREIGN KEY `document_payments_document_id_foreign`");
-        DB::unprepared("ALTER TABLE `document_payments` DROP FOREIGN KEY `document_payments_card_brand_id_foreign`");
         DB::unprepared("ALTER TABLE `document_items` DROP FOREIGN KEY `document_items_warehouse_id_foreign`");
         DB::unprepared("ALTER TABLE `document_items` DROP FOREIGN KEY `document_items_price_type_id_foreign`");
         DB::unprepared("ALTER TABLE `document_items` DROP FOREIGN KEY `document_items_item_id_foreign`");
@@ -1084,7 +1074,6 @@ return new class extends Migration
         DB::unprepared("ALTER TABLE `contracts` DROP FOREIGN KEY `contracts_currency_type_id_foreign`");
         DB::unprepared("ALTER TABLE `contract_payments` DROP FOREIGN KEY `contract_payments_payment_method_type_id_foreign`");
         DB::unprepared("ALTER TABLE `contract_payments` DROP FOREIGN KEY `contract_payments_contract_id_foreign`");
-        DB::unprepared("ALTER TABLE `contract_payments` DROP FOREIGN KEY `contract_payments_card_brand_id_foreign`");
         DB::unprepared("ALTER TABLE `contract_items` DROP FOREIGN KEY `contract_items_price_type_id_foreign`");
         DB::unprepared("ALTER TABLE `contract_items` DROP FOREIGN KEY `contract_items_item_id_foreign`");
         DB::unprepared("ALTER TABLE `contract_items` DROP FOREIGN KEY `contract_items_contract_id_foreign`");
@@ -1124,6 +1113,7 @@ return new class extends Migration
         DB::unprepared("ALTER TABLE `authorized_discount_users` DROP FOREIGN KEY `authorized_discount_users_user_id_foreign`");
         DB::unprepared("ALTER TABLE `authorized_discount_users` DROP FOREIGN KEY `authorized_discount_users_seller_id_foreign`");
         // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+        DB::unprepared("ALTER TABLE `payment_method_types` DROP FOREIGN KEY `payment_method_tax_fk`, DROP FOREIGN KEY `payment_method_currency_fk`");
         DB::unprepared("ALTER TABLE `cat_iva_rate_types` DROP FOREIGN KEY `cat_iva_rate_types_tax_kind_foreign`");
         // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
     }

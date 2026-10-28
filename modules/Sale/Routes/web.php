@@ -72,6 +72,7 @@ if($current_hostname) {
                 // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
                 Route::post('/active', 'PaymentMethodTypeController@active');
                 // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
+                Route::get('/tables', 'PaymentMethodTypeController@tables');
                 Route::get('/records', 'PaymentMethodTypeController@records');
                 Route::get('/record/{id}', 'PaymentMethodTypeController@record');
                 Route::post('', 'PaymentMethodTypeController@store');

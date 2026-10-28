@@ -47,9 +47,6 @@
                         <a href="{{url('list-currencies')}}"><i class="ti ti-currency-dollar"></i>Lista de monedas</a>
                     </li>
                     <li>
-                        <a href="{{url('list-cards')}}"><i class="ti ti-credit-card"></i>Listado de tarjetas</a>
-                    </li>
-                    <li>
                         <a href="{{url('list-platforms')}}"><i class="ti ti-apps"></i>Plataformas</a>
                     </li>
                     @if(in_array('production_app', $vc_modules) && $configuration->isShowExtraInfoToItem())

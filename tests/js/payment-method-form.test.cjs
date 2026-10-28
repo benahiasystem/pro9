@@ -50,6 +50,50 @@ test('editing sends PUT to the selected method', async () => {
     assert.equal(ctx.loading_submit, false);
 });
 
+test('payment methods no longer request card details', () => {
+    assert.doesNotMatch(source, /Solicitar datos de tarjeta|has_card|card_brand_id/);
+});
+
+test('availability checkbox is absent in both creation and editing', () => {
+    const ast = compiler.compile(parsed.template.content).ast;
+    function find(node, predicate) {
+        if (predicate(node)) return node;
+        for (const child of node.children || []) {
+            const found = find(child, predicate);
+            if (found) return found;
+        }
+    }
+    const checkbox = find(ast, node => node.tag === 'el-checkbox' && node.attrsMap['v-model'] === 'form.is_active');
+    assert.equal(checkbox, undefined);
+    const unclassified = find(ast, node => node.tag === 'el-option' && node.attrsMap.value === 'unclassified');
+    assert.equal(unclassified.if, 'recordId !== null');
+    const ctx = {};
+    component.methods.initForm.call(ctx);
+    assert.equal(ctx.form.is_active, true);
+});
+
+test('editing preserves the availability loaded from the server', async () => {
+    for (const isActive of [true, false]) {
+        let submitted;
+        const ctx = {
+            recordId: '27', resource: 'payment-method-types', showTax: false,
+            $http: {
+                get: url => Promise.resolve({data: url.endsWith('/tables')
+                    ? {currency_types: [], taxes: []}
+                    : {id: '27', description: 'Método', collection_kind: 'account', is_active: isActive}}),
+                put: (url, form) => { submitted = {...form}; return Promise.resolve({data: {success: true}}); },
+            },
+            $message: {success() {}, error() {}}, $eventHub: {$emit() {}}, close() {},
+        };
+        component.methods.create.call(ctx);
+        await new Promise(resolve => setImmediate(resolve));
+        ctx.form.description = 'Método editado';
+        component.methods.submit.call(ctx);
+        await new Promise(resolve => setImmediate(resolve));
+        assert.equal(submitted.is_active, isActive);
+    }
+});
+
 test('payment method form template compiles', () => {
     assert.deepEqual(compiler.compile(parsed.template.content).errors, []);
 });

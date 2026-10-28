@@ -21,18 +21,31 @@ class PaymentMethodTypeController extends Controller
         abort_unless(auth()->user()?->type === 'admin',403);
         $data=$request->validate(['id'=>['required','string','max:2'],'is_active'=>['required','boolean']]);
         $record=PaymentMethodType::findOrFail($data['id']);
-        if (in_array((string)$record->id,PaymentMethodType::HKA_REFERENCE_PAYMENT_METHOD_IDS,true)) return response()->json(['success'=>false,'message'=>'Los métodos HKA de referencia permanecen inactivos.'],409);
         $record->is_active=$data['is_active'];$record->save();
         return ['success'=>true,'message'=>'Disponibilidad actualizada'];
     }
 
     private function methodInput(PaymentMethodTypeRequest $request): array
     {
-        $fields=['id','description','number_days','has_card','is_active'];
-        $fields=array_merge($fields,['collection_kind','cash_currency_type_id']);
-        return $request->only($fields);
+        $fields=['id','description','number_days','is_active'];
+        $fields=array_merge($fields,['collection_kind','currency_type_id','iva_rate_type_id']);
+        $input = $request->only($fields);
+        $input['cash_currency_type_id'] = $request->input('collection_kind') === 'cash' ? $request->input('currency_type_id') : null;
+        $input['iva_rate_type_id'] = $request->input('iva_rate_type_id');
+        return $input;
     }
     // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
+
+    // ######## INICIO MONEDA E IMPUESTO DE MEDIOS ########
+    public function tables()
+    {
+        $db = \Illuminate\Support\Facades\DB::connection('tenant');
+        return [
+            'currency_types' => $db->table('cat_currency_types')->where('active', 1)->orderBy('id')->get(['id', 'description', 'symbol']),
+            'taxes' => $db->table('cat_iva_rate_types')->where('id', 'IGTF')->where('tax_kind', 'IGTF')->get(['id', 'percentage']),
+        ];
+    }
+    // ######## FIN MONEDA E IMPUESTO DE MEDIOS ########
 
     public function records(Request $request)
     {
@@ -46,18 +59,15 @@ class PaymentMethodTypeController extends Controller
     {
         $record = PaymentMethodType::findOrFail($id);
 
-        return $record->toArray()+['classification_editable'=>!PaymentMethodType::isInitialPaymentMethodId($record->id)];
+        return $record->toArray();
     }
 
     public function store(PaymentMethodTypeRequest $request)
     {
         // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
-        $id = $request->input('id');
-        if (in_array((string) $id, PaymentMethodType::HKA_REFERENCE_PAYMENT_METHOD_IDS, true)) {
-            return response()->json(['success' => false, 'message' => 'Los métodos HKA de referencia no se pueden editar ni activar'], 409);
-        }
         $record = new PaymentMethodType();
         $record->fill($this->methodInput($request));
+        $record->is_active = true;
         $record->hka_code = '99';
         $record->save();
 
@@ -68,10 +78,6 @@ class PaymentMethodTypeController extends Controller
     // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
     public function update(PaymentMethodTypeRequest $request, $id)
     {
-        if (in_array((string) $id, PaymentMethodType::HKA_REFERENCE_PAYMENT_METHOD_IDS, true)) {
-            return response()->json(['success' => false, 'message' => 'Los métodos HKA de referencia no se pueden editar ni activar'], 409);
-        }
-
         $record = PaymentMethodType::find($id);
         if (!$record) {
             return response()->json(['success' => false, 'message' => 'No se encontró el método de pago'], 404);

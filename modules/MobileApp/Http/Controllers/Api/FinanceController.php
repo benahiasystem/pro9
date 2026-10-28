@@ -87,7 +87,6 @@ class FinanceController extends Controller
                 'expense_method_types' => ExpenseMethodType::all()->map(fn($row) => [
                     'id' => $row->id,
                     'description' => $row->description,
-                    'has_card' => (bool) $row->has_card,
                 ])->values(),
                 'payment_method_types' => PaymentMethodType::getPaymentMethodTypes(),
                 'payment_destinations' => $this->getPaymentDestinations(),

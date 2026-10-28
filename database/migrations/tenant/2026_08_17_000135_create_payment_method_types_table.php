@@ -8,12 +8,12 @@ use Illuminate\Support\Facades\DB;
  * Estructura inicial de `payment_method_types` para instalaciones nuevas.
  * Inventario de columnas:
  * - `collection_kind` varchar(16) NOT NULL DEFAULT 'unclassified'
+ * - `currency_type_id` varchar(255) NOT NULL DEFAULT VES
+ * - `iva_rate_type_id` varchar(4) DEFAULT NULL
  * - `cash_currency_type_id` char(3) DEFAULT NULL
  * - `id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `hka_code` char(2) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `has_card` tinyint(1) NOT NULL DEFAULT '0'
- * - `charge` decimal(30,12) DEFAULT NULL
  * - `number_days` int(11) DEFAULT NULL
  * - `is_credit` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'Define si es tipo credito'
  * - `is_cash` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'Define si es es efectivo'
@@ -30,9 +30,9 @@ CREATE TABLE `payment_method_types` (
   `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `hka_code` char(2) COLLATE utf8mb4_unicode_ci NOT NULL,
   `collection_kind` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'unclassified',
+  `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'VES',
+  `iva_rate_type_id` varchar(4) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `cash_currency_type_id` char(3) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `has_card` tinyint(1) NOT NULL DEFAULT '0',
-  `charge` decimal(30,12) DEFAULT NULL,
   `number_days` int(11) DEFAULT NULL,
   `is_credit` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'Define si es tipo credito',
   `is_cash` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'Define si es es efectivo',

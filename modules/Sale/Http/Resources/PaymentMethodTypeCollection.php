@@ -19,28 +19,12 @@ class PaymentMethodTypeCollection extends ResourceCollection
         return $this->collection->transform(function($row, $key) {
 
             /** @var \App\Models\Tenant\PaymentMethodType  $row */
-            $show_actions = true;
-
-            // ######### INICIO PROTECCIÓN MÉTODOS INICIALES VENEZUELA #########
-            $can_delete = !PaymentMethodType::isInitialPaymentMethodId($row->id);
-            if (in_array((string) $row->id, PaymentMethodType::HKA_REFERENCE_PAYMENT_METHOD_IDS, true)) {
-                $show_actions = false;
-            }
-            // ######### FIN PROTECCIÓN MÉTODOS INICIALES VENEZUELA #########
-
-            if(in_array($row->id, ['01', '05', '08', '09', '04'])){
-                $show_actions = false;
-            }
+            // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
             $return = $row->toArray();
-            $return['show_actions'] = $show_actions;
-            $return['can_delete'] = $can_delete;
+            $return['show_actions'] = true;
+            $return['can_delete'] = !PaymentMethodType::isInitialPaymentMethodId($row->id);
+            // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
             return $return;
-
-            return [
-                'id' => $row->id,
-                'description' => $row->description,
-                'show_actions' => $show_actions
-            ];
         });
     }
 }

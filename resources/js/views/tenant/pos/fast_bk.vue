@@ -1977,7 +1977,6 @@ export default {
                 date_of_payment: moment().format('YYYY-MM-DD'),
                 payment_method_type_id: '01',
                 reference: null,
-                card_brand_id:null,
                 document_id:null,
                 sale_note_id:null,
                 payment: this.form.total,

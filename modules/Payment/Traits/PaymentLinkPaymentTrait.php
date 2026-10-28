@@ -322,8 +322,6 @@ trait PaymentLinkPaymentTrait
             'payment_method_type_id' => $this->getIncomePaymentMethodTypeId(),
             'payment_destination_id' => 'cash',
             'reference' => null,
-            'has_card' => false,
-            'card_brand_id' => null,
             'change' => null,
             'payment' => $payment,
         ];

@@ -19,8 +19,11 @@ class PaymentMethodTypeRequest extends FormRequest
             ? Rule::in([(string) $this->route('id')])
             : Rule::unique('tenant.payment_method_types', 'id');
         $classification=[
-            'collection_kind'=>['required',Rule::in(\App\Services\Payments\Classification::KINDS)],
-            'cash_currency_type_id'=>['nullable','required_if:collection_kind,cash',Rule::in(['VES','USD'])],
+            'collection_kind'=>['required',Rule::in($this->isMethod('POST')
+                ? ['cash', 'account', 'credit']
+                : \App\Services\Payments\Classification::KINDS)],
+            'currency_type_id'=>['required','string',Rule::exists('tenant.cat_currency_types','id')->where('active',1)],
+            'iva_rate_type_id'=>['nullable',Rule::in(['IGTF']),Rule::exists('tenant.cat_iva_rate_types','id')->where('tax_kind','IGTF')],
             'is_active'=>['sometimes','boolean'],
         ];
         return $classification + [

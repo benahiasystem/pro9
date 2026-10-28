@@ -33,12 +33,13 @@
             // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
             static::saving(function ($model) {
                 if ($model instanceof PaymentMethodType) {
-                    $values=\App\Services\Payments\Classification::values($model->collection_kind ?? 'unclassified',$model->cash_currency_type_id);
+                    // ######## INICIO MONEDA E IMPUESTO DE MEDIOS ########
+                    $kind = $model->collection_kind ?? 'unclassified';
+                    $currency = $model->currency_type_id;
+                    $cashCurrency = $currency !== null ? ($kind === 'cash' ? $currency : null) : $model->cash_currency_type_id;
+                    $values=\App\Services\Payments\Classification::values($kind, $cashCurrency);
+                    // ######## FIN MONEDA E IMPUESTO DE MEDIOS ########
                     if (($model->is_active ?? true) && $values['collection_kind'] === 'unclassified') \App\Services\Payments\Classification::error('collection_kind','Clasifique el método antes de activarlo.');
-                    if (PaymentMethodType::isInitialPaymentMethodId($model->id)) {
-                        $initial=\App\Services\Payments\Classification::initial((string)$model->id);
-                        if ($values !== $initial) \App\Services\Payments\Classification::error('collection_kind','La naturaleza y moneda de este medio inicial están definidas por el catálogo.');
-                    }
                     foreach ($values as $key=>$value) $model->setAttribute($key,$value);
                 }
                 if ($model instanceof \Modules\Finance\Models\GlobalPayment && $model->exists && ($model->getOriginal('report_context')['version'] ?? null) === 2 && $model->isDirty(['destination_id','destination_type','cash_session_id','report_context','payment_type','payment_id'])) {
@@ -336,7 +337,7 @@
          */
         public function scopeGeneralPaymentsWithOutRelations($query)
         {
-            return $query->withOut(['payment_method_type', 'card_brand']);
+            return $query->withOut(['payment_method_type']);
         }
 
 

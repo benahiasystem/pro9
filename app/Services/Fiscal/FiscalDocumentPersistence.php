@@ -248,7 +248,7 @@ final class FiscalDocumentPersistence
             if ($initial && $document->emission()->where('status', '!=', 'not_requested')->exists()) FiscalAmounts::error('emission','No se modifican los pagos de una operación preparada.');
             if (!empty($input['id']) && !$receiptOrigin) FiscalAmounts::error('id', 'Revierta el pago y registre uno nuevo; no se editan pagos contabilizados.');
             validator($input, ['date_of_payment'=>'required|date','exchange_rate_source'=>'nullable|string|max:255','exchange_rate_date'=>'nullable|date','exemption_reason'=>'nullable|string|max:255'])->validate();
-            $fields = array_intersect_key($input, array_flip(['date_of_payment','payment_method_type_id','has_card','card_brand_id','reference','payment_received','change']));
+            $fields = array_intersect_key($input, array_flip(['date_of_payment','payment_method_type_id','reference','payment_received','change']));
 
             if ($initial && D::readRequired($values, 'payment')->isGreaterThan($document->exactBalance())) {
                 $residual = D::readRequired($values, 'payment')->minus($document->exactBalance());

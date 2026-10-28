@@ -9,14 +9,6 @@ final class Classification
 {
     public const KINDS = ['cash', 'account', 'credit', 'unclassified'];
 
-    public static function initial(string $id): array
-    {
-        $kind = in_array($id, ['01', '10'], true) ? 'cash'
-            : (in_array($id, ['02','03','04','06','11','12','13'], true) ? 'account'
-            : (in_array($id, ['05','09'], true) ? 'credit' : 'unclassified'));
-        return self::values($kind, $kind === 'cash' ? ($id === '10' ? 'USD' : 'VES') : null);
-    }
-
     public static function values(string $kind, ?string $currency = null): array
     {
         if (!in_array($kind, self::KINDS, true)) self::error('collection_kind', 'Seleccione la naturaleza del medio de pago.');

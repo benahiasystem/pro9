@@ -47,8 +47,6 @@ class ContractResource extends JsonResource
                 'contract_id' => $row->contract_id, 
                 'date_of_payment' => $row->date_of_payment->format('Y-m-d'), 
                 'payment_method_type_id' => $row->payment_method_type_id, 
-                'has_card' => $row->has_card, 
-                'card_brand_id' => $row->card_brand_id, 
                 'reference' => $row->reference, 
                 'payment' => $row->payment, 
                 'payment_method_type' => $row->payment_method_type, 

@@ -17,8 +17,8 @@ class TenantMigrationDataSeederTest extends TestCase
         ));
 
         // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
-        self::assertCount(81, $tables);
-        self::assertSame(962, $totalRows);
+        self::assertCount(80, $tables);
+        self::assertSame(945, $totalRows);
         // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
 
         foreach ($tables as $table => $definition) {
@@ -37,9 +37,9 @@ class TenantMigrationDataSeederTest extends TestCase
     {
         $createMigrations = glob(database_path('migrations/tenant/*_create_*_table.php')) ?: [];
         $foreignKeyMigrations = glob(database_path('migrations/tenant/*_add_tenant_foreign_keys.php')) ?: [];
-        self::assertCount(348, $createMigrations);
+        self::assertCount(347, $createMigrations);
         self::assertCount(1, $foreignKeyMigrations);
-        self::assertCount(349, glob(database_path('migrations/tenant/*.php')) ?: []);
+        self::assertCount(348, glob(database_path('migrations/tenant/*.php')) ?: []);
         self::assertSame([], glob(database_path('migrations/tenant/*_migrate_*.php')) ?: []);
 
         // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
