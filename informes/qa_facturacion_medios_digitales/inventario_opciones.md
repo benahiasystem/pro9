@@ -1,12 +1,12 @@
 # Inventario obligatorio de opciones de facturación digital
 
-Referencia: 14 de octubre de 2026, `76690125` y cambios locales de órdenes con hashes en fuentes; 1702 casos planificados. Este archivo es una plantilla de ejecución. Las rutas son puntos de entrada del código actual; registrar la ubicación real del despliegue. Todas las filas comienzan **Por inventariar**. No constituyen opciones ya ejecutadas.
+Referencia: 14 de octubre de 2026, `76690125` y cambios locales de órdenes con hashes en fuentes; 1128 casos planificados en 42 grupos. Este archivo es una plantilla de ejecución. Las rutas son puntos de entrada del código actual; registrar la ubicación real del despliegue. Todas las filas comienzan **Por inventariar**. No constituyen opciones ya ejecutadas.
 
 ## Procedimiento de inventario
 
-Recorrer cada pantalla como administrador y como vendedor, en desktop y menú móvil. Abrir pestañas, menús, filtros, selectores, personalizadores y diálogos. Registrar TODOS los valores activos, condiciones de visibilidad, permiso y endpoint del control. Comparar con catálogo/feature flags actuales y escritor del documento. Vincular cada opción a un ID o crear QA-EXT con especificación completa.
+Recorrer cada pantalla como administrador y como vendedor, en desktop y menú móvil. Abrir pestañas, menús, filtros, selectores, personalizadores y diálogos. Registrar TODOS los valores activos, condiciones de visibilidad, permiso y endpoint del control. Comparar con catálogo/feature flags actuales y escritor del documento. Vincular cada opción a un caso existente; crear QA-EXT con especificación completa sólo cuando exista una condición, regla o efecto aún no cubierto.
 
-Una fila agregada como “pagos” no cubre efectivo, tarjeta, transferencia, crédito u otros valores efectivos. Expande una fila por valor y rama. Probar cada medio/destino activo en su canal real; un código 09 de un catálogo no tiene el mismo significado en otro. Si una opción es inaccesible por configuración, habilitar el fixture QA o registrar Bloqueada/exclusión sustentada. No llamarla No aplica sólo por estar oculta.
+El inventario debe identificar los medios y destinos disponibles, su clasificación y moneda. Registrar valores y ramas para no omitirlos, pero agrupar como datos los que comparten validación y efectos; probar por separado las naturalezas, monedas, permisos y comportamientos que sí difieren. Un código 09 de un catálogo no tiene necesariamente el mismo significado en otro. Si una opción es inaccesible por configuración, habilitar el fixture QA o registrar Bloqueada/exclusión sustentada. No llamarla No aplica sólo por estar oculta.
 
 | Pantalla o flujo | Opciones a inventariar y expandir | Grupos base | Estado inicial |
 |---|---|---|---|
@@ -72,7 +72,7 @@ Observado / evidencia / defecto / ejecutor / fecha Caracas / iteración:
 
 ## Inventario específico de la ampliación
 
-Cada valor/rama siguiente debe tener fila OP propia y caso/variante/veredicto individual. No aprobar todo un selector con un clic de apertura.
+Registrar los valores y ramas encontrados y vincularlos a los casos existentes. Las opciones equivalentes se verifican dentro del caso agrupado con evidencia y resultado por valor cuando aplique; crear caso o variante adicional sólo para una condición o efecto distinto. Abrir un selector no demuestra su funcionamiento.
 
 | Control/flujo | Valores y ramas obligatorias | Grupos | Estado |
 |---|---|---|---|
@@ -82,8 +82,8 @@ Cada valor/rama siguiente debe tener fila OP propia y caso/variante/veredicto in
 | Estado/facultades del perfil | iva_status ordinary/formal/not_subject; iva_agent_basis none/SNAT/2025/000054/SNAT/2013/0029; islr_agent true/false y fundamento propio; exclusión/contexto público |SPE/RIVA/RISLR|Por inventariar|
 | IVA 100 % | undisclosed_iva,invoice_formalities,portal_100,unregistered_rif,precious_metals; evidencia y restricción pública particular |SPE/RIVA|Por inventariar|
 | Pago IGTF | Moneda documental/recibida; intermediación omitida/none/ financial_institution; not_applicable/subject; exempt sólo admin+motivo+ exception_basis |SPE/IGT/PAG|Por inventariar|
-| Previsión IVA | Activar/desactivar; propuesta elegibilidad/porcentaje/base IVA/base imponible; actualización cliente/fecha/líneas; sugerir cobro neto sólo explícito |RIVA/INT|Por inventariar|
-| Previsión ISLR | Activar/desactivar; base_mode full_net /declared, concepto 002..086 (85 valores iniciales), porcentaje/sustraendo declarados, fundamento/evidencia |RISLR/INT|Por inventariar|
+| IVA recibido | Propuesta y comprobante desde Retención del listado; elegibilidad, porcentaje, base IVA/base imponible y soporte. Previsión activar/desactivar sólo por contrato API/servicio; sin sugerencia de cobro neto en creación/pagos UI |RIVA/INT|Por inventariar|
+| ISLR recibido | Propuesta y comprobante desde Retención del listado; concepto 002..086, porcentaje/sustraendo, fundamento/evidencia. Previsión activar/desactivar sólo por contrato API/servicio, sin editor en creación/pagos UI |RISLR/INT|Por inventariar|
 | Registro/soporte recibido | Tax kind IVA/ISLR; número/fecha/referencia/control/RIF; moneda VES/USD/tasa 8 dec; PDF/JPG/PNG≤5 MB; draft token 24 h/consumo/descarga privada |RIVA/RISLR|Por inventariar|
 | Estado/comando de retención | pending_validation /applied/invalid/reversed; reversal_pending; outbox waiting/pending/confirmed/uncertain/rejected/conflict/removed/cancelled; query/retry/reverse por permiso/UUID actual |RIVA/RISLR/INT|Por inventariar|
 | Pagos/borradores | Web/POS normal/rápido/múltiples/Garage rápido/múltiples, Hotel/Order/servicio técnico/Suscription/FullSuscription/restaurante/API; crédito/abonos/conservación/reabrir/recuperar y XHR obsoleta |INT|Por inventariar|
@@ -97,7 +97,7 @@ Si el tenant tiene más conceptos/opciones que el catálogo inicial, agregar QA-
 | Pantalla / opción | Valores y controles a inventariar | Casos |
 |---|---|---|
 |Nota|Tipo07/08; siete motivos y activos; factura/control; remanentes/partidas; series vacías/autorizadas; descripción; tercero/régimen heredados; tasa NC/ND; lotes/seriales originales|NHD|
-|Pagos ND|Contado/Crédito; medios activos/no is_credit; VES/USD/tasa8dec/fecha/UUID; banco/caja por sucursal; IGTF/intermediación; abonos/borradores|NHD/NRI|
+|Pagos ND|ND nueva: sólo crédito, sin pagos iniciales; abonos reales posteriores con medios activos/no crédito, VES/USD, tasa, fecha, UUID y destino. ND al contado preexistentes: política histórica; probar rechazo de nuevas ND al contado|NHD/NRI|
 |Devoluciones|Origen real; principal/moneda/tasa/fecha/medio/destino; parcial/total/remanente; UUID/motivo/actor; reversión e historial/permisos|NRF|
 |Ajustes|IVA/ISLR independientes; número/fundamento/soporte; reversión incierta/reemplazo; fondo parcial/total; reservas/IGTF bloqueado|NRF|
 |Anular nota|Admin/motivo/UUID; local/remoto; dependencias; pending/uncertain/rejected/remote_confirmed/completed; consultar/completar; rutas antiguas|NAN|

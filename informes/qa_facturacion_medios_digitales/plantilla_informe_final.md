@@ -1,6 +1,6 @@
 # Informe final QA: Pro 9 Medios digitales
 
-> Referencia `76690125` y cambios locales de órdenes identificados por hashes, 14 de octubre de 2026: 1702 casos/41 grupos; 1121 anteriores conservados +581 nuevos. Plantilla sin ejecutar. Sustituir todos los campos entre corchetes. No conservar cifras de ejemplo como resultados reales.
+> Referencia `76690125` y cambios locales de órdenes identificados por hashes, 14 de octubre de 2026: 1128 casos/42 grupos; IDs históricos agrupados conservados en tablas de equivalencias. Plantilla sin ejecutar. Sustituir todos los campos entre corchetes. No conservar cifras de ejemplo como resultados reales.
 
 ## 1. Identificación y conclusión
 
@@ -81,7 +81,7 @@ Verificación: [T = A+R+B+N+P]. Nivel de conteo: [casos padre / subcasos]. Si ha
 | RGE: 59 planificadas | [T] | [A] | [R] | [B] | [N] | [P] | [limitación] |
 | SPE: 64 planificadas | [T] | [A] | [R] | [B] | [N] | [P] | [limitación] |
 | RIVA: 63 planificadas | [T] | [A] | [R] | [B] | [N] | [P] | [limitación] |
-| RISLR: 135 planificadas | [T] | [A] | [R] | [B] | [N] | [P] | [limitación] |
+| RISLR: 51 planificadas | [T] | [A] | [R] | [B] | [N] | [P] | [limitación] |
 | INT: 80 planificadas | [T] | [A] | [R] | [B] | [N] | [P] | [limitación] |
 | [grupo] | [T] | [A] | [R] | [B] | [N] | [P] | [texto] |
 
@@ -132,8 +132,15 @@ Repetir para cada defecto. Agrupar un fallo raíz compartido sin perder los IDs 
 
 ## 9. Cobertura de opciones y matrices
 
+Para cada caso agrupado, adjuntar o completar una tabla como la siguiente. Registrar un veredicto para cada valor realmente probado y justificar los valores pendientes, bloqueados o excluidos. Estas filas son evidencia del caso padre y no aumentan el número de casos del registro.
+
+| Caso padre | Valor o escenario | Esperado / observado | Aprobó / Reprobó / Bloqueada / No aplica / Pendiente | Evidencia / defecto o motivo | Agente / fecha Caracas / iteración |
+|---|---|---|---|---|---|
+| [ID activo] | [dato y canal] | [resultado] | [estado] | [ruta e ID] | [datos] |
+
+
 - Inventario: [ruta actualizada]. Total de opciones efectivas: [cantidad]. Opciones mapeadas a casos: [cantidad]. Opciones ejecutadas con evidencia: [cantidad]. Opciones sin ejecutar: [lista].
-- Identidades×canales × tipos: [208 casos base; ejecutados/aprobados/fallidos/bloqueados/no aplicables; resultados remotos por separado].
+- Identidades×canales × tipos: [26 casos agrupados con 208 comprobaciones; ejecutados/aprobados/fallidos/bloqueados/no aplicables; resultados remotos por separado].
 - Moneda×IVA×condición: [18 Factura +12 NC/ND; cobertura].
 - Exportación: [FOB/CIF/EXW×VES/USD, restricciones/crédito].
 - Terceros, estados×acciones, roles×rutas: [cobertura y vacíos].
@@ -163,13 +170,13 @@ Si no hubo ejecuciones reales, indicar **No ejecutado: sólo proveedor simulado*
 
 ## 13. Regímenes especiales: resultados independientes
 
-Completar 28 filas de matriz RGE-001..028 y el resto de casos RGE, sin agrupar resultados. Registrar guardar/editar/enviar/presentar por capa; todos los valores y monedas tienen conclusión propia.
+Completar los cuatro casos RGE-001..004, uno por moneda y titular, y el resto de casos RGE vigentes. Registrar resultado y evidencia de cada uno de los siete regímenes dentro de los cuatro casos agrupados: 28 comprobaciones, sin crear 28 filas de caso. Registrar guardar/editar/enviar/presentar por capa; cada valor aplicable tiene conclusión propia.
 
 | Caso/variante | Régimen ID/descripcion | VES/USD y propia/terceros | Base/IVA/exento/desc/cargo/IGTF/total/pago/saldo | UUID antes/después y edición | Registro comercial | HKA/consulta/control | Ticket/snapshot/original hash y omisiones | Veredicto/evidencia/defecto |
 |---|---|---|---|---|---|---|---|---|
 | [ID] | [dato exacto] | [contexto] | [esperado/observado] | [dato] | [resultado] | [resultado/capa] | [dato] | [Aprobó/Reprobó/etc.] |
 
-Conclusión RGE: [matriz ejecutada/faltante, restricciones crédito/exportación/notas/canales, UUID y envío explícito, límites de PDF original].
+Conclusión RGE: [matriz ejecutada/faltante, restricciones de crédito/exportación y canales, habilitación de notas domésticas, UUID y envío explícito, límites de PDF original].
 
 ## 14. SPE: versiones, facultades y clasificación IGTF
 
@@ -201,7 +208,7 @@ Reportar 85 conceptos no salariales iniciales por ID, exclusión 001, ausencia d
 |---|---|---|---|---|---|---|---|---|---|
 | [ID] | [datos] | [importes] | [datos/estado] | [datos/estado] | [valores] | [antes/después] | [estados/bloqueos] | [conciliación] | [estado/ruta] |
 
-Reconciliar ejemplo 116−previsión 12−previsión 3=sugerencia 101, pago 101/deuda 15 antes de validar; sólo IVA aplicada→deuda 3, sólo ISLR→deuda 12, ambas→0. Cash 101 inmutable. Incluir casos crédito/abonos 30+20, remanente 51 por acción explícita, monedas propias, conversiones, respuestas propuestas obsoletas, concurrencia y dos entornos tenant/sucursal. Registrar todos los 39 casos canal×impuesto y cualquier módulo bloqueado con causa, más los saldos posteriores a reversión.
+Reconciliar propuestas API de 12 y 3 sin deducirlas del saldo ni de la sugerencia de creación: total 116, pago manual 101 y deuda 15 antes de validar; sólo IVA aplicada→deuda 3, sólo ISLR→deuda 12, ambas→0. Caja 101 inmutable. Con abonos 30+20, verificar que creación sugiere 66, no 51, y que la gestión UI de comprobantes ocurre en Retención del listado. Incluir monedas, conversiones, respuestas obsoletas del gestor, concurrencia y aislamiento. Registrar por separado los casos canal×impuesto, los contratos API y los saldos tras reversión.
 
 Separar las cuatro conclusiones: registro comercial, aplicación local, sincronización HKA y presentación. Evidencia histórica/simulada debe figurar en apartado de soporte con capa explícita; no en tabla de emisiones reales de la corrida. No cerrar Aprobó si falta variante aplicable o caso P0.
 
@@ -211,7 +218,7 @@ Separar las cuatro conclusiones: registro comercial, aplicación local, sincroni
 |---|---|---|---|---|---|---|---|---|---|
 | [ID] | [datos concretos] | [antes/después] | [moneda/tasa/UUID] | [antes/después] | [estado/identidad] | [capas] | [cálculo independiente] | [veredicto/rutas] | [datos] |
 
-Reconciliar las 224 combinaciones sin cobro propio y 96NDalcontado por ID. Mostrar motivos/tipo/transacción, moneda, tasa de nota/referencia, tercero/régimen, derechos pendientes y centavos. FormasPago 99 no son cash. Presentar aceptación Real DEMO actual y evidencia de A4/A5/ticket/correo por separado; no importar 120 casos históricos como resultados.
+Reconciliar las combinaciones positivas de notas mediante los 28 casos agrupados por motivo, moneda y titular, con evidencia por régimen. Informar aparte el caso QA-NHD-225 de rechazo común y sus escenarios representativos. Mostrar motivos/tipo/transacción, moneda, tasa de nota/referencia, tercero/régimen, derechos pendientes y centavos. FormasPago 99 no son cash. Presentar aceptación Real DEMO actual y evidencia de A4/A5/ticket/correo por separado; no importar 120 casos históricos como resultados.
 
 ## 19. Devoluciones de dinero y ajustes: resultados de NRF
 
@@ -253,6 +260,14 @@ Conciliar Kardex/almacén/lotes/seriales antes después y conversiones individua
 
 Comparar modeloSQL/listado/pagos/cxc/dashboard/reportes/exportaciones por moneda. Confirmar netoIVA/ISLRsiguenfalse, aislamiento tenant/sucursal/permisos, respuestasobsoletas/configuración y esquemalegado. FallosPDF/correono degradanconfirmed.
 
+## Resultados de clasificación y medios de pago — MPA
+
+| Caso | Módulo / condición / moneda | Método y destino | Saldo y movimientos antes/después | Reintento / concurrencia | Esperado / observado | Estado / evidencia / defecto | Agente / fecha / iteración |
+|---|---|---|---|---|---|---|---|
+| [QA-MPA-...] | [datos sintéticos] | [clasificación / moneda / snapshot] | [importes y conteos] | [UUID / resultado] | [cálculo independiente] | [veredicto y ruta] | [datos] |
+
+Informar semilla y permisos; efectivo, banco, crédito y no clasificado; moneda recibida y aplicada; efectivo y vuelto; conversiones y conservación de snapshots; caja, reportes y exportaciones; concurrencia, rollback y productores automáticos. Diferenciar evidencia del navegador, pruebas de servidor, dobles y ejecuciones DEMO reales. Identificar expresamente límites de Mozo y clientes externos. Adjuntar el inventario de trazabilidad y explicar cualquier asociación que no cubra todas las aserciones de la prueba vinculada.
+
 ## 24. Cierre y archivos entregados
 
 [Repetir conclusión con alcance preciso y las condiciones que faltan. Confirmar que conteos y veredictos están reconciliados.]
@@ -267,4 +282,4 @@ Comparar modeloSQL/listado/pagos/cxc/dashboard/reportes/exportaciones por moneda
 **No declarar aprobado un sistema con P0 fallido/bloqueado/pendiente, defectos críticos/altos abiertos o cobertura esencial sin demostrar. Entregar el informe también si el resultado es Inconcluso.**
 
 
-Catálogo de esta entrega: **1702 casos / 41 grupos**, con 581 nuevos Pendiente. Mantener casos y variantes separados. Justificar Bloqueada/No aplica; informe final obligatorio aunque sea Inconcluso. Producción, indicador 0, anulación remota facturas, correo/anulaciónHKAórdenes y nueva API pública fuera de positivas.
+Catálogo de esta entrega: **1128 casos / 42 grupos**, incluidos 23 casos de pagos Pendientes. Mantener casos y variantes separados. Justificar Bloqueada/No aplica; informe final obligatorio aunque sea Inconcluso. Producción, indicador 0, anulación remota facturas, correo/anulaciónHKAórdenes y nueva API pública fuera de positivas.

@@ -1,6 +1,6 @@
-# Equivalencias propuestas para la matriz de identidad
+# Equivalencias aplicadas para la matriz de identidad
 
-Borrador de trabajo: los casos anteriores siguen vigentes en el catálogo y el Excel hasta que se actualicen ambos. Cada grupo conserva un caso por canal y tipo, con los ocho valores de identidad como datos de la prueba. La aprobación requiere comprobar los ocho valores y registrar sus resultados en la evidencia del caso; no son ocho casos del catálogo. El tipo de documento, el canal y el resultado fiscal se mantienen diferenciados.
+Los IDs anteriores se agruparon en los casos vigentes de la tabla. Cada grupo conserva un caso por canal y tipo, con los ocho valores de identidad como datos de la prueba. La aprobación requiere comprobar los ocho valores y registrar sus resultados en la evidencia del caso; no son ocho casos del catálogo. El tipo de documento, el canal y el resultado fiscal se mantienen diferenciados.
 
 | Caso que se conserva | Canal y tipo | IDs anteriores agrupados | Identidades incluidas |
 |---|---|---|---|

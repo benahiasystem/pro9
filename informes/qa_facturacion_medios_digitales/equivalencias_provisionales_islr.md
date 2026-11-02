@@ -1,8 +1,8 @@
-# Equivalencias propuestas para conceptos ISLR
+# Equivalencias aplicadas para conceptos ISLR
 
-Borrador: los 85 casos siguen activos hasta actualizar el catálogo y el Excel. Se propone conservar QA-RISLR-036 como una prueba de selección y persistencia de conceptos no salariales. Comprobar el catálogo completo y registrar el resultado por código en una tabla de evidencia del caso, sin convertir cada opción en otro caso. La selección no cambia por sí sola el porcentaje ni el sustraendo; no inferir reglas tributarias ni verificación remota del concepto. Conservar por separado las pruebas de concepto 001, cálculo, facultad, soporte, aplicación y conciliación HKA.
+Se conserva QA-RISLR-036 como una prueba de selección y persistencia de conceptos no salariales. Comprobar el catálogo completo y registrar el resultado por código en una tabla de evidencia del caso, sin convertir cada opción en otro caso. La selección no cambia por sí sola el porcentaje ni el sustraendo; no inferir reglas tributarias ni verificación remota del concepto. Conservar por separado las pruebas de concepto 001, cálculo, facultad, soporte, aplicación y conciliación HKA.
 
-| ID anterior | Caso propuesto | Código | Descripción conservada |
+| ID anterior | Caso vigente | Código | Descripción conservada |
 |---|---|---|---|
 |QA-RISLR-036|QA-RISLR-036|002|Honorarios profesionales no mercantiles (PNR)|
 |QA-RISLR-037|QA-RISLR-036|003|Honorarios profesionales no mercantiles (PNNR)|
