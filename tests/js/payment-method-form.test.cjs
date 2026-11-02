@@ -121,3 +121,50 @@ test('catalogue displays condition and credit fields from classification, even w
     assert.ok(field, 'los días de crédito siguen la naturaleza vigente')
     assert.deepEqual(form.errors, [])
 })
+
+test('HKA choices follow nature and currency and incompatible changes require a new selection', () => {
+    const options = [
+        {code:'08', name:'Efectivo', kinds:['cash'], currencies:['VES']},
+        {code:'09', name:'Divisas', kinds:['cash'], currencies:['USD']},
+        {code:'03', name:'Transferencia', kinds:['account'], currencies:[]},
+        {code:'99', name:'Otros', kinds:['cash','account','credit','unclassified'], currencies:[]},
+    ];
+    const ctx = {hkaPaymentMethods: options, form:{collection_kind:'cash',currency_type_id:'VES',hka_code:'08'}};
+    Object.defineProperty(ctx, 'compatibleHkaMethods', {get: () => component.computed.compatibleHkaMethods.call(ctx)});
+    Object.defineProperty(ctx, 'incompatibleHka', {get: () => component.computed.incompatibleHka.call(ctx)});
+    assert.deepEqual(Array.from(ctx.compatibleHkaMethods, x => x.code), ['08','99']);
+    assert.equal(ctx.incompatibleHka, false);
+    ctx.form.currency_type_id = 'USD';
+    assert.equal(ctx.incompatibleHka, true);
+    component.methods.clearIncompatibleHka.call(ctx);
+    assert.equal(ctx.form.hka_code, null);
+    assert.deepEqual(Array.from(ctx.compatibleHkaMethods, x => x.code), ['09','99']);
+    ctx.form.collection_kind = 'account';
+    assert.deepEqual(Array.from(ctx.compatibleHkaMethods, x => x.code), ['03','99']);
+    ctx.form.collection_kind = 'credit';
+    assert.deepEqual(Array.from(ctx.compatibleHkaMethods, x => x.code), ['99']);
+    assert.match(parsed.template.content, /Medio fiscal HKA/);
+    assert.match(parsed.template.content, /incompatibleHka/);
+    const index = fs.readFileSync('modules/Sale/Resources/assets/js/views/payment_method_types/index.vue', 'utf8');
+    assert.match(index, /row\.hka_name/);
+    assert.match(index, /!row\.hka_compatible/);
+});
+
+// ######## INICIO TRAZABILIDAD CONFIGURACION DEL MEDIO ########
+test('catalogue displays every configured currency and the descriptive IGTF', () => {
+    const index = compiler.parseComponent(fs.readFileSync('modules/Sale/Resources/assets/js/views/payment_method_types/index.vue', 'utf8'))
+    assert.deepEqual(compiler.compile(index.template.content).errors, [])
+    assert.match(index.template.content, /<th>Moneda<\/th>/)
+    assert.match(index.template.content, /row\.currency_type_id/)
+    assert.match(index.template.content, /<th>IGTF asociado<\/th>/)
+    const output = {}
+    vm.runInNewContext(babel.transformSync(index.script.content, {
+        configFile: false, babelrc: false, plugins: ['@babel/plugin-transform-modules-commonjs'],
+    }).code, {exports: output, require: () => ({})})
+    const label = output.default.methods.taxLabel
+    assert.equal(label({iva_rate_type_id: null}), 'Sin impuesto')
+    assert.equal(label({iva_rate_type_id: 'IGTF', iva_rate_percentage: '3.000000000000'}), 'IGTF - 3.00%')
+    assert.equal(label({iva_rate_type_id: 'IGTF', iva_rate_percentage: '3.125'}), 'IGTF - 3.125%')
+    assert.equal(label({iva_rate_type_id: 'IGTF', iva_rate_percentage: null}), 'IGTF (porcentaje no disponible)')
+})
+// ######## FIN TRAZABILIDAD CONFIGURACION DEL MEDIO ########

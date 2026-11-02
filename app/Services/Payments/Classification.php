@@ -36,10 +36,18 @@ final class Classification
             $kind = (string)$method->id === '1' ? 'cash' : (in_array((string)$method->id, ['2','3'], true) ? 'account' : 'unclassified');
             return ['catalog'=>$catalog, 'id'=>(string)$method->id, 'description'=>$method->description, 'collection_kind'=>$kind, 'cash_currency_type_id'=>null];
         }
+        // ######## INICIO TRAZABILIDAD CONFIGURACION DEL MEDIO ########
+        // A locking read observes the current catalog even after an earlier MySQL snapshot.
+        $taxId = $method->iva_rate_type_id;
+        $tax = $taxId === null ? null : $method->getConnection()->table('cat_iva_rate_types')
+            ->where('id', $taxId)->lockForUpdate()->first(['id', 'percentage']);
+        if ($taxId !== null && !$tax) self::error('payment_method_type_id', 'No se encontró el impuesto configurado para el medio de pago.');
         return ['catalog'=>$catalog, 'id'=>(string)$method->id, 'description'=>$method->description,
             'hka_code'=>$method->hka_code, 'collection_kind'=>$method->collection_kind ?? 'unclassified',
             'currency_type_id'=>$method->currency_type_id,
-            'cash_currency_type_id'=>$method->cash_currency_type_id];
+            'cash_currency_type_id'=>$method->cash_currency_type_id,
+            'iva_rate_type_id'=>$taxId, 'iva_rate_percentage'=>$tax ? (string)$tax->percentage : null];
+        // ######## FIN TRAZABILIDAD CONFIGURACION DEL MEDIO ########
     }
 
     public static function cashIds(): array

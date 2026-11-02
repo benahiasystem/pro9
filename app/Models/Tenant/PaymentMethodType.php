@@ -73,6 +73,7 @@
         protected $fillable = [
             'id',
             'description',
+            'hka_code',
             'collection_kind',
             'currency_type_id',
             'iva_rate_type_id',

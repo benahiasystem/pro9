@@ -34,7 +34,7 @@ Se retiraron las 17 filas que tenían `active = 0`.
 
 ### Formas de pago Pro9 y HKA (`payment_method_types`)
 
-La tabla operativa siembra diez IDs locales `01`–`05`, `09`–`13`. Su `hka_code char(2) NOT NULL` almacena el código HKA: `01→08`, `02→06`, `03→05`, `04→03`, `10→09`, `11→02`; los demás usan `99`. Los IDs `06`, `07` y `14`–`26` no se siembran y pueden utilizarse para métodos personalizados. El código `99` no es único y el servidor lo asigna a métodos nuevos.
+La tabla operativa siembra diez IDs locales `01`–`05`, `09`–`13`. Su `hka_code char(2) NOT NULL` almacena el código HKA: `01→08`, `02→06`, `03→05`, `04→03`, `10→09`, `11→02`; los demás usan `99`. Los IDs `06`, `07` y `14`–`26` no se siembran y pueden utilizarse para métodos personalizados. El código `99` no es único. El administrador selecciona explícitamente el medio fiscal HKA para métodos nuevos y editados; el servidor valida su compatibilidad con naturaleza y moneda. Los snapshots de cobros ya registrados conservan su código.
 
 Se retiró del estado inicial `06 — Tarjeta Internacional`; no reasignar automáticamente ese código a otro método inicial.
 

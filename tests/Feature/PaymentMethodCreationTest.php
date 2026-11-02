@@ -57,17 +57,37 @@ class PaymentMethodCreationTest extends TestCase
         Route::post('/test-finance-payment-active', [\Modules\Finance\Http\Controllers\PaymentMethodTypeController::class, 'active']);
     }
 
+    // ######## INICIO TRAZABILIDAD CONFIGURACION DEL MEDIO ########
+    public function test_listing_exposes_currency_and_configured_tax_for_all_method_kinds(): void
+    {
+        $db = DB::connection('tenant');
+        foreach ([['31', 'cash', 'VES', null], ['32', 'account', 'USD', 'IGTF'], ['33', 'credit', 'VES', null]] as [$id, $kind, $currency, $tax]) {
+            $db->table('payment_method_types')->insert(['id'=>$id, 'description'=>$kind, 'hka_code'=>'99',
+                'collection_kind'=>$kind, 'currency_type_id'=>$currency, 'iva_rate_type_id'=>$tax]);
+        }
+        $queries = [];
+        $db->listen(function ($query) use (&$queries) { $queries[] = $query->sql; });
+        $rows = collect($this->getJson('/test-payment-methods')->assertOk()->json('data'))->keyBy('id');
+        self::assertSame('VES', $rows['31']['currency_type_id']);
+        self::assertSame('USD', $rows['32']['currency_type_id']);
+        self::assertSame('IGTF', $rows['32']['iva_rate_type_id']);
+        self::assertSame('3.00', $rows['32']['iva_rate_percentage']);
+        self::assertNull($rows['33']['iva_rate_type_id']);
+        self::assertNull($rows['33']['iva_rate_percentage']);
+        self::assertCount(1, array_filter($queries, fn ($sql) => str_contains($sql, 'cat_iva_rate_types')));
+    }
+
     public function test_duplicate_code_is_rejected_without_changing_the_existing_method(): void
     {
         DB::connection('tenant')->table('payment_method_types')->insert([
             'id' => '27', 'description' => 'Original', 'hka_code' => '99', 'is_active' => false,
         ]);
 
-        $this->postJson('/test-payment-methods', ['id' => '27', 'description' => 'Duplicado', 'collection_kind'=>'account', 'currency_type_id'=>'VES'])
+        $this->postJson('/test-payment-methods', ['id' => '27', 'description' => 'Duplicado', 'collection_kind'=>'account', 'currency_type_id'=>'VES', 'hka_code'=>'99'])
             ->assertStatus(422)
             ->assertJsonPath('message.id.0', 'El código del método de pago ya existe.');
         $this->withHeaders(['Accept' => 'text/html', 'X-Requested-With' => 'XMLHttpRequest'])
-            ->post('/test-web-payment-methods', ['id' => '27', 'description' => 'Duplicado', 'collection_kind'=>'account', 'currency_type_id'=>'VES'])
+            ->post('/test-web-payment-methods', ['id' => '27', 'description' => 'Duplicado', 'collection_kind'=>'account', 'currency_type_id'=>'VES', 'hka_code'=>'99'])
             ->assertStatus(422)
             ->assertJsonPath('id.0', 'El código del método de pago ya existe.');
 
@@ -78,14 +98,14 @@ class PaymentMethodCreationTest extends TestCase
 
     public function test_new_code_can_be_created_and_existing_method_can_be_edited(): void
     {
-        $this->postJson('/test-payment-methods', ['id' => '27', 'description' => 'Nuevo', 'collection_kind'=>'account', 'currency_type_id'=>'VES'])
+        $this->postJson('/test-payment-methods', ['id' => '27', 'description' => 'Nuevo', 'collection_kind'=>'account', 'currency_type_id'=>'VES', 'hka_code'=>'99'])
             ->assertOk()->assertJsonPath('success', true);
         self::assertTrue(\App\Models\Tenant\PaymentMethodType::active()->where('id', '27')->exists());
-        $this->putJson('/test-payment-methods/27', ['id' => '27', 'description' => 'Editado', 'collection_kind'=>'account', 'currency_type_id'=>'VES'])
+        $this->putJson('/test-payment-methods/27', ['id' => '27', 'description' => 'Editado', 'collection_kind'=>'account', 'currency_type_id'=>'VES', 'hka_code'=>'99'])
             ->assertOk()->assertJsonPath('success', true);
-        $this->putJson('/test-payment-methods/27', ['id' => '28', 'description' => 'Incorrecto', 'collection_kind'=>'account', 'currency_type_id'=>'VES'])
+        $this->putJson('/test-payment-methods/27', ['id' => '28', 'description' => 'Incorrecto', 'collection_kind'=>'account', 'currency_type_id'=>'VES', 'hka_code'=>'99'])
             ->assertStatus(422)->assertJsonStructure(['message' => ['id']]);
-        $this->putJson('/test-payment-methods/28', ['id' => '28', 'description' => 'Inexistente', 'collection_kind'=>'account', 'currency_type_id'=>'VES'])
+        $this->putJson('/test-payment-methods/28', ['id' => '28', 'description' => 'Inexistente', 'collection_kind'=>'account', 'currency_type_id'=>'VES', 'hka_code'=>'99'])
             ->assertNotFound();
 
         $rows = DB::connection('tenant')->table('payment_method_types')->get();
@@ -101,21 +121,21 @@ class PaymentMethodCreationTest extends TestCase
             $id = (string) (31 + $index);
             $this->postJson('/test-payment-methods', [
                 'id' => $id, 'description' => 'Nuevo', 'collection_kind' => $kind,
-                'currency_type_id' => 'VES', 'is_active' => false,
+                'currency_type_id' => 'VES', 'hka_code' => '99', 'is_active' => false,
             ])->assertOk()->assertJsonPath('success', true);
             self::assertSame(1, DB::connection('tenant')->table('payment_method_types')->where('id', $id)->value('is_active'));
         }
         $this->postJson('/test-payment-methods', [
-            'id' => '34', 'description' => 'Sin clasificar', 'collection_kind' => 'unclassified', 'currency_type_id' => 'VES',
+            'id' => '34', 'description' => 'Sin clasificar', 'collection_kind' => 'unclassified', 'currency_type_id' => 'VES', 'hka_code' => '99',
         ])->assertStatus(422);
         self::assertFalse(DB::connection('tenant')->table('payment_method_types')->where('id', '34')->exists());
 
         $this->putJson('/test-payment-methods/31', [
-            'id' => '31', 'description' => 'Editado', 'collection_kind' => 'cash', 'currency_type_id' => 'VES', 'is_active' => false,
+            'id' => '31', 'description' => 'Editado', 'collection_kind' => 'cash', 'currency_type_id' => 'VES', 'hka_code' => '99', 'is_active' => false,
         ])->assertOk();
         self::assertSame(0, DB::connection('tenant')->table('payment_method_types')->where('id', '31')->value('is_active'));
     }
-    public function test_initial_methods_are_editable_without_changing_id_or_hka_and_cannot_be_deleted(): void
+    public function test_initial_methods_are_editable_with_an_explicit_hka_code_and_cannot_be_deleted(): void
     {
         DB::connection('tenant')->table('payment_method_types')->insert([
             'id'=>'01', 'description'=>'Efectivo', 'hka_code'=>'08', 'collection_kind'=>'cash',
@@ -138,9 +158,9 @@ class PaymentMethodCreationTest extends TestCase
         $row = DB::connection('tenant')->table('payment_method_types')->where('id', '01')->first();
         self::assertSame('USD', $row->currency_type_id);
         self::assertSame('USD', $row->cash_currency_type_id);
-        self::assertSame('08', $row->hka_code);
+        self::assertSame('99', $row->hka_code);
         $this->putJson('/test-payment-methods/01', [
-            'id'=>'01', 'description'=>'Cuenta', 'collection_kind'=>'account', 'currency_type_id'=>'VES', 'cash_currency_type_id'=>null,
+            'id'=>'01', 'description'=>'Cuenta', 'collection_kind'=>'account', 'currency_type_id'=>'VES', 'hka_code'=>'03', 'cash_currency_type_id'=>null,
         ])->assertOk()->assertJsonPath('success', true);
         self::assertSame('account', DB::connection('tenant')->table('payment_method_types')->where('id', '01')->value('collection_kind'));
         $this->deleteJson('/test-payment-methods/01')->assertJsonPath('success', false);
@@ -149,13 +169,14 @@ class PaymentMethodCreationTest extends TestCase
     public function test_retired_ids_can_be_reused_and_unclassified_methods_remain_inactive(): void
     {
         foreach (['06', '07', '14', '26'] as $id) {
-            $this->postJson('/test-payment-methods', ['id'=>$id, 'description'=>'Personalizado', 'collection_kind'=>'account', 'currency_type_id'=>'VES'])
+            $this->postJson('/test-payment-methods', ['id'=>$id, 'description'=>'Personalizado', 'collection_kind'=>'account', 'currency_type_id'=>'VES', 'hka_code'=>'99'])
                 ->assertOk()->assertJsonPath('success', true);
         }
         $this->deleteJson('/test-payment-methods/06')->assertOk()->assertJsonPath('success', true);
-        $this->putJson('/test-payment-methods/14', ['id'=>'14', 'description'=>'Pendiente', 'collection_kind'=>'unclassified', 'currency_type_id'=>'VES', 'is_active'=>false])
+        $this->putJson('/test-payment-methods/14', ['id'=>'14', 'description'=>'Pendiente', 'collection_kind'=>'unclassified', 'currency_type_id'=>'VES', 'hka_code'=>'03', 'is_active'=>false])->assertStatus(422);
+        $this->putJson('/test-payment-methods/14', ['id'=>'14', 'description'=>'Pendiente', 'collection_kind'=>'unclassified', 'currency_type_id'=>'VES', 'hka_code'=>'99', 'is_active'=>false])
             ->assertOk()->assertJsonPath('success', true);
-        $this->putJson('/test-payment-methods/14', ['id'=>'14', 'description'=>'Pendiente', 'collection_kind'=>'unclassified', 'currency_type_id'=>'VES', 'is_active'=>true])
+        $this->putJson('/test-payment-methods/14', ['id'=>'14', 'description'=>'Pendiente', 'collection_kind'=>'unclassified', 'currency_type_id'=>'VES', 'hka_code'=>'99', 'is_active'=>true])
             ->assertStatus(422);
         $this->putJson('/test-payment-methods/26', ['id'=>'26', 'description'=>'Efectivo', 'collection_kind'=>'cash', 'currency_type_id'=>null])
             ->assertStatus(422);
@@ -165,7 +186,7 @@ class PaymentMethodCreationTest extends TestCase
     {
         $this->getJson('/test-payment-tables')->assertOk()->assertJsonCount(2, 'currency_types')
             ->assertJsonPath('taxes.0.id', 'IGTF')->assertJsonPath('taxes.0.percentage', '3.00');
-        $base = ['id'=>'30', 'description'=>'Moneda', 'collection_kind'=>'account'];
+        $base = ['id'=>'30', 'description'=>'Moneda', 'collection_kind'=>'account', 'hka_code'=>'99'];
         $this->postJson('/test-payment-methods', $base)->assertStatus(422);
         $this->postJson('/test-payment-methods', $base + ['currency_type_id'=>'XXX'])->assertStatus(422);
         $this->postJson('/test-payment-methods', $base + ['currency_type_id'=>'ZZZ'])->assertStatus(422);
@@ -199,6 +220,64 @@ class PaymentMethodCreationTest extends TestCase
         self::assertSame(0, DB::connection('tenant')->table('payment_method_types')->where('id','14')->value('is_active'));
         $this->deleteJson('/test-payment-methods/01')->assertOk()->assertJsonPath('success',false);
         $this->deleteJson('/test-payment-methods/14')->assertOk()->assertJsonPath('success',true);
+    }
+
+    public function test_hka_catalog_and_validation_cover_all_families_and_currencies(): void
+    {
+        $options = $this->getJson('/test-payment-tables')->assertOk()->json('hka_payment_methods');
+        self::assertCount(19, $options);
+        self::assertSame(['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '99'], array_column($options, 'code'));
+        $base = ['id'=>'27', 'description'=>'Pago', 'collection_kind'=>'account', 'currency_type_id'=>'VES'];
+        $this->postJson('/test-payment-methods', $base)->assertStatus(422)->assertJsonStructure(['message'=>['hka_code']]);
+        foreach (['01','02','03','04','05','06','07','10','11','12','13','14','15','16','17','18','99'] as $code) {
+            $this->postJson('/test-payment-methods', $base + ['hka_code'=>$code])->assertOk();
+            DB::connection('tenant')->table('payment_method_types')->where('id','27')->delete();
+        }
+        foreach ([['cash','VES','08',true], ['cash','USD','09',true], ['cash','USD','08',false],
+            ['cash','VES','09',false], ['cash','VES','03',false], ['account','VES','08',false],
+            ['credit','VES','06',false], ['credit','USD','99',true], ['cash','USD','99',true],
+            ['account','USD','99',true], ['account','VES','20',false]] as [$kind,$currency,$code,$allowed]) {
+            $response = $this->postJson('/test-payment-methods', ['id'=>'27','description'=>'Pago',
+                'collection_kind'=>$kind,'currency_type_id'=>$currency,'hka_code'=>$code]);
+            $response->assertStatus($allowed ? 200 : 422);
+            DB::connection('tenant')->table('payment_method_types')->where('id','27')->delete();
+        }
+    }
+
+    public function test_incompatible_existing_method_warns_and_requires_correction_on_edit(): void
+    {
+        DB::connection('tenant')->table('payment_method_types')->insert([
+            'id'=>'01','description'=>'Reclasificado','hka_code'=>'08','collection_kind'=>'account',
+            'currency_type_id'=>'VES','is_active'=>true,
+        ]);
+        $this->getJson('/test-payment-methods')->assertJsonPath('data.0.hka_compatible', false)
+            ->assertJsonPath('data.0.hka_name', 'Efectivo de curso legal');
+        $input = ['id'=>'01','description'=>'Reclasificado','collection_kind'=>'account','currency_type_id'=>'VES'];
+        $this->putJson('/test-payment-methods/01', $input + ['hka_code'=>'08'])->assertStatus(422);
+        $this->putJson('/test-payment-methods/01', $input)->assertStatus(422);
+        self::assertSame('08', DB::connection('tenant')->table('payment_method_types')->where('id','01')->value('hka_code'));
+        $this->putJson('/test-payment-methods/01', $input + ['hka_code'=>'03'])->assertOk();
+        $this->getJson('/test-payment-methods')->assertJsonPath('data.0.hka_compatible', true)->assertJsonPath('data.0.hka_name', 'Transferencia');
+        $this->actingAs((new \App\Models\Tenant\User())->forceFill(['id'=>2,'type'=>'seller']));
+        $this->putJson('/test-payment-methods/01', $input + ['hka_code'=>'03'])->assertForbidden();
+        $this->postJson('/test-payment-methods', array_replace($input, ['id'=>'27','hka_code'=>'03']))->assertForbidden();
+    }
+
+    public function test_captured_payment_keeps_its_hka_code_after_catalog_edit(): void
+    {
+        $this->postJson('/test-payment-methods', ['id'=>'27','description'=>'Transferencia',
+            'collection_kind'=>'account','currency_type_id'=>'VES','hka_code'=>'03'])->assertOk();
+        $method = \App\Models\Tenant\PaymentMethodType::findOrFail('27');
+        $frozen = \App\Services\Payments\Classification::snapshot($method);
+        $document = json_decode(file_get_contents(__DIR__.'/../Fixtures/Hka/invoice.json'), true);
+        $document['payments'][0]['payment_method_snapshot'] = $frozen;
+        $this->putJson('/test-payment-methods/27', ['id'=>'27','description'=>'Pago móvil',
+            'collection_kind'=>'account','currency_type_id'=>'VES','hka_code'=>'02'])->assertOk();
+        self::assertSame('02', \App\Models\Tenant\PaymentMethodType::findOrFail('27')->hka_code);
+        self::assertSame('03', $frozen['hka_code']);
+        $payload = (new \App\Services\Fiscal\HkaPayloadBuilder())->build($document);
+        self::assertSame('03', $payload['documentoElectronico']['encabezado']['totales']['formasPago'][0]['forma']);
+        self::assertSame('02', \App\Services\Payments\Classification::snapshot(\App\Models\Tenant\PaymentMethodType::findOrFail('27'))['hka_code']);
     }
 
 }

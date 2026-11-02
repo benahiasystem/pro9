@@ -32,10 +32,20 @@
                     <div class="col-md-4">
                         <div class="form-group">
                         <label class="control-label">Moneda</label>
-                        <el-select v-model="form.currency_type_id" placeholder="Seleccione una moneda">
+                        <el-select v-model="form.currency_type_id" @change="clearIncompatibleHka" placeholder="Seleccione una moneda">
                             <el-option v-for="currency in currencyTypes" :key="currency.id" :value="currency.id" :label="currency.description + ' (' + currency.symbol + ')'" />
                         </el-select>
                         <small class="text-danger" v-if="errors.currency_type_id">{{ errors.currency_type_id[0] }}</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                        <label class="control-label">Medio fiscal HKA</label>
+                        <el-select v-model="form.hka_code" placeholder="Seleccione un medio fiscal">
+                            <el-option v-for="option in compatibleHkaMethods" :key="option.code" :value="option.code" :label="option.code + ' - ' + option.name" />
+                        </el-select>
+                        <small class="text-danger" v-if="errors.hka_code">{{ errors.hka_code[0] }}</small>
+                        <small class="text-danger" v-if="incompatibleHka">El medio fiscal no corresponde a la naturaleza o moneda. Seleccione uno compatible.</small>
                         </div>
                     </div>
                     <div class="col-md-4">
@@ -82,13 +92,27 @@
                 form: {},
                 currencyTypes: [],
                 taxes: [],
+                hkaPaymentMethods: [],
                 showTax: false,
             }
         },
         created() {
             this.initForm()
         },
+        computed: {
+            compatibleHkaMethods() {
+                return this.hkaPaymentMethods.filter(option => option.kinds.includes(this.form.collection_kind)
+                    && (!option.currencies.length || option.currencies.includes(this.form.currency_type_id)))
+            },
+            incompatibleHka() {
+                return this.hkaPaymentMethods.length > 0 && !!this.form.hka_code
+                    && !this.compatibleHkaMethods.some(option => option.code === this.form.hka_code)
+            },
+        },
         methods: {
+            clearIncompatibleHka() {
+                if (this.incompatibleHka) this.form.hka_code = null
+            },
             formatPercentage(value) {
                 const [whole, fraction = ''] = String(value).split('.')
                 return whole + '.' + fraction.replace(/0+$/, '').padEnd(2, '0')
@@ -97,6 +121,7 @@
             changeCollectionKind() {
                 this.form.is_credit = this.form.collection_kind === 'credit' ? 1 : 0
                 if (this.form.collection_kind === 'unclassified') this.form.is_active = false
+                this.clearIncompatibleHka()
             },
             initForm() {
                 this.errors = {}
@@ -106,6 +131,7 @@
                     description: null,
                     collection_kind: 'account',
                     currency_type_id: 'VES',
+                    hka_code: null,
                     iva_rate_type_id: null,
                     is_active: true,
                     is_credit: 0,
@@ -117,7 +143,8 @@
                 this.$http.get(`/${this.resource}/tables`).then(response => {
                     this.currencyTypes = response.data.currency_types
                     this.taxes = response.data.taxes
-                }).catch(() => this.$message.error('No se pudieron cargar las monedas y los impuestos'))
+                    this.hkaPaymentMethods = response.data.hka_payment_methods
+                }).catch(() => this.$message.error('No se pudieron cargar las monedas, impuestos y medios fiscales'))
                 if (this.recordId) {
                     this.$http.get(`/${this.resource}/record/${this.recordId}`)
                         .then(response => {

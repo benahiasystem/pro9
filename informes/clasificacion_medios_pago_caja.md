@@ -73,7 +73,7 @@ La clasificación y el cálculo VES/USD están disponibles desde el alta, sin co
 - Crédito: 05 y 09; no representa recepción de dinero.
 - Los IDs 06, 07 y 14–26 no se siembran y pueden usarse para métodos personalizados.
 
-Se conservan IDs, `hka_code`, disponibilidad inicial y `has_card`. Los métodos nuevos reciben HKA 99 desde el servidor. Los métodos sin clasificar no pueden activarse. Configuración y disponibilidad exigen administrador. Los métodos iniciales no pueden eliminarse.
+En la implementación inicial se conservaron IDs, `hka_code`, disponibilidad inicial y `has_card`, y el servidor asignaba HKA 99 a los métodos nuevos. Estas reglas históricas fueron sustituidas; véase «Selección del medio fiscal HKA» al final de este informe. Los métodos sin clasificar no pueden activarse. Configuración y disponibilidad exigen administrador. Los métodos iniciales no pueden eliminarse.
 
 ## Movimiento financiero
 
@@ -784,3 +784,16 @@ Posteriormente se ejecutó `emitDocument` del orquestador con el emisor de Whats
 Se corrigió en el skill de catálogos una instrucción anterior que describía un efectivo predeterminado para FullSuscription: el código vigente genera a crédito y sin cobro cuando la orden no acredita recepción. También se actualizó allí la evidencia del productor de WhatsApp. Se repitieron `CatalogNamesMigrationContractTest` (7 pruebas, 124 aserciones), `TenantMigrationDataSeederTest` (3 pruebas, 257 aserciones) y `WhatsAppDraftPricingTest` (3 pruebas, 9 aserciones); `git diff --check` pasó.
 
 Durante la prueba, una serie de seis caracteres produjo un error SQL y el formulario ocultó inicialmente su detalle. El servidor ahora valida la serie contra los cuatro caracteres del esquema, deja pasar los errores de validación como 422 y registra los errores inesperados sin exponer SQL. Las tres pantallas de compras presentan el detalle de validación y conservan el borrador; errores de servidor se muestran de forma genérica. La prueba visual con `PRUEBA` mostró «series no debe ser mayor que 4 caracteres» sin guardar otra compra. Las pruebas de serie y errores pasaron con 3 aserciones PHP y 5 pruebas JavaScript; la batería JavaScript completa pasó 584 pruebas, el lint PHP y `git diff --check` pasaron. Esta comprobación no cubre conversión de orden a crédito ni en USD desde la interfaz.
+
+
+### Selección del medio fiscal HKA
+
+El administrador selecciona el medio fiscal HKA al crear o editar un método; el listado muestra código, nombre y advertencia cuando la combinación existente no corresponde. El catálogo central admite `08` para efectivo VES, `09` para efectivo USD, `01`–`07` y `10`–`18` para bancario y `99` para cualquier naturaleza. Crédito y sin clasificar sólo admiten `99`. La descripción es libre y su correspondencia debe revisarla el administrador. Los métodos incompatibles deben corregirse al editarse; los snapshots anteriores y sus payloads no se reescriben. La regla histórica de conservar siempre el código y asignar `99` a métodos nuevos, descrita en secciones anteriores, queda sustituida.
+
+### Moneda e IGTF configurados en métodos de ingreso
+
+El listado muestra la moneda de cada método y el IGTF asociado con su porcentaje, o «Sin impuesto». La respuesta obtiene el porcentaje en la misma consulta del catálogo. Para nuevas recepciones, el snapshot del método conserva moneda configurada, identificador y porcentaje del impuesto informativo, independientemente de la moneda recibida y del IGTF fiscal efectivamente aplicado. Facturas y movimientos usan la misma captura; reintentos y aplicaciones reutilizadas conservan el snapshot de origen. Un registro anterior sin estos campos no se completa desde el catálogo actual.
+
+Las pruebas SQLite cubren el listado, distintas naturalezas y la conservación después de cambiar moneda, asociación y porcentaje. Las pruebas MySQL temporales cubren la cadena cotización → nota → factura, un reintento de factura, edición concurrente del método en ambos órdenes y una actualización concurrente del porcentaje con lectura previa. El componente Vue se verificó con su compilador y pruebas JavaScript; la visualización en navegador queda pendiente de que el usuario compile los assets.
+
+Tras el build realizado por el usuario, se recargó el listado en bbc y se comprobaron las columnas «Moneda» e «IGTF asociado»: las filas de efectivo, bancarias y de crédito mostraron VES o USD y «Sin impuesto» conforme a su configuración. No había un método con IGTF asociado en ese catálogo, por lo que su presentación con porcentaje se acredita mediante las pruebas de componente y servidor, no mediante esta revisión visual. No se modificaron métodos ni se registraron cobros.

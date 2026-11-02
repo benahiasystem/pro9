@@ -20,8 +20,13 @@
                         <th>#</th>
                         <th>Código</th>
                         <th>Descripción</th>
+                        <th>Medio fiscal HKA</th>
                         <th>Condición de pago</th>
                         <th>Naturaleza</th>
+                        <!-- ######## INICIO TRAZABILIDAD CONFIGURACION DEL MEDIO ######## -->
+                        <th>Moneda</th>
+                        <th>IGTF asociado</th>
+                        <!-- ######## FIN TRAZABILIDAD CONFIGURACION DEL MEDIO ######## -->
                         <th>Estado</th>
                         <th class="text-end">Acciones</th>
                     </tr>
@@ -31,10 +36,18 @@
                         <td>{{ index + 1 }}</td>
                         <td>{{ row.id }}</td>
                         <td>{{ row.description }}</td>
+                        <td>
+                            {{ row.hka_code }} - {{ row.hka_name || 'Código desconocido' }}
+                            <small v-if="!row.hka_compatible" class="text-danger d-block">Medio fiscal incompatible; corrija el método.</small>
+                        </td>
                         <!-- ######## INICIO CLASIFICACION DE COBROS Y CAJA ######## -->
                         <td>{{ {cash:'Contado',account:'Contado',credit:'Crédito',unclassified:'Sin clasificar'}[row.collection_kind] || 'Sin clasificar' }}</td>
                         <!-- ######## FIN CLASIFICACION DE COBROS Y CAJA ######## -->
-                        <td>{{ {cash:'Efectivo físico',account:'Bancario / electrónico',credit:'Crédito',unclassified:'Sin clasificar'}[row.collection_kind] || 'Sin clasificar' }} {{ row.cash_currency_type_id || '' }}</td>
+                        <td>{{ {cash:'Efectivo físico',account:'Bancario / electrónico',credit:'Crédito',unclassified:'Sin clasificar'}[row.collection_kind] || 'Sin clasificar' }} </td>
+                        <!-- ######## INICIO TRAZABILIDAD CONFIGURACION DEL MEDIO ######## -->
+                        <td>{{ row.currency_type_id || 'No disponible' }}</td>
+                        <td>{{ taxLabel(row) }}</td>
+                        <!-- ######## FIN TRAZABILIDAD CONFIGURACION DEL MEDIO ######## -->
                         <td>
                             <el-switch :disabled="row.collection_kind === 'unclassified'" v-model="row.is_active" @change="clickActive(row)"></el-switch>
                         </td>
@@ -94,6 +107,14 @@
             this.getData()
         },
         methods: {
+            // ######## INICIO TRAZABILIDAD CONFIGURACION DEL MEDIO ########
+            taxLabel(row) {
+                if (!row.iva_rate_type_id) return 'Sin impuesto'
+                if (row.iva_rate_percentage == null) return row.iva_rate_type_id + ' (porcentaje no disponible)'
+                const [whole, fraction = ''] = String(row.iva_rate_percentage).split('.')
+                return row.iva_rate_type_id + ' - ' + whole + '.' + fraction.replace(/0+$/, '').padEnd(2, '0') + '%'
+            },
+            // ######## FIN TRAZABILIDAD CONFIGURACION DEL MEDIO ########
             getData() {
                 this.$http.get(`/${this.resource}/records`)
                     .then(response => {

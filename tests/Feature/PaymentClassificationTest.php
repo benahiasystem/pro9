@@ -27,10 +27,12 @@ class PaymentClassificationTest extends TestCase
         DB::connection('tenant')->table('users')->insert(['id'=>1]);
         $schema->create('cat_currency_types', function (Blueprint $t) { $t->string('id')->primary(); $t->boolean('active'); });
         DB::connection('tenant')->table('cat_currency_types')->insert([['id'=>'VES','active'=>true], ['id'=>'USD','active'=>true]]);
+        $schema->create('cat_iva_rate_types', function(Blueprint $t) { $t->string('id')->primary(); $t->string('percentage'); });
+        DB::connection('tenant')->table('cat_iva_rate_types')->insert(['id'=>'IGTF','percentage'=>'3.00']);
         $schema->create('payment_method_types',function(Blueprint $t) {
             $t->string('id')->primary();$t->string('description');$t->string('hka_code')->default('99');
             $t->string('collection_kind')->default('unclassified');$t->string('cash_currency_type_id')->nullable();
-            $t->string('currency_type_id')->default('VES');
+            $t->string('currency_type_id')->default('VES');$t->string('iva_rate_type_id')->nullable();
             foreach(['is_cash','is_credit'] as $f)$t->boolean($f)->default(false);$t->boolean('is_active')->default(true);
         });
         $schema->create('cash',function(Blueprint $t) {
@@ -85,6 +87,42 @@ class PaymentClassificationTest extends TestCase
         self::assertSame('USD', Movement::row($global)['currency_type_id']);
         self::assertSame('10', Movement::row($global)['amount']);
     }
+
+    // ######## INICIO TRAZABILIDAD CONFIGURACION DEL MEDIO ########
+    public function test_receipt_and_movement_freeze_method_tax_and_currency(): void
+    {
+        $db = DB::connection('tenant');
+        $db->table('payment_method_types')->where('id','13')->update(['is_active'=>1,'iva_rate_type_id'=>'IGTF']);
+        $bank = BankAccount::create(['currency_type_id'=>'USD']);
+        $incomeId = $db->table('income')->insertGetId(['user_id'=>1,'currency_type_id'=>'VES','exchange_rate_sale'=>'10']);
+        $create = function () use ($db, $bank, $incomeId) {
+            return $db->transaction(function () use ($bank, $incomeId) {
+                $input = ['currency_type_id'=>'USD','original_amount'=>'1','exchange_rate'=>'10','date_of_payment'=>'2026-10-26'];
+                $values = \App\Services\Payments\ReceiptAmounts::forMethod('13', 'VES', '10', $input);
+                $payment = new IncomePayment(array_merge($input, $values, ['income_id'=>$incomeId,'payment_method_type_id'=>'13']));
+                $payment->save();
+                $payment->global_payment()->create(['destination_id'=>$bank->id,'destination_type'=>BankAccount::class,'user_id'=>1,'fiscal_environment'=>'demo']);
+                return $payment;
+            });
+        };
+        $first = $create();
+        self::assertSame('USD', $first->payment_method_snapshot['currency_type_id']);
+        self::assertSame('IGTF', $first->payment_method_snapshot['iva_rate_type_id']);
+        self::assertSame('3.00', $first->payment_method_snapshot['iva_rate_percentage']);
+        self::assertSame('3.00', $first->global_payment->report_context['method']['iva_rate_percentage']);
+        $db->table('cat_iva_rate_types')->where('id','IGTF')->update(['percentage'=>'4.25']);
+        $second = $create();
+        $db->table('payment_method_types')->where('id','13')->update(['currency_type_id'=>'VES','iva_rate_type_id'=>null]);
+        self::assertSame('USD', $first->fresh()->payment_method_snapshot['currency_type_id']);
+        self::assertSame('3.00', $first->fresh()->payment_method_snapshot['iva_rate_percentage']);
+        self::assertSame('3.00', $first->global_payment->fresh()->report_context['method']['iva_rate_percentage']);
+        self::assertSame('4.25', $second->fresh()->payment_method_snapshot['iva_rate_percentage']);
+        $snapshot = $db->transaction(fn () => Classification::snapshot(PaymentMethodType::query()->lockForUpdate()->findOrFail('13')));
+        self::assertSame('VES', $snapshot['currency_type_id']);
+        self::assertNull($snapshot['iva_rate_type_id']);
+        self::assertNull($snapshot['iva_rate_percentage']);
+    }
+    // ######## FIN TRAZABILIDAD CONFIGURACION DEL MEDIO ########
 
     public function test_new_receipt_rejects_an_inactive_method_or_currency(): void
     {
@@ -352,5 +390,29 @@ class PaymentClassificationTest extends TestCase
             self::assertGreaterThan(0,$textAmounts);
         } finally {unlink($path);}
     }
+    public function test_saved_receipt_keeps_hka_code_for_payload_after_method_edit(): void
+    {
+        $db = DB::connection('tenant');
+        $db->table('payment_method_types')->where('id', '13')->update(['is_active'=>1, 'hka_code'=>'03']);
+        $bank = BankAccount::create(['currency_type_id'=>'USD']);
+        $incomeId = $db->table('income')->insertGetId(['user_id'=>1, 'currency_type_id'=>'VES', 'exchange_rate_sale'=>'10']);
+        $payment = $db->transaction(function () use ($bank, $incomeId) {
+            $input = ['currency_type_id'=>'USD', 'original_amount'=>'1', 'exchange_rate'=>'10', 'date_of_payment'=>'2026-10-26'];
+            $values = \App\Services\Payments\ReceiptAmounts::forMethod('13', 'VES', '10', $input);
+            $payment = new IncomePayment(array_merge($input, $values, ['income_id'=>$incomeId, 'payment_method_type_id'=>'13']));
+            $payment->save();
+            $payment->global_payment()->create(['destination_id'=>$bank->id, 'destination_type'=>BankAccount::class, 'user_id'=>1, 'fiscal_environment'=>'demo']);
+            return $payment;
+        });
+        $db->table('payment_method_types')->where('id', '13')->update(['hka_code'=>'02']);
+        $snapshot = $payment->fresh()->payment_method_snapshot;
+        self::assertSame('03', $snapshot['hka_code']);
+        self::assertSame('02', PaymentMethodType::findOrFail('13')->hka_code);
+        $document = json_decode(file_get_contents(__DIR__.'/../Fixtures/Hka/invoice.json'), true);
+        $document['payments'][0]['payment_method_snapshot'] = $snapshot;
+        $payload = (new \App\Services\Fiscal\HkaPayloadBuilder())->build($document);
+        self::assertSame('03', $payload['documentoElectronico']['encabezado']['totales']['formasPago'][0]['forma']);
+    }
+
 }
 // ######## FIN CLASIFICACION DE COBROS Y CAJA ########

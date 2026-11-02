@@ -21,6 +21,8 @@ class PaymentMethodTypeCollection extends ResourceCollection
             /** @var \App\Models\Tenant\PaymentMethodType  $row */
             // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
             $return = $row->toArray();
+            $return['hka_name'] = \App\Services\Payments\HkaPaymentMethods::name($row->hka_code);
+            $return['hka_compatible'] = \App\Services\Payments\HkaPaymentMethods::compatible($row->hka_code, $row->collection_kind, $row->currency_type_id);
             $return['show_actions'] = true;
             $return['can_delete'] = !PaymentMethodType::isInitialPaymentMethodId($row->id);
             // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES

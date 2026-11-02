@@ -240,7 +240,7 @@ class FiscalEmissionSchemaTest extends TestCase
             self::assertCount(1, $hkaIndex);
             self::assertSame(1, (int) $hkaIndex[0]->Non_unique);
             $customMethod = \Modules\Sale\Http\Requests\PaymentMethodTypeRequest::create('/', 'POST', [
-                'id' => '27', 'description' => 'Método local de prueba', 'is_active' => 1, 'collection_kind'=>'account', 'currency_type_id'=>'VES',
+                'id' => '27', 'description' => 'Método local de prueba', 'is_active' => 1, 'collection_kind'=>'account', 'currency_type_id'=>'VES', 'hka_code'=>'99',
             ]);
             app(\Modules\Sale\Http\Controllers\PaymentMethodTypeController::class)->store($customMethod);
             self::assertSame('99', $db->table('payment_method_types')->where('id', '27')->value('hka_code'));

@@ -1528,7 +1528,7 @@ trait PaymentClassificationPersistenceCases
             'number'=>'METHOD-RACE','currency_type_id'=>'USD','initial_balance'=>'0']);
         $payment=['quotation_id'=>$quotationId,'date_of_payment'=>'2026-10-26','payment_method_type_id'=>'13',
             'payment_destination_id'=>$bank->id,'payment'=>'10','currency_type_id'=>'USD','original_amount'=>'1','exchange_rate'=>'10'];
-        $method=['id'=>'13','description'=>'Zelle','collection_kind'=>'cash','currency_type_id'=>'VES','is_active'=>1];
+        $method=['id'=>'13','description'=>'Zelle','collection_kind'=>'cash','currency_type_id'=>'VES','is_active'=>1, 'hka_code'=>'99', 'iva_rate_type_id'=>null];
         $start=function ($operation,$data,$preRead=false) use ($db) {
             $process=new \Symfony\Component\Process\Process([PHP_BINARY,dirname(__DIR__).'/Support/fiscal_payment_concurrency_worker.php']);
             $process->setInput(json_encode(['connection'=>$db->getConfig(),'document_id'=>0,'operation'=>$operation,
@@ -1589,7 +1589,7 @@ trait PaymentClassificationPersistenceCases
         $db->table('payment_method_types')->where('id','13')->update(['collection_kind'=>'account','currency_type_id'=>'USD','cash_currency_type_id'=>null]);
         $process=null; $db->beginTransaction();
         try {
-            $db->table('payment_method_types')->where('id','13')->update(['collection_kind'=>'cash','currency_type_id'=>'USD','cash_currency_type_id'=>'USD']);
+            $db->table('payment_method_types')->where('id','13')->update(['collection_kind'=>'cash','currency_type_id'=>'USD','cash_currency_type_id'=>'USD','iva_rate_type_id'=>'IGTF']);
             $process=$start('quotation-receipt',$cashPayment,true);
             $db->commit();
             self::assertTrue($finish($process)['success'] ?? false);
@@ -1600,6 +1600,8 @@ trait PaymentClassificationPersistenceCases
         $cashGlobal=\Modules\Finance\Models\GlobalPayment::query()->firstOrFail();
         self::assertSame('cash',data_get($cashGlobal->report_context,'method.collection_kind'));
         self::assertSame('USD',data_get($cashGlobal->report_context,'currency_type_id'));
+        self::assertSame('IGTF',data_get($cashGlobal->report_context,'method.iva_rate_type_id'));
+        self::assertSame('3.000000000000',data_get($cashGlobal->report_context,'method.iva_rate_percentage'));
         self::assertSame(Cash::class,$cashGlobal->destination_type);
         self::assertSame((int)$cash->id,(int)$cashGlobal->destination_id);
         // Remove only synthetic rows in this temporary database before the remaining concurrency cases.
@@ -1631,9 +1633,63 @@ trait PaymentClassificationPersistenceCases
         $saved=\Modules\Sale\Models\QuotationPayment::where('quotation_id',$quotationId)->firstOrFail();
         self::assertSame('USD',Movement::row($saved->global_payment)['currency_type_id']);
         self::assertSame('account',data_get($saved->global_payment->report_context,'method.collection_kind'));
+        self::assertSame('IGTF',$saved->payment_method_snapshot['iva_rate_type_id']);
+        self::assertSame('3.000000000000',$saved->payment_method_snapshot['iva_rate_percentage']);
+        self::assertNull($db->table('payment_method_types')->where('id','13')->value('iva_rate_type_id'));
         self::assertSame('cash',$db->table('payment_method_types')->where('id','13')->value('collection_kind'));
         self::assertSame(1,$db->table('global_payments')->count());
     }
+
+    // ######## INICIO TRAZABILIDAD CONFIGURACION DEL MEDIO ########
+    public function test_receipt_reads_tax_percentage_after_concurrent_catalog_update(): void
+    {
+        [$db,$app,$input]=$this->bootHkaFixture(false);
+        $db->table('payment_method_types')->where('id','13')->update(['is_active'=>1,'iva_rate_type_id'=>'IGTF']);
+        $quotationId=$db->table('quotations')->insertGetId([
+            'user_id'=>$input['user_id'],'external_id'=>(string)\Illuminate\Support\Str::uuid(),
+            'establishment_id'=>$input['establishment_id'],'establishment'=>json_encode($input['establishment']),
+            'fiscal_environment'=>'demo','state_type_id'=>'05','prefix'=>'COT','date_of_issue'=>'2026-10-26',
+            'time_of_issue'=>'09:00:00','customer_id'=>$input['customer_id'],'customer'=>json_encode($input['customer']),
+            'currency_type_id'=>'VES','exchange_rate_sale'=>'10','total'=>'232',
+        ]);
+        $bank=BankAccount::create(['bank_id'=>$db->table('banks')->value('id'),'description'=>'USD',
+            'number'=>'TAX-RACE','currency_type_id'=>'USD','initial_balance'=>'0']);
+        $payment=['quotation_id'=>$quotationId,'date_of_payment'=>'2026-10-26','payment_method_type_id'=>'13',
+            'payment_destination_id'=>$bank->id,'payment'=>'10','currency_type_id'=>'USD','original_amount'=>'1','exchange_rate'=>'10'];
+        $process=null;
+        $db->beginTransaction();
+        try {
+            $db->table('cat_iva_rate_types')->where('id','IGTF')->update(['percentage'=>'4.25']);
+            $process=new \Symfony\Component\Process\Process([PHP_BINARY,dirname(__DIR__).'/Support/fiscal_payment_concurrency_worker.php']);
+            $process->setInput(json_encode(['connection'=>$db->getConfig(),'document_id'=>0,'operation'=>'quotation-receipt',
+                'data'=>$payment,'pre_read'=>true],JSON_THROW_ON_ERROR));
+            $process->setTimeout(30); $process->start();
+            $deadline=microtime(true)+10;
+            while (!str_contains($process->getOutput(),"READY\n")) {
+                if (!$process->isRunning() || microtime(true)>$deadline) self::fail('No inició el proceso: '.$process->getErrorOutput());
+                usleep(10000);
+            }
+            self::assertSame(1,preg_match('/LOCK_TEST_CONNECTION=(\d+)/',$process->getErrorOutput(),$match));
+            $control=$this->capsule->getConnection('control');
+            do {
+                $query=$control->selectOne('SELECT COMMAND, INFO FROM information_schema.processlist WHERE ID = ?',[(int)$match[1]]);
+                $sql=strtolower($query->INFO ?? '');
+                if (($query->COMMAND ?? null)==='Execute' && str_contains($sql,'cat_iva_rate_types') && str_contains($sql,'for update')) break;
+                if (!$process->isRunning() || microtime(true)>$deadline) self::fail('No esperó el bloqueo del impuesto: '.$process->getErrorOutput().$process->getOutput());
+                usleep(10000);
+            } while (true);
+            $db->commit();
+            self::assertSame(0,$process->wait(),$process->getErrorOutput().$process->getOutput());
+            self::assertTrue(json_decode(substr($process->getOutput(),strlen("READY\n")),true,512,JSON_THROW_ON_ERROR)['success']);
+        } finally {
+            if ($db->transactionLevel()) $db->rollBack();
+            if ($process && $process->isRunning()) $process->stop();
+        }
+        $receipt=\Modules\Sale\Models\QuotationPayment::where('quotation_id',$quotationId)->firstOrFail();
+        self::assertSame('4.250000000000',$receipt->payment_method_snapshot['iva_rate_percentage']);
+        self::assertSame('4.250000000000',$receipt->global_payment->report_context['method']['iva_rate_percentage']);
+    }
+    // ######## FIN TRAZABILIDAD CONFIGURACION DEL MEDIO ########
 
     public function test_quotation_and_technical_service_limit_the_exact_applied_receipt(): void
     {
@@ -2324,7 +2380,7 @@ trait PaymentClassificationPersistenceCases
     {
         [$db,$app,$input]=$this->bootHkaFixture(false);
         $db->table('configurations')->update(['auto_send_hka'=>false]);
-        $db->table('payment_method_types')->where('id','10')->update(['is_active'=>1,'collection_kind'=>'account','currency_type_id'=>'USD','cash_currency_type_id'=>null,'is_cash'=>0]);
+        $db->table('payment_method_types')->where('id','10')->update(['is_active'=>1,'collection_kind'=>'account','currency_type_id'=>'USD','cash_currency_type_id'=>null,'is_cash'=>0,'iva_rate_type_id'=>'IGTF']);
         $cash=Cash::create(['user_id'=>$input['user_id'],'state'=>true,'date_opening'=>'2026-10-26','time_opening'=>'09:00:00','beginning_balance'=>'0']);
         $db->transaction(fn()=>CashLedger::open($cash,[]));
         $quotationId=$db->table('quotations')->insertGetId([
@@ -2342,6 +2398,8 @@ trait PaymentClassificationPersistenceCases
         $quotationController=new \Modules\Sale\Http\Controllers\QuotationPaymentController();
         $quotationController->store($request);
         $source=\Modules\Sale\Models\QuotationPayment::where('quotation_id',$quotationId)->firstOrFail();
+        self::assertSame('IGTF', $source->payment_method_snapshot['iva_rate_type_id']);
+        self::assertSame('3.000000000000', $source->payment_method_snapshot['iva_rate_percentage']);
         $row=\App\Http\Resources\Tenant\QuotationResource::getTransformPayments(collect([$source]))->first();
         self::assertSame('10',$row['payment_method_type_id']);
         $db->table('quotations')->where('id',$quotationId)->update(['payment_method_type_id'=>'09']);
@@ -2376,7 +2434,7 @@ trait PaymentClassificationPersistenceCases
         $app->instance(\Illuminate\Contracts\Routing\UrlGenerator::class,$url);
         $controller=$this->getMockBuilder(\App\Http\Controllers\Tenant\SaleNoteController::class)->onlyMethods(['createPdf'])->getMock();
         $input['exchange_rate_sale']='10';
-        $db->table('payment_method_types')->where('id','10')->update(['collection_kind'=>'cash','currency_type_id'=>'VES','cash_currency_type_id'=>'VES','is_cash'=>1,'description'=>'Cambio posterior']);
+        $db->table('payment_method_types')->where('id','10')->update(['collection_kind'=>'cash','currency_type_id'=>'VES','cash_currency_type_id'=>'VES','is_cash'=>1,'description'=>'Cambio posterior','iva_rate_type_id'=>null]);
         $saleInput=array_replace($input,['id'=>null,'quotation_id'=>$quotationId,'series'=>'NV01','document_type_id'=>'80','prefix'=>'NV','payments'=>[$row]]);
         $missingReceipt=$saleInput;
         $missingReceipt['payments']=[];
@@ -2406,6 +2464,8 @@ trait PaymentClassificationPersistenceCases
         $note=\App\Models\Tenant\SaleNote::findOrFail($result['data']['id']);
         $applied=$note->payments()->firstOrFail();
         self::assertSame(\Modules\Sale\Models\QuotationPayment::class,$applied->payment_method_snapshot['receipt_origin']['type']);
+        self::assertSame('IGTF',$applied->payment_method_snapshot['iva_rate_type_id']);
+        self::assertSame('3.000000000000',$applied->payment_method_snapshot['iva_rate_percentage']);
         self::assertSame('10',$applied->payment_method_type_id);
         self::assertSame('USD',$applied->currency_type_id);
         self::assertSame('5',$applied->original_amount);
@@ -2450,6 +2510,8 @@ trait PaymentClassificationPersistenceCases
         $invoicePayment=$document->payments()->firstOrFail();
         self::assertSame(\App\Models\Tenant\SaleNotePayment::class,$invoicePayment->payment_method_snapshot['receipt_origin']['type']);
         self::assertSame($source->payment_method_snapshot['description'],$invoicePayment->payment_method_snapshot['description']);
+        self::assertSame('IGTF',$invoicePayment->payment_method_snapshot['iva_rate_type_id']);
+        self::assertSame('3.000000000000',$invoicePayment->payment_method_snapshot['iva_rate_percentage']);
         self::assertSame('10',$invoicePayment->payment_method_type_id);
         self::assertSame('5',$invoicePayment->original_amount);
         self::assertSame('50',$invoicePayment->payment);
@@ -4597,12 +4659,17 @@ trait PaymentClassificationPersistenceCases
             self::assertArrayHasKey('currency_type_id', $expected->errors());
         }
         self::assertSame(1,$db->table('global_payments')->count());
-        $db->table('payment_method_types')->where('id','13')->update(['is_active'=>1]);
+        $db->table('payment_method_types')->where('id','13')->update(['is_active'=>1,'iva_rate_type_id'=>'IGTF']);
         $row['payment_method_type_id']='13';
         $bank=\App\Services\Fiscal\FiscalDocumentPersistence::payment($document,$row);
         self::assertSame('USD',$bank->payment_method_snapshot['currency_type_id']);
-        $db->table('payment_method_types')->where('id','13')->update(['currency_type_id'=>'VES']);
+        self::assertSame('IGTF',$bank->payment_method_snapshot['iva_rate_type_id']);
+        self::assertSame('3.000000000000',$bank->payment_method_snapshot['iva_rate_percentage']);
+        self::assertSame('3.000000000000',$bank->global_payment->report_context['method']['iva_rate_percentage']);
+        $db->table('payment_method_types')->where('id','13')->update(['currency_type_id'=>'VES','iva_rate_type_id'=>null]);
         self::assertSame($bank->id,\App\Services\Fiscal\FiscalDocumentPersistence::payment($document,$row)->id);
+        self::assertSame('IGTF',$bank->fresh()->payment_method_snapshot['iva_rate_type_id']);
+        self::assertSame('3.000000000000',$bank->fresh()->payment_method_snapshot['iva_rate_percentage']);
         self::assertSame(2,$db->table('global_payments')->count());
         $report=CashLedger::report($cash);
         self::assertSame('1',$report['balances_by_currency']['USD']['final_balance']);self::assertSame('0',$report['balances_by_currency']['VES']['final_balance']);

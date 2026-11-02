@@ -30,7 +30,7 @@ class PaymentMethodTypeController extends Controller
 
     private function methodInput(PaymentMethodTypeRequest $request): array
     {
-        $fields=['id','description','number_days','is_active'];
+        $fields=['id','description','number_days','is_active','hka_code'];
         $fields=array_merge($fields,['collection_kind','currency_type_id','iva_rate_type_id']);
         $input = $request->only($fields);
         $input['cash_currency_type_id'] = $request->input('collection_kind') === 'cash' ? $request->input('currency_type_id') : null;
@@ -44,6 +44,7 @@ class PaymentMethodTypeController extends Controller
     {
         $db = \Illuminate\Support\Facades\DB::connection('tenant');
         return [
+            'hka_payment_methods' => \App\Services\Payments\HkaPaymentMethods::options(),
             'currency_types' => $db->table('cat_currency_types')->where('active', 1)->orderBy('id')->get(['id', 'description', 'symbol']),
             'taxes' => $db->table('cat_iva_rate_types')->where('id', 'IGTF')->where('tax_kind', 'IGTF')->get(['id', 'percentage']),
         ];
@@ -52,7 +53,11 @@ class PaymentMethodTypeController extends Controller
 
     public function records(Request $request)
     {
-        $records = PaymentMethodType::get();
+        // ######## INICIO TRAZABILIDAD CONFIGURACION DEL MEDIO ########
+        $records = PaymentMethodType::query()
+            ->leftJoin('cat_iva_rate_types as method_tax', 'method_tax.id', '=', 'payment_method_types.iva_rate_type_id')
+            ->get(['payment_method_types.*', 'method_tax.percentage as iva_rate_percentage']);
+        // ######## FIN TRAZABILIDAD CONFIGURACION DEL MEDIO ########
 
         return new PaymentMethodTypeCollection($records);
     }
@@ -62,7 +67,9 @@ class PaymentMethodTypeController extends Controller
     {
         $record = PaymentMethodType::findOrFail($id);
 
-        return $record->toArray();
+        return $record->toArray() + [
+            'hka_compatible' => \App\Services\Payments\HkaPaymentMethods::compatible($record->hka_code, $record->collection_kind, $record->currency_type_id),
+        ];
     }
 
     public function store(PaymentMethodTypeRequest $request)
@@ -71,7 +78,6 @@ class PaymentMethodTypeController extends Controller
         $record = new PaymentMethodType();
         $record->fill($this->methodInput($request));
         $record->is_active = true;
-        $record->hka_code = '99';
         $record->save();
 
         return ['success' => true, 'message' => 'Método de pago registrado con éxito'];

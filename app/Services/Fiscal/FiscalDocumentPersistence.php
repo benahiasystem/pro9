@@ -206,8 +206,9 @@ final class FiscalDocumentPersistence
                 $input['exchange_rate_source'] = $receiptOrigin['exchange_rate_source'];
                 $input['exchange_rate_date'] = $receiptOrigin['exchange_rate_date'];
             }
+            $lockedMethod = null;
             if (!$existing && !$receiptOrigin) {
-                \App\Services\Payments\MethodCurrency::validateNew($input['payment_method_type_id'] ?? null, (string)$document->currency_type_id, $input, $document->getConnection());
+                $lockedMethod = \App\Services\Payments\MethodCurrency::validateNew($input['payment_method_type_id'] ?? null, (string)$document->currency_type_id, $input, $document->getConnection());
             }
             // ######## FIN MONEDA DEL MEDIO DE COBRO ########
             $date = \Carbon\Carbon::parse($input['date_of_payment'] ?? now())->format('Y-m-d');
@@ -262,7 +263,7 @@ final class FiscalDocumentPersistence
             }
             if (!$initial && !FiscalNote::ordinary($document) && D::readRequired($values, 'tax_amount')->isPositive() && \App\Services\SpecialTaxRegimePolicy::applies($document)) FiscalAmounts::error('payment', 'El IGTF posterior requiere una nota vinculada a régimen especial; ese flujo todavía no está habilitado.');
             if (!$initial && !FiscalNote::ordinary($document) && D::readRequired($values, 'tax_amount')->isPositive() && \App\Services\ThirdPartyInvoicePolicy::isThirdParty($document)) FiscalAmounts::error('payment', 'El IGTF de un cobro posterior requiere una nota por cuenta de terceros; ese flujo todavía no está habilitado.');
-            $method = PaymentMethodType::findOrFail($input['payment_method_type_id']);
+            $method = $lockedMethod ?? PaymentMethodType::findOrFail($input['payment_method_type_id']);
             if ($document->document_type_id === '07') FiscalAmounts::error('document','Las NC no reciben cobros; utilice Registrar devolución.');
             // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
             $balance=$document->exactBalance(true);
@@ -291,7 +292,11 @@ final class FiscalDocumentPersistence
             $context = $document->getConnection()->getSchemaBuilder()->hasColumn('document_payments', 'fiscal_context')
                 ? ['fiscal_context'=>['issuer'=>$issuer, 'buyer'=>$buyer, 'decision'=>$decision, 'date'=>$date]] : [];
             $payment = $document->payments()->create($values + $fields + $context + [
-                'operation_key' => $key, 'payment_method_snapshot' => $method->only(['id','description','hka_code','collection_kind','currency_type_id','cash_currency_type_id','is_cash','is_credit']),
+                // ######## INICIO TRAZABILIDAD CONFIGURACION DEL MEDIO ########
+                'operation_key' => $key, 'payment_method_snapshot' => $receiptOrigin
+                    ? ($receiptOrigin['method_snapshot'] ?? $method->only(['id','description','hka_code','collection_kind','currency_type_id','cash_currency_type_id','is_cash','is_credit']))
+                    : (\App\Services\Payments\Classification::snapshot($method) + $method->only(['is_cash','is_credit'])),
+                // ######## FIN TRAZABILIDAD CONFIGURACION DEL MEDIO ########
                 ]);
             if ($receiptOrigin) {
                 if (D::readRequired($values,'tax_amount')->isPositive()) FiscalAmounts::error('source_sale_note_payment_id','La reutilización de un cobro no genera otro IGTF.');
