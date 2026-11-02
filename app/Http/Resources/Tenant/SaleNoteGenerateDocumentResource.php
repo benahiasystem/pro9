@@ -44,8 +44,15 @@ class SaleNoteGenerateDocumentResource extends JsonResource
                 'payment_method_type_id' => $row->payment_method_type_id,
                 'reference' => $row->reference,
                 'payment' => $row->payment,
+                'payment_method_snapshot' => $row->payment_method_snapshot,
+                'currency_type_id' => $row->currency_type_id,
+                'original_amount' => $row->original_amount,
+                'exchange_rate' => $row->exchange_rate,
+                'exchange_rate_source' => $row->exchange_rate_source,
+                'exchange_rate_date' => $row->exchange_rate_date ? $row->exchange_rate_date->format('Y-m-d') : null,
                 'payment_method_type' => $row->payment_method_type,
-                'payment_destination_id' => ($row->global_payment) ? ($row->global_payment->type_record == 'cash' ? 'cash':$row->global_payment->destination_id):null,
+                'payment_destination_id' => ($row->global_payment) ? ($row->global_payment->type_record == 'cash' ? 'cash':$row->global_payment->destination_id):data_get($row->payment_method_snapshot, 'receipt_origin.destination_id'),
+                'payment_destination_description' => \App\Services\Payments\ReceiptPresentation::destination($row),
                 'payment_filename' => ($row->payment_file) ? $row->payment_file->filename:null,
             ];
         });

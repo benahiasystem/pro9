@@ -40,6 +40,7 @@ function context() {
             return {data: {success: true, data: {id: 42}}};
         }},
         $eventHub: {$emit() {}},
+        ensureFiscalPaymentsReady: async () => true,
     };
     for (const [name, method] of Object.entries(component.methods)) ctx[name] = method.bind(ctx);
     for (const name of ['setLocalStorageIndex', 'setFormPosLocalStorage', 'asignPlateNumberToItems',

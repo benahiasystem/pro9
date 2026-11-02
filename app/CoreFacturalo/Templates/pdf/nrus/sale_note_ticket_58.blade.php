@@ -342,7 +342,7 @@
         $payment = 0;
     @endphp
     @foreach($payments as $row)
-        <tr><td>- {{ $row->date_of_payment->format('d/m/Y') }} - {{ $row->payment_method_type->description }} - {{ $row->reference ? $row->reference.' - ':'' }} {{ $document->currency_type->symbol }} {{ $row->payment + $row->change }}</td></tr>
+        <tr><td>- {{ $row->date_of_payment->format('d/m/Y') }} - @include('pdf.partials.sale_note_receipt', ['row' => $row, 'document' => $document])</td></tr>
         @php
             $payment += (float) $row->payment;
         @endphp

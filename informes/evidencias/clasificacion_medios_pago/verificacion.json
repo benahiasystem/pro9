@@ -17,6 +17,15 @@
   },
   "scope": "Exclusivamente instalaciones nuevas; clasificación y caja VES/USD desde consolidado y semillas. Sin comando de actualización ni infraestructura de activación/históricos añadida para este cambio.",
   "checks": {
+    "regression_current_2026_10_30": {
+      "status": "passed",
+      "mysql_tests": 10,
+      "mysql_assertions": 266,
+      "javascript_tests": 131,
+      "tracked_php_lint_files": 182,
+      "tracked_vue_sources_checked": 49,
+      "scope": "MySQL temporal: API de restaurante, clasificación y moneda concurrentes, cotización y copia, pedido, vuelto, caja y reportes. JavaScript: clasificación, destinos, moneda, cotizaciones, pedidos, Hotel, suscripciones y traslados. La ejecución no prueba clientes externos ni todos los recorridos visuales."
+    },
     "classification_feature": {
       "tests": 9,
       "assertions": 35,
@@ -97,6 +106,118 @@
     "php_lint": {
       "files": 73,
       "errors": 0
+    },
+    "http_payments_2026_10_29": {
+      "status": "passed",
+      "tests": 1,
+      "assertions": 120,
+      "scope": "Kernel y rutas reales con sesión, CSRF y MySQL temporal: préstamos, ingresos, cotizaciones, creación y edición de contratos, servicio técnico en ambos sentidos VES/USD, productos de Hotel, nota de venta y factura; adjunto y reintento de factura. No acredita frontend compilado ni canales restantes. Incluye listado HTTP de préstamos con filas. Rechaza importes cero y negativos en préstamos. Finalización HTTP de alojamiento tras cobro bancario: no duplica movimientos. Catálogo HTTP de Hotel con 01 bancario USD y 04 efectivo VES."
+    },
+    "loan_form_request_2026_10_29": {
+      "status": "passed",
+      "tests": 1,
+      "assertions": 10,
+      "scope": "Ruta de prueba con FormRequest real; método efectivo/inactivo y destino ausente."
+    },
+    "classified_cash_registry_2026_10_29": {
+      "status": "passed",
+      "tests": 2,
+      "assertions": 57,
+      "scope": "Registro, existencia de constructores y vistas, y XLSX; no sustituye recorridos HTTP de cada reporte."
+    },
+    "mysql_receipt_reuse_concurrency_2026_10_29": {
+      "status": "passed",
+      "tests": 5,
+      "assertions": 112,
+      "scope": "Reutilización de cobros de cotización y servicio técnico; aplicación concurrente y serialización de pagos, IGTF y retenciones."
+    },
+    "modified_tracked_php_lint_2026_10_29": {
+      "status": "passed",
+      "files": 176
+    },
+    "mysql_purchase_revalidation_2026_10_29": {
+      "status": "passed",
+      "tests": 2,
+      "assertions": 16,
+      "scope": "Importación y edición de compras tras reclasificar el método."
+    },
+    "browser_loan_2026_10_29": {
+      "status": "passed",
+      "scope": "Cliente descartable bbc.localhost: listado, validación de importe cero, método 01 reclasificado como bancario USD y pago en VES con cuenta VES; destino histórico preservado al restaurar el catálogo. No prueba todos los errores."
+    },
+    "hotel_checkin_format_2026_10_29": {
+      "status": "passed",
+      "tests": 7,
+      "scope": "Pruebas de componentes Vue; check-in y cierre también comprobados en navegador con assets compilados."
+    },
+    "hotel_order_mysql_2026_10_29": {
+      "status": "passed",
+      "tests": 4,
+      "assertions": 47,
+      "scope": "Hotel: reintentos, reutilización y moneda; anticipos de pedidos y generación de factura."
+    },
+    "hotel_currency_js_2026_10_29": {
+      "status": "passed",
+      "tests": 82,
+      "scope": "Componentes de Hotel, clasificación, destinos y moneda recibida."
+    },
+    "browser_hotel_checkout_2026_10_29": {
+      "status": "passed",
+      "scope": "bbc.localhost: check-in con deuda VES, checkout NV01-3 con Zelle USD 1 a tasa 100 y cuenta USD; saldo cero y caja física VES/USD sin incremento. Caja cerrada y Zelle restaurado inactivo."
+    },
+    "garage_visual_2026_10_29": {
+      "status": "passed",
+      "scope": "bbc.localhost: método 01 reclasificado como bancario USD, cuenta USD, tasa 100, USD 5 recibidos y Bs. 500 aplicados; NV01-4 conservada al restaurar catálogo, caja física cero y caja cerrada."
+    },
+    "pos_summary_2026_10_29": {
+      "status": "passed",
+      "tests": 38,
+      "scope": "POS: exceso sin efectivo, vuelto por moneda recibida, órdenes de asignación y centavos; verificación visual con efectivo USD en bbc.localhost."
+    },
+    "mysql_change_2026_10_30": {
+      "status": "passed",
+      "tests": 2,
+      "assertions": 22,
+      "scope": "Vuelto de efectivo en monedas distintas y rechazo de vuelto no expresable en centavos."
+    },
+    "browser_cross_currency_change_2026_10_30": {
+      "status": "passed",
+      "scope": "POS bbc.localhost: Bs. 100, USD 2 recibidos, tasa 100 y vuelto USD 1; caja quedó con USD 1 y se cerró."
+    },
+    "order_purchase_classified_defaults_2026_10_30": {
+      "status": "passed",
+      "tests": 60,
+      "scope": "Componentes de conversión de pedidos y compras: efectivo activo de moneda documental, selección vacía sin coincidencia, clasificación y disponibilidad independientes de flags antiguos, retenciones y preservación de abonos. Navegador: compra propone efectivo VES y muestra métodos de recepción activos; preparación de comprobante desde pedido propone efectivo VES, sin emitirlo."
+    },
+    "quotation_duplicate_conversion_2026_10_30": {
+      "status": "passed",
+      "tests": 1,
+      "assertions": 34,
+      "scope": "MySQL temporal: método 10 bancario USD, conversión a nota y factura, reclasificación y rechazo del segundo intento de aplicar el mismo cobro, sin nota ni movimiento duplicados."
+    },
+    "restaurant_document_api_2026_10_30": {
+      "status": "passed",
+      "tests": 2,
+      "assertions": 50,
+      "scope": "MySQL temporal: API de nota y middleware/controlador de factura; rechazo de PEN, moneda o método inactivo, cuenta inactiva o incompatible y omisión de moneda USD; rollback de cliente, cobro bancario USD y efectivo VES con IDs reclasificados, snapshot. PDF de nota sustituido."
+    },
+    "restaurant_credit_receipt_2026_10_30": {
+      "status": "passed",
+      "tests": 1,
+      "assertions": 23,
+      "scope": "MySQL temporal: controladores de caja de restaurante y API, factura a crédito, método 01 bancario USD, reintentos concurrentes con lecturas previas, reclasificación y cierre sin sumar banco al efectivo. No acredita pedido visual de Mozo."
+    },
+    "subscription_order_receipt_2026_10_30": {
+      "status": "passed",
+      "tests": 1,
+      "assertions": 31,
+      "scope": "MySQL temporal: controladores reales de orden y factura; factura a crédito sin cobro, reintento, rollback con fallo simulado, rechazo de cuenta VES, cobro bancario USD, snapshot y bloqueo de emisión sin solicitudes HTTP. PDF fiscal A4 no disponible sin confirmación."
+    },
+    "sale_note_change_history_2026_10_30": {
+      "status": "passed",
+      "tests": 1,
+      "assertions": 20,
+      "scope": "MySQL temporal: bruto y vuelto desde snapshot en historial, recurso de edición y modelo; sin inferencia en registros antiguos. Navegador: historial y edición de NV01-5 muestran USD 2 recibidos y USD 1 de vuelto; edición muestra Caja histórica sin atribuirla al turno actual. EDIT-CODEX quedó cerrada con saldo cero."
     }
   },
   "fiscal_regression_revalidated_cases": [
@@ -138,10 +259,13 @@
     "app/Models/Tenant/ModelTenant.php": "bd38c15b9508d912fb54d9de527fecfdb27ddb964918e71ee7530196609bac1b",
     "app/Services/Payments/Movement.php": "6d717e3912fc9d0becde3ac6a3e9509e310f46efa24fffd993622d5af2bcc77d",
     "app/Services/Payments/ReceiptDestination.php": "af3d5c5aef97cc7b97214921a2fe8f9e345e54f02ea7830ae09689e68013fed0",
+    "app/Services/Payments/CashPaymentLink.php": "ee7b55996d1069f08c6ccad46fcf7885bcd57ff6fb615c094ba61c5d9c252819",
+    "app/Http/Controllers/Tenant/DocumentController.php": "c360e2ca979c0e0b40379c0ba8d8ede53bd35a54f5218c774851e4af44b425da",
     "app/Http/Controllers/Tenant/SaleNoteController.php": "6eb3115d7302a76d7612036503245c3fecdcabf979f5c0a29192d766affa21c2",
     "app/Support/Exact/TenderAllocation.php": "e5d4d9e63a127f1c672605976850f4eb7c6592ff3438194924dcc4bc079f9ba2",
-    "tests/Support/PaymentClassificationPersistenceCases.php": "fff156134295fb8407be65309cad24ff56a22e3b5762ddbf826bbb283fcee483",
-    "tests/Feature/PaymentClassificationTest.php": "2ccb1532bbd0ba9f1c337e069f45c69a17e4de4c91547427bbf7a130206e9b93",
+    "tests/Support/PaymentClassificationPersistenceCases.php": "237c924fa8b27011a6df372ccc83fdb414d04e25253398321c1fe70d1bc3c628",
+    "tests/Support/fiscal_payment_concurrency_worker.php": "eca3b637b16f355c95f69b640aae00f3136c85dff5b45bd64463b542370b0a00",
+    "tests/Feature/PaymentClassificationTest.php": "bdf4801cc5b050e976916490be5a7e065d5a7c64ac93b3fbd92986be9f6238f0",
     "tests/Unit/TenantMigrationDataSeederTest.php": "e788121bd2d237732307d3676c9e775e04a08d413b3f0ef5189ad5cfc7d139bd"
   }
 }

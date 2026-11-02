@@ -18,7 +18,7 @@
     use App\Models\Tenant\Series;
     use App\Services\SeriesResolver;
     use App\Models\Tenant\User;
-    use Auth;
+    use Illuminate\Support\Facades\Auth;
     use Carbon\Carbon;
     use Hyn\Tenancy\Traits\UsesTenantConnection;
     use Illuminate\Database\Eloquent\Builder;
@@ -206,15 +206,12 @@
             $date = strtolower($date);
             return $dates[$date] ?? ucfirst($date);
         }
-        public static function setSaleNote(self $plan)
+        public static function setSaleNote(self $plan, ?SaleNoteController $saleNoteController = null)
         {
             $qtyPeriods = (int)$plan->getQuantityPeriod();
             if ($qtyPeriods < 1) return null;
-            $notas = $plan->sale_notes;
-            // Solo se toma en cuenta cuando no tiene notas de venta.
-            // if (strlen($notas) > 2) return null;
-
             $typerPeriod = $plan->getCatPeriod();
+            if (!$typerPeriod) throw \Illuminate\Validation\ValidationException::withMessages(['cat_period_id'=>'Seleccione un período válido para generar las notas.']);
 
             $parent = $plan->parent_customer;
             $child = $plan->children_customer;
@@ -240,6 +237,7 @@
                 'establishment_id' => $stablisment->id,
                 'document_type_id' => '80',
             ]), null)->first();
+            if (!$serie) throw \Illuminate\Validation\ValidationException::withMessages(['series_id'=>'Configure una serie de notas de venta para la sucursal.']);
             $ids = [];
             $time_of_issue = Carbon::now()->format('H:m:s');
             for ($i = 0; $i < $qtyPeriods; $i++) {
@@ -268,7 +266,7 @@
                 $iut = $item;
                 $data = [
                     'customer_id' => $plan->parent_customer_id,
-                    'customer' => $customer,
+                    'customer' => json_decode(json_encode($customer, JSON_THROW_ON_ERROR), true, 512, JSON_THROW_ON_ERROR),
                     'exchange_rate_sale' => $plan->getExchangeRate(),
                     'currency_type_id' => $plan->currency_type_id,
                     'date_of_issue' => $date_of_issue->format('Y-m-d'),
@@ -318,8 +316,11 @@
                 $request->merge($data);
 
                 // app/Http/Controllers/Tenant/SaleNoteController.php store
-                $saleNoteController = new SaleNoteController();
+                $saleNoteController = $saleNoteController ?? app(SaleNoteController::class);
                 $saleNoteSaved = $saleNoteController->store($request);
+                if (empty($saleNoteSaved['success']) || empty($saleNoteSaved['data']['id'])) {
+                    throw \Illuminate\Validation\ValidationException::withMessages(['sale_notes'=>$saleNoteSaved['message'] ?? 'No se pudo generar la nota de venta de la suscripción.']);
+                }
                 if (isset($saleNoteSaved['data']) && isset($saleNoteSaved['data']['id'])) {
                     $ids[] = (int)$saleNoteSaved['data']['id'];
                     $updateCustomerSaleNote = SaleNote::find((int)$saleNoteSaved['data']['id']);
@@ -366,15 +367,20 @@
 
         public function getExchangeRate()
         {
-            if (empty($this->exchange_rate_sale)) {
-                $date = Carbon::now()->format('Y-m-d');
-                $rate = ExchangeRate::where([
-                    'date' => $date
-                ])->first();
-                if ( !empty($rate)) return $rate->sale;
-                return 0;
+            // ######## INICIO TASA DE MATRICULA ########
+            $rate = $this->exchange_rate_sale;
+            if ($rate === null || \App\Support\Exact\Decimal::of($rate)->isZero()) {
+                $rate = ExchangeRate::where('date', Carbon::now()->format('Y-m-d'))->value('sale');
             }
-            return $this->exchange_rate_sale;
+            if ($rate === null) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['exchange_rate_sale'=>'Indique una tasa documental positiva en VES por USD.']);
+            }
+            $rate = \App\Support\Exact\Decimal::input($rate, 'exchange_rate_sale', 8, 10);
+            if (!\App\Support\Exact\Decimal::of($rate)->isPositive()) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['exchange_rate_sale'=>'Indique una tasa documental positiva en VES por USD.']);
+            }
+            return $rate;
+            // ######## FIN TASA DE MATRICULA ########
         }
 
         public function getCollectionData($withDocuments = false)

@@ -40,7 +40,6 @@ class MovementController extends Controller
     {
         ini_set('max_execution_time', 0);
         $records = $this->getRecords($request->all(), GlobalPayment::class);
-        $records->orderBy('id');
 
         if($request->has('paginate')){
             return new MovementCollection($records->paginate(1000));
@@ -85,14 +84,17 @@ class MovementController extends Controller
                 /** @var \Illuminate\Database\Eloquent\Builder  $records */
 
                 return $records->whereDestinationType(Cash::class)
-                                ->where('destination_id', $cash->id)->latest();
+                                ->where('destination_id', $cash->id)->orderBy('id');
 
             }
 
 
         }
         /** @var \Illuminate\Database\Eloquent\Builder  $records */
-        return $records->latest();
+        // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+        // El saldo acumulado sigue el orden estable de registro de los movimientos.
+        return $records->orderBy('id');
+        // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
     }
 
 
@@ -100,9 +102,11 @@ class MovementController extends Controller
 
         $company = Company::first();
         $establishment = ($request->establishment_id) ? Establishment::findOrFail($request->establishment_id) : auth()->user()->establishment;
-        $records = $this->getRecords($request->all(), GlobalPayment::class)->get();
-
-        $pdf = PDF::loadView('finance::movements.report_pdf', compact("records", "company", "establishment"))->setPaper('a4', 'landscape');;
+        // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+        $globals = $this->getRecords($request->all(), GlobalPayment::class)->get();
+        $records = (new MovementCollection($globals))->toArray(\Illuminate\Http\Request::create('/', 'GET', ['page' => 1]));
+        $pdf = PDF::loadView('finance::movements.new_report_pdf', compact("records", "company", "establishment"))->setPaper('a4', 'landscape');
+        // ######## FIN MONEDA DEL MEDIO DE COBRO ########
 
                 $filename = 'Reporte_Movimientos_'.date('YmdHis');
 

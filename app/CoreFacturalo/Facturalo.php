@@ -161,8 +161,16 @@ class Facturalo
                 $this->document = Document::find($document->id);
                 break;
             case 'invoice':
+                // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+                $sourceNotes = \App\Services\Payments\SaleNoteReceiptsRequired::lockOwners($inputs);
+                \App\Services\Payments\QuotationReceiptsRequired::assertPresent($inputs['quotation_id'] ?? null, $inputs['payments'] ?? []);
+                \App\Services\Payments\SaleNoteReceiptsRequired::assertPresent($sourceNotes, $inputs['payments'] ?? []);
+                // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
                 $inputs=\App\Services\Fiscal\DeliveryOrderInvoiceInventory::prepare($inputs);
                 $document = Document::create($inputs);
+                // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+                \App\Services\Payments\SaleNoteReceiptsRequired::attach($sourceNotes, $document->id);
+                // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
                 $document->invoice()->create($inputs['invoice']);
                 foreach ($inputs['items'] as $row) {
 //                    $purchase_unit_price = $row['purchase_unit_price'];
@@ -174,7 +182,6 @@ class Facturalo
                 }
                 \App\Services\Fiscal\FiscalDocumentPersistence::otherTaxes($document, $inputs['taxes'] ?? []);
                 \App\Services\Fiscal\FiscalDocumentPersistence::summarize($document);
-                $this->saveFee($document, $inputs['fee'] ?? []);
                 $this->savePayments($document, $inputs['payments']);
                 $this->updatePrepaymentDocuments($inputs);
                 if($inputs['hotel']) $document->hotel()->create($inputs['hotel']);
@@ -184,6 +191,10 @@ class Facturalo
                 \App\Services\Fiscal\FiscalDocumentPersistence::otherTaxes($document, $inputs['taxes'] ?? []);
                 \App\Services\Fiscal\FiscalDocumentPersistence::summarize($document);
                 \App\Services\Fiscal\FiscalDocumentPersistence::applySettlements($document, $inputs);
+                // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+                $outstanding = \App\Support\Exact\Receivables::balancesForDocuments([$document])[$document->id];
+                \App\Support\Exact\Installments::save($document, array_values($inputs['fee'] ?? []), \App\Support\Exact\Decimal::max(0, $outstanding));
+                // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
                 // ######## FIN PERSISTENCIA FISCAL VENEZUELA ########
                 \App\Services\Fiscal\HkaDispatchRelations::attach($document,$inputs);
                 \App\Services\Fiscal\HkaCreditInvoice::captureCreation($document, $this->webDocuments);
@@ -451,6 +462,10 @@ class Facturalo
 
             $quantity_rows     = count($this->document->items) + $was_deducted_prepayment;
             $document_payments     = count($this->document->payments ?? []);
+            // Credit installments and the received/applied currency details add lines to tickets.
+            $receipt_detail_height = $this->document instanceof Document ? $document_payments * 12 : 0;
+            $installment_height = ($this->document instanceof Document || $this->document instanceof \App\Models\Tenant\SaleNote)
+                ? count($this->document->fee ?? []) * 8 : 0;
             $document_transport     = ($this->document->transport) ? 30 : 0;
             $document_retention     = ($this->document instanceof Document && $this->document->retention_amount > 0) ? 10 : 0;
 
@@ -511,6 +526,7 @@ class Facturalo
                      $height_logo +
                     (($quantity_rows * 8) + $extra_by_item_description) +
                     ($document_payments * 8) +
+                    $receipt_detail_height + $installment_height +
                     ($discount_global * 8) +
                     $company_name +
                     $company_address +
@@ -984,35 +1000,43 @@ class Facturalo
     {
         $company = Company::firstOrFail();
         $normalized = [];
+        $receiptContexts = [];
         foreach ($payments as $row) {
             validator($row, ['date_of_payment'=>'required|date_format:Y-m-d'])->validate();
+            // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+            $alreadyRecorded = !empty($row['operation_key']) && \App\Models\Tenant\DocumentPayment::where('operation_key', $row['operation_key'])->exists();
+            $origin = !$alreadyRecorded ? \App\Services\Payments\ConvertedReceipt::resolve($document, $row) : null;
+            $row['_reused_receipt'] = $alreadyRecorded || (bool) $origin;
+            if (!$alreadyRecorded && !$origin && !empty($row['document_id'])) {
+                \App\Services\Payments\Classification::error('payments', 'No se puede copiar un cobro registrado de origen no identificado.');
+            }
+            if ($origin) {
+                $row['reference'] = $origin['reference'];
+                $row['exchange_rate_source'] = $origin['exchange_rate_source'];
+                $row['exchange_rate_date'] = $origin['exchange_rate_date'];
+            }
+            if (!$alreadyRecorded && !$origin) {
+                \App\Services\Payments\MethodCurrency::validateNew($row['payment_method_type_id'] ?? null, (string)$document->currency_type_id, $row, $document->getConnection());
+            }
+            // ######## FIN MONEDA DEL MEDIO DE COBRO ########
             $profile = \App\Services\Fiscal\FiscalProfileService::at($company, $row['date_of_payment']);
             $decision = \App\Services\Fiscal\SpecialTaxpayerPolicy::payment($profile, $row, $row['currency_type_id'] ?? $document->currency_type_id, $row['date_of_payment']);
             $row['igtf_status'] = $decision['igtf_status'];
+            // Change is derived from the complete set of receipts, never accepted from a client.
+            unset($row['change']);
             $values = \App\Services\Fiscal\FiscalAmounts::payment($row, $document->currency_type_id, $document->exchange_rate_sale, (bool)$company->igtf_enabled, $company->igtf_rate);
             $normalized[] = array_merge($row, $values);
+            $receiptContexts[] = !$alreadyRecorded && !$origin ? $values['calculation_snapshot']['values'] : null;
         }
         // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
-        $excess=\App\Support\Exact\Decimal::sum(array_map(fn($row)=>\App\Support\Exact\Decimal::readRequired($row,'payment'),$normalized))->minus(\App\Support\Exact\Decimal::readRequired($document,$document->total_payable === null ? 'total' : 'total_payable'));
-        if ($excess->isPositive()) {
-            $remaining=$excess; $cashMethods=\App\Services\Payments\Classification::cashIds();
-            foreach ($normalized as $index=>$row) {
-                if (!in_array($row['payment_method_type_id'],$cashMethods,true) || !$remaining->isPositive()) continue;
-                $applied=\App\Support\Exact\Decimal::min($remaining,\App\Support\Exact\Decimal::readRequired($row,'payment'));
-                $change=\App\Support\Exact\Decimal::convert($applied,$document->currency_type_id,$row['currency_type_id'],$row['exchange_rate']);
-                $row['change']=\App\Support\Exact\Decimal::represent($change,2);
-                if (!\App\Support\Exact\Decimal::of($row['change'])->isEqualTo($change)) \App\Services\Fiscal\FiscalAmounts::error('payments','El vuelto convertido requiere un importe liquidable en céntimos.');
-                $net=\App\Support\Exact\Decimal::readRequired($row,'original_amount')->minus($change);
-                if ($net->isNegative()) \App\Services\Fiscal\FiscalAmounts::error('payments','El vuelto supera el efectivo recibido.');
-                $row['original_amount']=\App\Support\Exact\Decimal::represent($net);
-                $row['payment']=\App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::readRequired($row,'payment')->minus($applied));
-                $normalized[$index]=$row; $remaining=$remaining->minus($applied);
-            }
-            if ($remaining->isPositive()) \App\Services\Fiscal\FiscalAmounts::error('payments','El exceso sólo puede devolverse desde el efectivo recibido.');
-        }
+        $normalized = \App\Services\Payments\ReceiptChange::apply($normalized,
+            \App\Support\Exact\Decimal::readRequired($document, $document->total_payable === null ? 'total' : 'total_payable'),
+            $document->currency_type_id);
         // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
-        foreach ($normalized as $row) {
-            $record = \App\Services\Fiscal\FiscalDocumentPersistence::payment($document, $row, true);
+        foreach ($normalized as $index => $row) {
+            $context = $receiptContexts[$index];
+            if ($context !== null && !empty($row['change'])) $context['received_change'] = \App\Support\Exact\Decimal::fraction($row['change']);
+            $record = \App\Services\Fiscal\FiscalDocumentPersistence::payment($document, $row, true, $context);
             $this->saveFilesFromPayments($row, $record, 'documents');
             if (isset($row['payment_destination_id']) && !$record->global_payment) {
                 $this->createGlobalPayment($record, $row);
@@ -1568,54 +1592,25 @@ class Facturalo
 
     public function setPaymentsPreview($document, $payments)
     {
-        $total = $document->total;
-        $balance = $total - collect($payments)->sum('payment');
-
-        $search_cash = ($balance < 0) ? collect($payments)->firstWhere('payment_method_type_id', '01') : null;
-        $this->apply_change = false;
-
-        if ($balance < 0 && $search_cash) {
-
-            $payments = collect($payments)->map(function ($row) use ($balance) {
-
-                $change = null;
-                $payment = $row['payment'];
-
-                if ($row['payment_method_type_id'] == '01' && !$this->apply_change) {
-                    $change = abs($balance);
-                    $payment = $row['payment'] - abs($balance);
-                    $this->apply_change = true;
-                }
-
-                return array_merge($row, [
-                    "id" => null,
-                    "document_id" => null,
-                    "sale_note_id" => null,
-                    "date_of_payment" => $row['date_of_payment'],
-                    "payment_method_type_id" => $row['payment_method_type_id'],
-                    "reference" => $row['reference'],
-                    "payment_destination_id" => isset($row['payment_destination_id']) ? $row['payment_destination_id'] : null,
-                    "change" => $change,
-                    "payment" => $payment,
-                    "payment_received" => isset($row['payment_received']) ? $row['payment_received'] : null,
-                ]);
-            });
-        }
-
+        // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+        $normalized = [];
         foreach ($payments as $row) {
-            if ($balance < 0 && !$this->apply_change) {
-                $row['change'] = abs($balance);
-                $row['payment'] = $row['payment'] - abs($balance);
-                unset($row['original_amount']);
-                $this->apply_change = true;
-            }
-
-            // Draft payments inherit the invoice currency/rate, like persisted payments.
-            $row['currency_type_id'] = $row['currency_type_id'] ?? $document->currency_type_id;
-            $row['exchange_rate'] = $row['exchange_rate'] ?? $document->exchange_rate_sale;
+            unset($row['change']);
+            $values = \App\Services\Fiscal\FiscalAmounts::payment($row, $document->currency_type_id,
+                $document->exchange_rate_sale, (bool) ($this->company->igtf_enabled ?? false), $this->company->igtf_rate ?? null);
+            $normalized[] = array_merge($row, $values);
+        }
+        $normalized = \App\Services\Payments\ReceiptChange::apply($normalized,
+            \App\Support\Exact\Decimal::readRequired($document, $document->total_payable === null ? 'total' : 'total_payable'),
+            $document->currency_type_id);
+        foreach ($normalized as $row) {
+            // Recalculate the net snapshot and tax after any cash change, as persistence does.
+            $row = array_merge($row, \App\Services\Fiscal\FiscalAmounts::payment($row, $document->currency_type_id,
+                $document->exchange_rate_sale, (bool) ($this->company->igtf_enabled ?? false), $this->company->igtf_rate ?? null));
             $payment = new \App\Models\Tenant\DocumentPayment($row);
             $document->payments[] = $payment;
         }
+        // ######## FIN MONEDA DEL MEDIO DE COBRO ########
     }
 
     public function SetFeePreview($document, $fee)

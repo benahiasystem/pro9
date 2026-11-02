@@ -33,7 +33,7 @@ class DocumentPaymentController extends Controller
     public function tables()
     {
         return [
-            'payment_method_types' => PaymentMethodType::getPaymentMethodTypes(),
+            'payment_method_types' => PaymentMethodType::getActiveReceiptMethods(),
             'payment_destinations' => $this->getPaymentDestinations(),
             'permissions' => auth()->user()->getPermissionsPayment()
         ];
@@ -61,7 +61,7 @@ class DocumentPaymentController extends Controller
             'amount_payable' => \App\Support\Exact\Decimal::represent($balance,2,true),
             'calculation_snapshot' => \App\Support\Exact\Decimal::snapshot(['total'=>$balance->plus($paidExact),'total_paid'=>$paidExact,'total_difference'=>$balance]),
             'currency_type_id' => $document->currency_type_id,
-            'exchange_rate_sale' => \App\Services\ExchangeRates\ExchangeRateMath::rate($document->exchange_rate_sale),
+            'exchange_rate_sale' => \App\Services\ExchangeRates\ExchangeRateMath::optionalRate($document->exchange_rate_sale),
             // 'credit_notes_total' => $credit_notes_total,
             'external_id' => $document->external_id,
         ];
@@ -82,7 +82,7 @@ class DocumentPaymentController extends Controller
             $record = \App\Services\Fiscal\FiscalDocumentPersistence::payment($document, $request->all());
             // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
             if (($record->global_payment?->report_context['version'] ?? null) === 2) {
-                if ($record->wasRecentlyCreated) $this->saveFiles($record,$request->all(),'documents');
+                if ($record->wasRecentlyCreated) $this->saveFiles($record,$request,'documents');
                 $this->createCashDocumentPayment($record,true);
             } elseif (!$record->global_payment && $request->filled('payment_destination_id')) {
             // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
@@ -181,27 +181,15 @@ class DocumentPaymentController extends Controller
 
     public function report($start, $end, $type = 'pdf')
     {
-        $documents = DocumentPayment::whereBetween('date_of_payment', [$start, $end])->get();
-
-        $records = collect($documents)->transform(function ($row) {
-            return [
-                'id' => $row->id,
-                'date_of_payment' => $row->date_of_payment->format('d/m/Y'),
-                'payment_method_type_description' => $row->payment_method_type->description,
-                'destination_description' => ($row->global_payment) ? $row->global_payment->destination_description : null,
-                'change' => $row->change,
-                'payment' => $row->reversed_at ? 0 : $row->cash_received_amount,
-                'currency_type_id' => $row->currency_type_id,
-                'applied_payment' => $row->payment,
-                'reference' => $row->reference,
-                'customer' => $row->document->customer->name,
-                'number' => $row->document->number_full,
-                'total' => $row->document->total,
-            ];
-        });
+        // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+        $documents = DocumentPayment::with(['document','global_payment'])->whereBetween('date_of_payment', [$start, $end])->get();
+        $records = $documents->map(fn($row)=>\App\Services\Payments\DocumentPaymentReport::row($row));
+        // ######## FIN MONEDA DEL MEDIO DE COBRO ########
 
         if ($type == 'pdf') {
-            $pdf = PDF::loadView('tenant.document_payments.report', compact("records"));
+            // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+            $pdf = PDF::loadView('tenant.document_payments.report', compact("records"))->setPaper('a4', 'landscape');
+            // ######## FIN MONEDA DEL MEDIO DE COBRO ########
 
             $filename = "Reporte_Pagos";
 

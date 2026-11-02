@@ -5,9 +5,13 @@ namespace App\Support\Exact;
 /** Keep the original shares separately from the amounts scheduled in cents. */
 final class Installments
 {
-    public static function save($owner, array $rows): void
+    public static function save($owner, array $rows, $outstanding = null): void
     {
-        foreach (self::calculate($owner->exactValue('total'),array_values($rows),$owner->total_payable ?? $owner->total) as $row) {
+        // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+        $total = $outstanding ?? $owner->exactValue('total');
+        $payable = $outstanding ?? ($owner->total_payable ?? $owner->total);
+        foreach (self::calculate($total,array_values($rows),$payable) as $row) {
+        // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
             $record=$owner->fee()->make($row);
             $record->calculation_snapshot=$row['calculation_snapshot'];
             $record->save();

@@ -18,6 +18,7 @@ class ContractResource extends JsonResource
     {
         /** @var Contract $contract */
         $contract = $this->resource;
+        $contract->loadMissing(['payments.global_payment', 'payments.payment_method_type']);
         $contract->payments = self::getTransformPayments($contract->payments);
 
         $customer = Person::find($this->customer_id);
@@ -49,6 +50,15 @@ class ContractResource extends JsonResource
                 'payment_method_type_id' => $row->payment_method_type_id, 
                 'reference' => $row->reference, 
                 'payment' => $row->payment, 
+                'currency_type_id' => $row->currency_type_id,
+                'original_amount' => $row->original_amount,
+                'exchange_rate' => $row->exchange_rate,
+                'exchange_rate_source' => $row->exchange_rate_source,
+                'exchange_rate_date' => $row->exchange_rate_date ? $row->exchange_rate_date->format('Y-m-d') : null,
+                // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+                'payment_method_snapshot' => $row->payment_method_snapshot,
+                'payment_destination_description' => data_get($row->global_payment?->report_context, 'destination_label'),
+                // ######## FIN MONEDA DEL MEDIO DE COBRO ########
                 'payment_method_type' => $row->payment_method_type, 
                 'payment_destination_id' => ($row->global_payment) ? ($row->global_payment->type_record == 'cash' ? 'cash':$row->global_payment->destination_id):null, 
             ];

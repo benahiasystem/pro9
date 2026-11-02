@@ -28,6 +28,8 @@ description: Mantener el alta, edición, catálogo, persistencia y presentación
 
 ## Selección y persistencia
 
+En la API de notas de venta, la creación implícita de clientes y artículos pertenece a la transacción de la nota y sus cobros: un rechazo posterior no debe dejar clientes ni artículos parciales. La moneda documental se valida antes de crear datos.
+
 - El tipo de documento debe mostrarse siempre sólo con su descripción: `Venezolano`, `Extranjero`, `Pasaporte`, `Juridico`, `Comuna`, `Gubernamental`, `Firma Personal` o `Doc.sin.rif`.
 - No concatenar la letra del documento al nombre del tipo en selectores, tablas, formularios, reportes, PDFs ni respuestas de presentación. Son incorrectas etiquetas como `Venezolano V`, `Juridico J` o `Pasaporte P`.
 - Guardar en `persons.identity_document_type_id` el `id` del registro elegido, no la letra visible salvo cuando ambos coinciden. Por tanto: Venezolano=`1`, Extranjero=`E`, Pasaporte=`7`, Juridico=`6`, Comuna=`C`, Gubernamental=`G`, Firma Personal=`R` y Doc.sin.rif=`0`.

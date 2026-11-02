@@ -40,6 +40,8 @@ Se retiró del estado inicial `06 — Tarjeta Internacional`; no reasignar autom
 
 Cada método inicial tiene moneda: USD para `10` Efectivo Dólares y `13` Zelle, VES para los demás. La moneda se selecciona del catálogo activo; IGTF puede asociarse como referencia opcional sin modificar el cálculo fiscal.
 
+La apertura de caja con saldo positivo selecciona el efectivo activo de menor ID en cada moneda, sin depender de los IDs iniciales. Si falta una configuración compatible, se rechaza antes de escribir los saldos; una apertura en cero no requiere método.
+
 La creación valida que el código local `id` no exista, incluso si el método está inactivo, exige naturaleza clasificada y guarda el método disponible automáticamente; la edición usa una operación separada y conserva el código original. Los formularios no muestran la casilla de disponibilidad; esta se cambia desde el listado.
 
 Los métodos de tarjeta conservan sus códigos; no solicitan ni registran marcas de tarjeta en los flujos comerciales.
@@ -294,4 +296,24 @@ Sin alterar filas ni IDs, el formulario y persistencia habilitan NC01/07/04/09 y
 
 `payment_method_types.collection_kind` separa efectivo físico (`cash`), bancario/electrónico (`account`), crédito (`credit`) y sin clasificar (`unclassified`). `is_cash`/`is_credit` se derivan en servidor; la moneda fija del efectivo es `cash_currency_type_id`. 01/VES y 10/USD son los efectivos iniciales; 02/03/04/11/12/13 son bancarios; 05/09 son crédito. No se siembran métodos sin clasificar ni la columna `charge`. Todos los métodos son editables, con ID y HKA inmutables; los iniciales no se pueden eliminar. Ver [contrato de instalación nueva](../../../../informes/clasificacion_medios_pago_caja.md).
 
+Estas asignaciones describen solamente la semilla: los consumidores seleccionan la naturaleza y moneda vigentes, no deducen comportamiento del ID. Las consultas de crédito y recepción usan `collection_kind`; los predeterminados de efectivo requieren moneda documental activa y el importador MiTiendaPe verifica todo el lote antes de crear clientes u órdenes. Los movimientos anteriores se leen con sus snapshots.
+
+Los selectores de cobro al generar nota desde pedidos, compartido con restaurante, y al cerrar una estancia de Hotel exigen `is_active` explícito y naturaleza `cash` o `account`; la ausencia del estado no habilita el método. La validación del servidor sigue siendo obligatoria.
+
+La fecha de la cuota de crédito en notas de venta depende de la naturaleza y de `number_days`, no del ID: sin días o con cero admite edición, con plazo positivo se calcula desde la emisión. Un método no crediticio o desconocido no habilita el campo.
+
+Los formularios de factura y nota aplican un plazo de crédito sólo a la fecha de la cuota seleccionada; no cambian fechas de otras cuotas al cambiar el método de una fila. `number_days` cero, incluso como texto, conserva la fecha manual.
+
+Al alternar condiciones se conservan cuotas y abonos del formulario; el payload de contado omite cuotas y el de crédito con cuotas normaliza la condición sin mutar el borrador. Si una cuota necesita método, la interfaz distingue falta de selección y catálogo vacío.
+
+El filtro de cuentas por cobrar consulta el catálogo completo para permitir búsquedas por métodos personalizados y referencias históricas inactivas o reclasificadas; esa lectura no habilita cobros nuevos con métodos inactivos.
+
+La API de empresa ofrece los métodos activos clasificados como efectivo o cuenta, incluidos métodos personalizados con IDs retirados; no excluye `07` por su número.
+
 La instrucción vigente del usuario limita este cambio exclusivamente a instalaciones nuevas. El consolidado y las semillas contienen directamente la clasificación; no hay actualización de tenants, activación diferida ni lectores del catálogo anterior. Inventario nuevo: 348 tablas, 349 migraciones, 81 catálogos y 948 filas iniciales. La tabla `cash_currency_balances` se crea en 000343; no se crea una tabla de activación/versiones de instalación.
+
+Las rutas de disponibilidad de ventas y finanzas exigen administrador y aplican la misma validación de clasificación; la eliminación de métodos personalizados también exige administrador. La protección de eliminación de los IDs iniciales permanece vigente.
+La activación se serializa con las ediciones de la fila y vuelve a validar la clasificación vigente antes de guardar.
+La edición y la activación adquieren bloqueo de la fila antes de leerla; la validación de naturaleza y estado se ejecuta sobre los valores actuales en ambos órdenes concurrentes.
+
+En el listado de métodos y en el editor, mostrar condición y días de crédito según `collection_kind`; los indicadores derivados `is_credit` e `is_cash` no deciden la presentación. Un método sin clasificar se identifica como tal. `payment-method-form.test.cjs` comprueba flags contradictorios y ambas plantillas.

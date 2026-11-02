@@ -405,7 +405,7 @@
             $payment = 0;
         @endphp
         @foreach($document->payments as $row)
-            <tr><td class="desc ">- {{ $row->payment_method_type->description }} - {{ $row->reference ? $row->reference.' - ':'' }} {{ $document->currency_type->symbol }} {{ $row->payment }}</td></tr>
+            <tr><td class="desc ">- @include('pdf.partials.quotation_receipt', ['row' => $row, 'document' => $document])</td></tr>
             @php
                 $payment += (float) $row->payment;
             @endphp

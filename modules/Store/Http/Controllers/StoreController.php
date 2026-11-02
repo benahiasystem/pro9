@@ -39,7 +39,7 @@ class StoreController extends Controller
             ];
         }
 
-        $record = Quotation::query()->with('person')->find($table_id);
+        $record = Quotation::query()->with(['person', 'payments.global_payment', 'payments.payment_method_type'])->find($table_id);
 
         if (!$record) {
             return [
@@ -140,7 +140,7 @@ class StoreController extends Controller
         $rec['fee'] = [];
         $rec['charges'] = [];
         $rec['discounts'] = $record->discounts;
-        $rec['payments'] = [];
+        $rec['payments'] = \App\Http\Resources\Tenant\QuotationResource::getTransformPayments($record->payments)->all();
         $rec['guides'] = [];
         $rec['payment_condition_id'] = '01';
         $rec['series'] = $series->number;
@@ -177,9 +177,10 @@ class StoreController extends Controller
 
         if ($payment_method_type) {
             if ($payment_method_type->isCredit()) {
-                //credito o credito con cuotas
-                $rec['payment_condition_id'] = ($payment_method_type->number_days) ? '02' : '03';
-                $rec['data_payments_fee'] = $document->payments;
+                // La cotización no registra cuotas: preparar crédito simple y
+                // conservar sus abonos como cobros, no convertirlos en cuotas.
+                $rec['payment_condition_id'] = '02';
+                $rec['data_payments_fee'] = [];
                 $rec['document_payment_method_type'] = $payment_method_type;
             }
         }

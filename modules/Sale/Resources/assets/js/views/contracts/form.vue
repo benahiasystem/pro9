@@ -630,7 +630,7 @@
                             <div class="col-12">
                                 <div
                                     class="p-2 payment-container col-12 col-lg-8 ms-auto"
-                                    v-if="showPayments && !form.quotation_id"
+                                    v-if="showPayments && (!form.quotation_id || form.payments.some(row => row.id))"
                                 >
                                     <table>
                                         <thead>
@@ -689,13 +689,15 @@
                                                     <div
                                                         class="form-group mb-2 me-2"
                                                     >
-                                                        <el-select
+                                                        <span v-if="row.id">{{ row.payment_method_snapshot?.description || row.payment_method_type?.description || row.payment_method_type_id }}</span>
+                                                        <el-select v-else
                                                             v-model="
                                                                 row.payment_method_type_id
                                                             "
+                                                            :disabled="!!row.id"
                                                         >
                                                             <el-option
-                                                                v-for="option in payment_method_types"
+                                                                v-for="option in receiptPaymentMethods"
                                                                 :key="option.id"
                                                                 :value="
                                                                     option.id
@@ -705,16 +707,21 @@
                                                                 "
                                                             ></el-option>
                                                         </el-select>
+                                                <small v-if="!row.payment_method_type_id" class="text-muted">No hay efectivo activo para la moneda del documento; seleccione un método.</small>
+                                                        <receipt-currency-fields :row="row" :methods="payment_method_types" :document-currency="form.currency_type_id" :document-rate="form.exchange_rate_sale" />
+                                                        <small v-if="row.id && row.currency_type_id" class="d-block">Recibido: {{ row.original_amount }} {{ row.currency_type_id }} · Tasa: {{ row.exchange_rate }}</small>
                                                     </div>
                                                 </td>
                                                 <td>
                                                     <div
                                                         class="form-group mb-2 me-2"
                                                     >
-                                                        <el-select
+                                                        <span v-if="row.id">{{ row.payment_destination_description || (row.payment_destination_id === 'cash' ? 'Caja' : row.payment_destination_id) }}</span>
+                                                        <el-select v-else
                                                             v-model="
                                                                 row.payment_destination_id
                                                             "
+                                                            :disabled="!!row.id"
                                                             filterable
                                                         >
                                                             <el-option
@@ -738,6 +745,7 @@
                                                             v-model="
                                                                 row.reference
                                                             "
+                                                            :disabled="!!row.id"
                                                         ></el-input>
                                                     </div>
                                                 </td>
@@ -749,6 +757,7 @@
                                                             v-model="
                                                                 row.payment
                                                             "
+                                                            :disabled="!!row.id"
                                                         ></el-input>
                                                     </div>
                                                 </td>
@@ -940,17 +949,26 @@ import ContractOptionsPdf from "./partials/options_pdf.vue";
 import { functions, exchangeRate } from "@mixins/functions";
 import { calculateRowItem, showNamePdfOfDescription } from "@helpers/functions";
 import Logo from "@views/companies/logo.vue";
+import ReceiptCurrencyFields from "@components/ReceiptCurrencyFields.vue";
+import {defaultCashForCurrency, paymentValidationMessage} from '@helpers/payment-classification';
 
 export default {
     props: ["typeUser", "quotationId", "id", "showPayments", "authUser"],
     components: {
         ContractFormItem,
+        ReceiptCurrencyFields,
         PersonForm,
         ContractOptionsPdf,
         Logo,
         TermsCondition
     },
     computed: {
+        // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+        receiptPaymentMethods() {
+            return this.payment_method_types.filter(method => [true, 1, '1'].includes(method.is_active)
+                && ['cash', 'account'].includes(method.collection_kind));
+        },
+        // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
         getCurrentLogo() {
             const isDarkMode = document.documentElement.classList.contains('dark');
 
@@ -1047,6 +1065,9 @@ export default {
                     : null;
             this.payment_method_types = data.payment_method_types;
             this.payment_destinations = data.payment_destinations;
+            const method = defaultCashForCurrency(this.payment_method_types, this.form.currency_type_id);
+            this.form.payment_method_type_id = method?.id || null;
+            this.form.payments.forEach(row => { if (!row.id && !row.payment_method_type_id) row.payment_method_type_id = method?.id || null; });
             this.configuration = data.configuration;
             this.sellers = data.sellers;
 
@@ -1084,12 +1105,14 @@ export default {
             if (
                 this.configuration.destination_sale &&
                 this.payment_destinations.length > 0 &&
-                this.showPayments
+                this.showPayments && this.form.payments[0] && !this.form.payments[0].id &&
+                this.form.payments[0].payment_destination_id == null
             ) {
-                let cash = _.find(this.payment_destinations, { id: "cash" });
+                const available = this.classifiedPaymentDestinations(this.payment_destinations, this.form.payments[0]);
+                const cash = available.find(destination => destination.id === 'cash');
                 this.form.payments[0].payment_destination_id = cash
                     ? cash.id
-                    : this.payment_destinations[0].id;
+                    : (available[0] || {}).id ?? null;
             }
         },
         getPaymentDestinationId() {
@@ -1141,6 +1164,9 @@ export default {
                     .get(`/${this.resource}/record/${this.id}`)
                     .then(response => {
                         this.form = response.data.data.contract;
+                        // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+                        this.showPayments = (this.form.items || []).length > 0 || (this.form.payments || []).length > 0;
+                        // ######## FIN MONEDA DEL MEDIO DE COBRO ########
                         this.reloadDataCustomers(this.form.customer_id);
                     });
             }
@@ -1153,13 +1179,14 @@ export default {
             }
         },
         clickAddPayment() {
+            const method = defaultCashForCurrency(this.payment_method_types, this.form.currency_type_id);
             this.form.payments.push({
                 id: null,
                 contract_id: null,
                 date_of_payment: moment().format("YYYY-MM-DD"),
-                payment_method_type_id: "01",
+                payment_method_type_id: method?.id || null,
                 reference: null,
-                payment_destination_id: this.getPaymentDestinationId(),
+                payment_destination_id: method && this.payment_destinations.some(destination => destination.id === 'cash') ? 'cash' : null,
                 payment: 0
             });
             this.showPayments = true; // Asegurar que la tabla se muestre
@@ -1247,7 +1274,7 @@ export default {
                 discounts: [],
                 attributes: [],
                 guides: [],
-                payment_method_type_id: "10",
+                payment_method_type_id: null,
                 additional_information: null,
                 shipping_address: null,
                 account_number: null,
@@ -1271,6 +1298,7 @@ export default {
                 this.currency_types.length > 0
                     ? this.currency_types[0].id
                     : null;
+            this.form.payment_method_type_id = defaultCashForCurrency(this.payment_method_types, this.form.currency_type_id)?.id || null;
             this.form.establishment_id =
                 this.establishments.length > 0
                     ? this.establishments[0].id
@@ -1479,10 +1507,12 @@ export default {
                     }
                 })
                 .catch(error => {
-                    if (error.response.status === 422) {
-                        this.errors = error.response.data;
+                    if (error.response && error.response.status === 422) {
+                        this.errors = error.response.data?.errors || error.response.data || {};
+                        const message = paymentValidationMessage(error.response.data);
+                        if (message) this.$message.error(message);
                     } else {
-                        this.$message.error(error.response.data.message);
+                        this.$message.error(error.response?.data?.message || 'No se pudo guardar el contrato.');
                     }
                 })
                 .then(() => {

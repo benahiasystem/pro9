@@ -22,38 +22,42 @@
                         <tr v-for="(row, index) in draftPayments" :key="index">
                             <td>
                                 <div class="form-group mb-2 mr-2">
-                                    <el-select v-model="row.payment_method_type_id" @change="changePaymentMethodType(index)">
-                                        <el-option v-for="option in payment_method_types" :key="option.id" :value="option.id" :label="option.description"></el-option>
+                                    <span v-if="isRecordedReceipt(row)">{{ (row.payment_method_snapshot || {}).description || (row.payment_method_type || {}).description || row.payment_method_type_id }}</span>
+                                    <el-select v-else v-model="row.payment_method_type_id" @change="changePaymentMethodType(index)">
+                                        <el-option v-for="option in receiptMethods" :key="option.id" :value="option.id" :label="option.description"></el-option>
                                     </el-select>
+                                    <small v-if="!row.payment_method_type_id" class="text-muted">No hay efectivo activo para la moneda del documento; seleccione un método.</small>
 <igtf-settings-status v-if="fiscalPaymentsApplicable" />
-<igtf-payment-fields v-if="fiscalPaymentsApplicable && !row.id" :igtf-enabled="igtfEnabled" :settings-version="igtfSettings.revision"
-    :payment="row" :document-currency="currencyTypeId || 'VES'" :document-rate="exchangeRateSale || '1'" :customer-id="customerId" />
+<igtf-payment-fields :payment-methods="payment_method_types" v-if="fiscalPaymentsApplicable && !isRecordedReceipt(row)" :igtf-enabled="igtfEnabled" :settings-version="igtfSettings.revision"
+    :payment="row" :document-currency="currencyTypeId || 'VES'" :document-rate="exchangeRateSale" :customer-id="customerId" />
+<receipt-currency-fields v-if="documentTypeId === '80' && !isRecordedReceipt(row)" :row="row" :methods="payment_method_types" :document-currency="currencyTypeId" :document-rate="exchangeRateSale" />
                                 </div>
                             </td>
                             <template v-if="enabled_payments">
                                 <td>
                                     <div class="form-group mb-2 mr-2">
-                                        <el-select v-model="row.payment_destination_id" filterable :disabled="classifiedPaymentDestinationDisabled(payment_destinations, row)">
+                                        <span v-if="isRecordedReceipt(row)">{{ row.payment_destination_description || 'Destino registrado' }}</span>
+                                        <el-select v-else v-model="row.payment_destination_id" filterable :disabled="classifiedPaymentDestinationDisabled(payment_destinations, row)">
                                             <el-option v-for="option in classifiedPaymentDestinations(payment_destinations, row)" :key="option.id" :value="option.id" :label="option.description"></el-option>
                                         </el-select>
                                     </div>
                                 </td>
                                 <td>
                                     <div class="form-group mb-2 mr-2"  >
-                                        <el-input v-model="row.reference"
+                                        <el-input v-model="row.reference" :disabled="isRecordedReceipt(row)"
                                                   @focus="valueInputSelect"
                                                   @click.native="valueInputSelect"></el-input>
                                     </div>
                                 </td>
                                 <td>
                                     <div class="form-group mb-2 mr-2" >
-                                        <el-input v-model="row.payment"
+                                        <el-input v-model="row.payment" :disabled="isRecordedReceipt(row)"
                                                   @focus="valueInputSelect"
                                                   @click.native="valueInputSelect"></el-input>
                                     </div>
                                 </td>
                                 <td class="series-table-actions text-center">
-                                    <button  type="button" class="btn waves-effect waves-light btn-xs btn-danger" @click.prevent="clickCancel(index)">
+                                    <button v-if="!isRecordedReceipt(row)" type="button" class="btn waves-effect waves-light btn-xs btn-danger" @click.prevent="clickCancel(index)">
                                         <i class="fa fa-trash"></i>
                                     </button>
                                 </td>
@@ -89,11 +93,13 @@
 <script>
 import fiscalPaymentSettings from "@mixins/fiscal-payment-settings"
 import {suggestRemainingPayment} from "@helpers/document-creation"
+import {defaultCashForCurrency, isRecordedReceipt} from "@helpers/payment-classification"
 import IgtfPaymentFields from "./../../documents/partials/igtf_fields.vue"
+import ReceiptCurrencyFields from '@components/ReceiptCurrencyFields.vue'
 
     export default {
         mixins: [fiscalPaymentSettings],
-        components: { IgtfPaymentFields },
+        components: { IgtfPaymentFields, ReceiptCurrencyFields },
         props: ['showDialog', 'payments', 'total', 'currencyTypeId', 'exchangeRateSale', 'customerId', 'paymentConditionId', 'documentTypeId'],
         data() {
             return {
@@ -110,6 +116,11 @@ import IgtfPaymentFields from "./../../documents/partials/igtf_fields.vue"
                 draftPayments: [],
                 paymentsSnapshot: [],
             }
+        },
+        computed: {
+            receiptMethods() {
+                return this.payment_method_types.filter(method => ['cash', 'account'].includes(method.collection_kind) && [true, 1, '1'].includes(method.is_active))
+            },
         },
         async created() {
 
@@ -164,13 +175,14 @@ import IgtfPaymentFields from "./../../documents/partials/igtf_fields.vue"
                 this.$nextTick(() => input.select())
             },
             buildPaymentRow(total = 0) {
+                const method = defaultCashForCurrency(this.payment_method_types, this.currencyTypeId)
                 return {
                     id: null,
                     document_id: null,
                     sale_note_id: null,
                     date_of_payment:  moment().format('YYYY-MM-DD'),
-                    payment_method_type_id: '01',
-                    payment_destination_id: 'cash',
+                    payment_method_type_id: method?.id || null,
+                    payment_destination_id: method?.collection_kind === 'cash' && this.payment_destinations.some(destination => destination.id === 'cash') ? 'cash' : null,
                     reference: null,
                     payment: total,
                 }
@@ -197,10 +209,10 @@ import IgtfPaymentFields from "./../../documents/partials/igtf_fields.vue"
                 suggestRemainingPayment({total: this.total || '0', currency_type_id: this.currencyTypeId}, payments);
             },
             accept() {
-                const payments = this.enabled_payments ? this.clonePayments(this.draftPayments) : []
+                const payments = this.clonePayments(this.draftPayments)
                 this.payments.splice(0, this.payments.length, ...payments)
                 this.$emit('add', payments)
-                this.$emit('setPaymentMethod', this.enabled_payments ? null : '09')
+                this.$emit('setPaymentMethod', null)
                 this.$emit('update:showDialog', false)
             },
             close() {
@@ -211,6 +223,7 @@ import IgtfPaymentFields from "./../../documents/partials/igtf_fields.vue"
                 this.$emit('update:showDialog', false)
             },
             clickCancel(index) {
+                if (isRecordedReceipt(this.draftPayments[index])) return
                 this.draftPayments.splice(index, 1);
                 this.calculatePayments(this.draftPayments);
             },
@@ -221,22 +234,8 @@ import IgtfPaymentFields from "./../../documents/partials/igtf_fields.vue"
                 //     this.getFormPosLocalStorage()
                 // });
             },
-            changePaymentMethodType(index){
-
-                let payment_method_type = _.find(this.payment_method_types, {'id':this.draftPayments[index].payment_method_type_id})
-
-                if(payment_method_type.id == '09' || payment_method_type.is_credit){
-
-            
-                    this.enabled_payments = false
-
-                }else{
-
-                
-                    this.enabled_payments = true
-
-                }
-
+            changePaymentMethodType(index) {
+                this.clearIncompatiblePaymentDestinations([this.draftPayments[index]])
             },
         }
     }

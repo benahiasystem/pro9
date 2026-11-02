@@ -66,7 +66,7 @@ test('POS and Garage restore sanitized drafts and persist them without resetting
     for (const name of ['index', 'fast', 'garage']) {
         const form = invoice(), writes = new Map(), key = name === 'garage' ? 'form_pos_garage' : 'form_pos';
         const {component} = load(`resources/js/views/tenant/pos/${name}.vue`, {localStorage: {getItem: requested => requested === key ? JSON.stringify(form) : null, setItem: (key, value) => writes.set(key, value)}});
-        const state = {initDateTimeIssue() {}};
+        const state = {form:{exchange_rate_sale:'1'}, initDateTimeIssue() {}, changeExchangeRate() {}};
         component.methods.getFormPosLocalStorage.call(state);
         assert.equal(Object.hasOwn(state.form, 'received_retentions'), false);
         assert.equal(Object.hasOwn(state.form, 'iva_retention_prevision'), false);
@@ -92,6 +92,13 @@ test('adding a receipt suggests the exact remaining amount without redistributin
     creation.suggestRemainingPayment(foreign); assert.equal(foreign.payments[0].payment, '0');
     const overpaid = {total: '10', payments: [{payment: '20'}, {payment: '0'}]};
     creation.suggestRemainingPayment(overpaid); assert.equal(overpaid.payments[1].payment, '0.00');
+    for (const origin of [{id:5},{receipt_parent_id:5},{receipt_origin:{id:5}},
+        {payment_method_snapshot:{receipt_origin:{id:5}}},{source_sale_note_payment_id:5},
+        {source_quotation_payment_id:5},{source_technical_service_payment_id:5},{_reused_receipt:true}]) {
+        const reused={total:'10',currency_type_id:'VES',payments:[{payment:'0',...origin}]};
+        creation.suggestRemainingPayment(reused);
+        assert.equal(reused.payments[0].payment,'0');
+    }
 });
 
 test('invoice and POS multiple-payment consumers preserve real receipts when adding another method', () => {
@@ -106,7 +113,7 @@ test('invoice and POS multiple-payment consumers preserve real receipts when add
 test('the invoice add-payment action suggests only the remaining amount rather than the full total', () => {
     const {component} = load('resources/js/views/tenant/documents/invoice_generate.vue', {moment: () => ({format: () => '2026-10-16'})});
     const form = invoice();
-    const state = {form, getPaymentDestinationId: () => 'cash'};
+    const state = {form, paymentMethodsLoaded:true, getPaymentDestinationId: () => 'cash'};
     state.calculatePayments = component.methods.calculatePayments.bind(state);
     component.methods.clickAddPayment.call(state);
     assert.equal(form.payments[0].payment, '20');

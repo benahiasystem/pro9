@@ -35,4 +35,37 @@ class FiscalApiPaymentTransformTest extends TestCase
         $this->expectException(ValidationException::class);
         $this->payments(['currency_type_id'=>'USD','original_amount'=>8,'exchange_rate'=>10]);
     }
+
+    // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+    public function test_api_preserves_source_receipt_id_and_original_date(): void
+    {
+        $key=(string)\Illuminate\Support\Str::uuid();
+        $row=$this->payments(['source_sale_note_payment_id'=>42,'date_of_payment'=>'2026-08-31',
+            'currency_type_id'=>'USD','original_amount'=>'8','exchange_rate'=>'10','operation_key'=>$key])[0];
+        self::assertSame(42,$row['source_sale_note_payment_id']);
+        self::assertSame('2026-08-31',$row['date_of_payment']);
+        self::assertSame('8',$row['original_amount']);
+        self::assertSame('10',$row['exchange_rate']);
+        self::assertSame('2026-09-10',$this->payments(['date_of_payment'=>'2026-08-31'])[0]['date_of_payment']);
+    }
+    // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
+
+    public function test_offline_web_payload_keeps_currency_rate_and_stable_operation_key(): void
+    {
+        $method=new \ReflectionMethod(\App\CoreFacturalo\Requests\Inputs\Transform\DocumentWebTransform::class,'payments');
+        $method->setAccessible(true);
+        $rows=$method->invoke(null,['document_type_id'=>'01','payments'=>[[
+            'date_of_payment'=>'2026-09-10','payment_method_type_id'=>'13','payment_destination_id'=>7,
+            'payment'=>'4000','currency_type_id'=>'USD','original_amount'=>'10','exchange_rate'=>'400',
+        ]]]);
+        self::assertTrue(\Illuminate\Support\Str::isUuid($rows[0]['operation_key']));
+        $api=new \ReflectionMethod(DocumentTransform::class,'payments');
+        $api->setAccessible(true);
+        $result=$api->invoke(null,['codigo_tipo_documento'=>'01','codigo_tipo_moneda'=>'VES','factor_tipo_de_cambio'=>'400',
+            'fecha_de_emision'=>'2026-09-10','pagos'=>$rows]);
+        self::assertSame('USD',$result[0]['currency_type_id']);
+        self::assertSame('10',$result[0]['original_amount']);
+        self::assertSame('400',$result[0]['exchange_rate']);
+        self::assertSame($rows[0]['operation_key'],$result[0]['operation_key']);
+    }
 }

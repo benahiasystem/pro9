@@ -21,9 +21,20 @@ trait SuscriptionDocumentService
 {
     public function document(UserRelSuscriptionPlan $suscription): array
     {
-        $_data   = $this->transform($suscription->toArray(), $suscription->suscription_plan->items);
+        // ######## INICIO PARTIDAS DE SUSCRIPCION ########
+        // Las altas actuales conservan importes y cantidades; algunos registros antiguos no los tienen.
+        $items = (array) $suscription->items;
+        $rows = count($items)
+            ? collect($items)->map(function ($item) {
+                $row = (object) $item;
+                if (isset($row->item)) $row->item = (object) $row->item;
+                return $row;
+            })
+            : $suscription->suscription_plan->items;
+        $_data = $this->transform($suscription->toArray(), $rows);
+        // ######## FIN PARTIDAS DE SUSCRIPCION ########
         $request = new DocumentRequest($_data);
-        $response = app(DocumentController::class)->store($request);
+        $response = app(DocumentController::class)->storeFromSubscription($request);
 
         if (!isset($response['data'])) {
             return [
@@ -32,14 +43,19 @@ trait SuscriptionDocumentService
             ];
         }
 
-        $_response = app(DocumentController::class)->send($response['data']['id']);
-
+        // ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
+        // El contrato HKA de crédito sin abono todavía no cubre suscripciones.
+        $document = \App\Models\Tenant\Document::findOrFail($response['data']['id']);
+        if ($emission = $document->emission()->first()) {
+            $emission->update(['response'=>array_replace($emission->response ?? [], ['auto_send_requested'=>false])]);
+        }
         return [
             'success' => $response['success'],
             'number'      => $response['data']['number_full'],
-            'response'    => isset($_response['response']) ? $_response['response']['description'] : 'No se pudo enviar el documento',
+            'response'    => 'Factura guardada. La emisión fiscal de suscripciones a crédito requiere validación.',
             'document_id' => $response['data']['id'],
         ];
+        // ######## FIN PERSISTENCIA FISCAL VENEZUELA ########
     }
 
     public function transform(array $values, $get_ids): array
@@ -51,6 +67,20 @@ trait SuscriptionDocumentService
         $establishment_id     = auth()->user()->establishment_id;
         $document_type_id     = $this->getDocumentType($identity_document_type_id);
         $items                = $this->items($get_ids);
+
+        // ######## INICIO MONEDA DE SUSCRIPCION ########
+        $currency = $values['currency_type_id'] ?? 'VES';
+        if (!in_array($currency, ['VES', 'USD'], true)) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['currency_type_id' => 'La moneda de la suscripción no es válida.']);
+        }
+        $connection = (new UserRelSuscriptionPlan())->getConnection();
+        $currencyQuery = $connection->table('cat_currency_types')
+            ->where('id', $currency)->where('active', 1);
+        if ($connection->transactionLevel() > 0) $currencyQuery->lockForUpdate();
+        if (!$currencyQuery->first()) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['currency_type_id' => 'La moneda de la suscripción no está activa.']);
+        }
+        // ######## FIN MONEDA DE SUSCRIPCION ########
 
         // Emisión automática (suscripción): siempre se omiten series dedicadas; no hay lectura de grupo/dispositivo.
         $serie = app(SeriesResolver::class)->applyContext(Series::where([
@@ -68,7 +98,10 @@ trait SuscriptionDocumentService
                 'group_id' => ($document_type_id === '01') ? '01' : '02',
             ]),
             'series'                  => $serie->number,
-            'payment_condition_id'    => '01',
+            // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+            // La orden no identifica un cobro verificable ni su destino.
+            'payment_condition_id'    => '02',
+            // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
             'type'                    => 'invoice',
             'group_id'                => ($document_type_id === '01') ? '01' : '02',
             'establishment_id'        => $establishment_id,
@@ -88,7 +121,8 @@ trait SuscriptionDocumentService
                 'date_of_due'       => now()->format('Y-m-d'),
             ],
             'exchange_rate_sale'      => $service['sale'],
-            'currency_type_id'        => 'VES',
+            'currency_type_id'        => $currency,
+            'source_module'           => 'FULL_SUSCRIPTION',
             'items'                   => $items,
             'charges'                 => $values['charges'] ?? [],
             'discounts'               => $values['discounts'] ?? [],
@@ -106,7 +140,7 @@ trait SuscriptionDocumentService
             'total_exportation'       => $values['total_exportation'] ?? 0,
             'total_value'             => $values['total_value'] ?? 0,
             'subtotal'                => $values['total'],
-            'payments'                => $this->payments($values['total']),
+            'payments'                => [],
             'fee'                     => [],
             'hotel'                   => null,
             'transport'               => null,
@@ -120,6 +154,7 @@ trait SuscriptionDocumentService
 
         foreach ($items as $row) {
             $item = Item::find($row->item_id);
+            $rowItem = $row->item ?? null;
 
             $_items[] = [
                 'item_id'                  => $item->id,
@@ -129,19 +164,19 @@ trait SuscriptionDocumentService
                     'internal_id'              => $item->barcode === 'VARIOUS_ITEM' ? null : $item->internal_id,
                     'item_code'                => trim($item->item_code),
                     'item_code_gs1'            => $item->item_code_gs1,
-                    'unit_type_id'             => optional($row->item)->unit_type_id ?? $item->unit_type_id,
-                    'presentation'             => optional($row->item)->presentation ?? [],
+                    'unit_type_id'             => optional($rowItem)->unit_type_id ?? $item->unit_type_id,
+                    'presentation'             => optional($rowItem)->presentation ?? [],
                     'is_set'                   => $item->is_set,
                     'lots'                     => [],
                     'IdLoteSelected'           => false,
                     'model'                    => $item->model,
                     'sanitary'                 => $item->sanitary,
                     'date_of_due'              => !empty($item->date_of_due) ? $item->date_of_due->format('Y-m-d') : null,
-                    'has_igv'                  => optional($row->item)->has_igv ?? true,
+                    'has_igv'                  => optional($rowItem)->has_igv ?? true,
                     'unit_price'               => $row->unit_price ?? 0,
                     'purchase_unit_price'      => $item->purchase_unit_price ?? 0,
-                    'exchanged_for_points'     => optional($row->item)->exchanged_for_points ?? false,
-                    'used_points_for_exchange' => optional($row->item)->used_points_for_exchange ?? null,
+                    'exchanged_for_points'     => optional($rowItem)->exchanged_for_points ?? false,
+                    'used_points_for_exchange' => optional($rowItem)->used_points_for_exchange ?? null,
                 ],
                 'quantity'                 => $row->quantity,
                 'unit_value'               => $row->unit_value,
@@ -176,22 +211,9 @@ trait SuscriptionDocumentService
 
     public function getDocumentType(string $identity_document_type): string
     {
-        return match ($identity_document_type) {
-            '6'     => '01',
-            default => '03',
-        };
-    }
-
-    public function payments(float $total): array
-    {
-        return [[
-            'id'                      => null,
-            'document_id'             => null,
-            'date_of_payment'         => now()->format('Y-m-d'),
-            'payment_method_type_id'  => '01',
-            'payment'                 => $total,
-            'payment_destination_id'  => 'cash',
-        ]];
+        // ######## INICIO CAMBIO QUITAR BOLETA ########
+        return '01';
+        // ######## FIN CAMBIO QUITAR BOLETA ########
     }
 }
 

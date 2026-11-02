@@ -118,25 +118,21 @@ class SuscriptionOrder extends ModelTenant
     public function generate(): ?array
     {
         try {
-            if (!is_null($this->documentable)) {
-                return null;
-            }
-
-            $response = $this->document($this->suscription);
-
-            if (!$response['success'] ) {
-                return $response;
-            }
-
-            $document = Document::find($response['document_id']);
-
-            $this->documentable()->associate($document);
-            $this->save();
-
-            return [
-                'success' => $response['success'],
-                'message' => $response['response'],
-            ];
+            // ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
+            return $this->getConnection()->transaction(function () {
+                $order = self::query()->lockForUpdate()->findOrFail($this->getKey());
+                if ($order->documentable_id !== null) {
+                    return ['success'=>true, 'message'=>'La orden ya tiene un comprobante.'];
+                }
+                $response = $order->document($order->suscription);
+                if (empty($response['success'])) {
+                    throw new \RuntimeException($response['message'] ?? 'No se pudo generar la factura.');
+                }
+                $order->documentable()->associate(Document::findOrFail($response['document_id']));
+                $order->save();
+                return ['success'=>true, 'message'=>$response['response']];
+            });
+            // ######## FIN PERSISTENCIA FISCAL VENEZUELA ########
         } catch (\Throwable $th) {
             Log::error('Error al generar el documento para la orden de suscripción:', [
                 'suscription_order_id' => $this->id,

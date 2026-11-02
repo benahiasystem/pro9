@@ -84,7 +84,10 @@ class UnpaidController extends Controller
         $users = User::query()->whereIn('type', ['admin', 'seller'])->get();
 
 
-        $payment_method_types = PaymentMethodType::whereIn('id', ['05', '08', '09'])->get();
+        // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+        // A historical document may reference a method that is now inactive or reclassified.
+        $payment_method_types = PaymentMethodType::orderBy('description')->get();
+        // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
         $web_platforms = WebPlatform::all();
 
         return compact('customers', 'establishments', 'users', 'payment_method_types','web_platforms');

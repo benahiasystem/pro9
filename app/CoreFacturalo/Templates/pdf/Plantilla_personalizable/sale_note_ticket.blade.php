@@ -455,7 +455,7 @@
             <strong>CONDICIÓN DE PAGO: {{ $paymentCondition }} </strong>
         </td>
     </tr>
-    @if($document->payment_method_type_id)
+    @if($document->payment_method_type_id && $payments->isEmpty())
     <tr>
         <td class="desc pt-5">
             <strong>MÉTODO DE PAGO: </strong>{{ $document->payment_method_type->description }}
@@ -464,7 +464,7 @@
     @endif
 </table>
 
-@if ($document->payment_condition_id === '01')
+@if (in_array((string) $document->payment_condition_id, ['01', '02', '03'], true))
 @if($payments->count())
 <table class="full-width">
     <tr><td><strong>PAGOS:</strong> </td></tr>
@@ -472,7 +472,7 @@
         $payment = 0;
     @endphp
     @foreach($payments as $row)
-        <tr><td>- {{ $row->date_of_payment->format('d/m/Y') }} - {{ $row->payment_method_type->description }} - {{ $row->reference ? $row->reference.' - ':'' }} {{ $document->currency_type->symbol }} {{ $row->payment + $row->change }}</td></tr>
+        <tr><td>- {{ $row->date_of_payment->format('d/m/Y') }} - @include('pdf.partials.sale_note_receipt', ['row' => $row, 'document' => $document])</td></tr>
         @php
             $payment += (float) $row->payment;
         @endphp
@@ -480,7 +480,8 @@
     <tr><td class="pb-10"><strong>SALDO:</strong> {{ $document->currency_type->symbol }} {{ number_format($document->total - $payment, 2) }}</td></tr>
 </table>
 @endif
-@else
+@endif
+    @if (in_array((string) $document->payment_condition_id, ['02', '03'], true))
 <table class="full-width">
     @foreach($document->fee as $key => $quote)
     <tr>

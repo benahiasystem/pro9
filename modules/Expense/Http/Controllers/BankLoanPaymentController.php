@@ -28,7 +28,9 @@
         public function tables()
         {
             return [
-                 'payment_method_types' => PaymentMethodType::active()->NotCash()->NotCredit()->get(),
+                 // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+                 'payment_method_types' => PaymentMethodType::active()->where('collection_kind', 'account')->get(),
+                 // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
 
                 'payment_destinations' => $this->getPaymentDestinations()
             ];
@@ -64,7 +66,10 @@
 
 
             DB::connection('tenant')->transaction(function () use ($id, $request) {
-
+                $method = PaymentMethodType::query()->lockForUpdate()->find($request->input('payment_method_type_id'));
+                if (!$method || !$method->is_active || $method->collection_kind !== 'account') {
+                    \App\Services\Payments\Classification::error('payment_method_type_id', 'Seleccione un método bancario activo.');
+                }
                 $record = BankLoanPayment::firstOrNew(['id' => $id]);
 
                 $record->fill($request->all());

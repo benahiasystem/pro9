@@ -6,9 +6,15 @@
     @endforeach
     @foreach($document->payments->whereNull('receipt_parent_id') as $payment)
     @if($payment->currency_type_id !== $document->currency_type_id || $payment->tax_amount > 0)
-    <tr><td>Cobro recibido ({{ $payment->currency_type_id }})</td><td style="text-align:right">{{ number_format($payment->cash_received_amount, 2) }}</td></tr>
+    @if($payment->original_amount !== null)
+    <tr><td>{{ !empty($payment->payment_method_snapshot['receipt_origin']) ? 'Cobro previo recibido' : 'Cobro recibido' }} ({{ $payment->currency_type_id }})</td><td style="text-align:right">{{ number_format($payment->cash_received_amount, 2) }}</td></tr>
+    @else
+    <tr><td>Importe recibido no disponible</td><td></td></tr>
+    @endif
     {{-- ######## INICIO TASAS OCHO DECIMALES ######## --}}
+    @if($payment->exchange_rate)
     <tr><td>Tasa del cobro VES/USD</td><td style="text-align:right">{{ str_replace('.', ',', \App\Services\ExchangeRates\ExchangeRateMath::rate($payment->exchange_rate)) }}</td></tr>
+    @endif
     {{-- ######## FIN TASAS OCHO DECIMALES ######## --}}
     <tr><td>Principal aplicado ({{ $document->currency_type_id }})</td><td style="text-align:right">{{ number_format($payment->payment, 2) }}</td></tr>
     @endif

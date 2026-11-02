@@ -18,7 +18,12 @@ class SaleNoteResource extends JsonResource
     {
 
         $sale_note = SaleNote::find($this->id);
-        return $sale_note-> getCollectionData();
+        // ######## INICIO DESTINOS HISTORICOS DE COBRO ########
+        $data = $sale_note->getCollectionData();
+        $payments = $sale_note->payments()->with(['global_payment', 'payment_method_type', 'payment_file'])->get();
+        $data['recorded_payments'] = self::getTransformPayments($payments);
+        return $data;
+        // ######## FIN DESTINOS HISTORICOS DE COBRO ########
         /** Movido al modelo */
         $sale_note->seller_id = $sale_note->user_id;
         $sale_note->payments = self::getTransformPayments($sale_note->payments);
@@ -53,8 +58,16 @@ class SaleNoteResource extends JsonResource
                 'payment_method_type_id' => $row->payment_method_type_id,
                 'reference' => $row->reference,
                 'payment' => $row->payment,
+                'payment_method_snapshot' => $row->payment_method_snapshot,
+                'currency_type_id' => $row->currency_type_id,
+                'original_amount' => $row->original_amount,
+                ...\App\Services\Payments\ReceiptPresentation::tender($row),
+                'exchange_rate' => $row->exchange_rate,
+                'exchange_rate_source' => $row->exchange_rate_source,
+                'exchange_rate_date' => $row->exchange_rate_date ? $row->exchange_rate_date->format('Y-m-d') : null,
                 'payment_method_type' => $row->payment_method_type,
-                'payment_destination_id' => ($row->global_payment) ? ($row->global_payment->type_record == 'cash' ? 'cash':$row->global_payment->destination_id):null,
+                'payment_destination_id' => ($row->global_payment) ? ($row->global_payment->type_record == 'cash' ? 'cash':$row->global_payment->destination_id):data_get($row->payment_method_snapshot, 'receipt_origin.destination_id'),
+                'payment_destination_description' => \App\Services\Payments\ReceiptPresentation::destination($row),
                 'payment_filename' => ($row->payment_file) ? $row->payment_file->filename:null,
             ];
         });

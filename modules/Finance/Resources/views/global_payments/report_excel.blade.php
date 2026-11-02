@@ -61,7 +61,7 @@
                     <th class="">Moneda</th>
                     <th class="">Tipo</th>
                     <th class="">Destino</th>
-                    <th class="">Cuenta/Caja</th>
+                    <th class="">Cuenta/Caja actual</th>
                     <th class="">F. Pago</th>
                     <th class="">Método</th>
                     <th class="">Referencia</th>
@@ -116,14 +116,14 @@
 
                         $data = [
                             'id' => $value->id,
-                            'destination_description' => $value->getDestinationDescriptionPayment(),
+                            'destination_description' => null,
                             // 'destination_description' => $value->destination_description,
                             'cci' => $cci,
                             'date_of_payment' => ($payment !== null && $value->payment->date_of_payment !== null) ? $value->payment->date_of_payment->format('Y-m-d') : '',
                             'payment_method_type_description' => $payment_method_type_description,
                             'reference' => ($payment !== null) ? $value->payment->reference : '',
                             'total' => $payment instanceof \App\Models\Tenant\DocumentPayment ? ($payment->reversed_at ? 0 : $payment->cash_received_amount) : (($payment !== null) ? $payment->payment : 0),
-                            'number_full' => ($payment !== null && $value->payment->associated_record_payment) ? $value->payment->associated_record_payment->number_full : '',
+                            'number_full' => null,
                             'currency_type_id' => $payment instanceof \App\Models\Tenant\DocumentPayment ? $payment->currency_type_id : (($payment !== null && $value->payment->associated_record_payment != null) ? $value->payment->associated_record_payment->currency_type_id : ''),
                             // 'document_type_description' => ($value->payment->associated_record_payment->document_type) ? $value->payment->associated_record_payment->document_type->description:'NV',
                             'document_type_description' => $document_type,
@@ -141,6 +141,8 @@
                         $movement=\App\Services\Payments\Movement::row($value);
                         {
                             $data['total']=$movement['amount'] ?? '0';
+                            $data['destination_description']=$movement['destination_label'];
+                            $data['number_full']=$movement['number'];
                             $data['currency_type_id']=$value->report_context['currency_type_id'];
                             $data['payment_method_type_description']=$value->report_context['method']['description'];
                         }
@@ -156,7 +158,7 @@
                         <td class="celda">{{ $data['destination_description'] }}</td>
                         <td class="celda">{{ $data['cci'] }}</td>
                         <td class="celda">{{ $data['date_of_payment'] }}</td>
-                        <td class="celda">{{$payment_method_type_description}}</td>
+                        <td class="celda">{{ $data['payment_method_type_description'] }}</td>
                         <td class="celda">{{ $data['reference'] }}</td>
                         <td class="celda">{{ $data['user_name'] }}</td>
                         <td class="celda">{{ $data['total'] }}</td>

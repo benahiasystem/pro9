@@ -213,14 +213,15 @@
                             @foreach ($payments as $payment)
                                 @foreach ($payment as $pay)
                                     @php
-                                        $reference_one = $pay['reference'];
+                                        $reference_one .= $pay['reference'];
                                     @endphp
-                                    {{ $pay['description'] }}
+                                    {{ $pay['display'] ?? $pay['description'] }}
                                     @if ($loop->count > 1 && !$loop->last)
                                         <br>
                                     @endif
                                 @endforeach
-                            @endforeach
+                            @if (!$loop->last)<br>@endif
+@endforeach
 
                         </td>
                         <td>{{ $reference_one }}</td>

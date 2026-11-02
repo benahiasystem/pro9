@@ -543,7 +543,7 @@ foreach ($document->items as $row) {
         </tr>
     </table>
 
-    @if($document->payment_method_type_id)
+    @if($document->payment_method_type_id && $payments->isEmpty())
     <table class="full-width">
         <tr>
             <td>
@@ -553,7 +553,7 @@ foreach ($document->items as $row) {
     </table>
     @endif
 
-    @if ($document->payment_condition_id === '01')
+    @if (in_array((string) $document->payment_condition_id, ['01', '02', '03'], true))
     @if($payments->count())
     <table class="full-width">
         <tr>
@@ -562,14 +562,14 @@ foreach ($document->items as $row) {
         @php $payment = 0; @endphp
         @foreach($payments as $row)
         <tr>
-            <td>&#8226; {{ $row->payment_method_type->description }}
-                - {{ $row->reference ? $row->reference.' - ':'' }} {{ $document->currency_type->symbol }} {{ $row->payment + $row->change }}</td>
+            <td>&#8226; @include('pdf.partials.sale_note_receipt', ['row' => $row, 'document' => $document])</td>
         </tr>
         @endforeach
         </tr>
     </table>
     @endif
-    @else
+    @endif
+    @if (in_array((string) $document->payment_condition_id, ['02', '03'], true))
     <table class="full-width">
         @foreach($document->fee as $key => $quote)
         <tr>
@@ -603,7 +603,7 @@ foreach ($document->items as $row) {
             $payment = 0;
         @endphp
         @foreach($payments as $row)
-            <tr><td>- {{ $row->date_of_payment->format('d/m/Y') }} - {{ $row->payment_method_type->description }} - {{ $row->reference ? $row->reference.' - ':'' }} {{ $document->currency_type->symbol }} {{ $row->payment + $row->change }}</td></tr>
+            <tr><td>- {{ $row->date_of_payment->format('d/m/Y') }} - @include('pdf.partials.sale_note_receipt', ['row' => $row, 'document' => $document])</td></tr>
             @php
                 $payment += (float) $row->payment;
             @endphp

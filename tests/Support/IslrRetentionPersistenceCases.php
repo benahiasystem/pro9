@@ -142,6 +142,42 @@ trait IslrRetentionPersistenceCases
         IslrRetentionService::reverse($conflict,['operation_key'=>(string)Str::uuid(),'reason'=>'Resolver discrepancia externa']);self::assertSame('applied',$conflict->fresh()->application_status);self::assertEquals(24,$doc->fresh()->balance);
         self::assertSame('conflict',$conflict->islr_operations()->latest('id')->first()->status);self::assertEquals(202,$doc->fresh()->payments->sum('payment'));
     }
+    // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+    public function test_islr_retention_rejects_paid_balance_after_prior_transaction_read():void
+    {
+        [$db,$app,$input]=$this->bootIslrFixture();
+        $doc=(new Facturalo)->save($input)->getDocument()->fresh();
+        self::assertEquals(30,$doc->balance);
+        $voucher=$this->islrVoucher($doc); $worker=null;
+        $db->beginTransaction();
+        try {
+            $prior=\App\Models\Tenant\Document::findOrFail($doc->id);
+            self::assertEquals(30,$prior->balance);
+            $worker=new \Symfony\Component\Process\Process([PHP_BINARY,dirname(__DIR__).'/Support/fiscal_payment_concurrency_worker.php']);
+            $payment=['date_of_payment'=>'2026-09-10','payment_method_type_id'=>'01','payment'=>'30',
+                'currency_type_id'=>'VES','payment_destination_id'=>'cash','operation_key'=>(string)Str::uuid()];
+            $worker->setInput(json_encode(['connection'=>$db->getConfig(),'document_id'=>$doc->id,
+                'operation'=>'document-receipt','data'=>$payment],JSON_THROW_ON_ERROR));
+            $worker->setTimeout(30); $worker->start();
+            self::assertSame(0,$worker->wait(),$worker->getErrorOutput().$worker->getOutput());
+            $result=json_decode(substr($worker->getOutput(),strlen("READY\n")),true,512,JSON_THROW_ON_ERROR);
+            self::assertArrayHasKey('id',$result,json_encode($result));
+            try {
+                IslrRetentionService::store($prior,$voucher);
+                self::fail('La retención no debe consumir un saldo ya cobrado.');
+            } catch (ValidationException $e) {
+                self::assertArrayHasKey('amount',$e->errors());
+            }
+        } finally {
+            if ($db->transactionLevel()) $db->rollBack();
+            if ($worker && $worker->isRunning()) $worker->stop();
+        }
+        self::assertEquals(0,$doc->fresh()->balance);
+        self::assertSame(0,$doc->received_retentions()->count());
+        self::assertSame(2,$doc->payments()->count());
+    }
+    // ######## FIN MONEDA DEL MEDIO DE COBRO ########
+
     public function test_islr_concurrent_registration_collection_and_reversal():void
     {
         [$db,$app,$input]=$this->bootIslrFixture();

@@ -9,7 +9,7 @@
         /**
          * 
          * Filtros para obtener pagos al contado
-         * Se determina contado por is_credit = false, en payment_method_types
+         * Se determina la naturaleza desde el snapshot del movimiento registrado.
          * 
          * Usado en:
          * Models\Tenant\DocumentPayment
@@ -22,9 +22,9 @@
          */
         public function scopeWhereCashPaymentMethodType($query)
         {
-            return $query->whereHas('payment_method_type', function($q){
-                $q->filterCashPayments();
-            });
+            // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+            return \App\Services\Payments\Classification::filterRecorded($query, 'cash');
+            // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
         }
 
     }

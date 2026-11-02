@@ -1083,6 +1083,7 @@ import LotsGroup from "./lots_group.vue";
 
 import {
     calculateRowItem,
+    getQuantityPrecisionByUnitType,
     resolveSelectableAffectationType
 } from "../../../../helpers/functions";
 import WarehousesDetail from "./select_warehouses.vue";
@@ -1357,15 +1358,15 @@ export default {
 
             return false;
         },
-        isWeightUnitKgm() {
+        hasFractionalQuantity() {
             return (
                 this.form &&
                 this.form.item &&
-                String(this.form.item.unit_type_id || "").toUpperCase() === "KGM"
+                getQuantityPrecisionByUnitType(this.form.item.unit_type_id) > 0
             );
         },
         quantityStep() {
-            return this.isWeightUnitKgm ? 0.01 : 1;
+            return this.hasFractionalQuantity ? 0.01 : 1;
         },
         configShowLastPriceSale() {
             return _.has(this.configuration, "show_last_price_sale")

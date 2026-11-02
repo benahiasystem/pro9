@@ -42,9 +42,9 @@ class DispatchController extends Controller
             ])
             ->values();
 
-        // Unidades de peso permitidas por SUNAT para el peso bruto total
+        // El catálogo local usa KG y TON; HKA recibe sus equivalencias por separado.
         $unitTypes = UnitType::whereActive()
-            ->whereIn('id', ['KGM', 'TNE'])
+            ->whereIn('id', ['KG', 'TON'])
             ->get()
             ->map(fn($row) => [
                 'id' => $row->id,

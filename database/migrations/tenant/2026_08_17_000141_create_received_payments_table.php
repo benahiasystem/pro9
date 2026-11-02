@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
  * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
  * - `provider` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `amount` decimal(30,12) NOT NULL
+ * - `currency_type_id` varchar(255) NOT NULL
  * - `sender_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `raw_text` text COLLATE utf8mb4_unicode_ci NOT NULL
  * - `package_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
@@ -33,6 +34,7 @@ CREATE TABLE `received_payments` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `provider` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `amount` decimal(30,12) NOT NULL,
+  `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `sender_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `raw_text` text COLLATE utf8mb4_unicode_ci NOT NULL,
   `package_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,

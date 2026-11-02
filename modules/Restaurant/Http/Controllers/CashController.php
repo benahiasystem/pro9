@@ -165,59 +165,19 @@ class CashController extends Controller
      */
     public function cash_document(Request $request) {
 
-        $cash = Cash::where([
-                                ['user_id', auth()->user()->id],
-                                ['state', true],
-                            ])->first();
-
-        (int)$payment_credit = 0;
-
-
-        if($request->document_id != null) {
-            $document_id = $request->document_id;
-
-            $document =  Document::find((int)$document_id);
-
-                                            //credito
-            if($document->payment_condition_id == '02')  {
-                CashDocumentCredit::create([
-                    'cash_id' => $cash->id,
-                    'document_id' => $document_id
-                ]);
-
-                $payment_credit += 1;
-            }
+        // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+        // Facturas y notas comparten la vinculación idempotente y los snapshots del POS general.
+        if ($request->document_id !== null || $request->sale_note_id !== null) {
+            return app(\App\Http\Controllers\Tenant\CashController::class)->cash_document($request);
         }
-        else if($request->sale_note_id != null) {
+        // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
 
-             $document_id = $request->sale_note_id;
-
-             $document =  SaleNote::find((int)$document_id);
-
-                                                //credito
-             if($document->payment_method_type_id == '09')  {
-                CashDocumentCredit::create([
-                    'cash_id' => $cash->id,
-                    'sale_note_id' => $document_id
-                ]);
-
-                $payment_credit += 1;
-            }
-        }
-        else if($request->quotation_id != null) {
-
-        }
-
-        if($payment_credit == 0) {
-
-            $req = [
-                'document_id' => $request->document_id,
-                'sale_note_id' => $request->sale_note_id,
-                'quotation_id' => $request->quotation_id,
-            ];
-
-            $cash->cash_documents()->updateOrCreate($req);
-        }
+        $cash = Cash::where('user_id', auth()->id())->where('state', true)->firstOrFail();
+        $cash->cash_documents()->updateOrCreate([
+            'document_id' => null,
+            'sale_note_id' => null,
+            'quotation_id' => $request->quotation_id,
+        ]);
 
         return [
             'success' => true,

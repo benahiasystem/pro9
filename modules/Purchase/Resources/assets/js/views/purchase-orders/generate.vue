@@ -92,6 +92,7 @@
                                         <el-option v-for="option in payment_method_types" :key="option.id"
                                                    :value="option.id" :label="option.description"></el-option>
                                     </el-select>
+                                    <small v-if="!form.payment_method_type_id" class="text-muted">No hay efectivo activo para la moneda del documento; seleccione un método.</small>
                                     <small class="form-control-feedback" v-if="errors.payment_method_type_id"
                                            v-text="errors.payment_method_type_id[0]"></small>
                                 </div>
@@ -237,6 +238,7 @@
 </template>
 
 <script>
+import {defaultCashForCurrency} from "@helpers/payment-classification"
 
 import PurchaseFormItem from './partials/item.vue'
 import PurchaseOptions from './partials/options.vue'
@@ -299,6 +301,7 @@ export default {
                 this.company = response.data.company
 
                 this.form.currency_type_id = (this.currency_types.length > 0) ? this.currency_types[0].id : null
+                this.form.payment_method_type_id = defaultCashForCurrency(this.payment_method_types, this.form.currency_type_id)?.id || null
                 this.form.establishment_id = (this.establishment.id) ? this.establishment.id : null
 
                 this.changeDateOfIssue()
@@ -495,7 +498,7 @@ export default {
         },
         changePaymentMethodType(flag_submit = true) {
             let payment_method_type = _.find(this.payment_method_types, {'id': this.form.payment_method_type_id})
-            if (payment_method_type.number_days) {
+            if (payment_method_type?.number_days) {
                 this.form.date_of_issue = moment().add(payment_method_type.number_days, 'days').format('YYYY-MM-DD');
                 this.changeDateOfIssue()
             } else {
@@ -542,7 +545,7 @@ export default {
                 time_of_issue: moment().format('HH:mm:ss'),
                 supplier_id: null,
                 supplier: null,
-                payment_method_type_id: '01',
+                payment_method_type_id: null,
                 currency_type_id: null,
                 purchase_order: null,
                 exchange_rate_sale: 0,
@@ -588,6 +591,7 @@ export default {
         resetForm() {
             this.initForm()
             this.form.currency_type_id = (this.currency_types.length > 0) ? this.currency_types[0].id : null
+                this.form.payment_method_type_id = defaultCashForCurrency(this.payment_method_types, this.form.currency_type_id)?.id || null
             this.form.establishment_id = this.establishment.id
             this.form.document_type_id = (this.document_types.length > 0) ? this.document_types[0].id : null
 

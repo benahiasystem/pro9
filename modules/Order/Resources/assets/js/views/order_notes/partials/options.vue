@@ -247,6 +247,7 @@
 
                     <!-- Contado -->
                     <template  v-if="document.payment_condition_id == '01'">
+                        <small class="d-block">Los cobros del pedido se registran al generar el comprobante.</small>
                         <table>
                             <thead>
                                 <tr width="100%">
@@ -266,6 +267,13 @@
                                             <el-select v-model="row.payment_method_type_id">
                                                 <el-option v-for="option in cash_payment_method_types" :key="option.id" :value="option.id" :label="option.description"></el-option>
                                             </el-select>
+                                            <small v-if="!row.payment_method_type_id" class="text-muted">No hay efectivo activo para la moneda del documento; seleccione un método.</small>
+                                            <igtf-settings-status v-if="fiscalPaymentsApplicable" />
+                                            <igtf-payment-fields v-if="fiscalPaymentsApplicable && !row.id" :payment="row" :payment-methods="payment_method_types"
+                                                :document-currency="document.currency_type_id" :document-rate="document.exchange_rate_sale"
+                                                :customer-id="document.customer_id" :igtf-enabled="igtfEnabled" :settings-version="igtfSettings.revision" />
+                                            <receipt-currency-fields v-else-if="!row.id" :row="row" :methods="payment_method_types"
+                                                :document-currency="document.currency_type_id" :document-rate="document.exchange_rate_sale" />
                                         </div>
                                     </td>
                                     <td>
@@ -316,8 +324,15 @@
                                 <td>
                                     <div class="form-group mb-2 mr-2">
                                         <el-select v-model="row.payment_method_type_id">
-                                            <el-option v-for="option in payment_method_types" :key="option.id" :value="option.id" :label="option.description"></el-option>
+                                            <el-option v-for="option in cash_payment_method_types" :key="option.id" :value="option.id" :label="option.description"></el-option>
                                         </el-select>
+                                        <small v-if="!row.payment_method_type_id" class="text-muted">No hay efectivo activo para la moneda del documento; seleccione un método.</small>
+                                        <igtf-settings-status v-if="fiscalPaymentsApplicable" />
+                                        <igtf-payment-fields v-if="fiscalPaymentsApplicable && !row.id" :payment="row" :payment-methods="payment_method_types"
+                                            :document-currency="document.currency_type_id" :document-rate="document.exchange_rate_sale"
+                                            :customer-id="document.customer_id" :igtf-enabled="igtfEnabled" :settings-version="igtfSettings.revision" />
+                                        <receipt-currency-fields v-else-if="!row.id" :row="row" :methods="payment_method_types"
+                                            :document-currency="document.currency_type_id" :document-rate="document.exchange_rate_sale" />
                                     </div>
                                 </td>
                                 <td>
@@ -395,6 +410,11 @@
 
 <script>
 import {withoutDraftRetentions, suggestRemainingPayment} from "@helpers/document-creation"
+import {ensureExchangeRateSale} from "@helpers/ensure-exchange-rate-sale"
+import {defaultCashForCurrency, paymentValidationMessage} from "@helpers/payment-classification"
+import fiscalPaymentSettings from "@mixins/fiscal-payment-settings"
+import IgtfPaymentFields from "@views/documents/partials/igtf_fields.vue"
+import ReceiptCurrencyFields from "@components/ReceiptCurrencyFields.vue"
 import DocumentOptions from "@views/documents/partials/options.vue";
 import SaleNoteOptions from "@views/sale_notes/partials/options.vue";
 import SetTip from '@components/SetTip.vue'
@@ -406,10 +426,12 @@ export default {
         DocumentOptions,
         SaleNoteOptions,
         SetTip,
-        ListRestrictItems
+        ListRestrictItems,
+        IgtfPaymentFields,
+        ReceiptCurrencyFields
     },
     mixins: [
-        fnRestrictSaleItemsCpe
+        fnRestrictSaleItemsCpe, fiscalPaymentSettings
     ],
     props: ["showDialog", "recordId", "showClose", "showGenerate", "type", 'typeUser', 'configuration'],
     data() {
@@ -450,15 +472,15 @@ export default {
     {
         isInvoiceDocument()
         {
-            return ['01', '03'].includes(this.document.document_type_id)
+            return this.document.document_type_id === '01'
         },
         credit_payment_method_types()
         {
-            return _.filter(this.payment_method_types, {is_credit: true})
+            return this.payment_method_types.filter(method => [true, 1, '1'].includes(method.is_active) && method.collection_kind === 'credit')
         },
         cash_payment_method_types()
         {
-            return _.filter(this.payment_method_types, {is_credit: false})
+            return this.payment_method_types.filter(method => [true, 1, '1'].includes(method.is_active) && ['cash', 'account'].includes(method.collection_kind))
         },
         isCreditPaymentCondition: function () {
             return ['02', '03'].includes(this.document.payment_condition_id)
@@ -578,16 +600,9 @@ export default {
         },
         clickAddPayment()
         {
-            let payment_method_type_id = null
-
-            if(this.isInvoiceDocument)
-            {
-                payment_method_type_id = this.cash_payment_method_types.length > 0 ? this.cash_payment_method_types[0].id : null
-            }
-            else
-            {
-                payment_method_type_id = this.payment_method_types.length > 0 ? this.payment_method_types[0].id : null
-            }
+            // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+            const payment_method_type_id = defaultCashForCurrency(this.payment_method_types, this.document.currency_type_id)?.id || null
+            // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
 
             this.document.payments.push({
                 id: null,
@@ -719,17 +734,11 @@ export default {
 
         },
         validatePaymentDestination() {
-            // Condición crédito / métodos crédito: no exigen destino de pago.
-            if (this.isCreditPaymentCondition) {
-                return { error_by_item: 0 }
-            }
-
             let error_by_item = 0
 
             this.document.payments.forEach((item) => {
-                if (!['05', '08', '09'].includes(item.payment_method_type_id)) {
-                    if (item.payment_destination_id == null) error_by_item++;
-                }
+                const method = this.payment_method_types.find(row => String(row.id) === String(item.payment_method_type_id));
+                if (!method || ![true, 1, '1'].includes(method.is_active) || !['cash', 'account'].includes(method.collection_kind) || item.payment_destination_id == null) error_by_item++;
             })
 
             return {
@@ -740,6 +749,9 @@ export default {
         async submit() {
             // await this.assignDocument();
             if(this.document.items.length === 0) return this.$message.error('No tiene productos agregados.')
+            if (this.document.payments.some(row => row.id || row.document_id)) {
+                return this.$message.error('El pedido contiene un cobro registrado de origen no identificado; no se puede registrar de nuevo.');
+            }
 
             let validate_payment_destination = await this.validatePaymentDestination()
 
@@ -752,6 +764,12 @@ export default {
             if(!validate_restrict_sale_items_cpe.success) return this.$message.error(validate_restrict_sale_items_cpe.message)
 
 
+            try {
+                await ensureExchangeRateSale(this.document, this.$http);
+            } catch (error) {
+                return this.$message.error(error.message || 'No se pudo obtener el tipo de cambio.');
+            }
+            if (!await this.ensureFiscalPaymentsReady(this.document.payments)) return;
             this.loading_submit = true;
             if (this.document.document_type_id === "80") {
                 this.document.prefix = "NV";
@@ -792,10 +810,12 @@ export default {
                     }
                 })
                 .catch(error => {
-                    if (error.response.status === 422) {
-                        this.errors = error.response.data;
+                    if (error.response && error.response.status === 422) {
+                        this.errors = error.response.data.errors || error.response.data;
+                        const message = paymentValidationMessage(error.response.data);
+                        if (message) this.$message.error(message);
                     } else {
-                        this.$message.error(error.response.data.message);
+                        this.$message.error(error.response?.data?.message || 'No se pudo generar el comprobante.');
                     }
 
                     if (temp_payment_condition_id === '03') this.document.payment_condition_id = temp_payment_condition_id
@@ -958,7 +978,10 @@ export default {
                         payment_method_type_id:  pay.payment_method_type_id,
                         payment_destination_id:  pay.payment_destination_id,
                         reference: pay.reference,
-                        payment: pay.payment
+                        payment: String(pay.payment ?? 0),
+                        currency_type_id: pay.currency_type_id ?? null,
+                        original_amount: pay.original_amount ?? null,
+                        exchange_rate: pay.exchange_rate ?? null,
                     })
                 })
 

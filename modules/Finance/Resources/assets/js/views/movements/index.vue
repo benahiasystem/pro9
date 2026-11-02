@@ -111,17 +111,17 @@
 
                             <!-- Ingresos -->
                             <td>
-                                <label v-show="row.input > 0 || row.input != '-'">Bs. </label
+                                <label v-show="row.input != '-'">{{ row.currency_type_id === 'VES' ? 'Bs.' : '$' }} </label
                                 >{{ row.input }}
                             </td>
                             <!-- Gastos -->
                             <td>
-                                <label v-show="row.output > 0 || row.output != '-'">Bs. </label
+                                <label v-show="row.output != '-'">{{ row.currency_type_id === 'VES' ? 'Bs.' : '$' }} </label
                                 >{{ row.output }}
                             </td>
                             <!-- Saldo -->
                             <td>
-                                <label v-show="row.balance > 0 || row.balance != '-'">Bs. </label
+                                <label v-show="row.balance != '-'">{{ row.currency_type_id === 'VES' ? 'Bs.' : '$' }} </label
                                 >{{ row.balance }}
                             </td>
                         </tr>

@@ -55,7 +55,7 @@
                     </div>
                     <!-- ######## FIN MONEDA E IMPUESTO DE MEDIOS ######## -->
                     <!-- ######## FIN CLASIFICACION DE COBROS Y CAJA ######## -->
-                    <div class="col-md-3" v-show="form.is_credit">
+                    <div class="col-md-3" v-show="form.collection_kind === 'credit'">
                         <label class="control-label">Número de dias</label>
                         <el-input v-model="form.number_days" :maxlength="3"></el-input>
                     </div>

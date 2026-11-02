@@ -17,7 +17,17 @@ final class SaleNoteConversionLines
     {
         $rows=[];$context=null;
         $groups=self::group(self::sourceRows($ids,$rows,$context,$selectAll));
-        return ['data'=>$rows,'grouped_items'=>$groups,'conversion_context'=>[
+        // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+        // sourceRows has already authorized every note in the same read snapshot.
+        $payments=collect();
+        foreach (array_chunk($ids,500) as $batch) {
+            $records=\App\Models\Tenant\SaleNotePayment::withoutEagerLoads()
+                ->with(['global_payment','payment_method_type','payment_file'])
+                ->whereIn('sale_note_id',$batch)->orderBy('id')->get();
+            $payments=$payments->concat(\App\Http\Resources\Tenant\SaleNoteResource::getTransformPayments($records));
+        }
+        // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
+        return ['data'=>$rows,'grouped_items'=>$groups,'payments'=>$payments->values()->all(),'conversion_context'=>[
             'customer_id'=>$context[0] ?? null,'establishment_id'=>$context[1] ?? null,
             'currency_type_id'=>$context[2] ?? null,'exchange_rate_sale'=>$context[3] ?? null,
         ]];

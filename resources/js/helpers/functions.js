@@ -62,6 +62,20 @@ function calculateRowItem(old, currency, rate, pigv = '0.16', exportation = fals
     for (const field of ['total_value', 'total_base_igv', 'total_igv', 'total_taxes', 'total']) result[field + '_without_rounding'] = result[field]
     return result
 }
+
+// Decimal representations must not replace a stored quantity fraction when merging rows.
+function canMergeRowQuantity(row) {
+    if (row.quantity_input || row.calculation_snapshot?.inputs?.quantity_input) return false
+    try { return exactValue(row, 'quantity').compare(exactAmount(row.quantity)) === 0 }
+    catch (_) { return false }
+}
+
+function canMergeRowPrice(left, right) {
+    // Combining adjustments would otherwise discard the second row's terms.
+    if (['discounts', 'charges', 'attributes'].some(field => (left[field] || []).length || (right[field] || []).length)) return false
+    try { return exactValue(left, 'unit_price').compare(exactValue(right, 'unit_price')) === 0 }
+    catch (_) { return false }
+}
 // ######## FIN CALCULOS EXACTOS PRO9 ########
 
 
@@ -154,15 +168,15 @@ function getDataItemLotGroup(row_old)
  */
 const DECIMAL_UNIT_TYPES = [
     // Peso
-    'KGM', 'GRM', 'MGM', 'TNE', 'LBR', 'ONZ',
+    'KG', 'GR', 'MG', 'TON', 'LB',
     // Volumen
-    'LTR', 'MLT', 'GLL', 'GLI', 'MTQ', 'CMQ', 'MMQ', 'FTQ',
+    'LT', 'ML', 'GAL', 'M3',
     // Longitud
-    'MTR', 'CMT', 'MMT', 'KTM', 'FOT', 'INH', 'YRD',
+    'M', 'CM', 'MM', 'KM', 'PULG',
     // Superficie
-    'MTK', 'CMK', 'MMK', 'FTK',
+    'M2',
     // Tiempo y energía
-    'HUR', 'HT', 'SEC', 'KWH', 'MWH',
+    'HR', 'DIA',
 ]
 
 
@@ -196,7 +210,7 @@ const resolveSelectableAffectationType = (requestedId, affectationTypes = [], ex
 export {
     calculateRowItem, getUniqueArray, showNamePdfOfDescription,
     sumAmountDiscountsNoBaseByItem, FormatUnitPriceRow, filterWords,
-    getQuantityPrecisionByUnitType, resolveSelectableAffectationType
+    getQuantityPrecisionByUnitType, resolveSelectableAffectationType, canMergeRowQuantity, canMergeRowPrice
 }
 
 // ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

@@ -109,6 +109,56 @@ trait SpePersistenceCases
         self::assertSame('-3/2000000000',(string)$note->payments->first()->exactValue('payment_adjustment'));
         $receiptRows=(new \App\Http\Resources\Tenant\DocumentPaymentCollection($note->payments))->toArray(\Illuminate\Http\Request::create('/'));
         self::assertSame($payment->id,$receiptRows->first()['receipt_parent_id']);
+        $reportDetail=\App\CoreFacturalo\Helpers\Template\TemplateHelper::getDetailedPayment($note);
+        self::assertSame('Aplicación IGTF',$reportDetail['PAGOS'][0]['kind']);
+        self::assertStringContainsString('Aplicación IGTF',$reportDetail['PAGOS'][0]['display']);
+        self::assertStringContainsString('Aplicado VES 1.5',$reportDetail['PAGOS'][0]['display']);
+        self::assertStringNotContainsString('Recibido',$reportDetail['PAGOS'][0]['display']);
+        $currentRows=(new \Modules\Report\Http\Resources\DocumentCollection(new \Illuminate\Database\Eloquent\Collection([$note->fresh()])))
+            ->toArray(\Illuminate\Http\Request::create('/'));
+        self::assertSame('1.50',$currentRows[0]['total']);
+        self::assertSame(['n'=>'3000000003','d'=>'2000000000'],$currentRows[0]['report_total_fractions']['total']);
+        $rejectedNote=clone $note; $rejectedNote->state_type_id='09';
+        $rejectedRows=(new \Modules\Report\Http\Resources\DocumentCollection(new \Illuminate\Database\Eloquent\Collection([$rejectedNote])))
+            ->toArray(\Illuminate\Http\Request::create('/'));
+        foreach (['total','total_taxed','total_igv','total_charge'] as $field) self::assertSame('0.00',$rejectedRows[0][$field]);
+        config(['view.compiled'=>sys_get_temp_dir().'/'.$this->database.'/igtf-report-views', 'view.paths'=>[base_path('resources/views')]]);
+        mkdir(config('view.compiled'),0777,true);
+        $app->register(\Illuminate\View\ViewServiceProvider::class);
+        $app['view']->addNamespace('report',base_path('modules/Report/Resources/views'));
+        $report=new \Modules\Report\Http\Controllers\ReportDocumentController();
+        $filters=['period'=>'between_dates','date_start'=>'2026-01-01','date_end'=>'2027-01-01',
+            'document_type_id'=>'08','seller_id'=>null,'person_id'=>null,'user_type'=>'admin'];
+        $records=$report->getRecords($filters,Document::class)->where('id',$note->id)->get();
+        $establishment=\App\Models\Tenant\Establishment::findOrFail($note->establishment_id);
+        $categories=collect(); $categories_services=collect();
+        $reportView='report::documents.report_pdf';
+        $templateSource=file_get_contents(base_path('modules/Report/Resources/views/documents/report_pdf.blade.php'));
+        preg_match_all('/\$columns->([a-zA-Z_]+)/',$templateSource,$matches);
+        $columns=new \stdClass();
+        foreach (array_unique($matches[1]) as $name) $columns->$name=(object)['title'=>$name,'visible'=>in_array($name,['payment_form','payment_method'],true)];
+        $html=view($reportView,compact('records','company','establishment','filters','columns','categories','categories_services'))->render();
+        self::assertStringContainsString('Aplicación IGTF',$html);
+        self::assertStringContainsString('Aplicado VES 1.5',$html);
+        self::assertStringNotContainsString('Recibido USD',$html);
+        $pdf=new \Mpdf\Mpdf(['tempDir'=>sys_get_temp_dir(),'format'=>'A4-L']);
+        $pdf->WriteHTML($html);
+        $reportPdf=$pdf->Output('','S');
+        self::assertStringStartsWith('%PDF-',$reportPdf);
+        if ($dir=getenv('PRO9_TICKET_EVIDENCE_DIR')) file_put_contents($dir.'/igtf-document-report.pdf',$reportPdf);
+        foreach (['report_pdf_standard','report_pdf_simple'] as $viewName) {
+            $rejectedRecords=new \Illuminate\Database\Eloquent\Collection([$rejectedNote]);
+            $rejectedHtml=view('report::documents.'.$viewName,['records'=>$rejectedRecords,'company'=>$company,
+                'establishment'=>$establishment,'filters'=>$filters])->render();
+            $dom=new \DOMDocument(); @$dom->loadHTML('<?xml encoding="utf-8" ?>'.$rejectedHtml);
+            $xpath=new \DOMXPath($dom);
+            $rows=$xpath->query('//tbody/tr[td[contains(normalize-space(.), "'.$rejectedNote->series.'")]]');
+            self::assertSame(1,$rows->length,$viewName);
+            $cells=$xpath->query('./td',$rows->item(0));
+            self::assertSame('0.00',trim($cells->item($cells->length-3)->textContent),$viewName.' base');
+            self::assertSame('0.00',trim($cells->item($cells->length-2)->textContent),$viewName.' IVA');
+            self::assertSame('0.00',trim($cells->item($cells->length-1)->textContent),$viewName.' total');
+        }
         $changed=clone $note;$changed->total=$note->exactValue('total')->plus('0.000000000001');
         try { HkaIgtfNote::assertCollection($changed);self::fail('Una diferencia subcéntimo no acredita el impuesto original.'); }
         catch (ValidationException $error) { self::assertArrayHasKey('payment',$error->errors()); }

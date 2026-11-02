@@ -35,8 +35,8 @@ class CashReportRegistry
      *     'label' => 'Reporte de caja',
      *     'description' => 'Detalle completo de documentos y pagos.',
      *     'category' => 'cash',
-     *     'builder' => Builders\CashSummaryBuilder::class,
-     *     'views' => ['pdf' => 'cashreport::reports.cash_summary_a4', 'ticket' => '...', 'excel' => '...'],
+     *     'builder' => ClassifiedCashReport::class,
+     *     'views' => ['pdf' => 'cashreport::reports.classified_a4', 'ticket' => '...', 'excel' => '...'],
      *     'formats' => [self::FORMAT_PDF, self::FORMAT_EXCEL],
      *     'papers' => [self::PAPER_A4, self::PAPER_TICKET_80, self::PAPER_TICKET_58],
      *     'options' => [['key' => 'summary', 'label' => 'Solo resumen (ticket)']],
@@ -44,17 +44,11 @@ class CashReportRegistry
      */
     public static function reports(): array
     {
-        return [
+        $reports = [
             'cash_summary' => [
                 'label' => 'Reporte de caja',
                 'description' => 'Movimientos del turno, medios de pago, efectivo y saldos por moneda.',
                 'category' => 'cash',
-                'builder' => Builders\CashSummaryBuilder::class,
-                'views' => [
-                    'pdf' => 'cashreport::reports.cash_summary_a4',
-                    'ticket' => 'cashreport::reports.cash_summary_ticket',
-                    'excel' => 'cashreport::reports.cash_summary_excel',
-                ],
                 'formats' => [self::FORMAT_PDF, self::FORMAT_EXCEL],
                 'papers' => [self::PAPER_A4, self::PAPER_TICKET_80, self::PAPER_TICKET_58],
                 'options' => [
@@ -65,8 +59,6 @@ class CashReportRegistry
                 'label' => 'Reporte de caja simple',
                 'description' => 'Versión simplificada A4.',
                 'category' => 'cash',
-                'builder' => Builders\CashSimpleBuilder::class,
-                'views' => ['pdf' => 'cashreport::reports.cash_simple_a4'],
                 'formats' => [self::FORMAT_PDF],
                 'papers' => [self::PAPER_A4],
             ],
@@ -74,17 +66,13 @@ class CashReportRegistry
                 'label' => 'Resumen de operaciones diarias',
                 'description' => 'Ventas al contado/crédito, compras y saldos globales.',
                 'category' => 'cash',
-                'builder' => Builders\SummaryDailyOperationsBuilder::class,
-                'views' => ['pdf' => 'cashreport::reports.summary_daily_operations_a4'],
                 'formats' => [self::FORMAT_PDF],
                 'papers' => [self::PAPER_A4],
             ],
             'general_with_payments' => [
                 'label' => 'Reporte general con pagos (V2)',
-                'description' => 'Pagos al contado con destino caja agrupados por método de pago.',
+                'description' => 'Movimientos de efectivo del turno agrupados por método y moneda.',
                 'category' => 'cash',
-                'builder' => Builders\GeneralWithPaymentsBuilder::class,
-                'views' => ['pdf' => 'cashreport::reports.general_with_payments_a4'],
                 'formats' => [self::FORMAT_PDF],
                 'papers' => [self::PAPER_A4],
             ],
@@ -92,8 +80,6 @@ class CashReportRegistry
                 'label' => 'Ingresos y egresos',
                 'description' => 'Movimientos de efectivo con destino caja por tipo de transacción.',
                 'category' => 'payments',
-                'builder' => Builders\IncomeEgressBuilder::class,
-                'views' => ['pdf' => 'cashreport::reports.income_egress_a4'],
                 'formats' => [self::FORMAT_PDF],
                 'papers' => [self::PAPER_A4],
             ],
@@ -123,26 +109,29 @@ class CashReportRegistry
                 'label' => 'Resumen de ingreso',
                 'description' => 'Pagos por método de pago, comprobantes con pago y a crédito.',
                 'category' => 'income',
-                'builder' => Builders\IncomeSummaryBuilder::class,
-                'views' => ['pdf' => 'cashreport::reports.income_summary_a4'],
                 'formats' => [self::FORMAT_PDF],
                 'papers' => [self::PAPER_A4],
             ],
             'payments_associated' => [
                 'label' => 'Pagos asociados a caja',
                 // ########## INICIO CAMBIO QUITAR BOLETA
-                'description' => 'Facturas y notas de venta pagadas en efectivo con destino caja. Excel: ingresos y egresos por moneda.',
+                'description' => 'Ingresos y egresos de efectivo del turno por método y moneda.',
                 // ######### FIN CAMBIO QUITAR BOLETA
                 'category' => 'payments',
-                'builder' => Builders\PaymentsAssociatedCashBuilder::class,
-                'views' => [
-                    'pdf' => 'cashreport::reports.payments_associated_a4',
-                    'excel' => 'cashreport::reports.payments_associated_excel',
-                ],
                 'formats' => [self::FORMAT_PDF, self::FORMAT_EXCEL],
                 'papers' => [self::PAPER_A4],
             ],
         ];
+        // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+        foreach ($reports as $type => &$report) {
+            if (in_array($type, ['products', 'products_garage'], true)) continue;
+            $report['builder'] = ClassifiedCashReport::class;
+            $report['views'] = ['pdf' => 'cashreport::reports.classified_a4',
+                'ticket' => 'cashreport::reports.classified_ticket', 'excel' => 'cashreport::reports.classified_excel'];
+        }
+        unset($report);
+        // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
+        return $reports;
     }
 
     public static function get(string $type): ?array

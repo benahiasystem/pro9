@@ -15,6 +15,8 @@ class DocumentCollection extends ResourceCollection
 
 
         \App\Services\Fiscal\FiscalIdentity::preload($this->collection);
+        (new \Illuminate\Database\Eloquent\Collection($this->collection->all()))
+            ->loadMissing(['currency_type', 'payments.global_payment', 'payments.payment_method_type', 'fee.currency_type']);
         return $this->collection->transform(function(\App\Models\Tenant\Document $row, $key){
 
 
@@ -38,14 +40,9 @@ class DocumentCollection extends ResourceCollection
             $payment_description='';
             $payments_total = TemplateHelper::getDetailedPayment($row);
 
-            foreach ($payments_total as $payment){
-                foreach ($payment as $pay){
-                    $payment_description=$pay['description'];
-                    if (count($payment) > 1){
-                        $payment_description.=' - ';
-                    }
-                }
-            }
+            $payment_description = collect($payments_total)->flatten(1)
+                ->map(fn ($payment) => $payment['display'] ?? $payment['description'])
+                ->implode(' - ');
 
             //dd($row->sale_note);
             return [
@@ -68,7 +65,7 @@ class DocumentCollection extends ResourceCollection
                 'ruc' => $row->customer->number,
                 'note_sale' => $row->sale_note?$row->sale_note->number_full:'',
                 'date_sale' => $row->sale_note?$row->sale_note->date_of_issue->format('Y-m-d'):'',
-                'payment_form' => ($row->payments()->count() > 0) ? $row->payments()->first()->payment_method_type->description : '',
+                'payment_form' => \App\Services\Payments\ReceiptPresentation::firstMethod($row->payments),
                 'payment_method' => $payment_description,
                 'series' => $row->fiscal_identity['series'],
                 'establishment_id' => $row->establishment_id,
@@ -76,12 +73,13 @@ class DocumentCollection extends ResourceCollection
                 'purchase_order' => $row->purchase_order,
                 'guides' => !empty($row->guides)?(array)$row->guides:null,
 
-                'total_exportation' => (in_array($row->document_type_id,['01', '07']) && in_array($row->state_type_id,['09','11'])) ? number_format(0,2, ".","") : \App\Support\Exact\Decimal::represent($row->total_exportation),
-                'total_exonerated' =>  (in_array($row->document_type_id,['01', '07']) && in_array($row->state_type_id,['09','11'])) ? number_format(0,2, ".","") : \App\Support\Exact\Decimal::represent($row->total_exonerated),
-                'total_taxed' => (in_array($row->document_type_id,['01', '07']) && in_array($row->state_type_id,['09','11'])) ? number_format(0,2, ".","") : \App\Support\Exact\Decimal::represent($row->total_taxed),
-                'total_igv' =>  (in_array($row->document_type_id,['01', '07']) && in_array($row->state_type_id,['09','11'])) ? number_format(0,2, ".","") : \App\Support\Exact\Decimal::represent($row->total_igv),
-                'total' =>  (in_array($row->document_type_id,['01', '07']) && in_array($row->state_type_id,['09','11'])) ? number_format(0,2, ".","") : \App\Support\Exact\Decimal::represent($row->total),
-                'total_charge' => $row->total_charge,
+                'total_exportation' => in_array($row->state_type_id,['09','11']) ? number_format(0,2, ".","") : \App\Support\Exact\Decimal::format(\App\Support\Exact\Decimal::read($row, 'total_exportation'), 2, '.', ''),
+                'total_exonerated' =>  in_array($row->state_type_id,['09','11']) ? number_format(0,2, ".","") : \App\Support\Exact\Decimal::format(\App\Support\Exact\Decimal::read($row, 'total_exonerated'), 2, '.', ''),
+                'total_taxed' => in_array($row->state_type_id,['09','11']) ? number_format(0,2, ".","") : \App\Support\Exact\Decimal::format(\App\Support\Exact\Decimal::read($row, 'total_taxed'), 2, '.', ''),
+                'total_igv' =>  in_array($row->state_type_id,['09','11']) ? number_format(0,2, ".","") : \App\Support\Exact\Decimal::format(\App\Support\Exact\Decimal::read($row, 'total_igv'), 2, '.', ''),
+                'total' =>  in_array($row->state_type_id,['09','11']) ? number_format(0,2, ".","") : \App\Support\Exact\Decimal::format(\App\Support\Exact\Decimal::read($row, 'total'), 2, '.', ''),
+                'total_charge' => in_array($row->state_type_id,['09','11']) ? '0.00' : \App\Support\Exact\Decimal::format(\App\Support\Exact\Decimal::read($row, 'total_charge'), 2, '.', ''),
+                'report_total_fractions' => \Modules\Report\Services\DocumentCurrencyTotals::fractions($row),
 
 
 

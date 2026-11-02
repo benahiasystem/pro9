@@ -1282,13 +1282,12 @@
                             </div>
 
                             <template
-                                v-if="showPayments && form.items.length > 0"
+                                v-if="form.items.length > 0"
                             >
 
                             <div
                                 class="p-2 payments-div"
                                 style="margin-left: auto;"
-                                v-if="payment_condition == '01'"
                             >
                                 <h4>Pagos:</h4>
                                 <table>
@@ -1365,6 +1364,7 @@
                                                             "
                                                         ></el-option>
                                                     </el-select>
+                                                <receipt-currency-fields :row="row" :methods="payment_method_types" :document-currency="form.currency_type_id" :document-rate="form.exchange_rate_sale" />
                                                 </div>
                                             </td>
                                             <td>
@@ -1424,125 +1424,6 @@
                                     </tbody>
                                 </table>
                             </div>
-
-                            <div class="row">
-                            <div class="col-md-6 mt-3"></div>
-                            <div
-                                v-if="
-                                    payment_condition === '02'"
-                                    class="col-md-6 payments-div"
-                                                            >
-                                                                <table
-                                                                    class="text-start table"
-                                                                    width="100%"
-                                                                >
-                                                                    <thead>
-                                                                        <tr>
-                                                                            <th
-                                                                                style="width: 120px"
-                                                                            >
-                                                                                Método
-                                                                                de
-                                                                                pago
-                                                                            </th>
-                                                                            <th
-                                                                                class="text-start"
-                                                                                style="width: 100px"
-                                                                            >
-                                                                                Fecha
-                                                                            </th>
-                                                                            <th
-                                                                                class="text-start"
-                                                                                style="width: 100px"
-                                                                            >
-                                                                                Monto
-                                                                            </th>
-                                                                            <th
-                                                                                style="width: 30px"
-                                                                            ></th>
-                                                                            <th width="15%">
-                                                                            <a
-                                                                                v-if="payment_condition == '02' && form.payments.length === 0"
-                                                                                href="#"
-                                                                                @click.prevent="
-                                                                                    clickAddPayment(true)
-                                                                                "
-                                                                                class="text-center font-weight-bold text-info"
-                                                                                >[+ Agregar]</a
-                                                                            >
-                                                                        </th>
-                                                                        </tr>
-                                                                    </thead>
-                                                                    <tbody>
-                                                                        <tr
-                                                                            v-for="(row,
-                                                                            index) in form.payments"
-
-                                                                            :key="
-                                                                                index
-                                                                            "
-                                                                        >
-                                                                            <td>
-                                                                                <el-select
-                                                                                    v-model="
-                                                                                        row.payment_method_type_id
-                                                                                    "
-                                                                                    @change="
-                                                                                        changePaymentMethodType(
-                                                                                            index
-                                                                                        )
-                                                                                    "
-                                                                                >
-                                                                                    <el-option
-                                                                                        v-for="option in payment_method_types_filter"
-                                                                                        :key="
-                                                                                            option.id
-                                                                                        "
-                                                                                        :label="
-                                                                                            option.description
-                                                                                        "
-                                                                                        :value="
-                                                                                            option.id
-                                                                                        "
-                                                                                    ></el-option>
-                                                                                </el-select>
-                                                                            </td>
-                                                                            <td>
-                                                                                <el-date-picker
-                                                                                    v-model="
-                                                                                        row.date_of_payment
-                                                                                    "
-                                                                                    :clearable="
-                                                                                        false
-                                                                                    "
-                                                                                    :format="dpDateFormat"
-                                                                                    type="date"
-                                                                                    value-format="yyyy-MM-dd"
-                                                                                    :readonly="
-                                                                                        row.payment_method_type_id !==
-                                                                                            '09'
-                                                                                    "
-                                                                                >
-                                                                                </el-date-picker>
-                                                                            </td>
-                                                                            <td>
-                                                                                <el-input
-                                                                                    v-model="
-                                                                                        row.payment
-                                                                                    "
-                                                                                    :readonly="
-                                                                                        true
-                                                                                    "
-                                                                                ></el-input>
-                                                                            </td>
-                                                                        </tr>
-                                                                    </tbody>
-                                                                </table>
-                                                            </div>
-
-
-                            </div>
-
 
                             </template>
                         </div>
@@ -1716,9 +1597,13 @@ import ItemSearchQuickSale from "@components/items/ItemSearchQuickSale.vue";
 import PackItemDescription from "@components/items/PackItemDescription.vue";
 import CustomFieldsRenderer from '@viewsModuleCustomField/custom_fields/custom_field_renderer.vue';
 
+import ReceiptCurrencyFields from '@components/ReceiptCurrencyFields.vue'
+import {defaultCashForCurrency, paymentValidationMessage} from '@helpers/payment-classification'
+
 export default {
     props: ["typeUser", "saleOpportunityId", "resourceId", "configuration", "authUser"],
     components: {
+        ReceiptCurrencyFields,
         QuotationFormItem,
         PersonForm,
         QuotationOptions,
@@ -1968,59 +1853,28 @@ export default {
                 this.form.total_discount = 0;
             }
         },
+        // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
         changePaymentCondition() {
-
-            this.form.payments = []
-            if (this.payment_condition == "01") {
-                this.payment_method_types_filter = this.payment_method_types.filter(element => element.is_credit == 0)
-            } else if (this.payment_condition == "02") {
-                this.payment_method_types_filter = this.payment_method_types.filter(element => element.is_credit == 1)
-                this.clickAddPayment(true)
+            this.payment_method_types_filter = this.payment_method_types.filter(method =>
+                [true, 1, '1'].includes(method.is_active) && ['cash', 'account'].includes(method.collection_kind));
+            const current = this.payment_method_types.find(method => String(method.id) === String(this.form.payment_method_type_id));
+            if (this.payment_condition === '02') {
+                const credit = this.payment_method_types.filter(method => [true, 1, '1'].includes(method.is_active) && method.collection_kind === 'credit')
+                    .sort((a, b) => String(a.id).localeCompare(String(b.id)));
+                this.form.payment_method_type_id = current?.collection_kind === 'credit' && [true, 1, '1'].includes(current.is_active)
+                    ? current.id : credit[0]?.id || null;
+            } else if (!current || !['cash', 'account'].includes(current.collection_kind) || ![true, 1, '1'].includes(current.is_active)) {
+                this.form.payment_method_type_id = defaultCashForCurrency(this.payment_method_types, this.form.currency_type_id)?.id || null;
             }
-
-            this.changePaymentMethodType()
         },
-        // Index 0 para Pagos en credito o solo un unico pago en contado
         changePaymentMethodType(index = 0) {
-            let id = "01";
-            if (
-                this.form.payments[index] !== undefined &&
-                this.form.payments[index].payment_method_type_id !== undefined
-            ) {
-                id = this.form.payments[index].payment_method_type_id;
-            }
-            let payment_method_type = _.find(this.payment_method_types_filter, {
-                id: id
-            });
-
-
-            let date = moment(this.form.date_of_issue)
-                    .add(payment_method_type.number_days, "days")
-                    .format("YYYY-MM-DD");
-
-
-            this.form.payment_method_type_id = payment_method_type.id
-
-            if (payment_method_type.number_days) {
-                this.form.payments[index].date_of_payment = date
-                this.form.date_of_due =  payment_method_type.number_days
-
-            } else if (
-                payment_method_type.id == "09" ||
-                payment_method_type.is_credit
-            ) {
-                this.form.payments[index].date_of_payment = date
-                // this.form.payments = []
-                this.enabled_payments = false;
-            } else {
-                if (this.form.payments[index]) {
-                    this.form.payments[index].date_of_payment = date
-                    this.readonly_date_of_due = false;
-                    this.enabled_payments = true;
-                }
-            }
-
+            const row = this.form.payments[index];
+            if (!row || row.id) return;
+            const method = this.payment_method_types.find(item => String(item.id) === String(row.payment_method_type_id));
+            if (this.payment_condition !== '02') this.form.payment_method_type_id = method?.id || null;
+            row.payment_destination_id = null;
         },
+        // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
         discountGlobal(ctx) {
             applyCommercialTotals(this);
         },
@@ -2108,50 +1962,30 @@ export default {
                 this.form.terms_condition = null;
             }
         },
+        // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
         selectDestinationSale() {
-            // if(this.configuration.destination_sale && this.payment_destinations.length > 0) {
-            if (
-                this.configuration.destination_sale &&
-                this.payment_destinations.length > 0 &&
-                this.form.payments.length > 0
-            ) {
-                let cash = _.find(this.payment_destinations, { id: "cash" });
-                this.form.payments[0].payment_destination_id = cash
-                    ? cash.id
-                    : this.payment_destinations[0].id;
-            }
+            // Existing receipts keep their saved destination.
         },
-        clickAddPayment(isCredit = false) {
+        clickAddPayment() {
+            const method = defaultCashForCurrency(this.payment_method_types, this.form.currency_type_id);
             this.form.payments.push({
-                id: null,
-                document_id: null,
-                date_of_payment: moment().format("YYYY-MM-DD"),
-                payment_method_type_id: isCredit ? '09' : '01',
-                reference: null,
-                payment_destination_id: this.getPaymentDestinationId(),
-                payment: 0
+                id: null, document_id: null, date_of_payment: moment().format("YYYY-MM-DD"),
+                payment_method_type_id: method?.id || null,
+                payment_destination_id: method && this.payment_destinations.some(destination => destination.id === 'cash') ? 'cash' : null,
+                reference: null, payment: 0
             });
-            this.showPayments = true; // Asegurar que la tabla se muestre
-
             this.setTotalDefaultPayment();
-
         },
-        getPaymentDestinationId() {
-            if (
-                this.configuration.destination_sale &&
-                this.payment_destinations.length > 0
-            ) {
-                let cash = _.find(this.payment_destinations, { id: "cash" });
-
-                return cash ? cash.id : this.payment_destinations[0].id;
-            }
-
-            return null;
-        },
+        // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
         setTotalDefaultPayment() {
-            if (this.form.payments.length > 0) {
+            // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+            // An existing or partially entered receipt must not be overwritten
+            // when the currency or another payment row changes.
+            if (this.payment_condition === '01' && this.form.payments.length === 1 &&
+                !this.form.payments[0].id && exactAmount(this.form.payments[0].payment || '0').compare(0) === 0) {
                 this.form.payments[0].payment = this.form.total;
             }
+            // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
         },
         clickCancel(index) {
             this.form.payments.splice(index, 1);
@@ -2187,9 +2021,9 @@ export default {
                         }
 
                         this.form.currency_type_id = dato.currency_type_id || this.form.currency_type_id;
-                        this.form.payment_method_type_id = (dato.payment_method_type_id && dato.payment_method_type_id !== '10')
-                            ? dato.payment_method_type_id
-                            : '01';
+                        // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+                        this.form.payment_method_type_id = dato.payment_method_type_id || null;
+                        // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
                         this.form.date_of_due = this.normalizeDate(dato.date_of_due);
                         this.form.date_of_issue = this.normalizeDate(dato.date_of_issue) || moment().format('YYYY-MM-DD');
                         this.form.delivery_date = this.normalizeDate(dato.delivery_date);
@@ -2205,6 +2039,10 @@ export default {
                         this.form.phone = dato.phone || null;
                         this.form.custom_fields_data = dato.custom_fields_data || {};
                         this.form.payments = Array.isArray(dato.payments) ? dato.payments : [];
+                        // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+                        const savedMethod = this.payment_method_types.find(method => String(method.id) === String(this.form.payment_method_type_id));
+                        this.payment_condition = savedMethod?.collection_kind === 'credit' ? '02' : '01';
+                        // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
 
                         this.currency_type = _.find(this.currency_types, (c) => String(c.id) === String(this.form.currency_type_id))
                             || this.currency_types[0]
@@ -2424,7 +2262,7 @@ export default {
                 discounts: [],
                 attributes: [],
                 guides: [],
-                payment_method_type_id: "10",
+                payment_method_type_id: null,
                 customer_address_id: null,
                 additional_information: null,
                 shipping_address: null,
@@ -2554,20 +2392,14 @@ export default {
             };
         },
         validatePaymentDestination() {
-            // Condición crédito: no se muestra destino ni aplica a caja.
-            if (this.payment_condition === '02') {
-                return { error_by_item: 0 };
-            }
-
-            // Métodos crédito (05/08/09) tampoco exigen destino — igual que NV/CPE.
             let error_by_item = 0;
 
             this.form.payments.forEach(item => {
-                // ######### INICIO MÉTODOS DE CRÉDITO VENEZUELA #########
-                if (!["05", "09"].includes(item.payment_method_type_id)) {
-                    if (item.payment_destination_id == null) error_by_item++;
-                }
-                // ######### FIN MÉTODOS DE CRÉDITO VENEZUELA #########
+                // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+                const method = (this.payment_method_types || []).find(value => String(value.id) === String(item.payment_method_type_id));
+                const credit = method?.collection_kind === 'credit';
+                if (!item.id && !credit && item.payment_destination_id == null) error_by_item++;
+                // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
             });
 
             return {
@@ -2575,6 +2407,12 @@ export default {
             };
         },
         async submit() {
+
+            // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+            if (this.payment_condition === '02' && !this.form.payment_method_type_id) {
+                return this.$message.error('Configure un método de crédito activo antes de guardar la cotización.');
+            }
+            // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
 
             let validate = await this.validate_payments();
             if (
@@ -2641,14 +2479,16 @@ export default {
                     }
                 })
                 .catch(error => {
-                    if (error.response.status === 422) {
-                        this.errors = error.response.data;
+                    if (error.response && error.response.status === 422) {
+                        this.errors = error.response.data?.errors || error.response.data || {};
+                        const message = paymentValidationMessage(error.response.data);
+                        if (message) this.$message.error(message);
                         if (this.errors.customer_id) {
                             this.$message.error(this.errors.customer_id[0]);
                             delete this.errors.customer_id;
                         }
                     } else {
-                        this.$message.error(error.response.data.message);
+                        this.$message.error(error.response?.data?.message || 'No se pudo guardar la cotización.');
                     }
                 })
                 .then(() => {

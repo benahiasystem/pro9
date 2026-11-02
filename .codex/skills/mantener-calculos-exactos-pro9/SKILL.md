@@ -5,6 +5,42 @@ description: Mantener la aritmética decimal exacta, snapshots, almacenamiento y
 
 # Cálculos exactos de Pro9
 
+Al convertir órdenes de entrega, sumar cantidades repetidas con decimal exacto y conservar la moneda y el precio de origen de cada partida, incluido si el precio incluye IVA. Aplicar la tasa documental antes de calcular la línea y conservar su afectación IVA; construir los totales desde fracciones. Los abonos introducidos no se redistribuyen al añadir otro y las cuotas sugeridas descuentan esos abonos.
+
+En alta y edición de compras y al generar una compra desde una orden, comparar la suma de pagos con el total mediante `purchasePaymentValidation` y decimal exacto. Bs. 0,10 más Bs. 0,20 debe admitir un total de Bs. 0,30; un exceso o decimal inválido se rechaza. Conservar las reglas propias de compras y verificar `purchase-payment-validation.test.cjs`.
+
+Los PDF A4 de orden de compra de `default`, `marca_de_agua` y `Plantilla_personalizable` presentan `PdfAmounts::lineDiscount` con `Decimal::format`; el resultado es una fracción y no se puede pasar a `number_format`. `PdfPricePrecisionTest` ejecuta el fragmento Blade de cada plantilla con descuentos fraccionarios.
+
+Al seleccionar un plan para una matrícula de `Suscription`, copiar sus partidas, moneda e importes al borrador; no vaciar el plan ni añadir un cobro. Copiar las partidas por valor para que una edición del borrador no modifique el catálogo. Verificar `classic-subscription-plan.test.cjs` y la nota generada en el recorrido de clasificación.
+
+Al crear facturas y guardar notas de venta, distribuir cuotas sobre el saldo pendiente después de los abonos aplicados. En facturas calcularlo tras registrar pagos y liquidaciones con `Receivables`; en notas descontar los importes aplicados de sus pagos. Las compras y notas fiscales conservan sus reglas propias.
+
+Al cargar una nota ya a crédito en cualquiera de los dos diálogos de suscripción, conservar sus cuotas registradas o sugerir el saldo pendiente tras abonos si no existen; no esperar a que el usuario cambie manualmente la condición. Las cuotas de la nueva factura conservan importe, moneda y método, pero se crean con identidad propia y fecha normalizada. Verificar también que contado no genere cuotas y que las filas históricas y la tasa permanezcan intactas.
+
+En la conversión de cotización, copiar las cuotas del origen antes de editarlas y conservar las modificaciones al alternar contado y las dos opciones de crédito. Mostrar las cuotas también para la nota de venta, sin añadirle cobros nuevos que el diálogo no presenta. Al enviar contado excluir cuotas del payload sin borrarlas del formulario; normalizar la condición `03` a `02` sólo en el payload y conservar los abonos. Verificar `quotation-conversion-receipts.test.cjs`.
+
+En los formularios de factura y nota, cambiar el método de una cuota con plazo positivo actualiza sólo la fecha de esa cuota; no reemplazar las fechas de las demás. Un plazo cero, también serializado como texto, conserva la fecha manual. Verificar las tres variantes de factura y nota con `default-receipt-methods.test.cjs`.
+
+Esos cuatro formularios conservan cuotas editadas y abonos al alternar contado y crédito. `paymentConditionPayload` normaliza `03` a `02` en una copia y omite cuotas al enviar contado sin borrar el borrador; también se utiliza en la vista previa de factura. Cuando una cuota necesita método, distinguir una selección pendiente de un catálogo de crédito vacío. Probar el cambio de condición, el envío rechazado y la vista previa.
+
+Las cuotas pactadas de crédito se muestran junto a los abonos en los PDF locales. La opción de formulario `03` se guarda como condición `02`; las plantillas también aceptan `03` en memoria. Una retención IVA posterior modifica el saldo y no recalcula el calendario registrado; ver la evidencia y el alcance en [clasificación de medios](../../../informes/clasificacion_medios_pago_caja.md).
+
+En tickets locales, la altura calculada debe reservar espacio para cuotas y detalles de moneda de los cobros. Las pruebas de conversión generan tickets de factura y nota a 58 mm; la factura se verificó con cinco plantillas de producción. Las muestras comprobadas caben en una página y no demuestran que cualquier longitud de texto o número de cobros quepa en una sola página.
+
+En POS y Garage, al editar el total manual de una línea, conservar el precio unitario como fracción en `price_input` con la moneda documental; recalcular cantidades con la tasa documental. Las pruebas de fuente cubren también pago rápido y ambos sentidos VES/USD; ver [clasificación de medios](../../../informes/clasificacion_medios_pago_caja.md).
+
+Al agrupar partidas en notas de venta o facturas, sumar las cantidades con aritmética exacta y recalcular en la moneda y tasa del documento, con la tasa IVA vigente del formulario. No fusionar cantidades cuya fracción o entrada original se perdería, precios exactos diferentes ni filas con ajustes o atributos que se descartarían. El ingreso rápido por código de barras debe aplicar los mismos controles de compatibilidad y sumar la cantidad recibida. Probar el método real de ambos formularios, incluyendo cantidades periódicas, cambio de moneda y agrupación por código.
+
+La precisión fraccionaria de los controles se determina con los IDs locales del catálogo de unidades venezolano, no sus equivalencias HKA; consultar [unidades de medida](../mantener-unidades-medida-venezuela/SKILL.md). El listado de artículos presenta el stock decimal conservado sin transformarlo a `Number` ni ocultar posiciones con redondeo de tres decimales.
+
+El PDF general de caja mantiene los títulos junto al contenido siguiente al paginar y presenta saldos VES/USD y destinos bancarios separados. La revisión visual del caso de tres turnos está registrada en [clasificación de medios](../../../informes/clasificacion_medios_pago_caja.md).
+
+El resumen de caja agrupa por los datos históricos de método y destino, incluida su naturaleza y etiquetas, antes de sumar importes con fracciones; no mezclar movimientos de nombres o clasificaciones distintas. PDF, ticket y Excel muestran la naturaleza congelada. `ClassifiedCashWorkbookTest` cubre agrupación y fracción exacta.
+
+Aplicar el filtro del tipo de reporte antes de formar los grupos exactos de caja, de modo que sus totales correspondan a los movimientos detallados; el saldo físico identificado como turno completo conserva todos los movimientos del turno.
+
+La agrupación financiera por método y cuenta comparte esa clave histórica y mantiene separados los cambios de nombre de la cuenta. Sus sumas y snapshots permanecen exactos; comprobar también la salida de la consulta real de `FinancialReport`.
+
 Aplicar el [contrato de cálculo](references/contrato.md) al modificar operaciones decimales de negocio. La evidencia y los pendientes están en [el informe de implementación](../../../informes/calculos_exactos_pro9.md) y en [la entrega de consumidores](../../../informes/calculos_exactos_cierre_consumidores_pro9.md); no inferir que un consumidor está migrado porque existe el motor común.
 
 - Operar con `App\Support\Exact\Decimal`/`BigRational` en PHP y `ExactAmount`/`BigInt` en JavaScript. No usar float, Number, parseFloat, round, toFixed ni textos formateados para encadenar cálculos.
@@ -30,10 +66,79 @@ Aplicar el [contrato de cálculo](references/contrato.md) al modificar operacion
 - Notas de venta: usar `TenderAllocation` y `Settlement::defer` para conservar solicitado, recibido, vuelto y ajuste, sin cobros negativos ni convertir un exceso bancario en efectivo. `SaleNoteBalance` comparte las fracciones con listado, diálogo y comprobación de crédito; consultar el saldo por GET no modifica el documento. Ver el contrato para los productores que siguen pendientes.
 - Las órdenes centrales nuevas congelan moneda, referencia y adaptación de cobro mediante `CentralPaymentQuote`. Una configuración de checkout no disponible se exige también en los POST directos mediante `CheckoutAvailability`; esto no acredita conciliación, idempotencia ni cierre de los adaptadores todavía pendientes.
 - Para aceptación MySQL puede usarse `php scripts/test_exact_isolated_mysql.php ...`: crea y elimina un servidor Docker temporal con la imagen local MySQL 5.7.33. No cambia ajustes de la instancia de la aplicación. Las pruebas funcionales de ese servidor no sustituyen las mediciones HTTP completas.
-- Preparación de conversiones: `SaleNoteConversionLines` lee notas autorizadas bajo corte consistente y agrupa sólo precios racionales y condiciones compatibles; conserva fuentes y separa lotes/seriales. El frontend restaura moneda y tasa del origen antes de importar las partidas. Esta lectura no acredita el guardado de la conversión: falta resolver otra vez las fuentes bajo bloqueo al persistir y reconciliar cabeceras y cobros.
+- Preparación de conversiones: `SaleNoteConversionLines` lee notas autorizadas bajo corte consistente, agrupa sólo precios racionales y condiciones compatibles y conserva sus cobros; separa lotes/seriales. El frontend restaura moneda, tasa y recibos antes de importar las partidas. Al guardar, `SaleNoteReceiptsRequired` comprueba los cobros bajo bloqueo y `ConvertedReceipt` los reutiliza sin otro movimiento. Esta comprobación de cobros no acredita por sí sola la resolución bajo bloqueo de todas las partidas ni la reconciliación de cabeceras.
+- Una consulta de tasa iniciada antes de restaurar una selección de notas no puede reemplazar su tasa documental. Verificar las tres variantes del formulario y respuestas desordenadas con `exact-note-conversion.test.cjs`.
 - JSON persistido: recuperar sus tokens decimales antes de operar, también en descuentos/cargos antiguos sin fracción propia. `SaleNoteConversionLines` conserva los tipos de contenedor del contrato; la decodificación nativa sólo identifica objetos/listas, nunca proporciona operandos numéricos. No reconstruye precisión que MySQL o un productor anterior ya hayan perdido.
 - Decisión vigente para órdenes centrales: después de enviar un intento de cobro, bloquear ediciones monetarias y otro intento mientras siga pendiente o incierto. Conciliar primero con el proveedor; la cotización congelada por sí sola no implementa ese ciclo.
 
 ## Verificación
 
+Los PDF locales de cotización usan `pdf.partials.quotation_receipt` para presentar el importe aplicado y, si difiere la moneda, el importe recibido y la tasa guardados. Priorizar el nombre del snapshot; no inventar moneda o tasa en pagos sin esos datos. La revisión visual A4 y su alcance están en [clasificación de medios de pago](../../../informes/clasificacion_medios_pago_caja.md).
+
+En la integración multimoneda de cobros, `ReceiptAmounts` conserva el importe recibido y calcula el principal aplicado con la tasa VES/USD. En notas de venta el vuelto se convierte a la moneda recibida y se rechaza si no puede expresarse en céntimos; el snapshot conserva principal neto, importe entregado y vuelto. `Movement` reporta el principal recibido. Comprobar saldos y reportes por canal antes de afirmar que el flujo está completo.
+
+Al aplicar un cobro de cotización o servicio técnico a una nota o factura, `CommercialSourceReceipt` conserva su principal y fracciones originales y registra una aplicación documental sin otro ingreso. La aplicación de nota no vuelve a imputar el vuelto ya liquidado. Las pruebas MySQL verifican importes en USD/VES, reutilización encadenada y que dos solicitudes concurrentes sólo aplican una vez el cobro.
+
+En el cierre de hotel y la generación de notas desde pedidos, conservar importe recibido y tasa en las filas enviadas; la comparación del total aplicado del hotel usa decimal exacto. Verificar conversiones, selección de cuenta y envío con `hotel-order-receipt-creation.test.cjs`.
+
+En facturas, `ReceiptChange` distribuye el exceso documental sólo al efectivo y valida su conversión a céntimos de la moneda recibida. La vista previa vuelve a calcular el snapshot neto tras ese reparto, como el guardado. El detalle local impreso suma importe neto y vuelto únicamente en su moneda recibida; no sumar ese vuelto al principal expresado en otra moneda.
+
+La validación de pagos de las tres variantes del formulario de factura usa `validateInvoicePayments` y suma importes aplicados con fracciones exactas. Un exceso sólo se admite si puede cubrirse con efectivo nuevo; un recibo histórico reutilizado no financia un segundo vuelto. El servidor aplica la misma exclusión antes de calcular el vuelto y vuelve a validar la liquidación en la moneda recibida. Probar los componentes, la reclasificación `01` bancario/`04` efectivo y la conversión de notas con exceso bancario en MySQL; la validación del frontend no sustituye la del servidor.
+
+La vista previa de liquidación del POS, pago rápido y Garage también excluye los cobros registrados o reutilizados al calcular el efectivo disponible para vuelto; un exceso que no cubra el efectivo nuevo se muestra como exceso. Bloquear la edición directa del importe para cualquiera de esos orígenes y sumar los pagos de Garage con aritmética decimal exacta. `pos-hka-email.test.cjs` e `invoice-payment-validation.test.cjs` cubren estas reglas.
+
+La sugerencia del importe pendiente nunca rellena un cobro previo o reutilizado, aunque su importe sea cero y su origen aparezca sin `id`. En los diálogos de pagos múltiples, conservar esas filas y evitar la edición de importe, referencia, moneda y clasificación. Las pruebas de clasificación, componentes y retenciones cubren los distintos indicadores de origen.
+
+La preparación de cobros de notas usa la clasificación histórica del cobro anterior y sólo distribuye vuelto entre efectivo nuevo. El formulario de nota no permite quitar cobros previos; el formulario de factura aplica la misma detección para proteger método, destino y principal. `exact-tender-consumers.test.cjs` verifica que el efectivo histórico no cubra un exceso bancario y que sí pueda devolverlo efectivo nuevo.
+
+El snapshot inicial de factura conserva `requested_amount` y `cash_adjustment` antes de restar vuelto; si hay vuelto también guarda `tendered_original_amount` y `received_change` en moneda recibida. No tomar esas fracciones de la solicitud. La presentación del diálogo distingue el importe entregado del neto y mantiene explícita la ausencia de datos para históricos anteriores.
+
+El reporte de movimientos suma las fracciones de `Movement` mediante `MovementBalances` por moneda recibida; la pantalla, PDF y Excel muestran totales separados. El Excel muestra el ID en cada fila y agrega `Fracciones exactas` con ese mismo ID y la fracción original de cada importe recuperable; no inventa valores para registros históricos sin importe. Los totales del PDF y del Excel deben quedar bajo los encabezados de ingreso, gasto y saldo. Se probó el importe recibido distinto del aplicado, la paginación, traslados entre cuentas y caja y la reversión en MySQL. Los traslados nuevos congelan la moneda de cada destino; los anteriores sin moneda identificable se muestran sin incluirlos en los totales. `TransferAccountPayment::FillFromData` valida el texto decimal sin convertirlo a float.
+
 Probar precio IVA incluido 500, agrupación de cien líneas, descuento 1 entre tres líneas, cuotas 100/1000 entre tres, lectura/operación/guardado de fracciones periódicas, conversiones de ida/vuelta, notas parciales y paridad PHP/JavaScript. Verificar esquema y persistencia en MySQL temporal, PDF con 2/6/12 decimales, rollback e idempotencia según el flujo. Registrar consumidores aún no migrados; no afirmar cumplimiento global a partir de pruebas del motor.
+
+Las cuotas sugeridas de crédito descuentan el importe aplicado documental de los abonos y distribuyen el saldo con `suggestInstallments`. Conservar cuotas guardadas o editadas; ante una entrada decimal incompleta mantener la última sugerencia válida. La prueba con un total ya ajustado no sustituye la verificación integral del flujo de retenciones.
+
+## Liquidación visible de cobros
+
+El borrador de factura de WhatsApp y su mapeador usan `DraftPricing` para compartir las conversiones, IVA, descuento e importe liquidable; el resumen muestra la tasa y el importe que luego se registra. Conservar precio de origen, moneda y tasa confirmados aunque cambie el catálogo, y rechazar borradores anteriores o con total inconsistente.
+
+En la conversión de orden a compra a crédito, la cuota sugerida usa el total actual de la compra y resta abonos con aritmética exacta, sin sobrescribir importes editados; un `total_payable` previo puede estar desactualizado durante la carga. Al guardar o editar, distribuir las cuotas sobre el saldo después de los pagos persistidos, leyendo sus snapshots exactos. Verificar también que crédito no cree pagos vacíos.
+
+Al cargar una compra para edición, normalizar los descuentos y cargos de partidas que llegan como objetos indexados a listas antes de recalcular; de lo contrario el total queda sin actualizar y la validación de pagos rechaza abonos válidos. El recálculo conserva las cuotas existentes y las editadas manualmente; sólo sugiere para filas nuevas el saldo que resta tras abonos y cuotas fijas.
+
+Al cambiar una compra de contado a crédito, descartar la propuesta automática intacta de contado y las filas nuevas vacías, sin quitar pagos registrados ni abonos añadidos o modificados. Si cambia el total antes del cambio de condición, mantener identificada la propuesta automática tras actualizar su importe.
+
+La vista previa de vuelto de notas obtiene la naturaleza del catálogo para filas nuevas y del snapshot para cobros existentes; no interpreta `01` ni `10` como efectivo. Si falta la clasificación de una fila con importe, no debe inventarla. `exact-tender-consumers.test.cjs` comprueba `01` bancario, `04` efectivo y exceso bancario. La comprobación visual requiere los assets compilados por el usuario.
+
+En los componentes de cobro, calcular el aplicado desde el importe recibido redondeado a centavos y su tasa, igual que `FiscalAmounts::payment`; no convertir el importe sin liquidar. Si una propuesta redondeada cambia el aplicado, reflejarlo y señalar el importe liquidado cuando difiera del recibido escrito. Conservar la entrada para el snapshot y comprobar ambos sentidos VES/USD y la misma moneda.
+
+El indicador de cuentas por cobrar del listado de facturas usa `Receivables::invoiceKpiDataset`, con lectura consistente por lotes y el alcance por usuario o vendedor del indicador. Sumar los equivalentes VES exactos de los saldos y redondear al presentar; una nota de crédito o una reversión debe reflejarse en el indicador.
+
+Los reportes de documentos PDF y Excel usan `DocumentCurrencyTotals` para sumar fracciones por moneda documental, restar notas de crédito y excluir anulados y rechazados. Mostrar VES y USD por separado y redondear al presentar; no convertir una serie completa con la tasa de una sola factura. Probar acumulación, notas, estados y resúmenes mixtos en los formatos correspondientes.
+
+Las descargas PDF estándar y simple usan vistas separadas: ambas deben conservar el detalle de cobro histórico y los mismos totales exactos por moneda. Al agregar columnas, comprobar la alineación de los totales y el ajuste de la tabla en el PDF generado.
+
+En las filas del reporte, presentar en cero los importes vigentes de documentos rechazados o anulados, incluidas notas de débito y de venta; excluirlos también de los acumulados y conservar sus fracciones originales sin reescribir el documento. Verificar recursos de pantalla y vistas PDF.
+
+Los importes monetarios visibles en el recurso de facturas y en las filas de los PDF estándar y simple se presentan a centavos; `report_total_fractions` conserva los valores exactos para la suma de pantalla. La comprobación en `bbc.localhost` descargó PDF simple y Excel estándar con un cobro previo USD aplicado en VES; consultar el informe para sus límites.
+
+En la pantalla de consulta de documentos, iniciar ventas con tipo Factura y mostrar el error de una consulta fallida sin conservar resultados anteriores ni dejar el botón de búsqueda bloqueado. Verificar `document-report-search.test.cjs` y, tras compilar los assets, el recorrido en navegador.
+
+Los totales de página del reporte de ventas consumen `report_total_fractions` del recurso y suman por moneda antes de redondear. Restar notas de crédito vigentes y excluir anuladas y rechazadas; no cambiar las reglas de los reportes de compras al compartir el componente. Probar fracciones no terminantes y monedas separadas con `document-report-search.test.cjs`.
+
+Los recursos de factura y nota de venta del reporte deben proporcionar las fracciones de los totales y el detalle histórico de pagos y cuotas; precargar sus relaciones por lote. La prueba MySQL de nota a crédito verifica los importes y el nombre después de reclasificar el método.
+
+El Excel de pagos de comprobantes materializa saldos por lotes con los mismos operandos que Cuentas por cobrar. Sus importes y tasas visibles son texto y la hoja `Fracciones exactas` conserva numerador/denominador del total, saldo y de cada recibo y aplicación. Los derivados y reutilizaciones identifican cero ingreso adicional.
+
+En las ventanas de artículos de pedidos, preservar el precio ingresado y si incluye IVA en `price_input`; dejar que `calculateRowItem` aplique el IVA con aritmética exacta. Multiplicarlo con flotantes antes de construir la entrada puede producir más de 12 decimales y provocar el rechazo del pedido. Al reabrir una partida, recuperar precio, moneda e IVA desde su entrada guardada; cuando no exista, usar el precio unitario documental como IVA incluido. Al editar un pedido, guardar la cabecera antes de sus partidas para que el guardado posterior del nombre no sobrescriba los totales recalculados. Verificar alta y edición de los formularios y controlador en MySQL.
+
+La cotización de tienda obtiene del catálogo el precio exacto y lo convierte con la tasa conservada de ocho decimales antes de calcular partidas y cabecera; no redondea a centavos la conversión. Congela precio de origen y tasa en el snapshot de cada partida. Si un producto requiere conversión USD y no hay tasa positiva válida, rechazar la solicitud y revertir también el cliente invitado. Sin precios visibles, conservar el precio sugerido y cotizar a cero. Probar el controlador y fracciones no terminantes en MySQL temporal.
+
+Al editar cotizaciones, resolver y bloquear las partidas existentes de la propia cotización, conservar sus fracciones si sus entradas no cambian y rechazar IDs ajenos o repetidos. No confiar en snapshots del navegador. Al copiar, conservar los snapshots internos de las partidas, pero iniciar sin cobros ni anticipos del padre y recalcular la cabecera dentro de la transacción. Los descuentos de anticipo tampoco pasan a la copia. Probar edición sin cambios, edición del precio, entrada manipulada y duplicación con cobros.
+
+Los recálculos de partidas en POS, pago rápido y Garage exigen una tasa documental positiva antes de operar; nunca sustituir una tasa ausente por 1. Conservar tasas válidas en borradores y descartar respuestas desactualizadas. Probar cargas fallidas, reintentos y solicitudes superpuestas junto con `pos-quantity-currency.test.cjs`.
+
+Mientras un borrador de POS, pago rápido o Garage no tenga tasa válida, deshabilitar los campos de cantidad y total y sus botones de variación: `v-model` cambia el dato antes del recálculo y dejarlo activo puede conservar una línea inconsistente. Los métodos que modifican cantidades deben comprobar la tasa antes de mutar. Verificar los controles y métodos con `pos-exchange-rate.test.cjs`.
+
+Los botones de cantidad del POS deben sumar o restar con decimal exacto, sin redondear a cuatro posiciones; Garage resta una unidad sin truncar la parte fraccionaria (1,5 pasa a 0,5). Validar el rango de la entrada y recalcular la línea con la moneda y tasa documentales. `pos-exchange-rate.test.cjs` ejercita también el recálculo real de Garage USD a VES.

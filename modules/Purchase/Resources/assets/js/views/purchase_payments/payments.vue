@@ -139,6 +139,7 @@
     import {deletable} from '@mixins/deletable'
 
     export default {
+        paymentCurrencyPolicy: 'document',
         props: ['showDialog', 'purchaseId'],
         mixins: [deletable],
         data() {

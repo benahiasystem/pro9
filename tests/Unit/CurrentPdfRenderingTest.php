@@ -47,6 +47,11 @@ class CurrentPdfRenderingTest extends TestCase
             $table->boolean('show_in_documents')->default(false);
             $table->unsignedInteger('establishment_id')->nullable();
         });
+        Schema::connection('tenant')->create('template_columns_config', function ($table): void {
+            $table->increments('id');
+            $table->unsignedInteger('establishment_id');
+            $table->string('template_name');
+        });
 
         DB::connection('tenant')->table('configurations')->insert(['id' => 1]);
         DB::connection('tenant')->table('companies')->insert([
@@ -139,8 +144,19 @@ class CurrentPdfRenderingTest extends TestCase
         $document->setRelation('received_retentions',new Collection([new Fluent(['tax_kind'=>'IVA','voucher_number'=>'IVA-TEST-1','applied_amount'=>12])]));
         $document->setRelation('guarantee_fund',new Fluent(['amount'=>5]));
         $document->setRelation('currency_totals',new Fluent(['iva'=>161.97,'total'=>1209.50]));
-        $receipt=new \App\Models\Tenant\DocumentPayment(['currency_type_id'=>'VES','exchange_rate'=>10.123,'original_amount'=>100,'payment'=>9.88,'tax_amount'=>0,'change'=>0]);
-        $receipt->setRelation('payment_method_type',new Fluent(['description'=>'Efectivo']));
+        Schema::connection('tenant')->create('payment_method_types', function ($table): void {
+            $table->string('id')->primary(); $table->string('description');
+        });
+        Schema::connection('tenant')->create('document_payments', function ($table): void {
+            $table->increments('id'); $table->string('payment_method_type_id'); $table->string('currency_type_id');
+            $table->string('exchange_rate'); $table->string('original_amount'); $table->string('payment');
+            $table->string('tax_amount'); $table->string('change'); $table->text('payment_method_snapshot');
+        });
+        DB::connection('tenant')->table('payment_method_types')->insert(['id'=>'01','description'=>'Nombre actual']);
+        DB::connection('tenant')->table('document_payments')->insert(['id'=>1,'payment_method_type_id'=>'01',
+            'currency_type_id'=>'VES','exchange_rate'=>'10.123','original_amount'=>'100','payment'=>'9.88',
+            'tax_amount'=>'0','change'=>'0','payment_method_snapshot'=>json_encode(['description'=>'Medio conservado'])]);
+        $receipt=\App\Models\Tenant\DocumentPayment::findOrFail(1);
         $document->setRelation('payments',new Collection([$receipt]));
         $company=new Fluent(['name'=>'Nombre actual cambiado','number'=>'J-99999999-9','trade_name'=>'Actual','logo'=>null]);
         $html=(new Template())->pdf('default','invoice',$company,$document,'a4',['is_preview'=>false,'enabled_price_items_dispatch'=>false]);
@@ -148,11 +164,43 @@ class CurrentPdfRenderingTest extends TestCase
         self::assertStringContainsString('IGTF 3.00%',$html);self::assertStringContainsString('IVA-TEST-1',$html);self::assertStringContainsString('Fondo de garantía',$html);
         self::assertStringContainsString('1,209.50',$html);
         self::assertStringContainsString('Cobro recibido (VES)',$html);self::assertStringContainsString('Principal aplicado (USD)',$html);
+        self::assertStringContainsString('Medio conservado',$html);
+        self::assertStringContainsString('Recibido VES 100.00',$html);
+        self::assertStringContainsString('Aplicado USD 9.88',$html);
+        self::assertStringNotContainsString('USD 100.00',$html);
         $document->items->first()->additional_information = [];
         $ticket = (new Template())->pdf('default', 'invoice', $company, $document, 'ticket', ['is_preview'=>false]);
+        self::assertStringContainsString('Recibido VES 100.00',$ticket);
+        self::assertStringContainsString('Aplicado USD 9.88',$ticket);
+        foreach (['a5', 'ticket_58'] as $format) {
+            $otherFormat = (new Template())->pdf('default', 'invoice', $company, $document, $format, ['is_preview'=>false]);
+            self::assertStringContainsString('Medio conservado', $otherFormat);
+            self::assertStringContainsString('Recibido VES 100.00', $otherFormat);
+            self::assertStringContainsString('Aplicado USD 9.88', $otherFormat);
+        }
+        foreach (['modern-2027'=>['a4','a5','ticket','ticket_58'],
+                  'Plantilla_personalizable'=>['a4','a5','ticket','ticket_58'],
+                  'marca_de_agua'=>['a4','a5','ticket','ticket_58','ticket_50'],
+                  'nrus'=>['ticket','ticket_58']] as $template => $formats) {
+            foreach ($formats as $format) {
+                $rendered = (new Template())->pdf($template, 'invoice', $company, $document, $format, ['is_preview'=>false]);
+                self::assertStringContainsString('Medio conservado', $rendered, "$template $format");
+                self::assertStringContainsString('Recibido VES 100.00', $rendered, "$template $format");
+                self::assertStringContainsString('Aplicado USD 9.88', $rendered, "$template $format");
+            }
+        }
         self::assertSame(1, substr_count($ticket, 'Tasa VES/USD'));
         self::assertSame(1, substr_count($ticket, 'Total en VES'));
         self::assertSame(1, substr_count($ticket, 'IGTF 3.00%'));
+        $receipt->payment_method_snapshot=['description'=>'Medio conservado','receipt_origin'=>['type'=>'test','id'=>'1']];
+        $reused=(new Template())->pdf('default','invoice',$company,$document,'a4',['is_preview'=>false,'enabled_price_items_dispatch'=>false]);
+        self::assertStringContainsString('Cobro previo recibido (VES)', $reused);
+        self::assertStringContainsString('Cobro previo', $reused);
+        $receipt->original_amount=null;
+        $receipt->exchange_rate=null;
+        $legacy=(new Template())->pdf('default','invoice',$company,$document,'a4',['is_preview'=>false,'enabled_price_items_dispatch'=>false]);
+        self::assertStringContainsString('Importe recibido no disponible', $legacy);
+        self::assertStringNotContainsString('Cobro previo recibido (VES)', $legacy);
         $pdf=new Mpdf(['tempDir'=>sys_get_temp_dir(),'default_font'=>'arial']);
         $pdf->WriteHTML(file_get_contents(app_path('CoreFacturalo/Templates/pdf/default/style.css')),HTMLParserMode::HEADER_CSS);
         $pdf->WriteHTML($html,HTMLParserMode::HTML_BODY);

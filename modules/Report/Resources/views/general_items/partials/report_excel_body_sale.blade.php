@@ -191,12 +191,13 @@ $isSaleNote = ($document_type_id != '80' && $type == 'sale') ? true : false;
     <td>
         @foreach ($payments as $payment)
             @foreach ($payment as $pay)
-                {{ $pay['description'] }}
+                {{ $pay['display'] ?? $pay['description'] }}
                 @if ($loop->count > 1 && !$loop->last)
                     <br>
                 @endif
             @endforeach
-        @endforeach
+        @if (!$loop->last)<br>@endif
+@endforeach
     </td>
     <td class="celda">{{ $series }}</td>
 

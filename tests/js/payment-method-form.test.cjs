@@ -98,3 +98,26 @@ test('payment method form template compiles', () => {
     assert.deepEqual(compiler.compile(parsed.template.content).errors, []);
 });
 // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
+
+test('catalogue displays condition and credit fields from classification, even with stale flags', () => {
+    const index = compiler.parseComponent(fs.readFileSync('modules/Sale/Resources/assets/js/views/payment_method_types/index.vue', 'utf8'))
+    const compiled = compiler.compile(index.template.content)
+    assert.deepEqual(compiled.errors, [])
+    const find = (node, predicate) => {
+        if (predicate(node)) return node
+        for (const child of node.children || []) {
+            const match = find(child, predicate)
+            if (match) return match
+        }
+    }
+    const condition = find(compiled.ast, node => node.type === 2 && node.text.includes("'Contado'") && node.text.includes('collection_kind'))
+    assert.ok(condition)
+    const expression = condition.expression.replace(/^_s\((.*)\)$/, '$1')
+    for (const [kind, staleFlag, label] of [['account',true,'Contado'],['cash',true,'Contado'],['credit',false,'Crédito'],['unclassified',true,'Sin clasificar'],['unknown',true,'Sin clasificar']]) {
+        assert.equal(vm.runInNewContext('(' + expression + ')', {row:{collection_kind:kind,is_credit:staleFlag}}), label)
+    }
+    const form = compiler.compile(parsed.template.content)
+    const field = find(form.ast, node => node.tag === 'div' && node.attrsMap['v-show'] === "form.collection_kind === 'credit'")
+    assert.ok(field, 'los días de crédito siguen la naturaleza vigente')
+    assert.deepEqual(form.errors, [])
+})

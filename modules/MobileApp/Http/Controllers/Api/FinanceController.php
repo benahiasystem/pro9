@@ -150,59 +150,31 @@ class FinanceController extends Controller
 
     /**
      * Totales del periodo con los mismos filtros del scroll (el saldo no puede
-     * acumularse pagina a pagina con cursor). Montos convertidos a VES.
+     * acumularse pagina a pagina con cursor). Totales por moneda recibida.
      *
      * @param  Request $request
      * @return array
      */
+    // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
     public function movementsSummary(Request $request)
     {
+        $summary = new \App\Services\Payments\MobileMovementSummary();
         $query = $this->buildMovementsQuery($request);
-        if (!$query) {
-            return ['success' => true, 'data' => ['count' => 0, 'total_input' => 0, 'total_output' => 0, 'balance' => 0]];
+        if ($query) {
+            $query->orderBy('id')->chunk(500, function ($rows) use ($summary) {
+                \App\Services\Payments\Movement::preload($rows);
+                foreach ($rows as $row) {
+                    $movement = \App\Services\Payments\Movement::row($row);
+                    if ($movement) $summary->add($movement);
+                    elseif (($row->report_context['version'] ?? null) !== 2 && !isset($row->report_context['reversal'])
+                        && $row->payment && !$row->payment->reversed_at
+                        && !($row->payment instanceof DocumentPayment && $row->payment->receipt_parent_id)) $summary->add(null);
+                }
+            });
         }
-
-        $count = 0;
-        $total_input = 0.0;
-        $total_output = 0.0;
-
-        $query->orderBy('id')->chunk(500, function ($rows) use (&$count, &$total_input, &$total_output) {
-            foreach ($rows as $row) {
-                $payment = $row->payment;
-                if (!$payment) continue;
-                $count++;
-
-                if ($row->payment_type === TransferAccountPayment::class) {
-                    // La transferencia refleja origen (monto positivo) y destino (negativo):
-                    // se anulan entre si, no afectan el balance global.
-                    continue;
-                }
-
-                $amount = (float) $payment->payment;
-                $document = $payment->associated_record_payment ?? null;
-                // ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
-                if ($payment instanceof \App\Models\Tenant\DocumentPayment) {
-                    $amount = $payment->reversed_at ? 0 : \App\Services\Fiscal\FiscalAmounts::convert($payment->cash_received_amount,$payment->currency_type_id,'VES',$payment->exchange_rate);
-                } elseif ($document && ($document->currency_type_id ?? 'VES') === 'USD') {
-                    $amount = (float) \App\Services\ExchangeRates\ExchangeRateMath::multiply($amount, $document->exchange_rate_sale, 2);
-                }
-                // ######## FIN MIGRACIÓN MONEDA VENEZUELA ########
-
-                if ($row->type_movement === 'input') $total_input += $amount;
-                else $total_output += $amount;
-            }
-        });
-
-        return [
-            'success' => true,
-            'data' => [
-                'count' => $count,
-                'total_input' => round($total_input, 2),
-                'total_output' => round($total_output, 2),
-                'balance' => round($total_input - $total_output, 2),
-            ],
-        ];
+        return ['success'=>true,'data'=>$summary->result()];
     }
+    // ######## FIN MONEDA DEL MEDIO DE COBRO ########
 
     /**
      * Registra un ingreso delegando en IncomeController@store.

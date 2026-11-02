@@ -244,16 +244,18 @@ class ContractController extends Controller
             $data = $this->mergeData($request);
             $data['terms_condition'] = $this->getTermsCondition();
 
+            $existing = $request->input('id') ? Contract::query()->lockForUpdate()->findOrFail($request->input('id')) : null;
+            $previousCurrency = $existing ? $existing->currency_type_id : null;
             $this->contract =  Contract::updateOrCreate( ['id' => $request->input('id')], $data);
 
             $this->contract->items()->delete();
-            $this->deleteAllPayments($this->contract->payments);
 
             foreach ($data['items'] as $row) {
                 $this->contract->items()->create($row);
             }
 
-            $this->savePayments($this->contract, $data['payments']);
+            $payments = $existing ? \App\Services\Payments\ExistingReceipts::synchronize($this->contract, $data['payments'], $previousCurrency) : $data['payments'];
+            $this->savePayments($this->contract, $payments);
 
             $this->setFilename();
             $this->createPdf($this->contract, "a4", $this->contract->filename);
@@ -582,8 +584,12 @@ class ContractController extends Controller
 
         foreach ($payments as $payment) {
 
-            \App\Models\Tenant\PaymentMethodType::assertActiveForPayment($payment['payment_method_type_id'] ?? null);
-            $record_payment = $contract->payments()->create($payment);
+            // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+            $values = \App\Services\Payments\ReceiptAmounts::forMethod($payment['payment_method_type_id'] ?? null, $contract->currency_type_id, $contract->exchange_rate_sale, $payment);
+            $record_payment = $contract->payments()->make(array_replace($payment, $values));
+            $record_payment->calculation_snapshot = $values['calculation_snapshot'];
+            $record_payment->save();
+            // ######## FIN MONEDA DEL MEDIO DE COBRO ########
 
             $this->createGlobalPayment($record_payment, $payment);
         }

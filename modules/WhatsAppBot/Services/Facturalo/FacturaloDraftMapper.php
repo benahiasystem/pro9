@@ -11,19 +11,30 @@ use App\Services\SeriesResolver;
 use App\Models\Tenant\Document;
 use App\Models\Tenant\User;
 use Carbon\Carbon;
+use App\Support\Exact\Decimal as D;
 
 class FacturaloDraftMapper
 {
-    // ########## INICIO CAMBIO AFECTACIÓN IVA
-    private const IGV_RATE = 0.16;
-    // ######### FIN CAMBIO AFECTACIÓN IVA
     private const AFFECTATION_TAXED = '10';
-    private const SYSTEM_ISC_NONE = '01';
     private const PRICE_TYPE_UNIT = '01';
-    private const PAYMENT_METHOD_CASH = '01';
 
     public function map(array $draft, User $user): array
     {
+        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        if (($draft['pricing_version'] ?? null) !== 1 || !\Illuminate\Support\Str::isUuid($draft['operation_key'] ?? '')) {
+            \App\Services\Payments\Classification::error('items', 'El borrador anterior debe prepararse y confirmarse nuevamente.');
+        }
+        $pricing = DraftPricing::calculate($draft['items'] ?? [], $draft['exchange_rate_sale'] ?? null, $draft['discount_amount'] ?? '0');
+        if (!isset($draft['total']) || !D::of(D::input($draft['total'], 'total'))->isEqualTo(D::of($pricing['total_payable']))) {
+            \App\Services\Payments\Classification::error('total', 'El importe confirmado cambió; prepare y confirme nuevamente el borrador.');
+        }
+        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+        $cashMethod = \App\Services\Payments\Classification::defaultCashMethod('VES');
+        if (!\App\Models\Tenant\Cash::where('user_id', $user->id)->where('state', true)->exists()) {
+            \App\Services\Payments\Classification::error('payment_destination_id', 'Aperture una caja antes de emitir el comprobante.');
+        }
+        // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
         $documentTypeId = $draft['document_type_id'];
         $establishmentId = (int) $user->establishment_id;
 
@@ -47,40 +58,20 @@ class FacturaloDraftMapper
         $today = Carbon::now();
 
         $mappedItems = [];
-        $totalTaxed = 0.0;
-        $totalIgv = 0.0;
-        $totalValue = 0.0;
-
-        foreach ($draft['items'] as $line) {
-            $item = Item::find($line['item_id']);
-            $mappedItem = $this->mapItem($item, (float) $line['quantity']);
-            $mappedItems[] = $mappedItem;
-            $totalTaxed += $mappedItem['total_value'];
-            $totalIgv += $mappedItem['total_igv'];
-            $totalValue += $mappedItem['total_value'];
+        foreach ($pricing['items'] as $line) {
+            $item = Item::findOrFail($line['item_id']);
+            $mappedItems[] = $this->mapItem($item, $line);
         }
-
-        $totalTaxed = round($totalTaxed, 2);
-        $totalIgv = round($totalIgv, 2);
-        $total = round($totalTaxed + $totalIgv, 2);
-        $totalValueRounded = round($totalValue, 2);
-
-        // ########## INICIO CAMBIO IGV A IVA
-        // Descuento global tipo '02': afecta la base imponible del IVA.
-        // ######### FIN CAMBIO IGV A IVA
-        // El front (mixins/functions.js::discountGlobal) calcula los mismos
-        // ajustes: total_taxed = base - amount, total_igv = nuevo total_taxed * %igv.
-        $discountAmount = round((float) ($draft['discount_amount'] ?? 0), 2);
+        $totalTaxed = $pricing['total_value'];
+        $totalValueRounded = $pricing['total_value'];
+        $totalIgv = $pricing['total_igv'];
+        $total = $pricing['total'];
+        $discountAmount = $pricing['discount_amount'];
         $discounts = [];
-        $totalDiscount = 0.0;
-        if ($discountAmount > 0) {
-            $discountBase = $totalTaxed;
-            $factor = $discountBase > 0 ? round($discountAmount / $discountBase, 5) : 0;
-            $totalTaxed = round($discountBase - $discountAmount, 2);
-            $totalValueRounded = $totalTaxed;
-            $totalIgv = round($totalTaxed * self::IGV_RATE, 2);
-            $total = round($totalTaxed + $totalIgv, 2);
-            $totalDiscount = $discountAmount;
+        $totalDiscount = $discountAmount;
+        if (D::of($discountAmount)->isGreaterThan(0)) {
+            $discountBase = $pricing['discount_base'];
+            $factor = D::represent(D::of($discountAmount)->dividedBy($discountBase));
             $discounts[] = [
                 'discount_type_id' => '02',
                 // ########## INICIO CAMBIO IGV A IVA
@@ -97,11 +88,11 @@ class FacturaloDraftMapper
         $payload = [
             'type' => 'invoice',
             'user_id' => $user->id,
-            'external_id' => (string) \Illuminate\Support\Str::uuid(),
+            'external_id' => $draft['operation_key'],
             'establishment_id' => $establishmentId,
             'establishment' => $this->establishmentSnapshot($establishmentId),
             'group_id' => '01',
-            'fiscal_environment' => 'production',
+            'fiscal_environment' => \App\Models\Tenant\Company::active()->fiscal_environment,
             'state_type_id' => '01',
             'document_type_id' => $documentTypeId,
             'series' => $series->number,
@@ -111,7 +102,7 @@ class FacturaloDraftMapper
             'customer_id' => $customer?->id,
             'customer' => $this->customerSnapshot($customer),
             'currency_type_id' => 'VES',
-            'exchange_rate_sale' => 1,
+            'exchange_rate_sale' => $pricing['exchange_rate_sale'],
             'total_prepayment' => 0,
             'total_discount' => $totalDiscount,
             'total_charge' => 0,
@@ -134,14 +125,15 @@ class FacturaloDraftMapper
             'related' => [],
             'legends' => [],
             'additional_information' => $draft['observations'] ?? null,
-            'payment_method_type_id' => '01',
+            'payment_method_type_id' => $cashMethod->id,
             'payments' => [
                 [
                     'date_of_payment' => $today->format('Y-m-d'),
-                    'payment_method_type_id' => self::PAYMENT_METHOD_CASH,
-                    'payment_destination_id' => null,
+                    'payment_method_type_id' => $cashMethod->id,
+                    'payment_destination_id' => 'cash',
+                    'operation_key' => $draft['operation_key'],
                     'reference' => null,
-                    'payment' => $total,
+                    'payment' => $pricing['total_payable'],
                 ],
             ],
             'fee' => [],
@@ -164,68 +156,30 @@ class FacturaloDraftMapper
         return $payload;
     }
 
-    private function mapItem(Item $item, float $quantity): array
+    // ######## INICIO CALCULOS EXACTOS PRO9 ########
+    private function mapItem(Item $item, array $line): array
     {
-        $unitPriceWithIgv = $item->has_igv
-            ? (float) $item->sale_unit_price
-            : round($item->sale_unit_price * (1 + self::IGV_RATE), 2);
-
-        // Multiplicar primero con el precio unitario CON IGV completo, y recien
-        // ########## INICIO CAMBIO IGV A IVA
-        // ahi separar base/IGV. Redondear el unit_value SIN IVA antes de
-        // ######### FIN CAMBIO IGV A IVA
-        // multiplicar (como se hacia antes) arrastra el error de redondeo x
-        // cantidad (ver bug: Bs.3.00 x 15 daba Bs.44.96 en vez de Bs.45.00 exacto).
-        $total = round($unitPriceWithIgv * $quantity, 2);
-        $totalValue = round($total / (1 + self::IGV_RATE), 2);
-        $totalIgv = round($total - $totalValue, 2);
-        // unit_value recalculado desde el total ya reconciliado, en 6 decimales
-        // (misma precision que la columna sale_unit_price y que el calculo real
-        // del POS en functions.js, que tampoco redondea unit_value a 2
-        // decimales). A 2 decimales, unit_value x cantidad no siempre reconcilia
-        // con total_value cuando la division no cae exacta (ej. 38.14/15).
-        $unitValueWithoutIgv = $quantity > 0 ? round($totalValue / $quantity, 6) : 0.0;
-
-        return [
+        return array_replace($line, [
             'item_id' => $item->id,
             'item' => array_merge($item->toArray(), [
-                'description' => $item->name,
+                'description' => $line['item_name'] ?? $item->name,
                 'unit_type_id' => $item->unit_type_id ?: 'UND',
-                'currency_type_id' => $item->currency_type_id ?: 'VES',
-                'has_igv' => (bool) $item->has_igv,
+                'currency_type_id' => $line['price_currency'],
+                'sale_unit_price' => $line['price'],
+                'has_igv' => (bool) $line['includes_iva'],
                 'calculate_quantity' => false,
-                'percentage_igv' => self::IGV_RATE * 100,
+                'percentage_igv' => 16,
                 'is_set' => (bool) $item->is_set,
-                'IdLoteSelected' => null,
-                'lots' => [],
-                'presentation' => null,
-                'used_points_for_exchange' => null,
-                'exchanged_for_points' => false,
+                'IdLoteSelected' => null, 'lots' => [], 'presentation' => null,
+                'used_points_for_exchange' => null, 'exchanged_for_points' => false,
             ]),
-            'quantity' => $quantity,
-            'unit_value' => $unitValueWithoutIgv,
             'price_type_id' => self::PRICE_TYPE_UNIT,
-            'unit_price' => $unitPriceWithIgv,
             'affectation_igv_type_id' => self::AFFECTATION_TAXED,
-            'total_base_igv' => $totalValue,
-            'percentage_igv' => self::IGV_RATE * 100,
-            'total_igv' => $totalIgv,
-            'total_base_other_taxes' => 0,
-            'percentage_other_taxes' => 0,
-            'total_other_taxes' => 0,
-            'total_taxes' => $totalIgv,
-            'total_value' => $totalValue,
-            'total_discount' => 0,
-            'total_charge' => 0,
-            'total' => $total,
-            'attributes' => [],
-            'charges' => [],
-            'discounts' => [],
-            'discount' => null,
-            'attribute' => null,
-            'name_product_pdf' => null,
-        ];
+            'attributes' => [], 'charges' => [], 'discounts' => [],
+            'discount' => null, 'attribute' => null, 'name_product_pdf' => null,
+        ]);
     }
+    // ######## FIN CALCULOS EXACTOS PRO9 ########
 
     private function nextNumber(Series $series): int
     {

@@ -366,9 +366,9 @@
         /**
          * @return string
          */
-        public function getCurrencyTypeIdAttribute()
+        public function getCurrencyTypeIdAttribute($value)
         {
-            return 'VES';
+            return $value ?: 'VES';
         }
 
         /**
@@ -384,6 +384,7 @@
          */
         public function getCollectionData()
         {
+            $this->loadMissing('payments.global_payment');
             $items = $this->items->transform(function ($row) {
                 /** @var TechnicalServiceItem $row */
                 return $row->getCollectionData();
@@ -428,7 +429,18 @@
                 'maintenance' => (bool)$this->maintenance,
                 'diagnosis' => (bool)$this->diagnosis,
                 'items' => $items,
-                'payments' => $this->payments,
+                'payments' => $this->payments->map(function ($row) {
+                    $values = $row->toArray();
+                    unset($values['global_payment']);
+                    return array_merge($values, [
+                        'date_of_payment' => $row->date_of_payment?->format('Y-m-d'),
+                        'exchange_rate_date' => $row->exchange_rate_date?->format('Y-m-d'),
+                        'payment_destination_id' => $row->global_payment
+                            ? ($row->global_payment->destination_type === \App\Models\Tenant\Cash::class ? 'cash' : $row->global_payment->destination_id)
+                            : null,
+                        'payment_destination_description' => \App\Services\Payments\ReceiptPresentation::destination($row),
+                    ]);
+                }),
 
                 'has_document_sale_note' => $has_document_sale_note,
                 'number_document_sale_note' => $number_document_sale_note,

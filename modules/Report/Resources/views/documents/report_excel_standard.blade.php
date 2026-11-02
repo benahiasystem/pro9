@@ -80,18 +80,8 @@
     <div class="">
         <div class=" ">
             @php
-                $acum_total_charges=0;
-                $acum_total_taxed=0;
-                $acum_total_igv=0;
-                $acum_total=0;
-
+                $currencyTotals = \Modules\Report\Services\DocumentCurrencyTotals::empty();
                 $serie_affec = '';
-                $acum_total_exonerado=0;
-
-
-                $acum_total_taxed_usd = 0;
-                $acum_total_igv_usd = 0;
-                $acum_total_usd = 0;
             @endphp
             <table class="">
                 <thead>
@@ -246,7 +236,7 @@
                         @endif
 
                         <td class="celda">
-                            {{ ($value->payments()->count() > 0) ? $value->payments()->first()->payment_method_type->description : ''}}
+                            {{ \App\Services\Payments\ReceiptPresentation::firstMethod($value->payments)}}
                         </td>
                         <td class="celda">
                             @php
@@ -261,12 +251,13 @@
 
                             @foreach ($payments as $payment)
                                 @foreach ($payment as $pay)
-                                    {{ $pay['description'] }}
+                                    {{ $pay['display'] ?? $pay['description'] }}
                                     @if ($loop->count > 1 && !$loop->last)
                                         <br>
                                     @endif
                                 @endforeach
-                            @endforeach
+                            @if (!$loop->last)<br>@endif
+@endforeach
 
                         </td>
                         <td>{{ $value->exchange_rate_sale }}</td>
@@ -294,20 +285,20 @@
                                 <td class="celda">{{$value->total_discount}}</td>
                                 <td class="celda">{{$signal == '07' ? "-" : ""  }}{{$value->total_igv}}</td>
 
-                                <td class="celda">{{$signal == '07' ? "-" : ""  }}{{$value->total}}</td>
+                                <td class="celda">{{$signal == '07' ? "-" : ""  }}{{\App\Support\Exact\Decimal::format(\App\Support\Exact\Decimal::read($value, 'total'))}}</td>
                             @endif
 
                         @else
-                            <td class="celda">{{ (in_array($document_type->id,['01','03']) && in_array($value->state_type_id,['09','11'])) ? 0 : $value->total_charge}}</td>
-                            <td class="celda">{{ (in_array($document_type->id,['01','03']) && in_array($value->state_type_id,['09','11'])) ? 0 : $value->total_exonerated}}</td>
+                            <td class="celda">{{ in_array($value->state_type_id,['09','11']) ? 0 : $value->total_charge}}</td>
+                            <td class="celda">{{ in_array($value->state_type_id,['09','11']) ? 0 : $value->total_exonerated}}</td>
 
 
 
-                            <td class="celda">{{ (in_array($document_type->id,['01','03']) && in_array($value->state_type_id,['09','11'])) ? 0 : $value->total_taxed}}</td>
-                            <td class="celda">{{ (in_array($document_type->id,['01','03']) && in_array($value->state_type_id,['09','11'])) ? 0 : $value->total_discount}}</td>
-                            <td class="celda">{{ (in_array($document_type->id,['01','03']) && in_array($value->state_type_id,['09','11'])) ? 0 : $value->total_igv}}</td>
+                            <td class="celda">{{ in_array($value->state_type_id,['09','11']) ? 0 : $value->total_taxed}}</td>
+                            <td class="celda">{{ in_array($value->state_type_id,['09','11']) ? 0 : $value->total_discount}}</td>
+                            <td class="celda">{{ in_array($value->state_type_id,['09','11']) ? 0 : $value->total_igv}}</td>
 
-                            <td class="celda">{{ (in_array($document_type->id,['01','03']) && in_array($value->state_type_id,['09','11'])) ? 0 : $value->total}}</td>
+                            <td class="celda">{{ in_array($value->state_type_id,['09','11']) ? '0.00' : \App\Support\Exact\Decimal::format(\App\Support\Exact\Decimal::read($value, 'total'))}}</td>
 
                         @endif
 
@@ -345,11 +336,11 @@
 
                         @php
 
-                            $value->total_exonerated = (in_array($document_type->id,['01','03', '07']) && in_array($value->state_type_id,['09','11'])) ? 0 : $value->total_exonerated;
+                            $value->total_exonerated = in_array($value->state_type_id,['09','11']) ? 0 : $value->total_exonerated;
 
-                            $value->total_taxed = (in_array($document_type->id,['01','03', '07']) && in_array($value->state_type_id,['09','11'])) ? 0 : $value->total_taxed;
-                            $value->total_igv = (in_array($document_type->id,['01','03', '07']) && in_array($value->state_type_id,['09','11'])) ? 0 : $value->total_igv;
-                            $value->total = (in_array($document_type->id,['01','03', '07']) && in_array($value->state_type_id,['09','11'])) ? 0 : $value->total;
+                            $value->total_taxed = in_array($value->state_type_id,['09','11']) ? 0 : $value->total_taxed;
+                            $value->total_igv = in_array($value->state_type_id,['09','11']) ? 0 : $value->total_igv;
+                            $value->total = in_array($value->state_type_id,['09','11']) ? 0 : $value->total;
                         @endphp
 
                         @php
@@ -373,101 +364,32 @@
 
                     </tr>
                     @php
-                        if($value->currency_type_id == 'VES'){
-                            /*$acum_total_taxed +=  $signal != '07' ? $value->total_taxed : -$value->total_taxed ;
-                            $acum_total_igv +=  $signal != '07' ? $value->total_igv : -$value->total_igv ;
-                            $acum_total += $signal != '07' ? $value->total : -$value->total ;*/
-
-
-
-
-                            if(($signal == '07' && $state !== '11')){
-
-                                $acum_total += -$value->total;
-                                $acum_total_taxed += -$value->total_taxed;
-                                $acum_total_igv += -$value->total_igv;
-
-                                $acum_total_charges += -$value->total_charge;
-                                $acum_total_exonerado += -$value->total_exonerated;
-
-
-                            }elseif($signal != '07' && $state == '11'){
-
-                                $acum_total += 0;
-                                $acum_total_taxed += 0;
-                                $acum_total_igv += 0;
-
-                                $acum_total_charges += 0;
-                                $acum_total_exonerado += 0;
-
-                            }else{
-
-                                $acum_total += $value->total;
-                                $acum_total_taxed += $value->total_taxed;
-                                $acum_total_igv += $value->total_igv;
-
-                                $acum_total_charges += $value->total_charge;
-                                $acum_total_exonerado += $value->total_exonerated;
-                            }
-
-
-                        }else if($value->currency_type_id == 'USD'){
-
-                            if(($signal == '07' && $state !== '11')){
-
-                                $acum_total_usd += -$value->total;
-                                $acum_total_taxed_usd += -$value->total_taxed;
-                                $acum_total_igv_usd += -$value->total_igv;
-
-
-
-                            }elseif($signal != '07' && $state == '11'){
-
-                                $acum_total_usd += 0;
-                                $acum_total_taxed_usd += 0;
-                                $acum_total_igv_usd += 0;
-
-
-                            }else{
-
-                                $acum_total_usd += $value->total;
-                                $acum_total_taxed_usd += $value->total_taxed;
-                                $acum_total_igv_usd += $value->total_igv;
-
-                            }
-
-
-                        }
-
-                    @endphp
+                        $currencyTotals = \Modules\Report\Services\DocumentCurrencyTotals::add($currencyTotals, $value);
+                        @endphp
                 @endforeach
                 <tr>
                     <td colspan="23"></td>
                     <td></td>
                     <td colspan="2">Totales VES</td>
-                    <td>{{number_format($acum_total_charges, 2)}}</td>
-                    <td>{{number_format($acum_total_exonerado, 2)}}</td>
+                    <td>{{\App\Support\Exact\Decimal::format($currencyTotals['VES']['total_charge'])}}</td>
+                    <td>{{\App\Support\Exact\Decimal::format($currencyTotals['VES']['total_exonerated'])}}</td>
 
 
-                    <td>{{$acum_total_taxed}}</td>
+                    <td>{{\App\Support\Exact\Decimal::format($currencyTotals['VES']['total_taxed'])}}</td>
                     <td></td>
-                    <td>{{$acum_total_igv}}</td>
-                    <td></td>
-                    <td>{{$acum_total}}</td>
+                    <td>{{\App\Support\Exact\Decimal::format($currencyTotals['VES']['total_igv'])}}</td>
+                    <td>{{\App\Support\Exact\Decimal::format($currencyTotals['VES']['total'])}}</td>
                 </tr>
                 <tr>
                     <td colspan="23"></td>
                     <td></td>
                     <td colspan="2">Totales USD</td>
+                    <td>{{\App\Support\Exact\Decimal::format($currencyTotals['USD']['total_charge'])}}</td>
+                    <td>{{\App\Support\Exact\Decimal::format($currencyTotals['USD']['total_exonerated'])}}</td>
+                    <td>{{\App\Support\Exact\Decimal::format($currencyTotals['USD']['total_taxed'])}}</td>
                     <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td>{{$acum_total_taxed_usd}}</td>
-                    <td></td>
-                    <td>{{$acum_total_igv_usd}}</td>
-                    <td></td>
-                    <td>{{$acum_total_usd}}</td>
+                    <td>{{\App\Support\Exact\Decimal::format($currencyTotals['USD']['total_igv'])}}</td>
+                    <td>{{\App\Support\Exact\Decimal::format($currencyTotals['USD']['total'])}}</td>
                 </tr>
 
                 </tbody>

@@ -740,6 +740,11 @@
                 $this->order_note = OrderNote::firstOrNew(['id' => $request['id']]);
                 $data = $this->mergeArray($request, $this->order_note);
                 $this->order_note->fill($data);
+                // ######## INICIO CALCULOS EXACTOS PRO9 ########
+                // Guardar la cabecera antes de las partidas: sus eventos recalculan
+                // los totales y el guardado del nombre no debe sobrescribirlos.
+                $this->order_note->save();
+                // ######## FIN CALCULOS EXACTOS PRO9 ########
 
                 // Obtén IDs de items nuevos
                 $new_item_ids = collect($request['items'])

@@ -10,7 +10,8 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Hyn\Tenancy\Models\Website;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Exception;
+use Illuminate\Support\Facades\Storage;
+use App\Models\Tenant\DownloadTray;
 use Hyn\Tenancy\Environment;
 use App\CoreFacturalo\Helpers\Storage\StorageDocument;
 use App\Models\Tenant\Company;
@@ -59,20 +60,18 @@ class ProcessGlobalPaymentReport implements ShouldQueue
     {
         $this->showLogInfo("ProcessGlobalPaymentReport Start WebsiteId => {$this->website_id}");
 
-        $website = $this->findWebsite($this->website_id);
-        $tenancy = app(Environment::class);
-        $tenancy->tenant($website);
-        $path = null;
-
-
+        // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+        $tenantSelected = false;
         try {
-
-            $download_tray = $this->findDownloadTray($this->tray_id);
+            $website = Website::findOrFail($this->website_id);
+            app(Environment::class)->tenant($website);
+            $tenantSelected = true;
+            $download_tray = DownloadTray::findOrFail($this->tray_id);
             $format = $download_tray->format;
             $this->showLogInfo("Init process format: {$format}");
 
             $path = $this->getReportPath($format);
-            $filename = $this->getReportFilename($download_tray->module, 'Reporte_Pagos');
+            $filename = $this->getReportFilename($download_tray->module, 'Reporte_Pagos').'_'.$download_tray->id;
 
             // data
             // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
@@ -89,7 +88,9 @@ class ProcessGlobalPaymentReport implements ShouldQueue
             {
                 // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
                 $pdf = PDF::loadView('finance::global_payments.report_pdf', compact('records', 'company', 'establishment'))->setPaper('a4', 'landscape');
-                $this->uploadStorage($filename, $pdf->output(), $path);
+                if (!Storage::disk('tenant')->put($path.DIRECTORY_SEPARATOR.$filename.'.pdf', $pdf->output())) {
+                    throw new \RuntimeException('No se pudo guardar el reporte de pagos.');
+                }
                 // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
             }
             else
@@ -100,17 +101,30 @@ class ProcessGlobalPaymentReport implements ShouldQueue
                 $this->showLogInfo('Render excel finish');
     
                 $this->showLogInfo('Upload excel init');
-                $global_payment_export->store(DIRECTORY_SEPARATOR.$path.DIRECTORY_SEPARATOR . $filename.'.'.$format, 'tenant');
+                if (!$global_payment_export->store(DIRECTORY_SEPARATOR.$path.DIRECTORY_SEPARATOR . $filename.'.'.$format, 'tenant')) {
+                    throw new \RuntimeException('No se pudo guardar el reporte de pagos.');
+                }
                 $this->showLogInfo('Upload excel finish');
             }
 
             $this->finishedDownloadTray($download_tray, $filename, $path);
 
-        } 
-        catch(Exception $e) 
-        {
-            $this->showLogInfo('ProcessGlobalPaymentReport Error transaction: '. $e->getMessage());
+        } catch (\Throwable $e) {
+            if ($tenantSelected) {
+                try {
+                    $tray = DownloadTray::find($this->tray_id);
+                    if ($tray) {
+                        $tray->status = 'FAILED';
+                        $tray->date_end = date('Y-m-d H:i:s');
+                        $tray->save();
+                    }
+                } catch (\Throwable $statusError) {
+                    Log::error('No se pudo actualizar el estado del reporte de pagos', ['exception' => $statusError]);
+                }
+            }
+            throw $e;
         }
+        // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
 
         $this->showLogInfo('ProcessGlobalPaymentReport Finish transaction');
     }
@@ -119,10 +133,10 @@ class ProcessGlobalPaymentReport implements ShouldQueue
     /**
      * The job failed to process.
      *
-     * @param  Exception  $exception
+     * @param  \Throwable  $exception
      * @return void
      */
-    public function failed(Exception $exception)
+    public function failed(\Throwable $exception)
     {
         Log::error($exception->getMessage());
     }

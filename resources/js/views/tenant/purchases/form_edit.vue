@@ -188,7 +188,7 @@
 
                             <div class="col-md-12 col-lg-12 mt-2">
                                 <!-- Contado -->
-                                <template v-if="form.payment_condition_id === '01'">
+                                <template>
                                     <table>
                                         <thead>
                                         <tr width="100%">
@@ -213,18 +213,20 @@
                                         <tr v-for="(row, index) in form.payments" :key="index">
                                             <td>
                                                 <div class="form-group mb-2 me-2">
-                                                    <el-select v-model="row.payment_method_type_id"
+                                                    <span v-if="row.id">{{ (row.payment_method_snapshot || {}).description || (row.payment_method_type || {}).description || row.payment_method_type_id }}</span>
+                                                    <el-select v-else v-model="row.payment_method_type_id"
                                                                @change="changePaymentMethodType(index)">
                                                         <el-option v-for="option in cashPaymentMethod"
                                                                    :key="option.id"
                                                                    :label="option.description"
                                                                    :value="option.id"></el-option>
                                                     </el-select>
+                                                    <small v-if="!row.payment_method_type_id" class="text-muted">No hay efectivo activo para la moneda del documento; seleccione un método.</small>
                                                 </div>
                                             </td>
                                             <td>
                                                 <div class="form-group mb-2 me-2">
-                                                    <el-select v-model="row.payment_destination_id" filterable>
+                                                    <el-select v-model="row.payment_destination_id" filterable :disabled="!!row.id">
                                                         <el-option v-for="option in classifiedPaymentDestinations(payment_destinations, row)"
                                                                    :key="option.id"
                                                                    :label="option.description"
@@ -234,12 +236,12 @@
                                             </td>
                                             <td>
                                                 <div class="form-group mb-2 me-2">
-                                                    <el-input v-model="row.reference"></el-input>
+                                                    <el-input v-model="row.reference" :disabled="!!row.id"></el-input>
                                                 </div>
                                             </td>
                                             <td>
                                                 <div class="form-group mb-2 me-2">
-                                                    <el-input v-model="row.payment"></el-input>
+                                                    <el-input v-model="row.payment" :disabled="!!row.id" @input="calculateFee"></el-input>
                                                 </div>
                                             </td>
                                             <td class="series-table-actions text-center">
@@ -256,7 +258,7 @@
                                 </template>
 
                                 <!-- Credito -->
-                                <template v-else-if="form.payment_condition_id === '02'">
+                                <template v-if="form.payment_condition_id === '02'">
                                     <table v-if="form.fee.length > 0">
                                         <thead>
                                         <tr width="100%">
@@ -533,7 +535,10 @@
 </template>
 
 <script>
+import {defaultCashForCurrency} from "@helpers/payment-classification"
+import {suggestRemainingPayment, suggestInstallments} from "@helpers/document-creation"
 import {exactAmount} from '../../../helpers/exchange-rate-math'
+import {purchasePaymentValidation, showPurchaseValidationError, markAutomaticPurchasePayment, isUntouchedAutomaticPurchasePayment} from '../../../helpers/purchase-payment-validation'
 
 import {applyCommercialTotals, allocateCommercialRows} from '../../../helpers/exact-commercial'
 
@@ -545,6 +550,7 @@ import {functions, exchangeRate, fnPaymentsFee} from '../../../mixins/functions'
 import {calculateRowItem, showNamePdfOfDescription} from '../../../helpers/functions'
 
 export default {
+    paymentCurrencyPolicy: 'document',
     props: {
         'resourceId': {
             required: true,
@@ -613,6 +619,7 @@ export default {
 
                 this.charges_types = response.data.charges_types
                 this.form.currency_type_id = (this.currency_types.length > 0) ? this.currency_types[0].id : null
+                this.form.payment_method_type_id = defaultCashForCurrency(this.payment_method_types, this.form.currency_type_id)?.id || null
                 this.form.establishment_id = (this.establishment.id) ? this.establishment.id : null
                 this.form.document_type_id = (this.document_types.length > 0) ? this.document_types[0].id : null
 
@@ -639,10 +646,10 @@ export default {
     },
     computed: {
         creditPaymentMethod: function () {
-            return _.filter(this.payment_method_types, {'is_credit': true})
+            return this.payment_method_types.filter(method => [true, 1, '1'].includes(method.is_active) && method.collection_kind === 'credit')
         },
         cashPaymentMethod: function () {
-            return _.filter(this.payment_method_types, {'is_credit': false})
+            return this.payment_method_types.filter(method => [true, 1, '1'].includes(method.is_active) && ['cash', 'account'].includes(method.collection_kind))
         },
         isCreditPaymentCondition: function () {
             return ['02', '03'].includes(this.form.payment_condition_id)
@@ -737,14 +744,8 @@ export default {
         },
         async validate_payments() {
 
-            let error_by_item = 0
-            let acum_total = 0
+            const paymentValidation = purchasePaymentValidation(this.form.payments, this.form.total)
             let q_affectation_free = 0
-
-            await this.form.payments.forEach((item) => {
-                acum_total += parseFloat(item.payment)
-                if (item.payment <= 0 || item.payment == null) error_by_item++;
-            })
 
             //determinate affectation igv
             await this.form.items.forEach((item) => {
@@ -755,7 +756,7 @@ export default {
 
             let all_free = (q_affectation_free == this.form.items.length) ? true : false
 
-            if (!all_free && (acum_total > parseFloat(this.form.total) || error_by_item > 0)) {
+            if (!all_free && (paymentValidation.exceeds_total || paymentValidation.error_by_item > 0)) {
                 return {
                     success: false,
                     message: 'Los montos ingresados superan al monto a pagar o son incorrectos'
@@ -798,20 +799,45 @@ export default {
         clickCancel(index) {
             this.form.payments.splice(index, 1);
             this.calculatePayments()
+            this.calculateFee()
         },
-        clickAddPayment() {
+        // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+        calculatePayments() {
+            if (this.form.payment_condition_id === '01') {
+                const row = this.form.payments[this.form.payments.length - 1]
+                const automatic = row && isUntouchedAutomaticPurchasePayment(row)
+                suggestRemainingPayment(this.form, this.form.payments, {refreshSuggested: true})
+                if (automatic) markAutomaticPurchasePayment(row)
+            }
+        },
+        calculateFee() {
+            suggestInstallments(this.form, this.form.total)
+        },
+        clickAddFeeNew() {
+            const method = this.creditPaymentMethod[0] || null
+            const date = moment(this.form.date_of_issue).add(method?.number_days || 0, 'days').format('YYYY-MM-DD')
+            this.form.date_of_due = date
+            this.form.fee.push({id: null, purchase_id: null, payment_method_type_id: method?.id || null,
+                date, currency_type_id: this.form.currency_type_id, amount: '0'})
+            this.calculateFee()
+        },
+        // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
+        clickAddPayment(automatic = false) {
 
+            const method = defaultCashForCurrency(this.payment_method_types, this.form.currency_type_id)
             this.form.payments.push({
                 id: null,
                 purchase_id: null,
                 date_of_payment: moment().format('YYYY-MM-DD'),
-                payment_method_type_id: '01',
+                payment_method_type_id: method?.id || null,
                 reference: null,
-                payment_destination_id: this.getPaymentDestinationId(),
+                payment_destination_id: method && this.payment_destinations.some(destination => destination.id === 'cash') ? 'cash' : null,
                 payment: 0,
             });
 
             this.calculatePayments()
+            this.calculateFee()
+            if (automatic === true) markAutomaticPurchasePayment(this.form.payments[this.form.payments.length - 1])
 
         },
         setTotalDefaultPayment() {
@@ -906,7 +932,13 @@ export default {
                     this.form.payment_method_type_id = dato.purchase_payments.payment_method_type_id
                     this.form.currency_type_id = dato.currency_type_id
                     this.form.exchange_rate_sale = dato.exchange_rate_sale
-                    this.form.items = dato.items
+                    // ######## INICIO CALCULOS EXACTOS PRO9 ########
+                    // Los JSON históricos pueden llegar como objetos indexados.
+                    this.form.items = dato.items.map(item => ({...item,
+                        discounts: item.discounts ? Object.values(item.discounts) : [],
+                        charges: item.charges ? Object.values(item.charges) : [],
+                    }))
+                    // ######## FIN CALCULOS EXACTOS PRO9 ########
                     this.form.payments = dato.purchase_payments
                     this.form.purchase_payments_id = dato.purchase_payments.id
                     this.form.purchase_order_id = dato.purchase_order_id
@@ -947,15 +979,12 @@ export default {
         },
         changePaymentMethodType(index) {
 
-            let id = '01'
-
-            if (this.form.payments.length > 0) {
-                id = this.form.payments[index].payment_method_type_id
-            } else if (this.form.fee.length > 0) {
-                id = this.form.fee[index].payment_method_type_id
-            }
-
-            let payment_method_type = _.find(this.payment_method_types, {'id': id})
+            // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+            const rows = this.form.payment_condition_id === '02' ? this.form.fee : this.form.payments
+            const id = Number.isInteger(index) ? rows[index]?.payment_method_type_id : this.form.payment_method_type_id
+            const payment_method_type = this.payment_method_types.find(method => String(method.id) === String(id))
+            if (!payment_method_type) return
+            // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
 
             if (payment_method_type.number_days) {
 
@@ -1021,7 +1050,7 @@ export default {
                 date_of_issue: moment().format('YYYY-MM-DD'),
                 time_of_issue: moment().format('HH:mm:ss'),
                 supplier_id: null,
-                payment_method_type_id: '01',
+                payment_method_type_id: null,
                 currency_type_id: null,
                 purchase_order: null,
                 exchange_rate_sale: 0,
@@ -1071,6 +1100,7 @@ export default {
         resetForm() {
             this.initForm()
             this.form.currency_type_id = (this.currency_types.length > 0) ? this.currency_types[0].id : null
+                this.form.payment_method_type_id = defaultCashForCurrency(this.payment_method_types, this.form.currency_type_id)?.id || null
             this.form.establishment_id = this.establishment.id
             this.form.document_type_id = (this.document_types.length > 0) ? this.document_types[0].id : null
 
@@ -1081,11 +1111,17 @@ export default {
         changePaymentCondition() {
 
             this.form.fee = []
-            this.form.payments = []
+
+            if (['02', '03'].includes(this.form.payment_condition_id)) {
+                this.form.payments = this.form.payments.filter(row => {
+                    try { return row.id != null || (!isUntouchedAutomaticPurchasePayment(row) && exactAmount(row.payment).compare(0) !== 0) }
+                    catch (_) { return true }
+                })
+            }
 
             if (this.form.payment_condition_id === '01') {
 
-                this.clickAddPayment()
+                if (this.form.payments.length === 0) this.clickAddPayment(true)
                 this.initDataPaymentCondition()
 
             }
@@ -1210,11 +1246,7 @@ export default {
                     }
                 })
                 .catch(error => {
-                    if (error.response.status === 422) {
-                        this.errors = error.response.data
-                    } else {
-                        this.$message.error(error.response.data.message)
-                    }
+                    showPurchaseValidationError(error, this)
                 })
                 .then(() => {
                     this.loading_submit = false

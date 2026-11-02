@@ -531,7 +531,6 @@ export default {
                 date_of_issue: moment().format('YYYY-MM-DD'),
                 time_of_issue: moment().format('HH:mm:ss'),
                 supplier_id: null,
-                payment_method_type_id: '01',
                 currency_type_id: null,
                 purchase_order: null,
                 exchange_rate_sale: 0,

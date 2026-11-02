@@ -19,7 +19,9 @@ class CashCollection extends ResourceCollection
     {
         return $this->collection->transform(function($row, $key) {
 
-            $balances=\App\Services\Payments\CashLedger::report($row)['balances_by_currency'];
+            // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+            $balances=\App\Services\Payments\CashLedger::report($row->resource)['balances_by_currency'];
+            // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
             return [
                 'id' => $row->id,
                 'user_id' => $row->user_id,

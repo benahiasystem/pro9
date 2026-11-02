@@ -4,7 +4,7 @@ const fs=require('node:fs'),vm=require('node:vm'),babel=require('@babel/core'),c
 const runtime=require('./support/exact-runtime.cjs')
 const {exactValue}=runtime('exchange-rate-math')
 const {documentTotals}=runtime('exact-document')
-const {restoreSaleNoteContext}=runtime('sale-note-conversion')
+const {restoreSaleNoteContext,documentRateRequest,mayApplyDocumentRate}=runtime('sale-note-conversion')
 
 function load(file,globals={}) {
     const parsed=compiler.parseComponent(fs.readFileSync(file,'utf8'))
@@ -33,9 +33,10 @@ test('note modal transports the server groups without regrouping products or fet
         localStorage:{setItem:(key,value)=>stored.set(key,value),removeItem:key=>stored.delete(key)},window:{location},
     })
     const expected=rows()
+    const receipts=[{id:7,sale_note_id:1,payment_method_type_id:'13',payment_destination_id:2,currency_type_id:'USD',original_amount:'1',payment:'40.12',exchange_rate:'40.12345678'}]
     const ctx={form:{selecteds:[1],client_id:1},group_items_generate_document:true,
         notes:[{id:1,selected:true}],clients:[{id:1}],getObjectForNote:v=>v,onClose:()=>{},
-        $http:{post:(path,data)=>{requests++;assert.equal(path,'/sale-notes/items');return Promise.resolve({data:{data:[],grouped_items:expected,
+        $http:{post:(path,data)=>{requests++;assert.equal(path,'/sale-notes/items');return Promise.resolve({data:{data:[],grouped_items:expected,payments:receipts,
             conversion_context:{currency_type_id:'USD',exchange_rate_sale:'40.12345678',customer_id:1,establishment_id:2}}})}},
         $message:()=>{throw new Error('La selección es válida')}}
     component.methods.onFetchNoteItems.call(ctx)
@@ -53,6 +54,26 @@ test('note modal transports the server groups without regrouping products or fet
     assert.equal(view.form.currency_type_id,'USD')
     assert.equal(view.form.exchange_rate_sale,'40.12345678')
     assert.equal(view.form.establishment_id,2)
+    assert.deepEqual(JSON.parse(JSON.stringify(view.form.payments)),receipts)
+    assert.equal(stored.has('noteConversionPayments'),false)
+})
+
+test('ungrouped note conversion restores every historical payment without changing it',async()=>{
+    const stored=new Map(),location={href:''}
+    const component=load('resources/js/views/tenant/sale_notes/ModalGenerateCPE.vue',{
+        localStorage:{setItem:(key,value)=>stored.set(key,value),removeItem:key=>stored.delete(key)},window:{location},
+    })
+    const receipts=[{id:7,sale_note_id:1,payment_method_type_id:'10',payment_destination_id:'cash',currency_type_id:'USD',original_amount:'5',payment:'50',exchange_rate:'10'},
+        {id:8,sale_note_id:2,payment_method_type_id:'04',payment_destination_id:2,currency_type_id:'VES',original_amount:'20',payment:'20',exchange_rate:'10'}]
+    const ctx={form:{selecteds:[1,2],client_id:1},notes:[{id:1,selected:true},{id:2,selected:true}],clients:[{id:1}],
+        getObjectForNote:v=>v,onClose:()=>{},$message:{error:message=>assert.fail(message)},
+        $http:{post:async()=>({data:{data:rows(),payments:receipts,conversion_context:{currency_type_id:'VES',exchange_rate_sale:'10',customer_id:1,establishment_id:2}}})}}
+    component.methods.processNotGroupItems.call(ctx)
+    await new Promise(setImmediate)
+    const view={form:{payments:[{payment:'999'}]}}
+    restoreSaleNoteContext(view,{getItem:key=>stored.get(key),removeItem:key=>stored.delete(key)})
+    assert.deepEqual(JSON.parse(JSON.stringify(view.form.payments)),receipts)
+    assert.equal(location.href,'/documents/create')
 })
 
 for (const grouped of [true,false]) {
@@ -95,6 +116,23 @@ for (const file of ['invoice_generate.vue','invoice.vue','invoiceupdate.vue']) {
         assert.equal(result[0].source_sale_note_items[0].sale_note_item_id,'500')
         assert.equal(exactValue(documentTotals(result),'total').decimal(),'333')
     })
+
+    test(`${file} discards an exchange-rate reply started before note restoration`,async()=>{
+        const component=load(`resources/js/views/tenant/documents/${file}`)
+        let finish
+        const lookup=new Promise(resolve=>{finish=resolve})
+        const view={form:{date_of_issue:'2026-11-02',currency_type_id:'VES',exchange_rate_sale:'1',payments:[]},
+            isUpdateDocument:false,validateDateOfIssue(){},searchExchangeRateByDate:()=>lookup,
+            async getPercentageIgv(){},changeCurrencyType(){}}
+        const pending=component.methods.changeDateOfIssue.call(view)
+        const data=new Map([['noteConversionContext',JSON.stringify({currency_type_id:'VES',exchange_rate_sale:'889.25530000',customer_id:1,establishment_id:2})],
+            ['noteConversionPayments','[]']])
+        restoreSaleNoteContext(view,{getItem:key=>data.get(key),removeItem:key=>data.delete(key)})
+        finish('889.57540000')
+        await pending
+        await new Promise(setImmediate)
+        assert.equal(view.form.exchange_rate_sale,'889.25530000')
+    })
 }
 
 test('missing or malformed historical conversion context is not replaced with zero or a current rate',()=>{
@@ -105,6 +143,29 @@ test('missing or malformed historical conversion context is not replaced with ze
         assert.throws(()=>restoreSaleNoteContext(view,{getItem:()=>JSON.stringify(context),removeItem:()=>{throw Error('No debe consumir una entrada inválida')}}))
         assert.equal(view.form.exchange_rate_sale,'1.00000000')
     }
+})
+
+test('missing or malformed note receipts cannot partially restore a conversion',()=>{
+    const context=JSON.stringify({currency_type_id:'USD',exchange_rate_sale:'10',customer_id:1,establishment_id:2})
+    for (const badPayments of [null,'{}','[']) {
+        const view={form:{currency_type_id:'VES',exchange_rate_sale:'20',payments:[{id:42}]}}
+        assert.throws(()=>restoreSaleNoteContext(view,{getItem:key=>key==='noteConversionContext' ? context : badPayments,removeItem:()=>assert.fail('No debe consumir datos incompletos')}))
+        assert.equal(view.form.currency_type_id,'VES')
+        assert.equal(view.form.exchange_rate_sale,'20')
+        assert.equal(view.form.payments[0].id,42)
+    }
+})
+
+test('only the latest unchanged document rate request may apply',()=>{
+    const view={form:{date_of_issue:'2026-11-02',exchange_rate_sale:'10'}}
+    const first=documentRateRequest(view),second=documentRateRequest(view)
+    assert.equal(mayApplyDocumentRate(view,first),false)
+    assert.equal(mayApplyDocumentRate(view,second),true)
+    view.form.exchange_rate_sale='11'
+    assert.equal(mayApplyDocumentRate(view,second),false)
+    const third=documentRateRequest(view)
+    view.form.date_of_issue='2026-11-03'
+    assert.equal(mayApplyDocumentRate(view,third),false)
 })
 
 test('the grouped conversion shows a source validation error instead of silently opening another invoice',async()=>{

@@ -65,17 +65,25 @@ final class CashLedger
             }
             return;
         }
-        foreach (['VES'=>'01','USD'=>'10'] as $currency=>$method) {
+        // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+        // Resolve every positive opening before writing either balance.
+        $openings = [];
+        foreach (['VES','USD'] as $currency) {
             $value=D::input($input['opening_balances'][$currency] ?? ($currency === 'VES' ? ($input['beginning_balance'] ?? '0') : '0'), 'opening_balances.'.$currency);
             if (D::of($value)->isNegative()) Classification::error('opening_balances.'.$currency, 'El saldo inicial no puede ser negativo.');
+            $openings[$currency] = ['value'=>$value, 'method'=>D::of($value)->isPositive() ? Classification::defaultCashMethod($currency) : null];
+        }
+        foreach ($openings as $currency=>$opening) {
+            $value = $opening['value'];
             $balance=self::summarize([],[$currency=>$value])[$currency];
             $db->table('cash_currency_balances')->insert(['cash_id'=>$cash->id]+array_merge($balance,['calculation_snapshot'=>json_encode($balance['calculation_snapshot'],JSON_THROW_ON_ERROR)]));
             if (!D::of($value)->isPositive()) continue;
             $transaction=CashTransaction::create(['cash_id'=>$cash->id, 'currency_type_id'=>$currency,
-                'date'=>$cash->date_opening, 'description'=>'Saldo inicial '.$currency, 'payment_method_type_id'=>$method,'payment'=>$value]);
+                'date'=>$cash->date_opening, 'description'=>'Saldo inicial '.$currency, 'payment_method_type_id'=>$opening['method']->id,'payment'=>$value]);
             $transaction->global_payment()->create(['destination_type'=>Cash::class,'destination_id'=>$cash->id,
                 'user_id'=>$cash->user_id,'fiscal_environment'=>\App\Models\Tenant\Company::active()->fiscal_environment]);
         }
+        // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
     }
 
     public static function close(Cash $cash): array

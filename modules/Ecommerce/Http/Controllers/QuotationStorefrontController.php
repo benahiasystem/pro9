@@ -273,6 +273,9 @@ class QuotationStorefrontController extends Controller
             $customer = null;
 
             DB::connection('tenant')->transaction(function () use ($request, $authUser, $isGuest, &$quotation, &$customer, $quotationSettings, $validityDays) {
+                // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+                $cashMethod = \App\Services\Payments\Classification::defaultCashMethod('VES');
+                // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
                 if ($isGuest) {
                     $customer = $this->findOrCreateGuestQuotationCustomer(
                         trim((string) $request->input('contact_name')),
@@ -348,7 +351,7 @@ class QuotationStorefrontController extends Controller
                     'customer_id' => $customer->id,
                     'customer' => PersonInput::set($customer->id),
                     'currency_type_id' => 'VES',
-                    'exchange_rate_sale' => $exchangeRate,
+                    'exchange_rate_sale' => $exchangeRate ?? '1',
                     'total_prepayment' => 0,
                     'total_discount' => 0,
                     'total_charge' => 0,
@@ -378,7 +381,7 @@ class QuotationStorefrontController extends Controller
                     'contact' => $contactName,
                     'phone' => $telephone,
                     'terms_condition' => $termsCondition,
-                    'payment_method_type_id' => '01',
+                    'payment_method_type_id' => $cashMethod->id,
                     'changed' => false,
                 ];
 
@@ -398,8 +401,20 @@ class QuotationStorefrontController extends Controller
                 $quotation = Quotation::create($data);
 
                 foreach ($built['items'] as $row) {
-                    $quotation->items()->create($row);
+                    // ######## INICIO CALCULOS EXACTOS PRO9 ########
+                    $exact = $row['_server_exact'];
+                    unset($row['_server_exact']);
+                    $line = $quotation->items()->create($row);
+                    $line->setExactValues($exact['values']);
+                    $snapshot = $line->calculation_snapshot;
+                    $snapshot['inputs']['storefront_catalog_price'] = $exact['source'];
+                    $line->calculation_snapshot = $snapshot;
+                    $line->saveQuietly();
+                    // ######## FIN CALCULOS EXACTOS PRO9 ########
                 }
+                \App\Support\Exact\CommercialCalculation::summarize($quotation);
+                $quotation->refresh();
+                $quotation->setExactValues(['subtotal'=>$quotation->exactValue('total_value')]);
 
                 // Mismo motor de filename que cotizaciones de empresa: COT-{id}-{Ymd}
                 $quotation->filename = join('-', [
@@ -450,6 +465,8 @@ class QuotationStorefrontController extends Controller
                     'show_prices' => $quotationSettings['show_prices'],
                 ],
             ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json(['success'=>false, 'message'=>collect($e->errors())->flatten()->first()], 422);
         } catch (Exception $e) {
             Log::error('Error al crear cotización desde tienda', [
                 'message' => $e->getMessage(),
@@ -568,19 +585,19 @@ class QuotationStorefrontController extends Controller
         }
     }
 
-    private function resolveExchangeRate(): float
+    private function resolveExchangeRate(): ?string
     {
         $rate = ExchangeRate::where('date', date('Y-m-d'))->first();
-        if ($rate && (float) $rate->sale > 0) {
-            return (float) $rate->sale;
+        if ($rate && ($value = \App\Services\ExchangeRates\ExchangeRateMath::optionalRate($rate->sale))) {
+            return $value;
         }
 
         $latest = ExchangeRate::orderByDesc('date')->first();
-        if ($latest && (float) $latest->sale > 0) {
-            return (float) $latest->sale;
+        if ($latest && ($value = \App\Services\ExchangeRates\ExchangeRateMath::optionalRate($latest->sale))) {
+            return $value;
         }
 
-        return 1.0;
+        return null;
     }
 
     /**
@@ -590,23 +607,25 @@ class QuotationStorefrontController extends Controller
      * @param  bool  $persistPrices  Si false (cotización sin precios en tienda), guarda montos en 0
      *                               y deja suggested_unit_price en el JSON del ítem para el admin.
      */
-    private function buildItemsAndTotals(array $cartItems, float $exchangeRate, bool $persistPrices = true): array
+    private function buildItemsAndTotals(array $cartItems, ?string $exchangeRate, bool $persistPrices = true): array
     {
-        $percentageIgv = 18.0;
+        // ######## INICIO CAMBIO AFECTACIÓN IVA ########
+        $percentageIgv = \App\Support\Venezuela\Localization::exactTaxPercentage();
+        // ######## FIN CAMBIO AFECTACIÓN IVA ########
         $rows = [];
         $totals = [
-            'total_taxed' => 0.0,
-            'total_exonerated' => 0.0,
-            'total_unaffected' => 0.0,
-            'total_igv' => 0.0,
-            'total_value' => 0.0,
-            'total' => 0.0,
+            'total_taxed' => \App\Support\Exact\Decimal::of(0),
+            'total_exonerated' => \App\Support\Exact\Decimal::of(0),
+            'total_unaffected' => \App\Support\Exact\Decimal::of(0),
+            'total_igv' => \App\Support\Exact\Decimal::of(0),
+            'total_value' => \App\Support\Exact\Decimal::of(0),
+            'total' => \App\Support\Exact\Decimal::of(0),
         ];
 
         foreach ($cartItems as $cartRow) {
             $itemId = (int) ($cartRow['item_id'] ?? 0);
-            $quantity = (float) ($cartRow['quantity'] ?? 0);
-            if ($itemId < 1 || $quantity <= 0) {
+            $quantity = \App\Support\Exact\Decimal::input($cartRow['quantity'] ?? null, 'items.quantity');
+            if ($itemId < 1 || \App\Support\Exact\Decimal::of($quantity)->isLessThanOrEqualTo(0)) {
                 continue;
             }
 
@@ -616,40 +635,29 @@ class QuotationStorefrontController extends Controller
             }
 
             $affectation = $item->sale_affectation_igv_type_id ?: '10';
-            $catalogUnitPrice = (float) $item->sale_unit_price;
-            if ($item->currency_type_id === 'USD') {
-                $catalogUnitPrice = round($catalogUnitPrice * $exchangeRate, 2);
+            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            if (!in_array($affectation, ['10','20'], true)) \App\Services\Fiscal\FiscalAmounts::error('items', 'Seleccione un producto con IVA vigente.');
+            $sourcePrice = \App\Support\Exact\Decimal::readRequired($item, 'sale_unit_price');
+            if ($item->currency_type_id === 'USD' && $exchangeRate === null) {
+                \App\Services\Fiscal\FiscalAmounts::error('exchange_rate_sale', 'Configure una tasa de cambio para cotizar productos en USD.');
             }
-
-            // Sin precios visibles: cotización entra a $0 para definición comercial en backoffice.
-            $unitPrice = $persistPrices ? $catalogUnitPrice : 0.0;
-
-            if ($affectation === '10') {
-                $unitValue = $unitPrice > 0
-                    ? round($unitPrice / (1 + ($percentageIgv / 100)), 6)
-                    : 0.0;
-                $totalValue = round($unitValue * $quantity, 2);
-                $totalIgv = round(($unitPrice * $quantity) - $totalValue, 2);
-                $total = round($unitPrice * $quantity, 2);
-
-                $totals['total_taxed'] += $totalValue;
-                $totals['total_igv'] += $totalIgv;
-            } else {
-                // 20 exonerado, 30 inafecto u otros: sin IGV
-                $unitValue = round($unitPrice, 6);
-                $totalValue = round($unitValue * $quantity, 2);
-                $totalIgv = 0.0;
-                $total = $totalValue;
-
-                if ($affectation === '20') {
-                    $totals['total_exonerated'] += $totalValue;
-                } else {
-                    $totals['total_unaffected'] += $totalValue;
-                }
-            }
-
-            $totals['total_value'] += $totalValue;
-            $totals['total'] += $total;
+            $catalogPrice = \App\Support\Exact\Decimal::convert($sourcePrice, $item->currency_type_id, 'VES', $exchangeRate);
+            $price = $persistPrices ? $catalogPrice : \App\Support\Exact\Decimal::of(0);
+            $calculated = \App\Support\Exact\LineCalculation::calculate([
+                'quantity'=>$quantity, 'unit_price'=>\App\Support\Exact\Decimal::represent($price),
+                'discounts'=>[], 'charges'=>[],
+            ], $affectation === '10' ? $percentageIgv : '0', ['unit_price'=>$price]);
+            $values = $calculated['calculation_snapshot']['values'];
+            $base = \App\Support\Exact\Decimal::of($values['total_base_igv']);
+            $totals[$affectation === '10' ? 'total_taxed' : 'total_exonerated'] = $totals[$affectation === '10' ? 'total_taxed' : 'total_exonerated']->plus($base);
+            foreach (['total_igv','total_value','total'] as $field) $totals[$field] = $totals[$field]->plus(\App\Support\Exact\Decimal::of($values[$field]));
+            $catalogUnitPrice = \App\Support\Exact\Decimal::represent($catalogPrice);
+            $unitPrice = $calculated['unit_price'];
+            $unitValue = $calculated['unit_value'];
+            $totalValue = $calculated['total_value'];
+            $totalIgv = $calculated['total_igv'];
+            $total = $calculated['total'];
+            // ######## FIN CALCULOS EXACTOS PRO9 ########
 
             $brandName = null;
             if ($item->relationLoaded('brand') && $item->brand) {
@@ -704,11 +712,13 @@ class QuotationStorefrontController extends Controller
                 'discounts' => [],
                 'warehouse_id' => null,
                 'name_product_pdf' => $item->description,
+                '_server_exact' => ['values'=>$values, 'source'=>['amount'=>\App\Support\Exact\Decimal::fraction($sourcePrice),
+                    'currency_type_id'=>$item->currency_type_id, 'exchange_rate'=>$exchangeRate]],
             ];
         }
 
         foreach ($totals as $key => $value) {
-            $totals[$key] = round($value, 2);
+            $totals[$key] = \App\Support\Exact\Decimal::represent($value);
         }
 
         return [

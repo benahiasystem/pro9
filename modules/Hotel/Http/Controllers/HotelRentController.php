@@ -46,13 +46,17 @@ class HotelRentController extends Controller
 	{
 		DB::connection('tenant')->beginTransaction();
 		try {
-			$room = HotelRoom::findOrFail($roomId);
-			if ($room->status !== 'DISPONIBLE') {
-				return response()->json([
-					'success' => true,
-					'message' => 'La habitación seleccionada no esta disponible',
-				], 500);
+			[$operationKey, $operationHash] = \App\Services\Payments\HotelOperation::identify($request, 'rent', (int)$roomId);
+			$room = HotelRoom::query()->lockForUpdate()->findOrFail($roomId);
+			$previous = \App\Services\Payments\HotelOperation::existing($operationKey, $operationHash);
+			if ($previous) {
+				DB::connection('tenant')->commit();
+				return response()->json(['success' => true, 'message' => 'Habitación rentada de forma correcta.', 'sale_note_id' => $previous->sale_note_id], 200);
 			}
+			if ($room->status !== 'DISPONIBLE') {
+				\App\Services\Payments\Classification::error('room', 'La habitación seleccionada no está disponible.');
+			}
+			$this->createSaleNoteWithinTransaction($request);
 
 			$request->merge(['hotel_room_id' => $roomId]);
 			$request->merge(['establishment_id' => $room->establishment_id]);
@@ -69,6 +73,8 @@ class HotelRentController extends Controller
 			$order->order_status = $request->payment_status;
 			$order->sale_note_id = $request->sale_note_id;
 			$order->establishment_id = $room->establishment_id;
+			$order->operation_key = $operationKey;
+			$order->operation_hash = $operationHash;
 			$order->save();
 
 			// Agregando la habitación a la lista de productos
@@ -89,16 +95,38 @@ class HotelRentController extends Controller
 			return response()->json([
 				'success' => true,
 				'message' => 'Habitación rentada de forma correcta.',
+				'sale_note_id' => $order->sale_note_id,
 			], 200);
 		} catch (\Throwable $th) {
 			DB::connection('tenant')->rollBack();
+			if ($th instanceof \Illuminate\Validation\ValidationException) {
+				return response()->json(['success' => false, 'message' => $th->getMessage(), 'errors' => $th->errors()], 422);
+			}
 
 			return response()->json([
-				'success' => true,
+				'success' => false,
 				'message' => 'No se puede procesar su transacción. Detalles: ' . $th->getMessage(),
 			], 500);
 		}
 	}
+
+    /** Create the note and the hotel operation in the same tenant transaction. */
+    private function createSaleNoteWithinTransaction(Request $request): void
+    {
+        $data = $request->input('sale_note');
+        if ($data === null) return;
+        if (!is_array($data) || $request->input('sale_note_id')) {
+            \App\Services\Payments\Classification::error('sale_note', 'La nota de venta no es válida.');
+        }
+        unset($data['id']);
+        $data['source_module'] = 'HOTEL';
+        validator($data, (new \App\Http\Requests\Tenant\SaleNoteRequest())->rules())->validate();
+        $result = app(\App\Http\Controllers\Tenant\SaleNoteController::class)->storeWithData($data);
+        if (empty($result['success']) || empty($result['data']['id'])) {
+            \App\Services\Payments\Classification::error('sale_note', $result['message'] ?? 'No se pudo registrar la nota de venta.');
+        }
+        $request->merge(['sale_note_id' => $result['data']['id']]);
+    }
 
 	private function getOrderNumberHotelRent($establishment_id)
 	{
@@ -117,15 +145,28 @@ class HotelRentController extends Controller
 	{
 		if($item->isPaid())
 		{
-			\App\Models\Tenant\PaymentMethodType::assertActiveForPayment($rent_payment['payment_method_type_id'] ?? null);
-			$record = $item->payments()->create([
-				'date_of_payment' => date('Y-m-d'),
-				'payment_method_type_id' => $rent_payment['payment_method_type_id'],
-				'reference' => $rent_payment['reference'],
-				'payment' => $rent_payment['payment'],
-			]);
+            // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+            $input = array_replace($rent_payment, ['date_of_payment' => date('Y-m-d')]);
+            unset($input['source_sale_note_payment_id'], $input['payment_method_snapshot'], $input['calculation_snapshot']);
+            $order = $item->hotel_rent_order_id ? HotelRentOrder::findOrFail($item->hotel_rent_order_id) : null;
+            $source = $order && $order->sale_note_id ? \App\Services\Payments\HotelReceipt::findSource((int) $order->sale_note_id, $item->hotel_rent, $input) : null;
+            if ($source) {
+                $amounts = $source->only(['currency_type_id', 'original_amount', 'payment', 'exchange_rate', 'exchange_rate_source', 'exchange_rate_date', 'payment_method_snapshot', 'calculation_snapshot']);
+                $amounts['source_sale_note_payment_id'] = $source->id;
+                $input['date_of_payment'] = $source->date_of_payment;
+            } else {
+                $amounts = \App\Services\Payments\ReceiptAmounts::forMethod($input['payment_method_type_id'] ?? null, $item->hotel_rent->getDefaultCurrency(), '1', $input);
+            }
+            $itemTotal = data_get($item->item, 'total');
+            if ($itemTotal === null || !\App\Support\Exact\Decimal::of($amounts['payment'])->isEqualTo(\App\Support\Exact\Decimal::represent($itemTotal, 2))) {
+                \App\Services\Payments\Classification::error('payment', 'El importe aplicado debe coincidir con el total del servicio pagado.');
+            }
+            $record = $item->payments()->make(array_replace($input, $amounts));
+            $record->calculation_snapshot = $amounts['calculation_snapshot'];
+            $record->save();
+            // ######## FIN MONEDA DEL MEDIO DE COBRO ########
             // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
-            \App\Services\Payments\ReceiptDestination::attach($record,$rent_payment);
+            if (!$source) \App\Services\Payments\ReceiptDestination::attach($record,$rent_payment);
             // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
 		}
 	}
@@ -220,15 +261,23 @@ class HotelRentController extends Controller
 	 */
 	public function addProductsToRoom(HotelRentItemRequest $request, $rentId)
 	{
-		$rent = HotelRent::findOrFail($rentId);
+        // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+        return DB::connection('tenant')->transaction(function () use ($request, $rentId) {
+		[$operationKey, $operationHash] = \App\Services\Payments\HotelOperation::identify($request, 'products', (int)$rentId);
+		$rent = HotelRent::query()->lockForUpdate()->findOrFail($rentId);
+		$previous = \App\Services\Payments\HotelOperation::existing($operationKey, $operationHash);
+		if ($previous) return response()->json(['success' => true, 'message' => 'Información actualizada.', 'sale_note_id' => $previous->sale_note_id], 200);
+		$this->createSaleNoteWithinTransaction($request);
 
-		if( isset($request->sale_note_id) && $request->sale_note_id !=null) {
+		if ($request->sale_note_id || $operationKey) {
 			$order = new HotelRentOrder();
 			$order->hotel_rent_id = $rentId;
 			$order->order_number = 1;
-			$order->order_status = 'PAID';
+			$order->order_status = collect($request->products)->contains(fn($product) => ($product['payment_status'] ?? null) === 'PAID') ? 'PAID' : 'DEBT';
 			$order->sale_note_id = $request->sale_note_id;
 			$order->establishment_id = $rent->establishment_id;
+			$order->operation_key = $operationKey;
+			$order->operation_hash = $operationHash;
 			$order->save();
 		}
 		
@@ -241,14 +290,16 @@ class HotelRentController extends Controller
 				$item->type = 'PRO';
 				$item->hotel_rent_id = $rentId;
 				$item->item_id = $product['item_id'];
+				$item->item = $product;
 				$item->payment_status = $product['payment_status'];
+				$item->hotel_rent_order_id = ($product['payment_status']==='PAID' && isset($order)) ? $order->id : null;
 				$item->save();
 
 				$this->saveHotelRentItemPayment($product['rent_payment'], $item);
 			}
 			$item->item = $product;
 			$item->payment_status = $product['payment_status'];
-			$item->hotel_rent_order_id = ($product['payment_status']=='PAID')? $order->id: null;
+			$item->hotel_rent_order_id = ($product['payment_status']==='PAID' && isset($order)) ? $order->id : null;
 			$item->save();
             $idInRequest[] = $item->id;
 
@@ -256,8 +307,11 @@ class HotelRentController extends Controller
 
 		return response()->json([
 			'success' => true,
-			'message' => 'Información actualizada.'
+			'message' => 'Información actualizada.',
+			'sale_note_id' => $request->sale_note_id,
 		], 200);
+        });
+        // ######## FIN MONEDA DEL MEDIO DE COBRO ########
 	}
 
   public function showFormChekout($rentId)

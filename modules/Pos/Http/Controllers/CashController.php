@@ -34,7 +34,6 @@ use Modules\Pos\Models\CashTransaction;
 use App\Models\Tenant\CashDocumentCredit;
 use Modules\Finance\Models\Income;
 use App\CoreFacturalo\Helpers\Template\ReportHelper;
-use Modules\CashReport\Services\Builders\CashSummaryBuilder;
 use Modules\CashReport\Services\CashReportRegistry;
 use Modules\CashReport\Services\CashReportRenderer;
 use Modules\CashReport\Services\HeaderDataBuilder;
@@ -47,7 +46,6 @@ use Illuminate\Support\Facades\Auth;
 
 class CashController extends Controller
 {
-    private const PAYMENT_METHOD_TYPE_CASH = '01';
 
     /**
      *
@@ -87,35 +85,6 @@ class CashController extends Controller
         return [
             'success' => true
         ];
-    }
-
-    /**
-     * Obtiene el string del metodo de pago (compatibilidad, lógica en CashSummaryBuilder)
-     */
-    public static function getStringPaymentMethod($payment_id) {
-        return CashSummaryBuilder::getStringPaymentMethod($payment_id);
-    }
-
-    /**
-     * Genera un formato de numero para las operaciones del reporte (compatibilidad)
-     */
-    public static function FormatNumber($number = 0, $decimal = 2, $decimal_separador = '.', $miles_separador = '') {
-        return CashSummaryBuilder::FormatNumber($number, $decimal, $decimal_separador, $miles_separador);
-    }
-
-    /**
-     * Data del reporte de caja (compatibilidad, lógica en CashSummaryBuilder)
-     */
-    public function setDataToReport($cash_id = 0, $summary = 0) {
-        return app(CashSummaryBuilder::class)->setDataToReport($cash_id, $summary);
-    }
-
-    public static function CalculeTotalOfCurency(...$args) {
-        return CashSummaryBuilder::CalculeTotalOfCurency(...$args);
-    }
-
-    public static function getStateTypeId() {
-        return CashSummaryBuilder::getStateTypeId();
     }
 
     /**

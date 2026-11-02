@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\DB;
  * - `order_status` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `sale_note_id` int(10) unsigned DEFAULT NULL
  * - `establishment_id` int(10) unsigned DEFAULT NULL
+ * - `operation_key` char(36) DEFAULT NULL, único
+ * - `operation_hash` char(64) DEFAULT NULL
  * - `created_at` timestamp NULL DEFAULT NULL
  * - `updated_at` timestamp NULL DEFAULT NULL
  */
@@ -28,9 +30,12 @@ CREATE TABLE `hotel_rent_orders` (
   `order_status` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `sale_note_id` int(10) unsigned DEFAULT NULL,
   `establishment_id` int(10) unsigned DEFAULT NULL,
+  `operation_key` char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `operation_hash` char(64) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
+  UNIQUE KEY `hotel_rent_orders_operation_key_unique` (`operation_key`),
   KEY `hotel_rent_orders_hotel_rent_id_foreign` (`hotel_rent_id`),
   KEY `hotel_rent_orders_sale_note_id_foreign` (`sale_note_id`),
   KEY `hotel_rent_orders_establishment_id_foreign` (`establishment_id`)

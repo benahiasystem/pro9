@@ -105,7 +105,7 @@
                                         <!-- Afectación IVA -->
                                         <!-- ######### FIN CAMBIO IGV A IVA -->
                                         <h3 class="col-12 text-center m-0" v-if="Number(rate_unit_value) > 0">
-                                            <span class="text-muted text-xs">Tarifa de alojamiento: </span> <b>Bs. {{ Number(rate_unit_value).toFixed(2) }}</b> <span class="text-muted text-xs">por noche</span>
+                                            <span class="text-muted text-xs">Tarifa de alojamiento: </span> <b>Bs. {{ formatHotelAmount(rate_unit_value) }}</b> <span class="text-muted text-xs">por noche</span>
                                         </h3>
                                     </div>
                                 </div>
@@ -371,7 +371,7 @@
                                     <h6>
                                         Total a pagar:
                                         <br/>
-                                        <b class="h5">{{ (form.total_to_pay).toFixed(2) }}</b>
+                                        <b class="h5">{{ formatHotelAmount(form.total_to_pay) }}</b>
                                     </h6>
                                 </div>
 
@@ -450,6 +450,8 @@
                                                 :label="option.description"
                                             ></el-option>
                                         </el-select>
+                                            <small v-if="!form.rent_payment.payment_method_type_id" class="text-muted">No hay efectivo activo para la moneda del documento; seleccione un método.</small>
+                                        <receipt-currency-fields :row="form.rent_payment" :methods="payment_method_types" :document-currency="paymentCurrency" :document-rate="null" />
 
                                         <small
                                             class="form-control-feedback"
@@ -577,16 +579,21 @@
 import PersonForm from "@views/persons/form.vue";
 import moment from "moment";
 import {calculateRowItem} from "@helpers/functions";
+import {exactAmount} from '@helpers/exchange-rate-math';
 import {ensureExchangeRateSale} from "@helpers/ensure-exchange-rate-sale";
 import {functions} from "@mixins/functions";
 import {mapState} from "vuex/dist/vuex.mjs";
 import QuantityPersons from './partials/QuantityPersons.vue';
 import SaleNoteOptions from "@views/sale_notes/partials/options.vue";
 import { conformsTo } from "lodash";
+import ReceiptCurrencyFields from '@components/ReceiptCurrencyFields.vue';
+import {newPaymentOperationKey} from '@helpers/payment-operation-key';
+import {defaultCashForCurrency, handleHotelPaymentError} from '@helpers/payment-classification';
 
 export default {
     components: {
         PersonForm,
+        ReceiptCurrencyFields,
         QuantityPersons,
         SaleNoteOptions,
     },
@@ -634,6 +641,7 @@ export default {
                 date_of_issue: moment().format('YYYY-MM-DD'),
                 establishment_id: null,
                 sale_note_id: null,
+                operation_key: null,
                 rent_payment: {
                     payment_method_type_id: null,
                     payment_destination_id: null,
@@ -709,9 +717,13 @@ export default {
         },
     },
     methods: {
+        formatHotelAmount(value) {
+            return exactAmount(value).final(2);
+        },
         async onSubmit() {
             try {
                 this.loading = true;
+                if (!this.form.operation_key) this.form.operation_key = newPaymentOperationKey();
 
                 const response = await this.$http.get(`/documents/search/item/${this.room.item_id}`);
                 const payload = {};
@@ -751,28 +763,32 @@ export default {
 
                 this.form.product = product;
 
-                if (this.isPaid) {
-                    this.document.items.push(product);
-                    console.log("PAYMENTS")
-                    await this.onGoToInvoice();
+                if (this.isPaid && !this.form.sale_note_id) {
+                    this.document.items = [product];
+                    if (!await this.onGoToInvoice()) return;
                 }
 
                 this.form.product.quantity = this.form.duration;
                 const response_reception = await this.$http.post(`/hotels/reception/${this.room.id}/rent/store`, this.form);
                 if(response_reception){
+                    this.form.sale_note_id = response_reception.data.sale_note_id;
                     this.$message({
                         message: response_reception.data.message,
                         type: "success",
                     });
 
-                    if (!this.isPaid) {
+                    if (this.isPaid) {
+                        this.successGoToInvoice();
+                        this.$emit("update:showDialog", false);
+                        this.saveCashDocument();
+                    } else {
                         this.onToBackPage();
                     }
                 }
 
 
             } catch (error) {
-                this.axiosError(error);
+                handleHotelPaymentError(error, this);
             } finally {
                 this.loading = false;
             }
@@ -786,7 +802,7 @@ export default {
             }
         },
         onUpdateTotalToPay() {
-            this.form.total_to_pay = this.form.rate_price * this.form.duration;
+            this.form.total_to_pay = exactAmount(this.form.rate_price).times(this.form.duration).final(2);
             this.onUpdateOutputDate();
             this.setTotalPayment()
         },
@@ -860,8 +876,9 @@ export default {
         },
         setDefaultDataPayments()
         {
-            this.form.rent_payment.payment_method_type_id = this.payment_method_types.length > 0 ? this.payment_method_types[0].id : null;
-            this.form.rent_payment.payment_destination_id = this.payment_destinations.length > 0 ? this.payment_destinations[0].id : null;
+            const method = defaultCashForCurrency(this.payment_method_types, this.paymentCurrency)
+            this.form.rent_payment.payment_method_type_id = method?.id || null
+            this.form.rent_payment.payment_destination_id = method?.collection_kind === 'cash' && this.payment_destinations.some(item => item.id === 'cash') ? 'cash' : null
         },
         setAffectationIgvType() {
 
@@ -991,7 +1008,8 @@ export default {
 
                 let validate_payment_destination = this.validatePaymentDestination();
                 if (validate_payment_destination.error_by_item > 0) {
-                    return this.$message.error("El destino del pago es obligatorio");
+                    this.$message.error("El destino del pago es obligatorio");
+                    return false;
                 }
 
                 this.document.customer_id = this.form.customer_id
@@ -1002,16 +1020,8 @@ export default {
                 // ######## INICIO MONEDA VENEZUELA HOTEL ########
                 await ensureExchangeRateSale(this.document, this.$http);
                 // ######## FIN MONEDA VENEZUELA HOTEL ########
-                const response = await this.$http.post(`/${this.resource_documents}`, this.document);
-
-                if (response.data.success) {
-                    this.form.sale_note_id = response.data.data.id;
-                    this.successGoToInvoice();
-                    this.$emit("update:showDialog", false);
-                    this.saveCashDocument();
-                } else {
-                    this.$message.error(response.data.message);
-                }
+                this.form.sale_note = this.document;
+                return true;
             } catch (error) {
                 console.error("Error en onGoToInvoice:", error);
                 if (error.response) {
@@ -1019,6 +1029,7 @@ export default {
                 } else {
                     this.$message.error(error.message || "Error inesperado");
                 }
+                return false;
             } finally {
                 this.loading = false;
             }
@@ -1040,7 +1051,7 @@ export default {
                     it.name_product_pdf = name;
                     it.quantity = 1;
 
-                    const newTotal = parseFloat(this.form.total_to_pay);
+                    const newTotal = exactAmount(this.form.total_to_pay).decimal();
 
                     it.input_unit_price_value = newTotal;
                     it.item.unit_price = newTotal;
@@ -1154,15 +1165,18 @@ export default {
             };
         },
         async setDataPayments(){
-            this.document.payments.push({
+            this.document.payments = [{
                 id: null,
                 document_id: null,
                 date_of_payment: this.form.date_of_issue,
                 payment_method_type_id: this.form.rent_payment.payment_method_type_id,
                 payment_destination_id: this.form.rent_payment.payment_destination_id,
                 reference: this.form.rent_payment.reference,
-                payment: this.document.total
-            });
+                payment: String(this.form.rent_payment.payment),
+                currency_type_id: this.form.rent_payment.currency_type_id,
+                original_amount: this.form.rent_payment.original_amount,
+                exchange_rate: this.form.rent_payment.exchange_rate
+            }];
         }
     },
 };

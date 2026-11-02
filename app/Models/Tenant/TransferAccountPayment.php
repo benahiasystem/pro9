@@ -5,7 +5,7 @@
     namespace App\Models\Tenant;
 
 
-    use Auth;
+    use Illuminate\Support\Facades\Auth;
     use Carbon\Carbon;
     use Hyn\Tenancy\Traits\UsesTenantConnection;
     use Modules\Finance\Models\GlobalPayment;
@@ -47,6 +47,7 @@
             'destiny_id',
             'destiny_type',
             'amount',
+            'currency_type_id',
             'date_of_movement',
             'user_id',
         ];
@@ -55,6 +56,13 @@
         {
             parent::boot();
 
+            // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+            static::creating(function ($model) {
+                if (!$model->currency_type_id && $model->destiny_type === BankAccount::class) {
+                    $model->currency_type_id=BankAccount::query()->whereKey($model->destiny_id)->lockForUpdate()->firstOrFail()->currency_type_id;
+                }
+            });
+            // ######## FIN MONEDA DEL MEDIO DE COBRO ########
             static::saved(function ($model) {
                 /** @var TransferAccountPayment $model */
                 $company = Company::active();
@@ -241,7 +249,9 @@
                 'origin_type' => $origin_type,
                 'destiny_id' => (int)$destiny_id,
                 'destiny_type' => $destiny_type,
-                'amount' => (float)$amount,
+                // ######## INICIO CALCULOS EXACTOS PRO9 ########
+                'amount' => \App\Support\Exact\Decimal::input($amount, 'amount'),
+                // ######## FIN CALCULOS EXACTOS PRO9 ########
                 'date_of_movement' => Carbon::now(),
                 'user_id' => Auth::user()->id,
             ];

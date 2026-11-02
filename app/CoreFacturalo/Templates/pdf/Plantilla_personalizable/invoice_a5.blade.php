@@ -704,13 +704,13 @@ foreach ($document->items as $row) {
                     <td class="font-bold">CONDICIÓN DE PAGO:</td>
                     <td>{{ $paymentCondition }} </td>
                 </tr>
-                @if($document->payment_method_type_id)
+                @if($document->payment_method_type_id && $payments->isEmpty())
                     <tr>
                         <td class="font-bold">MÉTODO DE PAGO:</td>
                         <td>{{ $document->payment_method_type->description }}</td>
                     </tr>
                 @endif
-                @if ($document->payment_condition_id === '01')
+                @if (in_array((string) $document->payment_condition_id, ['01', '02', '03'], true))
                     @if($payments->count())
                         <tr>
                             <td class="font-bold"> PAGOS</td>
@@ -724,14 +724,15 @@ foreach ($document->items as $row) {
                                 <ul>
                                     @foreach($payments as $row)
                                         <li>
-                                            {{ $row->payment_method_type->description }} - {{ $row->reference ? $row->reference.' - ':'' }} {{ $document->currency_type->symbol }} {{ $row->payment + $row->change }}
+                                            {{-- ######## INICIO MONEDA DEL MEDIO DE COBRO ######## --}}@include('pdf.partials.invoice_receipt', ['row' => $row, 'document' => $document]){{-- ######## FIN MONEDA DEL MEDIO DE COBRO ######## --}}
                                         </li>
                                     @endforeach
                                 </ul>
                             </td>
                         </tr>
                     @endif
-                @else
+                @endif
+                @if (in_array((string) $document->payment_condition_id, ['02', '03'], true))
                     <tr>
                         <td colspan="2">
                             <ul>

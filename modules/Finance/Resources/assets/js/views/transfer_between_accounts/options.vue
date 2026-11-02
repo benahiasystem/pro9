@@ -258,12 +258,19 @@ export default {
             })
         },
         transferAmount() {
-            this.$http.post(`/${this.resource}/transfer`, {data: this.transfer_amount}).then((resource) => {
+            // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+            const data = {...this.transfer_amount, cash_currency_type_id: this.config.currency_type_id};
+            this.$http.post(`/${this.resource}/transfer`, {data}).then((resource) => {
+            // ######## FIN MONEDA DEL MEDIO DE COBRO ########
                 let data = resource.data;
                 this.cashs = data.cash
             }).then(() => {
                 this.$emit('reloadAccounts', true)
                 this.clickClose()
+            }).catch((error) => {
+                this.$message.error(error.response?.data?.errors?.cash_currency_type_id?.[0]
+                    || error.response?.data?.errors?.currency_type_id?.[0]
+                    || error.response?.data?.message || 'No se pudo registrar el traslado.');
             })
 
         },

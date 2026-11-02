@@ -9,6 +9,69 @@ use Modules\Dispatch\Models\{Driver,Transport,Dispatcher};
 
 trait DispatchPersistenceCases
 {
+    public function test_dispatch_invoice_catalog_only_offers_active_receipt_methods(): void
+    {
+        [$db, $app, $raw] = $this->dispatchFixture();
+        $app->instance(\Illuminate\Contracts\Routing\ResponseFactory::class, new class {
+            public function json($data = [], $status = 200, array $headers = [], $options = 0)
+            {
+                return new \Illuminate\Http\JsonResponse($data, $status, $headers, $options);
+            }
+        });
+        Company::first()->forceFill(['fiscal_emission_mode' => 'free_form'])->save();
+        $db->table('payment_method_types')->where('id', '01')->update(['collection_kind' => 'account', 'is_active' => 1]);
+        $db->table('payment_method_types')->where('id', '04')->update(['collection_kind' => 'cash', 'is_active' => 1]);
+        $dispatch = (new Facturalo)->save(DispatchInput::set($raw))->getDocument();
+
+        $response = app(\App\Http\Controllers\Tenant\DispatchController::class)->generateDocumentTables($dispatch->id)->getData(true);
+        $methods = collect($response['payment_method_types'])->keyBy('id');
+        self::assertSame('account', $methods['01']['collection_kind']);
+        self::assertSame('cash', $methods['04']['collection_kind']);
+        self::assertFalse($methods->has('05'));
+        self::assertFalse($methods->has('09'));
+        self::assertNotEmpty($response['payment_conditions']);
+        foreach ($methods as $method) {
+            self::assertContains($method['collection_kind'], ['cash', 'account']);
+            self::assertTrue((bool) $method['is_active']);
+        }
+    }
+
+    public function test_dispatch_invoice_credit_keeps_cross_currency_receipt_and_rejects_wrong_account(): void
+    {
+        [$db, $app, $raw, $invoice] = $this->dispatchFixture();
+        Company::first()->forceFill(['fiscal_emission_mode'=>'free_form'])->save();
+        $db->table('configurations')->update(['auto_send_hka'=>false]);
+        $db->table('payment_method_types')->where('id','01')->update(['collection_kind'=>'account','currency_type_id'=>'USD','cash_currency_type_id'=>null,'is_cash'=>0,'is_active'=>1]);
+        $db->table('payment_method_types')->where('id','04')->update(['collection_kind'=>'cash','currency_type_id'=>'VES','cash_currency_type_id'=>'VES','is_cash'=>1,'is_active'=>1]);
+        $bankId=$db->table('banks')->value('id');
+        $usd=\App\Models\Tenant\BankAccount::create(['bank_id'=>$bankId,'description'=>'OE USD','number'=>'OE-USD','currency_type_id'=>'USD','initial_balance'=>'0']);
+        $ves=\App\Models\Tenant\BankAccount::create(['bank_id'=>$bankId,'description'=>'OE VES','number'=>'OE-VES','currency_type_id'=>'VES','initial_balance'=>'0']);
+        $dispatch=(new Facturalo)->save(DispatchInput::set($raw))->getDocument();
+        $invoice['dispatch_id']=$dispatch->id;
+        $invoice['payment_condition_id']='02';
+        $invoice['exchange_rate_sale']='10';
+        $invoice['fee']=[['date'=>date('Y-m-d',strtotime('+1 day')),'currency_type_id'=>'VES','amount'=>'182']];
+        $invoice['payments']=[['date_of_payment'=>date('Y-m-d'),'payment_method_type_id'=>'01','payment_destination_id'=>$ves->id,
+            'currency_type_id'=>'USD','original_amount'=>'5','exchange_rate'=>'10','payment'=>'50','igtf_status'=>'not_applicable']];
+        try {
+            (new Facturalo)->forWebDocuments()->save($invoice);
+            self::fail('Una cuenta VES no puede recibir el método USD.');
+        } catch (\Illuminate\Validation\ValidationException $error) { self::assertNotEmpty($error->errors()); }
+        self::assertSame(0,$db->table('documents')->count());
+        self::assertSame(0,$db->table('global_payments')->count());
+        self::assertNull($dispatch->fresh()->reference_document_id);
+        $invoice['payments'][0]['payment_destination_id']=$usd->id;
+        $document=(new Facturalo)->forWebDocuments()->save($invoice)->getDocument()->fresh();
+        self::assertSame('02',$document->payment_condition_id);
+        self::assertSame('USD',$document->payments->first()->currency_type_id);
+        self::assertSame('50',\App\Support\Exact\Decimal::represent($document->payments->first()->exactValue('payment')));
+        self::assertSame('182',\App\Support\Exact\Decimal::represent($document->fee->first()->exactValue('amount')));
+        self::assertSame('182',\App\Support\Exact\Decimal::represent($document->exactBalance()));
+        self::assertSame($document->id,$dispatch->fresh()->reference_document_id);
+        self::assertSame('account',\App\Services\Payments\Movement::row($document->payments->first()->global_payment)['method']['collection_kind']);
+        self::assertSame(1,$db->table('global_payments')->count());
+    }
+
     private function dispatchFixture(): array
     {
         [$db,$app,$invoice]=$this->bootHkaFixture();$calls=0;

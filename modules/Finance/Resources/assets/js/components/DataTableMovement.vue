@@ -90,6 +90,12 @@
 
             <div class="col-md-12">
 
+                <!-- ######## INICIO MONEDA DEL MEDIO DE COBRO ######## -->
+                <p v-if="records.some(row => !['VES', 'USD'].includes(row.currency_type_id))" class="text-warning">
+                    Los movimientos sin moneda no se incluyen en los totales.
+                </p>
+                <p>El saldo se acumula por moneda en orden de registro dentro del período consultado.</p>
+                <!-- ######## FIN MONEDA DEL MEDIO DE COBRO ######## -->
                 <div class="ms-auto pull-end col-3">
                     <el-select v-model="per_page" @change="handleCurrentChange">
                         <el-option key="10" label="10" value="10"></el-option>
@@ -102,7 +108,6 @@
                 <div class="table-responsive">
                     <el-table
                         :data="currentTableData"
-                        :default-sort="{prop: 'date_of_payment', order: 'ascending'}"
                         :summary-method="getSummaries"
                         show-summary
                         style="width: 100%"
@@ -121,14 +126,14 @@
                         <el-table-column
                             label="Fecha"
                             prop="date_of_payment"
-                            sortable
+                            sortable="custom"
                             type="date"
                         >
                         </el-table-column>
                         <el-table-column
                             label="Adquiriente"
                             prop="person_name"
-                            sortable>
+                            sortable="custom">
                             <template slot-scope="scope">
                                 <span>{{ scope.row.person_name }}
                                     <br/>
@@ -140,7 +145,7 @@
                         <el-table-column
                             label="Documento/Transacción"
                             prop="document_type_description"
-                            sortable>
+                            sortable="custom">
                             <template slot-scope="scope">
                                 <span>
                                     {{ scope.row.number_full }}<br/>
@@ -175,18 +180,19 @@
                             label="Moneda"
                             prop="currency_type_id"
                         >
+                            <template slot-scope="scope">{{ scope.row.currency_type_id || 'Sin moneda' }}</template>
                         </el-table-column>
                         <el-table-column
                             label="Destino"
                             prop="destination_name"
                             v-if="showDestination!== true"
-                            sortable>
+                            sortable="custom">
                         </el-table-column>
                         <el-table-column
                             label="Tipo"
                             prop="instance_type_description"
                             v-if="showDestination!== false"
-                            sortable>
+                            sortable="custom">
                         </el-table-column>
                         <el-table-column
                             :formatter="MonedaFormater"
@@ -265,6 +271,9 @@
 
 import moment from 'moment'
 import queryString from 'query-string'
+// ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+import { exactAmount, exactValue } from '../../../../../../resources/js/helpers/exchange-rate-math'
+// ######## FIN MONEDA DEL MEDIO DE COBRO ########
 
 export default {
     props: {
@@ -375,38 +384,25 @@ export default {
 
     },
     methods: {
-        getSummaries(param) {
-            const {columns, data} = param;
-            const sums = [];
-            columns.forEach((column, index) => {
-                if (index < 6) {
-                    sums[index] = '';
-                    return;
-                }
-
-                const values = data.map(item => Number(item[column.property]));
-                if (!values.every(value => isNaN(value))) {
-                    let valor = values.reduce((prev, curr) => {
-                        const value = Number(curr);
-                        if (!isNaN(value)) {
-                            return prev + curr;
-                        } else {
-                            return prev;
-                        }
-                    }, 0);
-
-                    sums[index] = 'Bs. ' + valor.toLocaleString('es')
-                } else {
-                    sums[index] = 'N/A';
-                }
+        // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+        getSummaries({columns, data}) {
+            const grouped = {};
+            for (const row of data) {
+                const currency = row.currency_type_id;
+                if (!['VES', 'USD'].includes(currency)) continue;
+                if (!grouped[currency]) grouped[currency] = {input: exactAmount(0), output: exactAmount(0)};
+                const field = row.type_movement === 'input' ? 'input' : 'output';
+                grouped[currency][field] = grouped[currency][field].plus(exactValue(row, 'amount'));
+            }
+            return columns.map(column => {
+                if (!['input', 'output', 'balance'].includes(column.property)) return '';
+                return Object.entries(grouped).map(([currency, totals]) => {
+                    const amount = column.property === 'balance' ? totals.input.minus(totals.output) : totals[column.property];
+                    return `${currency === 'VES' ? 'Bs.' : '$'} ${amount.final(2)}`;
+                }).join(' / ');
             });
-
-            let inputSum = sums[6].split(" ").length > 1 ? parseFloat(sums[6].split(" ")[1].replace(',', '.')) : 0
-            let outputSum = sums[7].split(" ").length > 1 ? parseFloat(sums[7].split(" ")[1].replace(',', '.')) : 0
-            sums[8] = 'Bs. ' + (inputSum - outputSum).toLocaleString('es')
-
-            return sums;
         },
+        // ######## FIN MONEDA DEL MEDIO DE COBRO ########
         DetailFormater: (row, col, value, index) => {
             let text = '';
             for (let i = 0; i < row.items.length; i++) {
@@ -423,11 +419,10 @@ export default {
         personFormater: (row, col, value, index) => {
             return `${row.person_name}<br/><small>${row.person_number}</small> `;
         },
-        MonedaFormater: (row, col, value, index) => {
-            if (value === null) return '-';
-            if (isNaN(parseFloat(value))) return '-';
-            return `Bs. ${value}`
-        },
+        // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+        MonedaFormater: (row, col, value) => value === '-' || value == null
+            ? '-' : `${row.currency_type_id === 'VES' ? 'Bs.' : row.currency_type_id === 'USD' ? '$' : ''} ${value}`,
+        // ######## FIN MONEDA DEL MEDIO DE COBRO ########
         handleCurrentChange() {
             this.currentTableData = this.records.slice(
                 (this.currentPage - 1) * this.itemsPerPage,
@@ -531,12 +526,9 @@ export default {
             // return (this.pagination.per_page * (this.pagination.current_page - 1)) + index + 1
         },
         async getRecordsByFilter() {
-
-            this.loading_submit = await true
             await this.getRecords(true)
-            this.loading_submit = await false
-
         },
+        // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
         getRecords(init_current_page = false) {
 
             if (init_current_page) {
@@ -546,7 +538,7 @@ export default {
             this.records = [];
             this.loading_submit = true;
             this.pagination.current_page = 0;
-            return this.$http.get(`/${this.resource}/records?${this.getQueryParameters()}`).then((response) => {
+            return this.$http.get(`/${this.resource}/records?${this.getQueryParameters()}`).then(async (response) => {
                 this.records = response.data.data
                 this.pagination = response.data.meta
                 // this.pagination.per_page = parseInt(response.data.meta.per_page)
@@ -556,9 +548,13 @@ export default {
                     ))
                 )
                 this.getTotals(response.data.data)
+                await this.getOtherData()
                 this.currentTableData = this.records.slice(0, this.itemsPerPage)
+            }).catch(() => {
+                this.records = []
+                this.currentTableData = []
+                this.$message.error('No se pudieron cargar los movimientos. Intente nuevamente.')
             }).finally(() => {
-                this.getOtherData()
                 this.loading_submit = false
             });
         },
@@ -573,45 +569,16 @@ export default {
             return temp;
         },
         async getOtherData() {
-            this.pagination.current_page = this.pagination.current_page + 1;
-            if (this.pagination.current_page <= this.pagination.last_page) {
-                return this.$http.get(`/${this.resource}/records?${this.getQueryParameters()}`)
-                    .then((response) => {
-                        let temp = [...this.records, ...response.data.data]
-                        this.records = this.reindex_array_keys(temp);
-                        this.pagination = response.data.meta
-                    }).catch(() => {
-                        // Si existe el error, habilita la busqueda
-                        this.pagination.current_page = 0;
-                        this.currentTableData = this.records.slice(0, this.itemsPerPage)
-                    })
-                    .finally(() => {
-                        this.loading_submit = false;
-                        this.getOtherData()
-                    });
-            } else {
-                this.pagination.current_page = 0;
-                this.loading_submit = false;
-                this.currentTableData = this.currentTableData.filter((item, index, self) =>
-                    index === self.findIndex((t) => (
-                        t.id === item.id
-                    ))
-                )
-                this.currentTableData = this.records.slice(0, this.itemsPerPage)
+            while (this.pagination.current_page < this.pagination.last_page) {
+                this.pagination.current_page += 1
+                const response = await this.$http.get(`/${this.resource}/records?${this.getQueryParameters()}`)
+                this.records = this.reindex_array_keys([...this.records, ...response.data.data])
+                this.pagination = response.data.meta
             }
         },
-        getTotals(records) {
-
-            this.initTotals()
-            this.totals.total_input = _.round(_.sumBy(records, (row) => {
-                return (row.input == '-') ? 0 : parseFloat(row.input)
-            }), 2)
-            this.totals.total_output = _.round(_.sumBy(records, (row) => {
-                return (row.output == '-') ? 0 : parseFloat(row.output)
-            }), 2)
-            this.totals.total_balance = this.totals.total_input - this.totals.total_output
-
-        },
+        // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
+        // El resumen visible se calcula por moneda en getSummaries.
+        getTotals() {},
 
         getQueryParameters() {
             return queryString.stringify({
@@ -658,36 +625,30 @@ export default {
             // this.loadAll();
         },
         changeTableSort(column) {
-            var fieldName = column.prop;
-            var sortingType = column.order;
-            if (sortingType == null) {
-                sortingType = 'ascending';
-            }
-            this.filterdata = {
-                order: fieldName,
-                prop: sortingType,
+            // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+            const fieldName = column.prop;
+            const sortingType = column.order;
+            const sign = sortingType === 'descending' ? -1 : 1;
+            this.filterdata = {order: fieldName, prop: sortingType};
+            const dateValue = value => {
+                const parsed = moment(value, ['DD-MM-YYYY hh:mm A', 'YYYY-MM-DD HH:mm:ss', 'YYYY-MM-DD'], true);
+                return parsed.isValid() ? parsed.valueOf() : null;
             };
-            if (fieldName == "date_of_payment") {
-                this.records.map(item => {
-                    item.date_of_payment = moment(item.date_of_payment).valueOf();
-                });
-            }
-            if (sortingType == "descending") {
-                this.records = this.records.sort((a, b) => b[fieldName] - a[fieldName]);
-            } else {
-                this.records = this.records.sort((a, b) => a[fieldName] - b[fieldName]);
-            }
-            if (fieldName == "date_of_payment") {
-                this.records.map(item => {
-                    item.date_of_payment = moment(item.date_of_payment).format(
-                        "YYYY-MM-DD HH:mm:ss"
-                    );
-                });
-            }
+            this.records = [...this.records].sort((a, b) => {
+                if (!fieldName || !sortingType) return a.id - b.id;
+                const left = fieldName === 'date_of_payment' ? dateValue(a[fieldName]) : a[fieldName];
+                const right = fieldName === 'date_of_payment' ? dateValue(b[fieldName]) : b[fieldName];
+                if (left == null && right == null) return a.id - b.id;
+                if (left == null) return 1;
+                if (right == null) return -1;
+                const result = fieldName === 'date_of_payment' ? left - right : String(left).localeCompare(String(right), 'es');
+                return sign * result || a.id - b.id;
+            });
             this.currentTableData = this.records.slice(
                 (this.currentPage - 1) * this.itemsPerPage,
                 this.currentPage * this.itemsPerPage
             )
+            // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
         }
     }
 }

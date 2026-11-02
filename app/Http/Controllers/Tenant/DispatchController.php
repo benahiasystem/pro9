@@ -679,7 +679,7 @@ class DispatchController extends Controller
         $document_types_invoice = DocumentType::whereIn('id', ['01'])->get();
         // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
         // $document_types_invoice = DocumentType::whereIn('id', ['01', '03', '80'])->get();
-        $payment_method_types = PaymentMethodType::active()->get();
+        $payment_method_types = PaymentMethodType::getActiveReceiptMethods();
         $payment_destinations = $this->getPaymentDestinations();
         $affectation_igv_types = AffectationIgvType::whereActive()->get();
         $payment_conditions = PaymentCondition::get();

@@ -27,13 +27,25 @@ class ExactFinanceCalculationTest extends TestCase
         self::assertSame('1', $totals['t_documents']);
     }
 
-    public function test_cash_conversion_includes_real_igtf_and_retains_the_full_exchange_result(): void
+    public function test_account_balances_include_igtf_only_in_the_received_currency(): void
     {
         $report = new class { use \Modules\Finance\Traits\FinanceTrait; };
         $payment = new DocumentPayment;
         $payment->setRawAttributes(['currency_type_id'=>'USD', 'original_amount'=>'1.00', 'tax_amount'=>'0.03',
             'exchange_rate'=>'10.12340000', 'receipt_parent_id'=>null, 'reversed_at'=>null]);
-        $rows = collect([(object)['payment_type'=>DocumentPayment::class, 'payment'=>$payment]]);
-        self::assertSame('10.427102', Decimal::represent($report->getSumPayment($rows, DocumentPayment::class, 'VES')));
+        // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+        $payment->setRelation('associated_record_payment', new \App\Models\Tenant\Document);
+        $global = new \Modules\Finance\Models\GlobalPayment;
+        $global->forceFill(['id'=>1, 'payment_id'=>1, 'payment_type'=>DocumentPayment::class,
+            'destination_id'=>1, 'destination_type'=>\App\Models\Tenant\BankAccount::class,
+            'report_context'=>['version'=>2, 'method'=>['collection_kind'=>'account'], 'currency_type_id'=>'USD',
+                'exchange_rate'=>'10.12340000', 'direction'=>'income', 'opening'=>false, 'date'=>'2026-10-26', 'number'=>'F001-1']]);
+        $global->setRelation('payment', $payment);
+        $rows = collect([$global]);
+        self::assertSame('0', Decimal::represent($report->getSumPayment($rows, DocumentPayment::class, 'VES')));
+        self::assertSame('1.03', Decimal::represent($report->getSumPayment($rows, DocumentPayment::class, 'USD')));
+        $global->destination_type = \App\Models\Tenant\Cash::class;
+        self::assertSame('0', Decimal::represent($report->getSumPayment($rows, DocumentPayment::class, 'VES')));
+        // ######## FIN MONEDA DEL MEDIO DE COBRO ########
     }
 }

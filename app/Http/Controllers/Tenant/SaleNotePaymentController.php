@@ -42,7 +42,7 @@ class SaleNotePaymentController extends Controller
     public function tables()
     {
         return [
-            'payment_method_types' => PaymentMethodType::active()->get(),
+            'payment_method_types' => PaymentMethodType::getActiveReceiptMethods(),
             'payment_destinations' => $this->getPaymentDestinations()
         ];
     }
@@ -61,6 +61,7 @@ class SaleNotePaymentController extends Controller
             'number_full' => $sale_note->getNumberFullAttribute(),
             // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
             'currency_type_id' => $sale_note->currency_type_id,
+            'exchange_rate_sale' => $sale_note->exchange_rate_sale,
             // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
             'total_paid' => $totals['total_paid'],
             'total' => $totals['total'],
@@ -85,7 +86,17 @@ class SaleNotePaymentController extends Controller
             $record = $id ? $sale_note->payments()->whereKey($id)->firstOrFail() : $sale_note->payments()->make();
             // ######## FIN CALCULOS EXACTOS PRO9 ########
             // ######## INICIO CALCULOS EXACTOS PRO9 ########
-            $record->fill($request->only(['date_of_payment','payment_method_type_id','reference','payment']));
+            // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+            $input = $request->only(['date_of_payment','payment_method_type_id','reference','payment']);
+            if (!$record->exists) {
+                $amounts = \App\Services\Payments\ReceiptAmounts::forMethod($input['payment_method_type_id'] ?? null, $sale_note->currency_type_id, $sale_note->exchange_rate_sale, $request->all());
+                $record->fill(array_replace($input, $amounts));
+                $record->calculation_snapshot = $amounts['calculation_snapshot'];
+            } else {
+                \App\Services\Payments\ExistingReceipts::assertCurrencyFields($record, $request->all());
+                $record->fill($input);
+            }
+            // ######## FIN MONEDA DEL MEDIO DE COBRO ########
             if ($record->exists && isset($record->calculation_snapshot['inputs']['tendered_payment'])
                 && $record->isDirty(['payment','payment_method_type_id'])) {
                 \App\Services\Fiscal\FiscalAmounts::error('payment','Revierta el cobro inicial antes de registrar otro importe o medio de pago.');
@@ -99,7 +110,7 @@ class SaleNotePaymentController extends Controller
             $sale_note = SaleNote::lockForUpdate()->findOrFail($request->sale_note_id);
 
             // ######## INICIO CALCULOS EXACTOS PRO9 ########
-            $values = \App\Support\Exact\SaleNoteBalance::values($sale_note);
+            $values = \App\Support\Exact\SaleNoteBalance::values($sale_note, true);
             $sale_note->total_canceled = $values['total_difference']->isZero();
             // ######## FIN CALCULOS EXACTOS PRO9 ########
             $sale_note->save();
@@ -142,7 +153,7 @@ class SaleNotePaymentController extends Controller
             $item = $sale_note->payments()->whereKey($id)->lockForUpdate()->firstOrFail();
             $item->cashDocumentPayments()->delete();
             $item->delete();
-            $values = \App\Support\Exact\SaleNoteBalance::values($sale_note);
+            $values = \App\Support\Exact\SaleNoteBalance::values($sale_note, true);
             $sale_note->total_canceled = $values['total_difference']->isZero();
             $sale_note->save();
             return $sale_note->id;
@@ -159,14 +170,14 @@ class SaleNotePaymentController extends Controller
 
     public function createPdf($sale_note_id, $format = null)
     {
-        $sale_note = SaleNote::find($sale_note_id);
-        $values = \App\Support\Exact\SaleNoteBalance::values($sale_note);
-        $totals = \App\Support\Exact\SaleNoteBalance::transport($values);
-
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
-        $sale_note->total_canceled = $values['total_difference']->isZero();
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
-        $sale_note->save();
+        // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+        DB::connection('tenant')->transaction(function () use ($sale_note_id) {
+            $sale_note = SaleNote::withoutEagerLoads()->lockForUpdate()->findOrFail($sale_note_id);
+            $values = \App\Support\Exact\SaleNoteBalance::values($sale_note, true);
+            $sale_note->total_canceled = $values['total_difference']->isZero();
+            $sale_note->save();
+        });
+        // ######## FIN MONEDA DEL MEDIO DE COBRO ########
 
 
         $company = Company::first();

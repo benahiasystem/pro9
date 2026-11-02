@@ -261,23 +261,23 @@ class CashController extends Controller
      */
     public function cash_document(Request $request)
     {
+        // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+        return DB::connection('tenant')->transaction(function () use ($request) {
         $cash = Cash::where([
             ['user_id', auth()->id()],
             ['state', true],
-        ])->firstOrFail();
+        ])->lockForUpdate()->firstOrFail();
 
         $isDocument = $request->document_id !== null;
         $documentModel = $isDocument ? Document::class : SaleNote::class;
         $documentField = $isDocument ? 'document_id' : 'sale_note_id';
-        $paymentConditionField = $isDocument ? 'payment_condition_id' : 'payment_method_type_id';
-        $creditCondition = $isDocument ? '02' : '09';
 
         $document = $documentModel::findOrFail((int) $request->$documentField);
 
-        $isCredit = $document->$paymentConditionField === $creditCondition;
+        $isCredit = \App\Services\Payments\CreditCondition::isCredit($document);
         // Evitar duplicicdad si ya existe
 
-        $cashDocumentCredit = $isCredit ? CashDocumentCredit::updateOrCreate([
+        $cashDocumentCredit = $isCredit ? \App\Services\Payments\CashPaymentLink::upsert(CashDocumentCredit::query(), [
             'cash_id' => $cash->id,
             $documentField => $document->id,
         ], $isDocument ? ['status'=>$document->balance <= 0.005 ? 'PROCESSED' : 'PENDING'] : []) : null;
@@ -285,24 +285,28 @@ class CashController extends Controller
         // NOTA: Se esta colocando dentro de los eventos de los modelos para poder registrarlo en caja
         // Gracias al updateOrCreate la información que primero se creo dentro de evento del modelo, no duplicara la información sino solo
         // lo actualiza
-        $cashDocument = $cash->cash_documents()->updateOrCreate([
+        $cashDocument = \App\Services\Payments\CashPaymentLink::upsert(CashDocument::query(), [
+            'cash_id' => $cash->id,
             'document_id' => $request->document_id,
             'sale_note_id' => $request->sale_note_id,
             'quotation_id' => $request->quotation_id,
         ]);
 
+        $document->loadMissing('payments.global_payment');
         $document->payments->each(function($payment) use($cash,$isDocument,$cashDocument){
-            CashDocumentPayment::updateOrCreate([
+            if (!\App\Services\Payments\CashPaymentLink::belongsToSession($payment, $cash->id)) return;
+            \App\Services\Payments\CashPaymentLink::upsert(CashDocumentPayment::query(), [
                 'cash_id' => $cash->id,
                 $isDocument ? 'document_payment_id' : 'sale_note_payment_id' => $payment->id,
-                'cash_document_id' => optional($cashDocument)->id,
-            ]);
+            ], ['cash_document_id' => $cashDocument->id]);
         });
 
         return response()->json([
             'success' => true,
             'message' => 'Venta con éxito',
         ]);
+        });
+        // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
     }
 
 

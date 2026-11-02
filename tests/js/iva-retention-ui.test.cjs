@@ -33,7 +33,7 @@ test('garage refresh preserves one receipt and multiple receipts when the collec
         const ctx={form:{items:[{}],payments:rows,payment_condition_id:'01',total:116},collectionTarget:'116.00',
             inputDiscountAmount(){},setAmount:amount=>displayed=amount,$refs:{componentMultiplePaymentGarage:{clickAddPayment(){assert.fail('Cannot add another receipt')}}}};
         garage.methods.checkPaymentGarage.call(ctx);
-        assert.equal(JSON.stringify(rows),snapshot);assert.equal(displayed,rows.reduce((sum,row)=>sum+row.payment,0));
+        assert.equal(JSON.stringify(rows),snapshot);assert.equal(displayed,String(rows.reduce((sum,row)=>sum+row.payment,0)));
     }
 });
 test('voucher validation details remain visible for both Web and API error envelopes',async()=>{

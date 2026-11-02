@@ -161,7 +161,7 @@
                                         <td>
                                             <h3 class="my-0">
                                                 <span class="badge badge-pill badge-info">
-                                                    {{ totalPaid | toDecimals }}
+                                                    {{ formatHotelAmount(totalPaid) }}
                                                 </span>
                                             </h3>
                                         </td>
@@ -173,7 +173,7 @@
                                         <td>
                                             <h3 class="my-0">
                                                 <span class="badge badge-pill badge-danger">
-                                                    {{ totalDebt | toDecimals }}
+                                                    {{ formatHotelAmount(totalDebt) }}
                                                 </span>
                                             </h3>
                                         </td>
@@ -303,12 +303,19 @@
                                         <div class="form-group mb-2 me-2">
                                             <el-select v-model="row.payment_method_type_id">
                                                 <el-option
-                                                    v-for="option in paymentMethodTypes"
+                                                    v-for="option in receiptMethods"
                                                     :key="option.id"
                                                     :label="option.description"
                                                     :value="option.id"
                                                 ></el-option>
                                             </el-select>
+                                            <small v-if="!row.payment_method_type_id" class="text-muted">No hay efectivo activo para la moneda del documento; seleccione un método.</small>
+                                            <igtf-settings-status v-if="fiscalPaymentsApplicable" />
+                                            <igtf-payment-fields v-if="fiscalPaymentsApplicable" :payment="row" :payment-methods="paymentMethodTypes"
+                                                :document-currency="document.currency_type_id" :document-rate="document.exchange_rate_sale"
+                                                :customer-id="document.customer_id" :igtf-enabled="igtfEnabled" :settings-version="igtfSettings.revision" />
+                                            <receipt-currency-fields v-else :row="row" :methods="paymentMethodTypes"
+                                                :document-currency="document.currency_type_id" :document-rate="document.exchange_rate_sale" />
                                         </div>
                                     </td>
                                     <td>
@@ -319,7 +326,7 @@
                                                 filterable
                                             >
                                                 <el-option
-                                                    v-for="option in paymentDestinations"
+                                                    v-for="option in destinationsFor(row)"
                                                     :key="option.id"
                                                     :label="option.description"
                                                     :value="option.id"
@@ -356,8 +363,8 @@
                         <div class="col-12 pt-3 text-end">
                             <template v-if="canMakePayment && totalDebt > 0">
                                 <el-button
-                                    :disabled="loading"
-                                    :loading="loading"
+                                    :disabled="loading || preparingCheckout"
+                                    :loading="loading || preparingCheckout"
                                     class="btn btn-primary"
                                     @click="onGoToInvoice"
                                 >
@@ -416,6 +423,11 @@
 
 <script>
 import {withoutDraftRetentions, suggestRemainingPayment} from "@helpers/document-creation"
+import {classifiedDestinations, defaultCashForCurrency, handleHotelPaymentError} from "@helpers/payment-classification"
+import {exactAmount} from "@helpers/exchange-rate-math"
+import fiscalPaymentSettings from "@mixins/fiscal-payment-settings"
+import ReceiptCurrencyFields from "@components/ReceiptCurrencyFields.vue"
+import IgtfPaymentFields from "@views/documents/partials/igtf_fields.vue"
 import moment from "moment";
 import DocumentOptions from "@views/documents/partials/options.vue";
 import SaleNoteOptions from "@views/sale_notes/partials/options.vue";
@@ -428,10 +440,13 @@ export default {
     components: {
         DocumentOptions,
         SaleNoteOptions,
+        ReceiptCurrencyFields,
+        IgtfPaymentFields,
     },
     mixins: [
         exchangeRate,
-        functions
+        functions,
+        fiscalPaymentSettings
     ],
     props: {
         rent: {
@@ -483,6 +498,12 @@ export default {
         ...mapState([
             'config',
         ]),
+        receiptMethods() {
+            // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+            return this.paymentMethodTypes.filter(method => method && [true, 1, '1'].includes(method.is_active)
+                && ['cash', 'account'].includes(method.collection_kind))
+            // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
+        },
         canMakePayment: function () {
             if (
                 this.currentRent !== undefined &&
@@ -521,6 +542,7 @@ export default {
             total: 0,
             debtRoom: 0,
             loading: false,
+            preparingCheckout: false,
             totalPaid: 0,
             totalDebt: 0,
             response: {},
@@ -570,13 +592,13 @@ export default {
         await this.onCalculatePaidAndDebts();
 
         if(this.totalDebt > 0){
-            let cash = _.find(this.paymentDestinations, {id: 'cash'})
+            const method = defaultCashForCurrency(this.paymentMethodTypes, this.document.currency_type_id)
             this.document.payments.push({
                 id: null,
                 document_id: null,
                 date_of_payment: moment().format("YYYY-MM-DD"),
-                payment_method_type_id: "01",
-                payment_destination_id: (cash)? cash.id : null,
+                payment_method_type_id: method?.id || null,
+                payment_destination_id: method?.collection_kind === 'cash' && this.paymentDestinations.some(item => item.id === 'cash') ? 'cash' : null,
                 reference: null,
                 payment: this.totalDebt,
             });
@@ -589,18 +611,31 @@ export default {
         });
     },
     watch: {
+        'document.payments': {
+            deep: true,
+            handler(rows) {
+                if (!Array.isArray(rows)) return
+                rows.forEach(row => {
+                    if (row.payment_destination_id != null && !this.destinationsFor(row).some(destination => destination.id === row.payment_destination_id)) {
+                        this.$set(row, 'payment_destination_id', null)
+                    }
+                })
+            },
+        },
         arrears(value) {
             if (isNaN(value)) {
                 return;
             }
             if (value >= 0) {
-                const total = parseFloat(this.room.item.total) + parseFloat(value);
-                this.total = total;
+                this.total = exactAmount(this.room.item.total).plus(value || 0).decimal();
                 this.onCalculatePaidAndDebts();
             }
         },
     },
     methods: {
+        formatHotelAmount(value) {
+            return exactAmount(value).final(2);
+        },
         ...mapActions([
             'loadConfiguration',
         ]),
@@ -630,17 +665,20 @@ export default {
                 this.series.length > 0 ? this.series[0].id : null;
         },
         clickAddPayment() {
-            let cash = _.find(this.paymentDestinations, {id: 'cash'})
+            const method = defaultCashForCurrency(this.paymentMethodTypes, this.document.currency_type_id)
             this.document.payments.push({
                 id: null,
                 document_id: null,
                 date_of_payment: moment().format("YYYY-MM-DD"),
-                payment_method_type_id: "01",
-                payment_destination_id: (cash)? cash.id : null,
+                payment_method_type_id: method?.id || null,
+                payment_destination_id: method?.collection_kind === 'cash' && this.paymentDestinations.some(item => item.id === 'cash') ? 'cash' : null,
                 reference: null,
                 payment: 0,
             });
             suggestRemainingPayment({...this.document, total: this.totalDebt, total_payable: this.totalDebt});
+        },
+        destinationsFor(row) {
+            return classifiedDestinations(this.paymentDestinations, this.paymentMethodTypes, row, this.document.currency_type_id)
         },
         onExitPage() {
             window.location.href = "/hotels/reception";
@@ -658,9 +696,12 @@ export default {
         },
         validateTotalPayments()
         {
-            const total_payments = _.sumBy(this.document.payments, 'payment')
-
-            if(total_payments > (this.totalDebt)) return this.getResponseValidations(false, 'El total de los pagos agregados es superior al monto.')
+            try {
+                const total = this.document.payments.reduce((sum, row) => sum.plus(row.payment), exactAmount(0))
+                if (total.compare(this.totalDebt) > 0) return this.getResponseValidations(false, 'El total de los pagos agregados es superior al monto.')
+            } catch (error) {
+                return this.getResponseValidations(false, 'Indique importes de pago válidos.')
+            }
 
             return this.getResponseValidations()
         },
@@ -720,27 +761,28 @@ export default {
                 });
         },
         async onGoToInvoice() {
-
-            await this.onUpdateItemsWithExtras();
-            await this.onCalculateTotals();
-            let validate_payment_destination = this.validatePaymentDestination();
-
-            if (validate_payment_destination.error_by_item > 0) {
-                return this.$message.error("El destino del pago es obligatorio");
-            }
-
-            const validate_total_payments = this.validateTotalPayments()
-            if(!validate_total_payments.success) return this.$message.error(validate_total_payments.message)
-
-            this.updateDataForSend()
-            // ######## INICIO MONEDA VENEZUELA HOTEL ########
+            if (this.loading || this.preparingCheckout) return
+            this.preparingCheckout = true
             try {
-                await ensureExchangeRateSale(this.document, this.$http);
-            } catch (error) {
-                return this.$message.error(error.message || 'No se pudo obtener el tipo de cambio.');
+                await this.onUpdateItemsWithExtras();
+                await this.onCalculateTotals();
+                const validate_payment_destination = this.validatePaymentDestination();
+                if (validate_payment_destination.error_by_item > 0) {
+                    return this.$message.error("El destino del pago es obligatorio");
+                }
+                const validate_total_payments = this.validateTotalPayments()
+                if (!validate_total_payments.success) return this.$message.error(validate_total_payments.message)
+                this.updateDataForSend()
+                try {
+                    await ensureExchangeRateSale(this.document, this.$http);
+                } catch (error) {
+                    return this.$message.error(error.message || 'No se pudo obtener el tipo de cambio.');
+                }
+                if (!(await this.ensureFiscalPaymentsReady(this.document.payments))) return
+                this.loading = true;
+            } finally {
+                this.preparingCheckout = false
             }
-            // ######## FIN MONEDA VENEZUELA HOTEL ########
-            this.loading = true;
             this.$http
                 .post(`/${this.resource_documents}`, withoutDraftRetentions(this.document))
                 .then((response) => {
@@ -773,11 +815,7 @@ export default {
                     }
                 })
                 .catch((error) => {
-                    if (error.response.status === 422) {
-                        this.errors = error.response.data;
-                    } else {
-                        this.$message.error(error.response.data.message);
-                    }
+                    handleHotelPaymentError(error, this)
                 })
                 .finally(() => {
                     this.loading = false;
@@ -792,10 +830,13 @@ export default {
                     it.item.full_description = name;
                     it.name_product_pdf = name;
                     it.quantity = 1;
-                    const newTotal = parseFloat(it.total) + parseFloat(this.arrears);
-                    it.input_unit_price_value = parseFloat(newTotal);
-                    it.item.unit_price = parseFloat(newTotal);
-                    it.unit_value = parseFloat(newTotal);
+                    // Preserve the original room amount across retries so arrears are applied once.
+                    it.hotel_checkout_base_total = it.hotel_checkout_base_total ?? it.total;
+                    const newTotal = exactAmount(it.hotel_checkout_base_total).plus(this.arrears || 0).decimal();
+                    it.input_unit_price_value = newTotal;
+                    it.item.unit_price = newTotal;
+                    it.unit_value = newTotal;
+                    it.price_input = {amount: newTotal, currency_type_id: 'VES', includes_iva: true};
                     const newItem = calculateRowItem(it, "VES", 3, this.percentage_igv);
                     return newItem;
                 }
@@ -819,23 +860,12 @@ export default {
                 });
         },
         onCalculatePaidAndDebts() {
-            this.totalPaid = this.currentRent.items
-                .map((i) => {
-                    if (i.payment_status === "PAID") {
-                        return i.item.total;
-                    }
-                    return 0;
-                })
-                .reduce((a, b) => a + b, 0);
-            const totalDebt = this.currentRent.items
-                .map((i) => {
-                    if (i.payment_status === "DEBT") {
-                        return i.item.total;
-                    }
-                    return 0;
-                })
-                .reduce((a, b) => a + b, 0);
-            this.totalDebt = totalDebt + parseFloat(this.arrears);
+            const sum = status => this.currentRent.items.reduce(
+                (total, item) => item.payment_status === status ? total.plus(item.item.total) : total,
+                exactAmount(0)
+            );
+            this.totalPaid = sum('PAID').decimal();
+            this.totalDebt = sum('DEBT').plus(this.arrears || 0).decimal();
         },
         initDocument() {
             this.document = {
@@ -897,69 +927,30 @@ export default {
             this.document.payments.splice(index, 1);
         },
         onCalculateTotals() {
-            let total_exportation = 0;
-            let total_taxed = 0;
-            let total_exonerated = 0;
-
-
-            let total_igv = 0;
-            let total_value = 0;
-            let total = 0;
-
-            let total_discount = 0;
-            let total_charge = 0;
-            this.document.items.forEach((row) => {
-                total_discount += parseFloat(row.total_discount);
-                total_charge += parseFloat(row.total_charge);
-
-                if (row.affectation_igv_type_id === "10") {
-                    total_taxed += parseFloat(row.total_value);
+            let taxed = exactAmount(0), exempt = exactAmount(0), igv = exactAmount(0);
+            let value = exactAmount(0), total = exactAmount(0);
+            this.document.items.forEach(row => {
+                const rowValue = exactAmount(row.total_value);
+                if (row.affectation_igv_type_id === '10') taxed = taxed.plus(rowValue);
+                if (row.affectation_igv_type_id === '20') exempt = exempt.plus(rowValue);
+                if (['10', '20', '30', '40'].includes(row.affectation_igv_type_id)) {
+                    igv = igv.plus(row.total_igv);
+                    total = total.plus(row.total);
                 }
-
-                if (row.affectation_igv_type_id === '20') {
-                    total_exonerated += parseFloat(row.total_value)
-                }
-
-                ;
-
-                if (
-                    ["10", "20", "30", "40"].indexOf(row.affectation_igv_type_id) > -1
-                ) {
-                    total_igv += parseFloat(row.total_igv);
-                    total += parseFloat(row.total);
-                }
-
-                total_value += parseFloat(row.total_value);
-
-
-                if (["13", "14", "15"].includes(row.affectation_igv_type_id)) {
-                    let unit_value =
-                        row.total_value / row.quantity / (1 + this.percentage_igv / 100);
-                    let total_value_partial = unit_value * row.quantity;
-                    row.total_taxes = row.total_value - total_value_partial;
-                    row.total_igv = row.total_value - total_value_partial;
-                    row.total_base_igv = total_value_partial;
-                    total_value -= row.total_value;
+                value = value.plus(rowValue);
+                if (['13', '14', '15'].includes(row.affectation_igv_type_id)) {
+                    const base = rowValue.dividedBy(exactAmount(1).plus(exactAmount(this.percentage_igv).dividedBy(100)));
+                    row.total_taxes = rowValue.minus(base).decimal();
+                    row.total_igv = row.total_taxes;
+                    row.total_base_igv = base.decimal();
+                    value = value.minus(rowValue);
                 }
             });
-
-            this.document.total_exportation = _.round(total_exportation, 2);
-            this.document.total_taxed = _.round(total_taxed, 2);
-            this.document.total_exonerated = _.round(total_exonerated, 2);
-
-
-            this.document.total_igv = _.round(total_igv, 2);
-            this.document.total_value = _.round(total_value, 2);
-            this.document.total_taxes = _.round(total_igv, 2);
-
-            this.document.total = _.round(
-                total,
-                2
-            );
-            this.document.subtotal = _.round(
-                this.document.total,
-                2
-            );
+            Object.assign(this.document, {
+                total_exportation: '0.00', total_taxed: taxed.final(2), total_exonerated: exempt.final(2),
+                total_igv: igv.final(2), total_value: value.final(2), total_taxes: igv.final(2),
+                total: total.final(2), subtotal: total.final(2),
+            });
         },
     },
 };

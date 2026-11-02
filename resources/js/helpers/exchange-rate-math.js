@@ -55,6 +55,19 @@ export function exactInput(value, scale = 12, integerDigits = 18) {
     return amount.decimal(scale)
 }
 export function exactValue(record, field) { return rational(record.calculation_snapshot?.values?.[field] ?? record[field] ?? 0) }
+// ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+export function appliedReceiptAmount(row, documentCurrency) {
+    const received = rational(row.original_amount ?? row.payment).final(2)
+    if (rational(received).compare(0) <= 0) throw new Error('Indique un importe recibido positivo.')
+    const currency = row.currency_type_id || documentCurrency
+    if (!['VES', 'USD'].includes(currency) || !['VES', 'USD'].includes(documentCurrency)) throw new Error('Seleccione una moneda válida.')
+    if (currency === documentCurrency) return rational(received)
+    const rate = rational(row.exchange_rate)
+    if (rate.compare(0) <= 0) throw new Error('Indique una tasa positiva.')
+    const amount = currency === 'USD' ? rational(received).times(rate) : rational(received).dividedBy(rate)
+    return rational(amount.final(2))
+}
+// ######## FIN MONEDA DEL MEDIO DE COBRO ########
 export function exactSum(values) { return values.reduce((sum, value) => sum.plus(value), rational(0)) }
 export function exactSnapshot(values, inputs = {}) { return {version: 1, inputs, values: Object.fromEntries(Object.entries(values).map(([key, value]) => [key, rational(value).fraction()]))} }
 export function allocateExact(total, weights, scale = 2) {

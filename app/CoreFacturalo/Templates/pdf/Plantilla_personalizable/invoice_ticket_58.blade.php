@@ -519,62 +519,9 @@ $affected_document_number = $document_base->affected_document ? $document_base->
                 </tr>
             @endif
 
-            @if ($document->payment_condition_id === '01')
-                @if($document->payment_method_type_id)
-                    <tr>
-                        <td class="desc-ticket">
-                            <div style="font-size: 10px;">
-                                PAGO: {{ $document->payment_method_type->description }}
-                            </div>
-                        </td>
-                    </tr>
-                @endif
-                @if($payments->count())
-                    <tr>
-                        <td class="desc-ticket">
-                            <div style="font-size: 10px;">
-                                PAGOS:
-                            </div>
-                        </td>
-                    </tr>
-                    @foreach($payments as $row)
-                        <tr>
-                            <td class="desc-ticket text-uppercase">
-                                <div style="font-size: 10px;">
-                                    &#8226; {{ $row->payment_method_type->description }}
-                                    - {{ $row->reference ? $row->reference.' - ':'' }}
-                                    {{ $document->currency_type->symbol }} {{ $row->payment + $row->change }}
-                                </div>
-                            </td>
-                        </tr>
-                    @endforeach
-                @endif
-            @else
-                @php
-                    $paymentMethod = \App\Models\Tenant\PaymentMethodType::where('id', '09')->first();
-                @endphp
-                <table class="full-width">
-                    <tr>
-                        <td class="desc-ticket">
-                            <div style="font-size: 10px;">
-                                <span>PAGOS: {{ $paymentMethod->description }}</span>
-                            </div>
-                        </td>
-                    </tr>
-                    @foreach($document->fee as $key => $quote)
-                        <tr>
-                            <td class="desc-ticket text-uppercase">
-                                <div style="font-size: 10px;">
-                                    &#8226; {{ (empty($quote->getStringPaymentMethodType()) ? 'Cuota #'.( $key + 1) : $quote->getStringPaymentMethodType()) }}
-                                    / Fecha: {{ $quote->date->format('d-m-Y') }} /
-                                    Monto: {{ $quote->currency_type->symbol }}{{ $quote->amount }}
-                                </div>
-                            </td>
-                        </tr>
-                        @endforeach
-                        </tr>
-                </table>
-            @endif
+            {{-- ######## INICIO CLASIFICACION DE COBROS Y CAJA ######## --}}
+            @include('pdf.partials.invoice_ticket_payments', ['document' => $document, 'payments' => $payments])
+            {{-- ######## FIN CLASIFICACION DE COBROS Y CAJA ######## --}}
 
             @if ($document->terms_condition)
                 <tr>

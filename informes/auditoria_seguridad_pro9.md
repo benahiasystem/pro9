@@ -109,6 +109,8 @@ Una petición con `X-Requested-With: XMLHttpRequest` evita la comprobación de m
 
 Hay una fuga relacionada: `UserController.php:96` inicializa la respuesta con el token del usuario objetivo **antes** de comprobar si el solicitante es administrador. `UserResource.php:33` también incluye `api_token`, y la ruta de consulta por usuario comparte el control débil.
 
+El 02/11/2026 se identificó exposición adicional de credenciales en los catálogos de vendedores de facturas, notas de venta y cotizaciones. Las cinco rutas web de tablas y opciones de esos flujos omiten ahora el token de API y la contraseña de cada vendedor; se mantiene el resto del contrato. La aceptación HTTP autenticada en MySQL temporal verificó las cinco rutas y pasó con 211 aserciones en total, incluidas las regresiones comerciales existentes. La medida no modifica los recursos generales de usuarios ni otras rutas, que siguen pendientes de revisión; tampoco rota credenciales previamente expuestas.
+
 Validación: el middleware real devolvió el marcador REACHED para una petición AJAX de un usuario ficticio sin módulo de usuarios. Se revisaron ruta, FormRequest y escritura de rol; no se modificaron cuentas reales. `auth`, bloqueo y CSRF permanecen como requisitos; no se afirma acceso anónimo a estas rutas.
 
 Corrección: políticas/gates de servidor para cada operación y objeto; aplicar a AJAX, web y API por igual. Separar edición de perfil de administración de roles. No devolver tokens de otros usuarios en errores ni recursos generales.

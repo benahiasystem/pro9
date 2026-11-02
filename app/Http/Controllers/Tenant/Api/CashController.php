@@ -38,44 +38,9 @@ class CashController extends Controller
     }
 
     public function cash_document(Request $request) {
-
-        $cash = Cash::where([
-            ['user_id', auth()->id()],
-            ['state', true],
-        ])->firstOrFail();
-
-        $isDocument = $request->document_id !== null;
-        $documentModel = $isDocument ? Document::class : SaleNote::class;
-        $documentField = $isDocument ? 'document_id' : 'sale_note_id';
-        $paymentConditionField = $isDocument ? 'payment_condition_id' : 'payment_method_type_id';
-        $creditCondition = $isDocument ? '02' : '09';
-
-        $document = $documentModel::findOrFail((int) $request->$documentField);
-
-        $isCredit = $document->$paymentConditionField === $creditCondition;
-        $cashDocumentCredit = $isCredit ? CashDocumentCredit::create([
-            'cash_id' => $cash->id,
-            $documentField => $document->id,
-        ]) : null;
-
-        $cashDocument = $cash->cash_documents()->updateOrCreate([
-            'document_id' => $request->document_id,
-            'sale_note_id' => $request->sale_note_id,
-            'quotation_id' => $request->quotation_id,
-        ]);
-
-        $document->payments->each(function($payment) use($cash,$isDocument,$cashDocument){
-            CashDocumentPayment::create([
-                'cash_id' => $cash->id,
-                $isDocument ? 'document_payment_id' : 'sale_note_payment_id' => $payment->id,
-                'cash_document_id' => optional($cashDocument)->id,
-            ]);
-        });
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Venta con éxito',
-        ]);
+        // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+        return app(\App\Http\Controllers\Tenant\CashController::class)->cash_document($request);
+        // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
     }
 
     public function opening_cash()

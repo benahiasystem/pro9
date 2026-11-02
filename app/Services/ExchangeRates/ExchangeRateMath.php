@@ -9,6 +9,15 @@ use Illuminate\Validation\ValidationException;
 
 final class ExchangeRateMath
 {
+    // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+    /** Read historical rates without inventing one when the stored value is unusable. */
+    public static function optionalRate($value): ?string
+    {
+        try { return self::rate($value); }
+        catch (ValidationException $exception) { return null; }
+    }
+    // ######## FIN MONEDA DEL MEDIO DE COBRO ########
+
     public static function rate($value, string $field = 'exchange_rate'): string
     {
         try {

@@ -644,6 +644,7 @@ import ItemsExportWp from "./partials/export_wp.vue";
 import ItemsExportBarcode from "./partials/export_barcode.vue";
 import ItemsExportExtra from "./partials/export_extra.vue";
 import DataTable from "../../../components/DataTable.vue";
+import {exactAmount} from "../../../helpers/exchange-rate-math";
 import { deletable } from "../../../mixins/deletable";
 import ItemsHistory from "@viewsModuleItem/items/history.vue";
 import { mapActions, mapState } from "vuex";
@@ -925,33 +926,23 @@ export default {
             if (!html) return html
             return html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
         },
-        isDecimalUnit(unitTypeId) {
-            // Solo la unidad UND (Unidad SUNAT) exige cantidades enteras; el resto (incluidas las unidades creadas manualmente) admite decimales
-            return unitTypeId !== 'UND';
-        },
         unitSymbol(unitTypeId) {
             const map = {
-                UND: 'und', BX: 'caja', BO: 'bot', BG: 'bls', DZN: 'doc',
-                PK: 'paq', SET: 'jgo', PR: 'par', '4B': 'rollo', CEN: 'cien', MLR: 'mll',
-                KGM: 'kg', GRM: 'g', MGM: 'mg', TNE: 't', LBR: 'lb',
-                LTR: 'L', MLT: 'mL', GLL: 'gal',
-                MTR: 'm', CMT: 'cm', KMT: 'km', MTK: 'm²', MTQ: 'm³',
-                HUR: 'h', DAY: 'día', MIN: 'min',
+                UND: 'und', CAJ: 'caja', BOT: 'bot', BOL: 'bolsa', DOC: 'doc',
+                PQT: 'paq', JGO: 'jgo', PAR: 'par',
+                KG: 'kg', GR: 'g', MG: 'mg', TON: 't', LB: 'lb',
+                LT: 'L', ML: 'mL', GAL: 'gal',
+                M: 'm', CM: 'cm', MM: 'mm', KM: 'km', M2: 'm²', M3: 'm³',
+                HR: 'h', DIA: 'día',
                 SERV: '',
             };
             return map[unitTypeId] !== undefined ? map[unitTypeId] : (unitTypeId || '').toLowerCase();
         },
         formatStock(stock, unitTypeId) {
-            const value = Number(stock) || 0;
+            if (stock === null || stock === undefined || stock === '') return 'No disponible';
             let str;
-            if (this.isDecimalUnit(unitTypeId)) {
-                // Hasta 3 decimales, recortando ceros a la derecha
-                str = value.toFixed(3).replace(/\.?0+$/, '');
-            } else {
-                // Unidad discreta: entero
-                str = Math.round(value).toString();
-            }
-            // Separador de miles con coma (estándar Perú/SUNAT)
+            try { str = exactAmount(String(stock)).decimal(); }
+            catch (_) { return 'No disponible'; }
             const parts = str.split('.');
             parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
             return parts.join('.');

@@ -61,7 +61,7 @@ class PurchasePayment extends ModelTenant
      */
     public function scopeWhereFilterCashPayment($query)
     {
-        return $query->where('payment_method_type_id', PaymentMethodType::CASH_PAYMENT_ID)
+        return \App\Services\Payments\Classification::filterRecorded($query, 'cash')
                     ->whereHas('global_payment', function($query){
                         return $query->where('destination_type', Cash::class);
                     });
@@ -120,7 +120,7 @@ class PurchasePayment extends ModelTenant
      */
     public function scopeFilterCashPaymentWithoutDestination($query)
     {
-        return $query->where('payment_method_type_id', PaymentMethodType::CASH_PAYMENT_ID);
+        return \App\Services\Payments\Classification::filterRecorded($query, 'cash');
     }
 
     
@@ -133,7 +133,7 @@ class PurchasePayment extends ModelTenant
      */
     public function scopeFilterTransferPayment($query)
     {
-        return $query->where('payment_method_type_id', PaymentMethodType::TRANSFER_PAYMENT_ID);
+        return \App\Services\Payments\Classification::filterRecorded($query, 'account');
     }
     
 

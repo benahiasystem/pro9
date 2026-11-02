@@ -16,7 +16,8 @@ use App\Models\Tenant\User;
  *
  * @property int         $id
  * @property string      $provider
- * @property float       $amount
+ * @property string      $amount
+ * @property string      $currency_type_id
  * @property string|null $sender_name
  * @property string      $raw_text
  * @property string      $package_name
@@ -42,6 +43,7 @@ class ReceivedPayment extends ModelTenant
     protected $fillable = [
         'provider',
         'amount',
+        'currency_type_id',
         'sender_name',
         'raw_text',
         'package_name',
@@ -152,6 +154,8 @@ class ReceivedPayment extends ModelTenant
             'id'                          => $this->id,
             'provider'                    => $this->provider,
             'amount'                      => (float) $this->amount,
+            'amount_decimal'              => \App\Support\Exact\Decimal::canonical($this->getAttributes()['amount']),
+            'currency_type_id'            => $this->currency_type_id,
             'sender_name'                 => $this->sender_name,
             'raw_text'                    => $this->raw_text,
             'package_name'                => $this->package_name,

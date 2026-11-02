@@ -91,7 +91,7 @@
             <div class="col-md-4">
                 <div class="right-wrapper">
                     <h2 class="text-sm pr-5" style="font-size: 14px;">
-                        T/C {{ form.exchange_rate_sale }}
+                        T/C {{ posRateUnavailable ? 'No disponible' : form.exchange_rate_sale }} <button v-if="currency_types.length && posRateUnavailable" type="button" class="btn btn-sm btn-default" @click="changeExchangeRate">Actualizar tasa</button>
                     </h2>
                     <h2 class="text-sm  pull-right" style="font-size: 14px;">{{ user.name }}</h2>
                 </div>
@@ -594,6 +594,7 @@
                                         </td>
                                         <td style="width: 80px; vertical-align: top">
                                             <el-input v-model="item.item.aux_quantity"
+                                                      :disabled="posRateUnavailable"
                                                       @focus="$event.target.select()"
                                                       @input="clickAddItem(item, index, true)"
                                                       @keyup.enter.native="keyupEnterQuantity"></el-input>
@@ -651,6 +652,7 @@
                                             <template v-if="edit_unit_price">
                                                 <el-input
                                                     v-model="item.total"
+                                                    :disabled="posRateUnavailable"
                                                     @focus="$event.target.select()"
                                                     @input="calculateQuantity(index)"
                                                     @blur="blurCalculateQuantity(index)"
@@ -816,6 +818,7 @@
 <script>
 import {withoutDraftRetentions} from "@helpers/document-creation"
 import {documentTotals} from "../../../helpers/exact-document"
+import {isValidPosRate, restorePosDraftRate, refreshPosRate, ensurePosRate} from "../../../helpers/pos-exchange-rate"
 
 import Keypress from "vue-keypress";
 import {calculateRowItem} from "../../../helpers/functions";
@@ -883,6 +886,7 @@ export default {
             row: {},
             user: {},
             form: {},
+            exchangeRateError: "",
             categories: [],
             colors: ["#1cb973", "#bf7ae6", "#fc6304", "#9b4db4", "#77c1f3"],
             pagination: {},
@@ -910,6 +914,9 @@ export default {
     },
 
     computed: {
+        posRateUnavailable() {
+            return !isValidPosRate(this.form.exchange_rate_sale);
+        },
         ...mapState(["config"]),
         classObjectCol() {
             let cols = this.configuration.colums_grid_item;
@@ -1085,8 +1092,14 @@ export default {
             let form_pos = localStorage.getItem("form_pos");
             form_pos = JSON.parse(form_pos);
             if (form_pos) {
-                this.form = withoutDraftRetentions(form_pos);
+                const currentRate = this.form.exchange_rate_sale;
+                this.form = restorePosDraftRate(withoutDraftRetentions(form_pos), currentRate);
                 this.initDateTimeIssue();
+                if (isValidPosRate(this.form.exchange_rate_sale)) {
+                    this.exchangeRateError = "";
+                } else {
+                    this.changeExchangeRate();
+                }
                 // this.calculateTotal()
             }
             let amount = localStorage.setItem('amount', JSON.stringify(this.form.total))
@@ -1234,11 +1247,12 @@ export default {
             //  this.clickAddItem(this.form.items[index],index, true)
         },
         blurCalculateQuantity(index) {
+            if (!ensurePosRate(this)) return;
 
             this.row = calculateRowItem(
                 this.form.items[index],
                 this.form.currency_type_id,
-                1,
+                this.form.exchange_rate_sale,
                 this.percentage_igv
             );
 
@@ -1251,10 +1265,11 @@ export default {
             this.setFormPosLocalStorage();
         },
         blurCalculateQuantity2(index) {
+            if (!ensurePosRate(this)) return;
             this.row = calculateRowItem(
                 this.form.items[index],
                 this.form.currency_type_id,
-                1,
+                this.form.exchange_rate_sale,
                 this.percentage_igv
             );
             this.form.items[index] = this.row;
@@ -1368,7 +1383,7 @@ export default {
                 customer_id: null,
                 currency_type_id: "VES",
                 purchase_order: null,
-                exchange_rate_sale: 1,
+                exchange_rate_sale: null,
                 total_prepayment: 0,
                 total_charge: 0,
                 total_discount: 0,
@@ -1440,6 +1455,7 @@ export default {
             };
         },
         async clickPayment() {
+            if (!ensurePosRate(this)) return;
 
             if(!this.form.subtotal){
                 //fix para agregar subtotal si no existe prop en json almacenado en local storage
@@ -1473,6 +1489,7 @@ export default {
             this.setFormPosLocalStorage();
         },
         async clickAddItem(item, index, input = false) {
+            if (!ensurePosRate(this)) return;
             // El padre con variaciones no es vendible: se elige una variación en el modal
             if (item.variations_count > 0) {
                 this.selectedVariationParent = item;
@@ -1666,11 +1683,7 @@ export default {
             // })
         },
         changeExchangeRate() {
-            this.searchExchangeRateByDate(this.form.date_of_issue).then(
-                response => {
-                    this.form.exchange_rate_sale = response;
-                }
-            );
+            return refreshPosRate(this);
         },
         async getTables() {
             await this.$http.get(`/${this.resource}/tables`).then(response => {
@@ -1844,11 +1857,13 @@ export default {
             });
         },
         selectCurrencyType() {
+            if (!ensurePosRate(this)) return;
             this.form.currency_type_id =
                 this.form.currency_type_id === "VES" ? "USD" : "VES";
             this.changeCurrencyType();
         },
         async changeCurrencyType() {
+            if (!ensurePosRate(this)) return;
             // console.log(this.form.currency_type_id)
             this.currency_type = await _.find(this.currency_types, {
                 id: this.form.currency_type_id

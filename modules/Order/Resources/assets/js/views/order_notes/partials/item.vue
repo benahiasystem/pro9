@@ -1150,12 +1150,14 @@ export default {
 
 
                 this.form.quantity = this.recordItem.quantity;
-                // ########## INICIO CAMBIO IGV A IVA
-                // El campo form.unit_price es el valor que ingresa el usuario (SIN IVA)
-                // ######### FIN CAMBIO IGV A IVA
-                // input_unit_price_value es el valor original ingresado
-                this.form.unit_price = this.recordItem.input_unit_price_value;
-                this.form.unit_price_value = this.recordItem.input_unit_price_value;
+                // ######## INICIO CALCULOS EXACTOS PRO9 ########
+                const originalPrice = this.recordItem.price_input || this.recordItem.calculation_snapshot?.inputs?.price_input;
+                this.form.unit_price = originalPrice?.amount ?? this.recordItem.unit_price;
+                this.form.unit_price_value = this.form.unit_price;
+                this.form.has_igv = originalPrice ? originalPrice.includes_iva !== false : true;
+                this.form.item.currency_type_id = originalPrice?.currency_type_id || this.currencyTypeIdActive;
+                this.form.item.currency_type_symbol = this.form.item.currency_type_id;
+                // ######## FIN CALCULOS EXACTOS PRO9 ########
 
                 this.form.warehouse_id = this.recordItem.warehouse_id;
                 if (this.recordItem.item && this.recordItem.item.name_product_pdf) {
@@ -1477,14 +1479,13 @@ export default {
 
             if (this.validateTotalItem().total_item) return;
 
-            // this.form.item.unit_price = this.form.unit_price;
-            let unit_price = this.form.has_igv
-                ? this.form.unit_price
-                : this.form.unit_price * (1 + this.percentageIgv);
-
-            // this.form.item.unit_price = this.form.unit_price
-            this.form.unit_price = unit_price;
-            this.form.item.unit_price = unit_price;
+            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            // Conservar el precio ingresado: el cálculo exacto agrega el IVA cuando corresponde.
+            this.form.price_input = {amount: String(this.form.unit_price),
+                currency_type_id: this.form.item.currency_type_id || this.currencyTypeIdActive,
+                includes_iva: Boolean(this.form.has_igv)};
+            this.form.item.unit_price = this.form.unit_price;
+            // ######## FIN CALCULOS EXACTOS PRO9 ########
 
             this.form.item.presentation = this.item_unit_type;
             this.form.affectation_igv_type = _.find(

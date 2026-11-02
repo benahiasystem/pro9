@@ -175,7 +175,8 @@
                         <tr v-for="(row, index) in form.payments"
                             :key="index">
                             <td>
-                                <el-select v-model="row.payment_method_type_id">
+                                <span v-if="isRecordedReceipt(row)">{{ (row.payment_method_snapshot || {}).description || (row.payment_method_type || {}).description || row.payment_method_type_id }}</span>
+                                <el-select v-else v-model="row.payment_method_type_id">
                                     <el-option
                                         v-for="option in payment_method_types"
                                         :key="option.id"
@@ -183,9 +184,30 @@
                                         :value="option.id"
                                     ></el-option>
                                 </el-select>
+                                        <small v-if="!row.payment_method_type_id" class="text-muted">No hay efectivo activo para la moneda del documento; seleccione un método.</small>
+                                <template v-if="isRecordedReceipt(row)">
+                                    <small class="d-block">Cobro registrado: {{ row.original_amount || row.payment }} {{ row.currency_type_id || form.currency_type_id }}; aplicado: {{ row.payment }} {{ form.currency_type_id }}.</small>
+                                    <small v-if="row.currency_type_id && row.currency_type_id !== form.currency_type_id" class="d-block">Tasa VES por USD: {{ row.exchange_rate }}</small>
+                                    <template v-if="fiscalPaymentsApplicable && row.currency_type_id === 'USD'">
+                                        <label>Intermediación del cobro original</label>
+                                        <el-select v-model="row.financial_intermediation" placeholder="Seleccione">
+                                            <el-option value="none" label="Sin institución financiera" />
+                                            <el-option value="financial_institution" label="Con institución financiera" />
+                                        </el-select>
+                                    </template>
+                                </template>
+                                <template v-else>
+                                    <igtf-settings-status v-if="fiscalPaymentsApplicable" />
+                                    <igtf-payment-fields v-if="fiscalPaymentsApplicable" :payment="row" :payment-methods="payment_method_types"
+                                        :document-currency="form.currency_type_id" :document-rate="form.exchange_rate_sale"
+                                        :customer-id="form.customer_id" :igtf-enabled="igtfEnabled" :settings-version="igtfSettings.revision" />
+                                    <receipt-currency-fields v-else :row="row" :methods="payment_method_types"
+                                        :document-currency="form.currency_type_id" :document-rate="form.exchange_rate_sale" />
+                                </template>
                             </td>
                             <td>
-                                <el-select v-model="row.payment_destination_id"
+                                <span v-if="isRecordedReceipt(row)">{{ row.payment_destination_description || 'Destino registrado' }}</span>
+                                <el-select v-else v-model="row.payment_destination_id"
                                            :disabled="classifiedPaymentDestinationDisabled(payment_destinations, row)"
                                            filterable>
                                     <el-option v-for="option in classifiedPaymentDestinations(payment_destinations, row)"
@@ -195,13 +217,13 @@
                                 </el-select>
                             </td>
                             <td>
-                                <el-input v-model="row.reference"></el-input>
+                                <el-input v-model="row.reference" :disabled="isRecordedReceipt(row)"></el-input>
                             </td>
                             <td>
-                                <el-input v-model="row.payment"></el-input>
+                                <el-input v-model="row.payment" :disabled="isRecordedReceipt(row)"></el-input>
                             </td>
                             <td class="series-table-actions text-center">
-                                <button class="btn waves-effect waves-light btn-xs btn-danger"
+                                <button v-if="!isRecordedReceipt(row)" class="btn waves-effect waves-light btn-xs btn-danger"
                                         type="button"
                                         @click.prevent="clickCancel(index)">
                                     <i class="fa fa-trash"></i>
@@ -250,6 +272,11 @@
 
 <script>
 import {withoutDraftRetentions, suggestRemainingPayment} from "@helpers/document-creation"
+import {ensureExchangeRateSale} from "@helpers/ensure-exchange-rate-sale"
+import {defaultCashForCurrency, paymentValidationMessage, isRecordedReceipt} from "@helpers/payment-classification"
+import fiscalPaymentSettings from "@mixins/fiscal-payment-settings"
+import IgtfPaymentFields from "@views/documents/partials/igtf_fields.vue"
+import ReceiptCurrencyFields from "@components/ReceiptCurrencyFields.vue"
 
 import DocumentOptions from "@views/documents/partials/options.vue";
 import SaleNoteOptions from "@views/sale_notes/partials/options.vue";
@@ -262,8 +289,8 @@ import {mapActions, mapState} from "vuex/dist/vuex.mjs";
 import {functions} from '@mixins/functions'
 
 export default {
-    components: {DocumentOptions, SaleNoteOptions, SeriesForm},
-    mixins: [functions],
+    components: {DocumentOptions, SaleNoteOptions, SeriesForm, IgtfPaymentFields, ReceiptCurrencyFields},
+    mixins: [functions, fiscalPaymentSettings],
     computed: {
         ...mapState([
             'exchange_rate',
@@ -377,6 +404,8 @@ export default {
                     this.record = response.data.data;
                     this.form.establishment_id = this.establishment.id;
                     this.form.customer_id = this.record.customer_id;
+                    this.form.currency_type_id = this.record.currency_type_id || 'VES';
+                    this.form.exchange_rate_sale = this.record.exchange_rate_sale;
                     // this.form.date_of_issue = this.record.date_of_issue;
                     // this.form.time_of_issue = this.record.time_of_issue;
                     this.form.date_of_due = this.record.date_of_issue;
@@ -407,7 +436,7 @@ export default {
                         'affectation_igv_type_id': '10',
                         'description': item_description,
                         'percentage_igv': this.percentage_igv * 100,
-                        'currency_type_id': 'VES',
+                        'currency_type_id': this.form.currency_type_id,
                         'unit_value': unit_value,
                         'unit_price': total,
                         'total_base_igv': total_taxed,
@@ -437,7 +466,7 @@ export default {
                     this.form.total_value = total_taxed;
                     this.form.total = total;
 
-                    this.form.payments = this.record.payments
+                    this.form.payments = (this.record.payments || []).map(row => ({...row}))
                     this.form.has_document_sale_note = this.record.has_document_sale_note
 
                     this.titleDialog = `Servicio de soporte técnico`;
@@ -525,6 +554,7 @@ export default {
                 });
         },
         clickCancel(index) {
+            if (isRecordedReceipt(this.form.payments[index])) return;
             this.form.payments.splice(index, 1);
         },
         clickAddPayment() {
@@ -532,7 +562,7 @@ export default {
                 id: null,
                 document_id: null,
                 date_of_payment: moment().format("YYYY-MM-DD"),
-                payment_method_type_id: "01",
+                payment_method_type_id: defaultCashForCurrency(this.payment_method_types, this.form.currency_type_id)?.id || null,
                 payment_destination_id: null,
                 reference: null,
                 payment: 0,
@@ -609,7 +639,7 @@ export default {
             let error_by_item = 0
 
             this.form.payments.forEach((item) => {
-                if (item.payment_destination_id == null) error_by_item++;
+                if (!isRecordedReceipt(item) && item.payment_destination_id == null) error_by_item++;
             })
 
             return {
@@ -626,6 +656,12 @@ export default {
                 return this.$message.error('El destino del pago es obligatorio');
             }
 
+            try {
+                await ensureExchangeRateSale(this.form, this.$http);
+            } catch (error) {
+                return this.$message.error(error.message || 'No se pudo obtener el tipo de cambio.');
+            }
+            if (!await this.ensureFiscalPaymentsReady(this.form.payments)) return;
             this.loading_submit = true;
             if (this.form.document_type_id === "nv") {
                 this.form.prefix = "NV";
@@ -645,11 +681,6 @@ export default {
             // this.form.items[0].item_id = item_id;
 
             // await this.$http.post(`/${this.resource_documents}`, withoutDraftRetentions(this.form))
-            if(
-                this.form.exchange_rate_sale === undefined
-            ){
-                this.form.exchange_rate_sale =  this.exchange_rate;
-            }
                 await this.$http.post(`/generate-document`, withoutDraftRetentions(this.form))
                 .then((response) => {
                     if (response.data.success) {
@@ -679,10 +710,12 @@ export default {
                     }
                 })
                 .catch((error) => {
-                    if (error.response.status === 422) {
-                        this.errors = error.response.data;
+                    if (error.response && error.response.status === 422) {
+                        this.errors = error.response.data.errors || error.response.data;
+                        const message = paymentValidationMessage(error.response.data);
+                        if (message) this.$message.error(message);
                     } else {
-                        this.$message.error(error.response.data.message);
+                        this.$message.error(error.response?.data?.message || 'No se pudo generar el comprobante.');
                     }
                 })
                 .finally(() => {

@@ -8,12 +8,12 @@ use App\Models\Tenant\Item;
 use App\Models\Tenant\Person;
 use App\Services\SalesCustomerIdentityPolicy;
 use Illuminate\Validation\ValidationException;
+use Modules\WhatsAppBot\Services\Facturalo\DraftPricing;
+use App\Support\Exact\Decimal as D;
+use App\Models\Tenant\ExchangeRate;
 
 class CreateDocumentTool implements ToolInterface
 {
-    // ########## INICIO CAMBIO AFECTACIÓN IVA
-    private const IGV_RATE = 0.16;
-    // ######### FIN CAMBIO AFECTACIÓN IVA
     private const DOC_TYPE_FACTURA = '01';
 
     public function name(): string
@@ -64,7 +64,7 @@ class CreateDocumentTool implements ToolInterface
                         ],
                         'discount_amount' => [
                             'type' => 'number',
-                            'description' => 'Descuento global en bolívares (monto fijo). Se aplica al total y reduce la base del IGV. Solo úsalo si el vendedor pidió un descuento explícito (ej. "con Bs. 9 de descuento", "descuéntale 10 bolívares"). Debe ser menor al subtotal antes de IGV.',
+                            'description' => 'Descuento global fijo en bolívares sobre la base imponible del IVA. Úsalo sólo si el vendedor lo solicitó; debe ser menor al subtotal sin IVA.',
                         ],
                     ],
                     'required' => ['document_type', 'customer_id', 'items'],
@@ -79,7 +79,7 @@ class CreateDocumentTool implements ToolInterface
         $customerId = $arguments['customer_id'] ?? null;
         $items = $arguments['items'] ?? [];
         $observations = trim((string) ($arguments['observations'] ?? ''));
-        $discountAmount = round((float) ($arguments['discount_amount'] ?? 0), 2);
+        $discountAmount = $arguments['discount_amount'] ?? '0';
 
         // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
         if ($documentType !== 'factura') {
@@ -109,17 +109,6 @@ class CreateDocumentTool implements ToolInterface
         // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
 
         $lines = [];
-        $totalValue = 0.0;
-        $totalIgv = 0.0;
-
-        // Mismo metodo que FacturaloDraftMapper::mapItem: el total de la linea
-        // se calcula multiplicando el precio unitario CON IGV completo por la
-        // cantidad, y recien ahi se separa base/IGV. Redondear el unit_value
-        // ########## INICIO CAMBIO IGV A IVA
-        // SIN IVA antes de multiplicar (como se hacia antes) arrastra el error
-        // ######### FIN CAMBIO IGV A IVA
-        // de redondeo x cantidad (ver bug: Bs.3.00 x 15 daba Bs.44.96 en vez de
-        // Bs.45.00 exacto).
         foreach ($items as $line) {
             $item = Item::find($line['item_id'] ?? null);
             if (!$item) {
@@ -142,68 +131,35 @@ class CreateDocumentTool implements ToolInterface
                     'error' => "Item id={$item->id} no es un producto vendible (tipo={$item->item_type_id}). Llama search_items primero.",
                 ];
             }
-            // El campo `items.name` (UI label "Descripción") es lo que SUNAT
-            // imprime en la columna DESCRIPCION del PDF. Si esta vacio, el
-            // comprobante sale con la columna en blanco — mal visualmente.
-            // Bloqueamos con instruccion clara para el vendedor.
+            // La descripción es necesaria para identificar la partida en el PDF.
             if (empty(trim($item->name ?? ''))) {
                 $shownName = $item->description ?: ('id=' . $item->id);
                 return [
                     'status' => 'error',
-                    'error' => "El producto \"{$shownName}\" no tiene 'Descripción' en su ficha (campo que sale en el PDF de SUNAT). Edita el producto en Pro8 → completa el campo 'Descripción' y vuelve a intentar.",
+                    'error' => "El producto \"{$shownName}\" no tiene descripción en su ficha. Complétala y vuelve a intentar.",
                 ];
             }
-            $qty = (float) ($line['quantity'] ?? 1);
-            $unitWithIgv = $item->has_igv
-                ? (float) $item->sale_unit_price
-                : round($item->sale_unit_price * (1 + self::IGV_RATE), 2);
-            $lineTotal = round($unitWithIgv * $qty, 2);
-            $lineValue = round($lineTotal / (1 + self::IGV_RATE), 2);
-            $lineIgv = round($lineTotal - $lineValue, 2);
-
             $lines[] = [
                 'item_id' => (int) $item->id,
-                // Mismo fallback que SearchItemsTool: algunos catálogos tienen
-                // populated solo `description` (lo que ve el cliente) y `name`
-                // vacío o solo el código. Sin este fallback el summary sale
-                // con el item sin nombre ("- 1 x  (Bs. 5.90)").
                 'item_name' => $item->description ?: $item->name,
                 'item_code' => $item->item_code ?: $item->internal_id,
-                'quantity' => $qty,
-                'unit_price_with_igv' => $unitWithIgv,
-                'line_total' => $lineTotal,
-                'line_igv' => $lineIgv,
+                'quantity' => $line['quantity'] ?? '1',
+                'price' => (string) $item->sale_unit_price,
+                'price_currency' => $item->currency_type_id,
+                'includes_iva' => (bool) $item->has_igv,
             ];
-
-            $totalValue += $lineValue;
-            $totalIgv += $lineIgv;
         }
-
-        $totalValue = round($totalValue, 2);
-        $totalIgv = round($totalIgv, 2);
-        $subtotal = $totalValue;
-        $total = round($totalValue + $totalIgv, 2);
-
-        // ########## INICIO CAMBIO IGV A IVA
-        // Descuento global tipo '02' (SUNAT): afecta la base imponible del IVA.
-        // ######### FIN CAMBIO IGV A IVA
-        // ########## INICIO CAMBIO IGV A IVA
-        // Se aplica sobre el valor neto (SIN IVA); el IGV se recalcula despues.
-        // ######### FIN CAMBIO IGV A IVA
-        $discountBase = $subtotal;
-        if ($discountAmount > 0) {
-            if ($discountAmount >= $discountBase) {
-                return [
-                    'status' => 'error',
-                    // ########## INICIO CAMBIO IGV A IVA
-                    'error' => "El descuento (Bs. {$discountAmount}) no puede ser mayor o igual al subtotal SIN IVA (Bs. {$discountBase}).",
-                    // ######### FIN CAMBIO IGV A IVA
-                ];
-            }
-            $subtotal = round($discountBase - $discountAmount, 2);
-            $totalIgv = round($subtotal * self::IGV_RATE, 2);
-            $total = round($subtotal + $totalIgv, 2);
+        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        $rate = ExchangeRate::where('date', '<=', now('America/Caracas')->format('Y-m-d'))->orderByDesc('date')->first();
+        try {
+            $pricing = DraftPricing::calculate($lines, $rate?->sale, $discountAmount);
+        } catch (ValidationException $exception) {
+            return ['status'=>'error', 'error'=>collect($exception->errors())->flatten()->first()];
         }
+        $lines = array_map(fn ($line) => array_replace($line, [
+            'unit_price_with_igv'=>$line['unit_price'], 'line_total'=>$line['total'], 'line_igv'=>$line['total_igv'],
+        ]), $pricing['items']);
+        // ######## FIN CALCULOS EXACTOS PRO9 ########
 
         $draft = [
             'document_type_id' => $documentTypeId,
@@ -213,11 +169,14 @@ class CreateDocumentTool implements ToolInterface
             'customer_document_number' => $customer ? $customer->number : null,
             'customer_name' => $customer ? $customer->name : 'Consumidor final',
             'items' => $lines,
-            'subtotal' => $subtotal,
-            'igv' => $totalIgv,
-            'total' => $total,
-            'discount_amount' => $discountAmount,
-            'discount_base' => $discountAmount > 0 ? $discountBase : 0.0,
+            'pricing_version' => 1,
+            'operation_key' => (string) \Illuminate\Support\Str::uuid(),
+            'exchange_rate_sale' => $pricing['exchange_rate_sale'],
+            'subtotal' => $pricing['total_value'],
+            'igv' => $pricing['total_igv'],
+            'total' => $pricing['total_payable'],
+            'discount_amount' => $pricing['discount_amount'],
+            'discount_base' => $pricing['discount_base'],
             'observations' => $observations !== '' ? $observations : null,
         ];
 
@@ -238,23 +197,24 @@ class CreateDocumentTool implements ToolInterface
         $lines[] = "=== {$type} a emitir ===";
         $lines[] = 'Cliente: ' . $draft['customer_name']
             . ($draft['customer_document_number'] ? ' (' . $draft['customer_document_number'] . ')' : '');
+        $lines[] = 'Tasa: Bs. ' . $draft['exchange_rate_sale'] . ' por USD';
         $lines[] = '';
         $lines[] = 'Items:';
         foreach ($draft['items'] as $line) {
             $lines[] = '  - ' . $line['quantity'] . ' x ' . $line['item_name']
-                . ' (Bs. ' . number_format($line['unit_price_with_igv'], 2) . ')'
-                . ' = Bs. ' . number_format($line['line_total'], 2);
+                . ' (Bs. ' . D::format($line['unit_price_with_igv'], 2) . ')'
+                . ' = Bs. ' . D::format($line['line_total'], 2);
         }
         $lines[] = '';
         if (!empty($draft['discount_amount']) && $draft['discount_amount'] > 0) {
-            $lines[] = 'Subtotal sin descuento: Bs. ' . number_format($draft['discount_base'], 2);
-            $lines[] = 'Descuento: -Bs. ' . number_format($draft['discount_amount'], 2);
+            $lines[] = 'Subtotal sin descuento: Bs. ' . D::format($draft['discount_base'], 2);
+            $lines[] = 'Descuento: -Bs. ' . D::format($draft['discount_amount'], 2);
         }
-        $lines[] = 'Subtotal: Bs. ' . number_format($draft['subtotal'], 2);
+        $lines[] = 'Subtotal: Bs. ' . D::format($draft['subtotal'], 2);
         // ########## INICIO CAMBIO IGV A IVA
-        $lines[] = 'IVA: Bs. ' . number_format($draft['igv'], 2);
+        $lines[] = 'IVA: Bs. ' . D::format($draft['igv'], 2);
         // ######### FIN CAMBIO IGV A IVA
-        $lines[] = 'Total: Bs. ' . number_format($draft['total'], 2);
+        $lines[] = 'Total: Bs. ' . D::format($draft['total'], 2);
         if ($draft['observations']) {
             $lines[] = '';
             $lines[] = 'Obs: ' . $draft['observations'];

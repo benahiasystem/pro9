@@ -53,6 +53,8 @@ Cada fila usa el mismo valor en `id` y `symbol`, con `active = 1`.
 
 Los códigos de envases del Excel Rec. 20 usan el prefijo `X` de su nota 2. Se interpreta `BTO` como *bundle* (`XBE`), `GAL` como galón estadounidense (`GLL`) y `TON` como tonelada métrica (`TNE`). `PR` tiene dos caracteres; confirmar su aceptación con HKA antes de emitir. Esta equivalencia no activa el envío de unidades a HKA.
 
+Los controles de cantidad y las consultas operativas usan los IDs locales (`KG`, `LT`, `M`, `TON`, etc.); `KGM`, `LTR`, `MTR` y `TNE` son equivalencias HKA, no claves locales. `getQuantityPrecisionByUnitType` identifica unidades continuas del catálogo local, y el diálogo de factura usa esa clasificación para su paso de cantidad. El formulario de artículo permite calcular cantidad por precio para `KG`, `LT`, `M` y `GAL`. El catálogo ligero del endpoint móvil de órdenes entrega `KG` y `TON` activos. El stock visible conserva hasta doce decimales sin convertir a float. Verificar `tests/js/venezuela-unit-quantity.test.cjs` y la factura fraccionaria con catálogo móvil en MySQL temporal; el ensayo directo del controlador no acredita una app móvil externa.
+
 ## Consumidores
 
 1. Actualizar conjuntamente el seeder tenant, datos mock, constantes del dominio y validadores web/API/móvil.

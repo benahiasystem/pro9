@@ -41,11 +41,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
      ------------------------------------------------------------------ */
     $m27_cashier = strtoupper(optional($document->user)->name ?? '');
 
-    $m27_total_change = (float) $document->payments->sum('change');
-    $m27_total_received = (float) $document->payments->sum('payment') + $m27_total_change;
-    if ($m27_total_change <= 0 && $balance < 0) {
-        $m27_total_change = abs($balance);
-    }
+
 
     $m27_igv_percentage = collect($document->items)
         ->map(function ($it) { return (float) ($it->percentage_igv ?? 0); })
@@ -541,31 +537,22 @@ $affected_document_number = $document_base->affected_document ? $document_base->
     <tr>
         <td colspan="2" class="m27-gap"></td>
     </tr>
-    @if($document->payment_method_type_id)
+    @if($document->payment_method_type_id && $payments->isEmpty())
         <tr>
             <td class="m27-label m27-label-sm" width="48%">Método de pago:</td>
             <td class="m27-value m27-value-sm">{{ $document->payment_method_type->description }}</td>
         </tr>
     @endif
-    @if($m27_total_received > 0)
-        <tr>
-            <td class="m27-label m27-label-sm">Recibido:</td>
-            <td class="m27-value m27-value-sm">{{ $document->currency_type->symbol }} {{ number_format($m27_total_received, 2) }}</td>
-        </tr>
-    @endif
-    @if($m27_total_change > 0)
-        <tr>
-            <td class="m27-label m27-label-sm">Vuelto:</td>
-            <td class="m27-value m27-value-sm">{{ $document->currency_type->symbol }} {{ number_format($m27_total_change, 2) }}</td>
-        </tr>
-    @endif
+    {{-- ######## INICIO CLASIFICACION DE COBROS Y CAJA ######## --}}
+    {{-- El recibido y el vuelto se presentan por cobro en su propia moneda. --}}
+    {{-- ######## FIN CLASIFICACION DE COBROS Y CAJA ######## --}}
     <tr>
         <td class="m27-label m27-label-sm" width="48%">Condición de pago:</td>
         <td class="m27-value m27-value-sm">{{ $paymentCondition }}</td>
     </tr>
 </table>
 
-@if ($document->payment_condition_id === '01')
+@if (in_array((string) $document->payment_condition_id, ['01', '02', '03'], true))
     @if($payments->count())
         <table class="full-width">
             <tr>
@@ -573,12 +560,13 @@ $affected_document_number = $document_base->affected_document ? $document_base->
             </tr>
             @foreach($payments as $row)
                 <tr>
-                    <td class="m27-value m27-value-sm">&#8226; {{ $row->payment_method_type->description }} {{ $row->reference ? '- '.$row->reference.' ':'' }}- {{ $document->currency_type->symbol }} {{ number_format($row->payment + $row->change, 2) }}</td>
+                    <td class="m27-value m27-value-sm">&#8226; {{-- ######## INICIO MONEDA DEL MEDIO DE COBRO ######## --}}@include('pdf.partials.invoice_receipt', ['row' => $row, 'document' => $document]){{-- ######## FIN MONEDA DEL MEDIO DE COBRO ######## --}}</td>
                 </tr>
             @endforeach
         </table>
     @endif
-@else
+@endif
+                @if (in_array((string) $document->payment_condition_id, ['02', '03'], true))
     @if(count($document->fee) > 0)
         <table class="full-width">
             <tr>

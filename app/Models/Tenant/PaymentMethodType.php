@@ -89,9 +89,6 @@
             'is_active' => 'bool'
         ];
 
-        public const CASH_PAYMENT_ID = '01';
-        public const TRANSFER_PAYMENT_ID = '04';
-
         // ######### INICIO PROTECCIÓN MÉTODOS INICIALES VENEZUELA #########
         public const INITIAL_PAYMENT_METHOD_IDS = [
             '01', '02', '03', '04', '05',
@@ -214,7 +211,7 @@
          */
         public function scopeNonCredit($query)
         {
-            return $query->where('is_credit', 0);
+            return $query->whereIn('collection_kind', ['cash', 'account']);
         }
 
         /**
@@ -224,7 +221,7 @@
          */
         public function scopeCredit($query)
         {
-            return $query->where('is_credit', 1);
+            return $query->where('collection_kind', 'credit');
         }
 
         /**
@@ -363,7 +360,7 @@
          */
         public function scopeNotCredit(Builder $query)
         {
-            return $query->where('is_credit', '!=', 1);
+            return $query->whereIn('collection_kind', ['cash', 'account']);
         }
 
         /**
@@ -373,7 +370,7 @@
          */
         public function scopeNotCash(Builder $query)
         {
-            return $query->where('is_cash', '!=', 1);
+            return $query->where('collection_kind', '!=', 'cash');
         }
 
         /**
@@ -392,7 +389,7 @@
          */
         public function isCredit()
         {
-            return (bool)$this->is_credit;
+            return $this->collection_kind === 'credit';
         }
 
         
@@ -405,7 +402,7 @@
          */
         public function scopeFilterCashPayments($query)
         {
-            return $query->where('is_credit', false);
+            return $query->whereIn('collection_kind', ['cash', 'account']);
         }
 
                 
@@ -421,10 +418,22 @@
                         ->active()
                         ->select([
                             'id',
-                            'description', 'collection_kind', 'cash_currency_type_id'
+                            'description', 'collection_kind', 'currency_type_id', 'cash_currency_type_id', 'is_active', 'is_credit'
                         ])
                         ->get();
         }
+
+        // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+        public static function getActiveCreditMethods()
+        {
+            return self::active()->where('collection_kind', 'credit')->orderBy('id')->get();
+        }
+
+        public static function getActiveReceiptMethods()
+        {
+            return self::active()->whereIn('collection_kind', ['cash', 'account'])->orderBy('id')->get();
+        }
+        // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
         
 
         public static function getDescriptionById($id)

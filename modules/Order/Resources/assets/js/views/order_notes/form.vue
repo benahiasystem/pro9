@@ -888,6 +888,9 @@
                                                                 "
                                                             ></el-option>
                                                         </el-select>
+                                            <small v-if="!row.payment_method_type_id" class="text-muted">No hay efectivo activo para la moneda del documento; seleccione un método.</small>
+                                                        <receipt-currency-fields :row="row" :methods="payment_method_types"
+                                                            :document-currency="form.currency_type_id" :document-rate="form.exchange_rate_sale" />
                                                     </div>
                                                 </td>
                                                 <td>
@@ -899,9 +902,7 @@
                                                                 row.payment_destination_id
                                                             "
                                                             filterable
-                                                            :disabled="
-                                                                row.payment_destination_disabled
-                                                            "
+                                                            :disabled="classifiedPaymentDestinationDisabled(payment_destinations, row)"
                                                         >
                                                             <el-option
                                                                 v-for="option in classifiedPaymentDestinations(payment_destinations, row)"
@@ -1131,6 +1132,9 @@ import { calculateRowItem, showNamePdfOfDescription } from "@helpers/functions";
 import Logo from "@views/companies/logo.vue";
 import { mapActions, mapState } from "vuex";
 import SelectLotsGroup from "@views/documents/partials/lots_group.vue";
+import ReceiptCurrencyFields from "@components/ReceiptCurrencyFields.vue";
+import {suggestRemainingPayment} from "@helpers/document-creation";
+import {defaultCashForCurrency} from "@helpers/payment-classification";
 
 export default {
     props: ["typeUser", "configuration", "authUser"],
@@ -1140,7 +1144,8 @@ export default {
         OrderNoteOptions,
         CustomFieldsRenderer,
         Logo,
-        SelectLotsGroup
+        SelectLotsGroup,
+        ReceiptCurrencyFields
     },
     mixins: [functions, exchangeRate],
     data() {
@@ -1254,6 +1259,8 @@ export default {
                         : null;
                 this.payment_method_types = response.data.payment_method_types;
                 this.payment_destinations = response.data.payment_destinations;
+                const defaultMethod = defaultCashForCurrency(this.payment_method_types, this.form.currency_type_id);
+                this.form.prepayments.forEach(row => { if (!row.id && !row.payment_method_type_id) row.payment_method_type_id = defaultMethod?.id || null; });
 
                 this.$nextTick(() => this.updateEmptyPaymentDestinations());
 
@@ -1480,18 +1487,18 @@ export default {
             this.form.prepayments.splice(index, 1);
         },
         clickAddPayment() {
-            let payment = this.form.total && this.form.total > 0 ? this.form.total : 0;
-            const payment_method_type_id = "10";
+            const method = defaultCashForCurrency(this.payment_method_types, this.form.currency_type_id);
 
             this.form.prepayments.push({
                 id: null,
                 document_id: null,
                 date_of_payment: moment().format("YYYY-MM-DD"),
-                payment_method_type_id: payment_method_type_id,
+                payment_method_type_id: method?.id || null,
                 payment_destination_id: null,
                 reference: null,
-                payment: payment
+                payment: '0'
             });
+            suggestRemainingPayment(this.form, this.form.prepayments, {refreshSuggested: true});
             this.showPayments = true; // Asegurar que la tabla se muestre
         },
         resetForm() {
@@ -1652,11 +1659,7 @@ export default {
             this.form.subtotal = _.round(total, 2);
             this.form.total = _.round(total, 2);
 
-            if (this.form.prepayments.length > 0) {
-                this.form.prepayments.forEach(payment => {
-                    payment.payment = this.form.total / this.form.prepayments.length;
-                });
-            }
+            suggestRemainingPayment(this.form, this.form.prepayments, {refreshSuggested: true});
 
             // Activar tabla de pagos si hay productos
             this.showPayments = this.form.items.length > 0;
@@ -1727,15 +1730,16 @@ export default {
                     }
                 })
                 .catch(error => {
-                    if (error.response.status === 422) {
-                        this.errors = error.response.data;
-                        if (this.errors.customer_id) {
-                            this.$message.error(this.errors.customer_id[0]);
-                            delete this.errors.customer_id;
-                        }
+                    // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+                    if (error.response && error.response.status === 422) {
+                        const data = error.response.data || {};
+                        this.errors = data.errors || (data.message && typeof data.message === 'object' ? data.message : data);
+                        const message = Object.values(this.errors).flat().find(value => typeof value === 'string' && value.trim());
+                        this.$message.error(message || (typeof data.message === 'string' ? data.message : 'Revise los datos del pedido.'));
                     } else {
-                        this.$message.error(error.response.data.message);
+                        this.$message.error(error.response?.data?.message || 'No se pudo guardar el pedido.');
                     }
+                    // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
                 })
                 .then(() => {
                     this.loading_submit = false;
@@ -1785,10 +1789,11 @@ export default {
         },
         updateEmptyPaymentDestinations() {
             if (this.payment_destinations && this.payment_destinations.length > 0) {
-                const defaultDestinationId = this.payment_destinations[0].id;
                 this.form.prepayments.forEach(payment => {
-                    if (!payment.payment_destination_id) {
-                        payment.payment_destination_id = defaultDestinationId;
+                    if (!payment.id && payment.payment_destination_id == null) {
+                        const available = this.classifiedPaymentDestinations(this.payment_destinations, payment);
+                        const cash = available.find(destination => destination.id === 'cash');
+                        payment.payment_destination_id = (cash || available[0] || {}).id ?? null;
                     }
                 });
             }

@@ -36,9 +36,16 @@ class FinanceIncomeRequest extends FormRequest
     public function withValidator($validator)
     {
         $validator->after(function ($v) {
-            $total = (float) $this->input('total', 0);
-            $payments = collect($this->input('payments', []))->sum('payment');
-            if (abs($payments - $total) > 0.01) {
+            try {
+                $total = \App\Support\Exact\Decimal::of($this->input('total', '0'));
+                $payments = \App\Support\Exact\Decimal::sum(array_map(
+                    static fn ($row) => $row['payment'] ?? '0', $this->input('payments', [])
+                ));
+            } catch (\Throwable $error) {
+                $v->errors()->add('payments', 'Indique importes de pago válidos.');
+                return;
+            }
+            if (!$payments->isEqualTo(\App\Support\Exact\Decimal::represent($total, 2))) {
                 $v->errors()->add('payments', 'Los montos ingresados no coinciden con el monto total.');
             }
         });

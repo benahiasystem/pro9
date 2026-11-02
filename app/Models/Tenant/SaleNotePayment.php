@@ -18,6 +18,12 @@ class SaleNotePayment extends ModelTenant
         'sale_note_id',
         'date_of_payment',
         'payment_method_type_id',
+        'currency_type_id',
+        'original_amount',
+        'exchange_rate',
+        'exchange_rate_source',
+        'exchange_rate_date',
+        'payment_method_snapshot',
         'reference',
         'change',
         'payment',
@@ -25,6 +31,8 @@ class SaleNotePayment extends ModelTenant
 
     protected $casts = [
         'date_of_payment' => 'date',
+        'exchange_rate_date' => 'date',
+        'payment_method_snapshot' => 'array',
     ];
 
     public function payment_method_type()
@@ -62,7 +70,7 @@ class SaleNotePayment extends ModelTenant
      */
     public function scopeWhereFilterCashPayment($query)
     {
-        return $query->where('payment_method_type_id', PaymentMethodType::CASH_PAYMENT_ID)
+        return \App\Services\Payments\Classification::filterRecorded($query, 'cash')
                     ->whereHas('global_payment', function($query){
                         return $query->where('destination_type', Cash::class);
                     });
@@ -145,7 +153,7 @@ class SaleNotePayment extends ModelTenant
      */
     public function scopeFilterCashPaymentWithoutDestination($query)
     {
-        return $query->where('payment_method_type_id', PaymentMethodType::CASH_PAYMENT_ID);
+        return \App\Services\Payments\Classification::filterRecorded($query, 'cash');
     }
 
 
@@ -158,7 +166,7 @@ class SaleNotePayment extends ModelTenant
      */
     public function scopeFilterTransferPayment($query)
     {
-        return $query->where('payment_method_type_id', PaymentMethodType::TRANSFER_PAYMENT_ID);
+        return \App\Services\Payments\Classification::filterRecorded($query, 'account');
     }
 
 

@@ -630,13 +630,13 @@ $affected_document_number = $document_base->affected_document ? $document_base->
                 <strong>CONDICIÓN DE PAGO: {{ $paymentCondition }} </strong>
             </p>
 
-            @if($document->payment_method_type_id)
+            @if($document->payment_method_type_id && $payments->isEmpty())
                 <p class="desc pt-5">
                     <strong>MÉTODO DE PAGO: </strong>{{ $document->payment_method_type->description }}
                 </p>
             @endif
 
-            @if ($document->payment_condition_id === '01')
+            @if (in_array((string) $document->payment_condition_id, ['01', '02', '03'], true))
 
                 @if($payments->count())
                         <p class="desc pt-5">
@@ -644,11 +644,12 @@ $affected_document_number = $document_base->affected_document ? $document_base->
                         </p>
                     @foreach($payments as $row)
                         <p>
-                            <span class="desc">&#8226; {{ $row->payment_method_type->description }} - {{ $row->reference ? $row->reference.' - ':'' }} {{ $document->currency_type->symbol }} {{ $row->payment + $row->change }}</span>
+                            <span class="desc">&#8226; {{-- ######## INICIO MONEDA DEL MEDIO DE COBRO ######## --}}@include('pdf.partials.invoice_receipt', ['row' => $row, 'document' => $document]){{-- ######## FIN MONEDA DEL MEDIO DE COBRO ######## --}}</span>
                         </p>
                     @endforeach
                 @endif
-            @else
+            @endif
+                @if (in_array((string) $document->payment_condition_id, ['02', '03'], true))
                 @foreach($document->fee as $key => $quote)
                     <p class="desc pt-5">
                         <span class="desc">&#8226; {{ (empty($quote->getStringPaymentMethodType()) ? 'Cuota #'.( $key + 1) : $quote->getStringPaymentMethodType()) }} / Fecha: {{ $quote->date->format('d-m-Y') }} / Monto: {{ $quote->currency_type->symbol }}{{ $quote->amount }}</span>

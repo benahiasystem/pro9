@@ -8,6 +8,7 @@
     use Illuminate\Foundation\Application;
     use Illuminate\Http\Request;
     use Illuminate\Http\Response;
+    use Illuminate\Support\Facades\DB;
     use Illuminate\View\View;
     use Modules\FullSuscription\Http\Requests\PaymentsFullSuscriptionRequest;
     use Modules\FullSuscription\Http\Resources\UserRelSuscriptionPlansCollection;
@@ -239,36 +240,36 @@ use Modules\FullSuscription\Models\Tenant\SuscriptionPlan;
          */
         public function store(PaymentsFullSuscriptionRequest $request)
         {
-            $id = null;
-            if ($request->has('id')) $id = (int)$request->id;
+            $id = $request->input('id');
 
-            $plan = UserRelSuscriptionPlan::firstOrNew(['id' => $id], []);
-            $plan->fill($request->all());
-            $plan->subscription_status = UserRelSuscriptionPlan::STATUS_AUTHORIZED;
-            $plan->push();
+            return DB::connection('tenant')->transaction(function () use ($request, $id) {
+                $plan = $id ? UserRelSuscriptionPlan::query()->lockForUpdate()->findOrFail($id) : new UserRelSuscriptionPlan();
+                $plan->fill($request->except(['id', 'orders_created', 'subscription_status']));
 
+                if (!$id) {
+                    $plan->subscription_status = UserRelSuscriptionPlan::STATUS_AUTHORIZED;
+                    $plan->orders_created = 1;
+                }
+                $plan->save();
 
-            $now = Carbon::now()->format('Y-m-d');
+                if (!$id) {
+                    SuscriptionOrder::create([
+                        'suscription_id' => $plan->id,
+                        'type' => SuscriptionOrder::TYPE_SUSCRIPTION_ORDER,
+                        'status' => SuscriptionOrder::STATUS_PENDING,
+                        'amount' => $request->input('total'),
+                        'date_of_issue' => Carbon::now()->format('Y-m-d'),
+                        'date_of_due' => $plan->getCurrentDateOfDue(),
+                        'count_notifications' => 0,
+                    ]);
+                }
 
-            $order = SuscriptionOrder::create([
-                'suscription_id' => $plan->id,
-                'type' => SuscriptionOrder::TYPE_SUSCRIPTION_ORDER,
-                'status' => SuscriptionOrder::STATUS_PENDING,
-                'amount' => $request->total,
-                'date_of_issue' => $now,
-                'date_of_due' => $plan->getCurrentDateOfDue(),
-                'count_notifications' => 0,
-            ]);
-
-            $plan->orders_created = 1;
-            $plan->save();
-
-
-            return [
-                'success' => true,
-                'message' => $id ? 'Suscripción actualizada con éxito' : 'Suscripción registrada con éxito',
-                'data' => new UserRelSuscriptionPlansResource($plan)
-            ];
+                return [
+                    'success' => true,
+                    'message' => $id ? 'Suscripción actualizada con éxito' : 'Suscripción registrada con éxito',
+                    'data' => new UserRelSuscriptionPlansResource($plan)
+                ];
+            });
 
         }
 

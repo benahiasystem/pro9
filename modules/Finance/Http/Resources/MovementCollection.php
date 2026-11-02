@@ -5,10 +5,8 @@
 namespace Modules\Finance\Http\Resources;
 
 use App\Models\Tenant\TransferAccountPayment;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
-use Illuminate\Support\Collection;
 use Modules\Finance\Http\Controllers\MovementController;
 use Modules\Finance\Models\GlobalPayment;
 
@@ -22,216 +20,86 @@ class MovementCollection extends ResourceCollection
      *
      * @return array
      */
-    protected static $balance = 0;
-    protected static $residuary = 0;
-    protected static $request;
-
-
+    // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
     public function toArray($request)
     {
-        self::$request = $request;
-        $this->calculateResiduary(self::$request);
-        /** @var Collection $data */
-
-        $data = $this->collection->transform(function (GlobalPayment $row, $key) use ($request) {
-            $index = $key + 1;
-            $data_person = $row->data_person;
-            $timedate = null;
-            $type_movement = $row->type_movement;
+        $balances = new \App\Services\Payments\MovementBalances();
+        $page = max(1, (int) ($request->page ?? 1));
+        if ($page > 1) {
+            $pageSize = $request->has('paginate') ? 1000 : (int) config('tenant.items_per_page');
+            $previous = app(MovementController::class)->getRecords($request, GlobalPayment::class)
+                ->limit(($page - 1) * $pageSize)->get();
+            \App\Services\Payments\Movement::preload($previous);
+            foreach ($previous as $global) {
+                if (($movement = \App\Services\Payments\Movement::row($global)) && in_array($movement['currency_type_id'], ['VES', 'USD'], true)) $balances->apply($movement);
+            }
+        }
+        \App\Services\Payments\Movement::preload($this->collection);
+        return $this->collection->map(function (GlobalPayment $row, $key) use ($balances) {
+            $movement = \App\Services\Payments\Movement::row($row);
             $payment = $row->payment;
-            $amount = $row->payment->payment * 1;
-            $instance_type_description = $row->instance_type_description;
-            if (get_class($payment) == TransferAccountPayment::class) {
-                $amount = $payment->amount * 1;
-            }
-            $document = $row->payment->document;
-            $document_type = '';
-            $payments = $payment->payment;
-
-            // Convirtiendo el documento que esta hecho en dolares a bolívares
-            if ($payment instanceof \App\Models\Tenant\DocumentPayment || $payment instanceof \App\Models\Tenant\DocumentNoteRefund) {
-                $payments = $payment->reversed_at ? 0 : $payment->cash_received_amount;
-                $amount = \App\Services\Fiscal\FiscalAmounts::convert($payments, $payment->currency_type_id, 'VES', $payment->exchange_rate);
-            } elseif ($document) {
-                if ($document->currency_type_id === 'USD') {
-                    $amount *= $document->exchange_rate_sale;
-                }
-            }
-            if (get_class($payment) == TransferAccountPayment::class) {
-                // para que transferencias bancarias. refleje el numero correctamente.
-                if ($type_movement == 'input') {
-                    self::$balance -= $amount;
-                } else {
-                    self::$balance += $amount;
-                }
-            } else {
-                self::$balance = ($row->type_movement == 'input') ? self::$balance + $amount : self::$balance - $amount;
-            }
-
-            // $timedate = $payment->date_of_payment->format('Y-m-d');
-            if ($payment->date_of_payment && $payment->date_of_payment != null) {
-                $timedate = $payment->date_of_payment->format('d-m-Y h:i A');
-
-            }
-
-
-            if ($payment->associated_record_payment) {
-                if (!($payment instanceof \App\Models\Tenant\DocumentNoteRefund) && $payment->associated_record_payment->date_of_issue) {
-                    $timedate = $payment->associated_record_payment->date_of_issue->format('Y-m-d') . " " . $payment->associated_record_payment->time_of_issue;
-                    $timedate = Carbon::createFromFormat('Y-m-d H:i:s', $timedate)->format('d-m-Y h:i A');
-                }
-
-                if ($payment->associated_record_payment->document_type) {
-                    $document_type = $payment->associated_record_payment->document_type->description;
-                } elseif (isset($payment->associated_record_payment->prefix)) {
-                    $document_type = $payment->associated_record_payment->prefix;
-                }
-            }
-            $destinationArray = $row->getDestinationWithCci();
-            $destinationName = $destinationArray['name'] . " - " . $destinationArray['description'];
-
-            $person_name = $data_person->name;
-            $person_number = $data_person->number;
-            $numberFull = $payment->associated_record_payment->number_full ?? null;
-            if ($row->instance_type == 'bank_loan_payment') {
-                $person_name = $person_name->description;
-                $document_type = $row->instance_type_description;
-                // $person_name = $person_name->description;
-                $person_number = '';
-                // dd($row->payment->associated_record_payment);
-                $numberFull = $row->payment->associated_record_payment->getNumberFull();
-            }
-
-            $input = '-';
-            $output = $input;
-
-            if ($type_movement == 'input') {
-                $input = number_format($amount, 2, ".", "");
-            } else {
-                $output = number_format($amount, 2, ".", "");
-            }
-            if (get_class($payment) == TransferAccountPayment::class) {
-                // transferencia bancaria
-                $person_name = $destinationArray['name'] ?? '-';
-                $person_number = $destinationArray['cci'] ?? '-';
-                if ($amount < 0) {
-                    // banco destino
-                    $output = number_format(abs($amount), 2, ".", "");
-                    $input = '-';
-                } else {
-                    // banco de origen
-
-                    $input = number_format(abs($amount), 2, ".", "");
-                    $output = '-';
-                }
-                $timedate = $row->payment->date_of_movement->format('d-m-Y h:i A');
-                $instance_type_description = 'Transferencia Bancaria';
-            }
-
-
+            $legacy = !$movement && ($row->report_context['version'] ?? null) !== 2
+                && !isset($row->report_context['reversal']) && $payment && !$payment->reversed_at
+                && !($payment instanceof \App\Models\Tenant\DocumentPayment && $payment->receipt_parent_id);
+            if (!$movement && !$legacy) return null;
+            $isTransfer = $payment instanceof TransferAccountPayment;
+            $dataPerson = $row->data_person;
+            $parent = $payment->associated_record_payment;
+            $documentType = $parent->document_type->description ?? ($parent->prefix ?? '');
+            $destination = $row->getDestinationWithCci();
+            $type = $legacy ? $row->type_movement : ($movement['direction'] === 'income' ? 'input' : 'output');
+            $amount = $legacy ? '-' : \App\Support\Exact\Decimal::format($movement['calculation_snapshot']['values']['amount'], 2, '.', '');
+            $balance = !$legacy && in_array($movement['currency_type_id'], ['VES', 'USD'], true)
+                ? \App\Support\Exact\Decimal::format($balances->applyExact($movement), 2, '.', '') : '-';
+            $date = $isTransfer ? $payment->date_of_movement : $payment->date_of_payment;
+            $personName = $isTransfer ? ($destination['name'] ?: '-') : $dataPerson->name;
+            if ($row->instance_type === 'bank_loan_payment') $personName = $personName->description ?? '';
             return [
-                'index' => $index,
-                //'data' => $row,
-                'payments' => $payments,
-                'document_type' => $document_type,
+                'index' => $key + 1,
                 'id' => $row->id,
-                'destination_description' => $row->destination_description,
-                'destination_array' => $destinationArray,
-                'destination_name' => $destinationName,
+                'payments' => $movement['amount'] ?? null,
+                'calculation_snapshot' => $movement['calculation_snapshot'] ?? null,
+                'document_type' => $documentType,
+                'document_type_description' => $documentType,
+                'destination_description' => $movement['destination_label'] ?? $row->destination_description,
+                'destination_array' => $destination,
+                'destination_name' => $movement['destination_label'] ?? $row->destination_description,
                 'date_of_payment_class' => get_class($payment),
-                'date_of_payment' => $timedate,
-                'payment_method_type_description' => $this->getPaymentMethodTypeDescription($row),
+                'date_of_payment' => $date ? $date->format('d-m-Y h:i A') : ($movement['date'] ?? ''),
+                'payment_method_type_description' => $movement['method']['description'] ?? '',
                 'reference' => $payment->reference,
-                'total' => $amount,
-                'number_full' => $numberFull,
-                'currency_type_id' => $payment instanceof \App\Models\Tenant\DocumentPayment ? $payment->currency_type_id : ($payment->associated_record_payment->currency_type_id ?? 'VES'),
-                // 'document_type_description' => ($payment->associated_record_payment->document_type) ? $payment->associated_record_payment->document_type->description:'NV',
-                'document_type_description' => $this->getDocumentTypeDescription($row),
-                'person_name' => $person_name,
-                'person_number' => $person_number,
-                // 'payment' => $row->payment,
-                // 'payment_type' => $row->payment_type,
+                'total' => $movement['amount'] ?? null,
+                'number_full' => $movement['number'] ?? ($parent->number_full ?? ''),
+                'currency_type_id' => $movement['currency_type_id'] ?? null,
+                'person_name' => $personName,
+                'person_number' => $isTransfer ? ($destination['cci'] ?? '') : $dataPerson->number,
                 'instance_type' => $row->instance_type,
-                'instance_type_description' => $instance_type_description,
+                'instance_type_description' => $isTransfer ? 'Transferencia Bancaria' : $row->instance_type_description,
                 'user_id' => $row->user_id,
                 'user_name' => optional($row->user)->name,
-                'type_movement' => $type_movement,
-                'input' => $input,
-                'output' => $output,
-                'balance' => number_format(self::$balance, 2, ".", ""),
+                'type_movement' => $type,
+                'input' => $type === 'input' ? $amount : '-',
+                'output' => $type === 'output' ? $amount : '-',
+                'balance' => $balance,
                 'items' => $this->getItems($row),
-
-
             ];
-        });
-
-        return $data;
+        })->filter()->values();
     }
-
-    public function calculateResiduary($request)
-    {
-
-        if ($request->page >= 2) {
-
-            $data = app(MovementController::class)->getRecords($request, GlobalPayment::class)
-                ->limit(($request->page * 20) - 20)->get();
-
-            $input = $data->where('type_movement', 'input')->sum('payment.payment');
-            $output = $data->where('type_movement', 'output')->sum('payment.payment');
-
-            self::$residuary += $input - $output;
-            self::$balance = self::$residuary;
-
-        }
-
-    }
-
-    public function getPaymentMethodTypeDescription(GlobalPayment $row)
-    {
-
-        $payment_method_type_description = '';
-
-        if ($row->payment->payment_method_type) {
-
-            $payment_method_type_description = $row->payment->payment_method_type->description;
-
-        } elseif ($row->payment->expense_method_type) {
-            $payment_method_type_description = $row->payment->expense_method_type->description;
-        }
-
-        return $payment_method_type_description;
-    }
-
-    public function getDocumentTypeDescription(GlobalPayment $row)
-    {
-
-        $document_type = '';
-
-        if ($row->payment->associated_record_payment) {
-            if ($row->payment->associated_record_payment->document_type) {
-
-                $document_type = $row->payment->associated_record_payment->document_type->description;
-
-            } elseif (isset($row->payment->associated_record_payment->prefix)) {
-
-                $document_type = $row->payment->associated_record_payment->prefix;
-
-            }
-        }
-        return $document_type;
-
-    }
+    // ######## FIN MONEDA DEL MEDIO DE COBRO ########
 
     public function getItems(GlobalPayment $row)
     {
         $instanceType = $row->instance_type;
         if (in_array($instanceType, ['expense', 'income', 'bank_loan_payment'])) {
 
-            return $row->payment->associated_record_payment->items->transform(function ($row, $key) {
+            // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+            // No modificar la relación cargada: varios movimientos pueden compartirla.
+            return $row->payment->associated_record_payment->items->map(function ($row) {
                 return [
-                    'description' => $row->description,
+                    'description' => data_get($row, 'description'),
                 ];
             });
+            // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
         }
 
         return [];

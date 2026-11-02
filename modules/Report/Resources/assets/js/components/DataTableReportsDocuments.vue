@@ -468,6 +468,7 @@
 import moment from 'moment'
 import queryString from 'query-string'
 import EmailOptions from '../views/documents/partials/options.vue'
+import {exactAmount} from '../../../../../../resources/js/helpers/exchange-rate-math'
 
 export default {
     components: {
@@ -518,7 +519,7 @@ export default {
             state_types: [],
             users: [],
             form: {
-                document_type_id: null,
+                document_type_id: this.resource === 'reports/sales' ? '01' : null,
                 user_type: null,
                 user_id: [],
             },
@@ -664,6 +665,24 @@ export default {
         getTotals(records) {
             this.initTotals()
 
+            if (this.resource === 'reports/sales') {
+                const sums = {}
+                for (const columnKey of this.salesTotalColumnKeys) {
+                    for (const suffix of ['', '_usd']) sums[`acum_${columnKey}${suffix}`] = exactAmount(0)
+                }
+                records.forEach(row => {
+                    if (!['VES', 'USD'].includes(row.currency_type_id) || ['09', '11'].includes(row.state_type_id)) return
+                    const suffix = row.currency_type_id === 'USD' ? '_usd' : ''
+                    this.salesTotalColumnKeys.forEach(columnKey => {
+                        const key = `acum_${columnKey}${suffix}`
+                        const value = exactAmount(row.report_total_fractions?.[columnKey] ?? row[columnKey] ?? 0)
+                        sums[key] = row.document_type_id === '07' ? sums[key].minus(value) : sums[key].plus(value)
+                    })
+                })
+                Object.keys(sums).forEach(key => { this.totals[key] = sums[key].final(2) })
+                return
+            }
+
             records.forEach(row => {
                 if (!['VES', 'USD'].includes(row.currency_type_id)) return
 
@@ -688,7 +707,7 @@ export default {
             const suffix = currency === 'USD' ? '_usd' : ''
             const value = this.totals[`acum_${columnKey}${suffix}`] || 0
 
-            return Number(value).toFixed(2)
+            return exactAmount(value).final(2)
         },
         clickDownload(type) {
             let query = queryString.stringify({
@@ -707,7 +726,7 @@ export default {
                 establishment_id: null,
                 person_id: null,
                 type_person: null,
-                document_type_id: null,
+                document_type_id: this.resource === 'reports/sales' ? '01' : null,
                 period: 'month',
                 date_start: moment().format('YYYY-MM-DD'),
                 date_end: moment().format('YYYY-MM-DD'),
@@ -736,11 +755,12 @@ export default {
             return (this.pagination.per_page * (this.pagination.current_page - 1)) + index + 1
         },
         async getRecordsByFilter() {
-
-            this.loading_submit = await true
-            await this.getRecords()
-            this.loading_submit = await false
-
+            this.loading_submit = true
+            try {
+                await this.getRecords()
+            } finally {
+                this.loading_submit = false
+            }
         },
         getRecords() {
             return this.$http.get(`/${this.resource}/records?${this.getQueryParameters()}`).then((response) => {
@@ -750,6 +770,10 @@ export default {
                 this.loading_submit = false
                 // this.initTotals()
                 if (this.resource == 'reports/sales' || this.resource == 'reports/purchases' || this.resource == 'reports/fixed-asset-purchases') this.getTotals(response.data.data)
+            }).catch((error) => {
+                this.records = []
+                this.initTotals()
+                this.$message.error(error?.response?.data?.message || 'No se pudo consultar el reporte. Revise los filtros e inténtelo de nuevo.')
             });
 
 

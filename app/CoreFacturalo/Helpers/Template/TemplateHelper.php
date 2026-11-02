@@ -72,95 +72,63 @@ use Illuminate\Support\Str;
          *
          * @return array
          */
-        public static function getDetailedPayment( $document, $dateFormat = 'Y-m-d')
+        // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+        public static function getDetailedPayment($document, $dateFormat = 'Y-m-d')
         {
             $data = [];
-            $payments = $document->payments;
-
-
-            if ($document->payment_condition_id === '01') {
-                $data['PAGOS'] = [];
-                /** @var DocumentPayment $row */ //OR
-                /** @var SaleNotePayment $row */
-                foreach ($payments as $row) {
-                    $temp = [
-                        'description' => $row->payment_method_type->description,
-                        'reference' => $row->reference ? $row->reference . ' - ' : '',
-                        'symbol' => $document->currency_type->symbol,
-                        'amount' => $row->payment + $row->change,
-                    ];
-
-                    $data['PAGOS'][] = $temp;
-                }
-            } else {
-                // Verificar bien si esiste en los pagos si es nulo
-                if (is_null($document->payment_condition_id)) {
-                    $id = Str::singular($document->getTable()). '_id';
-                    $payments = $document->payments()->where($id, $document->id)->get();
-                    foreach ($payments as $row) {
-                        $temp = [
-                            'description' => $row->payment_method_type->description,
-                            'reference' => $row->reference ? $row->reference . ' - ' : '',
-                            'symbol' => $document->currency_type->symbol,
-                            'amount' => $row->payment + $row->change,
-                        ];
-
-                        $data['PAGOS'][] = $temp;
+            foreach ($document->payments as $row) {
+                if ($row->reversed_at ?? false) continue;
+                $method = \App\Services\Payments\ReceiptPresentation::method($row);
+                $receivedCurrency = $row->currency_type_id ?: $document->currency_type_id;
+                $applied = \App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::read($row, 'payment'));
+                $derived = (bool) ($row->receipt_parent_id ?? false);
+                $reused = !empty($row->payment_method_snapshot['receipt_origin']);
+                $kind = $derived ? 'Aplicación IGTF' : ($reused ? 'Cobro previo' : 'Cobro');
+                $display = ($derived || $reused ? $kind.' — ' : '').$method;
+                $tender = \App\Services\Payments\ReceiptPresentation::tender($row);
+                if ($derived) {
+                    $display .= ' — Aplicado '.$document->currency_type_id.' '.$applied;
+                } elseif ($row->original_amount !== null) {
+                    $hasKnownGross = $tender['tendered_original_amount'] !== null;
+                    $label = !$hasKnownGross && \App\Support\Exact\Decimal::read($row, 'change')->isPositive() ? 'Neto recibido' : 'Recibido';
+                    $received = $tender['tendered_original_amount'] ?? \App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::read($row, 'original_amount'));
+                    $display .= ' — '.$label.' '.$receivedCurrency.' '.$received;
+                    $display .= ' — Aplicado '.$document->currency_type_id.' '.$applied;
+                    if ($receivedCurrency !== $document->currency_type_id && $row->exchange_rate) $display .= ' — Tasa '.$row->exchange_rate;
+                    if ($tender['received_change'] !== null && \App\Support\Exact\Decimal::of($tender['received_change'])->isPositive()) {
+                        $display .= ' — Vuelto '.$receivedCurrency.' '.$tender['received_change'];
                     }
                 }
-                else if(!empty($document->fee)) {
-                    $data['CUOTA'] = [];
-                    /**
-                     * @var int          $key
-                     * @var  DocumentFee $quote
-                     */
-
-                    $payment_of_fee = $document->payments;
-                    $index = 0;
-                    foreach ($document->fee as $key => $quote) {
-                        $reference = '';
-                        collect($payment_of_fee)->each(function ($item, $index) use ( &$reference) {
-                            $reference .= ($index + 1) . ') '. $item->reference . ' - ';
-                        });
-                        $temp = [
-                            'description' => (empty($quote->getStringPaymentMethodType()) ? 'Cuota #' . ($key + 1) : $quote->getStringPaymentMethodType()),
-                            'reference' => $reference,
-                            'amount' => $quote->amount,
-                            'symbol' => $quote->symbol,
-                        ];
-                        $data['CUOTA'][] = $temp;
-
-                        $index++;
-                    }
-                } 
-
+                $data['PAGOS'][] = [
+                    'description' => $method,
+                    'display' => $display,
+                    'kind' => $kind,
+                    'reference' => $row->reference ? $row->reference . ' - ' : '',
+                    'symbol' => $document->currency_type->symbol,
+                    'amount' => $applied,
+                    'currency_type_id' => $receivedCurrency,
+                    'original_amount' => $row->original_amount,
+                    'tendered_original_amount' => $tender['tendered_original_amount'],
+                    'received_change' => $tender['received_change'],
+                    'exchange_rate' => $row->exchange_rate,
+                    'document_currency_type_id' => $document->currency_type_id,
+                ];
             }
-            /**
-             *  @Deprecated -- Ya no se va a realizar, los pagos se estandarizo con la clase Document
-             */
-
-            // if(get_class($document)==SaleNote::class && $payments->count()!= 0){
-            //     // Las notas de venta no tiene condicion de pago.
-
-            //     /** @var \App\Models\Tenant\SaleNotePayment $row */
-            //     foreach ($payments as $row) {
-            //         $temp = [
-            //             'date_of_payment' => $row->date_of_payment->format($dateFormat),
-            //             'description' => $row->payment_method_type->description,
-            //             'reference' => $row->reference ? $row->reference . ' - ' : '',
-            //             'symbol' => $document->currency_type->symbol,
-            //             'payment' => $row->payment,
-            //             'amount' => $row->payment + $row->change,
-            //         ];
-
-            //         $data['PAGOS'][] = $temp;
-            //         // $payment += (float) $row->payment;
-            //     }
-            // }
-
-
+            if (in_array((string)$document->payment_condition_id, ['02', '03'], true)) {
+                foreach ($document->fee as $key => $quote) {
+                    $description='Cuota #'.($key + 1);
+                    $amount=\App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::read($quote, 'amount'));
+                    $currency=$quote->currency_type_id ?: $document->currency_type_id;
+                    $date=$quote->date ? $quote->date->format($dateFormat) : null;
+                    $display=$description.' — '.$currency.' '.$amount;
+                    if ($date) $display.=' — Vence '.$date;
+                    $data['CUOTA'][] = ['description'=>$description, 'display'=>$display, 'reference'=>'',
+                        'amount'=>$amount, 'symbol'=>$quote->currency_type?->symbol ?? ''];
+                }
+            }
             return $data;
         }
+        // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
 
         /**
          * Devuelve las guias de un documento, Primero las guias que esten escritas y luego las guias relacionadas

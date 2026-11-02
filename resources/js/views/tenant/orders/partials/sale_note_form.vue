@@ -72,23 +72,26 @@
                 <div class="col-lg-4">
                     <div class="form-group">
                         <label class="control-label">Método de pago</label>
-                        <el-select v-model="payment_method_type_id" placeholder="Seleccione">
+                        <el-select v-model="payment.payment_method_type_id" placeholder="Seleccione" @change="changePaymentMethod">
                             <el-option
-                                v-for="option in payment_method_types"
+                                v-for="option in receiptMethods"
                                 :key="option.id"
                                 :label="option.description"
                                 :value="option.id"
                             ></el-option>
                         </el-select>
+                                            <small v-if="!payment.payment_method_type_id" class="text-muted">No hay efectivo activo para la moneda del documento; seleccione un método.</small>
+                        <receipt-currency-fields :row="payment" :methods="payment_method_types"
+                            :document-currency="document.currency_type_id" :document-rate="document.exchange_rate_sale" />
                     </div>
                 </div>
 
                 <div class="col-lg-4">
                     <div class="form-group">
                         <label class="control-label">Caja / destino</label>
-                        <el-select v-model="payment_destination_id" placeholder="Seleccione">
+                        <el-select v-model="payment.payment_destination_id" placeholder="Seleccione">
                             <el-option
-                                v-for="option in payment_destinations"
+                                v-for="option in availableDestinations"
                                 :key="option.id"
                                 :label="option.description"
                                 :value="option.id"
@@ -132,9 +135,11 @@
 
 import SelectLotsForm from '../../documents/partials/lots.vue'
 import LotsGroup from '../../sale_notes/partials/lots_group.vue'
+import ReceiptCurrencyFields from '@components/ReceiptCurrencyFields.vue'
+import {classifiedDestinations, defaultCashForCurrency, paymentValidationMessage} from '@helpers/payment-classification'
 
 export default {
-    components: {SelectLotsForm, LotsGroup},
+    components: {SelectLotsForm, LotsGroup, ReceiptCurrencyFields},
 
     props: [
         'showDialog',
@@ -144,6 +149,15 @@ export default {
         'statusValue'
     ],
     computed:{
+        receiptMethods() {
+            // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+            return this.payment_method_types.filter(method => method && [true, 1, '1'].includes(method.is_active)
+                && ['cash', 'account'].includes(method.collection_kind))
+            // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
+        },
+        availableDestinations() {
+            return classifiedDestinations(this.payment_destinations, this.payment_method_types, this.payment, this.document.currency_type_id)
+        },
     },
     data() {
         return {
@@ -156,8 +170,7 @@ export default {
             series: [],
             payment_method_types: [],
             payment_destinations: [],
-            payment_method_type_id: null,
-            payment_destination_id: null,
+            payment: {},
             lots: [],
             loading_submit: false,
             showDialogSelectLots: false,
@@ -235,29 +248,35 @@ export default {
         },
         async submit() {
 
-            let validate_items = await this.validateQuantitySeriesLots()
-            if (!validate_items.success)
-                return this.$message.error(validate_items.message)
-
-            if (!this.payment_method_type_id)
-                return this.$message.error('Seleccione el método de pago')
-
-            if (!this.payment_destination_id)
-                return this.$message.error('Seleccione la caja / destino del pago')
-
+            if (this.loading_submit) return
             this.loading_submit = true
+            let validate_items
+            try {
+                validate_items = await this.validateQuantitySeriesLots()
+            } catch (error) {
+                this.loading_submit = false
+                return this.$message.error(error.message || 'No se pudieron validar los artículos')
+            }
+            if (!validate_items.success) {
+                this.loading_submit = false
+                return this.$message.error(validate_items.message)
+            }
+
+            if (!this.payment.payment_method_type_id) {
+                this.loading_submit = false
+                return this.$message.error('Seleccione el método de pago')
+            }
+
+            if (!this.payment.payment_destination_id || !this.availableDestinations.some(destination => destination.id === this.payment.payment_destination_id)) {
+                this.loading_submit = false
+                return this.$message.error('Seleccione la caja / destino del pago')
+            }
+
             this.document.prefix = "NV"
             this.document.order_id = this.orderId
 
             // Camino X: el comprobante registra el pago completo (saldo total) a la caja elegida
-            this.document.payments = [{
-                date_of_payment: this.paymentDate(),
-                payment_method_type_id: this.payment_method_type_id,
-                payment_destination_id: this.payment_destination_id,
-                reference: null,
-                payment: this.document.total,
-                payment_received: true,
-            }]
+            this.document.payments = [{...this.payment, date_of_payment: this.paymentDate(), payment_received: true}]
 
             await this.$http
                 .post(`/${this.resource}`, this.document)
@@ -276,7 +295,9 @@ export default {
                 })
                 .catch((error) => {
                     if (error.response.status === 422) {
-                        this.errors = error.response.data
+                        this.errors = error.response.data.errors || error.response.data
+                        const message = paymentValidationMessage(error.response.data)
+                        if (message) this.$message.error(message)
                     } else {
                         this.$message.error(error.response.data.message)
                     }
@@ -327,8 +348,16 @@ export default {
         },
         // Preselecciona método y caja (obligatorios). El pago se registra completo al generar.
         presetPayment() {
-            this.payment_method_type_id = this.payment_method_types.length > 0 ? this.payment_method_types[0].id : null
-            this.payment_destination_id = this.payment_destinations.length > 0 ? this.payment_destinations[0].id : null
+            const method = defaultCashForCurrency(this.payment_method_types, this.document.currency_type_id)
+            this.payment = {
+                payment_method_type_id: method?.id || null,
+                payment_destination_id: method?.collection_kind === 'cash' && this.payment_destinations.some(item => item.id === 'cash') ? 'cash' : null,
+                reference: null,
+                payment: this.document.total,
+            }
+        },
+        changePaymentMethod() {
+            this.payment.payment_destination_id = null
         },
         // Fecha local YYYY-MM-DD para el registro de pago
         paymentDate() {
@@ -350,8 +379,7 @@ export default {
         clickClose() {
             this.$emit("update:showDialog", false)
             this.resetDocument()
-            this.payment_method_type_id = null
-            this.payment_destination_id = null
+            this.payment = {}
         },
         // Cancelar sin generar: revierte el estado recargando el listado (el backend no avanzó)
         cancel() {

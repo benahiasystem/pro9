@@ -93,6 +93,8 @@
                                                         :label="option.description"
                                                     ></el-option>
                                                 </el-select>
+                                            <small v-if="!p.rent_payment.payment_method_type_id" class="text-muted">No hay efectivo activo para la moneda del documento; seleccione un método.</small>
+                                                <receipt-currency-fields v-if="!p.is_registered" :row="p.rent_payment" :methods="payment_method_types" :document-currency="paymentCurrency" :document-rate="null" />
 
                                                 <small
                                                     class="form-control-feedback"
@@ -280,11 +282,15 @@ import {ensureExchangeRateSale} from "@helpers/ensure-exchange-rate-sale";
 import moment from "moment";
 import {mapState} from "vuex/dist/vuex.mjs";
 import SaleNoteOptions from "@views/sale_notes/partials/options.vue";
+import ReceiptCurrencyFields from '@components/ReceiptCurrencyFields.vue';
+import {newPaymentOperationKey} from '@helpers/payment-operation-key';
+import {defaultCashForCurrency, handleHotelPaymentError} from '@helpers/payment-classification';
 
 export default {
     components: {
         // DocumentFormItem,
         SaleNoteOptions,
+        ReceiptCurrencyFields,
     },
     mixins: [
         functions
@@ -328,6 +334,7 @@ export default {
                 date_of_issue: moment().format("YYYY-MM-DD"),
                 establishment_id: null,
                 sale_note_id: null,
+                operation_key: null,
             },
             errors: {},
             typeUser: "admin",
@@ -380,6 +387,19 @@ export default {
         this.title = `Habitación ${this.rent.room.name} - Agregar productos`;
         await this.getTables()
     },
+    // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+    watch: {
+        'form.products': {
+            deep: true,
+            handler(products) {
+                if (!Array.isArray(products)) return
+                const newPayments = products.filter(product => !product.is_registered && product.rent_payment)
+                    .map(product => product.rent_payment)
+                this.clearIncompatiblePaymentDestinations(newPayments)
+            },
+        },
+    },
+    // ######## FIN MONEDA DEL MEDIO DE COBRO ########
     methods: {
         changePaymentStatus(index)
         {
@@ -411,14 +431,20 @@ export default {
                             })
         },
         async onSubmit() {
+            try {
+                if (!this.form.operation_key) this.form.operation_key = newPaymentOperationKey();
+            } catch (error) {
+                this.$message.error(error.message);
+                return;
+            }
 
             this.form.products = this.form.products
                 .filter((item) => item.is_registered === false);
 
-            if (this.isAtLeastOnePaid(this.form.products)) {
+            if (this.isAtLeastOnePaid(this.form.products) && !this.form.sale_note_id) {
                 const paidProducts = this.form.products.filter(item => item.payment_status === "PAID");
-                this.document.items.push(...paidProducts);
-                await this.onGoToInvoice();
+                this.document.items = [...paidProducts];
+                if (!await this.onGoToInvoice()) return;
             }
 
             this.loading = true;
@@ -428,15 +454,22 @@ export default {
                     this.form
                 )
                 .then((response) => {
+                    this.form.sale_note_id = response.data.sale_note_id;
                     if(this.form.sale_note_id == null){
                         window.location.href = "/hotels/reception";
+                    } else {
+                        this.successGoToInvoice();
+                        this.$emit("update:showDialog", false);
+                        this.saveCashDocument();
                     }
                     this.$message({
                         message: response.data.message,
                         type: "success",
                     });
                 })
-                .catch((error) => this.axiosError(error))
+                .catch((error) => {
+                    handleHotelPaymentError(error, this);
+                })
                 .finally(() => (this.loading = false));
         },
         onTotalDeleteProduct() {
@@ -488,19 +521,9 @@ export default {
         },
         getDefaultValuesRentPayment()
         {
-            let payment_method_type_id = null
-            let payment_destination_id = null
-
-            if(this.payment_method_types.length > 0)
-            {
-                payment_method_type_id = this.payment_method_types[0].id
-            }
-
-            if(this.payment_destinations.length > 0)
-            {
-                const exist_cash = _.find(this.payment_destinations, { id : 'cash'})
-                payment_destination_id = (exist_cash) ? exist_cash.id : this.payment_destinations[0].id
-            }
+            const method = defaultCashForCurrency(this.payment_method_types, this.document.currency_type_id)
+            const payment_method_type_id = method?.id || null
+            const payment_destination_id = method?.collection_kind === 'cash' && this.payment_destinations.some(item => item.id === 'cash') ? 'cash' : null
 
             return {
                 payment_method_type_id,
@@ -547,7 +570,7 @@ export default {
                     payment_method_type_id: payment_method_type_id,
                     payment_destination_id: payment_destination_id,
                     reference: null,
-                    payment: product.total
+                    payment: String(product.total)
                 },
                 is_registered:false,
                 document: "",
@@ -642,7 +665,8 @@ export default {
 
                 let validate_payment_destination = this.validatePaymentDestination();
                 if (validate_payment_destination.error_by_item > 0) {
-                    return this.$message.error("El destino del pago es obligatorio");
+                    this.$message.error("El destino del pago es obligatorio");
+                    return false;
                 }
 
                 this.loading = true;
@@ -650,16 +674,8 @@ export default {
                 // ######## INICIO MONEDA VENEZUELA HOTEL ########
                 await ensureExchangeRateSale(this.document, this.$http);
                 // ######## FIN MONEDA VENEZUELA HOTEL ########
-                const response = await this.$http.post(`/${this.resource_documents}`, this.document);
-
-                if (response.data.success) {
-                    this.form.sale_note_id = response.data.data.id;
-                    this.successGoToInvoice();
-                    this.$emit("update:showDialog", false);
-                    this.saveCashDocument();
-                } else {
-                    this.$message.error(response.data.message);
-                }
+                this.form.sale_note = this.document;
+                return true;
             } catch (error) {
                 console.error("Error en onGoToInvoice:", error);
                 if (error.response) {
@@ -667,6 +683,7 @@ export default {
                 } else {
                     this.$message.error(error.message || "Error inesperado");
                 }
+                return false;
             } finally {
                 this.loading = false;
             }
@@ -777,7 +794,10 @@ export default {
                 payment_method_type_id: item.rent_payment.payment_method_type_id,
                 payment_destination_id: item.rent_payment.payment_destination_id,
                 reference: item.rent_payment.reference,
-                payment: item.total
+                payment: String(item.rent_payment.payment),
+                currency_type_id: item.rent_payment.currency_type_id,
+                original_amount: item.rent_payment.original_amount,
+                exchange_rate: item.rent_payment.exchange_rate
             }));
         },
         onGotoBack() {

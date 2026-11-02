@@ -152,6 +152,10 @@ trait NotePersistenceCases
         $adjustment=NoteAdjustment::register($note,$request);
         self::assertSame($adjustment->id,NoteAdjustment::register($note,$request)->id);
         self::assertEquals(5,$invoice->fresh()->guarantee_amount);self::assertEquals($original,$fund->fresh()->toArray());
+        // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+        $balanceBatch=\App\Support\Exact\Receivables::balancesForDocuments(collect([$invoice->fresh()]));
+        self::assertTrue($balanceBatch[$invoice->id]->isEqualTo($invoice->fresh()->exactBalance()));
+        // ######## FIN MONEDA DEL MEDIO DE COBRO ########
         $payment=$invoice->payments->whereNull('receipt_parent_id')->first();
         $tax=$invoice->taxes()->where('tax_kind','IGTF')->where('document_payment_id',$payment->id)->firstOrFail();
         $originalTax=$tax->amount;
@@ -230,6 +234,10 @@ trait NotePersistenceCases
         $record=(new NoteRefund)->register($note,$refund);
         self::assertSame($record->id,(new NoteRefund)->register($note,$refund)->id);
         self::assertEquals(-13.20,$invoice->fresh()->balance);self::assertEquals(13.20,NoteRefund::available($note));
+        // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+        $balanceBatch=\App\Support\Exact\Receivables::balancesForDocuments(collect([$invoice->fresh()]));
+        self::assertTrue($balanceBatch[$invoice->id]->isEqualTo($invoice->fresh()->exactBalance()));
+        // ######## FIN MONEDA DEL MEDIO DE COBRO ########
         $sql=\App\Services\Fiscal\FiscalNoteBalance::sql();
         self::assertTrue(\App\Support\Exact\Decimal::of($invoice->fresh()->balance)->isEqualTo(\App\Support\Exact\Decimal::of($db->table('documents')->where('id',$invoice->id)->selectRaw($sql.' AS outstanding')->first()->outstanding)));
         self::assertEquals(0,$db->table('documents')->where('id',$note->id)->selectRaw($sql.' AS outstanding')->first()->outstanding);
@@ -239,8 +247,10 @@ trait NotePersistenceCases
         (new NoteRefund)->reverse($note,$record,$reverse);(new NoteRefund)->reverse($note,$record,$reverse);
         self::assertEquals(-23.20,$invoice->fresh()->balance);self::assertEquals(23.20,NoteRefund::available($note));
         $cash=\App\Models\Tenant\Cash::where('user_id',auth()->id())->where('state',true)->firstOrFail();
-        $cashRefund=array_replace($refund,['operation_key'=>(string)Str::uuid(),'original_amount'=>5,'payment_destination_id'=>'cash','payment_method_type_id'=>'01']);
+        $db->table('payment_method_types')->where('id','04')->update(['collection_kind'=>'cash','cash_currency_type_id'=>'VES','is_cash'=>1]);
+        $cashRefund=array_replace($refund,['operation_key'=>(string)Str::uuid(),'original_amount'=>5,'payment_destination_id'=>'cash','payment_method_type_id'=>'04']);
         $out=(new NoteRefund)->register($note->fresh(),$cashRefund);
+        $db->table('payment_method_types')->where('id','04')->update(['collection_kind'=>'account','cash_currency_type_id'=>null,'is_cash'=>0]);
         self::assertEquals(5,$cash->noteRefundTotal());self::assertSame('egress',$out->getDataCashPaymentReport()['type_transaction']);
         self::assertEquals(-5,$out->getRowIncomeSummaryPayment()['payment_for_calculate']);
         self::assertSame(1,\App\Models\Tenant\Cash::filterDataGeneralCashReport()->find($cash->id)->global_destination->where('payment_type',\App\Models\Tenant\DocumentNoteRefund::class)->count());

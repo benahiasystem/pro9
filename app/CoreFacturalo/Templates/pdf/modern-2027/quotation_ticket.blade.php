@@ -412,7 +412,7 @@
         </tr>
         @foreach($document->payments as $row)
             <tr>
-                <td class="m27-value">&#8226; {{ $row->payment_method_type->description }} {{ $row->reference ? '- '.$row->reference.' ':'' }}- {{ $document->currency_type->symbol }} {{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($row, 'payment'), 2) }}</td>
+                <td class="m27-value">&#8226; @include('pdf.partials.quotation_receipt', ['row' => $row, 'document' => $document])</td>
             </tr>
             @php
                 $payment += (float) $row->payment;

@@ -190,6 +190,22 @@ class FiscalEmissionSchemaTest extends TestCase
             self::assertSame(9, $methods->where('is_active', 1)->count());
             self::assertFalse($db->getSchemaBuilder()->hasColumn('payment_method_types', 'charge'));
             self::assertFalse($db->getSchemaBuilder()->hasTable('card_brands'));
+            // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+            foreach (['sale_note_payments', 'income_payments', 'quotation_payments', 'contract_payments', 'technical_service_payments', 'hotel_rent_item_payments'] as $table) {
+                foreach (['currency_type_id', 'original_amount', 'exchange_rate', 'exchange_rate_source', 'exchange_rate_date', 'payment_method_snapshot'] as $column) {
+                    self::assertTrue($db->getSchemaBuilder()->hasColumn($table, $column), $table.'.'.$column);
+                }
+                self::assertCount(1, $db->select('SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND CONSTRAINT_NAME = ?', [$this->database, $table, $table.'_currency_fk']));
+            }
+            self::assertTrue($db->getSchemaBuilder()->hasColumn('hotel_rent_item_payments', 'source_sale_note_payment_id'));
+            self::assertTrue($db->getSchemaBuilder()->hasColumn('transfer_account_payments', 'currency_type_id'));
+            self::assertCount(1, $db->select("SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'transfer_account_payments' AND CONSTRAINT_NAME = 'transfer_account_currency_fk'", [$this->database]));
+            self::assertCount(1, $db->select("SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'hotel_rent_item_payments' AND CONSTRAINT_NAME = 'hotel_receipt_source_fk'", [$this->database]));
+            self::assertSame(0, (int) $db->select("SHOW INDEX FROM hotel_rent_item_payments WHERE Key_name = 'hotel_receipt_source_unique'")[0]->Non_unique);
+            self::assertTrue($db->getSchemaBuilder()->hasColumn('received_payments', 'currency_type_id'));
+            self::assertSame('NO', $db->select("SHOW COLUMNS FROM received_payments LIKE 'currency_type_id'")[0]->Null);
+            self::assertCount(1, $db->select("SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'received_payments' AND CONSTRAINT_NAME = 'received_payments_currency_fk'", [$this->database]));
+            // ######## FIN MONEDA DEL MEDIO DE COBRO ########
             foreach (['payment_method_types', 'expense_method_types', 'document_payments', 'sale_note_payments', 'purchase_payments', 'quotation_payments', 'contract_payments', 'income_payments', 'expense_payments', 'bank_loan_payments'] as $table) {
                 self::assertFalse($db->getSchemaBuilder()->hasColumn($table, 'has_card'), $table);
                 self::assertFalse($db->getSchemaBuilder()->hasColumn($table, 'card_brand_id'), $table);
@@ -551,9 +567,7 @@ class FiscalEmissionSchemaTest extends TestCase
                 self::assertNull($converted->fiscal_identity['control_number']);
                 self::assertEquals($stock, $db->table('item_warehouse')->where('item_id', $item->id)->where('warehouse_id', $warehouse)->value('stock'));
                 if ($source === 'sale_note_id') {
-                    $link = new \ReflectionMethod(\App\Http\Controllers\Tenant\DocumentController::class, 'associateSaleNoteToDocument');
-                    $link->setAccessible(true);
-                    $link->invoke(new \App\Http\Controllers\Tenant\DocumentController(), \Illuminate\Http\Request::create('/', 'POST', ['sale_note_id' => $sourceId]), $converted->id);
+                    // Facturalo vincula la nota dentro de la misma transacción de la factura.
                     self::assertSame($converted->id, $saleNote->fresh()->document_id);
                 }
             }
@@ -806,6 +820,19 @@ class FiscalEmissionSchemaTest extends TestCase
         self::assertSame($result[0]['id'],$result[1]['id']);
         self::assertSame(1,$db->table('document_payments')->where('document_id',$id)->whereNull('receipt_parent_id')->count());
         self::assertSame(1,$db->table('document_taxes')->whereNotNull('document_payment_id')->count());
+        // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+        $principal=\App\Models\Tenant\DocumentPayment::findOrFail($result[0]['id']);
+        $derived=\App\Models\Tenant\DocumentPayment::where('receipt_parent_id',$principal->id)->firstOrFail();
+        $principalRow=\App\Services\Payments\DocumentPaymentReport::row($principal);
+        $derivedRow=\App\Services\Payments\DocumentPaymentReport::row($derived);
+        self::assertSame('8.24',$principalRow['payment']);
+        self::assertSame('80',$principalRow['applied_payment']);
+        self::assertSame('USD',$principalRow['currency_type_id']);
+        self::assertSame('VES',$principalRow['document_currency_type_id']);
+        self::assertSame('Aplicación de IGTF',$derivedRow['kind']);
+        self::assertSame('0',$derivedRow['payment']);
+        self::assertSame('2.4',$derivedRow['applied_payment']);
+        // ######## FIN MONEDA DEL MEDIO DE COBRO ########
         self::assertSame(1,$db->table('documents')->where('document_type_id','08')->count());
         $p1=array_replace($payment,['operation_key'=>(string)\Illuminate\Support\Str::uuid(),'original_amount'=>1.5]);
         $p2=array_replace($p1,['operation_key'=>(string)\Illuminate\Support\Str::uuid()]);

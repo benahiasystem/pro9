@@ -73,6 +73,7 @@
                                                            :label="option.description"
                                                            :value="option.id"></el-option>
                                             </el-select>
+                                            <small v-if="!row.payment_method_type_id" class="text-muted">No hay un método bancario activo; seleccione uno cuando esté disponible.</small>
                                             <small v-if="row.errors.payment_method_type_id"
                                                    class="form-control-feedback"
                                                    v-text="row.errors.payment_method_type_id[0]"></small>
@@ -195,6 +196,7 @@ import {deletable} from '@mixins/deletable'
 import {mapActions, mapState} from "vuex";
 
 export default {
+    paymentCurrencyPolicy: 'document',
     props: [
         'showDialog',
         'expenseId'
@@ -227,6 +229,9 @@ export default {
     },
     async created() {
         await this.initForm();
+    },
+    methods: {
+        async refreshLoanCatalog() {
         await this.$http.get(`/${this.resource}/tables`)
             .then(response => {
                 this.$store.commit('setPaymentMethodTypes',response.data.payment_method_types)
@@ -235,13 +240,14 @@ export default {
 
                 // this.payment_destinations = response.data.payment_destinations;
             })
-    },
-    methods: {
+        },
         changeExpenseMethodType(index) {
-
-            this.records[index].payment_destination_id = (this.payment_destinations.length > 0 && this.records[index].payment_method_type_id != 1) ? this.payment_destinations[0].id : null
-            this.records[index].payment_destination_disabled = (this.records[index].payment_method_type_id == 1) ? true : false
-
+            const row = this.records[index];
+            const method = this.payment_method_types.find(item => String(item.id) === String(row.payment_method_type_id) && [true, 1, '1'].includes(item.is_active) && item.collection_kind === 'account');
+            const available = method ? this.classifiedPaymentDestinations(this.payment_destinations, row) : [];
+            if (available.some(item => String(item.id) === String(row.payment_destination_id))) return;
+            const preferred = available.find(item => String(item.id) === String(this.expense?.payment_destination_id));
+            row.payment_destination_id = preferred?.id ?? null;
         },
         clickDownloadFile(filename) {
             window.open(
@@ -286,6 +292,7 @@ export default {
         },
         async getData() {
             this.initForm();
+            await this.refreshLoanCatalog();
             await this.$http.get(`/${this.resource}/expense/${this.expenseId}`)
                 .then(response => {
                     this.expense = response.data;
@@ -299,18 +306,15 @@ export default {
 
         },
         clickAddRow() {
-            // 04  transferencia
-            let payment_method_type_id = '04';
-            let payment_destination_id = null;
-            let payment_destination_disabled =false;
-
-            if(_.findIndex(this.payment_method_types,{id:'04'}) === undefined) {
-                payment_method_type_id = null;
-                payment_destination_disabled =  true;
-            }
-            if(this.expense && this.expense.payment_destination_id && this.expense.payment_destination_id != 0){
-                payment_destination_id = this.expense.payment_destination_id
-            }
+            // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+            const method = this.payment_method_types.filter(item => [true, 1, '1'].includes(item.is_active) && item.collection_kind === 'account')
+                .sort((a, b) => String(a.id).localeCompare(String(b.id)))[0] || null;
+            const destination = this.payment_destinations.find(item => item.id !== 'cash' &&
+                String(item.id) === String(this.expense?.payment_destination_id) && item.currency_type_id === this.expense?.currency_type_id);
+            const payment_method_type_id = method?.id || null;
+            const payment_destination_id = method && destination ? destination.id : null;
+            const payment_destination_disabled = false;
+            // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
             this.records.push({
                 id: null,
                 date_of_payment: moment().format('YYYY-MM-DD'),
@@ -365,7 +369,8 @@ export default {
                 })
                 .catch(error => {
                     if (error.response.status === 422) {
-                        this.records[index].errors = error.response.data;
+                        const data = error.response.data || {};
+                        this.records[index].errors = data.errors || (data.message && typeof data.message === 'object' ? data.message : data);
                     } else {
                         this.$message.error(error.response.data.message)
                         console.log(error);

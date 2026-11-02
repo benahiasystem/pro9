@@ -180,16 +180,19 @@
                                     <tr v-for="(row, index) in form.payments" :key="index">
                                         <td>
                                             <div class="form-group mb-2 me-2">
-                                                <el-select v-model="row.payment_method_type_id">
+                                                <el-select v-model="row.payment_method_type_id" :disabled="!!row.id">
                                                     <el-option v-for="option in payment_method_types" :key="option.id"
                                                                :value="option.id"
                                                                :label="option.description"></el-option>
                                                 </el-select>
+                                                <small v-if="!row.payment_method_type_id" class="text-muted">No hay efectivo activo para la moneda del documento; seleccione un método.</small>
+                                                <receipt-currency-fields :row="row" :methods="payment_method_types" :document-currency="form.currency_type_id" :document-rate="form.exchange_rate_sale" />
+                                                <small v-if="row.id && row.currency_type_id" class="d-block">Recibido: {{ row.original_amount }} {{ row.currency_type_id }} · Tasa: {{ row.exchange_rate }}</small>
                                             </div>
                                         </td>
                                         <td>
                                             <div class="form-group mb-2 me-2">
-                                                <el-select v-model="row.payment_destination_id" filterable>
+                                                <el-select v-model="row.payment_destination_id" filterable :disabled="!!row.id">
                                                     <el-option v-for="option in classifiedPaymentDestinations(payment_destinations, row)" :key="option.id"
                                                                :value="option.id"
                                                                :label="option.description"></el-option>
@@ -198,12 +201,12 @@
                                         </td>
                                         <td>
                                             <div class="form-group mb-2 me-2">
-                                                <el-input v-model="row.reference"></el-input>
+                                                <el-input v-model="row.reference" :disabled="!!row.id"></el-input>
                                             </div>
                                         </td>
                                         <td>
                                             <div class="form-group mb-2 me-2">
-                                                <el-input v-model="row.payment"></el-input>
+                                                <el-input v-model="row.payment" :disabled="!!row.id"></el-input>
                                             </div>
                                         </td>
                                         <td class="series-table-actions text-center">
@@ -658,8 +661,11 @@ import ItemSearchQuickSale from '@components/items/ItemSearchQuickSale.vue'
 import PackItemDescription from '@components/items/PackItemDescription.vue'
 import CustomFieldsRenderer from '@viewsModuleCustomField/custom_fields/custom_field_renderer.vue';
 
+import ReceiptCurrencyFields from '@components/ReceiptCurrencyFields.vue'
+import {defaultCashForCurrency, paymentValidationMessage} from '@helpers/payment-classification'
+
 export default {
-    components: {QuotationFormItem, PersonForm, QuotationOptions, Logo, TermsCondition, ItemSearchQuickSale, PackItemDescription, CustomFieldsRenderer},
+    components: {ReceiptCurrencyFields, QuotationFormItem, PersonForm, QuotationOptions, Logo, TermsCondition, ItemSearchQuickSale, PackItemDescription, CustomFieldsRenderer},
     props: {
         'resourceId': {
             required: true,
@@ -732,6 +738,8 @@ export default {
                 this.form.establishment_id = (this.establishments.length > 0) ? this.establishments[0].id : null
                 this.payment_method_types = response.data.payment_method_types
                 this.payment_destinations = response.data.payment_destinations
+                const method = defaultCashForCurrency(this.payment_method_types, this.form.currency_type_id)
+                this.form.payments.forEach(row => { if (!row.id && !row.payment_method_type_id) row.payment_method_type_id = method?.id || null })
                 this.global_discount_types = response.data.global_discount_types;
                 this.enabled_discount_global = response.data.enabled_discount_global;
                 /* this.configuration = response.data.configuration */
@@ -851,10 +859,11 @@ export default {
             }
         },
         selectDestinationSale() {
-
-            if (this.configuration.destination_sale && this.payment_destinations.length > 0) {
-                let cash = _.find(this.payment_destinations, {id: 'cash'})
-                this.form.payments[0].payment_destination_id = (cash) ? cash.id : this.payment_destinations[0].id
+            const row = this.form.payments[0]
+            if (this.configuration.destination_sale && row && !row.id && row.payment_destination_id == null) {
+                const available = this.classifiedPaymentDestinations(this.payment_destinations, row)
+                const cash = available.find(destination => destination.id === 'cash')
+                row.payment_destination_id = (cash || available[0] || {}).id ?? null
             }
 
         },
@@ -873,7 +882,7 @@ export default {
         },
         setTotalDefaultPayment() {
 
-            if (this.form.payments.length > 0) {
+            if (this.form.payments.length > 0 && !this.form.payments[0].id) {
 
                 this.form.payments[0].payment = this.form.total
             }
@@ -889,14 +898,15 @@ export default {
             }
         },
         clickAddPayment() {
+            const method = defaultCashForCurrency(this.payment_method_types, this.form.currency_type_id)
 
             this.form.payments.push({
                 id: null,
                 document_id: null,
                 date_of_payment: moment().format('YYYY-MM-DD'),
-                payment_method_type_id: '01',
+                payment_method_type_id: method?.id || null,
                 reference: null,
-                payment_destination_id: this.getPaymentDestinationId(),
+                payment_destination_id: method && this.payment_destinations.some(destination => destination.id === 'cash') ? 'cash' : null,
                 payment: 0,
 
             });
@@ -948,7 +958,9 @@ export default {
                     }
 
                     this.form.currency_type_id = dato.currency_type_id
-                    this.form.payment_method_type_id = dato.payment_method_type_id || '01'
+                    // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+                    this.form.payment_method_type_id = dato.payment_method_type_id || null
+                    // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
                     this.form.date_of_due = this.normalizeDate(dato.date_of_due)
                     this.form.date_of_issue = this.normalizeDate(dato.date_of_issue) || moment().format('YYYY-MM-DD')
                     this.form.delivery_date = this.normalizeDate(dato.delivery_date)
@@ -1226,15 +1238,15 @@ export default {
 
         },
         validatePaymentDestination() {
-            // Crédito (05/08/09) no usa destino de caja/cuenta — igual que NV/CPE.
+            // La clasificación vigente determina si la fila requiere destino.
             let error_by_item = 0
 
             this.form.payments.forEach((item) => {
-                // ######### INICIO MÉTODOS DE CRÉDITO VENEZUELA #########
-                if (!['05', '09'].includes(item.payment_method_type_id)) {
-                    if (item.payment_destination_id == null) error_by_item++;
-                }
-                // ######### FIN MÉTODOS DE CRÉDITO VENEZUELA #########
+                // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+                const method = (this.payment_method_types || []).find(value => String(value.id) === String(item.payment_method_type_id));
+                const credit = method?.collection_kind === 'credit';
+                if (!item.id && !credit && item.payment_destination_id == null) error_by_item++;
+                // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
             })
 
             return {
@@ -1285,14 +1297,16 @@ export default {
                     this.$message.error(response.data.message);
                 }
             }).catch(error => {
-                if (error.response.status === 422) {
-                    this.errors = error.response.data;
+                if (error.response && error.response.status === 422) {
+                    this.errors = error.response.data?.errors || error.response.data || {};
+                    const message = paymentValidationMessage(error.response.data);
+                    if (message) this.$message.error(message);
                     if (this.errors.customer_id) {
                         this.$message.error(this.errors.customer_id[0]);
                         delete this.errors.customer_id;
                     }
                 } else {
-                    this.$message.error(error.response.data.message);
+                    this.$message.error(error.response?.data?.message || 'No se pudo guardar la cotización.');
                 }
             }).then(() => {
                 this.loading_submit = false;

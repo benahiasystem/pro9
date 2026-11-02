@@ -215,6 +215,13 @@
                                                 value-format="yyyy-MM-dd"
                                 ></el-date-picker>
                             </div>
+                            <!-- ######## INICIO TASA DE MATRICULA ######## -->
+                            <div class="col-md-3 form-modern">
+                                <label class="control-label">Tasa documental (VES por USD)</label>
+                                <el-input v-model="form.exchange_rate_sale" :disabled="!is_editable" placeholder="Tasa del día"></el-input>
+                                <small v-if="errors.exchange_rate_sale" class="form-control-feedback" v-text="errors.exchange_rate_sale[0]"></small>
+                            </div>
+                            <!-- ######## FIN TASA DE MATRICULA ######## -->
 
                             <!--
                             Lista de items
@@ -553,6 +560,8 @@ import {
     showNamePdfOfDescription
 } from "@helpers/functions";
 import moment from 'moment'
+import {ensureExchangeRateSale} from '@helpers/ensure-exchange-rate-sale'
+import {normalizeExchangeRate} from '@helpers/exchange-rate-math'
 
 export default {
     mixins: [
@@ -597,6 +606,7 @@ export default {
                 grade: null,
                 section: null,
                 currency_type_id: null,
+                exchange_rate_sale: null,
                 items: [],
                 start_date: moment().format('YYYY-MM-DD'),
 
@@ -688,6 +698,7 @@ export default {
                 description: null,
                 period: null,
                 currency_type_id: this.config.currency_type_id,
+                exchange_rate_sale: null,
                 items: [],
                 start_date: moment().format('YYYY-MM-DD'),
                 grade: null,
@@ -813,18 +824,46 @@ export default {
                 this.form.id = this.suscriptionId
                 this.changeCurrencyType()
                 this.is_editable = true;
+                this.prepareExchangeRate()
             }
             this.changeStartDate()
             this.titleDialog = (this.form.id) ? 'Editar matrícula' : 'Nueva matrícula'
 
         },
 
-        submit() {
+        async prepareExchangeRate() {
+            const form = this.form;
+            if (form.exchange_rate_sale !== null && form.exchange_rate_sale !== undefined && form.exchange_rate_sale !== '') return;
+            try {
+                const rate = await ensureExchangeRateSale({exchange_rate_sale: null, date_of_issue: moment().format('YYYY-MM-DD')}, this.$http);
+                if (this.showDialog && this.form === form && (form.exchange_rate_sale === null || form.exchange_rate_sale === undefined || form.exchange_rate_sale === '')) {
+                    form.exchange_rate_sale = rate;
+                }
+            } catch (_) {
+                // El usuario puede indicar la tasa o reintentar al guardar.
+            }
+        },
+        async submit() {
             this.loading_submit = true
             let plan = _.find(this.plans, {'id': this.form.suscription_plan_id});
 
 
             let form = this.form;
+            const rateInput = form.exchange_rate_sale;
+            try {
+                const rate = rateInput !== null && rateInput !== undefined && rateInput !== ''
+                    ? normalizeExchangeRate(rateInput)
+                    : await ensureExchangeRateSale({exchange_rate_sale: null, date_of_issue: moment().format('YYYY-MM-DD')}, this.$http);
+                if (this.form !== form || form.exchange_rate_sale !== rateInput || !this.showDialog) {
+                    this.loading_submit = false;
+                    return;
+                }
+                form.exchange_rate_sale = rate;
+            } catch (error) {
+                this.loading_submit = false;
+                this.$message.error(error.message || 'No se pudo obtener la tasa documental.');
+                return;
+            }
             form.customer = this.customer;
             form.parent_customer = this.parent_customer;
             form.children_customer = this.children_customer;
@@ -835,16 +874,22 @@ export default {
             form.quantity_period = plan.quantity_period
             form.customer_id = this.customer.id
 
-            this.$http.post(`/suscription/${this.resource}`, this.form)
+            return this.$http.post(`/suscription/${this.resource}`, this.form)
                 .then(response => {
+                    if (response.data.success === false) {
+                        this.$message.error(response.data.message || 'No se pudo guardar la matrícula.');
+                        return;
+                    }
                     this.$eventHub.$emit('reloadData')
                     this.close()
                 })
                 .catch(error => {
-                    if (error.response.status === 422) {
-                        this.errors = error.response.data
+                    if (error.response?.status === 422) {
+                        this.errors = error.response.data.errors || error.response.data;
+                        const message = Object.values(this.errors).flat().find(value => typeof value === 'string' && value.trim());
+                        if (message) this.$message.error(message);
                     } else {
-                        console.log(error)
+                        this.$message.error('No se pudo guardar la matrícula.');
                     }
                 })
                 .finally(() => {
@@ -1185,8 +1230,18 @@ export default {
             this.form.total_taxes = 0;
             this.form.total_value = 0;
             this.form.total = 0;
-            ;
-
+            // ######## INICIO PARTIDAS DE MATRICULA ########
+            if (plan) {
+                this.form.items = JSON.parse(JSON.stringify(plan.items || []));
+                this.form.currency_type_id = plan.currency_type_id || (plan.currency_type && plan.currency_type.id) || this.config.currency_type_id;
+                this.currency_type = plan.currency_type || _.find(this.currency_types || [], {id: this.form.currency_type_id});
+                for (const field of ['total_charge', 'total_discount', 'total_exportation', 'total_taxed',
+                    'total_exonerated', 'total_igv', 'total_base_other_taxes', 'total_other_taxes',
+                    'total_taxes', 'total_value', 'total']) {
+                    this.form[field] = plan[field] ?? 0;
+                }
+            }
+            // ######## FIN PARTIDAS DE MATRICULA ########
 
             this.changeStartDate();
         },

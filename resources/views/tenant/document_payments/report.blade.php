@@ -71,9 +71,14 @@
                                 <th>Método de pago</th>
                                 <th>Destino</th>
                                 <th>Referencia</th>
+                                {{-- ######## INICIO MONEDA DEL MEDIO DE COBRO ######## --}}
+                                <th>Tipo de aplicación</th>
+                                <th>Estado</th>
                                 <th>Vuelto</th>
-                                <th>Moneda recibida</th><th>Importe recibido</th><th>Importe aplicado</th>
-                                <th>Total</th>
+                                <th>Moneda recibida</th><th>Importe recibido</th><th>Tasa Bs./USD</th>
+                                <th>Moneda del documento</th><th>Importe aplicado</th>
+                                <th>Total del documento</th>
+                                {{-- ######## FIN MONEDA DEL MEDIO DE COBRO ######## --}}
                                 <th>Fecha</th>
                             </tr>
                         </thead>
@@ -87,9 +92,13 @@
                                     <td class="celda">{{ $item['payment_method_type_description'] }}</td>
                                     <td class="celda">{{ $item['destination_description'] }}</td>
                                     <td class="celda">{{ $item['reference'] }}</td>
-                                    <td class="celda">{{ $item['change'] }}</td>
-                                    <td class="celda">{{ $item['currency_type_id'] }}</td><td class="celda">{{ $item['payment'] }}</td><td class="celda">{{ $item['applied_payment'] }}</td>
+                                    {{-- ######## INICIO MONEDA DEL MEDIO DE COBRO ######## --}}
+                                    <td class="celda">{{ $item['kind'] }}</td>
+                                    <td class="celda">{{ $item['status'] }}</td>
+                                    <td class="celda">{{ $item['change'] ?? 'No disponible' }}</td>
+                                    <td class="celda">{{ $item['currency_type_id'] ?? 'No disponible' }}</td><td class="celda">{{ $item['payment'] ?? 'No disponible' }}</td><td class="celda">{{ $item['exchange_rate'] ?? 'No disponible' }}</td><td class="celda">{{ $item['document_currency_type_id'] }}</td><td class="celda">{{ $item['applied_payment'] }}</td>
                                     <td class="celda">{{ $item['total'] }}</td>
+                                    {{-- ######## FIN MONEDA DEL MEDIO DE COBRO ######## --}}
                                     <td class="celda">{{ $item['date_of_payment'] }}</td>
                                 </tr>
                             @endforeach

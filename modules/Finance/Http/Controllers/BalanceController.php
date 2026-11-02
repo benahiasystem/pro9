@@ -130,6 +130,7 @@
                     $initial=$account->exactValue('initial_balance');
                     if ($initial->isZero()) continue;
                     $groups[]=['method'=>['catalog'=>'bank_accounts','id'=>(string)$account->id,'description'=>'Saldo inicial de cuenta','collection_kind'=>'account'],
+                        'method_kind_label'=>\App\Services\Payments\Classification::kindLabel('account'),
                         'destination_label'=>$account->description,'destination_id'=>$account->id,'currency_type_id'=>$currency,
                         'opening'=>\App\Support\Exact\Decimal::represent($initial),'income'=>'0','egress'=>'0','balance'=>\App\Support\Exact\Decimal::represent($initial),
                         'calculation_snapshot'=>\App\Support\Exact\Decimal::snapshot(['opening'=>$initial,'income'=>0,'egress'=>0,'balance'=>$initial])];
@@ -260,6 +261,32 @@
                     !empty($origin) &&
                     !empty($destiny)
                 ) {
+                    // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+                    // Lock accounts in a stable order before freezing each leg's currency.
+                    foreach ([Cash::class, BankAccount::class] as $accountClass) {
+                        $ids=[];
+                        foreach ([$origin,$destiny] as $account) if ($account instanceof $accountClass) $ids[]=$account->id;
+                        if (!$ids) continue;
+                        $locked=$accountClass::whereIn('id',array_unique($ids))->orderBy('id')->lockForUpdate()->get()->keyBy('id');
+                        if ($origin instanceof $accountClass) $origin=$locked->get($origin->id);
+                        if ($destiny instanceof $accountClass) $destiny=$locked->get($destiny->id);
+                    }
+                    if (!$origin || !$destiny) \App\Services\Payments\Classification::error('destination','La cuenta indicada ya no existe.');
+                    $cashCurrency=null;
+                    if ($origin instanceof Cash || $destiny instanceof Cash) {
+                        $configuration=Configuration::query()->lockForUpdate()->firstOrFail();
+                        $cashCurrency=$data['cash_currency_type_id'] ?? null;
+                        if (!in_array($cashCurrency,['VES','USD'],true) || $cashCurrency !== $configuration->getCurrencyTypeId()) {
+                            \App\Services\Payments\Classification::error('cash_currency_type_id','Actualice la configuración y confirme la moneda de caja del traslado.');
+                        }
+                    }
+                    $originCurrency=$origin instanceof Cash ? $cashCurrency : $origin->currency_type_id;
+                    $destinationCurrency=$destiny instanceof Cash ? $cashCurrency : $destiny->currency_type_id;
+                    $currencies=array_unique([$originCurrency,$destinationCurrency]);
+                    if (array_diff($currencies,['VES','USD']) || \DB::connection('tenant')->table('cat_currency_types')->whereIn('id',$currencies)->where('active',1)->count() !== count($currencies)) {
+                        \App\Services\Payments\Classification::error('currency_type_id','El traslado requiere monedas VES/USD activas.');
+                    }
+                    // ######## FIN MONEDA DEL MEDIO DE COBRO ########
 
                     $transfer = new TransferAccountPayment();
                     $transfer_minus = new TransferAccountPayment();
@@ -314,6 +341,10 @@
                         }
                     }
 
+                    // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+                    $transfer->currency_type_id=$destinationCurrency;
+                    $transfer_minus->currency_type_id=$originCurrency;
+                    // ######## FIN MONEDA DEL MEDIO DE COBRO ########
                     $transfer->push();
                     $transfer_minus->push();
                 }

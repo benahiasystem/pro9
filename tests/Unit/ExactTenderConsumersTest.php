@@ -25,12 +25,17 @@ class ExactTenderConsumersTest extends TestCase
         Schema::connection('tenant')->create('sale_note_payments',function ($t) {
             $t->increments('id'); $t->integer('sale_note_id'); $t->text('payment'); $t->text('change')->nullable();
             $t->string('payment_method_type_id')->nullable(); $t->json('calculation_snapshot')->nullable();
+            $t->string('currency_type_id')->nullable(); $t->text('original_amount')->nullable();
+            $t->text('exchange_rate')->nullable(); $t->string('exchange_rate_source')->nullable();
+            $t->date('exchange_rate_date')->nullable(); $t->json('payment_method_snapshot')->nullable();
         });
         Schema::connection('tenant')->create('payment_method_types',function ($t) {
             $t->string('id'); $t->boolean('is_active')->default(true);$t->string('description')->default('Prueba');
             $t->string('hka_code')->default('99');$t->string('collection_kind');$t->string('cash_currency_type_id')->nullable();
+            $t->string('currency_type_id')->default('VES');
         });
         DB::connection('tenant')->table('payment_method_types')->insert([['id'=>'01','collection_kind'=>'cash','cash_currency_type_id'=>'VES'],['id'=>'10','collection_kind'=>'cash','cash_currency_type_id'=>'USD'],['id'=>'04','collection_kind'=>'account','cash_currency_type_id'=>null]]);
+        DB::connection('tenant')->table('payment_method_types')->where('id','10')->update(['currency_type_id'=>'USD']);
         Schema::connection('tenant')->create('companies',function($t) {$t->increments('id');$t->string('fiscal_environment')->default('demo');$t->string('fiscal_emission_mode')->default('digital');});
         DB::connection('tenant')->table('companies')->insert(['id'=>1]);
         Schema::connection('tenant')->create('cash',function($t) {$t->increments('id');$t->integer('user_id');$t->boolean('state');});
@@ -38,10 +43,13 @@ class ExactTenderConsumersTest extends TestCase
         Schema::connection('tenant')->create('bank_accounts',function($t) {$t->increments('id');$t->string('description')->default('Cuenta VES');$t->string('currency_type_id')->default('VES');$t->boolean('status')->default(true);});
         DB::connection('tenant')->table('bank_accounts')->insert(['id'=>1]);
         Schema::connection('tenant')->create('document_payments',function($t) {$t->increments('id');$t->json('payment_method_snapshot')->nullable();$t->dateTime('reversed_at')->nullable();});
+        Schema::connection('tenant')->create('hotel_rent_item_payments',function($t) {$t->increments('id');$t->integer('source_sale_note_payment_id')->nullable();});
         Schema::connection('tenant')->create('users',function($t) {$t->increments('id');});
         DB::connection('tenant')->table('users')->insert(['id'=>1]);
         Schema::connection('tenant')->create('establishments',function($t) {$t->increments('id');});
-        foreach (['fiscal_environments','state_types','cat_currency_types','card_brands'] as $table) Schema::connection('tenant')->create($table,function($t) {$t->string('id');});
+        foreach (['fiscal_environments','state_types','card_brands'] as $table) Schema::connection('tenant')->create($table,function($t) {$t->string('id');});
+        Schema::connection('tenant')->create('cat_currency_types',function($t) {$t->string('id');$t->boolean('active')->default(true);});
+        DB::connection('tenant')->table('cat_currency_types')->insert([['id'=>'VES'],['id'=>'USD']]);
         Schema::connection('tenant')->create('sale_note_items',function($t) {$t->increments('id');$t->integer('sale_note_id');});
         foreach (['global_payments','payment_files','payment_link_payments'] as $name) Schema::connection('tenant')->create($name,function ($t) {
             $t->increments('id'); $t->string('payment_type'); $t->integer('payment_id');
@@ -55,6 +63,11 @@ class ExactTenderConsumersTest extends TestCase
     public function test_shared_php_javascript_cases_conserve_actual_tender_and_nonnegative_payments(): void
     {
         foreach (json_decode(file_get_contents(base_path('tests/fixtures/exact_tenders.json')),true) as $case) {
+            foreach ($case['rows'] as $row) {
+                if (!isset($row['payment_method_type_id'], $row['collection_kind'])) continue;
+                DB::connection('tenant')->table('payment_method_types')->where('id',$row['payment_method_type_id'])
+                    ->update(['collection_kind'=>$row['collection_kind']]);
+            }
             try { $rows = TenderAllocation::calculate($case['payable'],$case['rows']); }
             catch (ValidationException $error) { self::assertTrue($case['invalid'] ?? false,$case['name']); continue; }
             self::assertFalse($case['invalid'] ?? false,$case['name']);
@@ -134,6 +147,27 @@ class ExactTenderConsumersTest extends TestCase
         self::assertSame('30',$result['total_paid']);
         self::assertSame(0,$writes);
         self::assertFalse((bool)$db->table('sale_notes')->where('id',1)->value('total_canceled'));
+    }
+
+    public function test_locked_method_batch_cannot_escape_its_callback_or_transaction(): void
+    {
+        $db = DB::connection('tenant');
+        $scope = null;
+        $db->transaction(function () use ($db, &$scope) {
+            \App\Services\Payments\LockedPaymentMethods::run($db, ['01'], function ($locked) use ($db, &$scope) {
+                $scope = $locked;
+                self::assertSame('cash', $locked->find($db, '01')->collection_kind);
+                $db->transaction(fn() => self::assertSame('cash', $locked->find($db, '01')->collection_kind));
+            });
+            try {
+                $scope->find($db, '01');
+                self::fail('El catálogo bloqueado no debe poder usarse fuera del callback.');
+            } catch (\LogicException $error) {
+                self::assertStringContainsString('transacción', $error->getMessage());
+            }
+        });
+        $this->expectException(\LogicException::class);
+        \App\Services\Payments\LockedPaymentMethods::run($db, ['01'], fn() => null);
     }
 
     public function test_failure_after_an_insert_rolls_back_and_does_not_leave_settlement_deferred(): void

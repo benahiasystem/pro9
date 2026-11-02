@@ -312,6 +312,7 @@ class AccountController extends Controller
     private function getDocuments($d_start, $d_end)
     {
         return Document::query()
+            ->with('payments.global_payment')
             ->whereBetween('date_of_issue', [$d_start, $d_end])
             ->whereIn('document_type_id', ['01'])
             ->whereIn('currency_type_id', ['VES', 'USD'])
@@ -381,7 +382,7 @@ class AccountController extends Controller
     private function getDocumentsEjb($d_start, $d_end)
     {
         return Document::query()
-            ->with(['invoice', 'items', 'note.affected_document'])
+            ->with(['invoice', 'items', 'note.affected_document', 'payments.global_payment'])
             ->whereBetween('date_of_issue', [$d_start, $d_end])
             ->whereIn('document_type_id', ['01', '07', '08'])
             ->whereIn('currency_type_id', ['VES', 'USD'])
@@ -456,11 +457,14 @@ class AccountController extends Controller
                 $total_payments = $row->payments->count();
                 $row->payments->each(function($row, $index) use(&$automatic_payment_account, &$automatic_payment_amount, $account_debit_debit, $total_payments) {
                     $automatic_payment_amount .= "$row->payment";
-                    if ($row->payment_method_type_id === '01') {
+                    // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+                    $kind = \App\Services\Payments\Classification::recordedKind($row);
+                    if ($kind === 'cash') {
                         $automatic_payment_account .= $account_debit_debit['debit'];
-                    } else {
+                    } elseif ($kind === 'account') {
                         $automatic_payment_account .= $account_debit_debit['transfer'];
                     }
+                    // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
 
                     if (($index + 1) != $total_payments) {
                         $automatic_payment_amount .= ", ";
@@ -1456,18 +1460,15 @@ class AccountController extends Controller
             $payment_condition = '';
             $payment_method = '';
 
-            if ($row->payments->count() > 0) {
-                if ($row->payments[0]->payment_method_type_id == '01') {
-                    $payment_condition = 'CON';
-                    $payment_method = '008';
-                } elseif ($row->payments[0]->payment_method_type_id == '09') {
-                    $payment_condition = 'CRE';
-                    $payment_method = '005';
-                }
-            } else {
-                $payment_condition = '';
-                $payment_method = '';
+            // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+            if (in_array((string)$row->payment_condition_id, ['02', '03'], true)) {
+                $payment_condition = 'CRE';
+                $payment_method = '005';
+            } elseif ((string)$row->payment_condition_id === '01') {
+                $payment_condition = 'CON';
+                if ($row->payments->isNotEmpty() && \App\Services\Payments\Classification::recordedKind($row->payments[0]) === 'cash') $payment_method = '008';
             }
+            // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
             return [
                 'date_of_issue' => $row->date_of_issue->format('d/m/Y'),
                 'date_of_due' => $row->invoice->date_of_due->format('d/m/Y'),

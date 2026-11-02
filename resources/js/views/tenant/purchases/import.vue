@@ -395,7 +395,7 @@ export default {
                 date_of_issue: null,
                 time_of_issue: null,
                 supplier_id: null,
-                payment_method_type_id: "01",
+                payment_method_type_id: null,
                 currency_type_id: "VES",
                 purchase_order: null,
                 exchange_rate_sale: 3.393,

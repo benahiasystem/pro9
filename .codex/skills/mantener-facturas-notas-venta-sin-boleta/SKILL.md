@@ -30,6 +30,7 @@ Aplicar un único contrato funcional en todos los canales de venta: Facturas (`0
 ## Reglas de aceptación
 
 - Una petición manipulada con `document_type_id=03` falla también en el servidor.
+- El generador de FullSuscription utiliza Factura para cualquier identidad permitida; el guardado común revalida la identidad activa.
 - Ningún flujo nuevo propone `03` ni siembra series de Boleta; los prefijos de códigos introducidos manualmente no determinan el tipo documental.
 - Facturas y Notas de venta siguen creándose desde todos los canales que las soportan.
 - Los ocho tipos canónicos `0`, `1`, `6`, `7`, `E`, `C`, `G` y `R` nacen activos y pueden emitir `01`, `80`/`nv`, `07` y `08`; una identidad desactivada posteriormente se rechaza en backend en todos los canales aunque la petición sea manipulada.

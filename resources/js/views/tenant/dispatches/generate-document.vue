@@ -174,6 +174,26 @@
                         ></small>
                     </div>
                 </div>
+                <div class="col-lg-6">
+                    <div class="form-group">
+                        <label class="control-label">Tasa documental (VES por USD)</label>
+                        <el-input :value="document.exchange_rate_sale || ''" disabled></el-input>
+                        <small v-if="rateError" class="text-danger">{{ rateError }}</small>
+                    </div>
+                </div>
+                <div v-if="document.items && document.items.length" class="col-12">
+                    <table class="table table-sm">
+                        <thead><tr><th>Descripción</th><th>Cantidad</th><th>Precio unitario</th><th>Total</th></tr></thead>
+                        <tbody>
+                        <tr v-for="(item, index) in document.items" :key="index">
+                            <td>{{ item.item.description }}</td><td>{{ item.quantity }}</td>
+                            <td>{{ (currency_type || {}).symbol || document.currency_type_id }} {{ item.unit_price }}</td>
+                            <td>{{ (currency_type || {}).symbol || document.currency_type_id }} {{ item.total }}</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                    <p>Total del comprobante: {{ (currency_type || {}).symbol || document.currency_type_id }} {{ document.total }}</p>
+                </div>
 
                 <div class="col-lg-6">
                     <div
@@ -254,7 +274,7 @@
                     </div>
                 </div>
 
-                <template v-if="document.payment_condition_id === '01'">
+                <template>
                     <div class="col-lg-12">
                         <table>
                             <thead>
@@ -278,7 +298,7 @@
                                 :key="index">
                                 <td>
                                     <div class="form-group mb-2 mr-2">
-                                        <el-select v-model="row.payment_method_type_id">
+                                        <el-select v-model="row.payment_method_type_id" @change="markDefaultReceiptEdited(row)">
                                             <el-option
                                                 v-for="option in payment_method_types"
                                                 :key="option.id"
@@ -286,12 +306,21 @@
                                                 :value="option.id"
                                             ></el-option>
                                         </el-select>
+                                        <small v-if="!row.payment_method_type_id" class="text-muted">No hay efectivo activo para la moneda del documento; seleccione un método.</small>
+                                        <igtf-settings-status v-if="fiscalPaymentsApplicable" />
+                                        <igtf-payment-fields v-if="fiscalPaymentsApplicable && !row.id"
+                                            :payment="row" :payment-methods="payment_method_types"
+                                            :document-currency="document.currency_type_id" :document-rate="document.exchange_rate_sale"
+                                            :customer-id="document.customer_id" :igtf-enabled="igtfEnabled" :settings-version="igtfSettings.revision" />
+                                        <receipt-currency-fields v-else-if="!row.id" :row="row" :methods="payment_method_types"
+                                            :document-currency="document.currency_type_id" :document-rate="document.exchange_rate_sale" />
                                     </div>
                                 </td>
                                 <td>
                                     <div class="form-group mb-2 mr-2">
                                         <el-select
                                             v-model="row.payment_destination_id"
+                                            @change="markDefaultReceiptEdited(row)"
                                             :disabled="classifiedPaymentDestinationDisabled(payment_destinations, row)"
                                             filterable
                                         >
@@ -306,12 +335,12 @@
                                 </td>
                                 <td>
                                     <div class="form-group mb-2 mr-2">
-                                        <el-input v-model="row.reference"></el-input>
+                                        <el-input v-model="row.reference" @input="markDefaultReceiptEdited(row)"></el-input>
                                     </div>
                                 </td>
                                 <td>
                                     <div class="form-group mb-2 mr-2">
-                                        <el-input v-model="row.payment"></el-input>
+                                        <el-input v-model="row.payment" @input="markDefaultReceiptEdited(row)"></el-input>
                                     </div>
                                 </td>
                                 <td class="series-table-actions text-center">
@@ -329,7 +358,7 @@
                         </table>
                     </div>
                 </template>
-                <template v-else>
+                <template v-if="document.payment_condition_id === '02'">
                     <div class="col-lg-12">
                         <table v-if="document.fee.length>0" width="100%">
                             <thead>
@@ -437,14 +466,23 @@ import {calculateRowItem} from "../../../helpers/functions";
 import {exchangeRate, functions} from "../../../mixins/functions";
 import moment from "moment";
 import {mapActions, mapState} from "vuex/dist/vuex.mjs";
+import fiscalPaymentSettings from "@mixins/fiscal-payment-settings";
+import IgtfPaymentFields from "@views/documents/partials/igtf_fields.vue";
+import ReceiptCurrencyFields from "@components/ReceiptCurrencyFields.vue";
+import {paymentConditionPayload, suggestInstallments, suggestRemainingPayment} from "../../../helpers/document-creation";
+import {commercialTotals} from "../../../helpers/exact-commercial";
+import {exactAmount, exactSum, normalizeExchangeRate} from "../../../helpers/exchange-rate-math";
+import {defaultCashForCurrency, paymentValidationMessage} from "../../../helpers/payment-classification";
 
 export default {
     components: {
         DocumentOptions,
-        SaleNoteOptions
+        SaleNoteOptions,
+        IgtfPaymentFields,
+        ReceiptCurrencyFields
     },
     mixins: [
-        exchangeRate, functions
+        exchangeRate, functions, fiscalPaymentSettings
     ],
     props: [
         "showDialog",
@@ -481,11 +519,13 @@ export default {
             payment_conditions: [],
             form_cash_document: {},
             payment_method_types: [],
+            automaticReceipt: null,
             items: [],
             affectation_igv_types: [],
             affectation_igv_type: null,
             currencyTypeIdActive: "VES",
-            exchangeRateSale: 1,
+            exchangeRateSale: null,
+            rateError: '',
             show_has_retention: true,
             currency_type: {},
         };
@@ -493,6 +533,14 @@ export default {
     created() {
         this.initForm();
         this.initDocument();
+    },
+    watch: {
+        'document.payments': {
+            deep: true,
+            handler() {
+                if (this.document.payment_condition_id === '02') suggestInstallments(this.document);
+            },
+        },
     },
     methods: {
         documentNumberFull,
@@ -514,50 +562,42 @@ export default {
 
         },
         calculateFee() {
-
-            let total = this.document.total
-            let accumulated = 0
-            let amount = _.round(total / this.document.fee.length, 2)
-
-            _.forEach(this.document.fee, row => {
-                accumulated += amount
-                if (total - accumulated < 0) {
-                    amount = _.round(total - accumulated + amount, 2)
-                }
-                row.amount = amount
-            })
-
+            suggestInstallments(this.document)
         },
         calculatePayments() {
-
-            let total = this.document.total
-            let payment = 0;
-            let amount = _.round(total / this.document.payments.length, 2);
-
-            _.forEach(this.document.payments, row => {
-                payment += amount;
-                if (total - payment < 0) {
-                    amount = _.round(total - payment + amount, 2);
-                }
-                row.payment = amount;
-            })
+            suggestRemainingPayment(this.document, this.document.payments, {refreshSuggested: true});
+            if (this.document.payment_condition_id === '02') this.calculateFee();
         },
         changePaymentCondition() {
-
-            this.document.fee = []
-            this.document.payments = []
-
-            if(this.document.payment_condition_id === '01') {
-                this.clickAddPayment()
+            if(this.document.payment_condition_id === '01' && !this.document.payments.length) {
+                this.clickAddPayment(true)
             }
-
-            if(this.document.payment_condition_id === '02') {
+            if (this.document.payment_condition_id === '02' && this.automaticReceipt) {
+                const {row, payment, method, destination} = this.automaticReceipt;
+                const sameAmount = (left, right) => {
+                    try { return exactAmount(left).compare(right) === 0; } catch (_) { return false; }
+                };
+                const unchanged = String(row.payment) === payment && row.payment_method_type_id === method
+                    && row.payment_destination_id === destination && !row.reference
+                    && (!row.currency_type_id || row.currency_type_id === this.document.currency_type_id)
+                    && (row.original_amount == null || sameAmount(row.original_amount, payment))
+                    && !row.financial_intermediation && !['subject', 'exempt'].includes(row.igtf_status)
+                    && (!row.tax_amount || sameAmount(row.tax_amount, 0))
+                    && (!row.exchange_rate || sameAmount(row.exchange_rate, this.document.exchange_rate_sale));
+                if (unchanged) this.document.payments = this.document.payments.filter(paymentRow => paymentRow !== row);
+                this.automaticReceipt = null;
+            }
+            if(this.document.payment_condition_id === '02' && !this.document.fee.length) {
                 this.clickAddFee()
             }
-
+        },
+        markDefaultReceiptEdited(row) {
+            if (this.automaticReceipt && this.automaticReceipt.row === row) this.automaticReceipt = null;
         },
         clickCancel(index) {
+            this.markDefaultReceiptEdited(this.document.payments[index]);
             this.document.payments.splice(index, 1);
+            if (this.document.payment_condition_id === '02') this.calculateFee();
         },
         getPaymentDestinationId() {
             if (
@@ -571,21 +611,24 @@ export default {
 
             return null;
         },
-        async clickAddPayment() {
+        async clickAddPayment(automatic = false) {
 
-            let payment = this.document.payments.length == 0 ? this.form.dispatch.total : 0;
-
+            const method = defaultCashForCurrency(this.payment_method_types, this.document.currency_type_id);
             await this.document.payments.push({
                 id: null,
                 document_id: null,
                 date_of_payment: moment().format("YYYY-MM-DD"),
-                payment_method_type_id: "01",
-                payment_destination_id: this.getPaymentDestinationId(),
+                payment_method_type_id: method?.id || null,
+                payment_destination_id: method && this.payment_destinations.some(destination => destination.id === 'cash') ? 'cash' : null,
                 reference: null,
-                payment: payment,
+                payment: 0,
             });
 
             this.calculatePayments()
+            if (automatic === true) {
+                const row = this.document.payments[this.document.payments.length - 1];
+                this.automaticReceipt = {row, payment: String(row.payment), method: row.payment_method_type_id, destination: row.payment_destination_id};
+            }
 
         },
         initForm() {
@@ -687,6 +730,7 @@ export default {
             }
         },
         initDocument() {
+            this.automaticReceipt = null;
             this.document = {
                 document_type_id: null,
                 series_id: null,
@@ -771,62 +815,8 @@ export default {
             };
         },
         onCalculateTotals() {
-            let total_exportation = 0;
-            let total_taxed = 0;
-            let total_exonerated = 0;
-            let total_unaffected = 0;
-            let total_free = 0;
-            let total_igv = 0;
-            let total_value = 0;
-            let total = 0;
-
-            let total_discount = 0;
-            let total_charge = 0;
-            this.document.items.forEach((row) => {
-                total_discount += parseFloat(row.total_discount);
-                total_charge += parseFloat(row.total_charge);
-
-                if (row.affectation_igv_type_id === "10") {
-                    total_taxed += parseFloat(row.total_value);
-                }
-                if (["10", "20", "30", "40"].indexOf(row.affectation_igv_type_id) < 0) {
-                    total_free += parseFloat(row.total_value);
-                }
-                if (
-                    ["10", "20", "30", "40"].indexOf(row.affectation_igv_type_id) > -1
-                ) {
-                    total_igv += parseFloat(row.total_igv);
-                    total += parseFloat(row.total);
-                }
-                total_value += parseFloat(row.total_value);
-
-
-                if (["13", "14", "15"].includes(row.affectation_igv_type_id)) {
-                    let unit_value =
-                        row.total_value / row.quantity / (1 + row.percentage_igv / 100);
-                    let total_value_partial = unit_value * row.quantity;
-                    row.total_taxes = row.total_value - total_value_partial;
-                    row.total_igv = row.total_value - total_value_partial;
-                    row.total_base_igv = total_value_partial;
-                    total_value -= row.total_value;
-                }
-            });
-
-            this.document.total_exportation = _.round(total_exportation, 2);
-            this.document.total_taxed = _.round(total_taxed, 2);
-            this.document.total_exonerated = _.round(total_exonerated, 2);
-            this.document.total_unaffected = _.round(total_unaffected, 2);
-            this.document.total_free = _.round(total_free, 2);
-            this.document.total_igv = _.round(total_igv, 2);
-            this.document.total_value = _.round(total_value, 2);
-            this.document.total_taxes = _.round(total_igv, 2);
-
-            this.document.total = _.round(
-                total,
-                2
-            );
-
-            // this.setTotalDefaultPayment();
+            Object.assign(this.document, commercialTotals(this.document));
+            if (this.document.payment_condition_id === '02') suggestInstallments(this.document);
         },
         setTotalDefaultPayment() {
             if (this.document.payments.length > 0) {
@@ -834,6 +824,11 @@ export default {
             }
         },
         async submit() {
+            try {
+                this.document.exchange_rate_sale = normalizeExchangeRate(this.document.exchange_rate_sale);
+            } catch (_) {
+                return this.$message.error('No hay una tasa documental válida. Cierre el diálogo y vuelva a intentarlo.');
+            }
             this.assignDocument();
             this.onCalculateTotals();
 
@@ -843,6 +838,8 @@ export default {
             if (validate_payment_destination.error_by_item > 0) {
                 return this.$message.error("El destino del pago es obligatorio");
             }
+
+            if (!await this.ensureFiscalPaymentsReady(this.document.payments)) return;
 
             this.loading_submit = true;
             if (this.document.document_type_id === "80") {
@@ -854,7 +851,7 @@ export default {
             }
 
             this.$http
-                .post(`/${this.resource_documents}`, this.document)
+                .post(`/${this.resource_documents}`, paymentConditionPayload(this.document))
                 .then((response) => {
                     if (response.data.success) {
                         this.documentNewId = response.data.data.id;
@@ -879,10 +876,14 @@ export default {
                     }
                 })
                 .catch((error) => {
-                    if (error.response.status === 422) {
-                        this.errors = error.response.data;
+                    if (error.response && error.response.status === 422) {
+                        this.errors = error.response.data.errors || error.response.data;
+                        const message = paymentValidationMessage(error.response.data)
+                            || Object.values(this.errors).flat().find(value => typeof value === 'string' && value.trim())
+                            || 'Revise los datos del comprobante.';
+                        this.$message.error(message);
                     } else {
-                        this.$message.error(error.response.data.message);
+                        this.$message.error(error.response?.data?.message || "No se pudo guardar el comprobante.");
                     }
                 })
                 .then(() => {
@@ -911,10 +912,12 @@ export default {
                 });
         },
         onGetItems(item) {
+            const affectationId = item.sale_affectation_igv_type_id || '10';
+            const affectation = (this.affectation_igv_types || []).find(row => row.id === affectationId) || this.affectation_igv_type;
             const it = {
                 IdLoteSelected: null,
-                affectation_igv_type: this.affectation_igv_type,
-                affectation_igv_type_id: "10",
+                affectation_igv_type: affectation,
+                affectation_igv_type_id: affectationId,
                 attributes: [],
                 charges: [],
                 discounts: [],
@@ -923,6 +926,7 @@ export default {
 
 
                 input_unit_price_value: item.sale_unit_price,
+                price_input: {amount: String(item.sale_unit_price), currency_type_id: item.currency_type_id, includes_iva: !!item.has_igv},
                 item: item,
                 item_id: item.id,
                 item_unit_type_id: null,
@@ -999,32 +1003,38 @@ export default {
 
             const items = await data.items.map((i) => {
 
-                const quantity=this.form.dispatch.items.filter((ite)=>ite.item_id==i.id).reduce((sum,line)=>sum+Number(line.quantity),0);
-
-                let unit_price = (!i.has_igv) ? i.sale_unit_price * (1 + this.percentage_igv) : i.sale_unit_price;
+                const quantity = exactSum(this.form.dispatch.items.filter((ite)=>ite.item_id==i.id).map(line=>line.quantity)).decimal();
 
                 i.quantity = quantity;
-                i.unit_price = unit_price;
+                i.unit_price = i.sale_unit_price;
                 // i.unit_price = i.sale_unit_price;
 
                 return i;
             });
 
-            this.items = items.map((item) => this.onGetItems(item));
             await this.getCustomer();
             await this.validateIdentityDocumentType();
-            const date = moment(this.form.dispatch.date_of_issue).format(
-                "YYYY-MM-DD"
-            );
-            await this.searchExchangeRateByDate(date).then((res) => {
-                this.document.exchange_rate_sale = res;
-            });
+            this.items = [];
+            this.document.items = [];
+            this.rateError = '';
+            try {
+                const rate = normalizeExchangeRate(await this.searchExchangeRateByDate(this.document.date_of_issue));
+                this.document.exchange_rate_sale = rate;
+                this.exchangeRateSale = rate;
+            } catch (_) {
+                this.document.exchange_rate_sale = null;
+                this.exchangeRateSale = null;
+                this.rateError = 'No se pudo obtener una tasa documental válida. Cierre el diálogo y vuelva a intentarlo.';
+                this.$message.error(this.rateError);
+                return;
+            }
+            this.items = items.map((item) => this.onGetItems(item));
             this.document.items = this.items;
             this.titleDialog = `Orden de entrega ${documentNumberFull(this.form.dispatch.series, this.form.dispatch.number)}: Crear comprobante`;
 
             await this.onCalculateTotals();
 
-            await this.clickAddPayment();
+            await this.clickAddPayment(true);
         },
         changeDocumentType() {
             // this.filterSeries()

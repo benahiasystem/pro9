@@ -37,8 +37,11 @@
                                     <!-- ######## INICIO CALCULOS EXACTOS PRO9 ######## -->
                                     <td class="text-right">
                                         {{ row.payment }}
+                                        <small v-if="row.currency_type_id && row.tendered_original_amount !== null && row.tendered_original_amount !== undefined" class="d-block">{{ row.tendered_original_amount }} {{ row.currency_type_id }} recibido · tasa {{ row.exchange_rate }}</small>
+                                        <small v-else-if="row.currency_type_id" class="d-block">{{ row.original_amount }} {{ row.currency_type_id }} neto · tasa {{ row.exchange_rate }}</small>
                                         <small v-if="hasCashAdjustment(row)" class="d-block text-muted">Ajuste de liquidación: {{ cashAdjustmentText(row) }}</small>
-                                        <small v-if="hasChange(row)" class="d-block text-muted">Vuelto: {{ row.change }}</small>
+                                        <small v-if="hasChange(row) && row.received_change !== null && row.received_change !== undefined" class="d-block text-muted">Vuelto: {{ row.received_change }} {{ row.currency_type_id }}</small>
+                                        <small v-else-if="hasChange(row)" class="d-block text-muted">Vuelto aplicado: {{ row.change }} {{ document.currency_type_id }}</small>
                                     </td>
                                     <!-- ######## FIN CALCULOS EXACTOS PRO9 ######## -->
                                 <template v-if="external">
@@ -67,8 +70,9 @@
                                     <td>
                                         <div class="form-group mb-0" :class="{'has-danger': row.errors.payment_method_type_id}">
                                             <el-select v-model="row.payment_method_type_id">
-                                                <el-option v-for="option in payment_method_types" v-show="option.id != '09'" :key="option.id" :value="option.id" :label="option.description"></el-option>
+                                                <el-option v-for="option in payment_method_types" v-show="['cash', 'account'].includes(option.collection_kind)" :key="option.id" :value="option.id" :label="option.description"></el-option>
                                             </el-select>
+                                            <receipt-currency-fields :row="row" :methods="payment_method_types" :document-currency="document.currency_type_id" :document-rate="document.exchange_rate_sale" />
                                             <small class="form-control-feedback" v-if="row.errors.payment_method_type_id" v-text="row.errors.payment_method_type_id[0]"></small>
                                         </div>
                                     </td>
@@ -175,17 +179,19 @@
 
 <script>
     // ######## INICIO CALCULOS EXACTOS PRO9 ########
-    import {exactAmount, exactInput, exactValue} from '../../../../helpers/exchange-rate-math'
+    import {exactAmount, exactInput, exactValue, appliedReceiptAmount} from '../../../../helpers/exchange-rate-math'
+    import {paymentValidationMessage} from '../../../../helpers/payment-classification'
     // ######## FIN CALCULOS EXACTOS PRO9 ########
 
     import {deletable} from '../../../../mixins/deletable'
     import DocumentOptions from '../../../../../../modules/Finance/Resources/assets/js/views/unpaid/partials/options.vue'
+    import ReceiptCurrencyFields from '@components/ReceiptCurrencyFields.vue'
 
     export default {
         props: ['showDialog', 'documentId','external','configuration'],
         mixins: [deletable],
         components: {
-            DocumentOptions
+            DocumentOptions, ReceiptCurrencyFields
         },
         data() {
             return {
@@ -327,24 +333,22 @@
             },
             clickSubmit(index) {
                 // ######## INICIO CALCULOS EXACTOS PRO9 ########
+                const row = this.records[index];
+                if (row.loading) return;
                 let requested, applied;
                 try {
-                    this.records[index].payment = exactInput(String(this.records[index].payment));
-                    requested = exactAmount(this.records[index].payment);
-                    applied = exactAmount(requested.final(2));
+                    row.payment = exactInput(String(row.payment));
+                    requested = exactAmount(row.payment);
+                    applied = appliedReceiptAmount(row, this.document.currency_type_id);
                     if (requested.compare(0) <= 0 || applied.compare(0) <= 0) throw new Error('Indique un cobro positivo y liquidable en céntimos.');
+                    row.payment = applied.final(2);
                 } catch (error) { this.$message.error(error.message); return; }
                 if(applied.compare(exactValue(this.document, 'total_difference')) > 0) {
                     this.$message.error('El monto ingresado supera al monto pendiente de pago, verifique.');
                     return;
                 }
 
-                 // Prevenir múltiples clics
-                 if(this.records[index].loading) {
-                    return;
-                }
-
-                this.records[index].loading = true;
+                row.loading = true;
 
                 const paid = applied.compare(exactValue(this.document, 'total_difference')) === 0;
                 // ######## FIN CALCULOS EXACTOS PRO9 ########
@@ -360,6 +364,9 @@
                     filename: this.records[index].filename,
                     temp_path: this.records[index].temp_path,
                     payment: this.records[index].payment,
+                    currency_type_id: this.records[index].currency_type_id,
+                    original_amount: this.records[index].original_amount,
+                    exchange_rate: this.records[index].exchange_rate,
                     paid: paid
                 };
                 this.$http.post(`/${this.resource}`, form)
@@ -375,16 +382,17 @@
                         }
                     })
                     .catch(error => {
-                        if (error.response && error.response.status === 422 && error.response.data && !error.response.data.message) {
-                            this.records[index].errors = error.response.data;
+                        if (error.response && error.response.status === 422) {
+                            const data = error.response.data || {};
+                            row.errors = data.errors || (data.message && typeof data.message === 'object' ? data.message : data);
+                            const message = paymentValidationMessage(data);
+                            if (message) this.$message.error(message);
                         } else {
                             this.$message.error(this.getRequestErrorMessage(error))
                         }
                     })
                     .finally(() => {
-                        if (this.records[index]) {
-                            this.records[index].loading = false;
-                        }
+                        row.loading = false;
                     })
             },
             // filterDocumentType(row){

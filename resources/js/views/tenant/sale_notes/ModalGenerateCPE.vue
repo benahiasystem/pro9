@@ -191,7 +191,7 @@ export default {
             if (!Array.isArray(items)) throw new Error('No se recibió la agrupación conservada de las notas.');
             // ######## FIN CALCULOS EXACTOS PRO9 ########
             const client = this.clients.find((c) => c.id === this.form.client_id);
-            storeSaleNoteConversion(localStorage,{context:response.data.conversion_context,client,items,notes});
+            storeSaleNoteConversion(localStorage,{context:response.data.conversion_context,client,items,notes,payments:response.data.payments});
 
             this.onClose();
             window.location.href = "/documents/create";
@@ -227,7 +227,7 @@ export default {
             const items = response.data.data;
 
             const client = this.clients.find((c) => c.id === this.form.client_id);
-            storeSaleNoteConversion(localStorage,{context:response.data.conversion_context,client,items,notes});
+            storeSaleNoteConversion(localStorage,{context:response.data.conversion_context,client,items,notes,payments:response.data.payments});
             this.onClose();
             window.location.href = "/documents/create";
           })

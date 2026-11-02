@@ -49,7 +49,7 @@ class SaleNoteRequest extends FormRequest
             ],
             // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
             'payments.*.payment_method_type_id' => [
-                'required', Rule::exists('tenant.payment_method_types', 'id')->where('is_active', 1),
+                'required', Rule::exists('tenant.payment_method_types', 'id'),
             ],
             // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
         ];

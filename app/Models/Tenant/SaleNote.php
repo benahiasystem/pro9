@@ -297,7 +297,8 @@ use Modules\Sale\Models\Agent;
                 $cash = Cash::where([
                     ['user_id', auth()->id()],
                     ['state', true],
-                ])->firstOrFail();
+                ])->lockForUpdate()->first();
+                if (!$cash) \App\Services\Payments\Classification::error('cash', 'Abra una caja antes de registrar una nota de venta.');
 
                 $cash_document = CashDocument::where('cash_id', $cash->id)
                     ->where('sale_note_id', $model->id)->first();
@@ -408,6 +409,7 @@ use Modules\Sale\Models\Agent;
                 'total'                  => D::represent($this->exactValue('total')),
 
                 'items'                  => $items,
+                'payments'               => $this->getTransformPayments(),
                 // La tabla sale_notes tiene estas columnas y las plantillas pdf las
                 // imprimen; se agregan para igualar el contrato de los demas "find".
                 'observations'           => $this->observation,
@@ -1157,8 +1159,18 @@ use Modules\Sale\Models\Agent;
                     'payment_method_type_id' => $row->payment_method_type_id,
                     'reference' => $row->reference,
                     'payment' => $row->payment,
+                    'payment_method_snapshot' => $row->payment_method_snapshot,
+                    'currency_type_id' => $row->currency_type_id,
+                    'original_amount' => $row->original_amount,
+                    ...\App\Services\Payments\ReceiptPresentation::tender($row),
+                    'exchange_rate' => $row->exchange_rate,
+                    'exchange_rate_source' => $row->exchange_rate_source,
+                    'exchange_rate_date' => $row->exchange_rate_date ? $row->exchange_rate_date->format('Y-m-d') : null,
                     'payment_method_type' => $row->payment_method_type,
-                    'payment_destination_id' => ($row->global_payment) ? ($row->global_payment->type_record == 'cash' ? 'cash' : $row->global_payment->destination_id) : null,
+                    'payment_destination_id' => ($row->global_payment) ? ($row->global_payment->type_record == 'cash' ? 'cash' : $row->global_payment->destination_id) : data_get($row->payment_method_snapshot, 'receipt_origin.destination_id'),
+                    // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+                    'payment_destination_description' => \App\Services\Payments\ReceiptPresentation::destination($row),
+                    // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
                     'payment_filename' => ($row->payment_file) ? $row->payment_file->filename : null,
                 ];
             });

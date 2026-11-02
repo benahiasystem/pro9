@@ -445,10 +445,13 @@ use Modules\Purchase\Helpers\WeightedAverageCostHelper;
                         'number_full' => "{$purchase->series}-{$purchase->number}",
                     ],
                 ];
+            } catch (\Illuminate\Validation\ValidationException $th) {
+                throw $th;
             } catch (Throwable $th) {
+                report($th);
                 return response()->json([
                     'success' => false,
-                    'message' => $th->getMessage(),
+                    'message' => 'No se pudo guardar la compra. Revise los datos e inténtelo nuevamente.',
                 ], 500);
             }
         }
@@ -456,7 +459,15 @@ use Modules\Purchase\Helpers\WeightedAverageCostHelper;
 
         private function savePurchaseFee($purchase, $fee)
         {
-            \App\Support\Exact\Installments::save($purchase,array_values($fee));
+            // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+            $paid = \App\Support\Exact\Decimal::of(0);
+            foreach ($purchase->purchase_payments()->get() as $payment) {
+                $paid = $paid->plus(\App\Support\Exact\Decimal::readRequired($payment, 'payment'));
+            }
+            $total = $purchase->total_payable === null ? $purchase->exactValue('total') : $purchase->exactValue('total_payable');
+            $outstanding = \App\Support\Exact\Decimal::max(0, $total->minus($paid));
+            \App\Support\Exact\Installments::save($purchase, array_values($fee), $outstanding);
+            // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
         }
 
         /**
@@ -633,11 +644,15 @@ use Modules\Purchase\Helpers\WeightedAverageCostHelper;
 
             $purchase = DB::connection('tenant')->transaction(function () use ($request) {
 
-                $doc = Purchase::findOrFail($request['id']);
+                $doc = Purchase::whereKey($request['id'])->lockForUpdate()->firstOrFail();
+                $previousCurrency = $doc->currency_type_id;
                 $doc->fill($request->all());
                 $doc->supplier = PersonInput::set($request['supplier_id']);
                 $doc->group_id = ($request->document_type_id === '01') ? '01' : '02';
                 $doc->user_id = auth()->id();
+                if ((string)$previousCurrency !== (string)$doc->currency_type_id && $doc->purchase_payments()->exists()) {
+                    \App\Services\Payments\Classification::error('currency_type_id', 'La moneda de la compra no puede cambiar mientras tenga pagos registrados.');
+                }
                 $doc->save();
 
                 foreach ($doc->items as $it) {
@@ -706,9 +721,11 @@ use Modules\Purchase\Helpers\WeightedAverageCostHelper;
                     $this->processSupplies($doc, $supplies);
                 }
 
-                $this->deleteAllPayments($doc->purchase_payments);
-
-                foreach ($request['payments'] as $payment) {
+                // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+                $newPayments = $request->has('payments')
+                    ? \App\Services\Payments\ExistingReceipts::synchronize($doc, $request->input('payments', []), $previousCurrency)
+                    : [];
+                foreach ($newPayments as $payment) {
 
                     PaymentMethodType::assertActiveForPayment($payment['payment_method_type_id'] ?? null);
                     $record_payment = $doc->purchase_payments()->create($payment);
@@ -721,6 +738,7 @@ use Modules\Purchase\Helpers\WeightedAverageCostHelper;
                         ]);
                     }
                 }
+                // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
 
                 $doc->fee()->delete();
                 $this->savePurchaseFee($doc, $request['fee']);
@@ -1278,17 +1296,23 @@ use Modules\Purchase\Helpers\WeightedAverageCostHelper;
                 $data = array_merge($model, $values);
 
                 $purchase = DB::connection('tenant')->transaction(function () use ($data) {
+                    // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+                    if (empty($data['payment_method_type_id'])) {
+                        $data['payment_method_type_id'] = \App\Services\Payments\Classification::defaultCashMethod($data['currency_type_id'])->id;
+                    }
                     PaymentMethodType::assertActiveForPayment($data['payment_method_type_id'] ?? null);
                     $doc = Purchase::create($data);
                     foreach ($data['items'] as $row) {
                         $doc->items()->create($row);
                     }
 
-                    $doc->purchase_payments()->create([
+                    $payment = $doc->purchase_payments()->create([
                         'date_of_payment' => $data['date_of_issue'],
                         'payment_method_type_id' => $data['payment_method_type_id'],
                         'payment' => $data['total'],
                     ]);
+                    $this->createGlobalPayment($payment, $data);
+                    // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
 
                     return $doc;
                 });

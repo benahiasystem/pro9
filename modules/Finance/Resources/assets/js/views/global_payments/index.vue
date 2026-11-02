@@ -22,7 +22,7 @@
                                 <th class="">Moneda</th>
                                 <th class="">Tipo</th>
                                 <th class="">Destino</th>
-                                <th class="">Cuenta/Caja</th>
+                                <th class="">Cuenta/Caja actual</th>
                                 <th class="">F. Pago</th>
                                 <th class="">Método</th>
                                 <th class="">Referencia</th>

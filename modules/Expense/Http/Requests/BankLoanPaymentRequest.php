@@ -32,14 +32,16 @@
                 ],
                 'payment_method_type_id' => [
                     'required',
-                Rule::exists('tenant.payment_method_types', 'id')->where('is_active', 1),
+                Rule::exists('tenant.payment_method_types', 'id')->where('is_active', 1)->where('collection_kind', 'account'),
                 ],
                 'payment_destination_id' => [
-                    'required_unless:expense_method_type_id, "1"',
-                    // 'required',
+                    'required',
                 ],
                 'payment' => [
-                    'required',
+                    'bail', 'required', new \App\Rules\ExactDecimal('0', true),
+                    function ($attribute, $value, $fail) {
+                        if (is_float($value)) $fail('Transmita el importe decimal como texto.');
+                    },
                 ],
             ];
         }

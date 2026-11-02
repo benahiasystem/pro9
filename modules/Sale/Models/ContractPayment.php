@@ -16,6 +16,12 @@ class ContractPayment extends ModelTenant
         'contract_id',
         'date_of_payment',
         'payment_method_type_id',
+        'currency_type_id',
+        'original_amount',
+        'exchange_rate',
+        'exchange_rate_source',
+        'exchange_rate_date',
+        'payment_method_snapshot',
         'reference',
         'change',
         'payment',
@@ -23,6 +29,8 @@ class ContractPayment extends ModelTenant
 
     protected $casts = [
         'date_of_payment' => 'date',
+        'exchange_rate_date' => 'date',
+        'payment_method_snapshot' => 'array',
     ];
 
     public function payment_method_type()

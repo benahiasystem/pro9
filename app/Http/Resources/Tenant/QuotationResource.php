@@ -20,7 +20,7 @@ class QuotationResource extends JsonResource
      */
     public function toArray($request)
     {
-        $quotation = Quotation::with(['items', 'payments', 'person'])->find($this->id);
+        $quotation = Quotation::with(['items', 'payments', 'person', 'payment_method_type'])->find($this->id);
         $quotation->payments = self::getTransformPayments($quotation->payments);
         $items = self::getTransformItems($quotation->items, $quotation->currency_type_id);
         $quotation->setRelation('items', $items);
@@ -64,13 +64,12 @@ class QuotationResource extends JsonResource
         $quotationArray['discounts'] = $this->normalizeList($quotation->discounts);
         $quotationArray['charges'] = $this->normalizeList($quotation->charges);
         $quotationArray['items'] = collect($items)->values()->all();
+        // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+        // La cotización no guarda una condición independiente; usar la naturaleza vigente.
+        $quotationArray['payment_condition_id'] = optional($quotation->payment_method_type)->collection_kind === 'credit' ? '02' : '01';
+        // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
         // Snapshot de cliente siempre como array asociativo
         $quotationArray['customer'] = json_decode(json_encode($quotation->customer), true) ?: [];
-
-        // Método de pago legacy "10" (eliminado del catálogo) → Contado
-        if (($quotationArray['payment_method_type_id'] ?? null) === '10') {
-            $quotationArray['payment_method_type_id'] = '01';
-        }
 
         return [
             'id' => $this->id,
@@ -137,6 +136,14 @@ class QuotationResource extends JsonResource
                 'payment_method_type_id' => $row->payment_method_type_id,
                 'reference' => $row->reference,
                 'payment' => $row->payment,
+                'calculation_snapshot' => $row->calculation_snapshot,
+                'payment_method_snapshot' => $row->payment_method_snapshot,
+                'payment_destination_description' => data_get($row->global_payment?->report_context, 'destination_label'),
+                'currency_type_id' => $row->currency_type_id,
+                'original_amount' => $row->original_amount,
+                'exchange_rate' => $row->exchange_rate,
+                'exchange_rate_source' => $row->exchange_rate_source,
+                'exchange_rate_date' => $row->exchange_rate_date ? $row->exchange_rate_date->format('Y-m-d') : null,
                 'payment_method_type' => $row->payment_method_type,
                 'payment_destination_id' => ($row->global_payment)
                     ? ($row->global_payment->type_record == 'cash' ? 'cash' : $row->global_payment->destination_id)

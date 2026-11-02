@@ -59,16 +59,27 @@ class DocumentPaymentController extends Controller
      * Reutiliza el proceso web: crea el pago global, asocia el pago a la caja
      * aperturada y procesa el credito pendiente cuando el comprobante queda cancelado
      *
-     * Parametros requeridos:
+     * ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+     * Parámetros requeridos:
      * - document_id: comprobante al que se asigna el pago
      * - date_of_payment: fecha del pago (Y-m-d)
      * - payment_method_type_id: metodo de pago
      * - payment_destination_id: destino del pago (id de cuenta bancaria o 'cash')
-     * - payment: monto del pago (> 0)
+     * - payment u original_amount: importe positivo recibido en la moneda del cobro
      *
-     * Parametros opcionales:
-     * - id: para editar un pago existente
+     * Si se proporciona currency_type_id (VES o USD), debe coincidir con la moneda
+     * activa del método y se requiere operation_key con un UUID estable para el
+     * reintento. Si se omite, se usa la moneda documental y también debe coincidir
+     * con el método. Cuando ambas monedas difieren, enviar original_amount y
+     * exchange_rate positivos; la tasa expresa VES por USD, con hasta ocho decimales.
+     * exchange_rate_date y exchange_rate_source permiten identificar la tasa usada.
+     * El servidor conserva el importe recibido y calcula el aplicado al documento.
+     * La cuenta bancaria de destino debe estar activa y tener la moneda recibida.
+     *
+     * Otros parámetros opcionales:
      * - reference: referencia del pago
+     * Los pagos contabilizados no se editan: deben revertirse y registrarse de nuevo.
+     * ######## FIN MONEDA DEL MEDIO DE COBRO ########
      *
      * @param  DocumentPaymentRequest $request
      * @return array

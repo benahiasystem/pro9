@@ -23,7 +23,12 @@ class ReceivedPaymentStoreRequest extends FormRequest
     {
         return [
             'provider'     => ['required'],
-            'amount'       => ['required', 'numeric', 'gt:0'],
+            'amount'       => ['required', 'numeric', 'gt:0', function ($attribute, $value, $fail) {
+                if (is_float($value)) { $fail('Envíe el importe decimal como texto.'); return; }
+                try { \App\Support\Exact\Decimal::input($value, $attribute); }
+                catch (\Illuminate\Validation\ValidationException $error) { $fail('Indique un importe decimal válido.'); }
+            }],
+            'currency_type_id' => ['required', Rule::in(['VES', 'USD']), Rule::exists('tenant.cat_currency_types', 'id')],
             'sender_name'  => ['nullable', 'string', 'max:255'],
             'raw_text'     => ['required', 'string'],
             'package_name' => ['required', 'string', 'max:255'],

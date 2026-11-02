@@ -43,7 +43,7 @@
             ];
             // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
             // ######### FIN CAMBIO SOLO FACTURA Y NOTA DE VENTA
-            $payment_method_types = PaymentMethodType::active()->get();
+            $payment_method_types = PaymentMethodType::getActiveReceiptMethods();
             $payment_destinations = $this->getPaymentDestinations();
 
             return compact('series', 'document_types', 'payment_method_types', 'payment_destinations', 'establishment');
@@ -134,6 +134,12 @@
                 }
                 // ######### FIN CAMBIO SOLO FACTURA Y NOTA DE VENTA
 
+                // The nested controller reports validation failures as a result;
+                // roll back temporary items as well as the failed document.
+                if (empty($res['success'])) {
+                    DB::connection('tenant')->rollBack();
+                    return $res;
+                }
                 DB::connection('tenant')->commit();
                 return $res;
 

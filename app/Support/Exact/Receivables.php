@@ -12,18 +12,29 @@ final class Receivables
     public const EXPORT_FIELDS = ['total','total_payable','total_payment','total_credit_notes','retention_amount',
         'guarantee_amount','refund_amount','total_to_pay','exact_balance','settlement_adjustment',
         'total_ves_equivalent','balance_ves_equivalent','arrears'];
-    public static function dataset(array $filters, bool $all = false): ReportDataset
+    // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+    public static function invoiceKpiDataset(): ReportDataset
     {
+        return self::dataset(['source_type'=>'document'], true, true);
+    }
+    // ######## FIN MONEDA DEL MEDIO DE COBRO ########
+    public static function dataset(array $filters, bool $all = false, bool $documentKpiScope = false): ReportDataset
+    {
+        // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+        if ($documentKpiScope && (!$all || ($filters['source_type'] ?? null) !== 'document')) {
+            throw new \InvalidArgumentException('El indicador requiere únicamente facturas y su alcance de usuario.');
+        }
+        // ######## FIN MONEDA DEL MEDIO DE COBRO ########
         if (isset($filters['source_type']) && !in_array($filters['source_type'],['document','sale_note'],true)) {
             throw new \InvalidArgumentException('Origen de cuenta por cobrar no soportado.');
         }
         $db = DB::connection('tenant');
         $user = auth()->user();
         if (!$user) throw new \Illuminate\Auth\AuthenticationException();
-        return ReadSnapshot::run($db, function () use ($db, $filters, $all, $user) {
+        return ReadSnapshot::run($db, function () use ($db, $filters, $all, $user, $documentKpiScope) {
             $raw = $db->table('configurations')->value('finances');
             $settings = $raw ? JsonDecimals::decode($raw) : ['apply_arrears'=>false, 'arrears_amount'=>'0'];
-            return new ReportDataset((function () use ($db, $filters, $all, $user, $settings) {
+            return new ReportDataset((function () use ($db, $filters, $all, $user, $settings, $documentKpiScope) {
                 foreach (['document'=>['documents','document_items','document_id'], 'sale_note'=>['sale_notes','sale_note_items','sale_note_id']] as $type=>[$table,$lineTable,$foreign]) {
                     if (isset($filters['source_type']) && $filters['source_type'] !== $type) continue;
                     $query = $db->table($table)->join('persons','persons.id','=',$table.'.customer_id')
@@ -36,6 +47,12 @@ final class Receivables
                         ->whereIn('documents.document_type_id',['01','08'])->addSelect('invoices.date_of_due as due_at',
                             'documents.document_type_id','documents.control_number','documents.fiscal_emission_mode');
                     else $query->where('sale_notes.changed',false)->where('sale_notes.total_canceled',false)->addSelect('sale_notes.due_date as due_at');
+                    // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+                    if ($documentKpiScope) {
+                        $query->where('documents.document_type_id','01');
+                        if ($user->type !== 'admin') $query->where(fn($q)=>$q->where('documents.user_id',$user->id)->orWhere('documents.seller_id',$user->id));
+                    }
+                    // ######## FIN MONEDA DEL MEDIO DE COBRO ########
                     if (!empty($filters['customer_id'])) $query->where($table.'.customer_id',$filters['customer_id']);
                     if (!$all) {
                         if (empty($filters['stablishmentUnpaidAll'])) $query->where($table.'.establishment_id', $filters['establishment_id'] ?? $user->establishment_id);
@@ -61,18 +78,9 @@ final class Receivables
                         [$payments,$paymentDates] = self::payments($db,$type,$ids);
                         $credits = $retentions = $funds = $adjustments = $refunds = $guides = [];
                         if ($type === 'document') {
-                            $creditsQuery = $db->table('documents as nc')->join('notes','notes.document_id','=','nc.id')
-                                ->whereIn('notes.affected_document_id',$ids)->where('nc.document_type_id','07')
-                                ->whereNotIn('nc.state_type_id',['09','11'])->select('nc.*','notes.affected_document_id')->distinct();
-                            foreach ($creditsQuery->lazyById(500,'nc.id','id') as $row) {
-                                $id = $row->affected_document_id;
-                                $value = isset($row->total_payable) ? Decimal::readRequired($row,'total_payable') : Decimal::readRequired($row,'total');
-                                $credits[$id] = ($credits[$id] ?? Decimal::of(0))->plus($value)->simplified();
-                            }
-                            $retentions = self::sums($db->table('document_received_retentions')->whereIn('document_id',$ids),'document_id','applied_amount');
-                            $funds = self::sums($db->table('document_guarantee_funds')->whereIn('document_id',$ids),'document_id','amount');
-                            $adjustments = self::sums($db->table('document_note_adjustments')->whereIn('affected_document_id',$ids)->where('kind','fund')->where('status','applied'),'affected_document_id','amount');
-                            $refunds = self::sums($db->table('document_note_refunds')->whereIn('affected_document_id',$ids)->where('component','principal')->whereNull('reversed_at'),'affected_document_id','amount');
+                            // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+                            [$credits,$retentions,$funds,$adjustments,$refunds] = self::documentAdjustments($db,$ids);
+                            // ######## FIN MONEDA DEL MEDIO DE COBRO ########
                             foreach ($db->table('dispatches')->whereIn('reference_document_id',$ids)->lazyById(500) as $guide) {
                                 $guides[$guide->reference_document_id][] = ['id'=>$guide->id,'external_id'=>$guide->external_id,
                                     'number'=>\App\Services\Fiscal\FiscalIdentity::numberFull($guide->series,$guide->number),
@@ -134,6 +142,55 @@ final class Receivables
             'calculation_snapshot'=>Decimal::snapshot($values),
         ],Decimal::values($values));
     }
+
+    // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+    /** Caller owns the consistent read; operands are loaded once per batch. */
+    public static function balancesForDocuments($documents): array
+    {
+        $documents = collect($documents);
+        $ids = $documents->pluck('id')->unique()->values()->all();
+        if (!$ids) return [];
+        if (count($ids) > 500) throw new \InvalidArgumentException('El lote de saldos excede 500 documentos.');
+        $db = DB::connection('tenant');
+        [$payments] = self::payments($db,'document',$ids);
+        [$credits,$retentions,$funds,$adjustments,$refunds] = self::documentAdjustments($db,$ids);
+        $balances = [];
+        foreach ($documents as $document) {
+            $id = $document->id;
+            $zero = Decimal::of(0);
+            if ($document->document_type_id === '07' || ($document->document_type_id === '08' && $document->isVoidedOrRejected())) {
+                $balances[$id] = $zero;
+                continue;
+            }
+            $total = $document->total_payable === null ? $document->exactValue('total') : $document->exactValue('total_payable');
+            $fund = Decimal::max(0,($funds[$id] ?? $zero)->minus($adjustments[$id] ?? $zero));
+            $balance = $total->minus($payments[$id] ?? $zero)->minus($retentions[$id] ?? $zero)->minus($fund);
+            if ($document->document_type_id === '01') $balance = $balance->minus($credits[$id] ?? $zero)->plus($refunds[$id] ?? $zero);
+            $balances[$id] = $balance->simplified();
+        }
+        return $balances;
+    }
+
+    private static function documentAdjustments($db, array $ids): array
+    {
+        $credits = [];
+        $query = $db->table('documents as nc')->join('notes','notes.document_id','=','nc.id')
+            ->whereIn('notes.affected_document_id',$ids)->where('nc.document_type_id','07')
+            ->whereNotIn('nc.state_type_id',['09','11'])->select('nc.*','notes.affected_document_id')->distinct();
+        foreach ($query->lazyById(500,'nc.id','id') as $row) {
+            $id = $row->affected_document_id;
+            $value = isset($row->total_payable) ? Decimal::readRequired($row,'total_payable') : Decimal::readRequired($row,'total');
+            $credits[$id] = ($credits[$id] ?? Decimal::of(0))->plus($value)->simplified();
+        }
+        return [
+            $credits,
+            self::sums($db->table('document_received_retentions')->whereIn('document_id',$ids),'document_id','applied_amount'),
+            self::sums($db->table('document_guarantee_funds')->whereIn('document_id',$ids),'document_id','amount'),
+            self::sums($db->table('document_note_adjustments')->whereIn('affected_document_id',$ids)->where('kind','fund')->where('status','applied'),'affected_document_id','amount'),
+            self::sums($db->table('document_note_refunds')->whereIn('affected_document_id',$ids)->where('component','principal')->whereNull('reversed_at'),'affected_document_id','amount'),
+        ];
+    }
+    // ######## FIN MONEDA DEL MEDIO DE COBRO ########
 
     private static function sums($query, string $foreign, string $field): array
     {

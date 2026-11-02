@@ -921,7 +921,7 @@
                     ->filterCashPaymentWithoutDestination();
                 });
 
-            return $query->orWhere(fn ($q)=>$q->whereCashDestination()->whereHas('note_refund',fn ($r)=>$r->whereNull('reversed_at')->where('payment_method_type_id',PaymentMethodType::CASH_PAYMENT_ID)));
+            return $query->orWhere(fn ($q)=>$q->whereCashDestination()->whereHas('note_refund',fn ($r)=>$r->whereNull('reversed_at')->whereCashPaymentMethodType()));
         }
 
         
@@ -1082,7 +1082,7 @@
                     });
                     // egresos
 
-            return $query->orWhere(fn ($q)=>$q->whereCashDestination()->whereHas('note_refund',fn ($r)=>$r->whereNull('reversed_at')->where('payment_method_type_id',PaymentMethodType::CASH_PAYMENT_ID)));
+            return $query->orWhere(fn ($q)=>$q->whereCashDestination()->whereHas('note_refund',fn ($r)=>$r->whereNull('reversed_at')->whereCashPaymentMethodType()));
         }
 
 

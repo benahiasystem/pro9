@@ -50,6 +50,8 @@
                 text-align: center;
             }
             .td-custom { line-height: 0.1em; }
+            /* Mantener cada título junto al contenido que presenta. */
+            h3 { page-break-after: avoid; }
         </style>
     </head>
     <body>

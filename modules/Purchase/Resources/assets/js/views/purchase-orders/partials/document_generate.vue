@@ -191,6 +191,7 @@
                                 <thead>
                                 <tr width="100%">
                                     <th v-if="form.payments.length>0" class="pb-2">Forma de pago</th>
+                                    <th v-if="form.payments.length>0" class="pb-2">Destino</th>
                                     <th v-if="form.payments.length>0" class="pb-2">Referencia</th>
                                     <th v-if="form.payments.length>0" class="pb-2">Monto</th>
                                     <th width="15%"><a href="#" @click.prevent="clickAddPayment"
@@ -207,8 +208,12 @@
                                                 <el-option v-for="option in payment_method_types" :key="option.id"
                                                            :value="option.id" :label="option.description"></el-option>
                                             </el-select>
+                                            <small v-if="!row.payment_method_type_id" class="text-muted">Seleccione un método compatible con la moneda del documento.</small>
                                         </div>
                                     </td>
+                                    <td><el-select v-model="row.payment_destination_id" filterable>
+                                        <el-option v-for="option in classifiedPaymentDestinations(payment_destinations, row)" :key="option.id" :value="option.id" :label="option.description" />
+                                    </el-select></td>
                                     <td>
                                         <div class="form-group mb-2 mr-2">
                                             <el-input v-model="row.reference"></el-input>
@@ -221,7 +226,7 @@
                                     </td>
                                     <td class="series-table-actions text-center">
                                         <button type="button" class="btn waves-effect waves-light btn-xs btn-danger"
-                                                :disabled="index==0" @click.prevent="clickCancel(index)">
+                                                @click.prevent="clickCancel(index)">
                                             <i class="fa fa-trash"></i>
                                         </button>
                                     </td>
@@ -252,10 +257,13 @@
 </template>
 
 <script>
+import {defaultCashForCurrency} from '@helpers/payment-classification';
+import {purchasePaymentValidation, showPurchaseValidationError} from '@helpers/purchase-payment-validation';
 //import PurchaseOptions from "@views/purchases/partials/options.vue";
 import {functions, exchangeRate} from "@mixins/functions";
 
 export default {
+    paymentCurrencyPolicy: 'document',
     components: {},
 
     props: ["showDialog", "recordId", "showClose", "type"],
@@ -280,6 +288,7 @@ export default {
             discount_types: [],
             charges_types: [],
             payment_method_types: [],
+            payment_destinations: [],
             all_suppliers: [],
             suppliers: [],
             company: null,
@@ -300,10 +309,11 @@ export default {
             this.all_suppliers = response.data.suppliers;
             this.discount_types = response.data.discount_types;
             this.payment_method_types = response.data.payment_method_types;
+            this.payment_destinations = response.data.payment_destinations || [];
 
             this.charges_types = response.data.charges_types;
-            this.form.currency_type_id =
-                this.currency_types.length > 0 ? this.currency_types[0].id : null;
+            this.form.currency_type_id = this.form.purchase_order?.currency_type_id ||
+                (this.currency_types.length > 0 ? this.currency_types[0].id : null);
             this.form.establishment_id = this.establishment.id
                 ? this.establishment.id
                 : null;
@@ -313,6 +323,7 @@ export default {
             this.changeDateOfIssue();
             this.changeDocumentType();
             this.changeCurrencyType();
+            this.applyOrderPaymentDefault();
         });
         // this.initDocument();
         //this.clickAddPayment();
@@ -371,8 +382,9 @@ export default {
             }
         },
         changePaymentMethodType(flag_submit = true, index = null) {
-            let payment_method_type = _.find(this.payment_method_types, {'id': this.form.payments[index].payment_method_type_id})
-            if (payment_method_type.number_days) {
+            let payment_method_type = _.find(this.payment_method_types, {'id': this.form.payments[index]?.payment_method_type_id})
+            if (this.form.payments[index]) this.form.payments[index].payment_destination_id = null;
+            if (payment_method_type?.number_days) {
                 this.form.date_of_issue = moment().add(payment_method_type.number_days, 'days').format('YYYY-MM-DD');
                 this.changeDateOfIssue()
             } else {
@@ -422,7 +434,7 @@ export default {
                 date_of_issue: moment().format("YYYY-MM-DD"),
                 time_of_issue: moment().format("HH:mm:ss"),
                 supplier_id: null,
-                payment_method_type_id: "01",
+                payment_method_type_id: null,
                 currency_type_id: null,
                 purchase_order: null,
                 exchange_rate_sale: 0,
@@ -463,6 +475,7 @@ export default {
             this.initForm();
             this.form.currency_type_id =
                 this.currency_types.length > 0 ? this.currency_types[0].id : null;
+            this.applyOrderPaymentDefault();
             this.form.establishment_id = this.establishment.id;
             this.form.document_type_id =
                 this.document_types.length > 0 ? this.document_types[0].id : null;
@@ -590,38 +603,37 @@ export default {
             this.form.payments.splice(index, 1);
         },
         clickAddPayment() {
-            // console.log("we")
+            const method = defaultCashForCurrency(this.payment_method_types, this.form.currency_type_id)
             this.form.payments.push({
                 id: null,
                 purchase_id: null,
                 date_of_payment: moment().format('YYYY-MM-DD'),
-                payment_method_type_id: '01',
+                payment_method_type_id: method?.id || null,
+                payment_destination_id: method && this.payment_destinations.some(item => item.id === 'cash') ? 'cash' : null,
                 reference: null,
                 payment: 0,
             });
         },
+        applyOrderPaymentDefault() {
+            const row = this.form.payments[0];
+            if (!row || row.payment_method_type_id) return;
+            const source = this.form.purchase_order;
+            const selected = this.payment_method_types.find(item => String(item.id) === String(source?.payment_method_type_id)
+                && [true, 1, '1'].includes(item.is_active) && ['cash','account'].includes(item.collection_kind)
+                && (item.collection_kind !== 'cash' || item.currency_type_id === this.form.currency_type_id));
+            const method = selected || (!source ? defaultCashForCurrency(this.payment_method_types, this.form.currency_type_id) : null);
+            row.payment_method_type_id = method?.id || null;
+            row.payment_destination_id = method?.collection_kind === 'cash' && this.payment_destinations.some(item => item.id === 'cash') ? 'cash' : null;
+        },
         validate_payments() {
-
-            let error_by_item = 0
-            let acum_total = 0
-
-            this.form.payments.forEach((item) => {
-                acum_total += parseFloat(item.payment)
-                if (item.payment <= 0 || item.payment == null) error_by_item++;
-            })
-
-            return {
-                error_by_item: error_by_item,
-                acum_total: acum_total
-            }
-
+            return purchasePaymentValidation(this.form.payments, this.form.total)
         },
         async submit() {
 
             // console.log(this.form)
 
             let validate = await this.validate_payments()
-            if (validate.acum_total > parseFloat(this.form.total) || validate.error_by_item > 0) {
+            if (validate.exceeds_total || validate.error_by_item > 0) {
                 return this.$message.error('Los montos ingresados superan al monto a pagar o son incorrectos');
             }
 
@@ -646,11 +658,7 @@ export default {
                     }
                 })
                 .catch(error => {
-                    if (error.response.status === 422) {
-                        this.errors = error.response.data;
-                    } else {
-                        this.$message.error(error.response.data.message);
-                    }
+                    showPurchaseValidationError(error, this);
                 })
                 .then(() => {
                     this.loading_submit = false;
@@ -665,6 +673,7 @@ export default {
             this.initForm();
             this.form.currency_type_id =
                 this.currency_types.length > 0 ? this.currency_types[0].id : null;
+            this.applyOrderPaymentDefault();
             this.form.establishment_id = this.establishment.id;
             this.form.document_type_id =
                 this.document_types.length > 0 ? this.document_types[0].id : null;
@@ -694,9 +703,13 @@ export default {
                     this.form.items = response.data.data.purchase_order.items
                     this.form.supplier_id = this.form.purchase_order.supplier_id;
                     this.form.purchase_order_id = this.form.purchase_order.id;
-                    this.form.payments[0].payment_method_type_id = this.form.purchase_order.payment_method_type_id
-                    this.form.payments[0].payment = this.form.purchase_order.total
+                    this.form.currency_type_id = this.form.purchase_order.currency_type_id;
+                    this.currency_type = this.currency_types.find(item => item.id === this.form.currency_type_id) || {};
+                    this.form.payments[0].payment_method_type_id = null;
+                    this.form.payments[0].payment_destination_id = null;
+                    this.form.payments[0].payment = 0
                     this.form.total = this.form.purchase_order.total
+                    this.applyOrderPaymentDefault();
 
                     this.form.items.forEach((it) => {
                         it.warehouse_id = warehouse.id

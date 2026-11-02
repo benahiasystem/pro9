@@ -185,17 +185,31 @@ final class FiscalDocumentPersistence
         // ######## FIN CALCULOS EXACTOS PRO9 ########
     }
 
-    public static function payment(Document $document, array $input, bool $initial = false): DocumentPayment
+    public static function payment(Document $document, array $input, bool $initial = false, ?array $initialAmounts = null): DocumentPayment
     {
-        return $document->getConnection()->transaction(function () use ($document, $input, $initial) {
+        return $document->getConnection()->transaction(function () use ($document, $input, $initial, $initialAmounts) {
             validator($input, ['date_of_payment'=>'required|date_format:Y-m-d', 'exception_basis'=>'nullable|string|max:255', 'financial_intermediation'=>'nullable|in:none,financial_institution'])->validate();
+            if (!$initial && isset($input['change']) && !D::of(D::input($input['change'], 'change'))->isZero()) {
+                FiscalAmounts::error('change', 'El vuelto se calcula al recibir efectivo, no puede enviarse en un abono posterior.');
+            }
             $company = Company::query()->lockForUpdate()->firstOrFail();
             $document = Document::query()->lockForUpdate()->findOrFail($document->id);
             NoteAnnulment::assertNotBusy($document);
             if ($document->isVoidedOrRejected() || ($document->document_type_id !== '01' && !($document->document_type_id === '08' && FiscalNote::ordinary($document)))) FiscalAmounts::error('document','Sólo se cobran facturas vigentes.');
             $key = $input['operation_key'] ?? (string) Str::uuid();
             if (!Str::isUuid($key)) FiscalAmounts::error('operation_key', 'Use un UUID válido.');
-            $existing = DocumentPayment::where('operation_key', $key)->first();
+            // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+            $existing = DocumentPayment::where('operation_key', $key)->lockForUpdate()->first();
+            $receiptOrigin = !$existing && $initial ? \App\Services\Payments\ConvertedReceipt::resolve($document, $input) : null;
+            if ($receiptOrigin) {
+                $input['reference'] = $receiptOrigin['reference'];
+                $input['exchange_rate_source'] = $receiptOrigin['exchange_rate_source'];
+                $input['exchange_rate_date'] = $receiptOrigin['exchange_rate_date'];
+            }
+            if (!$existing && !$receiptOrigin) {
+                \App\Services\Payments\MethodCurrency::validateNew($input['payment_method_type_id'] ?? null, (string)$document->currency_type_id, $input, $document->getConnection());
+            }
+            // ######## FIN MONEDA DEL MEDIO DE COBRO ########
             $date = \Carbon\Carbon::parse($input['date_of_payment'] ?? now())->format('Y-m-d');
             $issuer = $existing->fiscal_context['issuer'] ?? FiscalProfileService::at($company, $date);
             $buyer = $existing->fiscal_context['buyer'] ?? FiscalProfileService::at(Person::findOrFail($document->customer_id), $date);
@@ -207,9 +221,21 @@ final class FiscalDocumentPersistence
                 $decision = SpecialTaxpayerPolicy::payment($issuer, $input, $input['currency_type_id'] ?? $document->currency_type_id, $date);
             }
             $input['igtf_status'] = $input['igtf_status'] ?? ($decision['igtf_status'] ?? 'not_applicable');
-            $storedRate = $existing ? \App\Models\Tenant\DocumentTax::where('document_payment_id',$existing->id)->value('percentage') : null;
+            // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+            $storedRate = $existing ? \App\Models\Tenant\DocumentTax::where('document_payment_id',$existing->id)->lockForUpdate()->value('percentage') : null;
+            // ######## FIN MONEDA DEL MEDIO DE COBRO ########
             $values = FiscalAmounts::payment($input, $document->currency_type_id, $document->exchange_rate_sale,
                 $existing ? $existing->igtf_status === 'subject' : (bool)$company->igtf_enabled, $existing ? $storedRate : $company->igtf_rate);
+            // Only the internal initial-invoice caller supplies the independently calculated gross input.
+            if ($initial && !$existing && !$receiptOrigin && $initialAmounts !== null) {
+                foreach (['requested_amount', 'cash_adjustment'] as $field) {
+                    $values['calculation_snapshot']['values'][$field] = $initialAmounts[$field];
+                }
+                if (isset($initialAmounts['received_change'])) {
+                    $values['calculation_snapshot']['values']['tendered_original_amount'] = $initialAmounts['original_amount'];
+                    $values['calculation_snapshot']['values']['received_change'] = $initialAmounts['received_change'];
+                }
+            }
             if ($existing) {
                 if ($existing->document_id !== $document->id || $existing->reversed_at ||
                     !\App\Support\Exact\Decimal::of($existing->original_amount)->isEqualTo(\App\Support\Exact\Decimal::of($values['original_amount'])) || $existing->currency_type_id !== $values['currency_type_id'] ||
@@ -221,14 +247,15 @@ final class FiscalDocumentPersistence
                     $existing->igtf_status !== $values['igtf_status'] || $existing->payment_method_type_id !== ($input['payment_method_type_id'] ?? null)) {
                     FiscalAmounts::error('operation_key', 'La operación ya existe con otros datos.');
                 }
-                if (isset($input['payment_destination_id']) && $existing->global_payment) {
-                    $destination = $existing->global_payment;
+                // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+                $destination = isset($input['payment_destination_id']) ? $existing->global_payment()->lockForUpdate()->first() : null;
+                // ######## FIN MONEDA DEL MEDIO DE COBRO ########
+                if ($destination) {
                     $cash = $destination->destination_type === \App\Models\Tenant\Cash::class;
                     if (($input['payment_destination_id']==='cash') !== $cash || (!$cash && (string)$destination->destination_id !== (string)$input['payment_destination_id'])) FiscalAmounts::error('operation_key','La operación ya existe con otro destino.');
                 }
                 return $existing;
             }
-            $receiptOrigin=$initial ? \App\Services\Payments\ConvertedReceipt::resolve($document,$input) : null;
             if (!$receiptOrigin) PaymentMethodType::assertActiveForPayment($input['payment_method_type_id'] ?? null);
             if (!$initial && D::readRequired($values, 'tax_amount')->isPositive() && \App\Services\ExportInvoicePolicy::isExport($document->invoice->operation_type_id ?? '')) {
                 FiscalAmounts::error('payment', 'El IGTF de un cobro posterior requiere una nota de exportación; ese flujo todavía no está habilitado.');
@@ -237,7 +264,9 @@ final class FiscalDocumentPersistence
             if (!$initial && !FiscalNote::ordinary($document) && D::readRequired($values, 'tax_amount')->isPositive() && \App\Services\ThirdPartyInvoicePolicy::isThirdParty($document)) FiscalAmounts::error('payment', 'El IGTF de un cobro posterior requiere una nota por cuenta de terceros; ese flujo todavía no está habilitado.');
             $method = PaymentMethodType::findOrFail($input['payment_method_type_id']);
             if ($document->document_type_id === '07') FiscalAmounts::error('document','Las NC no reciben cobros; utilice Registrar devolución.');
-            $balance=$document->exactBalance();
+            // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+            $balance=$document->exactBalance(true);
+            // ######## FIN MONEDA DEL MEDIO DE COBRO ########
             $principal=D::readRequired($values, 'payment');
             if (!$principal->isEqualTo($balance) && $principal->isEqualTo(D::of(D::represent($balance,2)))) {
                 $values['payment']=D::represent($balance);
@@ -250,19 +279,19 @@ final class FiscalDocumentPersistence
             validator($input, ['date_of_payment'=>'required|date','exchange_rate_source'=>'nullable|string|max:255','exchange_rate_date'=>'nullable|date','exemption_reason'=>'nullable|string|max:255'])->validate();
             $fields = array_intersect_key($input, array_flip(['date_of_payment','payment_method_type_id','reference','payment_received','change']));
 
-            if ($initial && D::readRequired($values, 'payment')->isGreaterThan($document->exactBalance())) {
-                $residual = D::readRequired($values, 'payment')->minus($document->exactBalance());
+            if ($initial && D::readRequired($values, 'payment')->isGreaterThan($balance)) {
+                $residual = D::readRequired($values, 'payment')->minus($balance);
                 $cashResidual = D::convert($residual, $document->currency_type_id, $values['currency_type_id'], $values['exchange_rate']);
                 if (D::of(D::represent($cashResidual, 2))->isZero()) {
-                    $values['payment'] = D::represent($document->exactBalance());
-                    $values['calculation_snapshot']['values']['payment'] = D::fraction($document->exactBalance());
-                    $values['calculation_snapshot']['values']['payment_adjustment'] = D::fraction($document->exactBalance()->minus(D::of($values['calculation_snapshot']['values']['converted_principal'])));
+                    $values['payment'] = D::represent($balance);
+                    $values['calculation_snapshot']['values']['payment'] = D::fraction($balance);
+                    $values['calculation_snapshot']['values']['payment_adjustment'] = D::fraction($balance->minus(D::of($values['calculation_snapshot']['values']['converted_principal'])));
                 }
             }
             $context = $document->getConnection()->getSchemaBuilder()->hasColumn('document_payments', 'fiscal_context')
                 ? ['fiscal_context'=>['issuer'=>$issuer, 'buyer'=>$buyer, 'decision'=>$decision, 'date'=>$date]] : [];
             $payment = $document->payments()->create($values + $fields + $context + [
-                'operation_key' => $key, 'payment_method_snapshot' => $method->only(['id','description','hka_code','collection_kind','cash_currency_type_id','is_cash','is_credit']),
+                'operation_key' => $key, 'payment_method_snapshot' => $method->only(['id','description','hka_code','collection_kind','currency_type_id','cash_currency_type_id','is_cash','is_credit']),
                 ]);
             if ($receiptOrigin) {
                 if (D::readRequired($values,'tax_amount')->isPositive()) FiscalAmounts::error('source_sale_note_payment_id','La reutilización de un cobro no genera otro IGTF.');
@@ -448,8 +477,10 @@ final class FiscalDocumentPersistence
 
     public static function updateSettlementState(Document $document): void
     {
-        $document=$document->fresh();
-        $document->total_canceled=$document->exactBalance()->isLessThanOrEqualTo(0);
+        // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+        $document=Document::withoutEagerLoads()->lockForUpdate()->findOrFail($document->id);
+        $document->total_canceled=$document->exactBalance(true)->isLessThanOrEqualTo(0);
+        // ######## FIN MONEDA DEL MEDIO DE COBRO ########
         if ($document->isDirty('total_canceled')) $document->save();
     }
 }

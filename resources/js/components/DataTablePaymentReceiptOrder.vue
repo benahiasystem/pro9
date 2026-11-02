@@ -100,12 +100,8 @@
                         </tbody>
                     </table>
 
-                    <div class="row mb-5">
-                        <div class="col-md-4 text-center">Total recibo de pagos en bolívares Bs. {{ totals.total_pen }}</div>
-                        <div class="col-md-4 text-center">Total pagado en bolívares Bs. {{ totals.total_paid_pen }}</div>
-                        <div class="col-md-4 text-center">Total por cobrar en bolívares Bs.
-                                                          {{ totals.total_pending_paid_pen }}
-                        </div>
+                    <div class="mb-3 text-muted">
+                        Los importes de las órdenes no se suman porque cada orden no conserva su moneda.
                     </div>
 
                     <div>
@@ -152,11 +148,6 @@ export default {
                 series: null,
                 total_canceled: null
             },
-            totals: {
-                total_pen: 0,
-                total_paid_pen: 0,
-                total_pending_paid_pen: 0
-            },
             columns: [],
             records: [],
             pagination: {},
@@ -170,7 +161,6 @@ export default {
     created() {
         this.$eventHub.$on('reloadData', () => {
             this.getRecords()
-            this.getTotals()
         })
     },
     async mounted() {
@@ -187,7 +177,6 @@ export default {
 
 
         await this.getRecords()
-        await this.getTotals()
 
         this.$nextTick(() => {
             const el = this.$refs.scrollContainer;
@@ -210,14 +199,6 @@ export default {
         },
         toggleInformation() {
             this.isVisible = !this.isVisible;
-        },
-        getTotals() {
-
-            this.$http.get(`/full-suscription/receipts/statistics?${this.getQueryParameters()}`)
-                .then((response) => {
-                    this.totals = response.data
-                });
-
         },
         customIndex(index) {
             return (this.pagination.per_page * (this.pagination.current_page - 1)) + index + 1
@@ -242,12 +223,10 @@ export default {
         async changeClearInput() {
             this.search.value = ''
             await this.getRecords()
-            await this.getTotals()
 
         },
         async getRequestData() {
             await this.getRecords()
-            await this.getTotals()
         }
     }
 }

@@ -17,6 +17,7 @@
     use Modules\Expense\Models\BankLoanPayment;
     use Modules\Expense\Models\ExpensePayment;
     use Modules\Finance\Models\IncomePayment;
+    use Modules\Finance\Models\GlobalPayment;
     use Modules\Pos\Models\CashTransaction;
     use Modules\Sale\Models\ContractPayment;
     use Modules\Sale\Models\QuotationPayment;
@@ -46,7 +47,8 @@
         private static function getBankAccounts()
         {
 
-            return BankAccount::get()->transform(function ($row) {
+            // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+            return BankAccount::where('status', 1)->with('bank')->get()->transform(function ($row) {
                 return [
                     'id' => $row->id,
                     'cash_id' => null,
@@ -54,6 +56,7 @@
                     'description' => "{$row->bank->description} - {$row->currency_type_id} - {$row->description}",
                 ];
             });
+            // ######## FIN MONEDA DEL MEDIO DE COBRO ########
 
         }
 
@@ -103,8 +106,6 @@
             $isDocument = $model instanceof Document;
             $documentModel = $isDocument ? Document::class : SaleNote::class;
             $documentField = $isDocument ? 'document_id' : 'sale_note_id';
-            $paymentConditionField = $isDocument ? 'payment_condition_id' : 'payment_method_type_id';
-            $creditCondition = $isDocument ? '02' : '09';
 
             $document = $documentModel::findOrFail((int) $id);
 
@@ -119,24 +120,32 @@
                 return;
             }
 
-            $isCredit = $document->$paymentConditionField === $creditCondition;
-            $cashDocumentCredit = $isCredit ? CashDocumentCredit::updateOrCreate([
+            // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+            return $document->getConnection()->transaction(function () use ($document,$cash,$documentField,$id,$isDocument) {
+            $cash = Cash::whereKey($cash->id)->lockForUpdate()->firstOrFail();
+            if (!$cash->state) return;
+            $isCredit = \App\Services\Payments\CreditCondition::isCredit($document);
+            $cashDocumentCredit = $isCredit ? \App\Services\Payments\CashPaymentLink::upsert(CashDocumentCredit::query(), [
                 'cash_id' => $cash->id,
                 $documentField => $document->id,
             ]) : null;
 
-            $cashDocument = $cash->cash_documents()->updateOrCreate([
+            $cashDocument = \App\Services\Payments\CashPaymentLink::upsert(CashDocument::query(), [
+                'cash_id' => $cash->id,
                 $documentField => $id
             ]);
 
 
+            $document->loadMissing('payments.global_payment');
             $document->payments->each(function($payment) use($cash,$isDocument,$cashDocument){
-                CashDocumentPayment::updateOrCreate([
+                if (!\App\Services\Payments\CashPaymentLink::belongsToSession($payment, $cash->id)) return;
+                \App\Services\Payments\CashPaymentLink::upsert(CashDocumentPayment::query(), [
                     'cash_id' => $cash->id,
                     $isDocument ? 'document_payment_id' : 'sale_note_payment_id' => $payment->id,
-                    'cash_document_id' => optional($cashDocument)->id,
-                ]);
+                ], ['cash_document_id' => $cashDocument->id]);
             });
+            });
+            // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
 
         }
 
@@ -177,14 +186,17 @@
         public function createCashDocumentPayment($payment, $isDocument = true)
         {
             // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+            if ($payment->receipt_parent_id || !empty($payment->payment_method_snapshot['receipt_origin'])) return;
             $global=$payment->global_payment;
             if (($global?->report_context['version'] ?? null) === 2) {
                 if (!$global->cash_session_id) return;
                 $field=$isDocument ? 'document_id' : 'sale_note_id';
                 $document=$isDocument ? $payment->document_id : $payment->sale_note_id;
-                CashDocumentPayment::updateOrCreate(['cash_id'=>$global->cash_session_id,$isDocument ? 'document_payment_id' : 'sale_note_payment_id'=>$payment->id],
-                    ['cash_document_id'=>CashDocument::where($field,$document)->value('id'),'cash_document_credit_id'=>CashDocumentCredit::where($field,$document)->value('id')]);
-                return;
+                return $payment->getConnection()->transaction(function () use ($global,$isDocument,$payment,$field,$document) {
+                Cash::whereKey($global->cash_session_id)->lockForUpdate()->firstOrFail();
+                \App\Services\Payments\CashPaymentLink::upsert(CashDocumentPayment::query(), ['cash_id'=>$global->cash_session_id,$isDocument ? 'document_payment_id' : 'sale_note_payment_id'=>$payment->id],
+                    ['cash_document_id'=>CashDocument::where('cash_id',$global->cash_session_id)->where($field,$document)->lockForUpdate()->value('id'),'cash_document_credit_id'=>CashDocumentCredit::where('cash_id',$global->cash_session_id)->where($field,$document)->lockForUpdate()->value('id')]);
+                });
             }
             // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
 
@@ -331,7 +343,7 @@
 
             $transfer_beween_account = ExactDecimal::of(0);
             foreach ($cash_ids as $c) {
-                $transfer_beween_account = $transfer_beween_account->plus($this->getTransferAccountPayment(Cash::find($c)));
+                $transfer_beween_account = $transfer_beween_account->plus($this->getTransferAccountPayment(Cash::find($c), $requestCurrencyTipeId));
             }
             $entry = ExactDecimal::sum([$document_payment, $sale_note_payment, $quotation_payment, $contract_payment,
                 $income_payment, $cash_pos, $technical_service_payment]);
@@ -380,8 +392,8 @@
             // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
             return ExactDecimal::sum($record->where('payment_type',$model)->map(function($global) use($requestCurrencyTipeId) {
                 $movement=\App\Services\Payments\Movement::row($global);
-                if (!$movement || ($global->destination_type === Cash::class && $movement['currency_type_id'] !== $requestCurrencyTipeId)) return ExactDecimal::of(0);
-                return ExactDecimal::convert(ExactDecimal::readRequired($movement,'amount'),$movement['currency_type_id'],$requestCurrencyTipeId,$movement['exchange_rate']);
+                if (!$movement || $movement['currency_type_id'] !== $requestCurrencyTipeId) return ExactDecimal::of(0);
+                return ExactDecimal::readRequired($movement,'amount');
             }));
             // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
         }
@@ -415,17 +427,25 @@
          *
          * @param BankAccount|Cash $model
          *
-         * @return float
+         * @return \Brick\Math\BigRational
          */
-        public function getTransferAccountPayment($model)
+        public function getTransferAccountPayment($model, ?string $currency = null)
         {
-            if(empty($model) ) return 0;
-            $filter = [
-                'destiny_id' => $model->id,
-                'destiny_type' => get_class($model),
-            ];
-            $query=TransferAccountPayment::where($filter);
-            return ExactDecimal::sum($query->get()->map(fn ($row) => $row->exactValue('amount')));
+            // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+            if (!$model) return ExactDecimal::of(0);
+            $currency = $currency ?? ($model instanceof BankAccount ? $model->currency_type_id : null);
+            if (!in_array($currency, ['VES', 'USD'], true)) return ExactDecimal::of(0);
+            $movements = GlobalPayment::where('destination_id', $model->id)
+                ->where('destination_type', get_class($model))
+                ->where('payment_type', TransferAccountPayment::class)
+                ->with('payment')->get();
+            return ExactDecimal::sum($movements->map(function ($global) use ($currency) {
+                $movement = \App\Services\Payments\Movement::row($global);
+                if (!$movement || $movement['currency_type_id'] !== $currency) return ExactDecimal::of(0);
+                $amount = ExactDecimal::readRequired($movement, 'amount');
+                return $movement['direction'] === 'egress' ? $amount->negated() : $amount;
+            }));
+            // ######## FIN MONEDA DEL MEDIO DE COBRO ########
         }
 
         /**
@@ -451,8 +471,6 @@
         public function getBalanceBySingleBankAcount($bank_account)
         {
 
-            $cash_pos = 0;
-
             if (Cash::class == get_class($bank_account)) {
                 $data = [];
                 $data['id'] = "C:" . $bank_account->id;
@@ -472,24 +490,32 @@
 
             }
 
-            $document_payment = $this->getSumPayment($bank_account->global_destination, DocumentPayment::class);
-            $expense_payment = $this->getSumPayment($bank_account->global_destination, ExpensePayment::class);
-            $sale_note_payment = $this->getSumPayment($bank_account->global_destination, SaleNotePayment::class);
-            $purchase_payment = $this->getSumPayment($bank_account->global_destination, PurchasePayment::class);
-            $quotation_payment = $this->getSumPayment($bank_account->global_destination, QuotationPayment::class);
+            $currency = $bank_account->currency_type_id;
+            $document_payment = $this->getSumPayment($bank_account->global_destination, DocumentPayment::class, $currency);
+            $expense_payment = $this->getSumPayment($bank_account->global_destination, ExpensePayment::class, $currency);
+            $sale_note_payment = $this->getSumPayment($bank_account->global_destination, SaleNotePayment::class, $currency);
+            $purchase_payment = $this->getSumPayment($bank_account->global_destination, PurchasePayment::class, $currency);
+            $quotation_payment = $this->getSumPayment($bank_account->global_destination, QuotationPayment::class, $currency);
             // $contract_payment = 0; //$this->getSumPayment($bank_account->global_destination, ContractPayment::class);
-            $contract_payment = $this->getSumPayment($bank_account->global_destination, ContractPayment::class);
-            $income_payment = $this->getSumPayment($bank_account->global_destination, IncomePayment::class);
-            $technical_service_payment = $this->getSumPayment($bank_account->global_destination, TechnicalServicePayment::class);
-            $purchase_settlement_payment = $this->getSumPayment($bank_account->global_destination, PurchaseSettlementPayment::class);
+            $contract_payment = $this->getSumPayment($bank_account->global_destination, ContractPayment::class, $currency);
+            $income_payment = $this->getSumPayment($bank_account->global_destination, IncomePayment::class, $currency);
+            $technical_service_payment = $this->getSumPayment($bank_account->global_destination, TechnicalServicePayment::class, $currency);
+            $purchase_settlement_payment = $this->getSumPayment($bank_account->global_destination, PurchaseSettlementPayment::class, $currency);
             $transfer_beween_account = $this->getTransferAccountPayment($bank_account);
-            $initial_balance = $bank_account->initial_balance;
-
-            $entry = ExactDecimal::sum([$document_payment, $sale_note_payment, $quotation_payment, $contract_payment,
-                $income_payment, $cash_pos, $technical_service_payment, $initial_balance, $transfer_beween_account]);
-            $refund_payment = $this->getSumPayment($bank_account->global_destination, \App\Models\Tenant\DocumentNoteRefund::class);
-            $egress = ExactDecimal::sum([$refund_payment, $expense_payment, $purchase_payment]);
+            // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+            $initial_balance = $bank_account->exactValue('initial_balance');
+            $entry = $initial_balance;
+            $egress = ExactDecimal::of(0);
+            \App\Services\Payments\Movement::preload($bank_account->global_destination);
+            foreach ($bank_account->global_destination as $global) {
+                $movement = \App\Services\Payments\Movement::row($global);
+                if (!$movement || $movement['currency_type_id'] !== $currency) continue;
+                $amount = ExactDecimal::readRequired($movement, 'amount');
+                if ($movement['direction'] === 'income') $entry = $entry->plus($amount);
+                else $egress = $egress->plus($amount);
+            }
             $balance = $entry->minus($egress);
+            // ######## FIN MONEDA DEL MEDIO DE COBRO ########
             $description = "{$bank_account->bank->description} - {$bank_account->currency_type_id} - {$bank_account->description}";
 
 
@@ -537,7 +563,7 @@
                 $income_payment = $this->getSumPayment($row->global_destination, IncomePayment::class, $requestCurrencyTipeId);
                 $technical_service_payment = $this->getSumPayment($row->global_destination, TechnicalServicePayment::class, $requestCurrencyTipeId);
                 $purchase_settlement_payment = $this->getSumPayment($row->global_destination, PurchaseSettlementPayment::class, $requestCurrencyTipeId);
-                $transfer_beween_account = $this->getTransferAccountPayment($row);
+                $transfer_beween_account = $this->getTransferAccountPayment($row, $requestCurrencyTipeId);
 
                 // BankLoan es el total otorgado, se suma
                 $bankLoan = 0;

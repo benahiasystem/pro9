@@ -62,8 +62,8 @@
                         <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M14.8 9a2 2 0 0 0 -1.8 -1h-2a2 2 0 1 0 0 4h2a2 2 0 1 1 0 4h-2a2 2 0 0 1 -1.8 -1" /><path d="M12 7v10" /></svg>
                     </div>
                     <div class="stat-card__body">
-                        <span class="stat-card__label">Total cobrado</span>
-                        <span class="stat-card__value">Bs. {{ formatAmount(statistics.total_collected) }}</span>
+                        <span class="stat-card__label">Órdenes de suscripción</span>
+                        <span class="stat-card__value">{{ statistics.total_orders || 0 }}</span>
                     </div>
                 </div>
             </div>
@@ -73,7 +73,7 @@
                         <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l5 5l10 -10" /></svg>
                     </div>
                     <div class="stat-card__body">
-                        <span class="stat-card__label">Pagos aprobados</span>
+                        <span class="stat-card__label">Órdenes marcadas pagadas</span>
                         <span class="stat-card__value">{{ statistics.total_approved || 0 }}</span>
                     </div>
                 </div>
@@ -84,7 +84,7 @@
                         <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M18 6l-12 12" /><path d="M6 6l12 12" /></svg>
                     </div>
                     <div class="stat-card__body">
-                        <span class="stat-card__label">Pagos rechazados</span>
+                        <span class="stat-card__label">Órdenes rechazadas o canceladas</span>
                         <span class="stat-card__value">{{ statistics.total_rejected || 0 }}</span>
                     </div>
                 </div>
@@ -95,7 +95,7 @@
                         <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M12 7v5l3 3" /></svg>
                     </div>
                     <div class="stat-card__body">
-                        <span class="stat-card__label">Pagos pendientes</span>
+                        <span class="stat-card__label">Órdenes pendientes</span>
                         <span class="stat-card__value">{{ statistics.total_pending || 0 }}</span>
                     </div>
                 </div>
@@ -267,7 +267,7 @@ export default {
             showModalGenerateCPE: false,
             generatingIds: [],
             statistics: {
-                total_collected: 0,
+                total_orders: 0,
                 total_approved: 0,
                 total_rejected: 0,
                 total_pending: 0,
@@ -394,13 +394,6 @@ export default {
                 if (response.data.success) {
                     this.statistics = response.data.statistics;
                 }
-            });
-        },
-        formatAmount(value) {
-            const num = parseFloat(value) || 0;
-            return num.toLocaleString('es-PE', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
             });
         },
         duplicate(id) {

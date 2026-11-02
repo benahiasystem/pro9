@@ -20,8 +20,7 @@
 
     $m27_cashier = strtoupper(($document->seller_id != 0 && $document->seller) ? $document->seller->name : optional($document->user)->name ?? '');
 
-    $m27_total_received = (float) $payments->sum('payment') + (float) $payments->sum('change');
-    $m27_total_change = (float) $payments->sum('change');
+
 
     $m27_igv_percentage = collect($document->items)
         ->map(function ($it) { return (float) ($it->percentage_igv ?? 0); })
@@ -306,25 +305,18 @@
     <tr>
         <td colspan="2" class="m27-gap"></td>
     </tr>
-    @if($document->payment_method_type_id)
+    @if($document->payment_method_type_id && $payments->isEmpty())
         <tr>
             <td class="m27-label" width="45%">Método de pago:</td>
             <td class="m27-value">{{ $document->payment_method_type->description }}</td>
         </tr>
     @endif
-    @if($m27_total_received > 0)
-        <tr>
-            <td class="m27-label">Recibido:</td>
-            <td class="m27-value">{{ $document->currency_type->symbol }} {{ number_format($m27_total_received, 2) }}</td>
-        </tr>
-    @endif
-    @if($m27_total_change > 0)
-        <tr>
-            <td class="m27-label">Vuelto:</td>
-            <td class="m27-value">{{ $document->currency_type->symbol }} {{ number_format($m27_total_change, 2) }}</td>
-        </tr>
-    @endif
+    {{-- ######## INICIO CLASIFICACION DE COBROS Y CAJA ######## --}}
+    {{-- El recibido y el vuelto se presentan por cobro en su propia moneda. --}}
+    {{-- ######## FIN CLASIFICACION DE COBROS Y CAJA ######## --}}
 </table>
+
+@include('pdf.partials.sale_note_credit_installments', ['document' => $document])
 
 @if($payments->count())
     @php
@@ -336,7 +328,7 @@
         </tr>
         @foreach($payments as $row)
             <tr>
-                <td class="m27-value">&#8226; {{ $row->date_of_payment->format('d/m/Y') }} - {{ $row->payment_method_type->description }} {{ $row->reference ? '- '.$row->reference.' ':'' }}- {{ $document->currency_type->symbol }} {{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($row, 'payment'), 2) }}</td>
+                <td class="m27-value">&#8226; {{ $row->date_of_payment->format('d/m/Y') }} - @include('pdf.partials.sale_note_receipt', ['row' => $row, 'document' => $document])</td>
             </tr>
             @php
                 $payment += (float) $row->payment;

@@ -81,7 +81,9 @@ class DocumentRequest extends FormRequest
             ],
             // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
             'payments.*.payment_method_type_id' => [
-                'required', Rule::exists('tenant.payment_method_types', 'id')->where('is_active', 1),
+                // Reused receipts retain the original method even if it was
+                // deactivated. New receipts are checked by MethodCurrency.
+                'required', Rule::exists('tenant.payment_method_types', 'id'),
             ],
             // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
         ];

@@ -94,6 +94,13 @@ class SaleNoteController extends Controller
 
     public function store(Request $request)
     {
+        // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+        $currency = $request->input('currency_type_id');
+        if (!in_array($currency, ['VES', 'USD'], true)
+            || !DB::connection('tenant')->table('cat_currency_types')->where('id', $currency)->where('active', 1)->exists()) {
+            \App\Services\Payments\Classification::error('currency_type_id', 'Seleccione una moneda documental activa y admitida.');
+        }
+        // ######## FIN MONEDA DEL MEDIO DE COBRO ########
         $request['establishment_id'] = $request['establishment_id'] ? $request['establishment_id'] : auth()->user()->establishment_id;
         $force_create_if_not_exist = isset($request['force_create_if_not_exist']) ? (bool)$request['force_create_if_not_exist'] : false;
         $request['force_create_if_not_exist'] = $force_create_if_not_exist;
@@ -119,25 +126,20 @@ class SaleNoteController extends Controller
         ];
         $print_result = ['auto_printed' => false, 'print_order_id' => null, 'reason' => null];
 
-        $data = [];
-        if ($request['force_create_if_not_exist']) {
-            // Se saca de tenant, para que pueda guardar el item correctamente.
-            self::ExtraLog(__FILE__ . "::" . __LINE__ . "   " . __FUNCTION__ . "  \n Entra por crear " . __FUNCTION__ . " \n" . var_export($request->all(), true) . "\n\n\n\n");
-            $data = $this->mergeData($request);
-        }
-
-        DB::connection('tenant')->transaction(function () use ($request, $data, $actions, &$print_result) {
-            if (!$request['force_create_if_not_exist']) {
-                $data = $this->mergeData($request);
+        // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+        // Cliente, productos y nota deben revertirse juntos si falla el cobro.
+        DB::connection('tenant')->transaction(function () use ($request, $actions, &$print_result) {
+            if (!$request->input('id')) {
+                \App\Services\Payments\QuotationReceiptsRequired::assertPresent($request->input('quotation_id'), $request->input('payments', []));
             }
+            $data = $this->mergeData($request);
+            // ######## FIN MONEDA DEL MEDIO DE COBRO ########
+            $existing = $request->input('id') ? SaleNote::query()->lockForUpdate()->findOrFail($request->input('id')) : null;
+            $previousCurrency = $existing ? $existing->currency_type_id : null;
             $this->sale_note = SaleNote::updateOrCreate(
                 ['id' => $request->input('id')],
                 $data
             );
-
-            // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
-            $this->sale_note->payments()->get()->each->delete();
-            // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
 
             foreach ($data['items'] as $row) {
                 $item_id = isset($row['id']) ? $row['id'] : null;
@@ -166,7 +168,13 @@ class SaleNoteController extends Controller
             }*/
             if(key_exists('payments', $data)) {
                 $payments = new \App\Http\Controllers\Tenant\SaleNoteController;
-                $payments->savePayments($this->sale_note, $data['payments']);
+                $rows = $existing ? \App\Services\Payments\ExistingReceipts::synchronize($this->sale_note, $data['payments'], $previousCurrency) : $data['payments'];
+                $payments->savePayments($this->sale_note, $rows, (bool)$existing);
+            } elseif ($existing) {
+                // An omitted payments array leaves recorded receipts untouched.
+                if ((string)$previousCurrency !== (string)$this->sale_note->currency_type_id && $this->sale_note->payments()->exists()) {
+                    \App\Services\Payments\Classification::error('currency_type_id', 'La moneda del documento no puede cambiar mientras tenga cobros registrados.');
+                }
             }
 
             $this->setFilename();

@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\DB;
  * - `destiny_id` int(10) unsigned DEFAULT '0' COMMENT 'id Cuenta de destino'
  * - `destiny_type` text COLLATE utf8mb4_unicode_ci COMMENT 'Modelo de destino'
  * - `amount` decimal(30,12) DEFAULT '0.00' COMMENT 'Monto a transferir'
+ * - `currency_type_id` char(3) DEFAULT NULL COMMENT 'Moneda del destino del traslado'
  * - `date_of_movement` datetime DEFAULT NULL COMMENT 'Fecha de movimiento'
  * - `user_id` int(10) unsigned DEFAULT '0' COMMENT 'Usuario que realiza el movimiento'
  * - `created_at` timestamp NULL DEFAULT NULL
@@ -31,6 +32,7 @@ CREATE TABLE `transfer_account_payments` (
   `destiny_id` int(10) unsigned DEFAULT '0' COMMENT 'id Cuenta de destino',
   `destiny_type` text COLLATE utf8mb4_unicode_ci COMMENT 'Modelo de destino',
   `amount` decimal(30,12) DEFAULT '0.00' COMMENT 'Monto a transferir',
+  `currency_type_id` char(3) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Moneda del destino del traslado',
   `date_of_movement` datetime DEFAULT NULL COMMENT 'Fecha de movimiento',
   `user_id` int(10) unsigned DEFAULT '0' COMMENT 'Usuario que realiza el movimiento',
   `created_at` timestamp NULL DEFAULT NULL,

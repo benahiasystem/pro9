@@ -56,6 +56,115 @@ trait IvaRetentionPersistenceCases
             'currency_type_id'=>'VES','exchange_rate'=>'1.00000000'], $changes);
     }
 
+    // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+    public function test_cross_currency_credit_receipt_and_iva_retention_keep_balance_and_snapshot(): void
+    {
+        [$db,$app,$input]=$this->bootIvaFixture();
+        $db->table('payment_method_types')->where('id','01')->update([
+            'collection_kind'=>'account','currency_type_id'=>'USD','cash_currency_type_id'=>null,'is_cash'=>0,'is_active'=>1,
+        ]);
+        $bank=\App\Models\Tenant\BankAccount::create([
+            'bank_id'=>$db->table('banks')->value('id'),'description'=>'USD',
+            'number'=>'IVA-CREDIT-USD','currency_type_id'=>'USD','initial_balance'=>'0',
+        ]);
+        $input['exchange_rate_sale']='10';
+        $input['payment_condition_id']='02';
+        $input['payments']=[['date_of_payment'=>'2026-09-10','payment_method_type_id'=>'01',
+            'payment_destination_id'=>$bank->id,'currency_type_id'=>'USD','original_amount'=>'5',
+            'exchange_rate'=>'10','payment'=>'50','financial_intermediation'=>'financial_institution']];
+        $input['fee']=[['date'=>'2026-11-10','currency_type_id'=>'VES','amount'=>'182']];
+        $doc=(new Facturalo)->save($input)->getDocument()->fresh();
+        self::assertSame('182',\App\Support\Exact\Decimal::represent(\App\Support\Exact\Receivables::balancesForDocuments([$doc])[$doc->id]));
+        self::assertSame('182',$doc->fee()->firstOrFail()->amount);
+        $payment=$doc->payments()->firstOrFail();
+        $movement=\App\Services\Payments\Movement::row($payment->global_payment);
+        self::assertSame('account',$movement['method']['collection_kind']);
+        self::assertSame('USD',$movement['currency_type_id']);
+        self::assertSame('5',$movement['amount']);
+
+        $voucher=$this->ivaVoucher($doc);
+        $retention=IvaRetentionService::store($doc,$voucher);
+        self::assertSame('applied',$retention->application_status);
+        self::assertSame('158',\App\Support\Exact\Decimal::represent(\App\Support\Exact\Receivables::balancesForDocuments([$doc->fresh()])[$doc->id]));
+        self::assertSame('182',$doc->fresh()->fee()->firstOrFail()->amount);
+        self::assertSame('50',$doc->fresh()->payments()->firstOrFail()->payment);
+        self::assertSame($retention->id,IvaRetentionService::store($doc,$voucher)->id);
+        self::assertSame(1,$db->table('global_payments')->count());
+        $db->table('payment_method_types')->where('id','01')->update([
+            'collection_kind'=>'cash','currency_type_id'=>'VES','cash_currency_type_id'=>'VES','is_cash'=>1,
+        ]);
+        $after=\App\Services\Payments\Movement::row($payment->global_payment->fresh());
+        self::assertSame($movement,$after);
+        IvaRetentionService::reverse($retention,['operation_key'=>(string)Str::uuid(),'reason'=>'Reversión de prueba']);
+        self::assertSame('182',\App\Support\Exact\Decimal::represent(\App\Support\Exact\Receivables::balancesForDocuments([$doc->fresh()])[$doc->id]));
+        self::assertSame('182',$doc->fresh()->fee()->firstOrFail()->amount);
+        self::assertSame(1,$db->table('global_payments')->count());
+    }
+
+    public function test_iva_retention_rejects_paid_balance_after_prior_transaction_read(): void
+    {
+        [$db,$app,$input]=$this->bootIvaFixture();
+        $doc=(new Facturalo)->save($input)->getDocument()->fresh();
+        self::assertEquals(24,$doc->balance);
+        $voucher=$this->ivaVoucher($doc);
+        $worker=null;
+        $db->beginTransaction();
+        try {
+            $prior=\App\Models\Tenant\Document::findOrFail($doc->id);
+            self::assertEquals(24,$prior->balance);
+            $worker=new \Symfony\Component\Process\Process([PHP_BINARY,dirname(__DIR__).'/Support/fiscal_payment_concurrency_worker.php']);
+            $payment=['date_of_payment'=>'2026-09-10','payment_method_type_id'=>'01','payment'=>'24',
+                'currency_type_id'=>'VES','payment_destination_id'=>'cash','operation_key'=>(string)Str::uuid()];
+            $worker->setInput(json_encode(['connection'=>$db->getConfig(),'document_id'=>$doc->id,
+                'operation'=>'document-receipt','data'=>$payment],JSON_THROW_ON_ERROR));
+            $worker->setTimeout(30); $worker->start();
+            self::assertSame(0,$worker->wait(),$worker->getErrorOutput().$worker->getOutput());
+            $result=json_decode(substr($worker->getOutput(),strlen("READY\n")),true,512,JSON_THROW_ON_ERROR);
+            self::assertArrayHasKey('id',$result,json_encode($result));
+            try {
+                IvaRetentionService::store($prior,$voucher);
+                self::fail('La retención no debe consumir un saldo ya cobrado.');
+            } catch (ValidationException $e) {
+                self::assertArrayHasKey('amount',$e->errors());
+            }
+        } finally {
+            if ($db->transactionLevel()) $db->rollBack();
+            if ($worker && $worker->isRunning()) $worker->stop();
+        }
+        self::assertEquals(0,$doc->fresh()->balance);
+        self::assertSame(0,$doc->received_retentions()->count());
+        self::assertSame(2,$doc->payments()->count());
+
+        $next=(new Facturalo)->save(array_replace($input,['external_id'=>(string)Str::uuid()]))->getDocument()->fresh();
+        $cashId=$db->table('cash')->where('user_id',auth()->id())->where('state',true)->value('id');
+        $credit=\App\Models\Tenant\CashDocumentCredit::create(['cash_id'=>$cashId,'document_id'=>$next->id,'status'=>'PENDING']);
+        $voucher=$this->ivaVoucher($next,['base'=>16,'amount'=>12]);
+        $worker=null;
+        $db->beginTransaction();
+        try {
+            $prior=\App\Models\Tenant\Document::findOrFail($next->id);
+            self::assertEquals(24,$prior->balance);
+            $worker=new \Symfony\Component\Process\Process([PHP_BINARY,dirname(__DIR__).'/Support/fiscal_payment_concurrency_worker.php']);
+            $payment=['date_of_payment'=>'2026-09-10','payment_method_type_id'=>'01','payment'=>'12',
+                'currency_type_id'=>'VES','payment_destination_id'=>'cash','operation_key'=>(string)Str::uuid()];
+            $worker->setInput(json_encode(['connection'=>$db->getConfig(),'document_id'=>$next->id,
+                'operation'=>'document-receipt','data'=>$payment],JSON_THROW_ON_ERROR));
+            $worker->setTimeout(30); $worker->start();
+            self::assertSame(0,$worker->wait(),$worker->getErrorOutput().$worker->getOutput());
+            $result=json_decode(substr($worker->getOutput(),strlen("READY\n")),true,512,JSON_THROW_ON_ERROR);
+            self::assertArrayHasKey('id',$result,json_encode($result));
+            $retention=IvaRetentionService::store($prior,$voucher);
+            self::assertSame('applied',$retention->application_status);
+            $db->commit();
+        } finally {
+            if ($db->transactionLevel()) $db->rollBack();
+            if ($worker && $worker->isRunning()) $worker->stop();
+        }
+        self::assertEquals(0,$next->fresh()->balance);
+        self::assertSame('PROCESSED',$credit->fresh()->status);
+    }
+    // ######## FIN MONEDA DEL MEDIO DE COBRO ########
+
     public function test_iva_net_forecast_idempotence_hka_and_audited_replacement(): void
     {
         [$db,$app,$input] = $this->bootIvaFixture();

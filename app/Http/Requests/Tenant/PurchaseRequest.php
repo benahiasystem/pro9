@@ -24,6 +24,8 @@ class PurchaseRequest extends FormRequest
 			],
 			'series' => [
 				'required',
+				'string',
+				'max:4',
 			],
 			'date_of_issue' => [
 				'required',
@@ -34,7 +36,7 @@ class PurchaseRequest extends FormRequest
             ],
             // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
             'payments.*.payment_method_type_id' => [
-                'required', Rule::exists('tenant.payment_method_types', 'id')->where('is_active', 1),
+                'required', Rule::exists('tenant.payment_method_types', 'id'),
             ],
             // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
 		];

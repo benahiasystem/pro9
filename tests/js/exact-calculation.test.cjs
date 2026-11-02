@@ -11,6 +11,7 @@ before(async () => {
     totals = await import(moduleUrl('resources/js/helpers/exact-document.js'))
     const commercialSource=fs.readFileSync('resources/js/helpers/exact-commercial.js','utf8')
         .replaceAll('./exchange-rate-math',mathUrl).replaceAll('./exact-document',moduleUrl('resources/js/helpers/exact-document.js'))
+        .replaceAll('./payment-classification',url('resources/js/helpers/payment-classification.js'))
     commercial=await import(`data:text/javascript;base64,${Buffer.from(commercialSource).toString('base64')}`)
 })
 const input = (quantity = '1') => ({quantity, item: {id: 1, currency_type_id: 'VES', unit_price: '500'}, affectation_igv_type_id: '10', discounts: [], charges: []})

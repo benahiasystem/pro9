@@ -4,8 +4,8 @@ namespace Modules\Expense\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
+use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Collection;
-use Modules\Expense\Models\BankLoan;
 
 /**
  * Class BankLoanCollection
@@ -24,7 +24,9 @@ class BankLoanCollection extends ResourceCollection
      */
     public function toArray($request): Collection
     {
-        $col = $this->collection->transform(function (BankLoan $row, $key) {
+        $col = $this->collection->transform(function ($row) {
+            // ResourceCollection may wrap each model in BankLoanResource automatically.
+            $row = $row instanceof JsonResource ? $row->resource : $row;
 
             $data = $row->toArray();
 

@@ -75,6 +75,11 @@
 
         public function collection(Collection $rows)
         {
+            return \Illuminate\Support\Facades\DB::connection('tenant')->transaction(fn () => $this->importRows($rows));
+        }
+
+        private function importRows(Collection $rows)
+        {
             libxml_disable_entity_loader(false);
             $this->process = [];
             $configurationMiTienda = ConfigurationMiTiendaPe::first();
@@ -114,7 +119,35 @@
             $order_total_taxed = [];
             $order_total_exonerated = [];
 
-            foreach ($rows as $row) {
+            // Resolver todas las filas importables antes de crear clientes u órdenes.
+            // Si falta un método compatible, ninguna fila debe dejar escrituras parciales.
+            $methodsByDescription = PaymentMethodType::active()
+                ->whereIn('collection_kind', ['cash', 'account', 'credit'])->orderBy('id')->get()
+                ->groupBy(fn ($method) => mb_strtolower($method->description));
+            $rowMethods = [];
+            $defaultMethod = null;
+            foreach ($rows as $index => $row) {
+                if (empty($row[9] ?? null)) continue;
+                $paymentType = trim($row[8] ?? 'Contado');
+                $method = $methodsByDescription->get(mb_strtolower($paymentType))?->first();
+                if (!$method) $method = $defaultMethod ??= \App\Services\Payments\Classification::defaultCashMethod($this->configuration->currency_type_id ?? 'VES');
+                if ($this->configuration->getAutogenerate() && ucfirst($row[0] ?? '') === 'Factura' && $method->collection_kind !== 'credit') {
+                    $currency = $this->configuration->currency_type_id ?? 'VES';
+                    \App\Services\Payments\MethodCurrency::validateNew($method->id, $currency, ['currency_type_id'=>$currency], $method->getConnection());
+                    if ($method->collection_kind === 'cash') {
+                        $cash = \App\Models\Tenant\Cash::where('user_id', $this->user->id)->where('state', true)->lockForUpdate()->first();
+                        if (!$cash) \App\Services\Payments\Classification::error('payment_destination_id', 'Abra una caja antes de generar facturas en efectivo.');
+                    } else {
+                        $account = \App\Models\Tenant\BankAccount::query()->whereKey($this->configuration->payment_destination_id)->lockForUpdate()->first();
+                        if (!$account || !$account->status || $account->currency_type_id !== $currency) {
+                            \App\Services\Payments\Classification::error('payment_destination_id', 'Configure una cuenta activa con la moneda del cobro.');
+                        }
+                    }
+                }
+                $rowMethods[$index] = $method;
+            }
+
+            foreach ($rows as $index => $row) {
                 $documentType = $row[0] ?? null;
                 $miTiendaPeOrder = $row[1] ?? null;
                 $names = $row[2] ?? null;
@@ -123,12 +156,9 @@
                 $street = $row[5] ?? null;
                 $region = $row[6] ?? null;
                 $district = $row[7] ?? null;
-                $paymentType = $row[8] ?? 'Contado';
-                $paymentType = trim($paymentType);
-                $payment_method_types = PaymentMethodType::where('description', $paymentType)->first();
-                if (empty($payment_method_types)) {
-                    $payment_method_types = PaymentMethodType::where('description', 'Contado')->first();
-                }
+                // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+                $payment_method_types = $rowMethods[$index] ?? null;
+                // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
 
 
                 $identificationNumber = $row[9] ?? null;
@@ -266,7 +296,7 @@
                 $customerData['telefono'] = $phone;
                 $customerData['correo_electronico'] = $email;
                 $customerData['direccion'] = "$street, $district, $region";
-                $payment_method_type_id = empty($payment_method_types) ? '10' : $payment_method_types->id;
+                $payment_method_type_id = $payment_method_types->id;
                 $temp = [
                     "prefix" => "PD", // nota, usar una configuracion para este caso CMAR
                     'transaction_code' => $transaction_code,
@@ -275,7 +305,7 @@
                     'external_id' => Str::uuid()->toString(),
                     'customer_id' => $customerData['id'],
                     'customer' => $customerData,
-                    "reference_payment" => empty($payment_method_types) ? 'Contado' : $payment_method_types->description,
+                    "reference_payment" => $payment_method_types->description,
                     'establishment_id' => $this->configuration->establishment_id,
                     'user_id' => $this->user->id,
                     'currency_type_id' => $this->configuration->currency_type_id ?? 'VES',
@@ -433,10 +463,8 @@
                     $order_total_igv[$miTiendaPeOrder] += $itemTo['total_igv'];
                     $order_unit_price[$miTiendaPeOrder] += $itemTo['unit_price'];
                     $order_total_value[$miTiendaPeOrder] += $itemTo['total_value'];
-                    if (!isset($ds)) {
-                        $ds = [];
-                    }
-                    $order_discounts[$miTiendaPeOrder][] = $ds;
+                    // El descuento pertenece a la línea; no duplicarlo como
+                    // ajuste global ni añadir un ajuste vacío cuando es cero.
                     $orders[$miTiendaPeOrder]['items'][] = $itemTo;
 
 
@@ -477,7 +505,7 @@
 
 
                     $request->merge($toSave);
-                    $orderNotecontroller = new OrderNoteController();
+                    $orderNotecontroller = $this->makeOrderNoteController();
                     $result = $orderNotecontroller->store($request);
                     if (isset($result['success']) && $result['success'] === true) {
                         $order = $orderNotecontroller->getOrderNote();
@@ -486,6 +514,7 @@
 
                         if ($configurationMiTienda->getAutogenerate() === true && isset($toSave['document_type_id']) && !empty($toSave['document_type_id'])) {
                             $document = $this->setDocument($toSave, $order);
+                            if (!$document->exists) \App\Services\Payments\Classification::error('payments', 'No se pudo generar la factura del pedido importado.');
                         }
 
                         $miTiendaPe = new MiTiendaPe([
@@ -505,6 +534,7 @@
                         $this->process[] = $temp;
                     } else {
                         Log::debug(" No se pudo guardar por que no fue exitoso \n" . json_encode($toSave));
+                        \App\Services\Payments\Classification::error('payments', 'No se pudo guardar el pedido importado; se revirtió el lote.');
                     }
                 }
 
@@ -695,13 +725,17 @@
             $data["operation_type_id"] = '0101';
             $data["prefix"] = null;
             $data['type'] = 'invoice';
-            $data["payments"][] = [
+            $method = PaymentMethodType::query()->lockForUpdate()->findOrFail($data['payment_method_type_id']);
+            $data['payment_condition_id'] = $method->collection_kind === 'credit' ? '02' : '01';
+            $data['payments'] = [];
+            if ($method->collection_kind !== 'credit') $data["payments"][] = [
                 "id" => null,
                 "document_id" => null,
                 "date_of_payment" => $data['date_of_issue'],
                 "payment_method_type_id" => $data['payment_method_type_id'],
                 "reference" => $data['transaction_code'] ?? null,
-                "payment_destination_id" => $this->configuration->payment_destination_id,
+                "payment_destination_id" => $method->collection_kind === 'cash' ? 'cash' : $this->configuration->payment_destination_id,
+                "currency_type_id" => $data['currency_type_id'],
                 "payment" => $data['total'],
             ];
 
@@ -717,7 +751,7 @@
             if (isset($data['discounts'])) unset($data['discounts']);
 
             $data = DocumentInput::set($data);
-            $documentController = new DocumentController();
+            $documentController = $this->makeDocumentController();
 
             $documentRequest = new DocumentRequest();
             $documentRequest->merge($data);
@@ -740,6 +774,16 @@
         public function getData()
         {
             return $this->data;
+        }
+
+        protected function makeOrderNoteController(): OrderNoteController
+        {
+            return new OrderNoteController();
+        }
+
+        protected function makeDocumentController(): DocumentController
+        {
+            return new DocumentController();
         }
 
     }

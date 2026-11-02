@@ -196,6 +196,12 @@ class ReportGeneralItemController extends Controller
             });
         }
 
+        // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+        if (in_array($relation, ['document', 'sale_note'], true)) {
+            $data->with([$relation.'.currency_type', $relation.'.payments.global_payment',
+                $relation.'.payments.payment_method_type', $relation.'.fee.currency_type']);
+        }
+        // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
         return $data;
 
     }

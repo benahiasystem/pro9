@@ -7,6 +7,25 @@ use PHPUnit\Framework\TestCase;
 
 class PdfPricePrecisionTest extends TestCase
 {
+    public function test_purchase_order_templates_render_exact_line_discounts(): void
+    {
+        $blade = new \Illuminate\View\Compilers\BladeCompiler(new \Illuminate\Filesystem\Filesystem(), sys_get_temp_dir());
+        $row = new \Illuminate\Support\Fluent(['percentage_igv'=>'16', 'discounts'=>[
+            ['discount_type_id'=>'00', 'amount'=>'0.10'], ['discount_type_id'=>'00', 'amount'=>'0.20'],
+        ]]);
+        $decimals = 2;
+        foreach (['default', 'marca_de_agua', 'Plantilla_personalizable'] as $template) {
+            $source = file_get_contents(dirname(__DIR__, 2).'/app/CoreFacturalo/Templates/pdf/'.$template.'/purchase_order_a4.blade.php');
+            self::assertMatchesRegularExpression('/(@php\s+\$total_discount_line\s*=.*?@endphp\s*\{\{.*?\}\})/s', $source);
+            preg_match('/(@php\s+\$total_discount_line\s*=.*?@endphp\s*\{\{.*?\}\})/s', $source, $match);
+            $compiled = $blade->compileString($match[1]);
+            ob_start();
+            try { eval('?>'.$compiled); $rendered = ob_get_contents(); }
+            finally { ob_end_clean(); }
+            self::assertSame('0.35', trim($rendered), $template);
+        }
+    }
+
     public function test_displayed_base_and_tax_add_up_to_the_represented_total(): void
     {
         $line=LineCalculation::calculate(['quantity'=>'1','unit_price'=>'116.123456789123'],'16');

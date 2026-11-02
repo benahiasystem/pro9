@@ -339,7 +339,10 @@ trait PaymentLinkPaymentTrait
     {
         $payment_configuration = PaymentConfiguration::select('default_payment_for_payment_links')->first();
 
-        return optional($payment_configuration)->default_payment_for_payment_links ?? PaymentMethodType::CASH_PAYMENT_ID;
+        // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+        return optional($payment_configuration)->default_payment_for_payment_links
+            ?? \App\Services\Payments\Classification::defaultCashMethod('VES')->id;
+        // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
     }
 
 }

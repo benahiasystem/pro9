@@ -45,8 +45,6 @@
             'charges',
             'discounts',
 
-            'extra_attr_name',
-            'extra_attr_value',
             'additional_information',
             'warehouse_id',
             'name_product_pdf',

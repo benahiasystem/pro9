@@ -357,14 +357,21 @@ class DocumentTransform
                         }
                     }
                     $payments[] = [
-                        'date_of_payment' => Functions::valueKeyInArray($inputs, 'fecha_de_emision'),
+                        // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+                        'date_of_payment' => (!empty($row['source_sale_note_payment_id']) || !empty($row['source_quotation_payment_id']) || !empty($row['source_technical_service_payment_id']))
+                            ? ($row['date_of_payment'] ?? Functions::valueKeyInArray($inputs, 'fecha_de_emision'))
+                            : Functions::valueKeyInArray($inputs, 'fecha_de_emision'),
+                        'source_sale_note_payment_id' => $row['source_sale_note_payment_id'] ?? null,
+                        'source_quotation_payment_id' => $row['source_quotation_payment_id'] ?? null,
+                        'source_technical_service_payment_id' => $row['source_technical_service_payment_id'] ?? null,
+                        // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
                         'payment_method_type_id' => $row['codigo_metodo_pago'],
                         'payment_destination_id' => $row['codigo_destino_pago'],
                         'reference' => Functions::valueKeyInArray($row, 'referencia'),
                         'payment' => Functions::valueKeyInArray($row, 'monto', 0),
                         'original_amount' => $row['original_amount'] ?? $row['monto'],
                         'currency_type_id' => $row['currency_type_id'] ?? $inputs['codigo_tipo_moneda'],
-                        'exchange_rate' => $row['exchange_rate'] ?? $inputs['tipo_cambio_venta'],
+                        'exchange_rate' => $row['exchange_rate'] ?? $inputs['factor_tipo_de_cambio'] ?? $inputs['tipo_cambio_venta'] ?? 1,
                         'exchange_rate_source' => $row['exchange_rate_source'] ?? 'manual',
                         'exchange_rate_date' => $row['exchange_rate_date'] ?? $inputs['fecha_de_emision'],
                         'igtf_status' => $row['igtf_status'] ?? 'not_applicable',

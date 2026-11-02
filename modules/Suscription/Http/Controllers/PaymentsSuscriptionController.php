@@ -5,12 +5,14 @@
     use App\Http\Controllers\SearchCustomerController;
     use Carbon\Carbon;
     use Illuminate\Http\Request;
+    use Illuminate\Support\Facades\DB;
     use Modules\Suscription\Http\Requests\PaymentsSuscriptionRequest;
     use Modules\Suscription\Http\Resources\UserRelSuscriptionPlansCollection;
     use Modules\Suscription\Http\Resources\UserRelSuscriptionPlansResource;
     use Modules\Suscription\Models\Tenant\CatPeriod;
     use Modules\Suscription\Models\Tenant\SuscriptionPlan;
     use Modules\Suscription\Models\Tenant\UserRelSuscriptionPlan;
+    use Modules\Suscription\Services\SubscriptionSaleNoteController;
 
     class PaymentsSuscriptionController extends SuscriptionController
     {
@@ -149,18 +151,32 @@
          */
         public function store(PaymentsSuscriptionRequest $request)
         {
-            $id = null;
-            if ($request->has('id')) $id = (int)$request->id;
-            $plan = UserRelSuscriptionPlan::firstOrNew(['id' => $id], []);
-            $plan->fill($request->all());
-            $plan->push();
-            $salesNotes = UserRelSuscriptionPlan::setSaleNote($plan);
-
-            if ( !empty($salesNotes)) {
-                $plan->sale_notes = implode(',', $salesNotes);
-                $plan->push();
+            $noteController = app(SubscriptionSaleNoteController::class);
+            try {
+                return DB::connection('tenant')->transaction(function () use ($request, $noteController) {
+                    try {
+                        $id = $request->input('id');
+                        $plan = $id ? UserRelSuscriptionPlan::query()->lockForUpdate()->findOrFail($id) : new UserRelSuscriptionPlan();
+                        $hasNotes = $plan->exists && (trim((string) $plan->sale_notes) !== ''
+                            || \App\Models\Tenant\SaleNote::where('user_rel_suscription_plan_id', $plan->id)->exists());
+                        $plan->fill($request->except(['id', 'sale_notes']));
+                        $plan->push();
+                        $plan->refresh();
+                        $salesNotes = $hasNotes ? null : UserRelSuscriptionPlan::setSaleNote($plan, $noteController);
+                        if (!empty($salesNotes)) {
+                            $plan->sale_notes = implode(',', $salesNotes);
+                            $plan->push();
+                        }
+                        return new UserRelSuscriptionPlansResource($plan);
+                    } catch (\Throwable $error) {
+                        $noteController->restoreFiles();
+                        throw $error;
+                    }
+                });
+            } catch (\Throwable $error) {
+                $noteController->restoreFiles();
+                throw $error;
             }
-            return new UserRelSuscriptionPlansResource($plan);
 
         }
 

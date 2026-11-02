@@ -130,8 +130,8 @@ class DocumentResource extends JsonResource
                 return [
                     'id' => $row->id,
                     'date_of_payment' => $row->date_of_payment->format('d/m/Y'),
-                    'payment_method_type_description' => optional($row->payment_method_type)->description,
-                    'destination_description' => ($row->global_payment) ? $row->global_payment->destination_description : null,
+                    'payment_method_type_description' => \App\Services\Payments\ReceiptPresentation::method($row),
+                    'destination_description' => \App\Services\Payments\ReceiptPresentation::destination($row),
                     'reference' => $row->reference,
                     'payment' => $row->payment,
                 ];

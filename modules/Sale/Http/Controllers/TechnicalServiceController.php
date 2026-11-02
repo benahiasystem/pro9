@@ -262,10 +262,16 @@
                 $this->setFilename();
                 $this->createPdf($this->technical_service, "a4", $this->technical_service->filename);
 
-                $cash = Cash::query()->where([['user_id', auth()->id()], ['state', true]])->first();
-                $cash->cash_documents()->create([
-                    'technical_service_id' => $this->technical_service->id
-                ]);
+                // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+                // El servicio no registra dinero por sí mismo; una caja abierta sólo
+                // recibe una referencia por servicio y turno, también al editar.
+                $cash = Cash::query()->where([['user_id', auth()->id()], ['state', true]])->lockForUpdate()->first();
+                if ($cash) {
+                    \App\Services\Payments\CashPaymentLink::upsert(\App\Models\Tenant\CashDocument::query(), [
+                        'cash_id'=>$cash->id, 'technical_service_id'=>$this->technical_service->id,
+                    ]);
+                }
+                // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
 
             });
 

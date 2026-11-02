@@ -40,8 +40,209 @@ App\Models\Tenant\Document::observe(App\Observers\DocumentObserver::class);
 (new Modules\Inventory\Providers\InventoryKardexServiceProvider($app))->boot();
 (new Modules\Inventory\Providers\InventoryVoidedServiceProvider($app))->boot();
 $manager->getConnection('tenant')->getPdo();
+// ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+if (in_array($input['operation'] ?? '', ['subscription-edit','cash-document-link','cash-opening','bank-currency-edit','currency-deactivate','method-reclassify','method-activate','method-deactivate','quotation-receipt','quotation-apply-note','quotation-conversion-preflight','technical-apply-note','technical-receipt','sale-note-receipt','sale-note-batch','sale-note-delete','sale-note-reuse-invoice','document-receipt','receipt-attach'], true)) {
+    $connectionId=$manager->getConnection('tenant')->selectOne('SELECT CONNECTION_ID() AS id')->id;
+    fwrite(STDERR,"LOCK_TEST_CONNECTION={$connectionId}\n");
+}
+// ######## FIN MONEDA DEL MEDIO DE COBRO ########
 fwrite(STDOUT,"READY\n");fflush(STDOUT);
 try {
+    if (($input['operation'] ?? '') === 'whatsapp-draft') {
+        $draft=$input['data']['draft'];
+        $user=\App\Models\Tenant\User::findOrFail($input['data']['user_id']);
+        $document=\Modules\WhatsAppBot\Services\Facturalo\DraftOperation::run($draft,$user,function () use ($draft,$user) {
+            $payload=(new \Modules\WhatsAppBot\Services\Facturalo\FacturaloDraftMapper())->map($draft,$user);
+            $document=(new \App\CoreFacturalo\Facturalo())->save($payload)->getDocument();
+            return ['success'=>true,'data'=>['id'=>$document->id]];
+        });
+        fwrite(STDOUT,json_encode(['id'=>$document->id],JSON_THROW_ON_ERROR));exit(0);
+    }
+    // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+    if (in_array(($input['operation'] ?? ''), ['receipt-attach','document-attach'], true)) {
+        $output=\DB::connection('tenant')->transaction(function () use ($input) {
+            $model=($input['operation'] ?? '') === 'document-attach' ? \App\Models\Tenant\DocumentPayment::class : \Modules\Sale\Models\QuotationPayment::class;
+            $payment=$model::findOrFail($input['data']['payment_id']);
+            \App\Services\Payments\ReceiptDestination::attach($payment,['payment_destination_id'=>$input['data']['destination_id']]);
+            return ['success'=>true];
+        });
+        fwrite(STDOUT,json_encode($output,JSON_THROW_ON_ERROR));exit(0);
+    }
+    if (($input['operation'] ?? '') === 'cash-opening') {
+        $output=\DB::connection('tenant')->transaction(function () use ($input) {
+            \DB::connection('tenant')->table('payment_method_types')->count();
+            $cash=\App\Models\Tenant\Cash::findOrFail($input['data']['cash_id']);
+            \App\Services\Payments\CashLedger::open($cash,$input['data']);
+            return ['success'=>true];
+        });
+        fwrite(STDOUT,json_encode($output,JSON_THROW_ON_ERROR));exit(0);
+    }
+    if (($input['operation'] ?? '') === 'method-deactivate') {
+        \DB::connection('tenant')->table('payment_method_types')->where('id',$input['data']['id'])->update(['is_active'=>0]);
+        fwrite(STDOUT,json_encode(['success'=>true],JSON_THROW_ON_ERROR));exit(0);
+    }
+    if (($input['operation'] ?? '') === 'subscription-edit') {
+        $app->instance(\Modules\Suscription\Services\SubscriptionSaleNoteController::class, new class extends \Modules\Suscription\Services\SubscriptionSaleNoteController {
+            public function createPdf($sale_note=null,$format_pdf=null,$filename=null,$output='pdf') {}
+        });
+        $app->instance(\Illuminate\Contracts\Routing\UrlGenerator::class, new class implements \Illuminate\Contracts\Routing\UrlGenerator {
+            public function full() { return 'http://example.test'; }
+            public function current() { return 'http://example.test'; }
+            public function previous($fallback = false) { return 'http://example.test'; }
+            public function to($path, $extra = [], $secure = null) { return 'http://example.test'; }
+            public function secure($path, $parameters = []) { return 'http://example.test'; }
+            public function asset($path, $secure = null) { return 'http://example.test'; }
+            public function secureAsset($path) { return 'http://example.test'; }
+            public function route($name, $parameters = [], $absolute = true) { return 'http://example.test'; }
+            public function action($action, $parameters = [], $absolute = true) { return 'http://example.test'; }
+            public function forceScheme($scheme) {}
+            public function getRootControllerNamespace() { return ''; }
+            public function setRootControllerNamespace($rootNamespace) {}
+        });
+        $request=\Modules\Suscription\Http\Requests\PaymentsSuscriptionRequest::create('/', 'POST', $input['data']);
+        $output=\DB::connection('tenant')->transaction(function () use ($request) {
+            \DB::connection('tenant')->table('user_rel_suscription_plans')->count();
+            (new \Modules\Suscription\Http\Controllers\PaymentsSuscriptionController())->store($request);
+            return ['success'=>true];
+        });
+        fwrite(STDOUT,json_encode($output,JSON_THROW_ON_ERROR));exit(0);
+    }
+    if (($input['operation'] ?? '') === 'cash-document-link') {
+        $app->instance(\Illuminate\Contracts\Routing\ResponseFactory::class, new class {
+            public function json($data = [], $status = 200, array $headers = [], $options = 0) {
+                return new \Illuminate\Http\JsonResponse($data, $status, $headers, $options);
+            }
+        });
+        $request=\Illuminate\Http\Request::create('/', 'POST', $input['data']);
+        $output=\DB::connection('tenant')->transaction(function () use ($request) {
+            \DB::connection('tenant')->table('cash_documents')->count();
+            return (new \App\Http\Controllers\Tenant\Api\CashController())->cash_document($request)->getData(true);
+        });
+        fwrite(STDOUT,json_encode($output,JSON_THROW_ON_ERROR));exit(0);
+    }
+    if (($input['operation'] ?? '') === 'bank-currency-edit') {
+        $request=\App\Http\Requests\Tenant\BankAccountRequest::create('/', 'POST', $input['data']);
+        $output=(new \App\Http\Controllers\Tenant\BankAccountController())->store($request);
+        fwrite(STDOUT,json_encode($output,JSON_THROW_ON_ERROR));exit(0);
+    }
+    if (($input['operation'] ?? '') === 'currency-deactivate') {
+        \DB::connection('tenant')->table('cat_currency_types')->where('id',$input['data']['currency'])->update(['active'=>0]);
+        fwrite(STDOUT,json_encode(['success'=>true],JSON_THROW_ON_ERROR));exit(0);
+    }
+    if (($input['operation'] ?? '') === 'method-reclassify') {
+        $request=\Modules\Sale\Http\Requests\PaymentMethodTypeRequest::create('/', 'PUT', $input['data']);
+        $output=(new \Modules\Sale\Http\Controllers\PaymentMethodTypeController())->update($request,$input['data']['id']);
+        fwrite(STDOUT,json_encode($output,JSON_THROW_ON_ERROR));exit(0);
+    }
+    if (($input['operation'] ?? '') === 'method-activate') {
+        \Illuminate\Http\Request::macro('validate', function ($rules) {
+            return app('validator')->make($this->all(), $rules)->validate();
+        });
+        $request=\Illuminate\Http\Request::create('/', 'POST', $input['data']);
+        $output=(new \Modules\Sale\Http\Controllers\PaymentMethodTypeController())->active($request);
+        fwrite(STDOUT,json_encode($output,JSON_THROW_ON_ERROR));exit(0);
+    }
+    if (($input['operation'] ?? '') === 'quotation-receipt') {
+        $request=\Modules\Sale\Http\Requests\QuotationPaymentRequest::create('/', 'POST', $input['data']);
+        $operation=fn()=>(new \Modules\Sale\Http\Controllers\QuotationPaymentController())->store($request);
+        $output=!empty($input['pre_read']) ? \DB::connection('tenant')->transaction(function () use ($operation) {
+            \DB::connection('tenant')->table('quotation_payments')->count();
+            return $operation();
+        }) : $operation();
+        fwrite(STDOUT,json_encode($output,JSON_THROW_ON_ERROR));exit(0);
+    }
+    if (($input['operation'] ?? '') === 'quotation-conversion-preflight') {
+        $output=\DB::connection('tenant')->transaction(function () use ($input) {
+            \DB::connection('tenant')->table('quotation_payments')->count();
+            \App\Services\Payments\QuotationReceiptsRequired::assertPresent($input['data']['quotation_id'],[]);
+            return ['success'=>true];
+        });
+        fwrite(STDOUT,json_encode($output,JSON_THROW_ON_ERROR));exit(0);
+    }
+    if (in_array($input['operation'] ?? '', ['quotation-apply-note', 'technical-apply-note'], true)) {
+        $output=\DB::connection('tenant')->transaction(function () use ($input) {
+            // Establish an old repeatable-read snapshot before locking the quotation.
+            \DB::connection('tenant')->table('sale_note_payments')->count();
+            \DB::connection('tenant')->table('document_payments')->count();
+            $note=\App\Models\Tenant\SaleNote::withoutEagerLoads()->findOrFail($input['document_id']);
+            (new \App\Http\Controllers\Tenant\SaleNoteController())->savePayments($note, [$input['data']]);
+            return ['success'=>true];
+        });
+        fwrite(STDOUT,json_encode($output,JSON_THROW_ON_ERROR));exit(0);
+    }
+    if (($input['operation'] ?? '') === 'sale-note-delete') {
+        $output=\DB::connection('tenant')->transaction(function () use ($input) {
+            \DB::connection('tenant')->table('document_payments')->count();
+            $controller=new class extends \App\Http\Controllers\Tenant\SaleNotePaymentController {
+                public function createPdf($sale_note_id, $format = null) { return null; }
+            };
+            return $controller->destroy($input['data']['payment_id']);
+        });
+        fwrite(STDOUT,json_encode($output,JSON_THROW_ON_ERROR));exit(0);
+    }
+    if (($input['operation'] ?? '') === 'sale-note-reuse-invoice') {
+        $output=\DB::connection('tenant')->transaction(function () use ($input) {
+            \DB::connection('tenant')->table('document_payments')->count();
+            $document=(new \App\CoreFacturalo\Facturalo())->forWebDocuments()->save($input['data'])->getDocument();
+            return ['success'=>true,'id'=>$document->id];
+        });
+        fwrite(STDOUT,json_encode($output,JSON_THROW_ON_ERROR));exit(0);
+    }
+    if (($input['operation'] ?? '') === 'technical-receipt') {
+        $request=\Modules\Sale\Http\Requests\TechnicalServicePaymentRequest::create('/', 'POST', $input['data']);
+        $operation=fn()=>(new \Modules\Sale\Http\Controllers\TechnicalServicePaymentController())->store($request);
+        $output=!empty($input['pre_read']) ? \DB::connection('tenant')->transaction(function () use ($operation) {
+            \DB::connection('tenant')->table('technical_service_payments')->count();
+            return $operation();
+        }) : $operation();
+        fwrite(STDOUT,json_encode($output,JSON_THROW_ON_ERROR));exit(0);
+    }
+    if (($input['operation'] ?? '') === 'sale-note-receipt') {
+        $request=\App\Http\Requests\Tenant\SaleNotePaymentRequest::create('/', 'POST', $input['data']);
+        $controller=new class extends \App\Http\Controllers\Tenant\SaleNotePaymentController {
+            public function createPdf($sale_note_id, $format = null) { return null; }
+        };
+        $operation=fn()=>$controller->store($request);
+        $output=!empty($input['pre_read']) ? \DB::connection('tenant')->transaction(function () use ($operation) {
+            \DB::connection('tenant')->table('sale_note_payments')->count();
+            return $operation();
+        }) : $operation();
+        fwrite(STDOUT,json_encode($output,JSON_THROW_ON_ERROR));exit(0);
+    }
+    if (($input['operation'] ?? '') === 'sale-note-batch') {
+        $output=\DB::connection('tenant')->transaction(function () use ($input) {
+            \DB::connection('tenant')->table('payment_method_types')->count();
+            $note=\App\Models\Tenant\SaleNote::findOrFail($input['data']['note_id']);
+            (new \App\Http\Controllers\Tenant\SaleNoteController())->savePayments($note,$input['data']['payments']);
+            return ['success'=>true];
+        });
+        fwrite(STDOUT,json_encode($output,JSON_THROW_ON_ERROR));exit(0);
+    }
+    if (($input['operation'] ?? '') === 'document-receipt') {
+        $output=\DB::connection('tenant')->transaction(function () use ($input) {
+            $document=\App\Models\Tenant\Document::query()->findOrFail($input['document_id']);
+            $payment=\App\Services\Fiscal\FiscalDocumentPersistence::payment($document,$input['data']);
+            return ['id'=>$payment->id];
+        });
+        fwrite(STDOUT,json_encode($output,JSON_THROW_ON_ERROR));exit(0);
+    }
+    // ######## FIN MONEDA DEL MEDIO DE COBRO ########
+    if (($input['operation'] ?? '') === 'mobile-capture') {
+        $request=\Modules\MobileApp\Http\Requests\Api\ReceivedPaymentStoreRequest::create('/', 'POST', $input['data']);
+        $request->setContainer($app); $request->validateResolved();
+        $response=(new \Modules\MobileApp\Http\Controllers\Api\ReceivedPaymentController())->store($request);
+        fwrite(STDOUT,json_encode($response, JSON_THROW_ON_ERROR));exit(0);
+    }
+    if (($input['operation'] ?? '') === 'hotel-retry') {
+        $app->instance(\Illuminate\Contracts\Routing\ResponseFactory::class, new class {
+            public function json($data = [], $status = 200, array $headers = [], $options = 0) {
+                return new \Illuminate\Http\JsonResponse($data, $status, $headers, $options);
+            }
+        });
+        $request=\Modules\Hotel\Http\Requests\HotelRentItemRequest::create('/', 'POST', $input['data']);
+        $response=(new \Modules\Hotel\Http\Controllers\HotelRentController())->addProductsToRoom($request,$input['document_id']);
+        fwrite(STDOUT,json_encode($response->getData(true), JSON_THROW_ON_ERROR));exit(0);
+    }
     if (($input['operation'] ?? '')==='dispatch-create') {
         $order=(new App\CoreFacturalo\Facturalo)->save(App\CoreFacturalo\Requests\Inputs\DispatchInput::set($input['data']))->getDocument();
         fwrite(STDOUT,json_encode(['id'=>$order->id,'number'=>$order->number]));exit(0);

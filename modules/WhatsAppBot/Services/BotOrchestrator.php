@@ -134,10 +134,11 @@ class BotOrchestrator
             if ($afterTrigger === '') {
                 if ($hadPendingDraft) {
                     $draft = $session->pending_document_json;
-                    $total = number_format($draft['total'] ?? 0, 2);
+                    $total = \App\Support\Exact\Decimal::format($draft['total'] ?? 0, 2);
                     $type = ucfirst($draft['document_type_label'] ?? 'comprobante');
                     $customer = $draft['customer_name'] ?? 'consumidor final';
-                    $greeting = "Retomamos. Tenías una {$type} a {$customer} por Bs. {$total} pendiente de confirmar.\n"
+                    $rate = isset($draft['exchange_rate_sale']) ? " Tasa: Bs. {$draft['exchange_rate_sale']} por USD." : '';
+                    $greeting = "Retomamos. Tenías una {$type} a {$customer} por Bs. {$total} pendiente de confirmar.{$rate}\n"
                         . "¿Confirmas la emisión con \"sí\" o cancelas con \"no\"?";
                 } elseif ($resuming) {
                     $greeting = "Retomamos donde lo dejamos. ¿En qué te ayudo?";
@@ -446,36 +447,34 @@ class BotOrchestrator
         $type = ucfirst($draft['document_type_label'] ?? 'comprobante');
 
         try {
-            $mapper = new \Modules\WhatsAppBot\Services\Facturalo\FacturaloDraftMapper();
-            $payload = $mapper->map($draft, $user);
-
-            auth()->setUser($user);
-
-            $controller = new \App\Http\Controllers\Tenant\DocumentController();
-            $result = $controller->storeWithData($payload);
-
-            if (empty($result['success']) || empty($result['data']['id'])) {
-                Log::warning('[WhatsAppBot] Emisión falló', ['result' => $result]);
-                $errMsg = $result['message'] ?? '';
-                return [
-                    'success' => false,
-                    'message' => $this->humanizeEmissionError($errMsg, $type),
-                ];
-            }
-
-            $numberFull = $result['data']['number_full'] ?? '?';
-            $documentId = $result['data']['id'];
-
-            $document = \App\Models\Tenant\Document::find($documentId);
+            $document = \Modules\WhatsAppBot\Services\Facturalo\DraftOperation::run($draft, $user, function () use ($draft, $user) {
+                $payload = (new \Modules\WhatsAppBot\Services\Facturalo\FacturaloDraftMapper())->map($draft, $user);
+                auth()->setUser($user);
+                return (new \App\Http\Controllers\Tenant\DocumentController())->storeWithData($payload);
+            });
+            $numberFull = $document->number_full;
+            $pdfWarning = '';
             if ($document && !empty($document->filename)) {
                 $displayName = $numberFull . '.pdf';
-                $caption = "{$type} {$numberFull} — Total Bs. " . number_format($draft['total'], 2);
-                $this->sender->sendDocumentPdf($toPhone, $document->filename, $displayName, $caption, $sessionId);
+                $caption = "{$type} {$numberFull} — Total Bs. " . \App\Support\Exact\Decimal::format($draft['total'], 2);
+                try {
+                    if (!$this->sender->sendDocumentPdf($toPhone, $document->filename, $displayName, $caption, $sessionId)) {
+                        $pdfWarning = "\nEl comprobante se guardó, pero no se pudo enviar el PDF.";
+                    }
+                } catch (\Throwable $error) {
+                    Log::warning('[WhatsAppBot] No se pudo enviar el PDF', ['exception'=>$error->getMessage()]);
+                    $pdfWarning = "\nEl comprobante se guardó, pero no se pudo enviar el PDF.";
+                }
             }
 
             return [
                 'success' => true,
-                'message' => "{$type} emitida correctamente.\nNúmero: {$numberFull}\nTotal: Bs. " . number_format($draft['total'], 2),
+                'message' => "{$type} emitida correctamente.\nNúmero: {$numberFull}\nTotal: Bs. " . \App\Support\Exact\Decimal::format($draft['total'], 2) . $pdfWarning,
+            ];
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return [
+                'success' => false,
+                'message' => collect($e->errors())->flatten()->first() ?: 'Revise los datos del borrador y vuelva a prepararlo.',
             ];
         } catch (\Throwable $e) {
             Log::error('[WhatsAppBot] Excepción al emitir', [

@@ -25,8 +25,9 @@ final class FinancialReport
                 if (!$row || $row['date'] < $start || substr($row['date'],0,10) > $end) continue;
                 if (isset($seen[$row['source']])) continue;
                 $seen[$row['source']]=true;
-                $key=implode(':',[$row['method']['catalog'],$row['method']['id'],$row['method']['description'],$row['currency_type_id'],$row['destination_type'],$row['destination_id']]);
+                $key=Classification::historicalGroupKey($row);
                 $groups[$key] ??= ['version'=>2,'method'=>$row['method'],'currency_type_id'=>$row['currency_type_id'],
+                    'method_kind_label'=>Classification::kindLabel($row['method']['collection_kind'] ?? null),
                     'destination_id'=>$row['destination_id'],'destination_label'=>$row['destination_label'],'opening'=>D::of(0),'income'=>D::of(0),'egress'=>D::of(0)];
                 $field=$row['opening'] ? 'opening' : $row['direction'];
                 $groups[$key][$field]=$groups[$key][$field]->plus(D::readRequired($row,'amount'));

@@ -242,42 +242,22 @@ class DocumentController extends Controller
             $variation = $sales_now > 0 ? 100 : 0;
         }
 
-        // Cuentas por cobrar: saldo pendiente de facturas/boletas no canceladas.
-        $receivable_total = 0;
-        $por_cobrar_30    = 0;
-        $vencidas         = 0;
+        // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+        // The receivables dataset reads exact documentary balances in batches
+        // and applies the same user/seller scope as this indicator.
+        $D = \App\Support\Exact\Decimal::class;
+        $totals = ['total'=>$D::of(0), 'current'=>$D::of(0), 'overdue'=>$D::of(0)];
         $today = Carbon::now()->startOfDay();
-        $due_limit_30 = $today->copy()->addDays(30)->endOfDay();
-
-        Document::query()
-            ->where(fn ($q) => $q->whereTypeUser())
-            ->whereIn('state_type_id', $valid_states)
-            ->whereIn('document_type_id', ['01'])
-            ->where('total_canceled', false)
-            ->with(['invoice:id,document_id,date_of_due'])
-            ->withSum('payments as payments_sum', 'payment')
-            ->get(['id', 'document_type_id', 'currency_type_id', 'exchange_rate_sale', 'total'])
-            ->each(function ($row) use (&$receivable_total, &$por_cobrar_30, &$vencidas, $today, $due_limit_30) {
-                $retention = $row->retention_amount + $row->guarantee_amount;
-                $balance = $row->total - $retention - ($row->payments_sum ?? 0);
-
-                if ($balance <= 0) {
-                    return;
-                }
-
-                $balance_pen = ($row->currency_type_id === 'VES')
-                    ? $balance
-                    : (float) \App\Services\ExchangeRates\ExchangeRateMath::finalAmount(\App\Services\ExchangeRates\ExchangeRateMath::rational($balance)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($row->exchange_rate_sale)), 2);
-
-                $receivable_total += $balance_pen;
-
-                $date_of_due = optional($row->invoice)->date_of_due;
-                if ($date_of_due && Carbon::parse($date_of_due)->lt($today)) {
-                    $vencidas += $balance_pen;
-                } elseif ($date_of_due && Carbon::parse($date_of_due)->lte($due_limit_30)) {
-                    $por_cobrar_30 += $balance_pen;
-                }
-            });
+        $dueLimit = $today->copy()->addDays(30)->endOfDay();
+        $receivables = \App\Support\Exact\Receivables::invoiceKpiDataset();
+        foreach ($receivables as $row) {
+            $ves = $D::readRequired($row, 'balance_ves_equivalent');
+            $totals['total'] = $totals['total']->plus($ves);
+            $due = $row['due_date_iso'];
+            if ($due && Carbon::parse($due)->lt($today)) $totals['overdue'] = $totals['overdue']->plus($ves);
+            elseif ($due && Carbon::parse($due)->lte($dueLimit)) $totals['current'] = $totals['current']->plus($ves);
+        }
+        // ######## FIN MONEDA DEL MEDIO DE COBRO ########
 
         return [
             'sales' => [
@@ -287,9 +267,9 @@ class DocumentController extends Controller
                 'variation_up' => $variation >= 0,
             ],
             'receivable' => [
-                'total'   => 'Bs. ' . number_format($receivable_total, 2, '.', ','),
-                'current' => 'Bs. ' . number_format($por_cobrar_30, 2, '.', ','),
-                'overdue' => 'Bs. ' . number_format($vencidas, 2, '.', ','),
+                'total'   => 'Bs. ' . \App\Support\Exact\Decimal::format($totals['total']),
+                'current' => 'Bs. ' . \App\Support\Exact\Decimal::format($totals['current']),
+                'overdue' => 'Bs. ' . \App\Support\Exact\Decimal::format($totals['overdue']),
             ],
         ];
     }
@@ -429,7 +409,7 @@ class DocumentController extends Controller
         // $sellers = User::where('establishment_id',$establishment_id)->whereIn('type', ['seller', 'admin'])->orWhere('id', $userId)->get();
         $sellers = User::getSellersToNvCpe($establishment_id, $userId)
             ->transform(function (User $row) {
-                return $row->getCollectionData();
+                return \Illuminate\Support\Arr::except($row->getCollectionData(), ['api_token', 'password']);
             });
         $payment_method_types = $this->table('payment_method_types');
         $business_turns = BusinessTurn::where('active', true)->get();
@@ -800,6 +780,18 @@ class DocumentController extends Controller
      */
     public function store(DocumentRequest $request)
     {
+        return $this->storeForChannel($request, true);
+    }
+
+    // ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
+    public function storeFromSubscription(DocumentRequest $request)
+    {
+        return $this->storeForChannel($request, false);
+    }
+
+    private function storeForChannel(DocumentRequest $request, bool $webDocuments)
+    // ######## FIN PERSISTENCIA FISCAL VENEZUELA ########
+    {
         try
         {
             // Validar restricciones de plan ANTES de crear el documento
@@ -821,10 +813,9 @@ class DocumentController extends Controller
                 $data['source_module'] = 'WEB';
             }
 
-            $res = $this->storeWithData($data, true);
+            $res = $this->storeWithData($data, $webDocuments);
             $document_id = $res['data']['id'];
             $this->associateDispatchesToDocument($request, $document_id);
-            $this->associateSaleNoteToDocument($request, $document_id);
 
             return $res;
         }
@@ -970,48 +961,6 @@ class DocumentController extends Controller
                 ]
             ];
         }
-
-    private function associateSaleNoteToDocument(Request $request, int $documentId)
-    {
-        if ($request->sale_note_id) {
-            SaleNote::where('id', $request->sale_note_id)
-                ->update(['document_id' => $documentId]);
-        }
-
-        //notas de venta relacionadas cuando se genera cpe desde multiples nv
-        $notes = $request->sale_notes_relateds;
-
-        if ($notes) {
-
-            foreach ($notes as $note) {
-
-                $sale_note_id = $note['id'] ?? null;
-
-                if ($sale_note_id) {
-
-                    $sale_note = SaleNote::find($sale_note_id);
-
-                    if (!empty($sale_note)) {
-                        $sale_note->document_id = $documentId;
-                        $sale_note->push();
-                    }
-
-                }
-
-                // $noteArray = explode('-', $note);
-                // if (count($noteArray) === 2) {
-                //     $sale_note = SaleNote::where([
-                //                                      'series'=> $noteArray[0],
-                //                                      'number'=> $noteArray[1],
-                //                                  ])->first();
-                //     if(!empty($sale_note)) {
-                //         $sale_note->document_id = $documentId;
-                //         $sale_note->push();
-                //     }
-                // }
-            }
-        }
-    }
 
     private function associateDispatchesToDocument(Request $request, int $documentId)
     {
@@ -1459,70 +1408,62 @@ class DocumentController extends Controller
         // $this->max_count_payment = 20 ;//( $value > $this->max_count_payment) ? $value : $this->$max_count_payment;
     }
 
+    // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
     private function transformReportPayment($resource)
     {
-
-        $records = $resource->transform(function ($row) {
-
-            $total_paid = collect($row->payments)->sum('payment');
-            $total = $row->total;
-            $total_difference = round($total - $total_paid, 2);
-
-            $this->updateMaxCountPayments($row->payments->count());
-
-            return (object)[
-
-                'id' => $row->id,
-                'ruc' => $row->customer->number,
-                // 'date' =>  $row->date_of_issue->format('Y-m-d'),
-                // 'date' =>  $row->date_of_issue,
-                'date' => $row->date_of_issue->format('d/m/Y'),
-                'invoice' => $row->number_full,
-                'comercial_name' => $row->customer->trade_name,
-                'business_name' => $row->customer->name,
-                'zone' => $row->customer->department->description,
-                'total' => number_format($row->total, 2, ".", ""),
-
-                'payments' => $row->payments,
-
-                /*'payment1' =>  ( isset($row->payments[0]) ) ?  number_format($row->payments[0]->payment, 2) : '',
-                'payment2' =>  ( isset($row->payments[1]) ) ?  number_format($row->payments[1]->payment, 2) : '',
-                'payment3' =>   ( isset($row->payments[2]) ) ?  number_format($row->payments[2]->payment, 2) : '',
-                'payment4' =>   ( isset($row->payments[3]) ) ?  number_format($row->payments[3]->payment, 2) : '', */
-
-                'balance' => $total_difference,
-                'person_type' => isset($row->person->person_type->description) ? $row->person->person_type->description : '',
-                'department' => $row->customer->department->description,
-                'district' => $row->customer->district->description,
-
-                /*'reference1' => ( isset($row->payments[0]) ) ?  $row->payments[0]->reference : '',
-                'reference2' =>  ( isset($row->payments[1]) ) ?  $row->payments[1]->reference : '',
-                'reference3' =>  ( isset($row->payments[2]) ) ?  $row->payments[2]->reference : '',
-                'reference4' =>  ( isset($row->payments[3]) ) ?  $row->payments[3]->reference : '', */
-            ];
-        });
-
-        return $records;
+        return $resource->chunk(500)->flatMap(function ($batch) {
+            $balances = \App\Support\Exact\Receivables::balancesForDocuments($batch);
+            return $batch->map(function ($row) use ($balances) {
+                $D = \App\Support\Exact\Decimal::class;
+                $voided = $row->isVoidedOrRejected();
+                $balance = $voided ? $D::of(0) : $balances[$row->id];
+                $payments = $row->payments->map(function ($payment) use ($row, $D) {
+                    $payment->setRelation('document', $row);
+                    $result = \App\Services\Payments\DocumentPaymentReport::row($payment);
+                    $applied = $result['status'] === 'Vigente' ? $payment->exactValue('payment') : $D::of(0);
+                    $values = ['applied'=>$applied];
+                    if ($result['payment'] !== null) $values['received'] = $D::of($result['payment']);
+                    if ($result['exchange_rate'] !== null) $values['rate'] = $D::of($result['exchange_rate']);
+                    $result['exact_snapshot'] = $D::snapshot($values);
+                    return $result;
+                })->values();
+                $this->updateMaxCountPayments($payments->count());
+                return (object) [
+                    'id'=>$row->id,
+                    'ruc'=>data_get($row->customer,'number',''),
+                    'date'=>$row->date_of_issue->format('d/m/Y'),
+                    'invoice'=>$row->number_full,
+                    'comercial_name'=>data_get($row->customer,'trade_name',''),
+                    'business_name'=>data_get($row->customer,'name',''),
+                    'zone'=>data_get($row->customer,'department.description',''),
+                    'person_type'=>data_get($row->person,'person_type.description',''),
+                    'department'=>data_get($row->customer,'department.description',''),
+                    'district'=>data_get($row->customer,'district.description',''),
+                    'currency_type_id'=>$row->currency_type_id,
+                    'status'=>$voided ? 'Anulado o rechazado' : 'Vigente',
+                    'total'=>$D::format($row->exactValue('total'),2,'.',''),
+                    'payments'=>$payments,
+                    'balance'=>$D::format($balance,2,'.',''),
+                    'exact_snapshot'=>$D::snapshot(['total'=>$row->exactValue('total'), 'balance'=>$balance]),
+                ];
+            });
+        })->values();
     }
 
     public function report_payments(Request $request)
     {
-        // $month_format = Carbon::parse($month)->format('m');
-
-        if ($request->anulled == 'true') {
-            $records = Document::whereBetween('date_of_issue', [$request->date_start, $request->date_end])->get();
-        } else {
-            $records = Document::whereBetween('date_of_issue', [$request->date_start, $request->date_end])->where('state_type_id', '!=', '11')->get();
-        }
-
-        $source = $this->transformReportPayment($records);
-
+        $source = \App\Support\Exact\ReadSnapshot::run(DB::connection('tenant'), function () use ($request) {
+            $query = Document::whereBetween('date_of_issue', [$request->date_start, $request->date_end])
+                ->with(['payments.global_payment','person.person_type']);
+            if ($request->anulled != 'true') $query->where('state_type_id', '!=', '11');
+            return $this->transformReportPayment($query->get());
+        });
         return (new PaymentExport)
             ->records($source)
             ->payment_count($this->max_count_payment)
             ->download('Reporte_Pagos_' . Carbon::now() . '.xlsx');
-
     }
+    // ######## FIN MONEDA DEL MEDIO DE COBRO ########
 
     public function destroyDocument($document_id)
     {

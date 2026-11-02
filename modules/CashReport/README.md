@@ -13,7 +13,7 @@ index.vue (botón "Reportes") ──▶ partials/reports.vue (modal)
                      │
              CashReportController  ── permiso ──▶ CashReportRenderer
                                                    │  CashReportRegistry::get(type)
-                                                   │  Builder::build(cash, options) → ['header','data',…]
+                                                   │  ClassifiedCashReport::build(cash, type, options) / ProductsBuilder
                                                    ├─ PDF  : mPDF + layouts/a4|ticket + partials/header|footer
                                                    └─ Excel: GeneralFormatExport + layouts/excel
 ```
@@ -56,29 +56,6 @@ modules/CashReport/
 
 ## Equivalencia con los reportes anteriores
 
-Los métodos y rutas legacy se conservan porque la **app móvil** (`modules/MobileApp`) los consume; ahora solo delegan en `CashReportRenderer` y entregan la respuesta igual que antes (inline o descarga).
-
-| Reporte (botón anterior) | Ruta legacy | Tipo nuevo | Builder | Vista nueva | Origen de la lógica |
-|---|---|---|---|---|---|
-| Reporte → PDF A4 | `cash/report-a4/{cash}` (Pos `reportA4`) | `cash_summary` `paper=a4` | `CashSummaryBuilder` | `reports/cash_summary_a4` | Pos `CashController@setDataToReport` + `pos::cash.report_pdf_a4` |
-| Reporte → PDF Ticket | `cash/report-ticket/{cash}/80/0` (`reportTicket`) | `cash_summary` `paper=ticket80` | `CashSummaryBuilder` | `reports/cash_summary_ticket` | `pos::cash.report_pdf_ticket` |
-| Reporte → PDF Ticket 58 | `cash/report-ticket/{cash}/58/0` | `cash_summary` `paper=ticket58` | `CashSummaryBuilder` | `reports/cash_summary_ticket` | idem |
-| Reporte → PDF Ticket Resumen | `cash/report-ticket/{cash}/80/1` | `cash_summary` `paper=ticket80&summary=1` | `CashSummaryBuilder` | `reports/cash_summary_ticket` | idem |
-| Reporte → Simple A4 | `cash/simple/report-a4/{cash}` (`reportSimpleA4`) | `cash_simple` | `CashSimpleBuilder` | `reports/cash_simple_a4` | `pos::cash.report_pdf_simple_a4` |
-| Reporte → Excel | `cash/report-excel/{cash}` (`reportExcel`) | `cash_summary` `format=excel` | `CashSummaryBuilder` | `reports/cash_summary_excel` | `pos::cash.report_excel` + `ReportCashExport` |
-| Reporte → Resumen de Operaciones Diarias | `cash-reports/summary-daily-operations/{cash}` | `summary_daily_operations` | `SummaryDailyOperationsBuilder` | `reports/summary_daily_operations_a4` | Pos `CashReportTrait` |
-| Reporte → Reporte general caja V2 | `cash-reports/general-with-payments/{cash}` | `general_with_payments` | `GeneralWithPaymentsBuilder` | `reports/general_with_payments_a4` | Pos `CashReportTrait` |
-| Reporte Efectivo → Excel | `cash-reports/cash-payment-report-excel/{cash}` | `payments_associated` `format=excel` | `PaymentsAssociatedCashBuilder` | `reports/payments_associated_excel` | Pos `CashReportTrait@setDataCashPaymentReportExcel` |
-| Reporte Efectivo → Ingresos y egresos | `cash/report-cash-income-egress/{cash}` (`reportCashIncomeEgress`) | `income_egress` | `IncomeEgressBuilder` | `reports/income_egress_a4` | Pos `CashController@reportCashIncomeEgress` |
-| Reporte Efectivo → Pagos asociados a caja | `cash-reports/payments-associated-cash/{cash}` | `payments_associated` | `PaymentsAssociatedCashBuilder` | `reports/payments_associated_a4` | Pos `CashReportTrait@getDataPaymentsAssociatedCash` |
-| Reporte Productos → Punto de venta PDF | `cash/report/products/{cash}/false` (app `report_products`) | `products` | `ProductsBuilder` | `reports/products_a4` | app `CashController@getDataReport` + `tenant.cash.report_product_pdf` |
-| Reporte Productos → Punto de venta Excel | `cash/report/products-excel/{cash}` | `products` `format=excel` | `ProductsBuilder` | `reports/products_excel` | `tenant.cash.report_product_excel` + `CashProductExport` |
-| Reporte Productos → Venta rápida PDF | `cash/report/products/{cash}/true` | `products_garage` | `ProductsBuilder` (`is_garage=true`) | `reports/products_a4` | idem + `partials.data_garage` |
-| R. Ingreso | `cash/report/income-summary/{cash}` (Report `pdf`) | `income_summary` | `IncomeSummaryBuilder` | `reports/income_summary_a4` | Report `ReportIncomeSummaryController` + `report::income_summary.report_pdf` |
-
-Fuera del módulo, sin cambios:
-
-- **Reporte general** de cabecera (`cash/report` → `Tenant\CashController@report_general`, `tenant.cash.report_general_pdf`, DomPDF, descarga). Consolida las cajas abiertas del día.
-- `modules/Restaurant` tiene su propia copia de la lógica de productos y sigue usando `tenant.cash.report_pdf`, `tenant.cash.report_product_pdf`, `tenant.cash.report_product_excel`, sus partials y `App\Exports\CashProductExport`; por eso esos archivos se conservan.
+Las rutas de caja, restaurante y móvil conservan sus contratos y delegan en `CashReportRenderer`. Los reportes financieros del catálogo usan `ClassifiedCashReport` y las vistas `classified_a4`, `classified_ticket` y `classified_excel`; los reportes `products` y `products_garage` usan `ProductsBuilder` y añaden el bloque financiero clasificado. La comparación de rendimiento anterior se conserva únicamente en `tests/Support/LegacyCashSummaryBuilder.php`.
 
 Eliminado en la migración: `tenant.cash.report_cash_excel` + `CashPaymentExport` + ruta `cash/report/cash-excel`, ruta `cash/report/{cash}` (`report`), vistas `pos::cash.report_*`, `pos::cash.reports.*`, `pos::cash_revision.*`, `CashControllerRevision`, `ReportCashExport`, `CashReportTrait`, vistas `report::income_summary.*`.

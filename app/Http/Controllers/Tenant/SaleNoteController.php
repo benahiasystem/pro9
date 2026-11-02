@@ -258,7 +258,8 @@ class SaleNoteController extends Controller
         $payment_destinations = $this->getPaymentDestinations();
         $configuration = Configuration::select('destination_sale','ticket_58')->first();
         // $sellers = User::GetSellers(false)->get();
-        $sellers = User::getSellersToNvCpe($establishment_id,$userId);
+        $sellers = User::getSellersToNvCpe($establishment_id,$userId)
+            ->each(fn (User $seller) => $seller->makeHidden(['api_token', 'password']));
         $global_discount_types = ChargeDiscountType::getGlobalDiscounts();
 
         return compact('customers', 'establishments','currency_types', 'discount_types', 'configuration',
@@ -354,11 +355,15 @@ class SaleNoteController extends Controller
                 $inputs['id'] = false;
                 $isUpdate = false;
             }
+            $previousCurrency = $isUpdate ? SaleNote::query()->lockForUpdate()->findOrFail($inputs['id'])->currency_type_id : null;
+            // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+            if (!$isUpdate) {
+                \App\Services\Payments\QuotationReceiptsRequired::assertPresent($inputs['quotation_id'] ?? null, $inputs['payments'] ?? []);
+            }
+            // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
             $data = $this->mergeData($inputs, $isUpdate);
 
             $this->sale_note =  SaleNote::query()->updateOrCreate(['id' => $inputs['id']], $data);
-
-            $this->deleteAllPayments($this->sale_note->payments);
 
             // ######## INICIO CALCULOS EXACTOS PRO9 ########
             \App\Support\Exact\CommercialCalculation::defer($this->sale_note, function () use ($data) {
@@ -431,7 +436,10 @@ class SaleNoteController extends Controller
             });
             // ######## FIN CALCULOS EXACTOS PRO9 ########
             //pagos
-            $this->savePayments($this->sale_note, $data['payments'], $isUpdate);
+            $payments = $isUpdate
+                ? \App\Services\Payments\ExistingReceipts::synchronize($this->sale_note, $data['payments'], $previousCurrency)
+                : $data['payments'];
+            $this->savePayments($this->sale_note, $payments, $isUpdate);
             $this->saveFee($this->sale_note, $data['fee'] ?? []);
 
             $this->setFilename();
@@ -468,7 +476,15 @@ class SaleNoteController extends Controller
         // Al editar, reemplazar cuotas (evita acumular historial de crédito en el PDF).
         $document->fee()->delete();
 
-        \App\Support\Exact\Installments::save($document,array_values($fee));
+        // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+        $paid = \App\Support\Exact\Decimal::of(0);
+        foreach ($document->payments()->get() as $payment) {
+            $paid = $paid->plus(\App\Support\Exact\Decimal::readRequired($payment, 'payment'));
+        }
+        $total = $document->total_payable === null ? $document->exactValue('total') : $document->exactValue('total_payable');
+        $outstanding = \App\Support\Exact\Decimal::max(0, $total->minus($paid));
+        \App\Support\Exact\Installments::save($document,array_values($fee),$outstanding);
+        // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
 
         $document->unsetRelation('fee');
     }
@@ -524,7 +540,7 @@ class SaleNoteController extends Controller
 
     private function regularizePayments(){
         // ######## INICIO CALCULOS EXACTOS PRO9 ########
-        $balance = \App\Support\Exact\SaleNoteBalance::values($this->sale_note);
+        $balance = \App\Support\Exact\SaleNoteBalance::values($this->sale_note, true);
         $this->sale_note->total_canceled = $balance['total_difference']->isZero();
         $this->sale_note->save();
         // ######## FIN CALCULOS EXACTOS PRO9 ########
@@ -1300,7 +1316,8 @@ class SaleNoteController extends Controller
         // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
         $payment_method_types = PaymentMethodType::active()->get();
         $payment_destinations = $this->getPaymentDestinations();
-        $sellers = User::GetSellers(false)->get();
+        $sellers = User::GetSellers(false)->get()
+            ->each(fn (User $seller) => $seller->makeHidden(['api_token', 'password']));
         $configuration = Configuration::select(['restrict_sale_items_cpe', 'global_discount_type_id','restrict_receipt_date', 'shipping_time_days'])->first();
         $global_discount_types = ChargeDiscountType::getGlobalDiscounts();
 
@@ -1473,22 +1490,71 @@ class SaleNoteController extends Controller
 
         // ######## INICIO CALCULOS EXACTOS PRO9 ########
         return \App\Support\Exact\Settlement::defer($sale_note, function () use ($sale_note, $payments, $isUpdate) {
+        $newPayments = [];
+        foreach ($payments as $payment) {
+            $quotationSource = !empty($payment['source_quotation_payment_id']) || (!empty($payment['quotation_id']) && !empty($payment['id']));
+            $technicalSource = !empty($payment['source_technical_service_payment_id']) || (!empty($payment['technical_service_id']) && !empty($payment['id']));
+            if ($quotationSource && $technicalSource) {
+                \App\Services\Payments\Classification::error('payments', 'Seleccione un único cobro de origen.');
+            }
+            if ($quotationSource) {
+                \App\Services\Payments\QuotationReceipt::applyToSaleNote($sale_note, $payment);
+            } elseif ($technicalSource) {
+                \App\Services\Payments\CommercialSourceReceipt::applyToSaleNote($sale_note, $payment, 'technical_service');
+            } elseif (!empty($payment['id']) || !empty($payment['document_id']) || !empty($payment['quotation_id']) || !empty($payment['technical_service_id'])) {
+                \App\Services\Payments\Classification::error('payments', 'No se puede copiar un cobro registrado como un cobro nuevo.');
+            } else {
+                $newPayments[] = $payment;
+            }
+        }
+        $payments = $newPayments;
         // ######## FIN CALCULOS EXACTOS PRO9 ########
         // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
         // ######## INICIO CALCULOS EXACTOS PRO9 ########
         $methods = array_values(array_unique(array_map(fn($row)=>(string)($row['payment_method_type_id'] ?? ''), $payments)));
-        $activeMethods = PaymentMethodType::active()->whereIn('id',$methods)->get()->keyBy('id');
+        return \App\Services\Payments\LockedPaymentMethods::run($sale_note->getConnection(), $methods, function ($lockedMethods) use ($sale_note, $payments, $isUpdate, $methods) {
+        $activeMethods = $lockedMethods->all($sale_note->getConnection());
         $active = $activeMethods->keys()->map(fn($id)=>(string)$id)->all();
         if (array_diff($methods, $active)) {
             \App\Services\Fiscal\FiscalAmounts::error('payment_method_type_id','La forma de pago seleccionada no está disponible.');
         }
+        $currencies = $activeMethods->pluck('currency_type_id')->unique()->values()->all();
+        \App\Services\Payments\MethodCurrency::assertActiveCurrencies($sale_note->getConnection(), $currencies);
         // ######## FIN CALCULOS EXACTOS PRO9 ########
         // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
 
         // ######## INICIO CALCULOS EXACTOS PRO9 ########
-        $paid = \App\Support\Exact\SaleNoteBalance::values($sale_note);
+        $paid = \App\Support\Exact\SaleNoteBalance::values($sale_note, true);
         $cashMethods=$activeMethods->where('collection_kind','cash')->keys()->map(fn($id)=>(string)$id)->all();
+        // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+        $payments = array_values($payments);
+        $prepared = [];
+        foreach ($payments as $index => $row) {
+            $amounts = \App\Services\Payments\ReceiptAmounts::prepare($activeMethods->get($row['payment_method_type_id']), $sale_note->currency_type_id, $sale_note->exchange_rate_sale, $row);
+            $prepared[$index] = $amounts;
+            $payments[$index] = array_replace($row, $amounts);
+            if ($amounts['currency_type_id'] === $sale_note->currency_type_id) {
+                // Preserve the requested precision for TenderAllocation's audit snapshot.
+                $payments[$index]['payment'] = $row['original_amount'] ?? $row['payment'];
+            }
+        }
         $payments = \App\Support\Exact\TenderAllocation::calculate($paid['total_difference'], array_values($payments), $cashMethods);
+        foreach ($payments as $index => &$row) {
+            $gross = \App\Support\Exact\Decimal::of($prepared[$index]['original_amount']);
+            $change = \App\Support\Exact\Decimal::of($row['change']);
+            $receivedChange = \App\Support\Exact\Decimal::convert($change, $sale_note->currency_type_id, $row['currency_type_id'], $row['exchange_rate']);
+            if (!$receivedChange->isEqualTo(\App\Support\Exact\Decimal::represent($receivedChange, 2))) {
+                \App\Services\Fiscal\FiscalAmounts::error('payments', 'El vuelto no puede expresarse en céntimos de la moneda recibida; ajuste el importe.');
+            }
+            $net = $gross->minus($receivedChange);
+            if ($net->isNegative()) \App\Services\Fiscal\FiscalAmounts::error('payments', 'El vuelto supera el importe recibido.');
+            $row['original_amount'] = \App\Support\Exact\Decimal::represent($net);
+            $row['calculation_snapshot']['values']['original_amount'] = \App\Support\Exact\Decimal::fraction($net);
+            $row['calculation_snapshot']['values']['tendered_original_amount'] = \App\Support\Exact\Decimal::fraction($gross);
+            $row['calculation_snapshot']['values']['received_change'] = \App\Support\Exact\Decimal::fraction($receivedChange);
+        }
+        unset($row);
+        // ######## FIN MONEDA DEL MEDIO DE COBRO ########
         // ######## FIN CALCULOS EXACTOS PRO9 ########
 
         foreach ($payments as $row) {
@@ -1501,7 +1567,7 @@ class SaleNoteController extends Controller
             $record_payment->save();
             // ######## FIN CALCULOS EXACTOS PRO9 ########
 
-            $this->createGlobalPayment($record_payment, $row);
+            \App\Services\Payments\ReceiptDestination::attach($record_payment, $row, $lockedMethods);
             if($isUpdate){
                 $this->createCashDocumentPayment($record_payment,false);
             }
@@ -1515,6 +1581,7 @@ class SaleNoteController extends Controller
             // para carga de voucher
             $this->saveFilesFromPayments($row, $record_payment, 'sale_notes');
         }
+        });
         });
     }
 
@@ -1756,29 +1823,19 @@ class SaleNoteController extends Controller
             'message' => 'Despacho eliminado con exito'
         ];
     }
-    /**
-     * Elimina la relación con factura (problema antiguo respecto un nuevo campo en notas de venta que se envía de forma incorrecta a la factura siendo esta rechazada)
-     * No se previene el error en este metodo
-     *
-     *
-     */
+    /** Evita que el endpoint heredado desvincule una factura sin revertirla. */
     public function deleteRelationInvoice(Request $request) {
-        // dd($request->all());
-        try {
-            $sale_note = SaleNote::find($request->id);
-
-            $document = Document::find($sale_note->document_id);
-            $document->sale_note_id = null;
-            $document->save();
-
-            $sale_note->changed = 0;
-            $sale_note->document_id = null;
-            $sale_note->save();
-        }catch(RequestException $e){
-            return ['success' => false];
-        }
-
-        return ['success' => true];
+        // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+        // Este endpoint heredado no revierte la factura ni sus cobros. No puede
+        // romper la trazabilidad o volver a habilitar la nota para facturarla.
+        return DB::connection('tenant')->transaction(function () use ($request) {
+            $saleNote = SaleNote::withoutEagerLoads()->lockForUpdate()->findOrFail($request->id);
+            if ($saleNote->document_id) {
+                \App\Services\Payments\Classification::error('sale_note_id', 'La nota está vinculada a una factura. Regularice la factura y sus cobros mediante el flujo correspondiente.');
+            }
+            return ['success' => true];
+        });
+        // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
     }
 
 

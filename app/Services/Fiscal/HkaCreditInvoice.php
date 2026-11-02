@@ -71,6 +71,12 @@ final class HkaCreditInvoice
     public static function reason(Document $document): ?string
     {
         $emission = $document->emission;
+        // ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
+        if ($document->source_module === 'FULL_SUSCRIPTION' && $document->payment_condition_id === '02'
+            && $emission->status === 'not_requested') {
+            return 'La emisión fiscal de facturas de suscripción a crédito requiere validación para este canal.';
+        }
+        // ######## FIN PERSISTENCIA FISCAL VENEZUELA ########
         if (($emission->response[self::KEY] ?? null) !== self::VERSION || $emission->status !== 'not_requested'
             || $document->payment_condition_id !== '02') return null;
         if (!self::verified()) return self::UNVERIFIED;

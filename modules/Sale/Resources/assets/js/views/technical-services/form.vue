@@ -589,6 +589,8 @@
     </el-dialog>
 </template>
 <script>
+import {suggestRemainingPayment, suggestInstallments} from '@helpers/document-creation'
+import {defaultCashForCurrency} from '@helpers/payment-classification'
 import PersonForm from "@views/persons/form.vue";
 import { mapActions, mapState } from "vuex/dist/vuex.mjs";
 import { calculateRowItem } from "@helpers/functions";
@@ -601,6 +603,9 @@ import {
 export default {
     props: ["showDialog", "recordId", "configuration"],
     computed: {
+        receiptAppliedAmounts() {
+            return JSON.stringify((this.form?.payments || []).map(row => row.payment));
+        },
         ...mapState(["exchange_rate", "config", "currency_types"]),
         personFormInput() {
             const term = (this.customerSearchTerm || '').trim()
@@ -698,6 +703,9 @@ export default {
         };
     },
     watch: {
+        receiptAppliedAmounts() {
+            if (['02', '03'].includes(this.form?.payment_condition_id) && this.form?.fee?.length) this.calculateFee();
+        },
         showDialogNewPerson(newVal) {
             if (!newVal) {
                 this.customerSearchTerm = ''
@@ -1269,13 +1277,7 @@ export default {
             }
         },
         setTotalDefaultPayment() {
-            /* Extraido de resources/js/views/tenant/documents/invoice.vue */
-            if (
-                this.form.payments !== undefined &&
-                this.form.payments.length > 0
-            ) {
-                this.form.payments[0].payment = this.form.total;
-            }
+            this.calculatePayments();
         },
         setPendingAmount() {
             /* Extraido de resources/js/views/tenant/documents/invoice.vue */
@@ -1284,23 +1286,7 @@ export default {
                 : 0;
         },
         calculateFee() {
-            /* Extraido de resources/js/views/tenant/documents/invoice.vue */
-            let fee_count = 0;
-            if (this.form.fee === undefined) {
-                return null;
-            }
-            fee_count = this.form.fee.length;
-
-            let total = this.form.total;
-            let accumulated = 0;
-            let amount = _.round(total / fee_count, 2);
-            _.forEach(this.form.fee, row => {
-                accumulated += amount;
-                if (total - accumulated < 0) {
-                    amount = _.round(total - accumulated + amount, 2);
-                }
-                row.amount = amount;
-            });
+            suggestInstallments(this.form);
         },
         chargeGlobal() {
             /* Extraido de resources/js/views/tenant/documents/invoice.vue */
@@ -1575,9 +1561,8 @@ export default {
 
         changePaymentCondition() {
             this.form.fee = [];
-            this.form.payments = [];
             if (this.form.payment_condition_id === "01") {
-                this.clickAddPayment();
+                if (!this.form.payments.length) this.clickAddPayment();
             }
             if (this.form.payment_condition_id === "02") {
                 this.clickAddFeeNew();
@@ -1588,7 +1573,7 @@ export default {
         },
 
         changePaymentMethodType(index) {
-            let id = "01";
+            let id = null;
             if (
                 this.form.payments[index] !== undefined &&
                 this.form.payments[index].payment_method_type_id !== undefined
@@ -1604,12 +1589,13 @@ export default {
                 id: id
             });
 
-            if (payment_method_type.number_days) {
+            if (!payment_method_type) return;
+            if (payment_method_type.collection_kind === 'credit' && payment_method_type.number_days) {
                 this.form.date_of_due = moment()
                     .add(payment_method_type.number_days, "days")
                     .format("YYYY-MM-DD");
                 // this.form.payments = []
-                this.enabled_payments = false;
+                this.enabled_payments = true;
                 this.readonly_date_of_due = true;
                 this.form.payment_method_type_id = payment_method_type.id;
 
@@ -1621,11 +1607,11 @@ export default {
                         this.form.fee[index].date = date;
                     }
                 }
-            } else if (payment_method_type.id == "09") {
+            } else if (payment_method_type.collection_kind === 'credit') {
                 this.form.payment_method_type_id = payment_method_type.id;
                 this.form.date_of_due = this.form.date_of_issue;
                 // this.form.payments = []
-                this.enabled_payments = false;
+                this.enabled_payments = true;
             } else {
                 this.form.date_of_due = this.form.date_of_issue;
                 this.readonly_date_of_due = false;
@@ -1660,17 +1646,8 @@ export default {
         },
 
         clickAddPayment() {
-            let id = "01";
-            if (
-                this.cash_payment_metod !== undefined &&
-                this.cash_payment_metod[0] !== undefined
-            ) {
-                id = this.cash_payment_metod[0].id;
-            }
-            let total = 0;
-            if (this.form.total !== undefined) {
-                total = this.form.total;
-            }
+            const method = defaultCashForCurrency(this.payment_method_types || [], this.form.currency_type_id);
+            const id = method?.id || null;
             this.form.date_of_due = moment().format("YYYY-MM-DD");
             this.form.payments.push({
                 id: null,
@@ -1678,19 +1655,18 @@ export default {
                 date_of_payment: moment().format("YYYY-MM-DD"),
                 payment_method_type_id: id,
                 reference: null,
-                payment_destination_id: this.getPaymentDestinationId(),
-                payment: total
+                payment_destination_id: id && this.getPaymentDestinationId() === 'cash' ? 'cash' : null,
+                payment: '0'
             });
             this.calculatePayments();
         },
         clickAddFeeNew() {
             let first = {
-                id: "05",
+                id: null,
                 number_days: 0
             };
-            if (this.credit_payment_metod[0] !== undefined) {
-                first = this.credit_payment_metod[0];
-            }
+            const credit = (this.payment_method_types || []).find(method => method.collection_kind === 'credit' && [true, 1, '1'].includes(method.is_active));
+            if (credit) first = credit;
             let date = moment()
                 .add(first.number_days, "days")
                 .format("YYYY-MM-DD");
@@ -2469,9 +2445,11 @@ export default {
             let error_by_item = 0;
 
             this.form.payments.forEach(item => {
-                if (!["05", "08", "09"].includes(item.payment_method_type_id)) {
-                    if (item.payment_destination_id == null) error_by_item++;
-                }
+                // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+                const method = (this.payment_method_types || []).find(value => String(value.id) === String(item.payment_method_type_id));
+                const credit = method?.collection_kind === 'credit';
+                if (!item.id && !credit && item.payment_destination_id == null) error_by_item++;
+                // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
             });
 
             return {
@@ -2534,19 +2512,8 @@ export default {
             }*/
         },
         calculatePayments() {
-            let payment_count = this.form.payments.length;
-            let total = this.form.total;
-            let payment = 0;
-            let amount = _.round(total / payment_count, 2);
-            // console.log(amount);
-            _.forEach(this.form.payments, row => {
-                payment += amount;
-                if (total - payment < 0) {
-                    amount = _.round(total - payment + amount, 2);
-                }
-                row.payment = amount;
-                // console.error(row.payment)
-            });
+            if (this.form.payment_condition_id !== '01') return;
+            suggestRemainingPayment(this.form, this.form.payments || [], {refreshSuggested: true});
         },
         openNewPersonDialog() {
             this.showDialogNewPerson = true

@@ -53,6 +53,8 @@ class PaymentMethodCreationTest extends TestCase
         Route::post('/test-payment-methods', [PaymentMethodTypeController::class, 'store']);
         Route::put('/test-payment-methods/{id}', [PaymentMethodTypeController::class, 'update']);
         Route::post('/test-web-payment-methods', [PaymentMethodTypeController::class, 'store'])->middleware('web');
+        Route::post('/test-payment-active', [PaymentMethodTypeController::class, 'active']);
+        Route::post('/test-finance-payment-active', [\Modules\Finance\Http\Controllers\PaymentMethodTypeController::class, 'active']);
     }
 
     public function test_duplicate_code_is_rejected_without_changing_the_existing_method(): void
@@ -172,6 +174,31 @@ class PaymentMethodCreationTest extends TestCase
         $this->getJson('/test-payment-methods/30')->assertJsonPath('currency_type_id', 'USD')->assertJsonPath('iva_rate_type_id', 'IGTF');
         $this->putJson('/test-payment-methods/30', $base + ['currency_type_id'=>'VES', 'iva_rate_type_id'=>null])->assertOk();
         $this->getJson('/test-payment-methods/30')->assertJsonPath('currency_type_id', 'VES')->assertJsonPath('iva_rate_type_id', null);
+    }
+
+    public function test_only_admin_can_change_availability_or_delete_custom_methods(): void
+    {
+        DB::connection('tenant')->table('payment_method_types')->insert([
+            ['id'=>'14','description'=>'Cuenta','hka_code'=>'99','collection_kind'=>'account','currency_type_id'=>'VES','cash_currency_type_id'=>null,'is_active'=>1],
+            ['id'=>'15','description'=>'Sin clasificar','hka_code'=>'99','collection_kind'=>'unclassified','currency_type_id'=>'VES','cash_currency_type_id'=>null,'is_active'=>0],
+            ['id'=>'01','description'=>'Inicial','hka_code'=>'08','collection_kind'=>'cash','currency_type_id'=>'VES','cash_currency_type_id'=>'VES','is_active'=>1],
+        ]);
+        $this->actingAs((new \App\Models\Tenant\User())->forceFill(['id'=>2,'type'=>'seller']));
+        foreach (['/test-payment-active','/test-finance-payment-active'] as $path) {
+            $this->postJson($path,['id'=>'14','is_active'=>false])->assertForbidden();
+        }
+        $this->deleteJson('/test-payment-methods/14')->assertForbidden();
+        self::assertSame(1, DB::connection('tenant')->table('payment_method_types')->where('id','14')->value('is_active'));
+        $this->actingAs((new \App\Models\Tenant\User())->forceFill(['id'=>1,'type'=>'admin']));
+        foreach (['/test-payment-active','/test-finance-payment-active'] as $path) {
+            $this->postJson($path,['id'=>'15','is_active'=>true])->assertStatus(422);
+            $this->postJson($path,['id'=>'14','is_active'=>'invalid'])->assertStatus(422);
+        }
+        self::assertSame(0, DB::connection('tenant')->table('payment_method_types')->where('id','15')->value('is_active'));
+        $this->postJson('/test-finance-payment-active',['id'=>'14','is_active'=>false])->assertOk();
+        self::assertSame(0, DB::connection('tenant')->table('payment_method_types')->where('id','14')->value('is_active'));
+        $this->deleteJson('/test-payment-methods/01')->assertOk()->assertJsonPath('success',false);
+        $this->deleteJson('/test-payment-methods/14')->assertOk()->assertJsonPath('success',true);
     }
 
 }

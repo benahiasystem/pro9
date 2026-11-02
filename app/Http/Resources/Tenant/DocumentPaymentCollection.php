@@ -18,13 +18,20 @@ class DocumentPaymentCollection extends ResourceCollection
             return [
                 'id' => $row->id,
                 'date_of_payment' => $row->date_of_payment->format('d/m/Y'),
-                'payment_method_type_description' => $row->payment_method_type->description,
-                'destination_description' => ($row->global_payment) ? $row->global_payment->destination_description:null,
+                // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+                'payment_method_type_description' => \App\Services\Payments\ReceiptPresentation::method($row),
+                'destination_description' => \App\Services\Payments\ReceiptPresentation::destination($row),
+                // ######## FIN MONEDA DEL MEDIO DE COBRO ########
                 'reference' => $row->reference,
                 'filename' => ($row->payment_file) ? $row->payment_file->filename:null,
                 'payment' => $row->reversed_at ? 0 : $row->payment,
                 'currency_type_id' => $row->currency_type_id,
                 'original_amount' => $row->original_amount,
+                ...\App\Services\Payments\ReceiptPresentation::tender($row),
+                // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+                'exchange_rate' => $row->exchange_rate,
+                'receipt_reused' => !empty($row->payment_method_snapshot['receipt_origin']),
+                // ######## FIN MONEDA DEL MEDIO DE COBRO ########
                 'tax_amount' => $row->tax_amount,
                 // ######## INICIO CALCULOS EXACTOS PRO9 ########
                 'receipt_parent_id' => $row->receipt_parent_id,

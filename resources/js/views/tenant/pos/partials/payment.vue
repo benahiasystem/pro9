@@ -95,7 +95,7 @@
                 <span>{{ currencyTypeActive.symbol }} {{ money(getTotal()) }}</span>
             </div>
 
-            <button :disabled="button_payment && payment_method_type_id != '09'"
+            <button :disabled="singleAmountInvalid || button_payment"
                     class="pos-checkout__confirm"
                     type="button"
                     @click="clickPayment">
@@ -103,7 +103,7 @@
                 <span>CONFIRMAR PAGO</span>
             </button>
 
-            <p v-if="button_payment && payment_method_type_id != '09'"
+            <p v-if="button_payment"
                class="pos-checkout__confirm-hint">
                 Falta cubrir {{ currencyTypeActive.symbol }} {{ differenceText }} para completar el pago.
             </p>
@@ -169,6 +169,7 @@
                             <el-input ref="enter_amount"
                                       inputmode="decimal"
                                       v-model="enter_amount"
+                                      :disabled="singleAmountLocked"
                                       @input="enterAmount()"
                                       @focus="valueInputSelect"
                                       @click.native="valueInputSelect"
@@ -176,24 +177,27 @@
                             </el-input>
                         </div>
 
-                        <div v-if="form_payment.payment_method_type_id=='01'"
+                        <div v-if="form.payments && form.payments.length === 1 && payment_method_types.some(method => String(method.id) === String(form.payments[0].payment_method_type_id) && method.collection_kind === 'cash')"
                              class="pos-quick-cash">
                             <button type="button"
                                     class="pos-quick-cash__btn pos-quick-cash__btn--exact"
+                                    :disabled="singleAmountLocked"
                                     @click="setExactAmount()">Importe exacto
                             </button>
                             <!-- ########## INICIO CAMBIO QUITAR SELECCIÓN DE BILLETES -->
                             <!-- El importe se captura manualmente; no se muestran denominaciones rápidas. -->
                             <!-- ######### FIN CAMBIO QUITAR SELECCIÓN DE BILLETES -->
                         </div>
+                        <small v-if="singleAmountLocked">Modifique los importes en Agregar pagos.</small>
+                        <small v-if="singleAmountInvalid" class="text-danger">Indique un monto válido.</small>
                     </div>
 
                     <div class="pos-change"
                          :class="isMissingAmount ? 'is-missing' : 'is-change'">
                         <span class="pos-change__label"
-                              v-text="isMissingAmount ? 'Faltante' : 'Vuelto'"></span>
+                              v-text="settlementDifferenceLabel"></span>
                         <span class="pos-change__value">
-                            {{ currencyTypeActive.symbol }} {{ differenceText }}
+                            {{ settlementDifferenceDisplay }}
                         </span>
                     </div>
                 </div>
@@ -303,10 +307,11 @@
                 </ul>
                 <div v-if="fiscalPaymentsApplicable" class="mt-2">
                     <igtf-settings-status />
-                    <igtf-payment-fields v-for="(row, fiscalIndex) in form.payments" v-if="!row.id" :key="'fiscal-' + fiscalIndex"
+                    <igtf-payment-fields :payment-methods="payment_method_types" v-for="(row, fiscalIndex) in form.payments" v-if="!isRecordedReceipt(row)" :key="'fiscal-' + fiscalIndex"
                         :payment="row" :igtf-enabled="igtfEnabled" :settings-version="igtfSettings.revision" :document-currency="form.currency_type_id"
                         :document-rate="form.exchange_rate_sale" :customer-id="form.customer_id" />
                 </div>
+                    <receipt-currency-fields v-for="(row, currencyIndex) in form.payments" v-if="form.document_type_id === '80' && !isRecordedReceipt(row)" :key="'currency-' + currencyIndex" :row="row" :methods="payment_method_types" :document-currency="form.currency_type_id" :document-rate="form.exchange_rate_sale" />
             </section>
 
             <!-- Datos adicionales -->
@@ -370,7 +375,12 @@
 
 <script>
 import IgtfPaymentFields from "../../documents/partials/igtf_fields.vue"
+import ReceiptCurrencyFields from "@components/ReceiptCurrencyFields.vue"
+import {defaultCashForCurrency, paymentValidationMessage} from '@helpers/payment-classification'
 import fiscalPaymentSettings from "@mixins/fiscal-payment-settings"
+// ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+import paymentSettlementSummary from "@mixins/payment-settlement-summary"
+// ######## FIN MONEDA DEL MEDIO DE COBRO ########
 import {withoutDraftRetentions, suggestRemainingPayment} from "@helpers/document-creation"
 import {checkoutTotals} from '../../../../helpers/exact-commercial'
 
@@ -391,8 +401,8 @@ import SearchAgent from '@components/SearchAgent.vue'
 
 
 export default {
-    components: {IgtfPaymentFields,OptionsForm, SaleNotesOptions, MultiplePaymentForm, Keypress, DiscountPermissionForm, SearchAgent},
-    mixins: [fiscalPaymentSettings, documentCreationMixin,pointSystemFunctions, buhoprinter],
+    components: {IgtfPaymentFields,ReceiptCurrencyFields,OptionsForm, SaleNotesOptions, MultiplePaymentForm, Keypress, DiscountPermissionForm, SearchAgent},
+    mixins: [paymentSettlementSummary, fiscalPaymentSettings, documentCreationMixin,pointSystemFunctions, buhoprinter],
 
     props: [
         'form',
@@ -672,6 +682,7 @@ export default {
          * Coloca en el campo de cobro el importe exacto de la venta.
          */
         setExactAmount() {
+            if (this.singleAmountLocked) return
             this.enter_amount = this.getTotal()
             this.enterAmount()
         },
@@ -864,41 +875,19 @@ export default {
             this.form.payments=this.payments;
             this.setAmount(exactSum(this.payments.map(row=>row.payment || '0')).decimal());
         },
-        /**
-         * Deja en el campo de cobro sólo caracteres válidos de un importe y
-         * devuelve su valor numérico (0 si aún no hay un número escrito).
-         */
-        sanitizeEnterAmount() {
-            const clean=String(this.enter_amount ?? '').replace(/[^\d.]/g,'');
-            if (!/^\d+(?:\.\d*)?$/.test(clean)) return '0';
-            this.enter_amount=clean;
-            return exactAmount(clean.endsWith('.') ? clean.slice(0,-1) : clean).decimal();
-        },
+        // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
         async enterAmount() {
-
-            const entered = this.sanitizeEnterAmount()
-
-            let r_item = await _.last(this.payments, {'payment_method_type_id': '01'})
-            if (r_item) r_item.payment = entered
-
-            let ind = this.form.payments.length - 1
-            if (ind >= 0) this.form.payments[ind].payment = entered
-
-            let acum_payment = 0
-
-            await this.form.payments.forEach((item) => {
-                acum_payment = exactAmount(acum_payment).plus(item.payment || '0').decimal()
-            })
-            // console.log(this.form.payments)
-
-            this.amount = acum_payment
-            this.setDifference(exactAmount(this.amount || '0').minus(this.collectionTarget ?? this.form.total_payable ?? this.form.total).decimal())
-
-            this.$eventHub.$emit('eventSetFormPosLocalStorage', this.form)
-
-            await this.lStoPayment()
-
+            const rows = this.form.payments || []
+            if (rows.length !== 1 || this.singleAmountLocked) return
+            const text = String(this.enter_amount ?? '').trim()
+            if (text && !/^\d+(?:\.\d*)?$/.test(text)) return
+            const entered = exactAmount(!text ? '0' : (text.endsWith('.') ? text.slice(0, -1) : text)).decimal()
+            rows[0].payment = entered
+            this.payments = rows
+            this.amount = entered
+            this.inputAmount()
         },
+        // ######## FIN MONEDA DEL MEDIO DE COBRO ########
         /**
          * Actualiza el vuelto/faltante y habilita el botón de cobro sólo si el
          * importe entregado cubre el total.
@@ -913,12 +902,7 @@ export default {
 
             this.difference = exactAmount(difference).decimal()
 
-            if (this.payment_method_type_id == '09') {
-                this.button_payment = false
-                return
-            }
-
-            this.button_payment = this.form.payment_condition_id !== '02' && (this.difference < 0)
+            this.button_payment = !['02', '03'].includes(this.form.payment_condition_id) && (this.difference < 0)
         },
         getLocalStoragePayment(key, re_default = null) {
 
@@ -957,7 +941,7 @@ export default {
             this.form_payment = {
                 id: null,
                 date_of_payment: moment().format('YYYY-MM-DD'),
-                payment_method_type_id: '01',
+                payment_method_type_id: defaultCashForCurrency(this.payment_method_types, this.form.currency_type_id)?.id || null,
                 reference: null,
                 document_id: null,
                 sale_note_id: null,
@@ -1106,6 +1090,9 @@ export default {
         },
         async clickPayment()
         {
+            // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+            if (this.singleAmountInvalid) return this.$message.warning('Indique un monto válido.')
+            // ######## FIN MONEDA DEL MEDIO DE COBRO ########
             // validacion restriccion de productos
             const validate_restrict_sale_items_cpe = this.validateRestrictSaleItemsCpe()
             if(!validate_restrict_sale_items_cpe.success) return this.$message.error(validate_restrict_sale_items_cpe.message)
@@ -1207,7 +1194,9 @@ export default {
                 console.log(error);
 
                 if (error.response && error.response.status === 422) {
-                    this.errors = error.response.data;
+                    this.errors = error.response.data?.errors || error.response.data || {};
+                    const message = paymentValidationMessage(error.response.data);
+                    if (message) this.$message.error(message);
                 } else {
                     this.$message.error(error.response && error.response.data && error.response.data.message || 'No se pudo confirmar el guardado. Consulte el listado antes de crear nuevamente la factura.');
                 }
@@ -1336,7 +1325,7 @@ export default {
                 })
         },
         async getTables() {
-            this.$http.get(`/${this.resource}/payment_tables`)
+            return this.$http.get(`/${this.resource}/payment_tables`)
                 .then(response => {
                     this.all_series = response.data.series
                     this.payment_method_types = response.data.payment_method_types

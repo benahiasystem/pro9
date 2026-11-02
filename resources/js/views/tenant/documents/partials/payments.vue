@@ -34,7 +34,18 @@
                                     <td>{{ row.payment_method_type_description }}</td>
                                     <td>{{ row.destination_description }}</td>
                                     <!-- <td>{{ row.reference }}</td> -->
-                                    <td class="text-center">{{ row.payment }} aplicado<br><small v-if="row.receipt_parent_id">IGTF del cobro PAGO-{{ row.receipt_parent_id }}</small><small v-else>{{ row.currency_type_id }} {{ row.original_amount }} recibido; IGTF {{ row.tax_amount }}</small><br><small v-if="hasPaymentAdjustment(row)">Ajuste de liquidación: {{ paymentAdjustmentText(row) }}</small><br><small v-if="row.reversed_at">Revertido</small></td>
+                                    <!-- ######## INICIO MONEDA DEL MEDIO DE COBRO ######## -->
+                                    <td class="text-center">{{ document.currency_type_id }} {{ row.payment }} aplicado<br>
+                                        <small v-if="row.reversed_at">Cobro revertido</small>
+                                        <small v-else-if="row.receipt_parent_id">IGTF del cobro PAGO-{{ row.receipt_parent_id }}</small>
+                                        <small v-else-if="row.receipt_reused">Cobro reutilizado; no genera otra recepción</small>
+                                        <small v-else-if="row.tendered_original_amount != null">{{ row.currency_type_id }} {{ row.tendered_original_amount }} recibido; vuelto {{ row.currency_type_id }} {{ row.received_change }}; IGTF {{ row.tax_amount }}</small>
+                                        <small v-else-if="row.original_amount != null">{{ row.currency_type_id }} {{ row.original_amount }} neto recibido; IGTF {{ row.tax_amount }}</small>
+                                        <small v-else>Importe recibido no disponible; IGTF {{ row.tax_amount }}</small>
+                                        <br><small v-if="row.currency_type_id !== document.currency_type_id && row.exchange_rate">Tasa: {{ row.exchange_rate }} Bs./USD</small>
+                                        <br><small v-if="hasPaymentAdjustment(row)">Ajuste de liquidación: {{ paymentAdjustmentText(row) }}</small>
+                                    </td>
+                                    <!-- ######## FIN MONEDA DEL MEDIO DE COBRO ######## -->
 
                                     <td class="text-left">
 
@@ -105,11 +116,11 @@
                                         <div class="form-group mb-0" :class="{'has-danger': row.errors.payment_method_type_id}">
                                             <!-- ######## INICIO PERSISTENCIA FISCAL VENEZUELA ######## -->
                                             <igtf-settings-status v-if="fiscalPaymentsApplicable" />
-                                            <igtf-payment-fields v-if="fiscalPaymentsApplicable && !row.id" :igtf-enabled="igtfEnabled" :settings-version="igtfSettings.revision"
+                                            <igtf-payment-fields :payment-methods="payment_method_types" v-if="fiscalPaymentsApplicable && !row.id" :igtf-enabled="igtfEnabled" :settings-version="igtfSettings.revision"
                                                 :payment="row" :document-currency="document.currency_type_id" :document-rate="document.exchange_rate_sale" :document-id="documentId" />
                                             <!-- ######## FIN PERSISTENCIA FISCAL VENEZUELA ######## -->
                                             <el-select v-model="row.payment_method_type_id">
-                                                <el-option v-for="option in payment_method_types" v-show="option.id != '09'" :key="option.id" :value="option.id" :label="option.description"></el-option>
+                                                <el-option v-for="option in payment_method_types" v-show="['cash', 'account'].includes(option.collection_kind)" :key="option.id" :value="option.id" :label="option.description"></el-option>
                                             </el-select>
                                             <small class="form-control-feedback" v-if="row.errors.payment_method_type_id" v-text="row.errors.payment_method_type_id[0]"></small>
                                         </div>
@@ -495,7 +506,7 @@ import IgtfPaymentFields from "./igtf_fields.vue"
                     payment: row.payment,
                     payment_received: row.payment_received,
                     currency_type_id: row.currency_type_id,
-                    original_amount: !row.currency_type_id || row.currency_type_id === this.document.currency_type_id ? row.payment : row.original_amount,
+                    original_amount: row.original_amount === null || row.original_amount === undefined ? row.payment : row.original_amount,
                     exchange_rate: row.exchange_rate,
                     exchange_rate_source: row.exchange_rate_source,
                     exchange_rate_date: row.exchange_rate_date,
@@ -523,11 +534,12 @@ import IgtfPaymentFields from "./igtf_fields.vue"
                     })
                     .catch(error => {
                         if (this.documentId !== documentId || !this.records.includes(row)) return
-                        if (error.response && error.response.status === 422 && error.response.data && !error.response.data.message) {
-                            row.errors = error.response.data;
-                        } else {
-                            this.$message.error(this.getRequestErrorMessage(error))
-                        }
+                        // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+                        const data = error.response && error.response.status === 422 ? error.response.data : null
+                        const errors = data && typeof data === 'object' ? (data.errors || (!data.message ? data : null)) : null
+                        if (errors && typeof errors === 'object' && Object.keys(errors).length) row.errors = errors
+                        else this.$message.error(this.getRequestErrorMessage(error))
+                        // ######## FIN MONEDA DEL MEDIO DE COBRO ########
                     })
                     .finally(() => { row.loading = false })
             },

@@ -22,6 +22,7 @@ function runtime() {
             if (name === 'vuex') return {mapActions:()=>({}),mapState:()=>({})};
             if (name === '@mixins/fiscal-payment-settings') return load('resources/js/mixins/fiscal-payment-settings.js');
             if (name.includes('exchange-rate-math')) return load('resources/js/helpers/exchange-rate-math.js');
+            if (name.includes('payment-classification')) return load('resources/js/helpers/payment-classification.js');
             if (name.startsWith('.') && /igtf-settings|IgtfSettingsStatus/.test(name)) {
                 return load(path.resolve(path.dirname(file), /\.(vue|js)$/.test(name) ? name : name + '.js'));
             }
@@ -81,6 +82,10 @@ test('disabled settings preserve and reject hidden draft tax while leaving histo
         assert.equal(s.fiscalPaymentProblem([{...row,id:12}]),'');
     }
     assert.equal(s.fiscalPaymentProblem([{payment:'100',igtf_status:'not_applicable'}]),'');
+    for (const origin of [{receipt_parent_id:5},{receipt_origin:{id:5}}, {payment_method_snapshot:{receipt_origin:{id:5}}},
+        {source_sale_note_payment_id:5},{source_quotation_payment_id:5},{source_technical_service_payment_id:5},{_reused_receipt:true}]) {
+        assert.equal(s.fiscalPaymentProblem([{payment:'100',igtf_status:'subject',...origin}]),'');
+    }
 });
 
 test('the rendered editor hides only IGTF controls, keeping currency and intermediation', () => {
@@ -121,11 +126,45 @@ test('disabled IGTF does not silently classify a payment as subject; enabled IGT
 
 test('a same-currency amount stays current even while its proposal request is pending', async () => {
     const {load}=runtime(), component=load('resources/js/views/tenant/documents/partials/igtf_fields.vue').default,response=deferred();
-    const ctx={payment:{payment:'50',original_amount:'100',currency_type_id:'USD'},documentCurrency:'USD',sequence:0,
+    const ctx={payment:{payment:'100',original_amount:'100',currency_type_id:'USD'},documentCurrency:'USD',sequence:0,lastApplied:null,
         $set:(o,k,v)=>o[k]=v,$http:{post:()=>response.promise}};
     const request=component.methods.evaluate.call(ctx);
+    ctx.payment.payment='50';
+    component.methods.proposeReceived.call(ctx);
     assert.equal(ctx.payment.original_amount,'50');
     response.resolve({data:{data:{payment:{igtf_status:'not_applicable'}}}}); await request;
+});
+
+test('a reused receipt does not request a new fiscal proposal or change its historical amounts', async () => {
+    const {load}=runtime(), component=load('resources/js/views/tenant/documents/partials/igtf_fields.vue').default;
+    for (const origin of [{id:5},{receipt_parent_id:5},{receipt_origin:{id:5}},
+        {payment_method_snapshot:{receipt_origin:{id:5}}},{source_sale_note_payment_id:5},
+        {source_quotation_payment_id:5},{source_technical_service_payment_id:5},{_reused_receipt:true}]) {
+        const payment={payment:'100',currency_type_id:'VES',original_amount:'100',exchange_rate:'10',...origin};
+        const before=JSON.stringify(payment); let calls=0;
+        const ctx={payment,documentCurrency:'VES',documentRate:'20',methodCurrency:'USD',sequence:0,
+            $set:(o,k,v)=>o[k]=v,$http:{post:async()=>{calls++;return {data:{data:{}}}}}};
+        component.created.call(ctx);
+        component.methods.syncMethodCurrency.call(ctx);
+        component.methods.proposeReceived.call(ctx);
+        component.methods.changeCurrency.call(ctx,'USD');
+        component.methods.convertPrincipal.call(ctx);
+        await component.methods.evaluate.call(ctx);
+        assert.equal(calls,0);
+        assert.equal(JSON.stringify(payment),before,JSON.stringify(origin));
+    }
+});
+
+test('a pending fiscal proposal cannot change a row that becomes a reused receipt', async () => {
+    const {load}=runtime(), component=load('resources/js/views/tenant/documents/partials/igtf_fields.vue').default,response=deferred();
+    const payment={payment:'100',igtf_status:'not_applicable'},ctx={payment,documentCurrency:'VES',igtfEnabled:true,sequence:0,
+        $set:(o,k,v)=>o[k]=v,$http:{post:()=>response.promise}};
+    const request=component.methods.evaluate.call(ctx);
+    payment.source_quotation_payment_id=5;
+    response.resolve({data:{data:{payment:{igtf_status:'subject'}}}});
+    await request;
+    assert.equal(payment.igtf_status,'not_applicable');
+    assert.equal(ctx.proposal,null);
 });
 
 test('a proposal for another document or removed payment cannot change the current payment', async () => {

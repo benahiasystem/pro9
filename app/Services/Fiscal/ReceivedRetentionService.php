@@ -27,7 +27,9 @@ abstract class ReceivedRetentionService
     public static function settlementLimit(Document $document): \Brick\Math\BigRational
     {
         $key=$document->getConnection()->getDatabaseName().':'.$document->id;
-        if (empty(self::$noteReplacementScope[$key])) return $document->exactBalance();
+        // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+        if (empty(self::$noteReplacementScope[$key])) return $document->exactBalance(true);
+        // ######## FIN MONEDA DEL MEDIO DE COBRO ########
         // A corrected real voucher can coexist with cash pending return after an NC.
         // Its fiscal/base limits still apply; this does not manufacture a collection.
         return D::max(0,$document->exactValue('total')->minus(D::sum(FiscalNote::activeCredits($document)->get()->map(fn($r)=>$r->exactValue('total'))))->minus($document->exactRetentionAmount())->minus($document->exactGuaranteeAmount()));
@@ -204,8 +206,10 @@ abstract class ReceivedRetentionService
     protected static function syncCreditBalance(Document $document): void
     {
         // Clearing a receivable with a fiscal voucher is not a receipt of cash.
+        // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
         \App\Models\Tenant\CashDocumentCredit::where('document_id',$document->id)
-            ->update(['status'=>$document->fresh()->balance <= 0.005 ? 'PROCESSED' : 'PENDING']);
+            ->update(['status'=>$document->exactBalance(true)->isLessThanOrEqualTo('0.005') ? 'PROCESSED' : 'PENDING']);
+        // ######## FIN MONEDA DEL MEDIO DE COBRO ########
     }
 
     public static function consumeUpload(Document $document, string $id): string

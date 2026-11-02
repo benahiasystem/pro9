@@ -42,9 +42,12 @@ Puntos históricos: MultiUserController::changeClient, AutoLoginHelper::getMulti
 - Verifica propietario o capacidad guest antes de aplicar cupones o cambiar referencias documentales.
 - Aplicación de descuento y registro de uso deben ser atómicos e idempotentes por pedido/cupón. Restringe repeticiones/concurrencia en la base cuando corresponda.
 - PAID por sí solo no vincula un pago a una orden: coteja identificador de transacción, pedido, comercio, importe y moneda contra información del proveedor y la asociación del servidor.
+- Enlaces de pago tenant: `publicConfirmPayment` actualmente acepta `paid` del cliente y la pantalla pública lo fuerza a verdadero; no verifica transacción, importe ni moneda con la pasarela. Es un hallazgo pendiente, no una confirmación confiable. Las pasarelas actuales se bloquean para VES y su integración no debe habilitarse ni darse por conciliada sin verificación del proveedor, idempotencia y pruebas aisladas.
 - No permitas que external_id del request reemplace orderId confirmado por la pasarela. Vincula cada transacción una sola vez y haz la generación del documento idempotente.
 - Respeta las restricciones vigentes de pasarelas/monedas de Pro9; una corrección de seguridad no debe habilitar una pasarela que la operación local tiene deshabilitada.
 - Prueba pagos con dobles o sandbox configurado, nunca cobrando para demostrar una falla.
+
+El Excel de pagos del listado de comprobantes escribe identificadores, nombres, métodos y referencias como texto explícito, incluidos valores que empiezan por `=`. Verificar con `PaymentWorkbookExportTest` que se conservan como texto al abrir el XLSX y no como fórmulas.
 
 ## Claves, uploads, HTML y documentos — 005, 006, 007, 012
 
@@ -117,3 +120,9 @@ En [ISLR recibido](../mantener-retenciones-islr-recibidas-pro9/SKILL.md), reutil
 ## Autorización de devoluciones y ajustes de notas (13/10/2026)
 
 Los endpoints `documents/{note}/refunds` y `adjustments` resuelven modelos en conexión tenant, autorizan sucursal antes de leer/mutar y cotejan nota/factura/origen. Registro de devolución/reemplazo usa create_payment; reversión y solicitud de ajustes usa delete_payment; admin conserva facultades. Validar cuenta por moneda/sucursal y caja abierta del usuario. UUID/hash impiden reutilización incompatible; FKs y bloqueo empresa→factura→nota→origen serializan efectos. DTOs omiten claves/hash/contextos privados, credenciales y payloads HKA. Ver [contrato y evidencia](../../../informes/notas_credito_debito_hka.md).
+
+- La activación o desactivación de métodos de cobro desde ventas o finanzas y la eliminación de métodos personalizados requieren usuario administrador. La ruta financiera delega en el controlador que valida disponibilidad y clasificación; no permitir activar `unclassified`. `PaymentMethodCreationTest` comprueba rechazo a vendedores y protección de los métodos iniciales.
+
+- Los catálogos de vendedores usados por facturas, notas de venta y cotizaciones, incluidos los diálogos de conversión, no deben devolver `api_token` ni `password`. Conservar los demás campos y la selección de vendedores. Esta protección acotada no corrige automáticamente `UserResource`, `UserCollection` ni otros endpoints fuera de estos catálogos; mantener su hallazgo en la auditoría. No registrar valores de credenciales en evidencias.
+
+En `ProcessGlobalPaymentReport`, resolver el website y seleccionar el tenant antes de consultar o modificar la bandeja; si esa selección falla, propagar la excepción sin escribir en la conexión tenant anterior. Probar el aislamiento con un website inexistente y una bandeja previa.

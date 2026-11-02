@@ -19,6 +19,9 @@
                             <label class="control-label">Saldo inicial</label>
                             <el-input v-model="form.beginning_balance"></el-input>
                             <small class="form-control-feedback" v-if="errors.beginning_balance" v-text="errors.beginning_balance[0]"></small>
+                            <!-- ######## INICIO CLASIFICACION DE COBROS Y CAJA ######## -->
+                            <small v-for="key in ['opening_balances.VES', 'opening_balances.USD', 'opening_balances', 'payment_method_type_id', 'currency_type_id']" :key="key" v-if="errors[key]" class="form-control-feedback d-block" v-text="errors[key][0]"></small>
+                            <!-- ######## FIN CLASIFICACION DE COBROS Y CAJA ######## -->
                         </div>
                     </div>
                     <div class="col-md-6">
@@ -150,8 +153,8 @@
                         }
                     })
                     .catch(error => {
-                        if (error.response.status === 422) {
-                            this.errors = error.response.data
+                        if (error.response?.status === 422) {
+                            this.errors = error.response.data.errors || error.response.data
                         } else {
                             console.log(error)
                         }

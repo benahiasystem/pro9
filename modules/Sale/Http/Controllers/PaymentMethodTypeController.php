@@ -18,10 +18,13 @@ class PaymentMethodTypeController extends Controller
 
     public function active(Request $request)
     {
-        abort_unless(auth()->user()?->type === 'admin',403);
+        if (auth()->user()?->type !== 'admin') throw new \Illuminate\Auth\Access\AuthorizationException();
         $data=$request->validate(['id'=>['required','string','max:2'],'is_active'=>['required','boolean']]);
-        $record=PaymentMethodType::findOrFail($data['id']);
-        $record->is_active=$data['is_active'];$record->save();
+        \Illuminate\Support\Facades\DB::connection('tenant')->transaction(function () use ($data) {
+            $record=PaymentMethodType::whereKey($data['id'])->lockForUpdate()->firstOrFail();
+            $record->is_active=$data['is_active'];
+            $record->save();
+        });
         return ['success'=>true,'message'=>'Disponibilidad actualizada'];
     }
 
@@ -78,19 +81,25 @@ class PaymentMethodTypeController extends Controller
     // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
     public function update(PaymentMethodTypeRequest $request, $id)
     {
-        $record = PaymentMethodType::find($id);
-        if (!$record) {
-            return response()->json(['success' => false, 'message' => 'No se encontró el método de pago'], 404);
-        }
-        $record->fill(array_diff_key($this->methodInput($request),['id'=>true]));
-        $record->save();
-
-        return ['success' => true, 'message' => 'Método de pago editado con éxito'];
+        // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+        return \Illuminate\Support\Facades\DB::connection('tenant')->transaction(function () use ($request, $id) {
+            $record = PaymentMethodType::whereKey($id)->lockForUpdate()->first();
+            if (!$record) {
+                return response()->json(['success' => false, 'message' => 'No se encontró el método de pago'], 404);
+            }
+            $record->fill(array_diff_key($this->methodInput($request),['id'=>true]));
+            $record->save();
+            return ['success' => true, 'message' => 'Método de pago editado con éxito'];
+        });
+        // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
     }
     // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
 
     public function destroy($id)
     {
+        // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+        if (auth()->user()?->type !== 'admin') throw new \Illuminate\Auth\Access\AuthorizationException();
+        // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
         // ######### INICIO PROTECCIÓN MÉTODOS INICIALES VENEZUELA #########
         if (PaymentMethodType::isInitialPaymentMethodId($id)) {
             return [

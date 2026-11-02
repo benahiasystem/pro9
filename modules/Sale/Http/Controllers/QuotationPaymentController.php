@@ -26,7 +26,7 @@ class QuotationPaymentController extends Controller
     public function tables()
     {
         return [
-            'payment_method_types' => PaymentMethodType::getPaymentMethodTypes(),
+            'payment_method_types' => PaymentMethodType::getActiveReceiptMethods(),
             // 'payment_method_types' => PaymentMethodType::all(),
             'payment_destinations' => $this->getPaymentDestinations()
 
@@ -35,21 +35,19 @@ class QuotationPaymentController extends Controller
 
     public function document($quotation_id)
     {
-        $record = Quotation::find($quotation_id);
-
-        $total_paid = round(collect($record->payments)->sum('payment'), 2);
-        $total = $record->total;
-        $total_difference = round($total - $total_paid, 2);
-
+        // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+        return \App\Support\Exact\ReadSnapshot::run(DB::connection('tenant'), function () use ($quotation_id) {
+        $record = Quotation::withoutEagerLoads()->findOrFail($quotation_id);
+        $totals = \App\Services\Payments\AppliedReceiptBalance::transport(\App\Services\Payments\AppliedReceiptBalance::values($record));
         return [
             'number_full' => $record->identifier,
             // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
             'currency_type_id' => $record->currency_type_id,
+            'exchange_rate_sale' => $record->exchange_rate_sale,
             // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
-            'total_paid' => $total_paid,
-            'total' => $total,
-            'total_difference' => $total_difference,
-        ];
+        ] + $totals;
+        });
+        // ######## FIN MONEDA DEL MEDIO DE COBRO ########
     }
 
     public function store(QuotationPaymentRequest $request)
@@ -59,7 +57,19 @@ class QuotationPaymentController extends Controller
         DB::connection('tenant')->transaction(function () use ($id, $request) {
 
             $record = QuotationPayment::firstOrNew(['id' => $id]);
-            $record->fill($request->all());
+            // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+            $input = $request->only(['quotation_id', 'date_of_payment', 'payment_method_type_id', 'reference', 'change', 'payment']);
+            if (!$record->exists) {
+                $quotation = Quotation::withoutEagerLoads()->lockForUpdate()->findOrFail($input['quotation_id'] ?? null);
+                $values = \App\Services\Payments\ReceiptAmounts::forMethod($input['payment_method_type_id'] ?? null, $quotation->currency_type_id, $quotation->exchange_rate_sale, $request->all());
+                \App\Services\Payments\AppliedReceiptBalance::assertFits(\App\Services\Payments\AppliedReceiptBalance::values($quotation, false, true), $values);
+                $record->fill(array_replace($input, $values));
+                $record->calculation_snapshot = $values['calculation_snapshot'];
+            } else {
+                \App\Services\Payments\ExistingReceipts::assertCurrencyFields($record, $request->all());
+                $record->fill($input);
+            }
+            // ######## FIN MONEDA DEL MEDIO DE COBRO ########
             $record->save();
             $this->createGlobalPayment($record, $request->all());
             $this->saveFiles($record, $request, 'quotations');
@@ -74,8 +84,11 @@ class QuotationPaymentController extends Controller
 
     public function destroy($id)
     {
-        $item = QuotationPayment::findOrFail($id);
-        $item->delete();
+        DB::connection('tenant')->transaction(function () use ($id) {
+            $quotationId = QuotationPayment::withoutEagerLoads()->findOrFail($id)->quotation_id;
+            Quotation::withoutEagerLoads()->lockForUpdate()->findOrFail($quotationId);
+            QuotationPayment::withoutEagerLoads()->lockForUpdate()->findOrFail($id)->delete();
+        });
 
         return [
             'success' => true,

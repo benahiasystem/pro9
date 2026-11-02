@@ -48,15 +48,12 @@ $affected_document_number = $document_base->affected_document ? $document_base->
         $totalFilas++;
     }
 
-    if ($document->payment_method_type_id) {
+    if ($document->payment_method_type_id && $payments->isEmpty()) {
         $totalFilas++;
     }
 
-    if ($document->payment_condition_id === '01' && $payments->count()) {
-        $totalFilas += $payments->count();
-    } else {
-        $totalFilas += count($document->fee);
-    }
+    $totalFilas += $payments->count();
+    if (in_array((string) $document->payment_condition_id, ['02', '03'], true)) $totalFilas += count($document->fee);
 
     $allowed = $totalFilas;
     if ($allowed>26){
@@ -67,7 +64,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
     elseif($allowed<=26){
         $allowed_items = 70 - $totalProductos;
     }
-    $quantity_items = $document->items()->count();
+    $quantity_items = $document->items->count();
     $cycle_items = $allowed_items - ($quantity_items * 3);
     $total_weight = 0;
 
@@ -352,15 +349,17 @@ $affected_document_number = $document_base->affected_document ? $document_base->
                         </td>
                     @endif
 
-                    @if($document->payments()->count() > 0)
+                    {{-- ######## INICIO MONEDA DEL MEDIO DE COBRO ######## --}}
+                    @if($payments->count() > 0)
                         <td class="font-sm align-top" width="70px">
                             <strong>F. Pago</strong>
                         </td>
                         <td class="font-sm align-top" width="8px">:</td>
                         <td class="font-sm">
-                            {{ $document->payments()->first()->payment_method_type->description }} - {{ $document->currency_type_id }} {{ $document->payments()->first()->payment }}
+                            @include('pdf.partials.invoice_receipt', ['row' => $payments->first(), 'document' => $document])
                         </td>
                     @endif
+                    {{-- ######## FIN MONEDA DEL MEDIO DE COBRO ######## --}}
                 </tr>
                 @if($document->guides)
                     <tr>
@@ -758,7 +757,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
     </tr>
 </table>
 
-@if($document->payment_method_type_id)
+@if($document->payment_method_type_id && $payments->isEmpty())
     <table class="full-width">
         <tr>
             <td>
@@ -768,7 +767,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
     </table>
 @endif
 
-@if ($document->payment_condition_id === '01')
+@if (in_array((string) $document->payment_condition_id, ['01', '02', '03'], true))
     @if($payments->count())
         <table class="full-width">
             <tr>
@@ -777,14 +776,14 @@ $affected_document_number = $document_base->affected_document ? $document_base->
             @php $payment = 0; @endphp
             @foreach($payments as $row)
                 <tr>
-                    <td>&#8226; {{ $row->payment_method_type->description }}
-                        - {{ $row->reference ? $row->reference.' - ':'' }} {{ $document->currency_type->symbol }} {{ $row->payment + $row->change }}</td>
+                    <td>&#8226; {{-- ######## INICIO MONEDA DEL MEDIO DE COBRO ######## --}}@include('pdf.partials.invoice_receipt', ['row' => $row, 'document' => $document]){{-- ######## FIN MONEDA DEL MEDIO DE COBRO ######## --}}</td>
                 </tr>
                 @endforeach
                 </tr>
         </table>
     @endif
-@else
+@endif
+                @if (in_array((string) $document->payment_condition_id, ['02', '03'], true))
     <table class="full-width">
         @foreach($document->fee as $key => $quote)
             <tr>

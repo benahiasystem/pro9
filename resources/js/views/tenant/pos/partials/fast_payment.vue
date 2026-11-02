@@ -37,23 +37,26 @@
                     <label class="control-label">Ingrese monto</label>
                     <el-input ref="enter_amount"
                                 v-model="enter_amount"
+                                :disabled="singleAmountLocked"
                                 @focus="$event.target.select()"
                                 @input="enterAmount()"
                                 @keyup.enter.native="keyupEnterAmount()">
                         <template slot="prepend" style="px-1">{{ currencyTypeActive.symbol }}</template>
                     </el-input>
+                    <small v-if="singleAmountLocked">Modifique los importes en Agregar pagos.</small>
+                    <small v-if="singleAmountInvalid" class="text-danger">Indique un monto válido.</small>
                 </div>
             </div>
             <div class="col-3">
                 <div :class="{'has-danger': difference < 0}"
                         class="form-group">
                     <label class="control-label"
-                            v-text="(difference <0) ? 'Faltante' :'Vuelto'"></label>
+                            v-text="settlementDifferenceLabel"></label>
                     <!-- <el-input v-model="difference" :disabled="true">
                         <template slot="prepend">{{currencyTypeActive.symbol}}</template>
                     </el-input> -->
                     <h4 class="control-label font-weight-semibold m-0 text-center m-b-0">
-                        {{ currencyTypeActive.symbol }} {{ difference }}</h4>
+                        {{ settlementDifferenceDisplay }}</h4>
                 </div>
             </div>
             <div class="col-5">
@@ -141,7 +144,7 @@
                 </div>
                 <div class="row m-0 p-0 h-25 d-flex align-items-center bg-white">
                     <div class="col-lg-6">
-                        <button :disabled="button_payment && form.payment_condition_id !== '02'"
+                        <button :disabled="singleAmountInvalid || (button_payment && form.payment_condition_id !== '02')"
                                 class="btn btn-block btn-primary"
                                 @click="clickPayment">PAGAR
                         </button>
@@ -164,10 +167,11 @@
 
         <div v-if="fiscalPaymentsApplicable" class="col-12">
             <igtf-settings-status />
-            <igtf-payment-fields v-for="(row, fiscalIndex) in form.payments" v-if="!row.id" :key="'fiscal-' + fiscalIndex"
+            <igtf-payment-fields :payment-methods="payment_method_types" v-for="(row, fiscalIndex) in form.payments" v-if="!isRecordedReceipt(row)" :key="'fiscal-' + fiscalIndex"
                 :payment="row" :igtf-enabled="igtfEnabled" :settings-version="igtfSettings.revision" :document-currency="form.currency_type_id"
                 :document-rate="form.exchange_rate_sale" :customer-id="form.customer_id" />
         </div>
+                    <receipt-currency-fields v-for="(row, currencyIndex) in form.payments" v-if="form.document_type_id === '80' && !isRecordedReceipt(row)" :key="'currency-' + currencyIndex" :row="row" :methods="payment_method_types" :document-currency="form.currency_type_id" :document-rate="form.exchange_rate_sale" />
         <multiple-payment-form
         :payments="payments"
         :currency-type-id="form.currency_type_id" :exchange-rate-sale="form.exchange_rate_sale" :customer-id="form.customer_id" :payment-condition-id="form.payment_condition_id" :document-type-id="form.document_type_id"
@@ -217,6 +221,9 @@
 
 <script>
 import fiscalPaymentSettings from "@mixins/fiscal-payment-settings"
+// ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+import paymentSettlementSummary from "@mixins/payment-settlement-summary"
+// ######## FIN MONEDA DEL MEDIO DE COBRO ########
 import {withoutDraftRetentions} from "@helpers/document-creation"
 import {exactAmount,exactSum} from '../../../../helpers/exchange-rate-math'
 
@@ -224,6 +231,8 @@ import {checkoutTotals} from '../../../../helpers/exact-commercial'
 
 import documentCreationMixin from "@mixins/document-creation"
 import IgtfPaymentFields from "../../documents/partials/igtf_fields.vue"
+import ReceiptCurrencyFields from "@components/ReceiptCurrencyFields.vue"
+import {defaultCashForCurrency, paymentValidationMessage} from '@helpers/payment-classification'
 import Keypress from 'vue-keypress'
 
 import SaleNotesOptions from '../../sale_notes/partials/options.vue'
@@ -232,8 +241,8 @@ import MultiplePaymentForm from './multiple_payment.vue'
 import { buhoprinter } from '@mixins/buhoprinter'
 
 export default {
-    components: {IgtfPaymentFields,OptionsForm, SaleNotesOptions, MultiplePaymentForm, Keypress},
-    mixins: [fiscalPaymentSettings, documentCreationMixin,buhoprinter],
+    components: {IgtfPaymentFields,ReceiptCurrencyFields,OptionsForm, SaleNotesOptions, MultiplePaymentForm, Keypress},
+    mixins: [paymentSettlementSummary, fiscalPaymentSettings, documentCreationMixin,buhoprinter],
 
     props: ['form', 'customer', 'configuration', 'config', 'currencyTypeActive', 'exchangeRateSale', 'is_payment', 'companyEnvironment', 'businessTurns', 'isPrint', 'rowsItems'],
     data() {
@@ -456,46 +465,19 @@ export default {
             this.form.payments=this.payments;
             this.setAmount(exactSum(this.payments.map(row=>row.payment || '0')).decimal());
         },
+        // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
         async enterAmount() {
-            if (!this.form.payments.length) return
-
-            let r_item = await _.last(this.payments, {'payment_method_type_id': '01'})
-            r_item.payment = await exactAmount(this.enter_amount || '0').decimal()
-            // console.log(r_item.payment)
-
-            let ind = this.form.payments.length - 1
-            this.form.payments[ind].payment = exactAmount(this.enter_amount || '0').decimal()
-            // this.setAmount(item.payment)
-
-            let acum_payment = 0
-
-            await this.form.payments.forEach((item) => {
-                acum_payment = exactAmount(acum_payment).plus(item.payment || '0').decimal()
-            })
-            // console.log(this.form.payments)
-
-            // this.amount = item.payment
-            this.amount = acum_payment
-            // this.amount = this.enter_amount
-            // console.log(this.amount)
-            this.difference = exactAmount(this.amount || '0').minus(this.collectionTarget ?? this.form.total_payable ?? this.form.total).decimal()
-
-            if (isNaN(this.difference)) {
-                this.button_payment = this.form.payment_condition_id !== '02'
-                this.difference = "-"
-            } else if (this.difference >= 0) {
-                this.button_payment = false
-                this.difference = exactAmount(this.amount || '0').minus(this.collectionTarget ?? this.form.total_payable ?? this.form.total).decimal()
-            } else {
-                this.button_payment = this.form.payment_condition_id !== '02'
-            }
-            if (this.difference !== '-') this.difference = exactAmount(this.difference).decimal()
-
-            this.$eventHub.$emit('eventSetFormPosLocalStorage', this.form)
-
-            await this.lStoPayment()
-
+            const rows = this.form.payments || []
+            if (rows.length !== 1 || this.singleAmountLocked) return
+            const text = String(this.enter_amount ?? '').trim()
+            if (text && !/^\d+(?:\.\d*)?$/.test(text)) return
+            const entered = exactAmount(!text ? '0' : (text.endsWith('.') ? text.slice(0, -1) : text)).decimal()
+            rows[0].payment = entered
+            this.payments = rows
+            this.amount = entered
+            this.inputAmount()
         },
+        // ######## FIN MONEDA DEL MEDIO DE COBRO ########
         getLocalStoragePayment(key, re_default = null) {
 
             let ls_obj = localStorage.getItem(key + '_garage');
@@ -545,7 +527,7 @@ export default {
             this.form_payment = {
                 id: null,
                 date_of_payment: moment().format('YYYY-MM-DD'),
-                payment_method_type_id: '01',
+                payment_method_type_id: defaultCashForCurrency(this.payment_method_types, this.form.currency_type_id)?.id || null,
                 reference: null,
                 document_id: null,
                 sale_note_id: null,
@@ -579,9 +561,9 @@ export default {
 
         },
         async events() {
-            await this.$eventHub.$on("cancelSale", () => {
-                this.initLStoPayment()
-                this.getTables()
+            await this.$eventHub.$on("cancelSale", async () => {
+                await this.initLStoPayment()
+                await this.getTables()
                 this.initFormPayment()
                 this.inputAmount()
                 this.form.payments = []
@@ -626,6 +608,9 @@ export default {
             }
         },
         async clickPayment() {
+            // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+            if (this.singleAmountInvalid) return this.$message.warning('Indique un monto válido.')
+            // ######## FIN MONEDA DEL MEDIO DE COBRO ########
 
             if(this.businessTurns.active) {
                 if(this.form.document_type_id == '01' && !this.form.plate_number) {
@@ -709,10 +694,12 @@ export default {
                     this.$message.error(response.data.message);
                 }
             }).catch(error => {
-                if (error.response.status === 422) {
-                    this.errors = error.response.data;
+                if (error.response && error.response.status === 422) {
+                    this.errors = error.response.data?.errors || error.response.data || {};
+                    const message = paymentValidationMessage(error.response.data);
+                    if (message) this.$message.error(message);
                 } else {
-                    this.$message.error(error.response.data.message);
+                    this.$message.error(error.response?.data?.message || 'No se pudo confirmar el guardado. Consulte el listado antes de crear nuevamente la venta.');
                 }
             }).then(() => {
                 this.loading_submit = false;
@@ -786,7 +773,7 @@ export default {
                 })
         },
         getTables() {
-            this.$http.get(`/${this.resource}/payment_tables`)
+            return this.$http.get(`/${this.resource}/payment_tables`)
                 .then(response => {
                     this.all_series = response.data.series
                     this.payment_method_types = response.data.payment_method_types

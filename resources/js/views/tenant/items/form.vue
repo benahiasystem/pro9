@@ -369,7 +369,7 @@
                         </div>
 
                         <div v-show="!isPinned('calculate_quantity')" class="col-md-5 field-pinnable">
-                            <div v-show="['KGM', 'LTR', 'MTR', 'GLL'].includes(form.unit_type_id)"
+                            <div v-show="['KG', 'LT', 'M', 'GAL'].includes(form.unit_type_id)"
                                  class="">
                                 <div :class="{'has-danger': errors.calculate_quantity}"
                                      class="form-group">

@@ -16,6 +16,7 @@ Aplicar [cálculos exactos](../mantener-calculos-exactos-pro9/SKILL.md). Para in
 - Conservar los nombres internos `igv`, `has_igv`, `purchase_has_igv`, `total_igv`, `percentage_igv` y `affectation_igv_type_id`; son contratos vigentes de esquema, API y componentes.
 - Usar `config/venezuela.php` y `App\Support\Venezuela\Localization` como fuente de verdad: tasa `0.16`, porcentaje `16` y multiplicador `1.16`.
 - Los flujos gravados preparan el porcentaje y calculan `total_igv` con la tasa de `Localization` antes de guardar: por defecto 16 %; una tasa configurada debe prevalecer. Los modelos conservan esos campos para persistir los valores.
+- La preparación de partidas de cotización de tienda usa la tasa de `Localization`, sin volver a fijar 18 %, y conserva las fracciones de precio e IVA hasta la presentación. La prueba MySQL cubre Bs. 116 con base Bs. 100 e IVA Bs. 16, además de un precio USD fraccionario.
 - Ofrecer en ventas internas y compras únicamente `10 = Gravado` y `20 = Exento`. Comprobantes web digitales DEMO de exportación 0201/0202/0203 usan exclusivamente `EXP = Exportación — IVA 0 %`, sin mezclar afectaciones.
 - No conservar códigos de afectación retirados, remapeos de instalaciones anteriores ni cálculos de ISC/bolsas. El esquema y los datos iniciales utilizan el contrato vigente.
 - Mantener exportaciones o integraciones externas con encabezados contractuales IGV cuando el consumidor los exija literalmente; documentar cada excepción.

@@ -110,6 +110,8 @@
                                                 <el-select v-model="row.payment_method_type_id" >
                                                     <el-option v-for="option in payment_method_types" :key="option.id" :value="option.id" :label="option.description"></el-option>
                                                 </el-select>
+                                                <small v-if="!row.payment_method_type_id" class="text-muted">No hay efectivo activo para la moneda del documento; seleccione un método.</small>
+                                                <receipt-currency-fields :row="row" :methods="payment_method_types" :document-currency="form.currency_type_id" :document-rate="form.exchange_rate_sale" />
                                             </div>
                                         </td>
                                         <td>
@@ -201,6 +203,8 @@
 <script>
 // ######## INICIO TASAS OCHO DECIMALES ########
 import { exactAmount } from "../../../../../../../resources/js/helpers/exchange-rate-math"
+import ReceiptCurrencyFields from "../../../../../../../resources/js/components/ReceiptCurrencyFields.vue"
+import {defaultCashForCurrency, paymentValidationMessage} from '@helpers/payment-classification'
 // ######## FIN TASAS OCHO DECIMALES ########
 
 
@@ -210,7 +214,7 @@ import { exactAmount } from "../../../../../../../resources/js/helpers/exchange-
 
 
     export default {
-        components: {IncomeFormItem, IncomeOptions},
+        components: {IncomeFormItem, IncomeOptions, ReceiptCurrencyFields},
         mixins: [functions, exchangeRate],
         data() {
             return {
@@ -249,6 +253,11 @@ import { exactAmount } from "../../../../../../../resources/js/helpers/exchange-
                     this.form.income_type_id = (this.income_types.length > 0) ? this.income_types[0].id : null
                     this.form.income_reason_id = (this.income_reasons.length > 0)?this.income_reasons[0].id:null
                     this.payment_destinations = response.data.payment_destinations
+                    const method = defaultCashForCurrency(this.payment_method_types, this.form.currency_type_id)
+                    this.form.payments.forEach(row => {
+                        if (!row.id && !row.payment_method_type_id) row.payment_method_type_id = method?.id || null
+                        if (!row.id && row.payment_destination_id == null && String(row.payment_method_type_id) === String(method?.id) && method?.collection_kind === 'cash' && this.payment_destinations.some(destination => destination.id === 'cash')) row.payment_destination_id = 'cash'
+                    })
 
                     this.changeDateOfIssue()
 
@@ -300,12 +309,13 @@ import { exactAmount } from "../../../../../../../resources/js/helpers/exchange-
                 this.form.payments.splice(index, 1);
             },
             clickAddPayment() {
+                const method = defaultCashForCurrency(this.payment_method_types, this.form.currency_type_id)
                 this.form.payments.push({
                     id: null,
                     income_id: null,
                     date_of_payment:  moment().format('YYYY-MM-DD'),
-                    payment_method_type_id: '01',
-                    payment_destination_id: 'cash',
+                    payment_method_type_id: method?.id || null,
+                    payment_destination_id: method?.collection_kind === 'cash' && this.payment_destinations.some(destination => destination.id === 'cash') ? 'cash' : null,
                     reference: null,
                     payment: 0,
                 });
@@ -345,22 +355,22 @@ import { exactAmount } from "../../../../../../../resources/js/helpers/exchange-
                     row.total = exactAmount(row.total_original).times(exactAmount(exchange_rate_sale)).final(2);
                 }
 
-                row.total = _.round(row.total,2)
+                row.total = exactAmount(row.total).final(2)
 
                 return row
             },
             calculateTotal() {
-                let total = 0
+                let total = exactAmount('0')
                 this.form.items.forEach((row) => {
-                    total += parseFloat(row.total)
+                    total = total.plus(row.total)
                 });
-                this.form.total = _.round(total, 2)
-                this.form.payments[0].payment = this.form.total
+                this.form.total = total.final(2)
+                if (this.form.payments[0]) this.form.payments[0].payment = this.form.total
             },
             submit() {
 
                 let validate = this.validate_payments()
-                if(validate.acum_total != parseFloat(this.form.total) || validate.error_by_item > 0) {
+                if(validate.acum_total.compare(this.form.total) !== 0 || validate.error_by_item > 0) {
                     return this.$message.error('Los montos ingresados no coinciden con el monto total o son incorrectos');
                 }
 
@@ -381,7 +391,8 @@ import { exactAmount } from "../../../../../../../resources/js/helpers/exchange-
                         }
                     })
                     .catch(error => {
-                        const mensaje = error.response?.data?.message || 'Ocurrió un error inesperado';
+                        const mensaje = paymentValidationMessage(error.response?.data) ||
+                            (typeof error.response?.data?.message === 'string' ? error.response.data.message : 'Ocurrió un error inesperado');
                         // ✅ Si es error 400 o 422 (validación)
                         if (error.response?.status === 400 || error.response?.status === 422) {
                             this.$alert(mensaje, 'Advertencia', {
@@ -400,11 +411,14 @@ import { exactAmount } from "../../../../../../../resources/js/helpers/exchange-
             validate_payments(){
 
                 let error_by_item = 0
-                let acum_total = 0
+                let acum_total = exactAmount('0')
 
                 this.form.payments.forEach((item)=>{
-                    acum_total += parseFloat(item.payment)
-                    if(item.payment <= 0 || item.payment == null) error_by_item++;
+                    try {
+                        const amount = exactAmount(item.payment)
+                        acum_total = acum_total.plus(amount)
+                        if (amount.compare(0) <= 0) error_by_item++
+                    } catch (e) { error_by_item++ }
                 })
 
                 return  {

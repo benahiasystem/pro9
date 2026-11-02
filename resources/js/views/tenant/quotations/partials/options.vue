@@ -299,7 +299,6 @@
                     </div>
                 </div>
 
-                <template v-if="is_document_type_invoice">
                     <!-- Crédito con cuotas -->
                     <div v-show=" document.payment_condition_id === '03'" class="col-lg-12">
                         <table v-if="document.fee.length>0" width="100%">
@@ -375,7 +374,7 @@
                                 <td>
                                     <el-select
                                         v-model="row.payment_method_type_id"
-                                        @change="changePaymentMethodType(index)">
+                                        @change="changePaymentMethodType(index, true)">
                                         <el-option
                                             v-for="option in credit_payment_metod"
                                             :key="option.id"
@@ -383,6 +382,7 @@
                                             :value="option.id"
                                         ></el-option>
                                     </el-select>
+                                                        <small v-if="!row.payment_method_type_id" class="text-muted">No hay un método de crédito activo disponible.</small>
                                 </td>
 
                                 <td v-if="document.fee.length>0">
@@ -411,8 +411,9 @@
                             </tbody>
                         </table>
                     </div>
+                <template v-if="is_document_type_invoice">
                     <!-- Contado -->
-                    <div v-show="document.payment_condition_id == '01'" class="col-lg-12">
+                    <div v-show="true" class="col-lg-12">
                         <table>
                             <thead>
                             <tr width="100%">
@@ -437,12 +438,14 @@
                                     <el-date-picker
                                         v-model="row.date_of_payment"
                                         :clearable="false"
+                                        :disabled="isRecordedReceipt(row)"
                                         type="date"
                                         value-format="yyyy-MM-dd"
                                     ></el-date-picker>
                                 </td>
                                 <td>
-                                    <el-select
+                                    <span v-if="isRecordedReceipt(row)">{{ (row.payment_method_snapshot || {}).description || (row.payment_method_type || {}).description || row.payment_method_type_id }}</span>
+                                    <el-select v-else
                                         v-model="row.payment_method_type_id"
                                         @change="changePaymentMethodType(index)">
                                         <el-option
@@ -451,10 +454,29 @@
                                             :label="option.description"
                                             :value="option.id"></el-option>
                                     </el-select>
+                                                        <small v-if="!row.payment_method_type_id" class="text-muted">No hay efectivo activo para la moneda del documento; seleccione un método.</small>
+                                    <template v-if="isRecordedReceipt(row)">
+                                        <small class="d-block">Cobro registrado: {{ row.original_amount }} {{ row.currency_type_id }}; aplicado: {{ row.payment }} {{ document.currency_type_id }}.</small>
+                                        <small v-if="row.currency_type_id !== document.currency_type_id" class="d-block">Tasa VES por USD: {{ row.exchange_rate }}</small>
+                                        <template v-if="fiscalPaymentsApplicable && row.currency_type_id === 'USD'">
+                                            <label>Intermediación del cobro original</label>
+                                            <el-select v-model="row.financial_intermediation" placeholder="Seleccione">
+                                                <el-option value="none" label="Sin institución financiera" />
+                                                <el-option value="financial_institution" label="Con institución financiera" />
+                                            </el-select>
+                                        </template>
+                                    </template>
+                                    <igtf-settings-status v-if="fiscalPaymentsApplicable" />
+                                    <igtf-payment-fields v-if="fiscalPaymentsApplicable && !isRecordedReceipt(row)" :payment="row" :payment-methods="payment_method_types"
+                                        :document-currency="document.currency_type_id" :document-rate="document.exchange_rate_sale"
+                                        :customer-id="document.customer_id" :igtf-enabled="igtfEnabled" :settings-version="igtfSettings.revision" />
+                                    <receipt-currency-fields v-else-if="!isRecordedReceipt(row)" :row="row" :methods="payment_method_types"
+                                        :document-currency="document.currency_type_id" :document-rate="document.exchange_rate_sale" />
                                 </td>
                                 <td>
                                     <div class="form-group mb-2 mr-2">
-                                        <el-select
+                                        <span v-if="isRecordedReceipt(row)">{{ row.payment_destination_description || 'Destino registrado' }}</span>
+                                        <el-select v-else
                                             v-model="row.payment_destination_id"
                                             :disabled="classifiedPaymentDestinationDisabled(payment_destinations, row)"
                                             filterable
@@ -470,16 +492,17 @@
                                 </td>
                                 <td>
                                     <div class="form-group mb-2 mr-2">
-                                        <el-input v-model="row.reference"></el-input>
+                                        <el-input v-model="row.reference" :disabled="isRecordedReceipt(row)"></el-input>
                                     </div>
                                 </td>
                                 <td>
                                     <div class="form-group mb-2 mr-2">
-                                        <el-input v-model="row.payment"></el-input>
+                                        <el-input v-model="row.payment" :disabled="isRecordedReceipt(row)"></el-input>
                                     </div>
                                 </td>
                                 <td class="series-table-actions text-center">
                                     <button
+                                        v-if="!isRecordedReceipt(row)"
                                         class="btn waves-effect waves-light btn-xs btn-danger"
                                         type="button"
                                         @click.prevent="clickCancel(index)"
@@ -493,6 +516,18 @@
                         </table>
                     </div>
                 </template>
+                <!-- ######## INICIO CLASIFICACION DE COBROS Y CAJA ######## -->
+                <div v-if="!is_document_type_invoice" class="col-lg-12">
+                    <div v-for="(row, index) in document.payments" :key="row.id ? 'registrado-' + row.id : 'borrador-' + index">
+                        <div v-if="isRecordedReceipt(row)" class="alert alert-info mb-2">
+                            <strong>Cobro registrado de la cotización</strong>
+                            <div>{{ (row.payment_method_snapshot || {}).description || (row.payment_method_type || {}).description || row.payment_method_type_id }} · {{ row.payment_destination_description || 'Destino registrado' }}</div>
+                            <div>Recibido: {{ row.original_amount }} {{ row.currency_type_id }} · Aplicado: {{ row.payment }} {{ document.currency_type_id }}</div>
+                            <div v-if="row.currency_type_id !== document.currency_type_id">Tasa VES por USD: {{ row.exchange_rate }}</div>
+                        </div>
+                    </div>
+                </div>
+                <!-- ######## FIN CLASIFICACION DE COBROS Y CAJA ######## -->
             </div>
 
             <!-- controlar series y lotes -->
@@ -502,7 +537,7 @@
             <div  v-show="document.total > 0" class="col-lg-12">
                 <div class="form-group pull-right">
                     <label class="control-label"> Total </label> <br>
-                    <label class="control-label">{{ document.currency_type_id }} {{ this.document.tota }}</label>
+                    <label class="control-label">{{ document.currency_type_id }} {{ document.total }}</label>
                 </div>
 
                 <br>
@@ -550,6 +585,8 @@
 </template>
 
 <script>
+import {suggestRemainingPayment, suggestInstallments} from '@helpers/document-creation'
+import {defaultCashForCurrency, isRecordedReceipt} from '@helpers/payment-classification'
 import {whatsappNumber} from "@helpers/phone";
 import DocumentOptions from "../../documents/partials/options.vue";
 import SaleNoteOptions from "../../sale_notes/partials/options.vue";
@@ -559,9 +596,13 @@ import {mapActions, mapState} from "vuex/dist/vuex.mjs";
 import {functions} from '../../../../mixins/functions';
 import QrApi from '@viewsModuleQrApi/QrApiTemplate.vue'
 import { validateItemsLots, hydrateItemLots } from '../../../../helpers/lotValidation';
+import fiscalPaymentSettings from '@mixins/fiscal-payment-settings';
+import IgtfPaymentFields from '../../documents/partials/igtf_fields.vue';
+import ReceiptCurrencyFields from '@components/ReceiptCurrencyFields.vue';
+import {paymentValidationMessage} from '../../../../helpers/payment-classification';
 
 export default {
-    components: {DocumentOptions, SaleNoteOptions, SeriesForm, QrApi},
+    components: {DocumentOptions, SaleNoteOptions, SeriesForm, QrApi, IgtfPaymentFields, ReceiptCurrencyFields},
     props: [
         "showDialog",
         "recordId",
@@ -570,17 +611,25 @@ export default {
         "type",
         "typeUser",
     ],
-    mixins: [functions],
+    mixins: [functions, fiscalPaymentSettings],
+    watch: {
+        receiptAppliedAmounts() {
+            if (['02', '03'].includes(this.document?.payment_condition_id) && this.document?.fee?.length) this.calculateFee();
+        },
+    },
     computed:{
+        receiptAppliedAmounts() {
+            return JSON.stringify((this.document?.payments || []).map(row => row.payment));
+        },
         ...mapState([
             'config',
             'payment_method_types'
         ]),
         credit_payment_metod: function () {
-            return _.filter(this.payment_method_types, {'is_credit': true})
+            return this.payment_method_types.filter(method => method.collection_kind === 'credit' && [true, 1, '1'].includes(method.is_active))
         },
         cash_payment_metod: function () {
-            return _.filter(this.payment_method_types, {'is_credit': false})
+            return this.payment_method_types.filter(method => ['cash', 'account'].includes(method.collection_kind) && [true, 1, '1'].includes(method.is_active))
         },
         isCreditPaymentCondition: function () {
             return ['02', '03'].includes(this.document.payment_condition_id)
@@ -694,26 +743,25 @@ export default {
             this.calculateFee()
         },
         changePaymentCondition() {
-            this.document.fee = [];
-            this.document.payments = [];
+            // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+            if (!Array.isArray(this.document.fee)) this.document.fee = [];
+            if (!Array.isArray(this.document.payments)) this.document.payments = [];
             if (this.document.payment_condition_id === '01') {
-                this.document.payments = this.form.quotation.payments;
-                if (this.document.payments === undefined || this.document.payments.length < 1) {
+                if (!this.document.payments.length && (this.form.quotation.payments || []).length) {
+                    this.document.payments = this.form.quotation.payments.map(row => ({...row}));
+                }
+                if (this.is_document_type_invoice && this.document.payments.length < 1) {
                     this.clickAddPayment();
                 }
             }
-            if (this.document.payment_condition_id === '02') {
-                this.document.fee = this.form.quotation.fee;
-                if (this.document.fee === undefined || this.document.fee.length < 1) {
-                    this.clickAddFeeNew();
+            if (['02', '03'].includes(this.document.payment_condition_id) && !this.document.fee.length) {
+                this.document.fee = (this.form.quotation.fee || []).map(row => ({...row}));
+                if (!this.document.fee.length) {
+                    if (this.document.payment_condition_id === '02') this.clickAddFeeNew();
+                    else this.clickAddFee();
                 }
             }
-            if (this.document.payment_condition_id === '03') {
-                this.document.fee = this.form.quotation.fee;
-                if (this.document.fee === undefined || this.document.fee.length < 1) {
-                    this.clickAddFee();
-                }
-            }
+            // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
 
             if (!_.isEmpty(this.document.retention)) {
                 this.setTotalPendingAmountRetention(this.document.retention.amount)
@@ -726,7 +774,7 @@ export default {
         },
         clickAddFeeNew() {
             let first = {
-                id: '05',
+                id: null,
                 number_days: 0,
             };
             if (this.credit_payment_metod[0] !== undefined) {
@@ -755,47 +803,25 @@ export default {
             this.calculateFee();
         },
         calculateFee() {
-            let fee_count = this.document.fee.length;
-            // let total = this.document.total;
-            let total = this.getTotal()
-
-            let accumulated = 0;
-            let amount = _.round(total / fee_count, 2);
-            _.forEach(this.document.fee, row => {
-                accumulated += amount;
-                if (total - accumulated < 0) {
-                    amount = _.round(total - accumulated + amount, 2);
-                }
-                row.amount = amount;
-            })
+            suggestInstallments(this.document, this.getTotal());
         },
         getTotal() {
 
-            if (!_.isEmpty(this.document.retention) && this.document.total_pending_payment > 0) {
+            if (!_.isEmpty(this.document.retention) && this.document.total_pending_payment != null) {
                 return this.document.total_pending_payment
             }
 
             return this.document.total
         },
         clickCancel(index) {
+            if (isRecordedReceipt(this.document.payments[index])) return;
             this.document.payments.splice(index, 1);
         },
         clickAddPayment() {
-            let id = '01';
-                if (this.cash_payment_metod !== undefined &&
-                this.cash_payment_metod[0] !== undefined) {
-                id = this.cash_payment_metod[0].id
-            }
+            const method = defaultCashForCurrency(this.payment_method_types || [], this.document.currency_type_id);
+            const id = method?.id || null;
 
             if (this.document.payments === undefined) this.document.payments = [];
-            let total = 0
-            if(
-                this.form !== null &&
-                this.form.quotation !== null &&
-                this.form.quotation.total !== null
-            ){
-                total =this.form.quotation.total
-            }
             this.document.payments.push({
                 id: null,
                 document_id: null,
@@ -803,9 +829,11 @@ export default {
                 payment_method_type_id: id,
                 payment_destination_id: null,
                 reference: null,
-                payment: parseFloat(total),
+                payment: '0',
             });
-
+            if (this.document.payment_condition_id === '01') {
+                suggestRemainingPayment(this.document, this.document.payments, {refreshSuggested: true});
+            }
         },
         initForm() {
             this.generate = this.showGenerate ? true : false;
@@ -915,19 +943,15 @@ export default {
             this.changeDocumentType();
         },
         validatePaymentDestination() {
-            // Condición crédito / métodos crédito: no exigen destino de pago.
-            if (this.isCreditPaymentCondition) {
-                return { error_by_item: 0 }
-            }
 
             let error_by_item = 0
 
             this.document.payments.forEach((item) => {
-                // ######### INICIO MÉTODOS DE CRÉDITO VENEZUELA #########
-                if (!['05', '09'].includes(item.payment_method_type_id)) {
-                    if (item.payment_destination_id == null) error_by_item++;
-                }
-                // ######### FIN MÉTODOS DE CRÉDITO VENEZUELA #########
+                // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+                const method = (this.payment_method_types || []).find(value => String(value.id) === String(item.payment_method_type_id));
+                const credit = method?.collection_kind === 'credit';
+                if (!isRecordedReceipt(item) && !credit && item.payment_destination_id == null) error_by_item++;
+                // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
             })
 
             return {
@@ -949,6 +973,8 @@ export default {
                 return this.$message.error('El destino del pago es obligatorio');
             }
 
+            if (!await this.ensureFiscalPaymentsReady(this.document.payments)) return;
+
             this.loading_submit = true;
             if (this.document.document_type_id === "nv") {
                 this.document.prefix = "NV";
@@ -957,10 +983,15 @@ export default {
                 this.document.prefix = null;
                 this.resource_documents = "documents";
             }
-            // Condicion de pago Credito con cuota pasa a credito
-            if (this.document.payment_condition_id === '03') this.document.payment_condition_id = '02';
+            // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+            const condition = this.document.payment_condition_id;
+            const payload = {...this.document,
+                payment_condition_id: condition === '03' ? '02' : condition,
+                fee: condition === '01' ? [] : this.document.fee,
+            };
+            // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
             this.$http
-                .post(`/${this.resource_documents}`, this.document)
+                .post(`/${this.resource_documents}`, payload)
                 .then((response) => {
                     if (response.data.success) {
                         this.documentNewId = response.data.data.id;
@@ -995,10 +1026,12 @@ export default {
                     }
                 })
                 .catch((error) => {
-                    if (error.response.status === 422) {
-                        this.errors = error.response.data;
+                    if (error.response && error.response.status === 422) {
+                        this.errors = error.response.data.errors || error.response.data;
+                        const message = paymentValidationMessage(error.response.data);
+                        if (message) this.$message.error(message);
                     } else {
-                        this.$message.error(error.response.data.message);
+                        this.$message.error(error.response?.data?.message || 'No se pudo generar el comprobante.');
                     }
                 })
                 .finally(() => {
@@ -1088,14 +1121,16 @@ export default {
                             this.form.observation = response.data.data.description
                             this.getPercentageIgv();
                             this.document.payments =
-                                response.data.data.quotation.payments;
+                                (response.data.data.quotation.payments || []).map(row => ({...row}));
                             this.document.observation = response.data.data.description
                             this.document.total = this.form.quotation.total;
                             this.document.currency_type_id = this.form.quotation.currency_type_id;
+                            this.document.exchange_rate_sale = this.form.quotation.exchange_rate_sale;
                             this.document.payment_condition_id = this.form.quotation.payment_condition_id;
-                            if (this.document.payment_condition_id === undefined || this.document.payments.length > 0) {
+                            if (!['01', '02', '03'].includes(this.document.payment_condition_id)) {
                                 this.document.payment_condition_id = "01";
                             }
+                            if (['02', '03'].includes(this.document.payment_condition_id)) this.changePaymentCondition();
 
                             // Precargar lotes ya guardados en la cotización
                             if (this.form.quotation && Array.isArray(this.form.quotation.items)) {
@@ -1243,22 +1278,18 @@ export default {
 
             return {success: true};
         },
-        changePaymentMethodType(index) {
-            let id = '01';
-            if (this.document.payments[index] !== undefined &&
-                this.document.payments[index].payment_method_type_id !== undefined) {
-                id = this.document.payments[index].payment_method_type_id;
-            } else if (this.document.fee[index] !== undefined &&
-                this.document.fee[index].payment_method_type_id !== undefined) {
-                id = this.document.fee[index].payment_method_type_id;
-            }
+        changePaymentMethodType(index, isFee = false) {
+            if (!isFee) return;
+            const row = (isFee ? this.document.fee : this.document.payments)[index];
+            const id = row?.payment_method_type_id;
             let payment_method_type = _.find(this.payment_method_types, {'id': id});
 
-            if (payment_method_type.number_days) {
+            if (!payment_method_type) return;
+            if (payment_method_type.collection_kind === 'credit' && payment_method_type.number_days) {
 
                 this.document.date_of_due = moment(this.document.date_of_issue).add(payment_method_type.number_days, 'days').format('YYYY-MM-DD')
                 // this.document.payments = []
-                this.enabled_payments = false
+                this.enabled_payments = true
                 this.readonly_date_of_due = true
                 this.document.payment_method_type_id = payment_method_type.id
 
@@ -1274,12 +1305,12 @@ export default {
                     }
                 }
 
-            } else if (payment_method_type.id == '09') {
+            } else if (payment_method_type.collection_kind === 'credit') {
 
                 this.document.payment_method_type_id = payment_method_type.id
                 this.document.date_of_due = this.document.date_of_issue
                 // this.document.payments = []
-                this.enabled_payments = false
+                this.enabled_payments = true
 
             } else {
 

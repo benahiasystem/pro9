@@ -22,6 +22,13 @@ class HotelRentItemPayment extends ModelTenant
         'hotel_rent_item_id',
         'date_of_payment',
         'payment_method_type_id',
+        'currency_type_id',
+        'original_amount',
+        'exchange_rate',
+        'exchange_rate_source',
+        'exchange_rate_date',
+        'payment_method_snapshot',
+        'source_sale_note_payment_id',
         'reference',
         'change',
         'payment',
@@ -29,11 +36,18 @@ class HotelRentItemPayment extends ModelTenant
 
     protected $casts = [
         'date_of_payment' => 'date',
+        'exchange_rate_date' => 'date',
+        'payment_method_snapshot' => 'array',
     ];
 
     public function payment_method_type()
     {
         return $this->belongsTo(PaymentMethodType::class);
+    }
+
+    public function source_sale_note_payment()
+    {
+        return $this->belongsTo(\App\Models\Tenant\SaleNotePayment::class, 'source_sale_note_payment_id');
     }
 
     public function global_payment()

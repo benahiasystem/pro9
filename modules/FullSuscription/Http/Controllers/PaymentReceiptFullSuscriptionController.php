@@ -84,12 +84,16 @@ use Modules\FullSuscription\Http\Resources\SuscriptionPlansCollection;
 
         public function statistics()
         {
-            $query = SuscriptionOrder::selectRaw("
-                COALESCE(SUM(CASE WHEN status = 'paid' THEN amount ELSE 0 END), 0) as total_collected,
+            // ######## INICIO RESUMEN DE ORDENES ########
+            // El estado de una orden no acredita un cobro y la orden no guarda moneda.
+            $query = SuscriptionOrder::where('type', SuscriptionOrder::TYPE_SUSCRIPTION_ORDER)->selectRaw("
+                COUNT(*) as total_orders,
                 COUNT(CASE WHEN status = 'paid' THEN 1 END) as total_approved,
                 COUNT(CASE WHEN status IN ('canceled', 'rejected') THEN 1 END) as total_rejected,
                 COUNT(CASE WHEN status = 'pending' THEN 1 END) as total_pending
             ")->first();
+            $query->setAttribute('total_collected', null);
+            // ######## FIN RESUMEN DE ORDENES ########
 
             return response()->json([
                 'success'    => true,
@@ -125,8 +129,9 @@ use Modules\FullSuscription\Http\Resources\SuscriptionPlansCollection;
             $currency_types = CurrencyType::whereActive()->orderByDescription()->get();
             $affectation_igv_types = AffectationIgvType::whereActive()->get();
 
-            $payments_credit = PaymentMethodType::select('id')->NonCredit()->get()->toArray();
-            $payments_credit = PaymentMethodType:: getPaymentMethodTypes($payments_credit);
+            // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+            $payments_credit = PaymentMethodType::getActiveCreditMethods();
+            // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
             $startDate = Carbon::createFromFormat('Y-m-d', '2022-01-01')->format('Y-m-d');
 
             return compact('unit_types',

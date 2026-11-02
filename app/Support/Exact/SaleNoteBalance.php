@@ -7,14 +7,18 @@ use App\Models\Tenant\SaleNote;
 // ######## INICIO CALCULOS EXACTOS PRO9 ########
 final class SaleNoteBalance
 {
-    public static function values(SaleNote $note): array
+    public static function values(SaleNote $note, bool $lockPayments = false): array
     {
         $total = Decimal::readRequired($note, 'total');
         $payable = $note->total_payable === null ? Decimal::of(Decimal::represent($total, 2)) : Decimal::readRequired($note, 'total_payable');
         $paid = Decimal::of(0);
-        foreach ($note->payments()->withoutEagerLoads()->lazyById(500) as $payment) {
+        // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+        $payments=$note->payments()->withoutEagerLoads();
+        if ($lockPayments) $payments->lockForUpdate();
+        foreach ($payments->lazyById(500) as $payment) {
             $paid = $paid->plus(Decimal::readRequired($payment, 'payment'));
         }
+        // ######## FIN MONEDA DEL MEDIO DE COBRO ########
         return ['total'=>$payable, 'document_total'=>$total, 'total_paid'=>$paid,
             'total_difference'=>$payable->minus($paid), 'settlement_adjustment'=>$payable->minus($total)];
     }

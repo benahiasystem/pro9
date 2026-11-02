@@ -198,8 +198,9 @@
             $currency_types = CurrencyType::whereActive()->orderByDescription()->get();
             $affectation_igv_types = AffectationIgvType::whereActive()->get();
 
-            $payments_credit = PaymentMethodType::select('id')->NonCredit()->get()->toArray();
-            $payments_credit = PaymentMethodType:: getPaymentMethodTypes($payments_credit);
+            // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+            $payments_credit = PaymentMethodType::getActiveCreditMethods();
+            // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
             $startDate = Carbon::now()->startOfYear()->format('Y-m-d');
             $grades = SuscriptionGrade::all();
             $sections = SuscriptionSection::all();

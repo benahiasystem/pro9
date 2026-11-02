@@ -91,8 +91,7 @@ class CashReportRenderer
         $options = $this->normalizeOptions($report, $options);
         // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
         if (!in_array($type,['products','products_garage'],true)) {
-            $payload=app(ClassifiedCashReport::class)->build($cash,$type,$options);
-            $report['views']=['pdf'=>'cashreport::reports.classified_a4','ticket'=>'cashreport::reports.classified_ticket','excel'=>'cashreport::reports.classified_excel'];
+            $payload=app($report['builder'])->build($cash,$type,$options);
         } else {
             $payload = app($report['builder'])->build($cash,$options);
             $payload += app(ClassifiedCashReport::class)->build($cash,$type,$options);

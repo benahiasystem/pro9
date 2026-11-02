@@ -19,6 +19,7 @@ Aplicar [cálculos exactos](../mantener-calculos-exactos-pro9/SKILL.md). Para in
 - Mantener una migración por tabla. Crear todas las tablas antes de agregar las claves en `2026_08_17_000999_add_tenant_foreign_keys.php`; su `down()` debe retirarlas en orden inverso.
 - Laravel administra `migrations`; no incluirla como tabla de aplicación.
 - Cada tabla debe declarar directamente sus columnas, tipos, nullability, defaults, índices, motor, charset, collation y comentarios vigentes. No crear campos retirados para eliminarlos después.
+- `transfer_account_payments.currency_type_id` es nullable y referencia `cat_currency_types`: conserva la moneda del destino en traslados nuevos, sin completar datos históricos ni modificar tenants existentes.
 - Al consolidar una modificación, capturar primero el esquema producido por la rama en una base temporal y comparar el resultado completo. Toda diferencia debe corresponder a una decisión explícita del cambio.
 - Mantener un inventario de columnas junto al DDL. No usar contadores `AUTO_INCREMENT` extraídos de datos de prueba como estado inicial.
 - Los parámetros de empresa y facturas incluyen modalidad y ambiente obligatorios según `mantener-modalidad-emision-fiscal-pro9`.
@@ -124,6 +125,12 @@ Inventario vigente:346 tablas de aplicación/347 migraciones tenant. 000318 inco
 ## Clasificación inicial de cobros — 26/10/2026
 
 La instrucción vigente del usuario limita [clasificación y caja por moneda](../../../informes/clasificacion_medios_pago_caja.md) exclusivamente a instalaciones nuevas. Definir la naturaleza del medio, contexto y vínculo de turno en movimientos, moneda de aperturas y `cash_currency_balances` directamente en las creaciones consolidadas y semillas. No preparar comandos de actualización, activaciones por tenant, copias de catálogo previo ni lectores de cajas anteriores para este cambio. Las instalaciones actuales se sustituirán por nuevas; su eliminación y recreación no forman parte de esta implementación. La caja se crea con el cálculo VES/USD disponible desde la instalación.
+
+## Cobros con moneda propia — implementación en curso
+
+Las creadoras de `sale_note_payments`, `income_payments`, `quotation_payments`, `contract_payments`, `technical_service_payments` y `hotel_rent_item_payments` incluyen moneda recibida, importe original, tasa, fuente, fecha y snapshot del método. Las columnas son nullable durante la integración de productores; la migración final declara las claves de moneda y las retira en su `down()`. Hotel agrega una FK única al cobro de la nota de venta y una clave de operación única con hash en `hotel_rent_orders` para reintentos. `FiscalEmissionSchemaTest` comprueba los campos y claves durante instalación, integridad, rollback y repetición. No convertir tenants existentes ni afirmar que todos los canales están integrados hasta verificar sus productores y lectores.
+
+La bandeja móvil `received_payments` requiere `currency_type_id` con FK restrictiva al catálogo de monedas; el productor debe enviar la moneda junto con el importe capturado. No asignar una moneda supuesta a registros históricos ni preparar conversiones de tenants existentes.
 
 ## Datos de tarjeta comerciales retirados
 

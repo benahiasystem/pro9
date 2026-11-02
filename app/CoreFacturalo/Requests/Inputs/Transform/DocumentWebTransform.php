@@ -298,13 +298,22 @@ class DocumentWebTransform
             if(key_exists('payments', $inputs)) {
 
                 foreach ($inputs['payments'] as $row) {
-                    $payments[] = [
+                    $payment = [
                         'fecha_de_emision' => $row['date_of_payment'],
                         'codigo_metodo_pago' => $row['payment_method_type_id'],
                         'codigo_destino_pago' => $row['payment_destination_id'],
                         'referencia' => Functions::valueKeyInArray($row, 'reference'),
                         'monto' => Functions::valueKeyInArray($row, 'payment', 0),
                     ];
+                    // Keep the actual receipt currency and rate in offline payloads.
+                    foreach (['currency_type_id', 'original_amount', 'exchange_rate', 'exchange_rate_source', 'exchange_rate_date',
+                        'operation_key', 'igtf_status', 'exemption_reason', 'exception_basis', 'financial_intermediation'] as $field) {
+                        if (array_key_exists($field, $row)) $payment[$field] = $row[$field];
+                    }
+                    if (!empty($payment['currency_type_id']) && empty($payment['operation_key'])) {
+                        $payment['operation_key'] = (string) \Illuminate\Support\Str::uuid();
+                    }
+                    $payments[] = $payment;
                 }
 
             }

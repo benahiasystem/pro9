@@ -225,7 +225,7 @@
         <div v-if="classified.length" class="table-responsive mt-3">
             <h4>Movimientos por cuenta y moneda</h4>
             <table class="table"><thead><tr><th>Medio</th><th>Destino</th><th>Moneda</th><th>Apertura</th><th>Entradas</th><th>Salidas</th><th>Saldo</th></tr></thead>
-                <tbody><tr v-for="(row,index) in classified" :key="index"><td>{{ row.method.description }}</td><td>{{ row.destination_label }}</td><td>{{ row.currency_type_id }}</td><td>{{ row.opening | DecimalText }}</td><td>{{ row.income | DecimalText }}</td><td>{{ row.egress | DecimalText }}</td><td>{{ row.balance | DecimalText }}</td></tr></tbody>
+                <tbody><tr v-for="(row,index) in classified" :key="index"><td>{{ row.method.description }}<br><small>{{ row.method_kind_label }}</small></td><td>{{ row.destination_label }}</td><td>{{ row.currency_type_id }}</td><td>{{ row.opening | DecimalText }}</td><td>{{ row.income | DecimalText }}</td><td>{{ row.egress | DecimalText }}</td><td>{{ row.balance | DecimalText }}</td></tr></tbody>
             </table>
         </div>
         <!-- ######## FIN CLASIFICACION DE COBROS Y CAJA ######## -->

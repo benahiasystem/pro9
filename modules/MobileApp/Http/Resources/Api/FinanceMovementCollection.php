@@ -20,28 +20,32 @@ class FinanceMovementCollection extends ResourceCollection
             $payment = $row->payment;
             if (!$payment) return null;
 
+            // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+            $movement = \App\Services\Payments\Movement::row($row);
+            $legacy = !$movement && ($row->report_context['version'] ?? null) !== 2
+                && !isset($row->report_context['reversal']) && !$payment->reversed_at
+                && !($payment instanceof \App\Models\Tenant\DocumentPayment && $payment->receipt_parent_id);
+            if (!$movement && !$legacy) return null;
             $is_transfer = $row->payment_type === TransferAccountPayment::class;
-            $amount = (float) ($is_transfer ? $payment->amount : $payment->payment);
             $document = $payment->associated_record_payment ?? null;
-
-            $receiptCurrency = $document->currency_type_id ?? 'VES';
-            $receiptRate = $document->exchange_rate_sale ?? 1;
-            if ($payment instanceof \App\Models\Tenant\DocumentPayment) {
-                $amount = $payment->reversed_at ? 0 : $payment->cash_received_amount;
-                $receiptCurrency = $payment->currency_type_id;
-                $receiptRate = $payment->exchange_rate;
+            $receiptCurrency = $movement['currency_type_id'] ?? null;
+            $amount_decimal = $movement['amount'] ?? null;
+            $amount_pen_exact = null;
+            $amount_pen_decimal = null;
+            if ($movement && $receiptCurrency === 'VES') {
+                $amount_pen_exact = \App\Support\Exact\Decimal::of($movement['calculation_snapshot']['values']['amount']);
+            } elseif ($movement && $receiptCurrency === 'USD' && !$is_transfer
+                && ($document->currency_type_id ?? null) === 'VES' && $payment->getRawOriginal('exchange_rate') !== null) {
+                $rate = \App\Support\Exact\Decimal::of($payment->getRawOriginal('exchange_rate'));
+                if ($rate->isPositive()) {
+                    $amount_pen_exact = \App\Support\Exact\Decimal::convert(
+                        $movement['calculation_snapshot']['values']['amount'], 'USD', 'VES', $payment->getRawOriginal('exchange_rate'));
+                }
             }
-            $amount_pen = abs($amount);
-            // ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
-            if ($receiptCurrency === 'USD') {
-                $amount_pen = round(abs($amount) * (float) $receiptRate, 2);
-            }
-            // ######## FIN MIGRACIÓN MONEDA VENEZUELA ########
-
-            // Transferencias: monto positivo = banco origen (salida), negativo = destino (entrada)
-            $type_movement = $is_transfer
-                ? ($amount < 0 ? 'input' : 'output')
-                : $row->type_movement;
+            if ($amount_pen_exact !== null) $amount_pen_decimal = \App\Support\Exact\Decimal::represent($amount_pen_exact);
+            $type_movement = $movement ? ($movement['direction'] === 'income' ? 'input' : 'output')
+                : ($is_transfer ? null : $row->type_movement);
+            // ######## FIN MONEDA DEL MEDIO DE COBRO ########
 
             // Fecha y hora del movimiento
             $date = null;
@@ -92,9 +96,11 @@ class FinanceMovementCollection extends ResourceCollection
             // Detalle (solo gastos, ingresos y prestamos, como la web)
             $items = [];
             if (in_array($instance_type, ['expense', 'income', 'bank_loan_payment']) && $document) {
+                // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
                 $items = collect($document->items ?? [])
-                    ->map(fn($item) => ['description' => $item->description])
+                    ->map(fn($item) => ['description' => data_get($item, 'description')])
                     ->values();
+                // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
             }
 
             // Registro origen accionable desde la app (PDF + anular): solo income/expense
@@ -121,15 +127,18 @@ class FinanceMovementCollection extends ResourceCollection
                 'number_full' => $number_full,
                 'person_name' => $person_name ?: null,
                 'person_number' => $person_number ?: null,
-                'payment_method_type_description' => optional($method)->description,
+                'payment_method_type_description' => $movement['method']['description'] ?? optional($method)->description,
                 'destination' => [
                     'type' => $row->destination_type === Cash::class ? 'cash' : 'bank',
                     'id' => $row->destination_id,
                     'name' => $row->destination_description,
                 ],
                 'currency_type_id' => $receiptCurrency,
-                'amount' => round(abs($amount), 2),
-                'amount_pen' => $amount_pen,
+                'amount' => $amount_decimal === null ? null : (float) \App\Support\Exact\Decimal::represent($movement['calculation_snapshot']['values']['amount'], 2, true),
+                'amount_decimal' => $amount_decimal,
+                'amount_pen' => $amount_pen_exact === null ? null : (float) \App\Support\Exact\Decimal::represent($amount_pen_exact, 2, true),
+                'amount_pen_decimal' => $amount_pen_decimal,
+                'calculation_snapshot' => $movement['calculation_snapshot'] ?? null,
                 'reference' => $payment->reference ?? null,
                 'items' => $items,
                 'record' => $record,

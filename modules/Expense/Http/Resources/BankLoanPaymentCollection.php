@@ -20,8 +20,8 @@ class BankLoanPaymentCollection extends ResourceCollection
             return [
                 'id' => $row->id,
                 'date_of_payment' => $row->date_of_payment->format('d/m/Y'),
-                'expense_method_type_description' => ($row->payment_method_type)?$row->payment_method_type->description:null,
-                'destination_description' => ($row->global_payment) ? $row->global_payment->destination_description:null,
+                'expense_method_type_description' => \App\Services\Payments\ReceiptPresentation::method($row),
+                'destination_description' => \App\Services\Payments\ReceiptPresentation::destination($row),
                 'reference' => $row->reference,
                 // 'filename' => ($row->payment_file) ? $row->payment_file->filename:null,
                 'payment' => $row->payment,

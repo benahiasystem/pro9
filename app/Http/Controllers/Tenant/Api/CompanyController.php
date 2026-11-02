@@ -61,8 +61,9 @@ class CompanyController extends Controller
             ->get()
             ->map(fn ($row) => $this->transformCustomer($row))
             ->values();
-        $payment_method_types = PaymentMethodType::active()->NotCredit()->
-        where('id', '!=', '07')->get();
+        // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+        $payment_method_types = PaymentMethodType::active()->whereIn('collection_kind', ['cash', 'account'])->get();
+        // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
 
         $payment_destinations = $this->getPaymentDestinations();
         return [

@@ -55,9 +55,25 @@ class BankAccountController extends Controller
     public function store(BankAccountRequest $request)
     {
         $id = $request->input('id');
-        $bank_account = BankAccount::firstOrNew(['id' => $id]);
-        $bank_account->fill($request->all());
-        $bank_account->save();
+        // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+        \DB::connection('tenant')->transaction(function () use ($id, $request) {
+            $bank_account = $id ? BankAccount::whereKey($id)->lockForUpdate()->firstOrFail() : new BankAccount();
+            if ($bank_account->exists && $request->input('currency_type_id') !== $bank_account->currency_type_id) {
+                $hasTransfers = \App\Models\Tenant\TransferAccountPayment::query()->where(function ($query) use ($bank_account) {
+                    $query->where(fn ($query) => $query->where('origin_type', BankAccount::class)->where('origin_id', $bank_account->id))
+                        ->orWhere(fn ($query) => $query->where('destiny_type', BankAccount::class)->where('destiny_id', $bank_account->id));
+                })->exists();
+                if (!$bank_account->exactValue('initial_balance')->isZero() || $bank_account->global_destination()->exists()
+                    || $hasTransfers || $bank_account->bank_loan()->exists()) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'currency_type_id' => 'No se puede cambiar la moneda de una cuenta con saldo inicial o movimientos. Registre otra cuenta.',
+                    ]);
+                }
+            }
+            $bank_account->fill($request->all());
+            $bank_account->save();
+        });
+        // ######## FIN MONEDA DEL MEDIO DE COBRO ########
 
         return [
             'success' => true,

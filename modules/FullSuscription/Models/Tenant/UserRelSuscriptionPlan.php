@@ -460,6 +460,13 @@ use App\Http\Controllers\Tenant\SaleNoteController;
          */
         public function calculateStatus(): string
         {
+            if (in_array($this->subscription_status, [self::STATUS_FINISHED, self::STATUS_CANCELED, 'cancelled'], true)) {
+                return 'cancelada';
+            }
+            if ($this->subscription_status === self::STATUS_PAUSED) {
+                return 'pausada';
+            }
+
             $today = Carbon::today();
 
             // Período de prueba: entre trial_start_date (inclusive) y start_date (exclusive)

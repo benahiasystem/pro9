@@ -151,13 +151,12 @@
                 </div>
             </div>
         </div>
-        <div class="pos-toolbar__currency" v-if="currency_types.length > 1">
+        <div class="pos-toolbar__currency" v-if="currency_types.length && (currency_types.length > 1 || posRateUnavailable)">
             <div class="h-100 d-flex align-items-center">
                 <p class="exchange-currency m-0">
                     T.C.
-                    <span>Bs. {{ form.exchange_rate_sale }}</span> Cambiar
-                    Moneda
-                    <a
+                    <span>Bs. {{ posRateUnavailable ? 'No disponible' : form.exchange_rate_sale }}</span> <button v-if="currency_types.length && posRateUnavailable" type="button" class="btn btn-sm btn-default" @click="changeExchangeRate">Actualizar tasa</button> <span v-if="currency_types.length > 1">Cambiar Moneda</span>
+                    <a v-if="currency_types.length > 1"
                         class="btn btn-sm btn-default"
                         @click="selectCurrencyType"
                     >
@@ -849,6 +848,7 @@
                                     type="button"
                                     class="pos-qty__btn"
                                     title="Quitar una unidad"
+                                    :disabled="posRateUnavailable"
                                     @click="changeCartQuantity(item, index, -1)"
                                 >
                                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l14 0" /></svg>
@@ -857,6 +857,7 @@
                                     class="pos-qty__input"
                                     inputmode="decimal"
                                     v-model="item.item.aux_quantity"
+                                    :disabled="posRateUnavailable"
                                     @focus="valueInputSelect"
                                     @click.native="valueInputSelect"
                                     @input="
@@ -874,6 +875,7 @@
                                     type="button"
                                     class="pos-qty__btn"
                                     title="Agregar una unidad"
+                                    :disabled="posRateUnavailable"
                                     @click="changeCartQuantity(item, index, 1)"
                                 >
                                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 5l0 14" /><path d="M5 12l14 0" /></svg>
@@ -888,6 +890,7 @@
                                         </span>
                                         <el-input
                                             v-model="item.total"
+                                            :disabled="posRateUnavailable"
                                             size="mini"
                                             inputmode="decimal"
                                             @focus="valueInputSelect"
@@ -1448,6 +1451,8 @@
 <script>
 import {withoutDraftRetentions} from "@helpers/document-creation"
 import {documentTotals} from "../../../helpers/exact-document"
+import {isValidPosRate, restorePosDraftRate, refreshPosRate, ensurePosRate} from "../../../helpers/pos-exchange-rate"
+import {exactAmount, exactInput} from "../../../helpers/exchange-rate-math"
 
 import Keypress from "vue-keypress";
 import { calculateRowItem } from "../../../helpers/functions";
@@ -1541,6 +1546,7 @@ export default {
             row: {},
             user: {},
             form: {},
+            exchangeRateError: "",
             categories: [],
             colors: ["#1cb973", "#bf7ae6", "#fc6304", "#9b4db4", "#77c1f3"],
             pagination: {},
@@ -1607,6 +1613,9 @@ export default {
         await this.restoreViewPreference();
     },
     computed: {
+        posRateUnavailable() {
+            return !isValidPosRate(this.form.exchange_rate_sale);
+        },
         layout_mode() {
             const cols = parseInt(this.configuration.colums_grid_item, 10);
             switch (cols) {
@@ -1703,7 +1712,9 @@ export default {
                 this.search_item_by_barcode = true;
             } },
         changeRowTotal(index) {
+            if (!ensurePosRate(this)) return;
             const item = this.form.items[index];
+            const enteredTotal = item.total;
             let newTotal = parseFloat(item.total);
             let validated = false
 
@@ -1729,13 +1740,21 @@ export default {
                 return;
             }
 
-            const newUnitPrice = newTotal / quantity;
+            let exactPrice;
+            try {
+                exactPrice = exactAmount(validated ? String(newTotal) : String(enteredTotal)).dividedBy(String(item.quantity));
+            } catch (_) {
+                this.blurCalculateQuantity(index);
+                return;
+            }
+            const newUnitPrice = exactPrice.decimal();
+            item.price_input = {amount: exactPrice.fraction(), currency_type_id: this.form.currency_type_id, includes_iva: true};
             item.item.unit_price = newUnitPrice;
             item.item.sale_unit_price = item.item.has_igv
                 ? newUnitPrice
-                : newUnitPrice / (1 + this.percentage_igv);
+                : exactPrice.dividedBy(exactAmount(1).plus(this.percentage_igv)).decimal();
 
-            this.row = calculateRowItem(item, this.form.currency_type_id, 1, this.percentage_igv);
+            this.row = calculateRowItem(item, this.form.currency_type_id, this.form.exchange_rate_sale, this.percentage_igv);
             this.row["unit_type_id"] = item.unit_type_id;
             this.form.items[index] = this.row;
 
@@ -1959,8 +1978,14 @@ export default {
             let form_pos = localStorage.getItem("form_pos");
             form_pos = JSON.parse(form_pos);
             if (form_pos) {
-                this.form = withoutDraftRetentions(form_pos);
+                const currentRate = this.form.exchange_rate_sale;
+                this.form = restorePosDraftRate(withoutDraftRetentions(form_pos), currentRate);
                 this.initDateTimeIssue();
+                if (isValidPosRate(this.form.exchange_rate_sale)) {
+                    this.exchangeRateError = "";
+                } else {
+                    this.changeExchangeRate();
+                }
                 // this.calculateTotal()
             }
         },
@@ -2324,10 +2349,11 @@ export default {
             //  this.clickAddItem(this.form.items[index],index, true)
         },
         blurCalculateQuantity(index) {
+            if (!ensurePosRate(this)) return;
             this.row = calculateRowItem(
                 this.form.items[index],
                 this.form.currency_type_id,
-                1,
+                this.form.exchange_rate_sale,
                 this.percentage_igv
             );
 
@@ -2340,10 +2366,11 @@ export default {
             this.setFormPosLocalStorage();
         },
         blurCalculateQuantity2(index) {
+            if (!ensurePosRate(this)) return;
             this.row = calculateRowItem(
                 this.form.items[index],
                 this.form.currency_type_id,
-                1,
+                this.form.exchange_rate_sale,
                 this.percentage_igv
             );
             this.form.items[index] = this.row;
@@ -2466,7 +2493,7 @@ export default {
                 customer_id: null,
                 currency_type_id: "VES",
                 purchase_order: null,
-                exchange_rate_sale: 1,
+                exchange_rate_sale: null,
                 total_prepayment: 0,
                 total_charge: 0,
                 total_discount: 0,
@@ -2570,6 +2597,7 @@ export default {
             };
         },
         async clickPayment() {
+            if (!ensurePosRate(this)) return;
             if (!this.form.subtotal) {
                 //fix para agregar subtotal si no existe prop en json almacenado en local storage
                 this.form.subtotal = this.form.total;
@@ -2649,6 +2677,7 @@ export default {
             }
         },
         async clickAddItem(item, index, input = false) {
+            if (!ensurePosRate(this)) return;
             // El padre con variaciones no es vendible: se elige una variación en el modal
             if (item.variations_count > 0) {
                 this.selectedVariationParent = item;
@@ -3025,16 +3054,27 @@ export default {
          * Aumenta/disminuye en una unidad la cantidad de una fila del carrito.
          */
         changeCartQuantity(item, index, delta) {
-            const current = parseFloat(item.item.aux_quantity);
-            let quantity = (isNaN(current) ? 0 : current) + delta;
-
-            if (quantity < 1) {
-                if (delta < 0) return;
-                quantity = 1;
+            // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+            if (!ensurePosRate(this)) return;
+            // ######## FIN MONEDA DEL MEDIO DE COBRO ########
+            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            let quantity;
+            try {
+                quantity = exactAmount(exactInput(String(item.item.aux_quantity))).plus(delta);
+            } catch (_) {
+                return this.$message.error("Indique una cantidad válida.");
             }
-
-            item.item.aux_quantity = _.round(quantity, 4);
+            if (quantity.compare(1) < 0) {
+                if (delta < 0) return;
+                quantity = exactAmount(1);
+            }
+            try {
+                item.item.aux_quantity = exactInput(quantity.decimal());
+            } catch (_) {
+                return this.$message.error("Indique una cantidad válida.");
+            }
             return this.clickAddItem(item, index, true);
+            // ######## FIN CALCULOS EXACTOS PRO9 ########
         },
         /**
          * Vacía el carrito conservando el cliente seleccionado.
@@ -3082,11 +3122,7 @@ export default {
             // })
         },
         changeExchangeRate() {
-            this.searchExchangeRateByDate(this.form.date_of_issue).then(
-                response => {
-                    this.form.exchange_rate_sale = response;
-                }
-            );
+            return refreshPosRate(this);
         },
         async getTables() {
             await this.$http.get(`/${this.resource}/tables`).then(response => {
@@ -3442,11 +3478,13 @@ export default {
             });
         },
         selectCurrencyType() {
+            if (!ensurePosRate(this)) return;
             this.form.currency_type_id =
                 this.form.currency_type_id === "VES" ? "USD" : "VES";
             this.changeCurrencyType();
         },
         async changeCurrencyType() {
+            if (!ensurePosRate(this)) return;
             // console.log(this.form.currency_type_id)
             this.currency_type = await _.find(this.currency_types, {
                 id: this.form.currency_type_id

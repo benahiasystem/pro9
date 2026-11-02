@@ -26,7 +26,7 @@ class PurchasePaymentController extends Controller
     public function tables()
     {
         return [
-            'payment_method_types' => PaymentMethodType::active()->get(),
+            'payment_method_types' => PaymentMethodType::getActiveReceiptMethods(),
             'payment_destinations' => $this->getPaymentDestinations()
         ];
     }
@@ -75,8 +75,11 @@ class PurchasePaymentController extends Controller
 
     public function destroy($id)
     {
-        $item = PurchasePayment::findOrFail($id);
-        $item->delete();
+        // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+        DB::connection('tenant')->transaction(function () use ($id) {
+            PurchasePayment::withoutEagerLoads()->lockForUpdate()->findOrFail($id)->delete();
+        });
+        // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
 
         return [
             'success' => true,

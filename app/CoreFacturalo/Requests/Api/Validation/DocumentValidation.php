@@ -10,6 +10,13 @@ use App\Services\SalesCustomerIdentityPolicy;
 class DocumentValidation
 {
     public static function validation($inputs) {
+        // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+        $currency = $inputs['currency_type_id'] ?? null;
+        if (!in_array($currency, ['VES','USD'], true)
+            || !\Illuminate\Support\Facades\DB::connection('tenant')->table('cat_currency_types')->where('id', $currency)->where('active', 1)->exists()) {
+            \App\Services\Payments\Classification::error('currency_type_id', 'Seleccione una moneda documental activa y admitida.');
+        }
+        // ######## FIN MONEDA DEL MEDIO DE COBRO ########
         \App\Services\ExportInvoicePolicy::assertInput($inputs, false);
         \App\Services\ThirdPartyInvoicePolicy::assertInput($inputs, false);
         // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA

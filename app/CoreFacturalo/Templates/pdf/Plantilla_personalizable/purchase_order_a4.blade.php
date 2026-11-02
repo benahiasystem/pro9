@@ -259,7 +259,7 @@
             <td class="text-right align-top">
                 @if($row->discounts)
                     @php $total_discount_line = \App\Support\Exact\PdfAmounts::lineDiscount($row, false); @endphp
-                    {{ number_format($total_discount_line, $decimals) }}
+                    {{ \App\Support\Exact\Decimal::format($total_discount_line, $decimals) }}
                 @else
                 0.00
                 @endif

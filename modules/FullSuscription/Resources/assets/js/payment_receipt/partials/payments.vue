@@ -41,7 +41,9 @@
                                             <i class="fas fa-file-download"></i>
                                         </button>
                                     </td>
-                                    <td class="text-right">{{ row.payment }}</td>
+                                    <td class="text-right">{{ row.payment }} {{ document.currency_type_id }}
+                                        <small v-if="row.currency_type_id" class="d-block">{{ row.original_amount }} {{ row.currency_type_id }} recibido · tasa {{ row.exchange_rate }}</small>
+                                    </td>
                                     <td class="series-table-actions text-right">
                                         <button class="btn waves-effect waves-light btn-xs btn-danger"
                                                 type="button"
@@ -74,6 +76,8 @@
                                                            :label="option.description"
                                                            :value="option.id"></el-option>
                                             </el-select>
+                                            <receipt-currency-fields :row="row" :methods="payment_method_types"
+                                                :document-currency="document.currency_type_id" :document-rate="document.exchange_rate_sale" />
                                             <small v-if="row.errors.payment_method_type_id"
                                                    class="form-control-feedback"
                                                    v-text="row.errors.payment_method_type_id[0]"></small>
@@ -135,6 +139,7 @@
                                     <td class="series-table-actions text-right">
                                         <button class="btn waves-effect waves-light btn-xs btn-info"
                                                 type="button"
+                                                :disabled="row.loading"
                                                 @click.prevent="clickSubmit(index)">
                                             <i class="fa fa-check"></i>
                                         </button>
@@ -205,8 +210,12 @@
 // import {deletable} from '../../../../mixins/deletable'
 
 import {deletable} from "@mixins/deletable";
+import ReceiptCurrencyFields from "@components/ReceiptCurrencyFields.vue";
+import {exactInput, exactAmount, exactValue, appliedReceiptAmount} from "@helpers/exchange-rate-math";
+import {paymentValidationMessage} from "@helpers/payment-classification";
 
 export default {
+    components: {ReceiptCurrencyFields},
     props: ['showDialog', 'documentId'],
     mixins: [
         deletable
@@ -311,16 +320,24 @@ export default {
             this.fileList = []
         },
         clickSubmit(index) {
-            if (this.records[index].payment > parseFloat(this.document.total_difference)) {
+            const row = this.records[index];
+            if (row.loading) return;
+            let applied;
+            try {
+                row.payment = exactInput(String(row.payment));
+                applied = appliedReceiptAmount(row, this.document.currency_type_id);
+                if (exactAmount(row.payment).compare(0) <= 0 || applied.compare(0) <= 0) throw new Error('Indique un cobro positivo y liquidable en céntimos.');
+                row.payment = applied.final(2);
+            } catch (error) {
+                this.$message.error(error.message || 'Indique un importe y una tasa válidos.');
+                return;
+            }
+            if (applied.compare(exactValue(this.document, 'total_difference')) > 0) {
                 this.$message.error('El monto ingresado supera al monto pendiente de pago, verifique.');
                 return;
             }
-
-            let paid = false
-            if (this.records[index].payment == parseFloat(this.document.total_difference)) {
-                paid = true
-            }
-
+            const paid = applied.compare(exactValue(this.document, 'total_difference')) === 0;
+            row.loading = true;
 
             let form = {
                 id: this.records[index].id,
@@ -332,6 +349,9 @@ export default {
                 filename: this.records[index].filename,
                 temp_path: this.records[index].temp_path,
                 payment: this.records[index].payment,
+                currency_type_id: this.records[index].currency_type_id,
+                original_amount: this.records[index].original_amount,
+                exchange_rate: this.records[index].exchange_rate,
                 paid: paid
             };
             this.$http.post(`/${this.resource}`, form)
@@ -347,12 +367,16 @@ export default {
                     }
                 })
                 .catch(error => {
-                    if (error.response.status === 422) {
-                        this.records[index].errors = error.response.data;
+                    if (error.response && error.response.status === 422) {
+                        const data = error.response.data || {};
+                        row.errors = data.errors || (data.message && typeof data.message === 'object' ? data.message : data);
+                        const message = paymentValidationMessage(data);
+                        if (message) this.$message.error(message);
                     } else {
-                        console.log(error);
+                        this.$message.error(error.response?.data?.message || 'No se pudo registrar el cobro.');
                     }
                 })
+                .finally(() => { row.loading = false; })
         },
         // filterDocumentType(row){
         //

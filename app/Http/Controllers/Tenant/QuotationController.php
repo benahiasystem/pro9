@@ -237,7 +237,8 @@ class QuotationController extends Controller
             ->orWhere('id', auth()->user()->id)
             ->get();
         */
-        $sellers = User::GetSellers(false)->get();
+        $sellers = User::GetSellers(false)->get()
+            ->each(fn (User $seller) => $seller->makeHidden(['api_token', 'password']));
         $seller_id = auth()->user()->id;
 
         return compact('customers','enabled_discount_global' ,'establishments','global_discount_types',  'currency_types', 'discount_types', 'charge_types', 'configuration',
@@ -260,7 +261,8 @@ class QuotationController extends Controller
         $payment_method_types = PaymentMethodType::getPaymentMethodTypes();
         $payment_destinations = $this->getPaymentDestinations();
         // $sellers = User::GetSellers(true)->get();
-        $sellers = User::where('establishment_id', auth()->user()->establishment_id)->whereIn('type', ['seller', 'admin'])->orWhere('id', auth()->user()->id)->get();
+        $sellers = User::where('establishment_id', auth()->user()->establishment_id)->whereIn('type', ['seller', 'admin'])->orWhere('id', auth()->user()->id)->get()
+            ->each(fn (User $seller) => $seller->makeHidden(['api_token', 'password']));
 
         return compact('series', 'document_types_invoice', 'payment_method_types', 'payment_destinations', 'sellers');
     }
@@ -327,9 +329,13 @@ class QuotationController extends Controller
 
             $this->quotation = Quotation::create($data);
 
-            foreach ($data['items'] as $row) {
-                $this->quotation->items()->create($row);
+            // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+            if ($data['items']) {
+                \App\Support\Exact\CommercialCalculation::defer($this->quotation, function () use ($data) {
+                    foreach ($data['items'] as $row) $this->quotation->items()->create($row);
+                });
             }
+            // ######## FIN MONEDA DEL MEDIO DE COBRO ########
 
             $this->savePayments($this->quotation, $data['payments']);
 
@@ -356,19 +362,13 @@ class QuotationController extends Controller
             $configuration = Configuration::select('terms_condition')->first();
             $request['terms_condition'] = $this->getTermsCondition();
 
-            $this->quotation = Quotation::firstOrNew(['id' => $request['id']]);
+            // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+            $this->quotation = Quotation::withoutEagerLoads()->lockForUpdate()->findOrFail($request['id']);
+            $previousCurrency = $this->quotation->currency_type_id;
+            // ######## FIN MONEDA DEL MEDIO DE COBRO ########
             $this->quotation->fill($request->all());
             $this->quotation->customer = PersonInput::set($request['customer_id'], isset($request['customer_address_id']) ? $request['customer_address_id'] : null);
-            $this->quotation->items()->delete();
-
-            $this->deleteAllPayments($this->quotation->payments);
-
-            foreach ($request['items'] as $row) {
-
-                $this->quotation->items()->create($row);
-            }
-
-            $this->savePayments($this->quotation, $request['payments']);
+            $this->syncExistingPayments($this->quotation, $request['payments'], $previousCurrency, $request['items']);
 
             $this->setFilename();
         });
@@ -398,20 +398,35 @@ class QuotationController extends Controller
 
     public function duplicate(Request $request)
     {
-        // return $request->id;
-        $obj = Quotation::find($request->id);
-        $this->quotation = $obj->replicate();
-        $this->quotation->external_id = Str::uuid()->toString();
-        $this->quotation->state_type_id = '01';
-        $this->quotation->save();
+        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        DB::connection('tenant')->transaction(function () use ($request) {
+            $obj = Quotation::withoutEagerLoads()->lockForUpdate()->findOrFail($request->id);
+            $this->quotation = $obj->replicate();
+            $this->quotation->external_id = Str::uuid()->toString();
+            $this->quotation->state_type_id = '01';
+            $this->quotation->prepayments = [];
+            $this->quotation->total_prepayment = '0';
+            $this->quotation->discounts = array_values(array_filter((array) ($obj->discounts ?? []),
+                fn ($row) => !in_array(data_get($row, 'discount_type_id'), ['04','05'], true)));
+            $this->quotation->save();
 
-        foreach ($obj->items as $row) {
-            $new = $row->replicate();
-            $new->quotation_id = $this->quotation->id;
-            $new->save();
-        }
-
-        $this->setFilename();
+            \App\Support\Exact\CommercialCalculation::defer($this->quotation, function () use ($obj) {
+                foreach ($obj->items()->withoutEagerLoads()->lockForUpdate()->get() as $row) {
+                    $new = $row->replicate();
+                    $new->quotation_id = $this->quotation->id;
+                    $new->save();
+                    $snapshot = $row->calculation_snapshot;
+                    if ($snapshot) {
+                        $new->setExactValues(array_intersect_key($snapshot['values'], array_flip(\App\Support\Exact\Persistence::columns($new))));
+                        $new->calculation_snapshot = $snapshot;
+                        $new->saveQuietly();
+                    }
+                }
+            });
+            $this->quotation->refresh();
+            $this->setFilename();
+        });
+        // ######## FIN CALCULOS EXACTOS PRO9 ########
 
         return [
             'success' => true,
@@ -939,11 +954,63 @@ class QuotationController extends Controller
 
         foreach ($payments as $payment) {
 
-            PaymentMethodType::assertActiveForPayment($payment['payment_method_type_id'] ?? null);
-            $record_payment = $quotation->payments()->create($payment);
+            // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+            $values = \App\Services\Payments\ReceiptAmounts::forMethod($payment['payment_method_type_id'] ?? null, $quotation->currency_type_id, $quotation->exchange_rate_sale, $payment);
+            \App\Services\Payments\AppliedReceiptBalance::assertFits(\App\Services\Payments\AppliedReceiptBalance::values($quotation, false, true), $values);
+            $record_payment = $quotation->payments()->make(array_replace($payment, $values));
+            $record_payment->calculation_snapshot = $values['calculation_snapshot'];
+            $record_payment->save();
+            // ######## FIN MONEDA DEL MEDIO DE COBRO ########
 
             $this->createGlobalPayment($record_payment, $payment);
         }
+    }
+
+    /** Keep previously recorded movements and their frozen currency details intact. */
+    private function syncExistingPayments($quotation, array $payments, $previousCurrency, array $items): void
+    {
+        // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+        $new = \App\Services\Payments\ExistingReceipts::synchronize($quotation, $payments, $previousCurrency);
+        $quotation->save();
+        if ($items) {
+            \App\Support\Exact\CommercialCalculation::defer($quotation, function () use ($quotation, $items) {
+                // ######## INICIO CALCULOS EXACTOS PRO9 ########
+                // Reutilizar las partidas propias para preservar los operandos exactos
+                // que no cambiaron; el snapshot recibido del cliente no es autoridad.
+                $stored = $quotation->items()->withoutEagerLoads()->lockForUpdate()->get()->keyBy('id');
+                $kept = [];
+                foreach ($items as $row) {
+                    $id = $row['id'] ?? null;
+                    foreach (['price_input', 'quantity_input'] as $field) {
+                        if (($row[$field] ?? null) === null) unset($row[$field]);
+                    }
+                    unset($row['calculation_snapshot'], $row['quotation_id']);
+                    if ($id !== null && $id !== '') {
+                        if (!$stored->has($id) || isset($kept[(string) $id])) {
+                            \App\Services\Fiscal\FiscalAmounts::error('items', 'La partida no pertenece a esta cotización o está repetida.');
+                        }
+                        $line = $stored->get($id);
+                        unset($row['id']);
+                        $line->fill($row);
+                        $line->save();
+                        $kept[(string) $id] = true;
+                    } else {
+                        unset($row['id']);
+                        $line = $quotation->items()->create($row);
+                        $kept[(string) $line->id] = true;
+                    }
+                }
+                $quotation->items()->whereNotIn('id', array_keys($kept))->delete();
+                // ######## FIN CALCULOS EXACTOS PRO9 ########
+            });
+        } else {
+            $quotation->items()->delete();
+        }
+        if (\App\Services\Payments\AppliedReceiptBalance::values($quotation, false, true)['total_difference']->isNegative()) {
+            \App\Services\Payments\Classification::error('total', 'El total no puede ser menor que los cobros aplicados.');
+        }
+        $this->savePayments($quotation, $new);
+        // ######## FIN MONEDA DEL MEDIO DE COBRO ########
     }
 
     public function changed($id)

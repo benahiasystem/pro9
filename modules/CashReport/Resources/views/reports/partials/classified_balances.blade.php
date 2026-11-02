@@ -1,5 +1,5 @@
 {{-- ######## INICIO CLASIFICACION DE COBROS Y CAJA ######## --}}
-<h3>Efectivo físico · VES / USD</h3>
+<h3>Efectivo físico del turno completo · VES / USD</h3>
 <table class="grid">
     <thead><tr><th>Moneda</th><th>Apertura</th><th>Entradas</th><th>Salidas</th><th>Saldo final</th></tr></thead>
     <tbody>
@@ -17,7 +17,7 @@
     <thead><tr><th>Medio</th><th>Destino</th><th>Moneda</th><th>Entradas</th><th>Salidas</th></tr></thead>
     <tbody>
     @foreach($classified['groups'] as $group)
-        <tr><td>{{ $group['method']['description'] }}</td><td>{{ $group['destination_label'] }}</td><td>{{ $group['currency_type_id'] }}</td>
+        <tr><td>{{ $group['method']['description'] }}<br><small>{{ \App\Services\Payments\Classification::kindLabel($group['method']['collection_kind'] ?? null) }}</small></td><td>{{ $group['destination_label'] }}</td><td>{{ $group['currency_type_id'] }}</td>
             <td data-type="s" style="mso-number-format:'\@'">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\Decimal::readRequired($group,'income')) }}</td>
             <td data-type="s" style="mso-number-format:'\@'">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\Decimal::readRequired($group,'egress')) }}</td></tr>
     @endforeach

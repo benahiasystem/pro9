@@ -1,9 +1,9 @@
 {{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 <?php
-$balance = 0;
-$final_balance = 0;
-$total_input = 0;
-$total_output = 0;
+// ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+$currencyTotals = [];
+$unknownCurrency = false;
+// ######## FIN MONEDA DEL MEDIO DE COBRO ########
 $i = 0
 ?>
     <!DOCTYPE html>
@@ -88,6 +88,9 @@ $i = 0
         </tr>
     </table>
 </div>
+{{-- ######## INICIO CLASIFICACION DE COBROS Y CAJA ######## --}}
+<p>El saldo se acumula por moneda en orden de registro dentro del período consultado.</p>
+{{-- ######## FIN CLASIFICACION DE COBROS Y CAJA ######## --}}
 @if(!empty($records))
     <div class="">
         <div class=" ">
@@ -114,31 +117,24 @@ $i = 0
                 @foreach($records as $value)
                     <tr>
                     <?php
+                    // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
                     $i++;
-                    $document_type = '';
-                    $items = [];
                     $document_type = $value['document_type'] ?? '';
                     $destination_array = $value['destination_array'] ?? [];
-
                     $destination_name = $value['destination_name'] ?? '';
-                    $payments = !isset($value['payments']) ? 0 : (float)$value['payments'];
-                    $type_movement = $value['type_movement'] ?? '';
-                    $destination = $value['destination_description'] ?? '';
-                    $balance = ($type_movement == 'input') ? $balance + $payments : $balance - $payments;
-
-                    $total_input += ($type_movement == 'input') ? $payments : 0;
-                    $total_output += ($type_movement == 'output') ? $payments : 0;
-                    /*
-
-                    if(in_array($value->instance_type, ['expense', 'income'])){
-
-                        $items = $value->payment->associated_record_payment->items->transform(function($row, $key) {
-                            return [
-                                'description' => $row->description
-                            ];
-                        });
-                    }
-                    */
+                    $reference = $value['reference'] ?? '';
+                    $items = $value['items'] ?? [];
+                    $currency = $value['currency_type_id'];
+                    $symbol = $currency === 'VES' ? 'Bs.' : ($currency === 'USD' ? '$' : '');
+                    $type_movement = $value['type_movement'];
+                    $fraction = $value['calculation_snapshot']['values']['amount'] ?? ($value['payments'] ?? null);
+                    $amount = $fraction === null ? null : \App\Support\Exact\Decimal::of($fraction);
+                    if ($amount !== null && in_array($currency, ['VES', 'USD'], true)) {
+                        if (!isset($currencyTotals[$currency])) $currencyTotals[$currency] = ['input' => \App\Support\Exact\Decimal::of(0), 'output' => \App\Support\Exact\Decimal::of(0)];
+                        $currencyTotals[$currency][$type_movement] = $currencyTotals[$currency][$type_movement]->plus($amount);
+                    } else { $unknownCurrency = true; }
+                    $formatted = $amount === null ? '-' : \App\Support\Exact\Decimal::format($amount, 2, '.', '');
+                    // ######## FIN MONEDA DEL MEDIO DE COBRO ########
                     ?>
 
 
@@ -153,27 +149,32 @@ $i = 0
                                 <p>- {{ $item['description'] }}</p>
                             @endforeach
                         </td>
-                        <td class="celda">{{$value['currency_type_id']}}</td>
+                        <td class="celda">{{ $value['currency_type_id'] ?: 'Sin moneda' }}</td>
                         <td class="celda">{{ $destination_name }}</td>
                         <td class="celda"> {{$destination_array['cci'] . " "}} &nbsp;</td>
                         <td class="celda">{{$value['instance_type_description']}}</td>
 
-                        <td class="celda"> {{ ($type_movement == 'input') ? "Bs.".number_format($payments, 2, ".", "") : '-' }}</td>
-                        <td class="celda"> {{ ($type_movement == 'output') ? "Bs.".number_format($payments, 2, ".", "") : '-' }}</td>
-                        <td class="celda">Bs.{{ $balance }}</td>
+                        <td class="celda">{{ $type_movement === 'input' ? $symbol.$formatted : '-' }}</td>
+                        <td class="celda">{{ $type_movement === 'output' ? $symbol.$formatted : '-' }}</td>
+                        <td class="celda">{{ $symbol.$value['balance'] }}</td>
                     </tr>
 
 
                 @endforeach
                 </tbody>
                 <tfoot>
+                @foreach($currencyTotals as $currency => $totals)
+                @php $symbol = $currency === 'VES' ? 'Bs.' : '$'; @endphp
                 <tr>
-                    <td colspan="8"
-                        class="celda"></td>
-                    <td class="celda">Bs.{{$total_input}}</td>
-                    <td class="celda">Bs.{{$total_output}}</td>
-                    <td class="celda">Bs.{{$total_input - $total_output}}</td>
+                    <td colspan="10" class="celda">Totales {{ $currency }}</td>
+                    <td class="celda">{{ $symbol.\App\Support\Exact\Decimal::format($totals['input'], 2, '.', '') }}</td>
+                    <td class="celda">{{ $symbol.\App\Support\Exact\Decimal::format($totals['output'], 2, '.', '') }}</td>
+                    <td class="celda">{{ $symbol.\App\Support\Exact\Decimal::format($totals['input']->minus($totals['output']), 2, '.', '') }}</td>
                 </tr>
+                @endforeach
+                @if($unknownCurrency)
+                <tr><td colspan="13" class="celda">Los movimientos sin moneda no se incluyen en los totales.</td></tr>
+                @endif
                 </tfoot>
             </table>
         </div>

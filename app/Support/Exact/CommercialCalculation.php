@@ -53,6 +53,14 @@ final class CommercialCalculation
             if (!$model->isDirty($field)) $preserved[$field]=$model->exactValue($field);
         }
         $line = LineCalculation::calculate($input, $affectation === '10' ? \App\Support\Venezuela\Localization::exactTaxPercentage() : '0', $preserved);
+        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // La procedencia interna del precio de tienda sigue siendo válida si el
+        // precio no cambió; nunca se toma del snapshot enviado por el navegador.
+        if ($model->exists && !$model->isDirty(['unit_price','price_input'])
+            && isset($model->calculation_snapshot['inputs']['storefront_catalog_price'])) {
+            $line['calculation_snapshot']['inputs']['storefront_catalog_price'] = $model->calculation_snapshot['inputs']['storefront_catalog_price'];
+        }
+        // ######## FIN CALCULOS EXACTOS PRO9 ########
         foreach (Persistence::columns($model) as $field) if (isset($line[$field])) $model->$field = $line[$field];
         $model->calculation_snapshot = $line['calculation_snapshot'];
         $model->discounts = $line['discounts'] ?? [];

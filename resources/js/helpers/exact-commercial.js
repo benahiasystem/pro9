@@ -1,5 +1,6 @@
 import {exactAmount, exactInput, exactValue, exactSum, allocateExact} from './exchange-rate-math'
 import {documentTotals} from './exact-document'
+import {isRecordedReceipt} from './payment-classification'
 
 // ######## INICIO CALCULOS EXACTOS PRO9 ########
 // Rebuild headers from line fractions. Calling this repeatedly never compounds adjustments.
@@ -74,11 +75,12 @@ export function prepareCommercialPayments(payable, rows) {
     const total = exactSum(received)
     let change = total.minus(target)
     if (change.compare(0) < 0) change = exactAmount('0')
-    const cash = exactSum(received.filter((_, index) => (inputs[index].collection_kind ? inputs[index].collection_kind === 'cash' : ['01','10'].includes(inputs[index].payment_method_type_id))))
+    if (inputs.some(row => !['cash', 'account'].includes(row.collection_kind))) throw new Error('Seleccione un método de pago clasificado')
+    const cash = exactSum(received.filter((_, index) => inputs[index].collection_kind === 'cash' && !isRecordedReceipt(inputs[index])))
     if (change.compare(cash) > 0) throw new Error('El exceso sólo puede devolverse desde el efectivo recibido')
     let remaining = change
     const payments = inputs.map((row, index) => {
-        const returned = (row.collection_kind ? row.collection_kind === 'cash' : ['01','10'].includes(row.payment_method_type_id))
+        const returned = row.collection_kind === 'cash' && !isRecordedReceipt(row)
             ? (remaining.compare(received[index]) < 0 ? remaining : received[index]) : exactAmount('0')
         remaining = remaining.minus(returned)
         return {...row, payment: received[index].minus(returned).decimal(), change: returned.decimal()}

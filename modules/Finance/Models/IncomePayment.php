@@ -16,6 +16,12 @@ class IncomePayment extends ModelTenant
         'income_id',
         'date_of_payment',
         'payment_method_type_id',
+        'currency_type_id',
+        'original_amount',
+        'exchange_rate',
+        'exchange_rate_source',
+        'exchange_rate_date',
+        'payment_method_snapshot',
         'reference',
         'change',
         'payment',
@@ -23,6 +29,8 @@ class IncomePayment extends ModelTenant
 
     protected $casts = [
         'date_of_payment' => 'date',
+        'exchange_rate_date' => 'date',
+        'payment_method_snapshot' => 'array',
     ];
 
     public function payment_method_type()
@@ -68,7 +76,7 @@ class IncomePayment extends ModelTenant
      */
     public function scopeFilterCashPaymentWithoutDestination($query)
     {
-        return $query->where('payment_method_type_id', PaymentMethodType::CASH_PAYMENT_ID);
+        return \App\Services\Payments\Classification::filterRecorded($query, 'cash');
     }
 
 

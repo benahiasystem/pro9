@@ -7,7 +7,7 @@ const shared = require('./helpers/load-module.cjs')(path.resolve('resources/js/m
 function load(file, globals = {}) {
  const parsed = compiler.parseComponent(fs.readFileSync(file,'utf8')), exports = {};
  vm.runInNewContext(babel.transformSync(parsed.script.content,{configFile:false,babelrc:false,plugins:['@babel/plugin-transform-modules-commonjs']}).code,
- {exports, moment, _, require: name => require('./support/exact-runtime.cjs')(name) || (name === '@mixins/document-pdf' ? require('./helpers/load-module.cjs')(require('node:path').resolve('resources/js/mixins/document-pdf.js')) : name === '@mixins/document-email' ? shared : name.includes('vuex') ? {mapActions:()=>({}),mapState:()=>({})} : {}), ...globals});
+ {exports, moment, _, require: name => require('./support/exact-runtime.cjs')(name) || (name === '@helpers/payment-classification' ? require('./helpers/load-module.cjs')(path.resolve('resources/js/helpers/payment-classification.js')) : name === '@mixins/document-pdf' ? require('./helpers/load-module.cjs')(require('node:path').resolve('resources/js/mixins/document-pdf.js')) : name === '@mixins/document-email' ? shared : name.includes('vuex') ? {mapActions:()=>({}),mapState:()=>({})} : {}), ...globals});
  assert.deepEqual(compiler.compile(parsed.template.content).errors, []);
  return exports.default;
 }
@@ -103,6 +103,15 @@ test('POS credit clears suggested cash and keeps partial real collections enable
  ctx.form.payments=[{payment:20}];ctx.setDifference(-80);assert.equal(ctx.button_payment,false);assert.equal(ctx.form.payments[0].payment,20);
  ctx.changeFiscalPaymentCondition('01');assert.equal(ctx.button_payment,true);assert.equal(events.length,2);
 });
+test('POS does not treat a reclassified method 09 as credit',()=>{
+ const payment=load('resources/js/views/tenant/pos/partials/payment.vue');
+ const ctx={form:{payment_condition_id:'01'},payment_method_type_id:'09'};
+ payment.methods.setDifference.call(ctx,-10);
+ assert.equal(ctx.button_payment,true);
+ ctx.form.payment_condition_id='02';
+ payment.methods.setDifference.call(ctx,-10);
+ assert.equal(ctx.button_payment,false);
+});
 for(const file of ['fast_payment.vue','fast_payment_garage.vue']) {
  test(`${file} preserves credit when reopening payments and changing real amounts`,async()=>{
   const payment=load('resources/js/views/tenant/pos/partials/'+file),events=[];
@@ -125,6 +134,38 @@ for(const file of ['multiple_payment.vue','multiple_payment_garage.vue']) {
   ctx.payments=[{payment:30}];ctx.create();assert.equal(ctx.draftPayments[0].payment,30);ctx.clickCancel(0);ctx.close();assert.equal(ctx.payments[0].payment,30);
  });
 }
+for(const file of ['multiple_payment.vue','multiple_payment_garage.vue']) {
+ test(`${file} defaults to the current classification and a compatible destination`,()=>{
+  const component=load('resources/js/views/tenant/pos/partials/'+file)
+  const ctx={currencyTypeId:'USD',payment_method_types:[{id:'01',collection_kind:'account',currency_type_id:'USD',is_active:true},{id:'13',collection_kind:'cash',currency_type_id:'VES',is_active:true}],payment_destinations:[{id:'cash'},{id:2,currency_type_id:'USD'}]}
+  const missing=component.methods.buildPaymentRow.call(ctx,'10');assert.equal(missing.payment_method_type_id,null);assert.equal(missing.payment_destination_id,null)
+  ctx.payment_method_types.push({id:'10',collection_kind:'cash',currency_type_id:'USD',is_active:true},{id:'04',collection_kind:'cash',currency_type_id:'USD',is_active:true})
+  const cash=component.methods.buildPaymentRow.call(ctx,'10');assert.equal(cash.payment_method_type_id,'04');assert.equal(cash.payment_destination_id,'cash')
+  ctx.currencyTypeId='VES';assert.equal(component.methods.buildPaymentRow.call(ctx,'10').payment_method_type_id,'13')
+ })
+}
+for(const file of ['payment.vue','fast_payment.vue','fast_payment_garage.vue']) {
+ test(`${file} initializes the default using the document currency`,()=>{
+  const component=load('resources/js/views/tenant/pos/partials/'+file)
+  const ctx={form:{currency_type_id:'USD',total:'100'}, collectionTarget:'100',
+   payment_method_types:[{id:'01',is_active:true,collection_kind:'account',currency_type_id:'USD'},
+    {id:'04',is_active:true,collection_kind:'cash',currency_type_id:'USD'},
+    {id:'07',is_active:true,collection_kind:'cash',currency_type_id:'VES'}],getTotal:()=> '100',initFormCashDocument:()=>{}}
+  component.methods.initFormPayment.call(ctx);assert.equal(ctx.form_payment.payment_method_type_id,'04')
+  ctx.form.currency_type_id='VES';component.methods.initFormPayment.call(ctx);assert.equal(ctx.form_payment.payment_method_type_id,'07')
+  ctx.form.currency_type_id='EUR';component.methods.initFormPayment.call(ctx);assert.equal(ctx.form_payment.payment_method_type_id,null)
+ })
+}
+for(const file of ['payment.vue','fast_payment.vue']) {
+ test(`${file} waits for the payment catalog before initializing`,async()=>{
+  const component=load('resources/js/views/tenant/pos/partials/'+file);let resolve
+  const ctx={resource:'pos',$http:{get:()=>new Promise(done=>{resolve=done})},filterSeries(){},setConfigGlobalDiscountType(){},setDefaultDocumentType(){}}
+  const pending=component.methods.getTables.call(ctx)
+  assert.equal(typeof pending.then,'function')
+  resolve({data:{series:[],payment_method_types:[{id:'13',collection_kind:'account'}],global_discount_types:[]}})
+  await pending;assert.equal(ctx.payment_method_types[0].id,'13')
+ })
+}
 for(const file of ['payment.vue','fast_payment.vue','fast_payment_garage.vue']) {
  test(`${file} restores credit amounts from actual draft receipts instead of the invoice total`,()=>{
   const draft={payment_condition_id:'02',payments:[{payment:20}]};
@@ -134,3 +175,195 @@ for(const file of ['payment.vue','fast_payment.vue','fast_payment_garage.vue']) 
   assert.equal(ctx.form.payment_condition_id,'02');assert.equal(ctx.amount,'20');assert.equal(ctx.enter_amount,'20');assert.equal(ctx.form.payments[0].payment,20);
  });
 }
+
+// ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+for (const file of ['payment.vue','fast_payment.vue','fast_payment_garage.vue']) {
+ test(`${file} updates its balance when a currency component changes the applied receipt`, async()=>{
+  const Vue=require('vue')
+  const summary=require('./helpers/load-module.cjs')(path.resolve('resources/js/mixins/payment-settlement-summary.js')).default
+  const component=load('resources/js/views/tenant/pos/partials/'+file)
+  const source=fs.readFileSync('resources/js/views/tenant/pos/partials/'+file,'utf8')
+  assert.match(source,/mixins:\s*\[paymentSettlementSummary,/)
+  const instance=new Vue({mixins:[summary],data:()=>({form:{payment_condition_id:'01',total:'100',payments:[{payment:'100',currency_type_id:'USD',original_amount:'33.33',exchange_rate:'3'}]},
+    amount:'100',enter_amount:'100',difference:'0',button_payment:false}),
+   methods:{inputAmount:component.methods.inputAmount,setDifference:component.methods.setDifference || (()=>{}),
+    getTotal:()=>100,lStoPayment:()=>{}}})
+  instance.$eventHub={$emit:()=>{}}
+  const fields=load('resources/js/views/tenant/documents/partials/igtf_fields.vue')
+  const fieldContext={payment:instance.form.payments[0],documentCurrency:'VES',error:'',lastApplied:null,evaluate:()=>{}}
+  fields.methods.convertPrincipal.call(fieldContext)
+  await Vue.nextTick()
+  assert.equal(instance.amount,'99.99')
+  assert.equal(instance.difference,'-0.01')
+  assert.equal(instance.button_payment,true)
+  assert.equal(instance.enter_amount,'100')
+  instance.form.payments.push({payment:'0.01'})
+  await Vue.nextTick()
+  assert.equal(instance.amount,'100')
+  assert.equal(instance.difference,'0')
+  assert.equal(instance.button_payment,false)
+  instance.form.payment_condition_id='02'
+  instance.form.payments=[{payment:'20'}]
+  await Vue.nextTick()
+  assert.equal(instance.amount,'20')
+  assert.equal(instance.difference,'-80')
+  assert.equal(instance.button_payment,false)
+  instance.$destroy()
+ })
+}
+// ######## FIN MONEDA DEL MEDIO DE COBRO ########
+
+test('POS does not describe bank or unclassified excess as cash change', () => {
+  const summary = require('./helpers/load-module.cjs')(path.resolve('resources/js/mixins/payment-settlement-summary.js')).default
+  const label = summary.computed.settlementDifferenceLabel
+  const ctx = {difference:'10', form:{currency_type_id:'VES',payments:[{payment_method_type_id:'01',payment:'110',currency_type_id:'USD'}]},
+    payment_method_types:[{id:'01',collection_kind:'account',currency_type_id:'USD'},{id:'04',collection_kind:'cash',currency_type_id:'VES'}]}
+  assert.equal(label.call(ctx),'Exceso')
+  ctx.form.payments=[{payment_method_type_id:null,payment:'110'}]
+  assert.equal(label.call(ctx),'Exceso')
+  ctx.form.payments=[{payment_method_type_id:'04',payment:'10',currency_type_id:'VES'}]
+  assert.equal(label.call(ctx),'Vuelto')
+  ctx.difference='-5'
+  assert.equal(label.call(ctx),'Faltante')
+})
+
+test('POS previews exact cash change in each received currency in server allocation order', () => {
+  const preview = require('./helpers/load-module.cjs')(path.resolve('resources/js/mixins/payment-settlement-summary.js')).previewSettlementDifference
+  const methods = [{id:'10',collection_kind:'cash',currency_type_id:'USD'}, {id:'04',collection_kind:'cash',currency_type_id:'VES'}, {id:'01',collection_kind:'account',currency_type_id:'USD'}]
+  const form = {currency_type_id:'VES',payments:[{payment_method_type_id:'10',currency_type_id:'USD',payment:'200',original_amount:'2',exchange_rate:'100'}]}
+  assert.equal(preview('100',form,methods,'Bs.').text, 'USD 1.00')
+  assert.equal(preview('100',form,methods,'Bs.').label, 'Vuelto')
+  assert.equal(preview('68',{currency_type_id:'VES',payments:[{payment_method_type_id:'10',currency_type_id:'USD',payment:'300',original_amount:'30',exchange_rate:'10'}]},methods,'Bs.').text,'USD 6.80')
+  assert.equal(preview('1', {...form,payments:[{...form.payments[0],exchange_rate:'300'}]},methods,'Bs.').label,'Exceso')
+  form.payments.push({payment_method_type_id:'04',currency_type_id:'VES',payment:'10',original_amount:'10',exchange_rate:'100'})
+  assert.equal(preview('205',form,methods,'Bs.').text, 'USD 2.00 · Bs. 5.00')
+  assert.equal(preview('211',form,methods,'Bs.').label,'Exceso')
+  assert.equal(preview('-5',form,methods,'Bs.').text,'Bs. 5.00')
+  const inverse={currency_type_id:'USD',payments:[{payment_method_type_id:'04',currency_type_id:'VES',payment:'2',original_amount:'200',exchange_rate:'100'}]}
+  assert.equal(preview('1',inverse,methods,'$').text,'Bs. 100.00')
+})
+
+test('POS never previews change from a previously recorded or reused cash receipt', () => {
+  const preview = require('./helpers/load-module.cjs')(path.resolve('resources/js/mixins/payment-settlement-summary.js')).previewSettlementDifference
+  const methods = [{id:'04',collection_kind:'cash',currency_type_id:'VES'}, {id:'01',collection_kind:'account',currency_type_id:'USD'}]
+  const cash={payment_method_type_id:'04',currency_type_id:'VES',payment:'20',original_amount:'20',exchange_rate:'10'}
+  const bank={payment_method_type_id:'01',currency_type_id:'USD',payment:'100',original_amount:'10',exchange_rate:'10'}
+  for (const origin of [{id:8},{receipt_parent_id:8},{receipt_origin:{id:8}},{payment_method_snapshot:{receipt_origin:{id:8},collection_kind:'cash'}},
+    {source_sale_note_payment_id:8},{source_quotation_payment_id:8},{source_technical_service_payment_id:8},{_reused_receipt:true}]) {
+    const form={currency_type_id:'VES',payments:[{...cash,...origin},bank]}
+    assert.equal(preview('10',form,methods,'Bs.').label,'Exceso',JSON.stringify(origin))
+    form.payments.push({...cash,payment:'10',original_amount:'10'})
+    assert.equal(preview('10',form,methods,'Bs.').text,'Bs. 10.00',JSON.stringify(origin))
+  }
+})
+
+test('Garage restores multiple decimal receipts without floating point drift', () => {
+  const garage=load('resources/js/views/tenant/pos/partials/fast_payment_garage.vue')
+  let total
+  const ctx={collectionTarget:'0.30',form:{items:[{}],payment_condition_id:'01',payments:[{payment:'0.10'},{payment:'0.20'}]},
+    inputDiscountAmount(){},setAmount(value){total=value}}
+  garage.methods.checkPaymentGarage.call(ctx)
+  assert.equal(total,'0.3')
+  assert.equal(ctx.form.payments.length,2)
+})
+
+for (const file of ['multiple_payment.vue','multiple_payment_garage.vue']) {
+ test(`${file} preserves registered and reused receipts in the payment dialog`,()=>{
+  const component=load('resources/js/views/tenant/pos/partials/'+file)
+  const origins=[{id:5},{receipt_parent_id:5},{receipt_origin:{id:5}},
+   {payment_method_snapshot:{receipt_origin:{id:5}}},{source_sale_note_payment_id:5},
+   {source_quotation_payment_id:5},{source_technical_service_payment_id:5},{_reused_receipt:true}]
+  for (const origin of origins) {
+   const row={payment:'10',...origin}; const ctx={draftPayments:[row],calculatePayments(){throw Error('historical receipt was removed')}}
+   component.methods.clickCancel.call(ctx,0)
+   assert.equal(ctx.draftPayments.length,1)
+   assert.equal(ctx.draftPayments[0],row)
+  }
+  const source=fs.readFileSync('resources/js/views/tenant/pos/partials/'+file,'utf8')
+  assert.match(source,/<span v-if="isRecordedReceipt\(row\)">/)
+  assert.match(source,/:disabled="isRecordedReceipt\(row\)"/)
+  assert.match(source,/v-if="!isRecordedReceipt\(row\)" type="button"/)
+ })
+}
+
+for (const [panel, dialogFile, storageKey, eventName] of [
+ ['payment.vue','multiple_payment.vue','form_pos','localSPayments'],
+ ['fast_payment.vue','multiple_payment.vue','form_pos','localSPayments'],
+ ['fast_payment_garage.vue','multiple_payment_garage.vue','form_pos_garage','localSPaymentsGarage'],
+]) {
+ test(`${panel} restores an origin-only receipt into the multiple-payment dialog`,()=>{
+  const historical={source_quotation_payment_id:42,payment_method_type_id:'01',payment:'100',original_amount:'2.50',
+   currency_type_id:'USD',exchange_rate:'40',payment_destination_id:91,payment_destination_description:'Cuenta histórica USD',
+   payment_method_snapshot:{id:'01',description:'Método anterior',collection_kind:'account',currency_type_id:'USD'}}
+  const localStorage={getItem:key=>{assert.equal(key,storageKey);return JSON.stringify({payment_condition_id:'01',payments:[historical]})}}
+  const component=load('resources/js/views/tenant/pos/partials/'+panel,{localStorage})
+  let recalculated=0
+  const ctx={form:{payment_condition_id:'01',payments:[]},$set:(obj,key,value)=>obj[key]=value,inputAmount:()=>{recalculated++}}
+  component.methods.getFormPosLocalStorage.call(ctx)
+  assert.deepEqual(JSON.parse(JSON.stringify(ctx.form.payments)),[historical])
+  assert.equal(String(ctx.amount),'100');assert.equal(recalculated,1)
+  const dialogComponent=load('resources/js/views/tenant/pos/partials/'+dialogFile,{localStorage})
+  const events=[];const dialogCtx={total:'200',$eventHub:{$emit:(name,value)=>events.push([name,value])},$emit:(name,value)=>events.push([name,value]),
+   clickAddPayment:()=>assert.fail('Debe conservar el cobro existente')}
+  dialogComponent.methods.getFormPosLocalStorage.call(dialogCtx)
+  assert.equal(events[0][0],eventName);assert.equal(events[1][0],'add')
+  assert.deepEqual(JSON.parse(JSON.stringify(events[1][1])),[historical])
+  dialogCtx.payments=events[1][1];dialogCtx.paymentConditionId='01'
+  dialogCtx.clonePayments=dialogComponent.methods.clonePayments
+  dialogComponent.methods.create.call(dialogCtx)
+  dialogComponent.methods.clickCancel.call(dialogCtx,0)
+  assert.deepEqual(JSON.parse(JSON.stringify(dialogCtx.draftPayments)),[historical])
+ })
+}
+
+// ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+for (const file of ['payment.vue','fast_payment.vue','fast_payment_garage.vue']) {
+ test(`${file} protects multiple or recorded receipts while accepting a restored single amount`, async()=>{
+  const Vue=require('vue')
+  const summary=require('./helpers/load-module.cjs')(path.resolve('resources/js/mixins/payment-settlement-summary.js')).default
+  const component=load('resources/js/views/tenant/pos/partials/'+file)
+  const instance=new Vue({mixins:[summary],data:()=>({form:{payment_condition_id:'01',total:'100',payments:[{payment:'30'}]},
+    payments:[],amount:'30',enter_amount:'45.50',difference:'-70',button_payment:true}),
+   methods:{enterAmount:component.methods.enterAmount,clickPayment:component.methods.clickPayment,
+    inputAmount:component.methods.inputAmount,setDifference:component.methods.setDifference || (()=>{}),
+    getTotal:()=>100,lStoPayment:()=>{}}})
+  const messages=[];instance.$eventHub={$emit:()=>{}};instance.$message={warning:m=>messages.push(m)}
+  assert.equal(instance.singleAmountLocked,false)
+  await instance.enterAmount()
+  assert.equal(instance.form.payments[0].payment,'45.5')
+  assert.equal(instance.amount,'45.5')
+  assert.equal(instance.payments[0].payment,'45.5')
+  instance.enter_amount='-12'
+  assert.equal(instance.singleAmountInvalid,true)
+  await instance.enterAmount()
+  assert.equal(instance.form.payments[0].payment,'45.5')
+  await instance.clickPayment()
+  assert.equal(messages[0],'Indique un monto válido.')
+  instance.form.payments=[{payment:'40'},{payment:'60'}];instance.enter_amount='80'
+  assert.equal(instance.singleAmountLocked,true)
+  await instance.enterAmount()
+  assert.deepEqual(instance.form.payments.map(row=>row.payment),['40','60'])
+  if (file === 'payment.vue') {
+   component.methods.setExactAmount.call(instance)
+   assert.equal(instance.enter_amount,'80')
+   assert.deepEqual(instance.form.payments.map(row=>row.payment),['40','60'])
+  }
+  instance.form.payments=[{id:77,payment:'40'}]
+  assert.equal(instance.singleAmountLocked,true)
+  await instance.enterAmount()
+  assert.equal(instance.form.payments[0].payment,'40')
+  instance.form.payments=[{source_sale_note_payment_id:9,payment:'40'}]
+  assert.equal(instance.singleAmountLocked,true)
+  await instance.enterAmount()
+  assert.equal(instance.form.payments[0].payment,'40')
+  for (const origin of [{source_quotation_payment_id:9},{source_technical_service_payment_id:9},{receipt_origin:{id:9}},{receipt_parent_id:9},
+    {payment_method_snapshot:{receipt_origin:{id:9}}},{_reused_receipt:true}]) {
+   instance.form.payments=[{...origin,payment:'40'}]
+   assert.equal(instance.singleAmountLocked,true,JSON.stringify(origin))
+   await instance.enterAmount()
+   assert.equal(instance.form.payments[0].payment,'40')
+  }
+  instance.$destroy()
+ })
+}
+// ######## FIN MONEDA DEL MEDIO DE COBRO ########

@@ -68,7 +68,7 @@ class IncomeController extends Controller
         $establishment = Establishment::where('id', auth()->user()->establishment_id)->first();
         $currency_types = CurrencyType::whereActive()->get();
         $income_types = IncomeType::get();
-        $payment_method_types = PaymentMethodType::active()->get();
+        $payment_method_types = PaymentMethodType::getActiveReceiptMethods();
         $income_reasons = IncomeReason::all();
         $payment_destinations = $this->getPaymentDestinations();
 
@@ -98,11 +98,20 @@ class IncomeController extends Controller
                 $doc->items()->create($row);
             }
 
+            $appliedTotal = \App\Support\Exact\Decimal::of(0);
             foreach ($data['payments'] as $row)
             {
-                PaymentMethodType::assertActiveForPayment($row['payment_method_type_id'] ?? null);
-                $record_payment = $doc->payments()->create($row);
+                // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+                $amounts = \App\Services\Payments\ReceiptAmounts::forMethod($row['payment_method_type_id'] ?? null, $doc->currency_type_id, $doc->exchange_rate_sale, $row);
+                $record_payment = $doc->payments()->make(array_replace($row, $amounts));
+                $record_payment->calculation_snapshot = $amounts['calculation_snapshot'];
+                $record_payment->save();
+                $appliedTotal = $appliedTotal->plus(\App\Support\Exact\Decimal::readRequired($record_payment, 'payment'));
+                // ######## FIN MONEDA DEL MEDIO DE COBRO ########
                 $this->createGlobalPayment($record_payment, $row);
+            }
+            if (!$appliedTotal->isEqualTo(\App\Support\Exact\Decimal::represent($doc->exactValue('total'), 2))) {
+                \App\Services\Payments\Classification::error('payments', 'Los importes aplicados deben coincidir con el total del ingreso.');
             }
 
             $this->setFilename($doc);

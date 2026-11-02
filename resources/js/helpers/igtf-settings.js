@@ -1,5 +1,6 @@
 import Vue from 'vue'
 import {exactAmount} from './exchange-rate-math'
+import {isRecordedReceipt} from './payment-classification'
 
 // ######## INICIO CONFIGURACION COMPARTIDA IGTF ########
 export const igtfSettings = Vue.observable({enabled: false, rate: null, loaded: false, loading: false, error: '', revision: 0})
@@ -30,7 +31,7 @@ export function loadIgtfSettings(http) {
 }
 
 export function fiscalPaymentProblem(payments, settings = igtfSettings) {
-    const rows = (payments || []).filter(row => !row.id && !row.receipt_parent_id && exactAmount(row.payment || '0').compare(0) > 0)
+    const rows = (payments || []).filter(row => !isRecordedReceipt(row) && exactAmount(row.payment || '0').compare(0) > 0)
     if (!rows.length) return ''
     if (!settings.loaded || settings.loading) return settings.error || 'Espere la configuración IGTF antes de registrar el cobro.'
     if (!settings.enabled && rows.some(row => ['subject', 'exempt'].includes(row.igtf_status) || exactAmount(row.tax_amount || '0').compare(0) > 0)) {

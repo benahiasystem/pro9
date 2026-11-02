@@ -79,8 +79,11 @@ class ExpensePaymentController extends Controller
 
     public function destroy($id)
     {
-        $item = ExpensePayment::findOrFail($id);
-        $item->delete();
+        // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+        DB::connection('tenant')->transaction(function () use ($id) {
+            ExpensePayment::withoutEagerLoads()->lockForUpdate()->findOrFail($id)->delete();
+        });
+        // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
 
         return [
             'success' => true,

@@ -14,6 +14,12 @@ use Illuminate\Support\Facades\DB;
  * - `reference` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `change` decimal(30,12) NOT NULL DEFAULT '0.00'
  * - `payment` decimal(30,12) NOT NULL
+ * - `currency_type_id` varchar(255) DEFAULT NULL
+ * - `original_amount` decimal(30,12) DEFAULT NULL
+ * - `exchange_rate` decimal(18,8) DEFAULT NULL
+ * - `exchange_rate_source` varchar(255) DEFAULT NULL
+ * - `exchange_rate_date` date DEFAULT NULL
+ * - `payment_method_snapshot` json DEFAULT NULL
  * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
@@ -29,6 +35,12 @@ CREATE TABLE `technical_service_payments` (
   `reference` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `change` decimal(30,12) NOT NULL DEFAULT '0.00',
   `payment` decimal(30,12) NOT NULL,
+  `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `original_amount` decimal(30,12) DEFAULT NULL,
+  `exchange_rate` decimal(18,8) DEFAULT NULL,
+  `exchange_rate_source` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `exchange_rate_date` date DEFAULT NULL,
+  `payment_method_snapshot` json DEFAULT NULL,
   `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`),
   KEY `technical_service_payments_technical_service_id_foreign` (`technical_service_id`),

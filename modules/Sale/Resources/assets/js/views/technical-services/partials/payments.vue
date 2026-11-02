@@ -36,7 +36,7 @@
                                             <i class="fas fa-file-download"></i>
                                         </button>
                                     </td> -->
-                                    <td class="text-right">{{ row.payment }}</td>
+                                    <td class="text-right">{{ row.payment }} aplicado <small v-if="row.currency_type_id" class="d-block">{{ row.original_amount }} {{ row.currency_type_id }} recibido · tasa {{ row.exchange_rate }}</small></td>
                                     <td class="series-table-actions text-right">
                                         <button class="btn waves-effect waves-light btn-xs btn-danger"
                                                 type="button"
@@ -68,6 +68,7 @@
                                                            :label="option.description"
                                                            :value="option.id"></el-option>
                                             </el-select>
+                                            <receipt-currency-fields :row="row" :methods="payment_method_types" :document-currency="document.currency_type_id" :document-rate="document.exchange_rate_sale" />
                                             <small v-if="row.errors.payment_method_type_id"
                                                    class="form-control-feedback"
                                                    v-text="row.errors.payment_method_type_id[0]"></small>
@@ -182,8 +183,11 @@
 <script>
 
 import {deletable} from '@mixins/deletable'
+import ReceiptCurrencyFields from '@components/ReceiptCurrencyFields.vue'
+import {appliedReceiptAmount, exactValue} from '@helpers/exchange-rate-math'
 
 export default {
+    components: {ReceiptCurrencyFields},
     props: ['showDialog', 'recordId'],
     mixins: [deletable],
     data() {
@@ -276,10 +280,15 @@ export default {
             this.fileList = []
         },
         clickSubmit(index) {
-            if (this.records[index].payment > parseFloat(this.document.total_difference)) {
+            // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+            let applied
+            try { applied = appliedReceiptAmount(this.records[index], this.document.currency_type_id) }
+            catch (error) { this.$message.error(error.message); return }
+            if (applied.compare(exactValue(this.document, 'total_difference')) > 0) {
                 this.$message.error('El monto ingresado supera al monto pendiente de pago, verifique.');
                 return;
             }
+            // ######## FIN MONEDA DEL MEDIO DE COBRO ########
 
             let form = {
                 id: this.records[index].id,
@@ -289,6 +298,9 @@ export default {
                 payment_destination_id: this.records[index].payment_destination_id,
                 reference: this.records[index].reference,
                 payment: this.records[index].payment,
+                currency_type_id: this.records[index].currency_type_id,
+                original_amount: this.records[index].original_amount,
+                exchange_rate: this.records[index].exchange_rate,
             }
 
             this.$http.post(`/${this.resource}`, form)
@@ -304,10 +316,11 @@ export default {
                     }
                 })
                 .catch(error => {
-                    if (error.response.status === 422) {
-                        this.records[index].errors = error.response.data;
+                    if (error.response && error.response.status === 422 && error.response.data &&
+                        (error.response.data.errors || !error.response.data.message)) {
+                        this.records[index].errors = error.response.data.errors || error.response.data;
                     } else {
-                        console.log(error);
+                        this.$message.error(error.response?.data?.message || 'No se pudo registrar el cobro.');
                     }
                 })
         },

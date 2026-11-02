@@ -60,11 +60,13 @@ $affected_document_number = $document_base->affected_document ? $document_base->
         height: 300px;
         text-align: center;
     ">
+        @if(is_file(public_path($logo)))
         <img
             src="data:{{ mime_content_type(public_path("{$logo}")) }};base64,{{ base64_encode(file_get_contents(public_path("{$logo}"))) }}"
             alt="{{ \App\CoreFacturalo\Helpers\CompanyDocumentDisplay::logoAlt($company) }}"
             style="width: 100%; height: auto; object-fit: contain; opacity: 0.1;"
         >
+        @endif
     </div>
 @endif
 @if($document->state_type->id == '09')
@@ -579,7 +581,7 @@ foreach ($document->items as $row) {
         </tr>
     @endforeach
     @php
-        $quantity_items = $document->items()->count();
+        $quantity_items = $document->items->count();
         $allowed_items = 5;
         $cycle_items = $allowed_items - ($quantity_items * 1);
     @endphp
@@ -813,7 +815,7 @@ foreach ($document->items as $row) {
     </tr>
 </table>
 
-@if($document->payment_method_type_id)
+@if($document->payment_method_type_id && $payments->isEmpty())
     <table class="full-width">
         <tr>
             <td>
@@ -822,7 +824,7 @@ foreach ($document->items as $row) {
         </tr>
     </table>
 @endif
-@if ($document->payment_condition_id === '01')
+@if (in_array((string) $document->payment_condition_id, ['01', '02', '03'], true))
     @if($payments->count())
         <table class="full-width">
             <tr>
@@ -834,14 +836,14 @@ foreach ($document->items as $row) {
             @endphp
             @foreach($payments as $row)
                 <tr>
-                    <td>&#8226; {{ $row->payment_method_type->description }}
-                        - {{ $row->reference ? $row->reference.' - ':'' }} {{ $document->currency_type->symbol }} {{ $row->payment + $row->change }}</td>
+                    <td>&#8226; {{-- ######## INICIO MONEDA DEL MEDIO DE COBRO ######## --}}@include('pdf.partials.invoice_receipt', ['row' => $row, 'document' => $document]){{-- ######## FIN MONEDA DEL MEDIO DE COBRO ######## --}}</td>
                 </tr>
                 @endforeach
                 </tr>
         </table>
     @endif
-@else
+@endif
+                @if (in_array((string) $document->payment_condition_id, ['02', '03'], true))
     <table class="full-width">
         @foreach($document->fee as $key => $quote)
             <tr>

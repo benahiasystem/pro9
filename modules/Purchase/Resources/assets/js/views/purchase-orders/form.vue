@@ -145,6 +145,7 @@
                                         <el-option v-for="option in payment_method_types" :key="option.id"
                                                    :value="option.id" :label="option.description"></el-option>
                                     </el-select>
+                                    <small v-if="!form.payment_method_type_id" class="text-muted">No hay efectivo activo para la moneda del documento; seleccione un método.</small>
                                     <small class="form-control-feedback" v-if="errors.payment_method_type_id"
                                            v-text="errors.payment_method_type_id[0]"></small>
                                 </div>
@@ -402,6 +403,7 @@ header .head-notes > div{
 }
 </style>
 <script>
+import {defaultCashForCurrency} from "@helpers/payment-classification"
 // ######## INICIO TASAS OCHO DECIMALES ########
 import { normalizeExchangeRate } from "../../../../../../../resources/js/helpers/exchange-rate-math"
 // ######## FIN TASAS OCHO DECIMALES ########
@@ -509,6 +511,7 @@ export default {
                 this.company = response.data.company
 
                 this.form.currency_type_id = (this.currency_types.length > 0) ? this.currency_types[0].id : null
+                this.form.payment_method_type_id = defaultCashForCurrency(this.payment_method_types, this.form.currency_type_id)?.id || null
                 this.form.establishment_id = (this.establishment.id) ? this.establishment.id : null
 
                 this.changeDateOfIssue()
@@ -556,6 +559,7 @@ export default {
             if (this.saleOpportunity) {
 
                 this.form.currency_type_id = this.saleOpportunity.currency_type_id
+                this.form.payment_method_type_id = defaultCashForCurrency(this.payment_method_types, this.form.currency_type_id)?.id || null
                 this.form.items = this.saleOpportunity.items
                 this.form.total_exportation = this.saleOpportunity.total_exportation
                 this.form.total_free = this.saleOpportunity.total_free
@@ -747,7 +751,7 @@ export default {
                 date_of_issue: moment().format('YYYY-MM-DD'),
                 time_of_issue: moment().format('HH:mm:ss'),
                 supplier_id: null,
-                payment_method_type_id: '01',
+                payment_method_type_id: null,
                 currency_type_id: null,
                 purchase_order: null,
                 exchange_rate_sale: 0,
@@ -804,6 +808,7 @@ export default {
         resetForm() {
             this.initForm()
             this.form.currency_type_id = (this.currency_types.length > 0) ? this.currency_types[0].id : null
+                this.form.payment_method_type_id = defaultCashForCurrency(this.payment_method_types, this.form.currency_type_id)?.id || null
             this.form.establishment_id = this.establishment.id
             this.form.document_type_id = (this.document_types.length > 0) ? this.document_types[0].id : null
 

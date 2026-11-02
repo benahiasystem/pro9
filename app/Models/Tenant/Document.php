@@ -155,26 +155,48 @@ class Document extends ModelTenant
     public function emission() { return $this->hasOne(DocumentEmission::class); }
     // ######## INICIO CALCULOS EXACTOS PRO9 ########
     public function getRetentionAmountAttribute() { return D::represent($this->exactRetentionAmount()); }
-    public function exactRetentionAmount(): \Brick\Math\BigRational
+    public function exactRetentionAmount(bool $current = false): \Brick\Math\BigRational
     {
-        return D::sum($this->received_retentions->map(fn($r)=>D::read($r,'applied_amount')));
+        // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+        $rows=$current ? $this->received_retentions()->lockForUpdate()->get() : $this->received_retentions;
+        return D::sum($rows->map(fn($r)=>D::read($r,'applied_amount')));
+        // ######## FIN MONEDA DEL MEDIO DE COBRO ########
     }
     public function getGuaranteeAmountAttribute() { return D::represent($this->exactGuaranteeAmount()); }
-    public function exactGuaranteeAmount(): \Brick\Math\BigRational
+    public function exactGuaranteeAmount(bool $current = false): \Brick\Math\BigRational
     {
-        $fund=$this->guarantee_fund ? D::read($this->guarantee_fund,'amount') : D::of(0);
-        $adjustments=$this->exists ? DocumentNoteAdjustment::where('affected_document_id',$this->id)->where('kind','fund')->where('status','applied')->get() : collect();
+        // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+        $record=$current ? $this->guarantee_fund()->lockForUpdate()->first() : $this->guarantee_fund;
+        $fund=$record ? D::read($record,'amount') : D::of(0);
+        $query=DocumentNoteAdjustment::where('affected_document_id',$this->id)->where('kind','fund')->where('status','applied');
+        if ($current) $query->lockForUpdate();
+        $adjustments=$this->exists ? $query->get() : collect();
         return D::max(0,$fund->minus(D::sum($adjustments->map(fn($r)=>$r->exactValue('amount')))));
+        // ######## FIN MONEDA DEL MEDIO DE COBRO ########
     }
     public function getBalanceAttribute() { return D::represent($this->exactBalance()); }
-    public function exactBalance(): \Brick\Math\BigRational
+    public function exactBalance(bool $current = false): \Brick\Math\BigRational
     {
         if ($this->document_type_id === '07' || ($this->document_type_id === '08' && $this->isVoidedOrRejected())) return D::of(0);
-        $credits=$this->document_type_id === '01' ? D::sum(\App\Services\Fiscal\FiscalNote::activeCredits($this)->get()->map(fn($r)=>$r->total_payable === null ? $r->exactValue('total') : $r->exactValue('total_payable'))) : D::of(0);
-        $refunds=$this->document_type_id === '01' ? DocumentNoteRefund::where('affected_document_id',$this->id)->where('component','principal')->whereNull('reversed_at')->get() : collect();
+        // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+        $creditRows=collect(); $refunds=collect();
+        if ($this->document_type_id === '01') {
+            if ($current) {
+                $ids=Note::where('affected_document_id',$this->id)->lockForUpdate()->pluck('document_id');
+                $creditRows=Document::withoutEagerLoads()->whereIn('id',$ids)->where('document_type_id','07')
+                    ->whereNotIn('state_type_id',self::VOIDED_REJECTED_IDS)->lockForUpdate()->get();
+            } else $creditRows=\App\Services\Fiscal\FiscalNote::activeCredits($this)->get();
+            $query=DocumentNoteRefund::where('affected_document_id',$this->id)->where('component','principal')->whereNull('reversed_at');
+            if ($current) $query->lockForUpdate();
+            $refunds=$query->get();
+        }
+        $credits=D::sum($creditRows->map(fn($r)=>$r->total_payable === null ? $r->exactValue('total') : $r->exactValue('total_payable')));
         $total=$this->total_payable === null ? $this->exactValue('total') : $this->exactValue('total_payable');
-        $payments=D::sum($this->payments()->whereNull('reversed_at')->get()->map(fn($r)=>$r->exactValue('payment')));
-        return $total->minus($credits)->minus($payments)->minus($this->exactRetentionAmount())->minus($this->exactGuaranteeAmount())->plus(D::sum($refunds->map(fn($r)=>$r->exactValue('amount'))));
+        $query=$this->payments()->whereNull('reversed_at');
+        if ($current) $query->lockForUpdate();
+        $payments=D::sum($query->get()->map(fn($r)=>$r->exactValue('payment')));
+        return $total->minus($credits)->minus($payments)->minus($this->exactRetentionAmount($current))->minus($this->exactGuaranteeAmount($current))->plus(D::sum($refunds->map(fn($r)=>$r->exactValue('amount'))));
+        // ######## FIN MONEDA DEL MEDIO DE COBRO ########
     }
     // ######## FIN CALCULOS EXACTOS PRO9 ########
     // ######## FIN PERSISTENCIA FISCAL VENEZUELA ########

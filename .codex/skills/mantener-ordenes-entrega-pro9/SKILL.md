@@ -35,6 +35,10 @@ Leer [implementación y evidencia](../../../informes/ordenes_entrega_hka.md). Ma
 
 `DeliveryOrderInvoiceInventory` conserva cantidades físicas ya trasladadas y lotes/seriales al convertir una o varias órdenes. Productos con trazabilidad requieren una línea por producto con su cantidad completa y unidad original; separar cantidades previamente trasladadas de cantidades nuevas. Bloquear edición fiscal y anulación local de órdenes HKA pendientes, inciertas o confirmadas. Conciliar antes de reenviar una solicitud incierta; conservar UUID, identidad y payload.
 
+La fuente del diálogo de conversión propone la moneda configurada del medio, muestra importe recibido y tasa cuando difiere del comprobante, filtra el destino y utiliza la configuración fiscal compartida antes de guardar. El reparto de pagos usa centavos exactos. Las pruebas `dispatch-invoice-receipts.test.cjs` y `payment-classification.test.cjs` verifican plantilla, validación y destino; requieren compilación y comprobación en navegador para acreditar la experiencia completa.
+
+Al alternar contado y crédito en la conversión, conservar los abonos introducidos y las cuotas editadas. La sugerencia automática de efectivo intacta se retira al pasar a crédito; un abono modificado se conserva. Sugerir cuotas sólo por el saldo tras abonos y omitirlas del envío al contado sin borrar el borrador. Consultar la tasa documental antes de calcular partidas y no admitir una tasa inválida; sumar cantidades y calcular importes con aritmética exacta, conservando la afectación IVA del artículo. Verificar en conjunto `dispatch-invoice-receipts.test.cjs` y la integración MySQL de la orden con cobro USD.
+
 El generador `scripts/prepare_delivery_order_demo.php` se limita a BBC DEMO y tiene manifiesto, bloqueo de ejecución y claves estables. Su ampliación de esquema BBC fue expresamente autorizada para estas pruebas; no extenderla automáticamente a otros tenants. Concurrencia, rollback y cambios de configuración se prueban en bases temporales.
 
 ## Verificación obligatoria

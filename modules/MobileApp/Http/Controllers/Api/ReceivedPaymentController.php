@@ -48,13 +48,26 @@ class ReceivedPaymentController extends Controller
         $existing = ReceivedPayment::where('dedup_hash', $request->input('dedup_hash'))->first();
 
         if ($existing) {
+            $this->assertSameCapture($existing, $request);
             return $this->buildResponse(true, 'El pago ya habia sido registrado', $existing, ['duplicated' => true]);
         }
 
         try {
-            $record = ReceivedPayment::create(array_merge($request->validated(), [
-                'status' => ReceivedPayment::STATUS_PENDING,
-            ]));
+            [$record, $duplicate] = DB::connection('tenant')->transaction(function () use ($request) {
+                // A retry uses the frozen capture even after the currency is disabled.
+                $existing = ReceivedPayment::where('dedup_hash', $request->input('dedup_hash'))->lockForUpdate()->first();
+                if ($existing) {
+                    $this->assertSameCapture($existing, $request);
+                    return [$existing, true];
+                }
+                $currency = DB::connection('tenant')->table('cat_currency_types')->where('id', $request->input('currency_type_id'))->lockForUpdate()->first();
+                if (!$currency || !(bool)$currency->active) {
+                    \App\Services\Payments\Classification::error('currency_type_id', 'La moneda capturada no está activa.');
+                }
+                return [ReceivedPayment::create(array_merge($request->validated(), [
+                    'status' => ReceivedPayment::STATUS_PENDING,
+                ])), false];
+            }, 3);
         } catch (QueryException $e) {
             // Carrera entre dos push simultaneos con el mismo dedup_hash:
             // el indice unico protege y devolvemos el registro ya existente.
@@ -64,10 +77,11 @@ class ReceivedPaymentController extends Controller
                 throw $e;
             }
 
+            $this->assertSameCapture($record, $request);
             return $this->buildResponse(true, 'El pago ya habia sido registrado', $record, ['duplicated' => true]);
         }
 
-        return $this->buildResponse(true, 'Pago registrado con exito', $record, ['duplicated' => false]);
+        return $this->buildResponse(true, $duplicate ? 'El pago ya habia sido registrado' : 'Pago registrado con exito', $record, ['duplicated' => $duplicate]);
     }
 
 
@@ -125,6 +139,8 @@ class ReceivedPaymentController extends Controller
      * - document_id: comprobante a pagar
      * - payment_method_type_id: metodo de pago (lo reconoce el front)
      * - payment_destination_id: destino del pago ('cash' o id de cuenta bancaria)
+     * - exchange_rate: tasa VES/USD si la moneda capturada difiere de la factura
+     * La moneda y el importe se toman de la captura; no se pueden sustituir al reclamar.
      *
      * @param  int $id
      * @param  ReceivedPaymentClaimRequest $request
@@ -159,11 +175,8 @@ class ReceivedPaymentController extends Controller
      *
      * Actualizar un pago ya reclamado.
      *
-     * El store web siempre crea un global_payment y un cash_document_payment
-     * nuevos (incluso al editar), por lo que reutilizarlo en modo edicion
-     * duplicaria esos registros. Para mantener la consistencia se hace un
-     * reemplazo limpio: dentro de la transaccion se elimina el pago anterior con
-     * sus relaciones y se genera uno nuevo con los datos enviados.
+     * Solo se permite reemplazar pagos anteriores sin movimiento contabilizado.
+     * Los pagos con snapshot financiero se conservan y requieren reversión explícita.
      *
      * @param  int $id
      * @param  ReceivedPaymentClaimRequest $request
@@ -239,19 +252,51 @@ class ReceivedPaymentController extends Controller
      */
     private function runDocumentPaymentStore(ReceivedPayment $received, $request)
     {
+        $currency = $received->currency_type_id;
+        if (!in_array($currency, ['VES', 'USD'], true)) {
+            \App\Services\Payments\Classification::error('currency_type_id', 'El pago capturado debe identificar su moneda.');
+        }
+        if ($request->filled('currency_type_id') && $request->input('currency_type_id') !== $currency) {
+            \App\Services\Payments\Classification::error('currency_type_id', 'La moneda no coincide con el pago capturado.');
+        }
+        $amount = \App\Support\Exact\Decimal::canonical(\App\Support\Exact\Decimal::input($received->getAttributes()['amount'] ?? null, 'amount'));
         $payload = [
             'id' => null,
             'document_id' => (int) $request->input('document_id'),
             'date_of_payment' => $received->posted_at->format('Y-m-d'),
             'payment_method_type_id' => $request->input('payment_method_type_id'),
             'payment_destination_id' => $request->input('payment_destination_id'),
-            'payment' => $received->amount,
+            'payment' => $amount,
             'reference' => trim($received->provider.' '.$received->sender_name),
         ];
+        // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+        foreach (['exchange_rate', 'exchange_rate_source', 'exchange_rate_date', 'financial_intermediation', 'igtf_status', 'exemption_reason', 'exception_basis'] as $field) {
+            if ($request->exists($field)) $payload[$field] = $request->input($field);
+        }
+        $payload['currency_type_id'] = $currency;
+        $payload['original_amount'] = $amount;
+        $payload['operation_key'] = (string) \Illuminate\Support\Str::uuid();
+        // ######## FIN MONEDA DEL MEDIO DE COBRO ########
 
         $documentPaymentRequest = DocumentPaymentRequest::create('', 'POST', $payload);
 
         return app(DocumentPaymentControllerWeb::class)->store($documentPaymentRequest);
+    }
+
+    private function assertSameCapture(ReceivedPayment $received, ReceivedPaymentStoreRequest $request): void
+    {
+        $amount = \App\Support\Exact\Decimal::input($request->input('amount'), 'amount');
+        $stored = $received->getAttributes()['amount'] ?? null;
+        if ($stored === null || !\App\Support\Exact\Decimal::of($stored)->isEqualTo(\App\Support\Exact\Decimal::of($amount))
+            || (string)$received->currency_type_id !== (string)$request->input('currency_type_id')
+            || (string)$received->provider !== (string)$request->input('provider')
+            || (string)$received->device_id !== (string)$request->input('device_id')
+            || (string)$received->package_name !== (string)$request->input('package_name')
+            || (string)$received->raw_text !== (string)$request->input('raw_text')
+            || (string)$received->sender_name !== (string)$request->input('sender_name')
+            || !$received->posted_at->equalTo(\Carbon\Carbon::parse($request->input('posted_at')))) {
+            $this->throwConflict('La captura ya existe con otros datos.');
+        }
     }
 
 
@@ -269,13 +314,20 @@ class ReceivedPaymentController extends Controller
             return;
         }
 
-        $payment = DocumentPayment::find($received->matched_document_payment_id);
+        // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+        // The source and its movement must be current even after a prior repeatable read.
+        $payment = DocumentPayment::withoutEagerLoads()->whereKey($received->matched_document_payment_id)->lockForUpdate()->first();
 
         if ($payment) {
+            $movement = $payment->global_payment()->lockForUpdate()->first();
+            if (($movement?->report_context['version'] ?? null) === 2) {
+                $this->throwConflict('El cobro ya fue contabilizado; reviértalo desde el comprobante antes de registrar otro.');
+            }
             $payment->cashDocumentPayments()->delete();
             $payment->global_payment()->delete();
             $payment->delete();
         }
+        // ######## FIN MONEDA DEL MEDIO DE COBRO ########
     }
 
 

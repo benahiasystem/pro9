@@ -31,7 +31,9 @@
                         <td>{{ index + 1 }}</td>
                         <td>{{ row.id }}</td>
                         <td>{{ row.description }}</td>
-                        <td>{{ (row.is_credit == 1)?'Crédito':'Contado' }}</td>
+                        <!-- ######## INICIO CLASIFICACION DE COBROS Y CAJA ######## -->
+                        <td>{{ {cash:'Contado',account:'Contado',credit:'Crédito',unclassified:'Sin clasificar'}[row.collection_kind] || 'Sin clasificar' }}</td>
+                        <!-- ######## FIN CLASIFICACION DE COBROS Y CAJA ######## -->
                         <td>{{ {cash:'Efectivo físico',account:'Bancario / electrónico',credit:'Crédito',unclassified:'Sin clasificar'}[row.collection_kind] || 'Sin clasificar' }} {{ row.cash_currency_type_id || '' }}</td>
                         <td>
                             <el-switch :disabled="row.collection_kind === 'unclassified'" v-model="row.is_active" @change="clickActive(row)"></el-switch>

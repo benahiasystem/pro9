@@ -45,6 +45,9 @@ class PurchaseResource extends JsonResource
                 'reference' => $row->reference,
                 'payment' => $row->payment,
                 'payment_method_type' => $row->payment_method_type,
+                // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+                'payment_method_snapshot' => $row->global_payment->report_context['method'] ?? null,
+                // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
                 'payment_destination_id' => ($row->global_payment) ? ($row->global_payment->type_record == 'cash' ? 'cash':$row->global_payment->destination_id):null,
                 'payment_filename' => ($row->payment_file) ? $row->payment_file->filename:null,
             ];

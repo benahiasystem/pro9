@@ -147,6 +147,12 @@ trait ReportTrait
             $data = $model::whereBetween('date_of_issue', [$date_start, $date_end])
                             ->latest();
 
+            // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+            if (in_array($model, [Document::class, SaleNote::class], true)) {
+                $data->with(['currency_type', 'payments.global_payment', 'payments.payment_method_type', 'fee.currency_type']);
+            }
+            // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
+
             //usado para reporte en cola (ProcessDocumentReport)
             if($session_user_id)
             {

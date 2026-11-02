@@ -9,7 +9,7 @@ use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithTitle;
 
-class MovementExport implements FromView, ShouldAutoSize, WithTitle
+class MovementExport implements FromView, ShouldAutoSize, WithTitle, \Maatwebsite\Excel\Concerns\WithEvents
 {
     use Exportable;
 
@@ -73,4 +73,22 @@ class MovementExport implements FromView, ShouldAutoSize, WithTitle
             'establishment'=>$this->establishment
         ]);
     }
+
+    // ######## INICIO CALCULOS EXACTOS PRO9 ########
+    public function registerEvents(): array
+    {
+        return [\Maatwebsite\Excel\Events\AfterSheet::class => function ($event) {
+            $rows = collect($this->records)->filter(function ($row) {
+                return isset($row['calculation_snapshot']['values']['amount']) || isset($row['payments']);
+            })->map(function ($row) {
+                // Los registros históricos sin importe recuperable no se inventan como cero.
+                $row['amount'] = $row['payments'] ?? null;
+                return $row;
+            });
+            if ($rows->isNotEmpty()) {
+                \App\Support\Exact\FractionSheet::append($event->sheet->getDelegate(), $rows, ['amount']);
+            }
+        }];
+    }
+    // ######## FIN CALCULOS EXACTOS PRO9 ########
 }
