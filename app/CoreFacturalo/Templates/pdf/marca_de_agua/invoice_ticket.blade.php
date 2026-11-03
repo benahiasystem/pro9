@@ -612,9 +612,6 @@ $affected_document_number = $document_base->affected_document ? $document_base->
                             <small>
                                 <span class="font-bold desc">{{$account->bank->description}}</span> {{$account->currency_type->description}}
                                 <span class="font-bold desc">N°:</span> {{$account->number}}
-                                @if($account->cci)
-                                <span class="font-bold desc">CCI:</span> {{$account->cci}}
-                                @endif
                             </small>
                         </p>
                     @endforeach

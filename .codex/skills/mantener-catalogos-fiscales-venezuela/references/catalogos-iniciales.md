@@ -24,6 +24,8 @@ Los identificadores y el orden son contractuales. Salvo indicación contraria, l
 
 Fuente histórica: `../pro6/database/migrations/tenant/2018_01_00_000001_tenant_system_table.php`.
 
+Las cuentas bancarias de instalaciones nuevas conservan su número de cuenta; el campo peruano CCI fue retirado del esquema y de sus consumidores. No se convierten bases existentes.
+
 ### Afectaciones IVA (`cat_affectation_igv_types`)
 
 - `10`: Gravado

@@ -197,9 +197,8 @@
                 $data['description'] = $bank->description;
                 $data['number'] = $bank->number;
                 $data['currency_type_id'] = $bank->currency_type_id;
-                $data['cci'] = $bank->cci;
 
-                $data['description'] = $data['description'] . " - " . $data['currency_type_id'] . " - " . $data['cci'];
+                $data['description'] = $data['description'] . " - " . $data['currency_type_id'];
                 return $data;
 
             });

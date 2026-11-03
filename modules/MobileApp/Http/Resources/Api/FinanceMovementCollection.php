@@ -74,9 +74,9 @@ class FinanceMovementCollection extends ResourceCollection
             }
 
             if ($is_transfer) {
-                $destination_data = $row->getDestinationWithCci();
+                $destination_data = $row->getDestinationDetails();
                 $person_name = $destination_data['name'] ?? '-';
-                $person_number = $destination_data['cci'] ?? '';
+                $person_number = '';
                 $instance_type_description = 'Transferencia bancaria';
             }
 

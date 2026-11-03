@@ -46,7 +46,7 @@ class MovementCollection extends ResourceCollection
             $dataPerson = $row->data_person;
             $parent = $payment->associated_record_payment;
             $documentType = $parent->document_type->description ?? ($parent->prefix ?? '');
-            $destination = $row->getDestinationWithCci();
+            $destination = $row->getDestinationDetails();
             $type = $legacy ? $row->type_movement : ($movement['direction'] === 'income' ? 'input' : 'output');
             $amount = $legacy ? '-' : \App\Support\Exact\Decimal::format($movement['calculation_snapshot']['values']['amount'], 2, '.', '');
             $balance = !$legacy && in_array($movement['currency_type_id'], ['VES', 'USD'], true)
@@ -72,7 +72,7 @@ class MovementCollection extends ResourceCollection
                 'number_full' => $movement['number'] ?? ($parent->number_full ?? ''),
                 'currency_type_id' => $movement['currency_type_id'] ?? null,
                 'person_name' => $personName,
-                'person_number' => $isTransfer ? ($destination['cci'] ?? '') : $dataPerson->number,
+                'person_number' => $isTransfer ? '' : $dataPerson->number,
                 'instance_type' => $row->instance_type,
                 'instance_type_description' => $isTransfer ? 'Transferencia Bancaria' : $row->instance_type_description,
                 'user_id' => $row->user_id,

@@ -824,7 +824,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
                 <tr>
                     <td class="m27-item-note">
                         <span class="font-bold">{{$account->bank->description}}</span> {{$account->currency_type->description}}
-                        N°: {{$account->number}}@if($account->cci) / CCI: {{$account->cci}}@endif
+                        N°: {{$account->number}}
                     </td>
                 </tr>
             @endforeach

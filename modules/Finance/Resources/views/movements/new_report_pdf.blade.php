@@ -106,7 +106,6 @@ $i = 0
                     <th class="">Detalle</th>
                     <th class="">Moneda</th>
                     <th class="">Destino</th>
-                    <th class="">Cod.</th>
                     <th class="">Tipo</th>
                     <th class="">Ingresos</th>
                     <th class="">Gastos</th>
@@ -120,7 +119,6 @@ $i = 0
                     // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
                     $i++;
                     $document_type = $value['document_type'] ?? '';
-                    $destination_array = $value['destination_array'] ?? [];
                     $destination_name = $value['destination_name'] ?? '';
                     $reference = $value['reference'] ?? '';
                     $items = $value['items'] ?? [];
@@ -151,7 +149,6 @@ $i = 0
                         </td>
                         <td class="celda">{{ $value['currency_type_id'] ?: 'Sin moneda' }}</td>
                         <td class="celda">{{ $destination_name }}</td>
-                        <td class="celda"> {{$destination_array['cci'] . " "}} &nbsp;</td>
                         <td class="celda">{{$value['instance_type_description']}}</td>
 
                         <td class="celda">{{ $type_movement === 'input' ? $symbol.$formatted : '-' }}</td>
@@ -166,14 +163,14 @@ $i = 0
                 @foreach($currencyTotals as $currency => $totals)
                 @php $symbol = $currency === 'VES' ? 'Bs.' : '$'; @endphp
                 <tr>
-                    <td colspan="10" class="celda">Totales {{ $currency }}</td>
+                    <td colspan="9" class="celda">Totales {{ $currency }}</td>
                     <td class="celda">{{ $symbol.\App\Support\Exact\Decimal::format($totals['input'], 2, '.', '') }}</td>
                     <td class="celda">{{ $symbol.\App\Support\Exact\Decimal::format($totals['output'], 2, '.', '') }}</td>
                     <td class="celda">{{ $symbol.\App\Support\Exact\Decimal::format($totals['input']->minus($totals['output']), 2, '.', '') }}</td>
                 </tr>
                 @endforeach
                 @if($unknownCurrency)
-                <tr><td colspan="13" class="celda">Los movimientos sin moneda no se incluyen en los totales.</td></tr>
+                <tr><td colspan="12" class="celda">Los movimientos sin moneda no se incluyen en los totales.</td></tr>
                 @endif
                 </tfoot>
             </table>

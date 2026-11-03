@@ -787,9 +787,6 @@ foreach ($document->items as $row) {
                             <span
                                 class="font-bold">{{$account->bank->description}}</span> {{$account->currency_type->description}}
                             <span class="font-bold">N°:</span> {{$account->number}}
-                            @if($account->cci)
-                                <span class="font-bold">CCI:</span> {{$account->cci}}
-                            @endif
                         </p>
                     @endforeach
                 @endif

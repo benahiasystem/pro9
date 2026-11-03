@@ -312,9 +312,6 @@
                     <span class="font-bold">{{$account->bank->description}}</span> {{$account->currency_type->description}}
                     <br>
                     <span class="font-bold">N°:</span> {{$account->number}}
-                    @if($account->cci)
-                    - <span class="font-bold">CCI:</span> {{$account->cci}}
-                    @endif
                     <br>
                 @endforeach
 
