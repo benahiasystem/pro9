@@ -1,4 +1,1566 @@
 {
+    "0f4a7305cb3291e53e056a2d": {
+        "category": "technical",
+        "justification": "Comparación de naturaleza o código de moneda de la cuenta en la cotización; no opera importes. Expresión: $method->collection_kind === 'account'",
+        "evidence": [
+            "app/Http/Controllers/Tenant/DocumentPaymentQuoteController.php",
+            "tests/Support/PaymentClassificationPersistenceCases.php"
+        ],
+        "evidence_sha256": {
+            "app/Http/Controllers/Tenant/DocumentPaymentQuoteController.php": "4d027c379549caecce750f90aafe54c9a2757f7e8995641caa05f4e284d8deb5",
+            "tests/Support/PaymentClassificationPersistenceCases.php": "e357bd18b240c75d5b0423ac1656bb69857c7a150f6d2fe802d57eb64861fc6f"
+        },
+        "source": {
+            "file": "app/Http/Controllers/Tenant/DocumentPaymentQuoteController.php",
+            "symbol": "DocumentPaymentQuoteController::__invoke",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "fbb978cea9579bebb934d087": {
+        "category": "technical",
+        "justification": "Comparación de naturaleza o código de moneda de la cuenta en la cotización; no opera importes. Expresión: $account->currency_type_id !== $method->currency_type_id",
+        "evidence": [
+            "app/Http/Controllers/Tenant/DocumentPaymentQuoteController.php",
+            "tests/Support/PaymentClassificationPersistenceCases.php"
+        ],
+        "evidence_sha256": {
+            "app/Http/Controllers/Tenant/DocumentPaymentQuoteController.php": "4d027c379549caecce750f90aafe54c9a2757f7e8995641caa05f4e284d8deb5",
+            "tests/Support/PaymentClassificationPersistenceCases.php": "e357bd18b240c75d5b0423ac1656bb69857c7a150f6d2fe802d57eb64861fc6f"
+        },
+        "source": {
+            "file": "app/Http/Controllers/Tenant/DocumentPaymentQuoteController.php",
+            "symbol": "DocumentPaymentQuoteController::__invoke",
+            "operation": "native_NotIdentical",
+            "operation_language": "php"
+        }
+    },
+    "08c72616c4e6ad63845a4393": {
+        "category": "technical",
+        "justification": "Comparación de identificadores, moneda o naturaleza del medio, sin operar importes. Expresión: String(item.id) === String(method.bank_account_id)",
+        "evidence": [
+            "modules/Hotel/Resources/assets/js/views/rooms/Checkout.vue",
+            "tests/js/hotel-order-receipt-creation.test.cjs",
+            "tests/js/payment-classification.test.cjs"
+        ],
+        "evidence_sha256": {
+            "modules/Hotel/Resources/assets/js/views/rooms/Checkout.vue": "7701da24aad2eebfa5513ba5aac38fb8d0c506849bafdc784fb6c6f7f84607a2",
+            "tests/js/hotel-order-receipt-creation.test.cjs": "414a2a5206697a6c1fe22f55191232155e0441fbf97870f989f94cbfd2b3174d",
+            "tests/js/payment-classification.test.cjs": "4878454f9b3b735bfccdcbb788954e4ee971f45fd3d2100f1fc42e3d7977fbbe"
+        },
+        "source": {
+            "file": "modules/Hotel/Resources/assets/js/views/rooms/Checkout.vue",
+            "symbol": "handler",
+            "operation": "native_===",
+            "operation_language": "javascript"
+        }
+    },
+    "0b56302a5a8b3c856eeaaacb": {
+        "category": "technical",
+        "justification": "Comparación de identificadores, moneda o naturaleza del medio, sin operar importes. Expresión: method.collection_kind === 'account'",
+        "evidence": [
+            "modules/Hotel/Resources/assets/js/views/rooms/Checkout.vue",
+            "tests/js/hotel-order-receipt-creation.test.cjs",
+            "tests/js/payment-classification.test.cjs"
+        ],
+        "evidence_sha256": {
+            "modules/Hotel/Resources/assets/js/views/rooms/Checkout.vue": "7701da24aad2eebfa5513ba5aac38fb8d0c506849bafdc784fb6c6f7f84607a2",
+            "tests/js/hotel-order-receipt-creation.test.cjs": "414a2a5206697a6c1fe22f55191232155e0441fbf97870f989f94cbfd2b3174d",
+            "tests/js/payment-classification.test.cjs": "4878454f9b3b735bfccdcbb788954e4ee971f45fd3d2100f1fc42e3d7977fbbe"
+        },
+        "source": {
+            "file": "modules/Hotel/Resources/assets/js/views/rooms/Checkout.vue",
+            "symbol": "isFixedBankDestination",
+            "operation": "native_===",
+            "operation_language": "javascript"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "111a26f2e6240b305b3d74ee": {
+        "category": "technical",
+        "justification": "Comparación de identificadores, moneda o naturaleza del medio, sin operar importes. Expresión: method.collection_kind === 'account'",
+        "evidence": [
+            "resources/js/views/tenant/orders/partials/sale_note_form.vue",
+            "tests/js/hotel-order-receipt-creation.test.cjs",
+            "tests/js/payment-classification.test.cjs"
+        ],
+        "evidence_sha256": {
+            "resources/js/views/tenant/orders/partials/sale_note_form.vue": "0f85c98242fbbc416b4975ea128cf0e62e9e10fc6a9b10e6db4e2c453cce5167",
+            "tests/js/hotel-order-receipt-creation.test.cjs": "414a2a5206697a6c1fe22f55191232155e0441fbf97870f989f94cbfd2b3174d",
+            "tests/js/payment-classification.test.cjs": "4878454f9b3b735bfccdcbb788954e4ee971f45fd3d2100f1fc42e3d7977fbbe"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/orders/partials/sale_note_form.vue",
+            "symbol": "fixedBankMethod",
+            "operation": "native_===",
+            "operation_language": "javascript"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "1e0781564220253446c10a40": {
+        "category": "technical",
+        "justification": "Comparación de identificadores, moneda o naturaleza del medio, sin operar importes. Expresión: String(method.id) === String(row.payment_method_type_id)",
+        "evidence": [
+            "modules/Hotel/Resources/assets/js/views/rooms/Checkout.vue",
+            "tests/js/hotel-order-receipt-creation.test.cjs",
+            "tests/js/payment-classification.test.cjs"
+        ],
+        "evidence_sha256": {
+            "modules/Hotel/Resources/assets/js/views/rooms/Checkout.vue": "7701da24aad2eebfa5513ba5aac38fb8d0c506849bafdc784fb6c6f7f84607a2",
+            "tests/js/hotel-order-receipt-creation.test.cjs": "414a2a5206697a6c1fe22f55191232155e0441fbf97870f989f94cbfd2b3174d",
+            "tests/js/payment-classification.test.cjs": "4878454f9b3b735bfccdcbb788954e4ee971f45fd3d2100f1fc42e3d7977fbbe"
+        },
+        "source": {
+            "file": "modules/Hotel/Resources/assets/js/views/rooms/Checkout.vue",
+            "symbol": "isFixedBankDestination",
+            "operation": "native_===",
+            "operation_language": "javascript"
+        }
+    },
+    "418b104a9236d86068252725": {
+        "category": "technical",
+        "justification": "Comparación de identificadores, moneda o naturaleza del medio, sin operar importes. Expresión: String(item.id) === String(this.payment.payment_method_type_id)",
+        "evidence": [
+            "resources/js/views/tenant/orders/partials/sale_note_form.vue",
+            "tests/js/hotel-order-receipt-creation.test.cjs",
+            "tests/js/payment-classification.test.cjs"
+        ],
+        "evidence_sha256": {
+            "resources/js/views/tenant/orders/partials/sale_note_form.vue": "0f85c98242fbbc416b4975ea128cf0e62e9e10fc6a9b10e6db4e2c453cce5167",
+            "tests/js/hotel-order-receipt-creation.test.cjs": "414a2a5206697a6c1fe22f55191232155e0441fbf97870f989f94cbfd2b3174d",
+            "tests/js/payment-classification.test.cjs": "4878454f9b3b735bfccdcbb788954e4ee971f45fd3d2100f1fc42e3d7977fbbe"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/orders/partials/sale_note_form.vue",
+            "symbol": "changePaymentMethod",
+            "operation": "native_===",
+            "operation_language": "javascript"
+        }
+    },
+    "43eef897bd29be0c48bf3b92": {
+        "category": "technical",
+        "justification": "Comparación de identificadores, moneda o naturaleza del medio, sin operar importes. Expresión: String(item.id) === String(row.payment_method_type_id)",
+        "evidence": [
+            "modules/Hotel/Resources/assets/js/views/rooms/Checkout.vue",
+            "tests/js/hotel-order-receipt-creation.test.cjs",
+            "tests/js/payment-classification.test.cjs"
+        ],
+        "evidence_sha256": {
+            "modules/Hotel/Resources/assets/js/views/rooms/Checkout.vue": "7701da24aad2eebfa5513ba5aac38fb8d0c506849bafdc784fb6c6f7f84607a2",
+            "tests/js/hotel-order-receipt-creation.test.cjs": "414a2a5206697a6c1fe22f55191232155e0441fbf97870f989f94cbfd2b3174d",
+            "tests/js/payment-classification.test.cjs": "4878454f9b3b735bfccdcbb788954e4ee971f45fd3d2100f1fc42e3d7977fbbe"
+        },
+        "source": {
+            "file": "modules/Hotel/Resources/assets/js/views/rooms/Checkout.vue",
+            "symbol": "handler",
+            "operation": "native_===",
+            "operation_language": "javascript"
+        }
+    },
+    "71e5de6eda38fcb3b73a4601": {
+        "category": "technical",
+        "justification": "Comparación de identificadores, moneda o naturaleza del medio, sin operar importes. Expresión: method?.collection_kind === 'account'",
+        "evidence": [
+            "resources/js/views/tenant/orders/partials/sale_note_form.vue",
+            "tests/js/hotel-order-receipt-creation.test.cjs",
+            "tests/js/payment-classification.test.cjs"
+        ],
+        "evidence_sha256": {
+            "resources/js/views/tenant/orders/partials/sale_note_form.vue": "0f85c98242fbbc416b4975ea128cf0e62e9e10fc6a9b10e6db4e2c453cce5167",
+            "tests/js/hotel-order-receipt-creation.test.cjs": "414a2a5206697a6c1fe22f55191232155e0441fbf97870f989f94cbfd2b3174d",
+            "tests/js/payment-classification.test.cjs": "4878454f9b3b735bfccdcbb788954e4ee971f45fd3d2100f1fc42e3d7977fbbe"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/orders/partials/sale_note_form.vue",
+            "symbol": "changePaymentMethod",
+            "operation": "native_===",
+            "operation_language": "javascript"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "9d798cb3752a64cbdbc05db5": {
+        "category": "technical",
+        "justification": "Comparación de identificadores, moneda o naturaleza del medio, sin operar importes. Expresión: String(item.id) === String(method.bank_account_id)",
+        "evidence": [
+            "resources/js/views/tenant/orders/partials/sale_note_form.vue",
+            "tests/js/hotel-order-receipt-creation.test.cjs",
+            "tests/js/payment-classification.test.cjs"
+        ],
+        "evidence_sha256": {
+            "resources/js/views/tenant/orders/partials/sale_note_form.vue": "0f85c98242fbbc416b4975ea128cf0e62e9e10fc6a9b10e6db4e2c453cce5167",
+            "tests/js/hotel-order-receipt-creation.test.cjs": "414a2a5206697a6c1fe22f55191232155e0441fbf97870f989f94cbfd2b3174d",
+            "tests/js/payment-classification.test.cjs": "4878454f9b3b735bfccdcbb788954e4ee971f45fd3d2100f1fc42e3d7977fbbe"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/orders/partials/sale_note_form.vue",
+            "symbol": "changePaymentMethod",
+            "operation": "native_===",
+            "operation_language": "javascript"
+        }
+    },
+    "aa1466c99e0ef48049ba786e": {
+        "category": "technical",
+        "justification": "Comparación de identificadores, moneda o naturaleza del medio, sin operar importes. Expresión: String(method.id) === String(this.payment.payment_method_type_id)",
+        "evidence": [
+            "resources/js/views/tenant/orders/partials/sale_note_form.vue",
+            "tests/js/hotel-order-receipt-creation.test.cjs",
+            "tests/js/payment-classification.test.cjs"
+        ],
+        "evidence_sha256": {
+            "resources/js/views/tenant/orders/partials/sale_note_form.vue": "0f85c98242fbbc416b4975ea128cf0e62e9e10fc6a9b10e6db4e2c453cce5167",
+            "tests/js/hotel-order-receipt-creation.test.cjs": "414a2a5206697a6c1fe22f55191232155e0441fbf97870f989f94cbfd2b3174d",
+            "tests/js/payment-classification.test.cjs": "4878454f9b3b735bfccdcbb788954e4ee971f45fd3d2100f1fc42e3d7977fbbe"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/orders/partials/sale_note_form.vue",
+            "symbol": "fixedBankMethod",
+            "operation": "native_===",
+            "operation_language": "javascript"
+        }
+    },
+    "c0c19501689cb2ed05e61772": {
+        "category": "technical",
+        "justification": "Comparación de identificadores, moneda o naturaleza del medio, sin operar importes. Expresión: item.currency_type_id === method.currency_type_id",
+        "evidence": [
+            "resources/js/views/tenant/orders/partials/sale_note_form.vue",
+            "tests/js/hotel-order-receipt-creation.test.cjs",
+            "tests/js/payment-classification.test.cjs"
+        ],
+        "evidence_sha256": {
+            "resources/js/views/tenant/orders/partials/sale_note_form.vue": "0f85c98242fbbc416b4975ea128cf0e62e9e10fc6a9b10e6db4e2c453cce5167",
+            "tests/js/hotel-order-receipt-creation.test.cjs": "414a2a5206697a6c1fe22f55191232155e0441fbf97870f989f94cbfd2b3174d",
+            "tests/js/payment-classification.test.cjs": "4878454f9b3b735bfccdcbb788954e4ee971f45fd3d2100f1fc42e3d7977fbbe"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/orders/partials/sale_note_form.vue",
+            "symbol": "changePaymentMethod",
+            "operation": "native_===",
+            "operation_language": "javascript"
+        }
+    },
+    "cd78661ac959b5a523aacf47": {
+        "category": "technical",
+        "justification": "Comparación de identificadores, moneda o naturaleza del medio, sin operar importes. Expresión: row.payment_destination_id !== next",
+        "evidence": [
+            "modules/Hotel/Resources/assets/js/views/rooms/Checkout.vue",
+            "tests/js/hotel-order-receipt-creation.test.cjs",
+            "tests/js/payment-classification.test.cjs"
+        ],
+        "evidence_sha256": {
+            "modules/Hotel/Resources/assets/js/views/rooms/Checkout.vue": "7701da24aad2eebfa5513ba5aac38fb8d0c506849bafdc784fb6c6f7f84607a2",
+            "tests/js/hotel-order-receipt-creation.test.cjs": "414a2a5206697a6c1fe22f55191232155e0441fbf97870f989f94cbfd2b3174d",
+            "tests/js/payment-classification.test.cjs": "4878454f9b3b735bfccdcbb788954e4ee971f45fd3d2100f1fc42e3d7977fbbe"
+        },
+        "source": {
+            "file": "modules/Hotel/Resources/assets/js/views/rooms/Checkout.vue",
+            "symbol": "handler",
+            "operation": "native_!==",
+            "operation_language": "javascript"
+        }
+    },
+    "d432cf1ef7e63d8bab5adbbc": {
+        "category": "technical",
+        "justification": "Comparación de identificadores, moneda o naturaleza del medio, sin operar importes. Expresión: method?.collection_kind === 'account'",
+        "evidence": [
+            "modules/Hotel/Resources/assets/js/views/rooms/Checkout.vue",
+            "tests/js/hotel-order-receipt-creation.test.cjs",
+            "tests/js/payment-classification.test.cjs"
+        ],
+        "evidence_sha256": {
+            "modules/Hotel/Resources/assets/js/views/rooms/Checkout.vue": "7701da24aad2eebfa5513ba5aac38fb8d0c506849bafdc784fb6c6f7f84607a2",
+            "tests/js/hotel-order-receipt-creation.test.cjs": "414a2a5206697a6c1fe22f55191232155e0441fbf97870f989f94cbfd2b3174d",
+            "tests/js/payment-classification.test.cjs": "4878454f9b3b735bfccdcbb788954e4ee971f45fd3d2100f1fc42e3d7977fbbe"
+        },
+        "source": {
+            "file": "modules/Hotel/Resources/assets/js/views/rooms/Checkout.vue",
+            "symbol": "handler",
+            "operation": "native_===",
+            "operation_language": "javascript"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "04466f6bb15a0f581283543a": {
+        "category": "technical",
+        "justification": "Comparación de identificadores, moneda, clasificación o presencia; no calcula importes. Expresión: $this->input('collection_kind') !== 'account'",
+        "evidence": [
+            "modules/Sale/Http/Requests/PaymentMethodTypeRequest.php",
+            "tests/Feature/BankCommissionPersistenceTest.php",
+            "tests/Support/PaymentClassificationPersistenceCases.php"
+        ],
+        "evidence_sha256": {
+            "modules/Sale/Http/Requests/PaymentMethodTypeRequest.php": "01a7464eda31ac531a4a9e25e347304978191cf8557a35d9fea696881798345a",
+            "tests/Feature/BankCommissionPersistenceTest.php": "087f50623391cb926cb3d3aded3e39dd2442ef8e8248f6681f5e284c5cd68861",
+            "tests/Support/PaymentClassificationPersistenceCases.php": "e357bd18b240c75d5b0423ac1656bb69857c7a150f6d2fe802d57eb64861fc6f"
+        },
+        "source": {
+            "file": "modules/Sale/Http/Requests/PaymentMethodTypeRequest.php",
+            "symbol": "PaymentMethodTypeRequest::rules",
+            "operation": "native_NotIdentical",
+            "operation_language": "php"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "143d913873d22566c4b16b5d": {
+        "category": "technical",
+        "justification": "Comparación de identificadores, moneda, clasificación o presencia; no calcula importes. Expresión: $account->bank_id === null",
+        "evidence": [
+            "app/Services/Payments/Movement.php",
+            "tests/Feature/BankCommissionPersistenceTest.php",
+            "tests/Support/PaymentClassificationPersistenceCases.php"
+        ],
+        "evidence_sha256": {
+            "app/Services/Payments/Movement.php": "862d8b627b9b27a037dca773828f2a203487b1887127266283f48981eeec8ff0",
+            "tests/Feature/BankCommissionPersistenceTest.php": "087f50623391cb926cb3d3aded3e39dd2442ef8e8248f6681f5e284c5cd68861",
+            "tests/Support/PaymentClassificationPersistenceCases.php": "e357bd18b240c75d5b0423ac1656bb69857c7a150f6d2fe802d57eb64861fc6f"
+        },
+        "source": {
+            "file": "app/Services/Payments/Movement.php",
+            "symbol": "Movement::capture",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        },
+        "proof": "strict_type_guard"
+    },
+    "19ba4ec17d153c97d011a18f": {
+        "category": "technical",
+        "justification": "Comparación de identificadores, moneda, clasificación o presencia; no calcula importes. Expresión: $method->minimum_commission === null",
+        "evidence": [
+            "app/Services/Payments/Classification.php",
+            "tests/Feature/BankCommissionPersistenceTest.php",
+            "tests/Support/PaymentClassificationPersistenceCases.php"
+        ],
+        "evidence_sha256": {
+            "app/Services/Payments/Classification.php": "d52a1656ce230ce9de4bc9f6076dac7ad2e7c876e414974bfb426b9ead90f9b4",
+            "tests/Feature/BankCommissionPersistenceTest.php": "087f50623391cb926cb3d3aded3e39dd2442ef8e8248f6681f5e284c5cd68861",
+            "tests/Support/PaymentClassificationPersistenceCases.php": "e357bd18b240c75d5b0423ac1656bb69857c7a150f6d2fe802d57eb64861fc6f"
+        },
+        "source": {
+            "file": "app/Services/Payments/Classification.php",
+            "symbol": "Classification::snapshot",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        },
+        "proof": "strict_type_guard"
+    },
+    "1c5fe2efeda819158854f90c": {
+        "category": "presentation",
+        "justification": "Concatenación de etiquetas o valores ya formateados en la interfaz, sin operación monetaria. Expresión: _s(_f(\"DecimalText\")(summary.income))+\" / \"",
+        "evidence": [
+            "modules/Finance/Resources/assets/js/components/DataTableGlobalPayment.vue",
+            "tests/js/payment-classification.test.cjs",
+            "tests/js/payment-method-form.test.cjs"
+        ],
+        "evidence_sha256": {
+            "modules/Finance/Resources/assets/js/components/DataTableGlobalPayment.vue": "c6ce3b16041bbd035c1f949fa90bbe5e401e89cdb4b8616a196a63b7e1703628",
+            "tests/js/payment-classification.test.cjs": "4878454f9b3b735bfccdcbb788954e4ee971f45fd3d2100f1fc42e3d7977fbbe",
+            "tests/js/payment-method-form.test.cjs": "7ae050586b61e28c836afb170c56975cd828c65c9e19d7ddc4bea365a429093d"
+        },
+        "source": {
+            "file": "modules/Finance/Resources/assets/js/components/DataTableGlobalPayment.vue",
+            "symbol": "{template}",
+            "operation": "native_+",
+            "operation_language": "javascript"
+        }
+    },
+    "1d2cb946ec0a7a562c358686": {
+        "category": "storage",
+        "justification": "DDL inicial con DECIMAL(30,12), snapshot y claves para la configuración y comisión bancaria. Expresión: <<<'SQL' CREATE TABLE `payment_commissions` ( `id` int(10) unsigned NOT NULL AUTO_INCREMENT, `source_global_payment_id` int(10) unsigned NOT NULL, `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL, `date_of_payment` date NOT NULL, `amount` decimal(30,12) NOT NULL, `calculation_snapshot` json DEFAULT NULL, PRIMARY KEY (`id`), UNIQUE KEY `payment_commissions_source_unique` (`source_global_payment_id`), KEY `payment_commissions_currency_fk` (`currency_type_id`) ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci SQL",
+        "evidence": [
+            "database/migrations/tenant/2026_08_17_000344_create_payment_commissions_table.php",
+            "tests/Unit/BankPaymentMysqlTest.php"
+        ],
+        "evidence_sha256": {
+            "database/migrations/tenant/2026_08_17_000344_create_payment_commissions_table.php": "da97882b9645cd2149b535daae24234920a5abd486cf3712abf1b6d501d31f5d",
+            "tests/Unit/BankPaymentMysqlTest.php": "e80a9ec6c01e20bb6e3c6b25dbf45145b883f2bcad9c527e5cc8fda1438e2d3d"
+        },
+        "source": {
+            "file": "database/migrations/tenant/2026_08_17_000344_create_payment_commissions_table.php",
+            "symbol": "{anonymous}::up",
+            "operation": "sql_expression",
+            "operation_language": "php"
+        }
+    },
+    "21fb7cc7b1be80b7e950a55f": {
+        "category": "presentation",
+        "justification": "Representación del total financiero; el resultado y sus componentes se conservan como fracciones en calculation_snapshot. Expresión: D::represent($row['egress'])",
+        "evidence": [
+            "app/Services/Payments/FinancialReport.php",
+            "tests/Feature/BankCommissionPersistenceTest.php",
+            "tests/Support/PaymentClassificationPersistenceCases.php"
+        ],
+        "evidence_sha256": {
+            "app/Services/Payments/FinancialReport.php": "ec83f91056888e2abccbea0b40d76d0826e8a9b1f84646d32302440de1e72f6f",
+            "tests/Feature/BankCommissionPersistenceTest.php": "087f50623391cb926cb3d3aded3e39dd2442ef8e8248f6681f5e284c5cd68861",
+            "tests/Support/PaymentClassificationPersistenceCases.php": "e357bd18b240c75d5b0423ac1656bb69857c7a150f6d2fe802d57eb64861fc6f"
+        },
+        "source": {
+            "file": "app/Services/Payments/FinancialReport.php",
+            "symbol": "FinancialReport::totals",
+            "operation": "represent",
+            "operation_language": "php"
+        }
+    },
+    "254723104f3753b0e415af72": {
+        "category": "technical",
+        "justification": "Comparación de identificadores, moneda, clasificación o presencia; no calcula importes. Expresión: (string) $account->bank_id !== (string) $request->input('bank_id')",
+        "evidence": [
+            "modules/Sale/Http/Controllers/PaymentMethodTypeController.php",
+            "tests/Feature/BankCommissionPersistenceTest.php",
+            "tests/Support/PaymentClassificationPersistenceCases.php"
+        ],
+        "evidence_sha256": {
+            "modules/Sale/Http/Controllers/PaymentMethodTypeController.php": "cd8a66935fc8a7d300d98f69d2e54d58763c062b6257df728ca77ba4167e247b",
+            "tests/Feature/BankCommissionPersistenceTest.php": "087f50623391cb926cb3d3aded3e39dd2442ef8e8248f6681f5e284c5cd68861",
+            "tests/Support/PaymentClassificationPersistenceCases.php": "e357bd18b240c75d5b0423ac1656bb69857c7a150f6d2fe802d57eb64861fc6f"
+        },
+        "source": {
+            "file": "modules/Sale/Http/Controllers/PaymentMethodTypeController.php",
+            "symbol": "PaymentMethodTypeController::methodInput",
+            "operation": "native_NotIdentical",
+            "operation_language": "php"
+        }
+    },
+    "26f67e8054eb2b7275103ac5": {
+        "category": "technical",
+        "justification": "Comparación de identificadores, moneda, clasificación o presencia; no calcula importes. Expresión: String(account.bank_id) === String(this.form.bank_id)",
+        "evidence": [
+            "modules/Sale/Resources/assets/js/views/payment_method_types/form.vue",
+            "tests/js/payment-classification.test.cjs",
+            "tests/js/payment-method-form.test.cjs"
+        ],
+        "evidence_sha256": {
+            "modules/Sale/Resources/assets/js/views/payment_method_types/form.vue": "fb3bfb848cc4c78d9deac673880357d902d456f753f110c389c7a1a39faeaa08",
+            "tests/js/payment-classification.test.cjs": "4878454f9b3b735bfccdcbb788954e4ee971f45fd3d2100f1fc42e3d7977fbbe",
+            "tests/js/payment-method-form.test.cjs": "7ae050586b61e28c836afb170c56975cd828c65c9e19d7ddc4bea365a429093d"
+        },
+        "source": {
+            "file": "modules/Sale/Resources/assets/js/views/payment_method_types/form.vue",
+            "symbol": "compatibleAccounts",
+            "operation": "native_===",
+            "operation_language": "javascript"
+        }
+    },
+    "2d7ae66ae4ddabf9340b7189": {
+        "category": "technical",
+        "justification": "Comparación de identificadores, moneda, clasificación o presencia; no calcula importes. Expresión: row.minimum_commission == null",
+        "evidence": [
+            "modules/Sale/Resources/assets/js/views/payment_method_types/index.vue",
+            "tests/js/payment-classification.test.cjs",
+            "tests/js/payment-method-form.test.cjs"
+        ],
+        "evidence_sha256": {
+            "modules/Sale/Resources/assets/js/views/payment_method_types/index.vue": "fbf7136f84c1b2689157f686c43ec9653e29ee14d74e4fa6891dc36879da1e0d",
+            "tests/js/payment-classification.test.cjs": "4878454f9b3b735bfccdcbb788954e4ee971f45fd3d2100f1fc42e3d7977fbbe",
+            "tests/js/payment-method-form.test.cjs": "7ae050586b61e28c836afb170c56975cd828c65c9e19d7ddc4bea365a429093d"
+        },
+        "source": {
+            "file": "modules/Sale/Resources/assets/js/views/payment_method_types/index.vue",
+            "symbol": "{template}",
+            "operation": "native_==",
+            "operation_language": "javascript"
+        },
+        "proof": "nullish_presence_guard"
+    },
+    "30fa1aec379172af3ec30d2f": {
+        "category": "presentation",
+        "justification": "Representación del total financiero; el resultado y sus componentes se conservan como fracciones en calculation_snapshot. Expresión: D::represent($row['income']->minus($row['egress']))",
+        "evidence": [
+            "app/Services/Payments/FinancialReport.php",
+            "tests/Feature/BankCommissionPersistenceTest.php",
+            "tests/Support/PaymentClassificationPersistenceCases.php"
+        ],
+        "evidence_sha256": {
+            "app/Services/Payments/FinancialReport.php": "ec83f91056888e2abccbea0b40d76d0826e8a9b1f84646d32302440de1e72f6f",
+            "tests/Feature/BankCommissionPersistenceTest.php": "087f50623391cb926cb3d3aded3e39dd2442ef8e8248f6681f5e284c5cd68861",
+            "tests/Support/PaymentClassificationPersistenceCases.php": "e357bd18b240c75d5b0423ac1656bb69857c7a150f6d2fe802d57eb64861fc6f"
+        },
+        "source": {
+            "file": "app/Services/Payments/FinancialReport.php",
+            "symbol": "FinancialReport::totals",
+            "operation": "represent",
+            "operation_language": "php"
+        }
+    },
+    "45eff750536ff512c16d93ac": {
+        "category": "technical",
+        "justification": "Comparación de identificadores, moneda, clasificación o presencia; no calcula importes. Expresión: ($context['method']['catalog'] ?? null) !== 'payment_method_types'",
+        "evidence": [
+            "app/Services/Payments/Movement.php",
+            "tests/Feature/BankCommissionPersistenceTest.php",
+            "tests/Support/PaymentClassificationPersistenceCases.php"
+        ],
+        "evidence_sha256": {
+            "app/Services/Payments/Movement.php": "862d8b627b9b27a037dca773828f2a203487b1887127266283f48981eeec8ff0",
+            "tests/Feature/BankCommissionPersistenceTest.php": "087f50623391cb926cb3d3aded3e39dd2442ef8e8248f6681f5e284c5cd68861",
+            "tests/Support/PaymentClassificationPersistenceCases.php": "e357bd18b240c75d5b0423ac1656bb69857c7a150f6d2fe802d57eb64861fc6f"
+        },
+        "source": {
+            "file": "app/Services/Payments/Movement.php",
+            "symbol": "Movement::createCommission",
+            "operation": "native_NotIdentical",
+            "operation_language": "php"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "494c27d7269bfd2cf8666631": {
+        "category": "presentation",
+        "justification": "Concatenación de etiquetas o valores ya formateados en la interfaz, sin operación monetaria. Expresión: _s(_f(\"DecimalText\")(summary.income))+\" / \"+_s(_f(\"DecimalText\")(summary.egress))",
+        "evidence": [
+            "modules/Finance/Resources/assets/js/components/DataTableGlobalPayment.vue",
+            "tests/js/payment-classification.test.cjs",
+            "tests/js/payment-method-form.test.cjs"
+        ],
+        "evidence_sha256": {
+            "modules/Finance/Resources/assets/js/components/DataTableGlobalPayment.vue": "c6ce3b16041bbd035c1f949fa90bbe5e401e89cdb4b8616a196a63b7e1703628",
+            "tests/js/payment-classification.test.cjs": "4878454f9b3b735bfccdcbb788954e4ee971f45fd3d2100f1fc42e3d7977fbbe",
+            "tests/js/payment-method-form.test.cjs": "7ae050586b61e28c836afb170c56975cd828c65c9e19d7ddc4bea365a429093d"
+        },
+        "source": {
+            "file": "modules/Finance/Resources/assets/js/components/DataTableGlobalPayment.vue",
+            "symbol": "{template}",
+            "operation": "native_+",
+            "operation_language": "javascript"
+        }
+    },
+    "49ad6cf717ee2a6623fa443f": {
+        "category": "technical",
+        "justification": "Comparación de identificadores, moneda, clasificación o presencia; no calcula importes. Expresión: form.collection_kind === 'account'",
+        "evidence": [
+            "modules/Sale/Resources/assets/js/views/payment_method_types/form.vue",
+            "tests/js/payment-classification.test.cjs",
+            "tests/js/payment-method-form.test.cjs"
+        ],
+        "evidence_sha256": {
+            "modules/Sale/Resources/assets/js/views/payment_method_types/form.vue": "fb3bfb848cc4c78d9deac673880357d902d456f753f110c389c7a1a39faeaa08",
+            "tests/js/payment-classification.test.cjs": "4878454f9b3b735bfccdcbb788954e4ee971f45fd3d2100f1fc42e3d7977fbbe",
+            "tests/js/payment-method-form.test.cjs": "7ae050586b61e28c836afb170c56975cd828c65c9e19d7ddc4bea365a429093d"
+        },
+        "source": {
+            "file": "modules/Sale/Resources/assets/js/views/payment_method_types/form.vue",
+            "symbol": "{template}",
+            "operation": "native_===",
+            "operation_language": "javascript"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "50c6f210e2c51e5efdd62fab": {
+        "category": "technical",
+        "justification": "Comparación de identificadores, moneda, clasificación o presencia; no calcula importes. Expresión: $kind === 'account'",
+        "evidence": [
+            "app/Services/Payments/ReceiptDestination.php",
+            "tests/Feature/BankCommissionPersistenceTest.php",
+            "tests/Support/PaymentClassificationPersistenceCases.php"
+        ],
+        "evidence_sha256": {
+            "app/Services/Payments/ReceiptDestination.php": "48efbde4ead43724d927effc953bcd8915498e135df7b05df5bae9d0fc4bb0ef",
+            "tests/Feature/BankCommissionPersistenceTest.php": "087f50623391cb926cb3d3aded3e39dd2442ef8e8248f6681f5e284c5cd68861",
+            "tests/Support/PaymentClassificationPersistenceCases.php": "e357bd18b240c75d5b0423ac1656bb69857c7a150f6d2fe802d57eb64861fc6f"
+        },
+        "source": {
+            "file": "app/Services/Payments/ReceiptDestination.php",
+            "symbol": "ReceiptDestination::attach",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "577e7ca40881d586ed39963c": {
+        "category": "settlement",
+        "justification": "Liquidación HALF_UP a centavos de la comisión bancaria; se conserva la fracción exacta y la base en calculation_snapshot. Expresión: D::represent($settled, 2, true)",
+        "evidence": [
+            "app/Services/Payments/BankCommission.php",
+            "tests/Feature/BankCommissionPersistenceTest.php",
+            "tests/Support/PaymentClassificationPersistenceCases.php"
+        ],
+        "evidence_sha256": {
+            "app/Services/Payments/BankCommission.php": "88d4a233a5a2f4da425277b91e539e3f3e4ffa4dcac31a1c8e18f403539bcb9c",
+            "tests/Feature/BankCommissionPersistenceTest.php": "087f50623391cb926cb3d3aded3e39dd2442ef8e8248f6681f5e284c5cd68861",
+            "tests/Support/PaymentClassificationPersistenceCases.php": "e357bd18b240c75d5b0423ac1656bb69857c7a150f6d2fe802d57eb64861fc6f"
+        },
+        "source": {
+            "file": "app/Services/Payments/BankCommission.php",
+            "symbol": "BankCommission::calculate",
+            "operation": "represent",
+            "operation_language": "php"
+        }
+    },
+    "5796189d429602cda1460045": {
+        "category": "technical",
+        "justification": "Actualiza sólo el identificador del turno de los movimientos de comisión vinculados, sin recalcular importes. Expresión: $db->table('global_payments')->where('payment_type', \\Modules\\Finance\\Models\\PaymentCommission::class)->whereIn('payment_id', $commissionIds)->whereNull('cash_session_id')->update(['cash_session_id' => $cash->id])",
+        "evidence": [
+            "app/Services/Payments/RestaurantCashImport.php",
+            "tests/Feature/BankCommissionPersistenceTest.php",
+            "tests/Support/PaymentClassificationPersistenceCases.php"
+        ],
+        "evidence_sha256": {
+            "app/Services/Payments/RestaurantCashImport.php": "ca52f3ce2e14be20ee5d9d78027ec2adf4fa280066a8fd6873f7ee80acb11c2b",
+            "tests/Feature/BankCommissionPersistenceTest.php": "087f50623391cb926cb3d3aded3e39dd2442ef8e8248f6681f5e284c5cd68861",
+            "tests/Support/PaymentClassificationPersistenceCases.php": "e357bd18b240c75d5b0423ac1656bb69857c7a150f6d2fe802d57eb64861fc6f"
+        },
+        "source": {
+            "file": "app/Services/Payments/RestaurantCashImport.php",
+            "symbol": "RestaurantCashImport::store",
+            "operation": "bulk_write",
+            "operation_language": "php"
+        }
+    },
+    "58e05959138d66c3913ffadc": {
+        "category": "technical",
+        "justification": "Comparación de identificadores, moneda, clasificación o presencia; no calcula importes. Expresión: String(method.id) === String(row.payment_method_type_id)",
+        "evidence": [
+            "resources/js/helpers/payment-classification.js",
+            "tests/js/payment-classification.test.cjs",
+            "tests/js/payment-method-form.test.cjs"
+        ],
+        "evidence_sha256": {
+            "resources/js/helpers/payment-classification.js": "b38bd8397df58c7f9a312d6b1f400923cb9982bd68c324114538a19994dfc879",
+            "tests/js/payment-classification.test.cjs": "4878454f9b3b735bfccdcbb788954e4ee971f45fd3d2100f1fc42e3d7977fbbe",
+            "tests/js/payment-method-form.test.cjs": "7ae050586b61e28c836afb170c56975cd828c65c9e19d7ddc4bea365a429093d"
+        },
+        "source": {
+            "file": "resources/js/helpers/payment-classification.js",
+            "symbol": "classifiedPaymentDestinationDisabled",
+            "operation": "native_===",
+            "operation_language": "javascript"
+        }
+    },
+    "66b8f7aedc604a0ffe71fa39": {
+        "category": "technical",
+        "justification": "Comparación de identificadores, moneda, clasificación o presencia; no calcula importes. Expresión: $kind === 'account'",
+        "evidence": [
+            "app/Models/Tenant/ModelTenant.php",
+            "tests/Feature/BankCommissionPersistenceTest.php",
+            "tests/Support/PaymentClassificationPersistenceCases.php"
+        ],
+        "evidence_sha256": {
+            "app/Models/Tenant/ModelTenant.php": "44371eea815835d6b261b601cc1b7e9be18cb0d27b22312000e6a15be3cde42b",
+            "tests/Feature/BankCommissionPersistenceTest.php": "087f50623391cb926cb3d3aded3e39dd2442ef8e8248f6681f5e284c5cd68861",
+            "tests/Support/PaymentClassificationPersistenceCases.php": "e357bd18b240c75d5b0423ac1656bb69857c7a150f6d2fe802d57eb64861fc6f"
+        },
+        "source": {
+            "file": "app/Models/Tenant/ModelTenant.php",
+            "symbol": "ModelTenant::booted",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "6cc753180dc689f986f559a8": {
+        "category": "technical",
+        "justification": "Comparación de identificadores, moneda, clasificación o presencia; no calcula importes. Expresión: $account->currency_type_id !== $request->input('currency_type_id')",
+        "evidence": [
+            "modules/Sale/Http/Controllers/PaymentMethodTypeController.php",
+            "tests/Feature/BankCommissionPersistenceTest.php",
+            "tests/Support/PaymentClassificationPersistenceCases.php"
+        ],
+        "evidence_sha256": {
+            "modules/Sale/Http/Controllers/PaymentMethodTypeController.php": "cd8a66935fc8a7d300d98f69d2e54d58763c062b6257df728ca77ba4167e247b",
+            "tests/Feature/BankCommissionPersistenceTest.php": "087f50623391cb926cb3d3aded3e39dd2442ef8e8248f6681f5e284c5cd68861",
+            "tests/Support/PaymentClassificationPersistenceCases.php": "e357bd18b240c75d5b0423ac1656bb69857c7a150f6d2fe802d57eb64861fc6f"
+        },
+        "source": {
+            "file": "modules/Sale/Http/Controllers/PaymentMethodTypeController.php",
+            "symbol": "PaymentMethodTypeController::methodInput",
+            "operation": "native_NotIdentical",
+            "operation_language": "php"
+        }
+    },
+    "6e42f16058de0c40f9a50887": {
+        "category": "technical",
+        "justification": "Comparación de identificadores, moneda, clasificación o presencia; no calcula importes. Expresión: this.form.collection_kind !== 'account'",
+        "evidence": [
+            "modules/Sale/Resources/assets/js/views/payment_method_types/form.vue",
+            "tests/js/payment-classification.test.cjs",
+            "tests/js/payment-method-form.test.cjs"
+        ],
+        "evidence_sha256": {
+            "modules/Sale/Resources/assets/js/views/payment_method_types/form.vue": "fb3bfb848cc4c78d9deac673880357d902d456f753f110c389c7a1a39faeaa08",
+            "tests/js/payment-classification.test.cjs": "4878454f9b3b735bfccdcbb788954e4ee971f45fd3d2100f1fc42e3d7977fbbe",
+            "tests/js/payment-method-form.test.cjs": "7ae050586b61e28c836afb170c56975cd828c65c9e19d7ddc4bea365a429093d"
+        },
+        "source": {
+            "file": "modules/Sale/Resources/assets/js/views/payment_method_types/form.vue",
+            "symbol": "changeCollectionKind",
+            "operation": "native_!==",
+            "operation_language": "javascript"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "6f02603e94b2048ecdd07d30": {
+        "category": "technical",
+        "justification": "Comparación de identificadores, moneda, clasificación o presencia; no calcula importes. Expresión: row.commission_percentage == null",
+        "evidence": [
+            "modules/Sale/Resources/assets/js/views/payment_method_types/index.vue",
+            "tests/js/payment-classification.test.cjs",
+            "tests/js/payment-method-form.test.cjs"
+        ],
+        "evidence_sha256": {
+            "modules/Sale/Resources/assets/js/views/payment_method_types/index.vue": "fbf7136f84c1b2689157f686c43ec9653e29ee14d74e4fa6891dc36879da1e0d",
+            "tests/js/payment-classification.test.cjs": "4878454f9b3b735bfccdcbb788954e4ee971f45fd3d2100f1fc42e3d7977fbbe",
+            "tests/js/payment-method-form.test.cjs": "7ae050586b61e28c836afb170c56975cd828c65c9e19d7ddc4bea365a429093d"
+        },
+        "source": {
+            "file": "modules/Sale/Resources/assets/js/views/payment_method_types/index.vue",
+            "symbol": "{template}",
+            "operation": "native_==",
+            "operation_language": "javascript"
+        },
+        "proof": "nullish_presence_guard"
+    },
+    "6f136987e19bc934e3a53fec": {
+        "category": "technical",
+        "justification": "Comparación de identificadores, moneda, clasificación o presencia; no calcula importes. Expresión: (string) $destination !== (string) $method->bank_account_id",
+        "evidence": [
+            "app/Services/Payments/ReceiptDestination.php",
+            "tests/Feature/BankCommissionPersistenceTest.php",
+            "tests/Support/PaymentClassificationPersistenceCases.php"
+        ],
+        "evidence_sha256": {
+            "app/Services/Payments/ReceiptDestination.php": "48efbde4ead43724d927effc953bcd8915498e135df7b05df5bae9d0fc4bb0ef",
+            "tests/Feature/BankCommissionPersistenceTest.php": "087f50623391cb926cb3d3aded3e39dd2442ef8e8248f6681f5e284c5cd68861",
+            "tests/Support/PaymentClassificationPersistenceCases.php": "e357bd18b240c75d5b0423ac1656bb69857c7a150f6d2fe802d57eb64861fc6f"
+        },
+        "source": {
+            "file": "app/Services/Payments/ReceiptDestination.php",
+            "symbol": "ReceiptDestination::attach",
+            "operation": "native_NotIdentical",
+            "operation_language": "php"
+        }
+    },
+    "7036641b66649b40f111f1a4": {
+        "category": "technical",
+        "justification": "Comparación de identificadores, moneda, clasificación o presencia; no calcula importes. Expresión: $origin->destination_type !== BankAccount::class",
+        "evidence": [
+            "app/Services/Payments/Movement.php",
+            "tests/Feature/BankCommissionPersistenceTest.php",
+            "tests/Support/PaymentClassificationPersistenceCases.php"
+        ],
+        "evidence_sha256": {
+            "app/Services/Payments/Movement.php": "862d8b627b9b27a037dca773828f2a203487b1887127266283f48981eeec8ff0",
+            "tests/Feature/BankCommissionPersistenceTest.php": "087f50623391cb926cb3d3aded3e39dd2442ef8e8248f6681f5e284c5cd68861",
+            "tests/Support/PaymentClassificationPersistenceCases.php": "e357bd18b240c75d5b0423ac1656bb69857c7a150f6d2fe802d57eb64861fc6f"
+        },
+        "source": {
+            "file": "app/Services/Payments/Movement.php",
+            "symbol": "Movement::capture",
+            "operation": "native_NotIdentical",
+            "operation_language": "php"
+        }
+    },
+    "725a9e6e93ea2b640023c459": {
+        "category": "presentation",
+        "justification": "Concatenación de etiquetas o valores ya formateados en la interfaz, sin operación monetaria. Expresión: \"Comisión mínima por transacción (\"+_s(form.currency_type_id)+\")\"",
+        "evidence": [
+            "modules/Sale/Resources/assets/js/views/payment_method_types/form.vue",
+            "tests/js/payment-classification.test.cjs",
+            "tests/js/payment-method-form.test.cjs"
+        ],
+        "evidence_sha256": {
+            "modules/Sale/Resources/assets/js/views/payment_method_types/form.vue": "fb3bfb848cc4c78d9deac673880357d902d456f753f110c389c7a1a39faeaa08",
+            "tests/js/payment-classification.test.cjs": "4878454f9b3b735bfccdcbb788954e4ee971f45fd3d2100f1fc42e3d7977fbbe",
+            "tests/js/payment-method-form.test.cjs": "7ae050586b61e28c836afb170c56975cd828c65c9e19d7ddc4bea365a429093d"
+        },
+        "source": {
+            "file": "modules/Sale/Resources/assets/js/views/payment_method_types/form.vue",
+            "symbol": "{template}",
+            "operation": "native_+",
+            "operation_language": "javascript"
+        }
+    },
+    "75f8e9ac3b9337421324f20a": {
+        "category": "presentation",
+        "justification": "Concatenación de etiquetas o valores ya formateados en la interfaz, sin operación monetaria. Expresión: row.currency_type_id + ' ' + row.minimum_commission",
+        "evidence": [
+            "modules/Sale/Resources/assets/js/views/payment_method_types/index.vue",
+            "tests/js/payment-classification.test.cjs",
+            "tests/js/payment-method-form.test.cjs"
+        ],
+        "evidence_sha256": {
+            "modules/Sale/Resources/assets/js/views/payment_method_types/index.vue": "fbf7136f84c1b2689157f686c43ec9653e29ee14d74e4fa6891dc36879da1e0d",
+            "tests/js/payment-classification.test.cjs": "4878454f9b3b735bfccdcbb788954e4ee971f45fd3d2100f1fc42e3d7977fbbe",
+            "tests/js/payment-method-form.test.cjs": "7ae050586b61e28c836afb170c56975cd828c65c9e19d7ddc4bea365a429093d"
+        },
+        "source": {
+            "file": "modules/Sale/Resources/assets/js/views/payment_method_types/index.vue",
+            "symbol": "{template}",
+            "operation": "native_+",
+            "operation_language": "javascript"
+        }
+    },
+    "76cea450110d23369cc93e26": {
+        "category": "technical",
+        "justification": "Comparación de identificadores, moneda, clasificación o presencia; no calcula importes. Expresión: String(destination.id) === String(method.bank_account_id)",
+        "evidence": [
+            "resources/js/helpers/payment-classification.js",
+            "tests/js/payment-classification.test.cjs",
+            "tests/js/payment-method-form.test.cjs"
+        ],
+        "evidence_sha256": {
+            "resources/js/helpers/payment-classification.js": "b38bd8397df58c7f9a312d6b1f400923cb9982bd68c324114538a19994dfc879",
+            "tests/js/payment-classification.test.cjs": "4878454f9b3b735bfccdcbb788954e4ee971f45fd3d2100f1fc42e3d7977fbbe",
+            "tests/js/payment-method-form.test.cjs": "7ae050586b61e28c836afb170c56975cd828c65c9e19d7ddc4bea365a429093d"
+        },
+        "source": {
+            "file": "resources/js/helpers/payment-classification.js",
+            "symbol": "classifiedDestinations",
+            "operation": "native_===",
+            "operation_language": "javascript"
+        }
+    },
+    "76e42821753b9e3a7334076f": {
+        "category": "technical",
+        "justification": "Comparación de identificadores, moneda, clasificación o presencia; no calcula importes. Expresión: $method->commission_percentage === null",
+        "evidence": [
+            "app/Services/Payments/Classification.php",
+            "tests/Feature/BankCommissionPersistenceTest.php",
+            "tests/Support/PaymentClassificationPersistenceCases.php"
+        ],
+        "evidence_sha256": {
+            "app/Services/Payments/Classification.php": "d52a1656ce230ce9de4bc9f6076dac7ad2e7c876e414974bfb426b9ead90f9b4",
+            "tests/Feature/BankCommissionPersistenceTest.php": "087f50623391cb926cb3d3aded3e39dd2442ef8e8248f6681f5e284c5cd68861",
+            "tests/Support/PaymentClassificationPersistenceCases.php": "e357bd18b240c75d5b0423ac1656bb69857c7a150f6d2fe802d57eb64861fc6f"
+        },
+        "source": {
+            "file": "app/Services/Payments/Classification.php",
+            "symbol": "Classification::snapshot",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        },
+        "proof": "strict_type_guard"
+    },
+    "7ccd04ffc5132e211b9af864": {
+        "category": "presentation",
+        "justification": "Concatenación de etiquetas o valores ya formateados en la interfaz, sin operación monetaria. Expresión: row.currency_type_id + ' '",
+        "evidence": [
+            "modules/Sale/Resources/assets/js/views/payment_method_types/index.vue",
+            "tests/js/payment-classification.test.cjs",
+            "tests/js/payment-method-form.test.cjs"
+        ],
+        "evidence_sha256": {
+            "modules/Sale/Resources/assets/js/views/payment_method_types/index.vue": "fbf7136f84c1b2689157f686c43ec9653e29ee14d74e4fa6891dc36879da1e0d",
+            "tests/js/payment-classification.test.cjs": "4878454f9b3b735bfccdcbb788954e4ee971f45fd3d2100f1fc42e3d7977fbbe",
+            "tests/js/payment-method-form.test.cjs": "7ae050586b61e28c836afb170c56975cd828c65c9e19d7ddc4bea365a429093d"
+        },
+        "source": {
+            "file": "modules/Sale/Resources/assets/js/views/payment_method_types/index.vue",
+            "symbol": "{template}",
+            "operation": "native_+",
+            "operation_language": "javascript"
+        }
+    },
+    "7e94ca60ea62838e5dc379c8": {
+        "category": "technical",
+        "justification": "Comparación de identificadores, moneda, clasificación o presencia; no calcula importes. Expresión: ($context['method']['collection_kind'] ?? null) !== 'account'",
+        "evidence": [
+            "app/Services/Payments/Movement.php",
+            "tests/Feature/BankCommissionPersistenceTest.php",
+            "tests/Support/PaymentClassificationPersistenceCases.php"
+        ],
+        "evidence_sha256": {
+            "app/Services/Payments/Movement.php": "862d8b627b9b27a037dca773828f2a203487b1887127266283f48981eeec8ff0",
+            "tests/Feature/BankCommissionPersistenceTest.php": "087f50623391cb926cb3d3aded3e39dd2442ef8e8248f6681f5e284c5cd68861",
+            "tests/Support/PaymentClassificationPersistenceCases.php": "e357bd18b240c75d5b0423ac1656bb69857c7a150f6d2fe802d57eb64861fc6f"
+        },
+        "source": {
+            "file": "app/Services/Payments/Movement.php",
+            "symbol": "Movement::createCommission",
+            "operation": "native_NotIdentical",
+            "operation_language": "php"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "8fcf0b057377b6a704d87a7f": {
+        "category": "technical",
+        "justification": "Comparación de identificadores, moneda, clasificación o presencia; no calcula importes. Expresión: $exchangeRate !== null",
+        "evidence": [
+            "modules/MobileApp/Http/Resources/Api/FinanceMovementCollection.php",
+            "tests/Feature/BankCommissionPersistenceTest.php",
+            "tests/Support/PaymentClassificationPersistenceCases.php"
+        ],
+        "evidence_sha256": {
+            "modules/MobileApp/Http/Resources/Api/FinanceMovementCollection.php": "bb5b24ab3213909294b9d28bd1c42b8703272cf7e00c55664463e86b54e14756",
+            "tests/Feature/BankCommissionPersistenceTest.php": "087f50623391cb926cb3d3aded3e39dd2442ef8e8248f6681f5e284c5cd68861",
+            "tests/Support/PaymentClassificationPersistenceCases.php": "e357bd18b240c75d5b0423ac1656bb69857c7a150f6d2fe802d57eb64861fc6f"
+        },
+        "source": {
+            "file": "modules/MobileApp/Http/Resources/Api/FinanceMovementCollection.php",
+            "symbol": "FinanceMovementCollection::toArray",
+            "operation": "native_NotIdentical",
+            "operation_language": "php"
+        },
+        "proof": "strict_type_guard"
+    },
+    "91c91015baa0946ae8676443": {
+        "category": "technical",
+        "justification": "Comparación de identificadores, moneda, clasificación o presencia; no calcula importes. Expresión: $account->currency_type_id !== $this->input('currency_type_id')",
+        "evidence": [
+            "modules/Sale/Http/Requests/PaymentMethodTypeRequest.php",
+            "tests/Feature/BankCommissionPersistenceTest.php",
+            "tests/Support/PaymentClassificationPersistenceCases.php"
+        ],
+        "evidence_sha256": {
+            "modules/Sale/Http/Requests/PaymentMethodTypeRequest.php": "01a7464eda31ac531a4a9e25e347304978191cf8557a35d9fea696881798345a",
+            "tests/Feature/BankCommissionPersistenceTest.php": "087f50623391cb926cb3d3aded3e39dd2442ef8e8248f6681f5e284c5cd68861",
+            "tests/Support/PaymentClassificationPersistenceCases.php": "e357bd18b240c75d5b0423ac1656bb69857c7a150f6d2fe802d57eb64861fc6f"
+        },
+        "source": {
+            "file": "modules/Sale/Http/Requests/PaymentMethodTypeRequest.php",
+            "symbol": "PaymentMethodTypeRequest::rules",
+            "operation": "native_NotIdentical",
+            "operation_language": "php"
+        }
+    },
+    "97ccbf557461e9c6892d0222": {
+        "category": "presentation",
+        "justification": "Concatenación de etiquetas o valores ya formateados en la interfaz, sin operación monetaria. Expresión: row.bank_name + (row.bank_account_number ? ' · ' + row.bank_account_number : '')",
+        "evidence": [
+            "modules/Sale/Resources/assets/js/views/payment_method_types/index.vue",
+            "tests/js/payment-classification.test.cjs",
+            "tests/js/payment-method-form.test.cjs"
+        ],
+        "evidence_sha256": {
+            "modules/Sale/Resources/assets/js/views/payment_method_types/index.vue": "fbf7136f84c1b2689157f686c43ec9653e29ee14d74e4fa6891dc36879da1e0d",
+            "tests/js/payment-classification.test.cjs": "4878454f9b3b735bfccdcbb788954e4ee971f45fd3d2100f1fc42e3d7977fbbe",
+            "tests/js/payment-method-form.test.cjs": "7ae050586b61e28c836afb170c56975cd828c65c9e19d7ddc4bea365a429093d"
+        },
+        "source": {
+            "file": "modules/Sale/Resources/assets/js/views/payment_method_types/index.vue",
+            "symbol": "{template}",
+            "operation": "native_+",
+            "operation_language": "javascript"
+        }
+    },
+    "98a7e39235da9266d0528f0b": {
+        "category": "technical",
+        "justification": "Comparación de identificadores, moneda, clasificación o presencia; no calcula importes. Expresión: $global->destination_type !== $origin->destination_type",
+        "evidence": [
+            "app/Services/Payments/Movement.php",
+            "tests/Feature/BankCommissionPersistenceTest.php",
+            "tests/Support/PaymentClassificationPersistenceCases.php"
+        ],
+        "evidence_sha256": {
+            "app/Services/Payments/Movement.php": "862d8b627b9b27a037dca773828f2a203487b1887127266283f48981eeec8ff0",
+            "tests/Feature/BankCommissionPersistenceTest.php": "087f50623391cb926cb3d3aded3e39dd2442ef8e8248f6681f5e284c5cd68861",
+            "tests/Support/PaymentClassificationPersistenceCases.php": "e357bd18b240c75d5b0423ac1656bb69857c7a150f6d2fe802d57eb64861fc6f"
+        },
+        "source": {
+            "file": "app/Services/Payments/Movement.php",
+            "symbol": "Movement::capture",
+            "operation": "native_NotIdentical",
+            "operation_language": "php"
+        }
+    },
+    "9c01c93ae68e3fe6f5b137d6": {
+        "category": "technical",
+        "justification": "Comparación de identificadores, moneda, clasificación o presencia; no calcula importes. Expresión: $method->collection_kind === 'cash'",
+        "evidence": [
+            "app/Services/Fiscal/NoteRefund.php",
+            "tests/Feature/BankCommissionPersistenceTest.php",
+            "tests/Support/PaymentClassificationPersistenceCases.php"
+        ],
+        "evidence_sha256": {
+            "app/Services/Fiscal/NoteRefund.php": "c79584423f5b4a82b6b177ba754f7e1fea46d0fc3f1a1c1893cc01183e3d9953",
+            "tests/Feature/BankCommissionPersistenceTest.php": "087f50623391cb926cb3d3aded3e39dd2442ef8e8248f6681f5e284c5cd68861",
+            "tests/Support/PaymentClassificationPersistenceCases.php": "e357bd18b240c75d5b0423ac1656bb69857c7a150f6d2fe802d57eb64861fc6f"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/NoteRefund.php",
+            "symbol": "NoteRefund::register",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "9e99ddafce1683439ac4e28a": {
+        "category": "presentation",
+        "justification": "Concatenación de etiquetas o valores ya formateados en la interfaz, sin operación monetaria. Expresión: _s(_f(\"DecimalText\")(summary.income))+\" / \"+_s(_f(\"DecimalText\")(summary.egress))+\" / \"+_s(_f(\"DecimalText\")(summary.net))",
+        "evidence": [
+            "modules/Finance/Resources/assets/js/components/DataTableGlobalPayment.vue",
+            "tests/js/payment-classification.test.cjs",
+            "tests/js/payment-method-form.test.cjs"
+        ],
+        "evidence_sha256": {
+            "modules/Finance/Resources/assets/js/components/DataTableGlobalPayment.vue": "c6ce3b16041bbd035c1f949fa90bbe5e401e89cdb4b8616a196a63b7e1703628",
+            "tests/js/payment-classification.test.cjs": "4878454f9b3b735bfccdcbb788954e4ee971f45fd3d2100f1fc42e3d7977fbbe",
+            "tests/js/payment-method-form.test.cjs": "7ae050586b61e28c836afb170c56975cd828c65c9e19d7ddc4bea365a429093d"
+        },
+        "source": {
+            "file": "modules/Finance/Resources/assets/js/components/DataTableGlobalPayment.vue",
+            "symbol": "{template}",
+            "operation": "native_+",
+            "operation_language": "javascript"
+        }
+    },
+    "9f6d95c87c7cfe0f19c973de": {
+        "category": "technical",
+        "justification": "Comparación de identificadores, moneda, clasificación o presencia; no calcula importes. Expresión: auth()->user()?->type !== 'admin'",
+        "evidence": [
+            "modules/Sale/Http/Resources/PaymentMethodTypeCollection.php",
+            "tests/Feature/BankCommissionPersistenceTest.php",
+            "tests/Support/PaymentClassificationPersistenceCases.php"
+        ],
+        "evidence_sha256": {
+            "modules/Sale/Http/Resources/PaymentMethodTypeCollection.php": "19d46a17a07cb18390fd5627be63735fe4583bc24f65fb4e7f227b18f657512b",
+            "tests/Feature/BankCommissionPersistenceTest.php": "087f50623391cb926cb3d3aded3e39dd2442ef8e8248f6681f5e284c5cd68861",
+            "tests/Support/PaymentClassificationPersistenceCases.php": "e357bd18b240c75d5b0423ac1656bb69857c7a150f6d2fe802d57eb64861fc6f"
+        },
+        "source": {
+            "file": "modules/Sale/Http/Resources/PaymentMethodTypeCollection.php",
+            "symbol": "PaymentMethodTypeCollection::toArray",
+            "operation": "native_NotIdentical",
+            "operation_language": "php"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "a035499f0c9b85accf5fe6af": {
+        "category": "presentation",
+        "justification": "Concatenación de etiquetas o valores ya formateados en la interfaz, sin operación monetaria. Expresión: account.number + ' - '",
+        "evidence": [
+            "modules/Sale/Resources/assets/js/views/payment_method_types/form.vue",
+            "tests/js/payment-classification.test.cjs",
+            "tests/js/payment-method-form.test.cjs"
+        ],
+        "evidence_sha256": {
+            "modules/Sale/Resources/assets/js/views/payment_method_types/form.vue": "fb3bfb848cc4c78d9deac673880357d902d456f753f110c389c7a1a39faeaa08",
+            "tests/js/payment-classification.test.cjs": "4878454f9b3b735bfccdcbb788954e4ee971f45fd3d2100f1fc42e3d7977fbbe",
+            "tests/js/payment-method-form.test.cjs": "7ae050586b61e28c836afb170c56975cd828c65c9e19d7ddc4bea365a429093d"
+        },
+        "source": {
+            "file": "modules/Sale/Resources/assets/js/views/payment_method_types/form.vue",
+            "symbol": "{template}",
+            "operation": "native_+",
+            "operation_language": "javascript"
+        }
+    },
+    "a32639bb224e94faeacb6564": {
+        "category": "presentation",
+        "justification": "Concatenación de etiquetas o valores ya formateados en la interfaz, sin operación monetaria. Expresión: row.commission_percentage + ' %'",
+        "evidence": [
+            "modules/Sale/Resources/assets/js/views/payment_method_types/index.vue",
+            "tests/js/payment-classification.test.cjs",
+            "tests/js/payment-method-form.test.cjs"
+        ],
+        "evidence_sha256": {
+            "modules/Sale/Resources/assets/js/views/payment_method_types/index.vue": "fbf7136f84c1b2689157f686c43ec9653e29ee14d74e4fa6891dc36879da1e0d",
+            "tests/js/payment-classification.test.cjs": "4878454f9b3b735bfccdcbb788954e4ee971f45fd3d2100f1fc42e3d7977fbbe",
+            "tests/js/payment-method-form.test.cjs": "7ae050586b61e28c836afb170c56975cd828c65c9e19d7ddc4bea365a429093d"
+        },
+        "source": {
+            "file": "modules/Sale/Resources/assets/js/views/payment_method_types/index.vue",
+            "symbol": "{template}",
+            "operation": "native_+",
+            "operation_language": "javascript"
+        }
+    },
+    "a73706bdf5f5039a999183f9": {
+        "category": "presentation",
+        "justification": "Concatenación de etiquetas o valores ya formateados en la interfaz, sin operación monetaria. Expresión: _s(_f(\"DecimalText\")(summary.income))+\" / \"+_s(_f(\"DecimalText\")(summary.egress))+\" / \"",
+        "evidence": [
+            "modules/Finance/Resources/assets/js/components/DataTableGlobalPayment.vue",
+            "tests/js/payment-classification.test.cjs",
+            "tests/js/payment-method-form.test.cjs"
+        ],
+        "evidence_sha256": {
+            "modules/Finance/Resources/assets/js/components/DataTableGlobalPayment.vue": "c6ce3b16041bbd035c1f949fa90bbe5e401e89cdb4b8616a196a63b7e1703628",
+            "tests/js/payment-classification.test.cjs": "4878454f9b3b735bfccdcbb788954e4ee971f45fd3d2100f1fc42e3d7977fbbe",
+            "tests/js/payment-method-form.test.cjs": "7ae050586b61e28c836afb170c56975cd828c65c9e19d7ddc4bea365a429093d"
+        },
+        "source": {
+            "file": "modules/Finance/Resources/assets/js/components/DataTableGlobalPayment.vue",
+            "symbol": "{template}",
+            "operation": "native_+",
+            "operation_language": "javascript"
+        }
+    },
+    "ab7559d82470d6f5f23561d0": {
+        "category": "technical",
+        "justification": "Comparación de identificadores, moneda, clasificación o presencia; no calcula importes. Expresión: auth()->user()?->type === 'seller'",
+        "evidence": [
+            "modules/Finance/Models/GlobalPayment.php",
+            "tests/Feature/BankCommissionPersistenceTest.php",
+            "tests/Support/PaymentClassificationPersistenceCases.php"
+        ],
+        "evidence_sha256": {
+            "modules/Finance/Models/GlobalPayment.php": "8092f309cccc7e11f86c4d6bc2f7bc0d2a85ff54c1db1be8badbc93c156d3b85",
+            "tests/Feature/BankCommissionPersistenceTest.php": "087f50623391cb926cb3d3aded3e39dd2442ef8e8248f6681f5e284c5cd68861",
+            "tests/Support/PaymentClassificationPersistenceCases.php": "e357bd18b240c75d5b0423ac1656bb69857c7a150f6d2fe802d57eb64861fc6f"
+        },
+        "source": {
+            "file": "modules/Finance/Models/GlobalPayment.php",
+            "symbol": "GlobalPayment::scopeWhereFilterPaymentType",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "ac0e2bbb57b8c467cfa7f64a": {
+        "category": "presentation",
+        "justification": "Concatenación de etiquetas o valores ya formateados en la interfaz, sin operación monetaria. Expresión: \"Comisión mínima por transacción (\"+_s(form.currency_type_id)",
+        "evidence": [
+            "modules/Sale/Resources/assets/js/views/payment_method_types/form.vue",
+            "tests/js/payment-classification.test.cjs",
+            "tests/js/payment-method-form.test.cjs"
+        ],
+        "evidence_sha256": {
+            "modules/Sale/Resources/assets/js/views/payment_method_types/form.vue": "fb3bfb848cc4c78d9deac673880357d902d456f753f110c389c7a1a39faeaa08",
+            "tests/js/payment-classification.test.cjs": "4878454f9b3b735bfccdcbb788954e4ee971f45fd3d2100f1fc42e3d7977fbbe",
+            "tests/js/payment-method-form.test.cjs": "7ae050586b61e28c836afb170c56975cd828c65c9e19d7ddc4bea365a429093d"
+        },
+        "source": {
+            "file": "modules/Sale/Resources/assets/js/views/payment_method_types/form.vue",
+            "symbol": "{template}",
+            "operation": "native_+",
+            "operation_language": "javascript"
+        }
+    },
+    "ac27311479d1ac701467d23d": {
+        "category": "storage",
+        "justification": "DDL inicial con DECIMAL(30,12), snapshot y claves para la configuración y comisión bancaria. Expresión: <<<'SQL' CREATE TABLE `payment_method_types` ( `id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL, `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL, `hka_code` char(2) COLLATE utf8mb4_unicode_ci DEFAULT NULL, `collection_kind` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'unclassified', `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'VES', `iva_rate_type_id` varchar(4) COLLATE utf8mb4_unicode_ci DEFAULT NULL, `cash_currency_type_id` char(3) COLLATE utf8mb4_unicode_ci DEFAULT NULL, `bank_account_id` int(10) unsigned DEFAULT NULL, `commission_percentage` decimal(30,12) DEFAULT NULL, `minimum_commission` decimal(30,12) DEFAULT NULL, `number_days` int(11) DEFAULT NULL, `is_credit` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'Define si es tipo credito', `is_cash` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'Define si es es efectivo', `is_active` tinyint(1) NOT NULL DEFAULT '1', `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1', KEY `payment_method_types_id_index` (`id`), KEY `payment_method_bank_account_fk` (`bank_account_id`), KEY `payment_method_types_hka_code_index` (`hka_code`), KEY `payment_method_types_is_credit_index` (`is_credit`) ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci SQL",
+        "evidence": [
+            "database/migrations/tenant/2026_08_17_000135_create_payment_method_types_table.php",
+            "tests/Unit/BankPaymentMysqlTest.php"
+        ],
+        "evidence_sha256": {
+            "database/migrations/tenant/2026_08_17_000135_create_payment_method_types_table.php": "4ba32c89d5a81da61a2e2dc925d4092693d35a625bd24c01cc33678ab5ca9a52",
+            "tests/Unit/BankPaymentMysqlTest.php": "e80a9ec6c01e20bb6e3c6b25dbf45145b883f2bcad9c527e5cc8fda1438e2d3d"
+        },
+        "source": {
+            "file": "database/migrations/tenant/2026_08_17_000135_create_payment_method_types_table.php",
+            "symbol": "{anonymous}::up",
+            "operation": "sql_expression",
+            "operation_language": "php"
+        }
+    },
+    "ad69037e9fd9063776ac5d30": {
+        "category": "technical",
+        "justification": "Comparación de identificadores, moneda, clasificación o presencia; no calcula importes. Expresión: $account->currency_type_id !== $model->currency_type_id",
+        "evidence": [
+            "app/Models/Tenant/ModelTenant.php",
+            "tests/Feature/BankCommissionPersistenceTest.php",
+            "tests/Support/PaymentClassificationPersistenceCases.php"
+        ],
+        "evidence_sha256": {
+            "app/Models/Tenant/ModelTenant.php": "44371eea815835d6b261b601cc1b7e9be18cb0d27b22312000e6a15be3cde42b",
+            "tests/Feature/BankCommissionPersistenceTest.php": "087f50623391cb926cb3d3aded3e39dd2442ef8e8248f6681f5e284c5cd68861",
+            "tests/Support/PaymentClassificationPersistenceCases.php": "e357bd18b240c75d5b0423ac1656bb69857c7a150f6d2fe802d57eb64861fc6f"
+        },
+        "source": {
+            "file": "app/Models/Tenant/ModelTenant.php",
+            "symbol": "ModelTenant::booted",
+            "operation": "native_NotIdentical",
+            "operation_language": "php"
+        }
+    },
+    "af98cc1a566646b19f3bd929": {
+        "category": "technical",
+        "justification": "Comparación de identificadores, moneda, clasificación o presencia; no calcula importes. Expresión: auth()->user()?->type === 'admin'",
+        "evidence": [
+            "modules/Sale/Http/Controllers/PaymentMethodTypeController.php",
+            "tests/Feature/BankCommissionPersistenceTest.php",
+            "tests/Support/PaymentClassificationPersistenceCases.php"
+        ],
+        "evidence_sha256": {
+            "modules/Sale/Http/Controllers/PaymentMethodTypeController.php": "cd8a66935fc8a7d300d98f69d2e54d58763c062b6257df728ca77ba4167e247b",
+            "tests/Feature/BankCommissionPersistenceTest.php": "087f50623391cb926cb3d3aded3e39dd2442ef8e8248f6681f5e284c5cd68861",
+            "tests/Support/PaymentClassificationPersistenceCases.php": "e357bd18b240c75d5b0423ac1656bb69857c7a150f6d2fe802d57eb64861fc6f"
+        },
+        "source": {
+            "file": "modules/Sale/Http/Controllers/PaymentMethodTypeController.php",
+            "symbol": "PaymentMethodTypeController::tables",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "b216a6b8a071a10c89eb1580": {
+        "category": "technical",
+        "justification": "Unión de arreglos con literal de claves; no es una suma de importes. Expresión: $record->toArray() + ['bank_id' => $record->bank_account_id ? \\App\\Models\\Tenant\\BankAccount::whereKey($record->bank_account_id)->value('bank_id') : null, 'hka_compatible' => \\App\\Services\\Payments\\HkaPaymentMethods::compatible($record->hka_code, $record->collection_kind, $record->currency_type_id)]",
+        "evidence": [
+            "modules/Sale/Http/Controllers/PaymentMethodTypeController.php",
+            "tests/Feature/BankCommissionPersistenceTest.php",
+            "tests/Support/PaymentClassificationPersistenceCases.php"
+        ],
+        "evidence_sha256": {
+            "modules/Sale/Http/Controllers/PaymentMethodTypeController.php": "cd8a66935fc8a7d300d98f69d2e54d58763c062b6257df728ca77ba4167e247b",
+            "tests/Feature/BankCommissionPersistenceTest.php": "087f50623391cb926cb3d3aded3e39dd2442ef8e8248f6681f5e284c5cd68861",
+            "tests/Support/PaymentClassificationPersistenceCases.php": "e357bd18b240c75d5b0423ac1656bb69857c7a150f6d2fe802d57eb64861fc6f"
+        },
+        "source": {
+            "file": "modules/Sale/Http/Controllers/PaymentMethodTypeController.php",
+            "symbol": "PaymentMethodTypeController::record",
+            "operation": "native_Plus",
+            "operation_language": "php"
+        },
+        "proof": "array_union"
+    },
+    "b4f71ae75465c6a106d8f983": {
+        "category": "technical",
+        "justification": "Comparación de identificadores, moneda, clasificación o presencia; no calcula importes. Expresión: $request->input('collection_kind') !== 'account'",
+        "evidence": [
+            "modules/Sale/Http/Controllers/PaymentMethodTypeController.php",
+            "tests/Feature/BankCommissionPersistenceTest.php",
+            "tests/Support/PaymentClassificationPersistenceCases.php"
+        ],
+        "evidence_sha256": {
+            "modules/Sale/Http/Controllers/PaymentMethodTypeController.php": "cd8a66935fc8a7d300d98f69d2e54d58763c062b6257df728ca77ba4167e247b",
+            "tests/Feature/BankCommissionPersistenceTest.php": "087f50623391cb926cb3d3aded3e39dd2442ef8e8248f6681f5e284c5cd68861",
+            "tests/Support/PaymentClassificationPersistenceCases.php": "e357bd18b240c75d5b0423ac1656bb69857c7a150f6d2fe802d57eb64861fc6f"
+        },
+        "source": {
+            "file": "modules/Sale/Http/Controllers/PaymentMethodTypeController.php",
+            "symbol": "PaymentMethodTypeController::methodInput",
+            "operation": "native_NotIdentical",
+            "operation_language": "php"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "b74c39e271f7d713a3be5ce3": {
+        "category": "technical",
+        "justification": "Comparación de identificadores, moneda, clasificación o presencia; no calcula importes. Expresión: ($context['direction'] ?? null) !== 'income'",
+        "evidence": [
+            "app/Services/Payments/Movement.php",
+            "tests/Feature/BankCommissionPersistenceTest.php",
+            "tests/Support/PaymentClassificationPersistenceCases.php"
+        ],
+        "evidence_sha256": {
+            "app/Services/Payments/Movement.php": "862d8b627b9b27a037dca773828f2a203487b1887127266283f48981eeec8ff0",
+            "tests/Feature/BankCommissionPersistenceTest.php": "087f50623391cb926cb3d3aded3e39dd2442ef8e8248f6681f5e284c5cd68861",
+            "tests/Support/PaymentClassificationPersistenceCases.php": "e357bd18b240c75d5b0423ac1656bb69857c7a150f6d2fe802d57eb64861fc6f"
+        },
+        "source": {
+            "file": "app/Services/Payments/Movement.php",
+            "symbol": "Movement::createCommission",
+            "operation": "native_NotIdentical",
+            "operation_language": "php"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "c07e53f7fc3cb8193789d59e": {
+        "category": "technical",
+        "justification": "Comparación de identificadores, moneda, clasificación o presencia; no calcula importes. Expresión: method.collection_kind === 'account'",
+        "evidence": [
+            "resources/js/helpers/payment-classification.js",
+            "tests/js/payment-classification.test.cjs",
+            "tests/js/payment-method-form.test.cjs"
+        ],
+        "evidence_sha256": {
+            "resources/js/helpers/payment-classification.js": "b38bd8397df58c7f9a312d6b1f400923cb9982bd68c324114538a19994dfc879",
+            "tests/js/payment-classification.test.cjs": "4878454f9b3b735bfccdcbb788954e4ee971f45fd3d2100f1fc42e3d7977fbbe",
+            "tests/js/payment-method-form.test.cjs": "7ae050586b61e28c836afb170c56975cd828c65c9e19d7ddc4bea365a429093d"
+        },
+        "source": {
+            "file": "resources/js/helpers/payment-classification.js",
+            "symbol": "classifiedPaymentDestinationDisabled",
+            "operation": "native_===",
+            "operation_language": "javascript"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "c2a1337bfc225cd70dc28f04": {
+        "category": "technical",
+        "justification": "Comparación de identificadores, moneda, clasificación o presencia; no calcula importes. Expresión: $data['payment_destination_id'] === null",
+        "evidence": [
+            "app/Services/Fiscal/NoteRefund.php",
+            "tests/Feature/BankCommissionPersistenceTest.php",
+            "tests/Support/PaymentClassificationPersistenceCases.php"
+        ],
+        "evidence_sha256": {
+            "app/Services/Fiscal/NoteRefund.php": "c79584423f5b4a82b6b177ba754f7e1fea46d0fc3f1a1c1893cc01183e3d9953",
+            "tests/Feature/BankCommissionPersistenceTest.php": "087f50623391cb926cb3d3aded3e39dd2442ef8e8248f6681f5e284c5cd68861",
+            "tests/Support/PaymentClassificationPersistenceCases.php": "e357bd18b240c75d5b0423ac1656bb69857c7a150f6d2fe802d57eb64861fc6f"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/NoteRefund.php",
+            "symbol": "NoteRefund::register",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        },
+        "proof": "strict_type_guard"
+    },
+    "c709769784f15ef6577d2faf": {
+        "category": "technical",
+        "justification": "Comparación de identificadores, moneda, clasificación o presencia; no calcula importes. Expresión: (string) $account->bank_id !== (string) $this->input('bank_id')",
+        "evidence": [
+            "modules/Sale/Http/Requests/PaymentMethodTypeRequest.php",
+            "tests/Feature/BankCommissionPersistenceTest.php",
+            "tests/Support/PaymentClassificationPersistenceCases.php"
+        ],
+        "evidence_sha256": {
+            "modules/Sale/Http/Requests/PaymentMethodTypeRequest.php": "01a7464eda31ac531a4a9e25e347304978191cf8557a35d9fea696881798345a",
+            "tests/Feature/BankCommissionPersistenceTest.php": "087f50623391cb926cb3d3aded3e39dd2442ef8e8248f6681f5e284c5cd68861",
+            "tests/Support/PaymentClassificationPersistenceCases.php": "e357bd18b240c75d5b0423ac1656bb69857c7a150f6d2fe802d57eb64861fc6f"
+        },
+        "source": {
+            "file": "modules/Sale/Http/Requests/PaymentMethodTypeRequest.php",
+            "symbol": "PaymentMethodTypeRequest::rules",
+            "operation": "native_NotIdentical",
+            "operation_language": "php"
+        }
+    },
+    "caa3e9f858a5b6b5e5da2ecf": {
+        "category": "technical",
+        "justification": "Comparación de identificadores, moneda, clasificación o presencia; no calcula importes. Expresión: account.currency_type_id === this.form.currency_type_id",
+        "evidence": [
+            "modules/Sale/Resources/assets/js/views/payment_method_types/form.vue",
+            "tests/js/payment-classification.test.cjs",
+            "tests/js/payment-method-form.test.cjs"
+        ],
+        "evidence_sha256": {
+            "modules/Sale/Resources/assets/js/views/payment_method_types/form.vue": "fb3bfb848cc4c78d9deac673880357d902d456f753f110c389c7a1a39faeaa08",
+            "tests/js/payment-classification.test.cjs": "4878454f9b3b735bfccdcbb788954e4ee971f45fd3d2100f1fc42e3d7977fbbe",
+            "tests/js/payment-method-form.test.cjs": "7ae050586b61e28c836afb170c56975cd828c65c9e19d7ddc4bea365a429093d"
+        },
+        "source": {
+            "file": "modules/Sale/Resources/assets/js/views/payment_method_types/form.vue",
+            "symbol": "compatibleAccounts",
+            "operation": "native_===",
+            "operation_language": "javascript"
+        }
+    },
+    "dc1340f1386d3d7925e9298a": {
+        "category": "technical",
+        "justification": "Comparación de identificadores, moneda, clasificación o presencia; no calcula importes. Expresión: (string) $global->destination_id !== (string) $origin->destination_id",
+        "evidence": [
+            "app/Services/Payments/Movement.php",
+            "tests/Feature/BankCommissionPersistenceTest.php",
+            "tests/Support/PaymentClassificationPersistenceCases.php"
+        ],
+        "evidence_sha256": {
+            "app/Services/Payments/Movement.php": "862d8b627b9b27a037dca773828f2a203487b1887127266283f48981eeec8ff0",
+            "tests/Feature/BankCommissionPersistenceTest.php": "087f50623391cb926cb3d3aded3e39dd2442ef8e8248f6681f5e284c5cd68861",
+            "tests/Support/PaymentClassificationPersistenceCases.php": "e357bd18b240c75d5b0423ac1656bb69857c7a150f6d2fe802d57eb64861fc6f"
+        },
+        "source": {
+            "file": "app/Services/Payments/Movement.php",
+            "symbol": "Movement::capture",
+            "operation": "native_NotIdentical",
+            "operation_language": "php"
+        }
+    },
+    "df75b507a9e2d8ea4b66b545": {
+        "category": "technical",
+        "justification": "Comparación de identificadores, moneda, clasificación o presencia; no calcula importes. Expresión: (string) $method->bank_account_id !== (string) $global->destination_id",
+        "evidence": [
+            "app/Services/Payments/Movement.php",
+            "tests/Feature/BankCommissionPersistenceTest.php",
+            "tests/Support/PaymentClassificationPersistenceCases.php"
+        ],
+        "evidence_sha256": {
+            "app/Services/Payments/Movement.php": "862d8b627b9b27a037dca773828f2a203487b1887127266283f48981eeec8ff0",
+            "tests/Feature/BankCommissionPersistenceTest.php": "087f50623391cb926cb3d3aded3e39dd2442ef8e8248f6681f5e284c5cd68861",
+            "tests/Support/PaymentClassificationPersistenceCases.php": "e357bd18b240c75d5b0423ac1656bb69857c7a150f6d2fe802d57eb64861fc6f"
+        },
+        "source": {
+            "file": "app/Services/Payments/Movement.php",
+            "symbol": "Movement::capture",
+            "operation": "native_NotIdentical",
+            "operation_language": "php"
+        }
+    },
+    "e65951f2a8313ad76865a92c": {
+        "category": "settlement",
+        "justification": "Liquidación HALF_UP a centavos de la comisión bancaria; se conserva la fracción exacta y la base en calculation_snapshot. Expresión: D::represent($exact, 2, true)",
+        "evidence": [
+            "app/Services/Payments/BankCommission.php",
+            "tests/Feature/BankCommissionPersistenceTest.php",
+            "tests/Support/PaymentClassificationPersistenceCases.php"
+        ],
+        "evidence_sha256": {
+            "app/Services/Payments/BankCommission.php": "88d4a233a5a2f4da425277b91e539e3f3e4ffa4dcac31a1c8e18f403539bcb9c",
+            "tests/Feature/BankCommissionPersistenceTest.php": "087f50623391cb926cb3d3aded3e39dd2442ef8e8248f6681f5e284c5cd68861",
+            "tests/Support/PaymentClassificationPersistenceCases.php": "e357bd18b240c75d5b0423ac1656bb69857c7a150f6d2fe802d57eb64861fc6f"
+        },
+        "source": {
+            "file": "app/Services/Payments/BankCommission.php",
+            "symbol": "BankCommission::calculate",
+            "operation": "represent",
+            "operation_language": "php"
+        }
+    },
+    "ea9f9ee9fbef41950100ee40": {
+        "category": "presentation",
+        "justification": "Representación del total financiero; el resultado y sus componentes se conservan como fracciones en calculation_snapshot. Expresión: D::represent($row['income'])",
+        "evidence": [
+            "app/Services/Payments/FinancialReport.php",
+            "tests/Feature/BankCommissionPersistenceTest.php",
+            "tests/Support/PaymentClassificationPersistenceCases.php"
+        ],
+        "evidence_sha256": {
+            "app/Services/Payments/FinancialReport.php": "ec83f91056888e2abccbea0b40d76d0826e8a9b1f84646d32302440de1e72f6f",
+            "tests/Feature/BankCommissionPersistenceTest.php": "087f50623391cb926cb3d3aded3e39dd2442ef8e8248f6681f5e284c5cd68861",
+            "tests/Support/PaymentClassificationPersistenceCases.php": "e357bd18b240c75d5b0423ac1656bb69857c7a150f6d2fe802d57eb64861fc6f"
+        },
+        "source": {
+            "file": "app/Services/Payments/FinancialReport.php",
+            "symbol": "FinancialReport::totals",
+            "operation": "represent",
+            "operation_language": "php"
+        }
+    },
+    "ec64b566c503ff187ff9ef54": {
+        "category": "presentation",
+        "justification": "Concatenación de etiquetas o valores ya formateados en la interfaz, sin operación monetaria. Expresión: \"Ingresos / egresos / neto · \"+_s(summary.currency_type_id)",
+        "evidence": [
+            "modules/Finance/Resources/assets/js/components/DataTableGlobalPayment.vue",
+            "tests/js/payment-classification.test.cjs",
+            "tests/js/payment-method-form.test.cjs"
+        ],
+        "evidence_sha256": {
+            "modules/Finance/Resources/assets/js/components/DataTableGlobalPayment.vue": "c6ce3b16041bbd035c1f949fa90bbe5e401e89cdb4b8616a196a63b7e1703628",
+            "tests/js/payment-classification.test.cjs": "4878454f9b3b735bfccdcbb788954e4ee971f45fd3d2100f1fc42e3d7977fbbe",
+            "tests/js/payment-method-form.test.cjs": "7ae050586b61e28c836afb170c56975cd828c65c9e19d7ddc4bea365a429093d"
+        },
+        "source": {
+            "file": "modules/Finance/Resources/assets/js/components/DataTableGlobalPayment.vue",
+            "symbol": "{template}",
+            "operation": "native_+",
+            "operation_language": "javascript"
+        }
+    },
+    "eee330a462b83017a088514c": {
+        "category": "presentation",
+        "justification": "Concatenación de etiquetas o valores ya formateados en la interfaz, sin operación monetaria. Expresión: ' · ' + row.bank_account_number",
+        "evidence": [
+            "modules/Sale/Resources/assets/js/views/payment_method_types/index.vue",
+            "tests/js/payment-classification.test.cjs",
+            "tests/js/payment-method-form.test.cjs"
+        ],
+        "evidence_sha256": {
+            "modules/Sale/Resources/assets/js/views/payment_method_types/index.vue": "fbf7136f84c1b2689157f686c43ec9653e29ee14d74e4fa6891dc36879da1e0d",
+            "tests/js/payment-classification.test.cjs": "4878454f9b3b735bfccdcbb788954e4ee971f45fd3d2100f1fc42e3d7977fbbe",
+            "tests/js/payment-method-form.test.cjs": "7ae050586b61e28c836afb170c56975cd828c65c9e19d7ddc4bea365a429093d"
+        },
+        "source": {
+            "file": "modules/Sale/Resources/assets/js/views/payment_method_types/index.vue",
+            "symbol": "{template}",
+            "operation": "native_+",
+            "operation_language": "javascript"
+        }
+    },
+    "f0fa016a443c67b71d227fd3": {
+        "category": "technical",
+        "justification": "Comparación de identificadores, moneda, clasificación o presencia; no calcula importes. Expresión: row.payment_destination_id !== next",
+        "evidence": [
+            "resources/js/helpers/payment-classification.js",
+            "tests/js/payment-classification.test.cjs",
+            "tests/js/payment-method-form.test.cjs"
+        ],
+        "evidence_sha256": {
+            "resources/js/helpers/payment-classification.js": "b38bd8397df58c7f9a312d6b1f400923cb9982bd68c324114538a19994dfc879",
+            "tests/js/payment-classification.test.cjs": "4878454f9b3b735bfccdcbb788954e4ee971f45fd3d2100f1fc42e3d7977fbbe",
+            "tests/js/payment-method-form.test.cjs": "7ae050586b61e28c836afb170c56975cd828c65c9e19d7ddc4bea365a429093d"
+        },
+        "source": {
+            "file": "resources/js/helpers/payment-classification.js",
+            "symbol": "clearIncompatiblePaymentDestinations",
+            "operation": "native_!==",
+            "operation_language": "javascript"
+        }
+    },
+    "f4495af0d9107c41a9d8d361": {
+        "category": "technical",
+        "justification": "Comparación de identificadores, moneda, clasificación o presencia; no calcula importes. Expresión: String(destination.id) === String(method.bank_account_id)",
+        "evidence": [
+            "resources/js/helpers/payment-classification.js",
+            "tests/js/payment-classification.test.cjs",
+            "tests/js/payment-method-form.test.cjs"
+        ],
+        "evidence_sha256": {
+            "resources/js/helpers/payment-classification.js": "b38bd8397df58c7f9a312d6b1f400923cb9982bd68c324114538a19994dfc879",
+            "tests/js/payment-classification.test.cjs": "4878454f9b3b735bfccdcbb788954e4ee971f45fd3d2100f1fc42e3d7977fbbe",
+            "tests/js/payment-method-form.test.cjs": "7ae050586b61e28c836afb170c56975cd828c65c9e19d7ddc4bea365a429093d"
+        },
+        "source": {
+            "file": "resources/js/helpers/payment-classification.js",
+            "symbol": "clearIncompatiblePaymentDestinations",
+            "operation": "native_===",
+            "operation_language": "javascript"
+        }
+    },
+    "f5e3d6fcf84fd3ae1e8fb38e": {
+        "category": "presentation",
+        "justification": "Concatenación de etiquetas o valores ya formateados en la interfaz, sin operación monetaria. Expresión: account.number + ' - ' + account.description",
+        "evidence": [
+            "modules/Sale/Resources/assets/js/views/payment_method_types/form.vue",
+            "tests/js/payment-classification.test.cjs",
+            "tests/js/payment-method-form.test.cjs"
+        ],
+        "evidence_sha256": {
+            "modules/Sale/Resources/assets/js/views/payment_method_types/form.vue": "fb3bfb848cc4c78d9deac673880357d902d456f753f110c389c7a1a39faeaa08",
+            "tests/js/payment-classification.test.cjs": "4878454f9b3b735bfccdcbb788954e4ee971f45fd3d2100f1fc42e3d7977fbbe",
+            "tests/js/payment-method-form.test.cjs": "7ae050586b61e28c836afb170c56975cd828c65c9e19d7ddc4bea365a429093d"
+        },
+        "source": {
+            "file": "modules/Sale/Resources/assets/js/views/payment_method_types/form.vue",
+            "symbol": "{template}",
+            "operation": "native_+",
+            "operation_language": "javascript"
+        }
+    },
+    "fe32217a243fffe0b6b5560f": {
+        "category": "technical",
+        "justification": "Comparación de identificadores, moneda, clasificación o presencia; no calcula importes. Expresión: $destination !== null",
+        "evidence": [
+            "app/Services/Payments/ReceiptDestination.php",
+            "tests/Feature/BankCommissionPersistenceTest.php",
+            "tests/Support/PaymentClassificationPersistenceCases.php"
+        ],
+        "evidence_sha256": {
+            "app/Services/Payments/ReceiptDestination.php": "48efbde4ead43724d927effc953bcd8915498e135df7b05df5bae9d0fc4bb0ef",
+            "tests/Feature/BankCommissionPersistenceTest.php": "087f50623391cb926cb3d3aded3e39dd2442ef8e8248f6681f5e284c5cd68861",
+            "tests/Support/PaymentClassificationPersistenceCases.php": "e357bd18b240c75d5b0423ac1656bb69857c7a150f6d2fe802d57eb64861fc6f"
+        },
+        "source": {
+            "file": "app/Services/Payments/ReceiptDestination.php",
+            "symbol": "ReceiptDestination::attach",
+            "operation": "native_NotIdentical",
+            "operation_language": "php"
+        },
+        "proof": "strict_type_guard"
+    },
+    "fe9babc36a9ff87bc7fd183e": {
+        "category": "technical",
+        "justification": "Comparación de identificadores, moneda, clasificación o presencia; no calcula importes. Expresión: method?.bank_account_id != null",
+        "evidence": [
+            "resources/js/helpers/payment-classification.js",
+            "tests/js/payment-classification.test.cjs",
+            "tests/js/payment-method-form.test.cjs"
+        ],
+        "evidence_sha256": {
+            "resources/js/helpers/payment-classification.js": "b38bd8397df58c7f9a312d6b1f400923cb9982bd68c324114538a19994dfc879",
+            "tests/js/payment-classification.test.cjs": "4878454f9b3b735bfccdcbb788954e4ee971f45fd3d2100f1fc42e3d7977fbbe",
+            "tests/js/payment-method-form.test.cjs": "7ae050586b61e28c836afb170c56975cd828c65c9e19d7ddc4bea365a429093d"
+        },
+        "source": {
+            "file": "resources/js/helpers/payment-classification.js",
+            "symbol": "classifiedDestinations",
+            "operation": "native_!=",
+            "operation_language": "javascript"
+        },
+        "proof": "nullish_presence_guard"
+    },
+    "ffaf41e16701362abb65f63a": {
+        "category": "technical",
+        "justification": "Comparación de identificadores, moneda, clasificación o presencia; no calcula importes. Expresión: method?.collection_kind === 'account'",
+        "evidence": [
+            "resources/js/helpers/payment-classification.js",
+            "tests/js/payment-classification.test.cjs",
+            "tests/js/payment-method-form.test.cjs"
+        ],
+        "evidence_sha256": {
+            "resources/js/helpers/payment-classification.js": "b38bd8397df58c7f9a312d6b1f400923cb9982bd68c324114538a19994dfc879",
+            "tests/js/payment-classification.test.cjs": "4878454f9b3b735bfccdcbb788954e4ee971f45fd3d2100f1fc42e3d7977fbbe",
+            "tests/js/payment-method-form.test.cjs": "7ae050586b61e28c836afb170c56975cd828c65c9e19d7ddc4bea365a429093d"
+        },
+        "source": {
+            "file": "resources/js/helpers/payment-classification.js",
+            "symbol": "clearIncompatiblePaymentDestinations",
+            "operation": "native_===",
+            "operation_language": "javascript"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
     "00046f187fad661976f3d8a1": {
         "category": "technical",
         "justification": "Igualdad con literal de texto no numérico; comprueba una categoría sin adaptar valores decimales: $format_pdf !== 'a4'",
@@ -4149,7 +5711,7 @@
             "tests/Unit/ExactGuardProofTest.php#test_only_type_or_nonnumeric_string_guards_are_proven"
         ],
         "evidence_sha256": {
-            "app/Services/Fiscal/NoteRefund.php": "d9e9763e253e26417494f1f1ca3dfab7625d1e4175c55a8f12bae002c27cddb1",
+            "app/Services/Fiscal/NoteRefund.php": "c79584423f5b4a82b6b177ba754f7e1fea46d0fc3f1a1c1893cc01183e3d9953",
             "scripts/exact_guard_proof.php": "425c25367e15706480baff82085b3f1a7f5c27252f13b00a8d4eca41bad272fc",
             "tests/Unit/ExactGuardProofTest.php": "e758abc24cc0fbb778d6c2895bec3c114ec8712d06e4b85615346b6afa49b381"
         },
@@ -24149,7 +25711,7 @@
             "tests/Unit/ExactGuardProofTest.php#test_only_type_or_nonnumeric_string_guards_are_proven"
         ],
         "evidence_sha256": {
-            "app/Services/Fiscal/NoteRefund.php": "d9e9763e253e26417494f1f1ca3dfab7625d1e4175c55a8f12bae002c27cddb1",
+            "app/Services/Fiscal/NoteRefund.php": "c79584423f5b4a82b6b177ba754f7e1fea46d0fc3f1a1c1893cc01183e3d9953",
             "scripts/exact_guard_proof.php": "425c25367e15706480baff82085b3f1a7f5c27252f13b00a8d4eca41bad272fc",
             "tests/Unit/ExactGuardProofTest.php": "e758abc24cc0fbb778d6c2895bec3c114ec8712d06e4b85615346b6afa49b381"
         },
@@ -33866,7 +35428,7 @@
             "tests/Unit/ExactGuardProofTest.php#test_only_type_or_nonnumeric_string_guards_are_proven"
         ],
         "evidence_sha256": {
-            "app/Services/Fiscal/NoteRefund.php": "d9e9763e253e26417494f1f1ca3dfab7625d1e4175c55a8f12bae002c27cddb1",
+            "app/Services/Fiscal/NoteRefund.php": "c79584423f5b4a82b6b177ba754f7e1fea46d0fc3f1a1c1893cc01183e3d9953",
             "scripts/exact_guard_proof.php": "425c25367e15706480baff82085b3f1a7f5c27252f13b00a8d4eca41bad272fc",
             "tests/Unit/ExactGuardProofTest.php": "e758abc24cc0fbb778d6c2895bec3c114ec8712d06e4b85615346b6afa49b381"
         },
@@ -40538,7 +42100,7 @@
             "tests/Unit/ExactArrayUnionProofTest.php#test_only_array_literal_unions_have_a_structural_proof"
         ],
         "evidence_sha256": {
-            "app/Services/Fiscal/NoteRefund.php": "d9e9763e253e26417494f1f1ca3dfab7625d1e4175c55a8f12bae002c27cddb1",
+            "app/Services/Fiscal/NoteRefund.php": "c79584423f5b4a82b6b177ba754f7e1fea46d0fc3f1a1c1893cc01183e3d9953",
             "scripts/exact_guard_proof.php": "425c25367e15706480baff82085b3f1a7f5c27252f13b00a8d4eca41bad272fc",
             "tests/Unit/ExactArrayUnionProofTest.php": "0425be414024106f490fd3297f7dbc0fa2ca5b3a08ae0a895d80989e37c78fa5"
         },
@@ -50308,7 +51870,7 @@
             "tests/Unit/ExactArrayUnionProofTest.php#test_only_array_literal_unions_have_a_structural_proof"
         ],
         "evidence_sha256": {
-            "app/Services/Fiscal/NoteRefund.php": "d9e9763e253e26417494f1f1ca3dfab7625d1e4175c55a8f12bae002c27cddb1",
+            "app/Services/Fiscal/NoteRefund.php": "c79584423f5b4a82b6b177ba754f7e1fea46d0fc3f1a1c1893cc01183e3d9953",
             "scripts/exact_guard_proof.php": "425c25367e15706480baff82085b3f1a7f5c27252f13b00a8d4eca41bad272fc",
             "tests/Unit/ExactArrayUnionProofTest.php": "0425be414024106f490fd3297f7dbc0fa2ca5b3a08ae0a895d80989e37c78fa5"
         },
@@ -65097,7 +66659,7 @@
             "tests/Unit/ExactGuardProofTest.php#test_only_type_or_nonnumeric_string_guards_are_proven"
         ],
         "evidence_sha256": {
-            "app/Services/Fiscal/NoteRefund.php": "d9e9763e253e26417494f1f1ca3dfab7625d1e4175c55a8f12bae002c27cddb1",
+            "app/Services/Fiscal/NoteRefund.php": "c79584423f5b4a82b6b177ba754f7e1fea46d0fc3f1a1c1893cc01183e3d9953",
             "scripts/exact_guard_proof.php": "425c25367e15706480baff82085b3f1a7f5c27252f13b00a8d4eca41bad272fc",
             "tests/Unit/ExactGuardProofTest.php": "e758abc24cc0fbb778d6c2895bec3c114ec8712d06e4b85615346b6afa49b381"
         },
@@ -74352,7 +75914,7 @@
             "tests/Unit/ExactGuardProofTest.php#test_only_type_or_nonnumeric_string_guards_are_proven"
         ],
         "evidence_sha256": {
-            "app/Services/Fiscal/NoteRefund.php": "d9e9763e253e26417494f1f1ca3dfab7625d1e4175c55a8f12bae002c27cddb1",
+            "app/Services/Fiscal/NoteRefund.php": "c79584423f5b4a82b6b177ba754f7e1fea46d0fc3f1a1c1893cc01183e3d9953",
             "scripts/exact_guard_proof.php": "425c25367e15706480baff82085b3f1a7f5c27252f13b00a8d4eca41bad272fc",
             "tests/Unit/ExactGuardProofTest.php": "e758abc24cc0fbb778d6c2895bec3c114ec8712d06e4b85615346b6afa49b381"
         },
@@ -75256,7 +76818,7 @@
             "tests/Unit/ExactGuardProofTest.php#test_only_type_or_nonnumeric_string_guards_are_proven"
         ],
         "evidence_sha256": {
-            "app/Services/Fiscal/NoteRefund.php": "d9e9763e253e26417494f1f1ca3dfab7625d1e4175c55a8f12bae002c27cddb1",
+            "app/Services/Fiscal/NoteRefund.php": "c79584423f5b4a82b6b177ba754f7e1fea46d0fc3f1a1c1893cc01183e3d9953",
             "scripts/exact_guard_proof.php": "425c25367e15706480baff82085b3f1a7f5c27252f13b00a8d4eca41bad272fc",
             "tests/Unit/ExactGuardProofTest.php": "e758abc24cc0fbb778d6c2895bec3c114ec8712d06e4b85615346b6afa49b381"
         },
@@ -85642,7 +87204,7 @@
             "tests/Unit/ExactGuardProofTest.php#test_only_type_or_nonnumeric_string_guards_are_proven"
         ],
         "evidence_sha256": {
-            "app/Services/Fiscal/NoteRefund.php": "d9e9763e253e26417494f1f1ca3dfab7625d1e4175c55a8f12bae002c27cddb1",
+            "app/Services/Fiscal/NoteRefund.php": "c79584423f5b4a82b6b177ba754f7e1fea46d0fc3f1a1c1893cc01183e3d9953",
             "scripts/exact_guard_proof.php": "425c25367e15706480baff82085b3f1a7f5c27252f13b00a8d4eca41bad272fc",
             "tests/Unit/ExactGuardProofTest.php": "e758abc24cc0fbb778d6c2895bec3c114ec8712d06e4b85615346b6afa49b381"
         },
@@ -108827,7 +110389,7 @@
             "tests/Unit/ExactGuardProofTest.php#test_only_type_or_nonnumeric_string_guards_are_proven"
         ],
         "evidence_sha256": {
-            "app/Services/Fiscal/NoteRefund.php": "d9e9763e253e26417494f1f1ca3dfab7625d1e4175c55a8f12bae002c27cddb1",
+            "app/Services/Fiscal/NoteRefund.php": "c79584423f5b4a82b6b177ba754f7e1fea46d0fc3f1a1c1893cc01183e3d9953",
             "scripts/exact_guard_proof.php": "425c25367e15706480baff82085b3f1a7f5c27252f13b00a8d4eca41bad272fc",
             "tests/Unit/ExactGuardProofTest.php": "e758abc24cc0fbb778d6c2895bec3c114ec8712d06e4b85615346b6afa49b381"
         },
@@ -127859,7 +129421,7 @@
             "tests/Unit/ExactGuardProofTest.php#test_only_type_or_nonnumeric_string_guards_are_proven"
         ],
         "evidence_sha256": {
-            "app/Services/Fiscal/NoteRefund.php": "d9e9763e253e26417494f1f1ca3dfab7625d1e4175c55a8f12bae002c27cddb1",
+            "app/Services/Fiscal/NoteRefund.php": "c79584423f5b4a82b6b177ba754f7e1fea46d0fc3f1a1c1893cc01183e3d9953",
             "scripts/exact_guard_proof.php": "425c25367e15706480baff82085b3f1a7f5c27252f13b00a8d4eca41bad272fc",
             "tests/Unit/ExactGuardProofTest.php": "e758abc24cc0fbb778d6c2895bec3c114ec8712d06e4b85615346b6afa49b381"
         },
@@ -187206,7 +188768,7 @@
             "tests/Unit/ExactGuardProofTest.php#test_only_type_or_nonnumeric_string_guards_are_proven"
         ],
         "evidence_sha256": {
-            "app/Services/Fiscal/NoteRefund.php": "d9e9763e253e26417494f1f1ca3dfab7625d1e4175c55a8f12bae002c27cddb1",
+            "app/Services/Fiscal/NoteRefund.php": "c79584423f5b4a82b6b177ba754f7e1fea46d0fc3f1a1c1893cc01183e3d9953",
             "scripts/exact_guard_proof.php": "425c25367e15706480baff82085b3f1a7f5c27252f13b00a8d4eca41bad272fc",
             "tests/Unit/ExactGuardProofTest.php": "e758abc24cc0fbb778d6c2895bec3c114ec8712d06e4b85615346b6afa49b381"
         },
@@ -201462,7 +203024,7 @@
             "tests/Unit/ExactGuardProofTest.php#test_only_type_or_nonnumeric_string_guards_are_proven"
         ],
         "evidence_sha256": {
-            "app/Services/Fiscal/NoteRefund.php": "d9e9763e253e26417494f1f1ca3dfab7625d1e4175c55a8f12bae002c27cddb1",
+            "app/Services/Fiscal/NoteRefund.php": "c79584423f5b4a82b6b177ba754f7e1fea46d0fc3f1a1c1893cc01183e3d9953",
             "scripts/exact_guard_proof.php": "425c25367e15706480baff82085b3f1a7f5c27252f13b00a8d4eca41bad272fc",
             "tests/Unit/ExactGuardProofTest.php": "e758abc24cc0fbb778d6c2895bec3c114ec8712d06e4b85615346b6afa49b381"
         },
@@ -204592,7 +206154,7 @@
             "tests/Unit/ExactGuardProofTest.php#test_only_type_or_nonnumeric_string_guards_are_proven"
         ],
         "evidence_sha256": {
-            "app/Services/Fiscal/NoteRefund.php": "d9e9763e253e26417494f1f1ca3dfab7625d1e4175c55a8f12bae002c27cddb1",
+            "app/Services/Fiscal/NoteRefund.php": "c79584423f5b4a82b6b177ba754f7e1fea46d0fc3f1a1c1893cc01183e3d9953",
             "scripts/exact_guard_proof.php": "425c25367e15706480baff82085b3f1a7f5c27252f13b00a8d4eca41bad272fc",
             "tests/Unit/ExactGuardProofTest.php": "e758abc24cc0fbb778d6c2895bec3c114ec8712d06e4b85615346b6afa49b381"
         },
@@ -206868,7 +208430,7 @@
             "tests/Unit/ExactArrayUnionProofTest.php#test_only_array_literal_unions_have_a_structural_proof"
         ],
         "evidence_sha256": {
-            "app/Services/Fiscal/NoteRefund.php": "d9e9763e253e26417494f1f1ca3dfab7625d1e4175c55a8f12bae002c27cddb1",
+            "app/Services/Fiscal/NoteRefund.php": "c79584423f5b4a82b6b177ba754f7e1fea46d0fc3f1a1c1893cc01183e3d9953",
             "scripts/exact_guard_proof.php": "425c25367e15706480baff82085b3f1a7f5c27252f13b00a8d4eca41bad272fc",
             "tests/Unit/ExactArrayUnionProofTest.php": "0425be414024106f490fd3297f7dbc0fa2ca5b3a08ae0a895d80989e37c78fa5"
         },

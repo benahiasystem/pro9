@@ -30,6 +30,13 @@ final class ReceiptDestination
                 : \App\Models\Tenant\PaymentMethodType::query()->lockForUpdate()->find($payment->payment_method_type_id));
         $kind=$payment instanceof \Modules\Expense\Models\ExpensePayment && $method
             ? Classification::snapshot($method,'expense_method_types')['collection_kind'] : $method?->collection_kind;
+        if ($kind === 'account' && $method instanceof \App\Models\Tenant\PaymentMethodType) {
+            if (!$method->bank_account_id) Classification::error('payment_method_type_id', 'El método no tiene una cuenta bancaria configurada.');
+            if ($destination !== null && (string) $destination !== (string) $method->bank_account_id) {
+                Classification::error('payment_destination_id', 'El destino debe ser la cuenta configurada en el método.');
+            }
+            $destination = $method->bank_account_id;
+        }
         if ($destination === 'cash' || ($destination === null && $kind === 'cash')) {
             $cash=Cash::where('user_id',$user)->where('state',true)->lockForUpdate()->first();
             if (!$cash) Classification::error('payment_destination_id','Abra una caja antes de registrar efectivo.');

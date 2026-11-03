@@ -27,7 +27,7 @@ class FinanceIncomeRequest extends FormRequest
             'items.*.total' => ['required', 'numeric', 'gt:0'],
             'payments' => ['required', 'array', 'min:1'],
             'payments.*.payment_method_type_id' => ['required', Rule::exists('tenant.payment_method_types', 'id')->where('is_active', 1)],
-            'payments.*.payment_destination_id' => ['required'],
+            'payments.*.payment_destination_id' => ['nullable'],
             'payments.*.payment' => ['required', 'numeric', 'gt:0'],
         ];
     }

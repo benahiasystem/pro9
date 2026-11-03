@@ -8,7 +8,7 @@ vm.runInNewContext(babel.transformSync(fs.readFileSync('resources/js/helpers/pay
     configFile:false, babelrc:false, plugins:['@babel/plugin-transform-modules-commonjs'],
 }).code,{exports:exported});
 const methods=[{id:'01',collection_kind:'cash',cash_currency_type_id:'VES'},{id:'10',collection_kind:'cash',cash_currency_type_id:'USD'},
-    {id:'04',collection_kind:'account'},{id:'09',collection_kind:'credit'}];
+    {id:'04',collection_kind:'account',bank_account_id:1},{id:'09',collection_kind:'credit'}];
 const destinations=[{id:'cash',report_version:2},{id:1,currency_type_id:'VES',report_version:2},{id:2,currency_type_id:'USD',report_version:2}];
 const ids=(rows)=>Array.from(rows,row=>row.id);
 
@@ -79,25 +79,25 @@ test('physical currency and banking destinations are independent',()=>{
     assert.deepEqual(ids(exported.classifiedDestinations(destinations,methods,{payment_method_type_id:'10'},undefined)),['cash']);
     assert.deepEqual(ids(exported.classifiedDestinations(destinations,methods,{payment_method_type_id:'10',currency_type_id:'USD'},'VES')),['cash']);
     assert.deepEqual(ids(exported.classifiedDestinations(destinations,methods,{payment_method_type_id:'04'},'VES')),[1]);
-    assert.deepEqual(ids(exported.classifiedDestinations(destinations,methods,{payment_method_type_id:'04'},'USD')),[2]);
+    assert.deepEqual(ids(exported.classifiedDestinations(destinations,methods,{payment_method_type_id:'04'},'USD')),[]);
     assert.deepEqual(ids(exported.classifiedDestinations(destinations,methods,{payment_method_type_id:'09'},'VES')),[]);
 });
 test('the method currency determines eligible bank accounts',()=>{
-    const usdMethod = [{id:'13',collection_kind:'account',currency_type_id:'USD'}];
+    const usdMethod = [{id:'13',collection_kind:'account',currency_type_id:'USD',bank_account_id:2}];
     assert.deepEqual(ids(exported.classifiedDestinations(destinations,usdMethod,{payment_method_type_id:'13'},'VES')),[2]);
     assert.deepEqual(ids(exported.classifiedDestinations(destinations,usdMethod,{payment_method_type_id:'13',currency_type_id:'VES'},'VES')),[]);
     assert.deepEqual(ids(exported.classifiedDestinations(destinations,usdMethod,{payment_method_type_id:'13',currency_type_id:'USD'},'VES')),[2]);
 });
-test('supplier and loan payments use their own currency even if the receipt method has another currency',()=>{
+test('supplier and loan payments require the configured account in the payment currency',()=>{
     const mixin=exported.default.methods;
-    const method=[{id:'13',collection_kind:'account',currency_type_id:'USD'}];
+    const method=[{id:'13',collection_kind:'account',currency_type_id:'USD',bank_account_id:2}];
     const row={payment_method_type_id:'13',currency_type_id:'VES'};
     const payment={payment_method_types:method,form:{currency_type_id:'VES'},$options:{paymentCurrencyPolicy:'document'}};
     const receipt={payment_method_types:method,form:{currency_type_id:'VES'}};
-    assert.deepEqual(ids(mixin.classifiedPaymentDestinations.call(payment,destinations,row)),[1]);
+    assert.deepEqual(ids(mixin.classifiedPaymentDestinations.call(payment,destinations,row)),[]);
     assert.deepEqual(ids(mixin.classifiedPaymentDestinations.call(receipt,destinations,row)),[]);
     const purchase={payment_method_types:method,purchase:{currency_type_id:'VES'},$options:{paymentCurrencyPolicy:'document'}};
-    assert.deepEqual(ids(mixin.classifiedPaymentDestinations.call(purchase,destinations,{payment_method_type_id:'13'})),[1]);
+    assert.deepEqual(ids(mixin.classifiedPaymentDestinations.call(purchase,destinations,{payment_method_type_id:'13'})),[]);
 });
 test('expense IDs never use the payment-method catalog',()=>{
     assert.deepEqual(ids(exported.classifiedDestinations(destinations,methods,{expense_method_type_id:1},'USD',true)),['cash']);
@@ -107,14 +107,14 @@ test('classification applies without an activation flag on destination options',
     const legacy=destinations.map(({report_version,...destination})=>destination);
     assert.deepEqual(ids(exported.classifiedDestinations(legacy,methods,{payment_method_type_id:'04'},'VES')),[1]);
 });
-test('an incompatible default is cleared and a new banking destination remains selectable',()=>{
+test('an incompatible default is replaced by the fixed banking destination',()=>{
     const mixin=exported.default.methods;
     const row={payment_method_type_id:'04',payment_destination_id:'cash',payment_destination_disabled:true};
     const instance={payment_destinations:destinations,payment_method_types:methods,form:{currency_type_id:'VES'},$set:(obj,key,value)=>{obj[key]=value}};
     instance.classifiedPaymentDestinations=(items,payment)=>mixin.classifiedPaymentDestinations.call(instance,items,payment);
     mixin.clearIncompatiblePaymentDestinations.call(instance,[row]);
-    assert.equal(row.payment_destination_id,null);assert.equal(row.collection_kind,'account');
-    assert.equal(mixin.classifiedPaymentDestinationDisabled.call(instance,destinations,row),false);
+    assert.equal(row.payment_destination_id,1);assert.equal(row.collection_kind,'account');
+    assert.equal(mixin.classifiedPaymentDestinationDisabled.call(instance,destinations,row),true);
 });
 
 test('document payment rows clear incompatible destinations without modifying recorded receipts',()=>{

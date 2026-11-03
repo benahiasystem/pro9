@@ -218,6 +218,11 @@ final class FiscalDocumentPersistence
                 $decision = $existing->fiscal_context['decision'] ?? [];
                 if (($input['financial_intermediation'] ?? null) !== ($decision['financial_intermediation'] ?? null)
                     || ($input['exception_basis'] ?? null) !== ($decision['exception_basis'] ?? null)) FiscalAmounts::error('operation_key', 'La operación ya existe con otro contexto fiscal.');
+            } elseif ($receiptOrigin) {
+                // The commercial source already owns this real receipt; conversion cannot perceive it again.
+                $decision = ['igtf_status'=>'not_applicable', 'financial_intermediation'=>$input['financial_intermediation'] ?? null,
+                    'exception_basis'=>null, 'authorized_by'=>null, 'reason'=>'reused_receipt'];
+                $input['igtf_status'] = 'not_applicable';
             } else {
                 $decision = SpecialTaxpayerPolicy::payment($issuer, $input, $input['currency_type_id'] ?? $document->currency_type_id, $date);
             }
@@ -227,6 +232,9 @@ final class FiscalDocumentPersistence
             // ######## FIN MONEDA DEL MEDIO DE COBRO ########
             $values = FiscalAmounts::payment($input, $document->currency_type_id, $document->exchange_rate_sale,
                 $existing ? $existing->igtf_status === 'subject' : (bool)$company->igtf_enabled, $existing ? $storedRate : $company->igtf_rate);
+            if (isset($input['quoted_tax_amount']) && !D::of(D::input($input['quoted_tax_amount'], 'quoted_tax_amount'))->isEqualTo(D::of($values['tax_amount']))) {
+                FiscalAmounts::error('quoted_tax_amount', 'El IGTF cambió desde la evaluación. Revise el cobro y vuelva a confirmarlo.');
+            }
             // Only the internal initial-invoice caller supplies the independently calculated gross input.
             if ($initial && !$existing && !$receiptOrigin && $initialAmounts !== null) {
                 foreach (['requested_amount', 'cash_adjustment'] as $field) {
@@ -258,11 +266,7 @@ final class FiscalDocumentPersistence
                 return $existing;
             }
             if (!$receiptOrigin) PaymentMethodType::assertActiveForPayment($input['payment_method_type_id'] ?? null);
-            if (!$initial && D::readRequired($values, 'tax_amount')->isPositive() && \App\Services\ExportInvoicePolicy::isExport($document->invoice->operation_type_id ?? '')) {
-                FiscalAmounts::error('payment', 'El IGTF de un cobro posterior requiere una nota de exportación; ese flujo todavía no está habilitado.');
-            }
-            if (!$initial && !FiscalNote::ordinary($document) && D::readRequired($values, 'tax_amount')->isPositive() && \App\Services\SpecialTaxRegimePolicy::applies($document)) FiscalAmounts::error('payment', 'El IGTF posterior requiere una nota vinculada a régimen especial; ese flujo todavía no está habilitado.');
-            if (!$initial && !FiscalNote::ordinary($document) && D::readRequired($values, 'tax_amount')->isPositive() && \App\Services\ThirdPartyInvoicePolicy::isThirdParty($document)) FiscalAmounts::error('payment', 'El IGTF de un cobro posterior requiere una nota por cuenta de terceros; ese flujo todavía no está habilitado.');
+            if (!$initial && D::readRequired($values, 'tax_amount')->isPositive()) self::assertLaterIgtfAvailable($document);
             $method = $lockedMethod ?? PaymentMethodType::findOrFail($input['payment_method_type_id']);
             if ($document->document_type_id === '07') FiscalAmounts::error('document','Las NC no reciben cobros; utilice Registrar devolución.');
             // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
@@ -333,6 +337,18 @@ final class FiscalDocumentPersistence
             self::updateSettlementState($document);
             return $payment;
         });
+    }
+
+    public static function assertLaterIgtfAvailable(Document $document): void
+    {
+        if (\App\Services\ExportInvoicePolicy::isExport($document->invoice->operation_type_id ?? '')) {
+            FiscalAmounts::error('payment', 'El IGTF de un cobro posterior requiere una nota de exportación; ese flujo todavía no está habilitado.');
+        }
+        if (!FiscalNote::ordinary($document) && \App\Services\SpecialTaxRegimePolicy::applies($document)) FiscalAmounts::error('payment', 'El IGTF posterior requiere una nota vinculada a régimen especial; ese flujo todavía no está habilitado.');
+        if (!FiscalNote::ordinary($document) && \App\Services\ThirdPartyInvoicePolicy::isThirdParty($document)) FiscalAmounts::error('payment', 'El IGTF de un cobro posterior requiere una nota por cuenta de terceros; ese flujo todavía no está habilitado.');
+        if (!app(\App\Services\SeriesResolver::class)->usableQuery($document->establishment_id)->where('document_type_id', '08')->exists()) {
+            FiscalAmounts::error('series', 'Configure una serie autorizada de Nota de débito para registrar IGTF posterior.');
+        }
     }
 
     private static function igtfNote(Document $invoice, DocumentPayment $payment): Document

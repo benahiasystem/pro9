@@ -10,6 +10,323 @@ use Modules\Expense\Models\ExpensePayment;
 // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
 trait PaymentClassificationPersistenceCases
 {
+    public function test_bank_commission_web_pos_and_garage_invoices_mysql(): void
+    {
+        [$db,$app,$input]=$this->bootHkaFixture(false);
+        $db->table('configurations')->update(['auto_send_hka'=>false]);
+        $bank=BankAccount::create(['bank_id'=>$db->table('banks')->value('id'),'description'=>'VES','number'=>'CHANNELS',
+            'currency_type_id'=>'VES','initial_balance'=>'0']);
+        $db->table('payment_method_types')->where('id','04')->update(['is_active'=>1,'bank_account_id'=>$bank->id,'commission_percentage'=>'2']);
+        foreach (['WEB','POS','GARAGE'] as $channel) {
+            $data=array_replace($input,['source_module'=>$channel,'external_id'=>(string)\Illuminate\Support\Str::uuid(),
+                'payments'=>[['date_of_payment'=>'2026-09-10','payment_method_type_id'=>'04','payment'=>'232',
+                    'currency_type_id'=>'VES','original_amount'=>'232','exchange_rate'=>'1']]]);
+            $document=(new \App\CoreFacturalo\Facturalo())->save($data)->getDocument();
+            $payment=$document->payments()->firstOrFail();
+            self::assertSame((string)$bank->id,(string)$payment->global_payment->destination_id,$channel);
+            self::assertSame('232',Movement::row($payment->global_payment)['amount'],$channel);
+        }
+        self::assertSame(3,$db->table('documents')->count());
+        self::assertSame(3,$db->table('payment_commissions')->count());
+        self::assertSame(6,$db->table('global_payments')->count());
+        self::assertSame(['4.640000000000'], $db->table('payment_commissions')->distinct()->pluck('amount')->all());
+    }
+
+    public function test_bank_commission_purchase_and_expense_do_not_charge_fees_mysql(): void
+    {
+        [$db,$app,$input]=$this->bootHkaFixture(false);
+        $bank=BankAccount::create(['bank_id'=>$db->table('banks')->value('id'),'description'=>'VES','number'=>'OUTFLOW-TEST',
+            'currency_type_id'=>'VES','initial_balance'=>'0']);
+        $db->table('payment_method_types')->where('id','04')->update(['is_active'=>1,'bank_account_id'=>$bank->id,'commission_percentage'=>'10']);
+        $common=['user_id'=>$input['user_id'],'external_id'=>(string)\Illuminate\Support\Str::uuid(),
+            'establishment_id'=>$input['establishment_id'],'fiscal_environment'=>'demo','state_type_id'=>'01',
+            'date_of_issue'=>'2026-10-26','time_of_issue'=>'09:00:00','supplier_id'=>$input['customer_id'],
+            'supplier'=>json_encode($input['customer']),'currency_type_id'=>'VES','exchange_rate_sale'=>'400','total'=>'12'];
+        $purchaseId=$db->table('purchases')->insertGetId($common+['group_id'=>'01','document_type_id'=>'01','series'=>'CP01','number'=>1,'filename'=>'bank-outflow','payment_condition_id'=>'01']);
+        $purchaseInput=['purchase_id'=>$purchaseId,'date_of_payment'=>'2026-10-26','payment_method_type_id'=>'04','payment'=>'12'];
+        self::assertTrue((new \Modules\Purchase\Http\Controllers\PurchasePaymentController())->store(
+            \Modules\Purchase\Http\Requests\PurchasePaymentRequest::create('/','POST',$purchaseInput))['success']);
+        $purchasePayment=\App\Models\Tenant\PurchasePayment::where('purchase_id',$purchaseId)->firstOrFail();
+        self::assertSame((string)$bank->id,(string)$purchasePayment->global_payment->destination_id);
+        self::assertSame('egress',Movement::row($purchasePayment->global_payment)['direction']);
+        $common['external_id']=(string)\Illuminate\Support\Str::uuid();
+        $expenseId=$db->table('expenses')->insertGetId($common+['expense_type_id'=>$db->table('expense_types')->value('id'),'expense_reason_id'=>1]);
+        $expenseInput=['expense_id'=>$expenseId,'date_of_payment'=>'2026-10-26','expense_method_type_id'=>2,'payment_destination_id'=>$bank->id,'payment'=>'12'];
+        self::assertTrue((new \Modules\Expense\Http\Controllers\ExpensePaymentController())->store(
+            \Modules\Expense\Http\Requests\ExpensePaymentRequest::create('/','POST',$expenseInput))['success']);
+        self::assertSame(0,$db->table('payment_commissions')->count());
+        self::assertSame(2,$db->table('global_payments')->count());
+    }
+
+    public function test_purchase_settlement_bank_payment_uses_configured_account_without_receipt_commission_mysql(): void
+    {
+        [$db,$app,$input]=$this->bootHkaFixture(false);
+        $bank=BankAccount::create(['bank_id'=>$db->table('banks')->value('id'),'description'=>'Liquidación VES',
+            'number'=>'SETTLEMENT-VES','currency_type_id'=>'VES','initial_balance'=>'0']);
+        $db->table('payment_method_types')->where('id','04')->update(['is_active'=>1,'bank_account_id'=>$bank->id,
+            'commission_percentage'=>'10','minimum_commission'=>'1']);
+        $id=$db->table('purchase_settlements')->insertGetId([
+            'user_id'=>$input['user_id'],'external_id'=>(string)\Illuminate\Support\Str::uuid(),
+            'establishment_id'=>$input['establishment_id'],'establishment'=>json_encode($input['establishment']),
+            'fiscal_environment'=>'demo','state_type_id'=>'01','ubl_version'=>'2.1','operation_type_id'=>'0101',
+            'document_type_id'=>'01','series'=>'LC01','number'=>1,'date_of_issue'=>'2026-10-26','time_of_issue'=>'09:00:00',
+            'supplier_id'=>$input['customer_id'],'supplier'=>json_encode($input['customer']),'operation_data'=>'{}',
+            'currency_type_id'=>'VES','exchange_rate_sale'=>'100','total'=>'100',
+        ]);
+        $payment=$db->transaction(function () use ($id,$bank) {
+            $payment=\App\Models\Tenant\PurchaseSettlementPayment::create(['purchase_settlement_id'=>$id,
+                'date_of_payment'=>'2026-10-26','payment_method_type_id'=>'04','payment'=>'100']);
+            (new \App\Http\Controllers\Tenant\PurchaseSettlementController())->createGlobalPayment($payment,
+                ['payment_destination_id'=>$bank->id]);
+            return $payment;
+        });
+        $movement=$payment->fresh()->global_payment;
+        self::assertNotNull($movement);
+        self::assertSame((string)$bank->id,(string)$movement->destination_id);
+        self::assertSame('egress',Movement::row($movement)['direction']);
+        self::assertSame('100',Movement::row($movement)['amount']);
+        self::assertSame(1,$db->table('global_payments')->count());
+        self::assertSame(0,$db->table('payment_commissions')->count());
+        try {
+            $db->transaction(function () use ($id) {
+                $payment=\App\Models\Tenant\PurchaseSettlementPayment::create(['purchase_settlement_id'=>$id,
+                    'date_of_payment'=>'2026-10-26','payment_method_type_id'=>'04','payment'=>'100']);
+                (new \App\Http\Controllers\Tenant\PurchaseSettlementController())->createGlobalPayment($payment,
+                    ['payment_destination_id'=>'cash']);
+            });
+            self::fail('Debe rechazarse un destino distinto de la cuenta del método.');
+        } catch (\Illuminate\Validation\ValidationException $error) {
+            self::assertArrayHasKey('payment_destination_id',$error->errors());
+        }
+        self::assertSame(1,$db->table('purchase_settlement_payments')->count());
+        self::assertSame(1,$db->table('global_payments')->count());
+    }
+
+    public function test_bank_commission_concurrent_method_edit_mysql(): void
+    {
+        [$db, $app, $input] = $this->bootHkaFixture(false);
+        $bankId=$db->table('banks')->value('id');
+        $account=BankAccount::create(['bank_id'=>$bankId,'description'=>'USD','number'=>'RACE-COMMISSION','currency_type_id'=>'USD','initial_balance'=>'0']);
+        $db->table('payment_method_types')->where('id','13')->update(['is_active'=>1,'bank_account_id'=>$account->id,'commission_percentage'=>'10']);
+        $id=$db->table('quotations')->insertGetId(['user_id'=>$input['user_id'],'external_id'=>(string)\Illuminate\Support\Str::uuid(),
+            'establishment_id'=>$input['establishment_id'],'establishment'=>json_encode($input['establishment']),'fiscal_environment'=>'demo',
+            'state_type_id'=>'05','prefix'=>'COT','date_of_issue'=>'2026-10-26','time_of_issue'=>'09:00:00',
+            'customer_id'=>$input['customer_id'],'customer'=>json_encode($input['customer']),'currency_type_id'=>'VES','exchange_rate_sale'=>'400','total'=>'4000']);
+        $row=['quotation_id'=>$id,'date_of_payment'=>'2026-10-26','payment_method_type_id'=>'13','payment_destination_id'=>$account->id,
+            'payment'=>'4000','currency_type_id'=>'USD','original_amount'=>'10','exchange_rate'=>'400'];
+        $edit=['id'=>'13','description'=>'Zelle','collection_kind'=>'account','currency_type_id'=>'USD','is_active'=>1,
+            'bank_id'=>$bankId,'bank_account_id'=>$account->id,'commission_percentage'=>'20','minimum_commission'=>null,'hka_code'=>'99'];
+        $worker=null; $db->beginTransaction();
+        try {
+            self::assertTrue((new \Modules\Sale\Http\Controllers\QuotationPaymentController())->store(
+                \Modules\Sale\Http\Requests\QuotationPaymentRequest::create('/', 'POST', $row))['success']);
+            $worker=new \Symfony\Component\Process\Process([PHP_BINARY,dirname(__DIR__).'/Support/fiscal_payment_concurrency_worker.php']);
+            $worker->setInput(json_encode(['connection'=>$db->getConfig(),'operation'=>'method-reclassify','data'=>$edit],JSON_THROW_ON_ERROR));
+            $worker->setTimeout(30); $worker->start(); $deadline=microtime(true)+10;
+            while (!str_contains($worker->getOutput(),"READY\n")) {
+                if (!$worker->isRunning() || microtime(true)>$deadline) self::fail('La edición concurrente no inició: '.$worker->getErrorOutput());
+                usleep(10000);
+            }
+            self::assertSame(1,preg_match('/LOCK_TEST_CONNECTION=(\d+)/',$worker->getErrorOutput(),$match));
+            do {
+                $query=$this->capsule->getConnection('control')->selectOne('SELECT COMMAND, INFO FROM information_schema.processlist WHERE ID = ?',[(int)$match[1]]);
+                $sql=strtolower($query->INFO ?? '');
+                if (($query->COMMAND ?? null)==='Execute' && str_contains($sql,'payment_method_types') && str_contains($sql,'update')) break;
+                if (!$worker->isRunning() || microtime(true)>$deadline) self::fail('La edición no esperó el bloqueo: '.$worker->getErrorOutput());
+                usleep(10000);
+            } while (true);
+            $db->commit();
+            self::assertSame(0,$worker->wait(),$worker->getErrorOutput().$worker->getOutput());
+            self::assertTrue(json_decode(substr($worker->getOutput(),strlen("READY\n")),true,512,JSON_THROW_ON_ERROR)['success'] ?? false);
+        } finally {
+            if ($db->transactionLevel()) $db->rollBack();
+            if ($worker && $worker->isRunning()) $worker->stop();
+        }
+        self::assertSame('1.000000000000',$db->table('payment_commissions')->value('amount'));
+        self::assertSame('20.000000000000',$db->table('payment_method_types')->where('id','13')->value('commission_percentage'));
+        self::assertSame(2,$db->table('global_payments')->count());
+        $second = (array)$db->table('quotations')->where('id',$id)->first();
+        unset($second['id']); $second['external_id']=(string)\Illuminate\Support\Str::uuid();
+        $secondId=$db->table('quotations')->insertGetId($second);
+        $edit['commission_percentage']='30'; $row['quotation_id']=$secondId;
+        $worker=null; $db->beginTransaction();
+        try {
+            $db->table('payment_method_types')->where('id','13')->first(); // Establish an older consistent read.
+            $worker=new \Symfony\Component\Process\Process([PHP_BINARY,dirname(__DIR__).'/Support/fiscal_payment_concurrency_worker.php']);
+            $worker->setInput(json_encode(['connection'=>$db->getConfig(),'operation'=>'method-reclassify','data'=>$edit],JSON_THROW_ON_ERROR));
+            $worker->setTimeout(30); $worker->start();
+            self::assertSame(0,$worker->wait(),$worker->getErrorOutput().$worker->getOutput());
+            self::assertTrue(json_decode(substr($worker->getOutput(),strlen("READY\n")),true,512,JSON_THROW_ON_ERROR)['success'] ?? false);
+            self::assertTrue((new \Modules\Sale\Http\Controllers\QuotationPaymentController())->store(
+                \Modules\Sale\Http\Requests\QuotationPaymentRequest::create('/', 'POST', $row))['success']);
+            $db->commit();
+        } finally {
+            if ($db->transactionLevel()) $db->rollBack();
+            if ($worker && $worker->isRunning()) $worker->stop();
+        }
+        self::assertSame(['1.000000000000','3.000000000000'], $db->table('payment_commissions')->orderBy('id')->pluck('amount')->all());
+        self::assertSame(4,$db->table('global_payments')->count());
+    }
+
+    public function test_bank_commission_quotation_service_and_contract_mysql(): void
+    {
+        [$db, $app, $input] = $this->bootHkaFixture(false);
+        $account = BankAccount::create(['bank_id'=>$db->table('banks')->value('id'), 'description'=>'USD',
+            'number'=>'MULTI-COMMISSION', 'currency_type_id'=>'USD', 'initial_balance'=>'0']);
+        $db->table('payment_method_types')->where('id','13')->update(['is_active'=>1,'bank_account_id'=>$account->id,'commission_percentage'=>'10']);
+        $common = ['user_id'=>$input['user_id'], 'customer_id'=>$input['customer_id'], 'customer'=>json_encode($input['customer']),
+            'establishment_id'=>$input['establishment_id'], 'fiscal_environment'=>'demo','currency_type_id'=>'VES',
+            'exchange_rate_sale'=>'400','date_of_issue'=>'2026-10-26','time_of_issue'=>'09:00:00', 'total'=>'4000'];
+        $quotation = $db->table('quotations')->insertGetId($common + ['external_id'=>(string)\Illuminate\Support\Str::uuid(),
+            'establishment'=>json_encode($input['establishment']), 'state_type_id'=>'05', 'prefix'=>'COT']);
+        $service = $db->table('technical_services')->insertGetId($common + ['serial_number'=>'BANK-COMMISSION',
+            'cellphone'=>'','description'=>'Servicio','state'=>'','reason'=>'','cost'=>'0']);
+        $contractId = $db->table('contracts')->insertGetId($common + ['external_id'=>(string)\Illuminate\Support\Str::uuid(),
+            'establishment'=>json_encode($input['establishment']), 'state_type_id'=>'05','prefix'=>'CON']);
+        $row=['date_of_payment'=>'2026-10-26','payment_method_type_id'=>'13','payment_destination_id'=>$account->id,
+            'payment'=>'4000','currency_type_id'=>'USD','original_amount'=>'10','exchange_rate'=>'400'];
+        self::assertTrue((new \Modules\Sale\Http\Controllers\QuotationPaymentController())->store(
+            \Modules\Sale\Http\Requests\QuotationPaymentRequest::create('/', 'POST', $row + ['quotation_id'=>$quotation]))['success']);
+        self::assertTrue((new \Modules\Sale\Http\Controllers\TechnicalServicePaymentController())->store(
+            \Modules\Sale\Http\Requests\TechnicalServicePaymentRequest::create('/', 'POST', $row + ['technical_service_id'=>$service]))['success']);
+        $contract=\Modules\Sale\Models\Contract::withoutEagerLoads()->findOrFail($contractId);
+        $save=new \ReflectionMethod(\Modules\Sale\Http\Controllers\ContractController::class,'savePayments');
+        $save->setAccessible(true);
+        $db->transaction(fn()=>$save->invoke(new \Modules\Sale\Http\Controllers\ContractController(),$contract,[$row]));
+        self::assertSame(3, $db->table('payment_commissions')->count());
+        self::assertSame(6, $db->table('global_payments')->count());
+        self::assertSame('3', \App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::sum($db->table('payment_commissions')->pluck('amount'))));
+    }
+
+    public function test_bank_commission_includes_real_igtf_receipt_mysql(): void
+    {
+        [$db, $app, $input] = $this->bootHkaFixture(false);
+        $db->table('configurations')->update(['auto_send_hka'=>false]);
+        $company = \App\Models\Tenant\Company::firstOrFail();
+        $company->forceFill(['igtf_enabled'=>true, 'igtf_rate'=>3])->save();
+        \Tests\Support\SpeProfiles::versions($db, $company->id, $input['customer_id']);
+        $account = BankAccount::create(['bank_id'=>$db->table('banks')->value('id'), 'description'=>'IGTF',
+            'number'=>'IGTF-COMMISSION', 'currency_type_id'=>'USD', 'initial_balance'=>'0']);
+        $db->table('payment_method_types')->where('id','13')->update(['is_active'=>1,
+            'bank_account_id'=>$account->id, 'commission_percentage'=>'10']);
+        $input['payments']=[]; $input['payment_condition_id']='02'; $input['exchange_rate_sale']='10';
+        $document = (new \App\CoreFacturalo\Facturalo())->forWebDocuments()->save($input)->getDocument();
+        $row = [
+            'date_of_payment'=>'2026-09-10', 'payment_method_type_id'=>'13', 'currency_type_id'=>'USD',
+            'payment'=>'50', 'original_amount'=>'5', 'exchange_rate'=>'10', 'igtf_status'=>'subject',
+            'financial_intermediation'=>'none', 'operation_key'=>(string)\Illuminate\Support\Str::uuid(),
+        ];
+        if (!\Illuminate\Http\Request::hasMacro('validate')) {
+            \Illuminate\Http\Request::macro('validate', function (array $rules) { return validator($this->all(), $rules)->validate(); });
+        }
+        $quoteController = new \App\Http\Controllers\Tenant\DocumentPaymentQuoteController();
+        $quoteRequest = \Illuminate\Http\Request::create('/documents/payment-quote', 'POST', ['document_id'=>$document->id,'payments'=>[$row]]);
+        $quote = $quoteController($quoteRequest)['data'];
+        self::assertSame('0.15', $quote['payments'][0]['tax_amount']);
+        self::assertSame('5.15', $quote['received_by_currency']['USD']);
+        $account->update(['status'=>0]);
+        try { $quoteController($quoteRequest); self::fail('La cotización debe rechazar una cuenta inactiva.'); }
+        catch (\Illuminate\Validation\ValidationException $error) { self::assertArrayHasKey('payment_method_type_id', $error->errors()); }
+        $account->update(['status'=>1]);
+        try {
+            \App\Services\Fiscal\FiscalDocumentPersistence::payment($document, $row + ['quoted_tax_amount'=>'0.14']);
+            self::fail('No debe guardarse una cotización de IGTF obsoleta.');
+        } catch (\Illuminate\Validation\ValidationException $error) { self::assertArrayHasKey('quoted_tax_amount', $error->errors()); }
+        self::assertSame(0, $db->table('global_payments')->count());
+        self::assertSame(0, $db->table('payment_commissions')->count());
+        $payment = \App\Services\Fiscal\FiscalDocumentPersistence::payment($document, $row + ['quoted_tax_amount'=>$quote['payments'][0]['tax_amount']]);
+        self::assertSame('0.15', $payment->tax_amount);
+        self::assertSame('5.15', Movement::row($payment->global_payment)['amount']);
+        self::assertSame('0.520000000000', $db->table('payment_commissions')->value('amount'));
+        self::assertSame(2, $db->table('global_payments')->count());
+        self::assertSame($payment->id, \App\Services\Fiscal\FiscalDocumentPersistence::payment($document, $row + ['quoted_tax_amount'=>'0.15'])->id);
+        self::assertSame(1, $db->table('payment_commissions')->count());
+    }
+
+    public function test_bank_commission_hotel_receipt_and_retry_mysql(): void
+    {
+        [$db, $app, $input] = $this->bootHkaFixture(false);
+        $responses = $this->createMock(\Illuminate\Contracts\Routing\ResponseFactory::class);
+        $responses->method('json')->willReturnCallback(fn($data,$status=200)=>new \Illuminate\Http\JsonResponse($data,$status));
+        $app->instance(\Illuminate\Contracts\Routing\ResponseFactory::class,$responses);
+        $rent = $db->table('hotel_rents')->insertGetId(['customer_id'=>$input['customer_id'], 'customer'=>json_encode($input['customer']),
+            'hotel_room_id'=>1, 'payment_status'=>'PAID', 'output_date'=>'2026-10-27', 'output_time'=>'12:00', 'establishment_id'=>$input['establishment_id']]);
+        $account = BankAccount::create(['bank_id'=>$db->table('banks')->value('id'), 'description'=>'Hotel',
+            'number'=>'HOTEL-COMMISSION', 'currency_type_id'=>'USD', 'initial_balance'=>'0']);
+        $db->table('payment_method_types')->where('id','13')->update(['is_active'=>1, 'bank_account_id'=>$account->id, 'commission_percentage'=>'2']);
+        $payload=['operation_key'=>(string)\Illuminate\Support\Str::uuid(), 'products'=>[[
+            'id'=>null,'item_id'=>$input['items'][0]['item_id'],'total'=>'4000','payment_status'=>'PAID',
+            'rent_payment'=>['payment_method_type_id'=>'13','payment'=>'4000', 'currency_type_id'=>'USD','original_amount'=>'10','exchange_rate'=>'400'],
+        ]]];
+        $controller = new \Modules\Hotel\Http\Controllers\HotelRentController();
+        $send = fn () => $controller->addProductsToRoom(\Modules\Hotel\Http\Requests\HotelRentItemRequest::create('/', 'POST', $payload), $rent);
+        self::assertSame(200, $send()->getStatusCode());
+        self::assertSame(200, $send()->getStatusCode());
+        self::assertSame(1, $db->table('hotel_rent_item_payments')->count());
+        self::assertSame(2, $db->table('global_payments')->count());
+        self::assertSame('0.200000000000', $db->table('payment_commissions')->value('amount'));
+    }
+
+    public function test_bank_commission_invoice_receipt_and_retry_mysql(): void
+    {
+        [$db, $app, $input] = $this->bootHkaFixture(false);
+        $db->table('configurations')->update(['auto_send_hka'=>false]);
+        $account = BankAccount::create(['bank_id'=>$db->table('banks')->value('id'), 'description'=>'Prueba',
+            'number'=>'TEST-ACCOUNT', 'currency_type_id'=>'VES', 'initial_balance'=>'0']);
+        $db->table('payment_method_types')->where('id','04')->update(['is_active'=>1,
+            'bank_account_id'=>$account->id, 'commission_percentage'=>'2', 'minimum_commission'=>'1']);
+        $input['payments'] = [];
+        $document = (new \App\CoreFacturalo\Facturalo())->forWebDocuments()->save($input)->getDocument();
+        $row = ['date_of_payment'=>'2026-09-10', 'payment_method_type_id'=>'04', 'payment'=>'100',
+            'currency_type_id'=>'VES', 'original_amount'=>'100', 'exchange_rate'=>'1.00000000',
+            'operation_key'=>(string)\Illuminate\Support\Str::uuid(), 'payment_destination_id'=>$account->id];
+        $payment = \App\Services\Fiscal\FiscalDocumentPersistence::payment($document, $row);
+        self::assertSame('100', Movement::row($payment->global_payment)['amount']);
+        self::assertSame('2.000000000000', $db->table('payment_commissions')->value('amount'));
+        self::assertSame(2, $db->table('global_payments')->count());
+        self::assertSame($payment->id, \App\Services\Fiscal\FiscalDocumentPersistence::payment($document, $row)->id);
+        self::assertSame(2, $db->table('global_payments')->count());
+        $groups = \App\Services\Payments\FinancialReport::groups('2026-09-10','2026-09-10');
+        self::assertSame('100', array_values(array_filter($groups, fn($g)=>$g['income'] !== '0'))[0]['income']);
+        self::assertSame('2', array_values(array_filter($groups, fn($g)=>$g['egress'] !== '0'))[0]['egress']);
+        $filters = ['payment_type'=>null, 'destination_type'=>null, 'last_cash_opening'=>'false', 'period'=>'date',
+            'date_start'=>'2026-09-10', 'date_end'=>'2026-09-10', 'month_start'=>'2026-09', 'month_end'=>'2026-09'];
+        $globalRows = (new \Modules\Finance\Http\Controllers\GlobalPaymentController())->getRecords($filters, \Modules\Finance\Models\GlobalPayment::class)->get();
+        self::assertCount(2, (new \Modules\Finance\Http\Resources\GlobalPaymentCollection($globalRows))->toArray(new \Illuminate\Http\Request()));
+        $totals = \App\Services\Payments\FinancialReport::totals($globalRows)[0];
+        self::assertSame('100', $totals['income']);
+        self::assertSame('2', $totals['egress']);
+        self::assertSame('98', $totals['net']);
+        $movementRows = (new \Modules\Finance\Http\Controllers\MovementController())->getRecords($filters, \Modules\Finance\Models\GlobalPayment::class)->get();
+        $movements = (new \Modules\Finance\Http\Resources\MovementCollection($movementRows))->toArray(\Illuminate\Http\Request::create('/', 'GET', ['page'=>1]));
+        self::assertCount(2, $movements);
+        self::assertSame('2.00', $movements[1]['output']);
+        self::assertSame('98.00', $movements[1]['balance']);
+        config(['view.compiled'=>sys_get_temp_dir().'/'.$this->database.'/bank-views', 'view.paths'=>[], 'excel'=>require base_path('config/excel.php')]);
+        mkdir(config('view.compiled'),0777,true);
+        $app->register(\Illuminate\View\ViewServiceProvider::class);
+        $app['view']->addNamespace('finance',base_path('modules/Finance/Resources/views'));
+        $app['view']->addLocation(base_path('resources/views'));
+        $company = \App\Models\Tenant\Company::firstOrFail();
+        $establishment=(object)['address'=>'Sede','department'=>(object)['description'=>'Estado'],'district'=>(object)['description'=>'Parroquia']];
+        $html = $app['view']->make('finance::global_payments.report_pdf',compact('company','establishment')+['records'=>$globalRows])->render();
+        self::assertStringContainsString('Comisión bancaria', $html);
+        self::assertStringContainsString('100 / 2 / 98', $html);
+        $pdf = new \Dompdf\Dompdf(); $pdf->setPaper('A4','landscape'); $pdf->loadHtml($html); $pdf->render();
+        self::assertStringStartsWith('%PDF-', $pdf->output());
+        $temporaryFiles = new \Maatwebsite\Excel\Files\TemporaryFileFactory(sys_get_temp_dir());
+        $app->instance(\Maatwebsite\Excel\Files\TemporaryFileFactory::class, $temporaryFiles);
+        $export = (new \Modules\Finance\Exports\GlobalPaymentExport())->records($globalRows)->company($company)->establishment($establishment);
+        $file = (new \Maatwebsite\Excel\Writer($temporaryFiles))->export($export, \Maatwebsite\Excel\Excel::XLSX);
+        try {
+            $book = (new \PhpOffice\PhpSpreadsheet\Reader\Xlsx())->load($file->getLocalPath());
+            $cells = collect($book->getActiveSheet()->toArray(null,true,false,false))->flatten()->map(fn($value)=>(string)$value)->all();
+            self::assertContains('Comisión bancaria · Transferencia Bancaria', $cells);
+            self::assertContains('98', $cells);
+            $book->disconnectWorksheets();
+        } finally { $file->delete(); }
+    }
+
     public function test_fractional_local_unit_invoice_and_mobile_weight_catalog(): void
     {
         [$db,$app,$input]=$this->bootHkaFixture();
@@ -249,6 +566,7 @@ trait PaymentClassificationPersistenceCases
         $bankId=$db->table('banks')->value('id');
         $ves=BankAccount::create(['bank_id'=>$bankId,'description'=>'API VES','number'=>'MOZO-INV-VES','currency_type_id'=>'VES','initial_balance'=>'0']);
         $usd=BankAccount::create(['bank_id'=>$bankId,'description'=>'API USD','number'=>'MOZO-INV-USD','currency_type_id'=>'USD','initial_balance'=>'0']);
+        $db->table('payment_method_types')->where('id','01')->update(['bank_account_id'=>$usd->id]);
         $input['exchange_rate_sale']='10'; $input['operation_type_id']='0101'; $input['date_of_issue']=now()->format('Y-m-d');
         $input['date_of_due']=$input['date_of_issue']; $input['actions']=['send_email'=>false];
         $input['payments']=[['date_of_payment'=>$input['date_of_issue'],'payment_method_type_id'=>'01',
@@ -477,6 +795,7 @@ trait PaymentClassificationPersistenceCases
         $db->table('payment_method_types')->where('id','01')->update(['collection_kind'=>'account','currency_type_id'=>'USD','cash_currency_type_id'=>null,'is_cash'=>0,'is_active'=>1]);
         $bank=BankAccount::create(['bank_id'=>$db->table('banks')->value('id'),'description'=>'Restaurante USD',
             'number'=>'REST-USD','currency_type_id'=>'USD','initial_balance'=>'0']);
+        $db->table('payment_method_types')->where('id','01')->update(['bank_account_id'=>$bank->id]);
         $input['payments']=[]; $input['payment_condition_id']='02'; $input['exchange_rate_sale']='10';
         $engine=new \App\CoreFacturalo\Facturalo(); $engine->forWebDocuments(); $engine->save($input);
         $document=$engine->getDocument();
@@ -690,6 +1009,8 @@ trait PaymentClassificationPersistenceCases
             'number'=>'SUB-USD','currency_type_id'=>'USD','initial_balance'=>'0']);
         $vesBank=BankAccount::create(['bank_id'=>$db->table('banks')->value('id'),'description'=>'Suscripción VES',
             'number'=>'SUB-VES','currency_type_id'=>'VES','initial_balance'=>'0']);
+        $db->table('payment_method_types')->where('id','01')->update(['bank_account_id'=>$bank->id]);
+        $db->table('payment_method_types')->where('id','04')->update(['bank_account_id'=>$vesBank->id]);
         $receipt=['date_of_payment'=>now()->format('Y-m-d'),
             'payment_method_type_id'=>'01','payment_destination_id'=>$bank->id,'currency_type_id'=>'USD',
             'exchange_rate'=>'10','original_amount'=>'23.20','igtf_status'=>'not_applicable','operation_key'=>(string)\Illuminate\Support\Str::uuid()];
@@ -747,7 +1068,7 @@ trait PaymentClassificationPersistenceCases
             'establishment_id'=>$input['establishment_id'], 'bank_id'=>$bankId, 'bank_account_id'=>$ves->id,
             'currency_type_id'=>'VES', 'external_id'=>(string)\Illuminate\Support\Str::uuid(), 'number'=>1,
             'date_of_issue'=>'2026-10-26', 'time_of_issue'=>'09:00:00', 'bank'=>'{}', 'total'=>'100', 'fiscal_environment'=>'demo']);
-        $db->table('payment_method_types')->where('id','01')->update(['collection_kind'=>'account','currency_type_id'=>'USD','cash_currency_type_id'=>null,'is_cash'=>0,'is_active'=>1]);
+        $db->table('payment_method_types')->where('id','01')->update(['collection_kind'=>'account','currency_type_id'=>'VES','cash_currency_type_id'=>null,'is_cash'=>0,'is_active'=>1,'bank_account_id'=>$ves->id]);
         $controller = new \Modules\Expense\Http\Controllers\BankLoanPaymentController();
         $send = function ($method, $destination) use ($controller, $loan) {
             $request = new \Modules\Expense\Http\Requests\BankLoanPaymentRequest();
@@ -858,9 +1179,9 @@ trait PaymentClassificationPersistenceCases
     public function test_document_receivable_kpi_uses_current_balance_after_foreign_receipt_reversal(): void
     {
         [$db,$app,$input]=$this->bootHkaFixture(false);
-        $db->table('payment_method_types')->where('id','13')->update(['is_active'=>1]);
         $bank=BankAccount::create(['bank_id'=>$db->table('banks')->value('id'),'description'=>'USD',
             'number'=>'KPI-USD','currency_type_id'=>'USD','initial_balance'=>'0']);
+        $db->table('payment_method_types')->where('id','13')->update(['is_active'=>1,'bank_account_id'=>$bank->id]);
         $id=$db->table('documents')->insertGetId(['user_id'=>$input['user_id'],'external_id'=>(string)\Illuminate\Support\Str::uuid(),
             'establishment_id'=>$input['establishment_id'],'establishment'=>json_encode($input['establishment']),
             'issuer'=>json_encode(['name'=>'Test fiscal','number'=>'J123456789']),'fiscal_environment'=>'demo',
@@ -1526,6 +1847,7 @@ trait PaymentClassificationPersistenceCases
         ]);
         $bank=BankAccount::create(['bank_id'=>$db->table('banks')->value('id'),'description'=>'USD',
             'number'=>'METHOD-RACE','currency_type_id'=>'USD','initial_balance'=>'0']);
+        $db->table('payment_method_types')->where('id','13')->update(['bank_account_id'=>$bank->id]);
         $payment=['quotation_id'=>$quotationId,'date_of_payment'=>'2026-10-26','payment_method_type_id'=>'13',
             'payment_destination_id'=>$bank->id,'payment'=>'10','currency_type_id'=>'USD','original_amount'=>'1','exchange_rate'=>'10'];
         $method=['id'=>'13','description'=>'Zelle','collection_kind'=>'cash','currency_type_id'=>'VES','is_active'=>1, 'hka_code'=>'99', 'iva_rate_type_id'=>null];
@@ -2391,6 +2713,7 @@ trait PaymentClassificationPersistenceCases
             'currency_type_id'=>'VES','exchange_rate_sale'=>'10','total'=>'232',
         ]);
         $bank=BankAccount::create(['bank_id'=>$db->table('banks')->value('id'),'description'=>'USD','number'=>'QT-CHAIN','currency_type_id'=>'USD','initial_balance'=>'0']);
+        $db->table('payment_method_types')->where('id','10')->update(['bank_account_id'=>$bank->id,'commission_percentage'=>'10']);
         $request=\Modules\Sale\Http\Requests\QuotationPaymentRequest::create('/', 'POST', [
             'quotation_id'=>$quotationId,'date_of_payment'=>'2026-10-26','payment_method_type_id'=>'10',
             'payment_destination_id'=>$bank->id,'payment'=>'50','currency_type_id'=>'USD','original_amount'=>'5','exchange_rate'=>'10',
@@ -2427,7 +2750,7 @@ trait PaymentClassificationPersistenceCases
         self::assertTrue($copy->exactValue('total_prepayment')->isZero());
         self::assertSame($originalSnapshot,$source->fresh()->payment_method_snapshot);
         self::assertSame(1,\Modules\Sale\Models\QuotationPayment::where('quotation_id',$quotationId)->count());
-        self::assertSame(1,$db->table('global_payments')->count());
+        self::assertSame(2,$db->table('global_payments')->count());
         $db->table('quotations')->where('id',$quotationId)->update(['payment_method_type_id'=>'09']);
         $url=$this->createMock(\Illuminate\Contracts\Routing\UrlGenerator::class);
         $url->method('to')->willReturn('http://fiscal-schema.example.test');
@@ -2443,7 +2766,7 @@ trait PaymentClassificationPersistenceCases
         self::assertStringContainsString('cobro',mb_strtolower($rejected['message']));
         self::assertSame(0,$db->table('sale_notes')->count());
         self::assertSame(0,$db->table('sale_note_payments')->count());
-        self::assertSame(1,$db->table('global_payments')->count());
+        self::assertSame(2,$db->table('global_payments')->count());
         $apiRequest=\Illuminate\Http\Request::create('/api/sale-notes','POST',[
             'quotation_id'=>$quotationId,'customer_id'=>$input['customer_id'],'establishment_id'=>$input['establishment_id'],
             'currency_type_id'=>'VES','payments'=>[],
@@ -2451,14 +2774,14 @@ trait PaymentClassificationPersistenceCases
         try { (new \App\Http\Controllers\Tenant\Api\SaleNoteController())->store($apiRequest); self::fail('La API no debe omitir el cobro de la cotización.'); }
         catch (\Illuminate\Validation\ValidationException $error) { self::assertArrayHasKey('payments',$error->errors()); }
         self::assertSame(0,$db->table('sale_notes')->count());
-        self::assertSame(1,$db->table('global_payments')->count());
+        self::assertSame(2,$db->table('global_payments')->count());
         $invoiceWithoutReceipt=array_replace($input,['quotation_id'=>$quotationId,'payments'=>[]]);
         try {
             (new \App\CoreFacturalo\Facturalo())->forWebDocuments()->save($invoiceWithoutReceipt);
             self::fail('La factura no debe omitir el cobro de la cotización.');
         } catch (\Illuminate\Validation\ValidationException $error) { self::assertArrayHasKey('payments',$error->errors()); }
         self::assertSame(0,$db->table('documents')->count());
-        self::assertSame(1,$db->table('global_payments')->count());
+        self::assertSame(2,$db->table('global_payments')->count());
         $result=$controller->storeWithData($saleInput);
         self::assertTrue($result['success'],$result['message'] ?? 'No se pudo guardar la nota desde la cotización.');
         $note=\App\Models\Tenant\SaleNote::findOrFail($result['data']['id']);
@@ -2475,7 +2798,7 @@ trait PaymentClassificationPersistenceCases
         $noteRows=$note->getTransformPayments()->all();
         self::assertSame((string)$bank->id,(string)$noteRows[0]['payment_destination_id']);
         self::assertSame([],$db->transaction(fn()=>\App\Services\Payments\ExistingReceipts::synchronize($note,$noteRows,'VES')));
-        self::assertSame(1,$db->table('global_payments')->count());
+        self::assertSame(2,$db->table('global_payments')->count());
         $repeated=$saleInput;
         $repeated['external_id']=(string)\Illuminate\Support\Str::uuid();
         $duplicate=$controller->storeWithData($repeated);
@@ -2483,14 +2806,14 @@ trait PaymentClassificationPersistenceCases
         self::assertStringContainsString('cobro',mb_strtolower($duplicate['message']));
         self::assertSame(1,$db->table('sale_notes')->where('quotation_id',$quotationId)->count());
         self::assertSame(1,$db->table('sale_note_payments')->count());
-        self::assertSame(1,$db->table('global_payments')->count());
+        self::assertSame(2,$db->table('global_payments')->count());
         try {
             $db->transaction(function () use ($applied,$bank,$input) {
                 $applied->global_payment()->create(['destination_type'=>BankAccount::class,'destination_id'=>$bank->id,'user_id'=>$input['user_id'],'fiscal_environment'=>'demo']);
             });
             self::fail('Una aplicación no puede generar un segundo movimiento.');
         } catch (\Illuminate\Validation\ValidationException $error) { self::assertArrayHasKey('payment',$error->errors()); }
-        self::assertSame(1,$db->table('global_payments')->count());
+        self::assertSame(2,$db->table('global_payments')->count());
         try { $quotationController->destroy($source->id); self::fail('La aplicación impide eliminar el cobro original.'); }
         catch (\Illuminate\Validation\ValidationException $error) { self::assertArrayHasKey('source_quotation_payment_id',$error->errors()); }
         try { $applied->payment='10'; $applied->save(); self::fail('La aplicación no puede cambiarse.'); }
@@ -2515,7 +2838,7 @@ trait PaymentClassificationPersistenceCases
         self::assertSame('10',$invoicePayment->payment_method_type_id);
         self::assertSame('5',$invoicePayment->original_amount);
         self::assertSame('50',$invoicePayment->payment);
-        self::assertSame(1,$db->table('global_payments')->count());
+        self::assertSame(2,$db->table('global_payments')->count());
         try { $db->transaction(fn()=>$applied->fresh()->delete()); self::fail('Una aplicación enlazada a factura no puede borrarse.'); }
         catch (\Illuminate\Validation\ValidationException $error) { self::assertArrayHasKey('payment',$error->errors()); }
         self::assertSame(1,$db->table('sale_note_payments')->count());
@@ -2546,17 +2869,19 @@ trait PaymentClassificationPersistenceCases
         self::assertEquals(0, $taxNote->payments()->firstOrFail()->cash_received_amount);
         self::assertSame($subjectPayment->id, $fiscal::payment($document, $newReceipt)->id);
         self::assertSame(1, \App\Models\Tenant\DocumentTax::where('document_payment_id', $subjectPayment->id)->count());
-        self::assertSame(2, $db->table('global_payments')->count());
+        self::assertSame(3, $db->table('global_payments')->count());
         self::assertSame('5.15', Movement::row($subjectPayment->global_payment)['amount']);
         self::assertNull($taxNote->payments()->firstOrFail()->global_payment);
         $fiscal::reverse($subjectPayment, 'Reversión de prueba');
         self::assertSame('11', $taxNote->fresh()->state_type_id);
         self::assertNotNull($subjectPayment->fresh()->reversed_at);
-        self::assertSame(2, $db->table('global_payments')->count());
+        self::assertSame(3, $db->table('global_payments')->count());
         self::assertNull(Movement::row($subjectPayment->fresh()->global_payment));
         self::assertSame('5', Movement::row($source->fresh()->global_payment)['amount']);
         self::assertSame('USD', $source->fresh()->currency_type_id);
         self::assertSame('account', $source->fresh()->payment_method_snapshot['collection_kind']);
+        self::assertSame(1, $db->table('payment_commissions')->count());
+        self::assertSame('0.500000000000', $db->table('payment_commissions')->value('amount'));
     }
 
     public function test_quotation_conversion_requires_all_mixed_receipts(): void
@@ -3088,6 +3413,7 @@ trait PaymentClassificationPersistenceCases
         $url->method('to')->willReturn('http://fiscal-schema.example.test');
         $app->instance(\Illuminate\Contracts\Routing\UrlGenerator::class,$url);
         $bank=BankAccount::create(['bank_id'=>$db->table('banks')->value('id'),'description'=>'USD','number'=>'ORDER-USD','currency_type_id'=>'USD','initial_balance'=>'0']);
+        $db->table('payment_method_types')->where('id','13')->update(['bank_account_id'=>$bank->id,'commission_percentage'=>'10']);
         $wrong=BankAccount::create(['bank_id'=>$bank->bank_id,'description'=>'VES','number'=>'ORDER-VES','currency_type_id'=>'VES','initial_balance'=>'0']);
         $draft=['id'=>null,'document_id'=>null,'date_of_payment'=>'2026-10-26','payment_method_type_id'=>'13',
             'payment_destination_id'=>$bank->id,'payment'=>'50','currency_type_id'=>'USD','original_amount'=>'5','exchange_rate'=>'10'];
@@ -3113,8 +3439,9 @@ trait PaymentClassificationPersistenceCases
         self::assertSame('USD',$receipt->currency_type_id);
         self::assertSame('5',$receipt->original_amount);
         self::assertSame('50',$receipt->payment);
-        self::assertSame(1,$db->table('global_payments')->count());
+        self::assertSame(2,$db->table('global_payments')->count());
         self::assertSame('5',Movement::row($receipt->global_payment)['amount']);
+        self::assertSame('0.500000000000',$db->table('payment_commissions')->value('amount'));
     }
 
     public function test_order_with_price_entered_without_iva(): void
@@ -3777,6 +4104,7 @@ trait PaymentClassificationPersistenceCases
         $db->table('payment_method_types')->where('id','01')->update(['collection_kind'=>'account','currency_type_id'=>'VES','cash_currency_type_id'=>null,'is_cash'=>0,'is_credit'=>0,'is_active'=>1]);
         $db->table('payment_method_types')->where('id','09')->update(['collection_kind'=>'credit','is_credit'=>1,'is_active'=>1]);
         $bank=BankAccount::create(['bank_id'=>$db->table('banks')->value('id'),'description'=>'Cuenta VES','number'=>'IMPORT-VES','currency_type_id'=>'VES','initial_balance'=>'0']);
+        $db->table('payment_method_types')->where('id','01')->update(['bank_account_id'=>$bank->id,'commission_percentage'=>'10']);
         $series=$db->table('series')->where('document_type_id','01')->where('establishment_id',$input['establishment_id'])->value('id');
         $db->table('configuration_mi_tienda_pe')->insert(['establishment_id'=>$input['establishment_id'],'user_id'=>$input['user_id'],'series_order_note_id'=>null,'series_document_ft_id'=>$series,'payment_destination_id'=>$bank->id,'currency_type_id'=>'VES','autogenerate'=>1]);
         $url=$this->createMock(\Illuminate\Contracts\Routing\UrlGenerator::class);
@@ -3820,7 +4148,8 @@ trait PaymentClassificationPersistenceCases
         self::assertSame('VES',$payment->currency_type_id);
         self::assertSame('account',$payment->global_payment->report_context['method']['collection_kind']);
         self::assertSame((string)$bank->id,(string)$payment->global_payment->destination_id);
-        self::assertSame(1,$db->table('global_payments')->count());
+        self::assertSame(2,$db->table('global_payments')->count());
+        self::assertSame('11.600000000000',$db->table('payment_commissions')->value('amount'));
     }
 
     public function test_purchase_import_uses_classified_cash_and_creates_one_movement(): void
@@ -4120,10 +4449,13 @@ trait PaymentClassificationPersistenceCases
         $cash=Cash::create(['user_id'=>$input['user_id'],'state'=>true,'date_opening'=>'2026-10-26','time_opening'=>'09:00:00','beginning_balance'=>'100']);
         $db->transaction(fn()=>CashLedger::open($cash,['opening_balances'=>['VES'=>'100','USD'=>'10']]));
         self::assertSame(2,$db->table('cash_transactions')->where('cash_id',$cash->id)->count());
-        $db->table('payment_method_types')->where('id','01')->update(['collection_kind'=>'account','currency_type_id'=>'USD','cash_currency_type_id'=>null,'is_cash'=>0,'is_active'=>1]);
+        $bankAccounts=[];
+        foreach (['VES','USD'] as $currency) $bankAccounts[$currency]=BankAccount::create(['bank_id'=>$db->table('banks')->value('id'),'description'=>'Cuenta '.$currency,'number'=>'TEST-'.$currency,'currency_type_id'=>$currency,'initial_balance'=>'0']);
+        $db->table('payment_method_types')->where('id','01')->update(['collection_kind'=>'account','currency_type_id'=>'USD','bank_account_id'=>$bankAccounts['USD']->id,'cash_currency_type_id'=>null,'is_cash'=>0,'is_active'=>1]);
+        $db->table('payment_method_types')->where('id','11')->update(['bank_account_id'=>$bankAccounts['VES']->id,'is_active'=>1]);
         $db->table('payment_method_types')->where('id','04')->update(['collection_kind'=>'cash','currency_type_id'=>'VES','cash_currency_type_id'=>'VES','is_cash'=>1,'is_active'=>1]);
         foreach ([['04','VES','50',false],['10','USD','5',false],['11','VES','200',false],['01','USD','20',false],['1','VES','30',true],['1','USD','2',true]] as [$method,$currency,$amount,$expense]) {
-            $db->transaction(function() use($db,$input,$cash,$method,$currency,$amount,$expense) {
+            $db->transaction(function() use($db,$input,$cash,$method,$currency,$amount,$expense,$bankAccounts) {
                 if ($expense) {
                     $id=$db->table('expenses')->insertGetId(['user_id'=>$input['user_id'],'expense_type_id'=>$db->table('expense_types')->value('id'),
                         'establishment_id'=>$input['establishment_id'],'supplier_id'=>$input['customer_id'],'supplier'=>json_encode($input['customer']),
@@ -4138,7 +4470,7 @@ trait PaymentClassificationPersistenceCases
                         'exchange_rate_sale'=>'100','total'=>$amount,'state_type_id'=>'05','number'=>1,'fiscal_environment'=>'demo']);
                     $payment=IncomePayment::create(['income_id'=>$id,'payment_method_type_id'=>$method,'date_of_payment'=>'2026-10-26','payment'=>$amount]);
                     $type=$db->table('payment_method_types')->where('id',$method)->value('collection_kind') === 'cash' ? Cash::class : BankAccount::class;
-                    $destination=$type===Cash::class ? $cash->id : BankAccount::create(['bank_id'=>$db->table('banks')->value('id'),'description'=>'Cuenta '.$currency,'number'=>'TEST-'.$currency,'currency_type_id'=>$currency,'initial_balance'=>'0'])->id;
+                    $destination=$type===Cash::class ? $cash->id : $bankAccounts[$currency]->id;
                 }
                 $global=$payment->global_payment()->create(['destination_type'=>$type,'destination_id'=>$destination,'user_id'=>$input['user_id'],'fiscal_environment'=>'demo']);
                 self::assertSame($cash->id,$global->cash_session_id);

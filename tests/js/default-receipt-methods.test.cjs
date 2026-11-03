@@ -4,6 +4,35 @@ const fs=require('node:fs'),vm=require('node:vm')
 const parser=require('@babel/parser'),generate=require('@babel/generator').default,compiler=require('vue-template-compiler')
 const helper=require('./helpers/load-module.cjs')(require('node:path').resolve('resources/js/helpers/payment-classification.js'))
 
+test('Garage replaces the cash destination with the fixed bank account when changing the draft method',()=>{
+    const source=compiler.parseComponent(fs.readFileSync('resources/js/views/tenant/pos/partials/multiple_payment_garage.vue','utf8'))
+    assert.match(source.template.content, /v-model="row\.payment_method_type_id"\s+@change="changePaymentMethodType\(index\)"/)
+    const tree=parser.parse(source.script.content,{sourceType:'module'})
+    const methods=tree.program.body.find(node=>node.type==='ExportDefaultDeclaration').declaration.properties.find(node=>node.key.name==='methods').value
+    const entry=methods.properties.find(node=>node.key?.name==='changePaymentMethodType')
+    const change=vm.runInNewContext(`({${generate(entry).code}}).changePaymentMethodType`)
+    const mixin=helper.default.methods
+    const row={payment_method_type_id:'14',payment_destination_id:'cash'}
+    const ctx={draftPayments:[row],currencyTypeId:'VES',payment_method_types:[{id:'14',collection_kind:'account',currency_type_id:'VES',bank_account_id:42}],
+        payment_destinations:[{id:'cash'},{id:42,currency_type_id:'VES'},{id:43,currency_type_id:'VES'}],$set(object,key,value){object[key]=value}}
+    ctx.classifiedPaymentDestinations=(destinations,payment)=>mixin.classifiedPaymentDestinations.call(ctx,destinations,payment)
+    ctx.clearIncompatiblePaymentDestinations=rows=>mixin.clearIncompatiblePaymentDestinations.call(ctx,rows)
+    change.call(ctx,0)
+    assert.equal(row.payment_destination_id,42)
+    assert.equal(row.collection_kind,'account')
+    assert.deepEqual(compiler.compile(source.template.content).errors,[])
+})
+
+test('Garage initializes the plate configuration before the payment dialog renders',()=>{
+    const source=compiler.parseComponent(fs.readFileSync('resources/js/views/tenant/pos/partials/fast_payment_garage.vue','utf8'))
+    const tree=parser.parse(source.script.content,{sourceType:'module'})
+    const data=tree.program.body.find(node=>node.type==='ExportDefaultDeclaration').declaration.properties.find(node=>node.key?.name==='data')
+    const initialize=vm.runInNewContext(`({${generate(data).code}}).data`)
+    assert.deepEqual(Object.keys(initialize().config_tap),[])
+    assert.equal(initialize().fiscalQuoteInline,true)
+    assert.deepEqual(compiler.compile(source.template.content).errors,[])
+})
+
 test('sale note credit installment date follows classification and configured days, not the method ID',()=>{
     const source=compiler.parseComponent(fs.readFileSync('resources/js/views/tenant/sale_notes/form.vue','utf8'))
     const tree=parser.parse(source.script.content,{sourceType:'module'})

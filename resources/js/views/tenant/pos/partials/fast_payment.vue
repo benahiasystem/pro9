@@ -136,7 +136,7 @@
                 </template>
                 <div class="row m-0 p-0 h-25 d-flex align-items-center">
                     <div class="col-sm-6 py-2">
-                        <p class="font-weight-semibold mb-0">TOTAL</p>
+                        <p class="font-weight-semibold mb-0">{{ fiscalPaymentsApplicable ? 'TOTAL VENTA (SIN IGTF)' : 'TOTAL' }}</p>
                     </div>
                     <div class="col-sm-6 py-2 text-right">
                         <h4 class="font-weight-semibold mb-0">{{ currencyTypeActive.symbol }} {{form.total}}</h4>
@@ -167,6 +167,7 @@
 
         <div v-if="fiscalPaymentsApplicable" class="col-12">
             <igtf-settings-status />
+                    <igtf-quote-summary v-if="fiscalPaymentsApplicable" :quote="igtfQuote" :loading="igtfQuoteLoading" :error="igtfQuoteError" :currency="fiscalQuoteCurrency" />
             <igtf-payment-fields :payment-methods="payment_method_types" v-for="(row, fiscalIndex) in form.payments" v-if="!isRecordedReceipt(row)" :key="'fiscal-' + fiscalIndex"
                 :payment="row" :igtf-enabled="igtfEnabled" :settings-version="igtfSettings.revision" :document-currency="form.currency_type_id"
                 :document-rate="form.exchange_rate_sale" :customer-id="form.customer_id" />
@@ -698,6 +699,7 @@ export default {
                     this.errors = error.response.data?.errors || error.response.data || {};
                     const message = paymentValidationMessage(error.response.data);
                     if (message) this.$message.error(message);
+                    if (this.errors.quoted_tax_amount) this.refreshFiscalQuote(this.form.payments);
                 } else {
                     this.$message.error(error.response?.data?.message || 'No se pudo confirmar el guardado. Consulte el listado antes de crear nuevamente la venta.');
                 }

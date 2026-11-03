@@ -58,6 +58,8 @@ class FinanceController extends Controller
         'contract' => [ContractPayment::class, 'Contrato', 'input'],
         'technical_service' => [TechnicalServicePayment::class, 'Servicio técnico', 'input'],
         'income' => [IncomePayment::class, 'Ingreso', 'input'],
+        'bank_commission' => [\Modules\Finance\Models\PaymentCommission::class, 'Comisión bancaria', 'output'],
+        'hotel_rent_item_payment' => [\Modules\Hotel\Models\HotelRentItemPayment::class, 'Hotel', 'input'],
         'cash_transaction' => [CashTransaction::class, 'Ingreso POS', 'input'],
         'purchase' => [PurchasePayment::class, 'Compra', 'output'],
         'purchase_settlement' => [PurchaseSettlementPayment::class, 'Liquidación de compra', 'output'],

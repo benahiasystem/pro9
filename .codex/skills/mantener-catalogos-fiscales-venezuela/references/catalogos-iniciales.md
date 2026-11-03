@@ -40,6 +40,8 @@ Se retiró del estado inicial `06 — Tarjeta Internacional`; no reasignar autom
 
 Cada método inicial tiene moneda: USD para `10` Efectivo Dólares y `13` Zelle, VES para los demás. La moneda se selecciona del catálogo activo; IGTF puede asociarse como referencia opcional sin modificar el cálculo fiscal.
 
+Los métodos bancarios nacen inactivos y sin cuenta, hasta que un administrador asocie una cuenta activa de la moneda configurada. Cada método conserva una cuenta fija y puede registrar porcentaje y mínimo de comisión opcionales. La comisión de cada ingreso bancario es el mayor entre el mínimo y el porcentaje sobre el total recibido, incluido IGTF; se registra como egreso vinculado en la misma moneda y no reduce la cancelación del cliente. El esquema sólo modifica instalaciones nuevas.
+
 La apertura de caja con saldo positivo selecciona el efectivo activo de menor ID en cada moneda, sin depender de los IDs iniciales. Si falta una configuración compatible, se rechaza antes de escribir los saldos; una apertura en cero no requiere método.
 
 La creación valida que el código local `id` no exista, incluso si el método está inactivo, exige naturaleza clasificada y guarda el método disponible automáticamente; la edición usa una operación separada y conserva el código original. Los formularios no muestran la casilla de disponibilidad; esta se cambia desde el listado.

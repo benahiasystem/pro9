@@ -116,7 +116,7 @@ class ExactHttpAcceptanceTest extends TestCase
             [$code,$body]=$get('/bank_loan/records?column=number&value=1');
             self::assertSame(200,$code,substr($body,0,1500));
             self::assertSame($loan,json_decode($body,true)['data'][0]['id']);
-            $db->table('payment_method_types')->where('id','01')->update(['collection_kind'=>'account','currency_type_id'=>'USD','cash_currency_type_id'=>null,'is_cash'=>0,'is_active'=>1]);
+            $db->table('payment_method_types')->where('id','01')->update(['collection_kind'=>'account','currency_type_id'=>'VES','bank_account_id'=>$ves->id,'cash_currency_type_id'=>null,'is_cash'=>0,'is_active'=>1]);
             $loanInput=['bank_loan_id'=>$loan,'date_of_payment'=>'2026-10-26','payment_method_type_id'=>'01','payment_destination_id'=>$ves->id,'payment'=>'10'];
             [$code,$body]=$get('/loan-payments',true,$loanInput);
             self::assertSame(200,$code,substr($body,0,1500));
@@ -137,7 +137,7 @@ class ExactHttpAcceptanceTest extends TestCase
             self::assertSame(422,$code,substr($body,0,1500));
             self::assertSame(1,$db->table('bank_loan_payments')->count());
             self::assertSame(1,$db->table('global_payments')->count());
-            $db->table('payment_method_types')->where('id','01')->update(['is_active'=>1]);
+            $db->table('payment_method_types')->where('id','01')->update(['is_active'=>1,'currency_type_id'=>'USD','bank_account_id'=>$usd->id]);
             $incomeInput=['id'=>null,'income_type_id'=>$db->table('income_types')->value('id'),
                 'income_reason_id'=>$db->table('income_reasons')->value('id'),'establishment_id'=>$input['establishment_id'],
                 'customer'=>'Prueba HTTP','currency_type_id'=>'VES','date_of_issue'=>'2026-10-26','time_of_issue'=>'09:00:00',
@@ -378,7 +378,7 @@ class ExactHttpAcceptanceTest extends TestCase
             self::assertSame('01',$notePayment->payment_method_type_id);
             self::assertSame('USD',$notePayment->currency_type_id);
             self::assertSame(1,$db->table('sale_note_payments')->where('sale_note_id',$note->id)->count());
-            $db->table('payment_method_types')->where('id','11')->update(['collection_kind'=>'account','currency_type_id'=>'VES','cash_currency_type_id'=>null,'is_active'=>1]);
+            $db->table('payment_method_types')->where('id','11')->update(['collection_kind'=>'account','currency_type_id'=>'VES','bank_account_id'=>$ves->id,'cash_currency_type_id'=>null,'is_active'=>1]);
             $serviceUsd=$db->table('technical_services')->insertGetId(['user_id'=>$input['user_id'],'customer_id'=>$input['customer_id'],
                 'customer'=>json_encode($input['customer']),'establishment_id'=>$input['establishment_id'],'fiscal_environment'=>'demo',
                 'currency_type_id'=>'USD','exchange_rate_sale'=>'100','date_of_issue'=>'2026-10-26','time_of_issue'=>'09:00:00',
@@ -547,7 +547,7 @@ class ExactHttpAcceptanceTest extends TestCase
             // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
             // Convert a second quotation directly to an invoice using a historical bank receipt.
             $db->table('payment_method_types')->where('id','13')->update(['collection_kind'=>'account',
-                'currency_type_id'=>'USD','cash_currency_type_id'=>null,'is_cash'=>0,'is_active'=>1]);
+                'currency_type_id'=>'USD','bank_account_id'=>$usd->id,'cash_currency_type_id'=>null,'is_cash'=>0,'is_active'=>1]);
             $invoiceQuotation=$db->table('quotations')->insertGetId(['user_id'=>$input['user_id'],'external_id'=>(string)\Illuminate\Support\Str::uuid(),
                 'establishment_id'=>$input['establishment_id'],'establishment'=>json_encode($input['establishment']),
                 'fiscal_environment'=>'demo','state_type_id'=>'05','prefix'=>'COT','date_of_issue'=>'2026-10-26','time_of_issue'=>'09:00:00',
@@ -596,6 +596,37 @@ class ExactHttpAcceptanceTest extends TestCase
             self::assertTrue($code===422 || ($code===200 && !json_decode($body,true)['success']),$body);
             self::assertSame(1,$db->table('documents')->where('quotation_id',$invoiceQuotation)->count());
             self::assertSame($movementCount,$db->table('global_payments')->count());
+            // 0501 is a retired legacy catalog value. Insert it only in this disposable fixture
+            // to exercise financial atomicity without restoring it in the tenant seed.
+            $db->table('cat_operation_types')->insert(['id'=>'0501','active'=>0,'exportation'=>0,'description'=>'Operación histórica de prueba']);
+            $db->table('payment_method_types')->where('id','13')->update(['collection_kind'=>'account','currency_type_id'=>'VES',
+                'bank_account_id'=>$ves->id,'cash_currency_type_id'=>null,'is_cash'=>0,'is_active'=>1,'commission_percentage'=>'10']);
+            $settlementInput=array_replace($input,['series'=>'LC01','number'=>'#','supplier_id'=>$input['customer_id'],
+                'operation_data'=>[],'subtotal'=>'232','total'=>'232','exchange_rate_sale'=>'100',
+                'payments'=>[['date_of_payment'=>'2026-10-26','payment_method_type_id'=>'13',
+                    'payment_destination_id'=>$ves->id,'reference'=>'HTTP liquidación','payment'=>'232']]]);
+            $settlementBefore=$db->table('purchase_settlements')->count();
+            $paymentBefore=$db->table('purchase_settlement_payments')->count();
+            $movementBefore=$db->table('global_payments')->count();
+            $feeBefore=$db->table('payment_commissions')->count();
+            $invalidSettlement=$settlementInput;$invalidSettlement['payments'][0]['payment_destination_id']='cash';
+            [$code,$body]=$get('/purchase-settlements',true,$invalidSettlement);
+            self::assertFalse(json_decode($body,true)['success'] ?? true,$body);
+            self::assertStringContainsString('cuenta',strtolower(json_decode($body,true)['message'] ?? ''),$body);
+            self::assertSame($settlementBefore,$db->table('purchase_settlements')->count());
+            self::assertSame($paymentBefore,$db->table('purchase_settlement_payments')->count());
+            self::assertSame($movementBefore,$db->table('global_payments')->count());
+            [$code,$body]=$get('/purchase-settlements',true,$settlementInput);
+            self::assertSame(200,$code,substr($body,0,2500));
+            self::assertTrue(json_decode($body,true)['success'] ?? false,$body);
+            self::assertSame($settlementBefore+1,$db->table('purchase_settlements')->count());
+            $operation=json_decode($db->table('purchase_settlements')->orderByDesc('id')->value('operation_data'),true);
+            self::assertSame('14',$operation['department_id']);
+            self::assertSame('0229',$operation['province_id']);
+            self::assertSame('000619',$operation['district_id']);
+            self::assertSame($paymentBefore+1,$db->table('purchase_settlement_payments')->count());
+            self::assertSame($movementBefore+1,$db->table('global_payments')->count());
+            self::assertSame($feeBefore,$db->table('payment_commissions')->count());
             // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
         } finally {
             if (is_resource($server)) { proc_terminate($server);proc_close($server); }

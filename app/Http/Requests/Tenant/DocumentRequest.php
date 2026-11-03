@@ -85,6 +85,7 @@ class DocumentRequest extends FormRequest
                 // deactivated. New receipts are checked by MethodCurrency.
                 'required', Rule::exists('tenant.payment_method_types', 'id'),
             ],
+            'payments.*.quoted_tax_amount' => ['sometimes', 'numeric', 'min:0'],
             // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
         ];
     }

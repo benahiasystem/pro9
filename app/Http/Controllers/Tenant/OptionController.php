@@ -178,6 +178,7 @@ class OptionController extends Controller
             $document->inventory_kardex()->delete();
             \App\Models\Tenant\DocumentPayment::where('document_id',$document->id)->each(function ($payment) {
                 $payment->cashDocumentPayments()->delete();
+                if ($movement = $payment->global_payment()->first()) \App\Services\Payments\Movement::deleteCommissionForDemo($movement);
                 $payment->global_payment()->delete();
                 $payment->delete();
             });
@@ -207,6 +208,7 @@ class OptionController extends Controller
             $saleNote->inventory_kardex()->delete();
             $saleNote->payments()->each(function ($payment) {
                 $payment->cashDocumentPayments()->delete();
+                if ($movement = $payment->global_payment()->first()) \App\Services\Payments\Movement::deleteCommissionForDemo($movement);
                 $payment->global_payment()->delete();
                 $payment->delete();
             });
@@ -216,6 +218,11 @@ class OptionController extends Controller
 
         $hotelOrderIds = HotelRentOrder::whereIn('sale_note_id', $saleNoteIds)->pluck('id');
         $hotelItemIds = HotelRentItem::whereIn('hotel_rent_order_id', $hotelOrderIds)->pluck('id');
+        $hotelPaymentIds = HotelRentItemPayment::whereIn('hotel_rent_item_id', $hotelItemIds)->pluck('id');
+        \Modules\Finance\Models\GlobalPayment::where('payment_type', HotelRentItemPayment::class)->whereIn('payment_id', $hotelPaymentIds)->each(function ($movement) {
+            \App\Services\Payments\Movement::deleteCommissionForDemo($movement);
+            $movement->delete();
+        });
         HotelRentItemPayment::whereIn('hotel_rent_item_id', $hotelItemIds)->delete();
         HotelRentItem::whereIn('id', $hotelItemIds)->delete();
         HotelRentOrder::whereIn('id', $hotelOrderIds)->delete();

@@ -29,7 +29,7 @@ const order = component('resources/js/views/tenant/orders/partials/sale_note_for
 const rent = component('modules/Hotel/Resources/assets/js/views/rooms/Rent.vue')
 const roomItems = component('modules/Hotel/Resources/assets/js/views/rooms/AddProductToRoom.vue')
 const methods = [{id:'01', is_active:true, is_credit:true, collection_kind:'none', currency_type_id:'VES'},
-    {id:'13', is_active:true, is_credit:false, collection_kind:'account', currency_type_id:'USD'}]
+    {id:'13', is_active:true, is_credit:false, collection_kind:'account', currency_type_id:'USD', bank_account_id:2}]
 const destinations = [{id:'cash'}, {id:1,currency_type_id:'VES'}, {id:2,currency_type_id:'USD'}]
 
 test('order receipt selector requires explicit active classification for every method', () => {
@@ -127,7 +127,7 @@ test('hotel product payment changes clear incompatible destinations without chan
     ctx.classifiedPaymentDestinations = (items, row) => mixin.classifiedPaymentDestinations.call(ctx, items, row)
     ctx.clearIncompatiblePaymentDestinations = rows => mixin.clearIncompatiblePaymentDestinations.call(ctx, rows)
     run.call(ctx, [fresh, saved])
-    assert.equal(fresh.rent_payment.payment_destination_id, null)
+    assert.equal(fresh.rent_payment.payment_destination_id, 2)
     assert.equal(saved.rent_payment.payment_destination_id, 1)
 })
 
@@ -149,6 +149,28 @@ test('hotel checkout suggests a valid classified method and filters account curr
     assert.deepEqual(compiler.compile(hotel.source.template.content).errors, [])
     assert.match(hotel.source.template.content, /<igtf-payment-fields/)
     assert.match(hotel.source.template.content, /<receipt-currency-fields/)
+})
+
+test('hotel checkout and order select the configured bank account for new payments', () => {
+    const tree = parser.parse(hotel.source.script.content, {sourceType:'module'})
+    const declaration = tree.program.body.find(node => node.type === 'ExportDefaultDeclaration').declaration
+    const watchers = declaration.properties.find(node => node.key.name === 'watch').value
+    const entry = watchers.properties.find(node => node.key.value === 'document.payments').value
+    const handler = entry.properties.find(node => node.key.name === 'handler')
+    const run = vm.runInNewContext(`({${generate(handler).code}}).handler`, globals)
+    const row = {payment_method_type_id:'13',currency_type_id:'USD',payment_destination_id:null}
+    const historic = {id:55,payment_method_type_id:'13',currency_type_id:'USD',payment_destination_id:1}
+    const ctx = {paymentMethodTypes:methods, paymentDestinations:destinations,document:{currency_type_id:'VES'},
+        $set:(target,key,value)=>{target[key]=value}}
+    ctx.destinationsFor = payment => hotel.method('destinationsFor').call(ctx,payment)
+    run.call(ctx,[row,historic])
+    assert.equal(row.payment_destination_id,2)
+    assert.equal(historic.payment_destination_id,1)
+    assert.equal(hotel.method('isFixedBankDestination').call(ctx,row),true)
+    const orderCtx={payment_method_types:methods,payment_destinations:destinations,payment:{payment_method_type_id:'13'}}
+    order.method('changePaymentMethod').call(orderCtx)
+    assert.equal(orderCtx.payment.payment_destination_id,2)
+    assert.equal(order.computed('fixedBankMethod').call(orderCtx),true)
 })
 
 test('order sale note submits received amount and rate without replacing them with the document total', async () => {

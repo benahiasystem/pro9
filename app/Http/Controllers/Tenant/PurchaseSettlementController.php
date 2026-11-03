@@ -82,23 +82,21 @@ class PurchaseSettlementController extends Controller
             $facturalo = new Facturalo();
             $facturalo->save($data);
             $facturalo->createPdf();
-
+            $document = $facturalo->getDocument();
+            foreach ($data['payments'] as $payment) {
+                $record_payment = new PurchaseSettlementPayment;
+                $record_payment->purchase_settlement_id=$document->id;
+                $record_payment->date_of_payment=$payment['date_of_payment'];
+                $record_payment->payment_method_type_id=$payment['payment_method_type_id'];
+                $record_payment->reference=$payment['reference'];
+                $record_payment->payment=$payment['payment'];
+                $record_payment->save();
+                $this->createGlobalPayment($record_payment, $payment);
+            }
             return $facturalo;
         });
 
         $document = $fact->getDocument();
-
-        foreach ($data['payments'] as $payment) {
-
-            $record_payment = new PurchaseSettlementPayment;
-            $record_payment->purchase_settlement_id=$document->id;
-            $record_payment->date_of_payment=$payment['date_of_payment'];
-            $record_payment->payment_method_type_id=$payment['payment_method_type_id'];
-            $record_payment->reference=$payment['reference'];
-            $record_payment->payment=$payment['payment'];
-            $record_payment->save();
-            $this->createGlobalPayment($record_payment, $payment);
-        }
 
         return [
             'success' => true,

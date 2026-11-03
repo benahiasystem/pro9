@@ -32,7 +32,7 @@ class TestDocumentsDeletionBehaviorTest extends TestCase
             'documents', 'document_items', 'document_payments', 'cash_document_payments',
             'document_taxes', 'document_currency_totals', 'document_received_retentions',
             'document_guarantee_funds', 'document_fiscal_data', 'document_emissions', 'document_note_refunds', 'document_note_adjustments',
-            'global_payments', 'document_fee', 'document_hotels', 'document_transports',
+            'global_payments', 'payment_commissions', 'document_fee', 'document_hotels', 'document_transports',
             'invoices', 'notes', 'kardex', 'cash_documents',
             'payment_method_types', 'card_brands', 'inventory_kardex', 'payment_files', 'payment_links',
             'payment_link_payments', 'users', 'fiscal_environments',
@@ -49,6 +49,7 @@ class TestDocumentsDeletionBehaviorTest extends TestCase
                 $table->dateTime('reversed_at')->nullable();
                 $table->string('payment_type')->nullable();
                 $table->unsignedInteger('payment_id')->nullable();
+                $table->unsignedInteger('source_global_payment_id')->nullable();
                 $table->string('payment_method_type_id')->nullable();
                 $table->unsignedInteger('card_brand_id')->nullable();
                 $table->string('inventory_kardexable_type')->nullable();
@@ -78,10 +79,18 @@ class TestDocumentsDeletionBehaviorTest extends TestCase
         ]);
         $connection->table('sale_note_payments')->insert(['id' => 501, 'sale_note_id' => 301]);
         $connection->table('cash_document_payments')->insert(['sale_note_payment_id' => 501]);
-        $connection->table('global_payments')->insert([
+        $origin=$connection->table('global_payments')->insertGetId([
             'payment_type' => SaleNotePayment::class,
             'payment_id' => 501,
         ]);
+        $commission=$connection->table('payment_commissions')->insertGetId(['source_global_payment_id'=>$origin]);
+        $connection->table('global_payments')->insert(['payment_type'=>\Modules\Finance\Models\PaymentCommission::class,'payment_id'=>$commission]);
+        $connection->table('hotel_rent_orders')->insert(['id'=>701,'sale_note_id'=>301]);
+        $connection->table('hotel_rent_items')->insert(['id'=>702,'hotel_rent_order_id'=>701]);
+        $connection->table('hotel_rent_item_payments')->insert(['id'=>703,'hotel_rent_item_id'=>702]);
+        $hotelOrigin=$connection->table('global_payments')->insertGetId(['payment_type'=>\Modules\Hotel\Models\HotelRentItemPayment::class,'payment_id'=>703]);
+        $hotelCommission=$connection->table('payment_commissions')->insertGetId(['source_global_payment_id'=>$hotelOrigin]);
+        $connection->table('global_payments')->insert(['payment_type'=>\Modules\Finance\Models\PaymentCommission::class,'payment_id'=>$hotelCommission]);
         $connection->table('kardex')->insert(['sale_note_id' => 301]);
         $connection->table('cash_documents')->insert(['sale_note_id' => 301]);
 
@@ -94,8 +103,8 @@ class TestDocumentsDeletionBehaviorTest extends TestCase
 
         foreach ([
             'sale_note_items', 'inventory_kardex', 'sale_note_payments',
-            'cash_document_payments', 'global_payments', 'kardex',
-            'cash_documents', 'sale_notes',
+            'cash_document_payments', 'global_payments', 'payment_commissions', 'kardex',
+            'cash_documents', 'sale_notes', 'hotel_rent_item_payments',
         ] as $table) {
             self::assertSame(0, $connection->table($table)->count(), $table);
         }
@@ -114,10 +123,12 @@ class TestDocumentsDeletionBehaviorTest extends TestCase
         ]);
         $connection->table('document_payments')->insert(['id' => 201, 'document_id' => 101]);
         $connection->table('cash_document_payments')->insert(['document_payment_id' => 201]);
-        $connection->table('global_payments')->insert([
+        $origin=$connection->table('global_payments')->insertGetId([
             'payment_type' => DocumentPayment::class,
             'payment_id' => 201,
         ]);
+        $commission=$connection->table('payment_commissions')->insertGetId(['source_global_payment_id'=>$origin]);
+        $connection->table('global_payments')->insert(['payment_type'=>\Modules\Finance\Models\PaymentCommission::class,'payment_id'=>$commission]);
 
         foreach (['document_fee', 'document_hotels', 'document_transports', 'invoices', 'kardex', 'cash_documents'] as $table) {
             $connection->table($table)->insert(['document_id' => 101]);
@@ -134,7 +145,7 @@ class TestDocumentsDeletionBehaviorTest extends TestCase
         self::assertFalse(Schema::connection('tenant')->hasTable('summary_documents'));
 
         foreach ([
-            'document_items', 'document_payments', 'cash_document_payments', 'global_payments',
+            'document_items', 'document_payments', 'cash_document_payments', 'global_payments', 'payment_commissions',
             'document_fee', 'document_hotels', 'document_transports', 'invoices', 'notes',
             'kardex', 'cash_documents', 'documents',
             'inventory_kardex', 'document_taxes','document_currency_totals','document_received_retentions',

@@ -322,7 +322,7 @@
                                         <div class="form-group mb-2 me-2">
                                             <el-select
                                                 v-model="row.payment_destination_id"
-                                                :disabled="row.payment_destination_disabled"
+                                                :disabled="row.payment_destination_disabled || isFixedBankDestination(row)"
                                                 filterable
                                             >
                                                 <el-option
@@ -423,7 +423,7 @@
 
 <script>
 import {withoutDraftRetentions, suggestRemainingPayment} from "@helpers/document-creation"
-import {classifiedDestinations, defaultCashForCurrency, handleHotelPaymentError} from "@helpers/payment-classification"
+import {classifiedDestinations, defaultCashForCurrency, handleHotelPaymentError, isRecordedReceipt} from "@helpers/payment-classification"
 import {exactAmount} from "@helpers/exchange-rate-math"
 import fiscalPaymentSettings from "@mixins/fiscal-payment-settings"
 import ReceiptCurrencyFields from "@components/ReceiptCurrencyFields.vue"
@@ -616,6 +616,14 @@ export default {
             handler(rows) {
                 if (!Array.isArray(rows)) return
                 rows.forEach(row => {
+                    if (isRecordedReceipt(row)) return
+                    const method = this.paymentMethodTypes.find(item => item && String(item.id) === String(row.payment_method_type_id))
+                    if (method?.collection_kind === 'account') {
+                        const destination = this.destinationsFor(row).find(item => String(item.id) === String(method.bank_account_id))
+                        const next = destination ? destination.id : null
+                        if (row.payment_destination_id !== next) this.$set(row, 'payment_destination_id', next)
+                        return
+                    }
                     if (row.payment_destination_id != null && !this.destinationsFor(row).some(destination => destination.id === row.payment_destination_id)) {
                         this.$set(row, 'payment_destination_id', null)
                     }
@@ -633,6 +641,9 @@ export default {
         },
     },
     methods: {
+        isFixedBankDestination(row) {
+            return this.paymentMethodTypes.some(method => method && String(method.id) === String(row.payment_method_type_id) && method.collection_kind === 'account')
+        },
         formatHotelAmount(value) {
             return exactAmount(value).final(2);
         },

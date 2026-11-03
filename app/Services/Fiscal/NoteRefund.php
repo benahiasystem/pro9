@@ -85,7 +85,7 @@ final class NoteRefund
         abort_unless(auth()->user()->type === 'admin' || auth()->user()->create_payment,403);
         $data=validator($input,['operation_key'=>'required|uuid','document_payment_id'=>'required|integer|min:1',
             'component'=>'required|in:principal,IGTF','adjustment_id'=>'nullable|integer|min:1','date_of_payment'=>'required|date|after_or_equal:'.$note->date_of_issue->format('Y-m-d'),
-            'payment_method_type_id'=>'required|string','payment_destination_id'=>'required','currency_type_id'=>'required|in:VES,USD',
+            'payment_method_type_id'=>'required|string','payment_destination_id'=>'nullable','currency_type_id'=>'required|in:VES,USD',
             'original_amount'=>'required|numeric|gt:0','exchange_rate'=>'required','exchange_rate_source'=>'required|string|max:50','reference'=>'nullable|string|max:255'])->validate();
         $data['exchange_rate']=Math::rate($data['exchange_rate']);
         $requested = D::of(D::input($data['original_amount'], 'original_amount'));
@@ -102,8 +102,12 @@ final class NoteRefund
             if (DocumentNoteRefund::where('reversal_key',$data['operation_key'])->exists()) abort(409,'La clave ya identifica una reversión.');
             $source=DocumentPayment::whereIn('document_id',$data['component'] === 'principal' ? [$invoice->id] : FiscalNote::collectionDocumentIds($invoice))->whereNull('receipt_parent_id')->whereNull('reversed_at')->lockForUpdate()->find($data['document_payment_id']);
             if (!$source) FiscalAmounts::error('document_payment_id','Seleccione un cobro real vigente de la factura original.');
-            $method=PaymentMethodType::where('is_active',1)->find($data['payment_method_type_id']);
+            $method=PaymentMethodType::where('is_active',1)->lockForUpdate()->find($data['payment_method_type_id']);
             if (!$method) FiscalAmounts::error('payment_method_type_id','Seleccione un medio de pago activo.');
+            if (!isset($data['payment_destination_id'])) {
+                $data['payment_destination_id'] = $method->collection_kind === 'cash' ? 'cash' : $method->bank_account_id;
+            }
+            if ($data['payment_destination_id'] === null) FiscalAmounts::error('payment_destination_id','El método no tiene una cuenta configurada.');
             $converted = D::convert($data['original_amount'],$data['currency_type_id'],$invoice->currency_type_id,$data['exchange_rate']);
             $amount = D::represent($converted, 2);
             $data['calculation_snapshot']['values'] += ['amount'=>D::fraction($amount),'converted_principal'=>D::fraction($converted),'payment_adjustment'=>D::fraction(D::of($amount)->minus($converted))];

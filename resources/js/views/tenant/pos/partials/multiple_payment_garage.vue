@@ -5,6 +5,7 @@
             <div class="row" >
                 <div class="col-lg-12">
 
+                    <igtf-quote-summary v-if="fiscalPaymentsApplicable" :quote="igtfQuote" :loading="igtfQuoteLoading" :error="igtfQuoteError" :currency="fiscalQuoteCurrency" />
                     <table>
                     <thead>
                         <tr width="100%">
@@ -20,7 +21,7 @@
                             <td>
                                 <div class="form-group mb-2 mr-2">
                                     <span v-if="isRecordedReceipt(row)">{{ (row.payment_method_snapshot || {}).description || (row.payment_method_type || {}).description || row.payment_method_type_id }}</span>
-                                    <el-select v-else v-model="row.payment_method_type_id">
+                                    <el-select v-else v-model="row.payment_method_type_id" @change="changePaymentMethodType(index)">
                                         <el-option v-for="option in payment_method_types" :key="option.id" :value="option.id" :label="option.description"></el-option>
                                     </el-select>
                                     <small v-if="!row.payment_method_type_id" class="text-muted">No hay efectivo activo para la moneda del documento; seleccione un método.</small>
@@ -208,6 +209,9 @@ import ReceiptCurrencyFields from '@components/ReceiptCurrencyFields.vue'
                 if (isRecordedReceipt(this.draftPayments[index])) return
                 this.draftPayments.splice(index, 1);
                 this.calculatePayments(this.draftPayments);
+            },
+            changePaymentMethodType(index) {
+                this.clearIncompatiblePaymentDestinations([this.draftPayments[index]])
             },
             async events() {
                 // await this.$eventHub.$on("cancelSaleGarage", () => {

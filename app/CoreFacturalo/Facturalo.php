@@ -1020,7 +1020,9 @@ class Facturalo
             }
             // ######## FIN MONEDA DEL MEDIO DE COBRO ########
             $profile = \App\Services\Fiscal\FiscalProfileService::at($company, $row['date_of_payment']);
-            $decision = \App\Services\Fiscal\SpecialTaxpayerPolicy::payment($profile, $row, $row['currency_type_id'] ?? $document->currency_type_id, $row['date_of_payment']);
+            $decision = $origin
+                ? ['igtf_status'=>'not_applicable']
+                : \App\Services\Fiscal\SpecialTaxpayerPolicy::payment($profile, $row, $row['currency_type_id'] ?? $document->currency_type_id, $row['date_of_payment']);
             $row['igtf_status'] = $decision['igtf_status'];
             // Change is derived from the complete set of receipts, never accepted from a client.
             unset($row['change']);
@@ -1590,25 +1592,80 @@ class Facturalo
             'Content-Disposition' => 'inline; filename="vista-previa-80mm.pdf"', 'Cache-Control' => 'private, no-store']);
     }
 
-    public function setPaymentsPreview($document, $payments)
+    public function setPaymentsPreview($document, $payments, ?Document $existingDocument = null)
     {
         // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+        $historical = $existingDocument ? ($existingDocument->relationLoaded('payments')
+            ? $existingDocument->getRelation('payments') : $existingDocument->payments()->whereNull('reversed_at')->get())->keyBy('id') : collect();
+        $previewTaxes = $existingDocument ? ($existingDocument->relationLoaded('taxes')
+            ? $existingDocument->getRelation('taxes') : $existingDocument->taxes()->get()) : new \Illuminate\Database\Eloquent\Collection();
+        $existingIgtf = \App\Support\Exact\Decimal::sum($previewTaxes->where('tax_kind','IGTF')->map(fn ($tax)=>$tax->exactValue('amount')));
+        $existingOther = \App\Support\Exact\Decimal::sum($previewTaxes->whereNotIn('tax_kind',['IVA','IGTF'])->map(fn ($tax)=>$tax->exactValue('amount')));
         $normalized = [];
         foreach ($payments as $row) {
             unset($row['change']);
+            if ($existingDocument && !empty($row['id'])) {
+                $stored = $historical->get($row['id']);
+                if (!$stored || $stored->reversed_at) \App\Services\Fiscal\FiscalAmounts::error('payments', 'El cobro no pertenece al comprobante vigente.');
+                $normalized[] = array_merge($row, $stored->getAttributes(), ['_reused_receipt'=>true, '_preview_existing'=>$stored]);
+                continue;
+            }
+            if ($this->company instanceof Company) {
+                if (\App\Services\Fiscal\PaymentQuote::reused($row)) {
+                    $row['igtf_status'] = 'not_applicable';
+                } else {
+                    $date = $row['date_of_payment'] ?? $document->date_of_issue->format('Y-m-d');
+                    $profile = \App\Services\Fiscal\FiscalProfileService::at($this->company, $date);
+                    $decisionInput = $row;
+                    if (($decisionInput['igtf_status'] ?? null) !== 'exempt') unset($decisionInput['igtf_status']);
+                    $row['igtf_status'] = \App\Services\Fiscal\SpecialTaxpayerPolicy::payment($profile, $decisionInput,
+                        $row['currency_type_id'] ?? $document->currency_type_id, $date)['igtf_status'];
+                }
+            }
             $values = \App\Services\Fiscal\FiscalAmounts::payment($row, $document->currency_type_id,
                 $document->exchange_rate_sale, (bool) ($this->company->igtf_enabled ?? false), $this->company->igtf_rate ?? null);
             $normalized[] = array_merge($row, $values);
         }
-        $normalized = \App\Services\Payments\ReceiptChange::apply($normalized,
-            \App\Support\Exact\Decimal::readRequired($document, $document->total_payable === null ? 'total' : 'total_payable'),
-            $document->currency_type_id);
+        if ($existingDocument) {
+            foreach ($normalized as $row) if (empty($row['_preview_existing'])) {
+                \App\Services\Fiscal\FiscalAmounts::error('payments', 'Los cobros se administran desde Pagos, no desde la edición.');
+            }
+        } else {
+            $normalized = \App\Services\Payments\ReceiptChange::apply($normalized,
+                \App\Support\Exact\Decimal::readRequired($document, $document->total_payable === null ? 'total' : 'total_payable'),
+                $document->currency_type_id);
+        }
+        $taxTotal = \App\Support\Exact\Decimal::of(0);
         foreach ($normalized as $row) {
+            if (!empty($row['_preview_existing'])) {
+                $document->payments[] = $row['_preview_existing'];
+                continue;
+            }
             // Recalculate the net snapshot and tax after any cash change, as persistence does.
             $row = array_merge($row, \App\Services\Fiscal\FiscalAmounts::payment($row, $document->currency_type_id,
                 $document->exchange_rate_sale, (bool) ($this->company->igtf_enabled ?? false), $this->company->igtf_rate ?? null));
             $payment = new \App\Models\Tenant\DocumentPayment($row);
             $document->payments[] = $payment;
+            $tax = \App\Support\Exact\Decimal::of($row['tax_amount']);
+            if ($tax->isPositive()) {
+                $amount = \App\Support\Exact\Decimal::convert($tax, $row['currency_type_id'], $document->currency_type_id, $row['exchange_rate']);
+                $taxTotal = $taxTotal->plus($amount);
+                $previewTaxes->push(new \App\Models\Tenant\DocumentTax(['tax_kind'=>'IGTF', 'code'=>'IGTF',
+                    'percentage'=>$this->company->igtf_rate, 'amount'=>\App\Support\Exact\Decimal::represent($amount),
+                    'base'=>\App\Support\Exact\Decimal::convert($row['original_amount'], $row['currency_type_id'], $document->currency_type_id, $row['exchange_rate'])]));
+            }
+        }
+        if ($taxTotal->isPositive() || $existingIgtf->isPositive()) {
+            $D = \App\Support\Exact\Decimal::class;
+            $other = $D::read($document, 'total_other_taxes');
+            $includedIgtf = $D::min($existingIgtf, $D::max(0, $other->minus($existingOther)));
+            $additional = $taxTotal->plus($existingIgtf->minus($includedIgtf));
+            $total = $D::read($document, 'total')->plus($additional);
+            $document->setRelation('taxes', $previewTaxes);
+            $document->setExactValues(['subtotal'=>$total->minus($existingIgtf)->minus($taxTotal), 'total'=>$total,
+                'total_other_taxes'=>$other->plus($additional),
+                'total_taxes'=>$D::read($document, 'total_taxes')->plus($additional),
+                'total_payable'=>$D::of($D::represent($total, 2))]);
         }
         // ######## FIN MONEDA DEL MEDIO DE COBRO ########
     }

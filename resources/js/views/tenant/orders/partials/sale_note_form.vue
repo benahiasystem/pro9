@@ -89,7 +89,7 @@
                 <div class="col-lg-4">
                     <div class="form-group">
                         <label class="control-label">Caja / destino</label>
-                        <el-select v-model="payment.payment_destination_id" placeholder="Seleccione">
+                        <el-select v-model="payment.payment_destination_id" placeholder="Seleccione" :disabled="fixedBankMethod">
                             <el-option
                                 v-for="option in availableDestinations"
                                 :key="option.id"
@@ -157,6 +157,9 @@ export default {
         },
         availableDestinations() {
             return classifiedDestinations(this.payment_destinations, this.payment_method_types, this.payment, this.document.currency_type_id)
+        },
+        fixedBankMethod() {
+            return this.payment_method_types.some(method => method && String(method.id) === String(this.payment.payment_method_type_id) && method.collection_kind === 'account')
         },
     },
     data() {
@@ -357,7 +360,9 @@ export default {
             }
         },
         changePaymentMethod() {
-            this.payment.payment_destination_id = null
+            const method = this.payment_method_types.find(item => item && String(item.id) === String(this.payment.payment_method_type_id))
+            const account = method?.collection_kind === 'account' && this.payment_destinations.find(item => String(item.id) === String(method.bank_account_id) && item.currency_type_id === method.currency_type_id)
+            this.payment.payment_destination_id = account ? account.id : null
         },
         // Fecha local YYYY-MM-DD para el registro de pago
         paymentDate() {

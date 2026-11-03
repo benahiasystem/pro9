@@ -187,7 +187,7 @@ class FiscalEmissionSchemaTest extends TestCase
             self::assertSame(7, $methods->pluck('hka_code')->unique()->count());
             self::assertSame(4, $methods->where('hka_code', '99')->count());
             self::assertFalse($methods->contains('id', '06'));
-            self::assertSame(9, $methods->where('is_active', 1)->count());
+            self::assertSame(4, $methods->where('is_active', 1)->count());
             self::assertFalse($db->getSchemaBuilder()->hasColumn('payment_method_types', 'charge'));
             self::assertFalse($db->getSchemaBuilder()->hasTable('card_brands'));
             // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
@@ -216,7 +216,7 @@ class FiscalEmissionSchemaTest extends TestCase
             self::assertSame(0, $db->table('payment_method_types')->whereNotNull('iva_rate_type_id')->count());
             self::assertCount(2, $db->select("SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'payment_method_types' AND CONSTRAINT_NAME IN ('payment_method_currency_fk', 'payment_method_tax_fk')", [$this->database]));
             self::assertSame(0, $db->table('payment_method_types')->where('collection_kind', 'unclassified')->count());
-            self::assertSame(9, \App\Models\Tenant\PaymentMethodType::getPaymentMethodTypes()->count());
+            self::assertSame(4, \App\Models\Tenant\PaymentMethodType::getPaymentMethodTypes()->count());
             $paymentRules = (new \App\Http\Requests\Tenant\DocumentPaymentRequest())->rules();
             unset($paymentRules['document_id']); // This assertion isolates payment-method eligibility.
             $validator = Container::getInstance()->make('validator');
@@ -241,7 +241,7 @@ class FiscalEmissionSchemaTest extends TestCase
             self::assertSame(1, (int) $hkaIndex[0]->Non_unique);
             $db->table('companies')->insert(['id'=>999, 'identity_document_type_id'=>'6', 'number'=>'J123456789', 'name'=>'Temporal', 'fiscal_environment'=>'demo', 'fiscal_emission_mode'=>'free_form']);
             $customMethod = \Modules\Sale\Http\Requests\PaymentMethodTypeRequest::create('/', 'POST', [
-                'id' => '27', 'description' => 'Método local de prueba', 'is_active' => 1, 'collection_kind'=>'account', 'currency_type_id'=>'VES',
+                'id' => '27', 'description' => 'Método local de prueba', 'is_active' => 1, 'collection_kind'=>'cash', 'currency_type_id'=>'VES',
             ]);
             app(\Modules\Sale\Http\Controllers\PaymentMethodTypeController::class)->store($customMethod);
             self::assertNull($db->table('payment_method_types')->where('id', '27')->value('hka_code'));

@@ -57,6 +57,53 @@ class InvoicePaymentPreviewCurrencyTest extends TestCase
         self::assertStringContainsString('Vuelto USD 2.00', $html);
     }
 
+    public function test_preview_shows_tax_and_total_after_change(): void
+    {
+        $document = new Document(['currency_type_id'=>'VES', 'total'=>'100', 'total_taxes'=>'0',
+            'total_other_taxes'=>'0', 'exchange_rate_sale'=>'10']);
+        $document->setRelation('payments', new Collection());
+        $engine = new class extends Facturalo {
+            public function __construct() { $this->company = new Fluent(['igtf_enabled'=>true, 'igtf_rate'=>'3']); }
+        };
+        $engine->setPaymentsPreview($document, [['payment_method_type_id'=>'10','currency_type_id'=>'USD',
+            'original_amount'=>'12','exchange_rate'=>'10','payment'=>'120','igtf_status'=>'subject']]);
+        $payment = $document->payments->first();
+        self::assertSame('0.3', $payment->tax_amount);
+        self::assertSame('103', $document->total);
+        self::assertSame('3', $document->total_other_taxes);
+        self::assertSame('3', $document->taxes->first()->amount);
+        $payment->payment_method_snapshot = ['description'=>'Efectivo dólares'];
+        $html = view('pdf.partials.invoice_receipt', ['row'=>$payment, 'document'=>$document])->render();
+        self::assertStringContainsString('Recibido USD 12.30', $html);
+        self::assertStringContainsString('Vuelto USD 2.00', $html);
+        self::assertStringContainsString('IGTF USD 0.30', $html);
+    }
+
+    public function test_edit_preview_keeps_recorded_tax_when_company_setting_changes(): void
+    {
+        $receipt=(new \App\Models\Tenant\DocumentPayment())->forceFill(['id'=>7,'document_id'=>3,
+            'payment_method_type_id'=>'10','currency_type_id'=>'USD','original_amount'=>'10','exchange_rate'=>'10',
+            'payment'=>'100','tax_amount'=>'0.30','igtf_status'=>'subject']);
+        $tax=new \App\Models\Tenant\DocumentTax(['tax_kind'=>'IGTF','percentage'=>'3','amount'=>'3']);
+        $existing=new Document();$existing->forceFill(['id'=>3]);
+        $existing->setRelation('payments',new Collection([$receipt]));
+        $existing->setRelation('taxes',new Collection([$tax]));
+        $engine = new class extends Facturalo {
+            public function __construct() { $this->company = new Fluent(['igtf_enabled'=>false]); }
+        };
+        foreach ([['100','0'],['103','3']] as [$total,$other]) {
+            $preview=new Document(['currency_type_id'=>'VES','total'=>$total,'total_taxes'=>$other,
+                'total_other_taxes'=>$other,'exchange_rate_sale'=>'10']);
+            $preview->setRelation('payments',new Collection());
+            $engine->setPaymentsPreview($preview,[['id'=>7,'payment'=>'1']],$existing);
+            self::assertSame('103',$preview->total);
+            self::assertSame('3',$preview->total_other_taxes);
+            self::assertSame('0.3',$preview->payments->first()->tax_amount);
+            self::assertSame('subject',$preview->payments->first()->igtf_status);
+            self::assertSame(1,$preview->taxes->count());
+        }
+    }
+
     public function test_preview_rejects_bank_excess_even_when_its_id_was_originally_cash(): void
     {
         $this->expectException(ValidationException::class);

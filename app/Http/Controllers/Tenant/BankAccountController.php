@@ -64,9 +64,10 @@ class BankAccountController extends Controller
                         ->orWhere(fn ($query) => $query->where('destiny_type', BankAccount::class)->where('destiny_id', $bank_account->id));
                 })->exists();
                 if (!$bank_account->exactValue('initial_balance')->isZero() || $bank_account->global_destination()->exists()
-                    || $hasTransfers || $bank_account->bank_loan()->exists()) {
+                    || $hasTransfers || $bank_account->bank_loan()->exists()
+                    || \App\Models\Tenant\PaymentMethodType::where('bank_account_id', $bank_account->id)->exists()) {
                     throw \Illuminate\Validation\ValidationException::withMessages([
-                        'currency_type_id' => 'No se puede cambiar la moneda de una cuenta con saldo inicial o movimientos. Registre otra cuenta.',
+                        'currency_type_id' => 'No se puede cambiar la moneda de una cuenta con saldo, movimientos o métodos asociados. Registre otra cuenta.',
                     ]);
                 }
             }

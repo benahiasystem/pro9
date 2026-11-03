@@ -16,6 +16,8 @@ class InvoiceTotalsPaymentsVisibilityContractTest extends TestCase
         self::assertStringContainsString('data-testid="invoice-totals-payments"', $source);
         self::assertStringContainsString('class="row justify-content-end mt-3"', $source);
         self::assertStringContainsString('<strong>TOTAL A PAGAR</strong>', $source);
+        self::assertStringContainsString('<strong v-if="fiscalPaymentsApplicable && !isUpdateDocument">TOTAL DE LA VENTA (SIN IGTF)</strong>', $source);
+        self::assertStringContainsString('<igtf-quote-summary', $source);
         self::assertStringContainsString('form.payment_condition_id ===', $source);
         self::assertStringContainsString('clickAddPayment', $source);
         self::assertStringContainsString('class="table-responsive payment mt-4"', $source);

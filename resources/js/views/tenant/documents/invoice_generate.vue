@@ -1656,12 +1656,13 @@
                                 </tr>
 
                                 <tr v-if="form.total > 0">
-                                    <td><strong>TOTAL A PAGAR</strong>:</td>
+                                    <td><strong v-if="fiscalPaymentsApplicable && !isUpdateDocument">TOTAL DE LA VENTA (SIN IGTF)</strong><template v-else><strong>TOTAL A PAGAR</strong></template>:</td>
                                     <td>
                                         {{ currency_type.symbol }}
                                         {{ form.total }}
                                     </td>
                                 </tr>
+                                <tr v-if="fiscalPaymentsApplicable"><td colspan="2"><igtf-quote-summary v-if="fiscalPaymentsApplicable" :quote="igtfQuote" :loading="igtfQuoteLoading" :error="igtfQuoteError" :currency="fiscalQuoteCurrency" /></td></tr>
 
                                 <tr v-if="form.settlement_adjustment && form.settlement_adjustment != 0">
                                     <td>Ajuste de liquidación:</td>
@@ -5924,7 +5925,10 @@ export default {
                             this.errors,
                             "IdLoteSelected"
                         );
-                        if (firstLotError) {
+                        if (this.errors.quoted_tax_amount) {
+                            this.$message.error(this.errors.quoted_tax_amount[0]);
+                            this.refreshFiscalQuote(this.form.payments);
+                        } else if (firstLotError) {
                             this.$message.error(firstLotError);
                         } else if (this.errors.customer_id) {
                             this.$message.error(this.errors.customer_id[0]);
