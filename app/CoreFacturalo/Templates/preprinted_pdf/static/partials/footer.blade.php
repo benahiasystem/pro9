@@ -114,9 +114,6 @@
                     <td class="text-center">{{$account->bank->description}}</td>
                     <td class="text-center text-upp">{{$account->currency_type->description}}</td>
                     <td class="text-center">
-                        @if($account->cci)
-                            {{$account->cci}}
-                        @endif
                     </td>
                     <td class="text-center">{{$account->number}}</td>
                 </tr>

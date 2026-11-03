@@ -412,7 +412,7 @@
             <tr>
                 <td class="m27-item-note m27-item-sub-sm">
                     <span class="font-bold">{{$account->bank->description}}</span> {{$account->currency_type->description}}
-                    N°: {{$account->number}}@if($account->cci) / CCI: {{$account->cci}}@endif
+                    N°: {{$account->number}}
                 </td>
             </tr>
         @endforeach

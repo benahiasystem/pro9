@@ -520,9 +520,6 @@ $affected_document_number = $document_base->affected_document ? $document_base->
                             @foreach($accounts as $account)
                                 <br>{{$account->bank->description}}
                                 <br>{{$account->currency_type->description}} N°: {{$account->number}}
-                                @if($account->cci)
-                                    <br>CCI: {{$account->cci}}
-                                @endif
                             @endforeach
                         @endif
                     @endif

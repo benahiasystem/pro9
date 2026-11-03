@@ -11,7 +11,6 @@ use Illuminate\Support\Facades\DB;
  * - `bank_id` int(10) unsigned NOT NULL
  * - `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `number` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `cci` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `status` tinyint(4) NOT NULL DEFAULT '1'
  * - `initial_balance` decimal(30,12) NOT NULL DEFAULT '0.00'
@@ -30,7 +29,6 @@ CREATE TABLE `bank_accounts` (
   `bank_id` int(10) unsigned NOT NULL,
   `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `number` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `cci` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `status` tinyint(4) NOT NULL DEFAULT '1',
   `initial_balance` decimal(30,12) NOT NULL DEFAULT '0.00',

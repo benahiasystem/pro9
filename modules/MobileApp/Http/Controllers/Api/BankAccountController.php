@@ -19,7 +19,7 @@ class BankAccountController extends Controller
      * Parametros soportados:
      * - limit: cantidad de registros (maximo 100, default 15)
      * - cursor: posicion actual (null en primera peticion)
-     * - input: busqueda por descripcion, numero, cci o nombre del banco
+     * - input: busqueda por descripcion, numero o nombre del banco
      * - show_in_documents: filtrar por cuentas visibles en documentos (true/false)
      * - status: filtrar por estado (1 activo, 0 inactivo)
      * - establishment_id: filtrar por establecimiento

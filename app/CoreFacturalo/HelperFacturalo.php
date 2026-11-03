@@ -55,7 +55,6 @@ class HelperFacturalo
             foreach ($bank_accounts_usd as $row) {
                 $bank_accounts_usd_array[] = [
                     'number' => $row->number,
-                    'cci' => $row->cci,
                 ];
             }
 
@@ -64,7 +63,6 @@ class HelperFacturalo
             foreach ($bank_accounts_pen as $row) {
                 $bank_accounts_pen_array[] = [
                     'number' => $row->number,
-                    'cci' => $row->cci,
                 ];
             }
             if(count($bank_accounts_usd_array) > 0 || count($bank_accounts_pen_array) > 0) {

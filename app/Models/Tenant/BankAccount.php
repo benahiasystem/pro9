@@ -19,7 +19,6 @@
      * @property int                             $bank_id
      * @property string                          $description
      * @property string                          $number
-     * @property string|null                     $cci
      * @property string                          $currency_type_id
      * @property int                             $status
      * @property float                           $initial_balance
@@ -53,7 +52,6 @@
             'description',
             'number',
             'currency_type_id',
-            'cci',
             'status',
             'initial_balance',
             'show_in_documents',
@@ -177,7 +175,6 @@
             return $query->where(function($q) use($input){
                 $q->where('description', 'like', "%{$input}%")
                     ->orWhere('number', 'like', "%{$input}%")
-                    ->orWhere('cci', 'like', "%{$input}%")
                     ->orWhereHas('bank', function($b) use($input){
                         $b->where('description', 'like', "%{$input}%");
                     });
@@ -199,7 +196,6 @@
                 'bank_description' => optional($this->bank)->description,
                 'description' => $this->description,
                 'number' => $this->number,
-                'cci' => $this->cci,
                 'currency_type_id' => $this->currency_type_id,
                 'currency_type_description' => optional($this->currency_type)->description,
                 'status' => (int) $this->status,

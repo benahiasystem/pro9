@@ -266,50 +266,6 @@
         /**
          * 
          * Esta función genera consultas innecesarias 
-         * @todo Usar en su reemplazo el método getCciBankAcount
-         *
-         * @return string
-         */
-        public function getCciAcoount(){
-            if ($this->destination_type === Cash::class) {
-                /** @var \App\Models\Tenant\Cash $destination */
-                $destination = $this->destination;
-                if($destination !== null) {
-                    return $destination->reference_number;
-                }
-                return '';
-            }
-            $destination = $this->destination;
-            try {
-                if (!$destination) return '';
-                $bank_id = $destination->bank_id;
-                // ######## INICIO CALCULOS EXACTOS PRO9 ########
-                $bank = $destination->relationLoaded('bank') ? $destination->getRelation('bank') : Bank::find($bank_id);
-                // ######## FIN CALCULOS EXACTOS PRO9 ########
-                if ($bank !== null) {
-
-                    try {
-                        if(!empty($destination->cci)){
-                            return  $destination->cci;
-
-                        }
-                        return  $destination->number;
-                    } catch (Exception $e) {
-                        // do nothing
-                        return '-';
-                    }
-                }
-            } catch (Exception $e) {
-                // do nothing
-                return '-';
-            }
-            return '-';
-        }
-        
-        
-        /**
-         * 
-         * Esta función genera consultas innecesarias 
          * @todo Usar en su reemplazo el método getDestinationDescriptionPayment
          *
          * @return string
@@ -324,7 +280,7 @@
                 $bank = Bank::find($bank_id);
                 if ($bank !== null) {
                     try {
-                        return $bank->description." ". $destination->cci;
+                        return $bank->description;
                     } catch (Exception $e) {
                         // do nothing
                         return '';
@@ -341,12 +297,11 @@
         /**
          * @return string[]
          */
-        public function getDestinationWithCci(): array
+        public function getDestinationDetails(): array
         {
             $data = [
                 'name' => '',
                 'description' => '',
-                'cci' => '',
             ];
             if ($this->destination_type === Cash::class) {
                 $data['name'] = 'CAJA GENERAL';
@@ -355,7 +310,6 @@
             $destination = $this->destination;
             try {
                 $data['description'] = $destination->description;
-                $data['cci'] = $destination->cci;
                 $bank_id = $destination->bank_id;
                 $bank = Bank::find($bank_id);
                 if ($bank !== null) {
@@ -824,45 +778,16 @@
             if ($this->destination_type === Cash::class) return 'CAJA GENERAL';
 
             $bank_description = $this->destination->bank->description ?? null;
-            $cci_description = $this->destination->cci ?? null;
             $full_description = "";
 
             if($bank_description) $full_description .= $bank_description;
             
-            if($cci_description) $full_description .=  " {$cci_description}";
 
             return $full_description;
 
         }
 
         
-        /**
-         * 
-         * Obtener cci
-         *
-         * @return string
-         */
-        public function getCciBankAcount()
-        {
-            $destination = $this->destination;
-            $cci_description = '-';
-
-            if($destination)
-            {
-                if ($this->destination_type === Cash::class) 
-                {
-                    $cci_description = $destination->reference_number;
-                }
-                else
-                {
-                    $cci_description = $destination->cci ?? $destination->number;
-                }
-            }
-
-            return $cci_description;
-        }
-
-
         /**
          * @return BelongsTo
          */

@@ -108,7 +108,6 @@ class TemplatePreview
 //            $sale->total = '1180.00';
 //
 //            $sale->observations = ['1. Observación 1', '2. Observación 2', '3. Observación 3'];
-//            $sale->bank_accounts = 'BCP Bs. 3432 423 / CCI: 4 23432<br/>BBVA Bs. 757567567 / CCI: 7657567567567';
 //
 //
 //            $sale->items = $items;

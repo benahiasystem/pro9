@@ -61,7 +61,6 @@
                     <th class="">Moneda</th>
                     <th class="">Tipo</th>
                     <th class="">Destino</th>
-                    <th class="">Cuenta/Caja actual</th>
                     <th class="">F. Pago</th>
                     <th class="">Método</th>
                     <th class="">Referencia</th>
@@ -94,8 +93,6 @@
 
                         }
 
-                        $cci = $value->getCciBankAcount();
-                        // $cci = $value->getCciAcoount();
                         $personName = $data_person->name;
                         if (!is_string($personName)) {
                             if (property_exists($personName, 'description')) {
@@ -118,7 +115,6 @@
                             'id' => $value->id,
                             'destination_description' => null,
                             // 'destination_description' => $value->destination_description,
-                            'cci' => $cci,
                             'date_of_payment' => ($payment !== null && $value->payment->date_of_payment !== null) ? $value->payment->date_of_payment->format('Y-m-d') : '',
                             'payment_method_type_description' => $payment_method_type_description,
                             'reference' => ($payment !== null) ? $value->payment->reference : '',
@@ -156,7 +152,6 @@
                         <td class="celda">{{ $data['currency_type_id'] }}</td>
                         <td class="celda">{{ $data['instance_type_description'] }}</td>
                         <td class="celda">{{ $data['destination_description'] }}</td>
-                        <td class="celda">{{ $data['cci'] }}</td>
                         <td class="celda">{{ $data['date_of_payment'] }}</td>
                         <td class="celda">{{ $data['payment_method_type_description'] }}</td>
                         <td class="celda">{{ $data['reference'] }}</td>
