@@ -309,6 +309,7 @@ class VenezuelaInitialCatalogContractTest extends TestCase
         self::assertFalse(PaymentMethodType::isInitialPaymentMethodId('08'));
         self::assertFalse(PaymentMethodType::isInitialPaymentMethodId('14'));
 
+        $this->actingAs((new \App\Models\Tenant\User())->forceFill(['id'=>1, 'type'=>'admin']));
         $response = app(PaymentMethodTypeController::class)->destroy('11');
         self::assertFalse($response['success']);
         self::assertSame('Los métodos de pago iniciales no se pueden eliminar', $response['message']);

@@ -34,7 +34,7 @@ Se retiraron las 17 filas que tenían `active = 0`.
 
 ### Formas de pago Pro9 y HKA (`payment_method_types`)
 
-La tabla operativa siembra diez IDs locales `01`–`05`, `09`–`13`. Su `hka_code char(2) NOT NULL` almacena el código HKA: `01→08`, `02→06`, `03→05`, `04→03`, `10→09`, `11→02`; los demás usan `99`. Los IDs `06`, `07` y `14`–`26` no se siembran y pueden utilizarse para métodos personalizados. El código `99` no es único. El administrador selecciona explícitamente el medio fiscal HKA para métodos nuevos y editados; el servidor valida su compatibilidad con naturaleza y moneda. Los snapshots de cobros ya registrados conservan su código.
+La tabla operativa siembra diez IDs locales `01`–`05`, `09`–`13`. Su `hka_code char(2)` nullable almacena el código HKA: `01→08`, `02→06`, `03→05`, `04→03`, `10→09`, `11→02`; los demás usan `99`. Los IDs `06`, `07` y `14`–`26` no se siembran y pueden utilizarse para métodos personalizados. El código `99` no es único. Sólo en Medios digitales el listado muestra el medio fiscal y se selecciona obligatoriamente un medio compatible; en otras modalidades se oculta, se deja sin asignar al crear y se conserva al editar si continúa siendo compatible. Los snapshots de cobros ya registrados conservan su código. Esta modificación del esquema corresponde únicamente a instalaciones nuevas.
 
 Se retiró del estado inicial `06 — Tarjeta Internacional`; no reasignar automáticamente ese código a otro método inicial.
 
@@ -294,7 +294,7 @@ Sin alterar filas ni IDs, el formulario y persistencia habilitan NC01/07/04/09 y
 
 ### Clasificación de cobros y caja — 26/10/2026
 
-`payment_method_types.collection_kind` separa efectivo físico (`cash`), bancario/electrónico (`account`), crédito (`credit`) y sin clasificar (`unclassified`). `is_cash`/`is_credit` se derivan en servidor; la moneda fija del efectivo es `cash_currency_type_id`. 01/VES y 10/USD son los efectivos iniciales; 02/03/04/11/12/13 son bancarios; 05/09 son crédito. No se siembran métodos sin clasificar ni la columna `charge`. Todos los métodos son editables, con ID y HKA inmutables; los iniciales no se pueden eliminar. Ver [contrato de instalación nueva](../../../../informes/clasificacion_medios_pago_caja.md).
+`payment_method_types.collection_kind` separa efectivo físico (`cash`), bancario/electrónico (`account`), crédito (`credit`) y sin clasificar (`unclassified`). `is_cash`/`is_credit` se derivan en servidor; la moneda fija del efectivo es `cash_currency_type_id`. 01/VES y 10/USD son los efectivos iniciales; 02/03/04/11/12/13 son bancarios; 05/09 son crédito. No se siembran métodos sin clasificar ni la columna `charge`. Todos los métodos son editables, conservan su ID y los iniciales no se pueden eliminar. Ver [contrato de instalación nueva](../../../../informes/clasificacion_medios_pago_caja.md).
 
 Estas asignaciones describen solamente la semilla: los consumidores seleccionan la naturaleza y moneda vigentes, no deducen comportamiento del ID. Las consultas de crédito y recepción usan `collection_kind`; los predeterminados de efectivo requieren moneda documental activa y el importador MiTiendaPe verifica todo el lote antes de crear clientes u órdenes. Los movimientos anteriores se leen con sus snapshots.
 

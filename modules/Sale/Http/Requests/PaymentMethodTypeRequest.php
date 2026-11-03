@@ -33,9 +33,9 @@ class PaymentMethodTypeRequest extends FormRequest
                 'max:2',
                 $idRule,
             ],
-            'hka_code' => ['required', 'string', function ($attribute, $value, $fail) {
+            'hka_code' => \App\Services\Payments\HkaPaymentMethods::emissionMode() !== 'digital' ? ['exclude'] : ['required', 'string', function ($attribute, $value, $fail) {
                 if (!\App\Services\Payments\HkaPaymentMethods::compatible($value, $this->input('collection_kind'), $this->input('currency_type_id'))) {
-                    $fail('Seleccione un medio fiscal HKA compatible con la naturaleza y moneda.');
+                    $fail('Seleccione un medio fiscal compatible con la naturaleza y moneda.');
                 }
             }],
             'description' => [

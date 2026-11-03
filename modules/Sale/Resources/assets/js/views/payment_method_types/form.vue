@@ -38,9 +38,9 @@
                         <small class="text-danger" v-if="errors.currency_type_id">{{ errors.currency_type_id[0] }}</small>
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <div v-if="fiscalEmissionMode === 'digital'" class="col-md-4">
                         <div class="form-group">
-                        <label class="control-label">Medio fiscal HKA</label>
+                        <label class="control-label">Medio fiscal</label>
                         <el-select v-model="form.hka_code" placeholder="Seleccione un medio fiscal">
                             <el-option v-for="option in compatibleHkaMethods" :key="option.code" :value="option.code" :label="option.code + ' - ' + option.name" />
                         </el-select>
@@ -73,7 +73,7 @@
             </div>
             <div class="form-actions text-end mt-4">
                 <el-button class="second-buton me-2" @click.prevent="close()">Cancelar</el-button>
-                <el-button type="primary" native-type="submit" :loading="loading_submit">Guardar</el-button>
+                <el-button type="primary" native-type="submit" :disabled="!formReady" :loading="loading_submit">Guardar</el-button>
             </div>
         </form>
     </el-dialog>
@@ -93,6 +93,9 @@
                 currencyTypes: [],
                 taxes: [],
                 hkaPaymentMethods: [],
+                fiscalEmissionMode: null,
+                formReady: false,
+                loadGeneration: 0,
                 showTax: false,
             }
         },
@@ -140,20 +143,29 @@
             },
             create() {
                 this.titleDialog = (this.recordId)? 'Editar método de pago':'Nuevo método de pago'
-                this.$http.get(`/${this.resource}/tables`).then(response => {
-                    this.currencyTypes = response.data.currency_types
-                    this.taxes = response.data.taxes
-                    this.hkaPaymentMethods = response.data.hka_payment_methods
-                }).catch(() => this.$message.error('No se pudieron cargar las monedas, impuestos y medios fiscales'))
-                if (this.recordId) {
-                    this.$http.get(`/${this.resource}/record/${this.recordId}`)
-                        .then(response => {
-                            this.showTax = !!response.data.iva_rate_type_id
-                            this.form = {...response.data, is_active: !!response.data.is_active}
-                        })
-                }
+                const generation = ++this.loadGeneration
+                this.formReady = false
+                this.fiscalEmissionMode = null
+                const record = this.recordId ? this.$http.get(`/${this.resource}/record/${this.recordId}`) : Promise.resolve(null)
+                return Promise.all([this.$http.get(`/${this.resource}/tables`), record]).then(([tables, response]) => {
+                    if (generation !== this.loadGeneration) return
+                    const data = tables.data
+                    if (!['digital', 'fiscal_machine', 'free_form'].includes(data.fiscal_emission_mode)) throw new Error('Modalidad fiscal desconocida')
+                    this.currencyTypes = data.currency_types
+                    this.taxes = data.taxes
+                    this.hkaPaymentMethods = data.hka_payment_methods
+                    this.fiscalEmissionMode = data.fiscal_emission_mode
+                    if (response) {
+                        this.showTax = !!response.data.iva_rate_type_id
+                        this.form = {...response.data, is_active: !!response.data.is_active}
+                    }
+                    this.formReady = true
+                }).catch(() => {
+                    if (generation === this.loadGeneration) this.$message.error('No se pudo cargar la configuración del método de pago')
+                })
             },
             submit() {
+                if (!this.formReady) return
                 this.loading_submit = true
                 // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
                 this.errors = {}
@@ -184,6 +196,9 @@
                     })
             },
             close() {
+                this.loadGeneration++
+                this.formReady = false
+                this.fiscalEmissionMode = null
                 this.$emit('update:showDialog', false)
                 this.initForm()
             },

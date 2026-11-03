@@ -235,16 +235,18 @@ class FiscalEmissionSchemaTest extends TestCase
             }
             $column = $db->select("SHOW COLUMNS FROM `payment_method_types` LIKE 'hka_code'");
             self::assertSame('char(2)', $column[0]->Type);
-            self::assertSame('NO', $column[0]->Null);
+            self::assertSame('YES', $column[0]->Null);
             $hkaIndex = $db->select("SHOW INDEX FROM `payment_method_types` WHERE Key_name = 'payment_method_types_hka_code_index'");
             self::assertCount(1, $hkaIndex);
             self::assertSame(1, (int) $hkaIndex[0]->Non_unique);
+            $db->table('companies')->insert(['id'=>999, 'identity_document_type_id'=>'6', 'number'=>'J123456789', 'name'=>'Temporal', 'fiscal_environment'=>'demo', 'fiscal_emission_mode'=>'free_form']);
             $customMethod = \Modules\Sale\Http\Requests\PaymentMethodTypeRequest::create('/', 'POST', [
-                'id' => '27', 'description' => 'Método local de prueba', 'is_active' => 1, 'collection_kind'=>'account', 'currency_type_id'=>'VES', 'hka_code'=>'99',
+                'id' => '27', 'description' => 'Método local de prueba', 'is_active' => 1, 'collection_kind'=>'account', 'currency_type_id'=>'VES',
             ]);
             app(\Modules\Sale\Http\Controllers\PaymentMethodTypeController::class)->store($customMethod);
-            self::assertSame('99', $db->table('payment_method_types')->where('id', '27')->value('hka_code'));
+            self::assertNull($db->table('payment_method_types')->where('id', '27')->value('hka_code'));
             $db->table('payment_method_types')->where('id', '27')->delete();
+            $db->table('companies')->where('id',999)->delete();
             // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
             // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
             // ########## INICIO CAMBIO AFECTACIÓN IVA

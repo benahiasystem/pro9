@@ -57,6 +57,17 @@ class HkaPayloadBuilderTest extends TestCase
         $d=json_decode(file_get_contents(__DIR__.'/../Fixtures/Hka/invoice.json'),true);unset($d['customer']['hka_identity_code']);
         $this->expectException(ValidationException::class);(new HkaPayloadBuilder())->build($d);
     }
+    public function test_missing_fiscal_payment_method_blocks_preparation(): void
+    {
+        $d = json_decode(file_get_contents(__DIR__.'/../Fixtures/Hka/invoice.json'), true);
+        $d['payments'][0]['payment_method_snapshot']['hka_code'] = null;
+        try {
+            (new HkaPayloadBuilder())->build($d);
+            self::fail('El pago sin medio fiscal no puede enviarse a HKA.');
+        } catch (ValidationException $exception) {
+            self::assertArrayHasKey('payments', $exception->errors());
+        }
+    }
     public function test_exports_are_not_enabled_by_catalog_presence(): void
     {
         $d=json_decode(file_get_contents(__DIR__.'/../Fixtures/Hka/invoice.json'),true);$d['invoice']['operation_type_id']='0201';

@@ -18,7 +18,7 @@ test('duplicate code displays the server error and keeps the form open', async (
     for (const data of [{id: ['El código ya existe']}, {message: {id: ['El código ya existe']}}]) {
         let closed = false;
         const ctx = {
-            recordId: null, resource: 'payment-method-types', form: {id: '01'}, errors: {},
+            recordId: null, resource: 'payment-method-types', form: {id: '01'}, errors: {}, formReady: true,
             $http: {post: (url) => {
                 assert.equal(url, '/payment-method-types');
                 return Promise.reject({response: {status: 422, data}});
@@ -37,7 +37,7 @@ test('duplicate code displays the server error and keeps the form open', async (
 test('editing sends PUT to the selected method', async () => {
     let saved = false;
     const ctx = {
-        recordId: '27', resource: 'payment-method-types', form: {id: '27'},
+        recordId: '27', resource: 'payment-method-types', form: {id: '27'}, formReady: true,
         $http: {put: (url) => {
             assert.equal(url, '/payment-method-types/27');
             return Promise.resolve({data: {success: true}});
@@ -76,10 +76,10 @@ test('editing preserves the availability loaded from the server', async () => {
     for (const isActive of [true, false]) {
         let submitted;
         const ctx = {
-            recordId: '27', resource: 'payment-method-types', showTax: false,
+            recordId: '27', resource: 'payment-method-types', showTax: false, loadGeneration: 0,
             $http: {
                 get: url => Promise.resolve({data: url.endsWith('/tables')
-                    ? {currency_types: [], taxes: []}
+                    ? {currency_types: [], taxes: [], hka_payment_methods: [], fiscal_emission_mode: 'digital'}
                     : {id: '27', description: 'Método', collection_kind: 'account', is_active: isActive}}),
                 put: (url, form) => { submitted = {...form}; return Promise.resolve({data: {success: true}}); },
             },
@@ -143,11 +143,68 @@ test('HKA choices follow nature and currency and incompatible changes require a 
     assert.deepEqual(Array.from(ctx.compatibleHkaMethods, x => x.code), ['03','99']);
     ctx.form.collection_kind = 'credit';
     assert.deepEqual(Array.from(ctx.compatibleHkaMethods, x => x.code), ['99']);
-    assert.match(parsed.template.content, /Medio fiscal HKA/);
+    assert.match(parsed.template.content, />Medio fiscal<\/label>/);
     assert.match(parsed.template.content, /incompatibleHka/);
-    const index = fs.readFileSync('modules/Sale/Resources/assets/js/views/payment_method_types/index.vue', 'utf8');
-    assert.match(index, /row\.hka_name/);
-    assert.match(index, /!row\.hka_compatible/);
+});
+
+test('catalogue shows the fiscal method only in digital mode', async () => {
+    const index = compiler.parseComponent(fs.readFileSync('modules/Sale/Resources/assets/js/views/payment_method_types/index.vue', 'utf8'));
+    const compiled = compiler.compile(index.template.content);
+    assert.deepEqual(compiled.errors, []);
+    assert.match(index.template.content, /<th v-if="fiscalEmissionMode === 'digital'">Medio fiscal<\/th>/);
+    assert.match(index.template.content, /<td v-if="fiscalEmissionMode === 'digital'">\{\{ fiscalLabel\(row\) \}\}<\/td>/);
+    const output = {};
+    vm.runInNewContext(babel.transformSync(index.script.content, {configFile: false, babelrc: false, plugins: ['@babel/plugin-transform-modules-commonjs']}).code,
+        {exports: output, require: () => ({})});
+    const methods = output.default.methods;
+    assert.equal(methods.fiscalLabel({hka_code:'03', hka_name:'Transferencia', hka_compatible:true}), '03 - Transferencia');
+    assert.equal(methods.fiscalLabel({hka_code:null}), 'Sin asignar');
+    assert.equal(methods.fiscalLabel({hka_code:'08', hka_name:'Efectivo de curso legal', hka_compatible:false}), '08 - Efectivo de curso legal (incompatible)');
+    for (const mode of ['digital', 'free_form', 'fiscal_machine']) {
+        const ctx = {resource:'payment-method-types', $http:{get: url => Promise.resolve({data: url.endsWith('/tables') ? {fiscal_emission_mode:mode} : {data:[]}})}};
+        methods.getData.call(ctx);
+        await new Promise(resolve => setImmediate(resolve));
+        assert.equal(ctx.fiscalEmissionMode === 'digital', mode === 'digital');
+    }
+});
+
+test('fiscal field appears only for digital mode and saving waits for loading', async () => {
+    const field = compiler.compile(parsed.template.content).ast.children[0].children[0].children[0].children
+        .find(node => node.attrsMap && node.attrsMap['v-if'] === "fiscalEmissionMode === 'digital'");
+    assert.ok(field);
+    for (const [mode, expected] of [['digital', true], ['fiscal_machine', false], ['free_form', false], [null, false]]) {
+        assert.equal(vm.runInNewContext(field.if, {fiscalEmissionMode: mode}), expected);
+    }
+    let resolveTables;
+    const ctx = {recordId: null, resource: 'payment-method-types', loadGeneration: 0,
+        $http: {get: () => new Promise(resolve => {resolveTables = resolve})},
+        $message: {error: () => assert.fail('unexpected error')}};
+    const pending = component.methods.create.call(ctx);
+    assert.equal(ctx.formReady, false);
+    assert.equal(ctx.fiscalEmissionMode, null);
+    component.methods.submit.call(ctx);
+    resolveTables({data: {currency_types: [], taxes: [], hka_payment_methods: [], fiscal_emission_mode: 'free_form'}});
+    await pending;
+    assert.equal(ctx.formReady, true);
+    assert.equal(ctx.fiscalEmissionMode, 'free_form');
+    ctx.$http.get = () => Promise.reject(new Error('offline'));
+    ctx.$message.error = () => {};
+    await component.methods.create.call(ctx);
+    assert.equal(ctx.formReady, false);
+    assert.equal(ctx.fiscalEmissionMode, null);
+});
+
+test('a response from a closed dialog cannot enable or populate a later dialog', async () => {
+    let resolveTables;
+    const ctx = {recordId: null, resource: 'payment-method-types', loadGeneration: 0,
+        $http: {get: () => new Promise(resolve => {resolveTables = resolve})},
+        $message: {error: () => assert.fail('unexpected error')}, $emit() {}, initForm() {}};
+    const pending = component.methods.create.call(ctx);
+    component.methods.close.call(ctx);
+    resolveTables({data: {currency_types: [], taxes: [], hka_payment_methods: [], fiscal_emission_mode: 'digital'}});
+    await pending;
+    assert.equal(ctx.formReady, false);
+    assert.equal(ctx.fiscalEmissionMode, null);
 });
 
 // ######## INICIO TRAZABILIDAD CONFIGURACION DEL MEDIO ########

@@ -20,13 +20,15 @@
                         <th>#</th>
                         <th>Código</th>
                         <th>Descripción</th>
-                        <th>Medio fiscal HKA</th>
                         <th>Condición de pago</th>
                         <th>Naturaleza</th>
                         <!-- ######## INICIO TRAZABILIDAD CONFIGURACION DEL MEDIO ######## -->
                         <th>Moneda</th>
                         <th>IGTF asociado</th>
                         <!-- ######## FIN TRAZABILIDAD CONFIGURACION DEL MEDIO ######## -->
+                        <!-- ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES -->
+                        <th v-if="fiscalEmissionMode === 'digital'">Medio fiscal</th>
+                        <!-- ######### FIN CAMBIO CATÁLOGOS DE NOMBRES -->
                         <th>Estado</th>
                         <th class="text-end">Acciones</th>
                     </tr>
@@ -36,10 +38,6 @@
                         <td>{{ index + 1 }}</td>
                         <td>{{ row.id }}</td>
                         <td>{{ row.description }}</td>
-                        <td>
-                            {{ row.hka_code }} - {{ row.hka_name || 'Código desconocido' }}
-                            <small v-if="!row.hka_compatible" class="text-danger d-block">Medio fiscal incompatible; corrija el método.</small>
-                        </td>
                         <!-- ######## INICIO CLASIFICACION DE COBROS Y CAJA ######## -->
                         <td>{{ {cash:'Contado',account:'Contado',credit:'Crédito',unclassified:'Sin clasificar'}[row.collection_kind] || 'Sin clasificar' }}</td>
                         <!-- ######## FIN CLASIFICACION DE COBROS Y CAJA ######## -->
@@ -48,6 +46,9 @@
                         <td>{{ row.currency_type_id || 'No disponible' }}</td>
                         <td>{{ taxLabel(row) }}</td>
                         <!-- ######## FIN TRAZABILIDAD CONFIGURACION DEL MEDIO ######## -->
+                        <!-- ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES -->
+                        <td v-if="fiscalEmissionMode === 'digital'">{{ fiscalLabel(row) }}</td>
+                        <!-- ######### FIN CAMBIO CATÁLOGOS DE NOMBRES -->
                         <td>
                             <el-switch :disabled="row.collection_kind === 'unclassified'" v-model="row.is_active" @change="clickActive(row)"></el-switch>
                         </td>
@@ -98,6 +99,7 @@
                 resource: 'payment-method-types',
                 recordId: null,
                 records: [],
+                fiscalEmissionMode: null,
             }
         },
         created() {
@@ -107,6 +109,13 @@
             this.getData()
         },
         methods: {
+            // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+            fiscalLabel(row) {
+                if (!row.hka_code) return 'Sin asignar'
+                const label = row.hka_code + ' - ' + (row.hka_name || 'Código desconocido')
+                return row.hka_compatible ? label : label + ' (incompatible)'
+            },
+            // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
             // ######## INICIO TRAZABILIDAD CONFIGURACION DEL MEDIO ########
             taxLabel(row) {
                 if (!row.iva_rate_type_id) return 'Sin impuesto'
@@ -116,6 +125,10 @@
             },
             // ######## FIN TRAZABILIDAD CONFIGURACION DEL MEDIO ########
             getData() {
+                this.fiscalEmissionMode = null
+                this.$http.get(`/${this.resource}/tables`)
+                    .then(response => { this.fiscalEmissionMode = response.data.fiscal_emission_mode })
+                    .catch(() => { this.$message.error('No se pudo cargar la modalidad de emisión fiscal') })
                 this.$http.get(`/${this.resource}/records`)
                     .then(response => {
                         this.records = response.data.data

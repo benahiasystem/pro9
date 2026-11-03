@@ -28,11 +28,19 @@ class PaymentMethodTypeController extends Controller
         return ['success'=>true,'message'=>'Disponibilidad actualizada'];
     }
 
-    private function methodInput(PaymentMethodTypeRequest $request): array
+    private function methodInput(PaymentMethodTypeRequest $request, ?PaymentMethodType $record = null): array
     {
         $fields=['id','description','number_days','is_active','hka_code'];
         $fields=array_merge($fields,['collection_kind','currency_type_id','iva_rate_type_id']);
         $input = $request->only($fields);
+        // ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
+        if (\App\Services\Payments\HkaPaymentMethods::emissionMode() !== 'digital') {
+            $code = $record->hka_code ?? null;
+            $input['hka_code'] = \App\Services\Payments\HkaPaymentMethods::compatible($code, $request->input('collection_kind'), $request->input('currency_type_id')) ? $code : null;
+        } elseif (!\App\Services\Payments\HkaPaymentMethods::compatible($request->input('hka_code'), $request->input('collection_kind'), $request->input('currency_type_id'))) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['hka_code' => 'Seleccione un medio fiscal compatible con la naturaleza y moneda.']);
+        }
+        // ######## FIN MODALIDAD DE EMISIÓN FISCAL ########
         $input['cash_currency_type_id'] = $request->input('collection_kind') === 'cash' ? $request->input('currency_type_id') : null;
         $input['iva_rate_type_id'] = $request->input('iva_rate_type_id');
         return $input;
@@ -44,6 +52,7 @@ class PaymentMethodTypeController extends Controller
     {
         $db = \Illuminate\Support\Facades\DB::connection('tenant');
         return [
+            'fiscal_emission_mode' => \App\Services\Payments\HkaPaymentMethods::emissionMode(),
             'hka_payment_methods' => \App\Services\Payments\HkaPaymentMethods::options(),
             'currency_types' => $db->table('cat_currency_types')->where('active', 1)->orderBy('id')->get(['id', 'description', 'symbol']),
             'taxes' => $db->table('cat_iva_rate_types')->where('id', 'IGTF')->where('tax_kind', 'IGTF')->get(['id', 'percentage']),
@@ -93,7 +102,7 @@ class PaymentMethodTypeController extends Controller
             if (!$record) {
                 return response()->json(['success' => false, 'message' => 'No se encontró el método de pago'], 404);
             }
-            $record->fill(array_diff_key($this->methodInput($request),['id'=>true]));
+            $record->fill(array_diff_key($this->methodInput($request, $record),['id'=>true]));
             $record->save();
             return ['success' => true, 'message' => 'Método de pago editado con éxito'];
         });

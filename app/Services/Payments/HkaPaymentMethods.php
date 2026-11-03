@@ -5,6 +5,15 @@ namespace App\Services\Payments;
 /** Catálogo 11 de HKA y restricciones de clasificación local. */
 final class HkaPaymentMethods
 {
+    // ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
+    public static function emissionMode(): string
+    {
+        $mode = \Illuminate\Support\Facades\DB::connection('tenant')->table('companies')->value('fiscal_emission_mode');
+        abort_unless(isset(\App\Services\FiscalEmissionSettings::MODES[$mode ?? '']), 503, 'No se pudo determinar la modalidad de emisión fiscal.');
+        return $mode;
+    }
+    // ######## FIN MODALIDAD DE EMISIÓN FISCAL ########
+
     private const NAMES = [
         '01' => 'Depósito', '02' => 'Pago móvil', '03' => 'Transferencia',
         '04' => 'Orden de pago', '05' => 'Tarjeta de débito', '06' => 'Tarjeta de crédito',

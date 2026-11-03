@@ -18,6 +18,10 @@ class PaymentMethodCreationTest extends TestCase
         $this->withoutMiddleware(\App\Http\Middleware\LockedAdmin::class);
         DB::purge('tenant');
         config(['database.connections.tenant' => ['driver' => 'sqlite', 'database' => ':memory:', 'prefix' => '']]);
+        Schema::connection('tenant')->create('companies', function (Blueprint $table) {
+            $table->id(); $table->string('fiscal_emission_mode');
+        });
+        DB::connection('tenant')->table('companies')->insert(['fiscal_emission_mode' => 'digital']);
         Schema::connection('tenant')->create('cat_currency_types', function (Blueprint $table) {
             $table->string('id')->primary(); $table->boolean('active'); $table->string('description'); $table->string('symbol');
         });
@@ -36,7 +40,7 @@ class PaymentMethodCreationTest extends TestCase
         Schema::connection('tenant')->create('payment_method_types', function (Blueprint $table) {
             $table->string('id', 2);
             $table->string('description');
-            $table->string('hka_code', 2);
+            $table->string('hka_code', 2)->nullable();
             $table->boolean('is_credit')->default(false);
             $table->boolean('is_cash')->default(false);
             $table->string('collection_kind')->default('unclassified');
@@ -242,6 +246,35 @@ class PaymentMethodCreationTest extends TestCase
             $response->assertStatus($allowed ? 200 : 422);
             DB::connection('tenant')->table('payment_method_types')->where('id','27')->delete();
         }
+    }
+
+    public function test_fiscal_method_depends_on_the_current_emission_mode(): void
+    {
+        $db = DB::connection('tenant');
+        foreach (['fiscal_machine', 'free_form'] as $mode) {
+            $db->table('companies')->update(['fiscal_emission_mode' => $mode]);
+            $this->getJson('/test-payment-tables')->assertOk()->assertJsonPath('fiscal_emission_mode', $mode);
+            $input = ['id'=>'27', 'description'=>'Método', 'collection_kind'=>'cash', 'currency_type_id'=>'VES'];
+            $this->postJson('/test-payment-methods', $input + ['hka_code'=>'03'])->assertOk();
+            self::assertNull($db->table('payment_method_types')->where('id','27')->value('hka_code'));
+            $db->table('payment_method_types')->where('id','27')->update(['hka_code'=>'08']);
+            $this->putJson('/test-payment-methods/27', $input + ['hka_code'=>'99'])->assertOk();
+            self::assertSame('08', $db->table('payment_method_types')->where('id','27')->value('hka_code'));
+            $this->putJson('/test-payment-methods/27', array_replace($input, ['currency_type_id'=>'USD']))->assertOk();
+            self::assertNull($db->table('payment_method_types')->where('id','27')->value('hka_code'));
+            $db->table('payment_method_types')->where('id','27')->delete();
+        }
+        $db->table('companies')->update(['fiscal_emission_mode' => 'digital']);
+        $this->getJson('/test-payment-tables')->assertOk()->assertJsonPath('fiscal_emission_mode', 'digital');
+        $db->table('payment_method_types')->insert(['id'=>'27','description'=>'Pendiente','collection_kind'=>'cash','currency_type_id'=>'VES','hka_code'=>null]);
+        $input = ['id'=>'27','description'=>'Pendiente','collection_kind'=>'cash','currency_type_id'=>'VES'];
+        $this->putJson('/test-payment-methods/27', $input)->assertStatus(422);
+        $this->putJson('/test-payment-methods/27', $input + ['hka_code'=>'03'])->assertStatus(422);
+        $this->putJson('/test-payment-methods/27', $input + ['hka_code'=>'08'])->assertOk();
+        self::assertSame('08', $db->table('payment_method_types')->where('id','27')->value('hka_code'));
+        $db->table('companies')->delete();
+        $this->getJson('/test-payment-tables')->assertStatus(500);
+        $this->postJson('/test-payment-methods', array_replace($input, ['id'=>'28']))->assertStatus(500);
     }
 
     public function test_incompatible_existing_method_warns_and_requires_correction_on_edit(): void
