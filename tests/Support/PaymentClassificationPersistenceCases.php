@@ -1317,7 +1317,7 @@ trait PaymentClassificationPersistenceCases
             $db->table('payment_method_types')->where('id','13')->update(['is_active'=>1]);
             $process=new \Symfony\Component\Process\Process([PHP_BINARY,dirname(__DIR__).'/Support/fiscal_payment_concurrency_worker.php']);
             $process->setInput(json_encode(['connection'=>$db->getConfig(),'operation'=>'method-reclassify',
-                'data'=>['id'=>'13','description'=>'Zelle','collection_kind'=>'unclassified','currency_type_id'=>'USD']],JSON_THROW_ON_ERROR));
+                'data'=>['id'=>'13','description'=>'Zelle','collection_kind'=>'unclassified','currency_type_id'=>'USD','hka_code'=>'99']],JSON_THROW_ON_ERROR));
             $process->setTimeout(30); $process->start();
             $deadline=microtime(true)+10;
             while (!str_contains($process->getOutput(),"READY\n")) {
@@ -1483,7 +1483,7 @@ trait PaymentClassificationPersistenceCases
             $controller->savePayments($note,[$row,$row]);
             $process=new \Symfony\Component\Process\Process([PHP_BINARY,dirname(__DIR__).'/Support/fiscal_payment_concurrency_worker.php']);
             $process->setInput(json_encode(['connection'=>$db->getConfig(),'operation'=>'method-reclassify',
-                'data'=>['id'=>'13','description'=>'Zelle','collection_kind'=>'cash','currency_type_id'=>'USD','is_active'=>1]],JSON_THROW_ON_ERROR));
+                'data'=>['id'=>'13','description'=>'Zelle','collection_kind'=>'cash','currency_type_id'=>'USD','is_active'=>1,'hka_code'=>'99']],JSON_THROW_ON_ERROR));
             $process->setTimeout(30); $process->start();
             $deadline=microtime(true)+10;
             while (!str_contains($process->getOutput(),"READY\n")) {

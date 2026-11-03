@@ -75,6 +75,7 @@ class FiscalEmissionSchemaTest extends TestCase
         $this->capsule->addConnection($connection, 'control');
         $this->database = 'pro9_fiscal_test_' . bin2hex(random_bytes(6));
         $this->capsule->getConnection('control')->statement('CREATE DATABASE `' . $this->database . '` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
+        \Tests\Support\FiscalTemporaryDatabases::register($this->database, $this->capsule->getConnection('control')->getPdo());
         $connection['database'] = $this->database;
         config(['filesystems.disks.tenant' => ['driver' => 'local', 'root' => sys_get_temp_dir().'/'.$this->database]]);
         $app->instance('filesystem', new \Illuminate\Filesystem\FilesystemManager($app));
@@ -97,13 +98,19 @@ class FiscalEmissionSchemaTest extends TestCase
 
     protected function tearDown(): void
     {
-        if ($this->database && preg_match('/^pro9_fiscal_test_[a-f0-9]{12}$/', $this->database)) {
-            $tenant = $this->capsule->getConnection('tenant');
-            while ($tenant->transactionLevel() > 0) $tenant->rollBack();
-            $this->capsule->getConnection('control')->statement('DROP DATABASE `' . $this->database . '`');
-            (new \Illuminate\Filesystem\Filesystem())->deleteDirectory(sys_get_temp_dir().'/'.$this->database);
-        }
-        if ($this->previousContainer) {
+        try {
+            if ($this->database && preg_match('/^pro9_fiscal_test_[a-f0-9]{12}$/', $this->database)) {
+                $tenant = $this->capsule->getConnection('tenant');
+                while ($tenant->transactionLevel() > 0) $tenant->rollBack();
+                $this->capsule->getConnection('control')->statement('DROP DATABASE `' . $this->database . '`');
+                \Tests\Support\FiscalTemporaryDatabases::forget($this->database);
+                (new \Illuminate\Filesystem\Filesystem())->deleteDirectory(sys_get_temp_dir().'/'.$this->database);
+            }
+        } finally {
+            if ($this->capsule) {
+                foreach ($this->capsule->getDatabaseManager()->getConnections() as $connection) $connection->disconnect();
+            }
+            if ($this->previousContainer) {
             \Illuminate\Database\Eloquent\Model::clearBootedModels();
             if ($this->previousDispatcher) \Illuminate\Database\Eloquent\Model::setEventDispatcher($this->previousDispatcher);
             else \Illuminate\Database\Eloquent\Model::unsetEventDispatcher();
@@ -115,8 +122,9 @@ class FiscalEmissionSchemaTest extends TestCase
             Facade::clearResolvedInstances();
             Facade::setFacadeApplication($this->previousFacade);
             Container::setInstance($this->previousContainer);
+            }
+            parent::tearDown();
         }
-        parent::tearDown();
     }
 
     private function migrations(string $pattern): array
@@ -130,6 +138,82 @@ class FiscalEmissionSchemaTest extends TestCase
             }
             return require $path;
         }, $paths);
+    }
+
+    private function prepareFiscalFixtureSchema(): void
+    {
+        $start = microtime(true);
+        $db = $this->capsule->getConnection('tenant');
+        if (getenv('PRO9_FISCAL_SNAPSHOT') !== '0' && \Tests\Support\FiscalFixtureSnapshot::restore($db)) {
+            if (getenv('PRO9_FISCAL_TIMING') === '1') fwrite(STDERR, sprintf("fixture restaurado: %.3f s\n", microtime(true) - $start));
+            return;
+        }
+        foreach ($this->migrations('migrations/tenant/*.php') as $migration) $migration->up();
+        $migrated = microtime(true);
+        (new \Database\Seeders\TenancyDatabaseSeeder())->setContainer(Container::getInstance())->run();
+        $seeded = microtime(true);
+        if (getenv('PRO9_FISCAL_SNAPSHOT') !== '0') \Tests\Support\FiscalFixtureSnapshot::capture($db);
+        if (getenv('PRO9_FISCAL_TIMING') === '1') fwrite(STDERR, sprintf("fixture migraciones %.3f s; semillas %.3f s; captura %.3f s\n", $migrated - $start, $seeded - $migrated, microtime(true) - $seeded));
+    }
+
+    public function test_fiscal_fixture_snapshot_preserves_schema_seed_data_and_database_isolation(): void
+    {
+        if (getenv('PRO9_FISCAL_SNAPSHOT') === '0') $this->markTestSkipped('La restauración del fixture está deshabilitada.');
+        $this->prepareFiscalFixtureSchema();
+        $source = $this->capsule->getConnection('tenant');
+        $other = 'pro9_fiscal_test_' . bin2hex(random_bytes(6));
+        $control = $this->capsule->getConnection('control');
+        $control->statement('CREATE DATABASE `' . $other . '` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
+        \Tests\Support\FiscalTemporaryDatabases::register($other, $control->getPdo());
+        try {
+            $config = $source->getConfig();
+            $config['database'] = $other;
+            $this->capsule->addConnection($config, 'fiscal_snapshot_check');
+            $target = $this->capsule->getConnection('fiscal_snapshot_check');
+            self::assertTrue(\Tests\Support\FiscalFixtureSnapshot::restore($target));
+            self::assertSame($this->schemaSnapshot($source), $this->schemaSnapshot($target));
+            self::assertSame($this->seedSnapshot($source, false), $this->seedSnapshot($target, false));
+            $target->table('payment_method_types')->where('id', '01')->update(['description' => 'Sólo en la copia']);
+            self::assertNotSame('Sólo en la copia', $source->table('payment_method_types')->where('id', '01')->value('description'));
+            try {
+                $target->table('payment_method_types')->where('id', '01')->update(['currency_type_id' => 'invalid']);
+                self::fail('La copia debe conservar sus claves foráneas.');
+            } catch (\Illuminate\Database\QueryException $error) {
+                self::assertSame('23000', $error->getCode());
+            }
+        } finally {
+            $this->capsule->getDatabaseManager()->purge('fiscal_snapshot_check');
+            $control->statement('DROP DATABASE `' . $other . '`');
+            \Tests\Support\FiscalTemporaryDatabases::forget($other);
+        }
+    }
+
+    public function test_fiscal_temporary_database_is_removed_after_process_error(): void
+    {
+        $name = 'pro9_fiscal_test_' . bin2hex(random_bytes(6));
+        $connection = $this->capsule->getConnection('control')->getConfig();
+        $code = <<<'PHP'
+require 'vendor/autoload.php';
+$input = json_decode(stream_get_contents(STDIN), true, 512, JSON_THROW_ON_ERROR);
+$c = $input['connection'];
+$pdo = new PDO('mysql:host='.$c['host'].';port='.$c['port'].';dbname=information_schema', $c['username'], $c['password']);
+$pdo->exec('CREATE DATABASE `'.$input['name'].'`');
+\Tests\Support\FiscalTemporaryDatabases::register($input['name'], $pdo);
+exit(9);
+PHP;
+        $process = proc_open([PHP_BINARY, '-r', $code], [['pipe', 'r'], ['pipe', 'w'], ['pipe', 'w']], $pipes, base_path());
+        self::assertIsResource($process);
+        try {
+            fwrite($pipes[0], json_encode(['name' => $name, 'connection' => $connection], JSON_THROW_ON_ERROR));
+            fclose($pipes[0]);
+            $stdout = stream_get_contents($pipes[1]); fclose($pipes[1]);
+            $stderr = stream_get_contents($pipes[2]); fclose($pipes[2]);
+            self::assertSame(9, proc_close($process), $stdout . $stderr);
+            $exists = $this->capsule->getConnection('control')->selectOne('SELECT SCHEMA_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = ?', [$name]);
+            self::assertNull($exists, 'La base del proceso fallido debe limpiarse al terminar.');
+        } finally {
+            $this->capsule->getConnection('control')->statement('DROP DATABASE IF EXISTS `' . $name . '`');
+        }
     }
 
     // ######## INICIO CALCULOS EXACTOS PRO9 ########
@@ -793,8 +877,7 @@ class FiscalEmissionSchemaTest extends TestCase
     public function test_concurrent_payments_igtf_and_retention_applications_are_serialized(): void
     {
         $db=$this->capsule->getConnection('tenant');
-        foreach ($this->migrations('migrations/tenant/*.php') as $migration) $migration->up();
-        (new \Database\Seeders\TenancyDatabaseSeeder())->setContainer(Container::getInstance())->run();
+        $this->prepareFiscalFixtureSchema();
         $db->table('companies')->insert(['id'=>1,'identity_document_type_id'=>'6','number'=>'J-12345678-9','name'=>'Fiscal concurrency',
             'fiscal_environment'=>'demo','fiscal_emission_mode'=>'digital','igtf_enabled'=>1,'igtf_rate'=>3]);
         $db->table('configurations')->insert(['id'=>1,'quantity_documents'=>0,'quantity_sales_notes'=>0]);
@@ -1170,7 +1253,7 @@ class FiscalEmissionSchemaTest extends TestCase
         \Tests\Support\SpeProfiles::versions($db, $company->id, $input['customer_id']);
         $paymentCount=$db->table('document_payments')->count();
         try {
-            \App\Services\Fiscal\FiscalDocumentPersistence::payment($document,['date_of_payment'=>'2026-09-10','payment_method_type_id'=>'01',
+            \App\Services\Fiscal\FiscalDocumentPersistence::payment($document,['date_of_payment'=>'2026-09-10','payment_method_type_id'=>'10',
                 'currency_type_id'=>'USD','original_amount'=>1,'exchange_rate'=>'40.12345678','igtf_status'=>'subject','financial_intermediation'=>'none']);
             self::fail('A post-emission export IGTF note is outside this stage');
         } catch (\Illuminate\Validation\ValidationException $expected) { self::assertArrayHasKey('payment',$expected->errors()); }
@@ -1286,9 +1369,8 @@ class FiscalEmissionSchemaTest extends TestCase
     private function bootHkaFixture(bool $openCash = true): array
     {
         $db = $this->capsule->getConnection('tenant');
-        foreach ($this->migrations('migrations/tenant/*.php') as $migration) $migration->up();
+        $this->prepareFiscalFixtureSchema();
         $app = Container::getInstance();
-        (new \Database\Seeders\TenancyDatabaseSeeder())->setContainer($app)->run();
         $db = $this->capsule->getConnection('tenant');
         $app->instance('files', new \Illuminate\Filesystem\Filesystem());
         $db->table('companies')->insert(['id' => 1, 'identity_document_type_id' => '6', 'number' => 'J123456789', 'name' => 'Test fiscal', 'trade_name' => 'Test fiscal', 'fiscal_environment' => 'demo', 'fiscal_emission_mode' => 'digital']);
@@ -2284,7 +2366,7 @@ class FiscalEmissionSchemaTest extends TestCase
         return $snapshot;
     }
 
-    private function seedSnapshot(Connection $db): array
+    private function seedSnapshot(Connection $db, bool $normalizeTimestamps = true): array
     {
         $snapshot = [];
         foreach ($db->select('SHOW TABLES') as $tableRow) {
@@ -2294,7 +2376,7 @@ class FiscalEmissionSchemaTest extends TestCase
                 $values = (array) $row;
                 // Only generated audit timestamps may differ between clean seeding cycles.
                 foreach (['created_at', 'updated_at'] as $column) {
-                    if (isset($values[$column])) {
+                    if ($normalizeTimestamps && isset($values[$column])) {
                         $values[$column] = '<generated timestamp>';
                     }
                 }

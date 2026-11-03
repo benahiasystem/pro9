@@ -12,12 +12,6 @@ trait NotePersistenceCases
     {
         [$db,$app,$input]=$this->bootHkaFixture(); $calls=0;
         config(['hka_notes.contract_probe'=>true]); // Doubles test protocol, never enable runtime capabilities.
-        $owned=$db->getDatabaseName(); $connection=$db->getConfig();
-        register_shutdown_function(static function () use ($owned,$connection) {
-            if (!preg_match('/^pro9_fiscal_test_[a-f0-9]{12}$/D',$owned)) return;
-            $pdo=new \PDO('mysql:host='.$connection['host'].';port='.$connection['port'].';dbname=information_schema',$connection['username'],$connection['password']);
-            $pdo->exec('DROP DATABASE IF EXISTS `'.$owned.'`');
-        });
         $app->make(\Illuminate\Http\Client\Factory::class)->fake(function ($request) use ($db,&$calls) {
             self::assertSame(0,$db->transactionLevel());
             if (str_ends_with($request->url(),'/Autenticacion')) return \Illuminate\Support\Facades\Http::response(['token'=>'test-private-token','expiracion'=>date('c',time()+3600)]);
@@ -475,6 +469,7 @@ trait NotePersistenceCases
     public function test_note_debit_is_created_on_credit_without_cash_effects_and_collects_later(): void
     {
         [$db,$app,$input,$invoice]=$this->noteFixture();$line=$invoice->items->first();
+        $db->table('payment_method_types')->where('id','04')->update(['currency_type_id'=>'USD']);
         $bank=$db->table('bank_accounts')->insertGetId(['description'=>'USD ND','number'=>'cash-nd','bank_id'=>1,'currency_type_id'=>'USD','establishment_id'=>$invoice->establishment_id]);
         $data=$this->noteInput($input,$invoice,'08','02',[['affected_document_item_id'=>$line->id,'adjustment_amount'=>11.60]]);
         unset($data['payment_condition_id'],$data['payments']);
@@ -500,9 +495,12 @@ trait NotePersistenceCases
         $forms=$payload['documentoElectronico']['encabezado']['totales']['formasPago'];
         self::assertCount(1,$forms);self::assertSame('99',$forms[0]['forma']);
         self::assertSame('confirmed',$note->emission->status);
-        $payment=\App\Services\Fiscal\FiscalDocumentPersistence::payment($note,$initialPayment);
-        $finance=new class { use \Modules\Finance\Traits\FinanceTrait; };
-        $finance->createGlobalPayment($payment,$initialPayment);
+        $payment=$db->transaction(function () use ($note,$initialPayment) {
+            $payment=\App\Services\Fiscal\FiscalDocumentPersistence::payment($note,$initialPayment);
+            $finance=new class { use \Modules\Finance\Traits\FinanceTrait; };
+            $finance->createGlobalPayment($payment,$initialPayment);
+            return $payment;
+        });
         self::assertEquals(0,$note->fresh()->balance);self::assertSame('2.00000001',$payment->exchange_rate);
         self::assertSame($bank,$payment->global_payment->destination_id);self::assertSame('USD',$payment->currency_type_id);
         self::assertSame(1,$note->payments()->count());self::assertEquals($payload,$note->fresh()->emission->payload);
