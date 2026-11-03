@@ -105,6 +105,7 @@ if ($hostname) {
             Route::get('fiscal-profiles/{kind}/{id}', 'Tenant\FiscalProfileController@record')->where('kind', 'company|customer')->where('id', '[0-9]+');
             Route::post('fiscal-profiles/{kind}/{id}', 'Tenant\FiscalProfileController@store')->where('kind', 'company|customer')->where('id', '[0-9]+');
             Route::post('fiscal-profiles/evaluate', 'Tenant\FiscalProfileController@evaluate');
+            Route::post('documents/payment-quote', 'Tenant\DocumentPaymentQuoteController@__invoke');
             Route::post('companies/igtf', 'Tenant\DocumentFiscalController@settingsStore');
             Route::post('documents/{document}/prepare-hka', 'Tenant\DocumentFiscalController@prepare');
             Route::post('documents/{document}/send-hka', 'Tenant\DocumentFiscalController@sendHka');

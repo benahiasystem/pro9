@@ -46,10 +46,11 @@ class FiscalProfileController extends Controller
         $decision = $needsIntermediation ? null : SpecialTaxpayerPolicy::payment($issuer, $input, $data['currency_type_id'], $data['date']);
         $company = Company::firstOrFail();
         $tax = ($decision['igtf_status'] ?? '') === 'subject' && $company->igtf_enabled && $company->igtf_rate > 0
-            ? round(($data['original_amount'] ?? 0) * $company->igtf_rate / 100, 2) : 0;
+            ? FiscalAmounts::paymentTax($data['original_amount'] ?? 0, $company->igtf_rate) : '0.00';
         return ['data'=>['issuer'=>$issuer, 'buyer'=>$buyer, 'payment'=>$decision, 'tax_amount'=>$tax,
             'issuer_spe'=>SpecialTaxpayerPolicy::spe($issuer, $data['date']), 'buyer_spe'=>SpecialTaxpayerPolicy::spe($buyer, $data['date']),
             'igtf_enabled'=>(bool)$company->igtf_enabled, 'igtf_rate'=>$company->igtf_rate,
+            'can_authorize_exemption'=>auth()->user() instanceof User && auth()->user()->type === 'admin',
             'needs_intermediation'=>$needsIntermediation, 'retention'=>SpecialTaxpayerPolicy::retention($issuer, $buyer, $data['date'], $data['fiscal_context'] ?? [])]];
     }
 }

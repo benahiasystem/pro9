@@ -17,6 +17,17 @@ final class FiscalAmounts
     {
         return \App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::convert($amount, $from, $to, $rate));
     }
+
+    /** Tax is based on the amount actually settled in cents. */
+    public static function paymentTax($amount, $rate): string
+    {
+        $principal = \App\Support\Exact\Decimal::represent(
+            \App\Support\Exact\Decimal::of(\App\Support\Exact\Decimal::input($amount, 'original_amount')), 2, true
+        );
+        return \App\Support\Exact\Decimal::represent(
+            \App\Support\Exact\Decimal::of($principal)->multipliedBy(\App\Support\Exact\Decimal::of($rate))->dividedBy(100), 2, true
+        );
+    }
     // ######## FIN CALCULOS EXACTOS PRO9 ########
 
     public static function payment(array $input, string $documentCurrency, $documentRate, bool $igtfEnabled, $igtfRate): array
@@ -46,7 +57,7 @@ final class FiscalAmounts
         $taxExact = $status === 'subject' ? \App\Support\Exact\Decimal::of($original)->multipliedBy(\App\Support\Exact\Decimal::of($igtfRate))->dividedBy(100) : \App\Support\Exact\Decimal::of(0);
         $converted = \App\Support\Exact\Decimal::convert($original, $currency, $documentCurrency, $rate);
         $applied = \App\Support\Exact\Decimal::of(\App\Support\Exact\Decimal::represent($converted, 2));
-        $tax = \App\Support\Exact\Decimal::represent($taxExact, 2, true);
+        $tax = $status === 'subject' ? self::paymentTax($original, $igtfRate) : '0.00';
         $values = ['original_amount' => \App\Support\Exact\Decimal::of($original), 'payment' => $applied,
             'converted_principal' => $converted, 'payment_adjustment' => $applied->minus($converted),
             'requested_amount' => $requested, 'cash_adjustment' => \App\Support\Exact\Decimal::of($original)->minus($requested),

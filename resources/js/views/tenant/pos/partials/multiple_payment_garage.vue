@@ -5,6 +5,7 @@
             <div class="row" >
                 <div class="col-lg-12">
 
+                    <igtf-quote-summary v-if="fiscalPaymentsApplicable" :quote="igtfQuote" :loading="igtfQuoteLoading" :error="igtfQuoteError" :currency="fiscalQuoteCurrency" />
                     <table>
                     <thead>
                         <tr width="100%">

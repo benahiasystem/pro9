@@ -1593,8 +1593,9 @@ class DocumentController extends Controller
         $facturalo->setActions(array_key_exists('actions', $inputs) ? $inputs['actions'] : []);
 
         $document = new Document($inputs);
-
-        $facturalo->setPaymentsPreview($document, $inputs['payments']);
+        $existingDocument = !empty($inputs['id']) ? Document::findOrFail($inputs['id']) : null;
+        if ($existingDocument) DocumentFiscalController::authorizeDocument($existingDocument);
+        $facturalo->setPaymentsPreview($document, $inputs['payments'], $existingDocument);
         $facturalo->setFeePreview($document, $inputs['fee']);
 
         foreach ($inputs['items'] as $row) {

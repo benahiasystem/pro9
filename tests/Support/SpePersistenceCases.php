@@ -9,6 +9,124 @@ use Illuminate\Validation\ValidationException;
 
 trait SpePersistenceCases
 {
+    public function test_payment_quote_matches_persisted_invoice_and_rejects_stale_tax(): void
+    {
+        [$db,$app,$input]=$this->bootHkaFixture();$sent=[];$mode='confirmed';$this->fakeSpeHka($db,$app,$sent,$mode);
+        $company=Company::firstOrFail();$company->forceFill(['igtf_enabled'=>true,'igtf_rate'=>3])->save();
+        FiscalProfileService::store($company,SpeProfiles::profile());
+        if (!\Illuminate\Http\Request::hasMacro('validate')) {
+            \Illuminate\Http\Request::macro('validate', function (array $rules) { return validator($this->all(), $rules)->validate(); });
+        }
+        $row=['date_of_payment'=>'2026-09-10','payment_method_type_id'=>'10','payment'=>'250',
+            'currency_type_id'=>'USD','original_amount'=>'250','exchange_rate'=>'10',
+            'financial_intermediation'=>'none','operation_key'=>(string)Str::uuid()];
+        $quoteInput=['currency_type_id'=>'USD','exchange_rate_sale'=>'10','principal_due'=>'232','payments'=>[$row]];
+        $request=\Illuminate\Http\Request::create('/documents/payment-quote','POST',$quoteInput);
+        $before=$db->table('documents')->count();
+        $quote=(new \App\Http\Controllers\Tenant\DocumentPaymentQuoteController())($request)['data'];
+        self::assertSame($before,$db->table('documents')->count());
+        self::assertSame('6.96',$quote['payments'][0]['tax_amount']);
+        self::assertSame('18.00',$quote['payments'][0]['change']);
+        self::assertSame('238.96',$quote['received_by_currency']['USD']);
+        self::assertSame('256.96',$quote['tendered_by_currency']['USD']);
+        $db->table('payment_method_types')->where('id','10')->update(['iva_rate_type_id'=>'IGTF']);
+        $associated=(new \App\Http\Controllers\Tenant\DocumentPaymentQuoteController())($request)['data'];
+        self::assertSame($quote['payments'][0]['tax_amount'],$associated['payments'][0]['tax_amount']);
+        $db->table('payment_method_types')->where('id','10')->update(['iva_rate_type_id'=>null]);
+        $input['currency_type_id']='USD';$input['exchange_rate_sale']='10';
+        $input['payments']=[array_replace($row,['igtf_status'=>'subject','quoted_tax_amount'=>'6.95'])];
+        try {
+            $db->transaction(fn()=>(new \App\CoreFacturalo\Facturalo)->save($input));
+            self::fail('A stale quote cannot be saved.');
+        } catch (ValidationException $exception) {
+            self::assertArrayHasKey('quoted_tax_amount',$exception->errors());
+        }
+        self::assertSame($before,$db->table('documents')->count());
+        $input['payments'][0]['quoted_tax_amount']=$quote['payments'][0]['tax_amount'];
+        $document=$db->transaction(fn()=>(new \App\CoreFacturalo\Facturalo)->save($input)->getDocument())->fresh();
+        self::assertEquals('238.96',$document->total);
+        self::assertTrue(\App\Support\Exact\Decimal::of('6.96')->isEqualTo(
+            \App\Support\Exact\Decimal::of($document->taxes()->where('tax_kind','IGTF')->sum('amount'))));
+        self::assertEquals('0',$document->balance);
+        self::assertTrue(\App\Support\Exact\Decimal::of('6.96')->isEqualTo(
+            \App\Support\Exact\Decimal::of($document->payments->whereNull('receipt_parent_id')->first()->tax_amount)));
+        $receipt=$document->payments->whereNull('receipt_parent_id')->first();
+        self::assertEquals('18',$receipt->change);
+        $movement=\App\Services\Payments\Movement::row($receipt->global_payment);
+        self::assertSame('238.96',$movement['amount']);
+        self::assertSame('232',$movement['principal']);
+        self::assertSame('6.96',$movement['tax']);
+        $header=$document->emission->payload['documentoElectronico']['encabezado'];
+        self::assertSame('69.60',$header['totales']['totalIGTF']);
+        self::assertSame('238.96',$header['totales']['formasPago'][0]['monto']);
+    }
+
+    public function test_later_quote_preserves_balance_and_creates_one_debit_note(): void
+    {
+        [$db,$app,$input]=$this->bootHkaFixture();$sent=[];$mode='confirmed';$this->fakeSpeHka($db,$app,$sent,$mode);
+        config(['hka_credit_invoices.demo_no_advance_verified'=>true]);
+        $company=Company::firstOrFail();$company->forceFill(['igtf_enabled'=>true,'igtf_rate'=>3])->save();
+        FiscalProfileService::store($company,SpeProfiles::profile());
+        if (!\Illuminate\Http\Request::hasMacro('validate')) {
+            \Illuminate\Http\Request::macro('validate', function (array $rules) { return validator($this->all(), $rules)->validate(); });
+        }
+        $input['payments']=[];$input['payment_condition_id']='02';$input['exchange_rate_sale']='10';
+        $document=$db->transaction(fn()=>(new \App\CoreFacturalo\Facturalo)->save($input)->getDocument())->fresh();
+        self::assertEquals('232',$document->balance);
+        $row=['date_of_payment'=>'2026-09-10','payment_method_type_id'=>'10','payment'=>'50',
+            'currency_type_id'=>'USD','original_amount'=>'5','exchange_rate'=>'10',
+            'financial_intermediation'=>'none','operation_key'=>(string)Str::uuid()];
+        $request=\Illuminate\Http\Request::create('/documents/payment-quote','POST',['document_id'=>$document->id,'payments'=>[$row]]);
+        $quote=(new \App\Http\Controllers\Tenant\DocumentPaymentQuoteController())($request)['data'];
+        self::assertSame('0.15',$quote['payments'][0]['tax_amount']);
+        self::assertSame('5.15',$quote['received_by_currency']['USD']);
+        self::assertSame('182.00',$quote['balance']);
+        $payment=array_replace($row,['igtf_status'=>'subject','quoted_tax_amount'=>'0.15']);
+        $company->forceFill(['igtf_rate'=>4])->save();
+        try {
+            FiscalDocumentPersistence::payment($document,$payment);
+            self::fail('A changed rate cannot silently change the quoted tax.');
+        } catch (ValidationException $exception) { self::assertArrayHasKey('quoted_tax_amount',$exception->errors()); }
+        self::assertEquals('232',$document->fresh()->balance);
+        $company->forceFill(['igtf_rate'=>3])->save();
+        $receipt=$db->transaction(fn()=>FiscalDocumentPersistence::payment($document,$payment));
+        self::assertEquals('182',$document->fresh()->balance);
+        $tax=\App\Models\Tenant\DocumentTax::where('document_payment_id',$receipt->id)->firstOrFail();
+        $note=Document::findOrFail($tax->document_id);
+        self::assertSame('IGTF',$note->note->note_debit_type_id);
+        self::assertSame('1.5',\App\Support\Exact\Decimal::represent($note->total));
+        self::assertSame($receipt->id,FiscalDocumentPersistence::payment($document,$payment)->id);
+        self::assertSame(1,\App\Models\Tenant\DocumentTax::where('document_payment_id',$receipt->id)->count());
+    }
+
+    public function test_spe_invoice_reuses_a_sale_note_receipt_without_new_igtf(): void
+    {
+        [$db,$app,$input]=$this->bootHkaFixture();
+        $db->table('configurations')->update(['auto_send_hka'=>false]);
+        $company=Company::firstOrFail();$company->forceFill(['igtf_enabled'=>true,'igtf_rate'=>3])->save();
+        FiscalProfileService::store($company,SpeProfiles::profile());
+        $controller=new \App\Http\Controllers\Tenant\SaleNoteController();
+        $input['exchange_rate_sale']='10';
+        $saleInput=array_replace($input,['id'=>null,'series'=>'NV01','document_type_id'=>'80','prefix'=>'NV','payments'=>[]]);
+        $note=\App\Models\Tenant\SaleNote::create($controller->mergeData($saleInput));
+        foreach ($input['items'] as $line) $note->items()->create($line);
+        $controller->savePayments($note,[['date_of_payment'=>'2026-09-10','payment_method_type_id'=>'10',
+            'payment_destination_id'=>'cash','currency_type_id'=>'USD','original_amount'=>'5',
+            'exchange_rate'=>'10','payment'=>'50']]);
+        $source=$note->payments()->firstOrFail();
+        $input['sale_note_id']=$note->id;$input['payment_condition_id']='02';
+        $input['fee']=[['date'=>'2026-10-10','currency_type_id'=>'VES','amount'=>'182']];
+        $input['payments']=[\App\Http\Resources\Tenant\SaleNoteResource::getTransformPayments(collect([$source]))->first()];
+        $document=(new \App\CoreFacturalo\Facturalo())->forWebDocuments()->save($input)->getDocument()->fresh();
+        $receipt=$document->payments()->whereNull('receipt_parent_id')->firstOrFail();
+        self::assertSame('not_applicable',$receipt->igtf_status);
+        self::assertTrue($receipt->exactValue('tax_amount')->isZero());
+        self::assertSame((string)$source->id,$receipt->payment_method_snapshot['receipt_origin']['id']);
+        self::assertSame(0,$document->taxes()->where('tax_kind','IGTF')->count());
+        self::assertSame(1,$db->table('global_payments')->count());
+        self::assertEquals('182',$document->balance);
+    }
+
     private function fakeSpeHka($db, $app, &$sent, &$mode): void
     {
         $app->make(\Illuminate\Http\Client\Factory::class)->preventStrayRequests();

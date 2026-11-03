@@ -307,7 +307,7 @@ class DocumentWebTransform
                     ];
                     // Keep the actual receipt currency and rate in offline payloads.
                     foreach (['currency_type_id', 'original_amount', 'exchange_rate', 'exchange_rate_source', 'exchange_rate_date',
-                        'operation_key', 'igtf_status', 'exemption_reason', 'exception_basis', 'financial_intermediation'] as $field) {
+                        'operation_key', 'igtf_status', 'exemption_reason', 'exception_basis', 'financial_intermediation', 'quoted_tax_amount'] as $field) {
                         if (array_key_exists($field, $row)) $payment[$field] = $row[$field];
                     }
                     if (!empty($payment['currency_type_id']) && empty($payment['operation_key'])) {

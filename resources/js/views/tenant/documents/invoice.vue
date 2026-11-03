@@ -350,9 +350,10 @@
                                 </tr>
 
                                 <tr v-if="form.total > 0">
-                                    <td><strong>TOTAL A PAGAR</strong>:</td>
+                                    <td><strong v-if="fiscalPaymentsApplicable && !isUpdate">TOTAL DE LA VENTA (SIN IGTF)</strong><template v-else><strong>TOTAL A PAGAR</strong></template>:</td>
                                     <td>{{ currency_type.symbol }} {{ form.total }}</td>
                                 </tr>
+                                <tr v-if="fiscalPaymentsApplicable"><td colspan="2"><igtf-quote-summary v-if="fiscalPaymentsApplicable" :quote="igtfQuote" :loading="igtfQuoteLoading" :error="igtfQuoteError" :currency="fiscalQuoteCurrency" /></td></tr>
 
                                 <tr v-if="form.total > 0">
                                     <td>CONDICIÓN DE PAGO:</td>
@@ -992,7 +993,7 @@
 </style>
 <script>
 import {suggestRemainingPayment, suggestInstallments, paymentConditionPayload} from '@helpers/document-creation'
-import {defaultCashForCurrency, proposeCashDestination, restoreDeferredInvoiceCash} from '@helpers/payment-classification'
+import {defaultCashForCurrency, proposeCashDestination, restoreDeferredInvoiceCash, paymentValidationMessage} from '@helpers/payment-classification'
 import fiscalPaymentSettings from "@mixins/fiscal-payment-settings"
 import {validateInvoicePayments} from "@helpers/invoice-payment-validation"
 import {restoreSaleNoteContext, documentRateRequest, mayApplyDocumentRate} from "../../../helpers/sale-note-conversion"
@@ -2569,6 +2570,9 @@ export default {
             }).catch(error => {
                 if (error.response.status === 422) {
                     this.errors = error.response.data;
+                    const message = paymentValidationMessage(error.response.data)
+                    if (message) this.$message.error(message)
+                    if (error.response.data?.errors?.quoted_tax_amount) this.refreshFiscalQuote(this.form.payments)
                 } else {
                     this.$message.error(error.response.data.message);
                 }

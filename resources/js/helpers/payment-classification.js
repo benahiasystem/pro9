@@ -52,7 +52,7 @@ export function paymentValidationMessage(data) {
     const errors = data?.errors || (data?.message && typeof data.message === 'object' ? data.message : data)
     if (!errors || typeof errors !== 'object' || Array.isArray(errors)) return null
     const fields = new Set(['payments', 'payment', 'payment_method_type_id', 'payment_destination_id',
-        'currency_type_id', 'original_amount', 'exchange_rate', 'financial_intermediation', 'igtf_status', 'exception_basis',
+        'currency_type_id', 'original_amount', 'exchange_rate', 'financial_intermediation', 'igtf_status', 'exception_basis', 'quoted_tax_amount',
         'source_sale_note_payment_id', 'source_quotation_payment_id', 'source_technical_service_payment_id', 'total'])
     for (const [key, value] of Object.entries(errors)) {
         if (!fields.has(key.split('.').pop())) continue

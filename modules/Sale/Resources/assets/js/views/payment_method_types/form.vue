@@ -50,7 +50,7 @@
                     </div>
                     <div class="col-md-4">
                         <div class="form-group">
-                        <label class="control-label">Impuesto</label>
+                        <label class="control-label">Impuesto asociado — informativo</label>
                         <div class="tax-controls">
                         <button v-if="!showTax" type="button" class="btn btn-sm btn-info" aria-label="Agregar impuesto" @click="showTax = true">+</button>
                         <template v-else>
@@ -60,6 +60,7 @@
                             <button type="button" class="btn btn-sm btn-danger" aria-label="Quitar impuesto" @click="removeTax">×</button>
                         </template>
                         </div>
+                        <small class="text-muted d-block">Seleccionar IGTF aquí no activa su cobro. El porcentaje del catálogo es informativo; se usa la tasa fiscal de la empresa y los datos reales del pago.</small>
                         <small class="text-danger" v-if="errors.iva_rate_type_id">{{ errors.iva_rate_type_id[0] }}</small>
                         </div>
                     </div>

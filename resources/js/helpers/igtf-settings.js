@@ -31,7 +31,9 @@ export function loadIgtfSettings(http) {
 }
 
 export function fiscalPaymentProblem(payments, settings = igtfSettings) {
-    const rows = (payments || []).filter(row => !isRecordedReceipt(row) && exactAmount(row.payment || '0').compare(0) > 0)
+    let rows
+    try { rows = (payments || []).filter(row => !isRecordedReceipt(row) && exactAmount(row.payment || '0').compare(0) > 0) }
+    catch (_) { return 'Indique un monto válido antes de registrar el cobro.' }
     if (!rows.length) return ''
     if (!settings.loaded || settings.loading) return settings.error || 'Espere la configuración IGTF antes de registrar el cobro.'
     if (!settings.enabled && rows.some(row => ['subject', 'exempt'].includes(row.igtf_status) || exactAmount(row.tax_amount || '0').compare(0) > 0)) {

@@ -7,8 +7,9 @@
             <el-option value="VES" label="VES"/><el-option value="USD" label="USD"/>
         </el-select>
         <template v-if="payment.currency_type_id && payment.currency_type_id !== documentCurrency">
-            <label>Importe recibido sin IGTF ni vuelto</label>
+            <label>Importe recibido para la venta, sin IGTF</label>
             <el-input v-model="payment.original_amount" @input="clearServerError('original_amount'); convertPrincipal()"/>
+            <small v-if="!documentId" class="d-block">Si hay exceso en efectivo, el vuelto se calcula antes del IGTF.</small>
             <!-- ######## INICIO MONEDA DEL MEDIO DE COBRO ######## -->
             <small v-if="settledReceived" class="d-block">Se liquidará {{ settledReceived }} {{ payment.currency_type_id }}.</small>
             <small class="d-block">El importe aplicado corresponde a los centavos recibidos.</small>
@@ -27,16 +28,12 @@
         </el-select>
         <template v-if="igtfEnabled">
             <label>Clasificación IGTF</label>
-            <el-select v-model="payment.igtf_status" @change="evaluate" placeholder="No aplica">
-                <el-option value="not_applicable" label="No aplica" />
-                <el-option value="subject" label="Sujeto" />
-                <el-option value="exempt" label="Excepción con autorización administrativa" />
-            </el-select>
+            <small class="d-block">{{ payment.igtf_status === 'subject' ? 'Sujeto' : (payment.igtf_status === 'exempt' ? 'Excepción' : 'No aplica') }}</small>
+            <el-checkbox v-if="proposal && proposal.can_authorize_exemption" :value="payment.igtf_status === 'exempt'" @change="setExemption">Excepción con autorización administrativa</el-checkbox>
             <template v-if="payment.igtf_status === 'exempt'">
                 <el-input v-model="payment.exemption_reason" placeholder="Motivo de excepción" />
                 <el-input v-model="payment.exception_basis" placeholder="Fundamento de excepción" />
             </template>
-            <small v-if="proposal && proposal.payment">Propuesta: {{ proposal.payment.igtf_status }}. IGTF adicional: {{ proposal.tax_amount }} {{ payment.currency_type_id || documentCurrency }}</small>
             <small v-if="payment.igtf_status === 'subject'">El IGTF se cobra adicional al importe neto aplicado.</small>
         </template>
         <small v-if="proposal && proposal.needs_intermediation">Indique la intermediación real para evaluar el cobro.</small>
@@ -68,7 +65,7 @@ export default {
         // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
         serverErrors() {
             const errors = this.payment.errors || {}
-            return ['currency_type_id', 'original_amount', 'exchange_rate'].flatMap(field => {
+            return ['currency_type_id', 'original_amount', 'exchange_rate', 'financial_intermediation', 'igtf_status', 'exception_basis', 'quoted_tax_amount'].flatMap(field => {
                 const messages = errors[field]
                 return (Array.isArray(messages) ? messages : [messages]).filter(message => typeof message === 'string' && message.trim())
             })
@@ -101,6 +98,14 @@ export default {
     },
     methods: {
         isRecordedReceipt,
+        setExemption(value) {
+            this.$set(this.payment, 'igtf_status', value ? 'exempt' : (this.proposal?.payment?.igtf_status || 'not_applicable'))
+            if (!value) {
+                this.$set(this.payment, 'exemption_reason', null)
+                this.$set(this.payment, 'exception_basis', null)
+            }
+            this.evaluate()
+        },
         // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
         clearServerError(field) {
             if (this.payment.errors && Object.prototype.hasOwnProperty.call(this.payment.errors, field)) this.$delete(this.payment.errors, field)

@@ -30,6 +30,14 @@ class FiscalApiPaymentTransformTest extends TestCase
         $p=$this->payments(['currency_type_id'=>'USD','original_amount'=>8,'exchange_rate'=>10.123,'operation_key'=>$key])[0];
         self::assertSame(8,$p['original_amount']);self::assertSame(10.123,$p['exchange_rate']);self::assertSame($key,$p['operation_key']);
     }
+
+    public function test_api_preserves_quote_and_leaves_unspecified_tax_classification_to_the_server(): void
+    {
+        $row=$this->payments(['currency_type_id'=>'USD','original_amount'=>'8','exchange_rate'=>'10',
+            'operation_key'=>(string)\Illuminate\Support\Str::uuid(),'quoted_tax_amount'=>'0.24'])[0];
+        self::assertNull($row['igtf_status']);
+        self::assertSame('0.24',$row['quoted_tax_amount']);
+    }
     public function test_api_requires_an_operation_key_for_payments_with_their_own_currency(): void
     {
         $this->expectException(ValidationException::class);
