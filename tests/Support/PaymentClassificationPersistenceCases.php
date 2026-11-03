@@ -5435,6 +5435,7 @@ trait PaymentClassificationPersistenceCases
         $cash=Cash::create(['user_id'=>$input['user_id'],'state'=>true,'date_opening'=>'2026-10-26','time_opening'=>'09:00:00','beginning_balance'=>'0']);
         $db->transaction(fn()=>CashLedger::open($cash,[]));
         $bank=BankAccount::create(['bank_id'=>$db->table('banks')->value('id'),'description'=>'USD','number'=>'CREDIT-CONVERSION-USD','currency_type_id'=>'USD','initial_balance'=>'0']);
+        $db->table('payment_method_types')->where('id','01')->update(['bank_account_id'=>$bank->id]);
         $controller=new \App\Http\Controllers\Tenant\SaleNoteController();
         $input['exchange_rate_sale']='10';
         $saleInput=array_replace($input,['id'=>null,'series'=>'NV01','document_type_id'=>'80','prefix'=>'NV','payments'=>[]]);
