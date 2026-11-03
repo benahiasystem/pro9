@@ -32,14 +32,16 @@ class FinanceMovementCollection extends ResourceCollection
             $amount_decimal = $movement['amount'] ?? null;
             $amount_pen_exact = null;
             $amount_pen_decimal = null;
+            $exchangeRate = $payment instanceof \Modules\Finance\Models\PaymentCommission
+                ? ($movement['exchange_rate'] ?? null) : $payment->getRawOriginal('exchange_rate');
             if ($movement && $receiptCurrency === 'VES') {
                 $amount_pen_exact = \App\Support\Exact\Decimal::of($movement['calculation_snapshot']['values']['amount']);
             } elseif ($movement && $receiptCurrency === 'USD' && !$is_transfer
-                && ($document->currency_type_id ?? null) === 'VES' && $payment->getRawOriginal('exchange_rate') !== null) {
-                $rate = \App\Support\Exact\Decimal::of($payment->getRawOriginal('exchange_rate'));
+                && ($document->currency_type_id ?? null) === 'VES' && $exchangeRate !== null) {
+                $rate = \App\Support\Exact\Decimal::of($exchangeRate);
                 if ($rate->isPositive()) {
                     $amount_pen_exact = \App\Support\Exact\Decimal::convert(
-                        $movement['calculation_snapshot']['values']['amount'], 'USD', 'VES', $payment->getRawOriginal('exchange_rate'));
+                        $movement['calculation_snapshot']['values']['amount'], 'USD', 'VES', $exchangeRate);
                 }
             }
             if ($amount_pen_exact !== null) $amount_pen_decimal = \App\Support\Exact\Decimal::represent($amount_pen_exact);

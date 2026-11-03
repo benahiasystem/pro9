@@ -354,6 +354,8 @@
         public function getInstanceTypeAttribute()
         {
             $instance_type = [
+                PaymentCommission::class => 'bank_commission',
+                HotelRentItemPayment::class => 'hotel_rent_item_payment',
                 \App\Models\Tenant\DocumentNoteRefund::class => 'note_refund',
                 DocumentPayment::class => 'document',
                 SaleNotePayment::class => 'sale_note',
@@ -379,6 +381,12 @@
             $description = null;
 
             switch ($this->instance_type) {
+                case 'bank_commission':
+                    $description = 'COMISIÓN BANCARIA';
+                    break;
+                case 'hotel_rent_item_payment':
+                    $description = 'HOTEL';
+                    break;
                 case 'note_refund':
                     $description = 'DEVOLUCIÓN POR NC';
                     break;
@@ -438,6 +446,7 @@
                 case 'bank_loan':
                 case 'cash_transaction':
                 case 'technical_service':
+                case 'hotel_rent_item_payment':
                     $type = 'input';
                     break;
                 case 'purchase':
@@ -445,6 +454,7 @@
                 case 'bank_loan_payment':
                 case 'expense':
                 case 'note_refund':
+                case 'bank_commission':
                     $type = 'output';
                     break;
 
@@ -458,9 +468,19 @@
         public function getDataPersonAttribute()
         {
 
+            if ($this->payment instanceof PaymentCommission) {
+                return $this->payment->sourceMovement?->data_person ?? (object)['name'=>'-', 'number'=>''];
+            }
+
                 $record = $this->payment->associated_record_payment;
 
             switch ($this->instance_type) {
+
+                case 'hotel_rent_item_payment':
+                    $customer = $record->hotel_rent->customer ?? null;
+                    $person['name'] = $customer->name ?? '-';
+                    $person['number'] = $customer->number ?? '';
+                    break;
 
                 case 'note_refund':
                 case 'document':
@@ -513,7 +533,7 @@
          *
          * @return Builder
          */
-        public function scopeWhereFilterPaymentType(Builder $query, $params)
+        public function scopeWhereFilterPaymentType(Builder $query, $params, bool $includeCommissions = true)
         {
 
             /** DocumentPayment  */
@@ -707,6 +727,19 @@
                 }
             });
 
+            $query->orWhere(function ($q) use ($params) {
+                $q->where('payment_type', HotelRentItemPayment::class);
+                if ($params->date_start) $q->where('report_context->date', '>=', $params->date_start);
+                if ($params->date_end) $q->where('report_context->date', '<=', $params->date_end);
+                $userId = $params->user_id ?? (auth()->user()?->type === 'seller' ? auth()->id() : null);
+                if ($userId) $q->where('user_id', $userId);
+            });
+            if ($includeCommissions) {
+                $eligible = self::query()->whereFilterPaymentType($params, false)->select('id');
+                $query->orWhereHasMorph('payment', [PaymentCommission::class], function ($q) use ($eligible) {
+                    $q->whereIn('source_global_payment_id', $eligible);
+                });
+            }
             return $query;
         }
 

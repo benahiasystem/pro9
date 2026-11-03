@@ -205,7 +205,7 @@
             </div>
         @endif
     {{-- ######## INICIO CLASIFICACION DE COBROS Y CAJA ######## --}}
-<table>@foreach(\App\Services\Payments\FinancialReport::totals($records) as $summary)<tr><td>Total · {{ $summary['currency_type_id'] }}</td><td style="mso-number-format:'\@'">{{ $summary['total'] }}</td></tr> @endforeach</table>
+<table>@foreach(\App\Services\Payments\FinancialReport::totals($records) as $summary)<tr><td>{{ $summary['currency_type_id'] }} · Ingresos / egresos / neto</td><td>{{ $summary['income'] }} / {{ $summary['egress'] }} / {{ $summary['net'] }}</td></tr> @endforeach</table>
 {{-- ######## FIN CLASIFICACION DE COBROS Y CAJA ######## --}}
 
 </body>

@@ -14,6 +14,24 @@ vm.runInNewContext(babel.transformSync(parsed.script.content, {
 }).code, {exports: exported});
 const component = exported.default;
 
+test('bank choices filter by bank and currency and clear monetary minimum on currency change', () => {
+    const ctx = {form:{collection_kind:'account',bank_id:1,bank_account_id:11,currency_type_id:'VES',minimum_commission:'1',commission_percentage:'2'},
+        bankAccounts:[{id:11,bank_id:1,currency_type_id:'VES'},{id:12,bank_id:1,currency_type_id:'USD'},{id:13,bank_id:2,currency_type_id:'VES'}],
+        clearIncompatibleHka() {}};
+    assert.deepEqual(Array.from(component.computed.compatibleAccounts.call(ctx), account => account.id), [11]);
+    ctx.form.currency_type_id = 'USD';
+    component.methods.changeCurrency.call(ctx);
+    assert.equal(ctx.form.bank_account_id, null);
+    assert.equal(ctx.form.minimum_commission, null);
+    assert.equal(ctx.form.commission_percentage, '2');
+    assert.deepEqual(Array.from(component.computed.compatibleAccounts.call(ctx), account => account.id), [12]);
+    ctx.form.collection_kind = 'cash';
+    component.methods.changeCollectionKind.call(ctx);
+    assert.equal(ctx.form.bank_id, null);
+    assert.equal(ctx.form.commission_percentage, null);
+    for (const label of ['Banco', 'Número de cuenta', '% Comisión', 'Comisión mínima por transacción']) assert.ok(parsed.template.content.includes(label));
+});
+
 test('duplicate code displays the server error and keeps the form open', async () => {
     for (const data of [{id: ['El código ya existe']}, {message: {id: ['El código ya existe']}}]) {
         let closed = false;

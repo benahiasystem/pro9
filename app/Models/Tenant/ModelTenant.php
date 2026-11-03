@@ -41,6 +41,12 @@
                     // ######## FIN MONEDA E IMPUESTO DE MEDIOS ########
                     if (($model->is_active ?? true) && $values['collection_kind'] === 'unclassified') \App\Services\Payments\Classification::error('collection_kind','Clasifique el método antes de activarlo.');
                     foreach ($values as $key=>$value) $model->setAttribute($key,$value);
+                    if ($kind === 'account' && ($model->is_active ?? true)) {
+                        $account = BankAccount::query()->whereKey($model->bank_account_id)->lockForUpdate()->first();
+                        if (!$account || !$account->status || $account->currency_type_id !== $model->currency_type_id) {
+                            \App\Services\Payments\Classification::error('bank_account_id', 'Seleccione una cuenta activa con la moneda del método.');
+                        }
+                    }
                 }
                 if ($model instanceof \Modules\Finance\Models\GlobalPayment && $model->exists && ($model->getOriginal('report_context')['version'] ?? null) === 2 && $model->isDirty(['destination_id','destination_type','cash_session_id','report_context','payment_type','payment_id'])) {
                     \App\Services\Payments\Classification::error('payment','El movimiento contabilizado es inmutable; revierta el pago.');
@@ -54,6 +60,11 @@
                     if (Cash::where('user_id',$model->user_id)->where('state',true)->lockForUpdate()->exists()) {
                         \App\Services\Payments\Classification::error('cash','El usuario ya tiene una caja abierta.');
                     }
+                }
+            });
+            static::created(function ($model) {
+                if ($model instanceof \Modules\Finance\Models\GlobalPayment) {
+                    \App\Services\Payments\Movement::createCommission($model);
                 }
             });
             static::updating(fn($model)=>\App\Services\Payments\Movement::beforeSourceChange($model));

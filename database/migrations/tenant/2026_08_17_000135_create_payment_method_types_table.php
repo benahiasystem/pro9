@@ -11,6 +11,9 @@ use Illuminate\Support\Facades\DB;
  * - `currency_type_id` varchar(255) NOT NULL DEFAULT VES
  * - `iva_rate_type_id` varchar(4) DEFAULT NULL
  * - `cash_currency_type_id` char(3) DEFAULT NULL
+ * - `bank_account_id` int unsigned DEFAULT NULL
+ * - `commission_percentage` decimal(30,12) DEFAULT NULL
+ * - `minimum_commission` decimal(30,12) DEFAULT NULL
  * - `id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `hka_code` char(2) COLLATE utf8mb4_unicode_ci DEFAULT NULL
@@ -33,12 +36,16 @@ CREATE TABLE `payment_method_types` (
   `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'VES',
   `iva_rate_type_id` varchar(4) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `cash_currency_type_id` char(3) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `bank_account_id` int(10) unsigned DEFAULT NULL,
+  `commission_percentage` decimal(30,12) DEFAULT NULL,
+  `minimum_commission` decimal(30,12) DEFAULT NULL,
   `number_days` int(11) DEFAULT NULL,
   `is_credit` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'Define si es tipo credito',
   `is_cash` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'Define si es es efectivo',
   `is_active` tinyint(1) NOT NULL DEFAULT '1',
   `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   KEY `payment_method_types_id_index` (`id`),
+  KEY `payment_method_bank_account_fk` (`bank_account_id`),
   KEY `payment_method_types_hka_code_index` (`hka_code`),
   KEY `payment_method_types_is_credit_index` (`is_credit`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci

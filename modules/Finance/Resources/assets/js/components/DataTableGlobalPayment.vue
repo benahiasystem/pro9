@@ -115,8 +115,8 @@
                         <tfoot v-if="resource == 'finances/global-payments'">
                             <tr v-for="summary in totalsByVersion" :key="`${summary.version}:${summary.currency_type_id}`">
                                 <td colspan="9"></td>
-                                <td><strong>Total de página · {{ summary.currency_type_id }}</strong></td>
-                                <td>{{ summary.total | DecimalText }}</td>
+                                <td><strong>Ingresos / egresos / neto · {{ summary.currency_type_id }}</strong></td>
+                                <td>{{ summary.income | DecimalText }} / {{ summary.egress | DecimalText }} / {{ summary.net | DecimalText }}</td>
                             </tr>
                         </tfoot>
                     </table>

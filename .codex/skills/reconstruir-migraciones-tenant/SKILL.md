@@ -124,6 +124,8 @@ Inventario vigente:346 tablas de aplicación/347 migraciones tenant. 000318 inco
 
 ## Clasificación inicial de cobros — 26/10/2026
 
+Los métodos bancarios incluyen una cuenta fija y comisiones opcionales en el consolidado. `payment_commissions` conserva una sola comisión por movimiento de ingreso mediante clave única y FK restrictiva; sus movimientos derivados figuran en `global_payments`. Declarar las tres claves nuevas en `000999`, con rollback inverso. Las filas bancarias iniciales quedan inactivas hasta asociar una cuenta; no crear cuentas ficticias ni actualizar tenants existentes. El consolidado incorpora una tabla y una migración creadora adicionales.
+
 La instrucción vigente del usuario limita [clasificación y caja por moneda](../../../informes/clasificacion_medios_pago_caja.md) exclusivamente a instalaciones nuevas. Definir la naturaleza del medio, contexto y vínculo de turno en movimientos, moneda de aperturas y `cash_currency_balances` directamente en las creaciones consolidadas y semillas. No preparar comandos de actualización, activaciones por tenant, copias de catálogo previo ni lectores de cajas anteriores para este cambio. Las instalaciones actuales se sustituirán por nuevas; su eliminación y recreación no forman parte de esta implementación. La caja se crea con el cálculo VES/USD disponible desde la instalación.
 
 ## Cobros con moneda propia — implementación en curso

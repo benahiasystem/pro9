@@ -33,6 +33,7 @@ class PaymentClassificationTest extends TestCase
             $t->string('id')->primary();$t->string('description');$t->string('hka_code')->default('99');
             $t->string('collection_kind')->default('unclassified');$t->string('cash_currency_type_id')->nullable();
             $t->string('currency_type_id')->default('VES');$t->string('iva_rate_type_id')->nullable();
+            $t->integer('bank_account_id')->nullable();$t->string('commission_percentage')->nullable();$t->string('minimum_commission')->nullable();
             foreach(['is_cash','is_credit'] as $f)$t->boolean($f)->default(false);$t->boolean('is_active')->default(true);
         });
         $schema->create('cash',function(Blueprint $t) {
@@ -42,7 +43,8 @@ class PaymentClassificationTest extends TestCase
         });
         $schema->create('cash_transactions',function(Blueprint $t) { $t->increments('id');$t->integer('cash_id');$t->string('payment_method_type_id');$t->string('currency_type_id')->nullable();$t->string('date');$t->string('description');$t->string('payment');$t->json('calculation_snapshot')->nullable(); });
         $schema->create('cash_currency_balances',function(Blueprint $t) { $t->integer('cash_id');$t->string('currency_type_id');foreach(['beginning_balance','income','egress','final_balance'] as $f)$t->string($f)->default('0');$t->json('calculation_snapshot');$t->primary(['cash_id','currency_type_id']); });
-        $schema->create('bank_accounts',function(Blueprint $t) {$t->increments('id');$t->string('currency_type_id');$t->integer('status')->default(1);});
+        $schema->create('banks',function(Blueprint $t) {$t->increments('id');$t->string('description');});
+        $schema->create('bank_accounts',function(Blueprint $t) {$t->increments('id');$t->integer('bank_id')->nullable();$t->string('number')->nullable();$t->string('description')->nullable();$t->string('currency_type_id');$t->integer('status')->default(1);});
         $schema->create('income',function(Blueprint $t) {$t->increments('id');$t->integer('user_id');$t->string('currency_type_id');$t->string('exchange_rate_sale')->default('1');$t->string('state_type_id')->default('05');$t->integer('number')->default(1);$t->date('date_of_issue')->default('2026-10-26');});
         $schema->create('income_payments',function(Blueprint $t) {$t->increments('id');$t->integer('income_id');$t->string('payment_method_type_id');$t->date('date_of_payment');$t->string('payment');$t->string('currency_type_id')->nullable();$t->string('original_amount')->nullable();$t->string('exchange_rate')->nullable();$t->string('exchange_rate_source')->nullable();$t->date('exchange_rate_date')->nullable();$t->json('payment_method_snapshot')->nullable();$t->json('calculation_snapshot')->nullable();$t->dateTime('reversed_at')->nullable();});
         $schema->create('document_payments',function(Blueprint $t) {$t->increments('id');foreach(['currency_type_id','original_amount','tax_amount','exchange_rate'] as $field)$t->string($field);$t->json('payment_method_snapshot')->nullable();$t->dateTime('reversed_at')->nullable();});
@@ -52,6 +54,10 @@ class PaymentClassificationTest extends TestCase
     }
 
     private function cash(): Cash { return Cash::create(['user_id'=>1,'date_opening'=>'2026-10-26','time_opening'=>'09:00:00','state'=>true,'beginning_balance'=>'100']); }
+    private function configureBank(string $method, BankAccount $account): void
+    {
+        DB::connection('tenant')->table('payment_method_types')->where('id',$method)->update(['bank_account_id'=>$account->id, 'is_active'=>1]);
+    }
 
     public function test_loan_form_request_rejects_unclassified_cash_inactive_and_missing_destination(): void
     {
@@ -72,8 +78,8 @@ class PaymentClassificationTest extends TestCase
     public function test_income_receipt_reports_received_currency_instead_of_applied_amount(): void
     {
         $method = PaymentMethodType::findOrFail('13');
-        $method->update(['is_active'=>true]);
         $bank = BankAccount::create(['currency_type_id'=>'USD']);
+        $method->update(['is_active'=>true, 'bank_account_id'=>$bank->id]);
         $global = DB::connection('tenant')->transaction(function () use ($method, $bank) {
             $id = DB::connection('tenant')->table('income')->insertGetId(['user_id'=>1,'currency_type_id'=>'VES','exchange_rate_sale'=>'400']);
             $input = ['currency_type_id'=>'USD','original_amount'=>'10','exchange_rate'=>'400.00000000','date_of_payment'=>'2026-10-26'];
@@ -94,6 +100,7 @@ class PaymentClassificationTest extends TestCase
         $db = DB::connection('tenant');
         $db->table('payment_method_types')->where('id','13')->update(['is_active'=>1,'iva_rate_type_id'=>'IGTF']);
         $bank = BankAccount::create(['currency_type_id'=>'USD']);
+        $this->configureBank('13', $bank);
         $incomeId = $db->table('income')->insertGetId(['user_id'=>1,'currency_type_id'=>'VES','exchange_rate_sale'=>'10']);
         $create = function () use ($db, $bank, $incomeId) {
             return $db->transaction(function () use ($bank, $incomeId) {
@@ -127,7 +134,8 @@ class PaymentClassificationTest extends TestCase
     public function test_new_receipt_rejects_an_inactive_method_or_currency(): void
     {
         $method=PaymentMethodType::findOrFail('13');
-        $method->update(['is_active'=>true]);
+        $bank=BankAccount::create(['currency_type_id'=>'USD']);
+        $method->update(['is_active'=>true,'bank_account_id'=>$bank->id]);
         $input=['currency_type_id'=>'USD','original_amount'=>'10','exchange_rate'=>'400'];
         DB::connection('tenant')->table('cat_currency_types')->where('id','USD')->update(['active'=>false]);
         try {
@@ -181,6 +189,7 @@ class PaymentClassificationTest extends TestCase
     {
         $cash=$this->cash();
         $bank=BankAccount::create(['currency_type_id'=>'VES']);
+        $this->configureBank('11', $bank);
         $physical=$this->receipt('01','50','VES',$cash->id);
         $this->receipt('10','5','USD',$cash->id);
         $electronic=$this->receipt('11','200','VES',$bank->id);
@@ -198,6 +207,7 @@ class PaymentClassificationTest extends TestCase
     public function test_account_currency_and_closed_cash_reject_the_entire_operation(): void
     {
         $cash=$this->cash();$account=BankAccount::create(['currency_type_id'=>'USD']);
+        $this->configureBank('04', $account);
         foreach([fn()=>$this->receipt('04','5','VES',$account->id),fn()=>$this->receipt('10','5','VES',$cash->id)] as $operation) {
             try {$operation();self::fail('Debe rechazar el movimiento incompatible.');}catch(ValidationException $expected){}
         }
@@ -222,7 +232,8 @@ class PaymentClassificationTest extends TestCase
 
     public function test_flags_are_derived_and_unclassified_active_methods_are_rejected(): void
     {
-        $method=PaymentMethodType::create(['id'=>'27','description'=>'Nuevo','collection_kind'=>'account','is_cash'=>true,'is_credit'=>true,'is_active'=>true]);
+        $account=BankAccount::create(['currency_type_id'=>'VES']);
+        $method=PaymentMethodType::create(['id'=>'27','description'=>'Nuevo','collection_kind'=>'account','currency_type_id'=>'VES','bank_account_id'=>$account->id,'is_cash'=>true,'is_credit'=>true,'is_active'=>true]);
         self::assertFalse($method->fresh()->is_cash);self::assertFalse($method->fresh()->is_credit);
         $this->expectException(ValidationException::class);
         $method->update(['collection_kind'=>'unclassified']);
@@ -266,6 +277,7 @@ class PaymentClassificationTest extends TestCase
     public function test_reclassifying_an_initial_method_changes_only_future_movements(): void
     {
         $cash=$this->cash();$bank=BankAccount::create(['currency_type_id'=>'VES']);
+        $this->configureBank('04', $bank);
         $method=PaymentMethodType::findOrFail('04');
         $global=$this->receipt('04','5','VES',$bank->id);
         $method->update(['collection_kind'=>'cash','cash_currency_type_id'=>'VES']);
@@ -279,9 +291,10 @@ class PaymentClassificationTest extends TestCase
     {
         $cash = $this->cash();
         $bank = BankAccount::create(['currency_type_id' => 'VES']);
+        $this->configureBank('04', $bank);
         $oldCash = $this->receipt('01', '5', 'VES', $cash->id);
         $oldBank = $this->receipt('04', '7', 'VES', $bank->id);
-        PaymentMethodType::findOrFail('01')->update(['collection_kind' => 'account', 'cash_currency_type_id' => null]);
+        PaymentMethodType::findOrFail('01')->update(['collection_kind' => 'account', 'cash_currency_type_id' => null, 'bank_account_id'=>$bank->id]);
         PaymentMethodType::findOrFail('04')->update(['collection_kind' => 'cash', 'cash_currency_type_id' => 'VES']);
         $ids = IncomePayment::filterCashPaymentWithoutDestination()->pluck('id')->all();
         self::assertContains($oldCash->payment_id, $ids);
@@ -395,6 +408,7 @@ class PaymentClassificationTest extends TestCase
         $db = DB::connection('tenant');
         $db->table('payment_method_types')->where('id', '13')->update(['is_active'=>1, 'hka_code'=>'03']);
         $bank = BankAccount::create(['currency_type_id'=>'USD']);
+        $this->configureBank('13', $bank);
         $incomeId = $db->table('income')->insertGetId(['user_id'=>1, 'currency_type_id'=>'VES', 'exchange_rate_sale'=>'10']);
         $payment = $db->transaction(function () use ($bank, $incomeId) {
             $input = ['currency_type_id'=>'USD', 'original_amount'=>'1', 'exchange_rate'=>'10', 'date_of_payment'=>'2026-10-26'];

@@ -24,6 +24,7 @@ class DocumentPaymentRequest extends FormRequest
             'exchange_rate_source' => ['nullable','string','max:255'],
             'operation_key' => ['required_with:currency_type_id','uuid'],
             'igtf_status' => ['sometimes', Rule::in(['subject','exempt','not_applicable'])],
+            'quoted_tax_amount' => ['sometimes', 'numeric', 'min:0'],
             'exemption_reason' => ['nullable','string','max:255'],
             'exception_basis' => ['nullable','string','max:255'],
             'financial_intermediation' => ['nullable',Rule::in(['none','financial_institution'])],

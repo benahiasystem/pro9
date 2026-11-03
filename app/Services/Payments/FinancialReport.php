@@ -50,10 +50,17 @@ final class FinancialReport
             if (!$row) continue;
             $version=2; $currency=$row['currency_type_id']; $value=D::readRequired($row,'amount');
             $key=$version.':'.$currency;
-            $result[$key] ??= ['version'=>$version,'currency_type_id'=>$currency,'total'=>D::of(0)];
+            $result[$key] ??= ['version'=>$version,'currency_type_id'=>$currency,'total'=>D::of(0),'income'=>D::of(0),'egress'=>D::of(0)];
             $result[$key]['total']=$result[$key]['total']->plus($value);
+            $direction=$row['direction'];
+            $result[$key][$direction]=$result[$key][$direction]->plus($value);
         }
-        return array_values(array_map(fn($row)=>array_replace($row,['total'=>D::represent($row['total'])]),$result));
+        return array_values(array_map(fn($row)=>array_replace($row,[
+            'total'=>D::represent($row['total']), 'income'=>D::represent($row['income']),
+            'egress'=>D::represent($row['egress']), 'net'=>D::represent($row['income']->minus($row['egress'])),
+            'calculation_snapshot'=>D::snapshot(['total'=>$row['total'], 'income'=>$row['income'],
+                'egress'=>$row['egress'], 'net'=>$row['income']->minus($row['egress'])])
+        ]),$result));
     }
 }
 // ######## FIN CLASIFICACION DE COBROS Y CAJA ########

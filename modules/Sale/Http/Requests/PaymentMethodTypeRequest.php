@@ -25,6 +25,25 @@ class PaymentMethodTypeRequest extends FormRequest
             'currency_type_id'=>['required','string',Rule::exists('tenant.cat_currency_types','id')->where('active',1)],
             'iva_rate_type_id'=>['nullable',Rule::in(['IGTF']),Rule::exists('tenant.cat_iva_rate_types','id')->where('tax_kind','IGTF')],
             'is_active'=>['sometimes','boolean'],
+            'bank_id'=>['required_if:collection_kind,account','nullable','integer'],
+            'bank_account_id'=>['required_if:collection_kind,account','nullable','integer', function ($attribute, $value, $fail) {
+                if ($this->input('collection_kind') !== 'account') return;
+                $account = \App\Models\Tenant\BankAccount::query()->find($value);
+                if (!$account || !$account->status || (string) $account->bank_id !== (string) $this->input('bank_id') || $account->currency_type_id !== $this->input('currency_type_id')) {
+                    $fail('Seleccione una cuenta activa del banco y la moneda del método.');
+                }
+            }],
+            'commission_percentage'=>['nullable', function ($attribute, $value, $fail) {
+                try {
+                    $amount = \App\Support\Exact\Decimal::of(\App\Support\Exact\Decimal::input($value, $attribute));
+                    if ($amount->isNegative() || $amount->isGreaterThan('100')) $fail('La comisión debe estar entre 0 y 100 %.');
+                } catch (\Throwable $error) { $fail('Indique un porcentaje válido.'); }
+            }],
+            'minimum_commission'=>['nullable', function ($attribute, $value, $fail) {
+                try {
+                    if (\App\Support\Exact\Decimal::of(\App\Support\Exact\Decimal::input($value, $attribute))->isNegative()) $fail('La comisión mínima no puede ser negativa.');
+                } catch (\Throwable $error) { $fail('Indique una comisión mínima válida.'); }
+            }],
         ];
         return $classification + [
             'id' => [

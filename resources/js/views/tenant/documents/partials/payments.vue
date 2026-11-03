@@ -116,6 +116,7 @@
                                         <div class="form-group mb-0" :class="{'has-danger': row.errors.payment_method_type_id}">
                                             <!-- ######## INICIO PERSISTENCIA FISCAL VENEZUELA ######## -->
                                             <igtf-settings-status v-if="fiscalPaymentsApplicable" />
+                                            <igtf-quote-summary v-if="fiscalPaymentsApplicable" :quote="igtfQuote" :loading="igtfQuoteLoading" :error="igtfQuoteError" :currency="fiscalQuoteCurrency" />
                                             <igtf-payment-fields :payment-methods="payment_method_types" v-if="fiscalPaymentsApplicable && !row.id" :igtf-enabled="igtfEnabled" :settings-version="igtfSettings.revision"
                                                 :payment="row" :document-currency="document.currency_type_id" :document-rate="document.exchange_rate_sale" :document-id="documentId" />
                                             <!-- ######## FIN PERSISTENCIA FISCAL VENEZUELA ######## -->
@@ -512,6 +513,7 @@ import IgtfPaymentFields from "./igtf_fields.vue"
                     exchange_rate_date: row.exchange_rate_date,
                     operation_key: row.operation_key,
                     igtf_status: row.igtf_status,
+                    quoted_tax_amount: row.quoted_tax_amount,
                     financial_intermediation: row.financial_intermediation,
                     exemption_reason: row.exemption_reason,
                     exception_basis: row.exception_basis,
@@ -537,7 +539,10 @@ import IgtfPaymentFields from "./igtf_fields.vue"
                         // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
                         const data = error.response && error.response.status === 422 ? error.response.data : null
                         const errors = data && typeof data === 'object' ? (data.errors || (!data.message ? data : null)) : null
-                        if (errors && typeof errors === 'object' && Object.keys(errors).length) row.errors = errors
+                        if (errors && typeof errors === 'object' && Object.keys(errors).length) {
+                            row.errors = errors
+                            if (errors.quoted_tax_amount) this.refreshFiscalQuote([row])
+                        }
                         else this.$message.error(this.getRequestErrorMessage(error))
                         // ######## FIN MONEDA DEL MEDIO DE COBRO ########
                     })

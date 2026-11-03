@@ -77,6 +77,9 @@
             'collection_kind',
             'currency_type_id',
             'iva_rate_type_id',
+            'bank_account_id',
+            'commission_percentage',
+            'minimum_commission',
             'cash_currency_type_id',
             'number_days',
             'is_credit',
@@ -419,7 +422,8 @@
                         ->active()
                         ->select([
                             'id',
-                            'description', 'collection_kind', 'currency_type_id', 'cash_currency_type_id', 'is_active', 'is_credit'
+                            'description', 'collection_kind', 'currency_type_id', 'cash_currency_type_id', 'is_active', 'is_credit',
+                            'bank_account_id', 'commission_percentage', 'minimum_commission'
                         ])
                         ->get();
         }

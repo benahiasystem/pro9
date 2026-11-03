@@ -25,6 +25,9 @@
                         <!-- ######## INICIO TRAZABILIDAD CONFIGURACION DEL MEDIO ######## -->
                         <th>Moneda</th>
                         <th>IGTF asociado</th>
+                        <th>Banco / cuenta</th>
+                        <th>% Comisión</th>
+                        <th>Comisión mínima</th>
                         <!-- ######## FIN TRAZABILIDAD CONFIGURACION DEL MEDIO ######## -->
                         <!-- ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES -->
                         <th v-if="fiscalEmissionMode === 'digital'">Medio fiscal</th>
@@ -45,6 +48,9 @@
                         <!-- ######## INICIO TRAZABILIDAD CONFIGURACION DEL MEDIO ######## -->
                         <td>{{ row.currency_type_id || 'No disponible' }}</td>
                         <td>{{ taxLabel(row) }}</td>
+                        <td>{{ row.bank_name ? row.bank_name + (row.bank_account_number ? ' · ' + row.bank_account_number : '') : 'Sin cuenta' }}</td>
+                        <td>{{ row.commission_percentage == null ? '—' : row.commission_percentage + ' %' }}</td>
+                        <td>{{ row.minimum_commission == null ? '—' : row.currency_type_id + ' ' + row.minimum_commission }}</td>
                         <!-- ######## FIN TRAZABILIDAD CONFIGURACION DEL MEDIO ######## -->
                         <!-- ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES -->
                         <td v-if="fiscalEmissionMode === 'digital'">{{ fiscalLabel(row) }}</td>

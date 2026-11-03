@@ -3,9 +3,7 @@
 namespace App\CoreFacturalo\Requests\Inputs\Common;
 
 use App\Models\Tenant\Catalogs\Country;
-use App\Models\Tenant\Catalogs\Department;
 use App\Models\Tenant\Catalogs\District;
-use App\Models\Tenant\Catalogs\Province;
 use App\Models\Tenant\Catalogs\AddressType;
 
 class OperationDataInput
@@ -18,10 +16,10 @@ class OperationDataInput
         $country = Country::find($operation_data['country_id']);
         
         $district_id = $operation_data['district_id'];
-        $district = District::find($district_id);
-
-        $province = Province::find(substr($district_id, 0 ,4));
-        $department = Department::find(substr($district_id, 0 ,2));
+        // Los identificadores venezolanos no contienen los códigos de sus padres.
+        $district = District::with('province.department')->findOrFail($district_id);
+        $province = $district->province;
+        $department = $province->department;
 
         return [ 
             'address' => $address,

@@ -4986,7 +4986,7 @@ return array (
           'number_days' => NULL,
           'is_credit' => 0,
           'is_cash' => 0,
-          'is_active' => 1,
+          'is_active' => 0,
         ),
         2 =>
         array (
@@ -5000,7 +5000,7 @@ return array (
           'number_days' => NULL,
           'is_credit' => 0,
           'is_cash' => 0,
-          'is_active' => 1,
+          'is_active' => 0,
         ),
         3 =>
         array (
@@ -5014,7 +5014,7 @@ return array (
           'number_days' => NULL,
           'is_credit' => 0,
           'is_cash' => 0,
-          'is_active' => 1,
+          'is_active' => 0,
         ),
         4 =>
         array (
@@ -5072,7 +5072,7 @@ return array (
           'number_days' => NULL,
           'is_credit' => 0,
           'is_cash' => 0,
-          'is_active' => 1,
+          'is_active' => 0,
         ),
         8 =>
         array (
@@ -5086,7 +5086,7 @@ return array (
           'number_days' => NULL,
           'is_credit' => 0,
           'is_cash' => 0,
-          'is_active' => 1,
+          'is_active' => 0,
         ),
         9 =>
         array (

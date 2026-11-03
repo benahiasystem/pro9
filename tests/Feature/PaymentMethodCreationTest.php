@@ -37,6 +37,16 @@ class PaymentMethodCreationTest extends TestCase
             ['id'=>'IGTF','tax_kind'=>'IGTF','percentage'=>'3.00'],
             ['id'=>'G','tax_kind'=>'IVA','percentage'=>'16.00'],
         ]);
+        Schema::connection('tenant')->create('banks', function (Blueprint $table) { $table->id(); $table->string('description'); });
+        Schema::connection('tenant')->create('bank_accounts', function (Blueprint $table) {
+            $table->id(); $table->unsignedBigInteger('bank_id'); $table->string('number'); $table->string('description');
+            $table->string('currency_type_id'); $table->boolean('status')->default(true);
+        });
+        DB::connection('tenant')->table('banks')->insert(['id'=>1,'description'=>'Banco de prueba']);
+        DB::connection('tenant')->table('bank_accounts')->insert([
+            ['id'=>1,'bank_id'=>1,'number'=>'VES-1','description'=>'VES','currency_type_id'=>'VES','status'=>1],
+            ['id'=>2,'bank_id'=>1,'number'=>'USD-1','description'=>'USD','currency_type_id'=>'USD','status'=>1],
+        ]);
         Schema::connection('tenant')->create('payment_method_types', function (Blueprint $table) {
             $table->string('id', 2);
             $table->string('description');
@@ -47,6 +57,9 @@ class PaymentMethodCreationTest extends TestCase
             $table->string('cash_currency_type_id')->nullable();
             $table->string('currency_type_id')->default('VES');
             $table->string('iva_rate_type_id')->nullable();
+            $table->unsignedBigInteger('bank_account_id')->nullable();
+            $table->string('commission_percentage')->nullable();
+            $table->string('minimum_commission')->nullable();
             $table->boolean('is_active')->default(true);
         });
         $this->actingAs((new \App\Models\Tenant\User())->forceFill(['id'=>1,'type'=>'admin']));
@@ -59,6 +72,25 @@ class PaymentMethodCreationTest extends TestCase
         Route::post('/test-web-payment-methods', [PaymentMethodTypeController::class, 'store'])->middleware('web');
         Route::post('/test-payment-active', [PaymentMethodTypeController::class, 'active']);
         Route::post('/test-finance-payment-active', [\Modules\Finance\Http\Controllers\PaymentMethodTypeController::class, 'active']);
+    }
+
+    // Existing catalogue tests exercise fiscal rules with valid banking setup.
+    private function withBank(array $data): array
+    {
+        if (($data['collection_kind'] ?? null) === 'account') {
+            $data += ['bank_id'=>1, 'bank_account_id'=>($data['currency_type_id'] ?? null) === 'USD' ? 2 : 1];
+        }
+        return $data;
+    }
+
+    public function postJson($uri, array $data = [], array $headers = [])
+    {
+        return parent::postJson($uri, $this->withBank($data), $headers);
+    }
+
+    public function putJson($uri, array $data = [], array $headers = [])
+    {
+        return parent::putJson($uri, $this->withBank($data), $headers);
     }
 
     // ######## INICIO TRAZABILIDAD CONFIGURACION DEL MEDIO ########
@@ -81,6 +113,17 @@ class PaymentMethodCreationTest extends TestCase
         self::assertCount(1, array_filter($queries, fn ($sql) => str_contains($sql, 'cat_iva_rate_types')));
     }
 
+    public function test_bank_account_numbers_are_only_shown_to_administrators(): void
+    {
+        DB::connection('tenant')->table('payment_method_types')->insert(['id'=>'29','description'=>'Banco','collection_kind'=>'account',
+            'currency_type_id'=>'VES','bank_account_id'=>1,'is_active'=>1]);
+        $this->getJson('/test-payment-tables')->assertOk()->assertJsonFragment(['number'=>'VES-1']);
+        $this->getJson('/test-payment-methods')->assertOk()->assertJsonPath('data.0.bank_account_number','VES-1');
+        $this->actingAs((new \App\Models\Tenant\User())->forceFill(['id'=>2,'type'=>'seller']));
+        $this->getJson('/test-payment-tables')->assertOk()->assertJsonCount(0,'bank_accounts');
+        $this->getJson('/test-payment-methods')->assertOk()->assertJsonMissingPath('data.0.bank_account_number');
+    }
+
     public function test_duplicate_code_is_rejected_without_changing_the_existing_method(): void
     {
         DB::connection('tenant')->table('payment_method_types')->insert([
@@ -91,7 +134,7 @@ class PaymentMethodCreationTest extends TestCase
             ->assertStatus(422)
             ->assertJsonPath('message.id.0', 'El código del método de pago ya existe.');
         $this->withHeaders(['Accept' => 'text/html', 'X-Requested-With' => 'XMLHttpRequest'])
-            ->post('/test-web-payment-methods', ['id' => '27', 'description' => 'Duplicado', 'collection_kind'=>'account', 'currency_type_id'=>'VES', 'hka_code'=>'99'])
+            ->post('/test-web-payment-methods', ['id' => '27', 'description' => 'Duplicado', 'collection_kind'=>'account', 'currency_type_id'=>'VES', 'hka_code'=>'99', 'bank_id'=>1, 'bank_account_id'=>1])
             ->assertStatus(422)
             ->assertJsonPath('id.0', 'El código del método de pago ya existe.');
 

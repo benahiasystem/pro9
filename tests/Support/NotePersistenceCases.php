@@ -218,6 +218,7 @@ trait NotePersistenceCases
         $data=$this->noteInput($input,$invoice,'07','09',[['affected_document_item_id'=>$line->id,'adjustment_amount'=>23.20]]);
         $note=(new Facturalo)->forWebDocuments()->save($data)->getDocument()->fresh();
         $bankId=$db->table('bank_accounts')->insertGetId(['description'=>'Refund test','number'=>'test','bank_id'=>1,'currency_type_id'=>'VES','establishment_id'=>$invoice->establishment_id]);
+        $db->table('payment_method_types')->where('id','04')->update(['bank_account_id'=>$bankId,'is_active'=>1,'commission_percentage'=>'10']);
         $refund=['operation_key'=>(string)Str::uuid(),'component'=>'principal','document_payment_id'=>$invoice->payments->first()->id,
             'date_of_payment'=>'2026-09-10','payment_method_type_id'=>'04','payment_destination_id'=>$bankId,
             'currency_type_id'=>'VES','original_amount'=>10,'exchange_rate'=>'1.00000000','exchange_rate_source'=>'manual'];
@@ -226,6 +227,7 @@ trait NotePersistenceCases
         try {(new NoteRefund)->register($note,$excess);self::fail('Cash refund cannot exceed the NC');}
         catch (\Illuminate\Validation\ValidationException $e) {self::assertArrayHasKey('original_amount',$e->errors());}
         $record=(new NoteRefund)->register($note,$refund);
+        self::assertSame(0, $db->table('payment_commissions')->count());
         self::assertSame($record->id,(new NoteRefund)->register($note,$refund)->id);
         self::assertEquals(-13.20,$invoice->fresh()->balance);self::assertEquals(13.20,NoteRefund::available($note));
         // ######## INICIO MONEDA DEL MEDIO DE COBRO ########

@@ -4,7 +4,8 @@
     $hasReceivedAmount = $row->original_amount !== null;
     $received = \App\Support\Exact\Decimal::read($row, $hasReceivedAmount ? 'original_amount' : 'payment');
     $change = \App\Support\Exact\Decimal::read($row, 'change');
-    $tendered = $received->plus($change);
+    $tax = $row->receipt_parent_id ? \App\Support\Exact\Decimal::of(0) : \App\Support\Exact\Decimal::read($row, 'tax_amount');
+    $tendered = $received->plus($change)->plus($tax);
     $methodSnapshot = $row->payment_method_snapshot ?? [];
     $isPriorReceipt = !empty($methodSnapshot['receipt_origin']);
     $methodName = $methodSnapshot['description'] ?? $row->payment_method_type?->description ?? 'No disponible';
@@ -20,4 +21,5 @@
     @if ($row->exchange_rate) — Tasa del cobro (VES/USD) {{ $row->exchange_rate }} @endif
 @endif
 @if ($hasReceivedAmount && $change->isPositive()) — Vuelto {{ $receiptCurrency }} {{ \App\Support\Exact\Decimal::format($change) }} @endif
+@if ($tax->isPositive()) — IGTF {{ $receiptCurrency }} {{ \App\Support\Exact\Decimal::format($tax) }} @endif
 {{-- ######## FIN MONEDA DEL MEDIO DE COBRO ######## --}}

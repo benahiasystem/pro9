@@ -52,7 +52,7 @@ export function paymentValidationMessage(data) {
     const errors = data?.errors || (data?.message && typeof data.message === 'object' ? data.message : data)
     if (!errors || typeof errors !== 'object' || Array.isArray(errors)) return null
     const fields = new Set(['payments', 'payment', 'payment_method_type_id', 'payment_destination_id',
-        'currency_type_id', 'original_amount', 'exchange_rate', 'financial_intermediation', 'igtf_status', 'exception_basis',
+        'currency_type_id', 'original_amount', 'exchange_rate', 'financial_intermediation', 'igtf_status', 'exception_basis', 'quoted_tax_amount',
         'source_sale_note_payment_id', 'source_quotation_payment_id', 'source_technical_service_payment_id', 'total'])
     for (const [key, value] of Object.entries(errors)) {
         if (!fields.has(key.split('.').pop())) continue
@@ -81,7 +81,7 @@ export function handleHotelPaymentError(error, view) {
 // ######## FIN MONEDA DEL MEDIO DE COBRO ########
 
 export function classifiedDestinations(destinations, methods, row, currency, expense = false, documentCurrencyOnly = false) {
-    const method = methods.find(method => String(method.id) === String(expense ? row.expense_method_type_id : row.payment_method_type_id))
+    const method = methods.find(method => method && String(method.id) === String(expense ? row.expense_method_type_id : row.payment_method_type_id))
     const kind = expense ? (String(row.expense_method_type_id) === '1' ? 'cash' : 'account') : method?.collection_kind
     if (!['cash', 'account'].includes(kind)) return []
     const configured = expense || documentCurrencyOnly ? null : paymentMethodCurrency(methods, row.payment_method_type_id)
@@ -89,14 +89,17 @@ export function classifiedDestinations(destinations, methods, row, currency, exp
     const received = configured || row.currency_type_id || currency || method?.cash_currency_type_id
     return destinations.filter(destination => kind === 'cash'
         ? destination.id === 'cash' && (!method?.cash_currency_type_id || method.cash_currency_type_id === received)
-        : destination.id !== 'cash' && (!received || destination.currency_type_id === received))
+        : destination.id !== 'cash' && (!received || destination.currency_type_id === received)
+            && (expense || (method?.bank_account_id != null && String(destination.id) === String(method.bank_account_id))))
 }
 
 export default {
     methods: {
         isRecordedReceipt,
         classifiedPaymentDestinationDisabled(destinations, row) {
-            return false
+            if (Object.prototype.hasOwnProperty.call(row, 'expense_method_type_id')) return false
+            const methods = this.payment_method_types || this.$store?.state?.payment_method_types || []
+            return methods.some(method => method && String(method.id) === String(row.payment_method_type_id) && method.collection_kind === 'account')
         },
         classifiedPaymentDestinations(destinations, row) {
             const expense = Object.prototype.hasOwnProperty.call(row, 'expense_method_type_id')
@@ -111,15 +114,23 @@ export default {
             if (!Array.isArray(rows) || !Array.isArray(this.payment_destinations)) return
             rows.forEach(row => {
                 if (isRecordedReceipt(row)) return
-                const method=(this.payment_method_types || this.$store?.state?.payment_method_types || []).find(method => String(method.id) === String(row.payment_method_type_id))
+                const method=(this.payment_method_types || this.$store?.state?.payment_method_types || []).find(method => method && String(method.id) === String(row.payment_method_type_id))
                 if (method?.collection_kind && row.collection_kind !== method.collection_kind) this.$set(row,'collection_kind',method.collection_kind)
-                if (row.payment_destination_id == null) return
                 const available = this.classifiedPaymentDestinations(this.payment_destinations, row)
+                if (method?.collection_kind === 'account' && !Object.prototype.hasOwnProperty.call(row, 'expense_method_type_id')) {
+                    const configured = available.find(destination => String(destination.id) === String(method.bank_account_id))
+                    const next = configured ? configured.id : null
+                    if (row.payment_destination_id !== next) this.$set(row, 'payment_destination_id', next)
+                    return
+                }
+                if (row.payment_destination_id == null) return
                 if (!available.some(destination => destination.id === row.payment_destination_id)) this.$set(row, 'payment_destination_id', null)
             })
         },
     },
     watch: {
+        payment_destinations: 'refreshClassifiedPaymentDestinations',
+        payment_method_types: 'refreshClassifiedPaymentDestinations',
         'form.currency_type_id': 'refreshClassifiedPaymentDestinations',
         'document.currency_type_id': 'refreshClassifiedPaymentDestinations',
         'expense.currency_type_id': 'refreshClassifiedPaymentDestinations',

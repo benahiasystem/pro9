@@ -32,6 +32,11 @@ final class RestaurantCashImport
                     if (!$global || ($global->report_context['version'] ?? null) !== 2 || ($global->cash_session_id && (int)$global->cash_session_id !== (int)$cash->id)) Classification::error('internalsId','Un cobro ya pertenece a otro turno o a la lógica histórica.');
                     // A previously unassigned banking receipt is associated once, without another receipt.
                     $db->table('global_payments')->where('id',$global->id)->whereNull('cash_session_id')->update(['cash_session_id'=>$cash->id]);
+                    $commissionIds = $db->table('payment_commissions')->where('source_global_payment_id', $global->id)->pluck('id');
+                    if ($commissionIds->isNotEmpty()) {
+                        $db->table('global_payments')->where('payment_type', \Modules\Finance\Models\PaymentCommission::class)
+                            ->whereIn('payment_id', $commissionIds)->whereNull('cash_session_id')->update(['cash_session_id'=>$cash->id]);
+                    }
                 }
             }
             return CashLedger::close($cash)+['data'=>['cash_id'=>$cash->id]];

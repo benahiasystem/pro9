@@ -131,9 +131,9 @@ final class HkaPayloadBuilder
             if (!empty($p['reversed_at']) || (!empty($p['receipt_parent_id']) && ($d['document_type_id']==='01' || $ordinaryNote))) continue;
             $method=$p['payment_method_snapshot']['hka_code'] ?? null;
             if (!$method) FiscalAmounts::error('payments','Falta equivalencia HKA de medio de pago.');
-            $paymentTax=$p['tax_amount'];
-            if ($ordinaryNote && $d['document_type_id'] === '08' && !array_filter($d['taxes'],fn ($t)=>$t['tax_kind'] === 'IGTF' && ($t['document_payment_id'] ?? null) === ($p['id'] ?? null))) $paymentTax=0;
-            $forms[]=['forma'=>$method,'moneda'=>$p['currency_type_id'],'monto'=>self::money($p['original_amount']+$paymentTax),
+            $paymentTax=D::readRequired($p,'tax_amount');
+            if ($ordinaryNote && $d['document_type_id'] === '08' && !array_filter($d['taxes'],fn ($t)=>$t['tax_kind'] === 'IGTF' && ($t['document_payment_id'] ?? null) === ($p['id'] ?? null))) $paymentTax=D::of(0);
+            $forms[]=['forma'=>$method,'moneda'=>$p['currency_type_id'],'monto'=>self::money(D::readRequired($p,'original_amount')->plus($paymentTax)),
                 'fecha'=>self::date($p['date_of_payment']),'tipoCambio'=>(string)$p['exchange_rate']];
         }
         $forms=HkaNotePayments::append($d,$forms);

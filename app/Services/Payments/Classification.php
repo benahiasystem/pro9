@@ -46,6 +46,9 @@ final class Classification
             'hka_code'=>$method->hka_code, 'collection_kind'=>$method->collection_kind ?? 'unclassified',
             'currency_type_id'=>$method->currency_type_id,
             'cash_currency_type_id'=>$method->cash_currency_type_id,
+            'bank_account_id'=>$method->bank_account_id,
+            'commission_percentage'=>$method->commission_percentage === null ? null : (string)$method->commission_percentage,
+            'minimum_commission'=>$method->minimum_commission === null ? null : (string)$method->minimum_commission,
             'iva_rate_type_id'=>$taxId, 'iva_rate_percentage'=>$tax ? (string)$tax->percentage : null];
         // ######## FIN TRAZABILIDAD CONFIGURACION DEL MEDIO ########
     }

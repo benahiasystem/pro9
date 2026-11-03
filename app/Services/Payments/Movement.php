@@ -6,17 +6,60 @@ use App\Models\Tenant\{Cash, BankAccount, DocumentPayment, DocumentNoteRefund, P
 use App\Support\Exact\Decimal as D;
 use Modules\Expense\Models\ExpensePayment;
 use Modules\Finance\Models\GlobalPayment;
+use Modules\Finance\Models\PaymentCommission;
 use Modules\Pos\Models\CashTransaction;
 
 // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
 /** One adapter for actual money. Documentary allocation is never a cash receipt. */
 final class Movement
 {
+    /** Remove dependent commission records only when demo documents are deleted. */
+    public static function deleteCommissionForDemo(GlobalPayment $source): void
+    {
+        $db = $source->getConnection();
+        $ids = $db->table('payment_commissions')->where('source_global_payment_id', $source->id)->pluck('id');
+        if ($ids->isEmpty()) return;
+        $db->table('global_payments')->where('payment_type', PaymentCommission::class)->whereIn('payment_id', $ids)->delete();
+        $db->table('payment_commissions')->whereIn('id', $ids)->delete();
+    }
+
+    public static function createCommission(GlobalPayment $global): void
+    {
+        $context = $global->report_context;
+        if ($global->payment instanceof PaymentCommission || ($context['direction'] ?? null) !== 'income'
+            || ($context['method']['collection_kind'] ?? null) !== 'account'
+            || ($context['method']['catalog'] ?? null) !== 'payment_method_types') return;
+        $row = self::row($global);
+        if (!$row) return;
+        $calculation = BankCommission::calculate(D::readRequired($row, 'amount'),
+            $context['method']['commission_percentage'] ?? null, $context['method']['minimum_commission'] ?? null);
+        if (D::of($calculation['amount'])->isZero()) return;
+        $commission = new PaymentCommission([
+            'source_global_payment_id' => $global->id,
+            'currency_type_id' => $row['currency_type_id'],
+            'date_of_payment' => $row['date'],
+            'amount' => $calculation['amount'],
+        ]);
+        $commission->calculation_snapshot = $calculation['calculation_snapshot'];
+        $commission->save();
+        $commission->setRelation('sourceMovement', $global);
+        $movement = $commission->global_payment()->make([
+            'destination_id' => $global->destination_id, 'destination_type' => $global->destination_type,
+            'user_id' => $global->user_id, 'fiscal_environment' => $global->fiscal_environment,
+        ]);
+        $movement->setRelation('payment', $commission);
+        $movement->save();
+    }
+
     public static function preload($payments): void
     {
         $payments->pluck('payment')->filter()->groupBy(fn($model)=>get_class($model))->each(function($models) {
             $models=new \Illuminate\Database\Eloquent\Collection($models->all());
             $first=$models->first();
+            if ($first instanceof PaymentCommission) {
+                $models->loadMissing('sourceMovement.payment');
+                return;
+            }
             $relation=$first instanceof CashTransaction ? 'cash' : 'associated_record_payment';
             if ($first instanceof \Modules\Hotel\Models\HotelRentItemPayment) $relation.='.hotel_rent';
             if (method_exists($first,explode('.',$relation)[0])) $models->loadMissing($relation);
@@ -76,6 +119,20 @@ final class Movement
         if ($db->transactionLevel() === 0) throw new \LogicException('El movimiento financiero requiere una transacción.');
         $source = $global->payment;
         if (!$source) Classification::error('payment', 'No existe el pago del movimiento financiero.');
+        if ($source instanceof PaymentCommission) {
+            $origin = $source->sourceMovement;
+            if (!$origin || $origin->destination_type !== BankAccount::class
+                || $global->destination_type !== $origin->destination_type || (string)$global->destination_id !== (string)$origin->destination_id) {
+                Classification::error('payment', 'La comisión requiere el movimiento bancario original.');
+            }
+            $context = $origin->report_context;
+            $context['direction'] = 'egress';
+            $context['method']['description'] = 'Comisión bancaria · '.$context['method']['description'];
+            $context['commission_source_id'] = $origin->id;
+            $global->cash_session_id = $origin->cash_session_id;
+            $global->report_context = $context;
+            return;
+        }
         if ($source instanceof DocumentPayment && ($source->receipt_parent_id || !empty($source->payment_method_snapshot['receipt_origin']))) Classification::error('payment', 'Un recibo derivado no representa otra recepción de dinero.');
         if ($source instanceof \App\Models\Tenant\SaleNotePayment && !empty($source->payment_method_snapshot['receipt_origin'])) {
             Classification::error('payment', 'Una aplicación de un cobro previo no representa otra recepción de dinero.');
@@ -117,8 +174,14 @@ final class Movement
             $cash = Cash::query()->whereKey($global->destination_id)->lockForUpdate()->first();
         } else {
             if ($global->destination_type !== BankAccount::class) Classification::error('payment_destination_id', 'Seleccione la cuenta donde se recibió o desembolsó el dinero.');
+            if ($method instanceof PaymentMethodType && (!$method->bank_account_id || (string) $method->bank_account_id !== (string) $global->destination_id)) {
+                Classification::error('payment_destination_id', 'El destino debe ser la cuenta configurada en el método.');
+            }
             $account = BankAccount::query()->whereKey($global->destination_id)->lockForUpdate()->first();
             if (!$account || !(bool)$account->status || $account->currency_type_id !== $currency) Classification::error('payment_destination_id', 'La cuenta debe existir en el tenant y tener la misma moneda del pago.');
+            $classification['bank_id'] = $account->bank_id;
+            $classification['bank_account_number'] = $account->number;
+            $classification['bank_name'] = $account->bank_id === null ? null : $db->table('banks')->where('id', $account->bank_id)->value('description');
             $user = $global->user_id ?? $parent->user_id;
             $cash = Cash::query()->where('user_id', $user)->where('state', true)->lockForUpdate()->first();
         }
@@ -164,11 +227,14 @@ final class Movement
         if (($context['version'] ?? null) !== 2 || isset($context['reversal'])) return null;
         $source = $global->payment;
         if (!$source) throw new \RuntimeException('Falta el origen del movimiento '.$global->id);
+        if ($source instanceof PaymentCommission && (!$source->sourceMovement || !self::row($source->sourceMovement))) return null;
         if ($source->reversed_at || ($source instanceof DocumentPayment && $source->receipt_parent_id)) return null;
         $parent = $source instanceof CashTransaction ? $source->cash : ($source->associated_record_payment ?? $source);
         if ($source instanceof \Modules\Hotel\Models\HotelRentItemPayment) $parent=$parent->hotel_rent;
         if (method_exists($parent, 'isVoidedOrRejected') && $parent->isVoidedOrRejected()) return null;
-        if ($source instanceof \App\Models\Tenant\TransferAccountPayment) {
+        if ($source instanceof PaymentCommission) {
+            $principal=D::readRequired($source, 'amount'); $tax=D::of(0);
+        } elseif ($source instanceof \App\Models\Tenant\TransferAccountPayment) {
             $principal=D::readRequired($source,'amount')->abs();$tax=D::of(0);
         } elseif ($source instanceof DocumentPayment) {
             $principal = D::readRequired($source, 'original_amount');

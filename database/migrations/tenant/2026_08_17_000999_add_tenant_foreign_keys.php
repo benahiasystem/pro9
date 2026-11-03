@@ -12,11 +12,12 @@ return new class extends Migration
         DB::unprepared("ALTER TABLE `cat_iva_rate_types` ADD CONSTRAINT `cat_iva_rate_types_tax_kind_foreign` FOREIGN KEY (`tax_kind`) REFERENCES `cat_taxes_types` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT");
         // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
         // ######## INICIO MONEDA E IMPUESTO DE MEDIOS ########
-        DB::unprepared("ALTER TABLE `payment_method_types` ADD CONSTRAINT `payment_method_currency_fk` FOREIGN KEY (`currency_type_id`) REFERENCES `cat_currency_types` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT, ADD CONSTRAINT `payment_method_tax_fk` FOREIGN KEY (`iva_rate_type_id`) REFERENCES `cat_iva_rate_types` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT");
+        DB::unprepared("ALTER TABLE `payment_method_types` ADD CONSTRAINT `payment_method_currency_fk` FOREIGN KEY (`currency_type_id`) REFERENCES `cat_currency_types` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT, ADD CONSTRAINT `payment_method_tax_fk` FOREIGN KEY (`iva_rate_type_id`) REFERENCES `cat_iva_rate_types` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT, ADD CONSTRAINT `payment_method_bank_account_fk` FOREIGN KEY (`bank_account_id`) REFERENCES `bank_accounts` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT");
         // ######## FIN MONEDA E IMPUESTO DE MEDIOS ########
         // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
         DB::unprepared("ALTER TABLE cash_currency_balances ADD CONSTRAINT cash_currency_balances_cash_fk FOREIGN KEY (cash_id) REFERENCES cash(id), ADD CONSTRAINT cash_currency_balances_currency_fk FOREIGN KEY (currency_type_id) REFERENCES cat_currency_types(id)");
         DB::unprepared("ALTER TABLE global_payments ADD CONSTRAINT global_payments_cash_session_fk FOREIGN KEY (cash_session_id) REFERENCES cash(id)");
+        DB::unprepared("ALTER TABLE payment_commissions ADD CONSTRAINT payment_commissions_source_fk FOREIGN KEY (source_global_payment_id) REFERENCES global_payments(id) ON DELETE RESTRICT, ADD CONSTRAINT payment_commissions_currency_fk FOREIGN KEY (currency_type_id) REFERENCES cat_currency_types(id) ON DELETE RESTRICT");
         DB::unprepared("ALTER TABLE received_payments ADD CONSTRAINT received_payments_currency_fk FOREIGN KEY (currency_type_id) REFERENCES cat_currency_types(id) ON DELETE RESTRICT");
         DB::unprepared("ALTER TABLE transfer_account_payments ADD CONSTRAINT transfer_account_currency_fk FOREIGN KEY (currency_type_id) REFERENCES cat_currency_types(id) ON DELETE RESTRICT");
         // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
@@ -591,6 +592,7 @@ return new class extends Migration
         DB::unprepared("ALTER TABLE transfer_account_payments DROP FOREIGN KEY transfer_account_currency_fk");
         DB::unprepared("ALTER TABLE received_payments DROP FOREIGN KEY received_payments_currency_fk");
         DB::unprepared("ALTER TABLE global_payments DROP FOREIGN KEY global_payments_cash_session_fk");
+        DB::unprepared("ALTER TABLE payment_commissions DROP FOREIGN KEY payment_commissions_source_fk, DROP FOREIGN KEY payment_commissions_currency_fk");
         DB::unprepared("ALTER TABLE cash_currency_balances DROP FOREIGN KEY cash_currency_balances_currency_fk, DROP FOREIGN KEY cash_currency_balances_cash_fk");
         // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
         // ######## INICIO NOTAS HKA ########
@@ -1143,7 +1145,7 @@ return new class extends Migration
         DB::unprepared("ALTER TABLE `authorized_discount_users` DROP FOREIGN KEY `authorized_discount_users_user_id_foreign`");
         DB::unprepared("ALTER TABLE `authorized_discount_users` DROP FOREIGN KEY `authorized_discount_users_seller_id_foreign`");
         // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
-        DB::unprepared("ALTER TABLE `payment_method_types` DROP FOREIGN KEY `payment_method_tax_fk`, DROP FOREIGN KEY `payment_method_currency_fk`");
+        DB::unprepared("ALTER TABLE `payment_method_types` DROP FOREIGN KEY `payment_method_bank_account_fk`, DROP FOREIGN KEY `payment_method_tax_fk`, DROP FOREIGN KEY `payment_method_currency_fk`");
         DB::unprepared("ALTER TABLE `cat_iva_rate_types` DROP FOREIGN KEY `cat_iva_rate_types_tax_kind_foreign`");
         // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
     }

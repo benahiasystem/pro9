@@ -24,7 +24,7 @@ class ReceivedPaymentClaimRequest extends FormRequest
         return [
             'document_id'            => ['required', 'integer', 'exists:tenant.documents,id'],
             'payment_method_type_id' => ['required', Rule::exists('tenant.payment_method_types', 'id')->where('is_active', 1)],
-            'payment_destination_id' => ['required'],
+            'payment_destination_id' => ['nullable'],
             'currency_type_id' => ['sometimes', Rule::in(['VES', 'USD'])],
             'exchange_rate' => ['sometimes', 'numeric', 'gt:0'],
             'exchange_rate_source' => ['nullable', 'string', 'max:255'],

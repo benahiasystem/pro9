@@ -88,6 +88,9 @@ Mantener los IDs existentes y selector exclusivo por tipo: NC01 anulación,07 de
 
 ## Moneda e impuesto del método de pago
 
+- Un método bancario activo requiere cuenta fija activa en su moneda. Los métodos bancarios iniciales se siembran inactivos y sin cuenta; no se crean cuentas ficticias. El servidor verifica banco, cuenta y moneda y congela su configuración en cada cobro.
+- La comisión opcional se calcula sobre el ingreso real total, incluido IGTF, como el mayor entre porcentaje y mínimo, y se liquida a centavos. Una comisión mayor al ingreso rechaza toda la operación. El egreso financiero vinculado se registra una sola vez, conserva la moneda y acompaña la reversión; no modifica el saldo del cliente. Gastos conserva su catálogo separado y los egresos no generan comisiones automáticas.
+
 - Cada método tiene `currency_type_id` obligatorio con FK al catálogo de monedas; los IDs iniciales 10 y 13 usan USD y los demás VES. La moneda se selecciona entre activas, con VES por defecto al crear. Para efectivo, sincronizar `cash_currency_type_id`.
 - `iva_rate_type_id` es opcional y referencia exclusivamente IGTF. Esta asociación es informativa y no habilita ni altera el cálculo de IGTF. Conservar snapshots de cobros y aplicar el esquema sólo a instalaciones nuevas.
 

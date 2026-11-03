@@ -32,12 +32,38 @@
                     <div class="col-md-4">
                         <div class="form-group">
                         <label class="control-label">Moneda</label>
-                        <el-select v-model="form.currency_type_id" @change="clearIncompatibleHka" placeholder="Seleccione una moneda">
+                        <el-select v-model="form.currency_type_id" @change="changeCurrency" placeholder="Seleccione una moneda">
                             <el-option v-for="currency in currencyTypes" :key="currency.id" :value="currency.id" :label="currency.description + ' (' + currency.symbol + ')'" />
                         </el-select>
                         <small class="text-danger" v-if="errors.currency_type_id">{{ errors.currency_type_id[0] }}</small>
                         </div>
                     </div>
+                    <template v-if="form.collection_kind === 'account'">
+                        <div class="col-md-4 form-group">
+                            <label class="control-label">Banco</label>
+                            <el-select v-model="form.bank_id" @change="form.bank_account_id = null" placeholder="Seleccione un banco">
+                                <el-option v-for="bank in banks" :key="bank.id" :value="bank.id" :label="bank.description" />
+                            </el-select>
+                            <small class="text-danger" v-if="errors.bank_id">{{ errors.bank_id[0] }}</small>
+                        </div>
+                        <div class="col-md-4 form-group">
+                            <label class="control-label">Número de cuenta</label>
+                            <el-select v-model="form.bank_account_id" placeholder="Seleccione una cuenta">
+                                <el-option v-for="account in compatibleAccounts" :key="account.id" :value="account.id" :label="account.number + ' - ' + account.description" />
+                            </el-select>
+                            <small class="text-danger" v-if="errors.bank_account_id">{{ errors.bank_account_id[0] }}</small>
+                        </div>
+                        <div class="col-md-4 form-group">
+                            <label class="control-label">% Comisión</label>
+                            <el-input v-model="form.commission_percentage" placeholder="Opcional" />
+                            <small class="text-danger" v-if="errors.commission_percentage">{{ errors.commission_percentage[0] }}</small>
+                        </div>
+                        <div class="col-md-4 form-group">
+                            <label class="control-label">Comisión mínima por transacción ({{ form.currency_type_id }})</label>
+                            <el-input v-model="form.minimum_commission" placeholder="Opcional" />
+                            <small class="text-danger" v-if="errors.minimum_commission">{{ errors.minimum_commission[0] }}</small>
+                        </div>
+                    </template>
                     <div v-if="fiscalEmissionMode === 'digital'" class="col-md-4">
                         <div class="form-group">
                         <label class="control-label">Medio fiscal</label>
@@ -50,7 +76,7 @@
                     </div>
                     <div class="col-md-4">
                         <div class="form-group">
-                        <label class="control-label">Impuesto</label>
+                        <label class="control-label">Impuesto asociado — informativo</label>
                         <div class="tax-controls">
                         <button v-if="!showTax" type="button" class="btn btn-sm btn-info" aria-label="Agregar impuesto" @click="showTax = true">+</button>
                         <template v-else>
@@ -60,6 +86,7 @@
                             <button type="button" class="btn btn-sm btn-danger" aria-label="Quitar impuesto" @click="removeTax">×</button>
                         </template>
                         </div>
+                        <small class="text-muted d-block">Seleccionar IGTF aquí no activa su cobro. El porcentaje del catálogo es informativo; se usa la tasa fiscal de la empresa y los datos reales del pago.</small>
                         <small class="text-danger" v-if="errors.iva_rate_type_id">{{ errors.iva_rate_type_id[0] }}</small>
                         </div>
                     </div>
@@ -91,6 +118,8 @@
                 errors: {},
                 form: {},
                 currencyTypes: [],
+                banks: [],
+                bankAccounts: [],
                 taxes: [],
                 hkaPaymentMethods: [],
                 fiscalEmissionMode: null,
@@ -103,6 +132,9 @@
             this.initForm()
         },
         computed: {
+            compatibleAccounts() {
+                return this.bankAccounts.filter(account => String(account.bank_id) === String(this.form.bank_id) && account.currency_type_id === this.form.currency_type_id)
+            },
             compatibleHkaMethods() {
                 return this.hkaPaymentMethods.filter(option => option.kinds.includes(this.form.collection_kind)
                     && (!option.currencies.length || option.currencies.includes(this.form.currency_type_id)))
@@ -113,6 +145,11 @@
             },
         },
         methods: {
+            changeCurrency() {
+                this.form.bank_account_id = null
+                this.form.minimum_commission = null
+                this.clearIncompatibleHka()
+            },
             clearIncompatibleHka() {
                 if (this.incompatibleHka) this.form.hka_code = null
             },
@@ -122,6 +159,9 @@
             },
             removeTax() { this.showTax = false; this.form.iva_rate_type_id = null },
             changeCollectionKind() {
+                if (this.form.collection_kind !== 'account') {
+                    this.form.bank_id = this.form.bank_account_id = this.form.commission_percentage = this.form.minimum_commission = null
+                }
                 this.form.is_credit = this.form.collection_kind === 'credit' ? 1 : 0
                 if (this.form.collection_kind === 'unclassified') this.form.is_active = false
                 this.clearIncompatibleHka()
@@ -134,6 +174,10 @@
                     description: null,
                     collection_kind: 'account',
                     currency_type_id: 'VES',
+                    bank_id: null,
+                    bank_account_id: null,
+                    commission_percentage: null,
+                    minimum_commission: null,
                     hka_code: null,
                     iva_rate_type_id: null,
                     is_active: true,
@@ -152,6 +196,8 @@
                     const data = tables.data
                     if (!['digital', 'fiscal_machine', 'free_form'].includes(data.fiscal_emission_mode)) throw new Error('Modalidad fiscal desconocida')
                     this.currencyTypes = data.currency_types
+                    this.banks = data.banks
+                    this.bankAccounts = data.bank_accounts
                     this.taxes = data.taxes
                     this.hkaPaymentMethods = data.hka_payment_methods
                     this.fiscalEmissionMode = data.fiscal_emission_mode
