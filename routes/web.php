@@ -99,6 +99,9 @@ if ($hostname) {
             Route::get('companies/create', 'Tenant\CompanyController@create')->name('tenant.companies.create')->middleware('redirect.level');
             Route::get('companies/tables', 'Tenant\CompanyController@tables');
             Route::get('companies/record', 'Tenant\CompanyController@record');
+            Route::get('companies/{id}/rif-document', 'Tenant\CompanyRifDocumentController@show')->where('id', '[0-9]+');
+            Route::post('companies/{id}/rif-document', 'Tenant\CompanyRifDocumentController@store')->where('id', '[0-9]+');
+            Route::get('companies/{id}/rif-document/download', 'Tenant\CompanyRifDocumentController@download')->where('id', '[0-9]+');
             // ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
             // ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
             Route::get('companies/igtf', 'Tenant\DocumentFiscalController@settings');

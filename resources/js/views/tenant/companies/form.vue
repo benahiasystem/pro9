@@ -365,10 +365,10 @@
                                    type="primary">Guardar
                         </el-button>
                     </div>
-                <fiscal-profile-editor kind="company" :entity-id="form.id" />
                 </form>
             </div>
         </div>
+        <fiscal-profile-editor kind="company" :entity-id="form.id" />
         <div class="card card-config">
             <div class="card-header bg-info">
                 <h3 class="my-0">Consulta integrada de CPE - Validador de documentos
