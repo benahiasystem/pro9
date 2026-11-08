@@ -47,7 +47,7 @@ class ReportKardexController extends Controller
             ->get();
 
         $reports = Kardex::query()
-            ->with(['document', 'purchase', 'item' => function ($queryItem) {
+            ->with(['document', 'purchase', 'purchase_settlement', 'sale_note', 'item' => function ($queryItem) {
                 return $queryItem->where('item_type_id', '01');
             }])
             ->where('item_id', $request->item_id)
@@ -70,7 +70,7 @@ class ReportKardexController extends Controller
         $establishment = Establishment::first();
 
         $reports = Kardex::query()
-            ->with(['document', 'purchase', 'item' => function ($queryItem) {
+            ->with(['document', 'purchase', 'purchase_settlement', 'sale_note', 'item' => function ($queryItem) {
                 return $queryItem->where('item_type_id', '01');
             }])
             ->where('item_id', $request->item_id)
@@ -95,7 +95,7 @@ class ReportKardexController extends Controller
         $establishment = Establishment::first();
 
         $records = Kardex::query()
-            ->with(['document', 'purchase', 'item' => function ($queryItem) {
+            ->with(['document', 'purchase', 'purchase_settlement', 'sale_note', 'item' => function ($queryItem) {
                 return $queryItem->where('item_type_id', '01');
             }])
             ->where('item_id', $request->item_id)

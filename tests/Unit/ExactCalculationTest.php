@@ -7,6 +7,16 @@ use PHPUnit\Framework\TestCase;
 
 class ExactCalculationTest extends TestCase
 {
+    public function test_decimal_reads_stored_attributes_before_float_casts_and_prefers_snapshots(): void
+    {
+        $record = new class extends \Illuminate\Database\Eloquent\Model { protected $casts = ['amount'=>'float']; };
+        $record->setRawAttributes(['amount'=>'123456789012345.123456789012']);
+        self::assertNotSame('123456789012345.123456789012', (string)$record->amount);
+        self::assertSame('123456789012345.123456789012',Decimal::represent(Decimal::readRequired($record,'amount')));
+        $record->setRawAttributes(['amount'=>'0.333333333333',
+            'calculation_snapshot'=>json_encode(Decimal::snapshot(['amount'=>['n'=>'1','d'=>'3']]))]);
+        self::assertSame(['n'=>'1','d'=>'3'],Decimal::fraction(Decimal::readRequired($record,'amount')));
+    }
     public function test_shared_php_javascript_cases_preserve_normalized_fractions(): void
     {
         foreach (json_decode(file_get_contents(__DIR__.'/../Fixtures/exact-calculations.json'),true,512,JSON_THROW_ON_ERROR) as $case) {

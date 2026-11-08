@@ -20,6 +20,37 @@ class Template
         $fiscal = \App\Services\Fiscal\FiscalPdfData::forDocument($document);
         $company = \App\Services\Fiscal\FiscalPdfData::issuerForPrint($company, $fiscal);
         $html = self::render($path_template, $company, $document, $configuration);
+        if ($template === 'sale_note' && $document instanceof \App\Models\Tenant\SaleNote
+            && in_array($format_pdf, ['a4','a5'], true)
+            && in_array($base_template, ['default','modern-2027','marca_de_agua','Plantilla_personalizable'], true)
+            && in_array((string) $document->payment_condition_id, ['02','03'], true) && $document->payments->isEmpty()) {
+            $balance='<table class="full-width">'.view('pdf.partials.sale_note_balance', [
+                'payments'=>$document->payments, 'document'=>$document,
+            ])->render().'</table>';
+            $bodyEnd=stripos($html,'</body>');
+            $html=$bodyEnd === false ? $html.$balance : substr_replace($html,$balance,$bodyEnd,0);
+        }
+        // El marcador sólo aparece si la plantilla realmente muestra el precio unitario.
+        // Los PDF originales del proveedor se gestionan fuera de esta plantilla.
+        $visiblePriceItems=null;
+        if (in_array($template, ['invoice','sale_note'], true) && $format_pdf === 'ticket' && in_array($base_template, ['default','modern-2027','marca_de_agua','Plantilla_personalizable','nrus'], true)) {
+            if ($template === 'invoice') {
+                $visiblePriceItems=\App\Support\Exact\PdfInvoiceGroups::split($document)['individual'];
+            } elseif ($template === 'sale_note') {
+                $visiblePriceItems=collect($document->items)->filter(fn ($row) => empty($row->item->esFusionado));
+            }
+        }
+        if (in_array($template, ['invoice','sale_note'], true) && in_array($format_pdf, ['a4','a5','ticket','ticket_50','ticket_58','ticket_80'], true)
+            && str_contains($html, 'data-pdf-unit-price')
+            && (str_contains($html,'data-pdf-group-rounded') ||
+                \App\Support\Exact\PdfPrice::needsRoundingNotice($visiblePriceItems ?? $document->items, \App\Models\Tenant\Configuration::getDataDecimalQuantity()))) {
+            $lastPrice=strrpos($html,'data-pdf-unit-price');
+            $tableEnd=stripos($html,'</table>',$lastPrice);
+            if ($tableEnd!==false) {
+                $notice='<div data-pdf-unit-price-rounding style="font-size: 8px; margin-top: 3px;">El precio unitario mostrado está redondeado; los importes se calculan con su valor exacto.</div>';
+                $html=substr_replace($html,$notice,$tableEnd+8,0);
+            }
+        }
         if (($document->document_type_id ?? null) === '01' && \App\Services\ThirdPartyInvoicePolicy::isThirdParty($document)) {
             $third = (array) $document->fiscal_data->third_party;
             $thirdIdentity = view('pdf.partials.third_party_identity', compact('third'))->render();
@@ -45,6 +76,9 @@ class Template
                     : $profileHtml.$html;
             }
             $identity = view('pdf.partials.fiscal_identity', compact('fiscal'))->render();
+            if ($document instanceof \App\Models\Tenant\Document && $referenceControl=\App\Services\Fiscal\NoteReferenceControl::forDocument($document)) {
+                $identity .= view('pdf.partials.note_reference_control',compact('referenceControl'))->render();
+            }
             if (preg_match('/<body\b[^>]*>/i', $html)) {
                 $html = preg_replace_callback('/<body\b[^>]*>/i', fn ($match) => $match[0] . $identity, $html, 1);
             } else {

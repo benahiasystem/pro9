@@ -111,6 +111,8 @@ if ($hostname) {
             Route::post('documents/payment-quote', 'Tenant\DocumentPaymentQuoteController@__invoke');
             Route::post('companies/igtf', 'Tenant\DocumentFiscalController@settingsStore');
             Route::post('documents/{document}/prepare-hka', 'Tenant\DocumentFiscalController@prepare');
+            Route::post('documents/{document}/free-form-control', 'Tenant\DocumentFiscalController@registerFreeFormControl');
+            Route::get('documents/{document}/free-form-control', 'Tenant\DocumentFiscalController@freeFormControl');
             Route::post('documents/{document}/send-hka', 'Tenant\DocumentFiscalController@sendHka');
             Route::post('documents/{document}/query-hka-email', 'Tenant\DocumentFiscalController@queryHkaEmail');
             Route::get('documents/{external_id}/download-pdf/{format}', 'Tenant\DocumentPdfController@download')->where('format', 'a4|a5|ticket');
@@ -654,7 +656,9 @@ if ($hostname) {
             Route::get('purchases/item/tables', 'Tenant\PurchaseController@item_tables');
             // Route::get('documents/table/{table}', 'Tenant\DocumentController@table');
 
-            Route::delete('purchases/destroy_purchase_item/{purchase_item}', 'PurchaseController@destroy_purchase_item');
+            // ######## INICIO CONTROLADOR DE PARTIDAS DE COMPRA ########
+            Route::delete('purchases/destroy_purchase_item/{purchase_item}', 'Tenant\PurchaseController@destroy_purchase_item');
+            // ######## FIN CONTROLADOR DE PARTIDAS DE COMPRA ########
 
             //quotations
             Route::get('quotations', 'Tenant\QuotationController@index')->name('tenant.quotations.index')->middleware('redirect.level');

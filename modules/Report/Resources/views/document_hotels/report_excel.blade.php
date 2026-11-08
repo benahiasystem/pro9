@@ -1,99 +1,17 @@
-<!DOCTYPE html>
-<html lang="es">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta http-equiv="Content-Type" content="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet; charset=utf-8" />
-        <meta http-equiv="X-UA-Compatible" content="ie=edge">
-        <title>RH</title>
-    </head>
-    <body>
-        <div>
-            <h3 align="center" class="title"><strong>Reporte Hoteles</strong></h3>
-        </div>
-        <br>
-        <div style="margin-top:20px; margin-bottom:15px;">
-            <table>
-                <tr>
-                    <td>
-                        <p><b>Empresa: </b></p>
-                    </td>
-                    <td align="center">
-                        <p>@include('partials.report_company_header', ['showEmpresaLabel' => false])</p>
-                    </td>
-                    <td>
-                        <p><strong>Fecha: </strong></p>
-                    </td>
-                    <td align="center">
-                        <p><strong>{{date('Y-m-d')}}</strong></p>
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        <p><strong>RIF: </strong></p>
-                    </td>
-                    <td align="center">{{$company->number}}</td>
-                  
-                </tr>
-            </table>
-        </div>
-        <br>
-        @if(!empty($records))
-            <div class="">
-                <div class=" ">
-                    <table class="">
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th >Nombres y Apellidos</th>
-                                <th>Tipo doc. Indetidad</th>
-                                <th>Número</th>
-                                <th>Sexo</th>
-                                <th >Ocupación</th>
-                                <th >Edad</th>
-                                <th >E. Civil</th>
-                                <th >Nacionalidad</th>
-                                <th >Procedencia</th>
-                                <th>N° Habitación</th>
-                                <th>F. Ingreso</th>
-                                <th>H .Ingreso</th>
-                                <th>F. Salida</th>
-                                <th>H .Salida</th>
-                                <th >Comprobante</th> 
-                                <th >Total</th> 
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($records as $key => $value)
-                            <tr>
-                                <td>{{$loop->iteration}}</td>
-                                <td>{{$value->name}}</td>
-                                <td>{{$value->identity_document_type->description}}</td>
-                                <td>{{$value->number}}</td>
-                                <td>{{$value->sex}}</td>
-                                <td>{{$value->ocupation}}</td>
-                                <td >{{ $value->age }}</td>
-                                <td >{{ $value->civil_status }}</td>
-                                <td >{{ $value->nacionality }}</td>
-                                <td>{{ $value->origin}}</td>
-                                <td>{{ $value->room_number}}</td>
-                                <td>{{ $value->date_entry}}</td>
-                                <td>{{ $value->time_entry}}</td>
-                                <td>{{ $value->date_exit}}</td>
-                                <td>{{ $value->time_exit}}</td>
-                                <td>{{ $value->document->number_full}}</td>
-                                <td>{{ $value->document->total}}</td>
-                        
-                            </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        @else
-            <div>
-                <p>No se encontraron registros.</p>
-            </div>
-        @endif
-    </body>
-</html>
+<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Reporte de huéspedes</title></head><body>
+<h3>Reporte de huéspedes y comprobantes</h3>
+<p>@include('partials.report_company_header') &nbsp; RIF: {{ $company->number }}</p>
+<p>El total corresponde al importe original del comprobante, incluso si fue anulado o rechazado.</p>
+<table><thead><tr><th>ID registro</th><th>Nombre</th><th>Tipo de identidad</th><th>Número</th><th>Sexo</th><th>Ocupación</th><th>Edad</th><th>Estado civil</th><th>Nacionalidad</th><th>Procedencia</th><th>Habitación</th><th>Entrada</th><th>Hora de entrada</th><th>Salida</th><th>Hora de salida</th><th>Comprobante</th><th>Estado</th><th>Moneda</th><th>Total original del comprobante</th></tr></thead><tbody>
+@foreach($records as $hotel)
+@php $document=$hotel->document; @endphp
+<tr><td>{{ $hotel->id }}</td><td data-type="s">{{ $hotel->name }}</td><td data-type="s">{{ optional($hotel->identity_document_type)->description }}</td>
+<td data-type="s">{{ $hotel->number }}</td><td data-type="s">{{ $hotel->sex }}</td><td data-type="s">{{ $hotel->ocupation }}</td><td>{{ $hotel->age }}</td><td data-type="s">{{ $hotel->civil_status }}</td>
+<td data-type="s">{{ $hotel->nacionality }}</td><td data-type="s">{{ $hotel->origin }}</td><td>{{ $hotel->room_number }}</td>
+<td data-type="s">{{ $hotel->date_entry }}</td><td data-type="s">{{ $hotel->time_entry }}</td><td data-type="s">{{ $hotel->date_exit }}</td><td data-type="s">{{ $hotel->time_exit }}</td>
+<td data-type="s">{{ $document->number_full }}</td><td data-type="s">{{ optional($document->state_type)->description }}</td><td data-type="s">{{ $document->currency_type_id }}</td>
+<td data-type="s" style="mso-number-format:'\@'">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\Decimal::readRequired($document,'total'),2,'.','') }}</td></tr>
+@endforeach
+</tbody></table>
+@if($records->isEmpty())<p>No se encontraron registros.</p>@endif
+</body></html>

@@ -102,7 +102,8 @@ class EvolutionSender
         }
 
         try {
-            $pdfBinary = $this->getStorage($filenameBase, 'pdf');
+            $pdfBinary = \App\Services\Fiscal\CurrentFreeFormPdf::bytesForFilename($filenameBase)
+                ?? $this->getStorage($filenameBase, 'pdf');
         } catch (\Throwable $e) {
             Log::error('[WhatsAppBot] No se pudo leer el PDF del storage', [
                 'filename' => $filenameBase,

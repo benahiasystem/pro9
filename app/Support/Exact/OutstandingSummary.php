@@ -46,6 +46,12 @@ final class OutstandingSummary
         }
         $values['consolidated_total_ves'] = $values['VES_total']->plus($usdVesTotal)->simplified();
         $values['consolidated_balance_ves'] = $values['VES_balance']->plus($usdVesBalance)->simplified();
+        // Separately rounded currency subtotals can differ by a cent from the rounded exact consolidated total.
+        foreach (['total'=>$usdVesTotal,'balance'=>$usdVesBalance] as $name=>$usdEquivalent) {
+            $rounded=fn($value)=>Decimal::of(Decimal::represent($value,2));
+            $values['rounding_adjustment_'.$name.'_ves']=$rounded($values['consolidated_'.$name.'_ves'])
+                ->minus($rounded($values['VES_'.$name]))->minus($rounded($usdEquivalent));
+        }
         return array_merge(Decimal::values($values), ['count'=>$count, 'calculation_snapshot'=>Decimal::snapshot($values)]);
     }
 }

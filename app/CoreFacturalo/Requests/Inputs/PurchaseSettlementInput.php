@@ -107,6 +107,10 @@ class PurchaseSettlementInput
                     'total_taxes' => $row['total_taxes'],
                     'total_value' => $row['total_value'],
                     'total' => $row['total'],
+                    'discounts' => $row['discounts'] ?? [],
+                    'charges' => $row['charges'] ?? [],
+                    'quantity_input' => $row['quantity_input'] ?? null,
+                    'price_input' => $row['price_input'] ?? null,
                 ];
             }
 

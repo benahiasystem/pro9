@@ -51,15 +51,16 @@ class ReportQuotationController extends Controller
 
     public function records(Request $request)
     {
-        $records = $this->getRecords($request->all(), Quotation::class);
-
-        return new QuotationCollection($records->paginate(config('tenant.items_per_page')));
+        return \App\Support\Exact\ReadSnapshot::run((new Quotation)->getConnection(), function () use ($request) {
+            $records = $this->getRecords($request->all(), Quotation::class);
+            return (new QuotationCollection($records->paginate(config('tenant.items_per_page'))))->response($request);
+        });
     }
 
 
 
     public function pdf(Request $request) {
-
+        return \App\Support\Exact\ReadSnapshot::run((new Quotation)->getConnection(), function () use ($request) {
         $company = Company::first();
         $establishment = ($request->establishment_id) ? Establishment::findOrFail($request->establishment_id) : auth()->user()->establishment;
         $records = $this->getRecords($request->all(), Quotation::class)->get();
@@ -70,13 +71,14 @@ class ReportQuotationController extends Controller
         $filename = 'Reporte_Cotizaciones_'.date('YmdHis');
 
         return $pdf->download($filename.'.pdf');
+        });
     }
 
 
 
 
     public function excel(Request $request) {
-
+        return \App\Support\Exact\ReadSnapshot::run((new Quotation)->getConnection(), function () use ($request) {
         $company = Company::first();
         $establishment = ($request->establishment_id) ? Establishment::findOrFail($request->establishment_id) : auth()->user()->establishment;
 
@@ -89,6 +91,7 @@ class ReportQuotationController extends Controller
                 ->establishment($establishment)
                 ->filters($filters)
                 ->download('Reporte_Cotizaciones_'.Carbon::now().'.xlsx');
+        });
 
     }
 }

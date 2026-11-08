@@ -44,8 +44,9 @@ final class NoteAdjustment
                 $record->diagnostic='Reversión solicitada. Su efecto se conserva hasta acreditar ausencia en HKA.'; $record->save();
             } elseif ($data['kind'] === 'fund') {
                 $fund=$invoice->guarantee_fund()->lockForUpdate()->findOrFail($data['source_id']);
-                $amount=isset($data['amount']) ? D::of(D::input($data['amount'],'amount')) : D::of($invoice->guarantee_amount);
-                if ($amount->isLessThanOrEqualTo(0) || $amount->isGreaterThan(D::min($invoice->guarantee_amount,$note->exactValue('total')->minus(D::sum(DocumentNoteAdjustment::where('document_id',$note->id)->where('kind','fund')->where('status','applied')->get()->map(fn($r)=>$r->exactValue('amount'))))))) FiscalAmounts::error('amount','El ajuste supera el fondo disponible o la NC.');
+                $available=$invoice->exactGuaranteeAmount(true);
+                $amount=isset($data['amount']) ? D::of(D::input($data['amount'],'amount')) : $available;
+                if ($amount->isLessThanOrEqualTo(0) || $amount->isGreaterThan(D::min($available,$note->exactValue('total')->minus(D::sum(DocumentNoteAdjustment::where('document_id',$note->id)->where('kind','fund')->where('status','applied')->get()->map(fn($r)=>$r->exactValue('amount'))))))) FiscalAmounts::error('amount','El ajuste supera el fondo disponible o la NC.');
                 $values+=['guarantee_fund_id'=>$fund->id,'amount'=>$amount];
                 $values['status']='applied'; $values['context']['original_fund']=$fund->toArray();
                 $values['diagnostic']='Aplicación del fondo reducida con trazabilidad, sin salida de efectivo.';
@@ -74,14 +75,20 @@ final class NoteAdjustment
 
     public static function resumeInvoice(Document $invoice): void
     {
-        foreach (DocumentNoteAdjustment::where('affected_document_id',$invoice->id)->whereIn('kind',['IVA','ISLR'])->where('status','pending')->get() as $adjustment) {
-            $retention=DocumentReceivedRetention::find($adjustment->retention_id);
-            if ($retention && $retention->application_status === 'reversed') {
-                $remaining=FiscalNote::remaining($invoice,$adjustment->kind === 'IVA' ? 'total_igv':'total_value');
-                $adjustment->update(['status'=>$remaining > 0 ? 'awaiting_support':'applied',
-                    'diagnostic'=>$remaining > 0 ? 'Reversión conciliada. Registre el comprobante corregido real con su soporte.':'Reversión completa conciliada; la factura no conserva base para un reemplazo.']);
+        $invoice->getConnection()->transaction(function () use ($invoice) {
+            Company::query()->lockForUpdate()->firstOrFail();
+            $current=Document::query()->lockForUpdate()->findOrFail($invoice->id);
+            $adjustments=DocumentNoteAdjustment::where('affected_document_id',$current->id)
+                ->whereIn('kind',['IVA','ISLR'])->where('status','pending')->lockForUpdate()->get();
+            foreach ($adjustments as $adjustment) {
+                $retention=DocumentReceivedRetention::query()->lockForUpdate()->find($adjustment->retention_id);
+                if ($retention && $retention->application_status === 'reversed') {
+                    $hasRemaining=FiscalNote::remainingExact($current,$adjustment->kind === 'IVA' ? 'total_igv':'total_value',true)->isGreaterThan(0);
+                    $adjustment->update(['status'=>$hasRemaining ? 'awaiting_support':'applied',
+                        'diagnostic'=>$hasRemaining ? 'Reversión conciliada. Registre el comprobante corregido real con su soporte.':'Reversión completa conciliada; la factura no conserva base para un reemplazo.']);
+                }
             }
-        }
+        });
     }
 
     public static function replace(Document $note,DocumentNoteAdjustment $adjustment,array $input): void

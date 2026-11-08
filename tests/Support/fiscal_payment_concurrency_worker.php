@@ -41,13 +41,51 @@ App\Models\Tenant\Document::observe(App\Observers\DocumentObserver::class);
 (new Modules\Inventory\Providers\InventoryVoidedServiceProvider($app))->boot();
 $manager->getConnection('tenant')->getPdo();
 // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
-if (in_array($input['operation'] ?? '', ['subscription-edit','cash-document-link','cash-opening','bank-currency-edit','currency-deactivate','method-reclassify','method-activate','method-deactivate','quotation-receipt','quotation-apply-note','quotation-conversion-preflight','technical-apply-note','technical-receipt','sale-note-receipt','sale-note-batch','sale-note-delete','sale-note-reuse-invoice','document-receipt','receipt-attach'], true)) {
+if (in_array($input['operation'] ?? '', ['store-order-receipt','store-coupon-order','subscription-edit','cash-document-link','cash-opening','bank-currency-edit','currency-deactivate','method-reclassify','method-activate','method-deactivate','quotation-receipt','quotation-apply-note','quotation-conversion-preflight','technical-apply-note','technical-receipt','sale-note-receipt','sale-note-batch','sale-note-delete','sale-note-reuse-invoice','document-receipt','receipt-attach'], true)) {
     $connectionId=$manager->getConnection('tenant')->selectOne('SELECT CONNECTION_ID() AS id')->id;
     fwrite(STDERR,"LOCK_TEST_CONNECTION={$connectionId}\n");
 }
 // ######## FIN MONEDA DEL MEDIO DE COBRO ########
 fwrite(STDOUT,"READY\n");fflush(STDOUT);
 try {
+    if (($input['operation'] ?? '') === 'store-order-receipt') {
+        $app->instance('url',new class { public function route(...$args) {return 'http://example.test';} public function to(...$args) {return 'http://example.test';} public function asset(...$args) {return 'http://example.test';} });
+        $app->instance('log',new class { public function error(...$args) {} public function warning(...$args) {} public function info(...$args) {} });
+        if (!class_exists('Log')) class_alias(\Illuminate\Support\Facades\Log::class,'Log');
+        $app->instance(\App\Http\Controllers\Tenant\SaleNoteController::class,new class extends \App\Http\Controllers\Tenant\SaleNoteController {
+            public function createPdf($sale_note=null,$format_pdf=null,$filename=null,$output='pdf') {}
+        });
+        $app->instance(\App\Http\Controllers\Tenant\DocumentController::class,new class extends \App\Http\Controllers\Tenant\DocumentController {
+            public function __construct() {}
+            public function storeWithData($data,bool $webExportInvoices=false,bool $deferPdfUntilCommit=false) {
+                $document=(new \App\CoreFacturalo\Facturalo())->forWebDocuments()->save($data)->getDocument();
+                return ['success'=>true,'data'=>['id'=>$document->id]];
+            }
+        });
+        $order=\App\Models\Tenant\Order::findOrFail($input['data']['order_id']);
+        $status=new \App\Models\Tenant\StatusOrder(['action_generate_document'=>true]);
+        $result=(new \App\Services\Tenant\OrderDocumentFromStatusService())->generateIfConfigured($order,$status);
+        fwrite(STDOUT,json_encode($result,JSON_THROW_ON_ERROR));exit(0);
+    }
+    if (($input['operation'] ?? '') === 'store-coupon-order') {
+        $person=empty($input['person_id']) ? null : \App\Models\Tenant\Person::findOrFail($input['person_id']);
+        $app->instance('auth',new class($person) {
+            public function __construct(private $person) {}
+            public function guard($name=null) {return $this;}
+            public function user() {return $this->person;}
+            public function id() {return $this->person?->id;}
+        });
+        $app->instance('url',new class { public function route(...$args) {return 'http://example.test/seguimiento';} public function to(...$args) {return 'http://example.test';} });
+        $app->instance('log',new class { public function error(...$args) {} public function warning(...$args) {} public function info(...$args) {} });
+        if (!class_exists('Log')) class_alias(\Illuminate\Support\Facades\Log::class,'Log');
+        $controller=new class extends \Modules\Ecommerce\Http\Controllers\EcommerceController {
+            public function __construct() {}
+            public function searchDocument($type,$number) {return ['success'=>false];}
+            public function paymentCashEmail($customer_email,$document) {return false;}
+        };
+        $result=$controller->paymentCash(\Illuminate\Http\Request::create('/','POST',$input['data']));
+        fwrite(STDOUT,json_encode(['success'=>$result['success'] ?? false,'message'=>$result['message'] ?? null],JSON_THROW_ON_ERROR));exit(0);
+    }
     if (($input['operation'] ?? '') === 'whatsapp-draft') {
         $draft=$input['data']['draft'];
         $user=\App\Models\Tenant\User::findOrFail($input['data']['user_id']);
@@ -249,7 +287,11 @@ try {
     }
     $document=App\Models\Tenant\Document::findOrFail($input['document_id']);
     $service=App\Services\Fiscal\FiscalDocumentPersistence::class;
-    if (($input['operation'] ?? '') === 'note-create') {
+    if (($input['operation'] ?? '') === 'free-form-control') {
+        $target=App\Models\Tenant\Document::findOrFail($input['data']['document_id']);
+        $result=App\Services\Fiscal\FreeFormControl::register($target,$input['data']);
+        $output=['id'=>$result->id];
+    } elseif (($input['operation'] ?? '') === 'note-create') {
         $note=(new App\CoreFacturalo\Facturalo)->forWebDocuments()->save($input['data'])->getDocument();
         $output=['id'=>$note->id];
     } elseif (($input['operation'] ?? '') === 'note-refund') {

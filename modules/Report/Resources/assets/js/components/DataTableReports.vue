@@ -353,10 +353,11 @@
                         </template>
                         <template v-else>
                             <!-- mostrar si no se aplica conversion a bolívares -->
-                            <template v-if="!applyConversionToPen">
+                            <template v-if="['reports/purchases', 'reports/fixed-asset-purchases'].includes(resource) || !applyConversionToPen">
                             <tr>
                                 <td :colspan="colspanFootPurchase"></td>
-                                <td><strong>Totales VES</strong></td>
+                                <td><strong>Suma página VES</strong></td>
+                                <td v-if="['reports/purchases', 'reports/fixed-asset-purchases'].includes(resource)">{{ totals.acum_total_perception }}</td>
                                 <td>{{ totals.acum_total_exonerated }}</td>
                                 <td>{{ totals.acum_total_unaffected }}</td>
                                 <td>{{ totals.acum_total_free }}</td>
@@ -365,12 +366,13 @@
                                 <td>{{ totals.acum_total_igv }}</td>
                                 <td>{{ totals.acum_total }}</td>
                             </tr>
-                            <tr>
+                            <tr v-if="!applyConversionToPen">
                                 <td :colspan="colspanFootPurchase"></td>
-                                <td><strong>Totales USD</strong></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
+                                <td><strong>Suma página USD</strong></td>
+                                <td v-if="['reports/purchases', 'reports/fixed-asset-purchases'].includes(resource)">{{ totals.acum_total_perception_usd }}</td>
+                                <td>{{ ['reports/purchases', 'reports/fixed-asset-purchases'].includes(resource) ? totals.acum_total_exonerated_usd : '' }}</td>
+                                <td>{{ ['reports/purchases', 'reports/fixed-asset-purchases'].includes(resource) ? totals.acum_total_unaffected_usd : '' }}</td>
+                                <td>{{ ['reports/purchases', 'reports/fixed-asset-purchases'].includes(resource) ? totals.acum_total_free_usd : '' }}</td>
 
                                 <td>{{ totals.acum_total_taxed_usd }}</td>
                                 <td>{{ totals.acum_total_igv_usd }}</td>
@@ -404,6 +406,7 @@
 
 import moment from 'moment'
 import queryString from 'query-string'
+import { exactAmount, exactSum } from '../../../../../../resources/js/helpers/exchange-rate-math'
 
 export default {
     props: {
@@ -568,6 +571,17 @@ export default {
         getTotals(records) {
 
             this.initTotals()
+            if (['reports/purchases', 'reports/fixed-asset-purchases'].includes(this.resource)) {
+                const fields = ['total', 'total_taxed', 'total_igv', 'total_perception', 'total_exonerated', 'total_unaffected', 'total_free'];
+                for (const currency of ['VES', 'USD']) {
+                    const rows = records.filter(row => row.currency_type_id === currency && !['09', '11'].includes(String(row.state_type_id)));
+                    for (const field of fields) {
+                        const suffix = currency === 'USD' ? '_usd' : '';
+                        this.totals[`acum_${field}${suffix}`] = exactSum(rows.map(row => exactAmount(row[field] ?? 0))).final(2);
+                    }
+                }
+                return;
+            }
             // console.log(records)
 
             records.forEach(row => {
@@ -714,7 +728,7 @@ export default {
                 this.pagination.per_page = parseInt(response.data.meta.per_page)
                 this.loading_submit = false
                 // this.initTotals()
-                if (this.resource == 'reports/sales' || this.resource == 'reports/purchases' || this.resource == 'reports/fixed-asset-purchases' || this.resource === 'reports/state-account') this.getTotals(response.data.data)
+                if (this.resource == 'reports/sales' || this.resource == 'reports/purchases' || this.resource == 'reports/fixed-asset-purchases') this.getTotals(response.data.data)
             });
 
 

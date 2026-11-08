@@ -277,6 +277,7 @@
                                 <el-button class="submit"
                                         icon="el-icon-tickets"
                                         type="danger"
+                                        :disabled="hasUnappliedFilters || loading_submit"
                                         id="dropdownMenuButton"
                                         data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"
                                         >Exportar PDF
@@ -289,6 +290,7 @@
                                     </button>
 
                                     <el-tooltip class="item"
+                                        v-if="resource === 'reports/sales'"
                                         effect="dark"
                                         content="Columnas dinámicas - Procesamiento asíncrono (bandeja de descargas)"
                                         placement="right">
@@ -311,6 +313,7 @@
                             <el-button  v-if="resource == 'reports/sales'" class="submit"
                                        icon="el-icon-tickets"
                                        type="danger"
+                                       :disabled="hasUnappliedFilters || loading_submit"
                                        @click.prevent="clickDownload('pdf-simple')">Exportar PDF Simple
                             </el-button>
 
@@ -320,6 +323,7 @@
 
                                 <el-button class="submit"
                                         type="success"
+                                        :disabled="hasUnappliedFilters || loading_submit"
                                         id="dropdownMenuButton"
                                         data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"
                                         >
@@ -335,6 +339,7 @@
 
 
                                     <el-tooltip class="item"
+                                        v-if="resource === 'reports/sales'"
                                         effect="dark"
                                         content="Columnas dinámicas - Procesamiento asíncrono (bandeja de descargas)"
                                         placement="right">
@@ -354,16 +359,19 @@
                             </el-button> -->
 
                             <el-tooltip class="item"
+                                v-if="resource === 'reports/sales'"
                                 effect="dark"
                                 content="Disponible para formato dinámico"
                                 placement="top-start">
 
                                 <el-button class="submit"
                                         type="info"
+                                        :disabled="hasUnappliedFilters || loading_submit"
                                         @click.prevent="clickEmail()">C. Electrónico
                                 </el-button>
 
                             </el-tooltip>
+                            <span v-if="hasUnappliedFilters">Los filtros cambiaron. Pulse Buscar para actualizar el reporte.</span>
 
                         </template>
 
@@ -404,7 +412,7 @@
                                         }"
                                     >
                                         <strong v-if="columnKey === salesFooterLabelColumnKey">
-                                            Totales {{ currency }}
+                                            Suma página {{ currency }}
                                         </strong>
                                         <span v-else-if="isSalesTotalColumn(columnKey)">
                                             {{ salesFooterValue(columnKey, currency) }}
@@ -455,7 +463,7 @@
                 </div>
             </div>
         </div>
-        <email-options :showDialog.sync="showEmailOptions" :data="this.form" :columns="this.visibleColumns"></email-options>
+        <email-options v-if="resource === 'reports/sales'" :showDialog.sync="showEmailOptions" :data="this.appliedForm" :columns="this.visibleColumns"></email-options>
     </div>
 </template>
 <style>
@@ -508,6 +516,8 @@ export default {
             loading_search: false,
             columns: [],
             records: [],
+            appliedForm: null,
+            recordsRequestId: 0,
             headers: headers_token,
             document_types: [],
             pagination: {},
@@ -545,6 +555,9 @@ export default {
         }
     },
     computed: {
+        hasUnappliedFilters() {
+            return !!this.appliedForm && JSON.stringify(this.form) !== JSON.stringify(this.appliedForm)
+        },
         cantChoiseUserWithUserType(){
             if(this.form.user_type && this.form.user_type.length > 1) return false;
             return true;
@@ -597,7 +610,6 @@ export default {
         await this.getRecords()
         await this.filterPersons()
         // await this.getTotals()
-        this.form.type_person = this.resource === 'reports/sales' ? 'customers' : 'suppliers'
 
         this.$nextTick(() => {
             const el = this.$refs.scrollContainer;
@@ -671,11 +683,12 @@ export default {
                     for (const suffix of ['', '_usd']) sums[`acum_${columnKey}${suffix}`] = exactAmount(0)
                 }
                 records.forEach(row => {
-                    if (!['VES', 'USD'].includes(row.currency_type_id) || ['09', '11'].includes(row.state_type_id)) return
+                    if (!['VES', 'USD'].includes(row.currency_type_id) || ['09', '11'].includes(String(row.state_type_id))) return
                     const suffix = row.currency_type_id === 'USD' ? '_usd' : ''
                     this.salesTotalColumnKeys.forEach(columnKey => {
                         const key = `acum_${columnKey}${suffix}`
-                        const value = exactAmount(row.report_total_fractions?.[columnKey] ?? row[columnKey] ?? 0)
+                        // The footer describes this page, so add the values actually shown in its rows.
+                        const value = exactAmount(row[columnKey] ?? 0)
                         sums[key] = row.document_type_id === '07' ? sums[key].minus(value) : sums[key].plus(value)
                     })
                 })
@@ -710,14 +723,13 @@ export default {
             return exactAmount(value).final(2)
         },
         clickDownload(type) {
+            if (!this.canExportReport()) return
+            const {user_id, document_type_id, ...filters} = this.appliedForm
             let query = queryString.stringify({
                 columns: JSON.stringify(this.visibleColumns),
-                ...this.form
+                ...filters
             });
-            delete(query.user_id)
-            delete(query.document_type_id)
-
-            window.open(`/${this.resource}/${type}/?${query}&user_id=${JSON.stringify(this.form.user_id)}&document_type_id=${JSON.stringify(this.form.document_type_id)}`, '_blank');
+            window.open(`/${this.resource}/${type}/?${query}&user_id=${encodeURIComponent(JSON.stringify(user_id))}&document_type_id=${encodeURIComponent(JSON.stringify(document_type_id))}`, '_blank');
         },
 
         initForm() {
@@ -725,7 +737,7 @@ export default {
             this.form = {
                 establishment_id: null,
                 person_id: null,
-                type_person: null,
+                type_person: this.resource === 'reports/sales' ? 'customers' : 'suppliers',
                 document_type_id: this.resource === 'reports/sales' ? '01' : null,
                 period: 'month',
                 date_start: moment().format('YYYY-MM-DD'),
@@ -755,42 +767,43 @@ export default {
             return (this.pagination.per_page * (this.pagination.current_page - 1)) + index + 1
         },
         async getRecordsByFilter() {
-            this.loading_submit = true
-            try {
-                await this.getRecords()
-            } finally {
-                this.loading_submit = false
-            }
+            return this.getRecords(JSON.parse(JSON.stringify(this.form)), 1)
         },
-        getRecords() {
-            return this.$http.get(`/${this.resource}/records?${this.getQueryParameters()}`).then((response) => {
+        getRecords(filters, page) {
+            const selected = filters && typeof filters === 'object' ? filters : (this.appliedForm || this.form)
+            const snapshot = JSON.parse(JSON.stringify(selected))
+            const pageNumber = typeof filters === 'number' ? filters : (page || this.pagination.current_page || 1)
+            const requestId = this.recordsRequestId = (this.recordsRequestId || 0) + 1
+            this.loading_submit = true
+            return this.$http.get(`/${this.resource}/records?${this.getQueryParameters(snapshot, pageNumber)}`).then((response) => {
+                if (requestId !== this.recordsRequestId) return false
                 this.records = response.data.data
                 this.pagination = response.data.meta
                 this.pagination.per_page = parseInt(response.data.meta.per_page)
-                this.loading_submit = false
+                this.appliedForm = snapshot
                 // this.initTotals()
                 if (this.resource == 'reports/sales' || this.resource == 'reports/purchases' || this.resource == 'reports/fixed-asset-purchases') this.getTotals(response.data.data)
+                return true
             }).catch((error) => {
+                if (requestId !== this.recordsRequestId) return false
                 this.records = []
+                this.pagination = {}
+                this.appliedForm = null
                 this.initTotals()
                 this.$message.error(error?.response?.data?.message || 'No se pudo consultar el reporte. Revise los filtros e inténtelo de nuevo.')
-            });
+                return false
+            }).finally(() => { if (requestId === this.recordsRequestId) this.loading_submit = false });
 
 
         },
-        getQueryParameters() {
-            if(this.users.length  > 0){
-                // delete(this.form.type_person)
-            }
+        getQueryParameters(filters = this.appliedForm || this.form, page = this.pagination.current_page) {
+            const {user_id, document_type_id, ...otherFilters} = filters
             let parameters = queryString.stringify({
-                page: this.pagination.current_page,
+                page,
                 limit: this.limit,
-                ...this.form
+                ...otherFilters
             })
-            delete(parameters.user_id)
-            delete(parameters.document_type_id)
-
-            return `${parameters}&user_id=${JSON.stringify(this.form.user_id)}&document_type_id=${JSON.stringify(this.form.document_type_id)}`
+            return `${parameters}&user_id=${encodeURIComponent(JSON.stringify(user_id))}&document_type_id=${encodeURIComponent(JSON.stringify(document_type_id))}`
 
         },
 
@@ -850,10 +863,19 @@ export default {
         filterItems() {
             this.items = this.all_items
         },
+        canExportReport() {
+            if (this.appliedForm && !this.hasUnappliedFilters && !this.loading_submit) return true
+            this.$message.error('Pulse Buscar para actualizar el reporte antes de exportar.')
+            return false
+        },
         clickEmail(){
+            if (this.resource !== 'reports/sales') return
+            if (!this.canExportReport()) return
             this.showEmailOptions = true
         },
         async clickExport(format) {
+            if (this.resource !== 'reports/sales') return
+            if (!this.canExportReport()) return
             this.loading = true;
             this.loadingSubmit = true;
             this.loadingPdf = (format === 'pdf');
@@ -865,7 +887,7 @@ export default {
                 data: {
                     'format': format,
                     columns: JSON.stringify(this.visibleColumns),
-                    ...this.form
+                    ...this.appliedForm
                 },
             })
                 .then(response => {

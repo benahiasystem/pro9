@@ -28,9 +28,10 @@
                             
                             <template v-if="records.length>0"> 
 
-                                <el-button class="submit" type="danger"  icon="el-icon-tickets" @click.prevent="clickDownload('pdf')" >Exportar PDF</el-button>
+                                <el-button class="submit" type="danger" :disabled="hasUnappliedFilters || loading_submit" icon="el-icon-tickets" @click.prevent="clickDownload('pdf')" >Exportar PDF</el-button>
 
-                                <el-button class="submit" type="success" @click.prevent="clickDownload('excel')"><i class="fa fa-file-excel" ></i>  Exportal Excel</el-button>
+                                <el-button class="submit" type="success" :disabled="hasUnappliedFilters || loading_submit" @click.prevent="clickDownload('excel')"><i class="fa fa-file-excel" ></i>  Exportar Excel</el-button>
+                                <span v-if="hasUnappliedFilters">Los filtros cambiaron. Pulse Buscar para actualizar el reporte.</span>
 
                             </template>
 
@@ -87,6 +88,8 @@
                 loading_submit:false,
                 columns: [],
                 records: [],
+                appliedForm: null,
+                recordsRequestId: 0,
                 headers: headers_token,
                 document_types: [],
                 pagination: {}, 
@@ -98,6 +101,9 @@
             }
         },
         computed: {
+            hasUnappliedFilters() {
+                return !!this.appliedForm && JSON.stringify(this.form) !== JSON.stringify(this.appliedForm)
+            },
         },
         created() {
             this.initForm()
@@ -119,8 +125,11 @@
         },
         methods: {  
             clickDownload(type) {                 
+                if (!this.appliedForm || this.hasUnappliedFilters || this.loading_submit) {
+                    return this.$message.error('Pulse Buscar para actualizar el reporte antes de exportar.')
+                }
                 let query = queryString.stringify({
-                    ...this.form
+                    ...this.appliedForm
                 });
                 window.open(`/${this.resource}/${type}/?${query}`, '_blank');
             },
@@ -136,27 +145,41 @@
                 return (this.pagination.per_page * (this.pagination.current_page - 1)) + index + 1
             }, 
             async getRecordsByFilter(){
-
-                this.loading_submit = await true
-                await this.getRecords()
-                this.loading_submit = await false
-
+                return this.getRecords({...this.form}, 1)
             },
-            getRecords() {
-                return this.$http.get(`/${this.resource}/records?${this.getQueryParameters()}`).then((response) => {
+            getRecords(filters, page) {
+                const selected = filters && typeof filters === 'object' ? filters : (this.appliedForm || this.form)
+                const snapshot = {...selected}
+                const pageNumber = typeof filters === 'number' ? filters : (page || this.pagination.current_page || 1)
+                const requestId = this.recordsRequestId = (this.recordsRequestId || 0) + 1
+                this.loading_submit = true
+                return this.$http.get(`/${this.resource}/records?${this.getQueryParameters(snapshot, pageNumber)}`).then((response) => {
+                    if (requestId !== this.recordsRequestId) return false
                     this.records = response.data.data
                     this.pagination = response.data.meta
                     this.pagination.per_page = parseInt(response.data.meta.per_page)
-                    this.loading_submit = false
-                });
+                    this.appliedForm = snapshot
+                    return true
+                }).catch(error => {
+                    if (requestId !== this.recordsRequestId) return false
+                    this.records = []
+                    this.pagination = {}
+                    this.appliedForm = null
+                    const data = error.response && error.response.data
+                    const errors = data && (data.errors || (typeof data.message === 'object' && data.message))
+                    this.$message.error(errors ? Object.values(errors).flat().join(' ') : (data && data.message) || 'No se pudo consultar el reporte.')
+                    return false
+                }).finally(() => {
+                    if (requestId === this.recordsRequestId) this.loading_submit = false
+                })
 
 
             },
-            getQueryParameters() {
+            getQueryParameters(filters = this.appliedForm || this.form, page = this.pagination.current_page) {
                 return queryString.stringify({
-                    page: this.pagination.current_page,
+                    page,
                     limit: this.limit,
-                    ...this.form
+                    ...filters
                 })
             },
              

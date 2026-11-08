@@ -156,7 +156,7 @@
             } elseif (($modelClass == OrderNoteItem::class)) {
                 $q->where('order_note_item_id', '!=', 0)->select(DB::raw('item_movement.order_note_item_id as table_id'));
             } elseif (($modelClass == PurchaseItem::class)) {
-                $q->where('purchase_item', '!=', 0)->select(DB::raw('item_movement.purchase_item as table_id'));
+                $q->where('purchase_item_id', '!=', 0)->select(DB::raw('item_movement.purchase_item_id as table_id'));
             } elseif ($modelClass == PurchaseOrderItem::class) {
                 $q->where('purchase_order_item_id', '!=', 0)->select(DB::raw('item_movement.purchase_order_item_id as table_id'));
             } elseif ($modelClass == PurchaseQuotationItem::class) {

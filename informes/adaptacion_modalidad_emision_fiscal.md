@@ -128,3 +128,7 @@ Verificación:
 - Análisis de scripts y compilación de plantillas en memoria: **23 fuentes Vue/JavaScript modificados o nuevos** en el diff acumulado; `git diff --check` correcto.
 
 No se ejecutó build ni se editaron bundles. Queda pendiente la revisión visual de las entradas con assets actualizados; las pruebas de VNodes no acreditan el navegador desplegado. Los bundles externos de Vende Ya, Mozo y LiveApp permanecen fuera del alcance.
+
+### Control transcrito en Forma libre
+
+En facturas y notas de crédito/débito vigentes de Forma libre, un administrador puede registrar el control leído del documento físico con una referencia de revisión. El servidor valida formato, duplicados y concurrencia, registra actor y fecha, no reemplaza controles existentes y no confirma ni transmite emisión digital. En facturas, las retenciones pendientes se revalidan después del commit; ante un fallo quedan recuperables. Las copias locales generadas después muestran el control sin alterar el archivo anterior. La validación automatizada se realizó en bases temporales con datos sintéticos; queda pendiente la interfaz compilada y su validación visual. Ver `qa_forma_libre_calculos_exactos.md`.

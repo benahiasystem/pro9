@@ -29,11 +29,9 @@ $affected_document_number = $document_base->affected_document ? $document_base->
         $logo = "{$establishment->logo}";
     }
 
-    $payments = $document->payments;
+    $payments = $document->payments->filter(fn ($payment) => !data_get($payment, 'reversed_at'));
     $document->load('reference_guides');
 
-    $total_payment = $document->payments->sum('payment');
-    $balance = $document instanceof \App\Models\Tenant\Document ? $document->balance : (($document->total - $total_payment) - $document->payments->sum('change'));
     $configuration_decimal_quantity = App\CoreFacturalo\Helpers\Template\TemplateHelper::getConfigurationDecimalQuantity();
     $configurationInPdf= App\CoreFacturalo\Helpers\Template\TemplateHelper::getConfigurationInPdf();
 @endphp
@@ -567,7 +565,7 @@ foreach ($document->items as $row) {
                     {{ $cleanedDate }}
                 </td>
             @endif
-            <td class="text-center align-top desc cell-solid-rl p-1">{{ $row->formatPdfUnitPrice($configuration_decimal_quantity) }}</td>
+            <td class="text-center align-top desc cell-solid-rl p-1"><span data-pdf-unit-price>{{ $row->formatPdfUnitPrice($configuration_decimal_quantity) }}</span></td>
 
             <td class="text-center align-top desc cell-solid-rl p-1">
                 @if($row->discounts)
@@ -739,14 +737,6 @@ foreach ($document->items as $row) {
         @endif
     @endif
 
-
-
-    @if($balance < 0)
-        <tr>
-            <td class="p-1 text-right align-top desc cell-solid font-bold" colspan="{{ $colspan_total }}">VUELTO: {{ $document->currency_type->symbol }}</td>
-            <td class="p-1 text-right align-top desc cell-solid font-bold">{{ number_format(abs($balance),2, ".", "") }}</td>
-        </tr>
-    @endif
     </tbody>
 </table>
 <table class="full-width">

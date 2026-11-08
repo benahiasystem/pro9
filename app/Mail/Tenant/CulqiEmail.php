@@ -25,8 +25,9 @@ class CulqiEmail extends Mailable
      */
     public function build()
     {
-        return $this->subject('Constancia - Nuevo pago desde Ecommerce')
-                    ->from(config('mail.username'), 'Constancia de Pago')
+        $paid = ($this->document->payment_confirmed ?? false) === true;
+        return $this->subject($paid ? 'Constancia - Nuevo pago desde Ecommerce' : 'Confirmación de pedido')
+                    ->from(config('mail.username'), $paid ? 'Constancia de Pago' : 'Confirmación de pedido')
                     ->view('tenant.templates.email.culqui_payment');
     }
 }

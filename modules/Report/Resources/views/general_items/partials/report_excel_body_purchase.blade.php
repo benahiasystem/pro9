@@ -2,23 +2,22 @@
 <?php
     $warehouse_description = \App\CoreFacturalo\Helpers\Template\ReportHelper::getWarehouseDescription($value, $purchase);
 
-    $apply_conversion_to_pen = $request_apply_conversion_to_pen == 'true';
+    $apply_conversion_to_pen = filter_var($request_apply_conversion_to_pen, FILTER_VALIDATE_BOOLEAN);
 
-    $unit_price = $value->unit_price;
-    $unit_value = $value->unit_value;
-    $total_value = $value->total_value;
-    $total = $value->total;
-    $total_igv = $value->total_igv;
+    $decimal = \App\Support\Exact\Decimal::class;
+    $amounts = [];
+    foreach (['unit_price','unit_value','total_value','total','total_igv','total_discount'] as $field) {
+        $amounts[$field] = $decimal::readRequired($value, $field);
+    }
+    $quantity = $decimal::readRequired($value, 'quantity');
+    $currency = $purchase->currency_type_id;
     $description_apply_conversion_to_pen = null;
 
     // aplicar conversión si es que esta habilitada la configuracion
-    if($apply_conversion_to_pen && $value->isCurrencyTypeUsd())
+    if($apply_conversion_to_pen && $currency === 'USD')
     {
-        $total = round($value->getConvertTotalToPen(), 2);
-        $unit_price = round($value->getConvertUnitPriceToPen(), 6);
-        $unit_value = round($value->getConvertUnitValueToPen(), 6);
-        $total_value = round($value->getConvertTotalValueToPen(), 2);
-        $total_igv = round($value->getConvertTotalIgvToPen(), 2);
+        foreach ($amounts as $field=>$amount) $amounts[$field] = $decimal::convert($amount,'USD','VES',$purchase->exchange_rate_sale);
+        $currency = 'VES';
         $description_apply_conversion_to_pen = '(Se aplicó conversión a bolívares)';
     }
     // aplicar conversión si es que esta habilitada la configuracion
@@ -55,30 +54,26 @@
     @endif
     </td>
     --}}
-    <td class="celda"> {{$purchase->currency_type_id}} {{ $description_apply_conversion_to_pen ?? ''}}</td>
+    <td class="celda">{{$currency}}</td>
     {{-- <td class="celda"> {{$purchase->exchange_rate_sale}}</td> --}}
     <td class="celda"> {{$value->item->unit_type_id}}</td>
     <td class="celda"> {{$value->relation_item ? $value->relation_item->internal_id:''}}</td>
     <td class="celda"> {{$value->item->description}}</td>
-    <td class="celda"> {{$value->quantity}}</td>
+    <td data-type="s" class="celda" style="mso-number-format:'\@'">{{$decimal::represent($quantity)}}</td>
     <td class="celda"></td>
     {{--
     <td class="celda">{{ $model }}</td>
     --}}
     <td class="celda"></td>
-    <td class="celda"> {{$unit_value}}</td>
-    <td class="celda"> {{$unit_price}}</td>
-    <td class="celda">
-        @if($value->discounts)
-            {{collect($value->discounts)->sum('amount')}}
-        @endif
-    </td>
-    <td class="celda"> {{$total_value}}</td>
+    <td data-type="s" class="celda" style="mso-number-format:'\@'">{{$decimal::represent($amounts['unit_value'])}}</td>
+    <td data-type="s" class="celda" style="mso-number-format:'\@'">{{$decimal::represent($amounts['unit_price'])}}</td>
+    <td data-type="s" class="celda" style="mso-number-format:'\@'">{{$decimal::represent($amounts['total_discount'])}}</td>
+    <td data-type="s" class="celda" style="mso-number-format:'\@'">{{$decimal::represent($amounts['total_value'])}}</td>
     <td class="celda"> {{$value->affectation_igv_type_id}}</td>
-    <td class="celda"> {{$total_igv}}</td>
+    <td data-type="s" class="celda" style="mso-number-format:'\@'">{{$decimal::represent($amounts['total_igv'])}}</td>
 
 
-    <td class="celda"> {{$total}}</td>
+    <td data-type="s" class="celda" style="mso-number-format:'\@'">{{$decimal::represent($amounts['total'])}}</td>
 
     <td class="celda">{{ $purchase->exchange_rate_sale }}</td>
     <td class="celda">{{ $warehouse_description }}</td>

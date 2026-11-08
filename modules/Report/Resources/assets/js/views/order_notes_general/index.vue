@@ -54,7 +54,7 @@
                             <th class="text-start" v-if="columns.user.visible">
                                 Vendedor
                             </th>
-                            <th class="text-center">Monto</th>
+                            <th class="text-center">Moneda</th><th class="text-center">Monto</th>
                             <th class="text-center">Estado</th>
                         </tr>
 
@@ -76,7 +76,7 @@
                             <td class="text-start" v-if="columns.user.visible">
                                 {{ row.user_name }}
                             </td>
-                            <td class="text-center">{{ row.total }}</td>
+                            <td class="text-center">{{ row.currency_type_id }}</td><td class="text-center">{{ row.total }}</td>
                             <td class="text-center">
                                 {{ row.state_description }}
                             </td>

@@ -11,13 +11,21 @@ final class Payables
     public static function dataset(array $filters, bool $unfiltered = false): ReportDataset
     {
         $db = DB::connection('tenant');
-        return ReadSnapshot::run($db, function () use ($db, $filters, $unfiltered) {
-            return new ReportDataset((function () use ($db, $filters, $unfiltered) {
+        $user=auth()->user();
+        if (!$user) throw new \Illuminate\Auth\AuthenticationException();
+        return ReadSnapshot::run($db, function () use ($db, $filters, $unfiltered, $user) {
+            return new ReportDataset((function () use ($db, $filters, $unfiltered, $user) {
                 $sources = [['purchases','purchase_payments','purchase_id','purchase'], ['expenses','expense_payments','expense_id','expense']];
                 if (!empty($filters['withBankLoan'])) $sources[] = ['bank_loans','bank_loan_payments','bank_loan_id','bank_loans'];
                 [$start, $end] = self::dates($filters);
                 foreach ($sources as [$table, $paymentTable, $foreign, $type]) {
                     $query = $db->table($table)->whereIn($table.'.state_type_id', ['01','03','05','07','13'])->select($table.'.*');
+                    if ($user->type !== 'admin') {
+                        $query->where($table.'.user_id',$user->id)->where($table.'.establishment_id',$user->establishment_id);
+                    } elseif (!$unfiltered) {
+                        if (!empty($filters['user'])) $query->where($table.'.user_id',(int)$filters['user']);
+                        if (empty($filters['stablishmentTopaidAll']) && !empty($filters['establishment_id'])) $query->where($table.'.establishment_id',$filters['establishment_id']);
+                    }
                     if ($table === 'bank_loans') {
                         $query->join('bank_accounts', 'bank_accounts.id', '=', 'bank_loans.bank_account_id')
                             ->join('banks', 'banks.id', '=', 'bank_loans.bank_id')
@@ -27,9 +35,6 @@ final class Payables
                             ->leftJoin('users', 'users.id', '=', $table.'.user_id')->addSelect('users.name as creator_name');
                         if ($table === 'purchases') $query->whereIn('purchases.document_type_id', ['01','GU75','NE76']);
                         if (!empty($filters['supplier_id'])) $query->where($table.'.supplier_id', $filters['supplier_id']);
-                        if (empty($filters['stablishmentTopaidAll']) && !empty($filters['establishment_id'])) $query->where($table.'.establishment_id', $filters['establishment_id']);
-                        // Preserve the existing creator restriction; this change does not widen access.
-                        if (!$unfiltered && (!empty($filters['user']) || auth()->user()->type !== 'admin')) $query->where($table.'.user_id', (int)($filters['user'] ?? 0));
                     }
                     if ($start !== null) $query->whereBetween($table.'.date_of_issue', [$start, $end]);
                     $lastId = 0;

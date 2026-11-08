@@ -28,7 +28,7 @@
      * @property string                               $payment_status
      * @property Carbon                               $output_date
      * @property string                               $output_time
-     * @property int                                  $arrears
+     * @property string                               $arrears
      * @property string                               $status
      * @property Carbon|null                          $created_at
      * @property Carbon|null                          $updated_at
@@ -75,7 +75,6 @@
             'hotel_room_id' => 'int',
             'duration' => 'int',
             'quantity_persons' => 'int',
-            'arrears' => 'int'
         ];
 
         public function getCustomerAttribute($value)
@@ -104,6 +103,11 @@
         public function room()
         {
             return $this->belongsTo(HotelRoom::class, 'hotel_room_id');
+        }
+
+        public function person()
+        {
+            return $this->belongsTo(Person::class, 'customer_id');
         }
 
         public function rate()

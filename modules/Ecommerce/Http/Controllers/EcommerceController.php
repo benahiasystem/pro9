@@ -1157,6 +1157,54 @@ class EcommerceController extends Controller
         return response()->json(['success' => true, 'order' => $order]);
     }
 
+    private function calculateManualCheckout(Request $request, array $delivery, ?int $personId): array
+    {
+        $couponCode = $request->input('discount_coupon_code');
+        if ($request->filled('discount_coupon_id')) {
+            $coupon = DiscountCoupon::whereKey($request->input('discount_coupon_id'))->first();
+            if (!$coupon || ($couponCode && mb_strtoupper(trim($couponCode)) !== $coupon->code)) {
+                \App\Services\Fiscal\FiscalAmounts::error('coupon','El cupón seleccionado no es válido.');
+            }
+            $couponCode = $coupon->code;
+        }
+        $result=app(\Modules\Ecommerce\Services\StorefrontCheckoutCalculation::class)
+            ->calculate((array)$request->input('items',[]),$delivery,$couponCode,$personId);
+        if ($request->filled('discount_coupon_id') && (int)($result['coupon']['id'] ?? 0)!==(int)$request->input('discount_coupon_id')) {
+            \App\Services\Fiscal\FiscalAmounts::error('coupon','El cupón seleccionado no es válido.');
+        }
+        return $result;
+    }
+
+    public function checkoutPreview(Request $request)
+    {
+        if ($blocked = $this->rejectPurchaseIfQuoteOnly()) return $blocked;
+        $user=auth('ecommerce')->user();
+        if (filter_var($request->input('is_guest',false),FILTER_VALIDATE_BOOLEAN)) $user=null;
+        $personId=$user instanceof \App\Models\Tenant\Person ? (int)$user->id : null;
+        try {
+            $calculation=\Illuminate\Support\Facades\DB::connection('tenant')->transaction(
+                fn()=>$this->calculateManualCheckout($request,(array)$request->input('delivery',[]),$personId)
+            );
+            $decimal=\App\Support\Exact\Decimal::class;
+            $subtotal=$decimal::represent($calculation['subtotal'],2,true);
+            $discount=$decimal::represent($calculation['discount'],2,true);
+            $shipping=$decimal::represent($calculation['shipping_amount'],2,true);
+            $adjustment=$decimal::of($calculation['total_payable'])->minus($decimal::of($subtotal)->minus($discount)->plus($shipping));
+            $items=array_map(fn($row)=>['id'=>$row['item_id'],
+                'unit_price'=>$decimal::represent($row['unit_price_ves']),
+                'subtotal'=>$decimal::represent($row['subtotal_ves'],2,true)],$calculation['items']);
+            return ['success'=>true,'subtotal'=>$subtotal,'discount'=>$discount,'shipping'=>$shipping,
+                'rounding_adjustment'=>$decimal::represent($adjustment,2,true),
+                'total'=>$calculation['total_payable'],'items'=>$items,
+                'coupon'=>$calculation['coupon'] ? [
+                    'id'=>$calculation['coupon']['id'],'code'=>$calculation['coupon']['code'],
+                    'free_shipping'=>$calculation['coupon']['free_shipping'],
+                ] : null];
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json(['success'=>false,'message'=>collect($e->errors())->flatten()->first()],422);
+        }
+    }
+
     public function paymentCash(Request $request)
     {
         if ($blocked = $this->rejectPurchaseIfQuoteOnly()) {
@@ -1237,71 +1285,40 @@ class EcommerceController extends Controller
                 }
                 $purchase = Order::attachEcommerceCheckoutMeta($purchase, $user, $isGuestOverride);
 
-                $authoritativeItems = $this->applyAuthoritativeCampaignPrices((array) $request->items);
-                $order = Order::create([
-                    'external_id' => Str::uuid()->toString(),
-                    'customer' =>  $request->customer,
-                    'shipping_address' => $request->input('shipping_address', ''),
-                    'items' => $authoritativeItems,
-                    'total' => $request->precio_culqi,
-                    'reference_payment' => $request->input('reference_payment', 'efectivo'),
-                    'status_order_id' => $initialStatusId,
-                    'payment_status_order_id' => $initialPaymentStatusId,
-                    'shipping_status_order_id' => StatusOrder::resolveInitialShippingStatusId(),
-                    'purchase' => $purchase,
-                ]);
-
-                // Si se envía cupón en la petición, aplicarlo inmediatamente
-                if ($request->discount_coupon_code || $request->discount_coupon_id) {
-                    $coupon = null;
-                    if ($request->discount_coupon_id) {
-                        $coupon = DiscountCoupon::find($request->discount_coupon_id);
-                    } elseif ($request->discount_coupon_code) {
-                        $coupon = DiscountCoupon::where('code', $request->discount_coupon_code)->first();
-                    }
-
-                    if ($coupon) {
-                        // Si el frontend ya envió el monto de descuento (`total_discount`),
-                        // usar ese valor en lugar de recalcularlo sobre el total ya descontado
-                        // (evita aplicar el cupón dos veces).
-                        if ($request->total_discount && $request->total_discount > 0) {
-                            $discount = round((float) $request->total_discount, 2);
-                            // reconstruir total original (antes del descuento) para validaciones
-                            $original_total = round($order->total + $discount, 2);
-
-                            if ($coupon->canBeUsedBy($user?->id, $original_total)) {
-                                $order->total_discount = $discount;
-                                $order->discount_coupon_code = $coupon->code;
-                                $order->discount_coupon_id = $coupon->id;
-                                // el total ya viene con descuento desde el frontend; mantenerlo
-                                $order->total = round(max(0, $original_total - $discount), 2);
-                                $order->save();
-
-                                DiscountCouponUsage::create([
-                                    'discount_coupon_id' => $coupon->id,
-                                    'person_id' => $user?->id,
-                                    'order_id' => $order->id
-                                ]);
-                            }
-                        } else {
-                            // Si frontend no envió el monto, calcularlo en servidor usando el total actual
-                            if ($coupon->canBeUsedBy($user?->id, $order->total)) {
-                                $discount = $coupon->calculateDiscountAmount($order->total);
-                                $order->total_discount = $discount;
-                                $order->discount_coupon_code = $coupon->code;
-                                $order->discount_coupon_id = $coupon->id;
-                                $order->total = round(max(0, $order->total - $discount), 2);
-                                $order->save();
-
-                                DiscountCouponUsage::create([
-                                    'discount_coupon_id' => $coupon->id,
-                                    'person_id' => $user?->id,
-                                    'order_id' => $order->id
-                                ]);
-                            }
-                        }
-                    }
+                $delivery = $request->input('delivery');
+                if (!is_array($delivery)) {
+                    $delivery = ['mode'=>$this->isPickupShippingAddress($shippingAddress) ? 'pickup' : 'delivery'];
                 }
+                $personId = $user instanceof \App\Models\Tenant\Person ? (int)$user->id : null;
+                [$order,$calculation] = \Illuminate\Support\Facades\DB::connection('tenant')->transaction(function () use (
+                    $request,$purchase,$delivery,$personId,$initialStatusId,$initialPaymentStatusId
+                ) {
+                    $calculator = app(\Modules\Ecommerce\Services\StorefrontCheckoutCalculation::class);
+                    $calculation = $this->calculateManualCheckout($request,$delivery,$personId);
+                    $submitted=\App\Support\Exact\Decimal::input($request->input('precio_culqi'),'total');
+                    if (\App\Support\Exact\Decimal::represent($submitted,2,true) !== $calculation['total_payable']) {
+                        \App\Services\Fiscal\FiscalAmounts::error('total','El total cambió. Actualice el carrito y revise el importe antes de confirmar.');
+                    }
+                    $order = Order::create([
+                        'external_id'=>Str::uuid()->toString(), 'customer'=>$request->customer,
+                        'shipping_address'=>$request->input('shipping_address',''),
+                        'items'=>$calculator->orderItems($calculation),
+                        'total'=>\App\Support\Exact\Decimal::represent($calculation['total']),
+                        'total_discount'=>\App\Support\Exact\Decimal::represent($calculation['discount']),
+                        'discount_coupon_code'=>$calculation['coupon']['code'] ?? null,
+                        'discount_coupon_id'=>$calculation['coupon']['id'] ?? null,
+                        'reference_payment'=>$request->input('reference_payment','efectivo'),
+                        'status_order_id'=>$initialStatusId,'payment_status_order_id'=>$initialPaymentStatusId,
+                        'shipping_status_order_id'=>StatusOrder::resolveInitialShippingStatusId(),
+                        'purchase'=>$calculator->purchase($purchase,$calculation),
+                    ]);
+                    $order->setExactValues(['total'=>\App\Support\Exact\Decimal::of($calculation['total']),
+                        'total_discount'=>\App\Support\Exact\Decimal::of($calculation['discount'])]);
+                    $order->saveQuietly();
+                    if ($calculation['coupon']) DiscountCouponUsage::create(['discount_coupon_id'=>$calculation['coupon']['id'],
+                        'person_id'=>$personId,'order_id'=>$order->id]);
+                    return [$order,$calculation];
+                });
 
                 // Encolar notificación por correo si el estado inicial lo requiere
                 if ($initialOrderStatus && ($initialOrderStatus->action_send_email ?? false)) {
@@ -1312,29 +1329,36 @@ class EcommerceController extends Controller
                     }
                 }
 
-                $contact = $this->resolveOrderCustomerContact($request, $user);
+                $emailSent = null;
+                try {
+                    $contact = $this->resolveOrderCustomerContact($request, $user);
+                    $document = new stdClass;
+                    $document->client = $contact['name'];
+                    $document->product = $request->producto;
+                    $document->total = $order->getRawOriginal('total');
+                    $document->items = \App\Support\Exact\JsonDecimals::decode($order->getRawOriginal('items'));
+                    $document->id = $order->id;
+                    $document->payment_confirmed = false;
+                    $document->order_number = $order->publicNumber();
+                    $document->tracking_url = route('tenant_ecommerce_order_tracking', [
+                        'pedido' => $document->order_number,
+                    ]);
 
-                $document = new stdClass;
-                $document->client = $contact['name'];
-                $document->product = $request->producto;
-                $document->total = $request->precio_culqi;
-                $document->items = $request->items;
-                $document->id = $order->id;
-                $document->order_number = $order->publicNumber();
-                $document->tracking_url = route('tenant_ecommerce_order_tracking', [
-                    'pedido' => $document->order_number,
-                ]);
-
-                if (!empty($contact['email'])) {
-                    $this->paymentCashEmail($contact['email'], $document);
+                    $emailSent = !empty($contact['email']) ? $this->paymentCashEmail($contact['email'], $document) : null;
+                } catch (\Throwable $e) {
+                    $emailSent = false;
+                    \Log::error('No se pudo preparar la notificación del pedido '.$order->id.': '.$e->getMessage());
                 }
 
                 //Mail::to($customer_email)->send(new CulqiEmail($document));
                 return [
                     'success' => true,
+                    'email_sent' => $emailSent,
                     'order' => $order
                 ];
 
+            } catch (\Illuminate\Validation\ValidationException $e) {
+                return ['success'=>false,'message'=>collect($e->errors())->flatten()->first() ?: 'Revise los datos del pedido.'];
             }catch(Exception $e)
             {
                 return [
@@ -1367,9 +1391,6 @@ class EcommerceController extends Controller
                 'message' => 'Las credenciales de Mercado Pago pertenecen a entornos distintos. La Public Key y el Access Token deben ser ambos de prueba o ambos de producción.',
             ], 422);
         }
-
-        // TODO: quitar tras depurar el payload del Payment Brick
-        Log::info('MercadoPago ecommerce request payload', $request->all());
 
         $customer = is_string($request->customer)
             ? json_decode($request->customer, true)
@@ -1603,23 +1624,13 @@ class EcommerceController extends Controller
             $mailable = new CulqiEmail($document);
             $id = (int) $document->id;
             $model = __FILE__.";;".__LINE__;
-            $sendIt = EmailController::SendMail($email, $mailable, $id, $model);
-            /*
-            Configuration::setConfigSmtpMail();
-            $array_email = explode(',', $customer_email);
-            if (count($array_email) > 1) {
-                foreach ($array_email as $email_to) {
-                    $email_to = trim($email_to);
-                if(!empty($email_to)) {
-                        Mail::to($email_to)->send(new CulqiEmail($document));
-                    }
-                }
-            } else {
-                Mail::to($customer_email)->send(new CulqiEmail($document));
-            }*/
-        }catch(\Exception $e)
+            $sent = EmailController::SendMail($email, $mailable, $id, $model);
+            if (!$sent) Log::warning('No se pudo enviar la notificación de pedido de tienda.', ['order_id'=>$id]);
+            return $sent;
+        }catch(\Throwable $e)
         {
-            return true;
+            Log::warning('No se pudo preparar la notificación de pedido de tienda.', ['order_id'=>$document->id ?? null]);
+            return false;
         }
     }
 

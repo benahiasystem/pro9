@@ -59,174 +59,45 @@ class ReportStateAccountController extends Controller
 
     public function records(Request $request)
     {
-        //dd($request->all());
-        $documentTypeId = null;
-        if ($request->has('document_type_id')) {
-            $documentTypeId = str_replace('"', '', $request->document_type_id);
-        };
-
-        $documentType = DocumentType::find($documentTypeId);
-            /* if (null === $documentType) {
-                $documentType = new DocumentType();
-            }; */
-        if ($documentType!=null) {
-            $classType = $documentType->getCurrentRelatiomClass();
-
-            $records = $this->getRecords($request->all(), $classType);
-
-            if ($classType == SaleNote::class) {
-                return new SaleNoteCollection($records->paginate(config('tenant.items_per_page')));
+        $request->validate(['page'=>'sometimes|integer|min:1']);
+        return \App\Support\Exact\ReadSnapshot::run(DB::connection('tenant'), function () use ($request) {
+            $type = str_replace('"', '', (string) $request->input('document_type_id'));
+            $queries = [];
+            if ($type !== '80') {
+                $queries[] = $this->getRecords($request->all(), Document::class)->reorder()
+                    ->selectRaw("id, date_of_issue, 'document' as source_type")->toBase();
             }
-            else {
-                return new DocumentCollection($records->paginate(config('tenant.items_per_page')));
-            };
-        }else{
-            $records_documents = $this->getRecords($request->all(), Document::class)->select(
-                'id',
-                'state_type_id',
-                'fiscal_environment',
-                'date_of_issue',
-                'currency_type_id',
-                'series',
-                'establishment_id',
-                'number',
-                'purchase_order',
-                'seller_id',
-                'customer_id',
-                'total_exportation',
-                'total_exonerated',
-                'total_taxed',
-                'total_igv',
-                'total')->with(['person'=> function ($query) {
-                $query->select('id','name', 'number');
-            }])->with(['fiscal_environment_type'=> function ($q) {
-                $q->select('id','description');
-            }])->with(['state_type'=> function ($y) {
-                $y->select('id','description');
-            }])->with(['user'=> function ($y) {
-                $y->select('id','name');
-            }])->with('items');
-
-            $records_sales = $this->getRecords($request->all(), SaleNote::class)->select(
-                'id',
-                'state_type_id',
-                'fiscal_environment',
-                'date_of_issue',
-                'currency_type_id',
-                'series',
-                'establishment_id',
-                'number',
-                'purchase_order',
-                'seller_id',
-                'customer_id',
-                'total_exportation',
-                'total_exonerated',
-                'total_taxed',
-                'total_igv',
-                'total')->with(['customer'=> function ($query) {
-                $query->select('id','name', 'number');
-            }])->with(['fiscal_environment_type'=> function ($q) {
-                $q->select('id','description');
-            }])->with(['state_type'=> function ($y) {
-                $y->select('id','description');
-            }])->with(['user'=> function ($y) {
-                $y->select('id','name');
-            }])->with('items');
-            //$records_documents = $records_documents->put('class', 'Document');
-            //$records_documents = $records_documents->put('class', 'SaleNote');
-            $records_all = $records_documents->unionAll($records_sales);
-
-            //dd($records_all->get());
-
-            return new StateAccountCollection($records_all->paginate(config('tenant.items_per_page')));
-        }
+            if ($type === '' || $type === 'null' || $type === '80') {
+                $queries[] = $this->getRecords($request->all(), SaleNote::class)->reorder()
+                    ->selectRaw("id, date_of_issue, 'sale_note' as source_type")->toBase();
+            }
+            $query = array_shift($queries);
+            foreach ($queries as $other) $query->unionAll($other);
+            $page = DB::connection('tenant')->query()->fromSub($query, 'account_rows')
+                ->orderByDesc('date_of_issue')->orderByDesc('id')->orderBy('source_type')
+                ->paginate(max(1, min(500, (int) config('tenant.items_per_page', 50))), ['*'], 'page', (int) $request->input('page', 1));
+            $keys = $page->getCollection();
+            $documents = Document::whereIn('id', $keys->where('source_type', 'document')->pluck('id'))->get()->keyBy('id');
+            $notes = SaleNote::whereIn('id', $keys->where('source_type', 'sale_note')->pluck('id'))->get()->keyBy('id');
+            $page->setCollection($keys->map(fn ($key) => $key->source_type === 'document'
+                ? $documents->get($key->id) : $notes->get($key->id))->filter()->values());
+            // Resolve the resource while the snapshot is open, including all balances.
+            return (new StateAccountCollection($page))->response($request);
+        });
     }
 
     public function excel(Request $request) {
 
+        return \App\Support\Exact\ReadSnapshot::run(DB::connection('tenant'), function () use ($request) {
         $company = Company::first();
         $establishment = ($request->establishment_id) ? Establishment::findOrFail($request->establishment_id) : auth()->user()->establishment;
 
-        $documentTypeId = null;
-        if ($request->has('document_type_id')) {
-            $documentTypeId = str_replace('"', '', $request->document_type_id);
-
+        $type = str_replace('"', '', (string) $request->input('document_type_id'));
+        $records = collect();
+        if ($type !== '80') $records = $records->concat($this->getRecords($request->all(), Document::class)->get());
+        if ($type === '' || $type === 'null' || $type === '80') {
+            $records = $records->concat($this->getRecords($request->all(), SaleNote::class)->get());
         }
-        $documentType = DocumentType::find($documentTypeId);
-        if ($documentType!=null) {
-            $classType = $documentType->getCurrentRelatiomClass();
-            $records = $this->getRecords($request->all(), $classType);
-            $records= $records->get();
-        } else {
-            $records_documents = $this->getRecords($request->all(), Document::class)->select(
-                'id',
-                'document_type_id',
-                'group_id',
-                'fiscal_environment',
-                'payment_condition_id',
-                'date_of_issue',
-                'currency_type_id',
-                'series',
-                'establishment_id',
-                'number',
-                'purchase_order',
-                'state_type_id',
-                'total_exportation',
-                'total_exonerated',
-                'total_taxed',
-                'total_igv',
-                'total',
-                'total_charge',
-                'plate_number',
-                'customer_id',
-                'user_id',
-                'seller_id')->with(['person'=> function ($query) {
-                $query->select('id','name', 'number');
-            }])->with(['fiscal_environment_type'=> function ($q) {
-                $q->select('id','description');
-            }])->with(['state_type'=> function ($y) {
-                $y->select('id','description');
-            }])->with(['user'=> function ($y) {
-                $y->select('id','name');
-            }])->get();
-
-            $records_sales = $this->getRecords($request->all(), SaleNote::class)->select(
-                'id',
-                'state_type_id',
-                'fiscal_environment',
-                'date_of_issue',
-                'due_date',
-                'currency_type_id',
-                'series',
-                'establishment_id',
-                'payment_condition_id',
-                'number',
-                'purchase_order',
-                'total_exportation',
-                'total_exonerated',
-                'total_taxed',
-                'total_igv',
-                'total',
-                'plate_number',
-                'observation',
-                'document_id',
-                'customer_id',
-                'user_id',
-                'seller_id')->with(['customer'=> function ($query) {
-                $query->select('id','name', 'number');
-            }])->with(['fiscal_environment_type'=> function ($q) {
-                $q->select('id','description');
-            }])->with(['state_type'=> function ($y) {
-                $y->select('id','description');
-            }])->with(['user'=> function ($y) {
-                $y->select('id','name');
-            }])->get();
-
-            //$records_documents = $records_documents->put('class', 'Document');
-            //$records_documents = $records_documents->put('class', 'SaleNote');
-            $records = $records_documents->concat($records_sales);
-        }
-
 
         $filters = $request->all();
 
@@ -249,7 +120,7 @@ class ReportStateAccountController extends Controller
             ->categories_services($categories_services);
          // return $documentExport->view();
         return $documentExport->download('Reporte_estado_de_cuenta'.Carbon::now().'.xlsx');
-
+        });
     }
 
 
@@ -260,7 +131,7 @@ class ReportStateAccountController extends Controller
         foreach ($records as $document) {
 
             $id_categories = $document->items->filter(function($row) use($is_service){
-                return (($is_service) ? (!is_null($row->relation_item->category_id) && $row->item->unit_type_id === 'SERV') : !is_null($row->relation_item->category_id)) ;
+                return (($is_service) ? (!is_null(optional($row->relation_item)->category_id) && $row->item->unit_type_id === 'SERV') : !is_null(optional($row->relation_item)->category_id)) ;
             })->pluck('relation_item.category_id');
 
             foreach ($id_categories as $value) {

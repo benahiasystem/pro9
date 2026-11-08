@@ -60,10 +60,11 @@ class ReportController extends Controller
             return $response;
         }
 
-        $controller = new \Modules\Report\Http\Controllers\ReportGeneralItemController();
-        $records = $controller->getRecordsItems($request->all())->latest('id')->get();
-
-        return $this->getCollectionGeneralItems($records, $request);
+        return \App\Support\Exact\ReadSnapshot::run(\DB::connection('tenant'), function () use ($request) {
+            $controller = new \Modules\Report\Http\Controllers\ReportGeneralItemController();
+            $records = $controller->getRecordsItems($request->all())->latest('id')->get();
+            return $this->getCollectionGeneralItems($records, $request);
+        });
     }
 
 
@@ -82,30 +83,37 @@ class ReportController extends Controller
 
     private function getCollectionGeneralItems($records, Request $request)
     {
-        return $records->transform(function($row) use($request) {
+        $costs = $request->input('type') === 'sale'
+            ? \Modules\Report\Services\EstimatedPurchaseCost::forLines($records, (string)$request->input('document_type_id') === '80') : [];
+        return $records->transform(function($row) use($request, $costs) {
             if ($request->input('type') === 'sale') {
+                $exact = [];
+                foreach (['quantity','unit_value','unit_price','total_discount','total_value','total_igv','total'] as $field) {
+                    $exact[$field] = \App\Support\Exact\Decimal::readRequired($row, $field);
+                }
                 $data = \Modules\Report\Http\Resources\GeneralItemCollection::getDocument($row);
                 if ($request->input('document_type_id') == '80') {
                     $observation = $data['observation']?$data['observation']:'';
                 } else {
                     $observation = $data['additional_information']?$data['additional_information'][0]:'';
                 }
-                $document = $row->document;
+                $isSaleNote = (string)$request->input('document_type_id') === '80';
+                $document = $isSaleNote ? $row->sale_note : $row->document;
                 $item = $row->relation_item;
                 $item_web_platform = $item->getWebPlatformModel();
                 if ($item_web_platform) {
                     $web_platform = $item_web_platform->name;
                 }
-                $total_item_purchase = \Modules\Report\Http\Resources\GeneralItemCollection::getPurchaseUnitPrice($row);
+                $cost = $costs[spl_object_id($row)];
                 $warehouse_description = \App\CoreFacturalo\Helpers\Template\ReportHelper::getWarehouseDescription($row, $document);
-                $isSaleNote = ($request->input('document_type_id') != '80' && $request->input('type') == 'sale') ? true : false;
+                $seller = $document->seller_id ? $document->seller : $document->user;
                 return [
                     'date_of_issue' => $document->date_of_issue->format('Y-m-d'),
-                    'user' => $document->seller_id ? $document->user->name : $document->seller->name,
+                    'user' => optional($document->user)->name,
                     'district' => $document->establishment->district->description,
                     'province' => $document->establishment->province->description,
                     'department' => $document->establishment->department->description,
-                    'type_document' => $isSaleNote ?  $document->document_type->description : 'SALON DE VENTA',
+                    'type_document' => $isSaleNote ? 'NOTA DE VENTA' : $document->document_type->description,
                     'serie' => $document->series,
                     'number' => $document->number,
                     'purchase_order' => $document->purchase_order,
@@ -114,26 +122,33 @@ class ReportController extends Controller
                     'identity_document_customer' => $document->customer->identity_document_type->description,
                     'number_document_customer' => $document->customer->number,
                     'customer_name' => $document->customer->name,
-                    'seller' => $isSaleNote ? ($document->seller_id ? $document->user->name : $document->seller->name) : $document->user->name,
+                    'seller' => optional($seller)->name,
                     'observation' => $observation,
                     'currency' => $document->currency_type_id,
-                    'unit_type'=> $item->unit_type_id,
-                    'internal_id'=> $item->internal_id,
-                    'description'=> $item->description,
-                    'quantity'=> $row->quantity,
+                    'unit_type'=> $row->item->unit_type_id ?? null,
+                    'internal_id'=> $row->item->internal_id ?? ($item->internal_id ?? ''),
+                    'description'=> $row->item->description ?? '',
+                    'quantity'=> \App\Support\Exact\Decimal::represent($exact['quantity']),
                     'payments_method' => '',
-                    'unit_value' => $item->unit_value,
-                    'unit_price' => $row->unit_price,
-                    'discount' => $item->total_discount,
-                    'total_value' => $item->total_value,
+                    'unit_value' => \App\Support\Exact\Decimal::represent($exact['unit_value']),
+                    'unit_price' => \App\Support\Exact\Decimal::represent($exact['unit_price']),
+                    'discount' => \App\Support\Exact\Decimal::represent($exact['total_discount']),
+                    'total_value' => \App\Support\Exact\Decimal::represent($exact['total_value']),
                     'affectation_igv_type' => $row->affectation_igv_type_id,
-                    'igv' => $item->total_igv,
-                    'total' => $row->total,
-                    'purchase_total' => $total_item_purchase,
+                    'igv' => \App\Support\Exact\Decimal::represent($exact['total_igv']),
+                    'total' => \App\Support\Exact\Decimal::represent($exact['total']),
+                    'calculation_snapshot' => \App\Support\Exact\Decimal::snapshot($exact),
+                    'purchase_total' => \App\Support\Exact\Decimal::represent($cost['amount']),
+                    'purchase_total_fraction' => \App\Support\Exact\Decimal::fraction($cost['amount']),
+                    'purchase_total_estimate_source' => $cost['source'],
                     'exchange_rate_sale' => $document->exchange_rate_sale,
                     'warehouse_description' => $warehouse_description
                 ];
             } else if ($request->input('type') === 'purchase') {
+                $exact = [];
+                foreach (['quantity','unit_value','unit_price','total_discount','total_value','total_igv','total'] as $field) {
+                    $exact[$field] = \App\Support\Exact\Decimal::readRequired($row, $field);
+                }
                 $purchase = $row->purchase;
                 $warehouse_description = \App\CoreFacturalo\Helpers\Template\ReportHelper::getWarehouseDescription($row, $purchase);
                 Log::info('purchase', ['purchase' => $row]);
@@ -148,16 +163,17 @@ class ReportController extends Controller
                     'supplier_name' => $purchase->supplier->name,
                     'currency' => $purchase->currency_type_id,
                     'unit_type'=> $row->item->unit_type_id,
-                    'internal_id'=> $row->relation_item ? $row->relation_item->internal_id:'',
+                    'internal_id'=> $row->item->internal_id ?? ($row->relation_item ? $row->relation_item->internal_id : ''),
                     'description' => $row->item->description,
-                    'quantity'=> $row->quantity,
-                    'unit_value' => $row->getConvertUnitValueToPen(),
-                    'unit_price' => $row->getConvertUnitPriceToPen(),
-                    'discount' => collect($row->discounts)->sum('amount'),
-                    'total_value' => $row->getConvertTotalValueToPen(),
+                    'quantity'=> \App\Support\Exact\Decimal::represent($exact['quantity']),
+                    'unit_value' => \App\Support\Exact\Decimal::represent($exact['unit_value']),
+                    'unit_price' => \App\Support\Exact\Decimal::represent($exact['unit_price']),
+                    'discount' => \App\Support\Exact\Decimal::represent($exact['total_discount']),
+                    'total_value' => \App\Support\Exact\Decimal::represent($exact['total_value']),
                     'affectation_igv_type' => $row->affectation_igv_type_id,
-                    'total_igv' => $row->getConvertTotalIgvToPen(),
-                    'total' => $row->getConvertTotalToPen(),
+                    'total_igv' => \App\Support\Exact\Decimal::represent($exact['total_igv']),
+                    'total' => \App\Support\Exact\Decimal::represent($exact['total']),
+                    'calculation_snapshot' => \App\Support\Exact\Decimal::snapshot($exact),
                     'exchange_rate_sale' => $purchase->exchange_rate_sale,
                     'warehouse_description' => $warehouse_description
                 ];
@@ -187,11 +203,14 @@ class ReportController extends Controller
                 }),
                 'case' =>'',
                 'currency' => $row->currency_type_id,
-                'total_exportation' => floatval($row->total_exportation),
-                'total_exonerated' => floatval($row->total_exonerated),
-                'total_taxed' => floatval($row->total_taxed),
-                'total_igv' => floatval($row->total_igv),
-                'total' => floatval($row->total)
+                'total_exportation' => \App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::read($row, 'total_exportation')),
+                'total_exonerated' => \App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::read($row, 'total_exonerated')),
+                'total_taxed' => \App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::read($row, 'total_taxed')),
+                'total_igv' => \App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::read($row, 'total_igv')),
+                'total' => \App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::read($row, 'total')),
+                'report_total_fractions' => \Modules\Report\Services\DocumentCurrencyTotals::fractions($row) + [
+                    'total_exportation' => \App\Support\Exact\Decimal::fraction(\App\Support\Exact\Decimal::read($row, 'total_exportation')),
+                ],
             ];
         });
     }
@@ -249,37 +268,23 @@ class ReportController extends Controller
                 'total_discount' => $totals['total_discount'],
                 'total_igv' => $totals['total_igv'],
                 'total' => $totals['total'],
+                'report_signed_fractions' => $totals['fractions'],
             ];
         });
     }
 
     private function totalesDocuments($record, $document_type)
     {
-        $totals = [
-            'total_charge' => 0,
-            'total_exonerated' => 0,
-            'total_taxed' => 0,
-            'total_discount' => 0,
-            'total_igv' => 0,
-            'total' => 0
-        ];
-
-        if ($document_type == '07') {
-            if (!in_array($record->state_type_id,['09','11'])) {
-                foreach ($totals as $key => $value) {
-                    $totals[$key] =  floatval("-{$record->$key}") == -0 ? 0 : floatval("-{$record->$key}");
-                }
-            }
-        } else {
-            foreach ($totals as $key => $value) {
-                $totals[$key] =  (in_array($document_type,['01','03']) && in_array($record->state_type_id,['09','11'])) ? 0  : floatval($record->$key);
-            }
+        $totals = []; $fractions = [];
+        foreach (['total_charge','total_exonerated','total_taxed','total_discount','total_igv','total'] as $key) {
+            $value = in_array((string)$record->state_type_id, ['09','11'], true)
+                ? \App\Support\Exact\Decimal::of(0) : \App\Support\Exact\Decimal::read($record, $key);
+            if ((string)$document_type === '07') $value = $value->negated();
+            $totals[$key] = \App\Support\Exact\Decimal::represent($value);
+            $fractions[$key] = \App\Support\Exact\Decimal::fraction($value);
         }
+        $totals['fractions'] = $fractions;
         return $totals;
-    }
-
-    function isNegativeZero(float $num): bool {
-        return $num === 0.0 && is_infinite(1 / $num) && (1 / $num) < 0;
     }
 
     private function parserRequest(Request &$request)

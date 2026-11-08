@@ -240,23 +240,63 @@
             DB::connection('tenant')->transaction(function () use ($request) {
 
                 $data = $this->mergeData($request);
-                $tc_id = ($request->has('id'))?$request->id:null;
-
-                $technical_service = TechnicalService::updateOrCreate(['id' => $request->input('id')], $data);
-                 $all_item = [];
-                foreach ($data['items'] as $row) {
-                    /** @var TechnicalServiceItem $temp_item */
-                    $temp_item = $technical_service->items()->create($row);
-                    $all_item[] = $temp_item->id;
-
+                $id=$request->input('id');
+                $technical_service=$id ? TechnicalService::withoutEagerLoads()->lockForUpdate()->findOrFail($id) : new TechnicalService();
+                $oldCurrency=$technical_service->currency_type_id;
+                $oldCustomer=$technical_service->customer_id;
+                $payments=$id ? $technical_service->payments()->lockForUpdate()->get() : collect();
+                $paid=\App\Support\Exact\Decimal::sum($payments->map(fn($row)=>\App\Support\Exact\Decimal::readRequired($row,'payment')));
+                $previousTotal=$id ? \App\Support\Exact\Decimal::read($technical_service,'cost')->plus(\App\Support\Exact\Decimal::read($technical_service,'total')) : \App\Support\Exact\Decimal::of(0);
+                $previousDeficit=\App\Support\Exact\Decimal::max(0,$paid->minus($previousTotal));
+                foreach (\App\Support\Exact\Persistence::columns($technical_service) as $field) {
+                    if (!in_array($field,['cost','prepayment'],true)) unset($data[$field]);
                 }
-                /* Elimina items del servicio */
-                if($tc_id != null) {
-                    $items = TechnicalServiceItem::where('technical_services_id',$tc_id)->wherenotin('id',$all_item)->get();
-                    /** @var TechnicalServiceItem $temp */
-                    foreach($items as $temp){
-                        $temp->delete();
+                $technical_service->fill($data);
+                if ($payments->isNotEmpty() && (string)$oldCurrency !== (string)$technical_service->currency_type_id) {
+                    \App\Services\Fiscal\FiscalAmounts::error('currency_type_id','No se puede cambiar la moneda de un servicio con cobros registrados.');
+                }
+                if ($payments->isNotEmpty() && (string)$oldCustomer !== (string)$technical_service->customer_id) {
+                    \App\Services\Fiscal\FiscalAmounts::error('customer_id','No se puede cambiar el cliente de un servicio con cobros registrados.');
+                }
+                $technical_service->save();
+                $stored=$technical_service->items()->withoutEagerLoads()->lockForUpdate()->get()->keyBy('id');
+                if ($id) \App\Support\Exact\TechnicalServiceCalculation::assertHistoricalAdjustmentsRecoverable($technical_service,$stored);
+                $kept=[];
+                foreach (($request->input('items') ?? []) as $row) {
+                    $row=(array)$row;
+                    $lineId=$row['record_id'] ?? $row['id'] ?? null;
+                    if (!empty($row['record_id']) && !empty($row['id']) && (string)$row['record_id'] !== (string)$row['id']) {
+                        \App\Services\Fiscal\FiscalAmounts::error('items','La identidad de la partida es inconsistente.');
                     }
+                    if (!in_array($row['affectation_igv_type_id'] ?? null,['10','20'],true)) {
+                        \App\Services\Fiscal\FiscalAmounts::error('items','Seleccione una afectación de IVA gravada o exenta.');
+                    }
+                    if (!isset($row['quantity'],$row['unit_price'])) {
+                        \App\Services\Fiscal\FiscalAmounts::error('items','Indique la cantidad y el precio de cada partida.');
+                    }
+                    if ($lineId !== null && $lineId !== '') {
+                        if (!$stored->has($lineId) || isset($kept[(string)$lineId])) {
+                            \App\Services\Fiscal\FiscalAmounts::error('items','La partida no pertenece a este servicio o está repetida.');
+                        }
+                        $line=$stored->get($lineId);
+                        if ((string)$oldCurrency !== (string)$technical_service->currency_type_id && empty($row['price_input'])) {
+                            \App\Services\Fiscal\FiscalAmounts::error('items','Indique el precio y su moneda de origen al cambiar la moneda del servicio.');
+                        }
+                    } else $line=$technical_service->items()->make();
+                    unset($row['id'],$row['record_id'],$row['technical_services_id'],$row['calculation_snapshot']);
+                    foreach (\App\Support\Exact\Persistence::columns($line) as $field) {
+                        if (!in_array($field,['quantity','unit_price'],true)) unset($row[$field]);
+                    }
+                    foreach (['price_input','quantity_input'] as $field) if (($row[$field] ?? null) === null) unset($row[$field]);
+                    $line->fill($row);
+                    $line->save();
+                    $kept[(string)$line->id]=true;
+                }
+                foreach ($stored as $line) if (!isset($kept[(string)$line->id])) $line->delete();
+                \App\Support\Exact\TechnicalServiceCalculation::summarize($technical_service,$request->all());
+                $newTotal=\App\Support\Exact\Decimal::read($technical_service,'cost')->plus(\App\Support\Exact\Decimal::read($technical_service,'total'));
+                if (\App\Support\Exact\Decimal::max(0,$paid->minus($newTotal))->isGreaterThan($previousDeficit)) {
+                    \App\Services\Fiscal\FiscalAmounts::error('total','El total del servicio no puede ser menor que los cobros registrados.');
                 }
                 $this->technical_service = $technical_service;
                 $this->setFilename();
@@ -406,7 +446,7 @@
 
         public function toPrint($id, $format)
         {
-
+            return \App\Support\Exact\ReadSnapshot::run(DB::connection('tenant'), function () use ($id, $format) {
             $technical_service = TechnicalService::find($id);
 
             if (!$technical_service) throw new Exception("El código es inválido, no se encontró el servicio técnico relacionado");
@@ -424,6 +464,7 @@
             */
 
             return response()->file($temp, $this->generalPdfResponseFileHeaders($technical_service->filename));
+            });
         }
 
         private function reloadPDF($technical_service, $format, $filename)

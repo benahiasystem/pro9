@@ -2,81 +2,64 @@
 
 namespace Modules\Report\Http\Controllers;
 
-use App\Models\Tenant\Catalogs\DocumentType;
 use App\Http\Controllers\Controller;
-use Barryvdh\DomPDF\Facade\Pdf as PDF;
-use Modules\Report\Exports\DocumentExport;
-use Illuminate\Http\Request;
-use Modules\Report\Traits\ReportTrait;
-use App\Models\Tenant\Establishment;
-use App\Models\Tenant\User;
-use App\Models\Tenant\Document;
+use App\Models\Tenant\Cash;
 use App\Models\Tenant\Company;
-use Carbon\Carbon;
+use App\Models\Tenant\User;
+use App\Support\Exact\ReadSnapshot;
+use App\Support\Exact\ReportDataset;
+use Barryvdh\DomPDF\Facade\Pdf as PDF;
+use Illuminate\Http\Request;
+use Modules\Report\Exports\PosCashDocumentsExport;
 use Modules\Report\Http\Resources\CashCollection;
- 
+use Modules\Report\Services\PosCashDocumentsReport;
 
+/** Documents associated with authorized cash shifts; these are not receipt totals. */
 class ReportCashController extends Controller
 {
-    use ReportTrait;
-   
-     
-    public function filter() {
-
-        $document_types = [
-            ['id' => '01', 'description' => 'TODOS LOS COMPROBANTES'],
-            ['id' => '02', 'description' => 'FACTURA - BOLETA DE VENTA ELECTRÓNICA'],
-            ['id' => '03', 'description' => 'NOTAS DE VENTA'],
-        ];
-
-        $users = User::get(['id','name']);
-        
-        return compact('document_types','users');
+    public function filter()
+    {
+        $viewer=auth()->user();
+        $users=User::query()->when($viewer->type !== 'admin',fn ($query)=>$query->where('id',$viewer->id))->get(['id','name']);
+        return ['document_types'=>[
+            ['id'=>'01','description'=>'Todos los documentos'],
+            ['id'=>'02','description'=>'Facturas y notas fiscales'],
+            ['id'=>'03','description'=>'Notas de venta'],
+        ],'users'=>$users];
     }
-      
 
-    public function index() {
-       
-        return view('report::cash.index');
+    public function index() { return view('report::cash.index'); }
+
+    private function report(Request $request): array
+    {
+        $validated=$request->validate(['document_type_id'=>'nullable|in:01,02,03','user_id'=>'nullable|integer|min:1','page'=>'sometimes|integer|min:1']);
+        return PosCashDocumentsReport::build($validated['document_type_id'] ?? '01',$validated['user_id'] ?? null,auth()->user());
     }
-   
+
     public function records(Request $request)
     {
-        $records = $this->getRecordsCash($request->all());
-// dd($records);
-        return new CashCollection($records->paginate(config('tenant.items_per_page')));
+        return ReadSnapshot::run((new Cash)->getConnection(),function () use ($request) {
+            $report=$this->report($request);
+            $dataset=new ReportDataset($report['rows']);
+            $page=$dataset->paginate(max(1,min(500,(int)config('tenant.items_per_page',50))),(int)$request->input('page',1),['path'=>$request->url()]);
+            return (new CashCollection($page))->response($request);
+        });
     }
 
- 
-
-    public function pdf(Request $request) {
-
-        $company = Company::first();
-        $establishment = ($request->establishment_id) ? Establishment::findOrFail($request->establishment_id) : auth()->user()->establishment; 
-        $records = $this->getRecords($request->all(), Document::class)->get();
-        
-        $pdf = PDF::loadView('report::documents.report_pdf', compact("records", "company", "establishment"));
-
-        $filename = 'Reporte_Ventas_'.date('YmdHis');
-        
-        return $pdf->download($filename.'.pdf');
+    public function pdf(Request $request)
+    {
+        return ReadSnapshot::run((new Cash)->getConnection(),function () use ($request) {
+            $report=$this->report($request);$company=Company::first();
+            return PDF::loadView('report::cash.documents_report',compact('report','company'))->setPaper('a4','landscape')
+                ->download('Reporte_Documentos_Caja_'.date('YmdHis').'.pdf');
+        });
     }
-    
-  
-    
 
-    public function excel(Request $request) {
-    
-        $company = Company::first();
-        $establishment = ($request->establishment_id) ? Establishment::findOrFail($request->establishment_id) : auth()->user()->establishment; 
-        
-        $records = $this->getRecords($request->all(), Document::class)->get();
-
-        return (new DocumentExport)
-                ->records($records)
-                ->company($company)
-                ->establishment($establishment)
-                ->download('Reporte_Ventas_'.Carbon::now().'.xlsx');
-
+    public function excel(Request $request)
+    {
+        return ReadSnapshot::run((new Cash)->getConnection(),function () use ($request) {
+            $report=$this->report($request);$company=Company::first();
+            return (new PosCashDocumentsExport($report,$company))->download('Reporte_Documentos_Caja_'.date('YmdHis').'.xlsx');
+        });
     }
 }

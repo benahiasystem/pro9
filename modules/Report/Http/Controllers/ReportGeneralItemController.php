@@ -55,10 +55,10 @@ class ReportGeneralItemController extends Controller
 
     public function records(Request $request)
     {
-
-        $records = $this->getRecordsItems($request->all())->latest('id');
-        
-        return new GeneralItemCollection($records->paginate(config('tenant.items_per_page')));
+        return \App\Support\Exact\ReadSnapshot::run(\DB::connection('tenant'), function () use ($request) {
+            $records = $this->getRecordsItems($request->all())->latest('id');
+            return (new GeneralItemCollection($records->paginate(config('tenant.items_per_page'))))->response($request);
+        });
     }
 
 

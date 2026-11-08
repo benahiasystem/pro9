@@ -335,14 +335,15 @@ class SaleNoteController extends Controller
     {
         $data = $request->all();
         if (empty($data['source_module'])) {
-            $data['source_module'] = 'WEB';
+            $existing = !empty($data['id']) ? SaleNote::withoutEagerLoads()->find($data['id']) : null;
+            $data['source_module'] = $existing ? $existing->source_module : 'WEB';
         }
 
         return $this->storeWithData($data);
     }
 
 
-    public function storeWithData($inputs)
+    public function storeWithData($inputs, bool $deferPdfUntilCommit = false)
     {
         \App\Services\ThirdPartyInvoicePolicy::assertInput($inputs);
         // ######## INICIO POLITICA IDENTIDAD ACTIVA EN VENTAS ########
@@ -355,13 +356,49 @@ class SaleNoteController extends Controller
                 $inputs['id'] = false;
                 $isUpdate = false;
             }
-            $previousCurrency = $isUpdate ? SaleNote::query()->lockForUpdate()->findOrFail($inputs['id'])->currency_type_id : null;
+            if ($isUpdate) Company::query()->lockForUpdate()->firstOrFail();
+            $previousNote = $isUpdate ? SaleNote::query()->lockForUpdate()->findOrFail($inputs['id']) : null;
+            if ($previousNote) $this->assertSaleNoteSourceEditable($previousNote);
+            $previousCurrency = $previousNote ? $previousNote->currency_type_id : null;
+            if ($previousNote && $previousNote->order_note_id && in_array((string)$previousNote->state_type_id, \App\Models\Tenant\Document::VOIDED_REJECTED_IDS, true)) {
+                \App\Services\Payments\Classification::error('order_note_id','No se puede editar una nota de venta anulada o rechazada.');
+            }
+            if ($previousNote && (string)($inputs['order_note_id'] ?? $previousNote->order_note_id ?? '') !== (string)($previousNote->order_note_id ?? '')) {
+                \App\Services\Payments\Classification::error('order_note_id','No se puede cambiar el pedido de origen de una nota.');
+            }
+            if ($previousNote && $previousNote->order_note_id && !array_key_exists('order_note_id',$inputs)) $inputs['order_note_id']=$previousNote->order_note_id;
+            $inputs=\App\Services\Fiscal\OrderInvoiceInventory::prepare($inputs,true,$previousNote ? $previousNote->id : null);
             // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
             if (!$isUpdate) {
                 \App\Services\Payments\QuotationReceiptsRequired::assertPresent($inputs['quotation_id'] ?? null, $inputs['payments'] ?? []);
             }
             // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
             $data = $this->mergeData($inputs, $isUpdate);
+
+            // Preserve server-owned pack composition when an existing line is edited.
+            $oldLines=$previousNote ? $previousNote->items()->lockForUpdate()->get()->keyBy('id') : collect();
+            $oldPacks=$oldLines->filter(fn($line)=>isset($line->calculation_snapshot['inputs']['sale_note_pack_inventory']));
+            $explicitIds=collect($data['items'])->pluck('record_id')->filter()->map(fn($id)=>(string)$id)->all();
+            $unidentifiedCounts=collect($data['items'])->filter(fn($row)=>empty($row['record_id']))->countBy('item_id'); $usedPackLines=[];
+            foreach ($data['items'] as &$row) {
+                unset($row['_verified_sale_note_pack_inventory']);
+                $recordId=$row['record_id'] ?? null;
+                if ($recordId && (!$previousNote || !$oldLines->has($recordId))) \App\Services\Fiscal\FiscalAmounts::error('items','La partida no pertenece a esta nota de venta.');
+                $old=$recordId ? $oldPacks->get($recordId) : null;
+                if (!$recordId) {
+                    $matches=$oldPacks->where('item_id',$row['item_id'])->reject(fn($line)=>in_array((string)$line->id,$explicitIds,true));
+                    if ($matches->count() && (($unidentifiedCounts[$row['item_id']] ?? 0)!==1 || $matches->count()!==1)) {
+                        \App\Services\Fiscal\FiscalAmounts::error('items','Identifique cada partida original del paquete para conservar su composición.');
+                    }
+                    if ($matches->count()===1) $old=$matches->first();
+                }
+                if ($old && (int)$old->item_id===(int)$row['item_id']) {
+                    if (isset($usedPackLines[$old->id])) \App\Services\Fiscal\FiscalAmounts::error('items','La partida del paquete está repetida.');
+                    $usedPackLines[$old->id]=true;
+                    $row['_verified_sale_note_pack_inventory']=$old->calculation_snapshot['inputs']['sale_note_pack_inventory'];
+                }
+            }
+            unset($row);
 
             $this->sale_note =  SaleNote::query()->updateOrCreate(['id' => $inputs['id']], $data);
 
@@ -385,6 +422,7 @@ class SaleNoteController extends Controller
                 $this->setIdLoteSelectedToItem($row);
                 $sale_note_item->fill($row);
                 $sale_note_item->sale_note_id = $this->sale_note->id;
+                if (isset($row['_verified_sale_note_pack_inventory'])) $sale_note_item->setRelation('verifiedSaleNotePackInventory',(object)$row['_verified_sale_note_pack_inventory']);
                 $sale_note_item->save();
 
                 if(isset($row['lots'])){
@@ -443,7 +481,15 @@ class SaleNoteController extends Controller
             $this->saveFee($this->sale_note, $data['fee'] ?? []);
 
             $this->setFilename();
-            $this->createPdf($this->sale_note,"a4", $this->sale_note->filename);
+            if ($deferPdfUntilCommit) {
+                $note = $this->sale_note;
+                DB::connection('tenant')->afterCommit(function () use ($note) {
+                    try { $this->createPdf($note, 'a4', $note->filename); }
+                    catch (\Throwable $e) { \Log::warning('No se pudo generar el PDF de la nota de Hotel después del cierre.', ['sale_note_id'=>$note->id, 'error'=>get_class($e)]); }
+                });
+            } else {
+                $this->createPdf($this->sale_note,"a4", $this->sale_note->filename);
+            }
             $this->regularizePayments();
             DB::connection('tenant')->commit();
 
@@ -549,20 +595,20 @@ class SaleNoteController extends Controller
 
     public function destroy_sale_note_item($id)
     {
-        $item = SaleNoteItem::findOrFail($id);
-
-        if(isset($item->item->lots)){
-
-            foreach($item->item->lots as $lot) {
-                // dd($lot->id);
+        DB::connection('tenant')->transaction(function () use ($id) {
+            Company::query()->lockForUpdate()->firstOrFail();
+            $sourceId=SaleNoteItem::whereKey($id)->value('sale_note_id');
+            $note=SaleNote::query()->lockForUpdate()->findOrFail($sourceId);
+            $this->assertSaleNoteSourceEditable($note);
+            $item=$note->items()->lockForUpdate()->findOrFail($id);
+            if ($note->order_note_id) \App\Services\Payments\Classification::error('items','Las partidas de una nota generada desde un pedido se conservan completas.');
+            if(isset($item->item->lots)) foreach($item->item->lots as $lot) {
                 $record_lot = ItemLot::findOrFail($lot->id);
                 $record_lot->has_sale = false;
                 $record_lot->update();
             }
-
-        }
-
-        $item->delete();
+            $item->delete();
+        });
 
         return [
             'success' => true,
@@ -805,6 +851,24 @@ class SaleNoteController extends Controller
                 if(strlen($it->item->description)>100){
                     $extra_by_item_description +=24;
                 }
+                if (in_array($format_pdf, ['ticket','ticket_58'], true)) {
+                    if (strlen(\App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::read($it, 'quantity'))) > 7) {
+                        $extra_by_item_description += 6;
+                    }
+                    if ($base_template === 'modern-2027') {
+                        $extra_by_item_description += 4 * max(0, (int) ceil(mb_strlen(strip_tags((string) $it->item->description)) / 22) - 1);
+                    }
+                    if ($format_pdf === 'ticket_58' && $base_template === 'marca_de_agua') {
+                        foreach ((array) ($it->item->IdLoteSelected ?? []) as $lot) {
+                            $code=trim((string) data_get($lot, 'code', ''));
+                            if ($code !== '') $extra_by_item_description += 5 * (int) ceil((mb_strlen($code) + mb_strlen((string) data_get($lot, 'date_of_due', '')) + 12) / 25);
+                        }
+                        foreach ((array) ($it->item->lots ?? []) as $serial) {
+                            $code=trim((string) data_get($serial, 'series', ''));
+                            if (data_get($serial, 'has_sale') && $code !== '') $extra_by_item_description += 5 * (int) ceil((mb_strlen($code) + 7) / 25);
+                        }
+                    }
+                }
                 if ($it->discounts) {
                     $discount_global = $discount_global + 1;
                 }
@@ -817,8 +881,11 @@ class SaleNoteController extends Controller
                 'mode' => 'utf-8',
                 'format' => [
                     $width,
-                    $base_height +
+                    $base_height + (str_contains($html,'data-pdf-unit-price-rounding') ? 20 : 0) + ((in_array($format_pdf, ['ticket','ticket_58'], true) && in_array($base_template, ['default','nrus','modern-2027'], true)) ? 6 : 0) +
                     ($quantity_rows * 8)+
+                    (($format_pdf === 'ticket_58' && in_array($base_template, ['Plantilla_personalizable','default','marca_de_agua'], true)) ? $quantity_rows * 20 : 0) +
+                    (($format_pdf === 'ticket_58' && $base_template === 'modern-2027')
+                        ? \App\Support\Exact\PdfQuantities::extraHeight58($this->document->items) : 0) +
                     ($discount_global * 3) +
                     $company_logo +
                     $payments +
@@ -1349,7 +1416,8 @@ class SaleNoteController extends Controller
         }*/
 
         return [
-            'success' => true
+            'success' => $sendIt,
+            'message' => $sendIt ? 'El correo fue enviado satisfactoriamente.' : 'No se pudo enviar el correo. Revise la configuración y el registro de envíos.'
         ];
     }
 
@@ -1387,14 +1455,27 @@ class SaleNoteController extends Controller
 
         DB::connection('tenant')->transaction(function () use ($id) {
 
-            $obj =  SaleNote::find($id);
+            Company::query()->lockForUpdate()->firstOrFail();
+            $obj = SaleNote::query()->lockForUpdate()->findOrFail($id);
+            if (in_array((string)$obj->state_type_id, \App\Models\Tenant\Document::VOIDED_REJECTED_IDS, true)) return;
+            $this->assertSaleNoteSourceEditable($obj);
+            if ($obj->order_note_id && $obj->document_id && \App\Models\Tenant\Document::whereKey($obj->document_id)
+                ->whereNotIn('state_type_id',\App\Models\Tenant\Document::VOIDED_REJECTED_IDS)->exists()) {
+                \App\Services\Payments\Classification::error('sale_note','No se puede anular una nota con una factura vigente.');
+            }
             $obj->state_type_id = 11;
             $obj->save();
+            if ($obj->order_note_id) {
+                foreach ($obj->items as $line) (new \App\Services\Fiscal\OrderSaleNoteLegacyInventory())->reverse($line);
+                return;
+            }
 
             // $establishment = Establishment::where('id', auth()->user()->establishment_id)->first();
             $warehouse = Warehouse::where('establishment_id',$obj->establishment_id)->first();
 
             foreach ($obj->items as $sale_note_item) {
+
+                (new \App\Services\Fiscal\SaleNoteGlobalInventory())->reverse($sale_note_item);
 
                 // voided sets
                 $this->voidedSaleNoteItem($sale_note_item, $warehouse);
@@ -1416,29 +1497,41 @@ class SaleNoteController extends Controller
 
     }
 
+    private function assertSaleNoteSourceEditable(SaleNote $note): void
+    {
+        if ($note->document_id && Document::whereKey($note->document_id)->whereNotIn('state_type_id',Document::VOIDED_REJECTED_IDS)->exists()) {
+            \App\Services\Payments\Classification::error('sale_note','La nota tiene una factura vigente y conserva sus partidas.');
+        }
+        if (Dispatch::where('reference_sale_note_id',$note->id)->whereNotIn('state_type_id',Document::VOIDED_REJECTED_IDS)->exists()) {
+            \App\Services\Payments\Classification::error('sale_note','La nota tiene una orden de entrega vigente y conserva sus partidas.');
+        }
+    }
+
     public function voidedSaleNoteItem($sale_note_item, $warehouse)
     {
+        if (($sale_note_item->calculation_snapshot['inputs']['inventory_service_without_movement'] ?? false) === true) return;
+        if (\App\Services\Fiscal\SaleNotePackInventory::apply($sale_note_item,1)) return;
 
-        $warehouse_id = ($sale_note_item->warehouse_id) ? $sale_note_item->warehouse_id : $warehouse->id;
+        $warehouse_id = $sale_note_item->warehouse_id ?: optional($warehouse)->id;
+        if (!$warehouse_id) \App\Services\Fiscal\FiscalAmounts::error('inventory','No se encontró el almacén de la nota de venta.');
 
         if(!$sale_note_item->item->is_set){
 
             $presentationQuantity = (!empty($sale_note_item->item->presentation)) ? $sale_note_item->item->presentation->quantity_unit : 1;
 
+            $quantity=$sale_note_item->exactValue('quantity')->multipliedBy(\App\Support\Exact\Decimal::of($presentationQuantity));
             $sale_note_item->sale_note->inventory_kardex()->create([
                 'date_of_issue' => date('Y-m-d'),
                 'item_id' => $sale_note_item->item_id,
                 'warehouse_id' => $warehouse_id,
-                'quantity' => $sale_note_item->quantity * $presentationQuantity,
+                'quantity' => $quantity,
             ]);
 
-            $wr = ItemWarehouse::where([['item_id', $sale_note_item->item_id],['warehouse_id', $warehouse_id]])->first();
+            $wr = ItemWarehouse::where([['item_id', $sale_note_item->item_id],['warehouse_id', $warehouse_id]])->lockForUpdate()->first();
+            if (!$wr) \App\Services\Fiscal\FiscalAmounts::error('inventory','No se encontró el saldo de almacén de la partida.');
 
-            if($wr)
-            {
-                $wr->stock =  $wr->stock + ($sale_note_item->quantity * $presentationQuantity);
-                $wr->save();
-            }
+            $wr->stock = $wr->exactValue('stock')->plus($quantity);
+            $wr->save();
 
         }else{
 

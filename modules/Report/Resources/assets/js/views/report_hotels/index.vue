@@ -40,7 +40,7 @@
                          <th  >Procedencia</th>
                          <th>Comprobante</th>-->
 
-                    <tr>
+                    </tr>
                     <tr slot-scope="{ index, row }">
                         <td>{{ index }}</td>
                         <td>{{ row.customer.description }}</td>
@@ -131,18 +131,7 @@ export default {
             this.room_name = room
         },
         checkProductDebts(row) {
-            let str = '';
-            let deb = 0;
-            row.forEach(function (a, b) {
-                if (a.payment_status !== 'PAID') {
-                    deb += a.item.total;
-                }
-            });
-            if (deb != 0) {
-                str = `Debe ${deb} en producto(s)`;
-            }
-
-            return str;
+            return row.some(item => item.payment_status !== 'PAID') ? 'Hay productos pendientes' : '';
         }
     },
 

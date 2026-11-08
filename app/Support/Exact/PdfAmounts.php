@@ -11,7 +11,7 @@ final class PdfAmounts
     public static function lineDiscount($line, bool $excludeGlobal = true): \Brick\Math\BigRational
     {
         $total=Decimal::of(0);
-        foreach ($line->discounts ?? [] as $entry) {
+        foreach (self::adjustments($line, 'discounts') as $entry) {
             $entry=(array)$entry;
             if ($excludeGlobal && !empty($entry['from_global_distribution'])) continue;
             $value=Decimal::of($entry['amount_exact'] ?? $entry['amount_without_rounded'] ?? $entry['amount'] ?? 0);
@@ -19,6 +19,44 @@ final class PdfAmounts
             $total=$total->plus($value);
         }
         return $total;
+    }
+
+    /** Preserve the numeric tokens stored in JSON, even for legacy adjustments. */
+    public static function adjustments($line, string $field): array
+    {
+        if (!in_array($field, ['discounts','charges'], true)) throw new \InvalidArgumentException('Ajuste no admitido.');
+        $attributes = is_array($line) ? $line : (method_exists($line, 'getAttributes') ? $line->getAttributes() : get_object_vars($line));
+        $raw = $attributes[$field] ?? [];
+        if (is_string($raw)) $raw=JsonDecimals::decode($raw);
+        return array_map(fn ($entry)=>(object)$entry, array_values((array)$raw));
+    }
+
+    public static function adjustmentPercent($entry): string
+    {
+        $entry=(array)$entry;
+        $percent = array_key_exists('percentage',$entry) && $entry['percentage'] !== null
+            ? Decimal::of($entry['percentage'])
+            : Decimal::of($entry['factor'] ?? 0)->multipliedBy(100);
+        return Decimal::represent($percent);
+    }
+
+    public static function adjustmentAmount($entry): string
+    {
+        $entry=(array)$entry;
+        return Decimal::format($entry['amount_exact'] ?? $entry['amount_without_rounded'] ?? $entry['amount'] ?? 0);
+    }
+
+    /** Return a percentage only when every taxable line uses the same rate. */
+    public static function singleTaxRate(iterable $items): ?string
+    {
+        $rate=null;
+        foreach ($items as $item) {
+            $value=Decimal::readRequired($item, 'percentage_igv');
+            if ($value->isZero()) continue;
+            if ($rate !== null && !$rate->isEqualTo($value)) return null;
+            $rate=$value;
+        }
+        return $rate === null ? null : Decimal::represent($rate);
     }
 
     public static function read($record, string $field): \Brick\Math\BigRational

@@ -61,6 +61,7 @@
                     <th class="">Moneda</th>
                     <th class="">Tipo</th>
                     <th class="">Destino</th>
+                    <th class="">Cuenta/Caja actual</th>
                     <th class="">F. Pago</th>
                     <th class="">Método</th>
                     <th class="">Referencia</th>
@@ -152,6 +153,7 @@
                         <td class="celda">{{ $data['currency_type_id'] }}</td>
                         <td class="celda">{{ $data['instance_type_description'] }}</td>
                         <td class="celda">{{ $data['destination_description'] }}</td>
+                        <td data-type="s" class="celda" style="mso-number-format:'\@'">{{ \Modules\Finance\Services\CurrentDestinationReference::forPayment($value) ?? '—' }}</td>
                         <td class="celda">{{ $data['date_of_payment'] }}</td>
                         <td class="celda">{{ $data['payment_method_type_description'] }}</td>
                         <td class="celda">{{ $data['reference'] }}</td>

@@ -78,18 +78,6 @@
                         </th>
                         <th
                             class="text-end"
-                            v-if="columns.total_free.visible"
-                        >
-                            T.Gratuita
-                        </th>
-                        <th
-                            class="text-end"
-                            v-if="columns.total_unaffected.visible"
-                        >
-                            T.Inafecta
-                        </th>
-                        <th
-                            class="text-end"
                             v-if="columns.total_exonerated.visible"
                         >
                             T.Exonerado
@@ -145,33 +133,7 @@
                         </td>
 
                         <td>
-                            <el-tooltip
-                                v-if="tooltip(row, false)"
-                                class="item"
-                                effect="dark"
-                                placement="bottom"
-                            >
-                                <div slot="content">{{ tooltip(row) }}</div>
-                                <span
-                                    class="badge bg-secondary text-white"
-                                    :class="{
-                                        'bg-danger': row.state_type_id === '11',
-                                        'bg-warning':
-                                            row.state_type_id === '13',
-                                        'bg-secondary':
-                                            row.state_type_id === '01',
-                                        'bg-info': row.state_type_id === '03',
-                                        'bg-success':
-                                            row.state_type_id === '05',
-                                        'bg-secondary':
-                                            row.state_type_id === '07',
-                                        'bg-dark': row.state_type_id === '09'
-                                    }"
-                                    >{{ row.state_type_description }}</span
-                                >
-                            </el-tooltip>
                             <span
-                                v-else
                                 class="badge bg-secondary text-white"
                                 :class="{
                                     'bg-danger': row.state_type_id === '11',
@@ -194,29 +156,17 @@
                             class="text-end"
                             v-if="columns.total_exportation.visible"
                         >
-                            {{ row.total_exportation }}
-                        </td>
-                        <td
-                            class="text-end"
-                            v-if="columns.total_free.visible"
-                        >
-                            {{ row.total_free }}
-                        </td>
-                        <td
-                            class="text-end"
-                            v-if="columns.total_unaffected.visible"
-                        >
-                            {{ row.total_unaffected }}
+                            {{ formatTotal(row, 'total_exportation') }}
                         </td>
                         <td
                             class="text-end"
                             v-if="columns.total_exonerated.visible"
                         >
-                            {{ row.total_exonerated }}
+                            {{ formatTotal(row, 'total_exonerated') }}
                         </td>
-                        <td class="text-end">{{ row.total_taxed }}</td>
-                        <td class="text-end">{{ row.total_igv }}</td>
-                        <td class="text-end">{{ row.total }}</td>
+                        <td class="text-end">{{ formatTotal(row, 'total_taxed') }}</td>
+                        <td class="text-end">{{ formatTotal(row, 'total_igv') }}</td>
+                        <td class="text-end">{{ formatTotal(row, 'total') }}</td>
                         <td class="text-center">
                             <!-- ########## INICIO CAMBIO DESCARGAS XML/CDR -->
                             <!-- XML y CDR no se ofrecen; PDF y las demás acciones permanecen. -->
@@ -267,6 +217,8 @@
 import DocumentsVoided from "../documents/partials/voided.vue";
 import DocumentOptions from "../documents/partials/options.vue";
 import DataTable from "../../../components/DataTable.vue";
+import {exactValue} from '../../../helpers/exchange-rate-math';
+import {formatMoneyExact} from '../../../helpers/format-money-exact';
 
 export default {
     props: ["isClient"],
@@ -287,14 +239,6 @@ export default {
                     title: "T.Exportación",
                     visible: false
                 },
-                total_free: {
-                    title: "T.Gratuito",
-                    visible: false
-                },
-                total_unaffected: {
-                    title: "T.Inafecto",
-                    visible: false
-                },
                 total_exonerated: {
                     title: "T.Exonerado",
                     visible: false
@@ -306,9 +250,12 @@ export default {
         this.loadColumnVisibility();
     },
     methods: {
+        formatTotal(row, field) {
+            return formatMoneyExact(exactValue(row, field));
+        },
         formatDate(date) {
             if (!date) return null;
-            const parsedDate = moment(date);
+            const parsedDate = moment(date, ["DD-MM-YYYY", "YYYY-MM-DD"], true);
             return parsedDate.isValid()
                 ? parsedDate.format("DD-MM-YYYY")
                 : null;
@@ -323,8 +270,14 @@ export default {
             const savedColumns = localStorage.getItem(
                 "columnVisibilityContingencies"
             );
-            if (savedColumns) {
-                this.columns = JSON.parse(savedColumns);
+            if (!savedColumns) return;
+            try {
+                const saved = JSON.parse(savedColumns);
+                for (const key of Object.keys(this.columns)) {
+                    if (typeof saved?.[key]?.visible === 'boolean') this.columns[key].visible = saved[key].visible;
+                }
+            } catch (_) {
+                // Conservar los valores predeterminados si la preferencia guardada no es válida.
             }
         },
         clickVoided(recordId = null) {

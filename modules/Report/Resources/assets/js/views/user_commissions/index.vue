@@ -6,7 +6,7 @@
             </a></h2>
             <ol class="breadcrumbs">
                 <li class="active"><span> Comisiones vendedores - utilidades
-                    <el-tooltip class="item" effect="dark" content="Total ventas (CPE - NV) - Total compras" placement="top-end">
+                    <el-tooltip class="item" effect="dark" content="Ventas menos costos estimados según compras o catálogo disponible." placement="top-end">
                         <i class="fa fa-info-circle"></i>
                     </el-tooltip>  
                 </span></li>
@@ -28,8 +28,8 @@
                                 <th>Vendedor</th>
                                 <th class="text-center">Tipo comisión</th>
                                 <th class="text-center">Monto comisión</th>
-                                <th class="text-center">Total utilidad</th>
-                                <th class="text-center">Total comisiones</th>
+                                <th class="text-center">Utilidad estimada (Bs.)</th>
+                                <th class="text-center">Comisión estimada (Bs.)</th>
                             </tr>
                             <tr slot-scope="{ index, row }">
                                 <td>{{ index }}</td>  

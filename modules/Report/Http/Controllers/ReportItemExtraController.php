@@ -60,11 +60,13 @@
          */
         public function records(Request $request)
         {
-
+            $request->validate(['page'=>'sometimes|integer|min:1']);
+            return \App\Support\Exact\ReadSnapshot::run((new DocumentItem)->getConnection(), function () use ($request) {
 
             $data = [
                 'establishment_id' => $request->has('establishment_id') ? $request->establishment_id : null,
                 'item_id' => $request->has('item_id') ? $request->item_id : null,
+                'type' => $request->input('type'),
                 'document_type_id' => $request->has('document_type_id') ? $request->document_type_id : null,
                 'period' => $request->has('period') ? $request->period : 'month',
                 'web_platform_id' => $request->has('web_platform_id') ? $request->web_platform_id : null,
@@ -84,9 +86,14 @@
                     'CatItemSize' => $request->has('extra.CatItemSize') ? $request->extra['CatItemSize'] : null,
                 ] : [],
             ];
-            $records = $this->getRecordsItems($data, DocumentItem::class);
-
-            return new ItemCollection($records->paginate(config('tenant.items_per_page')));
+            $records = $this->getRecordsItems($data, DocumentItem::class)->orderByDesc('id');
+            $page=(clone $records)->paginate(max(1,min(500,(int)config('tenant.items_per_page',50))),['*'],'page',(int)$request->input('page',1));
+            $purchase=$records->getModel() instanceof PurchaseItem;
+            $keys=$page->getCollection()->map(fn($row)=>($purchase?'purchase_item:':'document_item:').$row->id);
+            $all=(clone $records)->withoutEagerLoads()->with($purchase?'purchase':'document')->lazy(500);
+            $display=\Modules\Report\Services\ItemReportAmounts::displayForPage($all,$keys);
+            return (new ItemCollection($page,$display))->response($request);
+            });
         }
 
 
@@ -179,7 +186,8 @@
 
             $movement = ItemMovement::getElementItemIdFromClass($model,$item_id,$extra);
 
-            if (count($movement)> 0) {
+            $hasExtra = collect($extra)->contains(fn ($value) => is_array($value) ? count($value)>0 : $value !== null && $value !== '');
+            if ($hasExtra || count($movement)> 0) {
                 $data->wherein('id',$movement);
             }
             if ($model !== PurchaseItem::class) {
@@ -203,7 +211,7 @@
                 $data->whereHas('purchase', function ($query) use ($date_start, $date_end) {
                     /** @var Builder $query */
                     $query
-                        ->whereBetween('date_of_due', [$date_start, $date_end])
+                        ->whereBetween('date_of_issue', [$date_start, $date_end])
                         //->whereIn('document_type_id', ['01','03'])
                         ->WhereStateTypeAccepted()
                         ->latest()
@@ -223,7 +231,7 @@
          */
         public function excel(Request $request)
         {
-
+            return \App\Support\Exact\ReadSnapshot::run((new DocumentItem)->getConnection(), function () use ($request) {
 
             $company = Company::first();
             $establishment = ($request->establishment_id) ? Establishment::findOrFail($request->establishment_id) : auth()->user()->establishment;
@@ -232,7 +240,7 @@
             } else {
                 $model = DocumentItem::class;
             }
-            $records = $this->getRecordsItems($request->all(), $model)->get();
+            $records = $this->getRecordsItems($request->all(), $model)->orderByDesc('id')->get();
             $itemExport = new ItemExport();
             $fileName = 'Reporte_Ventas_por_Producto_' . Carbon::now() . '.xlsx';
             if ($request->has('type') && $request->type === 'purchase') {
@@ -248,6 +256,7 @@
                 ->setWithExtraData(true);
             // return $data->view();
             return $data->download($fileName);
+            });
 
         }
     }

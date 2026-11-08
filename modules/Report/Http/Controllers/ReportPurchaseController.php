@@ -46,18 +46,25 @@ class ReportPurchaseController extends Controller
 
     public function records(Request $request)
     {
-        $records = $this->getRecords($request->all(), Purchase::class);
-
-        return new PurchaseCollection($records->paginate(config('tenant.items_per_page')));
+        $request->validate(['page'=>'sometimes|integer|min:1']);
+        return \App\Support\Exact\ReadSnapshot::run((new Purchase)->getConnection(), function () use ($request) {
+            $records = $this->getRecords($request->all(), Purchase::class)->orderByDesc('id');
+            $page = (clone $records)->paginate(max(1, min(500, (int) config('tenant.items_per_page', 50))), ['*'], 'page', (int) $request->input('page', 1));
+            $fields = array_merge(['id','currency_type_id','exchange_rate_sale','state_type_id','calculation_snapshot'], \Modules\Report\Services\PurchaseReportAmounts::FIELDS);
+            $all = (clone $records)->withoutEagerLoads()->select(array_unique($fields))->lazy(500);
+            $display = \Modules\Report\Services\PurchaseReportAmounts::displayForPage($all, $page->getCollection()->pluck('id'),
+                \Modules\Report\Services\PurchaseReportAmounts::converted($request->input('apply_conversion_to_pen')));
+            return (new PurchaseCollection($page, $display))->response($request);
+        });
     }
 
 
 
     public function pdf(Request $request) {
-
+        return \App\Support\Exact\ReadSnapshot::run((new Purchase)->getConnection(), function () use ($request) {
         $company = Company::first();
         $establishment = ($request->establishment_id) ? Establishment::findOrFail($request->establishment_id) : auth()->user()->establishment;
-        $records = $this->getRecords($request->all(), Purchase::class)->get();
+        $records = $this->getRecords($request->all(), Purchase::class)->orderByDesc('id')->get();
         $filters = $request->all();
 
         $pdf = PDF::loadView('report::purchases.report_pdf', compact("records", "company", "establishment", "filters"))->setPaper('a4', 'landscape');
@@ -65,16 +72,17 @@ class ReportPurchaseController extends Controller
         $filename = 'Reporte_Compras_'.date('YmdHis');
 
         return $pdf->download($filename.'.pdf');
+        });
     }
 
 
 
 
     public function excel(Request $request) {
-
+        return \App\Support\Exact\ReadSnapshot::run((new Purchase)->getConnection(), function () use ($request) {
         $company = Company::first();
         $establishment = ($request->establishment_id) ? Establishment::findOrFail($request->establishment_id) : auth()->user()->establishment;
-        $records = $this->getRecords($request->all(), Purchase::class)->get();
+        $records = $this->getRecords($request->all(), Purchase::class)->orderByDesc('id')->get();
         $filters = $request->all();
 
         return (new PurchaseExport)
@@ -83,6 +91,7 @@ class ReportPurchaseController extends Controller
                 ->establishment($establishment)
                 ->filters($filters)
                 ->download('Reporte_Compras_'.Carbon::now().'.xlsx');
+        });
 
     }
 }

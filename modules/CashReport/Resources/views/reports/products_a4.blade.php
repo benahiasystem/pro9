@@ -60,8 +60,8 @@ table {
 {{-- ######## FIN CLASIFICACION DE COBROS Y CAJA ######## --}}
 @if($documents->count())
     @php
-        $total = 0;
-        $subTotal = 0
+        $currencySubtotals = \Modules\CashReport\Services\ProductsAmounts::subtotalsByOperation($documents);
+        $displaySubtotals = \Modules\CashReport\Services\ProductsAmounts::display($documents, 'sub_total');
     @endphp
     @php
         $items_id=[];
@@ -87,6 +87,8 @@ table {
                 <tr>
                     <th>#</th>
                     <th>Producto</th>
+                    <th>Operación</th>
+                    <th>Moneda</th>
                     <th>Cantidad</th>
                     <th>Precio</th>
                     <th>Sub Total</th>
@@ -99,30 +101,25 @@ table {
                     <tr>
                         <td class="celda">{{ $loop->iteration }}</td>
                         <td class="celda">{{ $item['description'] }}</td>
+                        <td class="celda">{{ $item['record_type'] === 'purchase_item' ? 'Compra' : 'Venta' }}</td>
+                        <td class="celda">{{ $item['currency_type_id'] ?: 'Sin moneda' }}</td>
                         <td class="celda">{{ $item['quantity'] }}</td>
                         <td class="celda"
-                            style="text-align: right">{{ App\CoreFacturalo\Helpers\Template\ReportHelper::setNumber($item['unit_value']) }}</td>
+                            style="text-align: right">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\Decimal::readRequired($item, 'unit_value')) }}</td>
                         <td class="celda"
-                            style="text-align: right">{{ App\CoreFacturalo\Helpers\Template\ReportHelper::setNumber($item['sub_total']) }}</td>
+                            style="text-align: right">{{ $displaySubtotals[$loop->index] }}</td>
                         <td class="celda">{{ $item['number_full'] }}</td>
                     </tr>
-                    @php
-                        $total+=$item['unit_value'];
-                        $subTotal+=$item['sub_total']
-                    @endphp
                 @endforeach
 
-                <tr>
-                    <td class="celda"></td>
-                    <td class="celda"></td>
-                    <td class="celda"></td>
-                    <td class="celda"> Totales </td>
-                    <td class="celda" style="text-align: right">
-                        {{ App\CoreFacturalo\Helpers\Template\ReportHelper::setNumber($subTotal) }}
-                    </td>
-                    <td class="celda"></td>
-
-                </tr>
+                @foreach($currencySubtotals as $operation => $currencies)
+                @foreach($currencies as $currency => $subtotal)
+                <tr><td colspan="6" class="celda">{{ $operation }} {{ $currency }}</td><td class="celda" style="text-align: right">{{ \App\Support\Exact\Decimal::format($subtotal) }}</td><td class="celda"></td></tr>
+                @endforeach
+                @endforeach
+                @if($documents->contains(fn($row) => !in_array($row['currency_type_id'], ['VES', 'USD'], true)))
+                <tr><td colspan="8" class="celda">Las partidas sin moneda identificada no se incluyen en los totales.</td></tr>
+                @endif
                 </tbody>
             </table>
             <br>

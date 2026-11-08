@@ -9,19 +9,22 @@ use App\Support\Exact\Decimal as D;
 final class FiscalNoteInventory
 {
     /** Preserve physical composition when an invoice is first persisted. */
-    public static function capture(array $line): array
+    public static function capture(array $line, ?array $frozenComponents=null): array
     {
         $item=Item::findOrFail($line['item_id']);
         $line['item']['is_set']=(bool)$item->is_set;
         $components=[];
-        if ($item->unit_type_id !== 'SERV') {
-            if ($item->is_set) {
-                foreach ($item->sets as $component) if ($component->individual_item->unit_type_id !== 'SERV') $components[]=['item_id'=>$component->individual_item_id,'quantity'=>(string)($component->quantity ?: 1)];
-            }
-            else $components[]=['item_id'=>$item->id,'quantity'=>(string)($line['item']['presentation']['quantity_unit'] ?? 1)];
+        if ($item->is_set) {
+            if ($frozenComponents !== null) $components=$frozenComponents;
+            else foreach ($item->sets as $component) if ($component->individual_item->unit_type_id !== 'SERV') $components[]=['item_id'=>$component->individual_item_id,'quantity'=>$component->exactValue('quantity')];
+        } elseif ($item->unit_type_id !== 'SERV') $components[]=['item_id'=>$item->id,'quantity'=>(string)($line['item']['presentation']['quantity_unit'] ?? 1)];
+        foreach ($components as &$component) {
+            $quantity=D::of($component['quantity_exact'] ?? $component['quantity'] ?? 0);
+            if (empty($component['item_id']) || !$quantity->isPositive()) FiscalAmounts::error('items','La composición del producto debe tener cantidades positivas.');
+            $component['quantity']=D::represent($quantity); $component['quantity_exact']=D::fraction($quantity);
         }
+        unset($component);
         $line['item']['inventory_components']=$components;
-        foreach ($components as $component) validator($component,['quantity'=>'required|numeric|gt:0'])->validate();
         return $line;
     }
 
@@ -37,37 +40,81 @@ final class FiscalNoteInventory
             $item['inventory_components']=($item['unit_type_id'] ?? '') === 'SERV' ? [] : [['item_id'=>$source->item_id,'quantity'=>(string)($item['presentation']['quantity_unit'] ?? 1)]];
         }
         $used=DocumentItem::where('affected_document_item_id',$source->id)->whereHas('document',fn ($q)=>$q->whereNotIn('state_type_id',Document::VOIDED_REJECTED_IDS))->get();
+        // ######## INICIO DEVOLUCIÓN EXACTA POR LOTE ########
         $lots=$item['IdLoteSelected'] ?? [];
-        if ($lots && !is_array($lots)) $lots=[['id'=>$lots,'compromise_quantity'=>$source->quantity]];
-        $available=[];
-        foreach ($lots ?: [] as $lot) $available[$lot['id']]=D::of($lot['compromise_quantity_exact'] ?? $lot['compromise_quantity']);
+        if ($lots && !is_array($lots)) $lots=[['id'=>$lots,'compromise_quantity'=>D::represent($source->exactValue('quantity')),
+            'compromise_quantity_exact'=>D::fraction($source->exactValue('quantity'))]];
+        $available=[]; $lotMetadata=[];
+        foreach ($lots ?: [] as $lot) {
+            $available[$lot['id']]=D::of($lot['compromise_quantity_exact'] ?? $lot['compromise_quantity']);
+            $record=(!isset($lot['code']) || !isset($lot['date_of_due']))
+                ? ItemLotsGroup::where('item_id',$source->item_id)->find($lot['id']) : null;
+            $lotMetadata[$lot['id']]=['code'=>$lot['code'] ?? $record->code ?? '',
+                'date_of_due'=>$lot['date_of_due'] ?? $record->date_of_due ?? ''];
+        }
         foreach ($used as $prior) foreach ((array)($prior->item->IdLoteSelected ?? []) as $lot) {
             $lot=(array)$lot; $available[$lot['id']]=D::of($available[$lot['id']] ?? 0)->minus(D::of($lot['compromise_quantity_exact'] ?? $lot['compromise_quantity']));
         }
         $selected=$posted['lot_returns'] ?? null;
         if ($available) {
-            if ($selected === null) {
+            $automatic=$selected === null;
+            if ($automatic) {
                 $selected=[]; $left=D::of($quantity);
                 foreach ($available as $id=>$amount) { $take=D::min(D::max(0,$amount),$left); if ($take->isGreaterThan(0)) $selected[]=['id'=>$id,'compromise_quantity'=>D::represent($take),'compromise_quantity_exact'=>D::fraction($take)]; $left=$left->minus($take); }
             }
-            $sum=D::of(0); $seen=[];
+            $sum=D::of(0); $seen=[]; $normalized=[];
             foreach ($selected as $lot) {
-                $id=$lot['id'] ?? 0; $take=D::of(D::input($lot['compromise_quantity'] ?? 0, 'items.lot_returns.compromise_quantity'));
+                $id=$lot['id'] ?? 0;
+                $take=$automatic ? D::of($lot['compromise_quantity_exact']) : D::of(D::input($lot['compromise_quantity'] ?? 0, 'items.lot_returns.compromise_quantity'));
                 if (isset($seen[$id]) || $take->isLessThanOrEqualTo(0) || $take->isGreaterThan($available[$id] ?? 0)) FiscalAmounts::error('items.lot_returns','El lote o su cantidad no pertenece a la devolución pendiente.');
                 $seen[$id]=true; $sum=$sum->plus($take);
+                $normalized[]=['id'=>$id,'quantity'=>$take];
             }
-            if (!$sum->isEqualTo(D::of($quantity))) FiscalAmounts::error('items.lot_returns','Los lotes deben sumar la cantidad devuelta.');
-            $item['IdLoteSelected']=$selected;
+            $target=D::of($quantity);
+            if (!$sum->isEqualTo($target)) {
+                if (!$normalized || D::represent($sum)!==D::represent($target)) FiscalAmounts::error('items.lot_returns','Los lotes deben sumar la cantidad devuelta.');
+                $last=count($normalized)-1; $corrected=$normalized[$last]['quantity']->plus($target->minus($sum));
+                if (!$corrected->isPositive() || $corrected->isGreaterThan($available[$normalized[$last]['id']] ?? 0)) FiscalAmounts::error('items.lot_returns','El lote o su cantidad no pertenece a la devolución pendiente.');
+                $normalized[$last]['quantity']=$corrected;
+            }
+            $item['IdLoteSelected']=array_map(fn($lot)=>['id'=>$lot['id'],'code'=>$lotMetadata[$lot['id']]['code'],
+                'date_of_due'=>$lotMetadata[$lot['id']]['date_of_due'],'compromise_quantity'=>D::represent($lot['quantity']),
+                'compromise_quantity_exact'=>D::fraction($lot['quantity'])],$normalized);
         }
+        // ######## FIN DEVOLUCIÓN EXACTA POR LOTE ########
         $serials=array_filter($item['lots'] ?? [],fn ($l)=>!empty($l['has_sale']));
         $usedSerials=[];
         foreach ($used as $prior) foreach ((array)($prior->item->lots ?? []) as $serial) $usedSerials[]=((array)$serial)['id'];
         $serials=array_values(array_filter($serials,fn ($l)=>!in_array($l['id'],$usedSerials,true)));
         if ($serials) {
-            if (!D::of($quantity)->simplified()->getDenominator()->isEqualTo(1)) FiscalAmounts::error('items.quantity','La devolución de unidades con serial requiere cantidades enteras.');
-            $ids=array_map('intval',$posted['serial_ids'] ?? array_column(array_slice($serials,0,D::of($quantity)->toBigInteger()->toInt()),'id'));
-            if (count(array_unique($ids)) !== D::of($quantity)->toBigInteger()->toInt() || array_diff($ids,array_column($serials,'id'))) FiscalAmounts::error('items.serial_ids','Seleccione los seriales originales pendientes de devolución.');
+            $physical=D::of($quantity)->multipliedBy(!empty($item['lot_serial_assignments_verified']) ? ($item['presentation']['quantity_unit'] ?? 1) : 1);
+            if (!$physical->simplified()->getDenominator()->isEqualTo(1) || $physical->isGreaterThan(count($serials))) FiscalAmounts::error('items.quantity','La devolución de unidades con serial requiere cantidades físicas enteras disponibles.');
+            $expected=[];
+            if (!empty($item['lot_serial_assignments_verified'])) {
+                foreach ($item['IdLoteSelected'] ?? [] as $lot) {
+                    $lot=(array)$lot; $amount=D::of($lot['compromise_quantity_exact'] ?? $lot['compromise_quantity'])->multipliedBy($item['presentation']['quantity_unit'] ?? 1);
+                    if (!$amount->simplified()->getDenominator()->isEqualTo(1)) FiscalAmounts::error('items.lot_returns','Cada lote con seriales requiere cantidades físicas enteras.');
+                    $expected[(string)$lot['id']]=$amount;
+                }
+            }
+            if (isset($posted['serial_ids'])) $ids=array_map('intval',$posted['serial_ids']);
+            elseif ($expected) {
+                $ids=[]; $selectedCounts=[];
+                foreach ($serials as $serial) {
+                    $lotId=(string)($serial['lot_group_id'] ?? '');
+                    if (isset($expected[$lotId]) && D::of($selectedCounts[$lotId] ?? 0)->isLessThan($expected[$lotId])) {
+                        $ids[]=(int)$serial['id']; $selectedCounts[$lotId]=($selectedCounts[$lotId] ?? 0)+1;
+                    }
+                }
+            } else $ids=array_column(array_slice($serials,0,$physical->toBigInteger()->toInt()),'id');
+            if (count(array_unique($ids)) !== count($ids) || !$physical->isEqualTo(count($ids)) || array_diff($ids,array_column($serials,'id'))) FiscalAmounts::error('items.serial_ids','Seleccione los seriales originales pendientes de devolución.');
             $item['lots']=array_values(array_filter($serials,fn ($l)=>in_array($l['id'],$ids)));
+            if ($expected) {
+                $counts=[];
+                foreach ($item['lots'] as $serial) { $lotId=(string)($serial['lot_group_id'] ?? ''); $counts[$lotId]=($counts[$lotId] ?? 0)+1; }
+                foreach ($expected as $lotId=>$amount) if (!$amount->isEqualTo($counts[$lotId] ?? 0)) FiscalAmounts::error('items.serial_ids','Los seriales devueltos deben corresponder a los lotes seleccionados.');
+                foreach ($counts as $lotId=>$count) if (!isset($expected[$lotId])) FiscalAmounts::error('items.serial_ids','Los seriales devueltos deben corresponder a los lotes seleccionados.');
+            }
         } else $item['lots']=[];
         return $item;
     }
@@ -80,7 +127,7 @@ final class FiscalNoteInventory
         if (!$warehouse || !\Modules\Inventory\Models\Warehouse::where('id',$warehouse)->where('establishment_id',$document->establishment_id)->exists()) FiscalAmounts::error('items.warehouse_id','La devolución requiere el almacén original de la sucursal.');
         foreach ((array)($line->item->inventory_components ?? []) as $component) {
             $component=(array)$component;
-            $quantity=$line->exactValue('inventory_quantity')->multipliedBy($component['quantity'])->multipliedBy($direction);
+            $quantity=$line->exactValue('inventory_quantity')->multipliedBy(D::of($component['quantity_exact'] ?? $component['quantity']))->multipliedBy($direction);
             $stock=ItemWarehouse::where('item_id',$component['item_id'])->where('warehouse_id',$warehouse)->lockForUpdate()->firstOrFail();
             if ($direction < 0 && $stock->exactValue('stock')->plus($quantity)->isNegative()) FiscalAmounts::error('inventory','No hay stock suficiente para revertir la devolución.');
             $stock->stock=$stock->exactValue('stock')->plus($quantity);
@@ -104,5 +151,8 @@ final class FiscalNoteInventory
             if ($direction < 0 && $record->has_sale) FiscalAmounts::error('inventory','El serial devuelto ya fue vendido nuevamente.');
             $record->has_sale=$direction < 0; if (!$checkOnly) $record->save();
         }
+        (new OrderSaleNoteLegacyInventory())->credit($line,$direction,$checkOnly);
+        DeliveryOrderGlobalInventory::credit($line,$direction,$checkOnly);
+        InvoiceGlobalInventory::credit($line,$direction,$checkOnly);
     }
 }

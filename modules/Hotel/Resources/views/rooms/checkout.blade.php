@@ -13,6 +13,7 @@
         :affectation-igv-types='{{ $affectation_igv_types }}'
         :payments='{{ $payments }}'
         :rent-items='{{ $items }}'
+        :atomic-checkout='@json(\App\Support\Exact\Persistence::enabled($rent))'
     >
     </tenant-hotel-rent-checkout>
 @endsection

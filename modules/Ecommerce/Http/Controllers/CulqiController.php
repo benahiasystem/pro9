@@ -254,9 +254,12 @@ class CulqiController extends Controller
             $document->client = $user?->name
                 ?? ($customer['apellidos_y_nombres_o_razon_social'] ?? 'Cliente');
             $document->product = $request->producto;
-            $document->total = $request->precio_culqi;
+            $document->total = $culqiStatus['amount'] === null ? null
+                : \App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::of($culqiStatus['amount'])->dividedBy(100));
+            $document->currency_label = $culqiStatus['currency'] ?: null;
             $document->items = is_array($orderItems) ? $orderItems : [];
             $document->id = $order->id;
+            $document->payment_confirmed = true;
             $document->order_number = $order->publicNumber();
             $document->tracking_url = route('tenant_ecommerce_order_tracking', [
                 'pedido' => $document->order_number,
@@ -266,7 +269,9 @@ class CulqiController extends Controller
             $mailable = new CulqiEmail($document);
             $id = (int) $order->id;
             $model = __FILE__.";;".__LINE__;
-            EmailController::SendMail($email, $mailable, $id, $model);
+            if (!EmailController::SendMail($email, $mailable, $id, $model)) {
+                Log::warning('Culqi: pedido creado; no se pudo enviar la notificación.', ['order_id'=>$id]);
+            }
         } catch (\Throwable $e) {
             Log::warning('Culqi: pedido '.$order->id.' creado; fallo al enviar email: '.$e->getMessage());
         }

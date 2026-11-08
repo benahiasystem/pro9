@@ -143,36 +143,21 @@
 </table>
 
 <table class="full-width mt-10 mb-10">
-    <thead class="">
-    <tr>
-        @if($show_codigo) <th class="border-top-bottom desc-9 text-left">COD.</th> @endif
-        @if($show_cantidad) <th class="border-top-bottom desc-9 text-left">CANT.</th> @endif
-        @if($show_unidad) <th class="border-top-bottom desc-9 text-left">UNIDAD</th> @endif
-        @if($show_descripcion) <th class="border-top-bottom desc-9 text-left">DESCRIP.</th> @endif
-        @if($show_precio_unitario) <th class="border-top-bottom desc-9 text-left">P.UNIT</th> @endif
-        @if($show_total) <th class="border-top-bottom desc-9 text-left">TOTAL</th> @endif
-    </tr>
-    </thead>
+    <thead><tr><th colspan="{{ $colspan_total }}" class="border-top-bottom desc-9 text-left">DETALLE</th></tr></thead>
     <tbody>
     @foreach($document->items as $row)
         @inject('items', 'App\Models\Tenant\Item')
         @php
             $internal_id = isset($row->item->internal_id) ? $row->item->internal_id : optional($items->find($row->item_id))->internal_id;
         @endphp
-        <tr>
-            @if($show_codigo) <td class="text-center desc-9 align-top">{{ $internal_id }}</td> @endif
-            @if($show_cantidad)
-            <td class="text-center desc-9 align-top">
-                @if(((int)$row->quantity != $row->quantity))
-                    {{ $row->quantity }}
-                @else
-                    {{ number_format($row->quantity, 0) }}
-                @endif
-            </td>
+        <tr><td colspan="{{ $colspan_total }}" class="text-left desc-9 align-top">
+            @if($show_codigo) <div>Código: {{ $internal_id }}</div> @endif
+            @if($show_cantidad || $show_unidad)
+                <div>@if($show_cantidad)Cantidad: {{ \App\Support\Exact\Decimal::represent($row->exactValue('quantity')) }}@endif
+                @if($show_unidad) {{ $row->item->unit_type_id }} @endif</div>
             @endif
-            @if($show_unidad) <td class="text-center desc-9 align-top">{{ $row->item->unit_type_id }}</td> @endif
             @if($show_descripcion)
-            <td class="text-left desc-9 align-top">
+            <div>
                 @if($row->name_product_pdf)
                     {!! \App\CoreFacturalo\Helpers\Template\TemplateHelper::formatNameProductPdfForTicket($row->name_product_pdf) !!}
                 @else
@@ -231,17 +216,17 @@
                     @isset($row->item->lots)
                         @foreach($row->item->lots as $lot)
                             @if( isset($lot->has_sale) && $lot->has_sale)
-                                <span> Serie: {{ $lot->series }}</span>
+                                <div>Serie: {{ $lot->series }}</div>
                             @endif
                         @endforeach
                     @endisset
                 </small>
                 @endif
-            </td>
+            </div>
             @endif
-            @if($show_precio_unitario) <td class="text-right desc-9 align-top">{{ $row->formatPdfUnitPrice() }}</td> @endif
-            @if($show_total) <td class="text-right desc-9 align-top">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($row, 'total'), 2) }}</td> @endif
-        </tr>
+            @if($show_precio_unitario) <div>Precio unitario: <span data-pdf-unit-price>{{ $row->formatPdfUnitPrice() }}</span></div> @endif
+            @if($show_total) <div>Importe: {{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($row, 'total'), 2) }}</div> @endif
+        </td></tr>
         <tr>
             <td colspan="{{ $colspan_total }}" class="border-bottom"></td>
         </tr>
@@ -282,12 +267,7 @@
                 <td class="text-right font-bold desc">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_discount_with_igv'), 2) }}</td>
             </tr>
         @endif
-        {{--<tr>
-            {{-- ########## INICIO CAMBIO IGV A IVA --}}
-            <td colspan="{{ $colspan_label }}" class="text-right font-bold desc">IVA: {{ $document->currency_type->symbol }}</td>
-            {{-- ######### FIN CAMBIO IGV A IVA --}}
-            <td class="text-right font-bold desc">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_igv'), 2) }}</td>
-        </tr>--}}
+        <tr><td colspan="{{ $colspan_total }}" class="text-right font-bold desc" style="white-space: nowrap;">IVA: {{ $document->currency_type->symbol }} {{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_igv'), 2) }}</td></tr>
 
         @if($document->total_charge > 0 && $document->charges)
             <tr>
@@ -298,25 +278,13 @@
 
         @if($show_nro_producto)
         <tr>
-            <td colspan="{{ $colspan_label }}" class="text-left font-bold desc" style="white-space: nowrap;">Productos: {{ rtrim(rtrim(number_format(collect($document->items)->sum(function ($item) { return (float) data_get($item, 'quantity', 0); }), 2, '.', ''), '0'), '.') }}</td>
-            <td class="text-right font-bold desc"></td>
+            <td colspan="{{ $colspan_total }}" class="text-left font-bold desc">Productos: {{ \App\Support\Exact\PdfQuantities::summary($document->items) }}</td>
         </tr>
         @endif
         <tr>
-            <td colspan="{{ $colspan_label }}" class="text-right font-bold desc">TOTAL A PAGAR: {{ $document->currency_type->symbol }}</td>
-            <td class="text-right font-bold desc">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total'), 2) }}</td>
+            <td colspan="{{ $colspan_total }}" class="text-right font-bold desc">TOTAL A PAGAR: {{ $document->currency_type->symbol }} {{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total'), 2) }}</td>
         </tr>
 
-        @php
-            $change_payment = $document->getChangePayment();
-        @endphp
-
-        @if($change_payment < 0)
-            <tr>
-                <td colspan="{{ $colspan_label }}" class="text-right font-bold desc">VUELTO: {{ $document->currency_type->symbol }}</td>
-                <td class="text-right font-bold desc">{{ number_format(abs($change_payment),2, ".", "") }}</td>
-            </tr>
-        @endif
 
         @if($show_tipo_persona && $person_type && $person_type->enabled_description_person_type)
             <tr>

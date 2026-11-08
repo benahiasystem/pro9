@@ -73,6 +73,7 @@
                 </tr>
             </table>
         </div>
+        <p>Comisión porcentual sobre cantidad y precio de partida, antes de ajustes globales. Se utiliza la tarifa actual del producto.</p>
         @if(!empty($records))
             <div class="">
                 <div class=" ">
@@ -83,7 +84,7 @@
                                 <th>Vendedor</th>
                                 <th class="text-center">Cantidad transacciones</th>
                                 <th class="text-center">Ventas acumuladas</th>
-                                <th class="text-center">Total comisiones</th>
+                                <th class="text-center">Comisión por partidas (tarifa actual)</th>
                             </tr>
                         </thead>
                         <tbody>

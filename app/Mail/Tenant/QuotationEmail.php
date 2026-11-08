@@ -2,16 +2,13 @@
 
 namespace App\Mail\Tenant;
 
-use App\CoreFacturalo\Helpers\Storage\StorageDocument;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Contracts\Queue\ShouldQueue;
 
 class QuotationEmail extends Mailable
 {
     use Queueable, SerializesModels;
-    use StorageDocument;
 
     public $company;
     public $quotation;
@@ -29,7 +26,9 @@ class QuotationEmail extends Mailable
      */
     public function build()
     {
-        $pdf = $this->getStorage($this->quotation->filename, 'quotation');
+        $document = app(\App\Http\Controllers\Tenant\QuotationController::class)->emailPdf($this->quotation->external_id);
+        $this->quotation = $document['quotation'];
+        $pdf = $document['bytes'];
         return $this->subject('Envio de Cotización')
                     ->from(config('mail.username'), 'Cotización')
                     ->view('tenant.templates.email.quotation')

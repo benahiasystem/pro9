@@ -36,12 +36,12 @@
                 this.errors = {};
                 this.form = {
                     email: null,
-                    data: this.data,
-                    columns: this.columns
+                    data: this.data ? JSON.parse(JSON.stringify(this.data)) : null,
+                    columns: this.columns ? JSON.parse(JSON.stringify(this.columns)) : null
                 }; 
             },
             async create() {
-                  
+                this.initForm()
             },   
             clickSendEmail() {
 

@@ -553,11 +553,8 @@ class Purchase extends ModelTenant
         $customer_name = '';
         $customer = $this->customer;
         if (null !== $customer) {
-            $customer = $customer->first();
-            if (!empty($customer)) {
-                $customer_number = $customer->number;
-                $customer_name = $customer->name;
-            }
+            $customer_number = $customer->number;
+            $customer_name = $customer->name;
         }
             /*
             alone_number

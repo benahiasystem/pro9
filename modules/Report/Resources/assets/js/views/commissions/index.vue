@@ -14,6 +14,7 @@
             </div> -->
             <div class="card mb-0">
                     <div class="card-body">
+                        <p>Comisión porcentual sobre cantidad y precio de partida, antes de ajustes globales. Se utiliza la tarifa actual del producto.</p>
                         <data-table
                             :applyCustomer="true"
                             :resource="resource">
@@ -23,7 +24,7 @@
                                 <th>Vendedor</th>
                                 <th class="text-center">Cantidad transacciones</th>
                                 <th class="text-center">Ventas acumuladas</th>
-                                <th class="text-center">Total comisiones</th>
+                                <th class="text-center">Comisión por partidas (tarifa actual)</th>
                             </tr>
                             <tr slot-scope="{ index, row }">
                                 <td>{{ index }}</td>

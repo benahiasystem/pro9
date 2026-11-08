@@ -366,7 +366,7 @@ trait InventoryTrait
      */
     private function createInventoryKardex($model, $item_id, $quantity, $warehouse_id)
     {
-        $model->inventory_kardex()->create([
+        return $model->inventory_kardex()->create([
             'date_of_issue' => date('Y-m-d'),
             'item_id' => $item_id,
             'warehouse_id' => $warehouse_id,
@@ -522,13 +522,13 @@ trait InventoryTrait
                     foreach ($lotesSelecteds as $item)
                     {
                         $lot = ItemLotsGroup::query()->lockForUpdate()->find($item->id);
-                        $lot->quantity = $lot->exactValue('quantity')->plus($quantity_unit->multipliedBy(\App\Support\Exact\Decimal::read($item,'compromise_quantity')));
+                        $lot->quantity = $lot->exactValue('quantity')->plus($quantity_unit->multipliedBy(\App\Support\Exact\Decimal::of($item->compromise_quantity_exact ?? \App\Support\Exact\Decimal::read($item,'compromise_quantity'))));
                         $lot->save();
                     }
 
                 }else {
                     $lot = ItemLotsGroup::query()->lockForUpdate()->find($document_item->item->IdLoteSelected);
-                    $lot->quantity = $lot->exactValue('quantity')->plus($document_item->exactValue('quantity'));
+                    $lot->quantity = $lot->exactValue('quantity')->plus($document_item->exactValue('quantity')->multipliedBy($this->getQuantityUnitPresentation($document_item)));
                     $lot->save();
                 }
 
@@ -623,6 +623,17 @@ trait InventoryTrait
     public function voidedDocumentItemSet($detail)
     {
         $document_item = $detail;
+        if (isset($document_item->item->inventory_components)) {
+            $document=$document_item->document;
+            $warehouse=$document_item->warehouse_id ? $this->findWarehouseById($document_item->warehouse_id) : $this->findWarehouse($document->establishment_id);
+            foreach ((array)$document_item->item->inventory_components as $component) {
+                $component=(array)$component;
+                $quantity=$document_item->exactValue('quantity')->multipliedBy(\App\Support\Exact\Decimal::of($component['quantity_exact'] ?? $component['quantity']));
+                $this->createInventoryKardex($document,$component['item_id'],$quantity,$warehouse->id);
+                if (!$document->sale_note_id && !$document->order_note_id && !$document->dispatch_id && !$document->sale_notes_relateds) $this->updateStock($component['item_id'],$quantity,$warehouse->id);
+            }
+            return;
+        }
         $item = Item::findOrFail($document_item->item_id);
         foreach ($item->sets as $it) {
             $ind_item = $it->individual_item;
@@ -646,17 +657,8 @@ trait InventoryTrait
      */
     public function verifyHasSaleLots($purchase_item)
     {
-        $validated = true;
-        $items = $purchase_item->lots;
-        foreach ($items as $element) {
-            //$lot_has_sale = collect($element->lots)->firstWhere('has_sale', 1);
-            if ($element->has_sale == 1) {
-                $validated = false;
-                break;
-            }
-        }
-        if ($validated == false) {
-            throw new Exception("El producto {$purchase_item->item->description} contiene series vendidas!");
+        if (method_exists($purchase_item,'lots') && $purchase_item->lots()->where('has_sale',1)->lockForUpdate()->first()) {
+            \App\Services\Payments\Classification::error('purchase',"El producto {$purchase_item->item->description} contiene series vendidas.");
         }
     }
 
@@ -695,15 +697,17 @@ trait InventoryTrait
                 $lot_group = PurchaseController::findItemLotsGroup($purchase_item);
 
                 if (!$lot_group) {
-                    throw new Exception("El lote {$purchase_item->lot_code} no existe!");
+                    \App\Services\Payments\Classification::error('purchase',"El lote {$purchase_item->lot_code} no existe.");
                 }
 
 
                 // factor de lista de precios
                 $presentation_quantity = $this->getQuantityUnitPresentation($purchase_item);
 
-                if (!$lot_group->exactValue('quantity')->isEqualTo($purchase_item->exactValue('quantity')->multipliedBy($presentation_quantity))) {
-                    throw new Exception("Los productos del lote {$purchase_item->lot_code} han sido vendidos!");
+                $movement=$purchase_item->calculation_snapshot['inputs']['purchase_warehouse_inventory'] ?? null;
+                $original=$movement ? \App\Support\Exact\Decimal::of($movement['quantity']) : $purchase_item->exactValue('quantity')->multipliedBy($presentation_quantity);
+                if (!$lot_group->exactValue('quantity')->isEqualTo($original)) {
+                    \App\Services\Payments\Classification::error('purchase',"Los productos del lote {$purchase_item->lot_code} han sido vendidos.");
                 }
             }
         }
@@ -722,7 +726,7 @@ trait InventoryTrait
      */
     public static function deleteItemSeriesAndGroup($purchase_item)
     {
-        $series = $purchase_item->lots;
+        $series = method_exists($purchase_item,'lots') ? $purchase_item->lots()->lockForUpdate()->get() : [];
         foreach ($series as $row) {
             $it = ItemLot::findOrFail($row->id);
             $it->delete();
@@ -824,7 +828,7 @@ trait InventoryTrait
      */
     public function validateStockLotGroup($lot, $document_item)
     {
-        if($lot->quantity < 0)
+        if($lot->exactValue('quantity')->isNegative())
         {
             throw new Exception("El lote '{$lot->code}' del producto {$document_item->item->description} no tiene suficiente stock!");
         }

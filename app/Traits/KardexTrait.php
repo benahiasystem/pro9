@@ -30,10 +30,12 @@ trait KardexTrait
 
     public function updateStock($item_id, $quantity, $is_sale){
         
-        $item = Item::find($item_id);
-        /* dd($item); */
-        $item->stock = ($is_sale) ? $item->stock - $quantity : $item->stock + $quantity;
+        // ######## INICIO STOCK GLOBAL EXACTO ########
+        $item = Item::query()->lockForUpdate()->findOrFail($item_id);
+        $amount=\App\Support\Exact\Decimal::of($quantity);
+        $item->stock = $is_sale ? $item->exactValue('stock')->minus($amount) : $item->exactValue('stock')->plus($amount);
         $item->save();
+        // ######## FIN STOCK GLOBAL EXACTO ########
 
     }
 

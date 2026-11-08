@@ -23,6 +23,7 @@
     use Illuminate\Database\QueryException;
     use Illuminate\Http\Request;
     use Illuminate\Support\Facades\DB;
+    use Illuminate\Validation\ValidationException;
     use Modules\Finance\Traits\FinanceTrait;
     use Modules\Sale\Http\Resources\TechnicalServiceResource;
     use Modules\Sale\Models\TechnicalService;
@@ -93,6 +94,22 @@
             DB::connection('tenant')->beginTransaction();
             try {
                 $inputs = $request->all();
+                if (!empty($inputs['technical_service_id'])) {
+                    $source=TechnicalService::withoutEagerLoads()->lockForUpdate()->findOrFail($inputs['technical_service_id']);
+                    $lines=$source->items()->withoutEagerLoads()->lockForUpdate()->get();
+                    \App\Support\Exact\TechnicalServiceCalculation::assertHistoricalAdjustmentsRecoverable($source,$lines);
+                    foreach ($lines as $line) {
+                        foreach (['quantity'=>'quantity_input','unit_price'=>'price_input'] as $field=>$original) {
+                            $attributes=$line->getAttributes();
+                            if (!array_key_exists($field,$attributes) || $attributes[$field] === null) continue;
+                            $exact=\App\Support\Exact\Decimal::read($line,$field);
+                            if (!$exact->isEqualTo(\App\Support\Exact\Decimal::of($attributes[$field]))
+                                && empty($line->calculation_snapshot['inputs'][$original])) {
+                                \App\Services\Fiscal\FiscalAmounts::error('items','La partida histórica no conserva su entrada exacta para la conversión.');
+                            }
+                        }
+                    }
+                }
                 $items = $request->input('items');
                 foreach ($items as $index => $item) {
                     $unit_type = $item['item']['unit_type_id']??'SERV';
@@ -125,9 +142,13 @@
                 if ($request->input('document_type_id') === SalesDocumentTypePolicy::INVOICE) {
                     $documentController = new DocumentController();
                     $doc_input = DocumentInput::set($inputs);
+                    $doc_input['charges'] = $this->sourceAdjustmentFractions($inputs, $doc_input['charges'] ?? [], 'charges');
+                    $doc_input['discounts'] = $this->sourceAdjustmentFractions($inputs, $doc_input['discounts'] ?? [], 'discounts');
                     $res = $documentController->storeWithData($doc_input);
                 } else {
                     $inputs['items'] = DocumentInput::items($inputs);
+                    $inputs['charges'] = $this->sourceAdjustmentFractions($inputs, $inputs['charges'] ?? [], 'charges');
+                    $inputs['discounts'] = $this->sourceAdjustmentFractions($inputs, $inputs['discounts'] ?? [], 'discounts');
                     $inputs['type_period'] = null;
                     $inputs['quantity_period'] = null;
                     $res = (new SaleNoteController())->storeWithData($inputs);
@@ -143,15 +164,45 @@
                 DB::connection('tenant')->commit();
                 return $res;
 
+            } catch (ValidationException $e) {
+                DB::connection('tenant')->rollBack();
+                $errors = $e->errors();
+                return ['success'=>false, 'message'=>collect($errors)->flatten()->first() ?: 'Revise los datos del comprobante.', 'errors'=>$errors];
             } catch (Exception $e) {
                 DB::connection('tenant')->rollBack();
+                report($e);
                 return [
                     'success' => false,
-                    'message' => $e->getFile() . '-' . $e->getLine() . '-' . $e->getMessage()
+                    'message' => 'No se pudo generar el comprobante. Intente nuevamente.'
                 ];
             }
 
 
+        }
+
+        /** Restore only fractions frozen by this service, never client snapshots. */
+        private function sourceAdjustmentFractions(array $input, array $rows, string $kind): array
+        {
+            foreach ($rows as &$row) unset($row['amount_exact']);
+            unset($row);
+            if (empty($input['technical_service_id']) || !$rows) return $rows;
+            $source=TechnicalService::withoutEagerLoads()->lockForUpdate()->findOrFail($input['technical_service_id']);
+            if ((string)$source->currency_type_id !== (string)($input['currency_type_id'] ?? '')) return $rows;
+            $stored=$source->calculation_snapshot['inputs']['service_adjustments'][$kind] ?? [];
+            if (count($stored)!==count($rows)) return $rows;
+            $typeField=$kind === 'charges' ? 'charge_type_id' : 'discount_type_id';
+            foreach ($rows as $index=>&$row) {
+                $original=$stored[$index] ?? null;
+                if (!$original || !isset($original['amount_exact'],$row['amount'])
+                    || (string)($original[$typeField] ?? '') !== (string)($row[$typeField] ?? '')) continue;
+                $exact=\App\Support\Exact\Decimal::of($original['amount_exact']);
+                $submitted=\App\Support\Exact\Decimal::of(\App\Support\Exact\Decimal::input($row['amount'],$kind.'.amount'));
+                if ($submitted->isEqualTo(\App\Support\Exact\Decimal::of(\App\Support\Exact\Decimal::represent($exact)))) {
+                    $row['amount_exact']=\App\Support\Exact\Decimal::fraction($exact);
+                }
+            }
+            unset($row);
+            return $rows;
         }
 
         /**

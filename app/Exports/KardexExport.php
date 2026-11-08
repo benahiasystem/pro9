@@ -7,8 +7,11 @@ use Maatwebsite\Excel\Concerns\FromView;
 use Maatwebsite\Excel\Concerns\Exportable;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\WithEvents;
+use Maatwebsite\Excel\Events\AfterSheet;
+use App\Support\Exact\{Decimal, FractionSheet, LegacyKardexRow};
 
-class KardexExport implements  FromView, ShouldAutoSize
+class KardexExport implements FromView, ShouldAutoSize, WithEvents
 {
     use Exportable;
     
@@ -43,5 +46,19 @@ class KardexExport implements  FromView, ShouldAutoSize
             'company' => $this->company,
             'establishment'=>$this->establishment
         ]);
+    }
+
+    public function registerEvents(): array
+    {
+        return [AfterSheet::class => function ($event) {
+            $sheet=$event->sheet->getDelegate();
+            FractionSheet::append($sheet, $this->records, ['quantity']);
+            $balance=Decimal::of($this->balance); $entries=[];
+            foreach ($this->records as $record) {
+                $balance=$balance->plus(LegacyKardexRow::from($record)['delta']);
+                $entries[]=['id'=>$record->id,'field'=>'balance','value'=>$balance];
+            }
+            FractionSheet::appendEntries($sheet,$entries);
+        }];
     }
 }

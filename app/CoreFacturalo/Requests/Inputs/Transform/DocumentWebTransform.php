@@ -18,6 +18,8 @@ class DocumentWebTransform
 
         // dd($inputs);
         $customer = PersonInput::set($inputs['customer_id']);
+        $condition = $inputs['payment_condition_id'] ?? '01';
+        if ($condition === '03') $condition = '02';
 
         $inputs_transform = [
             'serie_documento' => Functions::valueKeyInArray($inputs, 'series'),
@@ -26,6 +28,8 @@ class DocumentWebTransform
             'hora_de_emision' => Functions::valueKeyInArray($inputs, 'time_of_issue'),
             'codigo_tipo_documento' => Functions::valueKeyInArray($inputs, 'document_type_id'),
             'codigo_tipo_moneda' => Functions::valueKeyInArray($inputs, 'currency_type_id'),
+            'codigo_condicion_de_pago' => $condition,
+            'cuotas' => self::fee($inputs, $condition),
             'factor_tipo_de_cambio' => Functions::valueKeyInArray($inputs, 'exchange_rate_sale', 1),
             'numero_orden_de_compra' => Functions::valueKeyInArray($inputs, 'purchase_order'),
             'folio' => Functions::valueKeyInArray($inputs, 'folio'),
@@ -69,6 +73,21 @@ class DocumentWebTransform
         // dd($inputs_transform);
 
         return $inputs_transform;
+    }
+
+    private static function fee(array $inputs, string $condition): array
+    {
+        if ($condition !== '02') return [];
+        return array_map(static function (array $row): array {
+            $result = [
+                'fecha' => $row['date'] ?? null,
+                'codigo_tipo_moneda' => $row['currency_type_id'] ?? null,
+                'monto' => $row['amount'] ?? null,
+                'codigo_metodo_de_pago' => $row['payment_method_type_id'] ?? null,
+            ];
+            if (array_key_exists('allocation_weight', $row)) $result['allocation_weight'] = $row['allocation_weight'];
+            return $result;
+        }, array_values($inputs['fee'] ?? []));
     }
 
     public static function actions_transform($inputs){

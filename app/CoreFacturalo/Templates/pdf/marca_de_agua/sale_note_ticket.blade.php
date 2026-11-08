@@ -170,34 +170,33 @@
     {{-- Si existen productos fusionados, mostrar solo una fila resumen --}}
     @if(count($fusionados) > 0)
         @php
-            $cantidad_total = 0;
-            $importe_total = 0;
-            foreach($fusionados as $f) {
-                $cantidad_total += $f->quantity;
-                $importe_total += $f->total;
-            }
+            $cantidad_total = \App\Support\Exact\Decimal::sum(collect($fusionados)->map(fn($f)=>\App\Support\Exact\Decimal::read($f,'quantity')));
+            $importe_total = \App\Support\Exact\Decimal::sum(collect($fusionados)->map(fn($f)=>\App\Support\Exact\Decimal::read($f,'total')));
         @endphp
+        @if(strlen(\App\Support\Exact\Decimal::represent($cantidad_total)) > 7)
+            <tr><td colspan="6" class="text-left desc-9">Cantidad: {{ \App\Support\Exact\Decimal::represent($cantidad_total) }}</td></tr>
+        @endif
         <tr>
             <td class="text-center align-top">001</td>
             <td class="text-center desc-9 align-top">
-                {{ fmod($cantidad_total, 1) ? $cantidad_total : intval($cantidad_total) }}
+                {{ strlen(\App\Support\Exact\Decimal::represent($cantidad_total)) > 7 ? '' : \App\Support\Exact\Decimal::represent($cantidad_total) }}
             </td>
             <td class="text-center desc-9 align-top">UND</td>
             <td class="text-left desc-9 align-top">Por consumo</td>
-            <td class="text-right desc-9 align-top">{{ number_format($importe_total, 2) }}</td>
-            <td class="text-right desc-9 align-top">{{ number_format($importe_total, 2) }}</td>
+            <td class="text-right desc-9 align-top"><span data-pdf-unit-price @if(\App\Support\Exact\PdfPrice::roundingChangesLine($cantidad_total->isZero() ? 0 : $importe_total->dividedBy($cantidad_total),$cantidad_total,\App\Models\Tenant\Configuration::getDataDecimalQuantity())) data-pdf-group-rounded @endif>{{ \App\Support\Exact\PdfPrice::configured($cantidad_total->isZero() ? 0 : $importe_total->dividedBy($cantidad_total)) }}</span></td>
+            <td class="text-right desc-9 align-top">{{ \App\Support\Exact\Decimal::format($importe_total, 2) }}</td>
         </tr>
         <tr><td colspan="6" class="border-bottom"></td></tr>
     @endif
     @foreach($no_fusionados as $row)
+        @php $visible_quantity = \App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::read($row, 'quantity')); @endphp
+        @if(strlen($visible_quantity) > 7)
+            <tr><td colspan="6" class="text-left desc-9">Cantidad: {{ $visible_quantity }}</td></tr>
+        @endif
         <tr>
             <td class="text-center desc-9 align-top font-bold">{{ $row->item->internal_id }}</td>
             <td class="text-center desc-9 align-top">
-                @if(((int)$row->quantity != $row->quantity))
-                    {{ $row->quantity }}
-                @else
-                    {{ number_format($row->quantity, 0) }}
-                @endif
+                {{ strlen($visible_quantity) > 7 ? '' : $visible_quantity }}
             </td>
             <td class="text-center desc-9 align-top">{{ $row->item->unit_type_id }}</td>
             <td class="text-left desc-9 align-top">
@@ -235,7 +234,7 @@
                 @endif
                 
             </td>
-            <td class="text-right desc-9 align-top">{{ $row->formatPdfUnitPrice() }}</td>
+            <td class="text-right desc-9 align-top"><span data-pdf-unit-price>{{ $row->formatPdfUnitPrice() }}</span></td>
             <td class="text-right desc-9 align-top">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($row, 'total'), 2) }}</td>
         </tr>
         <tr>
@@ -278,12 +277,7 @@
                 <td class="text-right font-bold desc">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_discount_with_igv'), 2) }}</td>
             </tr>
         @endif
-        {{--<tr>
-            {{-- ########## INICIO CAMBIO IGV A IVA --}}
-            <td colspan="5" class="text-right font-bold desc">IVA: {{ $document->currency_type->symbol }}</td>
-            {{-- ######### FIN CAMBIO IGV A IVA --}}
-            <td class="text-right font-bold desc">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_igv'), 2) }}</td>
-        </tr>--}}
+        <tr><td colspan="6" class="text-right font-bold desc" style="white-space: nowrap;">IVA: {{ $document->currency_type->symbol }} {{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_igv'), 2) }}</td></tr>
         
         @if($document->total_charge > 0 && $document->charges)
             <tr>
@@ -296,17 +290,7 @@
             <td colspan="5" class="text-right font-bold desc">TOTAL A PAGAR: {{ $document->currency_type->symbol }}</td>
             <td class="text-right font-bold desc">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total'), 2) }}</td>
         </tr>
-        
-        @php
-            $change_payment = $document->getChangePayment();
-        @endphp
 
-        @if($change_payment < 0)
-            <tr>
-                <td colspan="5" class="text-right font-bold desc">VUELTO: {{ $document->currency_type->symbol }}</td>
-                <td class="text-right font-bold desc">{{ number_format(abs($change_payment),2, ".", "") }}</td>
-            </tr>
-        @endif
 
     </tbody>
 </table>

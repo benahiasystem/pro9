@@ -13,7 +13,9 @@ use App\Models\Tenant\Establishment;
 use App\Models\Tenant\SaleNote;
 use App\Models\Tenant\Company;
 use Carbon\Carbon;
-use App\Http\Resources\Tenant\SaleNoteCollection;
+use Modules\Report\Http\Resources\SaleNoteReportCollection;
+use Modules\Report\Services\SaleNoteReportAmounts;
+use App\Support\Exact\ReadSnapshot;
 
 class ReportSaleNoteController extends Controller
 {
@@ -57,9 +59,15 @@ class ReportSaleNoteController extends Controller
      */
     public function records(Request $request)
     {
-        $records = $this->getRecords($request->all(), SaleNote::class);
-
-        return new SaleNoteCollection($records->paginate(config('tenant.items_per_page')));
+        $request->validate(['page'=>'sometimes|integer|min:1']);
+        return ReadSnapshot::run((new SaleNote)->getConnection(), function () use ($request) {
+            $records = $this->getRecords($request->all(), SaleNote::class)->orderByDesc('id');
+            $page = (clone $records)->paginate(max(1, min(500, (int) config('tenant.items_per_page', 50))), ['*'], 'page', (int) $request->input('page', 1));
+            $fields = array_merge(['id','currency_type_id','state_type_id','calculation_snapshot'], SaleNoteReportAmounts::FIELDS);
+            $all = (clone $records)->withoutEagerLoads()->select(array_unique($fields))->lazy(500);
+            $display = SaleNoteReportAmounts::displayForPage($all, $page->getCollection()->pluck('id'));
+            return (new SaleNoteReportCollection($page, $display))->response($request);
+        });
     }
 
 
@@ -68,14 +76,15 @@ class ReportSaleNoteController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function pdf(Request $request) {
-
+        return ReadSnapshot::run((new SaleNote)->getConnection(), function () use ($request) {
         $company = Company::first();
         $establishment = ($request->establishment_id) ? Establishment::findOrFail($request->establishment_id) : auth()->user()->establishment;
-        $records = $this->getRecords($request->all(), SaleNote::class)->get();
+        $records = $this->getRecords($request->all(), SaleNote::class)->orderByDesc('id')->get();
         $filters = $request->all();
         $pdf = PDF::loadView('report::sale_notes.report_pdf', compact("records", "company", "establishment", "filters"))->setPaper('a4', 'landscape');
         $filename = 'Reporte_Nota_Ventas_'.date('YmdHis');
         return $pdf->download($filename.'.pdf');
+        });
     }
 
 
@@ -85,11 +94,11 @@ class ReportSaleNoteController extends Controller
      */
     public function excel(Request $request)
     {
-
+        return ReadSnapshot::run((new SaleNote)->getConnection(), function () use ($request) {
         $company = Company::first();
         $establishment = ($request->establishment_id) ? Establishment::findOrFail($request->establishment_id) : auth()->user()->establishment;
 
-        $records = $this->getRecords($request->all(), SaleNote::class)->get();
+        $records = $this->getRecords($request->all(), SaleNote::class)->orderByDesc('id')->get();
         $filters = $request->all();
         $SaleNoteExport = new SaleNoteExport();
 
@@ -100,6 +109,7 @@ class ReportSaleNoteController extends Controller
             ->filters($filters);
 
         return $SaleNoteExport->download('Reporte_Nota_Ventas_' . Carbon::now() . '.xlsx');
+        });
 
     }
 }

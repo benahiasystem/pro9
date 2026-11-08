@@ -17,11 +17,22 @@ class RentHotelCollection extends ResourceCollection
             $data = $row->toArray();
             $customer = $row->customer;
             $room = $row->room;
-            $items = $row->products;
+            $items = $row->products->map(function ($product) {
+                $data = $product->toArray();
+                if ($raw = $product->getRawOriginal('item')) {
+                    $item = \App\Support\Exact\JsonDecimals::decode($raw);
+                    if (isset($item['total']) || isset($item['calculation_snapshot']['values']['total'])) {
+                        $item['total'] = \App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::readRequired($item, 'total'));
+                    }
+                    $data['item'] = $item;
+                }
+                return $data;
+            });
             $data['status'] = ucfirst(strtolower($data['status']));
             $data['customer'] = $customer;
             $data['room'] = $room;
             $data['items'] = $items;
+            unset($data['products'], $data['person']);
             return  $data;
 
         });

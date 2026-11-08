@@ -61,7 +61,7 @@
                     'purchase_order' => $row->purchase_order,
                     'payment_form' => \App\Services\Payments\ReceiptPresentation::firstMethod($row->payments),
                     'payment_method' => $paymentDescription,
-                    'total_charge' => in_array($row->state_type_id, ['09', '11']) ? '0.00' : \App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::read($row, 'total_charge')),
+                    'total_charge' => in_array($row->state_type_id, ['09', '11']) ? '0.00' : \App\Support\Exact\Decimal::format(\App\Support\Exact\Decimal::read($row, 'total_charge'),2,'.',''),
                     'guides' => !empty($row->guides) ? (array)$row->guides : null,
 
 
@@ -99,7 +99,8 @@
                             'key' => $key + 1,
                             'id' => $row->id,
                             'description' => $row->item->description,
-                            'quantity' => round($row->quantity,2)
+                            'quantity' => \App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::read($row, 'quantity')),
+                            'quantity_fraction' => \App\Support\Exact\Decimal::fraction(\App\Support\Exact\Decimal::read($row, 'quantity'))
                         ];
                     }),
 

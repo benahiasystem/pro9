@@ -147,7 +147,7 @@
                     @endforeach
                 @endif
             </td>
-            <td class="text-right desc-9 align-top">{{ $row->formatPdfUnitPrice() }}</td>
+            <td class="text-right desc-9 align-top"><span data-pdf-unit-price>{{ $row->formatPdfUnitPrice() }}</span></td>
             <td class="text-right desc-9 align-top">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($row, 'total'), 2) }}</td>
         </tr>
         <tr>
@@ -190,14 +190,9 @@
                 <td class="text-right font-bold">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_discount_with_igv'), 2) }}</td>
             </tr>
         @endif
-        {{--<tr>
-            {{-- ########## INICIO CAMBIO IGV A IVA --}}
-            <td colspan="4" class="text-right font-bold desc">IVA: {{ $document->currency_type->symbol }}</td>
-            {{-- ######### FIN CAMBIO IGV A IVA --}}
-            <td class="text-right font-bold desc">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_igv'), 2) }}</td>
-        </tr>--}}
+        <tr><td colspan="5" class="text-right font-bold desc" style="white-space: nowrap;">IVA: {{ $document->currency_type->symbol }} {{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_igv'), 2) }}</td></tr>
         <tr>
-            <td colspan="2" class="text-left font-bold desc" style="white-space: nowrap;">Productos: {{ rtrim(rtrim(number_format(collect($document->items)->sum(function ($item) { return (float) data_get($item, 'quantity', 0); }), 2, '.', ''), '0'), '.') }}</td>
+            <td colspan="2" class="text-left font-bold desc">Productos: {{ \App\Support\Exact\PdfQuantities::summary($document->items) }}</td>
             <td colspan="2" class="text-right font-bold desc">TOTAL A PAGAR: {{ $document->currency_type->symbol }}</td>
             <td class="text-right font-bold desc">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total'), 2) }}</td>
         </tr>

@@ -4,9 +4,18 @@
 namespace Modules\Report\Http\Resources;
 
 use Illuminate\Http\Resources\Json\ResourceCollection;
+use App\Support\Exact\Decimal;
+use Modules\Report\Services\OrderNoteConsolidatedAmounts;
 
 class OrderNoteConsolidatedCollection extends ResourceCollection
 {
+    private ?array $amounts = null;
+
+    public function withAmounts(array $amounts): self
+    {
+        $this->amounts = $amounts;
+        return $this;
+    }
     /**
      * Transform the resource collection into an array.
      *
@@ -16,7 +25,10 @@ class OrderNoteConsolidatedCollection extends ResourceCollection
     public function toArray($request)
     {
         
-        return $this->collection->transform(function($row, $key){ 
+        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        $amounts = $this->amounts ?? OrderNoteConsolidatedAmounts::rows($this->collection);
+        return $this->collection->transform(function($row, $key) use ($amounts){
+            $line = $amounts[$row->id];
              
             return [
                 'id' => $row->id,
@@ -24,16 +36,14 @@ class OrderNoteConsolidatedCollection extends ResourceCollection
                 'customer' => $row->order_note->customer->name,  
                 'delivery_date' => $row->order_note->delivery_date,  
                 'item_description' => $row->item->description,  
-                'item_quantity' => $row->quantity,  
-                'total' => number_format(self::calculateTotalCurrencyType($row->order_note, $row->total),2, ".", ""),  
+                'item_quantity' => Decimal::represent(Decimal::readRequired($line, 'quantity')),
+                'total' => Decimal::format(Decimal::readRequired($line, 'total_sale'), 2, '.', ''),
+                'currency_type_id' => 'VES',
+                'calculation_snapshot' => $line['calculation_snapshot'],
             ];
         });
+        // ######## FIN CALCULOS EXACTOS PRO9 ########
     }
 
-    
-    public static function calculateTotalCurrencyType($record, $total)
-    {
-        return ($record->currency_type_id === 'USD') ? (float) \App\Services\ExchangeRates\ExchangeRateMath::finalAmount(\App\Services\ExchangeRates\ExchangeRateMath::rational($total)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($record->exchange_rate_sale)), 2) : $total;
-    }
     
 }

@@ -15,7 +15,7 @@ $document_number = $document->number_full;
     $accounts = (new TemplatePdf)->getBankAccountsForPdf($document->establishment_id);
 
     $document_base = ($document->note) ? $document->note : null;
-    $payments = $document->payments;
+    $payments = $document->payments->filter(fn ($payment) => !data_get($payment, 'reversed_at'));
 
     if($document_base) {
         /* ######## INICIO NUMERACIÓN FISCAL VENEZUELA ######## */
@@ -27,8 +27,6 @@ $affected_document_number = $document_base->affected_document ? $document_base->
     }
 
     $document->load('reference_guides');
-    $total_payment = $document->payments->sum('payment');
-    $balance = $document instanceof \App\Models\Tenant\Document ? $document->balance : (($document->total - $total_payment) - $document->payments->sum('change'));
 
     $logo = "storage/uploads/logos/{$company->logo}";
     if($establishment->logo) {
@@ -240,13 +238,13 @@ $affected_document_number = $document_base->affected_document ? $document_base->
         <td class="ticket-58 border-top-bottom desc text-right">TOTAL</td>
     </tr>
     @foreach($document->items as $row)
+        @php $visible_quantity = \App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::read($row, 'quantity')); @endphp
+        @if(strlen($visible_quantity) > 7)
+            <tr><td colspan="5" class="text-left desc">Cantidad: {{ $visible_quantity }}</td></tr>
+        @endif
         <tr>
             <td class="text-left desc align-top">
-                @if(((int)$row->quantity != $row->quantity))
-                    {{ $row->quantity }}
-                @else
-                    {{ number_format($row->quantity, 0) }}
-                @endif
+                {{ strlen($visible_quantity) > 7 ? '' : $visible_quantity }}
             </td>
             <td class="text-left desc align-top">{{ $row->item->unit_type_id }}</td>
             <td class="text-left desc align-top text-uppercase">
@@ -333,7 +331,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
                 </small>
             </td>
             <td class="text-right desc align-top"
-                style="padding-right:5px;">{{ $row->formatPdfUnitPrice() }}</td>
+                style="padding-right:5px;"><span data-pdf-unit-price>{{ $row->formatPdfUnitPrice() }}</span></td>
             <td class="text-right desc align-top">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($row, 'total'), 2) }}</td>
         </tr>
         <tr>
@@ -426,25 +424,10 @@ $affected_document_number = $document_base->affected_document ? $document_base->
         @endif
     @endif
 
-    <tr>
-        <td class="desc-ticket text-uppercase text-left" style="white-space: nowrap;">Productos: {{ rtrim(rtrim(number_format(collect($document->items)->sum(function ($item) { return (float) data_get($item, 'quantity', 0); }), 2, '.', ''), '0'), '.') }}</td>
-        <td colspan="2" class="desc-ticket text-uppercase">TOTAL A PAGAR:
-            {{ $document->currency_type->symbol }}</td>
-        <td colspan="2" class="text-right desc-ticket text-uppercase">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total'), 2) }}</td>
-    </tr>
+    <tr><td colspan="5" class="desc-ticket text-uppercase text-left">Productos: {{ \App\Support\Exact\PdfQuantities::summary($document->items) }}</td></tr>
+    <tr><td colspan="3" class="desc-ticket text-uppercase">TOTAL A PAGAR: {{ $document->currency_type->symbol }}</td>
+        <td colspan="2" class="text-right desc-ticket text-uppercase">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total'), 2) }}</td></tr>
 
-
-
-    @if($balance < 0)
-        <tr>
-            <td colspan="3" class="desc-ticket text-uppercase">
-                VUELTO:
-                <span class="text-right">{{ $document->currency_type->symbol }}</span>
-            </td>
-            <td colspan="2"
-                class="text-right desc-ticket text-uppercase">{{ number_format(abs($balance),2, ".", "") }}</td>
-        </tr>
-    @endif
     </tbody>
 </table>
 <table class="full-width">

@@ -43,7 +43,7 @@ final class LineCalculation
         $price = isset($preserved['unit_price']) ? Decimal::of($preserved['unit_price']) : Decimal::of(Decimal::input($line['unit_price'], 'items.unit_price'));
         if (!empty($line['price_input'])) {
             $source = $line['price_input'];
-            $price = Decimal::of(Decimal::input($source['amount'], 'items.price_input.amount'));
+            $price = self::priceInput($source['amount']);
             if (($source['includes_iva'] ?? true) === false) $price = $price->multipliedBy(Decimal::of(1)->plus(Decimal::of($percentage)->dividedBy(100)));
             $price = Decimal::convert($price, $source['currency_type_id'], $line['currency_type_id'], $line['exchange_rate_sale'] ?? null);
         }
@@ -91,6 +91,24 @@ final class LineCalculation
         return array_replace($line, Decimal::values($values), ['calculation_snapshot' => Decimal::snapshot($values,
             ['quantity' => (string)$line['quantity'], 'unit_price' => (string)$line['unit_price'],
                 'quantity_input'=>$line['quantity_input'] ?? null, 'price_input'=>$line['price_input'] ?? null])]);
+    }
+
+    /** A manual POS line total can imply a non-terminating unit price. */
+    private static function priceInput($input): \Brick\Math\BigRational
+    {
+        if (!is_array($input)) return Decimal::of(Decimal::input($input, 'items.price_input.amount'));
+        try {
+            foreach (['n','d'] as $part) {
+                if (!isset($input[$part]) || !is_string($input[$part]) || strlen(ltrim($input[$part],'-')) > 80) {
+                    throw new \InvalidArgumentException();
+                }
+            }
+            $value=Decimal::of($input);
+            if ($value->abs()->isGreaterThan(Decimal::of('999999999999999999.999999999999'))) throw new \InvalidArgumentException();
+            return $value;
+        } catch (\Throwable $error) {
+            \App\Services\Fiscal\FiscalAmounts::error('items.price_input.amount','Indique un precio válido dentro del rango permitido.');
+        }
     }
 }
 // ######## FIN CALCULOS EXACTOS PRO9 ########

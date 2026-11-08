@@ -19,7 +19,7 @@ test('invalid control shows error and releases loading without discarding filter
     assert.equal(message, 'Control inválido');
 });
 test('failed query keeps filter panel visible and does not fetch totals', async () => {
-    const ctx = {getRecords: async () => false, getTotalRecords: () => {throw Error('Unexpected total request');}, auto_hide_filters: true, see_more: true};
+    const ctx = {getQueryParameters: () => 'control_number=invalid', getRecords: async () => false, getTotalRecords: () => {throw Error('Unexpected total request');}, auto_hide_filters: true, see_more: true};
     await methods.getRecordsByFilter.call(ctx);
     assert.equal(ctx.see_more, true);
 });

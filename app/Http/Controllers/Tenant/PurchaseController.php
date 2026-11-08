@@ -344,32 +344,47 @@ use Modules\Purchase\Helpers\WeightedAverageCostHelper;
 
                         $p_item->save();
 
-                        if (isset($row['update_price']) && $row['update_price']) {
-                            if (!($row['sale_unit_price'] ?? false)) {
-                                throw new Exception('Debe ingresar el nuevo precio de venta del producto, cuando la opción "Actualizar precio de venta" está activado', 500);
+                        // ######## INICIO PRECIOS DE COMPRA EXACTOS ########
+                        if (!empty($row['update_price']) || !empty($row['update_purchase_price'])) {
+                            $catalogItem=Item::query()->lockForUpdate()->findOrFail($row['item_id']);
+                            if (!empty($row['update_price'])) {
+                                $salePrice=\App\Support\Exact\Decimal::of(\App\Support\Exact\Decimal::input($row['sale_unit_price'] ?? null,'sale_unit_price'));
+                                if (!$salePrice->isPositive()) \App\Services\Payments\Classification::error('sale_unit_price','El precio de venta debe ser positivo.');
+                                $catalogItem->sale_unit_price=$salePrice;
                             }
-                            Item::where('id', $row['item_id'])
-                                ->update(['sale_unit_price' => floatval($row['sale_unit_price'])]);
+                            if (!empty($row['update_purchase_price'])) {
+                                $purchasePrice=$p_item->exactValue($catalogItem->purchase_has_igv ? 'unit_price' : 'unit_value');
+                                $purchasePrice=\App\Support\Exact\Decimal::convert(
+                                    $purchasePrice, $doc->currency_type_id, $catalogItem->currency_type_id, $doc->exchange_rate_sale
+                                );
+                                if ($purchasePrice->isNegative()) \App\Services\Payments\Classification::error('unit_price','El precio de compra no puede ser negativo.');
+                                $catalogItem->purchase_unit_price=$purchasePrice;
+                            }
+                            $catalogItem->save();
                         }
 
-                        if (isset($row['update_purchase_price']) && $row['update_purchase_price']) {
-                            Item::query()->where('id', $row['item_id'])
-                                ->update(['purchase_unit_price' => floatval($row['unit_price'])]);
+                        if (!empty($row['update_purchase_price'])) {
                             // actualizacion de precios
                             $item = $row['item'];
                             if (isset($item['item_warehouse_prices'])) {
                                 $warehouse_prices = $item['item_warehouse_prices'];
                                 foreach ($warehouse_prices as $prices) {
+                                    $price=$prices['price'] ?? '';
+                                    if ($price !== '' && $price !== null) {
+                                        $price=\App\Support\Exact\Decimal::input($price,'warehouse_price');
+                                        if (\App\Support\Exact\Decimal::of($price)->isNegative()) \App\Services\Payments\Classification::error('warehouse_price','El precio de almacén no puede ser negativo.');
+                                    }
                                     Item::setStaticItemWarehousePrice(
                                         (int)$row['item_id'],
                                         (int)$prices['id'],
                                         (int)$prices['warehouse_id'],
-                                        $prices['price']
+                                        $price
                                     );
                                 }
                             }
 
                         }
+                        // ######## FIN PRECIOS DE COMPRA EXACTOS ########
 
                         if (isset($row['update_date_of_due'], $row['date_of_due']) && $row['update_date_of_due'] && !empty($row['date_of_due'])) {
                             $item_id = (int)$row['item_id'];
@@ -404,7 +419,7 @@ use Modules\Purchase\Helpers\WeightedAverageCostHelper;
 
                                 $item_lots_group = ItemLotsGroup::create([
                                     'code' => $row['lot_code'],
-                                    'quantity' => $row['quantity'] * $presentation_quantity,
+                                    'quantity' => $p_item->exactValue('quantity')->multipliedBy(\App\Support\Exact\Decimal::of($presentation_quantity)),
                                     // 'quantity' => $row['quantity'],
                                     'date_of_due' => $row['date_of_due'],
                                     'item_id' => $row['item_id']
@@ -645,7 +660,36 @@ use Modules\Purchase\Helpers\WeightedAverageCostHelper;
             $purchase = DB::connection('tenant')->transaction(function () use ($request) {
 
                 $doc = Purchase::whereKey($request['id'])->lockForUpdate()->firstOrFail();
+                // ######## INICIO PROTECCIÓN DE COMPRA ANULADA ########
+                if ($doc->isVoidedOrRejected()) \App\Services\Payments\Classification::error('purchase','No se puede editar una compra anulada o rechazada.');
+                if ($request->exists('state_type_id') && (string)$request['state_type_id'] !== (string)$doc->state_type_id) {
+                    \App\Services\Payments\Classification::error('purchase','El estado de la compra no puede cambiarse mediante la edición.');
+                }
+                // ######## FIN PROTECCIÓN DE COMPRA ANULADA ########
+                $itemIds=$doc->items()->pluck('item_id')->all();
+                foreach ($request->input('items',[]) as $row) {
+                    if (empty($row['is_supply']) && !empty($row['item_id'])) $itemIds[]=$row['item_id'];
+                }
+                Item::withoutEagerLoads()->whereIn('id',array_unique($itemIds))->orderBy('id')->lockForUpdate()->get();
+                $existingItems=$doc->items()->orderBy('id')->lockForUpdate()->get();
                 $previousCurrency = $doc->currency_type_id;
+                $previousRate=\App\Support\Exact\Decimal::of($doc->exchange_rate_sale);
+                $items = collect($request['items'])->filter(function($item) {
+                    return !isset($item['is_supply']) || !$item['is_supply'];
+                })->values()->all();
+                $supplies = collect($request['items'])->filter(function($item) {
+                    return isset($item['is_supply']) && $item['is_supply'];
+                })->values()->all();
+                $byId=$existingItems->keyBy('id'); $seen=[]; $preserved=[];
+                $sameCurrency=(string)$previousCurrency === (string)$request['currency_type_id'];
+                $sameRate=$previousRate->isEqualTo(\App\Support\Exact\Decimal::of($request['exchange_rate_sale']));
+                foreach ($items as $row) {
+                    if (empty($row['id'])) continue;
+                    $id=(int)$row['id'];
+                    if (isset($seen[$id]) || !$byId->has($id)) \App\Services\Payments\Classification::error('items','La partida no pertenece a la compra o está repetida.');
+                    $seen[$id]=true;
+                    if ($sameCurrency && $sameRate && \App\Services\Fiscal\PurchaseUnchangedLine::matches($byId[$id],$row)) $preserved[$id]=true;
+                }
                 $doc->fill($request->all());
                 $doc->supplier = PersonInput::set($request['supplier_id']);
                 $doc->group_id = ($request->document_type_id === '01') ? '01' : '02';
@@ -655,24 +699,11 @@ use Modules\Purchase\Helpers\WeightedAverageCostHelper;
                 }
                 $doc->save();
 
-                foreach ($doc->items as $it) {
-
-                    $p_i = PurchaseItem::findOrFail($it->id);
-                    $p_i->delete();
-
-                }
-
-                // Separar items normales de supplies
-                $items = collect($request['items'])->filter(function($item) {
-                    return !isset($item['is_supply']) || !$item['is_supply'];
-                })->values()->all();
-
-                $supplies = collect($request['items'])->filter(function($item) {
-                    return isset($item['is_supply']) && $item['is_supply'];
-                })->values()->all();
+                foreach ($existingItems as $it) if (!isset($preserved[$it->id])) $it->delete();
 
                 // Procesar items normales
                 foreach ($items as $row) {
+                    if (!empty($row['id']) && isset($preserved[(int)$row['id']])) continue;
                     $p_item = new PurchaseItem();
                     $p_item->fill($row);
                     $p_item->purchase_id = $doc->id;
@@ -720,6 +751,7 @@ use Modules\Purchase\Helpers\WeightedAverageCostHelper;
                 if (count($supplies) > 0) {
                     $this->processSupplies($doc, $supplies);
                 }
+                \App\Support\Exact\CommercialCalculation::summarize($doc);
 
                 // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
                 $newPayments = $request->has('payments')
@@ -750,7 +782,7 @@ use Modules\Purchase\Helpers\WeightedAverageCostHelper;
                 $this->createPdf($doc, "a4", $doc->filename);
 
                 return $doc;
-            });
+            }, 3);
 
             return [
                 'success' => true,
@@ -798,7 +830,7 @@ use Modules\Purchase\Helpers\WeightedAverageCostHelper;
 
             // factor de lista de precios
             $presentation_quantity = (isset($purchase_item->item->presentation->quantity_unit)) ? $purchase_item->item->presentation->quantity_unit : 1;
-            $quantity = $row['quantity'] * $presentation_quantity;
+            $quantity = $purchase_item->exactValue('quantity')->multipliedBy(\App\Support\Exact\Decimal::of($presentation_quantity));
 
             if($lot_code && $date_of_due)
             {
@@ -906,19 +938,19 @@ use Modules\Purchase\Helpers\WeightedAverageCostHelper;
 
         public function anular($id)
         {
-            $obj = Purchase::find($id);
-            $validated = self::verifyHasSaleItems($obj->items);
-            if (!$validated['success']) {
-                return [
-                    'success' => false,
-                    'message' => $validated['message']
-                ];
-            }
+            // ######## INICIO ANULACIÓN EXACTA DE COMPRA ########
+            return DB::connection('tenant')->transaction(function () use ($id) {
+                $obj = Purchase::query()->lockForUpdate()->findOrFail($id);
+                if ((string)$obj->state_type_id === '11') return ['success'=>true,'message'=>'La compra ya está anulada'];
+                // Match sales/orders: lock catalog items before their lot and serial rows.
+                $itemIds=$obj->items()->orderBy('item_id')->pluck('item_id')->unique()->values()->all();
+                Item::withoutEagerLoads()->whereIn('id',$itemIds)->orderBy('id')->lockForUpdate()->get();
+                $items=$obj->items()->orderBy('id')->lockForUpdate()->get();
+                $validated = self::verifyHasSaleItems($items);
+                if (!$validated['success']) return ['success'=>false,'message'=>$validated['message']];
 
-            DB::connection('tenant')->transaction(function () use ($obj) {
 
-
-                foreach ($obj->items as $it) {
+                foreach ($items as $it) {
                     $it->lots()->delete();
                 }
 
@@ -926,32 +958,42 @@ use Modules\Purchase\Helpers\WeightedAverageCostHelper;
                 $obj->state_type_id = 11;
                 $obj->save();
 
-                foreach ($obj->items as $item)
+                foreach ($items as $item)
                 {
-                    $item_warehouse_id = $item->warehouse_id ?? $obj->establishment->getCurrentWarehouseId();
+                    if (($item->calculation_snapshot['inputs']['inventory_service_without_movement'] ?? false) === true) continue;
+                    $warehouseMovement=$item->calculation_snapshot['inputs']['purchase_warehouse_inventory'] ?? null;
+                    $item_warehouse_id = $warehouseMovement['warehouse_id'] ?? $item->warehouse_id ?? $obj->establishment->getCurrentWarehouseId();
+                    $quantity=$warehouseMovement ? \App\Support\Exact\Decimal::of($warehouseMovement['quantity']) : $item->exactValue('quantity');
 
                     $item->purchase->inventory_kardex()->create([
                         'date_of_issue' => date('Y-m-d'),
                         'item_id' => $item->item_id,
                         'warehouse_id' => $item_warehouse_id,
-                        'quantity' => -$item->quantity,
+                        'quantity' => $quantity->negated(),
                     ]);
 
-                    $wr = ItemWarehouse::where([['item_id', $item->item_id], ['warehouse_id', $item_warehouse_id]])->first();
-                    $wr->stock = $wr->stock - $item->quantity;
+                    $wr = ItemWarehouse::where([['item_id', $item->item_id], ['warehouse_id', $item_warehouse_id]])->lockForUpdate()->firstOrFail();
+                    $wr->stock = $wr->exactValue('stock')->minus($quantity);
                     $wr->save();
+
+                    $legacy=$item->calculation_snapshot['inputs']['legacy_purchase_inventory'] ?? null;
+                    if ($legacy) {
+                        $legacyQuantity=\App\Support\Exact\Decimal::of($legacy['quantity']);
+                        \App\Models\Tenant\Kardex::create(['type'=>'purchase','date_of_issue'=>date('Y-m-d'),
+                            'item_id'=>$item->item_id,'purchase_id'=>$obj->id,'quantity'=>$legacyQuantity->negated()]);
+                        $catalogItem=Item::query()->lockForUpdate()->findOrFail($item->item_id);
+                        $catalogItem->stock=$catalogItem->exactValue('stock')->minus($legacyQuantity);
+                        $catalogItem->save();
+                    }
 
                     self::voidedItemLotsGroup($item);
 
                     (new WeightedAverageCostHelper)->processWeightedAverageCost($item, -1);
                 }
 
-            });
-
-            return [
-                'success' => true,
-                'message' => 'Compra anulada con éxito'
-            ];
+                return ['success'=>true,'message'=>'Compra anulada con éxito'];
+            }, 3);
+            // ######## FIN ANULACIÓN EXACTA DE COMPRA ########
         }
 
 
@@ -969,7 +1011,10 @@ use Modules\Purchase\Helpers\WeightedAverageCostHelper;
             if($lots_enabled && $purchase_item->lot_code && $purchase_item->item_lot_group_id)
             {
                 $lot_group = self::findItemLotsGroup($purchase_item);
-                $lot_group->quantity = $lot_group->quantity - $purchase_item->quantity;
+                $movement=$purchase_item->calculation_snapshot['inputs']['purchase_warehouse_inventory'] ?? null;
+                $presentation=$purchase_item->item->presentation->quantity_unit ?? 1;
+                $quantity=$movement ? \App\Support\Exact\Decimal::of($movement['quantity']) : $purchase_item->exactValue('quantity')->multipliedBy(\App\Support\Exact\Decimal::of($presentation));
+                $lot_group->quantity = $lot_group->exactValue('quantity')->minus($quantity);
                 $lot_group->update();
             }
         }
@@ -981,7 +1026,7 @@ use Modules\Purchase\Helpers\WeightedAverageCostHelper;
             $message = '';
             foreach ($items as $element) {
 
-                $lot_has_sale = collect($element->lots)->firstWhere('has_sale', 1);
+                $lot_has_sale = $element->lots()->where('has_sale',1)->lockForUpdate()->first();
                 if ($lot_has_sale) {
                     $validated = false;
                     $message = 'No se puede anular esta compra, series en productos no disponibles';
@@ -1013,7 +1058,10 @@ use Modules\Purchase\Helpers\WeightedAverageCostHelper;
                             break;
                         }
 
-                        if ((int)$lot_group->quantity != (int)$element->quantity) {
+                        $movement=$element->calculation_snapshot['inputs']['purchase_warehouse_inventory'] ?? null;
+                        $presentation=$element->item->presentation->quantity_unit ?? 1;
+                        $quantity=$movement ? \App\Support\Exact\Decimal::of($movement['quantity']) : $element->exactValue('quantity')->multipliedBy(\App\Support\Exact\Decimal::of($presentation));
+                        if (!$lot_group->exactValue('quantity')->isEqualTo($quantity)) {
                             $message = "Los productos del lote {$element->lot_code} han sido vendidos!";
                             $validated = false;
                             break;
@@ -1042,11 +1090,11 @@ use Modules\Purchase\Helpers\WeightedAverageCostHelper;
         {
             if(!is_null($purchase_item->item_lot_group_id))
             {
-                $lot_group = ItemLotsGroup::find($purchase_item->item_lot_group_id);
+                $lot_group = ItemLotsGroup::where('item_id',$purchase_item->item_id)->lockForUpdate()->find($purchase_item->item_lot_group_id);
             }
             else
             {
-                $lot_group = ItemLotsGroup::where('code', $purchase_item->lot_code)->first();
+                $lot_group = ItemLotsGroup::where('item_id',$purchase_item->item_id)->where('code', $purchase_item->lot_code)->lockForUpdate()->first();
             }
 
             return $lot_group;
@@ -1166,11 +1214,17 @@ use Modules\Purchase\Helpers\WeightedAverageCostHelper;
 
                 DB::connection('tenant')->transaction(function () use ($id) {
 
-                    $row = Purchase::findOrFail($id);
+                    // ######## INICIO REVERSIÓN AL ELIMINAR COMPRA ########
+                    $row = Purchase::query()->lockForUpdate()->findOrFail($id);
+                    $itemIds=$row->items()->orderBy('item_id')->pluck('item_id')->unique()->values()->all();
+                    Item::withoutEagerLoads()->whereIn('id',$itemIds)->orderBy('id')->lockForUpdate()->get();
+                    $items=$row->items()->orderBy('id')->lockForUpdate()->get();
                     $this->deleteAllPayments($row->purchase_payments);
+                    foreach ($items as $line) $line->delete();
                     $row->delete();
+                    // ######## FIN REVERSIÓN AL ELIMINAR COMPRA ########
 
-                });
+                }, 3);
 
                 return [
                     'success' => true,
@@ -1340,10 +1394,17 @@ use Modules\Purchase\Helpers\WeightedAverageCostHelper;
 
             DB::connection('tenant')->transaction(function () use ($id) {
 
-                $item = PurchaseItem::findOrFail($id);
+                // ######## INICIO BLOQUEO DE COMPRA ANTES DE PARTIDA ########
+                $purchaseId=PurchaseItem::whereKey($id)->value('purchase_id');
+                $purchase=Purchase::query()->lockForUpdate()->findOrFail($purchaseId);
+                if ($purchase->isVoidedOrRejected()) \App\Services\Payments\Classification::error('purchase','No se puede editar una compra anulada o rechazada.');
+                $itemId=$purchase->items()->whereKey($id)->value('item_id');
+                Item::withoutEagerLoads()->whereKey($itemId)->lockForUpdate()->firstOrFail();
+                $item = PurchaseItem::where('purchase_id',$purchase->id)->lockForUpdate()->findOrFail($id);
                 $item->delete();
+                // ######## FIN BLOQUEO DE COMPRA ANTES DE PARTIDA ########
 
-            });
+            }, 3);
 
             return [
                 'success' => true,

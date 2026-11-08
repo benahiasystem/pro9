@@ -107,6 +107,7 @@
 
     import DataTable from '../../components/DataTable.vue'
     import {deletable} from '@mixins/deletable'
+    import {exactAmount} from '@helpers/exchange-rate-math'
 
 
     export default {
@@ -172,13 +173,8 @@
                 }
             },
             formatDecimal(value) {
-                const number = parseFloat(value || 0)
-
-                if (isNaN(number)) {
-                    return Number(0).toFixed(this.decimal_quantity)
-                }
-
-                return number.toFixed(this.decimal_quantity)
+                try { return exactAmount(value || '0').final(this.decimal_quantity) }
+                catch (_) { return exactAmount('0').final(this.decimal_quantity) }
             },
             saveColumnVisibility() {
                 localStorage.setItem('columnVisibilityFixedpurchases', JSON.stringify(this.columns));

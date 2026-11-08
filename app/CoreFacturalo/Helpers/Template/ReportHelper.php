@@ -140,7 +140,7 @@
             $type_doc = $value;
             if (
                 $type_doc &&
-                $type_doc->customer
+                isset($type_doc->customer)
             ) {
                 $customer = $type_doc->customer;
             }
@@ -153,22 +153,13 @@
             }
 
             if ($customer != null) {
-                if (
-                    $customer->district &&
-                    $customer->district->description
-                ) {
+                if (!empty($customer->district->description)) {
                     $district = $customer->district->description;
                 }
-                if (
-                    $customer->department &&
-                    $customer->department->description
-                ) {
+                if (!empty($customer->department->description)) {
                     $department = $customer->department->description;
                 }
-                if (
-                    $customer->province &&
-                    $customer->province->description
-                ) {
+                if (!empty($customer->province->description)) {
                     $province = $customer->province->description;
                 }
             }

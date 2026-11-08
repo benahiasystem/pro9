@@ -138,7 +138,15 @@ final class Decimal
             self::$readCache[$record]=$entry;
             if (isset($entry['values'][$field])) return $entry['values'][$field];
         }
-        $value = is_array($record) ? ($record[$field] ?? 0) : ($record->$field ?? 0);
+        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // Eloquent casts may turn a stored decimal into a binary float. Read the
+        // raw attribute when no fraction was frozen, retaining accessors only for
+        // computed fields that have no corresponding stored attribute.
+        if (is_array($record)) $value = $record[$field] ?? 0;
+        elseif (method_exists($record, 'getAttributes') && array_key_exists($field, $record->getAttributes())) {
+            $value = $record->getAttributes()[$field] ?? 0;
+        } else $value = $record->$field ?? 0;
+        // ######## FIN CALCULOS EXACTOS PRO9 ########
         return self::of($snapshot['values'][$field] ?? $value);
     }
 

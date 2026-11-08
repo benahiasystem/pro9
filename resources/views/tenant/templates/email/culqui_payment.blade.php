@@ -13,7 +13,7 @@
             <tr bgcolor="#846add" height="100px">
                 <td align="center"
                     style="font-family: Montserrat, Arial, sans serif; color: #fff;text-transform: uppercase;font-size: 20px;justify-content: center;align-items: center;letter-spacing: 4px;font-weight: 600;">
-                    Constancia de pago
+                    {{ ($document->payment_confirmed ?? false) === true ? 'Constancia de pago' : 'Confirmación de pedido' }}
                 </td>
             </tr>
 
@@ -32,7 +32,7 @@
                             <tr>
                                 <td
                                     style="font-family: Montserrat, Arial, sans serif; margin:5px 0 0; font-size: 12px; font-weight:400;word-break: break-word;color:#333;line-height: 22p; position: relative; top: 10px;">
-                                    Gracias por su pago realizado, aqui le detallamos sus pedido:</td>
+                                    {{ ($document->payment_confirmed ?? false) === true ? 'Gracias por su pago. A continuación se detalla su pedido:' : 'Recibimos su pedido. El pago está pendiente de confirmación:' }}</td>
 
                             </tr>
                             <tr height="30"></tr>
@@ -59,20 +59,21 @@
                                                     {{$loop->iteration}}
                                                 </td>
                                                 <td style="padding-left:30px !important;" align="center">
-                                                    {{$item['description']}}
+                                                    {{ data_get($item, 'description', '') }}
                                                 </td>
                                                 <td style="padding-left:30px !important;" align="center">
-                                                    {{$item['cantidad']}}
+                                                    {{ data_get($item, 'cantidad', data_get($item, 'quantity', '')) }}
                                                 </td>
                                                 <td style="padding-left:30px !important;" align="center">
-                                                    {{$item['unit_type_id']}}
+                                                    {{ data_get($item, 'unit_type_id', '') }}
                                                 </td>
                                             </tr>
                                             @endforeach
                                         </tbody>
                                     </table>
                                     <br>
-                                    Monto: <b>Bs. {{ $document->total }}</b><br>
+                                    {{ ($document->payment_confirmed ?? false) === true ? 'Monto cobrado' : 'Total del pedido' }}:
+                                    <b>@if($document->total === null) No disponible @else {{ ($document->payment_confirmed ?? false) === true ? ($document->currency_label ?? 'Moneda no indicada') : 'Bs.' }} {{ \App\Support\Exact\Decimal::format($document->total) }} @endif</b><br>
 
                                     @if(!empty($document->order_number) || !empty($document->tracking_token))
                                     <br>

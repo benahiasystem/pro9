@@ -24,6 +24,15 @@ class ClassifiedCashExport extends GeneralFormatExport implements WithEvents
                     $records[]=['id'=>$section.':'.$id.':'.$field,'value'=>D::represent($value),'calculation_snapshot'=>D::snapshot(['value'=>$value])];
                 }
             }
+            foreach (($this->data['documents'] ?? []) as $line) {
+                $fields = ['quantity','unit_value','sub_total','total'];
+                if (isset($line['calculation_snapshot']['values']['line_total'])) $fields[] = 'line_total';
+                foreach ($fields as $field) {
+                    $value=D::readRequired($line,$field);
+                    $records[]=['id'=>'product:'.$line['record_type'].':'.$line['id'].':'.$field,
+                        'value'=>D::represent($value),'calculation_snapshot'=>D::snapshot(['value'=>$value])];
+                }
+            }
             FractionSheet::append($event->sheet->getDelegate(),$records,['value']);
         }];
     }

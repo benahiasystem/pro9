@@ -54,18 +54,13 @@
             </table>
         </div>
         <br>
-        @if(!empty($records))
+        @if($records->isNotEmpty())
             <div class="">
                 <div class=" ">
 
                     @php
-                        $acum_total_taxed=0;
-                        $acum_total_igv=0;
-                        $acum_total=0;
-
-                        $acum_total_taxed_usd=0;
-                        $acum_total_igv_usd=0;
-                        $acum_total_usd=0;
+                        $report = \Modules\Report\Services\SaleNoteReportAmounts::presentation($records);
+                        $displayByKey = $report['rows']->keyBy('report_key');
                     @endphp
 
                     <table class="">
@@ -107,6 +102,7 @@
                         </thead>
                         <tbody>
                             @foreach($records as $key => $value)
+                                @php $display = $displayByKey['sale_note:'.$value->id]['display']; @endphp
                                 {{-- {{ dd($value->items)}} --}}
                                 <tr>
                                     <td>{{$loop->iteration}}</td>
@@ -126,7 +122,7 @@
                                         @endforeach
                                     </td>
                                     <td>{{$value->purchase_order}}</td>
-                                    <td>{{$value->customer->department->description}}</td>
+                                    <td>{{ optional($value->customer->department)->description }}</td>
                                     @php
                                         $documents = $value->documents;
                                     @endphp
@@ -153,27 +149,13 @@
                                     </td>
 
 
-                                    @if($value->state_type_id == '11')
-
-                                        <td class="celda">0</td>
-                                        <td class="celda">0</td>
-                                        <td class="celda">0</td>
-                                        <td class="celda">0</td>
-                                        <td class="celda">0</td>
-                                        <td class="celda">0</td>
-                                        <td class="celda">0</td>
-
-                                    @else
-
-                                        <td class="celda">{{ ($value->total_discount) }}</td>
-                                        <td class="celda">{{ ($value->total_exportation) }}</td>
-                                        <td class="celda">{{ $value->total_unaffected }}</td>
-                                        <td class="celda">{{ $value->total_exonerated }}</td>
-                                        <td class="celda">{{ $value->total_taxed}}</td>
-                                        <td class="celda">{{ $value->total_igv}}</td>
-                                        <td class="celda">{{ $value->total}}</td>
-
-                                    @endif
+                                    <td class="celda" data-type="s" style="mso-number-format:'\@'">{{ $display['total_discount'] }}</td>
+                                    <td class="celda" data-type="s" style="mso-number-format:'\@'">{{ $display['total_exportation'] }}</td>
+                                    <td class="celda" data-type="s" style="mso-number-format:'\@'">{{ $display['total_unaffected'] }}</td>
+                                    <td class="celda" data-type="s" style="mso-number-format:'\@'">{{ $display['total_exonerated'] }}</td>
+                                    <td class="celda" data-type="s" style="mso-number-format:'\@'">{{ $display['total_taxed'] }}</td>
+                                    <td class="celda" data-type="s" style="mso-number-format:'\@'">{{ $display['total_igv'] }}</td>
+                                    <td class="celda" data-type="s" style="mso-number-format:'\@'">{{ $display['total'] }}</td>
 
                                     @if ($enabled_sales_agents)
                                         <td>{{optional($value->agent)->search_description}}</td>
@@ -194,59 +176,16 @@
                                 @endif
 
 
-                                @php
-
-                                    if($value->currency_type_id == 'VES'){
-
-                                        if($value->state_type_id == '11'){
-
-                                            $acum_total += 0;
-                                            $acum_total_taxed += 0;
-                                            $acum_total_igv += 0;
-
-                                        }else{
-
-                                            $acum_total += $value->total;
-                                            $acum_total_taxed += $value->total_taxed;
-                                            $acum_total_igv += $value->total_igv;
-
-                                        }
-
-                                    }else if($value->currency_type_id == 'USD'){
-
-                                        if($value->state_type_id == '11'){
-
-                                            $acum_total_usd += 0;
-                                            $acum_total_taxed_usd += 0;
-                                            $acum_total_igv_usd += 0;
-
-                                        }else{
-
-                                            $acum_total_usd += $value->total;
-                                            $acum_total_taxed_usd += $value->total_taxed;
-                                            $acum_total_igv_usd += $value->total_igv;
-
-                                        }
-
-                                    }
-                                @endphp
-
                             @endforeach
+                            @foreach($report['totals'] as $currency => $amounts)
                             <tr>
                                 <td class="celda" colspan="20"></td>
-                                <td class="celda" >Totales VES</td>
-                                <td class="celda">{{$acum_total_taxed}}</td>
-                                <td class="celda">{{$acum_total_igv}}</td>
-                                <td class="celda">{{$acum_total}}</td>
+                                <td class="celda">Totales {{ $currency }}</td>
+                                <td class="celda" data-type="s" style="mso-number-format:'\@'">{{ \App\Support\Exact\Decimal::format($amounts['total_taxed'],2,'.','') }}</td>
+                                <td class="celda" data-type="s" style="mso-number-format:'\@'">{{ \App\Support\Exact\Decimal::format($amounts['total_igv'],2,'.','') }}</td>
+                                <td class="celda" data-type="s" style="mso-number-format:'\@'">{{ \App\Support\Exact\Decimal::format($amounts['total'],2,'.','') }}</td>
                             </tr>
-                            <tr>
-                                <td class="celda" colspan="20"></td>
-                                <td class="celda" >Totales USD</td>
-                                <td class="celda">{{$acum_total_taxed_usd}}</td>
-                                <td class="celda">{{$acum_total_igv_usd}}</td>
-                                <td class="celda">{{$acum_total_usd}}</td>
-                            </tr>
-                            {{-- {{ dd($acum_total_taxed) }} --}}
+                            @endforeach
                         </tbody>
                     </table>
                 </div>

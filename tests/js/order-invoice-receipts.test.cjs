@@ -13,7 +13,7 @@ const component=tree.program.body.find(node=>node.type==='ExportDefaultDeclarati
 const methods=component.properties.find(node=>node.key.name==='methods').value
 const computed=component.properties.find(node=>node.key.name==='computed').value
 const globals={...load('resources/js/helpers/ensure-exchange-rate-sale.js'),...load('resources/js/helpers/document-creation.js'),
-    ...load('resources/js/helpers/payment-classification.js'),_: {isEmpty: value => !value || !Object.keys(value).length}}
+    ...load('resources/js/helpers/payment-classification.js'),...load('resources/js/helpers/exchange-rate-math.js'),_: require('lodash')}
 const get=name=>vm.runInNewContext(`({${generate(methods.properties.find(node=>node.key?.name===name)).code}})[${JSON.stringify(name)}]`,globals)
 const submit=get('submit'), assign=get('assignPrepayments'), validate=get('validatePaymentDestination')
 const orderForm=compiler.parseComponent(fs.readFileSync('modules/Order/Resources/assets/js/views/order_notes/form.vue','utf8'))
@@ -22,6 +22,35 @@ const formComponent=formTree.program.body.find(node=>node.type==='ExportDefaultD
 const formMethods=formComponent.properties.find(node=>node.key.name==='methods').value
 const formGet=name=>vm.runInNewContext(`({${generate(formMethods.properties.find(node=>node.key?.name===name)).code}})[${JSON.stringify(name)}]`,{
     ...globals,moment:()=>({format:()=> '2026-10-01'})})
+
+test('order conversion retains partial receipts and suggests only the unpaid balance',()=>{
+    globals.moment=()=>({add:()=>({format:()=> '2026-11-26'}),format:()=> '2026-11-06'})
+    const payment={id:null,document_id:null,payment:'50',currency_type_id:'USD',original_amount:'5',exchange_rate:'10',payment_method_type_id:'13',payment_destination_id:2}
+    const ctx={document:{total:'232',currency_type_id:'VES',payment_condition_id:'02',date_of_issue:'2026-11-06',payments:[payment],fee:[]},
+        credit_payment_method_types:[{id:'09',number_days:20}]}
+    for(const name of ['calculateFee','clickAddFeeNew','clickAddFee','changePaymentCondition']) ctx[name]=get(name).bind(ctx)
+    ctx.changePaymentCondition()
+    assert.equal(ctx.document.payments[0],payment)
+    assert.equal(ctx.document.fee[0].amount,'182.00')
+    const fee=ctx.document.fee[0]
+    ctx.document.payment_condition_id='01';ctx.changePaymentCondition()
+    ctx.document.payment_condition_id='03';ctx.changePaymentCondition()
+    assert.equal(ctx.document.payments[0],payment)
+    assert.equal(ctx.document.fee[0],fee)
+    assert.doesNotMatch(source.template.content,/v-if="document\.payment_condition_id == '01'"/)
+})
+
+test('order conversion submits a normalized copy without losing credit installments or mutating the draft',async()=>{
+    let posted
+    const fee={date:'2026-11-26',currency_type_id:'VES',amount:'182.00'}
+    const ctx={document:{items:[{}],document_type_id:'01',date_of_issue:'2026-11-06',currency_type_id:'VES',exchange_rate_sale:'40',payment_condition_id:'03',payments:[],fee:[fee]},
+        validatePaymentDestination:async()=>({error_by_item:0}),fnValidateRestrictSaleItemsCpe:()=>({success:true}),ensureFiscalPaymentsReady:async()=>true,
+        $message:{error(){}},$http:{post:async(url,data)=>{posted=data;return {data:{success:false,message:'sin guardar'}}}}}
+    await submit.call(ctx);await new Promise(resolve=>setImmediate(resolve))
+    assert.equal(posted.payment_condition_id,'02')
+    assert.equal(posted.fee[0],fee)
+    assert.equal(ctx.document.payment_condition_id,'03')
+})
 
 test('order draft payments retain received currency and rate at conversion',async()=>{
     const draft={id:null,document_id:null,date_of_payment:'2026-10-01',payment_method_type_id:'13',payment_destination_id:2,

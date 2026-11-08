@@ -50,6 +50,24 @@ class PdfPricePrecisionTest extends TestCase
             'change_decimal_quantity_unit_price_pdf'=>false, 'decimal_quantity_unit_price_pdf'=>12]));
     }
 
+    public function test_rounding_notice_only_when_displayed_price_changes_the_line_cents(): void
+    {
+        $row=new \Illuminate\Support\Fluent(['unit_price'=>'12.666666666667','quantity'=>'3']);
+        self::assertTrue(PdfPrice::needsRoundingNotice([$row],[]));
+        self::assertFalse(PdfPrice::needsRoundingNotice([$row],[
+            'change_decimal_quantity_unit_price_pdf'=>true,'decimal_quantity_unit_price_pdf'=>3]));
+        self::assertFalse(PdfPrice::needsRoundingNotice([new \Illuminate\Support\Fluent(['unit_price'=>'12.5','quantity'=>'3'])],[]));
+    }
+
+    public function test_ticket_tax_rate_is_exact_and_not_invented_for_mixed_rates(): void
+    {
+        $row=fn($rate)=>new \Illuminate\Support\Fluent(['percentage_igv'=>$rate]);
+        self::assertSame('16',\App\Support\Exact\PdfTaxRates::single([$row('16'),$row('0'),$row('16.0000')]));
+        self::assertSame('16.000000000001',\App\Support\Exact\PdfTaxRates::single([$row('16.000000000001')]));
+        self::assertNull(\App\Support\Exact\PdfTaxRates::single([$row('16'),$row('8')]));
+        self::assertNull(\App\Support\Exact\PdfTaxRates::single([$row('0')]));
+    }
+
     public function test_rendering_2_6_and_12_decimal_places_does_not_change_the_exact_value(): void
     {
         $price = Decimal::of(500)->dividedBy('1.16');

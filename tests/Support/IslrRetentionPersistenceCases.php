@@ -8,6 +8,40 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 trait IslrRetentionPersistenceCases
 {
+    public function test_free_form_cash_collection_respects_both_retention_forecasts(): void
+    {
+        [$db,$app,$input,$state]=$this->bootIslrFixture();
+        $db->table('companies')->update(['fiscal_emission_mode'=>'free_form']);
+        $db->table('configurations')->update(['auto_send_hka'=>false]);
+        $input['payment_condition_id']='01';
+        $short=$input; $short['payments'][0]['payment']='201';
+        try { (new Facturalo)->save($short); self::fail('Las previsiones no deben cubrir una falta adicional de cobro.'); }
+        catch (ValidationException $error) { self::assertArrayHasKey('payments',$error->errors()); }
+        self::assertSame(0,$db->table('documents')->count());
+        self::assertSame(0,$db->table('global_payments')->count());
+        $document=(new Facturalo)->save($input)->getDocument()->fresh();
+        self::assertSame('30',\App\Support\Exact\Decimal::represent($document->exactBalance()));
+        self::assertSame('24',\App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::readRequired($document->fiscal_data->iva_retention_prevision,'amount')));
+        self::assertSame('6',\App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::readRequired($document->fiscal_data->islr_retention_prevision,'amount')));
+        self::assertCount(0,$document->received_retentions);
+        $edit=array_replace($input,['id'=>$document->id,'series'=>$document->series,'number'=>$document->number,
+            'payments'=>[],'received_retentions'=>[],'guarantee_fund'=>null]);
+        (new Facturalo)->update($edit,$document->id);
+        self::assertSame('30',\App\Support\Exact\Decimal::represent($document->fresh()->exactBalance()));
+        $edit['items'][0]['quantity']='3';
+        try { (new Facturalo)->update($edit,$document->id); self::fail('La previsión recalculada no cubre el incremento neto.'); }
+        catch (ValidationException $error) { self::assertArrayHasKey('payments',$error->errors()); }
+        self::assertSame('232',\App\Support\Exact\Decimal::represent($document->fresh()->exactValue('total')));
+        \App\Services\Fiscal\FreeFormControl::register($document,['control_number'=>'00-1','evidence_reference'=>'Factura física sintética']);
+        $iva=IvaRetentionService::store($document->fresh(),$this->ivaVoucher($document->fresh()));
+        self::assertSame('applied',$iva->application_status);
+        self::assertSame('6',\App\Support\Exact\Decimal::represent($document->fresh()->exactBalance()));
+        \App\Services\Fiscal\FiscalDocumentPersistence::assertFreeFormCashCollection($document->fresh(),$document->fresh()->exactBalance());
+        try { \App\Services\Fiscal\FiscalDocumentPersistence::assertFreeFormCashCollection($document->fresh(),'7'); self::fail('No se debe descontar dos veces la previsión ya aplicada.'); }
+        catch (ValidationException $error) { self::assertArrayHasKey('payments',$error->errors()); }
+        self::assertSame([],$state->calls);
+    }
+
     private function bootIslrFixture(): array
     {
         [$db,$app,$input]=$this->bootHkaFixture();
@@ -51,6 +85,178 @@ trait IslrRetentionPersistenceCases
         return array_replace(SpeProfiles::voucher($doc),['tax_kind'=>'ISLR','voucher_number'=>'ISLR recibido / 001','voucher_date'=>'2026-09-10','agent_id'=>$doc->customer_id,
             'concept_id'=>'055','base'=>200,'percentage'=>4,'subtrahend'=>2,'amount'=>6,'currency_type_id'=>'VES','exchange_rate'=>'1.00000000'],$changes);
     }
+    public function test_free_form_received_iva_and_islr_wait_for_verified_control_and_restore_balance(): void
+    {
+        [$db,$app,$input,$state]=$this->bootIslrFixture();
+        $db->table('companies')->update(['fiscal_emission_mode'=>'free_form']);
+        $doc=(new Facturalo)->save($input)->getDocument()->fresh();
+        self::assertSame('free_form',$doc->fiscal_emission_mode);
+        config(['view.compiled'=>sys_get_temp_dir().'/'.$this->database.'/unpaid-retention-views',
+            'view.paths'=>[base_path('resources/views')],'excel'=>require base_path('config/excel.php')]);
+        mkdir(config('view.compiled'),0777,true);$app->register(\Illuminate\View\ViewServiceProvider::class);
+        $app['view']->addNamespace('report',base_path('modules/Report/Resources/views'));
+        $app->register(\Illuminate\Translation\TranslationServiceProvider::class);
+        \Illuminate\Http\Request::macro('validate',function ($rules) { return validator($this->all(),$rules)->validate(); });
+        config(['tenant.items_per_page'=>20]);
+        $temp=new \Maatwebsite\Excel\Files\TemporaryFileFactory(sys_get_temp_dir());
+        $app->instance(\Maatwebsite\Excel\Files\TemporaryFileFactory::class,$temp);
+        $checkExport=function (?string $balance, ?string $retained) use ($doc,$temp) {
+            $dataset=\App\Support\Exact\Receivables::dataset(['stablishmentUnpaidAll'=>1]);
+            $rows=collect(iterator_to_array($dataset))->keyBy('report_key');$key='document:'.$doc->id;
+            if ($balance===null) self::assertFalse($rows->has($key));
+            else {
+                self::assertSame($balance,$rows[$key]['total_to_pay']);
+                self::assertSame($retained,$rows[$key]['retention_amount']);
+            }
+            $export=(new \Modules\Report\Exports\NoPaidExport())->records($dataset)->company(Company::firstOrFail());
+            $file=(new \Maatwebsite\Excel\Writer($temp))->export($export,\Maatwebsite\Excel\Excel::XLSX);
+            try {
+                $book=(new \PhpOffice\PhpSpreadsheet\Reader\Xlsx())->load($file->getLocalPath());
+                $cells=collect($book->getSheet(0)->toArray(null,true,false,false))->flatten()->map(fn($v)=>(string)$v)->all();
+                $fractions=$book->getSheetByName('Fracciones exactas')->toArray(null,true,false,false);
+                if ($balance===null) self::assertContains('No se encontraron registros.',$cells);
+                else {
+                    self::assertContains($balance,$cells);
+                    self::assertContains([$key,'retention_amount',$retained,$retained,'1'],$fractions);
+                }
+                $book->disconnectWorksheets();
+            } finally {$file->delete();}
+        };
+        $checkState=function (string $balance) use ($doc,$temp) {
+            $fresh=$doc->fresh();$request=new \Illuminate\Http\Request();
+            $screen=(new \Modules\Report\Http\Resources\StateAccountCollection(collect([$fresh])))->toArray($request)->first();
+            self::assertSame($balance,$screen['payment_state']);
+            $query=\Illuminate\Http\Request::create('/reports/state-account/records','GET',[
+                'period'=>'date','date_start'=>'2026-09-10','date_end'=>'2026-09-10','document_type_id'=>'01']);
+            $page=(new \Modules\Report\Http\Controllers\ReportStateAccountController())->records($query)->getData(true);
+            $listed=collect($page['data'])->firstWhere('id',$doc->id);
+            self::assertNotNull($listed);self::assertSame($balance,$listed['payment_state']);
+            $export=(new \Modules\Report\Exports\StatusClientExport())->records(collect([$doc->fresh()]))
+                ->company(Company::firstOrFail())->establishment(\App\Models\Tenant\Establishment::findOrFail($doc->establishment_id))
+                ->filters(['user_type'=>'admin'])->categories([])->categories_services([]);
+            $file=(new \Maatwebsite\Excel\Writer($temp))->export($export,\Maatwebsite\Excel\Excel::XLSX);
+            try {
+                $book=(new \PhpOffice\PhpSpreadsheet\Reader\Xlsx())->load($file->getLocalPath());
+                $rows=$book->getSheet(0)->toArray(null,true,false,false);$header=null;$entry=null;
+                foreach ($rows as $row) {
+                    if (in_array('Total por pagar',$row,true)) $header=$row;
+                    if (in_array($doc->number_full,$row,true)) $entry=$row;
+                }
+                self::assertNotNull($header);self::assertNotNull($entry);
+                self::assertSame($balance,$entry[array_search('Total por pagar',$header,true)]);
+                $fractions=$book->getSheetByName('Fracciones exactas')->toArray(null,true,false,false);
+                $integer=explode('.',$balance)[0];
+                self::assertContains(['document:'.$doc->id,'payment_state',$integer,$integer,'1'],$fractions);
+                $book->disconnectWorksheets();
+            } finally {$file->delete();}
+        };
+        $control='00-00000001';
+        $iva=IvaRetentionService::store($doc,$this->ivaVoucher($doc,['invoice_control'=>$control]));
+        $islr=IslrRetentionService::store($doc,$this->islrVoucher($doc,['invoice_control'=>$control]));
+        self::assertSame('pending_validation',$iva->application_status);
+        self::assertSame('pending_validation',$islr->application_status);
+        self::assertSame('30',\App\Support\Exact\Decimal::represent($doc->fresh()->exactBalance()));
+        $checkExport('30','0');
+        $checkState('30.00');
+        // The administrator transcribes the control from a synthetic physical-form reference.
+        $request=\Illuminate\Http\Request::create('/','POST',['control_number'=>$control,'evidence_reference'=>'Factura física de prueba']);
+        $response=(new \App\Http\Controllers\Tenant\DocumentFiscalController())->registerFreeFormControl($request,$doc->id);
+        self::assertTrue($response['success']); self::assertSame($control,$response['control_number']);
+        self::assertSame('not_requested',$doc->fresh()->emission->status);
+        self::assertNull($doc->fresh()->emission->control_number);
+        self::assertSame(auth()->id(),$doc->fresh()->emission->response['free_form_control']['actor_id']);
+        self::assertSame('applied',$iva->fresh()->application_status);
+        self::assertSame('applied',$islr->fresh()->application_status);
+        self::assertSame('0',\App\Support\Exact\Decimal::represent($doc->fresh()->exactBalance()));
+        $checkExport(null,null);
+        $checkState('0.00');
+        $account=(new \Modules\Report\Http\Resources\StateAccountCollection(collect([$doc->fresh()])))->toArray(new \Illuminate\Http\Request())->first();
+        self::assertSame('0.00',$account['payment_state']);
+        IslrRetentionService::reverse($islr->fresh(),['operation_key'=>(string)Str::uuid(),'reason'=>'Corrección de prueba']);
+        self::assertSame('6',\App\Support\Exact\Decimal::represent($doc->fresh()->exactBalance()));
+        $checkExport('6','24');
+        $checkState('6.00');
+        IvaRetentionService::reverse($iva->fresh(),['operation_key'=>(string)Str::uuid(),'reason'=>'Corrección de prueba']);
+        self::assertSame('30',\App\Support\Exact\Decimal::represent($doc->fresh()->exactBalance()));
+        $checkExport('30','0');
+        $checkState('30.00');
+        self::assertCount(0,$state->calls);
+    }
+
+    public function test_free_form_control_requires_admin_unique_real_reference_and_rolls_back(): void
+    {
+        [$db,$app,$input,$state]=$this->bootIslrFixture();
+        $db->table('companies')->update(['fiscal_emission_mode'=>'free_form']);
+        $first=(new Facturalo)->save($input)->getDocument()->fresh();
+        $secondInput=$input; $secondInput['external_id']=(string)Str::uuid();
+        $second=(new Facturalo)->save($secondInput)->getDocument()->fresh();
+        $service=\App\Services\Fiscal\FreeFormControl::class;
+        $viewer=auth()->user(); $originalType=$viewer->type;
+        self::assertTrue($service::canRegister($first,$viewer)); $viewer->type='seller';
+        self::assertFalse($service::canRegister($first,$viewer));
+        try { $service::register($first,['control_number'=>'00-1','evidence_reference'=>'Factura física']); self::fail('Sólo el administrador registra el control.'); }
+        catch (\Symfony\Component\HttpKernel\Exception\HttpException $error) { self::assertSame(403,$error->getStatusCode()); }
+        $viewer->type=$originalType;
+        foreach ([['control_number'=>'00-0','evidence_reference'=>'Factura'],['control_number'=>'00-1','evidence_reference'=>'   '],['control_number'=>'no-control','evidence_reference'=>'Factura']] as $invalid) {
+            try { $service::register($first,$invalid); self::fail('Datos inválidos'); }
+            catch (ValidationException $error) { self::assertNotEmpty($error->errors()); }
+        }
+        $db->beginTransaction();
+        $service::register($first,['control_number'=>'00-1','evidence_reference'=>'Factura física']);
+        self::assertSame('00-00000001',$first->fresh()->control_number);
+        $db->rollBack();
+        self::assertNull($first->fresh()->control_number);
+        self::assertArrayNotHasKey('free_form_control',$first->fresh()->emission->response ?? []);
+        $service::register($first->fresh(),['control_number'=>'00-1','evidence_reference'=>'Factura física']);
+        $audit=$first->fresh()->emission->response['free_form_control'];
+        self::assertSame('00-00000001',$audit['control_number']); self::assertSame('Factura física',$audit['evidence_reference']);
+        $service::register($first->fresh(),['control_number'=>'00-00000001','evidence_reference'=>'Reintento']);
+        self::assertSame($audit,$first->fresh()->emission->response['free_form_control']);
+        try { $service::register($first->fresh(),['control_number'=>'00-2','evidence_reference'=>'Factura']); self::fail('Control no reemplazable'); }
+        catch (ValidationException $error) { self::assertArrayHasKey('control_number',$error->errors()); }
+        try { $service::register($second,['control_number'=>'00-1','evidence_reference'=>'Factura']); self::fail('Control duplicado'); }
+        catch (ValidationException $error) { self::assertArrayHasKey('control_number',$error->errors()); }
+        $db->table('documents')->where('id',$first->id)->update(['control_number'=>'00-2']);
+        try { $service::register($second,['control_number'=>'00-00000002','evidence_reference'=>'Factura']); self::fail('Control previo con ceros omitidos'); }
+        catch (ValidationException $error) { self::assertArrayHasKey('control_number',$error->errors()); }
+        $db->table('documents')->where('id',$second->id)->update(['fiscal_emission_mode'=>'digital']);
+        try { $service::register($second->fresh(),['control_number'=>'00-3','evidence_reference'=>'Factura']); self::fail('La modalidad digital es independiente'); }
+        catch (ValidationException $error) { self::assertArrayHasKey('document',$error->errors()); }
+        $db->table('documents')->where('id',$second->id)->update(['fiscal_emission_mode'=>'free_form','state_type_id'=>'09']);
+        try { $service::register($second->fresh(),['control_number'=>'00-3','evidence_reference'=>'Factura']); self::fail('Factura anulada'); }
+        catch (ValidationException $error) { self::assertArrayHasKey('document',$error->errors()); }
+        self::assertCount(0,$state->calls);
+    }
+
+    public function test_free_form_wrong_control_invalidates_voucher_without_settling(): void
+    {
+        [$db,$app,$input,$state]=$this->bootIslrFixture();
+        $db->table('companies')->update(['fiscal_emission_mode'=>'free_form']);
+        $doc=(new Facturalo)->save($input)->getDocument()->fresh();
+        $voucher=IvaRetentionService::store($doc,$this->ivaVoucher($doc,['invoice_control'=>'00-00000001']));
+        \App\Services\Fiscal\FreeFormControl::register($doc,['control_number'=>'00-2','evidence_reference'=>'Factura física']);
+        self::assertSame('invalid',$voucher->fresh()->application_status);
+        self::assertSame('30',\App\Support\Exact\Decimal::represent($doc->fresh()->exactBalance()));
+        self::assertSame('0',\App\Support\Exact\Decimal::represent($voucher->fresh()->exactValue('applied_amount')));
+        self::assertCount(0,$state->calls);
+    }
+
+    public function test_free_form_concurrent_control_registration_cannot_duplicate(): void
+    {
+        [$db,$app,$input]=$this->bootHkaFixture();
+        $db->table('companies')->update(['fiscal_emission_mode'=>'free_form']);
+        $first=(new Facturalo)->save($input)->getDocument()->fresh();
+        $input['external_id']=(string)Str::uuid();
+        $second=(new Facturalo)->save($input)->getDocument()->fresh();
+        $results=$this->runFiscalWorkers($first->id,'free-form-control',[
+            ['document_id'=>$first->id,'control_number'=>'00-1','evidence_reference'=>'Factura física A'],
+            ['document_id'=>$second->id,'control_number'=>'00-00000001','evidence_reference'=>'Factura física B'],
+        ]);
+        self::assertCount(1,array_filter($results,fn($result)=>isset($result['id'])));
+        self::assertCount(1,array_filter($results,fn($result)=>in_array('control_number',$result['rejected'] ?? [],true)));
+        self::assertSame(1,$db->table('documents')->where('control_number','00-00000001')->count());
+    }
+
     public function test_islr_coexists_with_iva_idempotence_replacement_cash_and_hka():void
     {
         [$db,$app,$input,$state]=$this->bootIslrFixture();

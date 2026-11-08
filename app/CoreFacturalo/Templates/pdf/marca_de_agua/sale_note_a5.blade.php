@@ -39,7 +39,8 @@
     }
 
     $quantity_items = $document->items()->count();
-    $cycle_items = $allowed_items - ($quantity_items * 3);
+    // A5 needs room for totals and payment details on the same page.
+    $cycle_items = max(0, min($allowed_items, 14) - ($quantity_items * 3));
     $total_weight = 0;
 
     $type = App\CoreFacturalo\Helpers\Template\TemplateHelper::getFiscalEnvironment();
@@ -366,11 +367,7 @@ foreach ($document->items as $row) {
         <tr>
             <td class="text-center align-top cell-solid-rl">{{ $row->item->internal_id }}</td>
             <td class="text-center align-top cell-solid-rl">
-                @if(((int)$row->quantity != $row->quantity))
-                    {{ $row->quantity }}
-                @else
-                    {{ number_format($row->quantity, 0) }}
-                @endif
+                {{ \App\Support\Exact\PdfQuantities::line($row) }}
             </td>
             <td class="text-center align-top cell-solid-rl">{{ $row->item->unit_type_id }}</td>
             <td class="text-left cell-solid-rl">
@@ -452,7 +449,7 @@ foreach ($document->items as $row) {
                     {{ $cleanedDate }}
                 </td>
             @endif
-            <td class="text-center align-top cell-solid-rl">{{ $row->formatPdfUnitPrice() }}</td>
+            <td class="text-center align-top cell-solid-rl"><span data-pdf-unit-price>{{ $row->formatPdfUnitPrice() }}</span></td>
             <td class="text-center align-top cell-solid-rl">
                 @if($row->discounts)
                     @php $total_discount_line = \App\Support\Exact\PdfAmounts::lineDiscount($row, false); @endphp
@@ -463,6 +460,7 @@ foreach ($document->items as $row) {
             </td>
             <td class="text-center align-top cell-solid-rl">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($row, 'total'), 2) }}</td>
         </tr>
+        @include('pdf.partials.sale_note_trace_wide', ['traceColspan' => $colspan_total + 5, 'traceShowLots' => true, 'traceShowDates' => true, 'traceShowSerials' => true])
     @endforeach
 
         @for($i = 0; $i < $cycle_items; $i++)
@@ -492,6 +490,8 @@ foreach ($document->items as $row) {
         <tr>
             @if(isset($configurationInPdf) && $configurationInPdf->show_seller_in_pdf)
                 <td class="p-1 text-left align-top desc cell-solid" colspan="3"><strong> VENDEDOR:</strong> {{ $document->user->name }}</td>
+            @else
+                <td class="p-1 text-left align-top desc cell-solid" colspan="3"></td>
             @endif
             <td class="p-1 text-left align-top desc cell-solid font-bold"></td>
             <td class="p-1 text-right align-top desc cell-solid font-bold" colspan="{{ $colspan_total }}">
@@ -507,27 +507,13 @@ foreach ($document->items as $row) {
             @endphp
             <td class="p-1 text-left align-top desc cell-solid" colspan="3" rowspan="6">
                 @php
-                    // Solo contar productos (no servicios) para total bultos
-                    $total_packages = 0;
-                    $has_product = false;
-                    foreach ($document->items as $itRow) {
-                        $itemType = $itRow->item->item_type_id ?? null;
-                        $unitType = $itRow->item->unit_type_id ?? null;
-                        // Considerar como producto si no es servicio ('02') y unidad no es 'SERV'
-                        if (!in_array($itemType, ['02']) && $unitType !== 'SERV') {
-                            $total_packages += $itRow->quantity;
-                            $has_product = true;
-                        }
-                    }
+                    $productItems = $document->items->filter(function ($line) {
+                        return ($line->item->item_type_id ?? null) !== '02'
+                            && ($line->item->unit_type_id ?? null) !== 'SERV';
+                    });
                 @endphp
-                @if($total_packages > 0 && $has_product)
-                    <strong> Total bultos:</strong>
-                        @if(((int)$total_packages != $total_packages))
-                            {{ $total_packages }}
-                        @else
-                            {{ number_format($total_packages, 0) }}
-                        @endif
-                    <br>
+                @if($productItems->isNotEmpty())
+                    <strong>Productos:</strong> {{ \App\Support\Exact\PdfQuantities::summary($productItems) }}<br>
                 @endif
             </td>
             <td class="p-1 text-center align-top desc cell-solid " rowspan="6"></td>
@@ -556,7 +542,7 @@ foreach ($document->items as $row) {
         </tr>
         <tr>
             <td class="p-1 text-right align-top desc cell-solid font-bold" colspan="{{ $colspan_total }}">
-                IGV. {{$document->currency_type->symbol}}
+                IVA. {{$document->currency_type->symbol}}
             </td>
             <td class="p-1 text-right align-top desc cell-solid font-bold">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_igv'), 2) }}</td>
         </tr>
@@ -581,16 +567,6 @@ foreach ($document->items as $row) {
             </tr>
         @endif
 
-        @php
-            $change_payment = $document->getChangePayment();
-        @endphp
-
-        @if($change_payment < 0)
-            <tr>
-                <td colspan="6" class="text-right font-bold">VUELTO: {{ $document->currency_type->symbol }}</td>
-                <td class="text-right font-bold">{{ number_format(abs($change_payment),2, ".", "") }}</td>
-            </tr>
-        @endif
     </tbody>
 </table>
 
@@ -626,17 +602,10 @@ foreach ($document->items as $row) {
 <tr>
     <td>
     <strong>PAGOS:</strong> </td></tr>
-        @php
-            $payment = 0;
-        @endphp
         @foreach($payments as $row)
             <tr><td>- {{ $row->date_of_payment->format('d/m/Y') }} - @include('pdf.partials.sale_note_receipt', ['row' => $row, 'document' => $document])</td></tr>
-            @php
-                $payment += (float) $row->payment;
-            @endphp
         @endforeach
-        <tr><td><strong>SALDO:</strong> {{ $document->currency_type->symbol }} {{ number_format($document->total - $payment, 2) }}</td>
-    </tr>
+        @include('pdf.partials.sale_note_balance', ['payments' => $payments, 'document' => $document])
 </table>
 @endif
 @if ($document->terms_condition)

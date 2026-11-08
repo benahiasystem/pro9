@@ -29,13 +29,10 @@ $affected_document_number = $document_base->affected_document ? $document_base->
 $affected_document_number = null;
 }
 
-$payments = $document->payments;
+$payments = $document->payments->filter(fn ($payment) => !data_get($payment, 'reversed_at'));
 
 
 $document->load('reference_guides');
-
-$total_payment = $document->payments->sum('payment');
-$balance = $document instanceof \App\Models\Tenant\Document ? $document->balance : (($document->total - $total_payment) - $document->payments->sum('change'));
 
 $logo = "storage/uploads/logos/{$company->logo}";
 if($establishment->logo) {
@@ -559,7 +556,7 @@ $exists_logo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::existsFileInU
                     $showLoteColumn = false;
                     $showDiscountItem = false;
                     foreach ($document->items as $row) {
-                        if ($row->item->lots) {
+                        if (!empty($row->item->lots)) {
                             $showSerieColumn = true;
                             break;
                         }
@@ -738,7 +735,7 @@ $exists_logo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::existsFileInU
                     $unit_price_item = \App\Support\Exact\Decimal::read($row, 'unit_price');
                     $price_total_item = $unit_price_item->multipliedBy(\App\Support\Exact\Decimal::read($row, 'quantity'));
                 @endphp
-                <td class="text-right align-top">{{ $row->formatPdfUnitPrice($configuration_decimal_quantity) }}</td>
+                <td class="text-right align-top"><span data-pdf-unit-price>{{ $row->formatPdfUnitPrice($configuration_decimal_quantity) }}</span></td>
 
                 @if ($showDiscountItem)
                     {{-- <td class="text-right align-top pr-2">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($row, 'total_real'), 2) }}</td> --}}
@@ -873,20 +870,11 @@ $exists_logo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::existsFileInU
 
 
             <tr>
-                <td colspan="{{ ceil(($colspan_total + 1) / 2) - 1 }}" class="text-left font-bold" style="white-space: nowrap;">Productos: {{ rtrim(rtrim(number_format(collect($document->items)->sum(function ($item) { return (float) data_get($item, 'quantity', 0); }), 2, '.', ''), '0'), '.') }}</td>
+                <td colspan="{{ ceil(($colspan_total + 1) / 2) - 1 }}" class="text-left font-bold">Productos: {{ \App\Support\Exact\PdfQuantities::summary($document->items) }}</td>
                 <td colspan="{{ floor(($colspan_total + 1) / 2)  }}" class="text-right font-bold pr-2">TOTAL A PAGAR: {{ $document->currency_type->symbol }}</td>
                 <td class="text-right font-bold">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total'), 2) }}</td>
             </tr>
 
-
-
-
-            @if($balance < 0)
-            <tr>
-                <td colspan="{{ $colspan_total }}" class="text-right font-bold pr-2">VUELTO: {{ $document->currency_type->symbol }}</td>
-                <td class="text-right font-bold">{{ number_format(abs($balance),2, ".", "") }}</td>
-            </tr>
-            @endif
 
         </tbody>
     </table>

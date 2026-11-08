@@ -46,7 +46,10 @@ final class Receivables
                     if ($type === 'document') $query->leftJoin('invoices','invoices.document_id','=','documents.id')
                         ->whereIn('documents.document_type_id',['01','08'])->addSelect('invoices.date_of_due as due_at',
                             'documents.document_type_id','documents.control_number','documents.fiscal_emission_mode');
-                    else $query->where('sale_notes.changed',false)->where('sale_notes.total_canceled',false)->addSelect('sale_notes.due_date as due_at');
+                    else $query->where('sale_notes.total_canceled',false)->where(function ($scope) {
+                        $scope->where(function ($unconverted) { $unconverted->where('sale_notes.changed',false)->whereNull('sale_notes.document_id'); })
+                            ->orWhereIn('sale_notes.document_id',DB::connection('tenant')->table('documents')->select('id')->whereIn('state_type_id',['09','11']));
+                    })->addSelect('sale_notes.due_date as due_at');
                     // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
                     if ($documentKpiScope) {
                         $query->where('documents.document_type_id','01');
@@ -55,8 +58,9 @@ final class Receivables
                     // ######## FIN MONEDA DEL MEDIO DE COBRO ########
                     if (!empty($filters['customer_id'])) $query->where($table.'.customer_id',$filters['customer_id']);
                     if (!$all) {
-                        if (empty($filters['stablishmentUnpaidAll'])) $query->where($table.'.establishment_id', $filters['establishment_id'] ?? $user->establishment_id);
-                        if ($user->type === 'seller') $query->where($table.'.user_id',$user->id);
+                        if ($user->type !== 'admin') $query->where($table.'.establishment_id',$user->establishment_id);
+                        elseif (empty($filters['stablishmentUnpaidAll'])) $query->where($table.'.establishment_id', $filters['establishment_id'] ?? $user->establishment_id);
+                        if ($user->type !== 'admin') $query->where($table.'.user_id',$user->id);
                         elseif ($user->type === 'admin' && !empty($filters['user_id'])) $query->where($table.'.user_id',$filters['user_id']);
                         foreach (['payment_method_type_id'] as $field) if (!empty($filters[$field])) $query->where($table.'.'.$field,$filters[$field]);
                         if (isset($filters['purchase_order'])) $query->where($table.'.purchase_order',$filters['purchase_order']);

@@ -59,7 +59,7 @@
     </head>
     <body>
         <div>
-            <p align="center" class="title"><strong>Consolidado de items por cliente/vendedor - Totales</strong></p>
+            <p align="center" class="title"><strong>Órdenes de entrega: totales por artículo</strong></p>
         </div>
         <div style="margin-top:20px; margin-bottom:20px;">
             <table>

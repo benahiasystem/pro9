@@ -42,20 +42,6 @@ class DocumentResource extends JsonResource
         $total_payment = \App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::sum($document->payments->map(fn ($payment) => $payment->exactValue('payment'))));
             $balance = \App\Support\Exact\Decimal::represent($document->balance);
 
-        $btn_voided = false;
-
-        if ($document->group_id === '01') {
-            if ($document->state_type_id === '05') {
-                $btn_voided = true;
-            }
-        }
-
-        if ($document->group_id === '02') {
-            if ($document->state_type_id === '05') {
-                $btn_voided = true;
-            }
-        }
-
         $identityDocumentType = optional($person)->identity_document_type;
 
         $edit = \App\Services\Fiscal\DocumentEditPolicy::view($document);
@@ -124,7 +110,7 @@ class DocumentResource extends JsonResource
             'total_paid' => $total_payment,
             'balance' => $balance,
             'has_pdf' => true,
-            'btn_voided' => \App\Services\Fiscal\FiscalNote::digital($document) ? false : $btn_voided,
+            'btn_voided' => false,
             'items' => self::mapDocumentItems($document),
             'payments' => $document->payments->map(function ($row) {
                 return [

@@ -28,6 +28,20 @@ final class FractionSheet
         foreach (['A'=>18,'B'=>28,'C'=>38,'D'=>44,'E'=>44] as $column=>$width) $sheet->getColumnDimension($column)->setWidth($width);
     }
 
+    /** Add sparse per-field fractions without inventing values for blank report cells. */
+    public static function appendEntries(Worksheet $source, iterable $entries): void
+    {
+        $sheet=$source->getParent()->getSheetByName('Fracciones exactas');
+        if (!$sheet) throw new \LogicException('Falta la hoja de fracciones exactas.');
+        $row=$sheet->getHighestDataRow()+1;
+        foreach ($entries as $entry) {
+            $value=Decimal::of($entry['value']);
+            $fraction=Decimal::fraction($value);
+            self::write($sheet,$row++,[(string)$entry['id'],(string)$entry['field'],Decimal::represent($value),$fraction['n'],$fraction['d']]);
+        }
+        $sheet->setAutoFilter('A1:E'.($row-1));
+    }
+
     private static function write(Worksheet $sheet, int $row, array $values): void
     {
         foreach (array_values($values) as $column=>$value) {

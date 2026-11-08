@@ -35,6 +35,9 @@ class DocumentHotelCollection extends ResourceCollection
                 'date_exit' => $row->date_exit,
                 'time_exit' => $row->time_exit,
                 'document' => $row->document->number_full,
+                'document_currency' => $document->currency_type_id,
+                'document_state' => optional($document->state_type)->description,
+                'document_total' => \App\Support\Exact\Decimal::format(\App\Support\Exact\Decimal::readRequired($document, 'total'), 2, '.', ''),
                 'items' => $items,
 
 

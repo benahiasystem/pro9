@@ -141,7 +141,7 @@ class ToPayController extends Controller
         $all_records = (new ToPay())->getToPay($request->all());
 
         $records = $all_records->filter(fn($row)=>Decimal::readRequired($row, 'total_to_pay')->isPositive() && $row['type'] === 'purchase')->map(function($row){
-            $row['difference_days'] = Carbon::parse($row['date_of_issue'])->diffInDays($row['date_of_due']);
+            $row['difference_days'] = $row['date_of_due'] ? Carbon::parse($row['date_of_issue'])->diffInDays($row['date_of_due']) : null;
             return $row;
         });
 
@@ -161,7 +161,7 @@ class ToPayController extends Controller
 
         $records = $records->filter(fn($row)=>Decimal::readRequired($row, 'total_to_pay')->isPositive());
         $reportSummary = \App\Support\Exact\OutstandingSummary::summarize($records);
-        $records = ReportProjection::money($records, ['total', 'total_to_pay', 'total_ves_equivalent', 'balance_ves_equivalent']);
+        $records = \App\Support\Exact\OutstandingProjection::money($records);
 
         $company = Company::first();
 

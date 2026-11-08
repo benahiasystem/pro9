@@ -46,11 +46,11 @@
                                 <tr v-for="(p, index) in form.products"
                                     :key="index">
                                     <td>{{ p.item.description }}</td>
-                                    <td class="text-center">{{ p.quantity | toDecimals }}</td>
+                                    <td class="text-center">{{ hotelQuantity(p) }}</td>
                                     <td class="text-center">
-                                        {{ p.input_unit_price_value | toDecimals }}
+                                        {{ hotelAmount(p.input_unit_price_value) }}
                                     </td>
-                                    <td class="text-end">{{ p.total | toDecimals }}</td>
+                                    <td class="text-end">{{ hotelRowAmount(p, 'total') }}</td>
                                     <td class="text-end">{{ p.document}}</td>
                                     <td class="text-center">
                                         <div class="d-inline-block"
@@ -146,14 +146,14 @@
                                             <strong>SUBTOTAL</strong>
                                         </td>
                                         <td class="text-end">
-                                            <strong>{{ this.form.subtotal | toDecimals }}</strong>
+                                            <strong>{{ hotelAmount(form.subtotal) }}</strong>
                                         </td>
                                         <!-- ########## INICIO CAMBIO IGV A IVA -->
                                         <td class="text-end">
                                             <strong>TOTAL</strong>
                                         </td>
                                         <td class="text-end">
-                                            <strong>{{ this.form.total | toDecimals }}</strong>
+                                            <strong>{{ hotelAmount(form.total) }}</strong>
                                         </td>
                                         <td colspan="5"></td>
                                         <!-- ######### FIN CAMBIO IGV A IVA -->
@@ -285,6 +285,9 @@ import SaleNoteOptions from "@views/sale_notes/partials/options.vue";
 import ReceiptCurrencyFields from '@components/ReceiptCurrencyFields.vue';
 import {newPaymentOperationKey} from '@helpers/payment-operation-key';
 import {defaultCashForCurrency, handleHotelPaymentError} from '@helpers/payment-classification';
+import {exactAmount, exactValue} from '@helpers/exchange-rate-math';
+import {documentTotals} from '@helpers/exact-document';
+import {allocateHotelPayments} from '@helpers/hotel-payment-allocation';
 
 export default {
     components: {
@@ -401,6 +404,15 @@ export default {
     },
     // ######## FIN MONEDA DEL MEDIO DE COBRO ########
     methods: {
+        hotelAmount(value) {
+            return exactAmount(value ?? 0).final(2)
+        },
+        hotelRowAmount(row, field) {
+            return exactValue(row, field).final(2)
+        },
+        hotelQuantity(row) {
+            return exactValue(row, 'quantity').decimal()
+        },
         changePaymentStatus(index)
         {
             this.form.products[index].rent_payment.payment_destination_id = null
@@ -443,6 +455,8 @@ export default {
 
             if (this.isAtLeastOnePaid(this.form.products) && !this.form.sale_note_id) {
                 const paidProducts = this.form.products.filter(item => item.payment_status === "PAID");
+                try { allocateHotelPayments(paidProducts, this.payment_method_types, this.paymentCurrency) }
+                catch (error) { this.$message.error(error.message); return }
                 this.document.items = [...paidProducts];
                 if (!await this.onGoToInvoice()) return;
             }
@@ -509,15 +523,10 @@ export default {
         },
         onCalculateTotals() {
             const unRegisteredProducts = this.form.products.filter(p => p.is_registered === false);
-            this.form.subtotal = unRegisteredProducts
-                .map(p => p.total_value)
-                .reduce((a, p) => a + p, 0);
-
-            this.form.igv = unRegisteredProducts
-                .map(p => p.total_igv)
-                .reduce((a, p) => a + p, 0);
-
-            this.form.total = this.form.subtotal + this.form.igv;
+            const sum = field => unRegisteredProducts.reduce((total, row) => total.plus(exactValue(row, field)), exactAmount(0));
+            this.form.subtotal = sum('total_value').decimal();
+            this.form.igv = sum('total_igv').decimal();
+            this.form.total = sum('total').decimal();
         },
         getDefaultValuesRentPayment()
         {
@@ -542,6 +551,9 @@ export default {
                 charges: product.charges,
                 discounts: product.discounts,
                 item_id: product.item_id,
+                calculation_snapshot: product.calculation_snapshot,
+                quantity_input: product.quantity_input,
+                price_input: product.price_input,
                 name_product_pdf: product.name_product_pdf,
                 percentage_igv: product.percentage_igv,
 
@@ -701,69 +713,8 @@ export default {
                 });
         },
         onCalculateTotalsDocument() {
-            let total_exportation = 0;
-            let total_taxed = 0;
-            let total_exonerated = 0;
-
-
-            let total_igv = 0;
-            let total_value = 0;
-            let total = 0;
-
-            let total_discount = 0;
-            let total_charge = 0;
-            this.document.items.forEach((row) => {
-                total_discount += parseFloat(row.total_discount);
-                total_charge += parseFloat(row.total_charge);
-
-                if (row.affectation_igv_type_id === "10") {
-                    total_taxed += parseFloat(row.total_value);
-                }
-
-                if (row.affectation_igv_type_id === '20') {
-                    total_exonerated += parseFloat(row.total_value)
-                }
-
-                ;
-
-                if (
-                    ["10", "20", "30", "40"].indexOf(row.affectation_igv_type_id) > -1
-                ) {
-                    total_igv += parseFloat(row.total_igv);
-                    total += parseFloat(row.total);
-                }
-
-                total_value += parseFloat(row.total_value);
-
-
-                if (["13", "14", "15"].includes(row.affectation_igv_type_id)) {
-                    let unit_value =
-                        row.total_value / row.quantity / (1 + this.percentage_igv / 100);
-                    let total_value_partial = unit_value * row.quantity;
-                    row.total_taxes = row.total_value - total_value_partial;
-                    row.total_igv = row.total_value - total_value_partial;
-                    row.total_base_igv = total_value_partial;
-                    total_value -= row.total_value;
-                }
-            });
-
-            this.document.total_exportation = _.round(total_exportation, 2);
-            this.document.total_taxed = _.round(total_taxed, 2);
-            this.document.total_exonerated = _.round(total_exonerated, 2);
-
-
-            this.document.total_igv = _.round(total_igv, 2);
-            this.document.total_value = _.round(total_value, 2);
-            this.document.total_taxes = _.round(total_igv, 2);
-
-            this.document.total = _.round(
-                total,
-                2
-            );
-            this.document.subtotal = _.round(
-                this.document.total,
-                2
-            );
+            Object.assign(this.document, documentTotals(this.document.items, this.document.discounts || [],
+                this.document.charges || [], this.document.total_prepayment || '0'));
         },
         validatePaymentDestination() {
             let error_by_item = 0;

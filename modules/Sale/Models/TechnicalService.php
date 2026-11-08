@@ -385,11 +385,13 @@
         public function getCollectionData()
         {
             $this->loadMissing('payments.global_payment');
-            $items = $this->items->transform(function ($row) {
+            $items = $this->items->map(function ($row) {
                 /** @var TechnicalServiceItem $row */
                 return $row->getCollectionData();
             });
-            $total = $this->cost + $this->total;
+            $total = \App\Support\Exact\Decimal::read($this, 'cost')->plus(\App\Support\Exact\Decimal::read($this, 'total'));
+            $paid = \Brick\Math\BigRational::zero();
+            foreach ($this->payments as $payment) $paid = $paid->plus(\App\Support\Exact\Decimal::read($payment, 'payment'));
 
             //docs asociados
             $has_document_sale_note = false;
@@ -407,10 +409,12 @@
                 'serial_number' => $this->serial_number,
                 'cost' => $this->cost,
                 'total' => $this->total,
-                'sum_total' => $total,
+                'sum_total' => \App\Support\Exact\Decimal::represent($total),
                 'prepayment' => $this->prepayment,
+                'discounts' => $this->calculation_snapshot['inputs']['service_adjustments']['discounts'] ?? [],
+                'charges' => $this->calculation_snapshot['inputs']['service_adjustments']['charges'] ?? [],
                 // 'balance' => $this->cost - $this->prepayment,
-                'balance' => ($total) - collect($this->payments)->sum('payment'),
+                'balance' => \App\Support\Exact\Decimal::represent($total->minus($paid)),
                 'date_of_issue' => $this->date_of_issue->format('Y-m-d'),
                 'customer_name' => $this->customer->name,
                 'customer_number' => format_person_identity_document($this->customer),

@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Tenant;
 use App\Http\Resources\Tenant\DocumentCollection;
 use App\Http\Resources\Tenant\DocumentResource; 
 use App\Models\Tenant\Document; 
-use App\Models\Tenant\Series; 
 use Illuminate\Http\Request; 
 use Illuminate\Support\Facades\Cache;
 use App\Http\Controllers\Controller;
@@ -36,12 +35,20 @@ class ContingencyController extends Controller
 
     public function records(Request $request)
     {
-        $series = Series::select('number')->where('contingency', true)->get();
-        
-        $records = Document::where($request->column, 'like', "%{$request->value}%")
-                            ->whereIn('series',$series)
-                            ->whereTypeUser()
-                            ->latest();
+        // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
+        $column = $request->input('column', 'number');
+        if (!is_string($column) || !array_key_exists($column, $this->columns())) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['column'=>'Seleccione un filtro válido.']);
+        }
+        $records = Document::where('documents.'.$column, 'like', '%'.$request->input('value', '').'%')
+            ->whereExists(function ($query) {
+                $query->selectRaw('1')->from('series as contingency_series')
+                    ->where('contingency_series.contingency', true)
+                    ->whereColumn('contingency_series.number', 'documents.series')
+                    ->whereColumn('contingency_series.establishment_id', 'documents.establishment_id')
+                    ->whereColumn('contingency_series.document_type_id', 'documents.document_type_id');
+            })->whereTypeUser()->latest();
+        // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
 
         return new DocumentCollection($records->paginate(config('tenant.items_per_page')));
     } 

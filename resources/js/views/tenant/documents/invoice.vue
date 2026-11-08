@@ -1685,14 +1685,18 @@ export default {
 
             let prepayment = this.getPrepayment(index)
 
-            if (parseFloat(this.form.prepayments[index].amount) > parseFloat(prepayment.amount)) {
+            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            if (exactAmount(this.form.prepayments[index].amount).compare(prepayment.amount) > 0) {
 
                 this.form.prepayments[index].amount = prepayment.amount
                 this.$message.error('El monto debe ser menor o igual al del anticipo');
 
             }
 
-            this.form.prepayments[index].total = (this.form.affectation_type_prepayment == 10) ? _.round(this.form.prepayments[index].amount * (1 + this.percentage_igv), 2) : this.form.prepayments[index].amount
+            this.form.prepayments[index].total = this.form.affectation_type_prepayment == 10
+                ? exactAmount(this.form.prepayments[index].amount).times(exactAmount(1).plus(this.percentage_igv)).decimal()
+                : String(this.form.prepayments[index].amount)
+            // ######## FIN CALCULOS EXACTOS PRO9 ########
 
             this.changeTotalPrepayment()
 
@@ -2133,6 +2137,8 @@ export default {
                 total_taxes: 0,
                 total_value: 0,
                 total: 0,
+                total_payable: 0,
+                settlement_adjustment: 0,
                 subtotal: 0,
 
                 operation_type_id: null,

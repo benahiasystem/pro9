@@ -8,6 +8,874 @@ use Illuminate\Support\Str;
 
 trait NotePersistenceCases
 {
+    public function test_note_adjustments_persist_fractional_fund_and_igtf_amounts(): void
+    {
+        [$db,$app,$input,$invoice]=$this->noteFixture(true);
+        $note=(new Facturalo)->forWebDocuments()->save($this->noteInput($input,$invoice,'07','09',[[
+            'affected_document_item_id'=>$invoice->items->first()->id,'adjustment_amount'=>'23.20']]))->getDocument()->fresh();
+        $fund=$invoice->guarantee_fund()->create(['base'=>'100','percentage'=>'10','amount'=>'10']);
+        $request=['kind'=>'fund','source_id'=>$fund->id,'operation_key'=>(string)Str::uuid(),'amount'=>'0.50','reason'=>'Prueba de centavos'];
+        $adjustment=NoteAdjustment::register($note,$request);
+        self::assertSame('0.5',\App\Support\Exact\Decimal::represent($adjustment->exactValue('amount')));
+        self::assertSame('9.5',\App\Support\Exact\Decimal::represent($invoice->fresh()->exactGuaranteeAmount()));
+        $payment=$invoice->payments->whereNull('receipt_parent_id')->first();
+        $tax=$invoice->taxes()->where('tax_kind','IGTF')->where('document_payment_id',$payment->id)->firstOrFail();
+        $igtf=NoteAdjustment::register($note,['kind'=>'IGTF','source_id'=>$tax->id,'operation_key'=>(string)Str::uuid(),'amount'=>'0.50','reason'=>'Prueba de centavos']);
+        self::assertSame('0.5',\App\Support\Exact\Decimal::represent($igtf->exactValue('amount')));
+        self::assertSame('blocked',$igtf->status);
+    }
+
+    public function test_free_form_note_default_fund_adjustment_preserves_exact_fraction(): void
+    {
+        [$db,$app,$input]=$this->bootHkaFixture(false);
+        $db->table('companies')->update(['fiscal_emission_mode'=>'free_form']);
+        $db->table('configurations')->update(['auto_send_hka'=>false]);
+        $input['payment_condition_id']='02'; $input['payments']=[];
+        $invoice=(new Facturalo)->forWebDocuments()->save($input)->getDocument()->fresh();
+        $note=(new Facturalo)->forWebDocuments()->save($this->noteInput($input,$invoice,'07','09',[[
+            'affected_document_item_id'=>$invoice->items->first()->id,'adjustment_amount'=>'23.20']]))->getDocument()->fresh();
+        $fund=$invoice->guarantee_fund()->create(['base'=>'100','percentage'=>'1','amount'=>\App\Support\Exact\Decimal::of('1/3')]);
+        $adjustment=NoteAdjustment::register($note,['kind'=>'fund','source_id'=>$fund->id,'operation_key'=>(string)Str::uuid(),'reason'=>'Ajuste exacto']);
+        self::assertSame(['n'=>'1','d'=>'3'],\App\Support\Exact\Decimal::fraction($adjustment->exactValue('amount')));
+        self::assertTrue($invoice->fresh()->exactGuaranteeAmount()->isZero());
+    }
+
+    public function test_note_retention_reversal_detects_subprecision_remaining_base(): void
+    {
+        [$db,$app,$input]=$this->bootHkaFixture(false);
+        $db->table('companies')->update(['fiscal_emission_mode'=>'free_form']);
+        $db->table('configurations')->update(['auto_send_hka'=>false]);
+        $input['payment_condition_id']='02'; $input['payments']=[];
+        $invoice=(new Facturalo)->forWebDocuments()->save($input)->getDocument()->fresh();
+        $note=(new Facturalo)->forWebDocuments()->save($this->noteInput($input,$invoice,'07','09',[[
+            'affected_document_item_id'=>$invoice->items->first()->id,'adjustment_amount'=>'23.20']]))->getDocument()->fresh();
+        foreach ([[$invoice,'1/3000000000000'],[$note,'0']] as [$document,$remaining]) {
+            $snapshot=$document->calculation_snapshot;
+            if (is_string($snapshot)) $snapshot=json_decode($snapshot,true,512,JSON_THROW_ON_ERROR);
+            foreach (['total_igv','total_value'] as $field) $snapshot['values'][$field]=\App\Support\Exact\Decimal::fraction($remaining);
+            $db->table('documents')->where('id',$document->id)->update(['calculation_snapshot'=>json_encode($snapshot)]);
+        }
+        foreach (['IVA','ISLR'] as $kind) {
+            $retention=$db->table('document_received_retentions')->insertGetId(['document_id'=>$invoice->id,'tax_kind'=>$kind,
+                'voucher_number'=>'QA-'.$kind,'voucher_date'=>'2026-09-10','agent_id'=>$input['customer_id'],'agent'=>'{}',
+                'agent_number'=>'V-12345678-9','currency_type_id'=>'VES','exchange_rate'=>'1','application_status'=>'reversed']);
+            $db->table('document_note_adjustments')->insert(['document_id'=>$note->id,'affected_document_id'=>$invoice->id,
+                'kind'=>$kind,'retention_id'=>$retention,'amount'=>'0','status'=>'pending','reason'=>'Prueba',
+                'request'=>'{}','context'=>'{}','operation_key'=>(string)Str::uuid(),'request_hash'=>str_repeat('a',64),'actor_id'=>$input['user_id']]);
+        }
+        NoteAdjustment::resumeInvoice($invoice->fresh());
+        self::assertSame(['awaiting_support','awaiting_support'],$db->table('document_note_adjustments')->orderBy('id')->pluck('status')->all());
+        $snapshot=$invoice->fresh()->calculation_snapshot;
+        foreach (['total_igv','total_value'] as $field) $snapshot['values'][$field]=\App\Support\Exact\Decimal::fraction('0');
+        $db->table('documents')->where('id',$invoice->id)->update(['calculation_snapshot'=>json_encode($snapshot)]);
+        $db->table('document_note_adjustments')->update(['status'=>'pending']);
+        NoteAdjustment::resumeInvoice($invoice->fresh());
+        self::assertSame(['applied','applied'],$db->table('document_note_adjustments')->orderBy('id')->pluck('status')->all());
+        // A previously loaded invoice must not restore a base already removed by another operation.
+        $db->table('document_note_adjustments')->update(['status'=>'pending']);
+        NoteAdjustment::resumeInvoice($invoice);
+        self::assertSame(['applied','applied'],$db->table('document_note_adjustments')->orderBy('id')->pluck('status')->all());
+        // MySQL repeatable-read may have an earlier snapshot of credits in the outer transaction.
+        foreach ([[$invoice,'1'],[$note,'0']] as [$document,$value]) {
+            $snapshot=$document->fresh()->calculation_snapshot;
+            foreach (['total_igv','total_value'] as $field) $snapshot['values'][$field]=\App\Support\Exact\Decimal::fraction($value);
+            $db->table('documents')->where('id',$document->id)->update(['calculation_snapshot'=>json_encode($snapshot)]);
+        }
+        $db->table('document_note_adjustments')->update(['status'=>'pending']);
+        config(['database.connections.pro9_note_concurrent'=>$db->getConfig()]);
+        $other=\Illuminate\Support\Facades\DB::connection('pro9_note_concurrent');
+        $db->beginTransaction();
+        try {
+            $stale=Document::findOrFail($invoice->id);
+            self::assertTrue(FiscalNote::remainingExact($stale,'total_igv')->isEqualTo('1'));
+            $snapshot=$note->fresh()->calculation_snapshot;
+            foreach (['total_igv','total_value'] as $field) $snapshot['values'][$field]=\App\Support\Exact\Decimal::fraction('1');
+            $other->table('documents')->where('id',$note->id)->update(['calculation_snapshot'=>json_encode($snapshot)]);
+            NoteAdjustment::resumeInvoice($stale);
+            self::assertSame(['applied','applied'],$db->table('document_note_adjustments')->orderBy('id')->pluck('status')->all());
+        } finally {
+            $db->rollBack();
+            \Illuminate\Support\Facades\DB::purge('pro9_note_concurrent');
+        }
+    }
+
+    public function test_free_form_full_credit_preserves_subprecision_remaining_fractions(): void
+    {
+        [$db,$app,$input]=$this->bootHkaFixture(false);
+        $db->table('companies')->update(['fiscal_emission_mode'=>'free_form']);
+        $db->table('configurations')->update(['auto_send_hka'=>false]);
+        $input['payment_condition_id']='02'; $input['payments']=[];
+        $input['items'][0]['quantity']='0.000000000001';
+        $input['items'][0]['quantity_input']=['amount'=>'0.000000000001','unit_price'=>'3'];
+        $input['items'][0]['unit_price']='0.1';
+        $input['items'][0]['affectation_igv_type_id']='20';
+        $invoice=(new Facturalo)->forWebDocuments()->save($input)->getDocument()->fresh();
+        $line=$invoice->items->first();
+        self::assertSame(['n'=>'1','d'=>'3000000000000'],\App\Support\Exact\Decimal::fraction($line->exactValue('quantity')));
+        self::assertSame(['n'=>'1','d'=>'30000000000000'],\App\Support\Exact\Decimal::fraction($invoice->exactValue('total')));
+        $context=FiscalNote::context($invoice);
+        self::assertSame('0',$context['credit_available']);
+        self::assertSame(['n'=>'1','d'=>'30000000000000'],$context['calculation_snapshot']['values']['credit_available']);
+        $data=$this->noteInput($input,$invoice,'07','01',[]);
+        $note=(new Facturalo)->forWebDocuments()->save($data)->getDocument()->fresh();
+        self::assertSame(\App\Support\Exact\Decimal::fraction($invoice->exactValue('total')),\App\Support\Exact\Decimal::fraction($note->exactValue('total')));
+        self::assertSame(\App\Support\Exact\Decimal::fraction($line->exactValue('quantity')),\App\Support\Exact\Decimal::fraction($note->items->first()->exactValue('inventory_quantity')));
+        self::assertSame($note->id,(new Facturalo)->forWebDocuments()->save($data)->getDocument()->id);
+        $duplicate=$this->noteInput($input,$invoice->fresh(),'07','01',[]);
+        try { (new Facturalo)->forWebDocuments()->save($duplicate); self::fail('No debe anular dos veces la misma fracción.'); }
+        catch (\Illuminate\Validation\ValidationException $error) { self::assertArrayHasKey('items',$error->errors()); }
+    }
+
+    public function test_free_form_full_credit_restores_fractional_invoice_lots(): void
+    {
+        [$db,$app,$input]=$this->bootHkaFixture(false);
+        $db->table('companies')->update(['fiscal_emission_mode'=>'free_form']);
+        $db->table('configurations')->update(['auto_send_hka'=>false]);
+        $input['payment_condition_id']='02'; $input['payments']=[];
+        $input['items'][0]['quantity']='0.333333333333';
+        $input['items'][0]['quantity_input']=['amount'=>'1','unit_price'=>'3'];
+        $itemId=$input['items'][0]['item_id']; $warehouse=$input['items'][0]['warehouse_id'];
+        foreach (['array','single'] as $kind) {
+            $lotId=$db->table('item_lots_group')->insertGetId(['item_id'=>$itemId,'code'=>'RETURN-'.$kind,'quantity'=>'1','date_of_due'=>'2027-11-30']);
+            $case=$input; $case['external_id']=(string)Str::uuid();
+            $case['items'][0]['item']['IdLoteSelected']=$kind==='single' ? $lotId : [['id'=>$lotId,'compromise_quantity'=>'0.333333333333']];
+            $stockBefore=\Modules\Inventory\Models\ItemWarehouse::where('item_id',$itemId)->where('warehouse_id',$warehouse)->firstOrFail()->exactValue('stock');
+            $invoice=$db->transaction(fn()=>(new Facturalo)->forWebDocuments()->save($case)->getDocument()->fresh());
+            self::assertSame('2/3',(string)\Modules\Item\Models\ItemLotsGroup::findOrFail($lotId)->exactValue('quantity'));
+            $context=FiscalNote::context($invoice);
+            self::assertSame('0.333333333333',$context['items'][0]['lots'][0]['quantity']);
+            $manual=\App\Services\Fiscal\FiscalNoteInventory::snapshot($invoice->items->first(),\App\Support\Exact\Decimal::of('1/3'),
+                ['lot_returns'=>[['id'=>$lotId,'compromise_quantity'=>'0.333333333333','compromise_quantity_exact'=>['n'=>'999','d'=>'1']]]]);
+            self::assertSame('1/3',(string)\App\Support\Exact\Decimal::of($manual['IdLoteSelected'][0]['compromise_quantity_exact']));
+            try {
+                \App\Services\Fiscal\FiscalNoteInventory::snapshot($invoice->items->first(),\App\Support\Exact\Decimal::of('1/3'),
+                    ['lot_returns'=>[['id'=>$lotId,'compromise_quantity'=>'0.333333333334']]]);
+                self::fail('No se debe devolver más de lo disponible en el lote.');
+            } catch (\Illuminate\Validation\ValidationException $error) { self::assertArrayHasKey('items.lot_returns',$error->errors()); }
+            $data=$this->noteInput($case,$invoice,'07','01',[]);
+            $note=$db->transaction(fn()=>(new Facturalo)->forWebDocuments()->save($data)->getDocument()->fresh());
+            self::assertSame('1/3',(string)$note->items->first()->exactValue('inventory_quantity'));
+            self::assertSame('1/3',(string)\App\Support\Exact\Decimal::of($note->items->first()->item->IdLoteSelected[0]->compromise_quantity_exact));
+            self::assertSame('1',(string)\Modules\Item\Models\ItemLotsGroup::findOrFail($lotId)->exactValue('quantity'));
+            self::assertTrue(\Modules\Inventory\Models\ItemWarehouse::where('item_id',$itemId)->where('warehouse_id',$warehouse)->firstOrFail()->exactValue('stock')->isEqualTo($stockBefore));
+        }
+    }
+
+    public function test_free_form_partial_credits_preserve_fractional_lot_remainder(): void
+    {
+        [$db,$app,$input]=$this->bootHkaFixture(false);
+        $db->table('companies')->update(['fiscal_emission_mode'=>'free_form']);
+        $db->table('configurations')->update(['auto_send_hka'=>false]);
+        $input['payment_condition_id']='02'; $input['payments']=[];
+        $input['items'][0]['quantity']='0.333333333333';
+        $input['items'][0]['quantity_input']=['amount'=>'1','unit_price'=>'3'];
+        $input['items'][0]['unit_price']='3'; $input['items'][0]['affectation_igv_type_id']='20';
+        $itemId=$input['items'][0]['item_id']; $warehouse=$input['items'][0]['warehouse_id'];
+        $lotId=$db->table('item_lots_group')->insertGetId(['item_id'=>$itemId,'code'=>'PARTIAL-LOT','quantity'=>'1','date_of_due'=>'2027-11-30']);
+        $input['items'][0]['item']['IdLoteSelected']=[['id'=>$lotId,'compromise_quantity'=>'0.333333333333']];
+        $stockBefore=\Modules\Inventory\Models\ItemWarehouse::where('item_id',$itemId)->where('warehouse_id',$warehouse)->firstOrFail()->exactValue('stock');
+        $invoice=$db->transaction(fn()=>(new Facturalo)->forWebDocuments()->save($input)->getDocument()->fresh());
+        $source=$invoice->items->first(); self::assertSame('1/3',(string)$source->exactValue('quantity'));
+        foreach (['0.1','0.233333333333'] as $quantity) {
+            $data=$this->noteInput($input,$invoice->fresh(),'07','07',[[
+                'affected_document_item_id'=>$source->id,'quantity'=>$quantity,
+                'lot_returns'=>[['id'=>$lotId,'compromise_quantity'=>$quantity,'compromise_quantity_exact'=>['n'=>'99','d'=>'1']]]]]);
+            $note=$db->transaction(fn()=>(new Facturalo)->forWebDocuments()->save($data)->getDocument()->fresh());
+            self::assertSame($quantity,\App\Support\Exact\Decimal::represent($note->items->first()->exactValue('inventory_quantity')));
+            self::assertSame($quantity,\App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::of($note->items->first()->item->IdLoteSelected[0]->compromise_quantity_exact)));
+        }
+        $remaining=FiscalNote::entitlements($invoice->fresh())[$source->id];
+        self::assertSame('1/3000000000000',(string)\App\Support\Exact\Decimal::read($remaining,'remaining_quantity'));
+        $context=FiscalNote::context($invoice->fresh());
+        self::assertSame('0',$context['items'][0]['lots'][0]['quantity']);
+        self::assertSame(['n'=>'1','d'=>'3000000000000'],$context['items'][0]['lots'][0]['calculation_snapshot']['values']['quantity']);
+        $last=$this->noteInput($input,$invoice->fresh(),'07','01',[]);
+        $note=$db->transaction(fn()=>(new Facturalo)->forWebDocuments()->save($last)->getDocument()->fresh());
+        self::assertSame('1/3000000000000',(string)$note->items->first()->exactValue('inventory_quantity'));
+        self::assertSame('1',(string)\Modules\Item\Models\ItemLotsGroup::findOrFail($lotId)->exactValue('quantity'));
+        self::assertTrue(\Modules\Inventory\Models\ItemWarehouse::where('item_id',$itemId)->where('warehouse_id',$warehouse)->firstOrFail()->exactValue('stock')->isEqualTo($stockBefore));
+        $again=$this->noteInput($input,$invoice->fresh(),'07','01',[]);
+        try { $db->transaction(fn()=>(new Facturalo)->forWebDocuments()->save($again)); self::fail('No debe devolverse dos veces el mismo lote.'); }
+        catch (\Illuminate\Validation\ValidationException $error) { self::assertArrayHasKey('items',$error->errors()); }
+    }
+
+    public function test_free_form_partial_credit_splits_fraction_across_original_lots(): void
+    {
+        [$db,$app,$input]=$this->bootHkaFixture(false);
+        $db->table('companies')->update(['fiscal_emission_mode'=>'free_form']);
+        $db->table('configurations')->update(['auto_send_hka'=>false]);
+        $input['payment_condition_id']='02'; $input['payments']=[];
+        $line=&$input['items'][0]; $line['quantity']='0.333333333333';
+        $line['quantity_input']=['amount'=>'1','unit_price'=>'3']; $line['unit_price']='3'; $line['affectation_igv_type_id']='20';
+        $itemId=$line['item_id']; $warehouse=$line['warehouse_id'];
+        $lotA=$db->table('item_lots_group')->insertGetId(['item_id'=>$itemId,'code'=>'PARTIAL-A','quantity'=>'1','date_of_due'=>'2027-11-30']);
+        $lotB=$db->table('item_lots_group')->insertGetId(['item_id'=>$itemId,'code'=>'PARTIAL-B','quantity'=>'1','date_of_due'=>'2027-11-30']);
+        $line['item']['IdLoteSelected']=[['id'=>$lotA,'compromise_quantity'=>'0.1'],['id'=>$lotB,'compromise_quantity'=>'0.233333333333']];
+        unset($line);
+        $stockBefore=\Modules\Inventory\Models\ItemWarehouse::where('item_id',$itemId)->where('warehouse_id',$warehouse)->firstOrFail()->exactValue('stock');
+        $invoice=$db->transaction(fn()=>(new Facturalo)->forWebDocuments()->save($input)->getDocument()->fresh());
+        $source=$invoice->items->first();
+        self::assertSame('7/30',(string)\App\Support\Exact\Decimal::of($source->item->IdLoteSelected[1]->compromise_quantity_exact));
+        $data=$this->noteInput($input,$invoice,'07','07',[[
+            'affected_document_item_id'=>$source->id,'quantity'=>'0.2',
+            'lot_returns'=>[['id'=>$lotA,'compromise_quantity'=>'0.1'],['id'=>$lotB,'compromise_quantity'=>'0.1']]]]);
+        $note=$db->transaction(fn()=>(new Facturalo)->forWebDocuments()->save($data)->getDocument()->fresh());
+        self::assertSame('1/5',(string)$note->items->first()->exactValue('inventory_quantity'));
+        self::assertSame('1',(string)\Modules\Item\Models\ItemLotsGroup::findOrFail($lotA)->exactValue('quantity'));
+        self::assertSame('13/15',(string)\Modules\Item\Models\ItemLotsGroup::findOrFail($lotB)->exactValue('quantity'));
+        $context=FiscalNote::context($invoice->fresh());
+        self::assertSame('0.133333333333',$context['items'][0]['lots'][0]['quantity']);
+        $remaining=$this->noteInput($input,$invoice->fresh(),'07','01',[]);
+        $last=$db->transaction(fn()=>(new Facturalo)->forWebDocuments()->save($remaining)->getDocument()->fresh());
+        self::assertSame('2/15',(string)$last->items->first()->exactValue('inventory_quantity'));
+        self::assertSame('1',(string)\Modules\Item\Models\ItemLotsGroup::findOrFail($lotB)->exactValue('quantity'));
+        self::assertTrue(\Modules\Inventory\Models\ItemWarehouse::where('item_id',$itemId)->where('warehouse_id',$warehouse)->firstOrFail()->exactValue('stock')->isEqualTo($stockBefore));
+    }
+
+    public function test_free_form_note_pdf_formats_show_frozen_lots_and_amounts(): void
+    {
+        [$db,$app,$input]=$this->bootHkaFixture(false);
+        $db->table('companies')->update(['fiscal_emission_mode'=>'free_form']);
+        $db->table('configurations')->update(['auto_send_hka'=>false]);
+        $input['payment_condition_id']='02'; $input['payments']=[];
+        $line=&$input['items'][0]; $line['quantity']='0.333333333333'; $line['quantity_input']=['amount'=>'1','unit_price'=>'3'];
+        $line['unit_price']='3'; $line['affectation_igv_type_id']='20';
+        $itemId=$line['item_id'];
+        $lotA=$db->table('item_lots_group')->insertGetId(['item_id'=>$itemId,'code'=>'PDF-LOT-ONE','quantity'=>'1','date_of_due'=>'2027-11-30']);
+        $lotB=$db->table('item_lots_group')->insertGetId(['item_id'=>$itemId,'code'=>'PDF-LOT-TWO','quantity'=>'1','date_of_due'=>'2027-11-30']);
+        $line['item']['IdLoteSelected']=[['id'=>$lotA,'compromise_quantity'=>'0.1'],['id'=>$lotB,'compromise_quantity'=>'0.233333333333']];
+        unset($line);
+        $invoice=$db->transaction(fn()=>(new Facturalo)->forWebDocuments()->save($input)->getDocument()->fresh());
+        $note=$db->transaction(fn()=>(new Facturalo)->forWebDocuments()->save($this->noteInput($input,$invoice,'07','01',[]))->getDocument()->fresh());
+        $db->table('item_lots_group')->whereIn('id',[$lotA,$lotB])->update(['code'=>'CAMBIADO']);
+        config(['view.compiled'=>sys_get_temp_dir().'/'.$this->database.'/note-lot-views',
+            'view.paths'=>[base_path('resources/views')], 'filesystems.disks.public'=>['driver'=>'local','root'=>sys_get_temp_dir()]]);
+        mkdir(config('view.compiled'),0777,true); $app->register(\Illuminate\View\ViewServiceProvider::class);
+        $formats=[];
+        foreach (['default','Plantilla_personalizable','modern-2027','marca_de_agua'] as $theme) foreach (['a4','a5','ticket'] as $format) $formats[]=[$theme,$format];
+        $formats[]=['default','ticket_58'];
+        $dir=getenv('PRO9_NOTE_LOT_PDF_DIR') ?: sys_get_temp_dir().'/pro9-note-lots-'.bin2hex(random_bytes(5));
+        if (!is_dir($dir)) mkdir($dir,0700,true);
+        try {
+            foreach ($formats as [$theme,$format]) {
+                $db->table('establishments')->where('id',$input['establishment_id'])->update(['template_pdf'=>$theme,'template_ticket_pdf'=>$theme]);
+                $print=$note->fresh();
+                $customer=(array)$print->customer; $customer['identity_document_type']=['description'=>'Venezolano'];
+                foreach (['district_id','province_id','department_id'] as $field) $customer[$field]='-';
+                $print->customer=$customer;
+                $establishment=(array)$print->establishment;
+                foreach (['district_id','province_id','department_id'] as $field) $establishment[$field]='-';
+                $print->establishment=$establishment;
+                $pdf=(new Facturalo())->createPdf($print,'credit',$format,'string');
+                self::assertStringStartsWith('%PDF-',$pdf,$theme.'/'.$format);
+                $name=$theme.'-'.$format; $pdfPath=$dir.'/'.$name.'.pdf'; $textPath=$dir.'/'.$name.'.txt'; file_put_contents($pdfPath,$pdf);
+                $process=proc_open(['pdftotext','-layout',$pdfPath,$textPath],[0=>['pipe','r'],1=>['pipe','w'],2=>['pipe','w']],$pipes);
+                self::assertIsResource($process); foreach ($pipes as $pipe) fclose($pipe); self::assertSame(0,proc_close($process));
+                $text=file_get_contents($textPath);
+                self::assertSame(1,substr_count($text,"\f"),$theme.'/'.$format.' debe caber en una página para esta muestra.');
+                self::assertStringContainsString('PDF-LOT-ONE',$text,$theme.'/'.$format);
+                self::assertStringContainsString('PDF-LOT-TWO',$text,$theme.'/'.$format);
+                self::assertStringNotContainsString('CAMBIADO',$text,$theme.'/'.$format);
+                self::assertStringNotContainsString('IGV',$text,$theme.'/'.$format);
+                self::assertStringContainsString('1.00',$text,$theme.'/'.$format);
+            }
+            $responseFactory=$this->createMock(\Illuminate\Contracts\Routing\ResponseFactory::class);
+            $responseFactory->method('make')->willReturnCallback(fn($content,$status,$headers)=>new \Illuminate\Http\Response($content,$status,$headers));
+            $app->instance(\Illuminate\Contracts\Routing\ResponseFactory::class,$responseFactory);
+            foreach (['ticket','ticket_58'] as $format) {
+                $preview=(new Facturalo())->previewPdf($print,'credit',$format);
+                self::assertSame(200,$preview->getStatusCode()); self::assertStringStartsWith('%PDF-',$preview->getContent());
+                $pdfPath=$dir.'/preview-'.$format.'.pdf'; $textPath=$dir.'/preview-'.$format.'.txt'; file_put_contents($pdfPath,$preview->getContent());
+                $process=proc_open(['pdftotext','-layout',$pdfPath,$textPath],[0=>['pipe','r'],1=>['pipe','w'],2=>['pipe','w']],$pipes);
+                self::assertIsResource($process); foreach ($pipes as $pipe) fclose($pipe); self::assertSame(0,proc_close($process));
+                $text=file_get_contents($textPath);
+                self::assertSame(1,substr_count($text,"\f"));
+                self::assertStringContainsString('PDF-LOT-ONE',$text); self::assertStringContainsString('PDF-LOT-TWO',$text);
+            }
+            $longCode='PDF-LONG<&'.str_repeat('0123456789',21);
+            $longLot=$db->table('item_lots_group')->insertGetId(['item_id'=>$itemId,'code'=>$longCode,'quantity'=>'1','date_of_due'=>'2027-11-30']);
+            $longInput=$input; $longInput['external_id']=(string)Str::uuid(); $longInput['items'][0]['item']['IdLoteSelected']=$longLot;
+            $longInvoice=$db->transaction(fn()=>(new Facturalo)->forWebDocuments()->save($longInput)->getDocument()->fresh());
+            $longNote=$db->transaction(fn()=>(new Facturalo)->forWebDocuments()->save($this->noteInput($longInput,$longInvoice,'07','01',[]))->getDocument()->fresh());
+            foreach ([['default','a4'],['default','a5'],['default','ticket'],['default','ticket_58'],['modern-2027','ticket']] as [$theme,$format]) {
+                $db->table('establishments')->where('id',$input['establishment_id'])->update(['template_pdf'=>$theme,'template_ticket_pdf'=>$theme]);
+                $longPrint=$longNote->fresh(); $longPrint->customer=$customer; $longPrint->establishment=$establishment;
+                $pdf=(new Facturalo())->createPdf($longPrint,'credit',$format,'string');
+                $pdfPath=$dir.'/long-'.$theme.'-'.$format.'.pdf'; $textPath=$dir.'/long-'.$theme.'-'.$format.'.txt'; file_put_contents($pdfPath,$pdf);
+                $process=proc_open(['pdftotext','-raw',$pdfPath,$textPath],[0=>['pipe','r'],1=>['pipe','w'],2=>['pipe','w']],$pipes);
+                self::assertIsResource($process); foreach ($pipes as $pipe) fclose($pipe); self::assertSame(0,proc_close($process));
+                $text=file_get_contents($textPath);
+                self::assertStringContainsString($longCode,preg_replace('/\s+/u','',$text),$theme.'/'.$format.' conserva el código completo.');
+                self::assertStringContainsString('1.00',$text,$theme.'/'.$format.' conserva el total.');
+                if (in_array($format,['ticket','ticket_58'],true)) self::assertSame(1,substr_count($text,"\f"),$theme.'/'.$format.' no debe cortar el ticket de muestra.');
+            }
+        } finally {
+            if (!getenv('PRO9_NOTE_LOT_PDF_DIR')) (new \Illuminate\Filesystem\Filesystem())->deleteDirectory($dir);
+        }
+    }
+
+    public function test_free_form_credit_limit_uses_exact_fractions_at_large_amounts(): void
+    {
+        [$db,$app,$input]=$this->bootHkaFixture(false);
+        $db->table('companies')->update(['fiscal_emission_mode'=>'free_form']);
+        $db->table('configurations')->update(['auto_send_hka'=>false]);
+        $input['payment_condition_id']='02'; $input['payments']=[];
+        $invoice=(new Facturalo)->forWebDocuments()->save($input)->getDocument()->fresh();
+        $data=$this->noteInput($input,$invoice,'07','04',[[
+            'affected_document_item_id'=>$invoice->items->first()->id,'adjustment_amount'=>'11.60']]);
+        $note=(new Facturalo)->forWebDocuments()->save($data)->getDocument()->fresh();
+        $setTotal=function (Document $document,string $total) use ($db) {
+            $snapshot=$document->calculation_snapshot;
+            if (is_string($snapshot)) $snapshot=json_decode($snapshot,true,512,JSON_THROW_ON_ERROR);
+            $snapshot['values']['total']=\App\Support\Exact\Decimal::fraction($total);
+            $db->table('documents')->where('id',$document->id)->update(['total'=>$total,'calculation_snapshot'=>json_encode($snapshot)]);
+        };
+        $setTotal($invoice,'1000000000000000');
+        $setTotal($note,'1000000000000000.005');
+        FiscalNote::finish($note->fresh());
+        $setTotal($note,'1000000000000000.005000000001');
+        try { FiscalNote::finish($note->fresh()); self::fail('NC fuera del límite exacto'); }
+        catch (\Illuminate\Validation\ValidationException $error) { self::assertArrayHasKey('total',$error->errors()); }
+    }
+
+    public function test_free_form_debit_service_uses_only_adjustment_amount(): void
+    {
+        [$db,$app,$input]=$this->bootHkaFixture(false);
+        $db->table('companies')->update(['fiscal_emission_mode'=>'free_form']);
+        $db->table('configurations')->update(['auto_send_hka'=>false]);
+        $input['payment_condition_id']='02'; $input['payments']=[];
+        $invoice=(new Facturalo)->forWebDocuments()->save($input)->getDocument()->fresh();
+        $service=\App\Models\Tenant\Item::where('unit_type_id','SERV')->firstOrFail();
+        foreach (['01','03'] as $reason) {
+            $row=['item_id'=>$service->id,'adjustment_amount'=>'11.60','affectation_igv_type_id'=>'10',
+                'price_type_id'=>'01','additional_information'=>'','currency_type_id'=>'VES','exchange_rate_sale'=>'1',
+                'quantity_input'=>['amount'=>'2','unit_price'=>'1'],
+                'price_input'=>['amount'=>'20','currency_type_id'=>'VES'],
+                'calculation_snapshot'=>\App\Support\Exact\Decimal::snapshot(['quantity'=>'2','unit_price'=>'20'])];
+            $data=$this->noteInput($input,$invoice,'08',$reason,[$row]);
+            $note=(new Facturalo)->forWebDocuments()->save($data)->getDocument()->fresh();
+            self::assertSame('1',\App\Support\Exact\Decimal::represent($note->items->first()->exactValue('quantity')));
+            self::assertSame('11.6',\App\Support\Exact\Decimal::represent($note->exactValue('total')));
+            self::assertSame('0',\App\Support\Exact\Decimal::represent($note->items->first()->exactValue('inventory_quantity')));
+        }
+    }
+
+    public function test_contingency_listing_matches_series_branch_type_and_user_scope(): void
+    {
+        [$db,$app,$input]=$this->bootHkaFixture(false);
+        $db->table('companies')->update(['fiscal_emission_mode'=>'free_form']);
+        $input['payments']=[]; $input['payment_condition_id']='02';
+        $invoice=(new Facturalo)->forWebDocuments()->save($input)->getDocument()->fresh();
+        $db->table('series')->where('establishment_id',$invoice->establishment_id)
+            ->where('document_type_id','01')->where('number','FF01')->update(['contingency'=>true]);
+        $branch=$db->table('establishments')->insertGetId(['description'=>'Sucursal de prueba','country_id'=>'VE',
+            'department_id'=>'14','province_id'=>'0229','district_id'=>'000619','address'=>'Test','telephone'=>'04121234567','code'=>'0001']);
+        $db->table('series')->insert(['establishment_id'=>$branch,'document_type_id'=>'01','number'=>'FF01','contingency'=>false]);
+        $row=(array)$db->table('documents')->where('id',$invoice->id)->first(); unset($row['id']);
+        $row['external_id']=(string)Str::uuid(); $row['establishment_id']=$branch; $row['number']=101;
+        $row['filename']='synthetic-branch-contingency'; $row['unique_filename']='synthetic-branch-contingency';
+        $branchInvoice=$db->table('documents')->insertGetId($row);
+        $row['external_id']=(string)Str::uuid(); $row['establishment_id']=$invoice->establishment_id;
+        $row['document_type_id']='08'; $row['number']=102; $row['filename']='synthetic-type-contingency';
+        $row['unique_filename']='synthetic-type-contingency';
+        $debit=$db->table('documents')->insertGetId($row);
+        config(['tenant.items_per_page'=>20]);
+        $controller=new \App\Http\Controllers\Tenant\ContingencyController();
+        $request=\Illuminate\Http\Request::create('/contingencies/records','GET',['column'=>'number','value'=>'']);
+        $ids=collect($controller->records($request)->resource->items())->pluck('id')->all();
+        self::assertSame([$invoice->id],$ids,'Un código idéntico en otra sucursal o tipo no identifica la serie de contingencia.');
+        $db->table('series')->insert(['establishment_id'=>$invoice->establishment_id,'document_type_id'=>'08','number'=>'FF01','contingency'=>true]);
+        $ids=collect($controller->records($request)->resource->items())->pluck('id')->all();
+        self::assertEqualsCanonicalizing([$invoice->id,$debit],$ids);
+        self::assertNotContains($branchInvoice,$ids);
+        $db->table('series')->insert(['establishment_id'=>$invoice->establishment_id,'document_type_id'=>'01','number'=>'','contingency'=>true]);
+        $db->table('series')->insert(['establishment_id'=>$branch,'document_type_id'=>'01','number'=>'','contingency'=>false]);
+        $row['external_id']=(string)Str::uuid(); $row['document_type_id']='01'; $row['series']=''; $row['number']=103;
+        $row['filename']='synthetic-empty-contingency'; $row['unique_filename']='synthetic-empty-contingency';
+        $empty=$db->table('documents')->insertGetId($row);
+        $row['external_id']=(string)Str::uuid(); $row['establishment_id']=$branch; $row['number']=104;
+        $row['filename']='synthetic-empty-normal'; $row['unique_filename']='synthetic-empty-normal';
+        $normalEmpty=$db->table('documents')->insertGetId($row);
+        $ids=collect($controller->records($request)->resource->items())->pluck('id')->all();
+        self::assertEqualsCanonicalizing([$invoice->id,$debit,$empty],$ids);
+        self::assertNotContains($normalEmpty,$ids);
+        $otherUser=$db->table('users')->insertGetId(['name'=>'Otro vendedor','email'=>'other-seller@example.test',
+            'password'=>'not-a-login-hash','type'=>'seller','establishment_id'=>$branch]);
+        $db->table('documents')->where('id',$debit)->update(['user_id'=>$otherUser,'seller_id'=>null]);
+        $seller=auth()->user(); $seller->type='seller';
+        $ids=collect($controller->records($request)->resource->items())->pluck('id')->all();
+        self::assertEqualsCanonicalizing([$invoice->id,$empty],$ids,'El alcance de usuario se mantiene tras aplicar el filtro de serie.');
+        $byNumber=\Illuminate\Http\Request::create('/','GET',['column'=>'number','value'=>'100']);
+        self::assertSame([$invoice->id],collect($controller->records($byNumber)->resource->items())->pluck('id')->all());
+        $byDate=\Illuminate\Http\Request::create('/','GET',['column'=>'date_of_issue','value'=>'2026-09-10']);
+        self::assertEqualsCanonicalizing([$invoice->id,$empty],collect($controller->records($byDate)->resource->items())->pluck('id')->all());
+        try { $controller->records(\Illuminate\Http\Request::create('/','GET',['column'=>'customer_id'])); self::fail('Debe rechazarse un filtro no ofrecido.'); }
+        catch (\Illuminate\Validation\ValidationException $error) { self::assertArrayHasKey('column',$error->errors()); }
+    }
+
+    public function test_free_form_paid_invoice_credit_balance_and_refund(): void
+    {
+        [$db,$app,$input]=$this->bootHkaFixture();
+        $db->table('companies')->update(['fiscal_emission_mode'=>'free_form']);
+        $http=$app->make(\Illuminate\Http\Client\Factory::class); $http->fake();
+        $invoice=(new Facturalo)->forWebDocuments()->save($input)->getDocument()->fresh();
+        $creditInput=$this->noteInput($input,$invoice,'07','09',[
+            ['affected_document_item_id'=>$invoice->items->first()->id,'adjustment_amount'=>'23.20'],
+        ]);
+        $note=(new Facturalo)->forWebDocuments()->save($creditInput)->getDocument()->fresh();
+        \App\Services\Fiscal\FreeFormControl::register($invoice,['control_number'=>'00-1','evidence_reference'=>'Factura física sintética']);
+        self::assertFalse(NoteRefund::view($note)['can_create']);
+        try { NoteRefund::eligible($note); self::fail('Sin control físico no se admite la devolución.'); }
+        catch (\Illuminate\Validation\ValidationException $error) { self::assertArrayHasKey('note',$error->errors()); }
+        \App\Services\Fiscal\FreeFormControl::register($note,['control_number'=>'00-2','evidence_reference'=>'Nota física sintética']);
+        $invoice=$invoice->fresh(); $note=$note->fresh();
+        self::assertSame('free_form',$note->fiscal_emission_mode);
+        self::assertSame('-23.2',\App\Support\Exact\Decimal::represent($invoice->exactBalance()));
+        self::assertSame('23.2',\App\Support\Exact\Decimal::represent(NoteRefund::available($note)));
+        $batch=\App\Support\Exact\Receivables::balancesForDocuments([$invoice]);
+        self::assertTrue($batch[$invoice->id]->isEqualTo($invoice->exactBalance()));
+        $sql=\App\Services\Fiscal\FiscalNoteBalance::sql();
+        self::assertTrue(\App\Support\Exact\Decimal::of($db->table('documents')->where('id',$invoice->id)
+            ->selectRaw($sql.' AS outstanding')->value('outstanding'))->isEqualTo($invoice->exactBalance()));
+        self::assertCount(0,\App\Support\Exact\Receivables::dataset(['source_type'=>'document'],true));
+        $view=NoteRefund::view($note);
+        self::assertTrue($view['can_create']);
+        self::assertNull($view['block_reason']);
+        $response=$note->emission->response;
+        $mismatch=$response; $mismatch['free_form_control']['control_number']='00-999';
+        $note->emission->response=$mismatch; $note->emission->save();
+        try { NoteRefund::eligible($note->fresh()); self::fail('El control debe coincidir con el registro auditado.'); }
+        catch (\Illuminate\Validation\ValidationException $error) { self::assertArrayHasKey('note',$error->errors()); }
+        $note->emission->response=$response; $note->emission->save(); $note=$note->fresh();
+        $count=$db->table('global_payments')->count();
+        $bank=$db->table('bank_accounts')->insertGetId(['description'=>'Devolución sintética','number'=>'qa','bank_id'=>1,'currency_type_id'=>'VES','establishment_id'=>$invoice->establishment_id]);
+        $db->table('payment_method_types')->where('id','04')->update(['bank_account_id'=>$bank,'is_active'=>1]);
+        $request=['operation_key'=>(string)Str::uuid(),'component'=>'principal','document_payment_id'=>$invoice->payments->first()->id,
+            'date_of_payment'=>'2026-09-10','payment_method_type_id'=>'04','payment_destination_id'=>$bank,
+            'currency_type_id'=>'VES','original_amount'=>'23.20','exchange_rate'=>'1.00000000','exchange_rate_source'=>'manual'];
+        try { (new NoteRefund)->register($note,array_replace($request,['original_amount'=>'23.21'])); self::fail('No puede devolver más de lo disponible.'); }
+        catch (\Illuminate\Validation\ValidationException $error) { self::assertArrayHasKey('original_amount',$error->errors()); }
+        $record=(new NoteRefund)->register($note,$request);
+        self::assertSame($record->id,(new NoteRefund)->register($note,$request)->id);
+        self::assertSame('free_form',$record->context['fiscal_emission_mode']);
+        self::assertSame($note->control_number,$record->context['control_number']);
+        self::assertSame('output',$record->global_payment->type_movement);
+        self::assertSame($count+1,$db->table('global_payments')->count());
+        self::assertSame('0',\App\Support\Exact\Decimal::represent($invoice->fresh()->exactBalance()));
+        self::assertSame('0',\App\Support\Exact\Decimal::represent(NoteRefund::available($note->fresh())));
+        $reverse=['operation_key'=>(string)Str::uuid(),'reason'=>'Reversión sintética'];
+        (new NoteRefund)->reverse($note,$record,$reverse);
+        (new NoteRefund)->reverse($note,$record,$reverse);
+        self::assertSame(1,$db->table('document_note_refunds')->count());
+        self::assertSame('-23.2',\App\Support\Exact\Decimal::represent($invoice->fresh()->exactBalance()));
+        self::assertSame('23.2',\App\Support\Exact\Decimal::represent(NoteRefund::available($note->fresh())));
+        $usdBank=$db->table('bank_accounts')->insertGetId(['description'=>'Devolución USD sintética','number'=>'qa-usd','bank_id'=>1,'currency_type_id'=>'USD','establishment_id'=>$invoice->establishment_id]);
+        $db->table('payment_method_types')->where('id','04')->update(['bank_account_id'=>$usdBank]);
+        $usd=array_replace($request,['operation_key'=>(string)Str::uuid(),'payment_destination_id'=>$usdBank,
+            'currency_type_id'=>'USD','original_amount'=>'0.50','exchange_rate'=>'40.00000000']);
+        $usdRecord=(new NoteRefund)->register($note->fresh(),$usd);
+        self::assertSame('USD',$usdRecord->currency_type_id);
+        self::assertSame('20',\App\Support\Exact\Decimal::represent($usdRecord->exactValue('amount')));
+        self::assertSame('-3.2',\App\Support\Exact\Decimal::represent($invoice->fresh()->exactBalance()));
+        self::assertSame('3.2',\App\Support\Exact\Decimal::represent(NoteRefund::available($note->fresh())));
+        (new NoteRefund)->reverse($note->fresh(),$usdRecord,['operation_key'=>(string)Str::uuid(),'reason'=>'Reversión de prueba USD']);
+        self::assertSame('-23.2',\App\Support\Exact\Decimal::represent($invoice->fresh()->exactBalance()));
+        $http->assertNothingSent();
+    }
+
+    public function test_free_form_concurrent_refunds_preserve_limits_and_idempotency(): void
+    {
+        [$db,$app,$input]=$this->bootHkaFixture();
+        $db->table('companies')->update(['fiscal_emission_mode'=>'free_form']);
+        $invoice=(new Facturalo)->forWebDocuments()->save($input)->getDocument()->fresh();
+        $data=$this->noteInput($input,$invoice,'07','09',[
+            ['affected_document_item_id'=>$invoice->items->first()->id,'adjustment_amount'=>'23.20'],
+        ]);
+        $note=(new Facturalo)->forWebDocuments()->save($data)->getDocument()->fresh();
+        \App\Services\Fiscal\FreeFormControl::register($note,['control_number'=>'00-2','evidence_reference'=>'Nota física sintética']);
+        $bank=$db->table('bank_accounts')->insertGetId(['description'=>'Devolución concurrente USD','number'=>'qa-usd','bank_id'=>1,'currency_type_id'=>'USD','establishment_id'=>$invoice->establishment_id]);
+        $db->table('payment_method_types')->where('id','04')->update(['is_active'=>1,'currency_type_id'=>'USD','bank_account_id'=>$bank]);
+        $refund=['operation_key'=>(string)Str::uuid(),'component'=>'principal','document_payment_id'=>$invoice->payments->first()->id,
+            'date_of_payment'=>'2026-09-10','payment_method_type_id'=>'04','payment_destination_id'=>$bank,
+            'currency_type_id'=>'USD','original_amount'=>'1','exchange_rate'=>'10.12345678','exchange_rate_source'=>'manual'];
+        $before=$db->table('global_payments')->count();
+        $results=$this->runFiscalWorkers($note->id,'note-refund',[$refund,$refund]);
+        self::assertSame($results[0]['id'],$results[1]['id']);
+        self::assertSame($before+1,$db->table('global_payments')->count());
+        self::assertSame('13.08',\App\Support\Exact\Decimal::represent(NoteRefund::available($note->fresh())));
+        $first=array_replace($refund,['operation_key'=>(string)Str::uuid()]);
+        $second=array_replace($refund,['operation_key'=>(string)Str::uuid()]);
+        $results=$this->runFiscalWorkers($note->id,'note-refund',[$first,$second]);
+        self::assertCount(1,array_filter($results,fn ($r)=>isset($r['id'])));
+        self::assertSame($before+2,$db->table('global_payments')->count());
+        self::assertSame(2,$db->table('document_note_refunds')->whereNull('reversed_at')->count());
+        self::assertSame('2.96',\App\Support\Exact\Decimal::represent(NoteRefund::available($note->fresh())));
+        self::assertSame('-2.96',\App\Support\Exact\Decimal::represent($invoice->fresh()->exactBalance()));
+        self::assertSame('free_form',$note->fresh()->fiscal_emission_mode);
+    }
+
+    public function test_free_form_invoices_credit_and_debit_match_cash_products_and_local_pdfs(): void
+    {
+        [$db,$app,$input]=$this->bootHkaFixture();
+        $db->table('companies')->update(['fiscal_emission_mode'=>'free_form']);
+        // Forma libre must not contact HKA even if the digital-mode flag is enabled.
+        $db->table('configurations')->update(['auto_send_hka'=>true]);
+        $http=$app->make(\Illuminate\Http\Client\Factory::class); $http->fake();
+        $cash=\App\Models\Tenant\Cash::firstOrFail();
+        $brand=\Modules\Item\Models\Brand::create(['name'=>'Marca de prueba']);
+        $itemId=$input['items'][0]['item_id'];
+        $itemRow=$db->table('items')->where('id',$itemId)->first();
+        $itemSnapshot=json_decode($itemRow->calculation_snapshot,true) ?: \App\Support\Exact\Decimal::snapshot([]);
+        $itemSnapshot['values']['purchase_unit_price']=\App\Support\Exact\Decimal::fraction('0.1');
+        $db->table('items')->where('id',$itemId)->update(['brand_id'=>$brand->id,'currency_type_id'=>'VES','purchase_unit_price'=>'0.1',
+            'calculation_snapshot'=>json_encode($itemSnapshot,JSON_THROW_ON_ERROR)]);
+        $documents=[];
+        foreach (['VES','USD'] as $currency) {
+            $source=$input;
+            $source['external_id']=(string)Str::uuid();
+            $source['currency_type_id']=$currency; $source['exchange_rate_sale']='10.12345678';
+            $source['payments'][0]['payment_method_type_id']=$currency==='USD'?'10':'01';
+            $invoice=(new Facturalo)->forWebDocuments()->save($source)->getDocument()->fresh();
+            $line=$invoice->items->first();
+            $credit=(new Facturalo)->forWebDocuments()->save($this->noteInput($source,$invoice,'07','09',
+                [['affected_document_item_id'=>$line->id,'adjustment_amount'=>'23.20']]))->getDocument()->fresh();
+            $debit=(new Facturalo)->forWebDocuments()->save($this->noteInput($source,$invoice,'08','02',
+                [['affected_document_item_id'=>$line->id,'adjustment_amount'=>'11.60']]))->getDocument()->fresh();
+            foreach ([$invoice,$credit,$debit] as $document) {
+                self::assertSame('free_form',$document->fiscal_emission_mode);
+                if ($document->emission) {
+                    self::assertSame('not_requested',$document->emission->status);
+                    self::assertNull($document->emission->payload);
+                    self::assertTrue($document->emission->response['auto_send_requested']);
+                }
+                $emissionView=\App\Services\Fiscal\DocumentEmissionView::forDocument($document);
+                self::assertNull($emissionView['status']);
+                self::assertFalse($emissionView['show_send']);
+                self::assertFalse($emissionView['can_send']);
+                \App\Models\Tenant\CashDocument::firstOrCreate(['cash_id'=>$cash->id,'document_id'=>$document->id]);
+                $documents[]=$document;
+            }
+            self::assertSame('23.2',\App\Support\Exact\Decimal::represent($credit->exactValue('total')));
+            self::assertSame('11.6',\App\Support\Exact\Decimal::represent($debit->exactValue('total')));
+            self::assertSame($invoice->id,$credit->note->affected_document_id);
+            self::assertSame($invoice->id,$debit->note->affected_document_id);
+        }
+        $printedInvoice=collect($documents)->first(fn($row)=>$row->document_type_id==='01' && $row->currency_type_id==='VES');
+        $printedCredit=collect($documents)->first(fn($row)=>$row->document_type_id==='07' && $row->currency_type_id==='VES');
+        $printedDebit=collect($documents)->first(fn($row)=>$row->document_type_id==='08' && $row->currency_type_id==='VES');
+        $fiscalController=new \App\Http\Controllers\Tenant\DocumentFiscalController();
+        $controlInputs=[$printedInvoice->id=>'00-1',$printedCredit->id=>'00-2',$printedDebit->id=>'00-3'];
+        foreach ([$printedInvoice,$printedCredit,$printedDebit] as $controlled) {
+            if ($controlled->document_type_id==='07') {
+                try { \App\Services\Fiscal\FreeFormControl::register($controlled,['control_number'=>'00-1','evidence_reference'=>'Nota']); self::fail('Control ya pertenece a factura.'); }
+                catch (\Illuminate\Validation\ValidationException $error) { self::assertArrayHasKey('control_number',$error->errors()); }
+                $viewer=auth()->user(); $type=$viewer->type; $viewer->type='seller';
+                try { $fiscalController->freeFormControl($controlled->id); self::fail('Sólo administrador.'); }
+                catch (\Symfony\Component\HttpKernel\Exception\HttpException $error) { self::assertSame(403,$error->getStatusCode()); }
+                $viewer->type=$type;
+                $controlled->emission()->update(['status'=>'pending']);
+                self::assertFalse($fiscalController->freeFormControl($controlled->id)['data']['can_register']);
+                try { \App\Services\Fiscal\FreeFormControl::register($controlled->fresh(),['control_number'=>'00-2','evidence_reference'=>'Nota']); self::fail('Emisión en revisión.'); }
+                catch (\Illuminate\Validation\ValidationException $error) { self::assertArrayHasKey('document',$error->errors()); }
+                $controlled->emission()->update(['status'=>'not_requested']); $controlled=$controlled->fresh();
+            }
+            $reference=$controlled->note->data_affected_document ?? null;
+            $amount=$controlled->exactValue('total');
+            self::assertTrue($fiscalController->freeFormControl($controlled->id)['data']['can_register']);
+            $result=$fiscalController->registerFreeFormControl(\Illuminate\Http\Request::create('/','POST',[
+                'control_number'=>$controlInputs[$controlled->id],'evidence_reference'=>'Documento físico de prueba']),$controlled->id);
+            self::assertTrue($result['success']); self::assertFalse($fiscalController->freeFormControl($controlled->id)['data']['can_register']);
+            self::assertTrue($amount->isEqualTo($controlled->fresh()->exactValue('total')));
+            if ($reference) self::assertEquals($reference,$controlled->fresh()->note->data_affected_document);
+            self::assertSame('not_requested',$controlled->fresh()->emission->status);
+        }
+        try { \App\Services\Fiscal\FreeFormControl::register($printedCredit->fresh(),['control_number'=>'00-4','evidence_reference'=>'Otra referencia']); self::fail('El control no se reemplaza.'); }
+        catch (\Illuminate\Validation\ValidationException $error) { self::assertArrayHasKey('control_number',$error->errors()); }
+        $usdInvoice=collect($documents)->first(fn($row)=>$row->document_type_id==='01' && $row->currency_type_id==='USD');
+        $usdCredit=collect($documents)->first(fn($row)=>$row->document_type_id==='07' && $row->currency_type_id==='USD');
+        \App\Services\Fiscal\FreeFormControl::register($usdInvoice,['control_number'=>'00-4','evidence_reference'=>'Factura USD física de prueba']);
+        self::assertNull($usdCredit->fresh()->control_number);
+        self::assertEmpty($usdCredit->fresh()->note->data_affected_document->control_number ?? null);
+        $debitPayment=\App\Services\Fiscal\FiscalDocumentPersistence::payment($printedDebit->fresh(),[
+            'operation_key'=>(string)Str::uuid(),'date_of_payment'=>'2026-09-10','payment_method_type_id'=>'10',
+            'payment_destination_id'=>'cash','currency_type_id'=>'USD','original_amount'=>'1','exchange_rate'=>'10.12345678',
+            'igtf_status'=>'not_applicable','financial_intermediation'=>'financial_institution']);
+        self::assertSame('10.12',\App\Support\Exact\Decimal::represent($debitPayment->exactValue('payment')));
+        self::assertSame('1.48',\App\Support\Exact\Decimal::represent($printedDebit->fresh()->exactBalance()));
+        $rows=(new \Modules\CashReport\Services\Builders\ProductsBuilder())->getDataReport($cash->id)['documents'];
+        $sold=\Modules\CashReport\Services\ProductsAmounts::sold($rows);
+        foreach (['VES','USD'] as $currency) {
+            $sum=\App\Support\Exact\Decimal::sum(collect($sold)->where('currency_type_id',$currency)->pluck('total'));
+            self::assertSame('220.4',\App\Support\Exact\Decimal::represent($sum));
+        }
+        config(['view.compiled'=>sys_get_temp_dir().'/'.$this->database.'/free-form-note-views',
+            'view.paths'=>[base_path('resources/views')], 'filesystems.disks.public'=>['driver'=>'local','root'=>sys_get_temp_dir()]]);
+        mkdir(config('view.compiled'),0777,true); $app->register(\Illuminate\View\ViewServiceProvider::class);
+        $db->table('establishments')->where('id',$input['establishment_id'])->update(['template_pdf'=>'default']);
+        $app['view']->addNamespace('report',base_path('modules/Report/Resources/views'));
+        foreach ($documents as $document) {
+            $print=$document->fresh();
+            $customer=(array)$print->customer; $customer['identity_document_type']=['description'=>'Venezolano'];
+            foreach (['district_id','province_id','department_id'] as $field) $customer[$field]='-';
+            $print->customer=$customer;
+            $establishment=(array)$print->establishment;
+            foreach (['district_id','province_id','department_id'] as $field) $establishment[$field]='-';
+            $print->establishment=$establishment;
+            $type=$print->document_type_id==='01'?'invoice':($print->document_type_id==='07'?'credit':'debit');
+            $html=(new \App\CoreFacturalo\Template())->pdf('default',$type,\App\Models\Tenant\Company::active(),$print,'a4',['is_preview'=>false]);
+            $pdf=new \Mpdf\Mpdf(['tempDir'=>sys_get_temp_dir()]); $pdf->WriteHTML($html);
+            $bytes=$pdf->Output('','S');
+            self::assertStringStartsWith('%PDF-',$bytes);
+            self::assertStringStartsWith('%PDF-',(new Facturalo())->createPdf($print,$type,'a4','string'));
+            self::assertStringContainsString(\App\Support\Exact\Decimal::format($print->exactValue('total'),2,'.',','),$html);
+            if ($print->document_type_id==='07') { self::assertStringContainsString('TOTAL NOTA DE CRÉDITO',$html); self::assertStringNotContainsString('TOTAL A PAGAR',$html); }
+            if ($print->document_type_id==='08') self::assertStringContainsString('TOTAL NOTA DE DÉBITO',$html);
+            if ($print->id===$printedCredit->id || $print->id===$printedDebit->id) {
+                self::assertStringContainsString('Control actual de factura afectada',$html);
+                self::assertStringContainsString('00-00000001',$html);
+                self::assertEmpty($print->note->data_affected_document->control_number ?? null);
+            }
+            if ($print->id===$printedDebit->id) {
+                foreach (['default','modern-2027','Plantilla_personalizable','marca_de_agua'] as $template) {
+                    foreach (['a4','a5','ticket','ticket_58'] as $format) {
+                        $debitHtml=(new \App\CoreFacturalo\Template())->pdf($template,'debit',\App\Models\Tenant\Company::active(),$print,$format,['is_preview'=>false]);
+                        self::assertStringContainsString('Recibido USD 1.00',$debitHtml,"$template $format");
+                        self::assertStringContainsString('Aplicado VES 10.12',$debitHtml,"$template $format");
+                        self::assertSame(1,substr_count($debitHtml,'Recibido USD 1.00'),"$template $format sin doble detalle");
+                    }
+                }
+                $credit=$printedCredit->fresh(); $credit->customer=$customer; $credit->establishment=$establishment;
+                $ticket=(new Facturalo())->createPdf($credit,'credit','ticket_58','string');
+                self::assertStringStartsWith('%PDF-',$ticket);
+                if ($dir=getenv('PRO9_FREE_FORM_NOTE_EVIDENCE')) file_put_contents($dir.'/control-ticket-58.pdf',$ticket);
+            }
+            if ($print->id===$usdCredit->id) {
+                self::assertStringContainsString('Control actual de factura afectada',$html);
+                self::assertStringContainsString('00-00000004',$html);
+                $original=$db->table('documents')->where('id',$print->id)->first(['customer','establishment']);
+                $db->table('documents')->where('id',$print->id)->update(['customer'=>json_encode($customer),'establishment'=>json_encode($establishment)]);
+                try {
+                    self::assertStringStartsWith('%PDF-',\App\Services\Fiscal\CurrentFreeFormPdf::bytesIfRegistered($document));
+                    self::assertStringStartsWith('%PDF-',\App\Services\Fiscal\CurrentFreeFormPdf::bytesForFilename($print->filename));
+                } finally { $db->table('documents')->where('id',$print->id)->update((array)$original); }
+            }
+            if (isset($controlInputs[$print->id])) {
+                $expectedControl=(string)new \App\Services\FiscalControlNumber($controlInputs[$print->id]);
+                self::assertStringContainsString($expectedControl,$html);
+                if ($print->id===$printedInvoice->id) self::assertStringNotContainsString('VUELTO:',$html);
+                $original=$db->table('documents')->where('id',$print->id)->first(['customer','establishment']);
+                $db->table('documents')->where('id',$print->id)->update(['customer'=>json_encode($customer),'establishment'=>json_encode($establishment)]);
+                $path='pdf/'.$print->filename.'.pdf';
+                \Illuminate\Support\Facades\Storage::disk('tenant')->put($path,'%PDF-original-before-control');
+                try {
+                    $stale=$document; self::assertNull($stale->control_number);
+                    $current=\App\Services\Fiscal\CurrentFreeFormPdf::bytesIfRegistered($stale);
+                    self::assertStringStartsWith('%PDF-',$current); self::assertNotSame('%PDF-original-before-control',$current);
+                    $controller=new \App\Http\Controllers\Tenant\DownloadController();
+                    self::assertStringStartsWith('%PDF-',$controller->downloadExternal('document','pdf',$print->external_id)->getContent());
+                    self::assertStringStartsWith('%PDF-',$controller->toPrint('document',$print->external_id,'a4')->getContent());
+                    if ($print->document_type_id==='07') {
+                        self::assertStringStartsWith('%PDF-',$controller->toPrint('document',$print->external_id,'ticket_58')->getContent());
+                        self::assertStringStartsWith('%PDF-',$controller->downloadExternal('document','pdf',$print->external_id,'a5')->getContent());
+                    }
+                    self::assertStringStartsWith('%PDF-',\App\Services\Fiscal\CurrentFreeFormPdf::bytesForFilename($print->filename));
+                    $qrRequest=new class extends \Illuminate\Http\Request {
+                        public function validate(array $rules) { return validator($this->all(),$rules)->validate(); }
+                    };
+                    $qrRequest->merge(['filename_only'=>$print->filename,'extension_only'=>'pdf']);
+                    $encoded=(new \Modules\QrApi\Http\Controllers\QrApiController())->encodeBase64($qrRequest);
+                    self::assertStringStartsWith('%PDF-',base64_decode($encoded,true));
+                    config(['tenant.template_document_mail'=>'default','mail.username'=>'test@example.test']);
+                    $mail=(new \App\Mail\Tenant\DocumentEmail(\App\Models\Tenant\Company::active(),$stale))->build();
+                    self::assertStringStartsWith('%PDF-',$mail->rawAttachments[0]['data']);
+                    self::assertNotSame('%PDF-original-before-control',$mail->rawAttachments[0]['data']);
+                    self::assertSame('%PDF-original-before-control',\Illuminate\Support\Facades\Storage::disk('tenant')->get($path));
+                    if ($dir=getenv('PRO9_FREE_FORM_NOTE_EVIDENCE')) file_put_contents($dir.'/control-current-'.$type.'.pdf',$current);
+                } finally { $db->table('documents')->where('id',$print->id)->update((array)$original); }
+            }
+            if ($dir=getenv('PRO9_FREE_FORM_NOTE_EVIDENCE')) file_put_contents($dir.'/'.$type.'-'.$print->currency_type_id.'.pdf',$bytes);
+        }
+        \App\Services\Fiscal\FiscalDocumentPersistence::reverse($debitPayment,'Reversión sintética');
+        self::assertSame('11.6',\App\Support\Exact\Decimal::represent($printedDebit->fresh()->exactBalance()));
+        $afterReverse=$printedDebit->fresh(); $afterReverse->customer=$customer; $afterReverse->establishment=$establishment;
+        foreach (['a4','a5','ticket','ticket_58'] as $format) {
+            $html=(new \App\CoreFacturalo\Template())->pdf('default','debit',\App\Models\Tenant\Company::active(),$afterReverse,$format,['is_preview'=>false]);
+            self::assertStringNotContainsString('Recibido USD 1.00',$html,"$format sin cobro revertido");
+            self::assertStringNotContainsString('Cobro recibido (USD)',$html,"$format sin resumen revertido");
+        }
+        // Even a third matching filename with a registered control must block ambiguous legacy lookup.
+        $usdDebit=collect($documents)->first(fn($row)=>$row->document_type_id==='08' && $row->currency_type_id==='USD');
+        \App\Services\Fiscal\FreeFormControl::register($usdDebit,['control_number'=>'00-5','evidence_reference'=>'Nota física de prueba']);
+        $invoiceEmission=$usdInvoice->fresh()->emission; $originalResponse=$invoiceEmission->response; $temporaryResponse=$originalResponse;
+        unset($temporaryResponse['free_form_control']); $invoiceEmission->update(['response'=>$temporaryResponse]);
+        $ambiguous=[$usdInvoice,$usdCredit,$usdDebit]; $names=[];
+        try {
+            foreach ($ambiguous as $candidate) { $names[$candidate->id]=$candidate->filename; $db->table('documents')->where('id',$candidate->id)->update(['filename'=>'ambiguous-free-form-test']); }
+            try { \App\Services\Fiscal\CurrentFreeFormPdf::bytesForFilename('ambiguous-free-form-test'); self::fail('No se debe resolver un nombre ambiguo.'); }
+            catch (\UnexpectedValueException $error) { self::assertStringContainsString('ambiguo',$error->getMessage()); }
+        } finally {
+            foreach ($names as $id=>$name) $db->table('documents')->where('id',$id)->update(['filename'=>$name]);
+            $invoiceEmission->update(['response'=>$originalResponse]);
+        }
+        $filters=['period'=>'date','date_start'=>'2026-09-10','date_end'=>'2026-09-10','brand_id'=>$brand->id];
+        $reportController=new \Modules\Report\Http\Controllers\ReportSalesByBrandController();
+        $reportMethod=new \ReflectionMethod($reportController,'getRecordsByBrand'); $reportMethod->setAccessible(true);
+        $brandRows=$reportMethod->invoke($reportController,$filters);
+        self::assertCount(1,$brandRows);
+        $expected=\App\Support\Exact\Decimal::of('220.4')->plus(\App\Support\Exact\Decimal::of('220.4')->multipliedBy('10.12345678'));
+        self::assertTrue(\App\Support\Exact\Decimal::readRequired($brandRows->first(),'total_sale_value')->isEqualTo($expected));
+        self::assertTrue(\App\Support\Exact\Decimal::readRequired($brandRows->first(),'total_profit')->isEqualTo($expected->minus('0.4')));
+        self::assertSame('4',$brandRows->first()['quantity_sold']);
+        self::assertSame('UND',$brandRows->first()['unit_type_id']);
+        $db->table('items')->where('id',$itemId)->update(['brand_id'=>null]);
+        $withoutBrand=$reportMethod->invoke($reportController,array_replace($filters,['brand_id'=>null]));
+        self::assertSame('Sin marca',$withoutBrand->first()['brand_name']);
+        self::assertTrue(\App\Support\Exact\Decimal::readRequired($withoutBrand->first(),'total_sale_value')->isEqualTo($expected));
+        $db->table('items')->where('id',$itemId)->update(['brand_id'=>$brand->id]);
+        $vesCredit=collect($documents)->first(fn($d)=>$d->currency_type_id==='VES' && $d->document_type_id==='07');
+        $vesDebit=collect($documents)->first(fn($d)=>$d->currency_type_id==='VES' && $d->document_type_id==='08');
+        foreach ([[$vesCredit,'-23.2'],[$vesDebit,'11.6']] as [$adjustment,$expectedProfit]) {
+            $adjustmentLines=\App\Models\Tenant\DocumentItem::where('document_id',$adjustment->id)->get();
+            $adjustmentGroup=\Modules\Report\Services\BrandSalesAmounts::groups($adjustmentLines,collect())->first();
+            self::assertSame('0',$adjustmentGroup['quantity_sold']);
+            self::assertSame($expectedProfit,$adjustmentGroup['total_profit']);
+        }
+        $vesInvoice=collect($documents)->first(fn($d)=>$d->currency_type_id==='VES' && $d->document_type_id==='01');
+        $physicalSource=$input; $physicalSource['exchange_rate_sale']='10.12345678';
+        $return=(new Facturalo)->forWebDocuments()->save($this->noteInput($physicalSource,$vesInvoice,'07','07',
+            [['affected_document_item_id'=>$vesInvoice->items->first()->id,'quantity'=>'1']]))->getDocument()->fresh();
+        $returnGroup=\Modules\Report\Services\BrandSalesAmounts::groups(
+            \App\Models\Tenant\DocumentItem::where('document_id',$return->id)->get(),collect())->first();
+        self::assertSame('-1',$returnGroup['quantity_sold']);
+        self::assertSame('104.4',\App\Support\Exact\Decimal::represent($return->exactValue('total')));
+        self::assertSame('-104.3',$returnGroup['total_profit']);
+        $brandResource=(new \Modules\Report\Http\Resources\ReportSalesByBrandCollection($brandRows))->toArray(null)->first();
+        self::assertSame(\App\Support\Exact\Decimal::fraction($expected),$brandResource['calculation_snapshot']['values']['total_sale_value']);
+        self::assertTrue($brandResource['cost_is_estimated']);
+        $company=\App\Models\Tenant\Company::firstOrFail();
+        $establishment=\App\Models\Tenant\Establishment::findOrFail($input['establishment_id']);
+        $date_start=$date_end='2026-09-10'; $records=$brandRows;
+        $brandHtml=view('report::sales_by_brand.report_pdf',compact('company','establishment','date_start','date_end','records'))->render();
+        self::assertStringContainsString('Ganancia estimada (Bs.)',$brandHtml);
+        self::assertStringContainsString(\App\Support\Exact\Decimal::format($expected,2,'.',''),$brandHtml);
+        $brandPdf=new \Dompdf\Dompdf(); $brandPdf->loadHtml($brandHtml); $brandPdf->render();
+        $brandBytes=$brandPdf->output();
+        self::assertStringStartsWith('%PDF-',$brandBytes);
+        if ($dir=getenv('PRO9_BRAND_REPORT_EVIDENCE')) file_put_contents($dir.'/marcas.pdf',$brandBytes);
+        config(['excel'=>require base_path('config/excel.php')]);
+        $export=(new \Modules\Report\Exports\SalesByBrandExport())->records($records)->company($company)
+            ->establishment($establishment)->dateStart($date_start)->dateEnd($date_end);
+        $temp=new \Maatwebsite\Excel\Files\TemporaryFileFactory(sys_get_temp_dir());
+        $app->instance(\Maatwebsite\Excel\Files\TemporaryFileFactory::class,$temp);
+        $file=(new \Maatwebsite\Excel\Writer($temp))->export($export,\Maatwebsite\Excel\Excel::XLSX);
+        try {
+            if ($dir=getenv('PRO9_BRAND_REPORT_EVIDENCE')) copy($file->getLocalPath(),$dir.'/marcas.xlsx');
+            $book=(new \PhpOffice\PhpSpreadsheet\Reader\Xlsx())->load($file->getLocalPath());
+            $fractions=$book->getSheetByName('Fracciones exactas')->toArray(null,true,false,false);
+            $fraction=\App\Support\Exact\Decimal::fraction($expected);
+            self::assertContains([$brandRows->first()['report_key'],'total_sale_value',\App\Support\Exact\Decimal::represent($expected),$fraction['n'],$fraction['d']],$fractions);
+            $book->disconnectWorksheets();
+        } finally { $file->delete(); }
+        $accountExport=(new \Modules\Report\Exports\StatusClientExport())->records(collect($documents))->company($company)
+            ->establishment($establishment)->filters(['user_type'=>'VENDEDOR'])->categories(collect())->categories_services(collect());
+        $accountFile=(new \Maatwebsite\Excel\Writer($temp))->export($accountExport,\Maatwebsite\Excel\Excel::XLSX);
+        try {
+            if ($dir=getenv('PRO9_FREE_FORM_NOTE_EVIDENCE')) copy($accountFile->getLocalPath(),$dir.'/estado-cuenta.xlsx');
+            $accountBook=(new \PhpOffice\PhpSpreadsheet\Reader\Xlsx())->load($accountFile->getLocalPath());
+            $sheet=$accountBook->getActiveSheet(); $totals=[];
+            foreach ($sheet->getRowIterator() as $row) {
+                $index=$row->getRowIndex(); $label=(string)$sheet->getCell('O'.$index)->getValue();
+                if (in_array($label,['Totales VES','Totales USD'],true)) $totals[$label]=(string)$sheet->getCell('U'.$index)->getValue();
+            }
+            self::assertSame(['Totales VES'=>'220.40','Totales USD'=>'220.40'],$totals);
+            self::assertSame(\PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING,$sheet->getCell('U7')->getDataType());
+            $accountFractions=$accountBook->getSheetByName('Fracciones exactas')->toArray(null,true,false,false);
+            self::assertContains(['document:'.$documents[1]->id,'total','-23.2','-116','5'],$accountFractions);
+            $accountBook->disconnectWorksheets();
+        } finally { $accountFile->delete(); }
+        $category=\Modules\Item\Models\Category::create(['name'=>'Repuestos QA']);
+        $db->table('items')->where('id',$itemId)->update(['category_id'=>$category->id]);
+        $usdInvoice=collect($documents)->first(fn($d)=>$d->currency_type_id==='USD' && $d->document_type_id==='01');
+        $db->table('documents')->where('id',$usdInvoice->id)->update(['date_of_issue'=>'2026-09-12']);
+        $usdLine=$db->table('document_items')->where('document_id',$usdInvoice->id)->first();
+        $historicItem=json_decode($usdLine->item,true); $historicItem['unit_type_id']='KG';
+        $db->table('document_items')->where('id',$usdLine->id)->update(['item'=>json_encode($historicItem)]);
+        $customer=\App\Models\Tenant\Person::findOrFail($input['customer_id']);
+        $categories=\Modules\Item\Models\Category::all()->pluck('name')->all();
+        $analysis=\Modules\Report\Services\CommercialAnalysisAmounts::row($customer,$categories);
+        self::assertSame('116.00',$analysis['total_ves']); self::assertSame('220.40',$analysis['total_usd']);
+        self::assertSame(2,$analysis['quantity_visit']); self::assertSame('2 KG; 1 UND',$analysis['REPUESTOS QA']);
+        self::assertSame('10-09-2026',$analysis['first_document_date']); self::assertSame('12-09-2026',$analysis['last_document_date']);
+        self::assertSame('2.00',$analysis['prom_difference_days']); self::assertSame('14-09-2026',$analysis['contact_date']);
+        self::assertSame(['n'=>'116','d'=>'1'],$analysis['calculation_snapshot']['values']['total_ves']);
+        $analysisResource=(new \Modules\Report\Http\Resources\CommercialAnalysisCollection(collect([$customer->fresh()])))->toArray(new \Illuminate\Http\Request())->first();
+        self::assertSame($analysis['REPUESTOS QA'],$analysisResource['REPUESTOS QA']);
+        self::assertSame('V-12345678',$analysisResource['customer_number']);
+        $app->register(\Illuminate\Translation\TranslationServiceProvider::class); config(['tenant.items_per_page'=>10]);
+        $analysisRequest=\Illuminate\Http\Request::create('/reports/commercial-analysis/records','GET',[
+            'number'=>$customer->number,'person_type_id'=>'all','category_id'=>null]);
+        $analysisPage=(new \Modules\Report\Http\Controllers\ReportCommercialAnalysisController())->records($analysisRequest)->getData(true);
+        $analysisRow=collect($analysisPage['data'])->first(fn($row)=>$row['id']===$customer->id);
+        self::assertNotNull($analysisRow); self::assertSame('116.00',$analysisRow['total_ves']);
+        $empty=$customer->replicate(); $empty->number='12345679'; $empty->name='Cliente sin compras'; $empty->save();
+        $noPurchases=\Modules\Report\Services\CommercialAnalysisAmounts::row($empty->fresh(),$categories);
+        self::assertNull($noPurchases['contact_date']); self::assertNull($noPurchases['last_document_date']);
+        $categoryRequest=$analysisRequest->duplicate(array_replace($analysisRequest->query->all(),['number'=>'','category_id'=>$category->id]));
+        $analysisController=new \Modules\Report\Http\Controllers\ReportCommercialAnalysisController();
+        $matched=collect($analysisController->records($categoryRequest)->getData(true)['data'])->pluck('id');
+        self::assertTrue($matched->contains($customer->id)); self::assertFalse($matched->contains($empty->id));
+        $db->table('documents')->whereIn('id',[$vesInvoice->id,$usdInvoice->id])->update(['state_type_id'=>'11']);
+        $voidMatched=collect($analysisController->records($categoryRequest)->getData(true)['data'])->pluck('id');
+        self::assertFalse($voidMatched->contains($customer->id));
+        $db->table('documents')->whereIn('id',[$vesInvoice->id,$usdInvoice->id])->update(['state_type_id'=>'01']);
+        $commercial=(new \Modules\Report\Exports\CommercialAnalysisExport())->records(collect([$customer->fresh()]))->company($company)->categories($categories);
+        $commercialFile=(new \Maatwebsite\Excel\Writer($temp))->export($commercial,\Maatwebsite\Excel\Excel::XLSX);
+        try {
+            if ($dir=getenv('PRO9_COMMERCIAL_REPORT_EVIDENCE')) copy($commercialFile->getLocalPath(),$dir.'/analisis-comercial.xlsx');
+            $book=(new \PhpOffice\PhpSpreadsheet\Reader\Xlsx())->load($commercialFile->getLocalPath());
+            $values=collect($book->getSheet(0)->toArray(null,true,false,false))->flatten()->map(fn($v)=>(string)$v)->all();
+            self::assertContains('116.00',$values); self::assertContains('220.40',$values); self::assertContains('2 KG; 1 UND',$values);
+            $fractions=$book->getSheetByName('Fracciones exactas')->toArray(null,true,false,false);
+            self::assertContains(['customer:'.$customer->id,'category:REPUESTOS QA:KG','2','2','1'],$fractions);
+            $book->disconnectWorksheets();
+        } finally { $commercialFile->delete(); }
+        $itemLines=\App\Models\Tenant\DocumentItem::whereIn('document_id',[$vesInvoice->id,$usdInvoice->id])->orderByDesc('id')->get();
+        $itemReport=\Modules\Report\Services\ItemReportAmounts::presentation($itemLines);
+        self::assertSame('232',\App\Support\Exact\Decimal::represent($itemReport['amounts']['VES']));
+        self::assertSame('232',\App\Support\Exact\Decimal::represent($itemReport['amounts']['USD']));
+        self::assertSame('2',\App\Support\Exact\Decimal::represent($itemReport['quantities']['UND']));
+        self::assertSame('2',\App\Support\Exact\Decimal::represent($itemReport['quantities']['KG']));
+        $itemResource=(new \Modules\Report\Http\Resources\ItemCollection($itemLines))->toArray(new \Illuminate\Http\Request());
+        self::assertEqualsCanonicalizing(['VES','USD'],$itemResource->pluck('currency_type_id')->all());
+        self::assertEqualsCanonicalizing(['KG','UND'],$itemResource->pluck('unit_type_id')->all());
+        \Illuminate\Http\Request::macro('validate',function ($rules) { return validator($this->all(),$rules)->validate(); });
+        $itemRequest=\Illuminate\Http\Request::create('/reports/items/records','GET',['period'=>'between_dates',
+            'date_start'=>'2026-09-10','date_end'=>'2026-09-12','item_id'=>$itemId,'type'=>'sale']);
+        $page=(new \Modules\Report\Http\Controllers\ReportItemController())->records($itemRequest)->getData(true);
+        self::assertCount(2,$page['data']); self::assertEqualsCanonicalizing(['VES','USD'],array_column($page['data'],'currency_type_id'));
+        $extraRequest=\Illuminate\Http\Request::create('/reports/items-extra/records','GET',['period'=>'between_dates',
+            'date_start'=>'2026-09-10','date_end'=>'2026-09-12','item_id'=>$itemId,'extra'=>['CatItemStatus'=>999999]]);
+        $extraPage=(new \Modules\Report\Http\Controllers\ReportItemExtraController())->records($extraRequest)->getData(true);
+        self::assertCount(0,$extraPage['data']);
+        self::assertCount(0,\App\Models\Tenant\ItemMovement::getElementItemIdFromClass(\App\Models\Tenant\PurchaseItem::class,$itemId));
+        foreach ([false,true] as $extra) {
+            $itemExport=(new \Modules\Report\Exports\ItemExport())->records($itemLines)->company($company)->establishment($establishment)->setWithExtraData($extra);
+            $itemFile=(new \Maatwebsite\Excel\Writer($temp))->export($itemExport,\Maatwebsite\Excel\Excel::XLSX);
+            try {
+                if ($dir=getenv('PRO9_ITEM_REPORT_EVIDENCE')) copy($itemFile->getLocalPath(),$dir.'/producto-'.($extra?'extra':'normal').'.xlsx');
+                $book=(new \PhpOffice\PhpSpreadsheet\Reader\Xlsx())->load($itemFile->getLocalPath());
+                $values=collect($book->getSheet(0)->toArray(null,true,false,false))->flatten()->map(fn($v)=>(string)$v)->all();
+                self::assertContains('Total VES',$values); self::assertContains('Total USD',$values);
+                self::assertContains('KG',$values); self::assertContains('UND',$values);
+                $fractions=$book->getSheetByName('Fracciones exactas')->toArray(null,true,false,false);
+                self::assertContains(['unit:KG','quantity','2','2','1'],$fractions);
+                self::assertContains(['total:USD','total','232','232','1'],$fractions);
+                $book->disconnectWorksheets();
+            } finally { $itemFile->delete(); }
+        }
+        $http->assertNothingSent();
+    }
+
     private function noteFixture(bool $withIgtf = false): array
     {
         [$db,$app,$input]=$this->bootHkaFixture(); $calls=0;
@@ -337,6 +1205,7 @@ trait NotePersistenceCases
         self::assertSame('not_requested',$note->emission->status); // DEMO capability rejection does not roll back commerce.
         $note->forceFill(['control_number'=>'00-00999999'])->save();$note->emission->update(['status'=>'confirmed','control_number'=>$note->control_number]);
         $bankId=$db->table('bank_accounts')->insertGetId(['description'=>'USD refund','number'=>'usd','bank_id'=>1,'currency_type_id'=>'USD','establishment_id'=>$invoice->establishment_id]);
+        $db->table('payment_method_types')->where('id','04')->update(['is_active'=>1,'currency_type_id'=>'USD','bank_account_id'=>$bankId]);
         $refund=['operation_key'=>(string)Str::uuid(),'component'=>'principal','document_payment_id'=>$invoice->payments->first()->id,
             'date_of_payment'=>'2026-09-10','payment_method_type_id'=>'04','payment_destination_id'=>$bankId,
             'currency_type_id'=>'USD','original_amount'=>1,'exchange_rate'=>'10.12345678','exchange_rate_source'=>'manual'];
@@ -471,8 +1340,8 @@ trait NotePersistenceCases
     public function test_note_debit_is_created_on_credit_without_cash_effects_and_collects_later(): void
     {
         [$db,$app,$input,$invoice]=$this->noteFixture();$line=$invoice->items->first();
-        $db->table('payment_method_types')->where('id','04')->update(['currency_type_id'=>'USD']);
         $bank=$db->table('bank_accounts')->insertGetId(['description'=>'USD ND','number'=>'cash-nd','bank_id'=>1,'currency_type_id'=>'USD','establishment_id'=>$invoice->establishment_id]);
+        $db->table('payment_method_types')->where('id','04')->update(['currency_type_id'=>'USD','is_active'=>1,'bank_account_id'=>$bank]);
         $data=$this->noteInput($input,$invoice,'08','02',[['affected_document_item_id'=>$line->id,'adjustment_amount'=>11.60]]);
         unset($data['payment_condition_id'],$data['payments']);
         $counts=[];

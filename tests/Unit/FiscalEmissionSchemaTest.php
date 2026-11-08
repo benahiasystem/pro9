@@ -259,6 +259,8 @@ PHP;
             }
             (new \Database\Seeders\TenancyDatabaseSeeder())->setContainer(Container::getInstance())->run();
             $this->assertFiscalSchema($db);
+            self::assertTrue($db->getSchemaBuilder()->hasColumn('hotel_rents', 'calculation_snapshot'));
+            self::assertSame('decimal(30,12)', $db->selectOne('SHOW COLUMNS FROM hotel_rents WHERE Field = ?', ['arrears'])->Type);
             foreach (['fiscal_sequences', 'fiscal_profiles', 'fiscal_control_lots', 'fiscal_number_reservations', 'fiscal_emission_attempts', 'fiscal_numbering_audits', 'fiscal_demo_receipts', 'fiscal_hka_assignments'] as $retired) {
                 self::assertFalse($db->getSchemaBuilder()->hasTable($retired), $retired);
             }
@@ -1432,16 +1434,19 @@ PHP;
         return [$db, $app, $input];
     }
 
-    public function test_exact_calculations_survive_mysql_reads_grouping_discounts_and_rollback(): void
+    /** @dataProvider fiscalChannelModes */
+    public function test_exact_calculations_survive_mysql_reads_grouping_discounts_and_rollback(string $fiscalMode): void
     {
         [$db, $app, $input] = $this->bootHkaFixture();
+        $db->table('companies')->update(['fiscal_emission_mode'=>$fiscalMode]);
         $db->table('configurations')->update(['auto_send_hka'=>false]);
         $db->table('item_warehouse')->update(['stock'=>'1000']);
-        $input['payments'] = [];
+        $input['payments'] = []; $input['payment_condition_id'] = '02';
         $input['items'][0]['quantity'] = '1';
         $input['items'][0]['unit_price'] = '500';
         $document = (new \App\CoreFacturalo\Facturalo())->save($input)->getDocument()->fresh();
         $D = \App\Support\Exact\Decimal::class;
+        self::assertSame($fiscalMode, $document->fiscal_emission_mode);
         self::assertSame('500', $D::represent($document->exactValue('total')));
         self::assertSame('500', $D::represent($document->exactValue('total_payable')));
         $line = $document->items()->firstOrFail();
@@ -1496,6 +1501,13 @@ PHP;
         $mixed['items'][] = array_replace($mixed['items'][0], ['unit_price'=>'100','affectation_igv_type_id'=>'20']);
         $mixedDocument = (new \App\CoreFacturalo\Facturalo())->save($mixed)->getDocument()->fresh();
         self::assertSame('200.4',$D::represent($mixedDocument->exactValue('total')));
+        $cash=\App\Models\Tenant\Cash::firstOrFail();
+        \App\Models\Tenant\CashDocument::firstOrCreate(['cash_id'=>$cash->id,'document_id'=>$mixedDocument->id]);
+        $productRows=(new \Modules\CashReport\Services\Builders\ProductsBuilder())->getDataReport($cash->id)['documents'];
+        $mixedIds=$mixedDocument->items()->pluck('id')->all();
+        $mixedRows=$productRows->filter(fn($row)=>$row['record_type']==='document_item' && in_array($row['id'],$mixedIds,true));
+        self::assertCount(2,$mixedRows);
+        self::assertTrue($D::sum($mixedRows->map(fn($row)=>$D::readRequired($row,'total')))->isEqualTo($mixedDocument->exactValue('total')));
         $exemptLine = $mixedDocument->items()->where('affectation_igv_type_id','20')->firstOrFail();
         self::assertTrue($D::readRequired($exemptLine,'header_discount')->isZero());
         self::assertSame('100',$D::represent($exemptLine->exactValue('total_base_igv')));

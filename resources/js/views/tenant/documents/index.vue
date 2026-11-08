@@ -233,7 +233,7 @@
                         </td>
                         <td v-if="col.visible && col.key === 'document_type'" :key="col.key" class="document-column-compact document-column-type">{{ row.document_type_description }}<template v-if="row.special_tax_regime_description"><br><small>{{ row.special_tax_regime_description }}</small></template><template v-if="row.is_third_party_invoice"><br><small>Venta por cuenta de terceros</small><br><small>{{ row.third_party.rif }} · {{ row.third_party.name }}</small></template></td>
                         <td v-if="col.visible && col.key === 'number'" :key="col.key" class="document-column-compact document-column-number">
-                            <span class="badge" :class="{ 'bg-invoices': row.document_type_id === '01', 'bg-tickets': row.document_type_id === '03', 'bg-credit-notes': row.document_type_id === '07', 'bg-debit-notes': row.document_type_id === '08' }" style="font-size: 11px; cursor: pointer;" @click="clickDetail(row)">
+                            <span class="badge" :class="{ 'bg-invoices': row.document_type_id === '01', 'bg-credit-notes': row.document_type_id === '07', 'bg-debit-notes': row.document_type_id === '08' }" style="font-size: 11px; cursor: pointer;" @click="clickDetail(row)">
                                 <svg data-v-e4dd5c75="" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-list-details" style="margin-top: -4px;"><path data-v-e4dd5c75="" stroke="none" d="M0 0h24v24H0z" fill="none"></path><path data-v-e4dd5c75="" d="M13 5h8"></path><path data-v-e4dd5c75="" d="M13 9h5"></path><path data-v-e4dd5c75="" d="M13 15h8"></path><path data-v-e4dd5c75="" d="M13 19h5"></path><path data-v-e4dd5c75="" d="M3 5a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4"></path><path data-v-e4dd5c75="" d="M3 15a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4"></path></svg>
                                 {{ row.number }}
                             </span>
@@ -432,6 +432,7 @@
 
                               <!-- ######## INICIO ACCESO DIRECTO DEVOLUCIONES NC ######## -->
                               <el-dropdown-item v-if="row.btn_note_operations" @click.native="clickNoteOperations(row.id)">Devoluciones y ajustes de NC</el-dropdown-item>
+                              <el-dropdown-item v-if="row.can_register_free_form_control && row.document_type_id !== '01'" @click.native="$refs.freeFormControl.open(row.id)">Registrar control impreso</el-dropdown-item>
                               <!-- ######## FIN ACCESO DIRECTO DEVOLUCIONES NC ######## -->
                               <el-dropdown-item
                                 divided
@@ -451,7 +452,7 @@
                                 @click.native="clickRetention(row.id)"
                               >
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-file-text me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M14 3v4a1 1 0 0 0 1 1h4"></path><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"></path><line x1="9" y1="9" x2="10" y2="9"></line><line x1="9" y1="13" x2="15" y2="13"></line><line x1="9" y1="17" x2="15" y2="17"></line></svg>
-                                Retención
+                                {{ row.can_register_free_form_control ? 'Control impreso y retenciones' : 'Retención' }}
                               </el-dropdown-item>
 
                               <el-dropdown-item divided />
@@ -542,6 +543,7 @@
         ></document-options>
         <!-- ######## INICIO ENVIO HKA DESDE ACCIONES DEL LISTADO ######## -->
         <document-send-action ref="documentSendAction" @fiscal-updated="onFiscalUpdated" />
+        <free-form-control ref="freeFormControl" @saved="$eventHub.$emit('reloadData')" />
         <!-- ######## FIN ENVIO HKA DESDE ACCIONES DEL LISTADO ######## -->
         <!-- ######## INICIO ANULACION DIRECTA DESDE LISTADO ######## -->
         <note-annulment-action ref="noteAnnulmentAction" @fiscal-updated="onFiscalUpdated" />
@@ -707,6 +709,7 @@ import ReportPaymentComplete from "./partials/report_payment_complete.vue";
 // ######### FIN CAMBIO SIN XML CDR SUNAT
 import { mapActions, mapState } from "vuex/dist/vuex.mjs";
 import DocumentRetention from "./partials/retention.vue";
+import FreeFormControl from "./partials/free-form-control.vue";
 import DocumentDetailDrawer from "./partials/detail-drawer.vue";
 import moment from "moment";
 import { documentStatus } from "../../../helpers/document-status";
@@ -740,6 +743,7 @@ export default {
         ItemsImport,
         DocumentImportSecond,
         DocumentOptions,
+        FreeFormControl,
         // ######## INICIO ACCESO DIRECTO DEVOLUCIONES NC ########
         NoteOperations,
         NoteAnnulmentAction,

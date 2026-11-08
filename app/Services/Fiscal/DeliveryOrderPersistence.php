@@ -1,6 +1,7 @@
 <?php
 namespace App\Services\Fiscal;
-use App\Models\Tenant\{Company,Dispatch};
+use App\Models\Tenant\{Company,Dispatch,SaleNote};
+use App\Support\Exact\Decimal as D;
 
 final class DeliveryOrderPersistence
 {
@@ -15,6 +16,20 @@ final class DeliveryOrderPersistence
                 abort_unless(hash_equals($existing->creation_hash,$input['creation_hash']),409,'La clave de creación corresponde a datos diferentes.');
                 return $existing;
             }
+        }
+        if (!empty($input['reference_sale_note_id'])) {
+            $note=SaleNote::whereKey($input['reference_sale_note_id'])->lockForUpdate()->firstOrFail();
+            if (in_array((string)$note->state_type_id,['09','11'],true)
+                || (int)$note->customer_id!==(int)$input['customer_id'] || (int)$note->establishment_id!==(int)$input['establishment_id']) {
+                FiscalAmounts::error('reference_sale_note_id','La nota de venta de origen debe estar vigente y pertenecer al cliente y sucursal.');
+            }
+            $available=$note->items()->lockForUpdate()->get()->groupBy('item_id')
+                ->map(fn($lines)=>D::sum($lines->map(fn($line)=>$line->exactValue('quantity')->multipliedBy($line->item->presentation->quantity_unit ?? 1))));
+            foreach (collect($input['items'])->groupBy('item_id') as $itemId=>$lines) {
+                if (D::sum($lines->pluck('quantity'))->isGreaterThan($available[$itemId] ?? 0)) FiscalAmounts::error('items','Las cantidades y productos deben corresponder a la nota de venta vigente.');
+            }
+        }
+        if (empty($input['id'])) {
             $order=new Dispatch();
         } else {
             $order=Dispatch::lockForUpdate()->findOrFail($input['id']);DeliveryOrderInput::authorize((int)$order->establishment_id);

@@ -28,8 +28,14 @@ class InputRequest
                 if ($service === 'api') $inputs = $this->transformInputs($inputs, $type);
                 $inputs = $this->validationInputs($inputs, $type, $service);
                 $request->replace($this->setInputs($inputs, $type, $service));
-                return $next($request);
+                $response = $next($request);
+                if ($response instanceof \Symfony\Component\HttpFoundation\Response && $response->getStatusCode() >= 400) {
+                    throw new InputResponseRollback($response);
+                }
+                return $response;
             });
+        } catch (InputResponseRollback $exception) {
+            return $exception->response;
         } catch (\Illuminate\Validation\ValidationException $exception) {
             throw $exception;
         } catch (\Symfony\Component\HttpKernel\Exception\HttpExceptionInterface $exception) {

@@ -57,9 +57,11 @@ trait IvaRetentionPersistenceCases
     }
 
     // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
-    public function test_cross_currency_credit_receipt_and_iva_retention_keep_balance_and_snapshot(): void
+    /** @dataProvider fiscalChannelModes */
+    public function test_cross_currency_credit_receipt_and_iva_retention_keep_balance_and_snapshot(string $fiscalMode): void
     {
-        [$db,$app,$input]=$this->bootIvaFixture();
+        [$db,$app,$input,$state]=$this->bootIvaFixture();
+        $db->table('companies')->update(['fiscal_emission_mode'=>$fiscalMode]);
         $db->table('payment_method_types')->where('id','01')->update([
             'collection_kind'=>'account','currency_type_id'=>'USD','cash_currency_type_id'=>null,'is_cash'=>0,'is_active'=>1,
         ]);
@@ -67,6 +69,7 @@ trait IvaRetentionPersistenceCases
             'bank_id'=>$db->table('banks')->value('id'),'description'=>'USD',
             'number'=>'IVA-CREDIT-USD','currency_type_id'=>'USD','initial_balance'=>'0',
         ]);
+        $db->table('payment_method_types')->where('id','01')->update(['bank_account_id'=>$bank->id]);
         $input['exchange_rate_sale']='10';
         $input['payment_condition_id']='02';
         $input['payments']=[['date_of_payment'=>'2026-09-10','payment_method_type_id'=>'01',
@@ -75,6 +78,32 @@ trait IvaRetentionPersistenceCases
         $input['fee']=[['date'=>'2026-11-10','currency_type_id'=>'VES','amount'=>'182']];
         $doc=(new Facturalo)->save($input)->getDocument()->fresh();
         self::assertSame('182',\App\Support\Exact\Decimal::represent(\App\Support\Exact\Receivables::balancesForDocuments([$doc])[$doc->id]));
+        config(['view.compiled'=>sys_get_temp_dir().'/'.$this->database.'/cross-retention-views',
+            'view.paths'=>[base_path('resources/views')],'excel'=>require base_path('config/excel.php')]);
+        mkdir(config('view.compiled'),0777,true);$app->register(\Illuminate\View\ViewServiceProvider::class);
+        $temp=new \Maatwebsite\Excel\Files\TemporaryFileFactory(sys_get_temp_dir());
+        $app->instance(\Maatwebsite\Excel\Files\TemporaryFileFactory::class,$temp);
+        $checkReport=function (string $balance, string $withheld) use ($doc,$temp) {
+            $dataset=\App\Support\Exact\Receivables::dataset(['stablishmentUnpaidAll'=>1]);
+            $row=collect(iterator_to_array($dataset))->firstWhere('report_key','document:'.$doc->id);
+            self::assertNotNull($row);self::assertSame($balance,$row['total_to_pay']);
+            self::assertSame('50',$row['total_payment']);self::assertSame($withheld,$row['retention_amount']);
+            $export=(new \Modules\Report\Exports\NoPaidExport())->records($dataset)->company(Company::firstOrFail());
+            $file=(new \Maatwebsite\Excel\Writer($temp))->export($export,\Maatwebsite\Excel\Excel::XLSX);
+            try {
+                $book=(new \PhpOffice\PhpSpreadsheet\Reader\Xlsx())->load($file->getLocalPath());
+                $rows=$book->getSheet(0)->toArray(null,true,false,false);$header=null;$entry=null;
+                foreach ($rows as $line) {
+                    if (in_array('Por cobrar',$line,true)) $header=$line;
+                    if (in_array($doc->number_full,$line,true)) $entry=$line;
+                }
+                self::assertNotNull($header);self::assertNotNull($entry);
+                self::assertSame($balance,$entry[array_search('Por cobrar',$header,true)]);
+                self::assertSame($withheld,$entry[array_search('Monto retención',$header,true)]);
+                $book->disconnectWorksheets();
+            } finally {$file->delete();}
+        };
+        $checkReport('182','0');
         self::assertSame('182',$doc->fee()->firstOrFail()->amount);
         $payment=$doc->payments()->firstOrFail();
         $movement=\App\Services\Payments\Movement::row($payment->global_payment);
@@ -83,9 +112,23 @@ trait IvaRetentionPersistenceCases
         self::assertSame('5',$movement['amount']);
 
         $voucher=$this->ivaVoucher($doc);
+        if ($fiscalMode === 'free_form') $voucher['invoice_control']='00-00000001';
         $retention=IvaRetentionService::store($doc,$voucher);
+        if ($fiscalMode === 'free_form') {
+            self::assertSame('pending_validation',$retention->application_status);
+            self::assertSame('182',\App\Support\Exact\Decimal::represent(\App\Support\Exact\Receivables::balancesForDocuments([$doc->fresh()])[$doc->id]));
+            // Transcribe a synthetic physical-form control through the application service.
+            \App\Services\Fiscal\FreeFormControl::register($doc->fresh(),['control_number'=>$voucher['invoice_control'],
+                'evidence_reference'=>'Factura física de prueba']);
+            $retention->refresh();
+        }
         self::assertSame('applied',$retention->application_status);
         self::assertSame('158',\App\Support\Exact\Decimal::represent(\App\Support\Exact\Receivables::balancesForDocuments([$doc->fresh()])[$doc->id]));
+        $checkReport('158','24');
+        self::assertSame($fiscalMode,$doc->fiscal_emission_mode);
+        $account=(new \Modules\Report\Http\Resources\StateAccountCollection(collect([$doc->fresh()])))->toArray(new \Illuminate\Http\Request())->first();
+        self::assertSame('158.00',$account['payment_state']);
+        if ($fiscalMode === 'free_form') self::assertCount(0,$state->calls);
         self::assertSame('182',$doc->fresh()->fee()->firstOrFail()->amount);
         self::assertSame('50',$doc->fresh()->payments()->firstOrFail()->payment);
         self::assertSame($retention->id,IvaRetentionService::store($doc,$voucher)->id);
@@ -97,6 +140,7 @@ trait IvaRetentionPersistenceCases
         self::assertSame($movement,$after);
         IvaRetentionService::reverse($retention,['operation_key'=>(string)Str::uuid(),'reason'=>'Reversión de prueba']);
         self::assertSame('182',\App\Support\Exact\Decimal::represent(\App\Support\Exact\Receivables::balancesForDocuments([$doc->fresh()])[$doc->id]));
+        $checkReport('182','0');
         self::assertSame('182',$doc->fresh()->fee()->firstOrFail()->amount);
         self::assertSame(1,$db->table('global_payments')->count());
     }

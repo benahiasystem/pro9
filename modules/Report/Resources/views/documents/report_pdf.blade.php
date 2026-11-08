@@ -9,36 +9,12 @@
     use App\Models\Tenant\SaleNote;
     use App\Models\Tenant\Catalogs\DocumentType;
 
-    $col_num=6;
-    //dd($columns);
-foreach ($columns as $value) {
-    switch ($value->title) {
-        case 'Opciones':
-        case 'Total':
-        // ########## INICIO CAMBIO IGV A IVA
-        case 'Total IVA':
-        // ######### FIN CAMBIO IGV A IVA
-        case 'Total Gratuito':
-        case 'Total Gravado':
-        case 'Total Exonerado':
-        case 'Total Inafecto':
-        case 'Productos':
-        case 'Total Cargos':
-            $col_num=$col_num;
-            break;
-        case 'Total ISC':
-            $col_num+=1;
-            break;
-        case 'Total Cargos':
-            $col_num+=1;
-            break;
-
-        default:
-            if ($value->visible) {
-                $col_num+=1;
-            }
-            break;
-    }
+    $prefixFields = ['user_seller', 'doc_affect', 'guides', 'quote', 'case', 'district', 'department',
+    'province', 'client_direction', 'ruc', 'currency_type_id', 'web_platforms', 'purchase_order',
+    'note_sale', 'date_note', 'payment_form', 'payment_method'];
+$col_num = 8;
+foreach ($prefixFields as $field) {
+    if ($columns->$field->visible) $col_num++;
 }
 
 $document_types=DocumentType::OnlyAvaibleDocuments()->get();
@@ -89,7 +65,7 @@ $document_types=DocumentType::OnlyAvaibleDocuments()->get();
                 </tr>
             </table>
         </div>
-        @if(!empty($records))
+        @if($records->isNotEmpty())
         <div class="">
             <div class=" ">
                 @php
@@ -136,6 +112,7 @@ $document_types=DocumentType::OnlyAvaibleDocuments()->get();
                                     @if ($serie_type['number']==$clear_series[$cs])
                                         @php
                                             $currencyTotals = \Modules\Report\Services\DocumentCurrencyTotals::empty();
+                        $displayTotals = \Modules\Report\Services\DocumentCurrencyTotals::empty();
                 $serie_affec = '';
                                             //dd($serie_type['number']);
                                             $serie_number=$serie_type['number'];
@@ -396,110 +373,45 @@ $document_types=DocumentType::OnlyAvaibleDocuments()->get();
 
 
 
-                                @if($signal == '07')
-
-                                    @if(in_array($value->state_type_id,['09','11']))
-                                        @if ($columns->total_charge->visible)
-                                            <td style="padding: 5px; text-align: center;" class="celda">0</td>
-                                        @endif
-                                            <td style="padding: 5px; text-align: center;" class="celda">0</td>
-                                            <td style="padding: 5px; text-align: center;" class="celda">0</td>
-                                            <td style="padding: 5px; text-align: center;" class="celda">0</td>
-                                            <td style="padding: 5px; text-align: center;" class="celda">0</td>
-                                            <td style="padding: 5px; text-align: center;" class="celda">0</td>
-                                            <td style="padding: 5px; text-align: center;" class="celda">0</td>
-                                            {{-- ########## INICIO SIN DETRACCIONES E ISC --}}
-
-                                            <td style="padding: 5px; text-align: center;" class="celda">0</td>
-
-                                    @else
-                                        @if ($columns->total_charge->visible)
-                                        <td style="padding: 5px; text-align: center;" class="celda">{{$signal == '07' ? "-" : ""  }}{{$value->total_charge}}</td>
-                                        @endif
-                                        @if ($columns->total_exonerated->visible)
-                                            <td style="padding: 5px; text-align: center;" class="celda">{{$signal == '07' ? "-" : ""  }}{{$value->total_exonerated}}</td>
-                                        @endif
-
-
-                                        @if ($columns->total_taxed->visible)
-                                            <td style="padding: 5px; text-align: center;" class="celda">{{$signal == '07' ? "-" : ""  }}{{$value->total_taxed}}</td>
-                                        @endif
-
-                                        <td style="padding: 5px; text-align: center;" class="celda">{{$value->total_discount}}</td>
-                                        @if ($columns->total_igv->visible)
-                                            <td style="padding: 5px; text-align: center;" class="celda">{{$signal == '07' ? "-" : ""  }}{{$value->total_igv}}</td>
-                                        @endif
-
-                                        {{-- ########## INICIO SIN DETRACCIONES E ISC --}}
-
-                                        @if ($columns->total->visible)
-                                            <td style="padding: 5px; text-align: center;" class="celda">{{$signal == '07' ? "-" : ""  }}{{\App\Support\Exact\Decimal::format(\App\Support\Exact\Decimal::read($value, 'total'))}}</td>
-                                        @endif
-
-                                    @endif
-
-                                @else
-                                    @if ($columns->total_charge->visible)
-                                        <td style="padding: 5px; text-align: center;" class="celda">{{ in_array($value->state_type_id,['09','11']) ? 0 : $value->total_charge}}</td>
-                                    @endif
-                                    @if ($columns->total_exonerated->visible)
-                                        <td style="padding: 5px; text-align: center;" class="celda">{{ in_array($value->state_type_id,['09','11']) ? 0 : $value->total_exonerated}}</td>
-                                    @endif
-
-
-
-
-
-                                    @if ($columns->total_taxed->visible)
-                                        <td style="padding: 5px; text-align: center;" class="celda">{{ in_array($value->state_type_id,['09','11']) ? 0 : $value->total_taxed}}</td>
-                                    @endif
-
-                                    <td style="padding: 5px; text-align: center;" class="celda">{{ in_array($value->state_type_id,['09','11']) ? 0 : $value->total_discount}}</td>
-                                    @if ($columns->total_igv->visible)
-                                        <td style="padding: 5px; text-align: center;" class="celda">{{ in_array($value->state_type_id,['09','11']) ? 0 : $value->total_igv}}</td>
-                                    @endif
-
-                                    {{-- ########## INICIO SIN DETRACCIONES E ISC --}}
-
-                                    @if ($columns->total->visible)
-                                        <td style="padding: 5px; text-align: center;" class="celda">{{ in_array($value->state_type_id,['09','11']) ? '0.00' : \App\Support\Exact\Decimal::format(\App\Support\Exact\Decimal::read($value, 'total'))}}</td>
-                                    @endif
-
-
+                                @if ($columns->total_charge->visible)
+                                    <td class="celda">{{ \App\Support\Exact\Decimal::format(\Modules\Report\Services\DocumentReportLines::monetary($value, 'total_charge'),2,'.','') }}</td>
                                 @endif
-                                @php
-
-                                    $value->total_exonerated = in_array($value->state_type_id,['09','11']) ? 0 : $value->total_exonerated;
-
-                                    $value->total_taxed = in_array($value->state_type_id,['09','11']) ? 0 : $value->total_taxed;
-                                    $value->total_igv = in_array($value->state_type_id,['09','11']) ? 0 : $value->total_igv;
-                                    $value->total = in_array($value->state_type_id,['09','11']) ? 0 : $value->total;
-                                @endphp
-
-                                @php
-
-                                    $serie_affec =  '';
-
-                                    $quality_item=0;
-                                    foreach ($value->items as $itm) {
-                                        $quality_item+=$itm->quantity;
-                                    }
-
-                                @endphp
+                                @if ($columns->total_exonerated->visible)
+                                    <td class="celda">{{ \App\Support\Exact\Decimal::format(\Modules\Report\Services\DocumentReportLines::monetary($value, 'total_exonerated'),2,'.','') }}</td>
+                                @endif
+                                @if ($columns->total_taxed->visible)
+                                    <td class="celda">{{ \App\Support\Exact\Decimal::format(\Modules\Report\Services\DocumentReportLines::monetary($value, 'total_taxed'),2,'.','') }}</td>
+                                @endif
+                                <td class="celda">{{ \App\Support\Exact\Decimal::format(\Modules\Report\Services\DocumentReportLines::monetary($value, 'total_discount'),2,'.','') }}</td>
+                                @if ($columns->total_igv->visible)
+                                    <td class="celda">{{ \App\Support\Exact\Decimal::format(\Modules\Report\Services\DocumentReportLines::monetary($value, 'total_igv'),2,'.','') }}</td>
+                                @endif
+                                @if ($columns->total->visible)
+                                    <td class="celda">{{ \App\Support\Exact\Decimal::format(\Modules\Report\Services\DocumentReportLines::monetary($value, 'total'),2,'.','') }}</td>
+                                @endif
+                                @php $serie_affec = ''; @endphp
                                 @if ($columns->items->visible)
-                                    <td style="padding: 5px; text-align: center;">{{$quality_item}}</td>
+                                    <td>{{ \Modules\Report\Services\DocumentReportLines::quantityText($value) }}</td>
                                 @endif
                             </tr>
                             @php
                                 $currencyTotals = \Modules\Report\Services\DocumentCurrencyTotals::add($currencyTotals, $value);
+                            $displayTotals = \Modules\Report\Services\DocumentCurrencyTotals::addDisplayed($displayTotals, $value);
                         @endphp
 
                             @endif
                             @endif
                         @endfor
+                        @php
+                            $adjustmentFields = array_values(array_filter(['total_charge','total_exonerated','total_taxed','total_igv','total'], fn ($field) => $columns->$field->visible));
+                        @endphp
+                        @foreach (['VES','USD'] as $currency)
+                            @if (\Modules\Report\Services\DocumentCurrencyTotals::hasAdjustment($currencyTotals,$displayTotals,$currency,$adjustmentFields))
+                                <tr><td colspan="{{$col_num}}">Ajuste por redondeo {{ $currency }}</td> @if ($columns->total_charge->visible) <td>{{ \Modules\Report\Services\DocumentCurrencyTotals::adjustment($currencyTotals,$displayTotals,$currency,'total_charge') }}</td> @endif @if ($columns->total_exonerated->visible) <td>{{ \Modules\Report\Services\DocumentCurrencyTotals::adjustment($currencyTotals,$displayTotals,$currency,'total_exonerated') }}</td> @endif @if ($columns->total_taxed->visible) <td>{{ \Modules\Report\Services\DocumentCurrencyTotals::adjustment($currencyTotals,$displayTotals,$currency,'total_taxed') }}</td> @endif <td></td> @if ($columns->total_igv->visible) <td>{{ \Modules\Report\Services\DocumentCurrencyTotals::adjustment($currencyTotals,$displayTotals,$currency,'total_igv') }}</td> @endif @if ($columns->total->visible) <td>{{ \Modules\Report\Services\DocumentCurrencyTotals::adjustment($currencyTotals,$displayTotals,$currency,'total') }}</td> @endif</tr>
+                            @endif
+                        @endforeach
                         <tr>
-                            <td colspan="{{$col_num}}"></td>
-                            <td>Totales VES</td>
+                            <td colspan="{{$col_num}}">Totales VES</td>
                             @if ($columns->total_charge->visible)
                             <td>{{\App\Support\Exact\Decimal::format($currencyTotals['VES']['total_charge'])}}</td>
                             @endif
@@ -527,8 +439,7 @@ $document_types=DocumentType::OnlyAvaibleDocuments()->get();
                             @endif
                         </tr>
                         <tr>
-                            <td colspan="{{$col_num}}"></td>
-                            <td>Totales USD</td>
+                            <td colspan="{{$col_num}}">Totales USD</td>
                             @if ($columns->total_charge->visible)
                             <td>{{\App\Support\Exact\Decimal::format($currencyTotals['USD']['total_charge'])}}</td>
                             @endif
@@ -585,6 +496,8 @@ $document_types=DocumentType::OnlyAvaibleDocuments()->get();
                         @php
                         $total_general_ves=\App\Support\Exact\Decimal::of(0);
                         $total_general_usd=\App\Support\Exact\Decimal::of(0);
+                        $display_general_ves=\App\Support\Exact\Decimal::of(0);
+                        $display_general_usd=\App\Support\Exact\Decimal::of(0);
                         @endphp
                         @foreach ($acum_documents as $document)
                             @foreach ($acum_series as $serie)
@@ -598,10 +511,23 @@ $document_types=DocumentType::OnlyAvaibleDocuments()->get();
                                     @php
                                         $total_general_ves=$total_general_ves->plus($serie['total_ves']);
                                         $total_general_usd=$total_general_usd->plus($serie['total_usd']);
+                                        $display_general_ves=$display_general_ves->plus(\App\Support\Exact\Decimal::format($serie['total_ves'],2,'.',''));
+                                        $display_general_usd=$display_general_usd->plus(\App\Support\Exact\Decimal::format($serie['total_usd'],2,'.',''));
                                     @endphp
                                 @endif
                             @endforeach
                         @endforeach
+                        @php
+                            $adjust_general_ves=\App\Support\Exact\Decimal::of(\App\Support\Exact\Decimal::format($total_general_ves,2,'.',''))->minus($display_general_ves);
+                            $adjust_general_usd=\App\Support\Exact\Decimal::of(\App\Support\Exact\Decimal::format($total_general_usd,2,'.',''))->minus($display_general_usd);
+                        @endphp
+                        @if (!$adjust_general_ves->isZero() || !$adjust_general_usd->isZero())
+                        <tr>
+                            <td style="padding: 5px; text-align: center;" colspan="2">Ajuste por redondeo de subtotales</td>
+                            <td style="padding: 5px; text-align: center;">{{\App\Support\Exact\Decimal::format($adjust_general_ves)}}</td>
+                            <td style="padding: 5px; text-align: center;">{{\App\Support\Exact\Decimal::format($adjust_general_usd)}}</td>
+                        </tr>
+                        @endif
                         <tr >
                             <td style="padding: 5px; text-align: center;" colspan="2">TOTAL GENERAL</td>
                             <td style="padding: 5px; text-align: center;">{{\App\Support\Exact\Decimal::format($total_general_ves)}}</td>

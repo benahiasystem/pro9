@@ -398,12 +398,14 @@ class DocumentTransform
         $fee = [];
         if (key_exists('cuotas', $inputs)) {
             foreach ($inputs['cuotas'] as $row) {
-                $fee[] = [
+                $transformed = [
                     'date' => $row['fecha'],
                     'currency_type_id' => $row['codigo_tipo_moneda'],
                     'amount' => $row['monto'],
                     'payment_method_type_id' => Functions::valueKeyInArray($row, 'codigo_metodo_de_pago'),
                 ];
+                if (array_key_exists('allocation_weight', $row)) $transformed['allocation_weight'] = $row['allocation_weight'];
+                $fee[] = $transformed;
             }
         }
 

@@ -112,9 +112,13 @@
          * @return \App\Http\Resources\Tenant\DispatchItemCollection
          */
         public function records(Request $request) {
-            $records = $this->getRecordsDispachesItem($request->all());
-
-            return new DispatchItemCollection($records->paginate(config('tenant.items_per_page')));
+            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            return \App\Support\Exact\ReadSnapshot::run((new DispatchItem())->getConnection(), function () use ($request) {
+                $records = $this->getRecordsDispachesItem($request->all())->paginate(config('tenant.items_per_page'));
+                $rows = \Modules\Report\Services\DispatchReportAmounts::rows($records->getCollection());
+                return (new DispatchItemCollection($records))->withResolved($rows);
+            });
+            // ######## FIN CALCULOS EXACTOS PRO9 ########
         }
 
         /**
@@ -200,7 +204,7 @@
             /** @var \Illuminate\Support\Collection $ids */
             $ids = $dispatch->select('dispatch_items.id as id')->get()->pluck('id')->unique();
 
-            return DispatchItem::wherein('id', $ids)->orderBy('dispatch_id', 'desc');
+            return DispatchItem::wherein('id', $ids)->orderBy('dispatch_id', 'desc')->orderBy('id', 'desc');
         }
 
         /**
@@ -224,7 +228,12 @@
             $company = Company::first();
             $establishment = ($request->establishment_id) ? Establishment::findOrFail($request->establishment_id)
                 : auth()->user()->establishment;
-            $records = $this->getRecordsDispachesItem($request->all())->get();
+            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            [$records, $reportRows] = \App\Support\Exact\ReadSnapshot::run((new DispatchItem())->getConnection(), function () use ($request) {
+                $records = $this->getRecordsDispachesItem($request->all())->get();
+                return [$records, \Modules\Report\Services\DispatchReportAmounts::rows($records)];
+            });
+            // ######## FIN CALCULOS EXACTOS PRO9 ########
             $params = $request->all();
             self::setParams($params);
             /*
@@ -233,7 +242,7 @@
                     */
 
             $pdf = PDF::loadView('report::guides.report_pdf',
-                                 compact('records', 'company', 'establishment', 'params'));
+                                 compact('records', 'company', 'establishment', 'params', 'reportRows'));
 
             $filename = 'Reporte_Consolidado_Items_Ordenes_Entrega_'.date('YmdHis');
 
@@ -297,18 +306,28 @@
          */
         public function totalsByItem(Request $request) {
 
-            $records = $this->getRecordsDispachesItem($request->all())->get()->groupBy('item_id');
+            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            return \App\Support\Exact\ReadSnapshot::run((new DispatchItem())->getConnection(), function () use ($request) {
+            $records = $this->getRecordsDispachesItem($request->all())->get()
+                ->groupBy(fn($line)=>json_encode([$line->item_id, \Modules\Report\Services\DispatchReportAmounts::unit($line)], JSON_THROW_ON_ERROR));
 
             return $records->map(function ($row, $key) {
+                $first = $row->first();
+                $unit = \Modules\Report\Services\DispatchReportAmounts::unit($first);
+                $quantity = \App\Support\Exact\Decimal::sum($row->map(fn($line)=>\App\Support\Exact\Decimal::readRequired($line,'quantity')));
 
                 return [
-                    'item_id'           => $key,
-                    'item_internal_id'  => $row->first()->relation_item->internal_id,
-                    'item_unit_type_id' => $row->first()->relation_item->unit_type_id,
-                    'item_description'  => $row->first()->item->description,
-                    'quantity'          => number_format($row->sum('quantity'), 4, '.', ''),
+                    'item_id'           => $first->item_id,
+                    'report_key'        => 'item:'.$key,
+                    'item_internal_id'  => $first->relation_item->internal_id ?? '',
+                    'item_unit_type_id' => $unit ?? 'Sin unidad',
+                    'item_description'  => $first->item->description ?? '',
+                    'quantity'          => \App\Support\Exact\Decimal::represent($quantity),
+                    'calculation_snapshot' => \App\Support\Exact\Decimal::snapshot(['quantity'=>$quantity]),
                 ];
             });
+            });
+            // ######## FIN CALCULOS EXACTOS PRO9 ########
 
         }
 
@@ -334,13 +353,19 @@
             $establishment = ($request->establishment_id) ? Establishment::findOrFail($request->establishment_id)
                 : auth()->user()->establishment;
 
-            $records = $this->getRecordsDispachesItem($request->all())->get();
+            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            [$records, $reportRows] = \App\Support\Exact\ReadSnapshot::run((new DispatchItem())->getConnection(), function () use ($request) {
+                $records = $this->getRecordsDispachesItem($request->all())->get();
+                return [$records, \Modules\Report\Services\DispatchReportAmounts::rows($records)];
+            });
+            // ######## FIN CALCULOS EXACTOS PRO9 ########
             $params = $request->all();
             self::setParams($params);
             $filename = 'Reporte_Consolidado_Items_Ordenes_Entrega_'.date('YmdHis');
 
             return (new GuidesConsolidatedExport())
                 ->records($records)
+                ->reportRows($reportRows)
                 ->company($company)
                 ->establishment($establishment)
                 ->params($params)

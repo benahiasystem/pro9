@@ -696,8 +696,8 @@ class SaleNoteController extends Controller
         */
 
         return [
-            'success' => true,
-            'message' => 'Email enviado correctamente.'
+            'success' => $sendIt,
+            'message' => $sendIt ? 'Email enviado correctamente.' : 'No se pudo enviar el correo. Revise la configuración y el registro de envíos.'
         ];
     }
 

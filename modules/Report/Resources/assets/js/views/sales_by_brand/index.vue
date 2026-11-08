@@ -24,50 +24,34 @@
                             <thead>
                                 <tr>
                                     <th>#</th>
-                                    <th>Marca</th>
-                                    <th>Unidades Vendidas
-                                        <el-tooltip
-                                            class="item"
-                                            content="cantidad de productos vendidos"
-                                            effect="dark"
-                                            placement="top"
-                                        >
-                                            <i class="fa fa-info-circle"></i>
-                                        </el-tooltip>
-                                    </th>
-                                    <th>Valor de venta 
-                                        <el-tooltip
-                                            class="item"
-                                            <!-- ########## INICIO CAMBIO IGV A IVA -->
-                                            content="SIN IVA"
-                                            <!-- ######### FIN CAMBIO IGV A IVA -->
-                                            effect="dark"
-                                            placement="top"
-                                        >
-                                            <i class="fa fa-info-circle"></i>
-                                        </el-tooltip>
-                                    </th>
-                                    <th>Utilidad generada</th>
+                                    <th>Marca actual</th>
+                                    <th>Unidad</th>
+                                    <th>Cantidad</th>
+                                    <th>Ventas con IVA (Bs.)</th>
+                                    <th>Ganancia estimada (Bs.)</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr v-for="(row, index) in records" :key="row.id">
                                     <td>{{ index + 1 }}</td>
                                     <td>{{ row.brand_name }}</td>
-                                    <td>{{ formatNumber(row.quantity_sold) }}</td>
-                                    <td>{{ formatNumber(row.total_sale_value) }}</td>
-                                    <td>{{ formatNumber(row.total_profit) }}</td>
+                                    <td>{{ row.unit_type_id || 'Sin unidad' }}</td>
+                                    <td>{{ row.quantity_sold }}</td>
+                                    <td>{{ row.display.total_sale_value }}</td>
+                                    <td>{{ row.display.total_profit }}</td>
                                 </tr>
                             </tbody>
                             <tfoot v-if="records.length">
                                 <tr>
-                                    <td colspan="2" class="text-right">TOTALES:</td>
-                                    <td>{{ formatNumber(totalQuantity) }}</td>
-                                    <td>{{ formatNumber(totalSaleValue) }}</td>
-                                    <td>{{ formatNumber(totalProfit) }}</td>
+                                    <td colspan="3" class="text-right">TOTALES:</td>
+                                    <td><div v-for="(quantity, unit) in quantitiesByUnit" :key="unit">{{ quantity }} {{ unit }}</div></td>
+                                    <td>{{ totalSaleValue }}</td>
+                                    <td>{{ totalProfit }}</td>
                                 </tr>
                             </tfoot>
                         </table>
+                        <p v-if="hasUnknownUnit">Las partidas sin unidad identificada no se incluyen en los totales de cantidad.</p>
+                        <p>La marca corresponde al catálogo actual; la ganancia es una estimación basada en compras o costos actuales.</p>
                     </div>
                 </div>
             </div>
@@ -77,6 +61,7 @@
 
 <script>
 import DataTableSalesByBrand from "../../components/DataTableSalesByBrand.vue";
+import { exactValue, exactSum } from '../../../../../../../resources/js/helpers/exchange-rate-math';
 
 export default {
     components: { DataTableSalesByBrand },
@@ -87,20 +72,20 @@ export default {
         };
     },
     computed: {
-        totalQuantity() {
-            return this.records.reduce((acc, item) => acc + Number(item.quantity_sold), 0)
+        hasUnknownUnit() { return this.records.some(row=>!row.unit_type_id) },
+        quantitiesByUnit() {
+            const groups = {};
+            this.records.forEach(row => {
+                if (!row.unit_type_id) return;
+                groups[row.unit_type_id] = (groups[row.unit_type_id] || []).concat([exactValue(row, 'quantity_sold')]);
+            });
+            return Object.fromEntries(Object.entries(groups).map(([unit, values])=>[unit, exactSum(values).decimal()]));
         },
         totalSaleValue() {
-            return this.records.reduce((acc, item) => acc + Number(item.total_sale_value), 0)
+            return exactSum(this.records.map(row=>exactValue(row, 'total_sale_value'))).final(2)
         },
         totalProfit() {
-            return this.records.reduce((acc, item) => acc + Number(item.total_profit), 0)
-        }
-    },
-    methods: {
-        formatNumber(value) {
-            if (value === null || value === undefined) return '';
-            return Number(value).toFixed(2);
+            return exactSum(this.records.map(row=>exactValue(row, 'total_profit'))).final(2)
         }
     }
 };

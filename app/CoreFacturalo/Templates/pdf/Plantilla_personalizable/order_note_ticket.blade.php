@@ -232,11 +232,7 @@
                 @if($show_fecha_vencimiento)
                     <small style="display:block; font-weight: normal; font-size: 7px;">
                         FV:
-                        @if(isset($row->relation_item->date_of_due))
-                            {{ $row->relation_item->date_of_due->format('Y-m-d') }}
-                        @else
-                            -
-                        @endif
+                        {{ $row->getSaleLotGroupDateDescription('Y-m-d') }}
                     </small>
                 @endif
                 @if($show_serie)

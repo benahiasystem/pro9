@@ -189,11 +189,14 @@
             $total_fusionado = \App\Support\Exact\Decimal::sum($fusionados->map(fn ($row) => \App\Support\Exact\Decimal::read($row, 'total')));
             $cantidad_fusionada_format = \App\Support\Exact\Decimal::represent($cantidad_fusionada);
         @endphp
+        @if(strlen($cantidad_fusionada_format) > 7)
+            <tr><td colspan="5" class="text-left desc-9">Cantidad: {{ $cantidad_fusionada_format }}</td></tr>
+        @endif
         <tr>
-            <td class="text-center desc-9 align-top">{{ $cantidad_fusionada_format }}</td>
+            <td class="text-center desc-9 align-top">{{ strlen($cantidad_fusionada_format) > 7 ? '' : $cantidad_fusionada_format }}</td>
             <td class="text-center desc-9 align-top">UND</td>
             <td class="text-left desc-9 align-top">Por consumo</td>
-            <td class="text-right desc-9 align-top">{{ \App\Support\Exact\PdfPrice::configured($cantidad_fusionada->isZero() ? 0 : $total_fusionado->dividedBy($cantidad_fusionada)) }}</td>
+            <td class="text-right desc-9 align-top"><span data-pdf-unit-price @if(\App\Support\Exact\PdfPrice::roundingChangesLine($cantidad_fusionada->isZero() ? 0 : $total_fusionado->dividedBy($cantidad_fusionada),$cantidad_fusionada,\App\Models\Tenant\Configuration::getDataDecimalQuantity())) data-pdf-group-rounded @endif>{{ \App\Support\Exact\PdfPrice::configured($cantidad_fusionada->isZero() ? 0 : $total_fusionado->dividedBy($cantidad_fusionada)) }}</span></td>
             <td class="text-right desc-9 align-top">{{ \App\Support\Exact\Decimal::format($total_fusionado) }}</td>
         </tr>
         @if($no_fusionados->count() === 0)
@@ -207,13 +210,13 @@
             $show_item_code = !empty($internal_id)
                 && mb_strpos(strip_tags((string) ($row->name_product_pdf ?: $row->item->description)), (string) $internal_id) === false;
         @endphp
+        @php $visible_quantity = \App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::read($row, 'quantity')); @endphp
+        @if(strlen($visible_quantity) > 7)
+            <tr><td colspan="5" class="text-left desc-9">Cantidad: {{ $visible_quantity }}</td></tr>
+        @endif
         <tr>
             <td class="text-center desc-9 align-top">
-                @if(((int)$row->quantity != $row->quantity))
-                    {{ $row->quantity }}
-                @else
-                    {{ number_format($row->quantity, 0) }}
-                @endif
+                {{ strlen($visible_quantity) > 7 ? '' : $visible_quantity }}
             </td>
             <td class="text-center desc-9 align-top">{{ $row->item->unit_type_id }}</td>
             <td class="text-left desc-9 align-top">
@@ -275,7 +278,7 @@
                     @endisset
                 </small>
             </td>
-            <td class="text-right desc-9 align-top">{{ $row->formatPdfUnitPrice() }}</td>
+            <td class="text-right desc-9 align-top"><span data-pdf-unit-price>{{ $row->formatPdfUnitPrice() }}</span></td>
             <td class="text-right desc-9 align-top">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($row, 'total'), 2) }}</td>
         </tr>
         <tr>
@@ -313,6 +316,7 @@
             </tr>
         @endif
 
+        <tr><td colspan="5" class="text-right font-bold desc" style="white-space: nowrap;">IVA: {{ $document->currency_type->symbol }} {{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_igv'), 2) }}</td></tr>
         @if($document->total_charge > 0 && $document->charges)
             <tr>
                 <td colspan="4" class="text-right font-bold desc">CARGOS ({{$document->getTotalFactor()}}%): {{ $document->currency_type->symbol }}</td>
@@ -321,21 +325,13 @@
         @endif
 
         <tr>
-            <td colspan="2" class="text-left font-bold desc" style="white-space: nowrap;">Productos: {{ rtrim(rtrim(number_format(collect($document->items)->sum(function ($item) { return (float) data_get($item, 'quantity', 0); }), 2, '.', ''), '0'), '.') }}</td>
-            <td colspan="2" class="text-right font-bold desc">TOTAL A PAGAR: {{ $document->currency_type->symbol }}</td>
+            <td colspan="5" class="text-left font-bold desc">Productos: {{ \App\Support\Exact\PdfQuantities::summary($document->items) }}</td>
+        </tr>
+        <tr>
+            <td colspan="4" class="text-right font-bold desc">TOTAL A PAGAR: {{ $document->currency_type->symbol }}</td>
             <td class="text-right font-bold desc">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total'), 2) }}</td>
         </tr>
 
-        @php
-            $change_payment = $document->getChangePayment();
-        @endphp
-
-        @if($change_payment < 0)
-            <tr>
-                <td colspan="4" class="text-right font-bold desc">VUELTO: {{ $document->currency_type->symbol }}</td>
-                <td class="text-right font-bold desc">{{ number_format(abs($change_payment),2, ".", "") }}</td>
-            </tr>
-        @endif
 
     </tbody>
 </table>

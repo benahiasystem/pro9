@@ -17,7 +17,10 @@ export function paymentConditionPayload(form) {
 // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
 
 export function collectionTarget(form) {
-    const amount = exactAmount(form.total_payable ?? form.total ?? '0')
+    // Read the original reactive property even when total_payable was added later
+    // to a legacy Vue 2 draft; otherwise the cached target can remain stale.
+    const total = form.total ?? '0'
+    const amount = exactAmount(form.total_payable ?? total)
     return amount.compare(0) < 0 ? '0.00' : amount.final(2)
 }
 

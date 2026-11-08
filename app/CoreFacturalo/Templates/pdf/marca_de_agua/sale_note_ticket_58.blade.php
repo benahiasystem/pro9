@@ -130,25 +130,16 @@
 <table class="full-width mt-10 mb-10">
     <thead class="">
     <tr>
-        <th class="border-top-bottom desc-9 text-left">CANT.</th>
-        <th class="border-top-bottom desc-9 text-left">UNIDAD</th>
-        <th class="border-top-bottom desc-9 text-left">DESCRIPCIÓN</th>
-        <th class="border-top-bottom desc-9 text-left">P.UNIT</th>
-        <th class="border-top-bottom desc-9 text-left">TOTAL</th>
+        <th colspan="5" class="border-top-bottom desc-9 text-left">DETALLE</th>
     </tr>
     </thead>
     <tbody>
     @foreach($document->items as $row)
+        @php $visible_quantity = \App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::read($row, 'quantity')); @endphp
         <tr>
-            <td class="text-center desc-9 align-top">
-                @if(((int)$row->quantity != $row->quantity))
-                    {{ $row->quantity }}
-                @else
-                    {{ number_format($row->quantity, 0) }}
-                @endif
-            </td>
-            <td class="text-center desc-9 align-top">{{ $row->item->unit_type_id }}</td>
-            <td class="text-left desc-9 align-top">
+            <td colspan="5" class="text-left desc-9 align-top">
+                <div>Cantidad: {{ $visible_quantity }} {{ $row->item->unit_type_id }}</div>
+                <div>
                 @if($row->name_product_pdf)
                     {!! \App\CoreFacturalo\Helpers\Template\TemplateHelper::formatNameProductPdfForTicket($row->name_product_pdf) !!}
                 @else
@@ -175,9 +166,21 @@
                      {{$item}}<br>
                  @endforeach
                 @endif
+                @foreach((array) ($row->item->IdLoteSelected ?? []) as $selectedLot)
+                    @php $lotCode = trim((string) data_get($selectedLot, 'code', '')); $lotExpiry = trim((string) data_get($selectedLot, 'date_of_due', '')); @endphp
+                    @if($lotCode !== '')
+                        <br/>Lote: {{ $lotCode }}@if($lotExpiry !== '') · FV: {{ $lotExpiry }}@endif
+                    @endif
+                @endforeach
+                @foreach((array) ($row->item->lots ?? []) as $serial)
+                    @if(data_get($serial, 'has_sale') && trim((string) data_get($serial, 'series', '')) !== '')
+                        <br/>Serie: {{ data_get($serial, 'series') }}
+                    @endif
+                @endforeach
+                </div>
+                <div>Precio unitario: <span data-pdf-unit-price>{{ $row->formatPdfUnitPrice() }}</span></div>
+                <div>Importe: {{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($row, 'total'), 2) }}</div>
             </td>
-            <td class="text-right desc-9 align-top">{{ $row->formatPdfUnitPrice() }}</td>
-            <td class="text-right desc-9 align-top">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($row, 'total'), 2) }}</td>
         </tr>
         <tr>
             <td colspan="5" class="border-bottom"></td>
@@ -219,12 +222,7 @@
                 <td class="text-right font-bold desc">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_discount_with_igv'), 2) }}</td>
             </tr>
         @endif
-        {{--<tr>
-            {{-- ########## INICIO CAMBIO IGV A IVA --}}
-            <td colspan="4" class="text-right font-bold desc">IVA: {{ $document->currency_type->symbol }}</td>
-            {{-- ######### FIN CAMBIO IGV A IVA --}}
-            <td class="text-right font-bold desc">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_igv'), 2) }}</td>
-        </tr>--}}
+        <tr><td colspan="5" class="text-right font-bold desc" style="white-space: nowrap;">IVA: {{ $document->currency_type->symbol }} {{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_igv'), 2) }}</td></tr>
         
         @if($document->total_charge > 0 && $document->charges)
             <tr>
@@ -234,20 +232,9 @@
         @endif
         
         <tr>
-            <td colspan="4" class="text-right font-bold desc">TOTAL A PAGAR: {{ $document->currency_type->symbol }}</td>
-            <td class="text-right font-bold desc">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total'), 2) }}</td>
+            <td colspan="5" class="text-right font-bold desc">TOTAL A PAGAR: {{ $document->currency_type->symbol }} {{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total'), 2) }}</td>
         </tr>
-        
-        @php
-            $change_payment = $document->getChangePayment();
-        @endphp
 
-        @if($change_payment < 0)
-            <tr>
-                <td colspan="4" class="text-right font-bold desc">VUELTO: {{ $document->currency_type->symbol }}</td>
-                <td class="text-right font-bold desc">{{ number_format(abs($change_payment),2, ".", "") }}</td>
-            </tr>
-        @endif
         
     </tbody>
 </table>

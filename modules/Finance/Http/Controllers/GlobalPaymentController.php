@@ -104,7 +104,7 @@ class GlobalPaymentController extends Controller
             $records->where('destination_id',$id);
         }
 
-        return $records->latest();
+        return $records->with('destination')->latest();
     }
 
 

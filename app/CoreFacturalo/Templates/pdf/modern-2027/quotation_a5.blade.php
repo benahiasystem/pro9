@@ -10,14 +10,8 @@
     $tittle = $document->pdf_title;
     $configurationInPdf= App\CoreFacturalo\Helpers\Template\TemplateHelper::getConfigurationInPdf();
 
-    $total_weight = 0;
-    $show_weight_attribute = $document->items->some(function($row) {
-        $at = (array)$row->attributes;
-        if (isset($row->attributes) && count(($at)) > 0) {
-            $attributes = (array)(($at)[0]);
-            return collect($attributes)->where('attribute_type_id', '5031');
-        }
-    });
+    $quotationWeight = \App\Support\Exact\QuotationPdfAmounts::weight($document->items);
+    $show_weight_attribute = $quotationWeight['has_weight'];
 @endphp
 <html>
 <head>
@@ -308,20 +302,11 @@
     @foreach($document->items as $row)
         @php
             $brand =  \App\CoreFacturalo\Helpers\Template\TemplateHelper::getBrandFormItem($row);;
-            $at = (array)$row->attributes;
-            if (isset($row->attributes) && count(($at)) > 0) {
-                $attributes = (array)(($at)[0]);
-                $total_weight += (float)($attributes['value'] ?? 0) * (float)$row->quantity;
-            }
 
         @endphp
         <tr>
             <td class="text-center align-top">
-                @if(((int)$row->quantity != $row->quantity))
-                    {{ $row->quantity }}
-                @else
-                    {{ number_format($row->quantity, 0) }}
-                @endif
+                {{ \App\Support\Exact\PdfQuantities::line($row) }}
             </td>
             <td class="text-center align-top">{{ $row->item->unit_type_id }}</td>
             <td class="text-left">
@@ -337,10 +322,15 @@
                     @endforeach
                 @endif
                 @if($row->discounts)
-                    @foreach($row->discounts as $dtos)
+                    @foreach(\App\Support\Exact\PdfAmounts::adjustments($row, 'discounts') as $dtos)
                         @if(!($dtos->from_global_distribution ?? false))
-                            <br/><span style="font-size: 9px">{{ ($dtos->is_amount ?? false) ? '' : ($dtos->factor * 100).'%' }} {{$dtos->description }}</span>
+                            <br/><span style="font-size: 9px">{{ ($dtos->is_amount ?? false) ? '' : \App\Support\Exact\PdfAmounts::adjustmentPercent($dtos).'%' }} {{$dtos->description }}</span>
                         @endif
+                    @endforeach
+                @endif
+                @if($row->charges)
+                    @foreach(\App\Support\Exact\PdfAmounts::adjustments($row, 'charges') as $charge)
+                        <br/><small>{{ $document->currency_type->symbol }} {{ \App\Support\Exact\PdfAmounts::adjustmentAmount($charge) }} ({{ \App\Support\Exact\PdfAmounts::adjustmentPercent($charge) }}%) {{ $charge->description }}</small>
                     @endforeach
                 @endif
                 @if($row->item->is_set == 1)
@@ -439,7 +429,7 @@
 @if ($show_weight_attribute)
     <table class="full-width">
         <tr>
-            <td colspan="{{ $colspan_total }}" class="text-left font-bold">Peso estimado: {{ number_format($total_weight, 2) }} Kg</td>
+            <td colspan="{{ $colspan_total }}" class="text-left font-bold">Peso estimado: {{ $quotationWeight['display'] }}</td>
         </tr>
     </table>
 @endif
@@ -476,15 +466,15 @@
     <td>
     <strong>PAGOS:</strong> </td></tr>
         @php
-            $payment = 0;
+            $quotationAmounts = \App\Support\Exact\QuotationPdfAmounts::values($document);
         @endphp
         @foreach($document->payments as $row)
             <tr><td>- @include('pdf.partials.quotation_receipt', ['row' => $row, 'document' => $document])</td></tr>
-            @php
-                $payment += (float) $row->payment;
-            @endphp
         @endforeach
-        <tr><td><strong>SALDO:</strong> {{ $document->currency_type->symbol }} {{ number_format($document->total - $payment, 2) }}</td>
+        @if($quotationAmounts['has_rounding'])
+        <tr><td>Ajuste por redondeo del saldo: {{ $document->currency_type->symbol }} {{ $quotationAmounts['rounding'] }}</td></tr>
+        @endif
+        <tr><td><strong>SALDO:</strong> {{ $document->currency_type->symbol }} {{ $quotationAmounts['balance'] }}</td>
     </tr>
 
 </table>

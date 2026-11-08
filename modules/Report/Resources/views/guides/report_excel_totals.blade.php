@@ -11,7 +11,7 @@
 </head>
 <body>
 <div>
-    <p align="center" class="title"><strong>Consolidado de items por cliente/vendedor - Totales</strong></p>
+    <p align="center" class="title"><strong>Órdenes de entrega: totales por artículo</strong></p>
 </div>
 <div style="margin-top:20px; margin-bottom:20px;">
     <table>
@@ -75,7 +75,7 @@
                         <td class="celda">{{$value['item_internal_id']}}</td>
                         <td class="celda-item">{{$value['item_description']}}</td>
                         <td class="celda">{{$value['item_unit_type_id']}}</td>
-                        <td class="celda">{{$value['quantity']}}</td>
+                        <td data-type="s" style="mso-number-format:'\@'" class="celda">{{$value['quantity']}}</td>
                     </tr>
                 @endforeach
                 </tbody>

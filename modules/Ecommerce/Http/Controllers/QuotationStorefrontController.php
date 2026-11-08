@@ -557,7 +557,9 @@ class QuotationStorefrontController extends Controller
         try {
             $company = Company::active();
             $mailable = new QuotationEmail($company, $quotation);
-            EmailController::SendMail($email, $mailable, $quotation->id, 3);
+            if (!EmailController::SendMail($email, $mailable, $quotation->id, 3)) {
+                Log::warning('No se pudo enviar email de cotización ecommerce', ['quotation_id'=>$quotation->id]);
+            }
         } catch (Exception $e) {
             Log::warning('No se pudo enviar email de cotización ecommerce', [
                 'quotation_id' => $quotation->id,

@@ -42,6 +42,7 @@ class InventoryVoidedServiceProvider extends ServiceProvider
 
                     foreach ($document['items'] as $detail) {
                         if (in_array($document->getOriginal('state_type_id'),['09','11'],true)) continue;
+                        if (($detail->calculation_snapshot['inputs']['inventory_service_without_movement'] ?? false) === true) continue;
                         if (\App\Services\Fiscal\DeliveryOrderInvoiceInventory::apply($detail,1)) continue;
                         // dd($detail['item']->presentation);
 
@@ -50,12 +51,13 @@ class InventoryVoidedServiceProvider extends ServiceProvider
                             $warehouse = ($detail->warehouse_id) ? $this->findWarehouse($this->findWarehouseById($detail->warehouse_id)->establishment_id) : $this->findWarehouse($document['establishment_id']);
 
                             $presentationQuantity = (!empty($detail['item']->presentation)) ? $detail['item']->presentation->quantity_unit : 1;
+                            $quantity=$detail->exactValue('quantity')->multipliedBy(\App\Support\Exact\Decimal::of($presentationQuantity));
 
-                            $this->createInventoryKardex($document, $detail['item_id'], $detail['quantity'] * $presentationQuantity, $warehouse->id);
+                            $this->createInventoryKardex($document, $detail['item_id'], $quantity, $warehouse->id);
 
                             if(!$detail->document->sale_note_id && !$detail->document->order_note_id && !$detail->document->dispatch_id && !$detail->document->sale_notes_relateds){
 
-                                $this->updateStock($detail['item_id'], $detail['quantity'] * $presentationQuantity, $warehouse->id);
+                                $this->updateStock($detail['item_id'], $quantity, $warehouse->id);
 
                             }else{
 
@@ -63,12 +65,12 @@ class InventoryVoidedServiceProvider extends ServiceProvider
 
                                     if(!$detail->document->dispatch->discountsPhysicalStock()){
                                         // $warehouse = $this->findWarehouse($document['establishment_id']);
-                                        $this->updateStock($detail['item_id'], $detail['quantity'] * $presentationQuantity, $warehouse->id);
+                                        $this->updateStock($detail['item_id'], $quantity, $warehouse->id);
                                     }
                                 }
                             }
 
-                            $this->updateDataLots($detail);
+                            if (!$detail->document->order_note_id) $this->updateDataLots($detail);
 
                         }
                         else{
@@ -105,6 +107,7 @@ class InventoryVoidedServiceProvider extends ServiceProvider
 
                 foreach ($document->items as $document_item)
                 {
+                    if (($document_item->calculation_snapshot['inputs']['inventory_service_without_movement'] ?? false) === true) continue;
                     if(!$document_item->item->is_set)
                     {
                         $warehouse = ($document_item->warehouse_id) ? $this->findWarehouse($this->findWarehouseById($document_item->warehouse_id)->establishment_id) : $this->findWarehouse($document->establishment_id);
@@ -209,21 +212,30 @@ class InventoryVoidedServiceProvider extends ServiceProvider
     private function voided_order_note(){
 
         OrderNote::updated(function ($order_note) {
-
+            // ######## INICIO ANULACIÓN EXACTA DE PEDIDO ########
+            if (!$order_note->wasChanged('state_type_id') || in_array((string)$order_note->getOriginal('state_type_id'),['09','11'],true)) return;
             if(in_array($order_note->state_type_id, [ '09', '11' ], true)){
-
-                $warehouse = $this->findWarehouse($order_note->establishment_id);
+                $moves=!$order_note->sale_note_id && !$order_note->order_note_id && !$order_note->dispatch_id;
+                if (!$moves && $order_note->dispatch) $moves=!$order_note->dispatch->discountsPhysicalStock();
+                if (!$moves) return;
 
                 foreach ($order_note->items as $order_note_item) {
+                    if (($order_note_item->calculation_snapshot['inputs']['inventory_service_without_movement'] ?? false) === true) continue;
+                    if (\App\Services\Fiscal\OrderPackInventory::apply($order_note_item,$order_note_item->exactValue('quantity'))) continue;
+                    if (\App\Services\Fiscal\OrderTrackedInventory::apply($order_note_item,1)) continue;
+                    $recordedWarehouse = $order_note_item->calculation_snapshot['inputs']['order_inventory_warehouse_id'] ?? null;
+                    $warehouse = $recordedWarehouse ? $this->findWarehouseById($recordedWarehouse) : $this->findWarehouse($order_note->establishment_id);
 
                     $presentationQuantity = (!empty($order_note_item->item->presentation)) ? $order_note_item->item->presentation->quantity_unit : 1;
 
-                    $this->createInventoryKardex($order_note, $order_note_item->item_id, $order_note_item->quantity * $presentationQuantity, $warehouse->id);
-                    $this->updateStock($order_note_item->item_id, $order_note_item->quantity * $presentationQuantity, $warehouse->id);
+                    $quantity=$order_note_item->exactValue('quantity')->multipliedBy(\App\Support\Exact\Decimal::of($presentationQuantity));
+                    $this->createInventoryKardex($order_note, $order_note_item->item_id, $quantity, $warehouse->id);
+                    $this->updateStock($order_note_item->item_id, $quantity, $warehouse->id);
 
                 }
 
             }
+            // ######## FIN ANULACIÓN EXACTA DE PEDIDO ########
 
         });
 
@@ -257,6 +269,7 @@ class InventoryVoidedServiceProvider extends ServiceProvider
                         $this->updateStock($detail->item_id, $detail->quantity, $warehouse->id);
 
                         $this->updateDataLots($detail);
+                        \App\Services\Fiscal\DeliveryOrderGlobalInventory::apply($detail,1);
                     }
             }
         });

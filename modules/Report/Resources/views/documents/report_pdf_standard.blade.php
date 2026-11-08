@@ -96,11 +96,12 @@
                 </tr>
             </table>
         </div>
-        @if(!empty($records))
+        @if($records->isNotEmpty())
             <div class="">
                 <div class=" ">
                     @php
                         $currencyTotals = \Modules\Report\Services\DocumentCurrencyTotals::empty();
+                        $displayTotals = \Modules\Report\Services\DocumentCurrencyTotals::empty();
                         $serie_affec = '';
                     @endphp
                     <table class="" style="font-size:10px;">
@@ -214,32 +215,9 @@
 
 
 
-                                    @if($signal == '07')
-
-                                        @if(in_array($value->state_type_id,['09','11']))
-                                            <td class="celda">0</td>
-                                            <td class="celda">0</td>
-                                            <td class="celda">0</td>
-                                        @else
-                                            <td class="celda">{{$signal == '07' ? "-" : ""  }}{{\App\Support\Exact\Decimal::format(\App\Support\Exact\Decimal::read($value, 'total_taxed'), 2, '.', '')}}</td>
-                                            <td class="celda">{{$signal == '07' ? "-" : ""  }}{{\App\Support\Exact\Decimal::format(\App\Support\Exact\Decimal::read($value, 'total_igv'), 2, '.', '')}}</td>
-                                            <td class="celda">{{$signal == '07' ? "-" : ""  }}{{\App\Support\Exact\Decimal::format(\App\Support\Exact\Decimal::read($value, 'total'))}}</td>
-                                        @endif
-
-                                    @else
-                                        <td class="celda">{{ in_array($value->state_type_id,['09','11']) ? '0.00' : \App\Support\Exact\Decimal::format(\App\Support\Exact\Decimal::read($value, 'total_taxed'), 2, '.', '')}}</td>
-                                        <td class="celda">{{ in_array($value->state_type_id,['09','11']) ? '0.00' : \App\Support\Exact\Decimal::format(\App\Support\Exact\Decimal::read($value, 'total_igv'), 2, '.', '')}}</td>
-                                        <td class="celda">{{ in_array($value->state_type_id,['09','11']) ? '0.00' : \App\Support\Exact\Decimal::format(\App\Support\Exact\Decimal::read($value, 'total'))}}</td>
-
-                                    @endif
-
-
-
-                                    @php
-                                        $value->total_taxed = in_array($value->state_type_id,['09','11']) ? 0 : $value->total_taxed;
-                                        $value->total_igv = in_array($value->state_type_id,['09','11']) ? 0 : $value->total_igv;
-                                        $value->total = in_array($value->state_type_id,['09','11']) ? 0 : $value->total;
-                                    @endphp
+                                    <td class="celda">{{ \App\Support\Exact\Decimal::format(\Modules\Report\Services\DocumentReportLines::monetary($value, 'total_taxed'),2,'.','') }}</td>
+                                    <td class="celda">{{ \App\Support\Exact\Decimal::format(\Modules\Report\Services\DocumentReportLines::monetary($value, 'total_igv'),2,'.','') }}</td>
+                                    <td class="celda">{{ \App\Support\Exact\Decimal::format(\Modules\Report\Services\DocumentReportLines::monetary($value, 'total'),2,'.','') }}</td>
                                 </tr>
                                 @php
 
@@ -252,7 +230,13 @@
                                 @php
 
                                     $currencyTotals = \Modules\Report\Services\DocumentCurrencyTotals::add($currencyTotals, $value);
+                            $displayTotals = \Modules\Report\Services\DocumentCurrencyTotals::addDisplayed($displayTotals, $value);
                                 @endphp
+                            @endforeach
+                            @foreach (['VES','USD'] as $currency)
+                                @if (\Modules\Report\Services\DocumentCurrencyTotals::hasAdjustment($currencyTotals,$displayTotals,$currency,['total_taxed','total_igv','total']))
+                                <tr><td colspan="17"></td><td>Ajuste por redondeo {{ $currency }}</td><td>{{ \Modules\Report\Services\DocumentCurrencyTotals::adjustment($currencyTotals,$displayTotals,$currency,'total_taxed') }}</td> <td>{{ \Modules\Report\Services\DocumentCurrencyTotals::adjustment($currencyTotals,$displayTotals,$currency,'total_igv') }}</td> <td>{{ \Modules\Report\Services\DocumentCurrencyTotals::adjustment($currencyTotals,$displayTotals,$currency,'total') }}</td></tr>
+                                @endif
                             @endforeach
                             <tr>
                                 <td class="celda" colspan="17"></td>

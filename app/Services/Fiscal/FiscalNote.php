@@ -44,9 +44,11 @@ final class FiscalNote
         return D::represent(self::remainingExact($invoice, $field));
     }
 
-    public static function remainingExact(Document $invoice, string $field): \Brick\Math\BigRational
+    public static function remainingExact(Document $invoice, string $field, bool $current = false): \Brick\Math\BigRational
     {
-        $used = $invoice->exists ? D::sum(self::activeCredits($invoice)->get()->map(fn ($r) => $r->exactValue($field))) : D::of(0);
+        $query=self::activeCredits($invoice);
+        if ($current) $query->lockForUpdate();
+        $used = $invoice->exists ? D::sum($query->get()->map(fn ($r) => $r->exactValue($field))) : D::of(0);
         $remaining = $invoice->exactValue($field)->minus($used);
         return $remaining->isNegative() ? D::of(0) : $remaining;
     }
@@ -116,15 +118,21 @@ final class FiscalNote
     public static function context(Document $invoice): array
     {
         $reason = self::reason($invoice);
+        // ######## INICIO SALDO ACREDITABLE EXACTO ########
+        $creditAvailable=D::max(0, $invoice->exactValue('total')->minus(D::sum($invoice->taxes->where('tax_kind','IGTF')->map(fn ($t) => $t->exactValue('amount'))))->minus(D::sum(self::activeCredits($invoice)->get()->map(fn ($r) => $r->exactValue('total')))));
         return ['can_create'=>$reason === null,'block_reason'=>$reason,'control_number'=>$invoice->control_number,
-            'credit_available'=>D::represent(D::max(0, $invoice->exactValue('total')->minus(D::sum($invoice->taxes->where('tax_kind','IGTF')->map(fn ($t) => $t->exactValue('amount'))))->minus(D::sum(self::activeCredits($invoice)->get()->map(fn ($r) => $r->exactValue('total')))))),
+            'credit_available'=>D::represent($creditAvailable),'calculation_snapshot'=>D::snapshot(['credit_available'=>$creditAvailable]),
+            // ######## FIN SALDO ACREDITABLE EXACTO ########
             'items'=>array_values(array_map(function ($r) {
-                $allocations=FiscalNoteInventory::snapshot($r['line'],$r['remaining_quantity'],[]);
+                // ######## INICIO CONTEXTO EXACTO DE LOTES ########
+                $allocations=FiscalNoteInventory::snapshot($r['line'],D::read($r,'remaining_quantity'),[]);
+                // ######## FIN CONTEXTO EXACTO DE LOTES ########
                 return ['id'=>$r['line']->id, 'description'=>$r['line']->item->description,
                     'quantity'=>$r['line']->quantity,'remaining_quantity'=>$r['remaining_quantity'], 'remaining_total'=>$r['remaining_total'], 'calculation_snapshot'=>$r['calculation_snapshot'],
                     'iva_rate'=>$r['line']->iva_rate, 'unit_type_id'=>$r['line']->item->unit_type_id,
                     'serials'=>array_map(fn ($s)=>['id'=>$s['id'],'series'=>$s['series']],$allocations['lots'] ?? []),
-                    'lots'=>array_map(fn ($l)=>['id'=>$l['id'],'quantity'=>$l['compromise_quantity']],$allocations['IdLoteSelected'] ?? [])];
+                    'lots'=>array_map(fn ($l)=>['id'=>$l['id'],'quantity'=>$l['compromise_quantity'],
+                        'calculation_snapshot'=>D::snapshot(['quantity'=>$l['compromise_quantity_exact'] ?? $l['compromise_quantity']])],$allocations['IdLoteSelected'] ?? [])];
             }, self::entitlements($invoice))),
             'notes'=>Note::where('affected_document_id',$invoice->id)->get()->map(fn ($n)=>[
                 'id'=>$n->document_id,'number'=>$n->document->number_full,'type'=>$n->note_type,'total'=>$n->document->total,
@@ -207,7 +215,7 @@ final class FiscalNote
         $entitlements = self::entitlements($invoice);
         $posted = $input['items'] ?? [];
         if ($credit && $reasonId === '01') $posted = array_map(fn ($r)=>['affected_document_item_id'=>$r['line']->id,
-            'quantity'=>$r['remaining_quantity'] ?: 1,'adjustment_amount'=>$r['remaining_total']], array_filter($entitlements,fn ($r)=>$r['remaining_total'] > 0 || $r['remaining_quantity'] > 0));
+            'quantity'=>$r['remaining_quantity'] ?: 1,'adjustment_amount'=>$r['remaining_total']], array_filter($entitlements,fn ($r)=>D::read($r,'remaining_total')->isGreaterThan(0) || D::read($r,'remaining_quantity')->isGreaterThan(0)));
         if (!$posted) FiscalAmounts::error('items','Añada al menos una partida con un ajuste positivo.');
         $seen=[]; $rows=[];
         foreach ($posted as $index=>$row) {
@@ -260,6 +268,9 @@ final class FiscalNote
                 if ($credit || $reasonId === '02') FiscalAmounts::error("items.$index",'Seleccione una partida de la factura original.');
                 $item=\App\Models\Tenant\Item::findOrFail($row['item_id'] ?? 0);
                 if ($item->unit_type_id !== 'SERV') FiscalAmounts::error("items.$index",'Los cargos de intereses o despacho requieren un servicio.');
+                // The service charge is one server-defined unit at the requested adjustment amount.
+                // Historical fractions and alternate price/quantity inputs are not authoritative here.
+                unset($row['calculation_snapshot'], $row['quantity_input'], $row['price_input']);
                 $row['item']=$item->toArray(); $row['quantity']=1;
                 $row['unit_price']=$row['adjustment_amount'] ?? $row['unit_price'] ?? 0;
                 $row['discounts']=[]; $row['charges']=[]; $row['inventory_quantity']=0;
@@ -277,10 +288,14 @@ final class FiscalNote
     {
         if (!self::ordinary($note)) return;
         $invoice=$note->note->affected_document;
-        if ($note->total <= 0) FiscalAmounts::error('total','La nota requiere un importe positivo.');
-        if ($note->document_type_id === '07' && self::credits($invoice) > $invoice->total-$invoice->taxes->where('tax_kind','IGTF')->sum('amount')+0.005) FiscalAmounts::error('total','Las NC acumuladas superan el importe comercial de la factura.');
+        if ($note->exactValue('total')->isLessThanOrEqualTo(0)) FiscalAmounts::error('total','La nota requiere un importe positivo.');
+        if ($note->document_type_id === '07') {
+            $credits=D::sum(self::activeCredits($invoice)->get()->map(fn($credit)=>$credit->exactValue('total')));
+            $igtf=D::sum($invoice->taxes->where('tax_kind','IGTF')->map(fn($tax)=>D::read($tax,'amount')));
+            if ($credits->isGreaterThan($invoice->exactValue('total')->minus($igtf)->plus('0.005'))) FiscalAmounts::error('total','Las NC acumuladas superan el importe comercial de la factura.');
+        }
         FiscalDocumentPersistence::updateSettlementState($invoice);
-        \App\Models\Tenant\CashDocumentCredit::where('document_id',$invoice->id)->update(['status'=>$invoice->fresh()->balance <= 0.005 ? 'PROCESSED':'PENDING']);
+        \App\Models\Tenant\CashDocumentCredit::where('document_id',$invoice->id)->update(['status'=>$invoice->fresh()->exactBalance()->isLessThanOrEqualTo('0.005') ? 'PROCESSED':'PENDING']);
         DocumentEmissionView::invalidate();
     }
 }

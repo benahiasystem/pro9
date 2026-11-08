@@ -2728,6 +2728,7 @@ const RemoteSlot = {
 export default {
     props: [
         "idUser",
+        "initialContingency",
         "typeUser",
         "configuration",
         "documentId",
@@ -2816,7 +2817,7 @@ export default {
             pinnedBarInstance: null,
             pinnedBarReady: false,
             isVisible: false,
-            is_contingency: false,
+            is_contingency: Boolean(this.initialContingency),
             focus_on_client: false,
             dateValid: false,
             input_person: {},
@@ -2891,7 +2892,6 @@ export default {
             enabled_discount_global: false,
             user: null,
             is_receivable: false,
-            is_contingency: false,
             select_first_document_type_03: false,
             customer_addresses: [],
             payment_destinations: [],
@@ -3966,6 +3966,8 @@ export default {
                 total_taxes: 0,
                 total_value: 0,
                 total: 0,
+                total_payable: 0,
+                settlement_adjustment: 0,
                 subtotal: 0,
 
                 operation_type_id: null,
@@ -5920,7 +5922,7 @@ export default {
                 .catch(error => {
                     if (error.response && error.response.status === 422) {
                         const data = error.response.data || {};
-                        this.errors = data.errors || data;
+                        this.errors = data.errors || (data.message && typeof data.message === 'object' ? data.message : data);
                         const firstLotError = this.firstValidationError(
                             this.errors,
                             "IdLoteSelected"

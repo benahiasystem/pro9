@@ -275,15 +275,8 @@
     $show_due = $document->items->contains(function ($row) {
         return !empty(optional($row->relation_item)->date_of_due);
     });
-    $total_weight = 0;
-    $show_weight_attribute = $document->items->some(function($row) {
-        $at = (array)$row->attributes;
-        if (isset($row->attributes) && count(($at)) > 0) {
-            $attributes = (array)(($at)[0]);
-            return collect($attributes)->where('attribute_type_id', '5031');
-        }
-        return false;
-    });
+    $quotationWeight = \App\Support\Exact\QuotationPdfAmounts::weight($document->items);
+    $show_weight_attribute = $quotationWeight['has_weight'];
 
 @endphp
 
@@ -328,19 +321,10 @@
         <tr>
             @php
                 $internal_id = optional($row->item)->internal_id;
-                $at = (array)$row->attributes;
-                if (isset($row->attributes) && count(($at)) > 0) {
-                    $attributes = (array)(($at)[0]);
-                    $total_weight += (float)($attributes['value'] ?? 0) * (float)$row->quantity;
-                }
             @endphp
             <td class="text-center align-top">{{ $internal_id }}</td>
             <td class="text-center align-top">
-                @if(((int)$row->quantity != $row->quantity))
-                    {{ $row->quantity }}
-                @else
-                    {{ number_format($row->quantity, 0) }}
-                @endif
+                {{ \App\Support\Exact\PdfQuantities::line($row) }}
             </td>
             <td class="text-center align-top">{{ $row->item->unit_type_id }}</td>
             <td class="text-left align-top">
@@ -363,16 +347,16 @@
                     @endforeach
                 @endif
                 @if($row->discounts)
-                    @foreach($row->discounts as $dtos)
+                    @foreach(\App\Support\Exact\PdfAmounts::adjustments($row, 'discounts') as $dtos)
                         @if(!($dtos->from_global_distribution ?? false))
-                            <br/><span style="font-size: 9px">{{ ($dtos->is_amount ?? false) ? '' : ($dtos->factor * 100).'%' }} {{$dtos->description }}</span>
+                            <br/><span style="font-size: 9px">{{ ($dtos->is_amount ?? false) ? '' : \App\Support\Exact\PdfAmounts::adjustmentPercent($dtos).'%' }} {{$dtos->description }}</span>
                         @endif
                     @endforeach
                 @endif
 
                 @if($row->charges)
-                    @foreach($row->charges as $charge)
-                        <br/><span style="font-size: 9px">{{ $document->currency_type->symbol}} {{ $charge->amount}} ({{ $charge->factor * 100 }}%) {{$charge->description }}</span>
+                    @foreach(\App\Support\Exact\PdfAmounts::adjustments($row, 'charges') as $charge)
+                        <br/><span style="font-size: 9px">{{ $document->currency_type->symbol}} {{ \App\Support\Exact\PdfAmounts::adjustmentAmount($charge) }} ({{ \App\Support\Exact\PdfAmounts::adjustmentPercent($charge) }}%) {{$charge->description }}</span>
                     @endforeach
                 @endif
 
@@ -478,7 +462,7 @@
             <td class="text-right font-bold">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_igv'), 2) }}</td>
         </tr>
         <tr>
-            <td colspan="{{ ceil(($colspan_total + 1) / 2) - 1 }}" class="text-left font-bold" style="white-space: nowrap;">Productos: {{ rtrim(rtrim(number_format(collect($document->items)->sum(function ($item) { return (float) data_get($item, 'quantity', 0); }), 2, '.', ''), '0'), '.') }}</td>
+            <td colspan="{{ ceil(($colspan_total + 1) / 2) - 1 }}" class="text-left font-bold">Productos: {{ \App\Support\Exact\PdfQuantities::summary($document->items) }}</td>
             <td colspan="{{ floor(($colspan_total + 1) / 2) }}" class="text-right font-bold">TOTAL A PAGAR: {{ $document->currency_type->symbol }}</td>
             <td class="text-right font-bold">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total'), 2) }}</td>
         </tr>
@@ -487,7 +471,7 @@
 @if ($show_weight_attribute)
     <table class="full-width">
         <tr>
-            <td colspan="{{ $colspan_total }}" class="text-left font-bold">Peso estimado: {{ number_format($total_weight, 2) }} Kg</td>
+            <td colspan="{{ $colspan_total }}" class="text-left font-bold">Peso estimado: {{ $quotationWeight['display'] }}</td>
         </tr>
     </table>
 @endif
@@ -542,15 +526,15 @@
     <td>
     <strong>PAGOS:</strong> </td></tr>
         @php
-            $payment = 0;
+            $quotationAmounts = \App\Support\Exact\QuotationPdfAmounts::values($document);
         @endphp
         @foreach($document->payments as $row)
             <tr><td>- @include('pdf.partials.quotation_receipt', ['row' => $row, 'document' => $document])</td></tr>
-            @php
-                $payment += (float) $row->payment;
-            @endphp
         @endforeach
-        <tr><td><strong>SALDO:</strong> {{ $document->currency_type->symbol }} {{ number_format($document->total - $payment, 2) }}</td>
+        @if($quotationAmounts['has_rounding'])
+        <tr><td>Ajuste por redondeo del saldo: {{ $document->currency_type->symbol }} {{ $quotationAmounts['rounding'] }}</td></tr>
+        @endif
+        <tr><td><strong>SALDO:</strong> {{ $document->currency_type->symbol }} {{ $quotationAmounts['balance'] }}</td>
     </tr>
 
 </table>

@@ -21,15 +21,9 @@
 
     $m27_seller = strtoupper(optional($document->seller)->name ?: optional($document->user)->name ?? '');
 
-    $m27_igv_percentage = collect($document->items)
-        ->map(function ($it) { return (float) ($it->percentage_igv ?? 0); })
-        ->filter()
-        ->max();
-    $m27_igv_percentage = $m27_igv_percentage ? rtrim(rtrim(number_format($m27_igv_percentage, 2, '.', ''), '0'), '.') : null;
+    $m27_igv_percentage = \App\Support\Exact\PdfAmounts::singleTaxRate($document->items);
 
-    $m27_total_products = rtrim(rtrim(number_format(collect($document->items)->sum(function ($item) {
-        return (float) data_get($item, 'quantity', 0);
-    }), 2, '.', ''), '0'), '.');
+    $m27_total_products = \App\Support\Exact\PdfQuantities::summary($document->items);
 
     $m27_barcode = preg_replace('/[^0-9A-Za-z\-]/', '', (string) $tittle);
 
@@ -226,8 +220,10 @@
 <table class="full-width mt-10 mb-10">
     <thead>
     <tr>
-        <th class="m27-th m27-th-line text-left" width="13%">Cant</th>
-        <th class="m27-th m27-th-line text-left" width="59%">Descripción</th>
+        @if(!($configuration['quotation_narrow_ticket'] ?? false))
+            <th class="m27-th m27-th-line text-left" width="13%">Cant</th>
+        @endif
+        <th class="m27-th m27-th-line text-left" width="{{ ($configuration['quotation_narrow_ticket'] ?? false) ? '72%' : '59%' }}">Descripción</th>
         <th class="m27-th m27-th-line text-right" width="28%">Total</th>
     </tr>
     </thead>
@@ -235,7 +231,7 @@
     @foreach($document->items as $row)
         @php
             $internal_id = optional($row->item)->internal_id;
-            $item_quantity = ((int)$row->quantity != $row->quantity) ? $row->quantity : number_format($row->quantity, 0);
+            $item_quantity = \App\Support\Exact\PdfQuantities::line($row);
             $use_name_product_pdf = !empty($row->item->name_product_pdf ?? null);
             $item_description = null;
             if (!$use_name_product_pdf) {
@@ -250,7 +246,9 @@
             }
         @endphp
         <tr>
-            <td class="m27-item text-left">{{ $item_quantity }}</td>
+            @if(!($configuration['quotation_narrow_ticket'] ?? false))
+                <td class="m27-item text-left">{{ $item_quantity }}</td>
+            @endif
             <td class="m27-item text-left">
                 @if($use_name_product_pdf)
                     {!! \App\CoreFacturalo\Helpers\Template\TemplateHelper::stripLeadingItemCode(\App\CoreFacturalo\Helpers\Template\TemplateHelper::formatNameProductPdfForTicket($row->item->name_product_pdf ?? ''), $internal_id) !!}
@@ -264,10 +262,15 @@
                     @endforeach
                 @endif
                 @if($row->discounts)
-                    @foreach($row->discounts as $dtos)
+                    @foreach(\App\Support\Exact\PdfAmounts::adjustments($row, 'discounts') as $dtos)
                         @if(!($dtos->from_global_distribution ?? false))
-                            <br/><small>{{ ($dtos->is_amount ?? false) ? '' : ($dtos->factor * 100).'%' }} {{$dtos->description }}</small>
+                            <br/><small>{{ ($dtos->is_amount ?? false) ? '' : \App\Support\Exact\PdfAmounts::adjustmentPercent($dtos).'%' }} {{$dtos->description }}</small>
                         @endif
+                    @endforeach
+                @endif
+                @if($row->charges)
+                    @foreach(\App\Support\Exact\PdfAmounts::adjustments($row, 'charges') as $charge)
+                        <br/><small>{{ $document->currency_type->symbol }} {{ \App\Support\Exact\PdfAmounts::adjustmentAmount($charge) }} ({{ \App\Support\Exact\PdfAmounts::adjustmentPercent($charge) }}%) {{ $charge->description }}</small>
                     @endforeach
                 @endif
                 @if($row->item->is_set == 1)
@@ -296,8 +299,11 @@
             </td>
             <td class="m27-item text-right font-bold">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($row, 'total'), 2) }}</td>
         </tr>
+        @if($configuration['quotation_narrow_ticket'] ?? false)
+            <tr><td colspan="2" class="m27-item-sub text-left">Cantidad: {{ $item_quantity }} {{ $row->item->unit_type_id }}</td></tr>
+        @endif
         <tr>
-            <td></td>
+            @if(!($configuration['quotation_narrow_ticket'] ?? false))<td></td>@endif
             <td colspan="2" class="m27-item-sub text-left">
                 @php
                     $item_unit_price = \App\Support\Exact\Decimal::read($row, 'unit_price');
@@ -362,7 +368,7 @@
         </tr>
     @endif
     <tr>
-        <td colspan="2" class="m27-total-label">IGV{{ $m27_igv_percentage ? ' ('.$m27_igv_percentage.'%)' : '' }}:</td>
+        <td colspan="2" class="m27-total-label">IVA{{ $m27_igv_percentage ? ' ('.$m27_igv_percentage.'%)' : '' }}:</td>
         <td class="m27-total-value">{{ $document->currency_type->symbol }} {{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_igv'), 2) }}</td>
     </tr>
 
@@ -376,8 +382,11 @@
         <td class="m27-colspec" width="56%"></td>
         <td class="m27-colspec" width="28%"></td>
     </tr>
+    @if($configuration['quotation_narrow_ticket'] ?? false)
+        <tr><td colspan="3" class="m27-item-sub">Cantidad total: {{ $m27_total_products }}</td></tr>
+    @endif
     <tr>
-        <td class="m27-item-sub align-bottom" style="white-space: nowrap;">{{ $m27_total_products }} und.</td>
+        <td class="m27-item-sub align-bottom">@if(!($configuration['quotation_narrow_ticket'] ?? false)){{ $m27_total_products }}@endif</td>
         <td class="m27-grand-label">TOTAL:</td>
         <td class="m27-grand-value">{{ $document->currency_type->symbol }} {{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total'), 2) }}</td>
     </tr>
@@ -404,7 +413,7 @@
 
 @if($document->payments->count())
     @php
-        $payment = 0;
+        $quotationAmounts = \App\Support\Exact\QuotationPdfAmounts::values($document);
     @endphp
     <table class="full-width">
         <tr>
@@ -414,12 +423,12 @@
             <tr>
                 <td class="m27-value">&#8226; @include('pdf.partials.quotation_receipt', ['row' => $row, 'document' => $document])</td>
             </tr>
-            @php
-                $payment += (float) $row->payment;
-            @endphp
         @endforeach
+        @if($quotationAmounts['has_rounding'])
+        <tr><td class="m27-value">Ajuste por redondeo del saldo: {{ $document->currency_type->symbol }} {{ $quotationAmounts['rounding'] }}</td></tr>
+        @endif
         <tr>
-            <td class="m27-value"><span class="font-bold">SALDO:</span> {{ $document->currency_type->symbol }} {{ number_format($document->total - $payment, 2) }}</td>
+            <td class="m27-value"><span class="font-bold">SALDO:</span> {{ $document->currency_type->symbol }} {{ $quotationAmounts['balance'] }}</td>
         </tr>
     </table>
     @include('pdf.modern-2027.partials.rule')

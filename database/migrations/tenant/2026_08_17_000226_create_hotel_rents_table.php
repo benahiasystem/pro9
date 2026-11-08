@@ -22,7 +22,8 @@ use Illuminate\Support\Facades\DB;
  * - `payment_status` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL
  * - `output_date` date NOT NULL
  * - `output_time` varchar(8) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `arrears` int(11) NOT NULL DEFAULT '0'
+ * - `arrears` decimal(30,12) NOT NULL DEFAULT '0.000000000000'
+ * - `calculation_snapshot` json DEFAULT NULL
  * - `status` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'INICIADO'
  * - `establishment_id` int(10) unsigned DEFAULT NULL
  * - `created_at` timestamp NULL DEFAULT NULL
@@ -49,7 +50,8 @@ CREATE TABLE `hotel_rents` (
   `payment_status` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL,
   `output_date` date NOT NULL,
   `output_time` varchar(8) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `arrears` int(11) NOT NULL DEFAULT '0',
+  `arrears` decimal(30,12) NOT NULL DEFAULT '0.000000000000',
+  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   `status` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'INICIADO',
   `establishment_id` int(10) unsigned DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,

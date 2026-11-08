@@ -224,7 +224,11 @@
                         Lote: {{ $row->getSaleLotGroupCodeDescription() }}
                     </small>
                 @endif
-                @if($show_fecha_vencimiento && isset($row->relation_item->date_of_due))
+                @if($show_fecha_vencimiento && $row->getSaleLotGroupCodeDescription())
+                    <small style="display:block; font-weight: normal; font-size: 7px;">
+                        FV: {{ $row->getSaleLotGroupDateDescription('Y-m-d') }}
+                    </small>
+                @elseif($show_fecha_vencimiento && isset($row->relation_item->date_of_due))
                     <small style="display:block; font-weight: normal; font-size: 7px;">
                         FV: {{ $row->relation_item->date_of_due->format('Y-m-d') }}
                     </small>

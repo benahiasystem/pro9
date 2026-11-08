@@ -38,30 +38,26 @@ class ReportOrderNoteGeneralController extends Controller
 
     public function records(Request $request)
     {
-        $records = $this->getRecordsOrderNotes($request->all(), OrderNote::class);
-
-        return new OrderNoteGeneralCollection($records->paginate(config('tenant.items_per_page')));
+        return \App\Support\Exact\ReadSnapshot::run((new OrderNote)->getConnection(), function () use ($request) {
+            $records = $this->getRecordsOrderNotes($request->all(), OrderNote::class);
+            return (new OrderNoteGeneralCollection($records->paginate(config('tenant.items_per_page'))))->response($request);
+        });
     }
 
 
 
     public function getRecordsOrderNotes($request, $model){
-
-        // dd($request);
+        $request['date_range_type_id'] = $request['date_range_type_id'] ?? 'date_of_issue';
+        if (!in_array($request['date_range_type_id'], array_column($this->getDateRangeTypes(),'id'), true)) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['date_range_type_id'=>'Seleccione un campo de fecha permitido.']);
+        }
+        $request += ['order_state_type_id'=>null,'person_id'=>null,'seller_id'=>null];
 
         $records = $this->dataOrderNotes($request, $model);
 
         return $records;
 
     }
-
-    private function dataGeneral($request)
-    {
-
-        return OrderNote::SearchByDate($request)->latest();
-
-    }
-
 
     private function dataOrderNotes($request, $model)
     {
@@ -99,23 +95,24 @@ class ReportOrderNoteGeneralController extends Controller
 
 
     public function pdf(Request $request) {
-
+        return \App\Support\Exact\ReadSnapshot::run((new OrderNote)->getConnection(), function () use ($request) {
         $company = Company::first();
         $establishment = ($request->establishment_id) ? Establishment::findOrFail($request->establishment_id) : auth()->user()->establishment;
         $records = $this->getRecordsOrderNotes($request->all(), OrderNote::class)->get();
-        $params = $request->all();
+        $params = $request->all() + ['person_id'=>null];
 
-        $pdf = PDF::loadView('report::order_notes_general.report_pdf', compact("records", "company", "establishment", "params"));
+        $pdf = PDF::loadView('report::order_notes_general.report_pdf', compact("records", "company", "establishment", "params"))->setPaper('a4','landscape');
 
         $filename = 'Reporte_General_Pedidos_'.date('YmdHis');
 
         return $pdf->download($filename.'.pdf');
+        });
     }
 
     public function excel(Request $request) {
-
+        return \App\Support\Exact\ReadSnapshot::run((new OrderNote)->getConnection(), function () use ($request) {
         $company = Company::first();
-        $records = $this->dataGeneral($request->all())->get();
+        $records = $this->getRecordsOrderNotes($request->all(), OrderNote::class)->get();
         /* dd($records); */
         $documentHotelExport = new ReportOrderGeneralExport();
         $documentHotelExport
@@ -123,6 +120,7 @@ class ReportOrderNoteGeneralController extends Controller
             ->company($company);
 
         return $documentHotelExport->download('Reporte_General_Pedidos' . Carbon::now() . '.xlsx');
+        });
     }
 
 }

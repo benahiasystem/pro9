@@ -6,6 +6,7 @@ const generate = require('@babel/generator').default
 const moment = require('moment'), _ = require('lodash')
 const {purchasePaymentValidation, showPurchaseValidationError, markAutomaticPurchasePayment, isUntouchedAutomaticPurchasePayment} = require('./helpers/load-module.cjs')(path.resolve('resources/js/helpers/purchase-payment-validation.js'))
 const {exactAmount} = require('./helpers/load-module.cjs')(path.resolve('resources/js/helpers/exchange-rate-math.js'))
+const {documentTotals} = require('./helpers/load-module.cjs')(path.resolve('resources/js/helpers/exact-document.js'))
 const {suggestInstallments, suggestRemainingPayment} = require('./helpers/load-module.cjs')(path.resolve('resources/js/helpers/document-creation.js'))
 const {defaultCashForCurrency} = require('./helpers/load-module.cjs')(path.resolve('resources/js/helpers/payment-classification.js'))
 
@@ -15,8 +16,22 @@ function method(file, name) {
     const tree = parser.parse(source.script.content, {sourceType:'module'})
     const methods = tree.program.body.find(node=>node.type === 'ExportDefaultDeclaration').declaration.properties.find(node=>node.key.name === 'methods').value
     const entry = methods.properties.find(node=>node.key?.name === name)
-    return vm.runInNewContext(`({${generate(entry).code}}).${name}`, {purchasePaymentValidation, showPurchaseValidationError, markAutomaticPurchasePayment, isUntouchedAutomaticPurchasePayment, defaultCashForCurrency, exactAmount, suggestRemainingPayment, suggestInstallments, moment, _})
+    return vm.runInNewContext(`({${generate(entry).code}}).${name}`, {purchasePaymentValidation, showPurchaseValidationError, markAutomaticPurchasePayment, isUntouchedAutomaticPurchasePayment, defaultCashForCurrency, exactAmount, documentTotals, suggestRemainingPayment, suggestInstallments, moment, _})
 }
+
+test('purchase settlement form totals retain exact cents and fractional amounts',()=>{
+    const calculate=method('resources/js/views/tenant/purchase-settlements/form.vue','calculateTotal')
+    const rows=['0.1','0.2'].map(total=>({affectation_igv_type_id:'20',total_base_igv:total,total_value:total,total_igv:'0',total}))
+    let calls=0
+    const ctx={form:{items:rows},calculatePayments(){calls++},calculateFee(){calls++}}
+    calculate.call(ctx)
+    assert.equal(ctx.form.total,'0.3'); assert.equal(ctx.form.total_exonerated,'0.3'); assert.equal(calls,2)
+    rows[0].calculation_snapshot={values:{total_base_igv:{n:'1',d:'3'},total_value:{n:'1',d:'3'},total:{n:'1',d:'3'}}}
+    rows[0].total_base_igv=rows[0].total_value=rows[0].total='0.333333333333'
+    calculate.call(ctx)
+    assert.equal(ctx.form.calculation_snapshot.values.total.n,'8')
+    assert.equal(ctx.form.calculation_snapshot.values.total.d,'15')
+})
 
 test('purchase payment amounts compare decimal fractions without float errors',()=>{
     const validate = (values,total='0.30') => purchasePaymentValidation(values.map(payment=>({payment})),total)
@@ -26,7 +41,7 @@ test('purchase payment amounts compare decimal fractions without float errors',(
     assert.equal(validate(['0.1'],'invalido').error_by_item,1)
 })
 
-for (const file of ['resources/js/views/tenant/purchases/form.vue','resources/js/views/tenant/purchases/form_edit.vue']) {
+for (const file of ['resources/js/views/tenant/purchases/form.vue','resources/js/views/tenant/purchases/form_edit.vue','resources/js/views/tenant/purchase-settlements/form.vue']) {
  test(`${file} accepts exact cents and rejects invalid or excessive payments`,async()=>{
     const run = method(file,'validate_payments')
     const ctx = {form:{payments:[{payment:'0.10'},{payment:'0.20'}],total:'0.30',items:[{affectation_igv_type:{free:false}}],has_client:false,has_payment:false}}

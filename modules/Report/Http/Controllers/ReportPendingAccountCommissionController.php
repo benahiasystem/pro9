@@ -34,6 +34,7 @@ class ReportPendingAccountCommissionController extends Controller
 
     public function records(Request $request)
     {
+        return \App\Support\Exact\ReadSnapshot::run((new User)->getConnection(), function () use ($request) {
         $records = $this->getRecords($request->all(), User::class);
 
         // Obtén el valor de días máximos de deuda vencida
@@ -41,10 +42,11 @@ class ReportPendingAccountCommissionController extends Controller
         $finances = $config->finances ?? [];
 
         // Pásalo a la colección
-        return new ReportPendingAccountCommissionCollection(
+        return (new ReportPendingAccountCommissionCollection(
             $records->paginate(config('tenant.items_per_page')),
             $finances
-        );
+        ))->response($request);
+        });
     }
 
     public function getRecords($request, $model)
@@ -104,6 +106,7 @@ class ReportPendingAccountCommissionController extends Controller
 
     public function pdf(Request $request)
     {
+        return \App\Support\Exact\ReadSnapshot::run((new User)->getConnection(), function () use ($request) {
         $company = Company::first();
         $establishment = ($request->establishment_id) ? Establishment::findOrFail($request->establishment_id) : auth()->user()->establishment;
         $users = $this->getRecords($request->all(), User::class)->get();
@@ -120,10 +123,12 @@ class ReportPendingAccountCommissionController extends Controller
         $filename = 'Reporte_Cuentas_Pendientes_'.date('YmdHis');
 
         return $pdf->download($filename.'.pdf');
+        });
     }
 
     public function excel(Request $request)
     {
+        return \App\Support\Exact\ReadSnapshot::run((new User)->getConnection(), function () use ($request) {
         $company = Company::first();
         $establishment = ($request->establishment_id) ? Establishment::findOrFail($request->establishment_id) : auth()->user()->establishment;
         $users = $this->getRecords($request->all(), User::class)->get();
@@ -141,5 +146,6 @@ class ReportPendingAccountCommissionController extends Controller
             ->establishment($establishment)
             ->request($request)
             ->download('Reporte_Cuentas_Pendientes_'.now().'.xlsx');
+        });
     }
 }

@@ -10,6 +10,10 @@
     <title>REPORTE PRODUCTOS</title>
 </head>
 <body>
+@php
+    $costs = $costs ?? ($type === 'sale' ? \Modules\Report\Services\EstimatedPurchaseCost::forLines(
+        $records, (string)$document_type_id === '80', filter_var($request_apply_conversion_to_pen, FILTER_VALIDATE_BOOLEAN)) : []);
+@endphp
 @if(!empty($records))
     <div>
         <div class=" ">
@@ -41,18 +45,16 @@
                             //     $purchase_item = \App\Models\Tenant\PurchaseItem::select('unit_price')->where('item_id', $value->item_id)->latest('id')->first();
                             //     $purchase_unit_price = ($purchase_item) ? $purchase_item->unit_price : $value->unit_price;
                             // }
-                            $total_item_purchase = \Modules\Report\Http\Resources\GeneralItemCollection::getPurchaseUnitPrice($value);
-                            // $total_item_purchase = $purchase_unit_price * $value->quantity;
-                            $utility_item = $value->total - $total_item_purchase;
+                            $cost = $costs[spl_object_id($value)];
                             /** @var \App\Models\Tenant\Item $item */
-                            $item = $value->getModelItem();
+                            $item = $value->relation_item;
                             $model = $item->model;
                             $document = $value->sale_note;
                             $platform = $item->getWebPlatformModel();
                             if ($platform !== null) {
                                 $platform = $platform->name;
                             }
-                            $pack = $item->getSetItems();
+                            $pack = $item->is_set ? $value->relation_item->sets : null;
                             ?>
                             @include('report::general_items.partials.report_excel_body_sale',[
                                       'document_type_id'=>$document_type_id,
@@ -66,10 +68,9 @@
                                 @foreach($pack as $item_pack)
                                     <?php
                                     /** @var \App\Models\Tenant\ItemSet $item_pack */
-                                    $value->item = $item_pack->individual_item;
                                     /** @var \App\Models\Tenant\Item $item */
-                                    $item = $value->item;
-                                    $qty = $item_pack->quantity;
+                                    $item = $item_pack->relation_item;
+                                    $qty = \App\Support\Exact\Decimal::readRequired($item_pack, 'quantity');
                                     ?>
                                     @include('report::general_items.partials.report_excel_body_sale',[
                                                                            'document_type_id'=>$document_type_id,
@@ -94,9 +95,8 @@
                                 $series_data = collect($value->item->lots)->where('has_sale', 1)->pluck('series')->toArray();
                                 $series = implode(" - ", $series_data);
                             }
-                            $total_item_purchase = \Modules\Report\Http\Resources\GeneralItemCollection::getPurchaseUnitPrice($value);
-                            $utility_item = $value->total - $total_item_purchase;
-                            $item = $value->getModelItem();
+                            $cost = $costs[spl_object_id($value)];
+                            $item = $value->relation_item;
                             $model = $item->model;
                             /** @var  \App\Models\Tenant\Document $document */
                             $document = $value->document;
@@ -105,7 +105,7 @@
                             if ($platform !== null) {
                                 $platform = $platform->name;
                             }
-                            $pack = $item->getSetItems();
+                            $pack = $item->is_set ? $value->relation_item->sets : null;
                             $item = $value->item;
                             $stablihsment = \App\CoreFacturalo\Helpers\Template\ReportHelper::getLocationData($document);
                             ?>
@@ -123,10 +123,9 @@
                                 @foreach($pack as $item_pack)
                                     <?php
                                     /** @var \App\Models\Tenant\ItemSet $item_pack */
-                                    $value->item = $item_pack->individual_item;
                                     /** @var \App\Models\Tenant\Item $item */
-                                    $item = $value->item;
-                                    $qty = $item_pack->quantity;
+                                    $item = $item_pack->relation_item;
+                                    $qty = \App\Support\Exact\Decimal::readRequired($item_pack, 'quantity');
                                     // dd($item);
                                     ?>
                                     @include('report::general_items.partials.report_excel_body_sale',

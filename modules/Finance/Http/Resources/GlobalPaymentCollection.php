@@ -47,6 +47,7 @@ class GlobalPaymentCollection extends ResourceCollection
                 'report_version' => 2,
                 'id' => $row->id,
                 'destination_description' => $movement['destination_label'],
+                'current_destination_reference' => \Modules\Finance\Services\CurrentDestinationReference::forPayment($row),
                 // 'destination_description' => $row->destination_description,
                 'date_of_payment' => ($payment !== null && $row->payment->date_of_payment !== null) ? $row->payment->date_of_payment->format('d-m-Y') : '',
                 'payment_method_type_description' => $this->getPaymentMethodTypeDescription($row),

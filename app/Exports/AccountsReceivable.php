@@ -14,7 +14,7 @@ class AccountsReceivable implements FromView, WithEvents
 
     public function view(): View
     {
-        $this->records = Receivables::dataset([], true);
+        $this->records = Receivables::dataset(['stablishmentUnpaidAll'=>auth()->user()->type === 'admin']);
         return view('tenant.reports.no_paid.reportall_excel', ['records'=>$this->records, 'reportSummary'=>\App\Support\Exact\OutstandingSummary::summarize($this->records),
             'companies'=>DB::connection('tenant')->table('companies')->get(['name','number'])]);
     }

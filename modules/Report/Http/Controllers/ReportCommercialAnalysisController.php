@@ -50,9 +50,10 @@ class ReportCommercialAnalysisController extends Controller
    
     public function records(Request $request)
     {
-        $records = $this->getRecords($request->all(), Person::class);
-
-        return new CommercialAnalysisCollection($records->paginate(config('tenant.items_per_page')));
+        return \App\Support\Exact\ReadSnapshot::run((new Person)->getConnection(), function () use ($request) {
+            $records = $this->getRecords($request->all(), Person::class);
+            return (new CommercialAnalysisCollection($records->paginate(config('tenant.items_per_page'))))->response($request);
+        });
     }
 
     
@@ -80,8 +81,9 @@ class ReportCommercialAnalysisController extends Controller
         }
 
         if ($category_id) {
-            $data->whereHas('documents.items.m_item.category', function($q) use($category_id){
-                $q->where('id', $category_id);
+            $data->whereHas('documents', function ($documents) use ($category_id) {
+                $documents->where('document_type_id','01')->whereNotIn('state_type_id',['09','11'])
+                    ->whereHas('items.m_item.category', fn ($category) => $category->where('id',$category_id));
             });
         }
 
@@ -92,11 +94,12 @@ class ReportCommercialAnalysisController extends Controller
   
 
     public function excel(Request $request) {
-    
+        return \App\Support\Exact\ReadSnapshot::run((new Person)->getConnection(), function () use ($request) {
         $company = Company::first();
         $establishment = ($request->establishment_id) ? Establishment::findOrFail($request->establishment_id) : auth()->user()->establishment; 
         
         $records = $this->getRecords($request->all(), Person::class)->get();
+        $records->loadMissing(['documents.items.relation_item.category','documents.note','country','department','province','district','identity_document_type']);
 
         // dd($records);
 
@@ -105,6 +108,7 @@ class ReportCommercialAnalysisController extends Controller
                 ->company($company)
                 ->categories(Category::all()->pluck('name')->toArray())
                 ->download('Reporte_Analisis_comercial_'.Carbon::now().'.xlsx');
+        });
     }
 
 

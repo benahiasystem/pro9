@@ -45,11 +45,13 @@ class ReportCommissionDetailController extends Controller
 
     public function records(Request $request)
     {
+        return \App\Support\Exact\ReadSnapshot::run((new DocumentItem)->getConnection(), function () use ($request) {
         $sales_notes = $this->getRecords($request->all(), SaleNoteItem::class);
         $documents = $this->getRecords($request->all(), DocumentItem::class);
         $merge = ($sales_notes->get())->merge($documents->get());
 
-        return new ReportCommissionDetailCollection($merge);
+        return (new ReportCommissionDetailCollection($merge))->response($request);
+        });
     }
 
 
@@ -110,6 +112,7 @@ class ReportCommissionDetailController extends Controller
 
                     $data = $model::whereHas('document',function($query) use($date_start, $date_end, $establishment_id){
                         $query->whereBetween('date_of_issue', [$date_start, $date_end])
+                        ->where(function ($access) { $viewer=auth()->user(); if ($viewer->type !== 'admin') $access->where(fn($q)=>$q->where('user_id',$viewer->id)->orWhere('seller_id',$viewer->id)); })
                         ->whereIn('document_type_id', ['01'])
                         ->where('establishment_id', $establishment_id)
                         ->whereStateTypeAccepted();
@@ -122,7 +125,8 @@ class ReportCommissionDetailController extends Controller
 
                 $data = $model::whereHas('document',function($query) use($date_start, $date_end){
                             $query->whereBetween('date_of_issue', [$date_start, $date_end])
-                            ->whereIn('document_type_id', ['01'])
+                            ->where(function ($access) { $viewer=auth()->user(); if ($viewer->type !== 'admin') $access->where(fn($q)=>$q->where('user_id',$viewer->id)->orWhere('seller_id',$viewer->id)); })
+                        ->whereIn('document_type_id', ['01'])
                             ->whereStateTypeAccepted();
                         });
             }
@@ -146,7 +150,8 @@ class ReportCommissionDetailController extends Controller
                     $query->whereBetween('date_of_issue', [$date_start, $date_end])
                         ->where('establishment_id', $establishment_id)
                         ->whereStateTypeAccepted()
-                        ->whereNotChanged();
+                        ->where(function ($access) { if (auth()->user()->type === 'seller') $access->where('user_id',auth()->id()); })
+                        ->where(fn($q)=>$q->whereNull('document_id')->orWhereNotIn('document_id',$this->visibleInvoices($date_start,$date_end,$establishment_id)));
                     });
 
             }else{
@@ -154,7 +159,8 @@ class ReportCommissionDetailController extends Controller
                     $data = $model::whereHas('sale_note',function($query) use($date_start, $date_end){
                                 $query->whereBetween('date_of_issue', [$date_start, $date_end])
                                     ->whereStateTypeAccepted()
-                                    ->whereNotChanged();
+                                    ->where(function ($access) { if (auth()->user()->type === 'seller') $access->where('user_id',auth()->id()); })
+                                    ->where(fn($q)=>$q->whereNull('document_id')->orWhereNotIn('document_id',$this->visibleInvoices($date_start,$date_end,null)));
                                 });
 
             }
@@ -170,6 +176,16 @@ class ReportCommissionDetailController extends Controller
 
         }
 
+    }
+
+    private function visibleInvoices($dateStart, $dateEnd, $establishmentId)
+    {
+        $query=\App\Models\Tenant\Document::withoutEagerLoads()->select('id')
+            ->whereBetween('date_of_issue',[$dateStart,$dateEnd])->where('document_type_id','01')->whereStateTypeAccepted();
+        if ($establishmentId) $query->where('establishment_id',$establishmentId);
+        $viewer=auth()->user();
+        if ($viewer->type !== 'admin') $query->where(fn($q)=>$q->where('user_id',$viewer->id)->orWhere('seller_id',$viewer->id));
+        return $query;
     }
 
 
@@ -191,6 +207,7 @@ class ReportCommissionDetailController extends Controller
 
 
     public function pdf(Request $request) {
+        return \App\Support\Exact\ReadSnapshot::run((new DocumentItem)->getConnection(), function () use ($request) {
 
         $company = Company::first();
         $establishment = ($request->establishment_id) ? Establishment::findOrFail($request->establishment_id) : auth()->user()->establishment;
@@ -200,17 +217,20 @@ class ReportCommissionDetailController extends Controller
         $records = ($sales_notes->get())->merge($documents->get());
 
 
+        $records = \Modules\Report\Services\DetailedProfitReport::rows($records);
         $pdf = PDF::loadView('report::commissions_detail.report_pdf', compact("records", "company", "establishment"))->setPaper('a4', 'landscape');
 
         $filename = 'Reporte_Utilidades_Detallado'.date('YmdHis');
 
         return $pdf->download($filename.'.pdf');
+        });
     }
 
 
 
 
     public function excel(Request $request) {
+        return \App\Support\Exact\ReadSnapshot::run((new DocumentItem)->getConnection(), function () use ($request) {
 
         $company = Company::first();
         $establishment = ($request->establishment_id) ? Establishment::findOrFail($request->establishment_id) : auth()->user()->establishment;
@@ -224,6 +244,7 @@ class ReportCommissionDetailController extends Controller
                 ->company($company)
                 ->establishment($establishment)
                 ->download('Reporte_Comision_utilidades_Vendedor'.Carbon::now().'.xlsx');
+        });
 
     }
 }

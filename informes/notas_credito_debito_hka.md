@@ -59,6 +59,8 @@ Saldo común: factura menos NC, cobros activos, retenciones y fondo ajustado, m�
 
 `NoteRefund` registra una salida independiente, con fecha, cobro real de origen, moneda VES/USD, importe realmente devuelto, tasa explícita de ocho decimales, medio y caja/banco. Requiere NC digital DEMO confirmada y control coincidente con su emisión. El límite respeta factura, NC, cobro y devoluciones previas; excluye conceptos no recibidos en efectivo y reserva las participaciones de retenciones/fondos mientras se corrigen. El IGTF requiere ajuste fiscal confirmado independiente. No se borran ni modifican cobros originales.
 
+Para una NC de Forma libre, la devolución principal también se habilita cuando su control impreso consta en el registro auditado, coincide con la NC y ésta permanece vigente. Se conserva modo y control en el contexto de la salida; esto documenta la transcripción y no acredita una confirmación HKA ni la verificación automática del documento físico. Los demás límites y la regla independiente de IGTF se mantienen.
+
 Registro/reversión llevan UUID, actor, hash y motivo; repetir la misma operación conserva un efecto, reutilizar clave con datos incompatibles produce409. Se valida permiso `create_payment` o `delete_payment`, conexión tenant, sucursal, cuenta por moneda/sucursal y caja abierta del usuario. El historial de devolución se conserva tras reversión. Finanzas, banco/caja, cierres y reportes contabilizan la salida real y excluyen registros revertidos; no convierten el valor de una NC en un egreso automático.
 
 ## Ajustes relacionados

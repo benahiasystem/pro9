@@ -37,6 +37,14 @@ class OrderDocumentFromStatusService
      */
     public function generateIfConfigured(Order $order, ?StatusOrder $status = null, bool $force = false): array
     {
+        return $order->getConnection()->transaction(function () use ($order, $status, $force) {
+            $locked = Order::query()->whereKey($order->getKey())->lockForUpdate()->firstOrFail();
+            return $this->generateLocked($locked, $status, $force);
+        });
+    }
+
+    private function generateLocked(Order $order, ?StatusOrder $status, bool $force): array
+    {
         $empty = [
             'generated' => false,
             'sale_note_id' => null,
@@ -54,7 +62,8 @@ class OrderDocumentFromStatusService
             return $empty;
         }
 
-        $order->loadMissing('sale_note');
+        // La relación previa puede estar desactualizada o pertenecer a una lectura anterior.
+        $order->setRelation('sale_note', $order->sale_note()->lockForUpdate()->first());
 
         $purchase = json_decode(json_encode($order->purchase), true) ?: [];
         // ########## INICIO CAMBIO FACTURAS Y NOTAS DE VENTA EN PEDIDOS

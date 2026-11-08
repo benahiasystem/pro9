@@ -2399,6 +2399,7 @@ export default {
         await this.loadPriceOptions();
 
         await this.initForm();
+        const initialPayment = this.form.payments[0];
         await this.$http.get(`/${this.resource}/tables`).then(response => {
             this.currency_types = response.data.currency_types;
             this.establishments = response.data.establishments;
@@ -2423,6 +2424,7 @@ export default {
             ];
             this.all_series = response.data.series;
             this.payment_destinations = response.data.payment_destinations;
+            this.applyInitialCashMethod(initialPayment);
             // this.configuration = response.data.configuration
             this.sellers = response.data.sellers;
             this.global_discount_types = response.data.global_discount_types;
@@ -2838,6 +2840,18 @@ export default {
 
             this.calculatePayments();
         },
+        // The initial row is created before the payment catalog arrives.
+        // Do not replace a selected method, a restored receipt, or a different draft.
+        applyInitialCashMethod(row) {
+            if (this.id || !row || this.form.payments[0] !== row || row.id != null ||
+                row.payment_method_type_id != null || isRecordedReceipt(row)) return;
+            const method = defaultCashForCurrency(this.payment_method_types || [], this.form.currency_type_id);
+            if (!method) return;
+            row.payment_method_type_id = method.id;
+            if (row.payment_destination_id == null && this.getPaymentDestinationId() === 'cash') {
+                row.payment_destination_id = 'cash';
+            }
+        },
         clickAddFee() {
 
             this.form.due_date = moment().format("YYYY-MM-DD");
@@ -2937,6 +2951,8 @@ export default {
                 subtotal: 0,
                 total_igv_free: 0,
                 total: 0,
+                total_payable: 0,
+                settlement_adjustment: 0,
                 operation_type_id: null,
                 items: [],
                 charges: [],

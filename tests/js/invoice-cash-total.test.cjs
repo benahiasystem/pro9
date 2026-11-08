@@ -42,6 +42,24 @@ test('invoice totals and the suggested cash payment follow all lines, quantity e
     state.clickRemoveItem(1); state.clickRemoveItem(0);
     assert.equal(state.form.total,'0'); assert.equal(state.form.payments[0].payment,'0.00'); state.$destroy();
 });
+test('the reactive collection target follows successive changes to the same draft', async () => {
+    const state=invoice();
+    state.form.items.push(line('0.10','2')); state.calculateTotal(); await Vue.nextTick();
+    assert.equal(state.collectionTarget,'0.20');
+    state.form.items.push(line('0.20')); state.calculateTotal(); await Vue.nextTick();
+    assert.equal(state.form.total,'0.4');
+    assert.equal(state.collectionTarget,'0.40');
+    assert.equal(state.form.payments[0].payment,'0.40');
+    state.form.exchange_rate_sale='1';
+    const fiscal = load(fs.readFileSync('resources/js/mixins/fiscal-payment-settings.js','utf8')).default;
+    assert.equal(fiscal.methods.fiscalQuoteRequest.call(state,state.form.payments).principal_due,'0.40');
+    state.form.payment_condition_id='02';
+    state.form.payments[0].payment='0.10';
+    state.form.fee.push({amount:'0'});
+    state.calculateFee();
+    assert.equal(state.form.fee[0].amount,'0.30');
+    state.$destroy();
+});
 test('discounts, charges, exempt lines and final cent settlement use the same collectible total', () => {
     const state = invoice();
     state.form.items=[line('500'),line('250','1','20')]; state.calculateTotal();

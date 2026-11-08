@@ -194,6 +194,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
             @if($show_descripcion)
             <td class="text-left desc-9 align-top">
                 {!! $row->item->description !!}
+                @include('pdf.partials.note_lots', ['row' => $row])
                 @if($show_marca && !empty($row->m_item->brand->name ?? null))
                     <br/><small>Marca: {{ $row->m_item->brand->name }}</small>
                 @endif
@@ -263,7 +264,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
             <td class="text-right font-bold desc">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_igv'), 2) }}</td>
         </tr>
         <tr>
-            <td colspan="{{ $colspan_label }}" class="text-right font-bold desc">TOTAL A PAGAR: {{ $document->currency_type->symbol }}</td>
+            <td colspan="{{ $colspan_label }}" class="text-right font-bold desc">{{ $document->document_type_id === '07' ? 'TOTAL NOTA DE CRÉDITO:' : 'TOTAL NOTA DE DÉBITO:' }} {{ $document->currency_type->symbol }}</td>
             <td class="text-right font-bold desc">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total'), 2) }}</td>
         </tr>
         @if($show_nro_producto)

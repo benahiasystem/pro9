@@ -7,8 +7,11 @@ use Maatwebsite\Excel\Concerns\FromView;
 use Maatwebsite\Excel\Concerns\Exportable;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\WithEvents;
+use Maatwebsite\Excel\Events\AfterSheet;
+use Modules\Report\Services\DocumentReportLines;
 
-class DocumentExport implements  FromView, ShouldAutoSize
+class DocumentExport implements FromView, ShouldAutoSize, WithEvents
 {
     use Exportable;
 
@@ -65,5 +68,15 @@ class DocumentExport implements  FromView, ShouldAutoSize
             'categories_services'=>$this->categories_services,
             'columns'=>$this->columns,
         ]);
+    }
+
+    public function registerEvents(): array
+    {
+        return [AfterSheet::class=>function (AfterSheet $event) {
+            $rows=collect($this->records)->map(fn ($row)=>DocumentReportLines::monetaryRow($row));
+            \App\Support\Exact\FractionSheet::append($event->sheet->getDelegate(),$rows,DocumentReportLines::MONETARY_FIELDS);
+            \App\Support\Exact\FractionSheet::appendEntries($event->sheet->getDelegate(),
+                DocumentReportLines::fractionEntries($this->records,$this->categories ?? [],$this->categories_services ?? []));
+        }];
     }
 }

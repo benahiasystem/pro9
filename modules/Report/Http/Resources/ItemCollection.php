@@ -7,12 +7,19 @@ use Illuminate\Http\Resources\Json\ResourceCollection;
 
 class ItemCollection extends ResourceCollection
 {
+    private ?array $display;
+
+    public function __construct($resource, ?array $display = null)
+    {
+        parent::__construct($resource);
+        $this->display=$display;
+    }
 
 
     public function toArray($request) {
 
 
-        return $this->collection->transform(function ($row, $key) {
+        return $this->collection->map(function ($row, $key) {
 
 
             $observation = null;
@@ -31,6 +38,10 @@ class ItemCollection extends ResourceCollection
                 $customer_name = $document->customer->name;
                 $customer_number = format_person_identity_document($document->customer);
             }
+            $amounts=\Modules\Report\Services\ItemReportAmounts::row($row);
+            $display=$this->display === null
+                ? \App\Support\Exact\Decimal::format(\App\Support\Exact\Decimal::readRequired($amounts,'total'),2,'.','')
+                : ($this->display[$amounts['report_key']] ?? throw new \LogicException('Falta la proyección de la partida.'));
             return [
                 'id'                        => $row->id,
                 'date_of_issue'             => $document->date_of_issue->format('Y-m-d'),
@@ -38,11 +49,12 @@ class ItemCollection extends ResourceCollection
                 'customer_number'           => $customer_number,
                 'series'                    => $document->series,
                 'alone_number'              => $document->number,
-                'quantity'                  => number_format($row->quantity, 2),
-                'total'                     => (in_array($document->document_type_id,
-                                                         ['01']) && in_array($document->state_type_id,
-                                                                                   ['09', '11'])) ? number_format(0, 2)
-                    : number_format($row->total, 2),
+                'quantity'                  => $amounts['quantity'],
+                'unit_type_id'              => $amounts['unit_type_id'],
+                'currency_type_id'          => $amounts['currency_type_id'],
+                'total'                     => $display,
+                'calculation_snapshot'      => $amounts['calculation_snapshot'],
+                'state_type_id'             => $document->state_type_id,
                 'document_type_description' => $document->document_type->description,
                 'document_type_id'          => $document->document_type->id,
                 'web_platform_name'         => optional($row->relation_item->web_platform)->name,

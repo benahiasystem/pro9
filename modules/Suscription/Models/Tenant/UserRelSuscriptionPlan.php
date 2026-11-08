@@ -426,7 +426,6 @@
             $has_pdf = true;
             $btn_note = false;
             $btn_guide = true; // Boton para generar guia
-            $btn_voided = false;
             $btn_delete_doc_type_03 = false;
 
             $affected_document = null;
@@ -437,7 +436,6 @@
 
                 if ($document->state_type_id === '05') {
                     $btn_note = true;
-                    $btn_voided = true;
                 }
 
                 if (in_array($document->document_type_id, ['07', '08'])) {
@@ -447,7 +445,6 @@
             if ($document->group_id === '02') {
                 if ($document->state_type_id === '05') {
                     $btn_note = true;
-                    $btn_voided = true;
                 }
 
                 if (in_array($document->document_type_id, ['07', '08'])) {
@@ -505,7 +502,7 @@
                 'document_type_id' => $document->document_type->id,
                 'has_pdf' => $has_pdf,
                 'download_pdf' => $document->download_external_pdf,
-                'btn_voided' => $btn_voided,
+                'btn_voided' => false,
                 'btn_note' => $btn_note,
                 'btn_guide' => $btn_guide,
 //                'btn_ticket' => $btn_ticket,

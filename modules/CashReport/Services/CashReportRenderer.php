@@ -88,6 +88,8 @@ class CashReportRenderer
             abort(404, 'Reporte no disponible');
         }
 
+        \App\Services\Payments\CashLedger::authorize($cash);
+
         $options = $this->normalizeOptions($report, $options);
         // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
         if (!in_array($type,['products','products_garage'],true)) {

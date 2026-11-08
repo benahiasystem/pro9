@@ -56,22 +56,7 @@ class VoidedController extends Controller
             DocumentFiscalController::authorizeDocument($document);
             if (\App\Services\Fiscal\FiscalNote::ordinary($document)) \App\Services\Fiscal\FiscalAmounts::error('documents','Utilice la anulación auditada desde las opciones de la nota.');
         }
-        $validate = $this->validateVoided($request);
-        if(!$validate['success']) return $validate;
-
-        $fact = DB::connection('tenant')->transaction(function () use($request) {
-            $facturalo = new Facturalo();
-            $facturalo->save($request->all());
-            return $facturalo;
-        });
-
-        $document = $fact->getDocument();
-        //$response = $fact->getResponse();
-
-        return [
-            'success' => true,
-            'message' => "La anulación {$document->identifier} fue creado correctamente",
-        ];
+        \App\Services\Fiscal\LegacyVoidedOperation::reject();
     }
 
 
@@ -115,19 +100,7 @@ class VoidedController extends Controller
 
     public function destroy($voided_id)
     {
-        $document = Voided::find($voided_id);
-        foreach ($document->documents as $doc)
-        {
-            $doc->document->update([
-                'state_type_id' => '05'
-            ]);
-        }
-        $document->delete();
-
-        return [
-            'success' => true,
-            'message' => 'Anulación eliminada con éxito'
-        ];
+        \App\Services\Fiscal\LegacyVoidedOperation::reject();
     }
 }
 // ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

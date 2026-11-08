@@ -7,8 +7,10 @@ use Maatwebsite\Excel\Concerns\FromView;
 use Maatwebsite\Excel\Concerns\Exportable;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\WithEvents;
+use Maatwebsite\Excel\Events\AfterSheet;
 
-class FixedAssetPurchaseExport implements  FromView, ShouldAutoSize
+class FixedAssetPurchaseExport implements  FromView, ShouldAutoSize, WithEvents
 {
     use Exportable;
     
@@ -43,5 +45,17 @@ class FixedAssetPurchaseExport implements  FromView, ShouldAutoSize
             'establishment'=>$this->establishment,
             'filters'=>$this->filters
         ]);
+    }
+
+    public function registerEvents(): array
+    {
+        return [AfterSheet::class => function (AfterSheet $event) {
+            $prepared = \Modules\Report\Services\PurchaseReportAmounts::presentation($this->records, false);
+            \App\Support\Exact\FractionSheet::append($event->sheet->getDelegate(), $prepared['rows'], \Modules\Report\Services\PurchaseReportAmounts::FIELDS);
+            $entries = [];
+            foreach ($prepared['totals'] as $currency=>$totals) foreach ($totals as $field=>$value)
+                $entries[] = ['id'=>'total:'.$currency,'field'=>$field,'value'=>$value];
+            \App\Support\Exact\FractionSheet::appendEntries($event->sheet->getDelegate(), $entries);
+        }];
     }
 }

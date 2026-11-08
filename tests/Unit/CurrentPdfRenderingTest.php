@@ -189,6 +189,28 @@ class CurrentPdfRenderingTest extends TestCase
                 self::assertStringContainsString('Aplicado USD 9.88', $rendered, "$template $format");
             }
         }
+        // A receipt's real change stays in the received currency; a reversed receipt disappears.
+        $receipt->change='3';
+        foreach (['default'=>['a4','a5','ticket','ticket_58'], 'modern-2027'=>['a4','a5','ticket','ticket_58'],
+                  'Plantilla_personalizable'=>['a4','a5','ticket','ticket_58'],
+                  'marca_de_agua'=>['a4','a5','ticket','ticket_58','ticket_50'], 'nrus'=>['ticket','ticket_58']] as $template=>$formats) {
+            foreach ($formats as $format) {
+                $rendered=(new Template())->pdf($template,'invoice',$company,$document,$format,['is_preview'=>false]);
+                self::assertStringContainsString('Vuelto VES 3.00',$rendered,"$template $format cambio");
+                self::assertStringNotContainsString('VUELTO:',$rendered,"$template $format no deriva vuelto del saldo");
+            }
+        }
+        $receipt->reversed_at='2026-09-11 00:00:00';
+        foreach (['default'=>['a4','a5','ticket','ticket_58'], 'modern-2027'=>['a4','a5','ticket','ticket_58'],
+                  'Plantilla_personalizable'=>['a4','a5','ticket','ticket_58'],
+                  'marca_de_agua'=>['a4','a5','ticket','ticket_58','ticket_50'], 'nrus'=>['ticket','ticket_58']] as $template=>$formats) {
+            foreach ($formats as $format) {
+                $rendered=(new Template())->pdf($template,'invoice',$company,$document,$format,['is_preview'=>false]);
+                self::assertStringNotContainsString('Medio conservado',$rendered,"$template $format pago revertido");
+                self::assertStringNotContainsString('Cobro recibido (VES)',$rendered,"$template $format resumen sin pago revertido");
+            }
+        }
+        $receipt->reversed_at=null; $receipt->change='0';
         self::assertSame(1, substr_count($ticket, 'Tasa VES/USD'));
         self::assertSame(1, substr_count($ticket, 'Total en VES'));
         self::assertSame(1, substr_count($ticket, 'IGTF 3.00%'));
@@ -230,6 +252,9 @@ class CurrentPdfRenderingTest extends TestCase
         $html=(new Template())->pdf('default','debit',$company,$document,'a4');
         self::assertStringContainsString('IGTF sobre pago posterior',$html);self::assertStringContainsString('FF01-00000001',$html);
         self::assertStringContainsString('IGTF 3.00%',$html);self::assertStringNotContainsString('Producto gravado de prueba',$html);
+        $compact=(new Template())->pdf('default','debit',$company,$document,'ticket_58');
+        self::assertStringContainsString('Otros impuestos',$compact); self::assertStringContainsString('3.48',$compact);
+        self::assertStringContainsString('TOTAL NOTA DE DÉBITO',$compact);
         $pdf=new Mpdf(['tempDir'=>sys_get_temp_dir(),'default_font'=>'arial']);
         $pdf->WriteHTML(file_get_contents(app_path('CoreFacturalo/Templates/pdf/default/style.css')),HTMLParserMode::HEADER_CSS);
         $pdf->WriteHTML($html,HTMLParserMode::HTML_BODY);
@@ -265,8 +290,9 @@ class CurrentPdfRenderingTest extends TestCase
                 'calculation_snapshot'=>\App\Support\Exact\Decimal::snapshot(['cantidad'=>'1','total_item'=>\App\Support\Exact\Decimal::of(1)->dividedBy(3)])];
             $document->data_json=(object)['items'=>[$third,clone $third]];
             $grouped=(new Template())->pdf($template,'invoice',$company,$document,'ticket',['is_preview'=>false]);
-            self::assertStringContainsString('0.333333333333',$grouped);
-            self::assertStringContainsString('0.67',$grouped);
+            self::assertStringNotContainsString('Por consumo',$grouped);
+            self::assertStringNotContainsString('0.67',$grouped);
+            self::assertStringContainsString('116.123456789123',$grouped);
             unset($document->data_json);
         }
     }
@@ -356,6 +382,60 @@ class CurrentPdfRenderingTest extends TestCase
                 if (!is_dir($directory)) mkdir($directory, 0775, true);
                 file_put_contents($directory.'/ticket-'.$expectedWidth.'mm-'.$rows.'rows.pdf', $download);
             }
+        }
+    }
+
+    public function test_grouped_ticket_keeps_unmerged_items_and_uses_saved_amounts(): void
+    {
+        $document=$this->documentFixture(); $document->number_full='FF01-00000001';
+        $first=$document->items->first(); $first->quantity='3'; $first->unit_price='12.666666666667';
+        $first->total='38'; $first->additional_information=[];
+        $second=clone $first; $second->item=clone $first->item;
+        $second->item->internal_id='PRUEBA-002'; $second->item->description='ARTICULO SIN FUSION';
+        $second->quantity='1'; $second->unit_price='10'; $second->total='10';
+        $document->items=new Collection([$first,$second]);
+        $document->data_json=(object)['items'=>[
+            (object)['codigo_interno'=>'PRUEBA-001','esFusionado'=>true,'cantidad'=>'3','total_item'=>'999'],
+            (object)['codigo_interno'=>'PRUEBA-002','esFusionado'=>false,'cantidad'=>'1','total_item'=>'0.01'],
+        ]];
+        $company=new Fluent(['name'=>'Empresa','number'=>'J123456789','logo'=>null]);
+        foreach (['default','modern-2027','marca_de_agua','Plantilla_personalizable','nrus'] as $design) {
+            $html=(new Template())->pdf($design,'invoice',$company,$document,'ticket',['is_preview'=>false]);
+            self::assertStringContainsString('Por consumo',$html,$design);
+            self::assertStringContainsString('ARTICULO SIN FUSION',$html,$design);
+            self::assertStringContainsString('38.00',$html,$design);
+            self::assertStringContainsString('10.00',$html,$design);
+            self::assertStringNotContainsString('999.00',$html,$design);
+            self::assertStringContainsString('precio unitario mostrado está redondeado',$html,$design);
+        }
+        // The hidden underlying unit price is fractional, but the displayed group price is exactly 13.
+        $first->total='39';
+        foreach (['default','modern-2027','marca_de_agua','Plantilla_personalizable','nrus'] as $design) {
+            $html=(new Template())->pdf($design,'invoice',$company,$document,'ticket',['is_preview'=>false]);
+            self::assertStringContainsString('Por consumo',$html,$design);
+            self::assertStringNotContainsString('precio unitario mostrado está redondeado',$html,$design);
+        }
+        $first->total='38';
+        foreach ([
+            [(object)['codigo_interno'=>'PRUEBA-001','esFusionado'=>true]],
+            [(object)['codigo_interno'=>'PRUEBA-001','esFusionado'=>true],(object)['codigo_interno'=>'PRUEBA-001','esFusionado'=>true]],
+            [(object)['codigo_interno'=>'PRUEBA-001','esFusionado'=>true],(object)['codigo_interno'=>'DESCONOCIDO','esFusionado'=>true]],
+        ] as $ambiguous) {
+            $document->data_json=(object)['items'=>$ambiguous];
+            foreach (['default','modern-2027','marca_de_agua','Plantilla_personalizable','nrus'] as $design) {
+                $html=(new Template())->pdf($design,'invoice',$company,$document,'ticket',['is_preview'=>false]);
+                self::assertStringNotContainsString('Por consumo',$html,$design);
+                self::assertStringContainsString('ARTICULO SIN FUSION',$html,$design);
+                self::assertStringContainsString('38.00',$html,$design);
+                self::assertStringContainsString('10.00',$html,$design);
+            }
+        }
+        $first->quantity='9007199254740993';
+        $document->data_json=(object)['items'=>[]];
+        foreach (['default','modern-2027','marca_de_agua','Plantilla_personalizable','nrus'] as $design) {
+            $html=(new Template())->pdf($design,'invoice',$company,$document,'ticket',['is_preview'=>false]);
+            self::assertStringContainsString('9007199254740993',$html,$design);
+            self::assertStringNotContainsString('9,007,199,254,740,992',$html,$design);
         }
     }
 

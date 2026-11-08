@@ -43,7 +43,11 @@ class DownloadController extends Controller
             && $type === 'pdf' && in_array($format ?? 'a4', ['a4', 'a5', 'ticket'], true)) {
             return $this->digitalPdf($document, $format ?? 'a4', true);
         }
-        $type_pdf = $document_type;
+        if ($document instanceof \App\Models\Tenant\Document && $type==='pdf' && in_array($format ?? 'a4',['a4','a5','ticket','ticket_58'],true)) {
+            $bytes=\App\Services\Fiscal\CurrentFreeFormPdf::bytesIfRegistered($document,$format ?? 'a4');
+            if ($bytes!==null) return $this->localCurrentPdf($document,$bytes,true);
+        }
+        $type_pdf = $document_type === 'purchaseSettlement' ? 'purchase_settlement' : $document_type;
         if ($type == 'pdf') {
             if ($document_type == 'document') {
                 $type_pdf = 'invoice';
@@ -168,6 +172,10 @@ class DownloadController extends Controller
             && in_array($format ?? 'a4', ['a4', 'a5'], true)) {
             return $this->digitalPdf($document, $format ?? 'a4', false);
         }
+        if ($document instanceof \App\Models\Tenant\Document && in_array($format ?? 'a4',['a4','a5','ticket','ticket_58'],true)) {
+            $bytes=\App\Services\Fiscal\CurrentFreeFormPdf::bytesIfRegistered($document,$format ?? 'a4');
+            if ($bytes!==null) return $this->localCurrentPdf($document,$bytes,false);
+        }
         $type = 'invoice';
         if ($document_type == 'dispatch') {
             $type = 'dispatch';
@@ -229,5 +237,13 @@ class DownloadController extends Controller
      */
     private function reloadPDF($document, $type, $format) {
         (new Facturalo)->createPdf($document, $type, $format);
+    }
+
+    private function localCurrentPdf($document, string $bytes, bool $attachment)
+    {
+        $filename=\App\Services\Fiscal\DocumentFileName::visible($document->filename).'.pdf';
+        return response($bytes,200,['Content-Type'=>'application/pdf',
+            'Content-Disposition'=>\Symfony\Component\HttpFoundation\HeaderUtils::makeDisposition($attachment?'attachment':'inline',$filename),
+            'Cache-Control'=>'private, no-store','X-Content-Type-Options'=>'nosniff']);
     }
 }

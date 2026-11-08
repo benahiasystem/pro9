@@ -20,25 +20,8 @@
         <div class="card mb-0 pt-2 pt-md-0 tab-content-default row-new">
             <div class="card mb-0">
                 <div class="card-body">
-                    <data-table
-                        :resource="resource">
-                        <tr slot="heading">
-                            <th>#</th>
-                            <th>Vendedor</th>
-                            <th class="text-center">Monto de cobro fuera de fecha</th>
-                            <th class="text-center">Monto de cobro comisionado</th>
-                            <th class="text-center">Monto total de cobro efectuado</th>
-                            <th class="text-center">Comisión</th>
-                        </tr>
-                        <tr slot-scope="{ index, row }">
-                            <td>{{ index }}</td>
-                            <td>{{ row.user_name }}</td>
-                            <td class="text-center">{{ row.total_out_of_range }}</td>
-                            <td class="text-center">{{ row.total_within_range }}</td>
-                            <td class="text-center">{{ row.total_completed }}</td>
-                            <td class="text-center">{{ row.commission }}</td>
-                        </tr>
-                    </data-table>
+                    <p>Importes aplicados en moneda del documento. Se comisionan cobros posteriores al vencimiento dentro del plazo configurado; sin restricción activa o vencimiento, no se calcula comisión. Una comisión fija sin moneda definida no se calcula.</p>
+                    <data-table :resource="resource" />
                 </div>
             </div>
         </div>

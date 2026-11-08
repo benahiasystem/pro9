@@ -39,9 +39,16 @@ class ReportItemController extends Controller
 
     public function records(Request $request)
     {
-        $records = $this->getRecordsItems($request->all(), DocumentItem::class);
-
-        return new ItemCollection($records->paginate(config('tenant.items_per_page')));
+        $request->validate(['page'=>'sometimes|integer|min:1']);
+        return \App\Support\Exact\ReadSnapshot::run((new DocumentItem)->getConnection(), function () use ($request) {
+            $records = $this->getRecordsItems($request->all(), DocumentItem::class)->orderByDesc('id');
+            $page=(clone $records)->paginate(max(1,min(500,(int)config('tenant.items_per_page',50))),['*'],'page',(int)$request->input('page',1));
+            $purchase=$records->getModel() instanceof PurchaseItem;
+            $keys=$page->getCollection()->map(fn($row)=>($purchase?'purchase_item:':'document_item:').$row->id);
+            $all=(clone $records)->withoutEagerLoads()->with($purchase?'purchase':'document')->lazy(500);
+            $display=\Modules\Report\Services\ItemReportAmounts::displayForPage($all,$keys);
+            return (new ItemCollection($page,$display))->response($request);
+        });
     }
 
 
@@ -146,7 +153,7 @@ class ReportItemController extends Controller
             $data->whereHas('purchase',function($query) use($date_start, $date_end){
                 /** @var \Illuminate\Database\Eloquent\Builder $query */
                 $query
-                    ->whereBetween('date_of_due', [$date_start, $date_end])
+                    ->whereBetween('date_of_issue', [$date_start, $date_end])
                     //->whereIn('document_type_id', ['01','03'])
                     ->WhereStateTypeAccepted()
                     ->latest()
@@ -161,7 +168,7 @@ class ReportItemController extends Controller
 
 
     public function excel(Request $request) {
-
+        return \App\Support\Exact\ReadSnapshot::run((new DocumentItem)->getConnection(), function () use ($request) {
         $company = Company::first();
         $establishment = ($request->establishment_id) ? Establishment::findOrFail($request->establishment_id) : auth()->user()->establishment;
         if($request->has('type') && $request->type === 'purchase') {
@@ -169,7 +176,7 @@ class ReportItemController extends Controller
         }else{
             $model = DocumentItem::class;
         }
-        $records = $this->getRecordsItems($request->all(), $model)->get();
+        $records = $this->getRecordsItems($request->all(), $model)->orderByDesc('id')->get();
         $itemExport =new ItemExport();
         $fileName = 'Reporte_Ventas_por_Producto_'.Carbon::now().'.xlsx';
         if($request->has('type') && $request->type === 'purchase'){
@@ -183,6 +190,7 @@ class ReportItemController extends Controller
                 ->company($company)
                 ->establishment($establishment)
                 ->download($fileName);
+        });
 
     }
 }

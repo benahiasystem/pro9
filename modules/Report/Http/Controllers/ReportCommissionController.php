@@ -44,10 +44,12 @@
 
         public function records(Request $request)
         {
+            return \App\Support\Exact\ReadSnapshot::run((new User)->getConnection(), function () use ($request) {
             /** @var \Illuminate\Database\Eloquent\Builder  $records */
             $records = $this->getRecords($request->all(), User::class);
 
-            return new ReportCommissionCollection($records->paginate(config('tenant.items_per_page')));
+            return (new ReportCommissionCollection($records->paginate(config('tenant.items_per_page'))))->response($request);
+            });
         }
 
 
@@ -116,10 +118,6 @@
 
             $data = $model::query();
 
-            if ($establishment_id) {
-                $data = $data->where('establishment_id', $establishment_id);
-            }
-
             if($user_seller_id){
                 $data->where('id', $user_seller_id);
             }
@@ -131,6 +129,7 @@
 
         public function pdf(Request $request)
         {
+            return \App\Support\Exact\ReadSnapshot::run((new User)->getConnection(), function () use ($request) {
 
             $company = Company::first();
             $establishment = ($request->establishment_id) ? Establishment::findOrFail($request->establishment_id) : auth()->user()->establishment;
@@ -141,11 +140,13 @@
             $filename = 'Reporte_Comision_Vendedor_' . date('YmdHis');
 
             return $pdf->download($filename . '.pdf');
+            });
         }
 
 
         public function excel(Request $request)
         {
+            return \App\Support\Exact\ReadSnapshot::run((new User)->getConnection(), function () use ($request) {
 
             $company = Company::first();
             $establishment = ($request->establishment_id) ? Establishment::findOrFail($request->establishment_id) : auth()->user()->establishment;
@@ -160,6 +161,7 @@
                 ->request($request);
             // return $commissionExport->view();
             return $commissionExport->download('Reporte_Comision_Vendedor' . Carbon::now() . '.xlsx');
+            });
 
         }
     }

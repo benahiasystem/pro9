@@ -62,7 +62,6 @@ class DocumentFileNameTest extends TestCase
         foreach ([
             [\App\Mail\Tenant\DocumentEmail::class, \App\Models\Tenant\Document::class, 'pdf'],
             [\App\Mail\Tenant\SaleNoteEmail::class, \App\Models\Tenant\SaleNote::class, 'sale_note'],
-            [\App\Mail\Tenant\QuotationEmail::class, \App\Models\Tenant\Quotation::class, 'quotation'],
         ] as [$mailClass, $modelClass, $folder]) {
             $stored = 'J123456789-01-SIN_SERIE_S1-25';
             $document = new $modelClass();
@@ -73,6 +72,19 @@ class DocumentFileNameTest extends TestCase
             self::assertSame('unchanged PDF', $mail->rawAttachments[0]['data']);
             self::assertSame($stored, $document->filename);
         }
+    }
+
+    public function test_quotation_mail_uses_fresh_pdf_and_visible_name(): void
+    {
+        config(['mail.username' => 'billing@example.test']);
+        $quote = new \App\Models\Tenant\Quotation();
+        $quote->setRawAttributes(['external_id'=>'test-id','filename'=>'J123456789-01-SIN_SERIE_S1-25']);
+        $controller=$this->createMock(\App\Http\Controllers\Tenant\QuotationController::class);
+        $controller->expects(self::once())->method('emailPdf')->with('test-id')->willReturn(['quotation'=>$quote,'bytes'=>'fresh PDF']);
+        $this->app->instance(\App\Http\Controllers\Tenant\QuotationController::class,$controller);
+        $mail=(new \App\Mail\Tenant\QuotationEmail((object)['name'=>'Test'],$quote))->build();
+        self::assertSame('J123456789-01-00000025.pdf',$mail->rawAttachments[0]['name']);
+        self::assertSame('fresh PDF',$mail->rawAttachments[0]['data']);
     }
 
     public function test_print_headers_use_visible_filename(): void

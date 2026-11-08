@@ -480,7 +480,7 @@
                 $this->setFilename();
                 $this->createPdf($this->order_note, "a4", $this->order_note->filename);
 
-            });
+            }, 3);
 
             return [
                 'success' => true,
@@ -601,6 +601,8 @@
                         $width,
                         120 +
                         ($quantity_rows * 8) +
+                        (($format_pdf === 'ticket_58' && $base_template === 'modern-2027')
+                            ? \App\Support\Exact\PdfQuantities::extraHeight58($document->items) : 0) +
                         ($payments_quantity * 8) +
                         ($discount_global * 3) +
                         $company_name +
@@ -737,8 +739,29 @@
         {
             DB::connection('tenant')->transaction(function () use ($request) {
 
-                $this->order_note = OrderNote::firstOrNew(['id' => $request['id']]);
+                // ######## INICIO EDICIÓN TRANSACCIONAL DEL INVENTARIO DEL PEDIDO ########
+                $this->order_note = OrderNote::query()->lockForUpdate()->findOrFail($request['id']);
+                if ((string)$this->order_note->state_type_id !== '01') \App\Services\Payments\Classification::error('order','No se puede editar un pedido anulado o rechazado.');
+                if ($this->order_note->documents()->whereNotIn('state_type_id',\App\Models\Tenant\Document::VOIDED_REJECTED_IDS)->exists()
+                    || $this->order_note->sale_notes()->whereNotIn('state_type_id',\App\Models\Tenant\Document::VOIDED_REJECTED_IDS)->exists()) {
+                    \App\Services\Payments\Classification::error('order','No se puede editar un pedido que ya tiene un comprobante vigente.');
+                }
+                $existing=$this->order_note->items()->lockForUpdate()->get()->keyBy('id');
+                $rows=$request->input('items',[]); $seen=[];
+                foreach ($rows as $row) {
+                    $id=$this->getRowIdItem($row);
+                    if (!$id) continue;
+                    if (isset($seen[$id]) || !$existing->has($id)) \App\Services\Payments\Classification::error('items','La partida no pertenece al pedido o está repetida.');
+                    $seen[$id]=true;
+                }
                 $data = $this->mergeArray($request, $this->order_note);
+                $data['external_id']=$this->order_note->external_id;
+                $data['state_type_id']=$this->order_note->state_type_id;
+                foreach (['sale_note_id','order_note_id','dispatch_id'] as $field) {
+                    if (array_key_exists($field,$data) && (string)($data[$field] ?? '') !== (string)($this->order_note->$field ?? '')) {
+                        \App\Services\Payments\Classification::error('order','No se puede cambiar el origen de inventario al editar el pedido.');
+                    }
+                }
                 $this->order_note->fill($data);
                 // ######## INICIO CALCULOS EXACTOS PRO9 ########
                 // Guardar la cabecera antes de las partidas: sus eventos recalculan
@@ -746,42 +769,85 @@
                 $this->order_note->save();
                 // ######## FIN CALCULOS EXACTOS PRO9 ########
 
-                // Obtén IDs de items nuevos
-                $new_item_ids = collect($request['items'])
-                    ->pluck('id')
-                    ->filter() // Solo IDs que no son null
-                    ->toArray();
-
-                // Elimina items que NO están en la nueva lista
-                if (!empty($new_item_ids)) {
-                    $this->order_note->items()
-                        ->whereNotIn('id', $new_item_ids)
-                        ->delete();
-                } else {
-                    // Si no hay IDs, elimina todos (son nuevos)
-                    $this->order_note->items()->delete();
+                foreach ($existing as $id=>$line) if (!isset($seen[$id])) {
+                    $this->assertSimpleOrderInventory($line);
+                    $line->delete();
                 }
 
                 // Actualiza o crea items
-                foreach ($request['items'] as $row) {
+                foreach ($rows as $row) {
                     $item_id = $this->getRowIdItem($row);
-
-                    if ($item_id) {
-                        $order_note_item = OrderNoteItem::find($item_id);
-                        if (!$order_note_item) {
-                            $order_note_item = new OrderNoteItem();
-                        }
-                    } else {
-                        $order_note_item = new OrderNoteItem();
-                    }
+                    $order_note_item = $item_id ? $existing[$item_id] : new OrderNoteItem();
+                    $oldQuantity=$item_id ? $order_note_item->exactValue('quantity') : null;
+                    $oldItem=$item_id ? $order_note_item->item : null;
+                    $oldWarehouse=$item_id ? $order_note_item->warehouse_id : null;
+                    $oldLine=$item_id ? clone $order_note_item : null;
+                    $recordedLot=$item_id && isset($order_note_item->calculation_snapshot['inputs']['order_lot_inventory']);
+                    $recordedSerial=$item_id && isset($order_note_item->calculation_snapshot['inputs']['order_serial_inventory']);
 
                     $this->generalSetIdLoteSelectedToItem($row);
+                    if ($item_id && ((int)$order_note_item->item_id !== (int)($row['item_id'] ?? 0)
+                        || (string)($oldWarehouse ?? '') !== (string)($row['warehouse_id'] ?? '')
+                        || (bool)data_get($oldItem,'is_set',false) !== (bool)data_get($row,'item.is_set',false)
+                        || (string)data_get($oldItem,'unit_type_id','') !== (string)data_get($row,'item.unit_type_id','')
+                        || json_encode(data_get($oldItem,'presentation')) !== json_encode(data_get($row,'item.presentation'))
+                        || (!$recordedLot && json_encode(data_get($oldItem,'IdLoteSelected')) !== json_encode(data_get($row,'item.IdLoteSelected')))
+                        || (!$recordedLot && json_encode(data_get($oldItem,'lots_group')) !== json_encode(data_get($row,'item.lots_group')))
+                        || (!$recordedSerial && json_encode(data_get($oldItem,'lots')) !== json_encode(data_get($row,'item.lots'))))) {
+                        \App\Services\Payments\Classification::error('items','Para cambiar el producto, almacén, presentación o lotes, quite la partida y agréguela nuevamente.');
+                    }
                     $order_note_item->fill($row);
                     $order_note_item->order_note_id = $this->order_note->id;
                     $order_note_item->save();
+                    $quantityChanged=$item_id && !$oldQuantity->isEqualTo($order_note_item->exactValue('quantity'));
+                    $lotsChanged=$recordedLot && (json_encode(data_get($oldItem,'IdLoteSelected')) !== json_encode(data_get($row,'item.IdLoteSelected'))
+                        || json_encode(data_get($oldItem,'lots_group')) !== json_encode(data_get($row,'item.lots_group')));
+                    $serialsChanged=$recordedSerial && json_encode(data_get($oldItem,'lots')) !== json_encode(data_get($row,'item.lots'));
+                    if ($recordedSerial && $recordedLot && ($quantityChanged || $lotsChanged || $serialsChanged)) {
+                        $snapshot=$order_note_item->calculation_snapshot;
+                        $warehouse=(int)$snapshot['inputs']['order_lot_inventory']['warehouse_id'];
+                        if ($warehouse !== (int)$snapshot['inputs']['order_serial_inventory']['warehouse_id']) \App\Services\Payments\Classification::error('items','Los lotes y seriales deben pertenecer al mismo almacén.');
+                        $lots=\App\Services\Fiscal\OrderLotInventory::capture($order_note_item,$warehouse);
+                        $serials=\App\Services\Fiscal\OrderSerialInventory::capture($order_note_item,$warehouse);
+                        if ($lots === null || $serials === null) \App\Services\Payments\Classification::error('items','Seleccione los lotes y seriales de la partida.');
+                        $serials=\App\Services\Fiscal\OrderTrackedInventory::verifyAssociation($order_note_item,$lots,$serials);
+                        \App\Services\Fiscal\OrderTrackedInventory::apply($oldLine,1);
+                        $snapshot['inputs']['order_lot_inventory']=$lots;
+                        $snapshot['inputs']['order_serial_inventory']=$serials;
+                        $order_note_item->calculation_snapshot=$snapshot;
+                        $order_note_item->getConnection()->table($order_note_item->getTable())->where('id',$order_note_item->id)
+                            ->update(['calculation_snapshot'=>json_encode($snapshot,JSON_THROW_ON_ERROR),'item'=>$order_note_item->getAttributes()['item']]);
+                        \App\Services\Fiscal\OrderTrackedInventory::apply($order_note_item,-1);
+                    } elseif ($recordedSerial && ($quantityChanged || $serialsChanged)) {
+                        $snapshot=$order_note_item->calculation_snapshot;
+                        $warehouse=(int)$snapshot['inputs']['order_serial_inventory']['warehouse_id'];
+                        $replacement=\App\Services\Fiscal\OrderSerialInventory::capture($order_note_item,$warehouse);
+                        if ($replacement === null) \App\Services\Payments\Classification::error('items','Seleccione los seriales de la partida.');
+                        \App\Services\Fiscal\OrderSerialInventory::apply($oldLine,1);
+                        $snapshot['inputs']['order_serial_inventory']=$replacement;
+                        $order_note_item->calculation_snapshot=$snapshot;
+                        $order_note_item->getConnection()->table($order_note_item->getTable())->where('id',$order_note_item->id)
+                            ->update(['calculation_snapshot'=>json_encode($snapshot,JSON_THROW_ON_ERROR),'item'=>$order_note_item->getAttributes()['item']]);
+                        \App\Services\Fiscal\OrderSerialInventory::apply($order_note_item,-1);
+                    } elseif ($recordedLot && ($quantityChanged || $lotsChanged)) {
+                        $snapshot=$order_note_item->calculation_snapshot;
+                        $warehouse=(int)$snapshot['inputs']['order_lot_inventory']['warehouse_id'];
+                        $replacement=\App\Services\Fiscal\OrderLotInventory::capture($order_note_item,$warehouse);
+                        if ($replacement === null) \App\Services\Payments\Classification::error('items','Seleccione los lotes de la partida.');
+                        \App\Services\Fiscal\OrderLotInventory::apply($oldLine,1);
+                        $snapshot['inputs']['order_lot_inventory']=$replacement;
+                        $order_note_item->calculation_snapshot=$snapshot;
+                        $order_note_item->getConnection()->table($order_note_item->getTable())->where('id',$order_note_item->id)
+                            ->update(['calculation_snapshot'=>json_encode($snapshot,JSON_THROW_ON_ERROR),'item'=>$order_note_item->getAttributes()['item']]);
+                        \App\Services\Fiscal\OrderLotInventory::apply($order_note_item,-1);
+                    } elseif ($quantityChanged) {
+                        $this->assertSimpleOrderInventory($order_note_item,true);
+                        $this->adjustSimpleOrderInventory($order_note_item,$oldQuantity->minus($order_note_item->exactValue('quantity')));
+                    }
                 }
 
                 $this->setFilename();
+                // ######## FIN EDICIÓN TRANSACCIONAL DEL INVENTARIO DEL PEDIDO ########
             });
 
             return [
@@ -790,6 +856,45 @@
                     'id' => $this->order_note->id,
                 ],
             ];
+        }
+
+        private function assertSimpleOrderInventory(OrderNoteItem $line, bool $quantityChange=false): void
+        {
+            $item=$line->item;
+            $recordedPack=isset($line->calculation_snapshot['inputs']['order_pack_inventory']);
+            $recordedLot=isset($line->calculation_snapshot['inputs']['order_lot_inventory']);
+            $recordedSerial=isset($line->calculation_snapshot['inputs']['order_serial_inventory']);
+            if ((!empty($item->is_set) && !$recordedPack) || ((!empty($item->IdLoteSelected) || !empty($item->lots_group)) && (!$recordedLot || $quantityChange)) || (!empty($item->lots) && (!$recordedSerial || $quantityChange))) {
+                \App\Services\Payments\Classification::error('items','La edición de inventario para paquetes, lotes o seriales aún no está disponible.');
+            }
+        }
+
+        private function adjustSimpleOrderInventory(OrderNoteItem $line, $delta): void
+        {
+            if (($line->calculation_snapshot['inputs']['inventory_service_without_movement'] ?? false) === true) return;
+            if (\App\Services\Fiscal\OrderPackInventory::apply($line,$delta)) return;
+            $order=$this->order_note;
+            $moves=!$order->sale_note_id && !$order->order_note_id && !$order->dispatch_id;
+            if ($order->dispatch_id && $order->dispatch) $moves=!$order->dispatch->discountsPhysicalStock();
+            if (!$moves) return;
+            $factor=\App\Support\Exact\Decimal::of(data_get($line->item,'presentation.quantity_unit',1));
+            $quantity=$delta->multipliedBy($factor);
+            if ($quantity->isZero()) return;
+            $recordedWarehouse=$line->calculation_snapshot['inputs']['order_inventory_warehouse_id'] ?? null;
+            if ($recordedWarehouse) $warehouse=\Modules\Inventory\Models\Warehouse::findOrFail($recordedWarehouse);
+            else {
+                $establishmentId=$line->warehouse_id
+                    ? \Modules\Inventory\Models\Warehouse::findOrFail($line->warehouse_id)->establishment_id
+                    : auth()->user()->establishment_id;
+                $warehouse=\Modules\Inventory\Models\Warehouse::where('establishment_id',$establishmentId)->firstOrFail();
+            }
+            $stock=\Modules\Inventory\Models\ItemWarehouse::where('item_id',$line->item_id)->where('warehouse_id',$warehouse->id)->lockForUpdate()->firstOrFail();
+            $stock->stock=$stock->exactValue('stock')->plus($quantity);
+            if ($quantity->isNegative() && $stock->exactValue('stock')->isNegative() && \Modules\Inventory\Models\InventoryConfiguration::firstOrFail()->stock_control) {
+                \App\Services\Payments\Classification::error('items','No hay inventario suficiente para la cantidad del pedido.');
+            }
+            $stock->save();
+            $order->inventory_kardex()->create(['date_of_issue'=>date('Y-m-d'),'item_id'=>$line->item_id,'warehouse_id'=>$warehouse->id,'quantity'=>$quantity]);
         }
 
 
@@ -821,7 +926,15 @@
 
             DB::connection('tenant')->transaction(function () use ($id) {
 
-                $item = OrderNoteItem::findOrFail($id);
+                $orderId = OrderNoteItem::whereKey($id)->value('order_note_id');
+                $order = OrderNote::query()->lockForUpdate()->findOrFail($orderId);
+                if ((string)$order->state_type_id !== '01') \App\Services\Payments\Classification::error('order','No se puede editar un pedido anulado o rechazado.');
+                if ($order->documents()->whereNotIn('state_type_id',\App\Models\Tenant\Document::VOIDED_REJECTED_IDS)->exists()
+                    || $order->sale_notes()->whereNotIn('state_type_id',\App\Models\Tenant\Document::VOIDED_REJECTED_IDS)->exists()) {
+                    \App\Services\Payments\Classification::error('order','No se puede editar un pedido que ya tiene un comprobante vigente.');
+                }
+                $item = $order->items()->lockForUpdate()->findOrFail($id);
+                $this->assertSimpleOrderInventory($item);
                 $item->delete();
 
             });
@@ -834,20 +947,19 @@
 
         public function duplicate(Request $request)
         {
-            // return $request->id;
-            $obj = OrderNote::find($request->id);
-            $this->order_note = $obj->replicate();
-            $this->order_note->external_id = Str::uuid()->toString();
-            $this->order_note->state_type_id = '01';
-            $this->order_note->save();
-
-            foreach ($obj->items as $row) {
-                $new = $row->replicate();
-                $new->order_note_id = $this->order_note->id;
-                $new->save();
-            }
-
-            $this->setFilename();
+            DB::connection('tenant')->transaction(function () use ($request) {
+                $obj = OrderNote::query()->lockForUpdate()->findOrFail($request->id);
+                $this->order_note = $obj->replicate();
+                $this->order_note->external_id = Str::uuid()->toString();
+                $this->order_note->state_type_id = '01';
+                $this->order_note->save();
+                foreach ($obj->items()->lockForUpdate()->get() as $row) {
+                    $new = $row->replicate();
+                    $new->order_note_id = $this->order_note->id;
+                    $new->save();
+                }
+                $this->setFilename();
+            });
 
             return [
                 'success' => true,
@@ -860,11 +972,7 @@
 
         public function voided($id)
         {
-            DB::connection('tenant')->transaction(function () use ($id) {
-                $obj = OrderNote::find($id);
-                $obj->VoidOrderNote();
-                $obj->update();
-            });
+            $this->updateStateType('11', $id);
 
             return [
                 'success' => true,
@@ -881,9 +989,25 @@
 
         public function updateStateType($state_type_id, $id)
         {
-            $record = OrderNote::find($id);
-            $record->state_type_id = $state_type_id;
-            $record->save();
+            // ######## INICIO CAMBIO TRANSACCIONAL DE ESTADO DEL PEDIDO ########
+            if (!in_array((string)$state_type_id,['01','03','05','07','09','11','13'],true)) {
+                \App\Services\Payments\Classification::error('state_type_id','Seleccione un estado de pedido válido.');
+            }
+            DB::connection('tenant')->transaction(function () use ($id,$state_type_id) {
+                $record=OrderNote::query()->lockForUpdate()->findOrFail($id);
+                $previous=(string)$record->state_type_id; $next=(string)$state_type_id;
+                if ($previous === $next) return;
+                if (in_array($previous,['09','11'],true)) \App\Services\Payments\Classification::error('state_type_id','No se puede reactivar un pedido anulado o rechazado.');
+                if (in_array($next,['09','11'],true)) {
+                    if ($record->documents()->whereNotIn('state_type_id',\App\Models\Tenant\Document::VOIDED_REJECTED_IDS)->exists()
+                        || $record->sale_notes()->whereNotIn('state_type_id',\App\Models\Tenant\Document::VOIDED_REJECTED_IDS)->exists()) {
+                        \App\Services\Payments\Classification::error('order','No se puede anular un pedido con comprobantes vigentes.');
+                    }
+                    foreach ($record->items()->lockForUpdate()->get() as $line) $this->assertSimpleOrderInventory($line);
+                }
+                $record->state_type_id=$next; $record->save();
+            });
+            // ######## FIN CAMBIO TRANSACCIONAL DE ESTADO DEL PEDIDO ########
 
             return [
                 'success' => true,
@@ -992,7 +1116,8 @@
                 Mail::to($customer_email)->send(new OrderNoteEmail($client, $order_note));
             }*/
             return [
-                'success' => true
+                'success' => $sendIt,
+                'message' => $sendIt ? 'El correo fue enviado satisfactoriamente.' : 'No se pudo enviar el correo. Revise la configuración y el registro de envíos.'
             ];
         }
 

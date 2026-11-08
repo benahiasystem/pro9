@@ -84,9 +84,9 @@
          */
         public function records(Request $request)
         {
-            $records = $this->getRecords($request->all());
-
-            return new RentHotelCollection($records->paginate(config('tenant.items_per_page')));
+            return \App\Support\Exact\ReadSnapshot::run((new HotelRent)->getConnection(), function () use ($request) {
+                return (new RentHotelCollection($this->getRecords($request->all())->paginate(config('tenant.items_per_page'))))->response($request);
+            });
         }
 
         /**
@@ -97,8 +97,8 @@
         public function getRecords($request)
         {
 
-            $date_start = $request['date_start'];
-            $date_end = $request['date_end'];
+            $date_start = $request['date_start'] ?? null;
+            $date_end = $request['date_end'] ?? null;
 
             return $this->data($date_start, $date_end);
 
@@ -112,9 +112,11 @@
          */
         private function data($date_start, $date_end)
         {
-            $rooms = HotelRent::with('room','room.rates', 'rate','room.category')
-			->orderBy('id', 'DESC');
-            return $rooms=$rooms->SearchByDate($date_start,$date_end)->latest();
+            $user = auth()->user();
+            abort_unless($user instanceof \App\Models\Tenant\User, 403);
+            $query = HotelRent::with(['room.category','items','products','person.identity_document_type','person.country','person.nationality']);
+            if ($user->type !== 'admin') $query->where('establishment_id', $user->establishment_id);
+            return $query->searchByDate($date_start,$date_end)->latest()->orderByDesc('id');
 
 
 
@@ -127,12 +129,10 @@
          */
         public function excel(Request $request)
         {
-
+            return \App\Support\Exact\ReadSnapshot::run((new HotelRent)->getConnection(), function () use ($request) {
             $company = Company::first();
-
             $records = $this->getRecords($request->all())->get();
-
-            $rooms = HotelRoom::get();
+            $rooms = $this->authorizedRooms();
 
             $documentHotelExport = new ReportHotelExport();
             $documentHotelExport
@@ -141,7 +141,27 @@
                 ->company($company);
 
             return $documentHotelExport->download('Reporte_Hoteles_' . Carbon::now() . '.xlsx');
+            });
 
+        }
+
+        public function pdf(Request $request)
+        {
+            return \App\Support\Exact\ReadSnapshot::run((new HotelRent)->getConnection(), function () use ($request) {
+                $company = Company::first();
+                $report = \Modules\Report\Services\HotelOccupancyReport::prepare($this->getRecords($request->all())->get(), $this->authorizedRooms());
+                return \Barryvdh\DomPDF\Facade\Pdf::loadView('report::report_hotels.report_pdf', compact('company','report'))
+                    ->setPaper('a4','landscape')->download('Reporte_Habitaciones_'.date('YmdHis').'.pdf');
+            });
+        }
+
+        private function authorizedRooms()
+        {
+            $query = HotelRoom::query();
+            $user = auth()->user();
+            abort_unless($user instanceof \App\Models\Tenant\User, 403);
+            if ($user->type !== 'admin') $query->where('establishment_id', $user->establishment_id);
+            return $query->orderBy('name')->get();
         }
 
 

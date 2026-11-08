@@ -17,22 +17,15 @@
     /* ------------------------------------------------------------------
      | modern-2027: variables propias del diseño del ticket
      ------------------------------------------------------------------ */
-    $max_chars_description = 28;
 
     $m27_cashier = strtoupper(($document->seller_id != 0 && $document->seller) ? $document->seller->name : optional($document->user)->name ?? '');
 
 
 
 
-    $m27_igv_percentage = collect($document->items)
-        ->map(function ($it) { return (float) ($it->percentage_igv ?? 0); })
-        ->filter()
-        ->max();
-    $m27_igv_percentage = $m27_igv_percentage ? rtrim(rtrim(number_format($m27_igv_percentage, 2, '.', ''), '0'), '.') : null;
+    $m27_igv_percentage = \App\Support\Exact\PdfTaxRates::single($document->items);
 
-    $m27_total_products = rtrim(rtrim(number_format(collect($document->items)->sum(function ($item) {
-        return (float) data_get($item, 'quantity', 0);
-    }), 2, '.', ''), '0'), '.');
+    $m27_total_products = \App\Support\Exact\PdfQuantities::summary($document->items);
 
     $m27_barcode = preg_replace('/[^0-9A-Za-z\-]/', '', $tittle);
 
@@ -177,7 +170,7 @@
         @php
             // El codigo interno se imprime en la linea secundaria del item
             $item_code = trim((string) optional($row->item)->internal_id);
-            $item_quantity = ((int)$row->quantity != $row->quantity) ? $row->quantity : number_format($row->quantity, 0);
+            $item_quantity = \App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::read($row, 'quantity'));
             $use_name_product_pdf = !empty($row->name_product_pdf);
             $item_description = null;
             if (!$use_name_product_pdf) {
@@ -186,13 +179,13 @@
                     $item_description .= ' '.strip_tags((string) $row->item->presentation->description);
                 }
                 $item_description = \App\CoreFacturalo\Helpers\Template\TemplateHelper::stripLeadingItemCode($item_description, $item_code);
-                if (mb_strlen($item_description) > $max_chars_description) {
-                    $item_description = rtrim(mb_substr($item_description, 0, max($max_chars_description - 1, 1))).'.';
-                }
             }
         @endphp
+        @if(strlen($item_quantity) > 9)
+        <tr><td colspan="3" class="m27-item m27-item-sm text-left">Cantidad: {{ $item_quantity }}</td></tr>
+        @endif
         <tr>
-            <td class="m27-item m27-item-sm text-left">{{ $item_quantity }}</td>
+            <td class="m27-item m27-item-sm text-left">{{ strlen($item_quantity) > 9 ? '' : $item_quantity }}</td>
             <td class="m27-item m27-item-sm text-left">
                 @if($use_name_product_pdf)
                     {!! \App\CoreFacturalo\Helpers\Template\TemplateHelper::stripLeadingItemCode(\App\CoreFacturalo\Helpers\Template\TemplateHelper::formatNameProductPdfForTicket($row->name_product_pdf), $item_code) !!}
@@ -241,7 +234,7 @@
                     @isset($row->item->lots)
                         @foreach($row->item->lots as $lot)
                             @if( isset($lot->has_sale) && $lot->has_sale)
-                                <span> Serie: {{ $lot->series }}</span>
+                                <div>Serie: {{ $lot->series }}</div>
                             @endif
                         @endforeach
                     @endisset
@@ -261,7 +254,7 @@
                     $item_sub_line = ($item_code_label !== '' ? $item_code_label.' ' : '')
                         .'('.$item_unit_label.$document->currency_type->symbol.' '.\App\Support\Exact\PdfPrice::configured($item_unit_price).')';
                 @endphp
-                {{ $item_sub_line }}
+                <span data-pdf-unit-price>{{ $item_sub_line }}</span>
             </td>
         </tr>
     @endforeach
@@ -318,11 +311,10 @@
     @endif
     @if($document->total_igv > 0)
         <tr>
-            <td colspan="2" class="m27-total-label m27-total-label-sm">Subtotal:</td>
-            <td class="m27-total-value m27-total-value-sm">{{ $document->currency_type->symbol }} {{ number_format($document->total - $document->total_igv, 2) }}</td>
+            <td colspan="3" class="m27-total-value m27-total-value-sm">Subtotal: {{ $document->currency_type->symbol }} {{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total')->minus(\App\Support\Exact\PdfAmounts::read($document, 'total_igv')), 2) }}</td>
         </tr>
         <tr>
-            <td colspan="2" class="m27-total-label m27-total-label-sm">IGV{{ $m27_igv_percentage ? ' ('.$m27_igv_percentage.'%)' : '' }}:</td>
+            <td colspan="2" class="m27-total-label m27-total-label-sm">IVA{{ $m27_igv_percentage ? ' ('.$m27_igv_percentage.'%)' : '' }}:</td>
             <td class="m27-total-value m27-total-value-sm">{{ $document->currency_type->symbol }} {{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_igv'), 2) }}</td>
         </tr>
     @endif
@@ -337,10 +329,12 @@
         <td class="m27-colspec" width="56%"></td>
         <td class="m27-colspec" width="28%"></td>
     </tr>
+    @if(strlen($m27_total_products) > 9)
+    <tr><td colspan="3" class="m27-item-sub m27-item-sub-sm">Cantidades: {{ $m27_total_products }}</td></tr>
+    @endif
     <tr>
-        <td class="m27-item-sub m27-item-sub-sm align-bottom" style="white-space: nowrap;">{{ $m27_total_products }} und.</td>
-        <td class="m27-grand-label m27-grand-label-sm">TOTAL:</td>
-        <td class="m27-grand-value m27-grand-value-sm">{{ $document->currency_type->symbol }} {{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total'), 2) }}</td>
+        <td class="m27-item-sub m27-item-sub-sm align-bottom">{{ strlen($m27_total_products) > 9 ? '' : $m27_total_products }}</td>
+        <td colspan="2" class="m27-grand-value m27-grand-value-sm" style="white-space: nowrap;">TOTAL: {{ $document->currency_type->symbol }} {{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total'), 2) }}</td>
     </tr>
     </tbody>
 </table>

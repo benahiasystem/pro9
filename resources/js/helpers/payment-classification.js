@@ -63,6 +63,22 @@ export function paymentValidationMessage(data) {
     return null
 }
 
+// Checkout forms have no inline display for line-item validation errors.
+export function checkoutValidationMessage(data) {
+    const payment = paymentValidationMessage(data)
+    if (payment) return payment
+    const errors = data?.errors || (data?.message && typeof data.message === 'object' ? data.message : data)
+    if (errors && typeof errors === 'object' && !Array.isArray(errors)) {
+        for (const [field, value] of Object.entries(errors)) {
+            if (field === 'message') continue
+            const message = (Array.isArray(value) ? value : [value]).find(item => typeof item === 'string' && item.trim())
+            if (message) return message
+        }
+    }
+    if (typeof data?.message === 'string' && data.message.trim()) return data.message
+    return 'No se pudo guardar la venta. Revise los datos e intente nuevamente.'
+}
+
 export function handleHotelPaymentError(error, view) {
     const response = error?.response
     if (!response) {
@@ -72,7 +88,7 @@ export function handleHotelPaymentError(error, view) {
     if (response.status === 422) {
         const data = response.data || {}
         view.errors = data.errors || (data.message && typeof data.message === 'object' ? data.message : data)
-        const message = paymentValidationMessage(data) || (data.errors && typeof data.message === 'string' ? data.message : null)
+        const message = checkoutValidationMessage(data)
         if (message) view.$message.error(message)
         return
     }

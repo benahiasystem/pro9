@@ -15,15 +15,18 @@ final class ConsolidatedLines
         $records = is_array($records) ? $records : iterator_to_array((function () use ($records) { yield from $records; })(), false);
         if (count($records) > 500) throw new \InvalidArgumentException('El lote del consolidado supera 500 partidas.');
         $wanted = [];
+        $tables = ['document'=>['documents','document_items','document_id'],
+            'sale_note'=>['sale_notes','sale_note_items','sale_note_id'],
+            'order_note'=>['order_notes','order_note_items','order_note_id']];
         foreach ($records as $row) {
             $source = $row->source_type;
-            if (!in_array($source, ['document', 'sale_note'], true) || $row->source_id === null) {
+            if (!isset($tables[$source]) || $row->source_id === null) {
                 throw new \UnexpectedValueException('Falta el origen de la partida del consolidado.');
             }
             $wanted[$source][$row->source_id] = true;
         }
         foreach ($wanted as $source=>$ids) {
-            $table = $source === 'document' ? 'documents' : 'sale_notes';
+            $table = $tables[$source][0];
             $missing = array_filter(array_keys($ids), fn($id)=>!isset($this->parents[$source.':'.$id]));
             if (!$missing) continue;
             foreach ($this->connection->table($table)->whereIn('id', $missing)->get(['id','total','total_value','total_igv',
@@ -39,8 +42,7 @@ final class ConsolidatedLines
             if ($frozen[$position] === null && $this->parents[$key]['context'] === null) $fallback[$row->source_type][$row->source_id] = true;
         }
         foreach ($fallback as $source=>$ids) {
-            $table = $source === 'document' ? 'document_items' : 'sale_note_items';
-            $foreign = $source === 'document' ? 'document_id' : 'sale_note_id';
+            [, $table, $foreign] = $tables[$source];
             $stats = [];
             foreach (array_keys($ids) as $id) $stats[$id] = HeaderAllocation::stats();
             foreach ($this->connection->table($table)->whereIn($foreign, array_keys($ids))->lazyById(500) as $line) {

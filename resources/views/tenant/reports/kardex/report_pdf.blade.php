@@ -82,9 +82,9 @@
                         <thead>
                             <tr>
                                 <th>#</th>
-                                <th>Fecha y hora</th>
-                                <th>Tipo transacción</th>
-                                <th>Número</th>
+                                <th>Fecha y hora del movimiento</th>
+                                <th>Tipo de movimiento</th>
+                                <th>N.º de documento</th>
                                 <th>Entrada</th>
                                 <th>Salida</th>
                                 <th>Saldo</th>
@@ -92,42 +92,18 @@
                         </thead>
                         <tbody>
                             @foreach($reports as $key => $value)
+                                @php
+                                    $row = \App\Support\Exact\LegacyKardexRow::from($value);
+                                    $balance = \App\Support\Exact\Decimal::of($balance)->plus($row['delta']);
+                                @endphp
                                 <tr>
                                     <td class="celda">{{$value->id}}</td>
                                     <td class="celda">{{$value->created_at}}</td>
-                                    <td class="celda">
-                                        @switch($value->type)
-                                            @case('sale') 
-                                                {{($value->sale_note_id) ? "Nota de Venta" : (($value->quantity >= 0) ? "Venta" : "Anulación")}}
-                                                @break
-                                            @case('purchase')
-                                                {{"Compra"}}                                                    
-                                                @break
-                                            @default                                                    
-                                                {{"Stock Inicial"}}                                                    
-                                            @break
-                                        @endswitch
-                                    </td>
-                                    <td class="celda">
-                                        @switch($value->type)
-                                            @case('sale')
-                                                {{($value->document_id) ? $value->document->number_full : $value->sale_note->number_full}}
-                                                @break
-                                            @case('purchase')
-                                                {{"{$value->purchase->series}-{$value->purchase->number}"}}                                                    
-                                                @break
-                                            @default                                                    
-                                                {{"-"}}                                                    
-                                            @break
-                                        @endswitch
-                                    </td>    
-                                    <td class="celda">{{($value->type == 'purchase' || !$value->type) ? number_format($value->quantity, 4) : number_format(0, 4)}}</td>
-                                    <td class="celda">{{($value->type == 'sale') ? number_format($value->quantity, 4) : number_format(0, 4)}}</td>
-                                    @php
-                                        if ($value->type == 'purchase' || !$value->type) $balance += $value->quantity;
-                                        if ($value->type == 'sale') $balance -= $value->quantity;
-                                    @endphp
-                                    <td class="celda">{{number_format($balance, 4)}}</td>
+                                    <td class="celda">{{ $row['description'] }}</td>
+                                    <td class="celda">{{ $row['number'] }}</td>
+                                    <td class="celda">{{ \App\Support\Exact\Decimal::represent($row['entry']) }}</td>
+                                    <td class="celda">{{ \App\Support\Exact\Decimal::represent($row['exit']) }}</td>
+                                    <td class="celda">{{ \App\Support\Exact\Decimal::represent($balance) }}</td>
                                 </tr>
                             @endforeach
                         </tbody>

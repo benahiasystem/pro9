@@ -9,6 +9,7 @@
 </template>
 
 <script>
+import { formatMoneyExact } from "../../../../../../../../resources/js/helpers/format-money-exact";
 export default {
     name: "SalesGrowthChart",
     props: {
@@ -24,6 +25,8 @@ export default {
             type: Array,
             default: () => [],
         },
+        currentExact: { type: Array, default: () => [] },
+        previousExact: { type: Array, default: () => [] },
         currentLabel: { type: String, default: "" },
         previousLabel: { type: String, default: "" },
     },
@@ -35,6 +38,7 @@ export default {
             ];
         },
         chartOptions() {
+            const exact = [this.currentExact, this.previousExact];
             return {
                 chart: {
                     toolbar: { show: false },
@@ -62,12 +66,9 @@ export default {
                 yaxis: { show: false },
                 tooltip: {
                     y: {
-                        formatter: (val) =>
-                            "Bs. " +
-                            Number(val).toLocaleString("es-PE", {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2,
-                            }),
+                        formatter: (val, context) => "Bs. " + formatMoneyExact(
+                            exact[context?.seriesIndex]?.[context?.dataPointIndex] ?? val
+                        ),
                     },
                 },
             };

@@ -68,6 +68,18 @@ class PurchaseSettlementTransform
                     'unit_value' => Functions::valueKeyInArray($row, 'valor_unitario'),
                     'price_type_id' => Functions::valueKeyInArray($row, 'codigo_tipo_precio'),
                     'unit_price' => Functions::valueKeyInArray($row, 'precio_unitario'),
+                    'quantity_input' => $row['quantity_input'] ?? null,
+                    'price_input' => $row['price_input'] ?? null,
+                    'discounts' => array_map(static fn ($discount) => [
+                        'discount_type_id'=>$discount['codigo'], 'description'=>$discount['descripcion'] ?? '',
+                        'factor'=>$discount['factor'] ?? '0', 'amount'=>$discount['monto'] ?? '0',
+                        'amount_without_rounded'=>$discount['cantidad_sin_redondeo'] ?? null,
+                        'from_global_distribution'=>$discount['global_distribucion'] ?? null,
+                    ], $row['descuentos'] ?? []),
+                    'charges' => array_map(static fn ($charge) => [
+                        'charge_type_id'=>$charge['codigo'], 'description'=>$charge['descripcion'] ?? '',
+                        'factor'=>$charge['factor'] ?? '0', 'amount'=>$charge['monto'] ?? '0',
+                    ], $row['cargos'] ?? []),
 
                     'affectation_igv_type_id' => Functions::valueKeyInArray($row, 'codigo_tipo_afectacion_igv'),
                     'total_base_igv' => Functions::valueKeyInArray($row, 'total_base_igv'),

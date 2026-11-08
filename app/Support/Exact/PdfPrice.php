@@ -24,5 +24,24 @@ final class PdfPrice
     {
         return self::format($value, \App\Models\Tenant\Configuration::getDataDecimalQuantity());
     }
+
+    /** Whether rounding the displayed unit price changes the displayed line base. */
+    public static function needsRoundingNotice($items, $configuration): bool
+    {
+        foreach ($items as $item) {
+            $price=Decimal::read($item,'unit_price');
+            $quantity=Decimal::read($item,'quantity');
+            if (self::roundingChangesLine($price,$quantity,$configuration)) return true;
+        }
+        return false;
+    }
+
+    public static function roundingChangesLine($price, $quantity, $configuration): bool
+    {
+        $price=Decimal::of($price); $quantity=Decimal::of($quantity);
+        $shown=Decimal::of(self::format($price,$configuration));
+        return Decimal::represent($shown->multipliedBy($quantity),2,true)
+            !== Decimal::represent($price->multipliedBy($quantity),2,true);
+    }
 }
 // ######## FIN CALCULOS EXACTOS PRO9 ########

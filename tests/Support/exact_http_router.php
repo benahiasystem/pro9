@@ -1,6 +1,15 @@
 <?php
 
 // Test-only front controller. It is never installed in public/ or production routes.
+// Browser fixtures serve static assets only from the public document root.
+if (getenv('PRO9_BROWSER_FIXTURE') === '1' && realpath($_SERVER['DOCUMENT_ROOT'] ?? '') === realpath(dirname(__DIR__,2).'/public')) {
+    $path=parse_url($_SERVER['REQUEST_URI'] ?? '/',PHP_URL_PATH);
+    $file=realpath(dirname(__DIR__,2).'/public/'.$path);
+    $root=realpath(dirname(__DIR__,2).'/public').DIRECTORY_SEPARATOR;
+    if (preg_match('~^/(?:build|porto-light|js|css|images|img|fonts|json|vendor)/[^?]*$~',$path)
+        && !preg_match('~(?:^|/)\.~',$path) && $file && str_starts_with($file,$root)
+        && is_file($file) && strtolower(pathinfo($file,PATHINFO_EXTENSION)) !== 'php') return false;
+}
 $fixturePath=getenv('PRO9_EXACT_HTTP_FIXTURE');
 if (!$fixturePath || !is_file($fixturePath)) { http_response_code(503);exit; }
 $fixture=json_decode(file_get_contents($fixturePath),true,512,JSON_THROW_ON_ERROR);
@@ -34,6 +43,13 @@ $bootStart=hrtime(true);$kernel->bootstrap();$bootMs=(hrtime(true)-$bootStart)/1
 $queries=0;$sqlMs=0;
 \Illuminate\Support\Facades\DB::listen(static function ($event) use (&$queries,&$sqlMs): void { $queries++;$sqlMs+=$event->time; });
 $handleStart=hrtime(true);$response=$kernel->handle($request);
+if (getenv('PRO9_BROWSER_FIXTURE') === '1' && $response->getStatusCode() >= 400) {
+    error_log('Browser fixture HTTP '.$response->getStatusCode().' '.$request->method().' '.$request->getPathInfo());
+}
+if (getenv('PRO9_BROWSER_FIXTURE') === '1') {
+    // The browser must not send synthetic test data to telemetry or integrations.
+    $response->headers->set('Content-Security-Policy', "default-src 'self' data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self' data: blob:; font-src 'self' data:");
+}
 $response->headers->set('X-Pro9-Test-Handler-Ms',(string)((hrtime(true)-$handleStart)/1000000));
 $response->headers->set('X-Pro9-Test-SQL-Ms',(string)$sqlMs);
 $response->headers->set('X-Pro9-Test-Boot-Ms',(string)$bootMs);

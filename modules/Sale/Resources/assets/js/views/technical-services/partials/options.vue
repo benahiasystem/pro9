@@ -150,9 +150,24 @@
                 <div v-if="form.items.length > 0"
                      class="col-lg-12">
                     <label class="control-label">Descripción del servicio</label>
-                    <el-input v-model="form.items[0].description"
+                    <el-input v-model="form.items[form.items.length - 1].description"
                               autosize
                               type="textarea"></el-input>
+                </div>
+                <div class="col-lg-12">
+                    <label class="control-label">Condición de pago</label>
+                    <el-select v-model="form.payment_condition_id" @change="changePaymentCondition">
+                        <el-option label="Contado" value="01"></el-option>
+                        <el-option label="Crédito" value="02"></el-option>
+                    </el-select>
+                    <table v-if="form.payment_condition_id === '02'" style="width: 100%">
+                        <thead><tr><th>Fecha</th><th>Monto</th><th><a href="#" @click.prevent="clickAddFee">[+]</a></th></tr></thead>
+                        <tbody><tr v-for="(fee, index) in form.fee" :key="index">
+                            <td><el-date-picker v-model="fee.date" type="date" value-format="yyyy-MM-dd" format="dd/MM/yyyy" :clearable="false"></el-date-picker></td>
+                            <td><el-input v-model="fee.amount"></el-input></td>
+                            <td><button v-if="form.fee.length > 1" type="button" @click.prevent="clickRemoveFee(index)">Eliminar</button></td>
+                        </tr></tbody>
+                    </table>
                 </div>
                 <div
                      class="col-lg-12">
@@ -271,7 +286,9 @@
 </template>
 
 <script>
-import {withoutDraftRetentions, suggestRemainingPayment} from "@helpers/document-creation"
+import {withoutDraftRetentions, suggestRemainingPayment, suggestInstallments, paymentConditionPayload} from "@helpers/document-creation"
+import {calculateRowItem} from "@helpers/functions"
+import {exactAmount, exactValue} from "@helpers/exchange-rate-math"
 import {ensureExchangeRateSale} from "@helpers/ensure-exchange-rate-sale"
 import {defaultCashForCurrency, paymentValidationMessage, isRecordedReceipt} from "@helpers/payment-classification"
 import fiscalPaymentSettings from "@mixins/fiscal-payment-settings"
@@ -297,6 +314,11 @@ export default {
             'config',
             'currency_types',
         ]),
+    },
+    watch: {
+        'form.payments': {deep: true, handler() {
+            if (this.form.payment_condition_id === '02' && this.form.fee?.length) this.calculateFee()
+        }},
     },
     props: [
         "showDialog",
@@ -388,7 +410,11 @@ export default {
                 total_value: 0,
                 total: 0,
                 items: [],
+                discounts: [],
+                charges: [],
                 payments: [],
+                payment_condition_id: '01',
+                fee: [],
                 prefix: null,
             };
         },
@@ -414,20 +440,18 @@ export default {
                     //     'unit_price': this.record.cost
                     // });
                     await this.getPercentageIgv();
-                    let total = _.round(parseFloat(this.record.cost), 2);
-                    let unit_value = this.record.cost / (1 + this.percentage_igv);
-                    let total_taxed = _.round(unit_value, 2);
-                    let total_igv = _.round(total - total_taxed, 2);
                     let item_description = `Descripción: ${this.record.description}, Estado: ${this.record.state}, Razón: ${this.record.reason + "\n"}`;
                     if (this.record.items !== undefined) {
-                        this.form.items = this.record.items
+                        this.form.items = this.record.items.map(row => ({...row}))
                     }
 
                     this.form.technical_service_id = this.recordId
 
-                    this.form.items.push({
+                    const cost = String(this.record.cost ?? '0');
+                    this.form.items.push(calculateRowItem({
                         'id': null,
                         'item_id': null,
+                        'item': {id: null, unit_price: cost, currency_type_id: this.form.currency_type_id, unit_type_id: 'SERV'},
                         'internal_id': moment().format("YYYYMMDDHHmmss"),
                         'item_type_id': '02',
                         'has_igv': true,
@@ -435,36 +459,30 @@ export default {
                         'unit_type_id': 'SERV',
                         'affectation_igv_type_id': '10',
                         'description': item_description,
-                        'percentage_igv': this.percentage_igv * 100,
                         'currency_type_id': this.form.currency_type_id,
-                        'unit_value': unit_value,
-                        'unit_price': total,
-                        'total_base_igv': total_taxed,
-                        'total_igv': total_igv,
-                        'total_value': total_taxed,
-                        'total_taxes': total_igv,
-                        'total': total,
+                        'unit_price': cost,
+                        'price_input': {amount: cost, currency_type_id: this.form.currency_type_id, includes_iva: true},
                         'quantity': 1,
                         'discounts': [],
                         'charges': [],
 
-                    });
+                    }, this.form.currency_type_id, this.form.exchange_rate_sale, this.percentage_igv));
 
-                    total = 0;
-                    total_taxed = 0
-                    total_igv = 0
-                    this.form.items.forEach((row) => {
-                        total += row.total;
-                        total_igv += row.total_igv;
-                        total_taxed += row.total_value;
-                    });
+                    const sum = field => this.form.items.reduce((total, row) => total.plus(exactValue(row, field)), exactAmount(0)).decimal();
 
                     this.form.items = this.onPrepareItems(this.form.items)
-                    this.form.total_taxed = total_taxed;
-                    this.form.total_igv = total_igv;
-                    this.form.total_taxes = total_igv;
-                    this.form.total_value = total_taxed;
-                    this.form.total = total;
+                    this.form.discounts = (this.record.discounts || []).map(row => ({...row}));
+                    this.form.charges = (this.record.charges || []).map(row => ({...row}));
+                    const stored = field => this.record[field] != null || this.record.calculation_snapshot?.values?.[field] != null;
+                    for (const field of ['total_taxed','total_exonerated','total_igv','total_taxes','total_value',
+                        'total_discount','total_charge','total_prepayment']) {
+                        if (stored(field)) this.form[field] = exactValue(this.record, field).decimal();
+                    }
+                    if (!stored('total_taxed')) this.form.total_taxed = sum('total_value');
+                    if (!stored('total_igv')) this.form.total_igv = sum('total_igv');
+                    if (!stored('total_taxes')) this.form.total_taxes = sum('total_taxes');
+                    if (!stored('total_value')) this.form.total_value = sum('total_value');
+                    this.form.total = stored('total') ? exactValue(this.record,'cost').plus(exactValue(this.record,'total')).decimal() : sum('total');
 
                     this.form.payments = (this.record.payments || []).map(row => ({...row}))
                     this.form.has_document_sale_note = this.record.has_document_sale_note
@@ -557,6 +575,16 @@ export default {
             if (isRecordedReceipt(this.form.payments[index])) return;
             this.form.payments.splice(index, 1);
         },
+        calculateFee() { suggestInstallments(this.form) },
+        changePaymentCondition() {
+            if (this.form.payment_condition_id === '02' && !this.form.fee.length) this.clickAddFee()
+            if (this.form.payment_condition_id === '02') this.calculateFee()
+        },
+        clickAddFee() {
+            this.form.fee.push({id:null, date:this.form.date_of_due, currency_type_id:this.form.currency_type_id, amount:0})
+            this.calculateFee()
+        },
+        clickRemoveFee(index) { this.form.fee.splice(index, 1); this.calculateFee() },
         clickAddPayment() {
             this.form.payments.push({
                 id: null,
@@ -681,7 +709,7 @@ export default {
             // this.form.items[0].item_id = item_id;
 
             // await this.$http.post(`/${this.resource_documents}`, withoutDraftRetentions(this.form))
-                await this.$http.post(`/generate-document`, withoutDraftRetentions(this.form))
+                await this.$http.post(`/generate-document`, paymentConditionPayload(withoutDraftRetentions(this.form)))
                 .then((response) => {
                     if (response.data.success) {
                         // console.log(response.data.data);

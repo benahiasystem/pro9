@@ -151,12 +151,18 @@ var app_cart = new Vue({
         couponMessage: null,
         couponSuccessMessage: null,
         couponLoading: false,
+        couponRequestId: 0,
         appliedCoupon: null,
         appliedCampaignDiscount: 0,
         campaignSavings: 0,
         appliedCampaigns: [],
         campaignValidationTimer: null,
         campaignExpirationInterval: null,
+        checkoutPreview: null,
+        checkoutPreviewState: 'idle',
+        checkoutPreviewError: '',
+        checkoutPreviewTimer: null,
+        checkoutPreviewSequence: 0,
         order_generated: {},
         summary: {
             subtotal: '0.0',
@@ -732,6 +738,7 @@ var app_cart = new Vue({
         records: {
             deep: true,
             handler() {
+                this.scheduleCheckoutPreview();
                 clearTimeout(this.campaignValidationTimer);
                 this.campaignValidationTimer = setTimeout(() => this.validateDiscountCampaigns(), 350);
             },
@@ -1120,6 +1127,7 @@ var app_cart = new Vue({
             });
         },
         dispatchPayment(method) {
+            if (!['cash', 'yape', 'transfer'].includes(method) && !this.gatewayPreviewMatches()) return;
             if (method === 'culqi') {
                 if (typeof execCulqi === 'function') {
                     execCulqi();
@@ -1986,6 +1994,7 @@ var app_cart = new Vue({
             });
         },
         dispatchPayment(method) {
+            if (!['cash', 'yape', 'transfer'].includes(method) && !this.gatewayPreviewMatches()) return;
             if (method === 'culqi') {
                 if (typeof execCulqi === 'function') {
                     execCulqi();
@@ -2682,11 +2691,69 @@ var app_cart = new Vue({
                 is_guest: isGuest,
                 discount_coupon_code: this.appliedCoupon ? this.appliedCoupon.code : null,
                 discount_coupon_id: this.appliedCoupon ? this.appliedCoupon.id : null,
-                total_discount: (this.appliedCoupon ? this.appliedCoupon.discount : 0) + parseFloat(this.appliedCampaignDiscount || 0),
+                total_discount: exactAmount(this.appliedCoupon ? this.appliedCoupon.discount : '0').plus(this.appliedCampaignDiscount || '0').decimal(),
                 discount_campaigns: this.appliedCampaigns,
+                delivery: {
+                    mode: this.isPickupMode ? 'pickup' : 'delivery',
+                    zone_id: this.isPickupMode ? null : (this.deliveryZone?.id || null),
+                    department: this.selectedDepartment || null,
+                    province: this.selectedProvince || null,
+                    district: this.selectedDistrict || null,
+                },
                 shipping_address: shippingAddress,
                 reference_payment: this.getSelectedReferencePayment(),
             }
+        },
+        scheduleCheckoutPreview() {
+            clearTimeout(this.checkoutPreviewTimer);
+            const sequence = ++this.checkoutPreviewSequence;
+            this.checkoutPreview = null;
+            this.checkoutPreviewError = '';
+            if (this.isQuotationCheckout || !this.records.length) {
+                this.checkoutPreviewState = 'idle';
+                return;
+            }
+            this.checkoutPreviewState = 'loading';
+            this.checkoutPreviewTimer = setTimeout(() => this.refreshCheckoutPreview(sequence), 200);
+        },
+        async refreshCheckoutPreview(sequence) {
+            const payload = {
+                items: this.records.map(row => ({id:row.id,cantidad:row.cantidad})),
+                is_guest: !this.isLoggedIn,
+                discount_coupon_code: this.appliedCoupon?.code || null,
+                discount_coupon_id: this.appliedCoupon?.id || null,
+                delivery: {mode:this.isPickupMode ? 'pickup' : 'delivery',
+                    zone_id:this.isPickupMode ? null : (this.deliveryZone?.id || null),
+                    department:this.selectedDepartment || null,province:this.selectedProvince || null,
+                    district:this.selectedDistrict || null},
+            };
+            try {
+                const response = await axios.post('/ecommerce/checkout/preview', payload, this.getHeaderConfig());
+                if (sequence !== this.checkoutPreviewSequence) return;
+                if (!response.data?.success) throw new Error(response.data?.message || 'No se pudo calcular el pedido.');
+                this.checkoutPreview = response.data;
+                this.checkoutPreviewState = 'ready';
+            } catch (error) {
+                if (sequence !== this.checkoutPreviewSequence) return;
+                this.checkoutPreview = null;
+                this.checkoutPreviewState = 'error';
+                this.checkoutPreviewError = error.response?.data?.message || error.message || 'No se pudo calcular el pedido.';
+            }
+        },
+        checkoutPreviewItem(id) {
+            return this.checkoutPreview?.items?.find(item => String(item.id) === String(id)) || null;
+        },
+        gatewayPreviewMatches() {
+            if (this.checkoutPreviewState !== 'ready' || !this.checkoutPreview) {
+                this.showSwalMessage('Importe pendiente', 'Espera a que termine el cálculo del carrito.', 'warning');
+                return false;
+            }
+            try {
+                if (exactAmount(this.checkoutPreview.total).compare('90071992547409.91') <= 0
+                    && exactAmount(this.summary.total).final(2) === this.checkoutPreview.total) return true;
+            } catch (error) { /* Se informa la diferencia a continuación. */ }
+            this.showSwalMessage('Importe actualizado', 'El importe de la pasarela no coincide con el carrito. Actualiza el carrito o utiliza un método manual.', 'warning');
+            return false;
         },
         // Mapea el método de pago seleccionado al valor que se guarda en la orden
         getSelectedReferencePayment() {
@@ -2767,9 +2834,24 @@ var app_cart = new Vue({
 
             let url_finally = window.__routes?.payment_cash || '/ecommerce/payment_cash';
             try {
+                const payload = await this.getFormPaymentCash();
+                const previewResponse = await axios.post('/ecommerce/checkout/preview', payload, this.getHeaderConfig());
+                const preview = previewResponse.data;
+                if (!preview || !preview.success) throw new Error(preview?.message || 'No se pudo calcular el pedido.');
+                this.hidePaymentLoading();
+                const adjustment = preview.rounding_adjustment !== '0.00'
+                    ? `\nAjuste por redondeo: Bs. ${preview.rounding_adjustment}` : '';
+                const confirmation = await swal({
+                    title: 'Confirma el total del pedido',
+                    text: `Productos: Bs. ${preview.subtotal}\nCupón: − Bs. ${preview.discount}\nEnvío: Bs. ${preview.shipping}${adjustment}\nTotal: Bs. ${preview.total}`,
+                    type: 'info', showCancelButton: true, confirmButtonText: 'Confirmar pedido', cancelButtonText: 'Revisar carrito'
+                });
+                if (!confirmation || !confirmation.value) return;
+                payload.precio_culqi = preview.total;
+                this.showPaymentLoading();
                 const response = await axios.post(
                     url_finally,
-                    await this.getFormPaymentCash(),
+                    payload,
                     this.getHeaderConfig()
                 );
                     if (response.data.success) {
@@ -2787,6 +2869,7 @@ var app_cart = new Vue({
                 this.hidePaymentLoading();
                 const message = error.response?.data?.message
                     || (error.response?.data?.errors && Object.values(error.response.data.errors).flat().join(' '))
+                    || error.message
                     || 'Sucedió algo inesperado.';
                 swal('Pago No realizado', message, 'error');
                 if (error.response && error.response.status === 422) {
@@ -3755,6 +3838,7 @@ var app_cart = new Vue({
             }
             this.checkoutIntent = intent === 'quote' ? 'quote' : 'purchase';
             this.checkoutIntentChosen = true;
+            this.scheduleCheckoutPreview();
             if (intent === 'quote') {
                 this.preloadQuotationContact();
                 this.quotationResult = null;
@@ -5107,6 +5191,7 @@ var app_cart = new Vue({
             location.reload()
         },
         calculateSummary() {
+            this.scheduleCheckoutPreview();
             let total_taxed = 0
             let total_value = 0
             let total_exonerated = 0
@@ -5455,33 +5540,42 @@ var app_cart = new Vue({
             this.couponLoading = true;
             this.couponMessage = null;
             this.couponSuccessMessage = null;
-
+            const requestId = ++this.couponRequestId;
+            const code = this.couponField.trim().toUpperCase();
+            const items = this.records.map(item => ({id:item.id,cantidad:item.cantidad}));
+            const cart = JSON.stringify(items);
             try {
-                const subtotal = this.records.reduce((sum, item) => sum + parseFloat(item.sub_total || 0), 0);
-                const payload = { code: this.couponField.trim().toUpperCase(), subtotal: subtotal };
-                const res = await axios.post('/api/coupons/validate', payload, this.getHeaderConfig());
-                if (res.data && res.data.success) {
-                    const d = res.data.data;
+                const payload = {items,discount_coupon_code:code,is_guest:!this.isLoggedIn,delivery:{mode:'pickup'}};
+                const res = await axios.post('/ecommerce/checkout/preview', payload, this.getHeaderConfig());
+                if (requestId !== this.couponRequestId) return;
+                if (this.couponField.trim().toUpperCase() !== code ||
+                    JSON.stringify(this.records.map(item => ({id:item.id,cantidad:item.cantidad}))) !== cart) {
+                    this.couponMessage = 'El carrito cambió. Aplica el cupón nuevamente.';
+                    return;
+                }
+                if (res.data && res.data.success && res.data.coupon) {
+                    const d = res.data.coupon;
                     this.couponField = d.code;
                     this.appliedCoupon = {
                         id: d.id,
                         code: d.code,
-                        discount: parseFloat(d.discount),
+                        discount: res.data.discount,
                         free_shipping: d.free_shipping
                     };
                     this.calculateSummary();
-                    this.couponSuccessMessage = `Cupón ${d.code} aplicado. Ahorras Bs. ${parseFloat(d.discount || 0).toFixed(2)}.`;
+                    this.couponSuccessMessage = `Cupón ${d.code} aplicado.`;
                 } else {
                     this.couponMessage = (res.data && res.data.message) ? res.data.message : 'El cupón no es válido.';
                 }
             } catch (err) {
+                if (requestId !== this.couponRequestId) return;
                 if (err.response && err.response.data && err.response.data.message) {
                     this.couponMessage = err.response.data.message;
                 } else {
                     this.couponMessage = 'No fue posible validar el cupón.';
                 }
             } finally {
-                this.couponLoading = false;
+                if (requestId === this.couponRequestId) this.couponLoading = false;
             }
         },
 
@@ -5528,6 +5622,8 @@ var app_cart = new Vue({
         },
 
         removeCoupon() {
+            this.couponRequestId++;
+            this.couponLoading = false;
             this.appliedCoupon = null;
             this.couponField = '';
             this.couponMessage = null;

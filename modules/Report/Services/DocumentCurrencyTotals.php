@@ -38,4 +38,28 @@ final class DocumentCurrencyTotals
         }
         return $totals;
     }
+
+    /** Sum exactly the two-decimal amounts shown in report rows. */
+    public static function addDisplayed(array $totals, $document): array
+    {
+        $currency=$document->currency_type_id;
+        if (!isset($totals[$currency])) return $totals;
+        foreach (self::FIELDS as $field) {
+            $shown=DocumentReportLines::monetary($document,$field);
+            $totals[$currency][$field]=$totals[$currency][$field]->plus(Decimal::of(Decimal::format($shown,2,'.','')));
+        }
+        return $totals;
+    }
+
+    public static function adjustment(array $exact, array $displayed, string $currency, string $field): string
+    {
+        $rounded=Decimal::of(Decimal::format($exact[$currency][$field],2,'.',''));
+        return Decimal::format($rounded->minus($displayed[$currency][$field]),2,'.','');
+    }
+
+    public static function hasAdjustment(array $exact, array $displayed, string $currency, array $fields): bool
+    {
+        foreach ($fields as $field) if (self::adjustment($exact,$displayed,$currency,$field) !== '0.00') return true;
+        return false;
+    }
 }

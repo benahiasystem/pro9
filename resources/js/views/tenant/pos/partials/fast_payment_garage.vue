@@ -258,7 +258,7 @@ import {checkoutTotals} from '../../../../helpers/exact-commercial'
 import documentCreationMixin from "@mixins/document-creation"
 import IgtfPaymentFields from "../../documents/partials/igtf_fields.vue"
 import ReceiptCurrencyFields from "@components/ReceiptCurrencyFields.vue"
-import {defaultCashForCurrency, paymentValidationMessage} from '@helpers/payment-classification'
+import {defaultCashForCurrency, checkoutValidationMessage} from '@helpers/payment-classification'
 import Keypress from 'vue-keypress'
 
 import SaleNotesOptions from '../../sale_notes/partials/options.vue'
@@ -1094,8 +1094,7 @@ export default {
             }).catch(error => {
                 if (error.response && error.response.status === 422) {
                     this.errors = error.response.data?.errors || error.response.data || {};
-                    const message = paymentValidationMessage(error.response.data);
-                    if (message) this.$message.error(message);
+                    this.$message.error(checkoutValidationMessage(error.response.data));
                     if (this.errors.quoted_tax_amount) this.refreshFiscalQuote(this.form.payments);
                 } else {
                     this.$message.error(error.response && error.response.data && error.response.data.message || 'No se pudo confirmar el guardado. Consulte el listado antes de crear nuevamente la factura.');

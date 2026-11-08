@@ -75,14 +75,24 @@ class PurchaseSettlementController extends Controller
 
     public function store(Request $request)
     {
+        \App\Services\Fiscal\PurchaseSettlementPolicy::assertAvailable($request->input('document_type_id'));
         $data = self::convert($request);
         // dd($request->all());
         try {
         $fact = DB::connection('tenant')->transaction(function () use($data) {
             $facturalo = new Facturalo();
             $facturalo->save($data);
-            $facturalo->createPdf();
             $document = $facturalo->getDocument();
+            $paid = \App\Support\Exact\Decimal::of(0);
+            foreach ($data['payments'] ?? [] as $payment) {
+                $amount=\App\Support\Exact\Decimal::of(\App\Support\Exact\Decimal::input($payment['payment'] ?? null, 'payments.payment'));
+                if ($amount->isLessThanOrEqualTo(0)) \App\Services\Fiscal\FiscalAmounts::error('payments', 'El importe del pago debe ser positivo.');
+                $paid=$paid->plus($amount);
+            }
+            if ($paid->isGreaterThan(\App\Support\Exact\Decimal::of(\App\Support\Exact\Decimal::represent($document->exactValue('total'),2)))) {
+                \App\Services\Fiscal\FiscalAmounts::error('payments', 'Los pagos superan el total liquidable.');
+            }
+            $facturalo->createPdf();
             foreach ($data['payments'] as $payment) {
                 $record_payment = new PurchaseSettlementPayment;
                 $record_payment->purchase_settlement_id=$document->id;
@@ -105,6 +115,8 @@ class PurchaseSettlementController extends Controller
                 'number_full' => "{$document->series}-{$document->number}",
             ],
         ];
+        } catch (\Illuminate\Validation\ValidationException $th) {
+            return response()->json(['success'=>false,'message'=>$th->getMessage(),'errors'=>$th->errors()], 422);
         } catch (Throwable $th) {
             return response()->json([
                 'success' => false,
@@ -147,7 +159,7 @@ class PurchaseSettlementController extends Controller
             'state_type_id' => '01',
             'establishment'=>EstablishmentInput::set($inputs['establishment_id']),
             'ubl_version' => '2.1',
-            'operation_type_id' => '0501',
+            'operation_type_id' => '0101',
             'operation_data' => OperationDataInput::set($operation_data),
             'legends' => $legends,
             'filename' => $filename,

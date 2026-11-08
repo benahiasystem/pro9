@@ -4,6 +4,33 @@ const fs=require('node:fs'),vm=require('node:vm')
 const parser=require('@babel/parser'),generate=require('@babel/generator').default,compiler=require('vue-template-compiler')
 const helper=require('./helpers/load-module.cjs')(require('node:path').resolve('resources/js/helpers/payment-classification.js'))
 
+test('sale note applies the cash default after the catalog arrives without replacing a chosen or restored receipt',()=>{
+    const source=compiler.parseComponent(fs.readFileSync('resources/js/views/tenant/sale_notes/form.vue','utf8'))
+    const tree=parser.parse(source.script.content,{sourceType:'module'})
+    const component=tree.program.body.find(node=>node.type==='ExportDefaultDeclaration').declaration
+    const methods=component.properties.find(node=>node.key.name==='methods').value
+    const method=methods.properties.find(node=>node.key?.name==='applyInitialCashMethod')
+    const apply=vm.runInNewContext(`({${generate(method).code}}).applyInitialCashMethod`,helper)
+    const created=generate(component.properties.find(node=>node.key?.name==='created')).code
+    assert.match(created,/initialPayment\s*=\s*this\.form\.payments\[0\]/)
+    assert.match(created,/this\.applyInitialCashMethod\(initialPayment\)/)
+    const cash={id:'04',collection_kind:'cash',is_active:true,currency_type_id:'VES'}
+    const row={id:null,payment_method_type_id:null,payment_destination_id:null,payment:'0.30'}
+    const ctx={id:null,form:{currency_type_id:'VES',payments:[row]},payment_method_types:[cash],getPaymentDestinationId:()=> 'cash'}
+    apply.call(ctx,row)
+    assert.equal(row.payment_method_type_id,'04');assert.equal(row.payment_destination_id,'cash');assert.equal(row.payment,'0.30')
+    const cases=[
+        {id:null,payment_method_type_id:'13',payment_destination_id:99},
+        {id:5,payment_method_type_id:null,payment_destination_id:null},
+        {id:null,receipt_origin:{id:3},payment_method_type_id:null,payment_destination_id:null},
+    ]
+    for(const payment of cases){ctx.form.payments=[payment];const before=JSON.stringify(payment);apply.call(ctx,payment);assert.equal(JSON.stringify(payment),before)}
+    const empty={id:null,payment_method_type_id:null,payment_destination_id:null}
+    ctx.form.payments=[empty];ctx.form.currency_type_id='USD';apply.call(ctx,empty);assert.equal(empty.payment_method_type_id,null)
+    ctx.form.currency_type_id='VES';ctx.id=7;apply.call(ctx,empty);assert.equal(empty.payment_method_type_id,null)
+    ctx.id=null;ctx.form.payments=[{}];apply.call(ctx,empty);assert.equal(empty.payment_method_type_id,null)
+})
+
 test('Garage replaces the cash destination with the fixed bank account when changing the draft method',()=>{
     const source=compiler.parseComponent(fs.readFileSync('resources/js/views/tenant/pos/partials/multiple_payment_garage.vue','utf8'))
     assert.match(source.template.content, /v-model="row\.payment_method_type_id"\s+@change="changePaymentMethodType\(index\)"/)

@@ -450,6 +450,8 @@ import PersonForm from '../persons/form.vue'
 import PurchaseOptions from './partials/options.vue'
 import {exchangeRate, functions, fnPaymentsFee} from '../../../mixins/functions'
 import {calculateRowItem} from '../../../helpers/functions'
+import {documentTotals} from '../../../helpers/exact-document'
+import {purchasePaymentValidation} from '../../../helpers/purchase-payment-validation'
 import SeriesForm from './partials/series.vue'
 import {mapActions, mapState} from "vuex/dist/vuex.mjs";
 
@@ -681,15 +683,8 @@ export default {
             }
         },
         async validate_payments() {
-
-            let error_by_item = 0
-            let acum_total = 0
+            const {error_by_item, exceeds_total} = purchasePaymentValidation(this.form.payments, this.form.total_payable ?? this.form.total)
             let q_affectation_free = 0
-
-            await this.form.payments.forEach((item) => {
-                acum_total += parseFloat(item.payment)
-                if (item.payment <= 0 || item.payment == null) error_by_item++;
-            })
 
             //determinate affectation igv
             await this.form.items.forEach((item) => {
@@ -700,7 +695,7 @@ export default {
 
             let all_free = (q_affectation_free == this.form.items.length) ? true : false
 
-            if (!all_free && (acum_total > parseFloat(this.form.total) || error_by_item > 0)) {
+            if (!all_free && (exceeds_total || error_by_item > 0)) {
                 return {
                     success: false,
                     message: 'Los montos ingresados superan al monto a pagar o son incorrectos'
@@ -1001,45 +996,8 @@ export default {
             this.calculateTotal()
         },
         calculateTotal() {
-            let total_taxed = 0
-            let total_exonerated = 0
-            let total_unaffected = 0
-            let total_igv = 0
-            let total_value = 0
-            let total = 0
-
-            this.form.items.forEach((row) => {
-
-                if (row.affectation_igv_type_id === '10') {
-                    total_taxed += parseFloat(row.total_value)
-                }
-                if (row.affectation_igv_type_id === '20') {
-                    total_exonerated += parseFloat(row.total_value)
-                }
-                if (row.affectation_igv_type_id === '30') {
-                    total_unaffected += parseFloat(row.total_value)
-                }
-
-                total_value += parseFloat(row.total_value)
-                total_igv += parseFloat(row.total_igv)
-                total += parseFloat(row.total)
-
-            });
-
-            this.form.total_taxed = _.round(total_taxed, 2)
-            this.form.total_exonerated = _.round(total_exonerated, 2)
-            this.form.total_unaffected = _.round(total_unaffected, 2)
-            this.form.total_igv = _.round(total_igv, 2)
-            this.form.total_value = _.round(total_value, 2)
-            // this.form.total_taxes = _.round(total_igv, 2)
-            
-            //impuestos (isc + igv)
-            this.form.total_taxes = _.round(total_igv, 2)
-            this.form.subtotal = _.round(total, 2)
-            this.form.total = _.round(total, 2)
-
-            // this.form.payments[0].payment = this.form.total
-            // this.setTotalDefaultPayment()
+            Object.assign(this.form, documentTotals(this.form.items))
+            this.form.total_unaffected = '0'
             this.calculatePayments()
             this.calculateFee()
 

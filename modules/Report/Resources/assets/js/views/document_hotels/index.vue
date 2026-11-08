@@ -33,9 +33,12 @@
                         <th>Nacionalidad</th>
                         <th>Procedencia</th>
                         <th>Comprobante</th>
+                        <th>Estado</th>
+                        <th>Moneda</th>
+                        <th>Total original del comprobante</th>
                         <th>Productos</th>
 
-                    <tr>
+                    </tr>
                     <tr slot-scope="{ index, row }">
                         <td>{{ index }}</td>
                         <td>{{ row.name }}</td>
@@ -47,6 +50,9 @@
                         <td>{{ row.nacionality }}</td>
                         <td>{{ row.origin }}</td>
                         <td>{{ row.document }}</td>
+                        <td>{{ row.document_state }}</td>
+                        <td>{{ row.document_currency }}</td>
+                        <td>{{ row.document_total }}</td>
                         <td>
 
                             <template

@@ -29,6 +29,10 @@ class FixedAssetPurchaseRequest extends FormRequest
             'date_of_issue' => [
                 'required',
             ],
+            'items' => ['required', 'array', 'min:1'],
+            'items.*.item.id' => ['required', 'integer'],
+            'items.*.quantity' => ['required'],
+            'items.*.unit_price' => ['required'],
         ];
     }
 }

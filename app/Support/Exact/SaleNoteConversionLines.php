@@ -98,6 +98,11 @@ final class SaleNoteConversionLines
             if (!empty($conditions['item']['lots']) || !empty($conditions['item']['IdLoteSelected'])) {
                 $conditions['tracked_source']=$row['conversion_source'] ?? [$row['sale_note_id'] ?? null,$row['id'] ?? null];
             }
+            $pack=$snapshot['inputs']['sale_note_pack_inventory'] ?? null;
+            if ($pack !== null) {
+                $conditions['pack_inventory']=['warehouse_id'=>$pack['warehouse_id'],'components'=>array_map(
+                    fn($component)=>['item_id'=>$component['item_id'],'quantity'=>self::normalizedFraction(Decimal::of($component['quantity']))],$pack['components'])];
+            }
             foreach (['unit_price','unit_value','percentage_igv'] as $field) $conditions[$field]=self::normalizedFraction(self::operand($row,$field,$operands));
             foreach (['discounts','charges'] as $kind) {
                 $conditions[$kind]=[];

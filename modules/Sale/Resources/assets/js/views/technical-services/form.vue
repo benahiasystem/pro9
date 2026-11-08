@@ -254,12 +254,11 @@
                                     <label class="control-label"
                                         >Costo del Servicio</label
                                     >
-                                    <el-input-number
+                                    <el-input
                                         v-model="form.cost"
-                                        :controls="false"
-                                        :min="0"
-                                        @change="updateCost"
-                                    ></el-input-number>
+                                        inputmode="decimal"
+                                        @input="onCostInput"
+                                    ></el-input>
                                     <small
                                         v-if="errors.cost"
                                         class="form-control-feedback"
@@ -590,7 +589,9 @@
 </template>
 <script>
 import {suggestRemainingPayment, suggestInstallments} from '@helpers/document-creation'
-import {defaultCashForCurrency} from '@helpers/payment-classification'
+import {exactAmount, exactInput, exactSum} from '@helpers/exchange-rate-math'
+import {technicalServiceTotals} from '@helpers/technical-service-totals'
+import {checkoutValidationMessage, defaultCashForCurrency} from '@helpers/payment-classification'
 import PersonForm from "@views/persons/form.vue";
 import { mapActions, mapState } from "vuex/dist/vuex.mjs";
 import { calculateRowItem } from "@helpers/functions";
@@ -904,173 +905,77 @@ export default {
             this.calculateTotal();
         },
         calculateTotal() {
-            /* Extraido de resources/js/views/tenant/documents/invoice.vue */
-            // Dos variables para tener el igv y el total_taxed del servicio, necesario para el xml
-            let base = this.form.cost > 0 ?  this.form.cost / (1 + this.percentage_igv) : 0 // Calcula la base del igv
-            let igv = this.form.cost > 0 ?  this.form.cost - base : 0 // Igv del servicio
-            let total_discount = 0;
-            let total_charge = 0;
-            let total_exportation = 0;
-            let total_taxed = base;
-            let total_exonerated = 0;
-            let total_unaffected = 0;
-            let total_free = 0;
-            let total_igv = igv;
-            let total_value = 0;
-            let total = 0;
-
-            this.total_discount_no_base = 0;
-
-            let total_igv_free = 0;
-
-            // let total_free_igv = 0
-
-            this.form.items.forEach(row => {
-                total_discount += parseFloat(row.total_discount);
-                total_charge += parseFloat(row.total_charge);
-
-                if (row.affectation_igv_type_id === "10") {
-                    total_taxed += parseFloat(row.total_value);
-                }
-
-                if (
-                    row.affectation_igv_type_id === "20" // 20,Exonerado - Operación Onerosa
-                    // || row.affectation_igv_type_id === '21' // 21,Exonerado – Transferencia Gratuita
-                ) {
-                    total_exonerated += parseFloat(row.total_value);
-                }
-
-                if (
-                    row.affectation_igv_type_id === "30" || // 30,Inafecto - Operación Onerosa
-                    row.affectation_igv_type_id === "31" || // 31,Inafecto – Retiro por Bonificación
-                    row.affectation_igv_type_id === "32" || // 32,Inafecto – Retiro
-                    row.affectation_igv_type_id === "33" || // 33,Inafecto – Retiro por Muestras Médicas
-                    row.affectation_igv_type_id === "34" || // 34,Inafecto - Retiro por Convenio Colectivo
-                    row.affectation_igv_type_id === "35" || // 35,Inafecto – Retiro por premio
-                    row.affectation_igv_type_id === "36" // 36,Inafecto - Retiro por publicidad
-                    // || row.affectation_igv_type_id === '37'  // 37,Inafecto - Transferencia gratuita
-                ) {
-                    total_unaffected += parseFloat(row.total_value);
-                }
-
-                if (row.affectation_igv_type_id === "40") {
-                    total_exportation += parseFloat(row.total_value);
-                }
-
-                if (
-                    [
-                        "10",
-                        // '20', '21',
-                        "20",
-                        "30",
-                        "31",
-                        "32",
-                        "33",
-                        "34",
-                        "35",
-                        "36",
-                        "40"
-                    ].indexOf(row.affectation_igv_type_id) < 0
-                ) {
-                    total_free += parseFloat(row.total_value);
-                }
-
-                if (
-                    [
-                        "10",
-                        "20",
-                        "21",
-                        "30",
-                        "31",
-                        "32",
-                        "33",
-                        "34",
-                        "35",
-                        "36",
-                        "40"
-                    ].indexOf(row.affectation_igv_type_id) > -1
-                ) {
-                    total_igv += parseFloat(row.total_igv);
-                    total += parseFloat(row.total);
-                }
-
-                // console.log(row.total_value)
-
-                if (!["21", "37"].includes(row.affectation_igv_type_id)) {
-                    total_value += parseFloat(row.total_value);
-                }
-
-
-
-                if (
-                    ["12", "13", "14", "15", "16"].includes(
-                        row.affectation_igv_type_id
-                    )
-                ) {
-                    let unit_value = row.total_value / row.quantity;
-                    let total_value_partial = unit_value * row.quantity;
-                    row.total_taxes = row.total_value - total_value_partial;
-                    row.total_igv =
-                        total_value_partial * (row.percentage_igv / 100);
-                    row.total_base_igv = total_value_partial;
-                    total_value -= row.total_value;
-
-                    total_igv_free += row.total_igv;
-                }
-
-                //sum discount no base
-                this.total_discount_no_base += this.sumDiscountsNoBaseByItem(
-                    row
-                );
-            });
-
-            this.form.total_igv_free = _.round(total_igv_free, 2);
-            this.form.total_discount = _.round(total_discount, 2);
-            this.form.total_exportation = _.round(total_exportation, 2);
-            this.form.total_taxed = _.round(total_taxed, 2);
-            this.form.total_exonerated = _.round(total_exonerated, 2);
-            this.form.total_unaffected = _.round(total_unaffected, 2);
-            this.form.total_free = _.round(total_free, 2);
-            // this.form.total_igv = _.round(total_igv + total_free_igv, 2)
-            this.form.total_igv = _.round(total_igv, 2);
-            this.form.total_value = _.round(total_value, 2);
-            this.form.total_taxes = _.round(total_igv, 2);
-
-            // this.form.total = _.round(total, 2)
-            this.form.subtotal = _.round(
-                total,
-                2
-            );
-            this.form.total = _.round(
-                total -
-                    this.total_discount_no_base,
-                2
-            );
-
-            if (this.enabled_discount_global) this.discountGlobal();
-
-            if (this.prepayment_deduction) this.discountGlobalPrepayment();
-
-
+            // Build the same cost, line and header totals as the server; keep
+            // recorded adjustments when the form is reopened.
+            const replaceAdjustment = (type, row) => {
+                const index = this.form.discounts.findIndex(value => value.discount_type_id === type);
+                if (index < 0) this.form.discounts.push(row);
+                else this.form.discounts.splice(index, 1, row);
+            };
+            if (this.prepayment_deduction) {
+                const prepayments = this.form.prepayments || [];
+                const amount = exactSum(prepayments.map(row => exactAmount(row.amount || 0)));
+                this.form.total_prepayment = exactSum(prepayments.map(row => exactAmount(row.total || 0))).decimal();
+                const type = String(this.form.affectation_type_prepayment) === '20' ? '05' : '04';
+                const original = technicalServiceTotals({...this.form, discounts: [], charges: [], total_prepayment: 0}, this.percentage_igv, true);
+                const base = exactAmount(type === '04' ? original.total_taxed : original.total_exonerated);
+                const factor = base.compare(0) === 0 ? exactAmount(0) : amount.dividedBy(base);
+                replaceAdjustment(type, {discount_type_id:type, description:'Descuento por anticipo',
+                    amount:amount.decimal(), base:base.decimal(), factor:factor.decimal()});
+            }
+            if (this.enabled_discount_global && exactAmount(this.total_global_discount || 0).compare(0) > 0) {
+                const original = technicalServiceTotals({...this.form, discounts: [], charges: [], total_prepayment: 0}, this.percentage_igv, true);
+                const base = exactAmount(original.total_taxed);
+                const amount = this.is_amount ? exactAmount(this.total_global_discount) : base.times(this.total_global_discount).dividedBy(100);
+                const factor = base.compare(0) === 0 ? exactAmount(0) : amount.dividedBy(base);
+                replaceAdjustment('02', {discount_type_id:'02', description:'Descuento global sobre la base imponible',
+                    amount:amount.decimal(), amount_exact:amount.fraction(), base:base.decimal(), factor:factor.decimal(),
+                    is_amount:this.is_amount, percentage:this.is_amount ? null : String(this.total_global_discount)});
+            }
+            const original = technicalServiceTotals({...this.form, discounts: [], charges: [], total_prepayment: 0}, this.percentage_igv, true);
+            for (const discount of this.form.discounts) {
+                if (discount.percentage == null || discount.is_amount || !['02','05'].includes(discount.discount_type_id)) continue;
+                const base=exactAmount(discount.discount_type_id === '02' ? original.total_taxed : original.total_exonerated);
+                const amount=base.times(discount.percentage).dividedBy(100);
+                discount.base=base.decimal(); discount.amount=amount.decimal(); discount.amount_exact=amount.fraction();
+            }
+            const savedAutoCharge=(this.form.charges || []).find(row=>row.service_auto_percentage);
+            if (this.config.active_allowance_charge || savedAutoCharge) {
+                const charges=(this.form.charges || []).filter(row=>this.config.active_allowance_charge
+                    ? row.charge_type_id !== '50' : !row.service_auto_percentage);
+                const withoutCharge=technicalServiceTotals({...this.form, charges}, this.percentage_igv, true);
+                const base=exactAmount(withoutCharge.total);
+                const percentage=savedAutoCharge ? savedAutoCharge.percentage : this.config.percentage_allowance_charge;
+                const factor=exactAmount(percentage || 0).dividedBy(100);
+                const amount=base.times(factor);
+                if (amount.compare(0)>0) charges.push({charge_type_id:'50', description:'Cargo global',
+                    factor:factor.decimal(), base:base.decimal(), amount:amount.decimal(), amount_exact:amount.fraction(),
+                    percentage:String(percentage || 0), service_auto_percentage:true});
+                this.form.charges=charges;
+                this.total_global_charge=amount.decimal();
+            }
+            Object.assign(this.form, technicalServiceTotals(this.form, this.percentage_igv));
             this.setTotalDefaultPayment();
             this.setPendingAmount();
-
             this.calculateFee();
-
-            this.chargeGlobal();
             this.updateCost();
         },
 
-        updateCost() {
-            let cost = parseFloat(this.form.cost);
-            let total = parseFloat(this.form.total);
-            if (isNaN(cost)) {
-                this.form.cost = 0;
+        onCostInput(value) {
+            this.form.cost = value;
+            try {
+                this.calculateTotal();
+            } catch (error) {
+                // An incomplete decimal is allowed while typing; submission
+                // validates it and keeps the last calculable draft intact.
             }
-            if (isNaN(total)) {
-                this.form.total = 0;
+        },
+        updateCost(value = this.form.cost) {
+            try {
+                this.total = exactAmount(value).plus(this.form.total ?? 0).decimal();
+            } catch (error) {
+                this.total = '0';
             }
-            this.total = this.form.cost + this.form.total;
         },
         getFormatUnitPriceRow(unit_price) {
             return _.round(unit_price, 6);
@@ -1520,13 +1425,25 @@ export default {
 
             this.ensureFormArraysExist();
 
-            if (parseFloat(this.form.prepayment) > parseFloat(this.form.cost)) {
+            let cost, prepayment;
+            try {
+                cost = exactAmount(exactInput(String(this.form.cost)));
+                prepayment = exactAmount(exactInput(String(this.form.prepayment)));
+                if (cost.compare(0) < 0 || prepayment.compare(0) < 0) throw new Error();
+            } catch (error) {
+                return this.$message.error('Indique importes válidos y no negativos para el costo y el pago adelantado.');
+            }
+            if (prepayment.compare(cost) > 0) {
                 return this.$message.error(
                     "Pago adelantado no puede ser mayor al costo"
                 );
             }
 
-            this.calculateTotal() // Hace un recalculo
+            try {
+                this.calculateTotal();
+            } catch (error) {
+                return this.$message.error(error.message || 'Revise los importes del servicio.');
+            }
             this.loading_submit = true;
             this.$http
                 .post(`/${this.resource}`, this.form)
@@ -1540,10 +1457,12 @@ export default {
                     }
                 })
                 .catch(error => {
-                    if (error.response.status === 422) {
-                        this.errors = error.response.data;
+                    if (error.response?.status === 422) {
+                        const data = error.response.data || {};
+                        this.errors = data.errors || data;
+                        this.$message.error(checkoutValidationMessage(data));
                     } else {
-                        console.log(error);
+                        this.$message.error(error.response?.data?.message || 'No se pudo guardar el servicio técnico.');
                     }
                 })
                 .then(() => {

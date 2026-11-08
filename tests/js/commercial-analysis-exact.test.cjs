@@ -1,0 +1,20 @@
+const {test}=require('node:test')
+const assert=require('node:assert/strict')
+const fs=require('node:fs')
+const vm=require('node:vm')
+const compiler=require('vue-template-compiler')
+const parser=require('@babel/parser')
+const generate=require('@babel/generator').default
+const t=require('@babel/types')
+const component=compiler.parseComponent(fs.readFileSync('modules/Report/Resources/assets/js/views/commercial_analysis/index.vue','utf8'))
+assert.deepEqual(compiler.compile(component.template.content).errors,[])
+const ast=parser.parse(component.script.content,{sourceType:'module'})
+const methods=ast.program.body.find(node=>node.type==='ExportDefaultDeclaration').declaration.properties.find(node=>node.key?.name==='methods').value
+const method=methods.properties.find(node=>node.key?.name==='formatOtherCurrencies')
+const format=vm.runInNewContext(`(${generate(t.functionExpression(null,method.params,method.body)).code})`)
+test('commercial analysis keeps unclassified currencies visible',()=>{
+    assert.equal(format(null),'')
+    assert.equal(format({EUR:'1.25','Sin moneda':'0.33'}),'EUR 1.25; Sin moneda 0.33')
+    assert.match(component.template.content,/row\.total_ves/)
+    assert.match(component.template.content,/row\.total_usd/)
+})

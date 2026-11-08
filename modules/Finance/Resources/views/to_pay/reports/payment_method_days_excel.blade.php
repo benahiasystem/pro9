@@ -9,7 +9,7 @@
     </head>
     <body>
         <div>
-            <h3 align="center" class="title"><strong>Reporte formas de pago - C. Pagar</strong></h3>
+            <h3 align="center" class="title"><strong>Plazos de pago - Cuentas por pagar</strong></h3>
         </div>
         <br>
         <div style="margin-top:20px; margin-bottom:15px;">
@@ -51,7 +51,7 @@
                                 <th>Proveedor</th>
                                 <th>Por Pagar</th>
                                 <th>Total</th>
-                                <th>Forma de pago</th>
+                                <th>Plazo entre emisión y vencimiento</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -66,7 +66,7 @@
                                         <td class="celda" data-type="s">{{$value['supplier_name']}}</td>
                                         <td class="celda" data-type="s">{{$value['total_to_pay']}}</td>
                                         <td class="celda" data-type="s">{{$value['total']}}</td>
-                                        <td class="celda" data-type="s">{{$value['difference_days']}} días</td>
+                                        <td class="celda" data-type="s">{{ $value['difference_days'] === null ? 'Sin vencimiento' : $value['difference_days'].' días' }}</td>
                                     </tr>
                                 @endif
                             @endforeach

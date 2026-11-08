@@ -13,6 +13,7 @@ use Modules\Report\Http\Resources\ReportTipCollection;
 use Modules\Pos\Models\Tip;
 use App\CoreFacturalo\Helpers\Functions\FunctionsHelper;
 use Modules\Report\Exports\ReportTipExport;
+use App\Models\Tenant\{Document, SaleNote};
 
 
 class ReportTipController extends Controller
@@ -38,7 +39,13 @@ class ReportTipController extends Controller
         
         FunctionsHelper::setDateInPeriod($request, $date_start, $date_end);
 
-        return Tip::with(['origin'])->whereBetween('origin_date_of_issue', [$date_start, $date_end])->latest();
+        $query = Tip::with(['origin'])->whereBetween('origin_date_of_issue', [$date_start, $date_end]);
+        if (!empty($request['establishment_id'])) {
+            $query->whereHasMorph('origin', [Document::class, SaleNote::class], function ($origin) use ($request) {
+                $origin->where('establishment_id', $request['establishment_id']);
+            });
+        }
+        return $query->latest()->orderBy('id', 'desc');
 
     }
 

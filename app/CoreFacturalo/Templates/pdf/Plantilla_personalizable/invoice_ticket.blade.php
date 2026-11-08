@@ -15,7 +15,7 @@ $document_number = $document->number_full;
     $accounts = (new TemplatePdf)->getBankAccountsForPdf($document->establishment_id);
 
     $document_base = ($document->note) ? $document->note : null;
-    $payments = $document->payments;
+    $payments = $document->payments->filter(fn ($payment) => !data_get($payment, 'reversed_at'));
 
     if($document_base) {
         /* ######## INICIO NUMERACIÓN FISCAL VENEZUELA ######## */
@@ -26,10 +26,6 @@ $affected_document_number = $document_base->affected_document ? $document_base->
         $affected_document_number = null;
     }
     $document->load('reference_guides');
-
-    $total_payment = $document->payments->sum('payment');
-    $balance = $document instanceof \App\Models\Tenant\Document ? $document->balance : (($document->total - $total_payment) - $document->payments->sum('change'));
-
 
     $logo = "storage/uploads/logos/{$company->logo}";
     if($establishment->logo) {
@@ -405,35 +401,38 @@ $affected_document_number = $document_base->affected_document ? $document_base->
     </thead>
     <tbody>
     @php
-        $data_json_items = collect($document->data_json->items ?? []);
-        $fusionados = $data_json_items->filter(function($item) {return !empty($item->esFusionado);});
+        $split = \App\Support\Exact\PdfInvoiceGroups::split($document);
+        $fusionados = $split['grouped'];
+        $no_fusionados = $split['individual'];
         $hay_fusionados = $fusionados->isNotEmpty();
-        $cantidad_fusionada = \App\Support\Exact\Decimal::sum($fusionados->map(fn ($item) => \App\Support\Exact\Decimal::read($item, 'cantidad')));
-
-        $total_fusionado = \App\Support\Exact\Decimal::sum($fusionados->map(fn ($item) => \App\Support\Exact\Decimal::read($item, 'total_item')));
+        $cantidad_fusionada = \App\Support\Exact\Decimal::sum($fusionados->map(fn ($item) => \App\Support\Exact\Decimal::read($item, 'quantity')));
+        $total_fusionado = \App\Support\Exact\Decimal::sum($fusionados->map(fn ($item) => \App\Support\Exact\Decimal::read($item, 'total')));
     @endphp
     @if($hay_fusionados)
+        @if($show_cantidad && strlen(\App\Support\Exact\Decimal::represent($cantidad_fusionada)) > 7)
+            <tr><td colspan="{{ $colspan_total }}" class="text-left desc-9">Cantidad: {{ \App\Support\Exact\Decimal::represent($cantidad_fusionada) }}</td></tr>
+        @endif
         <tr>
         @if($show_codigo) <td class="text-center desc-9 align-top font-bold">001</td> @endif
-        @if($show_cantidad) <td class="text-center">{{ \App\Support\Exact\Decimal::represent($cantidad_fusionada) }}</td> @endif
+        @if($show_cantidad) <td class="text-center">{{ strlen(\App\Support\Exact\Decimal::represent($cantidad_fusionada)) > 7 ? '' : \App\Support\Exact\Decimal::represent($cantidad_fusionada) }}</td> @endif
         @if($show_unidad) <td class="text-center desc-9 align-top">UND</td> @endif
         @if($show_descripcion) <td class="text-left desc-9 align-top font-bold">Por consumo</td> @endif
-        @if($show_precio_unitario) <td class="text-right">{{ \App\Support\Exact\PdfPrice::configured($cantidad_fusionada->isZero() ? 0 : $total_fusionado->dividedBy($cantidad_fusionada)) }}</td> @endif
+        @if($show_precio_unitario) <td class="text-right"><span data-pdf-unit-price @if(\App\Support\Exact\PdfPrice::roundingChangesLine($cantidad_fusionada->isZero() ? 0 : $total_fusionado->dividedBy($cantidad_fusionada),$cantidad_fusionada,\App\Models\Tenant\Configuration::getDataDecimalQuantity())) data-pdf-group-rounded @endif>{{ \App\Support\Exact\PdfPrice::configured($cantidad_fusionada->isZero() ? 0 : $total_fusionado->dividedBy($cantidad_fusionada)) }}</span></td> @endif
         @if($show_descuento) <td class="text-right">0.00</td> @endif
         @if($show_total) <td class="text-right">{{ \App\Support\Exact\Decimal::format($total_fusionado) }}</td> @endif
     </tr>
     <tr><td colspan="{{ $colspan_total }}" class="border-bottom"></td></tr>
-    @else
-        @foreach($document->items as $row)
+    @endif
+        @foreach($no_fusionados as $row)
+            @php $item_quantity = \App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::read($row, 'quantity')); @endphp
+            @if($show_cantidad && strlen($item_quantity) > 7)
+                <tr><td colspan="{{ $colspan_total }}" class="text-left desc-9">Cantidad: {{ $item_quantity }}</td></tr>
+            @endif
             <tr>
                 @if($show_codigo) <td class="text-center desc-9 align-top font-bold">{{ $row->item->internal_id }}</td> @endif
                 @if($show_cantidad)
                 <td class="text-center desc-9 align-top font-bold">
-                    @if(((int)$row->quantity != $row->quantity))
-                        {{ $row->quantity }}
-                    @else
-                        {{ number_format($row->quantity, 0) }}
-                    @endif
+                    {{ strlen($item_quantity) > 7 ? '' : $item_quantity }}
                 </td>
                 @endif
                 @if($show_unidad) <td class="text-center desc-9 align-top">{{ $row->item->unit_type_id }}</td> @endif
@@ -542,7 +541,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
                     @endif
                 </td>
                 @endif
-                @if($show_precio_unitario) <td class="text-right desc-9 align-top" style="padding-right: 6px;">{{ $row->formatPdfUnitPrice() }}</td> @endif
+                @if($show_precio_unitario) <td class="text-right desc-9 align-top" style="padding-right: 6px;"><span data-pdf-unit-price>{{ $row->formatPdfUnitPrice() }}</span></td> @endif
                 @if($show_descuento)
                 <td class="text-right desc-9 align-top" style="padding-right: 6px;">
                     @if($row->discounts)
@@ -559,7 +558,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
                 <td colspan="{{ $colspan_total }}" class="border-bottom"></td>
             </tr>
         @endforeach
-    @endif
+
     @if ($document->prepayments)
         @foreach($document->prepayments as $p)
             <tr>
@@ -669,14 +668,6 @@ $affected_document_number = $document_base->affected_document ? $document_base->
         <td class="text-right font-bold desc">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total'), 2) }}</td>
     </tr>
 
-
-
-    @if($balance < 0)
-        <tr>
-            <td colspan="{{ $colspan_label }}" class="text-right font-bold desc">VUELTO: {{ $document->currency_type->symbol }}</td>
-            <td class="text-right font-bold desc">{{ number_format(abs($balance),2, ".", "") }}</td>
-        </tr>
-    @endif
 
     @if($show_nro_producto)
         <tr>

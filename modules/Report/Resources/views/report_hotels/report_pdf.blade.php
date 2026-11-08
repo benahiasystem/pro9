@@ -1,127 +1,15 @@
-<!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta http-equiv="Content-Type" content="application/pdf; charset=utf-8" />
-        <meta http-equiv="X-UA-Compatible" content="ie=edge">
-        <title>Nota de ventas</title>
-        <style>
-            html {
-                font-family: sans-serif;
-                font-size: 12px;
-            }
-
-            table {
-                width: 100%;
-                border-spacing: 0;
-                border: 1px solid black;
-            }
-
-            .celda {
-                text-align: center;
-                padding: 5px;
-                border: 0.1px solid black;
-            }
-
-            th {
-                padding: 5px;
-                text-align: center;
-                border-color: #0088cc;
-                border: 0.1px solid black;
-            }
-
-            .title {
-                font-weight: bold;
-                padding: 5px;
-                font-size: 20px !important;
-                text-decoration: underline;
-            }
-
-            p>strong {
-                margin-left: 5px;
-                font-size: 13px;
-            }
-
-            thead {
-                font-weight: bold;
-                background: #0088cc;
-                color: white;
-                text-align: center;
-            }
-        </style>
-    </head>
-    <body>
-        <div>
-            <p align="center" class="title"><strong>Reporte Nota de Venta</strong></p>
-        </div>
-        <div style="margin-top:20px; margin-bottom:20px;">
-            <table>
-                <tr>
-                    <td>
-                        <p>@include('partials.report_company_header')</p>
-                    </td>
-                    <td>
-                        <p><strong>Fecha: </strong>{{date('Y-m-d')}}</p>
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        <p><strong>RIF: </strong>{{$company->number}}</p>
-                    </td>
-
-                </tr>
-            </table>
-        </div>
-        @if(!empty($records))
-            <div class="">
-                <div class=" ">
-                    <table class="">
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>Nombres y Apellidos</th>
-                                <th> Habitación</th>
-                                <th>Status de pago</th>
-                                <th>Status checkout</th>
-                                <th>Fecha de entrada</th>
-                                <th>Hora de entrada</th>
-                                <th>Fecha de salida</th>
-                                <th>Hora de salida</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        @foreach($records as $key => $value)
-                            <?php
-                            /** @var \Modules\Hotel\Models\HotelRent $value */
-
-
-                            $customer = $value->customer;
-                            $room = $value->room;
-                            ?>
-                            <tr>
-
-                                <td>{{ $key+1 }}</td>
-                                <td>{{$customer->description}}</td>
-                                <td>{{$room->name}}</td>
-                                <td>{{ $value ->payment_status === "PAID" ? "Pagado" : "Debe" }}</td>
-                                <td>{{$value ->status}}</td>
-                                <td>{{$value ->input_date}}</td>
-                                <td>{{$value ->input_time}}</td>
-                                <td>{{$value ->output_date}}</td>
-                                <td>{{$value ->output_time}}</td>
-
-
-                            </tr>
-                        @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        @else
-            <div class="callout callout-info">
-                <p>No se encontraron registros.</p>
-            </div>
-        @endif
-    </body>
-</html>
+<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Reporte de habitaciones</title>
+<style>body{font-family:sans-serif;font-size:9px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #aaa;padding:4px;vertical-align:top}th{background:#e8edf3}thead{display:table-header-group}tr{page-break-inside:avoid}</style></head><body>
+<h3>Reporte de habitaciones y estancias</h3>
+<p>@include('partials.report_company_header') &nbsp; RIF: {{ $company->number }}</p>
+<p>Estado actual de habitaciones: disponibles {{ $report['counts']['DISPONIBLE'] }}, ocupadas {{ $report['counts']['OCUPADO'] }}, limpieza {{ $report['counts']['LIMPIEZA'] }}, mantenimiento {{ $report['counts']['MANTENIMIENTO'] }}, otros {{ $report['counts']['OTRO'] }}.</p>
+<p>Las noches se calculan entre las fechas registradas; las pernoctaciones son una estimación según las personas registradas.</p>
+<table><thead><tr><th>Habitación</th><th>Estado actual</th><th>Última actualización</th></tr></thead><tbody>
+@foreach($report['rooms'] as $room)<tr><td>{{ $room['name'] }}</td><td>{{ $room['status'] }}</td><td>{{ $room['updated_at'] ?? 'Sin dato' }}</td></tr>@endforeach
+</tbody></table>
+<h4>Estancias seleccionadas</h4>
+<table><thead><tr><th>Huésped e identidad</th><th>Nacionalidad y residencia</th><th>Habitación y categoría actual</th><th>Entrada y salida</th><th>Precio unitario inicial registrado</th><th>Personas</th><th>Noches</th><th>Pernoctaciones estimadas</th><th>Motivo</th></tr></thead><tbody>
+@foreach($report['stays'] as $row)<tr><td>{{ $row['name'] }}<br>{{ $row['identity_type'] }} {{ $row['identity_number'] }}</td><td>{{ $row['nationality'] }}<br>{{ $row['country'] }}</td><td>{{ $row['room'] }}<br>{{ $row['category'] }}</td><td>{{ $row['input_date'] }}<br>{{ $row['output_date'] }}</td><td>{{ $row['rate'] === null ? 'Sin dato' : (($row['currency'] ?? 'Moneda no identificada').' '.$row['rate']) }}</td><td>{{ $row['people'] }}</td><td>{{ $row['nights'] ?? 'Sin dato' }}</td><td>{{ $row['person_nights'] ?? 'Sin dato' }}</td><td>{{ $row['notes'] }}</td></tr>@endforeach
+<tr><td colspan="6">Arribos: {{ $report['arrivals'] }}</td><td>{{ $report['nights'] }}</td><td>{{ $report['person_nights'] }}</td><td></td></tr></tbody></table>
+<p>Estancias sin llegada válida: {{ $report['unknown_arrivals'] }}. Estancias sin fechas válidas para contar noches: {{ $report['unknown_nights'] }}.</p>
+</body></html>

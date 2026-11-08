@@ -39,6 +39,8 @@ if ($hostname) {
             Route::post('documents/retention/{id}/retry-hka', 'Tenant\IvaRetentionController@retry');
             Route::post('documents/retention/{id}/reverse', 'Tenant\IvaRetentionController@reverse');
             Route::post('documents/{document}/prepare-hka', 'Tenant\DocumentFiscalController@prepare');
+            Route::post('documents/{document}/free-form-control', 'Tenant\DocumentFiscalController@registerFreeFormControl');
+            Route::get('documents/{document}/free-form-control', 'Tenant\DocumentFiscalController@freeFormControl');
             Route::post('documents/{document}/send-hka', 'Tenant\DocumentFiscalController@sendHka');
             Route::post('documents/{document}/query-hka-email', 'Tenant\DocumentFiscalController@queryHkaEmail');
             Route::get('documents/{external_id}/download-pdf/{format}', 'Tenant\DocumentPdfController@download')->where('format', 'a4|a5|ticket');

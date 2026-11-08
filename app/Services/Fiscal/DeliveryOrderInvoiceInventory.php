@@ -1,6 +1,6 @@
 <?php
 namespace App\Services\Fiscal;
-use App\Models\Tenant\{Company,Dispatch,DocumentItem,Item};
+use App\Models\Tenant\{Company,Dispatch,DocumentItem,Item,Kardex,SaleNote};
 use Modules\Inventory\Models\{Warehouse,ItemWarehouse};
 use App\Support\Exact\Decimal as D;
 use Modules\Item\Models\{ItemLot,ItemLotsGroup};
@@ -10,7 +10,7 @@ final class DeliveryOrderInvoiceInventory
 {
     public static function prepare(array $input): array
     {
-        foreach ($input['items'] as &$line) unset($line['item']['dispatch_inventory_quantity']);unset($line);
+        foreach ($input['items'] as &$line) unset($line['item']['dispatch_inventory_quantity'], $line['item']['dispatch_global_inventory_quantity']);unset($line);
         $refs=$input['dispatches_relateds'] ?? [];
         if (is_string($refs)) $refs=json_decode($refs,true) ?: [];
         if (empty($input['dispatch_id']) && !$refs) return $input;
@@ -20,18 +20,72 @@ final class DeliveryOrderInvoiceInventory
             $parts=FiscalIdentity::parseNumberFull((string)$reference);if (!$parts) FiscalAmounts::error('dispatches_relateds','Referencia de orden inválida.');
             $orders[]=Dispatch::where('establishment_id',$input['establishment_id'])->where('series',$parts[0])->where('number',$parts[1])->lockForUpdate()->firstOrFail();
         }
-        $covered=[];$tracked=[];$sourceAvailable=[];
+        if (!empty($input['order_note_id'])) {
+            $commercialOrder=\Modules\Order\Models\OrderNote::whereKey($input['order_note_id'])->lockForUpdate()->firstOrFail();
+            $orderIds=collect($orders)->pluck('id')->unique()->values();
+            if (!$commercialOrder->dispatch_id || $orderIds->count()!==1 || (int)$commercialOrder->dispatch_id!==(int)$orderIds->first()) {
+                FiscalAmounts::error('dispatches_relateds','La orden de entrega debe ser el origen del pedido seleccionado.');
+            }
+        }
+        $declared=[];
+        if (!empty($input['sale_note_id'])) $declared[]=(string)$input['sale_note_id'];
+        foreach ($input['sale_notes_relateds'] ?? [] as $related) $declared[]=(string)(is_array($related) ? ($related['id'] ?? '') : $related);
+        $orderNotes=collect($orders)->pluck('reference_sale_note_id')->filter()->map(fn($id)=>(string)$id)->unique()->all();
+        if (array_diff(array_unique($declared),$orderNotes)) FiscalAmounts::error('sale_notes_relateds','Las notas relacionadas deben ser origen de las órdenes seleccionadas.');
+        $covered=[];$globalCovered=[];$tracked=[];$sourceAvailable=[];$sourceGlobalAvailable=[];
         foreach (collect($orders)->unique('id') as $order) {
             DeliveryOrderInput::authorize((int)$order->establishment_id);
             if ((int)$order->establishment_id!==(int)$input['establishment_id'] || (int)$order->customer_id!==(int)$input['customer_id'] || $order->reference_document_id || in_array($order->state_type_id,['09','11'],true)) FiscalAmounts::error('dispatches_relateds','La orden debe estar vigente, sin facturar, y pertenecer al cliente y sucursal.');
             $source=$order->sale_note ?: $order->order_note;$sourceKey=$source ? get_class($source).':'.$source->id:null;
             if ($source && in_array($source->state_type_id,['09','11'],true)) FiscalAmounts::error('dispatches_relateds','El documento de origen de la orden debe estar vigente.');
-            if ($source && !isset($sourceAvailable[$sourceKey])) $sourceAvailable[$sourceKey]=$source->items->groupBy('item_id')->map(fn($lines)=>D::sum($lines->map(fn($line)=>$line->exactValue('quantity')->multipliedBy($line->item->presentation->quantity_unit ?? 1))))->all();
+            if ($source && !isset($sourceAvailable[$sourceKey])) {
+                $sourceAvailable[$sourceKey]=$source->items->groupBy('item_id')->map(fn($lines)=>D::sum($lines->map(fn($line)=>$line->exactValue('quantity')->multipliedBy($line->item->presentation->quantity_unit ?? 1))))->all();
+                $sourceGlobalAvailable[$sourceKey]=[];
+                if ($source instanceof SaleNote) {
+                    foreach (Kardex::where('sale_note_id',$source->id)->lockForUpdate()->get()->groupBy('item_id') as $itemId=>$movements) {
+                        $global=D::sum($movements->map(fn($movement)=>$movement->exactValue('quantity')));
+                        $physical=D::of($sourceAvailable[$sourceKey][$itemId] ?? 0);
+                        if ($global->isNegative() || !$global->isEqualTo($physical)) FiscalAmounts::error('inventory','El movimiento global de la nota de venta no coincide con sus cantidades físicas.');
+                        $sourceGlobalAvailable[$sourceKey][$itemId]=$global;
+                    }
+                    foreach ($sourceAvailable[$sourceKey] as $itemId=>$physical) {
+                        $lines=$source->items->where('item_id',$itemId);
+                        $service=$lines->every(fn($line)=>($line->calculation_snapshot['inputs']['inventory_service_without_movement'] ?? false) === true);
+                        if (!$service && D::of($physical)->isPositive()
+                            && !isset($sourceGlobalAvailable[$sourceKey][$itemId])) {
+                            FiscalAmounts::error('inventory','No se puede verificar el movimiento global de la nota de venta de origen.');
+                        }
+                    }
+                }
+                $billed=Dispatch::where($source instanceof SaleNote ? 'reference_sale_note_id':'reference_order_note_id',$source->id)
+                    ->whereNotNull('reference_document_id')->with('items','reference_document')->lockForUpdate()->get();
+                foreach ($billed as $previous) {
+                    if (!$previous->reference_document || in_array((string)$previous->reference_document->state_type_id,['09','11'],true)) continue;
+                    foreach ($previous->items as $priorLine) {
+                        $itemId=$priorLine->item_id; $used=$priorLine->exactValue('quantity');
+                        $sourceAvailable[$sourceKey][$itemId]=D::max(0,D::of($sourceAvailable[$sourceKey][$itemId] ?? 0)->minus($used));
+                        $sourceGlobalAvailable[$sourceKey][$itemId]=D::max(0,D::of($sourceGlobalAvailable[$sourceKey][$itemId] ?? 0)->minus($used));
+                    }
+                }
+            }
             foreach ($order->items as $line) {
+                $global=(array) ($line->calculation_snapshot['inputs']['dispatch_global_inventory'] ?? []);
+                if ($global) {
+                    if (!$order->discountsPhysicalStock() || !empty($global['reversed'])
+                        || (int) ($global['dispatch_id'] ?? 0)!==(int) $order->id
+                        || (int) ($global['item_id'] ?? 0)!==(int) $line->item_id
+                        || !D::of($global['quantity'] ?? 0)->isEqualTo($line->exactValue('quantity'))) {
+                        FiscalAmounts::error('inventory','El movimiento global de la orden no coincide con su partida.');
+                    }
+                    $globalCovered[$line->item_id]=D::of($globalCovered[$line->item_id] ?? 0)->plus(D::of($global['quantity']));
+                }
                 $moved=$order->discountsPhysicalStock() ? $line->exactValue('quantity'):D::of(0);
                 if ($moved->isZero() && $source) {
                     $moved=D::min($line->exactValue('quantity'),$sourceAvailable[$sourceKey][$line->item_id] ?? 0);
                     $sourceAvailable[$sourceKey][$line->item_id]=D::max(0,D::of($sourceAvailable[$sourceKey][$line->item_id] ?? 0)->minus($moved));
+                    $sourceGlobal=D::min($moved,$sourceGlobalAvailable[$sourceKey][$line->item_id] ?? 0);
+                    $sourceGlobalAvailable[$sourceKey][$line->item_id]=D::max(0,D::of($sourceGlobalAvailable[$sourceKey][$line->item_id] ?? 0)->minus($sourceGlobal));
+                    $globalCovered[$line->item_id]=D::of($globalCovered[$line->item_id] ?? 0)->plus($sourceGlobal);
                 }
                 $covered[$line->item_id]=D::of($covered[$line->item_id] ?? 0)->plus($moved);
                 $snapshot=(array)$line->item;
@@ -59,8 +113,11 @@ final class DeliveryOrderInvoiceInventory
                 $line['item']['lots']=array_values(array_map(fn($serial)=>array_replace($serial,['has_sale'=>true]),$source['serials']));
             }
             $taken=D::min($quantity,$covered[$item->id] ?? 0);$covered[$item->id]=D::max(0,D::of($covered[$item->id] ?? 0)->minus($taken));
+            $globalTaken=D::min($quantity,$globalCovered[$item->id] ?? 0);
+            $globalCovered[$item->id]=D::max(0,D::of($globalCovered[$item->id] ?? 0)->minus($globalTaken));
             if ($taken->isGreaterThan(0) && $taken->isLessThan($quantity) && (!empty($line['item']['lots']) || !empty($line['item']['IdLoteSelected']))) FiscalAmounts::error('items','Separe las cantidades ya trasladadas de las nuevas en líneas distintas para conservar lotes y seriales.');
             $line['item']['dispatch_inventory_quantity']=D::fraction($quantity->minus($taken));
+            $line['item']['dispatch_global_inventory_quantity']=D::fraction($quantity->minus($globalTaken));
         }
         unset($line);
         foreach ($tracked as $source) if (empty($source['assigned'])) FiscalAmounts::error('items','La factura debe conservar los productos con lotes y seriales de las órdenes.');
@@ -69,6 +126,7 @@ final class DeliveryOrderInvoiceInventory
 
     public static function apply(DocumentItem $line,int $direction): bool
     {
+        if (($line->item->order_inventory_inherited ?? false) === true) return true;
         if (!isset($line->item->dispatch_inventory_quantity)) return false;
         $quantity=D::of($line->item->dispatch_inventory_quantity);if ($quantity->isLessThanOrEqualTo(0)) return true;
         $document=$line->document;$db=$document->getConnection();

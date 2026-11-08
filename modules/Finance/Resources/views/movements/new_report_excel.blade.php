@@ -76,6 +76,7 @@ $i = 0
                     <th class="">Moneda</th>
                     <th class="">Referencia</th>
                     <th class="">Destino</th>
+                    <th class="">Método</th>
                     <th class="">Tipo</th>
                     <th class="">Ingresos</th>
                     <th class="">Gastos</th>
@@ -123,6 +124,7 @@ $i = 0
                         <td class="celda">{{ $value['currency_type_id'] ?: 'Sin moneda' }}</td>
                         <td class="celda">{{ $reference }}</td>
                         <td class="celda">{{ $destination_name }}</td>
+                        <td class="celda">{{ $value['payment_method_type_description'] ?? '' }}</td>
                         <td class="celda">{{$value['instance_type_description']}}</td>
 
                         <td class="celda">{{ $type_movement === 'input' ? $symbol.$formatted : '-' }}</td>
@@ -137,14 +139,14 @@ $i = 0
                 @foreach($currencyTotals as $currency => $totals)
                 @php $symbol = $currency === 'VES' ? 'Bs.' : '$'; @endphp
                 <tr>
-                    <td colspan="11" class="celda">Totales {{ $currency }}</td>
+                    <td colspan="12" class="celda">Totales {{ $currency }}</td>
                     <td class="celda">{{ $symbol.\App\Support\Exact\Decimal::format($totals['input'], 2, '.', '') }}</td>
                     <td class="celda">{{ $symbol.\App\Support\Exact\Decimal::format($totals['output'], 2, '.', '') }}</td>
                     <td class="celda">{{ $symbol.\App\Support\Exact\Decimal::format($totals['input']->minus($totals['output']), 2, '.', '') }}</td>
                 </tr>
                 @endforeach
                 @if($unknownCurrency)
-                <tr><td colspan="14" class="celda">Los movimientos sin moneda no se incluyen en los totales.</td></tr>
+                <tr><td colspan="15" class="celda">Los movimientos sin moneda no se incluyen en los totales.</td></tr>
                 @endif
                 </tfoot>
             </table>

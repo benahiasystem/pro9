@@ -542,14 +542,17 @@ class RestaurantController extends Controller
                 $document = new stdClass;
                 $document->client = $user->name;
                 $document->product = $request->producto;
-                $document->total = $request->precio_culqi;
-                $document->items = $request->items;
+                $document->total = $order->getRawOriginal('total');
+                $document->items = \App\Support\Exact\JsonDecimals::decode($order->getRawOriginal('items'));
+                $document->id = $order->id;
+                $document->payment_confirmed = false;
 
-                $this->paymentCashEmail($customer_email, $document);
+                $emailSent = $this->paymentCashEmail($customer_email, $document);
 
                 //Mail::to($customer_email)->send(new CulqiEmail($document));
                 return [
                     'success' => true,
+                    'email_sent' => $emailSent,
                     'order' => $order
                 ];
 
@@ -570,10 +573,13 @@ class RestaurantController extends Controller
             $mailable = new CulqiEmail($document);
             $id = (int) $document->id;
             $model = __FILE__.";;".__LINE__;
-            $sendIt = EmailController::SendMail($email, $mailable, $id, $model);
-        }catch(\Exception $e)
+            $sent = EmailController::SendMail($email, $mailable, $id, $model);
+            if (!$sent) \Illuminate\Support\Facades\Log::warning('No se pudo enviar la notificación de pedido de restaurante.', ['order_id'=>$id]);
+            return $sent;
+        }catch(\Throwable $e)
         {
-            return true;
+            \Illuminate\Support\Facades\Log::warning('No se pudo preparar la notificación de pedido de restaurante.', ['order_id'=>$document->id ?? null]);
+            return false;
         }
     }
 

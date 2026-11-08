@@ -1,131 +1,18 @@
-<!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta http-equiv="Content-Type" content="application/pdf; charset=utf-8" />
-        <meta http-equiv="X-UA-Compatible" content="ie=edge">
-        <title>Nota de ventas</title>
-        <style>
-            html {
-                font-family: sans-serif;
-                font-size: 12px;
-            }
-            
-            table {
-                width: 100%;
-                border-spacing: 0;
-                border: 1px solid black;
-            }
-            
-            .celda {
-                text-align: center;
-                padding: 5px;
-                border: 0.1px solid black;
-            }
-            
-            th {
-                padding: 5px;
-                text-align: center;
-                border-color: #0088cc;
-                border: 0.1px solid black;
-            }
-            
-            .title {
-                font-weight: bold;
-                padding: 5px;
-                font-size: 20px !important;
-                text-decoration: underline;
-            }
-            
-            p>strong {
-                margin-left: 5px;
-                font-size: 13px;
-            }
-            
-            thead {
-                font-weight: bold;
-                background: #0088cc;
-                color: white;
-                text-align: center;
-            }
-        </style>
-    </head>
-    <body>
-        <div>
-            <p align="center" class="title"><strong>Reporte Nota de Venta</strong></p>
-        </div>
-        <div style="margin-top:20px; margin-bottom:20px;">
-            <table>
-                <tr>
-                    <td>
-                        <p>@include('partials.report_company_header')</p>
-                    </td>
-                    <td>
-                        <p><strong>Fecha: </strong>{{date('Y-m-d')}}</p>
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        <p><strong>RIF: </strong>{{$company->number}}</p>
-                    </td>
-                
-                </tr>
-            </table>
-        </div>
-        @if(!empty($records))
-            <div class="">
-                <div class=" ">
-                    <table class="">
-                        <thead>
-                            <tr>
-                               <th>#</th>
-                                <th class="text-center">Fecha Emisión</th>
-                                <th>Cliente</th>
-                                <th>Nota de Venta</th>
-                                <th>Estado</th>
-                                <th class="text-center">Moneda</th>
-                                <th class="text-right" >T.Exportación</th>
-
-                                <th class="text-right" >T.Exonerado</th>
-                                <th class="text-right">T.Gravado</th>
-                                {{-- ########## INICIO CAMBIO IGV A IVA --}}
-                                <th class="text-right">T.IVA</th>
-                                {{-- ######### FIN CAMBIO IGV A IVA --}}
-                                <th class="text-right">Total</th>
-                                <th class="text-center">Comprobantes</th> 
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($records as $key => $value)
-                                <tr>
-                                    <td>{{$loop->iteration}}</td>
-                                    <td>{{$value->date_of_issue->format('Y-m-d')}}</td>
-                                    <td>{{$value->customer->name}}</td>
-                                    <td>{{$value->identifier}}</td>
-                                    <td>{{$value->state_type->description}}</td>
-                                    <td>{{$value->currency_type_id}}</td>
-                                    <td >{{ $value->total_exportation }}</td>
-
-                                    <td >{{ $value->total_exonerated }}</td>
-                                    <td>{{ $value->total_taxed}}</td>
-                                    <td>{{ $value->total_igv}}</td>
-                                    <td>{{ $value->total}}</td>
-                                    <td>
-                                        @foreach ($value->documents as $doc)
-                                            <label class="d-block">{{$doc->number_full}}</label>
-                                        @endforeach
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        @else
-            <div class="callout callout-info">
-                <p>No se encontraron registros.</p>
-            </div>
-        @endif
-    </body>
-</html>
+<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Reporte de huéspedes</title>
+<style>body{font-family:sans-serif;font-size:9px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #aaa;padding:4px;vertical-align:top}th{background:#e8edf3}thead{display:table-header-group}tr{page-break-inside:avoid}</style></head><body>
+<h3>Reporte de huéspedes y comprobantes</h3>
+<p>@include('partials.report_company_header') &nbsp; RIF: {{ $company->number }}</p>
+<p>El total corresponde al importe original del comprobante, incluso si fue anulado o rechazado.</p>
+<table><thead><tr><th>Huésped e identidad</th><th>Datos personales</th><th>Nacionalidad y procedencia</th><th>Habitación y estancia</th><th>Comprobante y estado</th><th>Moneda</th><th>Total original</th></tr></thead><tbody>
+@foreach($records as $hotel)
+@php $document=$hotel->document; @endphp
+<tr><td>{{ $hotel->name }}<br>{{ optional($hotel->identity_document_type)->description }}: {{ $hotel->number }}</td>
+<td>Sexo: {{ $hotel->sex }}<br>Edad: {{ $hotel->age }}<br>Estado civil: {{ $hotel->civil_status }}<br>Ocupación: {{ $hotel->ocupation }}</td>
+<td>{{ $hotel->nacionality }}<br>{{ $hotel->origin }}</td>
+<td>{{ $hotel->room_number }}<br>Entrada: {{ $hotel->date_entry }} {{ $hotel->time_entry }}<br>Salida: {{ $hotel->date_exit }} {{ $hotel->time_exit }}</td>
+<td>{{ $document->number_full }}<br>{{ optional($document->state_type)->description }}</td><td>{{ $document->currency_type_id }}</td>
+<td>{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\Decimal::readRequired($document,'total'),2,'.','') }}</td></tr>
+@endforeach
+</tbody></table>
+@if($records->isEmpty())<p>No se encontraron registros.</p>@endif
+</body></html>

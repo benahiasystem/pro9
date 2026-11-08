@@ -87,7 +87,7 @@ export default {
             let str = '';
 
             if (row.item && row.item.total) {
-                str = row.item.total
+                str = `${row.item.currency_type_id || 'Moneda no identificada'} ${row.item.total}`
             }else if (row.total){
                 str = row.total
 

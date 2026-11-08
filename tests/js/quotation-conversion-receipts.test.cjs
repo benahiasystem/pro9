@@ -80,6 +80,21 @@ const run = vm.runInNewContext(`({${generate(submit).code}}).submit`)
 const change = methods.properties.find(node => node.key?.name === 'changePaymentCondition')
 const runChange = vm.runInNewContext(`({${generate(change).code}}).changePaymentCondition`, {_: {isEmpty: value => !value || !Object.keys(value).length}})
 
+test('quotation conversion offers invoices and sale notes without enabling retired types', async () => {
+    const method=methods.properties.find(node=>node.key?.name==='validateIdentityDocumentType')
+    const validate=vm.runInNewContext(`({${generate(method).code}}).validateIdentityDocumentType`,{_:require('lodash')})
+    const ctx={customers:[{id:1,identity_document_type_id:'1'}],all_document_types:[{id:'01',description:'FACTURA'},{id:'03',description:'BOLETA'}],
+        document:{customer_id:1,document_type_id:'01'},changeDocumentType:async()=>{},validateCustomerRetention:()=>{}}
+    await validate.call(ctx)
+    assert.deepEqual(Array.from(ctx.document_types,row=>row.id),['01'])
+    assert.equal(ctx.document.document_type_id,'01')
+    ctx.document.document_type_id='nv';await validate.call(ctx);assert.equal(ctx.document.document_type_id,'nv')
+    ctx.document.document_type_id='03';await validate.call(ctx);assert.equal(ctx.document.document_type_id,'nv')
+    ctx.document.document_type_id='01';ctx.all_document_types=[];await validate.call(ctx);assert.equal(ctx.document.document_type_id,'nv')
+    assert.match(source.template.content,/v-for="option in document_types"/)
+    assert.deepEqual(compiler.compile(source.template.content).errors,[])
+})
+
 test('quotation conversion sends a recorded receipt without changing its original data', async () => {
     const receipt = {id: 12, quotation_id: 5, payment_method_type_id: '13', currency_type_id: 'USD', original_amount: '5', exchange_rate: '10', payment: '50', payment_destination_id: 2, financial_intermediation: 'financial_institution'}
     const requests = []

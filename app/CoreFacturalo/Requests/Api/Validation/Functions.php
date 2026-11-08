@@ -30,20 +30,17 @@ class Functions
     }
 
     public static function person($inputs, $type) {
-        $district_id = $inputs['district_id'];
-
         $identityDocumentTypeId = (string) $inputs['identity_document_type_id'];
         $number = IdentityDocument::normalizeNumber(
             $identityDocumentTypeId,
             $inputs['number'] ?? ''
         );
 
-        if ($identityDocumentTypeId === '6') {
-            $ubigeo = Functions::validateUbigeo($district_id);
-        }
-
-        $province_id = ($district_id)?substr($district_id, 0 ,4):null;
-        $department_id = ($district_id)?substr($district_id, 0 ,2):null;
+        $countryId = $identityDocumentTypeId === 'ND' ? ($inputs['country_id'] ?? null) : 'VE';
+        $districtId = in_array($identityDocumentTypeId, ['E','7'], true) ? null : ($inputs['district_id'] ?? null);
+        $location = \App\Support\Venezuela\PersonLocation::resolve(
+            \Illuminate\Support\Facades\DB::connection('tenant'), $countryId, $districtId
+        );
 
         $person = Person::updateOrCreate([
             'type' => $type,
@@ -52,10 +49,10 @@ class Functions
         ], [
             'name' => $inputs['name'],
             'trade_name' => $inputs['trade_name'],
-            'country_id' => $inputs['country_id'],
-            'department_id' => $department_id,
-            'province_id' => $province_id,
-            'district_id' => $district_id,
+            'country_id' => $countryId,
+            'department_id' => $location['department_id'],
+            'province_id' => $location['province_id'],
+            'district_id' => $location['district_id'],
             'address' => $inputs['address'],
             'email' => $inputs['email'],
             'telephone' => $inputs['telephone'],
@@ -76,7 +73,7 @@ class Functions
         }
     }
 
-    public static function item($inputs)
+    public static function item($inputs, $exchangeRate = null)
     {
         // ######## INICIO CONTRATO UNIDADES DE MEDIDA VENEZUELA ########
         $inputs['unit_type_id'] = UnitType::requireActiveCode($inputs['unit_type_id'] ?? null);
@@ -89,14 +86,25 @@ class Functions
             $item = new Item();
             $item->internal_id = $inputs['internal_id'];
             $item->description = $inputs['description'];
-            $item->name = $inputs['name'];
-            $item->second_name = $inputs['second_name'];
+            $item->name = $inputs['name'] ?? null;
+            $item->second_name = $inputs['second_name'] ?? null;
             $item->item_type_id = $inputs['item_type_id'];
             $item->item_code = $inputs['item_code'];
             $item->item_code_gs1 = $inputs['item_code_gs1'];
             $item->unit_type_id = $inputs['unit_type_id'];
             $item->currency_type_id = $inputs['currency_type_id'];
-            $item->sale_unit_price =  $inputs['unit_price'];
+            if (!empty($inputs['price_input'])) {
+                $affectation=(string) ($inputs['affectation_igv_type_id'] ?? '');
+                if (!in_array($affectation, ['10','20'], true)) \App\Services\Fiscal\FiscalAmounts::error('items', 'Seleccione Gravado o Exento.');
+                $percentage=$affectation === '10' ? \App\Support\Venezuela\Localization::exactTaxPercentage() : '0';
+                $priceLine=\App\Support\Exact\LineCalculation::calculate([
+                    'quantity'=>'1','unit_price'=>$inputs['unit_price'],'price_input'=>$inputs['price_input'],
+                    'currency_type_id'=>$inputs['currency_type_id'],'exchange_rate_sale'=>$exchangeRate,
+                ], $percentage);
+                $item->setExactValues(['sale_unit_price'=>\App\Support\Exact\Decimal::of($priceLine['calculation_snapshot']['values']['unit_price'])]);
+            } else {
+                $item->sale_unit_price = $inputs['unit_price'];
+            }
             $item->sale_affectation_igv_type_id = $inputs['affectation_igv_type_id'];
             $item->purchase_affectation_igv_type_id = $inputs['affectation_igv_type_id'];
             $item->stock = 0;
@@ -124,6 +132,16 @@ class Functions
         $inputs['unit_type_id'] = UnitType::requireActiveCode($inputs['unit_type_id'] ?? null);
         // ######## FIN CONTRATO UNIDADES DE MEDIDA VENEZUELA ########
 
+        $existing = Item::where('internal_id', $inputs['internal_id'])->first();
+        if ($existing) return $existing->id;
+        $affectation = (string) ($inputs['affectation_igv_type_id'] ?? '');
+        if (!\App\Models\Tenant\Catalogs\AffectationIgvType::whereActive()->where('id', $affectation)->exists()) {
+            \App\Services\Fiscal\FiscalAmounts::error('items', 'Seleccione una afectación de IVA activa para el producto nuevo.');
+        }
+        if (!isset($inputs['unit_price'])) {
+            \App\Services\Fiscal\FiscalAmounts::error('items', 'Indique el precio del producto nuevo.');
+        }
+
         $item = Item::firstOrCreate([
             'internal_id' => $inputs['internal_id'],
         ], [
@@ -138,7 +156,8 @@ class Functions
             'sale_unit_price' =>  $inputs['unit_price'],
             'sale_affectation_igv_type_id' => $inputs['affectation_igv_type_id'],
             'purchase_affectation_igv_type_id' => $inputs['affectation_igv_type_id'],
-            'stock' => $inputs['quantity']
+            // La cantidad trasladada no acredita una entrada de inventario.
+            'stock' => '0'
         ]);
         return $item->id;
     }

@@ -140,22 +140,59 @@ class FixedAssetPurchaseController extends Controller
 
     public function store(FixedAssetPurchaseRequest $request)
     {
-
         $data = self::convert($request);
-
         $purchase = DB::connection('tenant')->transaction(function () use ($data, $request) {
-
-            $doc =  FixedAssetPurchase::updateOrCreate( ['id' => $request->input('id')], $data);
-            $doc->items()->delete();
-
-            foreach ($data['items'] as $row)
-            {
-                $row['fixed_asset_item_id'] = $row['item']['id'];
-                $doc->items()->create($row);
+            if (empty($data['items']) || !is_array($data['items'])) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['items'=>'Agregue al menos una partida.']);
             }
-
+            $id = $request->input('id');
+            $doc = $id ? FixedAssetPurchase::whereTypeUser()->lockForUpdate()->findOrFail($id) : new FixedAssetPurchase();
+            if ($doc->exists && in_array($doc->state_type_id, ['09','11'], true)) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['id'=>'No se puede editar una compra anulada o rechazada.']);
+            }
+            $previousCurrency = $doc->exists ? $doc->currency_type_id : null;
+            $header = collect($data)->only(['establishment_id','document_type_id','series','number',
+                'date_of_issue','date_of_due','time_of_issue','supplier_id','supplier','currency_type_id','exchange_rate_sale',
+                'total_prepayment','total_perception','perception_number','perception_date','charges','discounts','prepayments',
+                'guides','related','perception','legends','customer_id','group_id'])->all();
+            if (!$doc->exists) $header += ['user_id'=>$data['user_id'],'external_id'=>$data['external_id'],
+                'fiscal_environment'=>$data['fiscal_environment'],'state_type_id'=>'01','group_id'=>$data['group_id'],'total'=>'0'];
+            $doc->fill($header);
+            $doc->save();
+            \App\Support\Exact\CommercialCalculation::defer($doc, function () use ($doc, $data, $previousCurrency) {
+                $existing = $doc->items()->withoutEagerLoads()->lockForUpdate()->get()->keyBy('id');
+                $seen = [];
+                foreach ($data['items'] as $row) {
+                    $row = (array) $row;
+                    $row['item'] = (array) ($row['item'] ?? []);
+                    if (!in_array($row['affectation_igv_type_id'] ?? null, ['10','20'], true)) {
+                        throw \Illuminate\Validation\ValidationException::withMessages(['items'=>'Seleccione una afectación de IVA vigente.']);
+                    }
+                    $asset = FixedAssetItem::query()->findOrFail($row['item']['id']);
+                    $rowId = $row['id'] ?? null;
+                    if ($rowId !== null) {
+                        if (isset($seen[$rowId]) || !$existing->has($rowId)) {
+                            throw \Illuminate\Validation\ValidationException::withMessages(['items'=>'La partida no pertenece a esta compra o está repetida.']);
+                        }
+                        $seen[$rowId] = true;
+                        $line = $existing->get($rowId);
+                        if ($previousCurrency !== $doc->currency_type_id && empty($row['price_input'])) {
+                            throw \Illuminate\Validation\ValidationException::withMessages(['items'=>'Indique el precio y la moneda de origen de cada partida al cambiar la moneda.']);
+                        }
+                        if ((int) $line->fixed_asset_item_id !== (int) $asset->id) {
+                            throw \Illuminate\Validation\ValidationException::withMessages(['items'=>'No se puede sustituir el activo de una partida existente.']);
+                        }
+                    } else {
+                        $line = $doc->items()->make();
+                        $line->fixed_asset_item_id = $asset->id;
+                    }
+                    $line->fill(collect($row)->only(['item','quantity','unit_price','affectation_igv_type_id',
+                        'price_type_id','discounts','charges','attributes','quantity_input','price_input'])->all());
+                    $line->save();
+                }
+                foreach ($existing as $line) if (!isset($seen[$line->id])) $line->delete();
+            });
             return $doc;
-
         });
 
         return [

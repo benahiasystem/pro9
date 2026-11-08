@@ -18,6 +18,7 @@ export default {
         fiscalQuoteRows() {
             if (Array.isArray(this.form?.payments)) return this.form.payments
             if (Array.isArray(this.draftPayments)) return this.draftPayments
+            if (Array.isArray(this.document?.payments)) return this.document.payments
             return (this.records || []).filter(row => !row.id)
         },
         fiscalQuoteCurrency() { return this.form?.currency_type_id || this.currencyTypeId || this.document?.currency_type_id || '' },
@@ -52,7 +53,7 @@ export default {
             const documentId = Array.isArray(this.records) ? this.documentId : null
             const currency = this.form?.currency_type_id || this.currencyTypeId || this.document?.currency_type_id
             const rate = this.form?.exchange_rate_sale ?? this.exchangeRateSale ?? this.document?.exchange_rate_sale
-            const due = this.collectionTarget ?? this.form?.total_payable ?? this.form?.total ?? this.total ?? this.document?.amount_payable ?? this.document?.total_difference
+            const due = this.collectionTarget ?? this.form?.total_payable ?? this.form?.total ?? this.total ?? this.document?.amount_payable ?? this.document?.total_difference ?? this.document?.total
             if (!documentId && (!currency || !rate || due === undefined || due === null)) return null
             const payloadRows = rows.map(row => {
                 const money = row.currency_type_id || currency
@@ -70,7 +71,7 @@ export default {
                     exemption_reason: row.exemption_reason, exception_basis: row.exception_basis,
                 }
             })
-            return {document_id: documentId || undefined, customer_id: this.form?.customer_id || this.customerId || undefined,
+            return {document_id: documentId || undefined, customer_id: this.form?.customer_id || this.customerId || this.document?.customer_id || undefined,
                 currency_type_id: currency, exchange_rate_sale: rate, principal_due: due, payments: payloadRows}
         },
         fiscalQuotePresentation(quote) {
@@ -81,13 +82,14 @@ export default {
             const request = this.fiscalQuoteRequest(payments)
             const key = request ? JSON.stringify([request, this.igtfSettings.enabled, this.igtfSettings.rate]) : ''
             const sequence = ++this.igtfQuoteSequence
-            const source = this.form?.payments === payments ? 'form' : (this.draftPayments === payments ? 'draft' : null)
+            const source = this.form?.payments === payments ? 'form' : (this.draftPayments === payments ? 'draft' : (this.document?.payments === payments ? 'document' : null))
             const isCurrent = () => {
                 const current = this.fiscalQuoteRequest(payments)
                 return sequence === this.igtfQuoteSequence && this.fiscalPaymentsApplicable
                     && this.showDialog !== false && (this.is_payment !== false || this.fiscalQuoteInline)
                     && (source !== 'form' || this.form?.payments === payments)
                     && (source !== 'draft' || this.draftPayments === payments)
+                    && (source !== 'document' || this.document?.payments === payments)
                     && (!Array.isArray(this.records) || payments.every(row => this.records.includes(row)))
                     && current && JSON.stringify([current, this.igtfSettings.enabled, this.igtfSettings.rate]) === key
             }

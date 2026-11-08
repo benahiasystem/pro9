@@ -51,44 +51,39 @@
                     <thead>
                         <tr>
                             <th>#</th>
-                            <th>Marca</th>
+                            <th>Marca actual</th>
+                            <th>Unidad</th>
                             <th class="text-center">Cantidad vendida</th>
-                            {{-- ########## INICIO CAMBIO IGV A IVA --}}
-                            <th class="text-center">Valor de venta (SIN IVA)</th>
-                            {{-- ######### FIN CAMBIO IGV A IVA --}}
-                            <th class="text-center">Utilidad generada</th>
+                            <th class="text-center">Ventas con IVA (Bs.)</th>
+                            <th class="text-center">Ganancia estimada (Bs.)</th>
                         </tr>
                     </thead>
                     <tbody>
                         @php
-                            $total_quantity = 0;
-                            $total_sale_value = 0;
-                            $total_profit = 0;
+                            $report = \Modules\Report\Services\BrandSalesAmounts::presentation($records);
                         @endphp
-                        @foreach($records as $row)
+                        @foreach($report['rows'] as $row)
                             <tr>
                                 <td>{{$loop->iteration}}</td>
                                 <td>{{$row['brand_name']}}</td>
-                                <td>{{number_format($row['quantity_sold'], 2)}}</td>
-                                <td>{{number_format($row['total_sale_value'], 2)}}</td>
-                                <td>{{number_format($row['total_profit'], 2)}}</td>
+                                <td>{{$row['unit_type_id'] ?? 'Sin unidad'}}</td>
+                                <td data-type="s" style="mso-number-format:'\@'">{{$row['quantity_sold']}}</td>
+                                <td data-type="s" style="mso-number-format:'\@'">{{$row['display']['total_sale_value']}}</td>
+                                <td data-type="s" style="mso-number-format:'\@'">{{$row['display']['total_profit']}}</td>
                             </tr>
-                            @php
-                                $total_quantity += $row['quantity_sold'];
-                                $total_sale_value += $row['total_sale_value'];
-                                $total_profit += $row['total_profit'];
-                            @endphp
                         @endforeach
                     </tbody>
                     <tfoot>
                         <tr>
-                            <th colspan="2">Totales</th>
-                            <th>{{number_format($total_quantity, 2)}}</th>
-                            <th>{{number_format($total_sale_value, 2)}}</th>
-                            <th>{{number_format($total_profit, 2)}}</th>
+                            <th colspan="3">Totales</th>
+                            <th>@foreach($report['units'] as $unit=>$quantity) {{ \App\Support\Exact\Decimal::represent($quantity) }} {{ $unit }}<br>@endforeach</th>
+                            <th data-type="s" style="mso-number-format:'\@'">{{\App\Support\Exact\Decimal::format($report['totals']['total_sale_value'],2,'.','')}}</th>
+                            <th data-type="s" style="mso-number-format:'\@'">{{\App\Support\Exact\Decimal::format($report['totals']['total_profit'],2,'.','')}}</th>
                         </tr>
                     </tfoot>
                 </table>
+                @if($report['unknown'])<p>Las partidas sin unidad identificada no se incluyen en los totales de cantidad.</p>@endif
+                <p>La marca corresponde al catálogo actual; la ganancia es una estimación basada en compras o costos actuales.</p>
             </div>
         @else
             <div>

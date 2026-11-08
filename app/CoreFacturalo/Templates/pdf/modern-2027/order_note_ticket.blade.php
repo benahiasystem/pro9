@@ -23,9 +23,7 @@
         ->max();
     $m27_igv_percentage = $m27_igv_percentage ? rtrim(rtrim(number_format($m27_igv_percentage, 2, '.', ''), '0'), '.') : null;
 
-    $m27_total_products = rtrim(rtrim(number_format(collect($document->items)->sum(function ($item) {
-        return (float) data_get($item, 'quantity', 0);
-    }), 2, '.', ''), '0'), '.');
+    $m27_total_products = \App\Support\Exact\PdfQuantities::summary($document->items);
 
     $m27_barcode = preg_replace('/[^0-9A-Za-z\-]/', '', (string) $tittle);
 
@@ -218,11 +216,7 @@
                     <small style="display:block; font-weight: normal; font-size: 7px;">
                         Lote: {{ $row->getSaleLotGroupCodeDescription() }}<br>
                         FV:
-                        @if(isset($row->relation_item->date_of_due))
-                            {{ $row->relation_item->date_of_due->format('Y-m-d') }}
-                        @else
-                            -
-                        @endif
+                        {{ $row->getSaleLotGroupDateDescription('Y-m-d') }}
                     </small>
                 @endif
                 <small style="display:block; font-weight: normal; font-size: 7px;">
@@ -320,7 +314,7 @@
         <td class="m27-colspec" width="28%"></td>
     </tr>
     <tr>
-        <td class="m27-item-sub align-bottom" style="white-space: nowrap;">{{ $m27_total_products }} und.</td>
+        <td class="m27-item-sub align-bottom">{{ $m27_total_products }}</td>
         <td class="m27-grand-label">TOTAL:</td>
         <td class="m27-grand-value">{{ $document->currency_type->symbol }} {{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total'), 2) }}</td>
     </tr>

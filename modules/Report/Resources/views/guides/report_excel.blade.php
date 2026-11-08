@@ -53,7 +53,7 @@
 </head>
 <body>
 <div>
-    <p align="center" class="title"><strong>Consolidado de items por cliente/vendedor</strong></p>
+    <p align="center" class="title"><strong>Órdenes de entrega: artículos por cliente/vendedor</strong></p>
 </div>
 <div style="margin-top:20px; margin-bottom:20px;">
     <table>
@@ -104,7 +104,7 @@
     <div class="">
         <div class=" ">
             @php
-                $acum_total=0;
+                $unitTotals=\Modules\Report\Services\DispatchReportAmounts::totalsByUnit($records);
 
             @endphp
             <table class="">
@@ -140,7 +140,7 @@
                         $num_doc=0;
                         $name_dispatcher=0;
                         $transfer_description=0;
-                        $data = $value->getCollectionData();
+                        $data = $reportRows[$value->id] ?? $value->getCollectionData();
                         // dd($data);
                         $qty = $data['quantity'];
                         $item = $data['item'];
@@ -179,7 +179,7 @@
                         <td class="celda"> {{$state_type_description}} </td>
                         <td class="celda">{{ $date_of_shipping }}</td>
                         <td class="celda"> {{$item_description}} </td>
-                        <td class="celda"> {{$value->getQtyFormated()}} </td>
+                        <td data-type="s" style="mso-number-format:'\@'" class="celda">{{ $qty }} {{ \Modules\Report\Services\DispatchReportAmounts::unit($value) ?? '(sin unidad)' }}</td>
                         <td class="celda">{{$transfer_reason}}</td>
                         <td class="celda">{{$type_doc}}</td>
                         <td class="celda">{{$num_doc}}</td>
@@ -187,16 +187,17 @@
                         <td class="celda">{{$order_note}}</td>
                         <td class="celda">{{ $order_form_description }}</td>
                     </tr>
-                    @php
-                        $acum_total += $qty
-                    @endphp
                 @endforeach
+                @foreach($unitTotals as $unit => $quantity)
                 <tr>
+                    <td class="celda" colspan="8"><strong>Total {{ $unit }}</strong></td>
+                    <td data-type="s" style="mso-number-format:'\@'" class="celda">{{ \App\Support\Exact\Decimal::represent($quantity) }}</td>
                     <td class="celda" colspan="6"></td>
-                    <td class="celda"><strong>Total</strong></td>
-                    <td class="celda">{{number_format($acum_total,2)}}</td>
-                    <td class="celda" colspan="7"></td>
                 </tr>
+                @endforeach
+                @if($records->contains(fn($line)=>\Modules\Report\Services\DispatchReportAmounts::unit($line) === null))
+                <tr><td class="celda" colspan="15">Las partidas sin unidad identificada no se incluyen en los totales.</td></tr>
+                @endif
                 </tbody>
             </table>
         </div>

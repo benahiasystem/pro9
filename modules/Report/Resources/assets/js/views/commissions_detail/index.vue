@@ -34,7 +34,7 @@
                         <el-tooltip
                             class="item"
                             effect="dark"
-                            content="Total ventas (CPE - NV) - Total compras"
+                            content="Ganancia estimada por partida, antes de ajustes globales; costo según compras o catálogo."
                             placement="top-end"
                         >
                             <i class="fa fa-info-circle"></i>
@@ -46,7 +46,7 @@
         <div class="card mb-0 pt-2 pt-md-0 tab-content-default row-new">
             <!-- <div class="card-header bg-info">
                 <h3 class="my-0">Utilidades detallado
-                    <el-tooltip class="item" effect="dark" content="Total ventas (CPE - NV) - Total compras" placement="top-end">
+                    <el-tooltip class="item" effect="dark" content="Ganancia estimada por partida, antes de ajustes globales; costo según compras o catálogo." placement="top-end">
                         <i class="fa fa-info-circle"></i>
                     </el-tooltip>
                 </h3>
@@ -64,6 +64,7 @@
                             <th class="text-center">Comercial</th>
                             <th class="text-center">Detalle</th>
                             <th class="text-center">Cantidad</th>
+                            <th class="text-center">Moneda</th>
                             <th class="text-center">
                                 Precio compra
                                 <el-tooltip
@@ -101,7 +102,8 @@
 
                             <td class="text-center">{{ row.customer_name }}</td>
                             <td class="text-center">{{ row.name }}</td>
-                            <td class="text-center">{{ row.quantity }}</td>
+                            <td class="text-center">{{ row.quantity }} {{ row.unit_type_id }}</td>
+                            <td class="text-center">{{ row.currency_type_id }}</td>
                             <td class="text-center">
                                 {{ formatNumber(row.purchase_unit_price) }}
                             </td>
@@ -109,7 +111,7 @@
 
                             <td class="text-center">{{ formatNumber(row.unit_gain) }}</td>
                             <td class="text-center">
-                                {{ formatNumber(row.overall_profit) }}
+                                {{ row.display_profit }}
                             </td>
                         </tr>
                     </data-table>
@@ -141,7 +143,7 @@ export default {
         },
         formatNumber(value) {
             if (value === null || value === undefined) return '';
-            return Number(value).toFixed(2);
+            return String(value);
         }
     }
 };

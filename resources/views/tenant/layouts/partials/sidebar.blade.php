@@ -354,7 +354,7 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
                                     @if(in_array('list_document', $vc_module_levels))
                                         <li
                                             class="{{ ($firstLevel === 'documents' && $secondLevel != 'create' && $secondLevel != 'not-sent' && $secondLevel != 'regularize-shipping') ? 'nav-active' : '' }} {{ ($firstLevel === 'documents' && $secondLevel === 'create') ? 'nav-active' : '' }} nav-item-with-action">
-                                            <a class="nav-link pe-5" href="{{route('tenant.documents.index')}}">Boleta/factura</a>
+                                            <a class="nav-link pe-5" href="{{route('tenant.documents.index')}}">Facturas y notas</a>
                                             <button
                                                 type="button"
                                                 class="{{ ($firstLevel === 'documents') ? 'second-buton' : 'btn-primary' }} btn btn-xs nav-action m-0 py-0"

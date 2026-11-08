@@ -159,6 +159,8 @@
                             :categories="monthlyComparison.categories"
                             :sales="monthlyComparison.sales"
                             :purchases="monthlyComparison.purchases"
+                            :sales-exact="monthlyComparison.salesExact"
+                            :purchases-exact="monthlyComparison.purchasesExact"
                         ></monthly-comparison-chart>
                     </div>
                 </div>
@@ -176,6 +178,8 @@
                             :categories="salesGrowth.categories"
                             :current="salesGrowth.current"
                             :previous="salesGrowth.previous"
+                            :current-exact="salesGrowth.currentExact"
+                            :previous-exact="salesGrowth.previousExact"
                             :current-label="salesGrowth.currentLabel"
                             :previous-label="salesGrowth.previousLabel"
                         ></sales-growth-chart>
@@ -193,6 +197,7 @@
 <script>
 import MonthlyComparisonChart from "./MonthlyComparisonChart.vue";
 import SalesGrowthChart from "./SalesGrowthChart.vue";
+import { formatMoneyExact } from "../../../../../../../../resources/js/helpers/format-money-exact";
 
 export default {
     name: "NewDashboard",
@@ -230,11 +235,15 @@ export default {
                 categories: [],
                 sales: [],
                 purchases: [],
+                salesExact: [],
+                purchasesExact: [],
             },
             salesGrowth: {
                 categories: [],
                 current: [],
                 previous: [],
+                currentExact: [],
+                previousExact: [],
                 currentLabel: "",
                 previousLabel: "",
             },
@@ -427,6 +436,8 @@ export default {
                         categories: data.categories,
                         sales: data.sales,
                         purchases: data.purchases,
+                        salesExact: data.sales_exact || [],
+                        purchasesExact: data.purchases_exact || [],
                     };
                 });
         },
@@ -439,16 +450,15 @@ export default {
                         categories: data.categories,
                         current: data.current,
                         previous: data.previous,
+                        currentExact: data.current_exact || [],
+                        previousExact: data.previous_exact || [],
                         currentLabel: data.current_label,
                         previousLabel: data.previous_label,
                     };
                 });
         },
         formatMoney(value) {
-            return Number(value).toLocaleString("es-PE", {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-            });
+            return formatMoneyExact(value);
         },
         formatPercent(value) {
             const number = Number(value) || 0;

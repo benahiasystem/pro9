@@ -1,0 +1,13 @@
+const {test}=require('node:test')
+const assert=require('node:assert/strict')
+const fs=require('node:fs')
+const compiler=require('vue-template-compiler')
+test('pending collection commissions show each currency and unresolved fixed amounts',()=>{
+    const component=compiler.parseComponent(fs.readFileSync('modules/Report/Resources/assets/js/views/pending-account-commissions/index.vue','utf8'))
+    assert.deepEqual(compiler.compile(component.template.content).errors,[])
+    assert.match(component.template.content,/moneda definida no se calcula/)
+    const table=compiler.parseComponent(fs.readFileSync('modules/Report/Resources/assets/js/components/DataTablePendingAccounts.vue','utf8'))
+    assert.deepEqual(compiler.compile(table.template.content).errors,[])
+    assert.match(table.template.content,/row\.currency_rows/)
+    assert.match(table.template.content,/entry\.commission_reason/)
+})

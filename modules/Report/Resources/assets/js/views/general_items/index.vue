@@ -94,8 +94,8 @@
                             <th class="">Valor unitario</th>
                             <th class="">Total</th>
                             <template v-if="type == 'sale'">
-                                <th class="">Total compra</th>
-                                <th class="">Ganancia</th>
+                                <th class="">Costo estimado</th>
+                                <th class="">Ganancia estimada</th>
                             </template>
                         </tr>
 

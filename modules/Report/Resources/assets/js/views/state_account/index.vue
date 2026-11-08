@@ -108,7 +108,7 @@
                         <tr slot-scope="{ index, row }">
                             <td>{{ index }}</td>
                             <td>{{ row.user_name }}</td>
-                            <td>{{ row.document_type_description }}</td>
+                            <td>{{ row.document_type_description }}<span v-if="row.converted"> (convertida)</span></td>
                             <td>{{ row.number }}</td>
                             <td>{{ formatDate(row.date_of_issue) }}</td>
                             <td>{{ formatDate(row.date_of_due) }}</td>
@@ -181,7 +181,7 @@
 
                             <td>
                                 {{
-                                    row.document_type_id == "07"
+                                    row.total_unaffected == null ? "—" : row.document_type_id == "07"
                                         ? row.total_unaffected == 0
                                             ? "0.00"
                                             : "-" + row.total_unaffected
@@ -194,7 +194,7 @@
                             </td>
                             <td>
                                 {{
-                                    row.document_type_id == "07"
+                                    row.total_free == null ? "—" : row.document_type_id == "07"
                                         ? row.total_free == 0
                                             ? "0.00"
                                             : "-" + row.total_free

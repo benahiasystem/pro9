@@ -286,11 +286,13 @@ use Modules\Sale\Models\Agent;
         {
             parent::boot();
             static::creating(function (self $model) {
+                \Modules\Hotel\Services\CheckoutCreation::assertAllowed($model);
                 $model->number = \App\Services\SeriesNumbering::next(
                     $model, '80', $model->series, $model->getAttributes()['number'] ?? '#', $model->establishment_id
                 );
                 self::adjustSellerIdField($model);
             });
+            static::updating(fn (self $model) => \Modules\Hotel\Services\CheckoutCreation::assertLinkUnchanged($model));
 
 
             static::created(function (self $model) {

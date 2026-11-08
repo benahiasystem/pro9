@@ -120,7 +120,21 @@ class ProcessReportSalesConsolidated implements ShouldQueue
 
     private function buildPdf($company, $establishment, $params)
     {
-        $records = $this->resolveRecords($params);
+        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        $reportAmounts = null; $reportRows = null;
+        if ($this->report_source === 'order_notes' && $this->export_mode === 'detail') {
+            [$records, $reportAmounts] = \App\Support\Exact\ReadSnapshot::run((new OrderNoteItem())->getConnection(), function () use ($params) {
+                $records = $this->resolveRecords($params);
+                $records->loadMissing('order_note.user');
+                return [$records, \Modules\Report\Services\OrderNoteConsolidatedAmounts::rows($records)];
+            });
+        } elseif ($this->report_source === 'guides' && $this->export_mode === 'detail') {
+            [$records, $reportRows] = \App\Support\Exact\ReadSnapshot::run((new \App\Models\Tenant\DispatchItem())->getConnection(), function () use ($params) {
+                $records = $this->resolveRecords($params);
+                return [$records, \Modules\Report\Services\DispatchReportAmounts::rows($records)];
+            });
+        } else $records = $this->resolveRecords($params);
+        // ######## FIN CALCULOS EXACTOS PRO9 ########
         // ######## INICIO CALCULOS EXACTOS PRO9 ########
         $reportSummary = $this->report_source === 'sales' ? \App\Support\Exact\SalesConsolidated::summary($records) : null;
         if ($this->report_source === 'sales') $records = \App\Support\Exact\ReportProjection::money($records, ['total_sale','total_ves','total_usd']);
@@ -139,7 +153,7 @@ class ProcessReportSalesConsolidated implements ShouldQueue
                 break;
         }
 
-        $pdf = PDF::loadView($view, compact('records', 'company', 'establishment', 'params', 'reportSummary'));
+        $pdf = PDF::loadView($view, compact('records', 'company', 'establishment', 'params', 'reportSummary', 'reportAmounts', 'reportRows'));
 
         if ($this->export_mode === 'ticket') {
             $height = (5.8 / 2.54) * 72;
@@ -156,7 +170,13 @@ class ProcessReportSalesConsolidated implements ShouldQueue
 
     private function buildExcelExport($company, $establishment, $params)
     {
-        $records = $this->resolveRecords($params);
+        $reportRows = null;
+        if ($this->report_source === 'guides' && $this->export_mode === 'detail') {
+            [$records, $reportRows] = \App\Support\Exact\ReadSnapshot::run((new \App\Models\Tenant\DispatchItem())->getConnection(), function () use ($params) {
+                $records = $this->resolveRecords($params);
+                return [$records, \Modules\Report\Services\DispatchReportAmounts::rows($records)];
+            });
+        } else $records = $this->resolveRecords($params);
         // ######## INICIO CALCULOS EXACTOS PRO9 ########
         $reportSummary = $this->report_source === 'sales' ? \App\Support\Exact\SalesConsolidated::summary($records) : null;
         // ######## FIN CALCULOS EXACTOS PRO9 ########
@@ -174,6 +194,7 @@ class ProcessReportSalesConsolidated implements ShouldQueue
 
             return (new GuidesConsolidatedExport())
                 ->records($records)
+                ->reportRows($reportRows)
                 ->company($company)
                 ->establishment($establishment)
                 ->params($params);
@@ -216,6 +237,7 @@ class ProcessReportSalesConsolidated implements ShouldQueue
                 }
 
                 return $controller->getRecordsOrderNotes($params, OrderNoteItem::class)
+                    ->with('order_note.user')
                     ->get()
                     ->sortBy(function ($row) {
                         return $row->order_note->user->name;

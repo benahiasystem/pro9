@@ -76,11 +76,13 @@
     </table>
 </div>
 <br>
-@if(!empty($records))
+<p>Los importes por categoría corresponden a partidas, sin ajustes globales de cabecera. Las cantidades se agrupan por unidad.</p>
+@if($records->isNotEmpty())
     <div class="">
         <div class=" ">
             @php
                 $currencyTotals = \Modules\Report\Services\DocumentCurrencyTotals::empty();
+                        $displayTotals = \Modules\Report\Services\DocumentCurrencyTotals::empty();
                 $serie_affec = '';
             @endphp
             <table class="">
@@ -129,14 +131,14 @@
 
                     {{-- ######### FIN SIN DETRACCIONES E ISC --}}
                     <th>Total</th>
-                    <th>Total de productos</th>
+                    <th>Cantidades por unidad</th>
 
                     @foreach ($categories as $category)
-                        <th>{{$category->name}}</th>
+                        <th>{{$category->name}} (importe de partidas)</th>
                     @endforeach
 
                     @foreach ($categories_services as $category)
-                        <th>{{$category->name}}</th>
+                        <th>{{$category->name}} (cantidad de servicios)</th>
                     @endforeach
 
                     @if ($enabled_sales_agents)
@@ -264,96 +266,21 @@
 
 
 
-                        @if($signal == '07')
+                        <td class="celda" data-type="s" style="mso-number-format:'\@'">{{ \App\Support\Exact\Decimal::format(\Modules\Report\Services\DocumentReportLines::monetary($value, 'total_charge'),2,'.','') }}</td>
+                        <td class="celda" data-type="s" style="mso-number-format:'\@'">{{ \App\Support\Exact\Decimal::format(\Modules\Report\Services\DocumentReportLines::monetary($value, 'total_exonerated'),2,'.','') }}</td>
+                        <td class="celda" data-type="s" style="mso-number-format:'\@'">{{ \App\Support\Exact\Decimal::format(\Modules\Report\Services\DocumentReportLines::monetary($value, 'total_taxed'),2,'.','') }}</td>
+                        <td class="celda" data-type="s" style="mso-number-format:'\@'">{{ \App\Support\Exact\Decimal::format(\Modules\Report\Services\DocumentReportLines::monetary($value, 'total_discount'),2,'.','') }}</td>
+                        <td class="celda" data-type="s" style="mso-number-format:'\@'">{{ \App\Support\Exact\Decimal::format(\Modules\Report\Services\DocumentReportLines::monetary($value, 'total_igv'),2,'.','') }}</td>
+                        <td class="celda" data-type="s" style="mso-number-format:'\@'">{{ \App\Support\Exact\Decimal::format(\Modules\Report\Services\DocumentReportLines::monetary($value, 'total'),2,'.','') }}</td>
 
-                            @if(in_array($value->state_type_id,['09','11']))
-                                <td class="celda">0</td>
-                                <td class="celda">0</td>
-                                <td class="celda">0</td>
-                                <td class="celda">0</td>
-                                <td class="celda">0</td>
-                                <td class="celda">0</td>
-                                <td class="celda">0</td>
-                                <td class="celda">0</td>
-                                <td class="celda">0</td>
-                            @else
-                                <td class="celda">{{$signal == '07' ? "-" : ""  }}{{$value->total_charge}}</td>
-                                <td class="celda">{{$signal == '07' ? "-" : ""  }}{{$value->total_exonerated}}</td>
-
-
-                                <td class="celda">{{$signal == '07' ? "-" : ""  }}{{$value->total_taxed}}</td>
-                                <td class="celda">{{$value->total_discount}}</td>
-                                <td class="celda">{{$signal == '07' ? "-" : ""  }}{{$value->total_igv}}</td>
-
-                                <td class="celda">{{$signal == '07' ? "-" : ""  }}{{\App\Support\Exact\Decimal::format(\App\Support\Exact\Decimal::read($value, 'total'))}}</td>
-                            @endif
-
-                        @else
-                            <td class="celda">{{ in_array($value->state_type_id,['09','11']) ? 0 : $value->total_charge}}</td>
-                            <td class="celda">{{ in_array($value->state_type_id,['09','11']) ? 0 : $value->total_exonerated}}</td>
-
-
-
-                            <td class="celda">{{ in_array($value->state_type_id,['09','11']) ? 0 : $value->total_taxed}}</td>
-                            <td class="celda">{{ in_array($value->state_type_id,['09','11']) ? 0 : $value->total_discount}}</td>
-                            <td class="celda">{{ in_array($value->state_type_id,['09','11']) ? 0 : $value->total_igv}}</td>
-
-                            <td class="celda">{{ in_array($value->state_type_id,['09','11']) ? '0.00' : \App\Support\Exact\Decimal::format(\App\Support\Exact\Decimal::read($value, 'total'))}}</td>
-
-                        @endif
-
+                        <td data-type="s">{{ \Modules\Report\Services\DocumentReportLines::quantityText($value) }}</td>
                         @foreach ($categories as $category)
-
-                            @php
-                                $amount = 0;
-                                // dd($item->relation_item->category_id);
-
-                                foreach ($value->items as $item) {
-                                    if($item->relation_item->category_id == $category->id){
-                                        $amount += $item->total;
-                                    }
-                                }
-                            @endphp
-
-                            <td>{{$amount}}</td>
+                            <td data-type="s" style="mso-number-format:'\@'">{{ \App\Support\Exact\Decimal::format(\Modules\Report\Services\DocumentReportLines::categoryAmount($value, $category->id),2,'.','') }}</td>
                         @endforeach
-
-
                         @foreach ($categories_services as $category)
-
-                            @php
-                                $quantity = 0;
-
-                                foreach ($value->items as $item) {
-                                    if($item->relation_item->category_id == $category->id){
-                                        $quantity += $item->quantity;
-                                    }
-                                }
-                            @endphp
-
-                            <td>{{$quantity}}</td>
+                            <td data-type="s" style="mso-number-format:'\@'">{{ \App\Support\Exact\Decimal::represent(\Modules\Report\Services\DocumentReportLines::serviceQuantity($value, $category->id)) }}</td>
                         @endforeach
-
-                        @php
-
-                            $value->total_exonerated = in_array($value->state_type_id,['09','11']) ? 0 : $value->total_exonerated;
-
-                            $value->total_taxed = in_array($value->state_type_id,['09','11']) ? 0 : $value->total_taxed;
-                            $value->total_igv = in_array($value->state_type_id,['09','11']) ? 0 : $value->total_igv;
-                            $value->total = in_array($value->state_type_id,['09','11']) ? 0 : $value->total;
-                        @endphp
-
-                        @php
-
-                            $serie_affec =  '';
-
-                            $quality_item=0;
-                            foreach ($value->items as $itm) {
-                                $quality_item+=$itm->quantity;
-                            }
-
-                        @endphp
-                        <td>{{$quality_item}}</td>
+                        @php $serie_affec = ''; @endphp
 
                         @if ($enabled_sales_agents)
                             <td>{{optional($value->agent)->search_description}}</td>
@@ -365,31 +292,37 @@
                     </tr>
                     @php
                         $currencyTotals = \Modules\Report\Services\DocumentCurrencyTotals::add($currencyTotals, $value);
+                            $displayTotals = \Modules\Report\Services\DocumentCurrencyTotals::addDisplayed($displayTotals, $value);
                         @endphp
+                @endforeach
+                @foreach (['VES','USD'] as $currency)
+                    @if (\Modules\Report\Services\DocumentCurrencyTotals::hasAdjustment($currencyTotals,$displayTotals,$currency,['total_charge','total_exonerated','total_taxed','total_igv','total']))
+                    <tr><td colspan="23"></td><td></td><td colspan="2">Ajuste por redondeo {{ $currency }}</td><td data-type="s" style="mso-number-format:'\@'">{{ \Modules\Report\Services\DocumentCurrencyTotals::adjustment($currencyTotals,$displayTotals,$currency,'total_charge') }}</td> <td data-type="s" style="mso-number-format:'\@'">{{ \Modules\Report\Services\DocumentCurrencyTotals::adjustment($currencyTotals,$displayTotals,$currency,'total_exonerated') }}</td> <td data-type="s" style="mso-number-format:'\@'">{{ \Modules\Report\Services\DocumentCurrencyTotals::adjustment($currencyTotals,$displayTotals,$currency,'total_taxed') }}</td> <td></td> <td data-type="s" style="mso-number-format:'\@'">{{ \Modules\Report\Services\DocumentCurrencyTotals::adjustment($currencyTotals,$displayTotals,$currency,'total_igv') }}</td> <td data-type="s" style="mso-number-format:'\@'">{{ \Modules\Report\Services\DocumentCurrencyTotals::adjustment($currencyTotals,$displayTotals,$currency,'total') }}</td></tr>
+                    @endif
                 @endforeach
                 <tr>
                     <td colspan="23"></td>
                     <td></td>
                     <td colspan="2">Totales VES</td>
-                    <td>{{\App\Support\Exact\Decimal::format($currencyTotals['VES']['total_charge'])}}</td>
-                    <td>{{\App\Support\Exact\Decimal::format($currencyTotals['VES']['total_exonerated'])}}</td>
+                    <td data-type="s" style="mso-number-format:'\@'">{{\App\Support\Exact\Decimal::format($currencyTotals['VES']['total_charge'])}}</td>
+                    <td data-type="s" style="mso-number-format:'\@'">{{\App\Support\Exact\Decimal::format($currencyTotals['VES']['total_exonerated'])}}</td>
 
 
-                    <td>{{\App\Support\Exact\Decimal::format($currencyTotals['VES']['total_taxed'])}}</td>
+                    <td data-type="s" style="mso-number-format:'\@'">{{\App\Support\Exact\Decimal::format($currencyTotals['VES']['total_taxed'])}}</td>
                     <td></td>
-                    <td>{{\App\Support\Exact\Decimal::format($currencyTotals['VES']['total_igv'])}}</td>
-                    <td>{{\App\Support\Exact\Decimal::format($currencyTotals['VES']['total'])}}</td>
+                    <td data-type="s" style="mso-number-format:'\@'">{{\App\Support\Exact\Decimal::format($currencyTotals['VES']['total_igv'])}}</td>
+                    <td data-type="s" style="mso-number-format:'\@'">{{\App\Support\Exact\Decimal::format($currencyTotals['VES']['total'])}}</td>
                 </tr>
                 <tr>
                     <td colspan="23"></td>
                     <td></td>
                     <td colspan="2">Totales USD</td>
-                    <td>{{\App\Support\Exact\Decimal::format($currencyTotals['USD']['total_charge'])}}</td>
-                    <td>{{\App\Support\Exact\Decimal::format($currencyTotals['USD']['total_exonerated'])}}</td>
-                    <td>{{\App\Support\Exact\Decimal::format($currencyTotals['USD']['total_taxed'])}}</td>
+                    <td data-type="s" style="mso-number-format:'\@'">{{\App\Support\Exact\Decimal::format($currencyTotals['USD']['total_charge'])}}</td>
+                    <td data-type="s" style="mso-number-format:'\@'">{{\App\Support\Exact\Decimal::format($currencyTotals['USD']['total_exonerated'])}}</td>
+                    <td data-type="s" style="mso-number-format:'\@'">{{\App\Support\Exact\Decimal::format($currencyTotals['USD']['total_taxed'])}}</td>
                     <td></td>
-                    <td>{{\App\Support\Exact\Decimal::format($currencyTotals['USD']['total_igv'])}}</td>
-                    <td>{{\App\Support\Exact\Decimal::format($currencyTotals['USD']['total'])}}</td>
+                    <td data-type="s" style="mso-number-format:'\@'">{{\App\Support\Exact\Decimal::format($currencyTotals['USD']['total_igv'])}}</td>
+                    <td data-type="s" style="mso-number-format:'\@'">{{\App\Support\Exact\Decimal::format($currencyTotals['USD']['total'])}}</td>
                 </tr>
 
                 </tbody>

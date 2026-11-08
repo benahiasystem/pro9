@@ -1,6 +1,12 @@
 <template>
     <!-- ######## INICIO PERSISTENCIA FISCAL VENEZUELA ######## -->
     <el-dialog title="Retenciones recibidas IVA / ISLR" :visible="showDialog" @close="close">
+        <div v-if="!initializing && document.can_register_free_form_control && !replacementKind" class="mb-3">
+            <p>Registre el control que aparece en la factura física. Compruebe el número y conserve la referencia de su revisión.</p>
+            <label>Control impreso</label><el-input v-model="controlForm.control_number" placeholder="00-00000001"/>
+            <label>Referencia de verificación</label><el-input v-model="controlForm.evidence_reference" placeholder="Referencia de la factura física"/>
+            <el-button :loading="loading" :disabled="loading" @click="registerControl">Registrar control impreso</el-button>
+        </div>
         <p v-if="prevision">Prevista: {{ prevision.amount }} {{ prevision.currency_type_id }}. Permanece pendiente hasta validar el comprobante.</p>
         <table class="table"><thead><tr><th>Tipo</th><th>Comprobante</th><th>Importe aplicado</th><th>Estado</th><th>Acciones</th></tr></thead>
             <tbody><tr v-for="row in records" :key="row.id"><td>{{ row.tax_kind }}</td><td>{{ row.voucher_number }}</td><td>{{ row.applied_amount }}</td>
@@ -55,7 +61,7 @@ export default {
         replacementEndpoint: {type: String, default: null},
         replacementKind: {type: String, default: null},
     },
-    data: () => ({ records: [], form: {}, loading: false, uploading: false, evaluating: false, initializing: false, error: '', proposal: null, prevision: null, concepts: [], document: {}, canCreate: false, sequence: 0, proposalSequence: 0 }),
+    data: () => ({ records: [], form: {}, controlForm: {control_number:'',evidence_reference:''}, loading: false, uploading: false, evaluating: false, initializing: false, error: '', proposal: null, prevision: null, concepts: [], document: {}, canCreate: false, sequence: 0, proposalSequence: 0 }),
     watch: { showDialog(value) { if (value) this.load(); else this.sequence++ }, documentId() { if (this.showDialog) this.load() } },
     beforeDestroy() { this.sequence++ },
     methods: {
@@ -65,6 +71,7 @@ export default {
             this.uploading = false;
             this.evaluating = false;
             this.error = ''; this.records = []; this.proposal = null; this.prevision = null; this.canCreate=false; this.form={};
+            this.controlForm={control_number:'',evidence_reference:''}; this.loading=false;
             try {
                 if (!this.documentId) { this.error = 'Seleccione una factura guardada para gestionar sus retenciones.'; return; }
                 const response = await this.$http.get(`/documents/retention/${this.documentId}`);
@@ -85,6 +92,18 @@ export default {
                     exchange_rate: data.document.exchange_rate_sale, base: kind === 'ISLR' ? data.document.total_value : data.document.total_igv, percentage: '', subtrahend: 0, amount: '', concept_id: null, attachment: null, operation_key: this.newKey() }
             } catch (e) { if (sequence === this.sequence) this.error = 'No se pudieron cargar las retenciones.' }
             finally { if (sequence === this.sequence) this.initializing = false }
+        },
+        async registerControl() {
+            if (!this.documentId || !this.document.can_register_free_form_control || this.loading) return;
+            const sequence=this.sequence, documentId=this.documentId;
+            this.loading=true; this.error='';
+            try {
+                await this.$http.post(`/documents/${documentId}/free-form-control`, {...this.controlForm});
+                if (sequence!==this.sequence || documentId!==this.documentId) return;
+                this.controlForm={control_number:'',evidence_reference:''};
+                await this.load(); this.$eventHub.$emit('reloadData'); this.$emit('changed');
+            } catch (e) { if (sequence===this.sequence) this.error=this.requestError(e,'No se pudo registrar el control.'); }
+            finally { if (sequence===this.sequence) this.loading=false; }
         },
         changeKind(kind) {
             this.proposal=null; this.error=''; this.uploading=false; this.evaluating=false;

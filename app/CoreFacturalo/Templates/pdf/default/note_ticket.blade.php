@@ -184,6 +184,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
             <td class="text-center desc-9 align-top">{{ $row->item->unit_type_id }}</td>
             <td class="text-left desc-9 align-top">
                 {!! $row->item->description !!}
+                @include('pdf.partials.note_lots', ['row' => $row])
                 @if($row->attributes)
                     @foreach($row->attributes as $attr)
                         <br/>{!! $attr->description !!} : {{ $attr->value }}
@@ -237,8 +238,8 @@ $affected_document_number = $document_base->affected_document ? $document_base->
             <td class="text-right font-bold desc">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_igv'), 2) }}</td>
         </tr>
         <tr>
-            <td class="text-left font-bold desc" style="white-space: nowrap;">Productos: {{ rtrim(rtrim(number_format(collect($document->items)->sum(function ($item) { return (float) data_get($item, 'quantity', 0); }), 2, '.', ''), '0'), '.') }}</td>
-            <td colspan="4" class="text-right font-bold desc">TOTAL A PAGAR: {{ $document->currency_type->symbol }}</td>
+            <td class="text-left font-bold desc">Productos: {{ \App\Support\Exact\PdfQuantities::summary($document->items) }}</td>
+            <td colspan="4" class="text-right font-bold desc">{{ $document->document_type_id === '07' ? 'TOTAL NOTA DE CRÉDITO:' : 'TOTAL NOTA DE DÉBITO:' }} {{ $document->currency_type->symbol }}</td>
             <td class="text-right font-bold desc">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total'), 2) }}</td>
         </tr>
     </tbody>

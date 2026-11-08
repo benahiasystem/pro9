@@ -361,14 +361,14 @@
                     </div>
                     <div class="row card-body shadow-none mb-2 border-0">
                         <div class="col-12 pt-3 text-end">
-                            <template v-if="canMakePayment && totalDebt > 0">
+                            <template v-if="canMakePayment && (totalDebt > 0 || pendingCheckout || pendingAtomic)">
                                 <el-button
                                     :disabled="loading || preparingCheckout"
                                     :loading="loading || preparingCheckout"
                                     class="btn btn-primary"
                                     @click="onGoToInvoice"
                                 >
-                                <svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-device-floppy"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M6 4h10l4 4v10a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2" /><path d="M12 14m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M14 4l0 4l-6 0l0 -4" /></svg> Guardar y Generar Comprobante
+                                <svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-device-floppy"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M6 4h10l4 4v10a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2" /><path d="M12 14m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M14 4l0 4l-6 0l0 -4" /></svg> {{ (pendingCheckout || pendingAtomic) ? 'Reintentar cierre' : 'Guardar y Generar Comprobante' }}
                                 </el-button>
                             </template>
                             <template v-else-if="canMakePayment">
@@ -423,8 +423,10 @@
 
 <script>
 import {withoutDraftRetentions, suggestRemainingPayment} from "@helpers/document-creation"
+import {newPaymentOperationKey} from "@helpers/payment-operation-key"
 import {classifiedDestinations, defaultCashForCurrency, handleHotelPaymentError, isRecordedReceipt} from "@helpers/payment-classification"
-import {exactAmount} from "@helpers/exchange-rate-math"
+import {exactAmount, exactValue} from "@helpers/exchange-rate-math"
+import {documentTotals} from "@helpers/exact-document"
 import fiscalPaymentSettings from "@mixins/fiscal-payment-settings"
 import ReceiptCurrencyFields from "@components/ReceiptCurrencyFields.vue"
 import IgtfPaymentFields from "@views/documents/partials/igtf_fields.vue"
@@ -452,6 +454,10 @@ export default {
         rent: {
             type: Object,
             required: true,
+        },
+        atomicCheckout: {
+            type: Boolean,
+            default: false,
         },
         customer: {
             type: Object,
@@ -531,6 +537,14 @@ export default {
         this.loadConfiguration();
         this.$store.commit('setConfiguration', this.configuration);
         this.currentRent = this.rent
+        try {
+            const pending = JSON.parse(window.sessionStorage.getItem(`pro9-hotel-checkout:${this.rent.id}`) || 'null')
+            if (pending && ['01', '80'].includes(pending.type) && pending.id) this.pendingCheckout = pending
+        } catch (error) { /* The server still validates any document submitted on retry. */ }
+        try {
+            const pending = JSON.parse(window.sessionStorage.getItem(`pro9-hotel-atomic:${this.rent.id}`) || 'null')
+            if (pending && typeof pending.key === 'string' && ['01','80'].includes(pending.type)) this.pendingAtomic = pending
+        } catch (error) { /* An unconfirmed operation is always checked by the server. */ }
         this.currentRent.input_date =  moment(this.currentRent.input_date).toDate()
         this.currentRent.output_date =  moment(this.currentRent.output_date).toDate()
     },
@@ -556,6 +570,9 @@ export default {
             resource_documents: "documents",
             showDialogDocumentOptions: false,
             documentNewId: null,
+            pendingCheckout: null,
+            pendingAtomic: null,
+            atomicDraft: null,
             form_cash_document: {},
             showDialogSaleNoteOptions: false,
             form: {
@@ -585,7 +602,7 @@ export default {
                 if (!i.item.affectation_igv_type || _.isEmpty(i.item.affectation_igv_type)) {
                     i.item.affectation_igv_type = _.find(this.affectationIgvTypes, { id: i.item.affectation_igv_type_id });
                 }
-                return calculateRowItem(i.item, "VES", 3, this.percentage_igv);
+                return {...calculateRowItem(i.item, "VES", 3, this.percentage_igv), hotel_checkout_room: i.type === 'HAB'};
             });
 
         await this.onCalculateTotals();
@@ -609,6 +626,7 @@ export default {
         await this.searchExchangeRateByDate(date).then((res) => {
             this.document.exchange_rate_sale = res;
         });
+        if (this.atomicCheckout && this.pendingAtomic && this.currentRent.status === 'FINALIZADO') await this.onAtomicCheckout();
     },
     watch: {
         'document.payments': {
@@ -631,13 +649,12 @@ export default {
             },
         },
         arrears(value) {
-            if (isNaN(value)) {
-                return;
-            }
-            if (value >= 0) {
-                this.total = exactAmount(this.room.item.total).plus(value || 0).decimal();
+            try {
+                const amount = exactAmount(value || 0);
+                if (amount.compare(0) < 0) return;
+                this.total = exactValue(this.room.item, 'total').plus(amount).decimal();
                 this.onCalculatePaidAndDebts();
-            }
+            } catch (error) { /* Allow an incomplete decimal while it is being typed. */ }
         },
     },
     methods: {
@@ -730,6 +747,8 @@ export default {
                 this.resource_documents = 'sale-notes'
             } else {
                 this.document.prefix = null
+                this.document.type = 'invoice'
+                this.document.series = this.series.find(row => row.id === this.document.series_id)?.number || null
                 this.resource_documents = 'documents'
             }
 
@@ -767,14 +786,78 @@ export default {
                     });
                     window.location.href = "/hotels/reception";
                 })
+                .catch((error) => handleHotelPaymentError(error, this))
                 .finally(() => {
                     this.loading = false
                 });
         },
-        async onGoToInvoice() {
+        clearAtomicPending() {
+            try { window.sessionStorage.removeItem(`pro9-hotel-atomic:${this.currentRent.id}`) } catch (error) { /* The completed operation remains on the server. */ }
+            this.pendingAtomic = null
+            this.atomicDraft = null
+        },
+        completeAtomicCheckout(result) {
+            const data = result.data
+            if (!result.found || !data?.id || !['01','80'].includes(data.document_type_id) || !result.currentRent) {
+                throw new Error('La respuesta del cierre no contiene el comprobante esperado.')
+            }
+            this.documentNewId = data.id
+            this.document.document_type_id = data.document_type_id
+            this.currentRent = result.currentRent
+            this.response = result
+            this.clearAtomicPending()
+            this.successGoToInvoice()
+            this.$emit('update:showDialog', false)
+            this.saveCashDocument()
+        },
+        async onAtomicCheckout() {
             if (this.loading || this.preparingCheckout) return
             this.preparingCheckout = true
+            this.loading = true
             try {
+                if (this.pendingAtomic) {
+                    const status = await this.$http.get(`/hotels/reception/${this.currentRent.id}/rent/checkout/operation/${this.pendingAtomic.key}`)
+                    if (status.data.found) return this.completeAtomicCheckout(status.data)
+                    if (!this.atomicDraft) {
+                        this.clearAtomicPending()
+                        return this.$message.error('No se registró el cierre anterior. Revise los datos y vuelva a intentarlo.')
+                    }
+                } else {
+                    await this.onUpdateItemsWithExtras()
+                    await this.onCalculateTotals()
+                    if (this.validatePaymentDestination().error_by_item > 0) return this.$message.error('El destino del pago es obligatorio')
+                    const valid = this.validateTotalPayments()
+                    if (!valid.success) return this.$message.error(valid.message)
+                    this.updateDataForSend()
+                    try { await ensureExchangeRateSale(this.document, this.$http) }
+                    catch (error) { return this.$message.error(error.message || 'No se pudo obtener el tipo de cambio.') }
+                    if (!(await this.ensureFiscalPaymentsReady(this.document.payments))) return
+                    const key = newPaymentOperationKey()
+                    const pending = {key, type:this.document.document_type_id}
+                    const draft = JSON.parse(JSON.stringify({operation_key:key, arrears:String(this.arrears || 0),
+                        document:withoutDraftRetentions(this.document)}))
+                    try { window.sessionStorage.setItem(`pro9-hotel-atomic:${this.currentRent.id}`, JSON.stringify(pending)) }
+                    catch (error) { throw new Error('No se puede guardar la clave necesaria para recuperar el cierre.') }
+                    this.pendingAtomic = pending
+                    this.atomicDraft = draft
+                }
+                const response = await this.$http.post(`/hotels/reception/${this.currentRent.id}/rent/checkout/operation`, this.atomicDraft)
+                if (!response.data.success) throw new Error(response.data.message || 'No se pudo registrar el cierre.')
+                this.completeAtomicCheckout(response.data)
+            } catch (error) {
+                if (error.response?.status >= 400 && error.response.status < 500) this.clearAtomicPending()
+                handleHotelPaymentError(error, this)
+            } finally {
+                this.preparingCheckout = false
+                this.loading = false
+            }
+        },
+        async onGoToInvoice() {
+            if (this.atomicCheckout && !this.pendingCheckout) return this.onAtomicCheckout()
+            if (this.loading || this.preparingCheckout) return
+            if (!this.pendingCheckout) this.preparingCheckout = true
+            try {
+                if (!this.pendingCheckout) {
                 await this.onUpdateItemsWithExtras();
                 await this.onCalculateTotals();
                 const validate_payment_destination = this.validatePaymentDestination();
@@ -790,69 +873,76 @@ export default {
                     return this.$message.error(error.message || 'No se pudo obtener el tipo de cambio.');
                 }
                 if (!(await this.ensureFiscalPaymentsReady(this.document.payments))) return
-                this.loading = true;
+                }
+                this.loading = true
+                if (!this.pendingCheckout) {
+                    const response = await this.$http.post(`/${this.resource_documents}`, withoutDraftRetentions(this.document))
+                    if (!response.data.success) return this.$message.error(response.data.message)
+                    this.pendingCheckout = {id: response.data.data.id, type: this.document.document_type_id, arrears: String(this.arrears || 0)}
+                    try { window.sessionStorage.setItem(`pro9-hotel-checkout:${this.currentRent.id}`, JSON.stringify(this.pendingCheckout)) } catch (error) { /* Retry remains available on this page. */ }
+                    this.response = response.data
+                }
+                const pending = this.pendingCheckout
+                const finalized = await this.$http.post(`/hotels/reception/${this.currentRent.id}/rent/finalized`, {
+                    arrears: pending.arrears, checkout_document_type: pending.type, checkout_document_id: pending.id,
+                })
+                if (!finalized.data.success) return this.$message.error(finalized.data.message)
+                this.documentNewId = pending.id
+                this.document.document_type_id = pending.type
+                this.currentRent = finalized.data.currentRent
+                this.pendingCheckout = null
+                try { window.sessionStorage.removeItem(`pro9-hotel-checkout:${this.currentRent.id}`) } catch (error) { /* The completed server operation is idempotent. */ }
+                this.successGoToInvoice()
+                this.$emit('update:showDialog', false)
+                this.saveCashDocument()
+            } catch (error) {
+                handleHotelPaymentError(error, this)
             } finally {
                 this.preparingCheckout = false
+                this.loading = false
             }
-            this.$http
-                .post(`/${this.resource_documents}`, withoutDraftRetentions(this.document))
-                .then((response) => {
-                    if (response.data.success) {
-
-                        this.documentNewId = response.data.data.id;
-                        this.successGoToInvoice()
-
-                        this.$emit("update:showDialog", false);
-                        this.saveCashDocument();
-
-                        const payloadFinalizedRent = {
-                            arrears: this.arrears,
-                        };
-                        this.loading = true;
-                        this.$http
-                            .post(
-                                `/hotels/reception/${this.currentRent.id}/rent/finalized`,
-                                payloadFinalizedRent
-                            )
-                            .then((responseFinalize) => {
-                                this.response = response.data;
-                                this.currentRent = responseFinalize.data.currentRent
-                            })
-                            .finally(() => {
-                                this.loading = false
-                            });
-                    } else {
-                        this.$message.error(response.data.message);
-                    }
-                })
-                .catch((error) => {
-                    handleHotelPaymentError(error, this)
-                })
-                .finally(() => {
-                    this.loading = false;
-                });
         },
         onUpdateItemsWithExtras() {
-            this.document.items = this.document.items.map((it) => {
-                if (it.item_id === this.room.item_id) {
-                    let dayQuantity = it.quantity;
-                    const name = `${it.item.name} x ${dayQuantity} noche(s)`;
+            const amount = exactAmount(this.arrears || 0);
+            if (amount.compare(0) < 0) throw new Error('El recargo no puede ser negativo.');
+            const items = this.document.items.filter(row => !row.hotel_checkout_surcharge);
+            const roomDue = items.some(row => row.hotel_checkout_room === true ||
+                (row.hotel_checkout_room === undefined && row.item_id === this.room.item_id));
+            this.document.items = items.map((it) => {
+                if (it.hotel_checkout_room === true || (it.hotel_checkout_room === undefined && it.item_id === this.room.item_id)) {
+                    it.hotel_checkout_base_name = it.hotel_checkout_base_name ?? it.item.name;
+                    it.hotel_checkout_nights = it.hotel_checkout_nights ?? exactValue(it, 'quantity').decimal();
+                    const name = `${it.hotel_checkout_base_name} x ${it.hotel_checkout_nights} noche(s)`;
                     it.item.description = name;
                     it.item.full_description = name;
                     it.name_product_pdf = name;
                     it.quantity = 1;
+                    it.quantity_input = null;
                     // Preserve the original room amount across retries so arrears are applied once.
-                    it.hotel_checkout_base_total = it.hotel_checkout_base_total ?? it.total;
-                    const newTotal = exactAmount(it.hotel_checkout_base_total).plus(this.arrears || 0).decimal();
-                    it.input_unit_price_value = newTotal;
-                    it.item.unit_price = newTotal;
-                    it.unit_value = newTotal;
-                    it.price_input = {amount: newTotal, currency_type_id: 'VES', includes_iva: true};
+                    it.hotel_checkout_base_total = it.hotel_checkout_base_total ?? exactValue(it, 'total').fraction();
+                    const newTotal = exactAmount(it.hotel_checkout_base_total).plus(this.arrears || 0);
+                    it.input_unit_price_value = newTotal.decimal();
+                    it.item.unit_price = newTotal.decimal();
+                    it.unit_value = newTotal.decimal();
+                    it.price_input = {amount: newTotal.fraction(), currency_type_id: 'VES', includes_iva: true};
                     const newItem = calculateRowItem(it, "VES", 3, this.percentage_igv);
                     return newItem;
                 }
                 return it;
             });
+            if (!roomDue && amount.compare(0) > 0) {
+                const source = this.room.item;
+                if (!source?.item || source.item.unit_type_id !== 'SERV' || [true, 1, '1'].includes(source.item.is_set)) {
+                    throw new Error('Para registrar el recargo de una habitación pagada, la habitación debe tener un servicio asociado.');
+                }
+                const item = {...source.item, unit_price: amount.decimal(), description:'Cargo por salida tardía',
+                    full_description:'Cargo por salida tardía'};
+                const row = {...source, id:null, record_id:null, item, item_id:this.room.item_id, quantity:'1',
+                    quantity_input:null, price_input:{amount:amount.fraction(), currency_type_id:'VES', includes_iva:true},
+                    discounts:[], charges:[], calculation_snapshot:null, input_unit_price_value:amount.decimal(),
+                    name_product_pdf:'Cargo por salida tardía', hotel_checkout_surcharge:true, hotel_checkout_room:false};
+                this.document.items.push(calculateRowItem(row, 'VES', 3, this.percentage_igv));
+            }
         },
         // async getItemsForSaleNote()
         // {
@@ -872,7 +962,7 @@ export default {
         },
         onCalculatePaidAndDebts() {
             const sum = status => this.currentRent.items.reduce(
-                (total, item) => item.payment_status === status ? total.plus(item.item.total) : total,
+                (total, item) => item.payment_status === status ? total.plus(exactValue(item.item, 'total')) : total,
                 exactAmount(0)
             );
             this.totalPaid = sum('PAID').decimal();
@@ -938,30 +1028,8 @@ export default {
             this.document.payments.splice(index, 1);
         },
         onCalculateTotals() {
-            let taxed = exactAmount(0), exempt = exactAmount(0), igv = exactAmount(0);
-            let value = exactAmount(0), total = exactAmount(0);
-            this.document.items.forEach(row => {
-                const rowValue = exactAmount(row.total_value);
-                if (row.affectation_igv_type_id === '10') taxed = taxed.plus(rowValue);
-                if (row.affectation_igv_type_id === '20') exempt = exempt.plus(rowValue);
-                if (['10', '20', '30', '40'].includes(row.affectation_igv_type_id)) {
-                    igv = igv.plus(row.total_igv);
-                    total = total.plus(row.total);
-                }
-                value = value.plus(rowValue);
-                if (['13', '14', '15'].includes(row.affectation_igv_type_id)) {
-                    const base = rowValue.dividedBy(exactAmount(1).plus(exactAmount(this.percentage_igv).dividedBy(100)));
-                    row.total_taxes = rowValue.minus(base).decimal();
-                    row.total_igv = row.total_taxes;
-                    row.total_base_igv = base.decimal();
-                    value = value.minus(rowValue);
-                }
-            });
-            Object.assign(this.document, {
-                total_exportation: '0.00', total_taxed: taxed.final(2), total_exonerated: exempt.final(2),
-                total_igv: igv.final(2), total_value: value.final(2), total_taxes: igv.final(2),
-                total: total.final(2), subtotal: total.final(2),
-            });
+            Object.assign(this.document, documentTotals(this.document.items, this.document.discounts || [],
+                this.document.charges || [], this.document.total_prepayment || '0'));
         },
     },
 };

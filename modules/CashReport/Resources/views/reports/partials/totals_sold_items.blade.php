@@ -1,61 +1,38 @@
+{{-- ######## INICIO CALCULOS EXACTOS PRO9 ######## --}}
 @php
-    use App\CoreFacturalo\Helpers\Template\ReportHelper;
+    $table_sold_items = \Modules\CashReport\Services\ProductsAmounts::sold($documents);
+    $displaySold = \Modules\CashReport\Services\ProductsAmounts::display($table_sold_items, 'total');
+    $sold_totals = [];
+    foreach ($table_sold_items as $item) {
+        $currency = $item['currency_type_id'];
+        if (in_array($currency, ['VES', 'USD'], true)) {
+            $sold_totals[$currency] = ($sold_totals[$currency] ?? \App\Support\Exact\Decimal::of(0))->plus($item['total']);
+        }
+    }
 @endphp
-
 <table>
-    
     <thead>
-        <tr>
-            <th colspan="5">Totales por producto</th>
-        </tr>
-        <tr>
-            <th>#</th>
-            <th>Producto</th>
-            <th>Cantidad</th>
-            <th style="text-align: right">Último V. Unitario</th>
-            <th style="text-align: right">Total</th>
-        </tr>
+        <tr><th colspan="7">Totales por producto</th></tr>
+        <tr><th>#</th><th>Producto</th><th>Moneda</th><th>Unidad</th><th>Cantidad</th><th>Último V. Unitario</th><th>Total</th></tr>
     </thead>
     <tbody>
-
-        @php
-            $sold_items = $documents->whereIn('record_type', ['sale_note_item', 'document_item'])->groupBy('item_id');
-
-            $table_sold_items = $sold_items->map(function($row, $key){
-
-                $last_item = $row->last();
-                $description = $last_item['item']->description ?? 'Error al obtener nombre de producto.';
-                $unit_value = $last_item['unit_value'];
-                $quantity = $row->sum('quantity');
-                $total = $row->sum('total');
-
-                return [
-                    'item_id' => $last_item['item_id'],
-                    'description' => $description,
-                    'quantity' => $quantity,
-                    'unit_value' => $unit_value,
-                    'total' => $total,
-                ];
-            });
-
-        @endphp
-
-        @foreach ($table_sold_items as $item)
-            <tr>
-                <td class="celda">{{ $loop->iteration }}</td>
-                <td class="celda">{{ $item['description'] }}</td>
-                <td class="celda">{{ $item['quantity'] }}</td>
-                <td class="celda" style="text-align: right">{{ ReportHelper::setNumber($item['unit_value'], 2, '.', '') }}</td>
-                <td class="celda" style="text-align: right">{{ ReportHelper::setNumber($item['total'], 2, '.', '') }}</td>
-            </tr>
-        @endforeach
-
+    @foreach ($table_sold_items as $item)
         <tr>
-            <td class="celda" colspan="3"></td>
-            <td class="celda"> Totales </td>
-            <td class="celda" style="text-align: right">
-                {{ ReportHelper::setNumber($table_sold_items->sum('total'), 2, '.', '') }}
-            </td>
+            <td class="celda">{{ $loop->iteration }}</td>
+            <td class="celda">{{ $item['description'] }}</td>
+            <td class="celda">{{ $item['currency_type_id'] ?: 'Sin moneda' }}</td>
+            <td class="celda">{{ $item['unit_type_id'] ?: 'Sin unidad' }}</td>
+            <td class="celda">{{ \App\Support\Exact\Decimal::represent($item['quantity']) }}</td>
+            <td class="celda" style="text-align: right">{{ \App\Support\Exact\Decimal::format($item['unit_value'], 2, '.', '') }}</td>
+            <td class="celda" style="text-align: right">{{ $displaySold[$loop->index] }}</td>
         </tr>
+    @endforeach
+    @foreach ($sold_totals as $currency => $total)
+        <tr><td class="celda" colspan="6">Total {{ $currency }}</td><td class="celda" style="text-align: right">{{ \App\Support\Exact\Decimal::format($total, 2, '.', '') }}</td></tr>
+    @endforeach
+    @if(collect($table_sold_items)->contains(fn($row) => !in_array($row['currency_type_id'], ['VES', 'USD'], true)))
+        <tr><td class="celda" colspan="7">Las partidas sin moneda identificada no se incluyen en los totales.</td></tr>
+    @endif
     </tbody>
 </table>
+{{-- ######## FIN CALCULOS EXACTOS PRO9 ######## --}}

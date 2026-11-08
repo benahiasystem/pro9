@@ -109,7 +109,9 @@ final class CashLedger
     public static function authorize(Cash $cash): void
     {
         $user=auth()->user();
-        if ($user && $user->type !== 'admin' && (string)$cash->user_id !== (string)auth()->id()) abort(403,'No puede acceder a la caja de otro usuario.');
+        if ($user && $user->type !== 'admin' && (string)$cash->user_id !== (string)auth()->id()) {
+            throw new \Illuminate\Auth\Access\AuthorizationException('No puede acceder a la caja de otro usuario.');
+        }
     }
 }
 // ######## FIN CLASIFICACION DE COBROS Y CAJA ########

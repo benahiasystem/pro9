@@ -1545,7 +1545,7 @@ export default {
             customer: {},
             row: {},
             user: {},
-            form: {},
+            form: {items: []},
             exchangeRateError: "",
             categories: [],
             colors: ["#1cb973", "#bf7ae6", "#fc6304", "#9b4db4", "#77c1f3"],

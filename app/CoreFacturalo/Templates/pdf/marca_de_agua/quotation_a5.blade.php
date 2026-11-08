@@ -411,11 +411,7 @@
         <tr>
             <td class="text-center align-top desc cell-solid-rl p-1">{{ $row->item->internal_id }}</td>
             <td class="text-center align-top desc cell-solid-rl p-1">
-                @if(((int)$row->quantity != $row->quantity))
-                    {{ $row->quantity }}
-                @else
-                    {{ number_format($row->quantity, 0) }}
-                @endif
+                {{ \App\Support\Exact\PdfQuantities::line($row) }}
             </td>
             <td class="text-center align-top desc cell-solid-rl p-1">{{ $row->item->unit_type_id }}</td>
             <td class="text-left align-top desc cell-solid-rl p-1">
@@ -438,16 +434,16 @@
                     @endforeach
                 @endif
                 @if($row->discounts)
-                    @foreach($row->discounts as $dtos)
+                    @foreach(\App\Support\Exact\PdfAmounts::adjustments($row, 'discounts') as $dtos)
                         @if(!($dtos->from_global_distribution ?? false))
-                            <br/><span style="font-size: 9px">{{ ($dtos->is_amount ?? false) ? '' : ($dtos->factor * 100).'%' }} {{$dtos->description }}</span>
+                            <br/><span style="font-size: 9px">{{ ($dtos->is_amount ?? false) ? '' : \App\Support\Exact\PdfAmounts::adjustmentPercent($dtos).'%' }} {{$dtos->description }}</span>
                         @endif
                     @endforeach
                 @endif
 
                 @if($row->charges)
-                    @foreach($row->charges as $charge)
-                        <br/><span style="font-size: 9px">{{ $document->currency_type->symbol}} {{ $charge->amount}} ({{ $charge->factor * 100 }}%) {{$charge->description }}</span>
+                    @foreach(\App\Support\Exact\PdfAmounts::adjustments($row, 'charges') as $charge)
+                        <br/><span style="font-size: 9px">{{ $document->currency_type->symbol}} {{ \App\Support\Exact\PdfAmounts::adjustmentAmount($charge) }} ({{ \App\Support\Exact\PdfAmounts::adjustmentPercent($charge) }}%) {{$charge->description }}</span>
                     @endforeach
                 @endif
 
@@ -596,15 +592,15 @@
     <td>
     <strong>PAGOS:</strong> </td></tr>
         @php
-            $payment = 0;
+            $quotationAmounts = \App\Support\Exact\QuotationPdfAmounts::values($document);
         @endphp
         @foreach($document->payments as $row)
             <tr><td>- @include('pdf.partials.quotation_receipt', ['row' => $row, 'document' => $document])</td></tr>
-            @php
-                $payment += (float) $row->payment;
-            @endphp
         @endforeach
-        <tr><td><strong>SALDO:</strong> {{ $document->currency_type->symbol }} {{ number_format($document->total - $payment, 2) }}</td>
+        @if($quotationAmounts['has_rounding'])
+        <tr><td>Ajuste por redondeo del saldo: {{ $document->currency_type->symbol }} {{ $quotationAmounts['rounding'] }}</td></tr>
+        @endif
+        <tr><td><strong>SALDO:</strong> {{ $document->currency_type->symbol }} {{ $quotationAmounts['balance'] }}</td>
     </tr>
 </table>
 </body>

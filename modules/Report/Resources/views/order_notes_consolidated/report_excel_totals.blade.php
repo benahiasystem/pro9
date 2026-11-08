@@ -82,7 +82,7 @@
                                     <td class="celda">{{$value['item_internal_id']}}</td>
                                     <td class="celda-item">{{$value['item_description']}}</td>
                                     <td class="celda">{{$value['item_unit_type_id']}}</td>
-                                    <td class="celda">{{$value['quantity']}}</td>
+                                    <td data-type="s" style="mso-number-format:'\@'" class="celda">{{$value['quantity']}}</td>
                                 </tr>
                             @endforeach
                         </tbody>

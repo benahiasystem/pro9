@@ -1,200 +1,38 @@
-{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
+{{-- ######## INICIO CALCULOS EXACTOS PRO9 ######## --}}
 <!DOCTYPE html>
 <html lang="es">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta http-equiv="Content-Type" content="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet; charset=utf-8" />
-        <meta http-equiv="X-UA-Compatible" content="ie=edge">
-        <title>Document</title>
-    </head>
-    <body>
-        <div>
-            <h3 align="center" class="title"><strong>REPORTE POR CLIENTE</strong></h3>
-        </div>
-        <br>
-        <div style="margin-top:20px; margin-bottom:15px;">
-            <table>
-                @if(!empty($records))
-                    <tr>
-                        <td>
-                            <p><b>Cliente: </b></p>
-                        </td>
-                        <td align="center">
-                            <p><strong>{{format_person_identity_document($records[0]->customer)}} - {{$records[0]->customer->name}}</strong></p>
-                        </td>
-                    </tr>
-                @endif
-                <tr>
-                    <td>
-                        <p><b>Empresa: </b></p>
-                    </td>
-                    <td align="center">
-                        <p>@include('partials.report_company_header', ['showEmpresaLabel' => false])</p>
-                    </td>
-                    <td>
-                        <p><strong>Fecha: </strong></p>
-                    </td>
-                    <td align="center">
-                        <p><strong>{{date('Y-m-d')}}</strong></p>
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        <p><strong>RIF: </strong></p>
-                    </td>
-                    <td align="center">{{$company->number}}</td>
-                    <td>
-                        <p><strong>Establecimiento: </strong></p>
-                    </td>
-                    <td align="center">{{$establishment->address}} - {{$establishment->department->description}} - {{$establishment->district->description}}</td>
-                </tr>
-            </table>
-        </div>
-        <br>
-        @if(!empty($records))
-            <div class="">
-                <div class=" ">
-                    @php
-                        $acum_total_taxed=0;
-                        $acum_total_igv=0;
-                        $acum_total=0;
-
-                        $serie_affec = '';
-                        $acum_total_exonerado=0;
-
-
-                        $acum_total_taxed_usd = 0;
-                        $acum_total_igv_usd = 0;
-                        $acum_total_usd = 0;
-                    @endphp
-                    <table class="">
-                        <thead>
-                            <tr>
-                                <th class="">#</th>
-                                <th class="">Fecha</th>
-                                <th class="">Tipo Documento</th>
-                                <th class="">Moneda</th>
-                                <th class="">Serie</th>
-                                <th class="">Número</th>
-                                <th class="">Monto</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($records as $key => $value)
-                            <tr>
-                                <td class="celda">{{$loop->iteration}}</td>
-                                <td class="celda">{{$value->date_of_issue->format('Y-m-d')}}</td>
-                                <td class="celda">{{$value->document_type->description}}</td>
-                                <td class="celda">{{$value->currency_type_id}}</td>
-                                <td class="celda">{{$value->series}}</td>
-                                <td class="celda">{{$value->number}}</td>
-                                <td class="celda">{{$value->total}}</td>
-
-                                @php
-                                  $signal = $value->document_type_id;
-                                  $state = $value->state_type_id;
-                                @endphp
-
-
-
-                                @php
-
-                                    $value->total_exonerated = (in_array($value->document_type_id,['01','03']) && in_array($value->state_type_id,['09','11'])) ? 0 : $value->total_exonerated;
-
-                                    $value->total_taxed = (in_array($value->document_type_id,['01','03']) && in_array($value->state_type_id,['09','11'])) ? 0 : $value->total_taxed;
-                                    $value->total_igv = (in_array($value->document_type_id,['01','03']) && in_array($value->state_type_id,['09','11'])) ? 0 : $value->total_igv;
-                                    $value->total = (in_array($value->document_type_id,['01','03']) && in_array($value->state_type_id,['09','11'])) ? 0 : $value->total;
-                                @endphp
-
-                            @php
-
-                                $serie_affec =  '';
-
-                            @endphp
-
-                            </tr>
-                            @php
-                            if($value->currency_type_id == 'VES'){
-
-
-                                if(($signal == '07' && $state !== '11')){
-
-                                    $acum_total += -$value->total;
-                                    $acum_total_taxed += -$value->total_taxed;
-                                    $acum_total_igv += -$value->total_igv;
-
-
-                                    $acum_total_exonerado += -$value->total_exonerated;
-
-
-                                }elseif($signal != '07' && $state == '11'){
-
-                                    $acum_total += 0;
-                                    $acum_total_taxed += 0;
-                                    $acum_total_igv += 0;
-
-                                    $acum_total_exonerado += 0;
-
-                                }else{
-
-                                    $acum_total += $value->total;
-                                    $acum_total_taxed += $value->total_taxed;
-                                    $acum_total_igv += $value->total_igv;
-
-                                    $acum_total_exonerado += $value->total_exonerated;
-                                }
-
-
-                            }else if($value->currency_type_id == 'USD'){
-
-                                if(($signal == '07' && $state !== '11')){
-
-                                    $acum_total_usd += -$value->total;
-                                    $acum_total_taxed_usd += -$value->total_taxed;
-                                    $acum_total_igv_usd += -$value->total_igv;
-
-
-
-                                }elseif($signal != '07' && $state == '11'){
-
-                                    $acum_total_usd += 0;
-                                    $acum_total_taxed_usd += 0;
-                                    $acum_total_igv_usd += 0;
-
-
-                                }else{
-
-                                    $acum_total_usd += $value->total;
-                                    $acum_total_taxed_usd += $value->total_taxed;
-                                    $acum_total_igv_usd += $value->total_igv;
-
-                                }
-
-
-                            }
-                            @endphp
-                            @endforeach
-                            <tr>
-                                <td colspan="5"></td>
-                                <td >TOTAL VES</td>
-                                <td>{{$acum_total}}</td>
-                            </tr>
-                            <tr>
-                                <td colspan="5"></td>
-                                <td >TOTAL USD</td>
-                                <td>{{$acum_total_usd}}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        @else
-            <div>
-                <p>No se encontraron registros.</p>
-            </div>
+<head><meta charset="UTF-8"><title>Reporte por cliente</title></head>
+<body>
+    <h3>REPORTE POR CLIENTE</h3>
+    <table>
+        @if($records->isNotEmpty())
+        <tr><td>Cliente:</td><td>{{ format_person_identity_document($records->first()->customer) }} - {{ $records->first()->customer->name }}</td></tr>
         @endif
-    </body>
+        <tr><td>Empresa:</td><td>@include('partials.report_company_header', ['showEmpresaLabel'=>false])</td><td>Fecha:</td><td>{{ date('Y-m-d') }}</td></tr>
+        <tr><td>RIF:</td><td>{{ $company->number }}</td><td>Establecimiento:</td><td>{{ $establishment->address }} - {{ optional($establishment->department)->description }} - {{ optional($establishment->district)->description }}</td></tr>
+    </table>
+    @if($records->isNotEmpty())
+    @php $report=\Modules\Report\Services\CustomerReportAmounts::presentation($records); @endphp
+    <table>
+        <thead><tr><th>#</th><th>Fecha</th><th>Tipo Documento</th><th>Moneda</th><th>Serie</th><th>Número</th><th>Monto</th></tr></thead>
+        <tbody>
+        @foreach($report['rows'] as $entry)
+            @php $document=$entry['model']; @endphp
+            <tr>
+                <td>{{ $loop->iteration }}</td><td>{{ $document->date_of_issue->format('Y-m-d') }}</td>
+                <td>{{ $document->document_type->description }}</td><td>{{ $document->currency_type_id }}</td>
+                <td data-type="s">{{ $document->series }}</td><td data-type="s">{{ $document->number }}</td>
+                <td data-type="s" style="mso-number-format:'\@'">{{ $entry['display']['total'] }}</td>
+            </tr>
+        @endforeach
+        @foreach($report['totals'] as $currency=>$total)
+            <tr><td colspan="5"></td><td>TOTAL {{ $currency }}</td><td data-type="s" style="mso-number-format:'\@'">{{ \App\Support\Exact\Decimal::format($total,2,'.','') }}</td></tr>
+        @endforeach
+        </tbody>
+    </table>
+    @else
+        <p>No se encontraron registros.</p>
+    @endif
+</body>
 </html>
-
-{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}
+{{-- ######## FIN CALCULOS EXACTOS PRO9 ######## --}}

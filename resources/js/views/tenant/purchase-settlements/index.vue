@@ -48,6 +48,7 @@
                         <th>Vendedor</th>
                         <th>Número</th>
                         <th>Estado</th>
+                        <th>Moneda</th>
                         <th class="text-end">T.Inafecto</th>
                         <th class="text-end">T.Exonerado</th>
                         <th class="text-end">T.Gravado</th>
@@ -88,6 +89,7 @@
                                 {{ row.state_type_description }}
                             </span>
                         </td>
+                        <td>{{ row.currency_type_id }}</td>
                         <td class="text-end">{{ row.total_unaffected }}</td>
                         <td class="text-end">{{ row.total_exonerated }}</td>
                         <td class="text-end">{{ row.total_taxed }}</td>

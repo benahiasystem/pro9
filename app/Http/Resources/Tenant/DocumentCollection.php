@@ -32,7 +32,6 @@ class DocumentCollection extends ResourceCollection
             $has_pdf = true;
             $btn_note = false;
             $btn_guide = true; // Boton para generar orden de entrega
-            $btn_voided = false;
             $btn_delete_doc_type_03 = false;
 
             $affected_document = null;
@@ -40,7 +39,6 @@ class DocumentCollection extends ResourceCollection
             if ($row->group_id === '01') {
                 if ($row->state_type_id === '05') {
                     $btn_note = true;
-                    $btn_voided = true;
                 }
 
                 if (in_array($row->document_type_id, ['07', '08'])) {
@@ -51,7 +49,6 @@ class DocumentCollection extends ResourceCollection
             if ($row->group_id === '02') {
                 if ($row->state_type_id === '05') {
                     $btn_note = true;
-                    $btn_voided = true;
                     // envio individual
 
                 }
@@ -132,6 +129,7 @@ class DocumentCollection extends ResourceCollection
                 'date_of_due' => (in_array($row->document_type_id, ['01'])) ? $row->invoice->date_of_due->format('d-m-Y') : null,
                 'number' => $row->number_full,
                 'fiscal_identity' => $row->fiscal_identity,
+                'can_register_free_form_control' => \App\Services\Fiscal\FreeFormControl::canRegister($row,auth()->user()),
                 'iva_retention' => \App\Services\Fiscal\IvaRetentionService::view($row),
                 'islr_retention' => \App\Services\Fiscal\IslrRetentionService::view($row),
                     'fiscal_emission' => \App\Services\Fiscal\DocumentEmissionView::forDocument($row),
@@ -166,7 +164,7 @@ class DocumentCollection extends ResourceCollection
                 'document_type_id' => $row->document_type->id,
                 'has_pdf' => $has_pdf,
                 'download_pdf' => $row->download_external_pdf,
-                'btn_voided' => \App\Services\Fiscal\FiscalNote::digital($row) ? false : $btn_voided,
+                'btn_voided' => false,
                 'btn_note' => $btn_note,
                 'btn_note_operations' => \App\Services\Fiscal\FiscalNote::ordinary($row) && $row->document_type_id === '07',
                 'btn_guide' => $btn_guide,

@@ -928,4 +928,19 @@
             return implode('/', $this->getSaleLotGroupCode());
         }
 
+        /** Dates belong to the selected lot snapshots, not the mutable product. */
+        public function getSaleLotGroupDateDescription(string $format = 'Y-m-d'): string
+        {
+            $selected=$this->item->IdLoteSelected ?? $this->item->lots_group ?? [];
+            if (!is_array($selected)) return '-';
+            $dates=[];
+            foreach ($selected as $lot) {
+                $lot=(array)$lot;
+                if (isset($lot['compromise_quantity']) && !\App\Support\Exact\Decimal::of($lot['compromise_quantity'])->isPositive()) continue;
+                try { $dates[]=empty($lot['date_of_due']) ? '-' : \Carbon\Carbon::parse($lot['date_of_due'])->format($format); }
+                catch (\Throwable $error) { $dates[]='-'; }
+            }
+            return $dates ? implode('/', $dates) : '-';
+        }
+
     }

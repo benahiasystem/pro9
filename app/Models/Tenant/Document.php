@@ -324,8 +324,10 @@ class Document extends ModelTenant
     {
         parent::boot();
         static::creating(function (self $model) {
+            \Modules\Hotel\Services\CheckoutCreation::assertAllowed($model);
             self::adjustSellerIdField($model);
         });
+        static::updating(fn (self $model) => \Modules\Hotel\Services\CheckoutCreation::assertLinkUnchanged($model));
     }
 
     protected static function booted()
@@ -938,15 +940,14 @@ class Document extends ModelTenant
         if (isset($params['user_id'])) {
             $user_id = (int)$params['user_id'];
             $user = User::find($user_id);
-            if (!$user) {
-                $user = new User();
-            }
         } else {
             $user = auth()->user();
         }
-
-        return ($user->type === 'admin') ? null : $query->where('user_id', $user->id)->orWhere('seller_id', $user->id)->latest();
-        // return ($user->type == 'seller') ? $query->where('user_id', $user->id) : null;
+        if (!$user || !$user->id) return $query->whereRaw('1 = 0');
+        if ($user->type === 'admin') return $query;
+        return $query->where(function ($scope) use ($user) {
+            $scope->where('user_id', $user->id)->orWhere('seller_id', $user->id);
+        })->latest();
     }
 
     /**

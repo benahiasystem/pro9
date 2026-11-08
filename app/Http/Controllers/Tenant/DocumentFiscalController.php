@@ -19,6 +19,7 @@ class DocumentFiscalController extends Controller
             'id'=>$document->id,'customer_id'=>$document->customer_id,'currency_type_id'=>$document->currency_type_id,
             'exchange_rate_sale'=>$document->exchange_rate_sale,'balance'=>$document->balance,
             'control_number'=>$document->control_number,'number_full'=>$document->number_full,
+            'can_register_free_form_control'=>$document->document_type_id==='01' && \App\Services\Fiscal\FreeFormControl::canRegister($document,auth()->user()),
             'iva_retention'=>\App\Services\Fiscal\IvaRetentionService::view($document),
             'islr_retention' => \App\Services\Fiscal\IslrRetentionService::view($document),
             'effective_total_value'=>\App\Services\Fiscal\FiscalNote::remaining($document,'total_value'),
@@ -28,6 +29,21 @@ class DocumentFiscalController extends Controller
             'islr_concepts'=>\App\Services\Fiscal\IslrRetentionService::available($document) ? \App\Services\Fiscal\IslrRetentionService::concepts() : [],
             'total_taxed'=>$document->total_taxed,
             'total_igv'=>$document->total_igv]];
+    }
+    public function registerFreeFormControl(Request $request, $id)
+    {
+        $document=Document::findOrFail($id);
+        $document=\App\Services\Fiscal\FreeFormControl::register($document,$request->only(['control_number','evidence_reference']));
+        return ['success'=>true,'control_number'=>$document->control_number,
+            'message'=>'Control impreso registrado. Las retenciones pendientes de factura se validan por separado.'];
+    }
+    public function freeFormControl($id)
+    {
+        $document=Document::findOrFail($id); self::authorizeDocument($document);
+        abort_unless(auth()->user()->type==='admin',403);
+        return ['data'=>['id'=>$document->id,'number_full'=>$document->number_full,
+            'document_type_id'=>$document->document_type_id,'control_number'=>$document->control_number,
+            'can_register'=>\App\Services\Fiscal\FreeFormControl::canRegister($document,auth()->user())]];
     }
     public function retentionStore(Request $request)
     {

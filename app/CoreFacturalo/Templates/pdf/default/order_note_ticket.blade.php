@@ -210,11 +210,7 @@
                     <small style="display:block; font-weight: normal; font-size: 7px;">
                         Lote: {{ $row->getSaleLotGroupCodeDescription() }}<br>
                         FV:
-                        @if(isset($row->relation_item->date_of_due))
-                            {{ $row->relation_item->date_of_due->format('Y-m-d') }}
-                        @else
-                            -
-                        @endif
+                        {{ $row->getSaleLotGroupDateDescription('Y-m-d') }}
                     </small>
                 @endif
                 <br>

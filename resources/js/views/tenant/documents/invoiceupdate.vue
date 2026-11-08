@@ -2170,6 +2170,8 @@ export default {
                 total_taxes: 0,
                 total_value: 0,
                 total: 0,
+                total_payable: 0,
+                settlement_adjustment: 0,
                 subtotal: 0,
 
                 operation_type_id: null,

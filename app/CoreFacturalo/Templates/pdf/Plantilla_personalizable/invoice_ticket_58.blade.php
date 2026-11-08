@@ -14,7 +14,7 @@ $document_number = $document->number_full;
     $accounts = (new TemplatePdf)->getBankAccountsForPdf($document->establishment_id);
 
     $document_base = ($document->note) ? $document->note : null;
-    $payments = $document->payments;
+    $payments = $document->payments->filter(fn ($payment) => !data_get($payment, 'reversed_at'));
 
     if($document_base) {
         /* ######## INICIO NUMERACIÓN FISCAL VENEZUELA ######## */
@@ -26,8 +26,6 @@ $affected_document_number = $document_base->affected_document ? $document_base->
     }
 
     $document->load('reference_guides');
-    $total_payment = $document->payments->sum('payment');
-    $balance = $document instanceof \App\Models\Tenant\Document ? $document->balance : (($document->total - $total_payment) - $document->payments->sum('change'));
 
     $logo = "storage/uploads/logos/{$company->logo}";
     if($establishment->logo) {
@@ -251,15 +249,15 @@ $affected_document_number = $document_base->affected_document ? $document_base->
         @if($show_total) <td class="ticket-58 border-top-bottom desc text-right">TOTAL</td> @endif
     </tr>
     @foreach($document->items as $row)
+        @php $visible_quantity = \App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::read($row, 'quantity')); @endphp
+        @if($show_cantidad && strlen($visible_quantity) > 7)
+            <tr><td colspan="{{ $colspan_total }}" class="text-left desc">Cantidad: {{ $visible_quantity }}</td></tr>
+        @endif
         <tr>
             @if($show_codigo) <td class="text-left desc align-top">{{ $row->item->internal_id }}</td> @endif
             @if($show_cantidad)
             <td class="text-left desc align-top">
-                @if(((int)$row->quantity != $row->quantity))
-                    {{ $row->quantity }}
-                @else
-                    {{ number_format($row->quantity, 0) }}
-                @endif
+                {{ strlen($visible_quantity) > 7 ? '' : $visible_quantity }}
             </td>
             @endif
             @if($show_unidad) <td class="text-left desc align-top">{{ $row->item->unit_type_id }}</td> @endif
@@ -361,7 +359,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
             @endif
             @if($show_precio_unitario)
             <td class="text-right desc align-top"
-                style="padding-right:5px;">{{ $row->formatPdfUnitPrice() }}</td>
+                style="padding-right:5px;"><span data-pdf-unit-price>{{ $row->formatPdfUnitPrice() }}</span></td>
             @endif
             @if($show_total) <td class="text-right desc align-top">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($row, 'total'), 2) }}</td> @endif
         </tr>
@@ -461,18 +459,6 @@ $affected_document_number = $document_base->affected_document ? $document_base->
         <td colspan="{{ $colspan_amount }}" class="text-right desc-ticket text-uppercase">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total'), 2) }}</td>
     </tr>
 
-
-
-    @if($balance < 0)
-        <tr>
-            <td colspan="{{ $colspan_desc }}" class="desc-ticket text-uppercase">
-                VUELTO:
-                <span class="text-right">{{ $document->currency_type->symbol }}</span>
-            </td>
-            <td colspan="{{ $colspan_amount }}"
-                class="text-right desc-ticket text-uppercase">{{ number_format(abs($balance),2, ".", "") }}</td>
-        </tr>
-    @endif
 
     @if($show_nro_producto)
         <tr>

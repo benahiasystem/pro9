@@ -26,14 +26,14 @@ class ExactReceivablesTest extends TestCase
         DB::connection('tenant')->table('persons')->insert(['id'=>1,'name'=>'Cliente']);
         DB::connection('tenant')->table('users')->insert([['id'=>1,'name'=>'Uno'],['id'=>2,'name'=>'Dos']]);
         foreach (['documents','sale_notes'] as $table) Schema::connection('tenant')->create($table,function ($t) {
-            $t->increments('id');$t->integer('customer_id')->default(1);$t->integer('user_id')->default(1);$t->integer('establishment_id')->default(1);
+            $t->increments('id');$t->string('external_id')->nullable();$t->integer('customer_id')->default(1);$t->integer('user_id')->default(1);$t->integer('establishment_id')->default(1);
             $t->string('document_type_id')->default('01');$t->string('state_type_id')->default('01');
             $t->string('control_number')->nullable();$t->string('fiscal_emission_mode')->nullable();
             $t->string('currency_type_id')->default('VES');$t->text('exchange_rate_sale')->default('3.00000000');
             $t->text('total');$t->text('total_payable')->nullable();$t->json('calculation_snapshot')->nullable();
             $t->date('date_of_issue')->default('2026-10-01');$t->date('due_date')->nullable();
             $t->string('series')->default('F');$t->integer('number')->default(1);$t->string('purchase_order')->nullable();
-            $t->string('payment_method_type_id')->nullable();$t->boolean('changed')->default(false);$t->boolean('total_canceled')->default(false);
+            $t->string('payment_method_type_id')->nullable();$t->boolean('changed')->default(false);$t->boolean('total_canceled')->default(false);$t->integer('document_id')->nullable();
         });
         Schema::connection('tenant')->create('invoices',fn($t)=>[$t->increments('id'),$t->integer('document_id'),$t->date('date_of_due')]);
         foreach (['document_payments'=>'document_id','sale_note_payments'=>'sale_note_id'] as $table=>$foreign) Schema::connection('tenant')->create($table,function ($t) use ($foreign) {
@@ -136,6 +136,98 @@ class ExactReceivablesTest extends TestCase
         $db->table('sale_notes')->insert(['id'=>1,'total'=>'500','changed'=>true,'user_id'=>1]);
         auth()->setUser((new User())->forceFill(['id'=>1,'type'=>'seller','establishment_id'=>1]));
         self::assertCount(1,Receivables::dataset([]));
+    }
+
+    public function test_cancelled_conversion_restores_only_the_original_unpaid_note(): void
+    {
+        $db=DB::connection('tenant');
+        $db->table('documents')->insert([['id'=>1,'total'=>'50','state_type_id'=>'01'],['id'=>2,'total'=>'50','state_type_id'=>'11']]);
+        $db->table('sale_notes')->insert([
+            ['id'=>1,'total'=>'50','changed'=>true,'document_id'=>1],
+            ['id'=>2,'total'=>'50','changed'=>true,'document_id'=>2],
+            ['id'=>3,'total'=>'10','changed'=>false,'document_id'=>null],
+            ['id'=>4,'total'=>'70','changed'=>true,'document_id'=>null],
+        ]);
+        $rows=collect(iterator_to_array(Receivables::dataset([])));
+        self::assertEqualsCanonicalizing(['document:1','sale_note:2','sale_note:3'],$rows->pluck('report_key')->all());
+        self::assertSame('110',OutstandingSummary::summarize($rows)['VES_balance']);
+        $db->table('documents')->where('id',2)->update(['state_type_id'=>'01']);
+        $after=collect(iterator_to_array(Receivables::dataset([])));
+        self::assertEqualsCanonicalizing(['document:1','document:2','sale_note:3'],$after->pluck('report_key')->all());
+    }
+
+    public function test_non_admin_cannot_export_or_request_other_sellers_or_branches(): void
+    {
+        $db=DB::connection('tenant');
+        $db->table('documents')->insert([
+            ['id'=>1,'total'=>'10','user_id'=>1,'establishment_id'=>1],
+            ['id'=>2,'total'=>'20','user_id'=>2,'establishment_id'=>1],
+            ['id'=>3,'total'=>'30','user_id'=>1,'establishment_id'=>2],
+        ]);
+        Schema::connection('tenant')->create('companies',fn($t)=>[$t->increments('id'),$t->string('name'),$t->string('number')]);
+        $db->table('companies')->insert(['name'=>'Empresa','number'=>'J000000000']);
+        auth()->setUser((new User())->forceFill(['id'=>1,'type'=>'seller','establishment_id'=>1]));
+        $rows=Receivables::dataset(['stablishmentUnpaidAll'=>true,'establishment_id'=>2,'user_id'=>2]);
+        self::assertSame(['document:1'],collect(iterator_to_array($rows))->pluck('report_key')->all());
+        $view=(new \App\Exports\AccountsReceivable())->view();
+        self::assertSame(['document:1'],collect(iterator_to_array($view->getData()['records']))->pluck('report_key')->all());
+        auth()->setUser((new User())->forceFill(['id'=>1,'type'=>'client','establishment_id'=>1]));
+        self::assertSame(['document:1'],collect(iterator_to_array(Receivables::dataset(['stablishmentUnpaidAll'=>true])))->pluck('report_key')->all());
+    }
+
+    public function test_pdf_projection_does_not_distribute_cents_across_currencies(): void
+    {
+        $rows=new \App\Support\Exact\ReportDataset(array_map(function ($currency) {
+            $values=['total'=>D::of('1/3'),'total_to_pay'=>D::of('1/3'),'total_ves_equivalent'=>D::of('1/3'),'balance_ves_equivalent'=>D::of('1/3')];
+            return ['currency_type_id'=>$currency,'exchange_rate_sale'=>'1','calculation_snapshot'=>D::snapshot($values)]+D::values($values);
+        },['VES','USD']));
+        $projected=collect(iterator_to_array(\App\Support\Exact\OutstandingProjection::money($rows)))->keyBy('currency_type_id');
+        self::assertSame('0.33',$projected['VES']['display']['total']);
+        self::assertSame('0.33',$projected['USD']['display']['total']);
+        self::assertSame('0.33',$projected['VES']['display']['total_to_pay']);
+        self::assertSame('0.33',$projected['USD']['display']['total_to_pay']);
+        $summary=OutstandingSummary::summarize($rows);
+        self::assertSame('0.01',$summary['rounding_adjustment_total_ves']);
+        self::assertSame('0.01',$summary['rounding_adjustment_balance_ves']);
+        self::assertSame('0.67',D::format(D::readRequired($summary,'consolidated_balance_ves'),2,'.',''));
+        $html=view('partials.exact_outstanding_summary',['reportSummary'=>$summary,'excel'=>false])->render();
+        self::assertStringContainsString('Ajuste de redondeo del saldo consolidado',$html);
+    }
+
+    public function test_print_rejects_another_users_document_and_sale_note(): void
+    {
+        $db=DB::connection('tenant');
+        $db->table('documents')->insert(['external_id'=>'other-document','user_id'=>2,'total'=>'10']);
+        $db->table('sale_notes')->insert(['external_id'=>'other-note','user_id'=>2,'total'=>'10']);
+        $db->table('sale_notes')->insert(['external_id'=>'own-note','user_id'=>1,'total'=>'10']);
+        auth()->setUser((new User())->forceFill(['id'=>1,'type'=>'seller','establishment_id'=>1]));
+        $controller=new UnpaidController();
+        foreach ([['other-document','document'],['other-note','sale_note']] as [$id,$type]) {
+            try { $controller->toPrint($id,$type); self::fail('Se permitió imprimir un documento ajeno.'); }
+            catch (\Symfony\Component\HttpKernel\Exception\HttpException $exception) { self::assertSame(403,$exception->getStatusCode()); }
+        }
+        self::assertStringContainsString('/sale-notes/print/own-note/a4',$controller->toPrint('own-note','sale_note')->getTargetUrl());
+    }
+
+    public function test_mixed_currency_pdf_lines_and_summary_have_an_explicit_rounding_adjustment(): void
+    {
+        $db=DB::connection('tenant');
+        foreach (['VES','USD'] as $index=>$currency) $db->table('documents')->insert([
+            'id'=>$index+1,'currency_type_id'=>$currency,'exchange_rate_sale'=>'1','total'=>'0.333333333333','total_payable'=>'0.333333333333',
+            'calculation_snapshot'=>json_encode(D::snapshot(['total'=>'1/3','total_payable'=>'1/3']))]);
+        view()->addNamespace('finance',base_path('modules/Finance/Resources/views'));
+        $rows=Receivables::dataset([]); $reportSummary=OutstandingSummary::summarize($rows);
+        $records=\App\Support\Exact\OutstandingProjection::money($rows);
+        $company=(new \App\Models\Tenant\Company())->forceFill(['name'=>'Empresa','number'=>'J000000000']);
+        $html=view('finance::unpaid.reports.report_pdf',compact('records','reportSummary','company'))->render();
+        self::assertSame(4,substr_count($html,'class="celda">0.33'));
+        self::assertStringContainsString('Saldo consolidado (Bs.)',$html);
+        self::assertStringContainsString('Ajuste de redondeo del saldo consolidado (Bs.)',$html);
+        self::assertStringContainsString('0.67',$html);
+        self::assertStringContainsString('0.01',$html);
+        $pdf=\Barryvdh\DomPDF\Facade\Pdf::loadHTML($html)->output();
+        self::assertStringStartsWith('%PDF-',$pdf);
+        if ($path=getenv('PRO9_MIXED_RECEIVABLE_PDF_PATH')) file_put_contents($path,$pdf);
     }
 
     public function test_real_xlsx_export_has_text_amounts_composite_identity_and_original_fractions(): void

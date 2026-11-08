@@ -881,6 +881,7 @@ export default {
             all_customers: [],
             establishment: null,
             currency_type: {},
+            currency_types: [],
             form_item: {},
             customer: {},
             row: {},

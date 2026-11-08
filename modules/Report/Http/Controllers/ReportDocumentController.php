@@ -28,6 +28,7 @@ use Maatwebsite\Excel\Excel as BaseExcel;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Traits\JobReportTrait;
 use Modules\Report\Exports\DocumentExportStandard;
+use App\Support\Exact\ReadSnapshot;
 
 
 class ReportDocumentController extends Controller
@@ -66,6 +67,7 @@ class ReportDocumentController extends Controller
 
     public function records(Request $request)
     {
+        return ReadSnapshot::run((new Document)->getConnection(), function () use ($request) {
         $documentTypeId = "01";
         if ($request->has('document_type_id')) {
             $documentTypeId = str_replace('"', '', $request->document_type_id);
@@ -80,9 +82,10 @@ class ReportDocumentController extends Controller
         $records = $this->getRecords($request->all(), $classType);
 
         if ($classType == SaleNote::class) {
-            return new SaleNoteCollection($records->paginate(config('tenant.items_per_page')));
+            return (new SaleNoteCollection($records->paginate(config('tenant.items_per_page'))))->response($request);
         }
-        return new DocumentCollection($records->paginate(config('tenant.items_per_page')));
+        return (new DocumentCollection($records->paginate(config('tenant.items_per_page'))))->response($request);
+        });
 
 
     }
@@ -90,6 +93,7 @@ class ReportDocumentController extends Controller
 
     public function pdf(Request $request)
     {
+        return ReadSnapshot::run((new Document)->getConnection(), function () use ($request) {
         set_time_limit (1800); // Maximo 30 minutos
         $company = Company::first();
         $establishment = ($request->establishment_id) ? Establishment::findOrFail($request->establishment_id) : auth()->user()->establishment;
@@ -114,10 +118,12 @@ class ReportDocumentController extends Controller
         $filename = 'Reporte_Ventas_'.date('YmdHis');
 
         return $pdf->download($filename.'.pdf');
+        });
     }
 
 
     public function pdfSimple(Request $request) {
+        return ReadSnapshot::run((new Document)->getConnection(), function () use ($request) {
         set_time_limit (1800); // Maximo 30 minutos
         $company = Company::first();
         $establishment = ($request->establishment_id) ? Establishment::findOrFail($request->establishment_id) : auth()->user()->establishment;
@@ -142,11 +148,13 @@ class ReportDocumentController extends Controller
         $filename = 'Reporte_Ventas_Simple'.date('YmdHis');
 
         return $pdf->download($filename.'.pdf');
+        });
     }
 
 
     public function excel(Request $request)
     {
+        return ReadSnapshot::run((new Document)->getConnection(), function () use ($request) {
         $company = Company::first();
         $establishment = ($request->establishment_id) ? Establishment::findOrFail($request->establishment_id) : auth()->user()->establishment;
 
@@ -183,6 +191,7 @@ class ReportDocumentController extends Controller
             ->categories_services($categories_services);
          // return $documentExport->view();
         return $documentExport->download('Reporte_Ventas_'.Carbon::now().'.xlsx');
+        });
 
     }
 
@@ -303,7 +312,8 @@ class ReportDocumentController extends Controller
         foreach ($records as $document) {
 
             $id_categories = $document->items->filter(function($row) use($is_service){
-                return (($is_service) ? (!is_null($row->relation_item->category_id) && $row->item->unit_type_id === 'SERV') : !is_null($row->relation_item->category_id)) ;
+                return data_get($row,'relation_item.category_id') !== null
+                    && (!$is_service || data_get($row,'item.unit_type_id') === 'SERV');
             })->pluck('relation_item.category_id');
 
             foreach ($id_categories as $value) {
@@ -324,11 +334,15 @@ class ReportDocumentController extends Controller
         $company = Company::active();
         $email = $request->input('email');
 
-        $mailable = new DocumentEmail($company, $this->getPdf($data,$columns), $this->getExcel($data,$columns));
+        [$pdf, $excel] = ReadSnapshot::run((new Document)->getConnection(), function () use ($data, $columns) {
+            return [$this->getPdf($data,$columns), $this->getExcel($data,$columns)];
+        });
+        $mailable = new DocumentEmail($company, $pdf, $excel);
         $sendIt = EmailController::SendMail($email, $mailable);
 
         return [
-            'success' => true
+            'success' => $sendIt,
+            'message' => $sendIt ? 'El correo fue enviado satisfactoriamente.' : 'No se pudo enviar el correo. Revise la configuración y el registro de envíos.'
         ];
     }
 
@@ -366,7 +380,7 @@ class ReportDocumentController extends Controller
         $html = $view->render();
         $pdf = new Mpdf([
                             'mode' => 'utf-8',
-                            'format' => 'A4-L',
+                            'format' => \Modules\Report\Services\DocumentReportPaper::landscape($columns),
                         ]);
         $pdf->WriteHTML($html);
 

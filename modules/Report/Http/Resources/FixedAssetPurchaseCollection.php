@@ -1,63 +1,53 @@
 <?php
-// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace Modules\Report\Http\Resources;
 
+use App\Support\Exact\Decimal as D;
 use Illuminate\Http\Resources\Json\ResourceCollection;
+use Modules\Report\Services\PurchaseReportAmounts;
 
 class FixedAssetPurchaseCollection extends ResourceCollection
 {
-    /**
-     * Transform the resource collection into an array.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return array
-     */
-    public function toArray($request)
+    private ?array $display;
+
+    public function __construct($resource, ?array $display = null)
     {
-        return $this->collection->transform(function($row, $key) {
-
-            $total = $row->total;
-            if($row->total_perception)
-            {
-                $total += round($row->total_perception, 2);
-            }
-
-            return [
-                'id' => $row->id,
-                'document_type_description' => $row->document_type->description,
-                'group_id' => $row->group_id,
-                'fiscal_environment' => $row->fiscal_environment,
-                'date_of_issue' => $row->date_of_issue->format('Y-m-d'),
-                'date_of_due' => ($row->date_of_due) ? $row->date_of_due->format('Y-m-d'):'-',
-                'number' => $row->number_full,
-                'supplier_name' => $row->supplier->name,
-                'supplier_number' => format_person_identity_document($row->supplier),
-                'currency_type_id' => $row->currency_type_id,
-                'total_exportation' => $row->total_exportation,
-                'total_free' => number_format($row->total_free, 2, ".",""),
-                'total_unaffected' => number_format($row->total_unaffected, 2, ".",""),
-                'total_exonerated' => number_format($row->total_exonerated, 2, ".",""),
-                'total_taxed' => number_format($row->total_taxed, 2, ".",""),
-                'total_igv' => number_format($row->total_igv, 2, ".",""),
-                'total_perception' => number_format($row->total_perception, 2, ".",""),
-                'total' => number_format($total, 2, ".",""),
-                'state_type_id' => $row->state_type_id,
-                'exchange_rate_sale' => $row->exchange_rate_sale,
-                'state_type_description' => $row->state_type->description,
-                'created_at' => $row->created_at->format('Y-m-d H:i:s'),
-                'updated_at' => $row->updated_at->format('Y-m-d H:i:s'),
-                'items' => $row->items->transform(function($row, $key) {
-                    return [
-                        'key' => $key + 1,
-                        'id' => $row->id,
-                        'description' => $row->item->description,
-                        'quantity' => round($row->quantity,2)
-                    ];
-                }),
-            ];
-        });
+        parent::__construct($resource);
+        $this->display = $display;
     }
 
+    public function toArray($request)
+    {
+        $prepared = $this->display === null
+            ? PurchaseReportAmounts::presentation($this->collection, false)['rows']
+            : $this->collection->map(function ($row) {
+                $amounts = PurchaseReportAmounts::row($row, false);
+                $amounts['display'] = $this->display[$amounts['report_key']] ?? throw new \LogicException('Falta la proyección de la compra de activo fijo.');
+                return $amounts;
+            });
+        return $prepared->map(function ($amounts) {
+            $row = $amounts['model'];
+            $supplier = $row->supplier;
+            $data = [
+                'id'=>$row->id, 'document_type_description'=>optional($row->document_type)->description,
+                'group_id'=>$row->group_id, 'fiscal_environment'=>$row->fiscal_environment,
+                'date_of_issue'=>optional($row->date_of_issue)->format('Y-m-d'),
+                'date_of_due'=>optional($row->date_of_due)->format('Y-m-d'),
+                'number'=>$row->number_full, 'supplier_name'=>$supplier->name ?? null,
+                'supplier_number'=>$supplier ? format_person_identity_document($supplier) : null,
+                'currency_type_id'=>$amounts['currency_type_id'], 'state_type_id'=>$row->state_type_id,
+                'exchange_rate_sale'=>$row->exchange_rate_sale, 'state_type_description'=>optional($row->state_type)->description,
+                'created_at'=>optional($row->created_at)->format('Y-m-d H:i:s'),
+                'updated_at'=>optional($row->updated_at)->format('Y-m-d H:i:s'),
+                'calculation_snapshot'=>$amounts['calculation_snapshot'],
+                'items'=>$row->items->map(function ($item, $key) {
+                    $quantity = D::readRequired($item, 'quantity');
+                    return ['key'=>$key+1, 'id'=>$item->id, 'description'=>$item->item->description ?? $item->item->name ?? null,
+                        'quantity'=>D::represent($quantity), 'quantity_fraction'=>D::fraction($quantity)];
+                }),
+            ];
+            foreach (PurchaseReportAmounts::FIELDS as $field) $data[$field] = $amounts['display'][$field];
+            return $data;
+        });
+    }
 }
-// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

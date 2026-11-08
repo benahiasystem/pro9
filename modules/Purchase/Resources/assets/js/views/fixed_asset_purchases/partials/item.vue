@@ -58,7 +58,7 @@
                     <div class="col-md-3 col-6">
                         <div class="form-group" :class="{'has-danger': errors.quantity}">
                             <label class="control-label">Cantidad</label>
-                            <el-input-number v-model="form.quantity" :min="0.01"></el-input-number>
+                            <el-input v-model="form.quantity" inputmode="decimal"></el-input>
                             <small class="form-control-feedback" v-if="errors.quantity" v-text="errors.quantity[0]"></small>
                         </div>
                     </div>
@@ -216,6 +216,7 @@
 
     import FaItemForm from '../../fixed_asset_items/form.vue'
     import {calculateRowItem} from '@helpers/functions'
+    import {exactAmount} from '@helpers/exchange-rate-math'
     import { mapState } from 'vuex/dist/vuex.mjs'
 
     export default {
@@ -295,13 +296,8 @@
                 }
             },
             formatDecimal(value) {
-                const number = parseFloat(value || 0)
-
-                if (isNaN(number)) {
-                    return Number(0).toFixed(this.decimal_quantity)
-                }
-
-                return number.toFixed(this.decimal_quantity)
+                try { return exactAmount(value || '0').final(this.decimal_quantity) }
+                catch (_) { return exactAmount('0').final(this.decimal_quantity) }
             },
             handleCloseDialog() {
               if (this.hasUnsavedChanges()) {
@@ -422,7 +418,8 @@
             },
             changeItem() {
                 this.form.item = _.find(this.items, {'id': this.form.fixed_asset_item_id})
-                this.form.unit_price = this.form.item.purchase_unit_price > 0 ? this.formatDecimal(this.form.item.purchase_unit_price) : 0
+                this.form.item = {...this.form.item}
+                this.form.unit_price = this.form.item.purchase_unit_price || '0'
                 this.form.affectation_igv_type_id = this.form.item.purchase_affectation_igv_type_id
             },
             async clickAddItem() {

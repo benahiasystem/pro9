@@ -20,7 +20,6 @@ $affected_document_number = $document_base->affected_document ? $document_base->
         $affected_document_number = null;
     }
 
-    $payments = $document->payments;
 
 @endphp
 <html>
@@ -120,7 +119,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
         @endif
     </tr>
 </table>
-<table class="full-width mt-5">
+<table class="full-width mt-3">
     <tr>
         <td width="120px">FECHA DE EMISIÓN</td>
         <td width="8px">:</td>
@@ -263,6 +262,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
                 @else
                     {!!$row->item->description!!}
                 @endif
+                @include('pdf.partials.note_lots', ['row' => $row])
                 @if (!empty($row->item->presentation)) {!!$row->item->presentation->description!!} @endif
                 @if($row->attributes)
                     @foreach($row->attributes as $attr)
@@ -326,8 +326,8 @@ $affected_document_number = $document_base->affected_document ? $document_base->
             <td class="text-right font-bold">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_igv'), 2) }}</td>
         </tr>
         <tr>
-            <td class="text-left font-bold" style="white-space: nowrap;">Productos: {{ rtrim(rtrim(number_format(collect($document->items)->sum(function ($item) { return (float) data_get($item, 'quantity', 0); }), 2, '.', ''), '0'), '.') }}</td>
-            <td colspan="4" class="text-right font-bold">TOTAL A PAGAR: {{ $document->currency_type->symbol }}</td>
+            <td colspan="3" class="text-left font-bold">Productos: {{ \App\Support\Exact\PdfQuantities::summary($document->items) }}</td>
+            <td colspan="2" class="text-right font-bold">{{ $document->document_type_id === '07' ? 'TOTAL NOTA DE CRÉDITO:' : 'TOTAL NOTA DE DÉBITO:' }} {{ $document->currency_type->symbol }}</td>
             <td class="text-right font-bold">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total'), 2) }}</td>
         </tr>
     </tbody>
@@ -373,24 +373,6 @@ $affected_document_number = $document_base->affected_document ? $document_base->
         </td>
     </tr>
 </table>
-
-@if($payments->count())
-    <table class="full-width">
-        <tr>
-        <td>
-        <strong>PAGOS:</strong> </td></tr>
-            @php
-                $payment = 0;
-            @endphp
-            @foreach($payments as $row)
-                <tr>
-                    <td>- {{ $row->reference }} {{ $document->currency_type->symbol }} {{ $row->payment }}</td>
-                </tr>
-            @endforeach
-        </tr>
-
-    </table>
-@endif
 
 </body>
 </html>

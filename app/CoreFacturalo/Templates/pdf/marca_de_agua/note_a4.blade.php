@@ -34,7 +34,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
         src="data:{{mime_content_type(public_path("status_images".DIRECTORY_SEPARATOR."anulado.png"))}};base64, {{base64_encode(file_get_contents(public_path("status_images".DIRECTORY_SEPARATOR."anulado.png")))}}"
         alt="anulado" class="" style="opacity: 0.6;">
 </div>
-@else
+@elseif(is_file(public_path($logo)))
     <div class="item_watermark" style="
         position: absolute;
         top: 35%;
@@ -60,7 +60,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
 
 <table class="full-width">
     <tr>
-        @if($company->logo)
+        @if(is_file(public_path($logo)))
             <td width="20%">
                 <div class="company_logo_box">
                     <img src="data:{{mime_content_type(public_path("{$logo}"))}};base64, {{base64_encode(file_get_contents(public_path("{$logo}")))}}" alt="{{ \App\CoreFacturalo\Helpers\CompanyDocumentDisplay::logoAlt($company) }}" alt="{{ \App\CoreFacturalo\Helpers\CompanyDocumentDisplay::logoAlt($company) }}" class="company_logo" style="max-width: 150px;">
@@ -206,6 +206,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
                 @else
                     {!!$row->item->description!!}
                 @endif
+                @include('pdf.partials.note_lots', ['row' => $row])
                 @if($row->attributes)
                     @foreach($row->attributes as $attr)
                         <br/><span style="font-size: 9px">{!! $attr->description !!} : {{ $attr->value }}</span>
@@ -267,7 +268,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
             <td class="text-right font-bold">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_igv'), 2) }}</td>
         </tr>
         <tr>
-            <td colspan="6" class="text-right font-bold">TOTAL A PAGAR: {{ $document->currency_type->symbol }}</td>
+            <td colspan="6" class="text-right font-bold">{{ $document->document_type_id === '07' ? 'TOTAL NOTA DE CRÉDITO:' : 'TOTAL NOTA DE DÉBITO:' }} {{ $document->currency_type->symbol }}</td>
             <td class="text-right font-bold">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total'), 2) }}</td>
         </tr>
     </tbody>

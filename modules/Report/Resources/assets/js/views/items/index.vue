@@ -39,6 +39,7 @@
             </div> -->
             <div class="card mb-0">
                 <div class="card-body">
+                    <p>Importes de partidas en moneda documental, sin ajustes globales.</p>
                     <data-table :defaultType="defaultType" :resource="resource">
                         <tr slot="heading">
                             <th class="">#</th>
@@ -51,7 +52,7 @@
                             <th class="" v-if="defaultType !== 'purchase'">
                                 Plataforma
                             </th>
-                            <th class="">Cantidad</th>
+                            <th class="">Cantidad</th><th class="">Unidad</th><th class="">Moneda</th>
                             <th class="">Monto</th>
                         </tr>
 
@@ -67,20 +68,7 @@
                             <td v-if="defaultType !== 'purchase'">
                                 {{ row.web_platform_name }}
                             </td>
-                            <td>{{ row.quantity }}</td>
-                            <td>
-                                {{
-                                    row.document_type_id == "07"
-                                        ? row.total == 0
-                                            ? "0.00"
-                                            : "-" + row.total
-                                        : row.document_type_id != "07" &&
-                                          (row.state_type_id == "11" ||
-                                              row.state_type_id == "09")
-                                        ? "0.00"
-                                        : row.total
-                                }}
-                            </td>
+                            <td>{{ row.quantity }}</td><td>{{ row.unit_type_id }}</td><td>{{ row.currency_type_id }}</td><td>{{ row.total }}</td>
                         </tr>
                     </data-table>
                 </div>

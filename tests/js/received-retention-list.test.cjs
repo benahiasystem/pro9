@@ -184,3 +184,38 @@ test('note retention corrections require the list context while other adjustment
     assert.equal(defaultContext.allowRetentionManagement, false);
     defaultContext.$destroy();
 });
+
+test('free form control is submitted only for the current eligible invoice', async () => {
+    const instance=manager();
+    instance.document={id:4,can_register_free_form_control:true};
+    instance.controlForm={control_number:'00-00000001',evidence_reference:'Factura física'};
+    let payload, emitted=0, loads=0;
+    instance.$http.post=async (url,body)=>{payload={url,body:clone(body)}};
+    instance.$eventHub={$emit(){emitted++}}; instance.load=async()=>{loads++};
+    await instance.registerControl();
+    assert.equal(payload.url,'/documents/4/free-form-control');
+    assert.deepEqual(payload.body,{control_number:'00-00000001',evidence_reference:'Factura física'});
+    assert.equal(loads,1); assert.equal(emitted,1); assert.equal(instance.controlForm.control_number,'');
+    instance.document.can_register_free_form_control=false; payload=null;
+    await instance.registerControl(); assert.equal(payload,null);
+});
+
+test('a late free form control response cannot reload another invoice', async () => {
+    const instance=manager(); instance.document={id:4,can_register_free_form_control:true};
+    let resolve, emitted=0, loads=0;
+    instance.$http.post=()=>new Promise(done=>{resolve=done});
+    instance.$eventHub={$emit(){emitted++}}; instance.load=async()=>{loads++};
+    const pending=instance.registerControl(); instance.sequence++; instance.documentId=5;
+    resolve({}); await pending;
+    assert.equal(loads,0); assert.equal(emitted,0);
+});
+
+test('opening another invoice clears the printed-control draft', async () => {
+    const instance=manager(); instance.controlForm={control_number:'00-00000001',evidence_reference:'Factura anterior'};
+    await instance.load();
+    assert.equal(instance.controlForm.control_number,'');
+    assert.equal(instance.controlForm.evidence_reference,'');
+    const listing=load('resources/js/views/tenant/documents/index.vue');
+    assert.match(listing.template,/row\.can_register_free_form_control/);
+    assert.match(listing.template,/Control impreso y retenciones/);
+});

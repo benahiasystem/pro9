@@ -14,6 +14,13 @@ use phpDocumentor\Reflection\Types\True_;
  */
 class DispatchItemCollection extends ResourceCollection
 {
+    private ?array $resolved = null;
+
+    public function withResolved(array $resolved): self
+    {
+        $this->resolved = $resolved;
+        return $this;
+    }
 	/**
 	 * Transform the resource collection into an array.
 	 *
@@ -22,6 +29,7 @@ class DispatchItemCollection extends ResourceCollection
 	 */
 	public function toArray($request)
 	{
+        if ($this->resolved !== null) return $this->collection->map(fn($row)=>$this->resolved[$row->id]);
         $configuration =  Configuration::first();
 		return $this->collection->transform(function ($row, $key) use($configuration) {
 		    /** @var \App\Models\Tenant\DispatchItem $row */

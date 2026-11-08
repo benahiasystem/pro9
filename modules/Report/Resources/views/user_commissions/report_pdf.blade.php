@@ -83,16 +83,16 @@
                                 <th>Vendedor</th>
                                 <th class="text-center">Tipo comisión</th>
                                 <th class="text-center">Monto comisión</th>
-                                <th class="text-center">Total utilidad</th>
-                                <th class="text-center">Total comisiones</th>
+                                <th class="text-center">Utilidad estimada (Bs.)</th>
+                                <th class="text-center">Comisión estimada (Bs.)</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach($records as $row)
                                 @php
 
-                                    $utilities = Modules\Report\Helpers\UserCommissionHelper::getUtilities($row->sale_notes, $row->documents);
-                                    $commission = Modules\Report\Helpers\UserCommissionHelper::getCommission($row, $utilities);
+                                    $utility = \App\Support\Exact\Decimal::format(\App\Support\Exact\Decimal::readRequired($amounts[$row->id], 'total_utility'),2,'.','');
+                                    $commission = \App\Support\Exact\Decimal::format(\App\Support\Exact\Decimal::readRequired($amounts[$row->id], 'commission'),2,'.','');
 
                                 @endphp
                                 
@@ -101,7 +101,7 @@
                                     <td class="celda">{{$row->name}}</td>
                                     <td class="celda">{{($row->user_commission->type == 'amount') ? 'Monto':'Porcentaje'}}</td>
                                     <td class="celda">{{$row->user_commission->amount}}</td> 
-                                    <td class="celda">{{$utilities['total_utility']}}</td> 
+                                    <td class="celda">{{$utility}}</td>
                                     <td class="celda">{{$commission}}</td> 
                                 </tr>
                             @endforeach

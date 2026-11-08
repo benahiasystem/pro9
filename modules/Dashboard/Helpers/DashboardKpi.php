@@ -14,8 +14,8 @@ use Carbon\Carbon;
  *
  * Totales de KPI para el nuevo dashboard. Replica las reglas del dashboard
  * anterior (tipos de estado aceptados, tipos de documento de venta, resta de
- * notas de crédito y conversión de moneda VES/USD) pero calculadas con
- * agregados SQL ligeros.
+ * notas de crédito y conversión de moneda VES/USD). Ventas y compras se
+ * acumulan desde snapshots exactos; las series gráficas se entregan como números.
  *
  * Por defecto abarca todo el negocio; pasa establishment_id para limitarlo a
  * una sola sucursal.
@@ -35,6 +35,7 @@ class DashboardKpi
 
     public function data($request)
     {
+        return \App\Support\Exact\ReadSnapshot::run((new Document)->getConnection(), function () use ($request) {
         $establishment_id = isset($request['establishment_id']) ? $request['establishment_id'] : null;
         $compare = isset($request['compare']) ? $request['compare'] : 'none';
 
@@ -61,6 +62,7 @@ class DashboardKpi
             'month_sales_variation' => $compare === 'none' ? 0 : $this->variation($sales, $prev_sales),
             'month_purchases_variation' => $compare === 'none' ? 0 : $this->variation($purchases, $prev_purchases),
         ];
+        });
     }
 
     /**
@@ -117,6 +119,7 @@ class DashboardKpi
      */
     public function monthlyComparison($request)
     {
+        return \App\Support\Exact\ReadSnapshot::run((new Document)->getConnection(), function () use ($request) {
         $establishment_id = isset($request['establishment_id']) ? $request['establishment_id'] : null;
         $period = isset($request['period']) ? $request['period'] : 'month';
 
@@ -133,6 +136,7 @@ class DashboardKpi
             default:
                 return $this->bucketsByWeek($establishment_id, $range_start, $range_end);
         }
+        });
     }
 
     /**
@@ -143,14 +147,18 @@ class DashboardKpi
         $categories = [];
         $sales = [];
         $purchases = [];
+        $sales_exact = [];
+        $purchases_exact = [];
 
         for ($h = 0; $h < 24; $h++) {
             $categories[] = str_pad($h, 2, '0', STR_PAD_LEFT) . 'h';
-            $sales[] = $this->salesTotal($establishment_id, $day, $day, $h);
-            $purchases[] = $this->purchasesTotal($establishment_id, $day, $day, $h);
+            $sales_exact[] = $this->salesTotal($establishment_id, $day, $day, $h);
+            $sales[] = (float) end($sales_exact);
+            $purchases_exact[] = $this->purchasesTotal($establishment_id, $day, $day, $h);
+            $purchases[] = (float) end($purchases_exact);
         }
 
-        return compact('categories', 'sales', 'purchases');
+        return compact('categories', 'sales', 'purchases', 'sales_exact', 'purchases_exact');
     }
 
     /**
@@ -167,16 +175,20 @@ class DashboardKpi
         $categories = [];
         $sales = [];
         $purchases = [];
+        $sales_exact = [];
+        $purchases_exact = [];
 
         while ($cursor->lessThanOrEqualTo($last)) {
             $d = $cursor->format('Y-m-d');
             $categories[] = isset($dayLabels[$cursor->dayOfWeekIso]) ? $dayLabels[$cursor->dayOfWeekIso] : $cursor->format('d/m');
-            $sales[] = $this->salesTotal($establishment_id, $d, $d);
-            $purchases[] = $this->purchasesTotal($establishment_id, $d, $d);
+            $sales_exact[] = $this->salesTotal($establishment_id, $d, $d);
+            $sales[] = (float) end($sales_exact);
+            $purchases_exact[] = $this->purchasesTotal($establishment_id, $d, $d);
+            $purchases[] = (float) end($purchases_exact);
             $cursor->addDay();
         }
 
-        return compact('categories', 'sales', 'purchases');
+        return compact('categories', 'sales', 'purchases', 'sales_exact', 'purchases_exact');
     }
 
     /**
@@ -194,6 +206,8 @@ class DashboardKpi
         $categories = [];
         $sales = [];
         $purchases = [];
+        $sales_exact = [];
+        $purchases_exact = [];
 
         while ($cursor->lessThanOrEqualTo($month_end)) {
             $w_start = $cursor->copy();
@@ -203,14 +217,16 @@ class DashboardKpi
             }
 
             $categories[] = 'Sem ' . $week;
-            $sales[] = $this->salesTotal($establishment_id, $w_start->format('Y-m-d'), $w_end->format('Y-m-d'));
-            $purchases[] = $this->purchasesTotal($establishment_id, $w_start->format('Y-m-d'), $w_end->format('Y-m-d'));
+            $sales_exact[] = $this->salesTotal($establishment_id, $w_start->format('Y-m-d'), $w_end->format('Y-m-d'));
+            $sales[] = (float) end($sales_exact);
+            $purchases_exact[] = $this->purchasesTotal($establishment_id, $w_start->format('Y-m-d'), $w_end->format('Y-m-d'));
+            $purchases[] = (float) end($purchases_exact);
 
             $cursor = $w_end->copy()->addDay();
             $week++;
         }
 
-        return compact('categories', 'sales', 'purchases');
+        return compact('categories', 'sales', 'purchases', 'sales_exact', 'purchases_exact');
     }
 
     /**
@@ -225,19 +241,23 @@ class DashboardKpi
         $categories = [];
         $sales = [];
         $purchases = [];
+        $sales_exact = [];
+        $purchases_exact = [];
 
         while ($cursor->lessThanOrEqualTo($last)) {
             $m_start = $cursor->copy()->startOfMonth()->format('Y-m-d');
             $m_end = $cursor->copy()->endOfMonth()->format('Y-m-d');
 
             $categories[] = $this->monthLabels[$cursor->month];
-            $sales[] = $this->salesTotal($establishment_id, $m_start, $m_end);
-            $purchases[] = $this->purchasesTotal($establishment_id, $m_start, $m_end);
+            $sales_exact[] = $this->salesTotal($establishment_id, $m_start, $m_end);
+            $sales[] = (float) end($sales_exact);
+            $purchases_exact[] = $this->purchasesTotal($establishment_id, $m_start, $m_end);
+            $purchases[] = (float) end($purchases_exact);
 
             $cursor->addMonthNoOverflow();
         }
 
-        return compact('categories', 'sales', 'purchases');
+        return compact('categories', 'sales', 'purchases', 'sales_exact', 'purchases_exact');
     }
 
     /**
@@ -246,6 +266,7 @@ class DashboardKpi
      */
     public function salesGrowth($request)
     {
+        return \App\Support\Exact\ReadSnapshot::run((new Document)->getConnection(), function () use ($request) {
         $establishment_id = isset($request['establishment_id']) ? $request['establishment_id'] : null;
 
         [, $range_end] = $this->resolveRange($request);
@@ -263,6 +284,8 @@ class DashboardKpi
         $categories = [];
         $current = [];
         $previous = [];
+        $current_exact = [];
+        $previous_exact = [];
 
         for ($m = 1; $m <= $current_month; $m++) {
             $mm = str_pad($m, 2, '0', STR_PAD_LEFT);
@@ -274,17 +297,22 @@ class DashboardKpi
             $prev_end = Carbon::parse($prev_start)->endOfMonth()->format('Y-m-d');
 
             $categories[] = $this->monthLabels[$m];
-            $current[] = $this->salesTotal($establishment_id, $cur_start, $cur_end);
-            $previous[] = $this->salesTotal($establishment_id, $prev_start, $prev_end);
+            $current_exact[] = $this->salesTotal($establishment_id, $cur_start, $cur_end);
+            $current[] = (float) end($current_exact);
+            $previous_exact[] = $this->salesTotal($establishment_id, $prev_start, $prev_end);
+            $previous[] = (float) end($previous_exact);
         }
 
         return [
             'categories' => $categories,
             'current' => $current,
             'previous' => $previous,
+            'current_exact' => $current_exact,
+            'previous_exact' => $previous_exact,
             'current_label' => (string) $current_year,
             'previous_label' => (string) $previous_year,
         ];
+        });
     }
 
     /**
@@ -294,11 +322,12 @@ class DashboardKpi
      */
     private function variation($current, $previous)
     {
-        if ($previous == 0) {
-            return $current > 0 ? 100.0 : 0.0;
+        $D=\App\Support\Exact\Decimal::class;
+        $current=$D::of($current);$previous=$D::of($previous);
+        if ($previous->isZero()) {
+            return $current->isPositive() ? 100.0 : 0.0;
         }
-
-        return round((($current - $previous) / $previous) * 100, 1);
+        return (float) $D::format($current->minus($previous)->dividedBy($previous)->multipliedBy(100),1,'.','');
     }
 
     /**
@@ -308,39 +337,33 @@ class DashboardKpi
      */
     private function salesTotal($establishment_id, $start, $end, $hour = null)
     {
-        $sum_expr = "CASE WHEN currency_type_id = 'VES' THEN total ELSE total * exchange_rate_sale END";
-
-        $document_sales = (float) Document::query()
-            ->whereIn('state_type_id', $this->acceptedStates)
-            ->whereIn('document_type_id', $this->salesDocumentTypes)
-            ->whereBetween('date_of_issue', [$start, $end])
-            ->when($establishment_id, function ($q) use ($establishment_id) {
-                $q->where('establishment_id', $establishment_id);
-            })
-            ->when(!is_null($hour), $this->hourFilter($hour))
-            ->sum(\DB::raw($sum_expr));
-
-        $document_credit_notes = (float) Document::query()
-            ->whereIn('state_type_id', $this->acceptedStates)
-            ->where('document_type_id', '07')
-            ->whereBetween('date_of_issue', [$start, $end])
-            ->when($establishment_id, function ($q) use ($establishment_id) {
-                $q->where('establishment_id', $establishment_id);
-            })
-            ->when(!is_null($hour), $this->hourFilter($hour))
-            ->sum(\DB::raw($sum_expr));
-
-        $sale_notes = (float) SaleNote::query()
-            ->where('changed', false)
-            ->whereStateTypeAccepted()
-            ->whereBetween('date_of_issue', [$start, $end])
-            ->when($establishment_id, function ($q) use ($establishment_id) {
-                $q->where('establishment_id', $establishment_id);
-            })
-            ->when(!is_null($hour), $this->hourFilter($hour))
-            ->sum(\DB::raw($sum_expr));
-
-        return round(($document_sales - $document_credit_notes) + $sale_notes, 2);
+        return \App\Support\Exact\ReadSnapshot::run((new Document)->getConnection(), function () use ($establishment_id,$start,$end,$hour) {
+        $D = \App\Support\Exact\Decimal::class;
+        $sum = $D::of(0);
+        $invoices = Document::withoutEagerLoads()->select('id')->whereIn('state_type_id', $this->acceptedStates)
+            ->where('document_type_id','01')->whereBetween('date_of_issue',[$start,$end])
+            ->when($establishment_id,fn ($q)=>$q->where('establishment_id',$establishment_id))
+            ->when(!is_null($hour),$this->hourFilter($hour));
+        $documents = Document::withoutEagerLoads()->whereIn('state_type_id',$this->acceptedStates)
+            ->whereIn('document_type_id',['01','03','07','08'])->whereBetween('date_of_issue',[$start,$end])
+            ->when($establishment_id,fn ($q)=>$q->where('establishment_id',$establishment_id))
+            ->when(!is_null($hour),$this->hourFilter($hour));
+        $notes = SaleNote::withoutEagerLoads()->whereStateTypeAccepted()->whereBetween('date_of_issue',[$start,$end])
+            ->where(fn ($q)=>$q->where('changed',false)->orWhereNotNull('document_id'))
+            ->where(fn ($q)=>$q->whereNull('document_id')->orWhereNotIn('document_id',$invoices))
+            ->when($establishment_id,fn ($q)=>$q->where('establishment_id',$establishment_id))
+            ->when(!is_null($hour),$this->hourFilter($hour));
+        foreach ([$documents,$notes] as $query) {
+            foreach ($query->lazyById(500) as $record) {
+                $currency=$record->currency_type_id;
+                $rate=$currency === 'USD' ? $D::represent($D::readRequired($record,'exchange_rate_sale'),8) : '1';
+                $amount=$D::convert($D::readRequired($record,'total'),$currency,'VES',$rate);
+                if ($record instanceof Document && $record->document_type_id === '07') $amount=$amount->negated();
+                $sum=$sum->plus($amount)->simplified();
+            }
+        }
+        return $D::format($sum,2,'.','');
+        });
     }
 
     /**
@@ -349,19 +372,20 @@ class DashboardKpi
      */
     private function purchasesTotal($establishment_id, $start, $end, $hour = null)
     {
-        $sum_expr = "CASE WHEN currency_type_id = 'VES' THEN (total + COALESCE(total_perception, 0)) "
-            . "ELSE (total + COALESCE(total_perception, 0)) * exchange_rate_sale END";
-
-        $total = (float) Purchase::query()
-            ->whereStateTypeAccepted()
-            ->whereBetween('date_of_issue', [$start, $end])
-            ->when($establishment_id, function ($q) use ($establishment_id) {
-                $q->where('establishment_id', $establishment_id);
-            })
-            ->when(!is_null($hour), $this->hourFilter($hour))
-            ->sum(\DB::raw($sum_expr));
-
-        return round($total, 2);
+        return \App\Support\Exact\ReadSnapshot::run((new Purchase)->getConnection(), function () use ($establishment_id,$start,$end,$hour) {
+            $D=\App\Support\Exact\Decimal::class;
+            $sum=$D::of(0);
+            $purchases=Purchase::withoutEagerLoads()->whereStateTypeAccepted()->whereBetween('date_of_issue',[$start,$end])
+                ->when($establishment_id,fn ($q)=>$q->where('establishment_id',$establishment_id))
+                ->when(!is_null($hour),$this->hourFilter($hour));
+            foreach ($purchases->lazyById(500) as $purchase) {
+                $currency=$purchase->currency_type_id;
+                $rate=$currency === 'USD' ? $D::represent($D::readRequired($purchase,'exchange_rate_sale'),8) : '1';
+                $amount=$D::readRequired($purchase,'total')->plus($D::read($purchase,'total_perception'));
+                $sum=$sum->plus($D::convert($amount,$currency,'VES',$rate))->simplified();
+            }
+            return $D::format($sum,2,'.','');
+        });
     }
 
     /**
@@ -379,7 +403,7 @@ class DashboardKpi
 
     private function formatNumber($number)
     {
-        return number_format($number, 2, '.', '');
+        return \App\Support\Exact\Decimal::format($number, 2, '.', '');
     }
 }
 

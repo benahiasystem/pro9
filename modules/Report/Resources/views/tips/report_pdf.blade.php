@@ -73,6 +73,7 @@
                 </tr>
             </table>
         </div>
+        <p>Propinas registradas. La moneda indicada corresponde al documento asociado.</p>
         @if(!empty($records))
             <div class="">
                 <div class=" ">
@@ -85,6 +86,7 @@
                                 <th class="text-center">Documento</th>
                                 <th class="text-center">Estado</th>
                                 <th>Tipo documento</th>
+                                <th>Moneda del documento</th>
                                 <th class="text-center">Total propina</th>
                             </tr>
                         </thead>
@@ -101,7 +103,8 @@
                                     <td class="celda">{{ $row['document_number_full'] }}</td> 
                                     <td class="celda">{{ $row['state_type_description'] }}</td> 
                                     <td class="celda">{{ $row['document_type_description'] }}</td> 
-                                    <td class="celda">{{ $row['total'] }}</td> 
+                                    <td class="celda">{{ $row['document_currency'] ?? 'Sin identificar' }}</td>
+                                    <td class="celda">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\Decimal::readRequired($record, 'total'), 2, '.', '') }}</td>
                                 </tr>
                             @endforeach
                         </tbody>

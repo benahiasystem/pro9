@@ -7,8 +7,46 @@ const parser = require('@babel/parser')
 const generate = require('@babel/generator').default
 const load = require('./helpers/load-module.cjs')
 
+test('hotel allocates the rounding cent across domestic receipts without changing foreign receipts', () => {
+    const {allocateHotelPayments} = load('resources/js/helpers/hotel-payment-allocation.js')
+    const items=[1,2].map(() => ({total:'0.333333333333',rent_payment:{payment_method_type_id:'04',payment:'0.33'}}))
+    assert.equal(allocateHotelPayments(items,[{id:'04',currency_type_id:'VES'}]),true)
+    assert.equal(items[0].rent_payment.payment,'0.34')
+    assert.equal(items[1].rent_payment.payment,'0.33')
+    assert.equal(items[0].rent_payment.original_amount,'0.34')
+    const foreign=[{total:'0.333333333333',rent_payment:{payment_method_type_id:'01',currency_type_id:'USD',
+        payment:'0.33',original_amount:'0.01',exchange_rate:'33'}}]
+    const mixed=[foreign[0],{total:'0.333333333333',rent_payment:{payment_method_type_id:'04',payment:'0.33'}}]
+    const methods=[{id:'01',currency_type_id:'USD'},{id:'04',currency_type_id:'VES'}]
+    assert.equal(allocateHotelPayments(mixed,methods),true)
+    assert.equal(foreign[0].rent_payment.original_amount,'0.01')
+    assert.equal(foreign[0].rent_payment.payment,'0.33')
+    assert.equal(mixed[1].rent_payment.payment,'0.34')
+    const impossible=[{total:'0.333333333333',rent_payment:{payment_method_type_id:'01',currency_type_id:'USD',
+        payment:'0.40',original_amount:'0.01',exchange_rate:'40'}},
+        {total:'0.333333333333',rent_payment:{payment_method_type_id:'04',payment:'0.33'}}]
+    assert.throws(()=>allocateHotelPayments(impossible,methods),/redondeo permitido/)
+    assert.equal(impossible[0].rent_payment.original_amount,'0.01')
+    assert.equal(impossible[1].rent_payment.payment,'0.33')
+    const nearInteger=[{total:'0.014',rent_payment:{payment_method_type_id:'04'}},
+        {total:'1000',rent_payment:{payment_method_type_id:'04'}},
+        {total:'0.014',rent_payment:{payment_method_type_id:'01',currency_type_id:'USD',
+            payment:'0.01',original_amount:'0.01',exchange_rate:'1'}}]
+    assert.equal(allocateHotelPayments(nearInteger,methods),true)
+    assert.equal(nearInteger[0].rent_payment.payment,'0.02')
+    assert.equal(nearInteger[1].rent_payment.payment,'1000.00')
+    const allForeign=['33','34'].map(rate=>({total:'0.333333333333',rent_payment:{payment_method_type_id:'01',currency_type_id:'USD',
+        payment:rate==='33' ? '0.33' : '0.34',original_amount:'0.01',exchange_rate:rate}}))
+    assert.equal(allocateHotelPayments(allForeign,methods),true)
+    assert.deepEqual(allForeign.map(row=>row.rent_payment.original_amount),['0.01','0.01'])
+    allForeign[1].rent_payment.exchange_rate='33'; allForeign[1].rent_payment.payment='0.33'
+    assert.throws(()=>allocateHotelPayments(allForeign,methods),/cubrir exactamente/)
+})
+
 const globals = {...load('resources/js/helpers/payment-classification.js'),
     ...load('resources/js/helpers/document-creation.js'), ...load('resources/js/helpers/exchange-rate-math.js'),
+    ...load('resources/js/helpers/hotel-payment-allocation.js'),
+    ...load('resources/js/helpers/exact-document.js'), _:require('lodash'),
     moment: () => ({format: () => '2026-10-01'})}
 function component(path) {
     const source = compiler.parseComponent(fs.readFileSync(path, 'utf8'))
@@ -28,6 +66,23 @@ const hotel = component('modules/Hotel/Resources/assets/js/views/rooms/Checkout.
 const order = component('resources/js/views/tenant/orders/partials/sale_note_form.vue')
 const rent = component('modules/Hotel/Resources/assets/js/views/rooms/Rent.vue')
 const roomItems = component('modules/Hotel/Resources/assets/js/views/rooms/AddProductToRoom.vue')
+
+test('hotel product submission applies the mixed-currency rounding allocation before building the note', async () => {
+    const products=[{total:'0.333333333333',payment_status:'PAID',is_registered:false,
+        rent_payment:{payment_method_type_id:'01',currency_type_id:'USD',payment:'0.33',original_amount:'0.01',exchange_rate:'33'}},
+    {total:'0.333333333333',payment_status:'PAID',is_registered:false,
+        rent_payment:{payment_method_type_id:'04',currency_type_id:'VES',payment:'0.33',original_amount:'0.33'}}]
+    let submittedItems
+    const ctx={form:{operation_key:'known',products},paymentCurrency:'VES',document:{items:[]},
+        payment_method_types:[{id:'01',currency_type_id:'USD'},{id:'04',currency_type_id:'VES'}],
+        isAtLeastOnePaid: rows=>rows.some(row=>row.payment_status==='PAID'),
+        onGoToInvoice:async function () { submittedItems=this.document.items; return false },
+        $message:{error:message=>{throw Error(message)}}}
+    await roomItems.method('onSubmit').call(ctx)
+    assert.equal(submittedItems[0].rent_payment.original_amount,'0.01')
+    assert.equal(submittedItems[0].rent_payment.payment,'0.33')
+    assert.equal(submittedItems[1].rent_payment.payment,'0.34')
+})
 const methods = [{id:'01', is_active:true, is_credit:true, collection_kind:'none', currency_type_id:'VES'},
     {id:'13', is_active:true, is_credit:false, collection_kind:'account', currency_type_id:'USD', bank_account_id:2}]
 const destinations = [{id:'cash'}, {id:1,currency_type_id:'VES'}, {id:2,currency_type_id:'USD'}]
@@ -59,13 +114,38 @@ test('hotel check-in formats exact string totals after selecting a rate', () => 
     assert.deepEqual(compiler.compile(rent.source.template.content).errors, [])
 })
 
-test('hotel check-in preserves the exact rate when preparing the document line', async () => {
-    globals.calculateRowItem = item => item
-    const ctx = {form:{duration:1,total_to_pay:'90071992547409.91'}, percentage_igv:'0.16',
-        document:{items:[{item:{description:'Habitación'}}]}, axiosError:error => { throw error }}
+test('hotel check-in keeps the final room rate and every night in the note', async () => {
+    globals.calculateRowItem = load('resources/js/helpers/functions.js').calculateRowItem
+    const room={id:7,description:'Habitación',unit_price:'999',currency_type_id:'VES',has_igv:false}
+    const ctx={form:{duration:2,rate_price:'0.10',total_to_pay:'0.20',affectation_igv_type_id:'10'},
+        affectationIgvTypes:[{id:'10'}],percentage_igv:'0.16',document:{items:[],exchange_rate_sale:'0',discounts:[],charges:[]},
+        axiosError:error=>{throw error}}
+    const product=rent.method('buildRoomProduct').call(ctx,room)
+    assert.equal(product.quantity,'2')
+    assert.equal(product.total,'0.2')
+    assert.equal(product.price_input.includes_iva,true)
+    assert.equal(room.unit_price,'999')
+    ctx.document.items=[product]
     await rent.method('onUpdateItemsWithExtras').call(ctx)
-    assert.equal(ctx.document.items[0].item.unit_price, '90071992547409.91')
-    assert.equal(ctx.document.items[0].input_unit_price_value, '90071992547409.91')
+    await rent.method('onUpdateItemsWithExtras').call(ctx)
+    rent.method('onCalculateTotals').call(ctx)
+    assert.equal(ctx.document.items[0].item.description,'Habitación x 2 noche(s)')
+    assert.equal(ctx.document.items[0].quantity,'2')
+    assert.equal(ctx.document.total,'0.2')
+    assert.equal(ctx.document.total_igv,'0.027586206897')
+    assert.equal(ctx.document.calculation_snapshot.values.total_igv.n,'4')
+    assert.equal(ctx.document.calculation_snapshot.values.total_igv.d,'145')
+    assert.equal(product.item.description,'Habitación')
+    ctx.form.rate_price='90071992547409.91'
+    assert.equal(rent.method('buildRoomProduct').call(ctx,room).total,'180143985094819.82')
+})
+
+test('hotel check-in clears the payable amount for invalid rate input',()=>{
+    const ctx={form:{rate_price:'',duration:2,total_to_pay:'10',rent_payment:{payment:'10'}},errors:{},onUpdateOutputDate(){throw Error('unexpected')}}
+    rent.method('onUpdateTotalToPay').call(ctx)
+    assert.equal(ctx.form.total_to_pay,null)
+    assert.equal(ctx.form.rent_payment.payment,null)
+    assert.ok(ctx.errors.rate_price.length)
 })
 
 test('hotel checkout sums decimal balances and applies arrears only once on retries', () => {
@@ -89,10 +169,201 @@ test('hotel checkout sums decimal balances and applies arrears only once on retr
     assert.equal(checkout.document.items[0].total, '100.35')
     update.call(checkout)
     assert.equal(checkout.document.items[0].total, '100.35')
-    checkout.document.items.push({affectation_igv_type_id:'20', total_value:'0.05',total_igv:'0',total:'0.05'})
+    checkout.document.items.push({affectation_igv_type_id:'20', total_base_igv:'0.05',total_value:'0.05',total_igv:'0',total:'0.05'})
     hotel.method('onCalculateTotals').call(checkout)
-    assert.equal(checkout.document.total, '100.40')
-    assert.equal(checkout.document.total_exonerated, '100.40')
+    assert.equal(checkout.document.total, '100.4')
+    assert.equal(checkout.document.total_exonerated, '100.4')
+})
+
+test('hotel checkout preserves periodic room amounts through surcharge retries and document totals', () => {
+    globals.calculateRowItem = load('resources/js/helpers/functions.js').calculateRowItem
+    const third={n:'1',d:'3'}
+    const context={arrears:'0.10',percentage_igv:'0.16',room:{item_id:7},document:{items:[{
+        item_id:7,quantity:'0.333333333333',total:'0.333333333333',affectation_igv_type_id:'20',
+        item:{id:7,name:'Habitación',unit_price:'1',currency_type_id:'VES'},
+        quantity_input:{amount:'1',unit_price:'3'},price_input:{amount:'1',currency_type_id:'VES',includes_iva:true},
+        calculation_snapshot:{values:{quantity:third,total:third},inputs:{quantity_input:{amount:'1',unit_price:'3'}}},
+    }],discounts:[],charges:[]}}
+    const update=hotel.method('onUpdateItemsWithExtras')
+    update.call(context)
+    update.call(context)
+    const row=context.document.items[0]
+    assert.equal(row.quantity,'1')
+    assert.equal(row.item.description,'Habitación x 0.333333333333 noche(s)')
+    assert.equal(row.calculation_snapshot.values.total.n,'13')
+    assert.equal(row.calculation_snapshot.values.total.d,'30')
+    hotel.method('onCalculateTotals').call(context)
+    assert.equal(context.document.calculation_snapshot.values.total.n,'13')
+    assert.equal(context.document.calculation_snapshot.values.total.d,'30')
+    const debt={arrears:'0.10',currentRent:{items:[{payment_status:'DEBT',item:{total:'0.333333333333',
+        calculation_snapshot:{values:{total:third}}}}]}}
+    hotel.method('onCalculatePaidAndDebts').call(debt)
+    assert.equal(debt.totalDebt,'0.433333333333')
+})
+
+test('hotel charges late checkout separately when the room was already paid', () => {
+    globals.calculateRowItem = load('resources/js/helpers/functions.js').calculateRowItem
+    const ctx={arrears:'0.25',percentage_igv:'0.16',room:{item_id:7,item:{item_id:7,quantity:'2',
+        affectation_igv_type_id:'10',item:{id:7,name:'Habitación',unit_type_id:'SERV',currency_type_id:'VES',unit_price:'116'}}},
+        document:{items:[{item_id:8,hotel_checkout_room:false,total:'3',total_value:'3',total_base_igv:'3',total_igv:'0',affectation_igv_type_id:'20'}],discounts:[],charges:[]}}
+    const update=hotel.method('onUpdateItemsWithExtras')
+    update.call(ctx)
+    update.call(ctx)
+    assert.equal(ctx.document.items.length,2)
+    assert.equal(ctx.document.items[1].item_id,7)
+    assert.equal(ctx.document.items[1].total,'0.25')
+    assert.equal(ctx.document.items[1].item.description,'Cargo por salida tardía')
+    hotel.method('onCalculateTotals').call(ctx)
+    assert.equal(ctx.document.total,'3.25')
+    ctx.arrears='0'
+    update.call(ctx)
+    assert.equal(ctx.document.items.length,1)
+    ctx.arrears='0.25'
+    ctx.room.item.item.unit_type_id='UND'
+    assert.throws(()=>update.call(ctx),/servicio asociado/)
+    ctx.room.item.item.unit_type_id='SERV'
+    ctx.room.item.item.is_set=true
+    assert.throws(()=>update.call(ctx),/servicio asociado/)
+    ctx.room.item.item.is_set='0'
+    update.call(ctx)
+    assert.equal(ctx.document.items[1].total,'0.25')
+})
+
+test('hotel checkout retries the same saved document after finalization fails', async () => {
+    const storage=new Map(), calls=[], errors=[]
+    globals.window={sessionStorage:{setItem:(key,value)=>storage.set(key,value),removeItem:key=>storage.delete(key)}}
+    globals.ensureExchangeRateSale=async()=>{}
+    let attempts=0, completed=0
+    const ctx={loading:false,preparingCheckout:false,pendingCheckout:null,currentRent:{id:7},arrears:'0.25',
+        resource_documents:'sale-notes',document:{document_type_id:'80',payments:[]},
+        onUpdateItemsWithExtras(){},onCalculateTotals(){},validatePaymentDestination(){return {error_by_item:0}},
+        validateTotalPayments(){return {success:true}},updateDataForSend(){},async ensureFiscalPaymentsReady(){return true},
+        $http:{async post(url,data){calls.push({url,data}); if (url==='/sale-notes') return {data:{success:true,data:{id:42}}};
+            if (++attempts===1) throw Error('sin conexión'); return {data:{success:true,currentRent:{id:7,status:'FINALIZADO'}}}}},
+        $message:{error:message=>errors.push(message)},successGoToInvoice(){completed++},$emit(){},saveCashDocument(){}}
+    const run=hotel.method('onGoToInvoice')
+    await run.call(ctx)
+    assert.equal(ctx.pendingCheckout.id,42)
+    assert.equal(completed,0)
+    assert.equal(storage.size,1)
+    await run.call(ctx)
+    assert.equal(calls.filter(call=>call.url==='/sale-notes').length,1)
+    assert.equal(calls.filter(call=>call.url.endsWith('/finalized')).length,2)
+    assert.equal(calls[2].data.checkout_document_id,42)
+    assert.equal(calls[2].data.checkout_document_type,'80')
+    assert.equal(calls[2].data.arrears,'0.25')
+    assert.equal(completed,1)
+    assert.equal(storage.size,0)
+    assert.deepEqual(errors,['sin conexión'])
+})
+
+test('hotel atomic checkout recovers a lost response without creating another document', async () => {
+    const storage=new Map(), calls=[], messages=[]
+    globals.window={sessionStorage:{setItem:(key,value)=>storage.set(key,value),removeItem:key=>storage.delete(key)}}
+    globals.newPaymentOperationKey=()=> 'a98c5b98-5964-4f6e-9cff-7c405690a58b'
+    globals.ensureExchangeRateSale=async()=>{}
+    let complete=0
+    const result={success:true,found:true,data:{id:42,document_type_id:'80'},currentRent:{id:7,status:'FINALIZADO'}}
+    const ctx={loading:false,preparingCheckout:false,pendingAtomic:null,atomicDraft:null,currentRent:{id:7},arrears:'0.25',
+        document:{document_type_id:'80',payments:[]},onUpdateItemsWithExtras(){},onCalculateTotals(){},
+        validatePaymentDestination(){return {error_by_item:0}},validateTotalPayments(){return {success:true}},
+        updateDataForSend(){},async ensureFiscalPaymentsReady(){return true},
+        $http:{async post(url,data){calls.push({url,data});throw Error('respuesta perdida')},
+            async get(url){calls.push({url});return {data:result}}},
+        $message:{error:message=>messages.push(message)},successGoToInvoice(){complete++},$emit(){},saveCashDocument(){}}
+    ctx.clearAtomicPending=hotel.method('clearAtomicPending')
+    ctx.completeAtomicCheckout=hotel.method('completeAtomicCheckout')
+    const run=hotel.method('onAtomicCheckout')
+    await run.call(ctx)
+    assert.equal(ctx.pendingAtomic.key,'a98c5b98-5964-4f6e-9cff-7c405690a58b')
+    assert.equal(storage.size,1)
+    assert.equal(complete,0)
+    await run.call(ctx)
+    assert.equal(calls.filter(call=>call.data).length,1)
+    assert.match(calls[1].url,/operation\/a98c5b98/)
+    assert.equal(ctx.documentNewId,42)
+    assert.equal(ctx.currentRent.status,'FINALIZADO')
+    assert.equal(storage.size,0)
+    assert.equal(complete,1)
+    assert.deepEqual(messages,['respuesta perdida'])
+    // A reloaded page has only the opaque key, and still recovers the committed result.
+    ctx.currentRent={id:7,status:'FINALIZADO'}; ctx.pendingAtomic={key:'a98c5b98-5964-4f6e-9cff-7c405690a58b',type:'80'}
+    ctx.atomicDraft=null
+    await run.call(ctx)
+    assert.equal(calls.filter(call=>call.data).length,1)
+    assert.equal(complete,2)
+    assert.deepEqual(compiler.compile(hotel.source.template.content).errors, [])
+})
+
+test('hotel atomic checkout never sends a document without a recoverable session key', async () => {
+    globals.window={sessionStorage:{setItem(){throw Error('denegado')}}}
+    globals.newPaymentOperationKey=()=> 'a98c5b98-5964-4f6e-9cff-7c405690a58b'
+    globals.ensureExchangeRateSale=async()=>{}
+    let posts=0; const messages=[]
+    const ctx={loading:false,preparingCheckout:false,pendingAtomic:null,currentRent:{id:7},arrears:'0',
+        document:{document_type_id:'80',payments:[]},onUpdateItemsWithExtras(){},onCalculateTotals(){},
+        validatePaymentDestination(){return {error_by_item:0}},validateTotalPayments(){return {success:true}},
+        updateDataForSend(){},async ensureFiscalPaymentsReady(){return true},$http:{async post(){posts++}},
+        $message:{error:message=>messages.push(message)}}
+    await hotel.method('onAtomicCheckout').call(ctx)
+    assert.equal(posts,0)
+    assert.match(messages[0],/clave necesaria/)
+})
+
+test('hotel atomic checkout does not recreate a missing draft after a reload', async () => {
+    const storage=new Map([['pro9-hotel-atomic:7','pending']]), messages=[]; let posts=0
+    globals.window={sessionStorage:{removeItem:key=>storage.delete(key)}}
+    const ctx={loading:false,preparingCheckout:false,pendingAtomic:{key:'a98c5b98-5964-4f6e-9cff-7c405690a58b',type:'80'},
+        atomicDraft:null,currentRent:{id:7},$message:{error:message=>messages.push(message)},
+        $http:{async get(){return {data:{success:true,found:false}}},async post(){posts++}}}
+    ctx.clearAtomicPending=hotel.method('clearAtomicPending')
+    await hotel.method('onAtomicCheckout').call(ctx)
+    assert.equal(posts,0)
+    assert.equal(ctx.pendingAtomic,null)
+    assert.equal(storage.size,0)
+    assert.match(messages[0],/Revise los datos/)
+})
+
+test('hotel product summary adds exact rows without mixing registered items or binary rounding', () => {
+    const context = {form:{products:[
+        {is_registered:false, total_value:'0.1', total_igv:'0.02', total:'0.12'},
+        {is_registered:false, total_value:'0.2', total_igv:'0.03', total:'0.23'},
+        {is_registered:true, total_value:'99', total_igv:'0', total:'99'},
+    ]}}
+    roomItems.method('onCalculateTotals').call(context)
+    assert.equal(context.form.subtotal, '0.3')
+    assert.equal(context.form.igv, '0.05')
+    assert.equal(context.form.total, '0.35')
+    context.form.products = [
+        {is_registered:false, total_value:'0.333333333333', total_igv:'0', total:'0.333333333333',
+            calculation_snapshot:{values:{total_value:{n:'1',d:'3'},total:{n:'1',d:'3'},quantity:{n:'1',d:'3'}}}},
+        {is_registered:false, total_value:'0.666666666667', total_igv:'0', total:'0.666666666667',
+            calculation_snapshot:{values:{total_value:{n:'2',d:'3'},total:{n:'2',d:'3'}}}},
+    ]
+    roomItems.method('onCalculateTotals').call(context)
+    assert.equal(context.form.total, '1')
+    assert.equal(context.form.subtotal, '1')
+    assert.equal(roomItems.method('hotelQuantity')(context.form.products[0]), '0.333333333333')
+    assert.equal(roomItems.method('hotelAmount')('9007199254740993.01'), '9007199254740993.01')
+    assert.deepEqual(compiler.compile(roomItems.source.template.content).errors, [])
+})
+
+test('hotel product sale note preserves exact document fractions and large amounts', () => {
+    const context = {document:{items:[
+        {affectation_igv_type_id:'20',total_base_igv:'0.333333333333',total_value:'0.333333333333',total_igv:'0',total:'0.333333333333',
+            calculation_snapshot:{values:{total_base_igv:{n:'1',d:'3'},total_value:{n:'1',d:'3'},total:{n:'1',d:'3'}}}},
+        {affectation_igv_type_id:'20',total_base_igv:'0.666666666667',total_value:'0.666666666667',total_igv:'0',total:'0.666666666667',
+            calculation_snapshot:{values:{total_base_igv:{n:'2',d:'3'},total_value:{n:'2',d:'3'},total:{n:'2',d:'3'}}}},
+    ],discounts:[],charges:[]}}
+    roomItems.method('onCalculateTotalsDocument').call(context)
+    assert.equal(context.document.total, '1')
+    assert.equal(context.document.total_exonerated, '1')
+    assert.equal(context.document.calculation_snapshot.values.total.n, '1')
+    assert.equal(context.document.calculation_snapshot.values.total.d, '1')
+    context.document.items = [{affectation_igv_type_id:'20',total_base_igv:'9007199254740993.01',
+        total_value:'9007199254740993.01',total_igv:'0',total:'9007199254740993.01'}]
+    roomItems.method('onCalculateTotalsDocument').call(context)
+    assert.equal(context.document.total, '9007199254740993.01')
 })
 
 test('hotel payment defaults use document currency and do not assign cash to an account method', () => {

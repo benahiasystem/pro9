@@ -29,24 +29,24 @@ test('document sales report starts with an invoice type', () => {
     assert.equal(context.form.document_type_id, '01')
 })
 
-test('sales totals sum exact fractions by currency and exclude rejected credit notes', () => {
+test('sales page totals sum displayed decimals by currency and exclude rejected credit notes', () => {
     const context={resource:'reports/sales', salesTotalColumnKeys:['total'], initTotals() {this.totals={}}}
     method('getTotals').call(context,[
-        {currency_type_id:'VES',document_type_id:'01',state_type_id:'01',report_total_fractions:{total:{n:'1',d:'3'}}},
-        {currency_type_id:'VES',document_type_id:'01',state_type_id:'01',report_total_fractions:{total:{n:'1',d:'3'}}},
-        {currency_type_id:'VES',document_type_id:'01',state_type_id:'01',report_total_fractions:{total:{n:'1',d:'3'}}},
+        {currency_type_id:'VES',document_type_id:'01',state_type_id:'01',total:'0.33',report_total_fractions:{total:{n:'1',d:'3'}}},
+        {currency_type_id:'VES',document_type_id:'01',state_type_id:'01',total:'0.33',report_total_fractions:{total:{n:'1',d:'3'}}},
+        {currency_type_id:'VES',document_type_id:'01',state_type_id:'01',total:'0.33',report_total_fractions:{total:{n:'1',d:'3'}}},
         {currency_type_id:'VES',document_type_id:'07',state_type_id:'09',total:'9'},
         {currency_type_id:'USD',document_type_id:'01',state_type_id:'01',total:'4.75'},
         {currency_type_id:'USD',document_type_id:'07',state_type_id:'01',total:'1.25'},
     ])
-    assert.equal(context.totals.acum_total,'1.00')
+    assert.equal(context.totals.acum_total,'0.99')
     assert.equal(context.totals.acum_total_usd,'3.50')
-    assert.equal(method('salesFooterValue').call(context,'total','VES'),'1.00')
+    assert.equal(method('salesFooterValue').call(context,'total','VES'),'0.99')
 })
 
 test('a rejected search clears old results, reports the error and releases the button', async () => {
     const messages=[]
-    const context={resource:'reports/sales', records:[{id:1}], loading_submit:false,
+    const context={resource:'reports/sales', form:{}, pagination:{}, records:[{id:1}], loading_submit:false,
         getQueryParameters:() => '', initTotals() {this.totals='reset'},
         $http:{get:() => Promise.reject({response:{data:{message:'Seleccione un tipo de documento.'}}})},
         $message:{error:value => messages.push(value)}}

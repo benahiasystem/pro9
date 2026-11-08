@@ -93,7 +93,8 @@
 
                             <template v-if="records.length>0">
 
-                                <el-button class="submit" type="success" @click.prevent="clickDownload('excel')"><i class="fa fa-file-excel" ></i>  Exportal Excel</el-button>
+                                <el-button class="submit" type="success" :disabled="hasUnappliedFilters || loading_submit" @click.prevent="clickDownload('excel')"><i class="fa fa-file-excel" ></i>  Exportar Excel</el-button>
+                                <span v-if="hasUnappliedFilters">Los filtros cambiaron. Pulse Buscar para actualizar el reporte.</span>
 
                             </template>
 
@@ -157,6 +158,8 @@
                 loading_search:false,
                 columns: [],
                 records: [],
+                appliedForm: null,
+                recordsRequestId: 0,
                 headers: headers_token,
                 document_types: [],
                 pagination: {},
@@ -182,6 +185,11 @@
             }
         },
         computed: {
+            hasUnappliedFilters() {
+                if (!this.appliedForm) return false
+                const keys = new Set([...Object.keys(this.appliedForm), ...Object.keys(this.form)])
+                return [...keys].some(key => this.appliedForm[key] !== this.form[key])
+            },
         },
         watch: {
             customerId: function(newVal, oldVal) { // watch it
@@ -277,8 +285,10 @@
                 this.persons = this.all_persons
             },
             clickDownload(type) {
+                if (!this.appliedForm) return this.$message.error('Primero consulte los documentos del cliente.')
+                if (this.hasUnappliedFilters) return this.$message.error('Pulse Buscar para actualizar el reporte antes de exportar.')
                 let query = queryString.stringify({
-                    ...this.form
+                    ...this.appliedForm
                 });
                 window.open(`/${this.resource}/${type}/?${query}`, '_blank');
             },
@@ -321,28 +331,42 @@
                     return this.$message.error('Debe seleccionar un cliente')
                 }
 
-                this.loading_submit = await true
-                await this.getRecords()
-                this.loading_submit = await false
+                return this.getRecords({...this.form}, 1)
 
             },
-            getRecords() {
-                return this.$http.get(`/${this.resource}/records?${this.getQueryParameters()}`).then((response) => {
+            getRecords(filters, page) {
+                const selected = filters && typeof filters === 'object' ? filters : (this.appliedForm || this.form)
+                const snapshot = {...selected}
+                const pageNumber = typeof filters === 'number' ? filters : (page || this.pagination.current_page || 1)
+                const requestId = this.recordsRequestId = (this.recordsRequestId || 0) + 1
+                this.loading_submit = true
+                return this.$http.get(`/${this.resource}/records?${this.getQueryParameters(snapshot, pageNumber)}`).then((response) => {
+                    if (requestId !== this.recordsRequestId) return false
                     this.records = response.data.data
                     this.pagination = response.data.meta
                     this.pagination.per_page = parseInt(response.data.meta.per_page)
-                    this.loading_submit = false
-                    // this.initTotals()
-                    if(this.resource == 'reports/sales') this.getTotals(response.data.data)
-                });
+                    this.appliedForm = snapshot
+                    return true
+                }).catch(error => {
+                    if (requestId !== this.recordsRequestId) return false
+                    this.records = []
+                    this.pagination = {}
+                    this.appliedForm = null
+                    const data = error.response && error.response.data
+                    const errors = data && (data.errors || (typeof data.message === 'object' && data.message))
+                    this.$message.error(errors ? Object.values(errors).flat().join(' ') : (data && data.message) || 'No se pudo consultar el reporte.')
+                    return false
+                }).finally(() => {
+                    if (requestId === this.recordsRequestId) this.loading_submit = false
+                })
 
 
             },
-            getQueryParameters() {
+            getQueryParameters(filters = this.appliedForm || this.form, page = this.pagination.current_page) {
                 return queryString.stringify({
-                    page: this.pagination.current_page,
+                    page,
                     limit: this.limit,
-                    ...this.form
+                    ...filters
                 })
             },
 

@@ -23,9 +23,9 @@
                     <h5>{{ 'RIF '.$company->number }}</h5>
                     <h6>
                         {{ ($establishment->address !== '-')? $establishment->address : '' }}
-                        {{ ($establishment->district_id !== '-')? ', '.$establishment->district->description : '' }}
-                        {{ ($establishment->province_id !== '-')? ', '.$establishment->province->description : '' }}
-                        {{ ($establishment->department_id !== '-')? '- '.$establishment->department->description : '' }}
+                        {{ (!empty($establishment->district_id) && $establishment->district_id !== '-' && !empty($establishment->district->description)) ? ', '.$establishment->district->description : '' }}
+                        {{ (!empty($establishment->province_id) && $establishment->province_id !== '-' && !empty($establishment->province->description)) ? ', '.$establishment->province->description : '' }}
+                        {{ (!empty($establishment->department_id) && $establishment->department_id !== '-' && !empty($establishment->department->description)) ? '- '.$establishment->department->description : '' }}
                     </h6>
 
                     @isset($establishment->trade_address)
@@ -55,9 +55,9 @@
                     <h5>{{ 'RIF '.$company->number }}</h5>
                     <h6>
                         {{ ($establishment->address !== '-')? $establishment->address : '' }}
-                        {{ ($establishment->district_id !== '-')? ', '.$establishment->district->description : '' }}
-                        {{ ($establishment->province_id !== '-')? ', '.$establishment->province->description : '' }}
-                        {{ ($establishment->department_id !== '-')? '- '.$establishment->department->description : '' }}
+                        {{ (!empty($establishment->district_id) && $establishment->district_id !== '-' && !empty($establishment->district->description)) ? ', '.$establishment->district->description : '' }}
+                        {{ (!empty($establishment->province_id) && $establishment->province_id !== '-' && !empty($establishment->province->description)) ? ', '.$establishment->province->description : '' }}
+                        {{ (!empty($establishment->department_id) && $establishment->department_id !== '-' && !empty($establishment->department->description)) ? '- '.$establishment->department->description : '' }}
                     </h6>
 
                     @isset($establishment->trade_address)
@@ -91,7 +91,7 @@
         <td width="15%">{{ $document->date_of_issue->format('Y-m-d') }}</td>
     </tr>
     <tr>
-        <td>{{ $customer->identity_document_type->description }}:</td>
+        <td>{{ data_get($customer, 'identity_document_type.description') ?? 'Documento' }}:</td>
         <td>{{ format_identity_document($customer->identity_document_type_id ?? null, $customer->number) }}</td>
 
     </tr>
@@ -168,27 +168,6 @@
     @endif
 </table>
 
-<table class="full-width mt-10 mb-10">
-    <thead class="">
-    <tr class="bg-grey">
-    </tr>
-    </thead>
-    <tbody>
-        <tr>
-        </tr>
-        <tr>
-            <td colspan="4" class="text-right font-bold mb-3">COSTO DEL SERVICIO: </td>
-            <td class="text-right font-bold">{{ number_format($document->cost, 2) }}</td>
-        </tr>
-        <tr>
-            <td colspan="4" class="text-right font-bold">PAGO ADELANTADO: </td>
-            <td class="text-right font-bold">{{ number_format($document->prepayment, 2) }}</td>
-        </tr>
-        <tr>
-            <td colspan="4" class="text-right font-bold">SALDO A PAGAR: </td>
-            <td class="text-right font-bold">{{ number_format($document->cost - $document->prepayment, 2) }}</td>
-        </tr>
-    </tbody>
-</table>
+@include('pdf.partials.technical_service_amounts')
 </body>
 </html>

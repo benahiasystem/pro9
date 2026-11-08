@@ -15,7 +15,8 @@ class OrderNoteGeneralCollection extends ResourceCollection
     public function toArray($request)
     {
         
-        return $this->collection->transform(function($row, $key){ 
+        return $this->collection->map(function($row, $key){
+            $amounts=\Modules\Report\Services\OrderGeneralAmounts::row($row);
              
             return [
                 'id' => $row->id, 
@@ -25,7 +26,9 @@ class OrderNoteGeneralCollection extends ResourceCollection
                 'user_name' => $row->user->name,  
                 'customer_name' => $row->customer->name,  
                 'customer_number' => format_person_identity_document($row->customer),
-                'total' => $row->total,  
+                'total' => \App\Support\Exact\Decimal::format(\App\Support\Exact\Decimal::readRequired($amounts,'total'),2,'.',''),
+                'currency_type_id' => $amounts['currency_type_id'],
+                'calculation_snapshot' => $amounts['calculation_snapshot'],
                 'state_description' => strtoupper(optional($row->state_type)->description ?? 'PENDIENTE'),  
             ];
         });

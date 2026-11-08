@@ -118,7 +118,7 @@
                         </div>
                         <div class="col-sm-6 py-1 text-right">
                             <p class="font-weight-semibold mb-0">
-                                {{ currencyTypeActive.symbol }} {{form.total_taxed}}
+                                {{ currencyTypeActive.symbol }} {{ money(form.total_taxed) }}
                             </p>
                         </div>
                     </div>
@@ -129,7 +129,7 @@
                         </div>
                         <div class="col-sm-6 py-1 text-right">
                             <p class="font-weight-semibold mb-0">
-                                {{ currencyTypeActive.symbol }}{{ form.total_igv }}
+                                {{ currencyTypeActive.symbol }} {{ money(form.total_igv) }}
                             </p>
                         </div>
                     </div>
@@ -139,7 +139,7 @@
                         <p class="font-weight-semibold mb-0">{{ fiscalPaymentsApplicable ? 'TOTAL VENTA (SIN IGTF)' : 'TOTAL' }}</p>
                     </div>
                     <div class="col-sm-6 py-2 text-right">
-                        <h4 class="font-weight-semibold mb-0">{{ currencyTypeActive.symbol }} {{form.total}}</h4>
+                        <h4 class="font-weight-semibold mb-0">{{ currencyTypeActive.symbol }} {{ money(form.total) }}</h4>
                     </div>
                 </div>
                 <div class="row m-0 p-0 h-25 d-flex align-items-center bg-white">
@@ -233,7 +233,7 @@ import {checkoutTotals} from '../../../../helpers/exact-commercial'
 import documentCreationMixin from "@mixins/document-creation"
 import IgtfPaymentFields from "../../documents/partials/igtf_fields.vue"
 import ReceiptCurrencyFields from "@components/ReceiptCurrencyFields.vue"
-import {defaultCashForCurrency, paymentValidationMessage} from '@helpers/payment-classification'
+import {defaultCashForCurrency, checkoutValidationMessage} from '@helpers/payment-classification'
 import Keypress from 'vue-keypress'
 
 import SaleNotesOptions from '../../sale_notes/partials/options.vue'
@@ -273,8 +273,10 @@ export default {
             form_cash_document: {},
             statusDocument: {},
             payment_method_types: [],
+            payment_destinations: [],
             payments: [],
-            locked_submit: false
+            locked_submit: false,
+            fiscalQuoteInline: true
         }
     },
     async created() {
@@ -309,6 +311,17 @@ export default {
     computed: {
         enableGlobalDiscount() {
             return !!(this.configuration && this.configuration.enable_global_discount);
+        },
+    },
+    watch: {
+        form() {
+            // A completed or cancelled sale replaces the parent form. Reapply the
+            // available series after Vue passes the new form to this panel.
+            if (this.all_series.length) this.filterSeries(false)
+        },
+        'form.document_type_id'() {
+            // The parent can change the document type when a customer changes.
+            if (this.all_series.length) this.filterSeries(false)
         },
     },
     methods: {
@@ -469,10 +482,27 @@ export default {
         // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
         async enterAmount() {
             const rows = this.form.payments || []
-            if (rows.length !== 1 || this.singleAmountLocked) return
+            if (rows.length > 1 || this.singleAmountLocked) return
             const text = String(this.enter_amount ?? '').trim()
             if (text && !/^\d+(?:\.\d*)?$/.test(text)) return
             const entered = exactAmount(!text ? '0' : (text.endsWith('.') ? text.slice(0, -1) : text)).decimal()
+            if (rows.length === 0 && exactAmount(entered).compare(0) > 0) {
+                const method = defaultCashForCurrency(this.payment_method_types, this.form.currency_type_id)
+                const destination = this.payment_destinations.find(item => item.id === 'cash')
+                if (!method || !destination) {
+                    this.$message.warning('Seleccione un método y destino en Agregar pagos.')
+                    return
+                }
+                rows.push({id: null, document_id: null, sale_note_id: null,
+                    date_of_payment: moment().format('YYYY-MM-DD'), payment_method_type_id: method.id,
+                    payment_destination_id: destination.id, reference: null, payment: '0'})
+                this.form.payments = rows
+            }
+            if (rows.length === 0) {
+                this.amount = entered
+                this.inputAmount()
+                return
+            }
             rows[0].payment = entered
             this.payments = rows
             this.amount = entered
@@ -481,7 +511,7 @@ export default {
         // ######## FIN MONEDA DEL MEDIO DE COBRO ########
         getLocalStoragePayment(key, re_default = null) {
 
-            let ls_obj = localStorage.getItem(key + '_garage');
+            let ls_obj = localStorage.getItem(key);
             ls_obj = JSON.parse(ls_obj)
 
             if (ls_obj) {
@@ -542,12 +572,12 @@ export default {
 
         },
 
-        filterSeries() {
-            this.form.series_id = null
+        filterSeries(warn = true) {
             this.series = _.filter(this.all_series, {'document_type_id': this.form.document_type_id});
-            this.form.series_id = (this.series.length > 0) ? this.series[0].id : null
+            const selected = this.series.find(series => series.id === this.form.series_id)
+            this.form.series_id = selected ? selected.id : (this.series.length > 0 ? this.series[0].id : null)
 
-            if (!this.form.series_id) {
+            if (!this.form.series_id && warn !== false) {
                 return this.$message.warning('El sucursal no tiene series disponibles para el comprobante');
             }
         },
@@ -687,6 +717,10 @@ export default {
 
                     // this.initFormPayment() ;
                     this.cleanLocalStoragePayment()
+                    this.amount = 0
+                    this.enter_amount = 0
+                    this.difference = 0
+                    this.payments = []
                     if(this.isPrint){
                         this.gethtml();
                     }
@@ -697,8 +731,7 @@ export default {
             }).catch(error => {
                 if (error.response && error.response.status === 422) {
                     this.errors = error.response.data?.errors || error.response.data || {};
-                    const message = paymentValidationMessage(error.response.data);
-                    if (message) this.$message.error(message);
+                    this.$message.error(checkoutValidationMessage(error.response.data));
                     if (this.errors.quoted_tax_amount) this.refreshFiscalQuote(this.form.payments);
                 } else {
                     this.$message.error(error.response?.data?.message || 'No se pudo confirmar el guardado. Consulte el listado antes de crear nuevamente la venta.');
@@ -779,6 +812,7 @@ export default {
                 .then(response => {
                     this.all_series = response.data.series
                     this.payment_method_types = response.data.payment_method_types
+                    this.payment_destinations = response.data.payment_destinations || []
                     this.filterSeries()
                 })
 

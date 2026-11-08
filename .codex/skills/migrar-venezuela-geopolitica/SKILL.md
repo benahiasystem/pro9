@@ -6,6 +6,8 @@ description: Reemplazar catálogos y referencias geográficas de Perú por Venez
 <!-- ######## INICIO SKILL GEOPOLITICO VENEZUELA -->
 # Migrar geopolítica de Venezuela
 
+La creación o actualización implícita de clientes y proveedores desde las API documentales resuelve la parroquia con `PersonLocation`: lee los padres reales y valida la jerarquía activa, sin derivar códigos por prefijo. Para E y Pasaporte limpia la jerarquía y en identidades domiciliadas usa país VE. `test_api_person_uses_venezuela_location_relations_for_customers_and_suppliers` comprueba creación, actualización y rechazo de parroquias inexistentes o inactivas; la aceptación HTTP comprueba una factura en Forma libre y el rollback de una dirección inválida.
+
 ## Flujo
 
 1. Auditar el esquema y contar referencias existentes antes de modificar catálogos.

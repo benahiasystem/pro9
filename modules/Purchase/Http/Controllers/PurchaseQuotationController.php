@@ -340,7 +340,8 @@ class PurchaseQuotationController extends Controller
 
     public function email($purchase_quotation)
     {
-        $suppliers = $purchase_quotation->suppliers;
+        $suppliers = (array) ($purchase_quotation->suppliers ?? []);
+        $sendIt = count($suppliers) > 0;
         // dd($suppliers);
 
         foreach ($suppliers as $supplier) {
@@ -352,7 +353,8 @@ class PurchaseQuotationController extends Controller
             $mailable =new  PurchaseQuotationEmail($client, $purchase_quotation);
             $id = (int)$purchase_quotation->id;
             $model = __FILE__.";;".__LINE__;
-            $sendIt = EmailController::SendMail($email, $mailable, $id, $model);
+            $sent = EmailController::SendMail($email, $mailable, $id, $model);
+            $sendIt = $sendIt && $sent;
             /*
             Configuration::setConfigSmtpMail();
             $array_email = explode(',', $supplier_email);
@@ -370,7 +372,8 @@ class PurchaseQuotationController extends Controller
         }
 
         return [
-            'success' => true
+            'success' => $sendIt,
+            'message' => $sendIt ? 'El correo fue enviado satisfactoriamente.' : 'No se pudo enviar el correo. Revise la configuración y el registro de envíos.'
         ];
     }
 

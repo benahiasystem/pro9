@@ -97,9 +97,8 @@
         public function scopeSearchByDate(Builder $query, $date_start = null, $date_end = null)
         {
 
-            if ($date_end !== null && $date_start !== null) {
-                $query->where([['date_entry', '>=', $date_start], ['date_exit', '<=', $date_end]]);
-            }
+            if (!empty($date_start)) $query->where('date_entry', '>=', $date_start);
+            if (!empty($date_end)) $query->where('date_exit', '<=', $date_end);
             return $query;
         }
     }

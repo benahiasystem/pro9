@@ -142,6 +142,12 @@
             {{-- ######### FIN CAMBIO IGV A IVA --}}
             <td class="text-right font-bold">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_igv'), 2) }}</td>
         </tr> 
+        @if(\App\Support\Exact\PdfAmounts::read($document, 'total_prepayment')->isGreaterThan(0))
+        <tr>
+            <td colspan="6" class="text-right font-bold">ANTICIPOS: {{ $document->currency_type->symbol }}</td>
+            <td class="text-right font-bold">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_prepayment'), 2) }}</td>
+        </tr>
+        @endif
         <tr>
             <td colspan="6" class="text-right font-bold">IMPORTE TOTAL: {{ $document->currency_type->symbol }}</td>
             <td class="text-right font-bold">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total'), 2) }}</td>

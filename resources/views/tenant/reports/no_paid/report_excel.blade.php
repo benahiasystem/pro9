@@ -38,7 +38,7 @@
             </table>
         </div>
         <br>
-        @if(!empty($records))
+        @if(count($records) > 0)
             <div class="">
                 <div class=" ">
                     <table class="">

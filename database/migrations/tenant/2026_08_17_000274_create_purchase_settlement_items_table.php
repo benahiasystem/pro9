@@ -25,6 +25,8 @@ use Illuminate\Support\Facades\DB;
  * - `income_tax_affectation_igv_type_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
  * - `income_retention_percentage` decimal(30,12) NOT NULL DEFAULT '0.00'
  * - `income_retention_amount` decimal(30,12) NOT NULL DEFAULT '0.00'
+ * - `discounts` json DEFAULT NULL
+ * - `charges` json DEFAULT NULL
  * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
@@ -51,6 +53,8 @@ CREATE TABLE `purchase_settlement_items` (
   `income_tax_affectation_igv_type_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `income_retention_percentage` decimal(30,12) NOT NULL DEFAULT '0.00',
   `income_retention_amount` decimal(30,12) NOT NULL DEFAULT '0.00',
+  `discounts` json DEFAULT NULL,
+  `charges` json DEFAULT NULL,
   `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   PRIMARY KEY (`id`),
   KEY `purchase_settlement_items_purchase_settlement_id_foreign` (`purchase_settlement_id`),

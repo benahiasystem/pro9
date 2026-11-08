@@ -5,6 +5,12 @@ description: Mantener la operación comercial local de Pro9 para instalaciones n
 
 # Mantener operación local fiscal de Pro9
 
+El servicio común de correo devuelve el resultado real de su intento; cotizaciones web/API, facturas y notas locales, notas de venta web/API, órdenes de entrega y reporte de ventas lo propagan sin exponer errores internos del transporte. Conservar separado el resultado HKA de documentos digitales. Comprobar sin SMTP real configuración ausente, fallo y aceptación simulada mediante `test_quotation_email_reports_missing_configuration_and_transport_failure`, `test_free_form_document_email_endpoints_report_transport_result` y `test_sales_report_queued_workbook_is_generated_and_failures_propagate`. Otros consumidores deben revisarse por separado si ignoran ese resultado.
+
+Pedidos web/API, formularios de orden, compras API, órdenes de compra, contratos, oportunidades, correo móvil y caja también propagan ese resultado. Las cotizaciones de compra sólo informan éxito si hay proveedores y todos los intentos son aceptados; intentar todos aun si falla uno. Verificar `test_other_commercial_mail_endpoints_preserve_transport_result`: el PDF de caja de esa prueba es simulado y no acredita el transporte SMTP real.
+
+La creación de pedidos en efectivo de tienda y restaurante conserva su resultado aunque falle la notificación y expone por separado `email_sent`. El correo usa partidas e importe guardados y dice que el pago está pendiente; sólo un pago confirmado puede presentarse como tal. En la ruta Culqi fuera del flujo venezolano, el monto y moneda confirmados proceden de la respuesta del proveedor, no de la entrada del cliente. Verificar `test_cash_order_notifications_separate_payment_and_delivery_status` sin correo ni pago real; la aceptación del pedido y el cálculo de sus precios tienen verificación independiente.
+
 ## Evolución aprobada
 
 Mantener separados registro comercial y resultado fiscal. Están implementados el guardado local, preparación, envío y conciliación de facturas digitales DEMO, además de correo/rastreo HKA, descargas A4/A5 desde HKA y descarga del ticket 80MM local con QR de consulta HKA. Producción permanece deshabilitada; este alcance no acredita emisión real de notas ni homologación. Aplicar [numeración fiscal](../mantener-numeracion-fiscal-venezuela-pro9/SKILL.md) para series/controles, [persistencia fiscal y cobros](../mantener-persistencia-fiscal-venezuela-pro9/SKILL.md) para guardado/edición, [facturas y notas HKA](../emitir-facturas-notas-hka/SKILL.md) para la operación congelada y [distribución HKA](../distribuir-documentos-hka/SKILL.md) para correo y descargas. `prepared` no acredita emisión ni homologación. No restaurar XML/CDR/SUNAT/PSE ni perfiles de numeración/reservas/asignaciones anticipadas.
@@ -105,6 +111,7 @@ El envío, correo fiscal y restricciones por registro HKA se aplican a «Medios 
 
 ## Resolución de anulaciones locales
 
+- La comunicación heredada `voided` no anula una factura ni sus efectos locales: no debe responder con éxito ni crear registros como si lo hiciera. Sus rutas web/API rechazan esa operación y no ofrecen el botón antiguo en los recursos de documentos; las notas ordinarias conservan su flujo auditado propio. La eliminación de comunicaciones históricas tampoco reactiva facturas. La anulación directa de facturas no queda implementada por esta protección. Verificar `test_legacy_void_request_does_not_claim_to_cancel_an_invoice` y la aceptación HTTP de ambas rutas.
 - `Functions::voidedDocuments` no recibe un selector de resumen fiscal: su único consumidor es `VoidedValidation` y consulta directamente el grupo 01, por código externo y fecha. No reintroducir una alternativa de grupo 02 para Boletas.
 - `CurrentLocalDocumentReferenceTest` ejecuta consultas Eloquent en SQLite en memoria: conserva la referencia de Factura para notas, rechaza documentos no admitidos o inexistentes y verifica grupo/fecha de anulaciones. No acredita la persistencia completa ni efectos de una anulación.
 

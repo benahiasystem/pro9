@@ -268,14 +268,11 @@
                               :row="row"></slot>
                         </tbody>
                         <tfoot>
-                            <template>
-                                <tr>
-                                    <td class="text-end" colspan="10">TOTAL:</td>
-                                    <td class="text-center">{{ totals.acum_unit_gain}}</td>
-                                     <td class="text-center">{{ totals.acum_overall_profit}}</td>
-                                </tr>
-
-                            </template>
+                            <tr v-for="total in totals" :key="total.currency">
+                                <td class="text-end" colspan="11">Total {{ total.currency }}:</td>
+                                <td></td>
+                                <td class="text-center">{{ total.profit }}</td>
+                            </tr>
                             
                         </tfoot>
                     </table>
@@ -303,6 +300,7 @@
 
 import moment from 'moment'
 import queryString from 'query-string'
+import {exactAmount, exactSum} from '../../../../../../resources/js/helpers/exchange-rate-math'
 
 export default {
     props: {
@@ -327,7 +325,7 @@ export default {
             document_types: [],
             pagination: {},
             search: {},
-            totals: {},
+            totals: [],
             establishment: null,
             establishments: [],
             web_platforms: [],
@@ -466,12 +464,10 @@ export default {
             this.persons = this.all_persons
         },
         getTotals(records) {
-
-            this.initTotals()
-
-            this.totals.acum_unit_gain = records.reduce((accum,item) => accum + Number(item.unit_gain), 0).toFixed(2)
-            this.totals.acum_overall_profit = records.reduce((accum,item) => accum + Number(item.overall_profit), 0).toFixed(2)
-            
+            const currencies = [...new Set(records.map(row => row.currency_type_id || 'Sin moneda'))].sort()
+            this.totals = currencies.map(currency => ({currency, profit: exactSum(records
+                .filter(row => (row.currency_type_id || 'Sin moneda') === currency)
+                .map(row => exactAmount(row.display_profit))).final(2)}))
         },
         clickDownload(type) {
             let query = queryString.stringify({
@@ -508,10 +504,7 @@ export default {
         },
         initTotals() {
 
-            this.totals = {
-                acum_unit_gain: 0,
-                acum_overall_profit: 0,
-            }
+            this.totals = []
         },
         customIndex(index) {
             return index + 1

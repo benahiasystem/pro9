@@ -478,7 +478,8 @@ class QrApiController extends Controller
         ]);
 
         $filename = $request->filename_only;
-        $content_file = $this->getStorage($filename, 'pdf');
+        $content_file = \App\Services\Fiscal\CurrentFreeFormPdf::bytesForFilename($filename)
+            ?? $this->getStorage($filename, 'pdf');
         return base64_encode($content_file);
     }
 

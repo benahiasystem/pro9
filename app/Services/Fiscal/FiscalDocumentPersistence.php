@@ -55,7 +55,7 @@ final class FiscalDocumentPersistence
         return $customer;
     }
 
-    public static function line(array $line, bool $exportation = false): array
+    public static function line(array $line, bool $exportation = false, ?array $frozenComponents=null): array
     {
         $affectation = $line['affectation_igv_type_id'] ?? null;
         if (!in_array($affectation, $exportation ? ['EXP'] : ['10','20'], true)) FiscalAmounts::error('items', $exportation ? 'Seleccione Exportación — IVA 0 %.' : 'Seleccione Gravado o Exento.');
@@ -71,7 +71,7 @@ final class FiscalDocumentPersistence
         unset($line['item']['cod_digemid']);
         $line['item']['hka_unit_code'] = DB::connection('tenant')->table('cat_unit_types')->where('id', $line['item']['unit_type_id'])->where('active',1)->value('hka_code');
         if (!$line['item']['hka_unit_code']) FiscalAmounts::error('items.unit_type_id','Seleccione una unidad activa con equivalencia HKA.');
-        return isset($line['item_id']) ? FiscalNoteInventory::capture($line) : $line;
+        return isset($line['item_id']) ? FiscalNoteInventory::capture($line,$frozenComponents) : $line;
     }
 
     public static function fiscalData(Document $document, array $input = []): void
@@ -146,6 +146,31 @@ final class FiscalDocumentPersistence
         }
         if ($document->document_type_id !== '07' && $document->fresh()->exactBalance()->isNegative()) FiscalAmounts::error('document','Las aplicaciones superan el saldo del documento.');
         self::updateSettlementState($document);
+    }
+
+    /** A forecast reserves the expected net collection without settling the debt. */
+    public static function freeFormCashShortfall(Document $document, $outstanding): \Brick\Math\BigRational
+    {
+        if ($document->document_type_id !== '01' || $document->fiscal_emission_mode !== 'free_form'
+            || $document->payment_condition_id !== '01') return D::of(0);
+        $pending=D::of($outstanding);
+        $data=$document->fresh()->fiscal_data;
+        foreach (['IVA'=>'iva_retention_prevision','ISLR'=>'islr_retention_prevision'] as $kind=>$field) {
+            $forecast=$data->$field ?? null;
+            if (!is_array($forecast) || empty($forecast['eligible'])) continue;
+            $applied=D::sum($document->received_retentions()->where('tax_kind',$kind)->where('application_status','applied')
+                ->get()->map(fn ($row)=>$row->exactValue('applied_amount')));
+            $pending=$pending->minus(D::max(0,D::readRequired($forecast,'amount')->minus($applied)));
+        }
+        return D::max(0,D::of(D::represent($pending,2)));
+    }
+
+    public static function assertFreeFormCashCollection(Document $document, $outstanding, $previousShortfall = 0, bool $editing = false): void
+    {
+        if (self::freeFormCashShortfall($document,$outstanding)->isGreaterThan(D::of($previousShortfall)))
+            FiscalAmounts::error('payments',$editing
+                ? 'La edición no puede aumentar el importe pendiente de una factura al contado. Ajuste las partidas para mantener el saldo anterior.'
+                : 'Una factura al contado requiere cobrar el total, descontadas las retenciones previstas y el fondo de garantía. Seleccione crédito si queda saldo por cobrar.');
     }
 
     public static function assertNoSecrets(array $data): void

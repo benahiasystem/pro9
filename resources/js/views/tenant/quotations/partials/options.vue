@@ -157,13 +157,15 @@
                             popper-class="el-select-document_type"
                             @change="changeDocumentType"
                         >
-<!--                            <el-option-->
-<!--                                v-for="option in document_types"-->
-<!--                                :key="option.id"-->
-<!--                                :label="option.description"-->
-<!--                                :value="option.id"-->
-<!--                            ></el-option>-->
+                            <!-- ######## INICIO CAMBIO SOLO FACTURA Y NOTA DE VENTA ######## -->
+                            <el-option
+                                v-for="option in document_types"
+                                :key="option.id"
+                                :label="option.description"
+                                :value="option.id"
+                            ></el-option>
                             <el-option key="nv" label="NOTA DE VENTA" value="nv"></el-option>
+                            <!-- ######## FIN CAMBIO SOLO FACTURA Y NOTA DE VENTA ######## -->
                         </el-select>
                         <small
                             v-if="errors.document_type_id"
@@ -1174,9 +1176,7 @@ export default {
             });
 
             // ######## INICIO POLITICA IDENTIDAD ACTIVA EN VENTAS ########
-            this.document_types = this.all_document_types.filter(row =>
-                ["01", "nv"].includes(row.id)
-            );
+            this.document_types = this.all_document_types.filter(row => row.id === "01");
             // ######## FIN POLITICA IDENTIDAD ACTIVA EN VENTAS ########
 
             // this.document.document_type_id =
@@ -1184,7 +1184,10 @@ export default {
             //         ? this.document_types[0].id
             //         : null;
 
-            this.document.document_type_id = 'nv';
+            if (!['01', 'nv'].includes(this.document.document_type_id) ||
+                (this.document.document_type_id === '01' && !this.document_types.length)) {
+                this.document.document_type_id = 'nv';
+            }
 
             await this.changeDocumentType();
 

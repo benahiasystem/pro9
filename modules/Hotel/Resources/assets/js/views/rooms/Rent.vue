@@ -335,12 +335,11 @@
                                     v-if="rate"
                                 >
                                     <label class="control-label m-0" for="rate">Precio</label>
-                                    <el-input-number
+                                    <el-input
                                         v-model="form.rate_price"
-                                        controls-position="right"
-                                        :min="0"
-                                        @change="onUpdateTotalToPay"
-                                    ></el-input-number>
+                                        inputmode="decimal"
+                                        @input="onUpdateTotalToPay"
+                                    ></el-input>
                                     <small
                                         class="form-control-feedback"
                                         v-if="errors.rate_price"
@@ -579,7 +578,8 @@
 import PersonForm from "@views/persons/form.vue";
 import moment from "moment";
 import {calculateRowItem} from "@helpers/functions";
-import {exactAmount} from '@helpers/exchange-rate-math';
+import {exactAmount, exactInput} from '@helpers/exchange-rate-math';
+import {documentTotals} from '@helpers/exact-document';
 import {ensureExchangeRateSale} from "@helpers/ensure-exchange-rate-sale";
 import {functions} from "@mixins/functions";
 import {mapState} from "vuex/dist/vuex.mjs";
@@ -718,7 +718,7 @@ export default {
     },
     methods: {
         formatHotelAmount(value) {
-            return exactAmount(value).final(2);
+            return value === null || value === '' ? '—' : exactAmount(value).final(2);
         },
         async onSubmit() {
             try {
@@ -726,40 +726,8 @@ export default {
                 if (!this.form.operation_key) this.form.operation_key = newPaymentOperationKey();
 
                 const response = await this.$http.get(`/documents/search/item/${this.room.item_id}`);
-                const payload = {};
                 const item = response.data.items[0];
-
-                payload.item = item;
-                payload.discounts = [];
-                payload.charges = [];
-                payload.attributes = [];
-                payload.item_unit_types = item.item_unit_types;
-                payload.unit_price_value = this.form.rate_price;
-                payload.has_igv = item.has_igv;
-
-
-                payload.affectation_igv_type_id = this.form.affectation_igv_type_id;
-                payload.affectation_igv_type = _.find(this.affectationIgvTypes, {
-                    id: payload.affectation_igv_type_id,
-                });
-
-                payload.quantity = this.form.duration;
-                const unit_price = item.has_igv
-                    ? payload.unit_price_value
-                    : payload.unit_price_value * (1 + this.percentage_igv);
-
-                payload.input_unit_price_value = payload.unit_price_value;
-                payload.unit_price = unit_price;
-                payload.item.unit_price = unit_price;
-
-                const currencyTypeIdActive = "VES";
-                const exchangeRateSale = 0;
-                const product = calculateRowItem(
-                    payload,
-                    currencyTypeIdActive,
-                    exchangeRateSale,
-                    this.percentage_igv
-                );
+                const product = this.buildRoomProduct(item);
 
                 this.form.product = product;
 
@@ -796,13 +764,35 @@ export default {
         onToBackPage() {
             window.location.href = "/hotels/reception";
         },
+        buildRoomProduct(item) {
+            if (!item) throw new Error('No se encontró el servicio de la habitación.');
+            const price = exactInput(String(this.form.rate_price));
+            if (exactAmount(price).compare(0) < 0) throw new Error('Indique una tarifa válida.');
+            const payload = {item:{...item, unit_price:price}, discounts:[], charges:[], attributes:[],
+                item_unit_types:item.item_unit_types, quantity:String(this.form.duration), unit_price:price,
+                input_unit_price_value:price, affectation_igv_type_id:this.form.affectation_igv_type_id,
+                affectation_igv_type:_.find(this.affectationIgvTypes, {id:this.form.affectation_igv_type_id}),
+                price_input:{amount:price,currency_type_id:'VES',includes_iva:true}};
+            return calculateRowItem(payload, 'VES', this.document.exchange_rate_sale, this.percentage_igv);
+        },
         onChangeStatusPayment() {
             if (this.form.payment_status === "DEBT") {
                 this.form.payment_type = "CASH";
             }
         },
         onUpdateTotalToPay() {
-            this.form.total_to_pay = exactAmount(this.form.rate_price).times(this.form.duration).final(2);
+            try {
+                const price = exactAmount(exactInput(String(this.form.rate_price ?? '')));
+                const nights = exactAmount(String(this.form.duration ?? ''));
+                if (price.compare(0) < 0 || nights.compare(1) < 0 || nights.compare(nights.final(0)) !== 0) throw new Error('Indique una tarifa válida y noches enteras.');
+                this.form.total_to_pay = price.times(nights).final(2);
+                if (this.errors?.rate_price) { const errors = {...this.errors}; delete errors.rate_price; this.errors = errors; }
+            } catch (error) {
+                this.form.total_to_pay = null;
+                this.form.rent_payment.payment = null;
+                this.errors = {...this.errors, rate_price:[error.message || 'Indique una tarifa válida.']};
+                return;
+            }
             this.onUpdateOutputDate();
             this.setTotalPayment()
         },
@@ -1045,20 +1035,10 @@ export default {
                         throw new Error("Elemento en items no tiene la propiedad 'item'");
                     }
 
-                    const name = `${it.item.description} x ${this.form.duration} noche(s)`;
-                    it.item.description = name;
-                    it.item.full_description = name;
-                    it.name_product_pdf = name;
-                    it.quantity = 1;
-
-                    const newTotal = exactAmount(this.form.total_to_pay).decimal();
-
-                    it.input_unit_price_value = newTotal;
-                    it.item.unit_price = newTotal;
-                    it.unit_value = newTotal;
-
-                    const newItem = calculateRowItem(it, "VES", 3, this.percentage_igv);
-                    return newItem;
+                    const original = it.hotel_base_description ?? it.item.description;
+                    const name = `${original} x ${this.form.duration} noche(s)`;
+                    return {...it, hotel_base_description:original, name_product_pdf:name,
+                        item:{...it.item, description:name, full_description:name}};
                 });
 
             } catch (error) {
@@ -1079,69 +1059,8 @@ export default {
                 });
         },
         onCalculateTotals() {
-            let total_exportation = 0;
-            let total_taxed = 0;
-            let total_exonerated = 0;
-
-
-            let total_igv = 0;
-            let total_value = 0;
-            let total = 0;
-
-            let total_discount = 0;
-            let total_charge = 0;
-            this.document.items.forEach((row) => {
-                total_discount += parseFloat(row.total_discount);
-                total_charge += parseFloat(row.total_charge);
-
-                if (row.affectation_igv_type_id === "10") {
-                    total_taxed += parseFloat(row.total_value);
-                }
-
-                if (row.affectation_igv_type_id === '20') {
-                    total_exonerated += parseFloat(row.total_value)
-                }
-
-                ;
-
-                if (
-                    ["10", "20", "30", "40"].indexOf(row.affectation_igv_type_id) > -1
-                ) {
-                    total_igv += parseFloat(row.total_igv);
-                    total += parseFloat(row.total);
-                }
-
-                total_value += parseFloat(row.total_value);
-
-
-                if (["13", "14", "15"].includes(row.affectation_igv_type_id)) {
-                    let unit_value =
-                        row.total_value / row.quantity / (1 + this.percentage_igv / 100);
-                    let total_value_partial = unit_value * row.quantity;
-                    row.total_taxes = row.total_value - total_value_partial;
-                    row.total_igv = row.total_value - total_value_partial;
-                    row.total_base_igv = total_value_partial;
-                    total_value -= row.total_value;
-                }
-            });
-
-            this.document.total_exportation = _.round(total_exportation, 2);
-            this.document.total_taxed = _.round(total_taxed, 2);
-            this.document.total_exonerated = _.round(total_exonerated, 2);
-
-
-            this.document.total_igv = _.round(total_igv, 2);
-            this.document.total_value = _.round(total_value, 2);
-            this.document.total_taxes = _.round(total_igv, 2);
-
-            this.document.total = _.round(
-                total,
-                2
-            );
-            this.document.subtotal = _.round(
-                this.document.total,
-                2
-            );
+            Object.assign(this.document, documentTotals(this.document.items, this.document.discounts || [],
+                this.document.charges || [], this.document.total_prepayment || '0'));
         },
         validatePaymentDestination() {
             let error_by_item = 0;

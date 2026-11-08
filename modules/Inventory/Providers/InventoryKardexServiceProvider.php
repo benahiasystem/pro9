@@ -17,6 +17,7 @@ use Modules\Order\Models\OrderNoteItem;
 use Modules\Item\Models\ItemLotsGroup;
 use Modules\Item\Models\ItemLot;
 use Modules\Inventory\Models\DevolutionItem;
+use Modules\Inventory\Models\ItemWarehouse;
 use App\Models\Tenant\DispatchItem;
 
 
@@ -27,11 +28,88 @@ class InventoryKardexServiceProvider extends ServiceProvider
 {
     use InventoryTrait;
 
+    /** Freeze the catalog unit before insertion; never trust a marker from the client. */
+    private function markNewServiceInventory($line): void
+    {
+        if (!\App\Support\Exact\Persistence::enabled($line)) return;
+        $item = Item::withoutGlobalScopes()->whereKey($line->item_id)->lockForUpdate()->first(['id', 'unit_type_id', 'is_set', 'series_enabled', 'lots_enabled']);
+        $snapshot = $line->calculation_snapshot ?? \App\Support\Exact\Decimal::snapshot([]);
+        unset($snapshot['inputs']['inventory_service_without_movement']);
+        if ($item && $item->unit_type_id === 'SERV' && !$item->is_set) $snapshot['inputs']['inventory_service_without_movement'] = true;
+        if ($line instanceof SaleNoteItem) {
+            unset($snapshot['inputs']['sale_note_pack_inventory']);
+            if ($item && $item->is_set && !$line->sale_note->order_note_id) {
+                if (!empty($line->item->IdLoteSelected) || !empty($line->item->lots)) \App\Services\Fiscal\FiscalAmounts::error('items','Los paquetes con lotes o seriales requieren trazabilidad por componente.');
+                if (!empty($line->item->esFusionado) || !empty($line->item->modifiersApplied)) \App\Services\Fiscal\FiscalAmounts::error('items','Los paquetes fusionados o con modificadores requieren trazabilidad por componente.');
+                $warehouse=$line->warehouse_id ? $this->findWarehouseById($line->warehouse_id) : $this->findWarehouse($line->sale_note->establishment_id);
+                if ((int)$warehouse->establishment_id!==(int)$line->sale_note->establishment_id) \App\Services\Fiscal\FiscalAmounts::error('items.warehouse_id','El almacén debe pertenecer a la sucursal de la nota.');
+                $original=$line->relationLoaded('verifiedSaleNotePackInventory') ? (array)$line->getRelation('verifiedSaleNotePackInventory') : null;
+                if ($original && ((int)$original['item_id']!==(int)$item->id || (int)$original['sale_note_id']!==(int)$line->sale_note_id)) \App\Services\Fiscal\FiscalAmounts::error('items','La composición no pertenece a la partida original.');
+                $components=$original['components'] ?? [];
+                if (!$original) foreach ($item->sets()->orderBy('individual_item_id')->get() as $component) {
+                    if ($component->individual_item->unit_type_id === 'SERV') continue;
+                    $quantity=$component->exactValue('quantity');
+                    if (!$quantity->isPositive()) \App\Services\Fiscal\FiscalAmounts::error('items','La cantidad de un componente del paquete debe ser positiva.');
+                    $components[]=['item_id'=>$component->individual_item_id,'quantity'=>ExactDecimal::fraction($quantity)];
+                }
+                $snapshot['inputs']['sale_note_pack_inventory']=['item_id'=>$item->id,'sale_note_id'=>$line->sale_note_id,
+                    'warehouse_id'=>$warehouse->id,'components'=>$components];
+                $line->warehouse_id=$warehouse->id;
+            }
+        }
+        if ($line instanceof OrderNoteItem) {
+            unset($snapshot['inputs']['order_inventory_warehouse_id']);
+            unset($snapshot['inputs']['order_pack_inventory']);
+            unset($snapshot['inputs']['order_lot_inventory']);
+            unset($snapshot['inputs']['order_serial_inventory']);
+            if ($item) {
+                $itemData=(array)$line->item;
+                unset($itemData['lot_serial_assignments_verified']);
+                $itemData['is_set']=(bool)$item->is_set;
+                $line->item=$itemData;
+            }
+            if ($item && !$item->is_set && $item->unit_type_id !== 'SERV') {
+                $warehouse = $line->warehouse_id
+                    ? $this->findWarehouse($this->findWarehouseById($line->warehouse_id)->establishment_id)
+                    : $this->findWarehouse();
+                $snapshot['inputs']['order_inventory_warehouse_id'] = $warehouse->id;
+                $lots=\App\Services\Fiscal\OrderLotInventory::capture($line,$warehouse->id);
+                if ($lots !== null) $snapshot['inputs']['order_lot_inventory']=$lots;
+                if ($item->lots_enabled && $lots === null) \App\Services\Fiscal\FiscalAmounts::error('items','Seleccione los lotes del producto.');
+                $serials=\App\Services\Fiscal\OrderSerialInventory::capture($line,$warehouse->id);
+                $serials=\App\Services\Fiscal\OrderTrackedInventory::verifyAssociation($line,$lots,$serials);
+                if ($serials !== null) $snapshot['inputs']['order_serial_inventory']=$serials;
+                if ($item->series_enabled && $serials === null) \App\Services\Fiscal\FiscalAmounts::error('items','Seleccione los seriales del producto.');
+            }
+            if ($item && $item->is_set && empty($line->item->IdLoteSelected) && empty($line->item->lots_group) && empty($line->item->lots)) {
+                $components=[];
+                foreach ($item->sets()->orderBy('individual_item_id')->get() as $component) {
+                    if ($component->individual_item->unit_type_id === 'SERV') continue;
+                    $quantity=$component->exactValue('quantity');
+                    if (!$quantity->isPositive()) \App\Services\Fiscal\FiscalAmounts::error('items','La cantidad de un componente del paquete debe ser positiva.');
+                    $components[]=['item_id'=>$component->individual_item_id,'quantity'=>\App\Support\Exact\Decimal::fraction($quantity)];
+                }
+                $snapshot['inputs']['order_pack_inventory']=['warehouse_id'=>$this->findWarehouse()->id,'components'=>$components];
+            }
+        }
+        $line->calculation_snapshot = $snapshot;
+    }
+
+    private function hasNoServiceInventory($line): bool
+    {
+        return ($line->calculation_snapshot['inputs']['inventory_service_without_movement'] ?? false) === true;
+    }
+
     public function register() {
         //
     }
 
     public function boot() {
+        DocumentItem::creating(fn ($line) => $this->markNewServiceInventory($line));
+        SaleNoteItem::creating(fn ($line) => $this->markNewServiceInventory($line));
+        PurchaseItem::creating(fn ($line) => $this->markNewServiceInventory($line));
+        PurchaseSettlementItem::creating(fn ($line) => $this->markNewServiceInventory($line));
+        OrderNoteItem::creating(fn ($line) => $this->markNewServiceInventory($line));
         $this->purchase();
         $this->purchase_settlement();
         $this->sale();
@@ -56,6 +134,7 @@ class InventoryKardexServiceProvider extends ServiceProvider
      */
     private function purchase() {
         PurchaseItem::created(function (PurchaseItem $purchase_item) {
+            if ($this->hasNoServiceInventory($purchase_item)) return;
 
             $presentationQuantity = (!empty($purchase_item->item->presentation)) ? $purchase_item->item->presentation->quantity_unit : 1;
 
@@ -63,8 +142,10 @@ class InventoryKardexServiceProvider extends ServiceProvider
             // $warehouse = $this->findWarehouse($this->findWarehouseById($purchase_item->warehouse_id)->establishment_id);
             // $warehouse = $this->findWarehouse();
             //$this->createInventory($purchase_item->item_id, $purchase_item->quantity, $warehouse->id);
-            $this->createInventoryKardex($purchase_item->purchase, $purchase_item->item_id, /*$purchase_item->quantity*/ $purchase_item->exactValue('quantity')->multipliedBy(ExactDecimal::of($presentationQuantity)), $warehouse->id);
-            $this->updateStock($purchase_item->item_id, $purchase_item->exactValue('quantity')->multipliedBy(ExactDecimal::of($presentationQuantity)), $warehouse->id);
+            $quantity=$purchase_item->exactValue('quantity')->multipliedBy(ExactDecimal::of($presentationQuantity));
+            $movement=$this->createInventoryKardex($purchase_item->purchase, $purchase_item->item_id, $quantity, $warehouse->id);
+            $this->updateStock($purchase_item->item_id, $quantity, $warehouse->id);
+            $this->rememberPurchaseWarehouseMovement($purchase_item,$movement,$quantity,$warehouse->id);
 
             // Sincronizar stock del restaurante
             $this->syncRestaurantStock($purchase_item->item_id);
@@ -76,6 +157,7 @@ class InventoryKardexServiceProvider extends ServiceProvider
      */
     private function purchase_settlement() {
         PurchaseSettlementItem::created(function (PurchaseSettlementItem $purchase_item) {
+            if ($this->hasNoServiceInventory($purchase_item)) return;
             /* dd($purchase_item); */
             $presentationQuantity = (!empty($purchase_item->item->presentation)) ? $purchase_item->item->presentation->quantity_unit : 1;
 
@@ -83,15 +165,29 @@ class InventoryKardexServiceProvider extends ServiceProvider
             // $warehouse = $this->findWarehouse($this->findWarehouseById($purchase_item->warehouse_id)->establishment_id);
             // $warehouse = $this->findWarehouse();
             //$this->createInventory($purchase_item->item_id, $purchase_item->quantity, $warehouse->id);
-            $inve=$this->createInventoryKardex($purchase_item->purchase_settlement, $purchase_item->item_id, /*$purchase_item->quantity*/ $purchase_item->exactValue('quantity')->multipliedBy(ExactDecimal::of($presentationQuantity)), $warehouse->id);
-            /* dd($inve); */
-            $this->updateStock($purchase_item->item_id, $purchase_item->exactValue('quantity')->multipliedBy(ExactDecimal::of($presentationQuantity)), $warehouse->id);
+            $quantity=$purchase_item->exactValue('quantity')->multipliedBy(ExactDecimal::of($presentationQuantity));
+            $movement=$this->createInventoryKardex($purchase_item->purchase_settlement, $purchase_item->item_id, $quantity, $warehouse->id);
+            $this->updateStock($purchase_item->item_id, $quantity, $warehouse->id);
+            $this->rememberPurchaseWarehouseMovement($purchase_item,$movement,$quantity,$warehouse->id);
 
             // Sincronizar stock del restaurante
             $this->syncRestaurantStock($purchase_item->item_id);
         });
     }
 
+
+    // ######## INICIO MOVIMIENTO ORIGINAL DE COMPRA ########
+    private function rememberPurchaseWarehouseMovement($line, $movement, $quantity, $warehouseId): void
+    {
+        if (!\App\Support\Exact\Persistence::enabled($line)) return;
+        $snapshot=$line->calculation_snapshot;
+        $snapshot['inputs']['purchase_warehouse_inventory']=['kardex_id'=>$movement->id,'warehouse_id'=>$warehouseId,
+            'quantity'=>ExactDecimal::fraction($quantity)];
+        $line->calculation_snapshot=$snapshot;
+        $line->getConnection()->table($line->getTable())->where($line->getKeyName(),$line->getKey())
+            ->update(['calculation_snapshot'=>json_encode($snapshot,JSON_THROW_ON_ERROR)]);
+    }
+    // ######## FIN MOVIMIENTO ORIGINAL DE COMPRA ########
 
     /**
      * Se dispara cuando se realiza una venta
@@ -108,6 +204,7 @@ class InventoryKardexServiceProvider extends ServiceProvider
                 }
                 return;
             }
+            if ($this->hasNoServiceInventory($document_item)) return;
             if ($document_item->document->document_type_id==='01' && \App\Services\Fiscal\DeliveryOrderInvoiceInventory::apply($document_item,-1)) return;
             // si es nota credito tipo 13, no se asocia a inventario
             if($document_item->document->isCreditNoteAndType13()) return;
@@ -139,27 +236,24 @@ class InventoryKardexServiceProvider extends ServiceProvider
 
             } else {
 
-                $item = Item::findOrFail($document_item->item_id);
-
-                foreach ($item->sets as $it) {
-                    /** @var Item $ind_item */
-                    $ind_item = $it->individual_item;
-                    $item_set_quantity = ($it->quantity) ? $it->quantity : 1;
+                foreach ((array)($document_item->item->inventory_components ?? []) as $component) {
+                    $component=(array)$component;
+                    $item_set_quantity=ExactDecimal::of($component['quantity_exact'] ?? $component['quantity']);
                     $presentationQuantity = 1;
                     $document = $document_item->document;
                     $factor = ($document->document_type_id === '07') ? 1 : -1;
                     $warehouse = $document_item->warehouse_id ? $this->findWarehouseById($document_item->warehouse_id) : $this->findWarehouse();
                     if ($warehouse->establishment_id != $document->establishment_id) \App\Services\Fiscal\FiscalAmounts::error('items.warehouse_id','El almacén debe corresponder a la sucursal del comprobante.');
                     if (!$document_item->warehouse_id) $document_item->forceFill(['warehouse_id'=>$warehouse->id])->saveQuietly();
-                    $this->createInventoryKardex($document_item->document, $ind_item->id, $document_item->exactValue('quantity')->multipliedBy(ExactDecimal::of($presentationQuantity))->multipliedBy(ExactDecimal::of($item_set_quantity))->multipliedBy($factor), $warehouse->id);
+                    $this->createInventoryKardex($document_item->document, $component['item_id'], $document_item->exactValue('quantity')->multipliedBy(ExactDecimal::of($presentationQuantity))->multipliedBy($item_set_quantity)->multipliedBy($factor), $warehouse->id);
 
                     if (!$document_item->document->sale_note_id && !$document_item->document->order_note_id && !$document_item->document->dispatch_id && !$document_item->document->sale_notes_relateds)
                     {
-                        $this->updateStock($ind_item->id, $document_item->exactValue('quantity')->multipliedBy(ExactDecimal::of($presentationQuantity))->multipliedBy(ExactDecimal::of($item_set_quantity))->multipliedBy($factor), $warehouse->id);
+                        $this->updateStock($component['item_id'], $document_item->exactValue('quantity')->multipliedBy(ExactDecimal::of($presentationQuantity))->multipliedBy($item_set_quantity)->multipliedBy($factor), $warehouse->id);
                     } else {
                         if ($document_item->document->dispatch) {
                             if (!$document_item->document->dispatch->discountsPhysicalStock()) {
-                                $this->updateStock($ind_item->id, $document_item->exactValue('quantity')->multipliedBy(ExactDecimal::of($presentationQuantity))->multipliedBy(ExactDecimal::of($item_set_quantity))->multipliedBy($factor), $warehouse->id);
+                                $this->updateStock($component['item_id'], $document_item->exactValue('quantity')->multipliedBy(ExactDecimal::of($presentationQuantity))->multipliedBy($item_set_quantity)->multipliedBy($factor), $warehouse->id);
                             }
                         }
                     }
@@ -192,35 +286,68 @@ class InventoryKardexServiceProvider extends ServiceProvider
                             // presentacion - factor de lista de precios
                             $quantity_unit = isset($document_item->item->presentation->quantity_unit) ? $document_item->item->presentation->quantity_unit : 1;
 
-                            $lotesSelecteds = $document_item->item->IdLoteSelected;
+                            // ######## INICIO ASIGNACIÓN EXACTA Y BLOQUEO DE LOTES ########
+                            $lotesSelecteds=[]; $seen=[]; $selectedTotal=ExactDecimal::of(0);
+                            foreach ($document_item->item->IdLoteSelected as $selected) {
+                                $selected=(array)$selected;
+                                $id=$selected['id'] ?? null;
+                                if (!$id || isset($seen[(string)$id])) throw new Exception("Lote vacío o duplicado para el producto [{$productName}]");
+                                $quantity=ExactDecimal::inputRational($selected['compromise_quantity'] ?? null,'items.lots');
+                                if (!$quantity->isPositive()) throw new Exception("La cantidad del lote debe ser positiva para el producto [{$productName}]");
+                                $seen[(string)$id]=true; $selectedTotal=$selectedTotal->plus($quantity);
+                                $lotesSelecteds[]=['id'=>$id,'quantity'=>$quantity];
+                            }
+                            $lineQuantity=$document_item->exactValue('quantity');
+                            if (!$lotesSelecteds || ExactDecimal::represent($selectedTotal)!==ExactDecimal::represent($lineQuantity)) {
+                                throw new Exception("Las cantidades de lotes no coinciden con el producto [{$productName}]");
+                            }
+                            $last=count($lotesSelecteds)-1;
+                            $lotesSelecteds[$last]['quantity']=$lotesSelecteds[$last]['quantity']->plus($lineQuantity->minus($selectedTotal));
+                            if (!$lotesSelecteds[$last]['quantity']->isPositive()) throw new Exception("La cantidad del lote debe ser positiva para el producto [{$productName}]");
+                            usort($lotesSelecteds,fn($a,$b)=>(int)$a['id']<=>(int)$b['id']);
                             $document_factor = ($document->document_type_id === '07') ? 1 : -1;
+                            $lotMetadata=[];
 
                             foreach ($lotesSelecteds as $item)
                             {
-                                $lotId = is_array($item) ? ($item['id'] ?? null) : ($item->id ?? null);
-                                $compromiseQuantity = is_array($item)
-                                    ? ($item['compromise_quantity'] ?? 0)
-                                    : ($item->compromise_quantity ?? 0);
+                                $lotId = $item['id'];
+                                $compromiseQuantity = $item['quantity'];
 
                                 if ($lotId === null || $lotId === '') {
                                     throw new Exception("Lote vacío o sin identificador para el producto [{$productName}]");
                                 }
 
-                                $lot = ItemLotsGroup::query()->find($lotId);
+                                $lot = ItemLotsGroup::query()->where('item_id',$document_item->item_id)->lockForUpdate()->find($lotId);
                                 if (!$lot) {
                                     throw new Exception("Lote no encontrado (id: {$lotId}) para el producto [{$productName}]");
                                 }
+                                $lotMetadata[(string)$lotId]=['code'=>$lot->code,'date_of_due'=>$lot->date_of_due];
 
                                 $lot->quantity = $lot->exactValue('quantity')->plus(ExactDecimal::of($quantity_unit)->multipliedBy(ExactDecimal::of($compromiseQuantity))->multipliedBy($document_factor));
                                 $this->validateStockLotGroup($lot, $document_item);
                                 $lot->save();
                             }
+                            $frozen=json_decode(json_encode($document_item->item,JSON_THROW_ON_ERROR),true,512,JSON_THROW_ON_ERROR);
+                            $exactById=[];
+                            foreach ($lotesSelecteds as $selected) $exactById[(string)$selected['id']]=$selected['quantity'];
+                            foreach ($frozen['IdLoteSelected'] as &$selected) {
+                                $exact=$exactById[(string)$selected['id']];
+                                $selected['code']=$lotMetadata[(string)$selected['id']]['code'];
+                                $selected['date_of_due']=$lotMetadata[(string)$selected['id']]['date_of_due'];
+                                $selected['compromise_quantity']=ExactDecimal::represent($exact);
+                                $selected['compromise_quantity_exact']=ExactDecimal::fraction($exact);
+                            }
+                            unset($selected);
+                            $document_item->item=$frozen;
+                            $document_item->getConnection()->table($document_item->getTable())->where($document_item->getKeyName(),$document_item->getKey())
+                                ->update(['item'=>$document_item->getAttributes()['item']]);
+                            // ######## FIN ASIGNACIÓN EXACTA Y BLOQUEO DE LOTES ########
 
                         }
                         else{
 
                             $lotId = $document_item->item->IdLoteSelected;
-                            $lot = ItemLotsGroup::query()->find($lotId);
+                            $lot = ItemLotsGroup::query()->where('item_id',$document_item->item_id)->lockForUpdate()->find($lotId);
                             if (!$lot) {
                                 throw new Exception("Lote no encontrado (id: {$lotId}) para el producto [{$productName}]");
                             }
@@ -237,6 +364,7 @@ class InventoryKardexServiceProvider extends ServiceProvider
                             }
 
                             $lot->quantity = $quantity;
+                            $this->validateStockLotGroup($lot, $document_item);
                             $lot->save();
                         }
 
@@ -276,6 +404,10 @@ class InventoryKardexServiceProvider extends ServiceProvider
     private function sale_note()
     {
         SaleNoteItem::created(function (SaleNoteItem $sale_note_item) {
+
+            if ($this->hasNoServiceInventory($sale_note_item)) return;
+            if ($sale_note_item->sale_note->order_note_id) return;
+            if (\App\Services\Fiscal\SaleNotePackInventory::apply($sale_note_item,-1)) return;
 
             if(!$sale_note_item->item->is_set){
 
@@ -355,6 +487,13 @@ class InventoryKardexServiceProvider extends ServiceProvider
 
         SaleNoteItem::deleted(function (SaleNoteItem $sale_note_item) {
 
+            if ($this->hasNoServiceInventory($sale_note_item)) return;
+            if ($sale_note_item->sale_note->order_note_id) return;
+            if (isset($sale_note_item->calculation_snapshot['inputs']['sale_note_pack_inventory'])) {
+                if (!in_array((string)$sale_note_item->sale_note->state_type_id,['09','11'],true)) \App\Services\Fiscal\SaleNotePackInventory::apply($sale_note_item,1);
+                return;
+            }
+
             // dd($sale_note_item);
 
             if(!$sale_note_item->item->is_set){
@@ -409,6 +548,9 @@ class InventoryKardexServiceProvider extends ServiceProvider
     private function order_note() {
 
         OrderNoteItem::created(function (OrderNoteItem $order_note_item) {
+            if ($this->hasNoServiceInventory($order_note_item)) return;
+            if (\App\Services\Fiscal\OrderPackInventory::apply($order_note_item,$order_note_item->exactValue('quantity')->negated())) return;
+            if (\App\Services\Fiscal\OrderTrackedInventory::apply($order_note_item,-1)) return;
             /** @todo bloque repetido, buscar colocar en funcion */
             $item = $order_note_item->item;
             $document = $order_note_item->order_note;
@@ -535,6 +677,14 @@ class InventoryKardexServiceProvider extends ServiceProvider
     private function order_note_item_delete() {
 
         OrderNoteItem::deleted(function (OrderNoteItem $order_note_item) {
+            if ($this->hasNoServiceInventory($order_note_item)) return;
+            if (in_array((string)$order_note_item->order_note->state_type_id,['09','11'],true)) return;
+            if (\App\Services\Fiscal\OrderPackInventory::apply($order_note_item,$order_note_item->exactValue('quantity'))) return;
+            if (\App\Services\Fiscal\OrderTrackedInventory::apply($order_note_item,1)) return;
+            $order=$order_note_item->order_note;
+            $moves=!$order->sale_note_id && !$order->order_note_id && !$order->dispatch_id;
+            if (!$moves && $order->dispatch) $moves=!$order->dispatch->discountsPhysicalStock();
+            if (!$moves) return;
 
 
 
@@ -542,7 +692,9 @@ class InventoryKardexServiceProvider extends ServiceProvider
             $presentationQuantity = (!empty($order_note_item->item->presentation)) ? $order_note_item->item->presentation->quantity_unit : 1;
 
             // $warehouse = $this->findWarehouse($order_note_item->order_note->establishment_id);
-            $warehouse = ($order_note_item->warehouse_id) ? $this->findWarehouse($this->findWarehouseById($order_note_item->warehouse_id)->establishment_id) : $this->findWarehouse($order_note_item->order_note->establishment_id);
+            $recordedWarehouse = $order_note_item->calculation_snapshot['inputs']['order_inventory_warehouse_id'] ?? null;
+            $warehouse = $recordedWarehouse ? $this->findWarehouseById($recordedWarehouse)
+                : (($order_note_item->warehouse_id) ? $this->findWarehouse($this->findWarehouseById($order_note_item->warehouse_id)->establishment_id) : $this->findWarehouse($order_note_item->order_note->establishment_id));
 
             $this->createInventoryKardex($order_note_item->order_note, $order_note_item->item_id , $order_note_item->exactValue('quantity')->multipliedBy(ExactDecimal::of($presentationQuantity)), $warehouse->id);
 
@@ -575,6 +727,8 @@ class InventoryKardexServiceProvider extends ServiceProvider
     private function purchase_item_delete()
     {
         PurchaseItem::deleted(function (PurchaseItem $purchase_item) {
+            if ($this->hasNoServiceInventory($purchase_item)) return;
+            if ((string)$purchase_item->purchase->state_type_id === '11') return;
 
 
             $presentationQuantity = (!empty($purchase_item->item->presentation)) ? $purchase_item->item->presentation->quantity_unit : 1;
@@ -586,9 +740,12 @@ class InventoryKardexServiceProvider extends ServiceProvider
 
             $this->deleteItemSeriesAndGroup($purchase_item);
 
-            $this->createInventoryKardex($purchase_item->purchase, $purchase_item->item_id, $purchase_item->exactValue('quantity')->multipliedBy(ExactDecimal::of($presentationQuantity))->negated(), $warehouse->id);
+            $original=$purchase_item->calculation_snapshot['inputs']['purchase_warehouse_inventory'] ?? null;
+            $warehouseId=$original['warehouse_id'] ?? $warehouse->id;
+            $quantity=$original ? ExactDecimal::of($original['quantity']) : $purchase_item->exactValue('quantity')->multipliedBy(ExactDecimal::of($presentationQuantity));
+            $this->createInventoryKardex($purchase_item->purchase, $purchase_item->item_id, $quantity->negated(), $warehouseId);
             // $this->updateStock($purchase_item->item_id, $purchase_item->exactValue('quantity')->multipliedBy(ExactDecimal::of($presentationQuantity))->negated(), $warehouse->id);
-            $this->updateStockPurchase($purchase_item->item_id, $purchase_item->exactValue('quantity')->multipliedBy(ExactDecimal::of($presentationQuantity))->negated(), $warehouse->id);
+            $this->updateStockPurchase($purchase_item->item_id, $quantity->negated(), $warehouseId);
 
         });
     }
@@ -599,6 +756,7 @@ class InventoryKardexServiceProvider extends ServiceProvider
     private function purchase_item_settlement_delete()
     {
         PurchaseSettlementItem::deleted(function (PurchaseSettlementItem $purchase_item) {
+            if ($this->hasNoServiceInventory($purchase_item)) return;
 
 
             $presentationQuantity = (!empty($purchase_item->item->presentation)) ? $purchase_item->item->presentation->quantity_unit : 1;
@@ -610,9 +768,12 @@ class InventoryKardexServiceProvider extends ServiceProvider
 
             $this->deleteItemSeriesAndGroup($purchase_item);
 
-            $this->createInventoryKardex($purchase_item->purchase_settlement, $purchase_item->item_id, $purchase_item->exactValue('quantity')->multipliedBy(ExactDecimal::of($presentationQuantity))->negated(), $warehouse->id);
+            $original=$purchase_item->calculation_snapshot['inputs']['purchase_warehouse_inventory'] ?? null;
+            $warehouseId=$original['warehouse_id'] ?? $warehouse->id;
+            $quantity=$original ? ExactDecimal::of($original['quantity']) : $purchase_item->exactValue('quantity')->multipliedBy(ExactDecimal::of($presentationQuantity));
+            $this->createInventoryKardex($purchase_item->purchase_settlement, $purchase_item->item_id, $quantity->negated(), $warehouseId);
             // $this->updateStock($purchase_item->item_id, $purchase_item->exactValue('quantity')->multipliedBy(ExactDecimal::of($presentationQuantity))->negated(), $warehouse->id);
-            $this->updateStockPurchase($purchase_item->item_id, $purchase_item->exactValue('quantity')->multipliedBy(ExactDecimal::of($presentationQuantity))->negated(), $warehouse->id);
+            $this->updateStockPurchase($purchase_item->item_id, $quantity->negated(), $warehouseId);
 
         });
     }
@@ -721,22 +882,27 @@ class InventoryKardexServiceProvider extends ServiceProvider
 
                     $warehouse = $this->findWarehouse($dispatch->establishment_id);
 
-                    $this->createInventoryKardex($dispatch, $dispatch_item->item_id, -$dispatch_item->quantity, $warehouse->id);
-
                     if(!$dispatch->reference_sale_note_id && !$dispatch->reference_order_note_id && !$dispatch->reference_document_id){
-
-                        $this->updateStock($dispatch_item->item_id, -$dispatch_item->quantity, $warehouse->id);
-
-                        if(isset($dispatch_item->item->IdLoteSelected)){
-
-                            if($dispatch_item->item->IdLoteSelected != null){
-
-                                $lot = ItemLotsGroup::query()->find($dispatch_item->item->IdLoteSelected);
-                                $lot->quantity = $lot->quantity - $dispatch_item->quantity;
-                                $lot->save();
-
+                        $item=Item::whereKey($dispatch_item->item_id)->lockForUpdate()->firstOrFail();
+                        $quantity=$dispatch_item->exactValue('quantity');
+                        $stock=ItemWarehouse::where('item_id',$item->id)->where('warehouse_id',$warehouse->id)->lockForUpdate()->first();
+                        if ($quantity->isLessThanOrEqualTo(0) || !$stock || $stock->exactValue('stock')->isLessThan($quantity)) {
+                            \App\Services\Fiscal\FiscalAmounts::error('items', 'Existencias insuficientes en el almacén de la sucursal.');
+                        }
+                        if ($item->series_enabled) \App\Services\Fiscal\FiscalAmounts::error('items', 'Seleccione seriales mediante la orden de entrega.');
+                        $lotId=$dispatch_item->item->IdLoteSelected ?? null;
+                        if ($item->lots_enabled && !$lotId) \App\Services\Fiscal\FiscalAmounts::error('items', 'Seleccione el lote del producto.');
+                        $lot=null;
+                        if ($lotId) {
+                            $lot=ItemLotsGroup::where('item_id',$item->id)->lockForUpdate()->find($lotId);
+                            if (!$lot || $lot->exactValue('quantity')->isLessThan($quantity)) {
+                                \App\Services\Fiscal\FiscalAmounts::error('items', 'El lote no pertenece al producto o no tiene existencias suficientes.');
                             }
                         }
+                        $this->createInventoryKardex($dispatch, $item->id, $quantity->negated(), $warehouse->id);
+                        $this->updateStock($item->id, $quantity->negated(), $warehouse->id);
+                        if ($lot) { $lot->quantity=$lot->exactValue('quantity')->minus($quantity); $lot->save(); }
+                        \App\Services\Fiscal\DeliveryOrderGlobalInventory::apply($dispatch_item,-1);
                     }
                 }
             }
@@ -751,6 +917,8 @@ class InventoryKardexServiceProvider extends ServiceProvider
 
         DocumentItem::deleted(function(DocumentItem $document_item) {
             if (\App\Services\Fiscal\FiscalNote::ordinary($document_item->document)) { \App\Services\Fiscal\FiscalNoteInventory::apply($document_item, -1); $this->syncRestaurantStock($document_item->item_id); return; }
+
+            if ($this->hasNoServiceInventory($document_item)) return;
 
             if(!$document_item->item->is_set){
 

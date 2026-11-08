@@ -2263,11 +2263,14 @@
                                 <h5 class="product-title m-0">
                                     <a href="#">@{{ row.description }}</a>
                                 </h5>
-                                <span class="price text-muted text-decoration-line-through mr-1" v-if="showCartPrices && row.compare_at_price">
+                                <span class="price text-muted text-decoration-line-through mr-1" v-if="showCartPrices && isQuotationCheckout && row.compare_at_price">
                                     @{{ row.currency_type_symbol }} @{{ Number(row.compare_at_price).toFixed(2) }}
                                 </span>
-                                <span class="price text-muted" v-if="showCartPrices">
+                                <span class="price text-muted" v-if="showCartPrices && isQuotationCheckout">
                                     @{{ row.currency_type_symbol }} @{{ row.sale_unit_price }}
+                                </span>
+                                <span class="price text-muted" v-else-if="showCartPrices && checkoutPreviewItem(row.id)">
+                                    Bs. @{{ checkoutPreviewItem(row.id).unit_price }}
                                 </span>
                             </div>
 
@@ -2285,7 +2288,8 @@
                                 </div>
                             </div>
 
-                            <strong class="total" v-if="showCartPrices">@{{ row.currency_type_symbol }} @{{ (row.sale_unit_price * row.cantidad).toFixed(2) }}</strong>
+                            <strong class="total" v-if="showCartPrices && isQuotationCheckout">@{{ row.currency_type_symbol }} @{{ (row.sale_unit_price * row.cantidad).toFixed(2) }}</strong>
+                            <strong class="total" v-else-if="showCartPrices && checkoutPreviewItem(row.id)">Bs. @{{ checkoutPreviewItem(row.id).subtotal }}</strong>
                             <strong class="total text-muted" v-else>x @{{ row.cantidad }}</strong>
 
                             <button type="button" @click="deleteItem(row.id, index)" class="btn btn-sm btn-link text-muted px-0 delete-item-btn">
@@ -3169,7 +3173,22 @@
                 <span>En este modo no es posible pagar en la tienda.</span>
             </div>
             <div class="sum-body">
-                <table class="table table-totals" v-if="showCartPrices">
+                <p v-if="!isQuotationCheckout && records.length && checkoutPreviewState === 'loading'">Calculando importes…</p>
+                <p v-if="!isQuotationCheckout && records.length && checkoutPreviewState === 'error'" role="alert">
+                    @{{ checkoutPreviewError }} <button type="button" @click="scheduleCheckoutPreview">Reintentar</button>
+                </p>
+                <table class="table table-totals" v-if="!isQuotationCheckout && checkoutPreviewState === 'ready' && checkoutPreview">
+                    <tbody>
+                        <tr><td>Productos</td><td>Bs. @{{ checkoutPreview.subtotal }}</td></tr>
+                        <tr v-if="appliedCoupon && appliedCoupon.code"><td>Cupón @{{ appliedCoupon.code }}</td>
+                            <td>&minus; Bs. @{{ checkoutPreview.discount }}</td></tr>
+                        <tr><td>Envío</td><td>Bs. @{{ checkoutPreview.shipping }}</td></tr>
+                        <tr v-if="checkoutPreview.rounding_adjustment !== '0.00'"><td>Ajuste por redondeo</td>
+                            <td>Bs. @{{ checkoutPreview.rounding_adjustment }}</td></tr>
+                    </tbody>
+                    <tfoot><tr><td>Total</td><td>Bs. @{{ checkoutPreview.total }}</td></tr></tfoot>
+                </table>
+                <table class="table table-totals" v-if="showCartPrices && isQuotationCheckout">
                     <tbody>
                         <tr v-if="summary.total_exonerated > 0">
                             <td>Op. exoneradas</td>
@@ -3223,6 +3242,7 @@
                     </div>
                     <small class="coupon-msg text-danger" v-if="couponMessage">@{{ couponMessage }}</small>
                     <small class="coupon-msg text-success" v-if="couponSuccessMessage">@{{ couponSuccessMessage }}</small>
+                    <button v-if="appliedCoupon" type="button" class="coupon-remove" @click="removeCoupon">Eliminar cupón</button>
                 </div>
 
                 <div class="quotation-summary-note" v-if="isQuotationCheckout">

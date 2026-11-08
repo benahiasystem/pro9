@@ -28,13 +28,10 @@ $affected_document_number = $document_base->affected_document ? $document_base->
 $affected_document_number = null;
 }
 
-$payments = $document->payments;
+$payments = $document->payments->filter(fn ($payment) => !data_get($payment, 'reversed_at'));
 
 
 $document->load('reference_guides');
-
-$total_payment = $document->payments->sum('payment');
-$balance = $document instanceof \App\Models\Tenant\Document ? $document->balance : (($document->total - $total_payment) - $document->payments->sum('change'));
 
 $logo = "storage/uploads/logos/{$company->logo}";
 if($establishment->logo) {
@@ -736,7 +733,7 @@ $showColumns = $columnsConfig ? $columnsConfig->columns_config : [
                     </td>
                 @endif
                 @if($showColumns['precio_unitario'])
-                    <td class="text-right align-top">{{ $row->formatPdfUnitPrice($configuration_decimal_quantity) }}</td>
+                    <td class="text-right align-top"><span data-pdf-unit-price>{{ $row->formatPdfUnitPrice($configuration_decimal_quantity) }}</span></td>
                 @endif
 
                 @if($showColumns['descuento'])
@@ -879,20 +876,11 @@ $showColumns = $columnsConfig ? $columnsConfig->columns_config : [
 
 
             <tr>
-                <td colspan="{{ max(1, ceil($colspan_total / 2) - 1) }}" class="text-left font-bold" style="white-space: nowrap;">Productos: {{ rtrim(rtrim(number_format(collect($document->items)->sum(function ($item) { return (float) data_get($item, 'quantity', 0); }), 2, '.', ''), '0'), '.') }}</td>
+                <td colspan="{{ max(1, ceil($colspan_total / 2) - 1) }}" class="text-left font-bold">Productos: {{ \App\Support\Exact\PdfQuantities::summary($document->items) }}</td>
                 <td colspan="{{ max(1, floor($colspan_total / 2)) }}" class="text-right font-bold pr-2">TOTAL A PAGAR: {{ $document->currency_type->symbol }}</td>
                 <td class="text-right font-bold">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total'), 2) }}</td>
             </tr>
 
-
-
-
-            @if($balance < 0)
-            <tr>
-                <td colspan="{{ $colspan_total - 1 }}" class="text-right font-bold pr-2">VUELTO: {{ $document->currency_type->symbol }}</td>
-                <td class="text-right font-bold">{{ number_format(abs($balance),2, ".", "") }}</td>
-            </tr>
-            @endif
 
         </tbody>
     </table>

@@ -108,6 +108,7 @@
                         </thead>
                         <tbody>
                             @foreach($records as $key => $value)
+                                @php $amounts=\Modules\Report\Services\QuotationReportAmounts::row($value); @endphp
                                 <tr>
                                     <td class="celda">{{$loop->iteration}}</td>
                                     <td class="celda">{{$value->date_of_issue->format('Y-m-d')}}</td>
@@ -127,12 +128,12 @@
                                     <td class="celda">{{ ($value->sale_opportunity) ? $value->sale_opportunity->number_full : '' }}</td>
                                     
                                     <td class="celda">{{$value->currency_type_id}}</td>
-                                    <td class="celda">{{$value->total_exportation}}</td>
-                                    <td class="celda">{{$value->total_unaffected}}</td>
-                                    <td class="celda">{{ $value->total_exonerated}}</td>
-                                    <td class="celda">{{ $value->total_taxed}}</td>
-                                    <td class="celda">{{ $value->total_igv}}</td>
-                                    <td class="celda">{{ $value->total}}</td>
+                                    <td class="celda">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\Decimal::readRequired($amounts, 'total_exportation'),2,'.','') }}</td>
+                                    <td class="celda">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\Decimal::readRequired($amounts, 'total_unaffected'),2,'.','') }}</td>
+                                    <td class="celda">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\Decimal::readRequired($amounts, 'total_exonerated'),2,'.','') }}</td>
+                                    <td class="celda">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\Decimal::readRequired($amounts, 'total_taxed'),2,'.','') }}</td>
+                                    <td class="celda">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\Decimal::readRequired($amounts, 'total_igv'),2,'.','') }}</td>
+                                    <td class="celda">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\Decimal::readRequired($amounts, 'total'),2,'.','') }}</td>
                                 </tr>
                             @endforeach
                         </tbody>

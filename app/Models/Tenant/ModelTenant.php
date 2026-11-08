@@ -74,6 +74,10 @@
             static::deleted(fn ($model) => \App\Support\Exact\CommercialCalculation::afterLine($model));
             static::saved(fn ($model) => \App\Support\Exact\Settlement::afterPayment($model));
             static::deleted(fn ($model) => \App\Support\Exact\Settlement::afterPayment($model));
+            static::saved(fn ($model) => \Modules\Hotel\Services\CheckoutSettlement::afterPayment($model));
+            static::deleted(fn ($model) => \Modules\Hotel\Services\CheckoutSettlement::afterPayment($model));
+            static::saved(fn ($model) => \Modules\Hotel\Services\CheckoutSettlement::afterDocument($model));
+            static::deleted(fn ($model) => \Modules\Hotel\Services\CheckoutSettlement::afterDocument($model));
         }
 
         public function isFillable($key)

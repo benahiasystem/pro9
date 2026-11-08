@@ -7,10 +7,16 @@ use App\Models\Tenant\SaleNote;
 // ######## INICIO CALCULOS EXACTOS PRO9 ########
 final class SaleNoteBalance
 {
+    public static function payable(SaleNote $note): \Brick\Math\BigRational
+    {
+        $total = Decimal::readRequired($note, 'total');
+        return $note->total_payable === null ? Decimal::of(Decimal::represent($total, 2)) : Decimal::readRequired($note, 'total_payable');
+    }
+
     public static function values(SaleNote $note, bool $lockPayments = false): array
     {
         $total = Decimal::readRequired($note, 'total');
-        $payable = $note->total_payable === null ? Decimal::of(Decimal::represent($total, 2)) : Decimal::readRequired($note, 'total_payable');
+        $payable = self::payable($note);
         $paid = Decimal::of(0);
         // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
         $payments=$note->payments()->withoutEagerLoads();

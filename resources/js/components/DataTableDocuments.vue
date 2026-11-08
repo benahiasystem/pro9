@@ -16,22 +16,22 @@
                                 {{ see_more ? "Ocultar filtros" : "Mostrar filtros" }}
                             </el-button>
                             <el-button v-if="hasActiveFilters" class="submit ms-2 mb-2" type="info" @click.prevent="cleanInputs"  icon="el-icon-refresh">Limpiar </el-button>  
+                            <!-- ######## INICIO CAMBIO QUITAR BOLETA ######## -->
                             <div class="d-flex align-items-end justify-content-start ms-2 mb-2 documents-legend">
                                 <div class="d-flex align-items-end gap-1">
-                                    <span class="bg-tickets legend-cube d-flex" style="margin-bottom: 2px;"></span>
-                                    <span style="line-height: normal;">Boletas</span>
+                                    <span class="bg-invoices legend-cube d-flex" style="margin-bottom: 2px;"></span>
+                                    <span style="line-height: normal;">Facturas</span>
                                 </div>
-                                <template v-if="!isNrus">
-                                    <div class="d-flex align-items-end ms-3 gap-1">
-                                        <span class="bg-invoices legend-cube d-flex" style="margin-bottom: 2px;"></span>
-                                        <span style="line-height: normal;">Facturas</span>
-                                    </div>
-                                </template>
                                 <div class="d-flex align-items-end ms-3 gap-1">
                                     <span class="bg-credit-notes legend-cube d-flex" style="margin-bottom: 2px;"></span>
                                     <span style="line-height: normal;">Notas de crédito</span>
                                 </div>
+                                <div class="d-flex align-items-end ms-3 gap-1">
+                                    <span class="bg-debit-notes legend-cube d-flex" style="margin-bottom: 2px;"></span>
+                                    <span style="line-height: normal;">Notas de débito</span>
+                                </div>
                             </div>                          
+                            <!-- ######## FIN CAMBIO QUITAR BOLETA ######## -->
                         </div>
                     </div>
                     <div class="col-lg-3 col-md-4 col-sm-12 text-end">
@@ -227,7 +227,7 @@
                     </table>
                     <div>
                         <el-pagination
-                                @current-change="getRecords"
+                                @current-change="refreshRecords"
                                 layout="total, prev, pager, next"
                                 :total="pagination.total"
                                 :current-page.sync="pagination.current_page"
@@ -266,6 +266,9 @@ export default {
                 loading_submit:false,
                 columns: [],
                 totals: [],
+                totalsRequested: false,
+                recordsRequestId: 0,
+                filterRequestId: 0,
                 records: [],
                 customers: [],
                 all_customers: [],
@@ -320,9 +323,6 @@ export default {
                 }
                 return Object.keys(defaults).some(key => this.search[key] !== defaults[key])
             },
-            isNrus() {
-                return !!(this.config && this.config.is_nrus);
-            },
         },
         watch: {
             auto_hide_filters(val) {
@@ -332,9 +332,7 @@ export default {
         created() {
             this.loadConfiguration();
             this.initForm()
-            this.$eventHub.$on('reloadData', () => {
-                this.getRecords()
-            })
+            this.$eventHub.$on('reloadData', () => this.refreshRecords())
         },
         async mounted () {
 
@@ -460,17 +458,30 @@ export default {
             customIndex(index) {
                 return (this.pagination.per_page * (this.pagination.current_page - 1)) + index + 1
             },
-            async getRecordsByFilter(){
-
-                this.loading_submit = true
-                if (await this.getRecords()) {
-                    this.getTotalRecords()
-                    if (this.auto_hide_filters) this.see_more = false
-                }
-
+            refreshRecords() {
+                return (this.totalsRequested || this.totals.length) ? this.getRecordsByFilter() : this.getRecords()
             },
-            getRecords() {
-                return this.$http.get(`/${this.resource}/records?${this.getQueryParameters()}`).then((response) => {
+            async getRecordsByFilter(){
+                const requestId = this.filterRequestId = (this.filterRequestId || 0) + 1
+                this.loading_submit = true
+                this.totals = []
+                if (this.config && this.config.show_totals_on_cpe_list === true && this.config.typeUser === 'admin') this.totalsRequested = true
+                const parameters = this.getQueryParameters()
+                try {
+                    if (await this.getRecords(parameters, true, this.totalsRequested) && requestId === this.filterRequestId) {
+                        if (requestId === this.filterRequestId && this.auto_hide_filters) this.see_more = false
+                    }
+                } finally {
+                    if (requestId === this.filterRequestId) this.loading_submit = false
+                }
+            },
+            getRecords(parameters, keepLoading = false, includeTotals = false) {
+                const requestId = this.recordsRequestId = (this.recordsRequestId || 0) + 1
+                const query = typeof parameters === 'string' ? parameters : this.getQueryParameters()
+                const url = `/${this.resource}/records?${query}${includeTotals ? '&include_totals=1' : ''}`
+                return this.$http.get(url).then((response) => {
+                    if (requestId !== this.recordsRequestId) return false
+                    if (includeTotals && !Array.isArray(response.data.totals)) throw new Error('No se pudieron consultar los totales.')
                     this.records = (response.data.data || []).map(row => {
                         let customFieldsData = {};
                         if (typeof row.custom_fields_data === 'object' && row.custom_fields_data !== null) {
@@ -489,25 +500,18 @@ export default {
                     });
                     this.pagination = response.data.meta
                     this.pagination.per_page = parseInt(response.data.meta.per_page)
+                    if (includeTotals) this.totals = response.data.totals
                     return true
                 }).catch(error => {
+                    if (requestId !== this.recordsRequestId) return false
+                    this.records = []
+                    this.pagination = {}
+                    this.totals = []
                     const data = error.response && error.response.data;
                     const errors = data && (data.errors || (typeof data.message === 'object' && data.message));
-                    this.$message.error(errors ? Object.values(errors).flat().join(' ') : (data && data.message) || 'No se pudo consultar el listado.');
+                    this.$message.error(errors ? Object.values(errors).flat().join(' ') : (data && data.message) || error.message || 'No se pudo consultar el listado.');
                     return false;
-                }).finally(() => { this.loading_submit = false; });
-
-            },
-            getTotalRecords() {
-                if(this.config.show_totals_on_cpe_list !== true) return null;
-                if(this.config.typeUser !== 'admin') return null;
-                return this.$http.get(`/${this.resource}/recordsTotal?${this.getQueryParameters()}`).then((response) => {
-                    this.totals = response.data;
-                    // this.records = response.data.data
-                    // this.pagination = response.data.meta
-                    // this.pagination.per_page = parseInt(response.data.meta.per_page)
-                    // this.loading_submit = false
-                });
+                }).finally(() => { if (!keepLoading && requestId === this.recordsRequestId) this.loading_submit = false; });
 
             },
             getQueryParameters() {

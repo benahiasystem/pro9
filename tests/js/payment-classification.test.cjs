@@ -52,6 +52,14 @@ test('payment validation extracts the server message without guessing a payment 
     assert.equal(exported.paymentValidationMessage(null),null);
 });
 
+test('checkout reports line validation errors and preserves payment-error priority',()=>{
+    assert.equal(exported.checkoutValidationMessage({'items.price_input.amount':['Precio inválido']}),'Precio inválido');
+    assert.equal(exported.checkoutValidationMessage({message:'No válido',errors:{'items.0.quantity':['Cantidad inválida']}}),'Cantidad inválida');
+    assert.equal(exported.checkoutValidationMessage({errors:{'items.0.quantity':['Cantidad inválida'],payment_destination_id:['Cuenta inválida']}}),'Cuenta inválida');
+    assert.equal(exported.checkoutValidationMessage({message:'No válido'}),'No válido');
+    assert.match(exported.checkoutValidationMessage({}),/No se pudo guardar/);
+});
+
 test('hotel exposes wrapped and indexed payment errors and retains other form errors',()=>{
     const messages=[]; const fallback=[];
     const view={errors:{},$message:{error:value=>messages.push(value)},axiosError:error=>fallback.push(error)};
@@ -65,7 +73,7 @@ test('hotel exposes wrapped and indexed payment errors and retains other form er
     assert.equal(messages.pop(),'Tasa inválida');
     assert.equal(view.errors.exchange_rate[0],'Tasa inválida');
     exported.handleHotelPaymentError({response:{status:422,data:{customer_id:['Cliente inválido']}}},view);
-    assert.equal(messages.length,0);
+    assert.equal(messages.pop(),'Cliente inválido');
     assert.equal(view.errors.customer_id[0],'Cliente inválido');
     exported.handleHotelPaymentError({message:'Sin conexión'},view);
     assert.equal(messages.pop(),'Sin conexión');

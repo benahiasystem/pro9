@@ -108,7 +108,8 @@ class DocumentCollection extends ResourceCollection
                         'key' => $key + 1,
                         'id' => $row->id,
                         'description' => $row->item->description,
-                        'quantity' => round($row->quantity,2)
+                        'quantity' => \App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::read($row, 'quantity')),
+                        'quantity_fraction' => \App\Support\Exact\Decimal::fraction(\App\Support\Exact\Decimal::read($row, 'quantity'))
                     ];
                 }),
 

@@ -15,6 +15,14 @@ final class NoteRefund
     {
         DocumentFiscalController::authorizeDocument($note);
         if (!FiscalNote::ordinary($note) || $note->document_type_id !== '07' || $note->isVoidedOrRejected()) FiscalAmounts::error('note','Seleccione una NC vigente registrada desde una factura.');
+        if ($note->fiscal_emission_mode === 'free_form') {
+            $registration = optional($note->emission)->response['free_form_control'] ?? null;
+            if (optional($note->emission)->status !== 'not_requested' || !$note->control_number || !is_array($registration)
+                || ($registration['control_number'] ?? null) !== $note->control_number || empty($registration['evidence_reference'])
+                || empty($registration['actor_id']) || empty($registration['recorded_at']))
+                FiscalAmounts::error('note','Registre el control impreso de la NC y su referencia antes de registrar una devolución de dinero.');
+            return;
+        }
         if ($note->fiscal_emission_mode !== 'digital' || $note->fiscal_environment !== 'demo' || optional($note->emission)->status !== 'confirmed' || !$note->control_number
             || $note->control_number !== optional($note->emission)->control_number) FiscalAmounts::error('note','Confirme la NC digital DEMO en HKA antes de registrar una devolución de dinero.');
     }
@@ -132,7 +140,8 @@ final class NoteRefund
             $record=DocumentNoteRefund::create(array_diff_key($data,['payment_destination_id'=>true])+[
                 'document_id'=>$note->id,'affected_document_id'=>$invoice->id,'request_hash'=>$hash,'amount'=>$amount,'actor_id'=>auth()->id(),
                 'context'=>['source_payment'=>$source->only(['id','operation_key','currency_type_id','original_amount','tax_amount','exchange_rate']),
-                    'payment_method'=>$method->only(['id','description','hka_code']),'destination'=>$destination,'emission_key'=>$note->emission->operation_key]]);
+                    'payment_method'=>$method->only(['id','description','hka_code']),'destination'=>$destination,'emission_key'=>$note->emission->operation_key,
+                    'fiscal_emission_mode'=>$note->fiscal_emission_mode,'control_number'=>$note->control_number]]);
             $record->global_payment()->create($destination+['user_id'=>auth()->id(),'fiscal_environment'=>$note->fiscal_environment]);
             FiscalDocumentPersistence::updateSettlementState($invoice); DocumentEmissionView::invalidate();
             return $record;
@@ -148,7 +157,7 @@ final class NoteRefund
             Company::query()->lockForUpdate()->firstOrFail();
             $invoice=Document::query()->lockForUpdate()->findOrFail($note->note->affected_document_id);
             NoteAnnulment::assertNotBusy($invoice);
-            Document::query()->lockForUpdate()->findOrFail($note->id);
+            $note=Document::query()->lockForUpdate()->findOrFail($note->id); self::eligible($note);
             $refund=DocumentNoteRefund::query()->lockForUpdate()->findOrFail($refund->id);
             if ($refund->reversal_key) { if ($refund->reversal_key !== $data['operation_key'] || $refund->reversal_reason !== $data['reason']) abort(409,'La devolución ya tiene otra reversión.'); return; }
             if (DocumentNoteRefund::where('operation_key',$data['operation_key'])->orWhere('reversal_key',$data['operation_key'])->exists()) abort(409,'La clave pertenece a otra operación.');

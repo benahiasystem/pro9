@@ -143,6 +143,14 @@ class ReportSalesByBrandController extends Controller
 
     private function getRecordsByBrand($request)
     {
+        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        return \App\Support\Exact\ReadSnapshot::run((new DocumentItem())->getConnection(),
+            fn()=> $this->calculateRecordsByBrand($request));
+        // ######## FIN CALCULOS EXACTOS PRO9 ########
+    }
+
+    private function calculateRecordsByBrand($request)
+    {
         $date_start = null;
         $date_end = null;
         if (isset($request['period'])) {
@@ -174,12 +182,12 @@ class ReportSalesByBrandController extends Controller
         // Documentos
         $document_items = DocumentItem::whereHas('document', function($q) use ($date_start, $date_end) {
                 $q->whereBetween('date_of_issue', [$date_start, $date_end])
-                ->whereIn('document_type_id', ['01'])
+                ->whereIn('document_type_id', ['01','07','08'])
                 ->whereStateTypeAccepted();
             })
-            ->whereHas('relation_item.brand', function($q) use ($brand_id) {
+            ->whereHas('relation_item', function($q) use ($brand_id) {
                 if ($brand_id) {
-                    $q->where('id', $brand_id);
+                    $q->where('brand_id', $brand_id);
                 }
             })
             ->with('relation_item.brand')
@@ -189,70 +197,23 @@ class ReportSalesByBrandController extends Controller
         $sale_note_items = SaleNoteItem::whereHas('sale_note', function($q) use ($date_start, $date_end) {
                 $q->whereBetween('date_of_issue', [$date_start, $date_end])
                 ->whereStateTypeAccepted()
-                ->whereNotChanged();
+                ->where(fn ($notes) => $notes->where('changed',false)->orWhereNotNull('document_id'))
+                ->where(function ($notes) use ($date_start, $date_end) {
+                    $notes->whereNull('document_id')->orWhereNotIn('document_id',
+                        \App\Models\Tenant\Document::withoutEagerLoads()->select('id')
+                            ->where('document_type_id','01')->whereBetween('date_of_issue',[$date_start,$date_end])->whereStateTypeAccepted());
+                });
             })
-            ->whereHas('relation_item.brand', function($q) use ($brand_id) {
+            ->whereHas('relation_item', function($q) use ($brand_id) {
                 if ($brand_id) {
-                    $q->where('id', $brand_id);
+                    $q->where('brand_id', $brand_id);
                 }
             })
             ->with('relation_item.brand')
             ->get();
 
-        // Unimos ambos
-        $all_items = $document_items->concat($sale_note_items);
-
-        if ($all_items->isEmpty()) {
-            return collect([]);
-        }
-
-        // Agrupamos solo los items que realmente existen en el rango de fechas y marca
-        $grouped = $all_items->groupBy(function($item) {
-            return optional($item->relation_item->brand)->id;
-        });
-
-        $records = $grouped->map(function($items, $brand_id) {
-            $quantity_sold = 0;
-            $total_profit = 0;
-            $brand_name = '';
-            $total_sale_value = 0;
-
-            foreach ($items as $item) {
-                $helper_values = ReportHelper::getValuesReportCommissionDetail($item);
-                $quantity_sold += $helper_values->quantity;
-                $total_profit += $helper_values->overall_profit;
-
-                if (isset($item->total_value)) {
-                    $total_sale_value += $item->total_value;
-                } else {
-                    // ########## INICIO CAMBIO IGV A IVA
-                    // Si solo tienes el total con IVA:
-                    // ######### FIN CAMBIO IGV A IVA
-                    $total = $item->total ?? 0;
-                    // ########## INICIO CAMBIO AFECTACIÓN IVA
-                    $total_sale_value += $total / \App\Support\Venezuela\Localization::taxMultiplier();
-                    // ######### FIN CAMBIO AFECTACIÓN IVA
-                }
-
-                if (isset($item->relation_item->brand) && $item->relation_item->brand) {
-                    $brand_name = $item->relation_item->brand->name;
-                }
-            }
-
-            return [
-                'id' => $brand_id,
-                'brand_name' => $brand_name,
-                'quantity_sold' => $quantity_sold,
-                'total_sale_value' => $total_sale_value,
-                'total_profit' => $total_profit,
-            ];
-        })
-        // Solo marcas con ventas en el periodo
-        ->filter(function($row) {
-            return $row['quantity_sold'] > 0;
-        })
-        ->values();
-
-        return $records;
+        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        return \Modules\Report\Services\BrandSalesAmounts::groups($document_items, $sale_note_items);
+        // ######## FIN CALCULOS EXACTOS PRO9 ########
     }
 }

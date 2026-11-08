@@ -9,7 +9,7 @@
     </head>
     <body>
         <div>
-            <h3 align="center" class="title"><strong>Reporte formas de pago - C. Cobrar</strong></h3>
+            <h3 align="center" class="title"><strong>Plazos de pago - Cuentas por cobrar</strong></h3>
         </div>
         <br>
         <div style="margin-top:20px; margin-bottom:15px;">
@@ -56,7 +56,7 @@
                                 <th>Total</th>
                                 <th>Saldo equivalente (Bs.)</th>
                                 <th>Total documental equivalente (Bs.)</th>
-                                <th>Forma de pago</th>
+                                <th>Plazo entre emisión y vencimiento</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -82,7 +82,7 @@
                                         <td data-type="s" class="celda">{{$value['total']}}</td>
                                         <td data-type="s" class="celda">{{$value['balance_ves_equivalent']}}</td>
                                         <td data-type="s" class="celda">{{$value['total_ves_equivalent']}}</td>
-                                        <td data-type="s" class="celda">{{$value['difference_days']}} días</td>
+                                        <td data-type="s" class="celda">{{ $value['difference_days'] === null ? 'Sin vencimiento' : $value['difference_days'].' días' }}</td>
                                     </tr>
                                 @endif
                             @endforeach

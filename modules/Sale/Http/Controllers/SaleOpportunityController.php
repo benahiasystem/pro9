@@ -491,7 +491,8 @@ class SaleOpportunityController extends Controller
         }*/
 
         return [
-            'success' => true
+            'success' => $sendIt,
+            'message' => $sendIt ? 'El correo fue enviado satisfactoriamente.' : 'No se pudo enviar el correo. Revise la configuración y el registro de envíos.'
         ];
     }
 }

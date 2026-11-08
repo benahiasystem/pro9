@@ -62,6 +62,8 @@ if ($hostname) {
             Route::get('/{id}/rent/products', 'HotelRentController@showFormAddProduct');
             Route::post('/{id}/rent/products/store', 'HotelRentController@addProductsToRoom');
             Route::get('/{id}/rent/checkout', 'HotelRentController@showFormChekout');
+            Route::post('/{id}/rent/checkout/operation', 'HotelRentController@atomicCheckout');
+            Route::get('/{id}/rent/checkout/operation/{key}', 'HotelRentController@checkoutOperationStatus');
             Route::post('/{id}/rent/finalized', 'HotelRentController@finalizeRent');
             Route::post('/{id}/rent/extend-time', 'HotelRentController@extendTime');
             Route::get('/{id}/rent/get-item', 'HotelReceptionController@getItem');

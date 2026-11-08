@@ -3,9 +3,31 @@ namespace App\Services\Fiscal;
 
 use App\Models\Tenant\Document;
 use App\Services\ExchangeRates\ExchangeRateMath;
+use App\Support\Exact\Decimal as D;
 
 final class DocumentEditSettlements
 {
+    /** Only snapshots read from this invoice may restore unchanged exact values. */
+    public static function restoreLineSnapshots(Document $document, array $rows): array
+    {
+        $existing=$document->items()->lockForUpdate()->get()->keyBy('id');
+        $used=[];
+        foreach ($rows as &$row) {
+            $id=$row['record_id'] ?? $row['id'] ?? null;
+            unset($row['calculation_snapshot']);
+            if ($id === null || $id === '') continue;
+            if (!is_scalar($id) || !ctype_digit((string)$id) || (int)$id < 1 || isset($used[(int)$id]))
+                FiscalAmounts::error('items','Las partidas guardadas deben identificarse una sola vez.');
+            $source=$existing->get((int)$id);
+            if (!$source || (int)$source->item_id !== (int)($row['item_id'] ?? 0))
+                FiscalAmounts::error('items','La partida no pertenece a esta factura o no corresponde al producto.');
+            $used[(int)$id]=true;
+            $row['calculation_snapshot']=$source->calculation_snapshot;
+        }
+        unset($row);
+        return $rows;
+    }
+
     /** Never recreate collections from the editor's serialized rows. */
     public static function validateInput(Document $document, array $inputs): void
     {
@@ -46,18 +68,21 @@ final class DocumentEditSettlements
 
     public static function validateTotals(Document $document): void
     {
-        if ($document->fresh()->balance < -0.005) FiscalAmounts::error('total', 'El total no puede ser inferior al importe ya aplicado.');
+        $tolerance=D::of('0.005');
+        $balance=$document->fresh()->exactBalance();
+        if ($balance->isLessThan($tolerance->negated())) FiscalAmounts::error('total', 'El total no puede ser inferior al importe ya aplicado.');
         $retentions = $document->received_retentions()->where('tax_kind', 'IVA')->applied()->get();
-        $fiscalIva = FiscalAmounts::convert($document->total_igv,$document->currency_type_id,'VES',$document->exchange_rate_sale);
+        $fiscalIva = D::convert(D::read($document,'total_igv'),$document->currency_type_id,'VES',$document->exchange_rate_sale);
         foreach ($retentions as $retention) {
-            $base = FiscalAmounts::convert($retention->base, $retention->currency_type_id, 'VES', $retention->exchange_rate);
-            if ($base > $fiscalIva + 0.005) FiscalAmounts::error('total_igv', 'El nuevo IVA fiscal no respalda la base de la retención registrada.');
+            $base = D::convert(D::read($retention,'base'), $retention->currency_type_id, 'VES', $retention->exchange_rate);
+            if ($base->isGreaterThan($fiscalIva->plus($tolerance))) FiscalAmounts::error('total_igv', 'El nuevo IVA fiscal no respalda la base de la retención registrada.');
         }
-        if ($retentions->sum(fn($row)=>FiscalAmounts::convert($row->amount,$row->currency_type_id,'VES',$row->exchange_rate)) > $fiscalIva + 0.005) FiscalAmounts::error('total_igv', 'El nuevo IVA fiscal es inferior a las retenciones aplicadas.');
-        $netVes=FiscalAmounts::convert($document->total_value,$document->currency_type_id,'VES',$document->exchange_rate_sale);
+        $retained=D::sum($retentions->map(fn($row)=>D::convert(D::read($row,'amount'),$row->currency_type_id,'VES',$row->exchange_rate)));
+        if ($retained->isGreaterThan($fiscalIva->plus($tolerance))) FiscalAmounts::error('total_igv', 'El nuevo IVA fiscal es inferior a las retenciones aplicadas.');
+        $netVes=D::convert(D::read($document,'total_value'),$document->currency_type_id,'VES',$document->exchange_rate_sale);
         foreach ($document->received_retentions()->where('tax_kind','ISLR')->applied()->get() as $retention) {
-            if (FiscalAmounts::convert($retention->base,$retention->currency_type_id,'VES',$retention->exchange_rate) > $netVes + 0.005) FiscalAmounts::error('total_value','El nuevo valor neto no respalda la base ISLR registrada.');
+            if (D::convert(D::read($retention,'base'),$retention->currency_type_id,'VES',$retention->exchange_rate)->isGreaterThan($netVes->plus($tolerance))) FiscalAmounts::error('total_value','El nuevo valor neto no respalda la base ISLR registrada.');
         }
-        $document->forceFill(['total_canceled' => $document->fresh()->balance <= 0.005])->save();
+        $document->forceFill(['total_canceled' => $balance->isLessThanOrEqualTo($tolerance)])->save();
     }
 }

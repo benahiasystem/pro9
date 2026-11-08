@@ -22,10 +22,10 @@
                     <td v-else-if="row.affected_document_item_id"><el-select v-model="row.affected_document_item_id" filterable @change="changeOriginal(row)"><el-option v-for="item in eligibleItems" :key="item.id" :value="item.id" :label="item.description"/></el-select></td>
                     <td v-else>{{ row.item && row.item.description }}</td>
                     <td>{{ source(row).unit_type_id || 'SERV' }} / {{ (source(row).iva_rate || row.iva_rate || {}).percentage }}%</td>
-                    <td>{{ source(row).remaining_quantity }}</td><td>{{ source(row).remaining_total }}</td>
-                    <td v-if="full">{{ source(row).remaining_quantity }}</td>
+                    <td>{{ noteAmountLabel(source(row),'remaining_quantity') }}</td><td>{{ noteAmountLabel(source(row),'remaining_total') }}</td>
+                    <td v-if="full">{{ noteAmountLabel(source(row),'remaining_quantity') }}</td>
                     <td v-else><el-input v-if="returning" v-model="row.quantity" type="number" min="0.0001" step="0.0001"/><el-input v-else v-model="row.adjustment_amount" type="number" min="0.01" step="0.01"/></td>
-                    <td v-if="returning"><el-select v-if="(source(row).serials || []).length" v-model="row.serial_ids" multiple placeholder="Seriales que regresan"><el-option v-for="s in source(row).serials" :key="s.id" :value="s.id" :label="s.series"/></el-select><div v-for="lot in source(row).lots || []" :key="lot.id"><label>Lote {{ lot.id }} · Disponible {{ lot.quantity }}</label><el-input :value="lotQuantity(row,lot.id)" type="number" min="0" step="0.0001" @input="setLot(row,lot.id,$event)"/></div></td>
+                    <td v-if="returning"><el-select v-if="(source(row).serials || []).length" v-model="row.serial_ids" multiple placeholder="Seriales que regresan"><el-option v-for="s in source(row).serials" :key="s.id" :value="s.id" :label="s.series"/></el-select><div v-for="lot in source(row).lots || []" :key="lot.id"><label>Lote {{ lot.id }} · Disponible {{ noteAmountLabel(lot,'quantity') }}</label><el-input :value="lotQuantity(row,lot.id)" type="number" min="0" step="0.0001" @input="setLot(row,lot.id,$event)"/></div></td>
                     <td><el-button v-if="!full" size="mini" @click="form.items.splice(index,1)">Quitar</el-button></td>
                 </tr></tbody>
             </table></div>
@@ -33,7 +33,7 @@
             <el-button v-if="!credit && ['01','03'].includes(form.note_credit_or_debit_type_id)" @click="showItem=true">Agregar servicio / cargo</el-button>
             <p class="text-right mt-3"><strong>Total de la nota: {{ total }} {{ document.currency_type_id }}</strong></p>
             <el-alert v-for="(messages,field) in errors" :key="field" :title="Array.isArray(messages) ? messages.join(' ') : String(messages)" type="error" :closable="false" class="mt-2"/>
-            <div class="text-right mt-3"><el-button @click="close">Cancelar</el-button><el-button type="primary" native-type="submit" :disabled="!context.can_create || !form.series_id || !form.note_credit_or_debit_type_id || Number(total)<=0" :loading="busy">Generar nota</el-button></div>
+            <div class="text-right mt-3"><el-button @click="close">Cancelar</el-button><el-button type="primary" native-type="submit" :disabled="!context.can_create || !form.series_id || !form.note_credit_or_debit_type_id || !canGenerate" :loading="busy">Generar nota</el-button></div>
         </form>
     </div></div>
     <document-form-item :showDialog.sync="showItem" :document-type-id="form.document_type_id" :note-credit-or-debit-type-id="form.note_credit_or_debit_type_id" operation-type-id="0101" :currency-type-id-active="form.currency_type_id" :exchange-rate-sale="form.exchange_rate_sale" :configuration="configuration" :typeUser="authUser.type" :percentage-igv="percentage_igv" @add="addService"/>
@@ -43,7 +43,7 @@
 <script>
 // ########## INICIO CAMBIO SUNAT A SENIAT
 import { documentNumberFull } from '../../../helpers/document-number';
-import {noteSeries,noteTotal,noteRequestId} from '../../../helpers/fiscal-note';
+import {noteSeries,noteTotalLabel,noteRequestId,noteAmountLabel,noteIsPositive,noteCanGenerate,noteCanReturnPartially} from '../../../helpers/fiscal-note';
 import {functions,exchangeRate} from '../../../mixins/functions';
 import DocumentFormItem from './partials/item.vue';
 import DocumentOptions from './partials/options.vue';
@@ -52,10 +52,11 @@ export default {
     data(){return {document:this.document_affected,context:this.document_affected.note_context,form:{items:[]},tables:{series:[],note_credit_types:[],note_debit_types:[]},loading:false,busy:false,errors:{},showItem:false,showOptions:false,newId:null};},
     computed:{credit(){return this.form.document_type_id==='07';},full(){return this.credit && this.form.note_credit_or_debit_type_id==='01';},returning(){return this.credit && this.form.note_credit_or_debit_type_id==='07';},
         series(){return noteSeries(this.tables.series,this.form.document_type_id,this.document.establishment_id);},reasons(){return (this.credit?this.tables.note_credit_types:this.tables.note_debit_types).filter(r=>r.id!=='IGTF');},
-        eligibleItems(){return this.context.items.filter(r=>this.returning ? r.unit_type_id!=='SERV' && Number(r.remaining_quantity)>0 : !this.credit || Number(r.remaining_total)>0);},
-        displayedRows(){return this.full?this.context.items.map(r=>({affected_document_item_id:r.id})):this.form.items;},total(){return noteTotal(this.form,this.context);}},
+        eligibleItems(){return this.context.items.filter(r=>this.returning ? r.unit_type_id!=='SERV' && noteCanReturnPartially(r) : !this.credit || noteIsPositive(r,'remaining_total'));},
+        displayedRows(){return this.full?this.context.items.map(r=>({affected_document_item_id:r.id})):this.form.items;},total(){return noteTotalLabel(this.form,this.context);},
+        canGenerate(){return noteCanGenerate(this.form,this.context);}},
     async created(){this.reset();this.loading=true;try{const res=await this.$http.get('/documents/tables');this.tables=res.data;this.changeType();await this.getPercentageIgv();}catch(e){this.$message.error('No se pudieron cargar los catálogos de notas.');}finally{this.loading=false;}},
-    methods:{documentNumberFull,source(row){return this.context.items.find(r=>r.id===row.affected_document_item_id)||{};},
+    methods:{documentNumberFull,noteAmountLabel,source(row){return this.context.items.find(r=>r.id===row.affected_document_item_id)||{};},
         reset(){this.form={note_creation_key:noteRequestId(),document_type_id:'07',note_credit_or_debit_type_id:null,note_description:'',series_id:null,number:'#',date_of_issue:moment().format('YYYY-MM-DD'),time_of_issue:moment().format('HH:mm:ss'),establishment_id:this.document.establishment_id,customer_id:this.document.customer_id,currency_type_id:this.document.currency_type_id,exchange_rate_sale:this.document.exchange_rate_sale,exchange_rate_source:this.document.exchange_rate_source,exchange_rate_date:this.document.exchange_rate_date,affected_document_id:this.document.id,operation_type_id:'0101',items:[],payments:[],fee:[],payment_condition_id:null,actions:{format_pdf:'a4'},total_taxed:0,total_igv:0,total_taxes:0,total_value:0,total:0};this.errors={};},
         changeType(){this.form.note_credit_or_debit_type_id=null;this.form.items=[];this.form.series_id=this.series.length?this.series[0].id:null;this.form.payments=[];this.form.payment_condition_id=this.credit?null:'02';this.changeDate();},
         changeReason(){this.form.items=[];},async changeDate(){if(this.credit){this.form.exchange_rate_sale=this.document.exchange_rate_sale;this.form.exchange_rate_date=this.document.exchange_rate_date;this.form.exchange_rate_source=this.document.exchange_rate_source;}else{this.form.exchange_rate_sale=await this.searchExchangeRateByDate(this.form.date_of_issue);this.form.exchange_rate_date=this.form.date_of_issue;this.form.exchange_rate_source='BCV';}},

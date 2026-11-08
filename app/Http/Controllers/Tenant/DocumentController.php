@@ -119,6 +119,17 @@ class DocumentController extends Controller
     // TODO: refactorizar para usar el mismo método en el controller de sale notes
     public function records(Request $request)
     {
+        // A list with totals must use one uncached, consistent database view.
+        if ($request->boolean('include_totals') && auth()->user()->type === 'admin'
+            && (bool) optional(Configuration::first())->show_totals_on_cpe_list) {
+            return \App\Support\Exact\ReadSnapshot::run(DB::connection('tenant'), function () use ($request) {
+                $collection = new DocumentCollection($this->getRecords($request)->paginate(config('tenant.items_per_page')));
+                $response = $collection->response($request);
+                $body = $response->getData(true);
+                $body['totals'] = $this->recordsTotal($request);
+                return response()->json($body, $response->getStatusCode());
+            });
+        }
         $auth_id = auth()->user()->id;
         $cacheParams = [
             'category_id' => $request->category_id,
@@ -167,87 +178,62 @@ class DocumentController extends Controller
      */
     public function recordsTotal(Request $request)
     {
-
-        $FT_t = DocumentType::find('01');
-        $BV_t = DocumentType::find('03');
-        $NC_t = DocumentType::find('07');
-        $ND_t = DocumentType::find('08');
-        $currencyTypeId = Localization::nationalCurrencyId();
-        $currencySymbol = Localization::currencySymbol($currencyTypeId);
-
-        $BV = $this->getRecords($request)->where('document_type_id', $BV_t->id)->where('currency_type_id', $currencyTypeId)->sum('total');
-        $FT = $this->getRecords($request)->where('document_type_id', $FT_t->id)->where('currency_type_id', $currencyTypeId)->sum('total');
-        $NC = $this->getRecords($request)->where('document_type_id', $NC_t->id)->where('currency_type_id', $currencyTypeId)->sum('total');
-        $ND = $this->getRecords($request)->where('document_type_id', $ND_t->id)->where('currency_type_id', $currencyTypeId)->sum('total');
-        return [
-            [
-                'name' => $FT_t->description,
-                'total' => "{$currencySymbol} " . ReportHelper::setNumber($FT),
-            ],
-            [
-                'name' => $BV_t->description,
-                'total' => "{$currencySymbol} " . ReportHelper::setNumber($BV),
-
-            ],
-            [
-                'name' => $NC_t->description,
-                'total' => "{$currencySymbol} " . ReportHelper::setNumber($NC),
-            ],
-            [
-                'name' => $ND_t->description,
-                'total' => "{$currencySymbol} " . ReportHelper::setNumber($ND),
-            ],
-        ];
+        // ######## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA ########
+        return \App\Support\Exact\ReadSnapshot::run(DB::connection('tenant'), function () use ($request) {
+            $D=\App\Support\Exact\Decimal::class;
+            $types=DocumentType::whereIn('id',['01','07','08'])->get()->keyBy('id');
+            $currencies=[Localization::nationalCurrencyId(),Localization::secondaryCurrencyId()];
+            $totals=[];
+            foreach ($types as $type) foreach ($currencies as $currency) $totals[$type->id][$currency]=$D::of(0);
+            $records=$this->getRecords($request)->withoutEagerLoads()->reorder()->whereIn('document_type_id',$types->keys()->all())
+                ->whereIn('currency_type_id',$currencies)->whereNotIn('state_type_id',['09','11'])
+                ->select(['id','document_type_id','currency_type_id','total','calculation_snapshot']);
+            foreach ($records->lazyById(500) as $document) {
+                $type=$document->document_type_id; $currency=$document->currency_type_id;
+                $totals[$type][$currency]=$totals[$type][$currency]->plus($D::readRequired($document,'total'));
+            }
+            $result=[];
+            foreach (['01','07','08'] as $id) if ($types->has($id)) foreach ($currencies as $currency) {
+                $value=$totals[$id][$currency];
+                $result[]=['name'=>$types[$id]->description.' ('.$currency.')','document_type_id'=>$id,'currency_type_id'=>$currency,
+                    'total'=>Localization::currencySymbol($currency).' '.$D::format($value),
+                    'calculation_snapshot'=>$D::snapshot(['total'=>$value])];
+            }
+            return $result;
+        });
+        // ######## FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA ########
     }
 
-    /**
-     * KPIs del listado de comprobantes (solo documentos: facturas y boletas).
-     *
-     * Devuelve:
-     *  - Ventas del mes (facturas + boletas), desglose y variacion vs mes anterior.
-     *  - Cuentas por cobrar (saldo pendiente), separado en por cobrar y vencidas.
-     *
-     * Implementado en resources/js/views/tenant/documents/index.vue
-     *
-     * @param Request $request
-     * @return array
-     */
+    /** Indicadores del listado de facturas y cuentas por cobrar. */
     public function kpis(Request $request)
     {
+        return \App\Support\Exact\ReadSnapshot::run(DB::connection('tenant'), function () {
         $valid_states = ['01', '03', '05', '07', '13'];
 
-        $start_current = Carbon::now()->startOfMonth()->toDateString();
-        $end_current   = Carbon::now()->endOfMonth()->toDateString();
-        $start_prev    = Carbon::now()->subMonthNoOverflow()->startOfMonth()->toDateString();
-        $end_prev      = Carbon::now()->subMonthNoOverflow()->endOfMonth()->toDateString();
+        $today=Carbon::now()->startOfDay();
+        $start_current=$today->copy()->startOfMonth()->toDateString();
+        $end_current=$today->copy()->endOfMonth()->toDateString();
+        $start_prev=$today->copy()->subMonthNoOverflow()->startOfMonth()->toDateString();
 
-        $sumPen = function ($document_type_id, $start, $end) use ($valid_states) {
-            return (float) Document::query()
-                ->where(fn ($q) => $q->whereTypeUser())
-                ->whereIn('state_type_id', $valid_states)
-                ->where('document_type_id', $document_type_id)
-                ->whereBetween('date_of_issue', [$start, $end])
-                ->selectRaw("COALESCE(SUM(CASE WHEN currency_type_id = 'VES' THEN total ELSE total * exchange_rate_sale END), 0) as s")
-                ->value('s');
-        };
-
-        $facturas_now = $sumPen('01', $start_current, $end_current);
-        $sales_now    = $facturas_now;
-
-        $sales_prev = $sumPen('01', $start_prev, $end_prev);
-
-        if ($sales_prev > 0) {
-            $variation = (($sales_now - $sales_prev) / $sales_prev) * 100;
-        } else {
-            $variation = $sales_now > 0 ? 100 : 0;
+        $D = \App\Support\Exact\Decimal::class;
+        $sales_now=$D::of(0); $sales_prev=$D::of(0);
+        $documents=Document::withoutEagerLoads()->where(fn ($q) => $q->whereTypeUser())
+            ->whereIn('state_type_id',$valid_states)->where('document_type_id','01')
+            ->whereBetween('date_of_issue',[$start_prev,$end_current])
+            ->select(['id','date_of_issue','currency_type_id','exchange_rate_sale','total','calculation_snapshot']);
+        foreach ($documents->lazyById(500) as $document) {
+            $amount=$D::readRequired($document,'total');
+            if ($document->currency_type_id !== 'VES') $amount=$amount->multipliedBy($D::readRequired($document,'exchange_rate_sale'));
+            if ($document->date_of_issue->toDateString() >= $start_current) $sales_now=$sales_now->plus($amount);
+            else $sales_prev=$sales_prev->plus($amount);
         }
+        $variation=$sales_prev->isPositive() ? $sales_now->minus($sales_prev)->dividedBy($sales_prev)->multipliedBy(100)
+            : $D::of($sales_now->isPositive() ? 100 : 0);
 
         // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
         // The receivables dataset reads exact documentary balances in batches
         // and applies the same user/seller scope as this indicator.
-        $D = \App\Support\Exact\Decimal::class;
         $totals = ['total'=>$D::of(0), 'current'=>$D::of(0), 'overdue'=>$D::of(0)];
-        $today = Carbon::now()->startOfDay();
         $dueLimit = $today->copy()->addDays(30)->endOfDay();
         $receivables = \App\Support\Exact\Receivables::invoiceKpiDataset();
         foreach ($receivables as $row) {
@@ -261,10 +247,10 @@ class DocumentController extends Controller
 
         return [
             'sales' => [
-                'total'        => 'Bs. ' . number_format($sales_now, 2, '.', ','),
-                'facturas'     => 'Bs. ' . number_format($facturas_now, 2, '.', ','),
-                'variation'    => ($variation >= 0 ? '+' : '') . number_format($variation, 1, '.', ',') . '% vs mes anterior',
-                'variation_up' => $variation >= 0,
+                'total'        => 'Bs. ' . $D::format($sales_now),
+                'facturas'     => 'Bs. ' . $D::format($sales_now),
+                'variation'    => (!$variation->isNegative() ? '+' : '') . $D::format($variation,1) . '% vs mes anterior',
+                'variation_up' => !$variation->isNegative(),
             ],
             'receivable' => [
                 'total'   => 'Bs. ' . \App\Support\Exact\Decimal::format($totals['total']),
@@ -272,6 +258,7 @@ class DocumentController extends Controller
                 'overdue' => 'Bs. ' . \App\Support\Exact\Decimal::format($totals['overdue']),
             ],
         ];
+        });
     }
 
     public function searchCustomers(Request $request)
@@ -783,13 +770,18 @@ class DocumentController extends Controller
         return $this->storeForChannel($request, true);
     }
 
+    public function storeFromHotelCheckout(DocumentRequest $request)
+    {
+        return $this->storeForChannel($request, true, true);
+    }
+
     // ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
     public function storeFromSubscription(DocumentRequest $request)
     {
         return $this->storeForChannel($request, false);
     }
 
-    private function storeForChannel(DocumentRequest $request, bool $webDocuments)
+    private function storeForChannel(DocumentRequest $request, bool $webDocuments, bool $deferPdfUntilCommit = false)
     // ######## FIN PERSISTENCIA FISCAL VENEZUELA ########
     {
         try
@@ -813,7 +805,7 @@ class DocumentController extends Controller
                 $data['source_module'] = 'WEB';
             }
 
-            $res = $this->storeWithData($data, $webDocuments);
+            $res = $this->storeWithData($data, $webDocuments, $deferPdfUntilCommit);
             $document_id = $res['data']['id'];
             $this->associateDispatchesToDocument($request, $document_id);
 
@@ -925,15 +917,22 @@ class DocumentController extends Controller
      * @return array
      * @throws \Throwable
      */
-        public function storeWithData($data, bool $webExportInvoices = false)
+        public function storeWithData($data, bool $webExportInvoices = false, bool $deferPdfUntilCommit = false)
         {
             $this->aplicarItineranciaSiCorresponde($data);
             self::setChildrenToData($data);
-            $fact = DB::connection('tenant')->transaction(function () use ($data, $webExportInvoices) {
+            $fact = DB::connection('tenant')->transaction(function () use ($data, $webExportInvoices, $deferPdfUntilCommit) {
                 $facturalo = new Facturalo();
                 if ($webExportInvoices) $facturalo->forWebDocuments();
                 $facturalo->save($data);
-                $facturalo->createPdf();
+                if ($deferPdfUntilCommit) {
+                    DB::connection('tenant')->afterCommit(function () use ($facturalo) {
+                        try { $facturalo->createPdf(); }
+                        catch (\Throwable $e) { \Log::warning('No se pudo generar el PDF de la factura de Hotel después del cierre.', ['document_id'=>$facturalo->getDocument()->id, 'error'=>get_class($e)]); }
+                    });
+                } else {
+                    $facturalo->createPdf();
+                }
                 return $facturalo;
             });
 
@@ -1111,9 +1110,9 @@ class DocumentController extends Controller
             return ['success' => $delivery['status'] === 'accepted', 'message' => $delivery['message'], 'email_delivery' => $delivery];
         }
         $company = Company::active();
-        EmailController::SendMail(implode(',', $request->input('recipients')),
+        $sent = EmailController::SendMail(implode(',', $request->input('recipients')),
             new DocumentEmail($company, $document), $document->id, 1);
-        return ['success' => true, 'message' => 'El correo fue enviado satisfactoriamente.'];
+        return ['success' => $sent, 'message' => $sent ? 'El correo fue enviado satisfactoriamente.' : 'No se pudo enviar el correo. Revise la configuración y el registro de envíos.'];
     }
 
     public function searchCustomerById(Request $request, $id)

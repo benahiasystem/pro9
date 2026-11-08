@@ -23,6 +23,14 @@ trait TipTrait
     {
         if(!is_null($data))
         {
+            $amount = \App\Support\Exact\Decimal::input($data['total'] ?? null, 'total_tips');
+            if (!\App\Support\Exact\Decimal::of($amount)->isGreaterThan(0)) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['total_tips' => 'La propina debe ser mayor que cero.']);
+            }
+            $data['total'] = $amount;
+            $data['fiscal_environment'] = $model->fiscal_environment;
+            $data['origin_date_of_issue'] = $model->date_of_issue;
+            $data['calculation_snapshot'] = \App\Support\Exact\Decimal::snapshot(['total' => $amount]);
             $model->tip()->create($data);
         }
     }

@@ -1,10 +1,11 @@
 <template>
     <div class="card mb-0 pt-2 pt-md-0">
         <div class="card-header bg-info">
-            <h3 class="my-0">Reporte Caja - POS</h3>
+            <h3 class="my-0">Documentos asociados a caja</h3>
         </div>
         <div class="card mb-0">
                 <div class="card-body">
+                    <p>Los importes son documentales y no representan necesariamente dinero cobrado.</p>
                     <data-table :resource="resource">
                         <tr slot="heading">
                             <th class="">#</th>
@@ -32,9 +33,9 @@
                             <td>{{row.state_type_description}}</td>
 
                             <td>{{ row.currency_type_id}}</td> 
-                            <td>{{ (row.document_type_id == '07' || (row.document_type_id!='07' && row.state_type_id =='11')) ? -row.total_taxed : row.total_taxed }}</td>
-                            <td>{{ (row.document_type_id == '07' || (row.document_type_id!='07' && row.state_type_id =='11')) ? -row.total_igv : row.total_igv }}</td>
-                            <td>{{ (row.document_type_id == '07' || (row.document_type_id!='07' && row.state_type_id =='11')) ? -row.total : row.total }}</td> 
+                            <td>{{ row.total_taxed }}</td>
+                            <td>{{ row.total_igv }}</td>
+                            <td>{{ row.total }}</td>
 
                         </tr>
                         

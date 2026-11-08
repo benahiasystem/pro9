@@ -1075,7 +1075,7 @@
 </style>
 
 <script>
-import {exactAmount} from "../../../../helpers/exchange-rate-math"
+import {exactAmount, exactValue} from "../../../../helpers/exchange-rate-math"
 
 import ItemForm from "../../items/form.vue";
 import VariationChips from "../../items/partials/variation_chips.vue";
@@ -1491,6 +1491,10 @@ export default {
             return Number.isNaN(parsed) ? value : parsed;
         },
         onQuantityChange(value) {
+            if (this.form.quantity_input && exactAmount(value || '0').decimal() !==
+                exactAmount(this.form.quantity_input.amount).dividedBy(this.form.quantity_input.unit_price).decimal()) {
+                this.form.quantity_input = null;
+            }
             this.form.quantity = this.normalizeDecimal(value);
             this.calculateTotal();
         },
@@ -1805,7 +1809,7 @@ export default {
                         this.form.affectation_igv_type_id = this.recordItem.item.original_affectation_igv_type_id;
                     }
                 }
-                this.calculateQuantity();
+                this.restoreEditedQuantity();
 
                 if (this.recordItem.item.exchanged_for_points)
                     this.form.item.exchanged_for_points = this.recordItem.item.exchanged_for_points;
@@ -2179,6 +2183,17 @@ export default {
             }
         },
         // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        restoreEditedQuantity() {
+            const row = this.recordItem;
+            this.form.record_id = row.record_id || row.id || null;
+            this.form.quantity = this.normalizeDecimal(row.quantity);
+            this.form.calculation_snapshot = row.calculation_snapshot || null;
+            this.form.quantity_input = row.quantity_input || row.calculation_snapshot?.inputs?.quantity_input || null;
+            if (this.form.item.calculate_quantity) {
+                this.total_item = exactValue(row, 'quantity').times(this.form.unit_price_value || '0').decimal();
+            }
+            this.calculateTotal();
+        },
         calculateQuantity() {
             if (this.form.item.calculate_quantity && exactAmount(this.form.unit_price_value || '0').compare(0) > 0) {
                 this.form.quantity_input = {amount: String(this.total_item || '0'), unit_price: String(this.form.unit_price_value)};
@@ -2186,10 +2201,17 @@ export default {
             }
             this.calculateTotal();
         },
+        currentExactQuantity() {
+            if (this.form.quantity_input) return exactAmount(this.form.quantity_input.amount).dividedBy(this.form.quantity_input.unit_price);
+            if (this.form.calculation_snapshot && exactValue(this.form, 'quantity').decimal() === exactAmount(this.form.quantity || '0').decimal()) {
+                return exactValue(this.form, 'quantity');
+            }
+            return exactAmount(this.form.quantity || '0');
+        },
         calculateTotal() {
             const quantity = this.form.quantity_input
                 ? exactAmount(this.form.quantity_input.amount).dividedBy(this.form.quantity_input.unit_price)
-                : exactAmount(this.form.quantity || '0');
+                : this.currentExactQuantity();
             this.readonly_total = quantity.times(this.form.unit_price_value || '0').decimal();
         },
         // ######## FIN CALCULOS EXACTOS PRO9 ########
@@ -2342,9 +2364,7 @@ export default {
             // Configurar base, amount, porcentaje y factor de cada descuento
             // ######## INICIO CALCULOS EXACTOS PRO9 ########
             const igvFactor = affectation_igv_type_id === '10' ? exactAmount(1).plus(this.percentageIgv) : exactAmount(1);
-            const quantity = this.form.quantity_input
-                ? exactAmount(this.form.quantity_input.amount).dividedBy(this.form.quantity_input.unit_price)
-                : exactAmount(this.form.quantity);
+            const quantity = this.currentExactQuantity();
             const itemCurrency = this.form.item.currency_type_id || this.currencyTypeIdActive;
             const conversion = itemCurrency === this.currencyTypeIdActive ? exactAmount(1)
                 : itemCurrency === 'VES' ? exactAmount(1).dividedBy(this.exchangeRateSale) : exactAmount(this.exchangeRateSale);

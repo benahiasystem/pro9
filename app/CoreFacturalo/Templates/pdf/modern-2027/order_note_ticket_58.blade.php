@@ -18,9 +18,7 @@
         ->max();
     $m27_igv_percentage = $m27_igv_percentage ? rtrim(rtrim(number_format($m27_igv_percentage, 2, '.', ''), '0'), '.') : null;
 
-    $m27_total_products = rtrim(rtrim(number_format(collect($document->items)->sum(function ($item) {
-        return (float) data_get($item, 'quantity', 0);
-    }), 2, '.', ''), '0'), '.');
+    $m27_total_products = \App\Support\Exact\PdfQuantities::summary($document->items);
 
     $m27_barcode = preg_replace('/[^0-9A-Za-z\-]/', '', (string) $tittle);
 
@@ -191,10 +189,13 @@
         @php
             // El codigo interno se imprime en la linea secundaria del item
             $item_code = trim((string) optional($row->item)->internal_id);
-            $item_quantity = ((int)$row->quantity != $row->quantity) ? $row->quantity : number_format($row->quantity, 0);
+            $item_quantity = \App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::read($row, 'quantity'));
         @endphp
+        @if(strlen($item_quantity) > 9)
+        <tr><td colspan="3" class="m27-item m27-item-sm text-left">Cantidad: {{ $item_quantity }}</td></tr>
+        @endif
         <tr>
-            <td class="m27-item m27-item-sm text-left">{{ $item_quantity }}</td>
+            <td class="m27-item m27-item-sm text-left">{{ strlen($item_quantity) > 9 ? '' : $item_quantity }}</td>
             <td class="m27-item m27-item-sm text-left">
                 {!! \App\CoreFacturalo\Helpers\Template\TemplateHelper::stripLeadingItemCode($row->getTemplateDescription(), $item_code) !!} @if (!empty($row->item->presentation)) {!!$row->item->presentation->description!!} @endif
                 @if($row->attributes)
@@ -294,8 +295,11 @@
         <td class="m27-colspec" width="56%"></td>
         <td class="m27-colspec" width="28%"></td>
     </tr>
+    @if(strlen($m27_total_products) > 9)
+    <tr><td colspan="3" class="m27-item-sub m27-item-sub-sm">Cantidades: {{ $m27_total_products }}</td></tr>
+    @endif
     <tr>
-        <td class="m27-item-sub m27-item-sub-sm align-bottom" style="white-space: nowrap;">{{ $m27_total_products }} und.</td>
+        <td class="m27-item-sub m27-item-sub-sm align-bottom">{{ strlen($m27_total_products) > 9 ? '' : $m27_total_products }}</td>
         <td class="m27-grand-label m27-grand-label-sm">TOTAL:</td>
         <td class="m27-grand-value m27-grand-value-sm">{{ $document->currency_type->symbol }} {{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total'), 2) }}</td>
     </tr>

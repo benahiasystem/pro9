@@ -35,6 +35,7 @@
 </template>
 
 <script>
+import { formatMoneyExact } from "../../../../../../../../resources/js/helpers/format-money-exact";
 export default {
     name: "MonthlyComparisonChart",
     props: {
@@ -50,6 +51,8 @@ export default {
             type: Array,
             default: () => [],
         },
+        salesExact: { type: Array, default: () => [] },
+        purchasesExact: { type: Array, default: () => [] },
         emptyBarRatio: {
             type: Number,
             default: 0.04,
@@ -129,8 +132,10 @@ export default {
             ];
         },
         chartOptions() {
-            const realSales = this.visibleSales;
-            const realPurchases = this.visiblePurchases;
+            const realSales = this.salesExact.slice(this.offset, this.offset + this.maxVisible);
+            const realPurchases = this.purchasesExact.slice(this.offset, this.offset + this.maxVisible);
+            const fallbackSales = this.visibleSales;
+            const fallbackPurchases = this.visiblePurchases;
             return {
                 chart: {
                     toolbar: { show: false },
@@ -159,16 +164,12 @@ export default {
                 yaxis: { show: false, min: 0, max: this.yAxisMax },
                 tooltip: {
                     custom: function ({ seriesIndex, dataPointIndex, w }) {
-                        const realValue =
-                            seriesIndex === 0
-                                ? realSales[dataPointIndex]
-                                : realPurchases[dataPointIndex];
+                        const realValue = seriesIndex === 0
+                            ? (realSales[dataPointIndex] ?? fallbackSales[dataPointIndex])
+                            : (realPurchases[dataPointIndex] ?? fallbackPurchases[dataPointIndex]);
                         const name = w.config.series[seriesIndex].name;
                         const label = w.globals.labels[dataPointIndex];
-                        const value = Number(realValue || 0).toLocaleString("es-PE", {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                        });
+                        const value = formatMoneyExact(realValue);
                         return (
                             '<div style="padding:6px 10px;font-size:12px;">' +
                             '<strong>' + label + '</strong><br/>' +

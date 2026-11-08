@@ -14,6 +14,7 @@
             </div> -->
             <div class="card mb-0">
                     <div class="card-body">
+                        <p>Importes netos de facturas y notas; las visitas cuentan facturas vigentes. Las categorías son actuales y las cantidades se separan por unidad.</p>
                         <data-table :resource="resource">
                                 <tr slot="heading">
                                 <th class="">#</th>
@@ -24,8 +25,8 @@
                                 <th class="">Primera compra</th> 
                                 <th class="">Ultima compra</th> 
                                 <th class="">Tiempo promedio</th> 
-                                <th class="">Cant. Visita</th> 
-                                <th class="">Total</th> 
+                                <th class="">Facturas</th>
+                                <th class="">Total VES</th><th class="">Total USD</th><th class="">Otras monedas</th>
     
                                 <th v-for="c in columns">{{c.toUpperCase()}}</th>
     
@@ -48,7 +49,7 @@
                                 <td>{{row.last_document_date}}</td> 
                                 <td>{{row.prom_difference_days}}</td> 
                                 <td>{{row.quantity_visit}}</td> 
-                                <td>{{row.total}}</td>
+                                <td>{{row.total_ves}}</td><td>{{row.total_usd}}</td><td>{{ formatOtherCurrencies(row.other_currencies) }}</td>
     
                                 <td v-for="c in columns">{{row[c.toUpperCase()]}}</td>
     
@@ -93,8 +94,10 @@
                 this.columns = response.data.categories
             });
         },
-        methods: { 
-            
+        methods: {
+            formatOtherCurrencies(values) {
+                return Object.entries(values || {}).map(([currency, value]) => `${currency} ${value}`).join('; ')
+            }
         }
     }
 </script>

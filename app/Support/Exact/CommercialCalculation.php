@@ -11,6 +11,7 @@ final class CommercialCalculation
     private static array $deferred = [];
     private const OWNERS = [
         'purchase_items' => [\App\Models\Tenant\Purchase::class, 'purchase_id'],
+        'purchase_settlement_items' => [\App\Models\Tenant\PurchaseSettlement::class, 'purchase_settlement_id'],
         'sale_note_items' => [\App\Models\Tenant\SaleNote::class, 'sale_note_id'],
         'quotation_items' => [\App\Models\Tenant\Quotation::class, 'quotation_id'],
         'order_note_items' => [\Modules\Order\Models\OrderNote::class, 'order_note_id'],
@@ -23,15 +24,20 @@ final class CommercialCalculation
 
     public static function supportsLine(Model $model): bool
     {
-        return isset(self::OWNERS[$model->getTable()]) || $model->getTable() === 'document_items';
+        return isset(self::OWNERS[$model->getTable()]) || in_array($model->getTable(), ['document_items','technical_service_items'], true);
     }
 
     public static function line(Model $model): void
     {
-        if (!isset(self::OWNERS[$model->getTable()]) || $model->unit_price === null || $model->quantity === null) return;
+        $owner = self::OWNERS[$model->getTable()] ?? ($model->getTable() === 'technical_service_items'
+            ? [\Modules\Sale\Models\TechnicalService::class, 'technical_services_id'] : null);
+        if (!$owner || $model->unit_price === null || $model->quantity === null) return;
         $changed = !$model->calculation_snapshot || $model->isDirty(['quantity','unit_price','discounts','charges','affectation_igv_type_id','quantity_input','price_input']);
         if (!$changed) return;
         $affectation = $model->affectation_igv_type_id;
+        if ($model instanceof \App\Models\Tenant\PurchaseSettlementItem && !in_array($affectation, ['10','20'], true)) {
+            \App\Services\Fiscal\FiscalAmounts::error('items.affectation_igv_type_id', 'Seleccione una afectación de IVA vigente.');
+        }
         if (!in_array($affectation, ['10','20','EXP'], true)) return;
         $input = $model->getAttributes();
         foreach (['quantity_input'=>'quantity','price_input'=>'unit_price'] as $source=>$field) {
@@ -40,7 +46,7 @@ final class CommercialCalculation
                 $input[$source]=$model->calculation_snapshot['inputs'][$source];
             }
         }
-        [$class, $foreign] = self::OWNERS[$model->getTable()];
+        [$class, $foreign] = $owner;
         if (!empty($input['price_input'])) {
             $owner = $class::findOrFail($model->$foreign);
             $input['currency_type_id'] = $owner->currency_type_id;
@@ -59,6 +65,40 @@ final class CommercialCalculation
         if ($model->exists && !$model->isDirty(['unit_price','price_input'])
             && isset($model->calculation_snapshot['inputs']['storefront_catalog_price'])) {
             $line['calculation_snapshot']['inputs']['storefront_catalog_price'] = $model->calculation_snapshot['inputs']['storefront_catalog_price'];
+        }
+        // Inventory provenance describes the original movement, not the edited price or quantity.
+        if ($model->exists && ($model->calculation_snapshot['inputs']['inventory_service_without_movement'] ?? false) === true) {
+            $line['calculation_snapshot']['inputs']['inventory_service_without_movement'] = true;
+        }
+        if ($model->exists && isset($model->calculation_snapshot['inputs']['legacy_purchase_inventory'])) {
+            $line['calculation_snapshot']['inputs']['legacy_purchase_inventory'] = $model->calculation_snapshot['inputs']['legacy_purchase_inventory'];
+        }
+        if ($model->exists && isset($model->calculation_snapshot['inputs']['purchase_warehouse_inventory'])) {
+            $line['calculation_snapshot']['inputs']['purchase_warehouse_inventory'] = $model->calculation_snapshot['inputs']['purchase_warehouse_inventory'];
+        }
+        if ($model->exists && isset($model->calculation_snapshot['inputs']['order_inventory_warehouse_id'])) {
+            $line['calculation_snapshot']['inputs']['order_inventory_warehouse_id'] = $model->calculation_snapshot['inputs']['order_inventory_warehouse_id'];
+        }
+        if ($model->exists && isset($model->calculation_snapshot['inputs']['order_pack_inventory'])) {
+            $line['calculation_snapshot']['inputs']['order_pack_inventory'] = $model->calculation_snapshot['inputs']['order_pack_inventory'];
+        }
+        if ($model->exists && isset($model->calculation_snapshot['inputs']['order_lot_inventory'])) {
+            $line['calculation_snapshot']['inputs']['order_lot_inventory'] = $model->calculation_snapshot['inputs']['order_lot_inventory'];
+        }
+        if ($model->exists && isset($model->calculation_snapshot['inputs']['order_serial_inventory'])) {
+            $line['calculation_snapshot']['inputs']['order_serial_inventory'] = $model->calculation_snapshot['inputs']['order_serial_inventory'];
+        }
+        if ($model->exists && isset($model->calculation_snapshot['inputs']['order_sale_note_legacy_inventory'])) {
+            $line['calculation_snapshot']['inputs']['order_sale_note_legacy_inventory'] = $model->calculation_snapshot['inputs']['order_sale_note_legacy_inventory'];
+        }
+        if ($model->exists && isset($model->calculation_snapshot['inputs']['sale_note_global_inventory'])) {
+            $line['calculation_snapshot']['inputs']['sale_note_global_inventory'] = $model->calculation_snapshot['inputs']['sale_note_global_inventory'];
+        }
+        if ($model->exists && isset($model->calculation_snapshot['inputs']['sale_note_pack_inventory'])) {
+            $line['calculation_snapshot']['inputs']['sale_note_pack_inventory'] = $model->calculation_snapshot['inputs']['sale_note_pack_inventory'];
+        }
+        if ($model->exists && isset($model->calculation_snapshot['inputs']['invoice_global_inventory'])) {
+            $line['calculation_snapshot']['inputs']['invoice_global_inventory'] = $model->calculation_snapshot['inputs']['invoice_global_inventory'];
         }
         // ######## FIN CALCULOS EXACTOS PRO9 ########
         foreach (Persistence::columns($model) as $field) if (isset($line[$field])) $model->$field = $line[$field];
@@ -113,11 +153,19 @@ final class CommercialCalculation
             'total'=>$value->plus($taxes)->minus(HeaderAllocation::includesAdvance($owner->discounts) ? 0 : Decimal::read($owner,'total_prepayment'))];
         if ($values['total']->isNegative()) \App\Services\Fiscal\FiscalAmounts::error('total', 'El total no puede ser negativo.');
         $values['total_payable']=Decimal::of(Decimal::represent($values['total'],2));
+        if ($owner instanceof \App\Models\Tenant\PurchaseSettlement) {
+            $values['subtotal']=$values['total'];
+            $legends=collect((array) $owner->legends)->map(fn ($row)=>(array) $row)
+                ->reject(fn ($row)=>(string) ($row['code'] ?? '') === '1000')->values()->all();
+            $legends[]=['code'=>'1000','value'=>\App\CoreFacturalo\Helpers\Number\NumberLetter::convertToLetter(Decimal::represent($values['total'],2))];
+            $owner->legends=$legends;
+        }
         $values['settlement_adjustment']=$values['total_payable']->minus($values['total']);
         $values = array_intersect_key($values, array_flip(Persistence::columns($owner)));
         $owner->setExactValues($values);
         if ($owner instanceof \App\Models\Tenant\SaleNote) HeaderAllocation::freeze($owner, $items);
         $owner->saveQuietly();
+        if ($owner instanceof \App\Models\Tenant\SaleNote) \Modules\Hotel\Services\CheckoutSettlement::afterDocument($owner);
         LoyaltyPoints::synchronize($owner);
     }
 

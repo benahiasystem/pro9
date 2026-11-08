@@ -31,11 +31,9 @@ $affected_document_number = $document_base->affected_document ? $document_base->
 
     $exists_logo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::existsFileInUploads($logo);
 
-    $payments = $document->payments;
+    $payments = $document->payments->filter(fn ($payment) => !data_get($payment, 'reversed_at'));
     $document->load('reference_guides');
 
-    $total_payment = $document->payments->sum('payment');
-    $balance = $document instanceof \App\Models\Tenant\Document ? $document->balance : (($document->total - $total_payment) - $document->payments->sum('change'));
     $configuration_decimal_quantity = App\CoreFacturalo\Helpers\Template\TemplateHelper::getConfigurationDecimalQuantity();
 
     $paymentCondition = \App\CoreFacturalo\Helpers\Template\TemplateHelper::getDocumentPaymentCondition($document);
@@ -127,7 +125,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
             <td width="30%" class="border-box py-4 px-2 text-center">
                 <h3 class="font-bold">{{ 'R.I.F. '.$company->number }}</h3>
                 <h5>{{ $document->document_type->description }}</h5>
-                <h3>{{ $document_number }}</h3>
+                <h3 style="font-size: 11px; white-space: nowrap;">{{ $document_number }}</h3>
             </td>
         @else
             <td colspan="2" width="70%" class="pl-1 text-left">
@@ -156,7 +154,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
             <td width="30%" class="border-box py-4 px-2 text-center">
                 <h3 class="font-bold">{{ 'R.I.F. '.$company->number }}</h3>
                 <h5>{{ $document->document_type->description }}</h5>
-                <h3>{{ $document_number }}</h3>
+                <h3 style="font-size: 11px; white-space: nowrap;">{{ $document_number }}</h3>
             </td>
         @endif
     </tr>
@@ -521,7 +519,7 @@ foreach ($document->items as $row) {
                 </td>
             @endif
             @if($showColumns['precio_unitario'])
-                <td class="text-right align-top">{{ $row->formatPdfUnitPrice($configuration_decimal_quantity) }}</td>
+                <td class="text-right align-top"><span data-pdf-unit-price>{{ $row->formatPdfUnitPrice($configuration_decimal_quantity) }}</span></td>
             @endif
 
             @if($showColumns['descuento']) <td class="text-right align-top pr-2">
@@ -646,14 +644,6 @@ foreach ($document->items as $row) {
         <td class="text-right font-bold">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total'), 2) }}</td>
     </tr>
 
-
-
-    @if($balance < 0)
-        <tr>
-            <td colspan="{{ $colspan_total - 1 }}" class="text-right font-bold pr-2">VUELTO: {{ $document->currency_type->symbol }}</td>
-            <td class="text-right font-bold">{{ number_format(abs($balance),2, ".", "") }}</td>
-        </tr>
-    @endif
     </tbody>
 </table>
 <table class="full-width">

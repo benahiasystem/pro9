@@ -14,6 +14,13 @@ use Illuminate\Support\Collection;
  */
 class PurchaseCollection extends ResourceCollection
 {
+    private ?array $display;
+
+    public function __construct($resource, ?array $display = null)
+    {
+        parent::__construct($resource);
+        $this->display = $display;
+    }
     /**
      * Transform the resource collection into an array.
      *
@@ -23,30 +30,25 @@ class PurchaseCollection extends ResourceCollection
     public function toArray($request)
     {
 
-        $apply_conversion_to_pen = $request->apply_conversion_to_pen == 'true';
-
-        return $this->collection->transform(function($row, $key) use($apply_conversion_to_pen){
-
+        $convert = \Modules\Report\Services\PurchaseReportAmounts::converted($request->input('apply_conversion_to_pen'));
+        $prepared = $this->display === null
+            ? \Modules\Report\Services\PurchaseReportAmounts::presentation($this->collection, $convert)['rows']
+            : $this->collection->map(function ($row) use ($convert) {
+                $amounts = \Modules\Report\Services\PurchaseReportAmounts::row($row, $convert);
+                $amounts['display'] = $this->display[$amounts['report_key']] ?? throw new \LogicException('Falta la proyección de la compra.');
+                return $amounts;
+            });
+        return $prepared->map(function ($amounts) {
+            $row = $amounts['model'];
             $data = $row->getCollectionData();
-
-            // dd($apply_conversion_to_pen, $data);
-            $data['description_apply_conversion_to_pen'] = null;
-
-            if($apply_conversion_to_pen && $row->isCurrencyTypeUsd())
-            {
-                $data['total_exportation'] = $row->getConvertTotalExportationToPen();
-                $data['total_free'] = $row->getConvertTotalFreeToPen();
-                $data['total_unaffected'] = $row->getConvertTotalUnaffectedToPen();
-                $data['total_exonerated'] = $row->getConvertTotalExoneratedToPen();
-                $data['total_taxed'] = $row->getConvertTotalTaxedToPen();
-                $data['total_igv'] = $row->getConvertTotalIgvToPen();
-                $data['total'] = $row->getConvertTotalToPen();
-                $data['description_apply_conversion_to_pen'] = 'Se aplicó conversión a bolívares';
-            }
-
+            foreach (\Modules\Report\Services\PurchaseReportAmounts::FIELDS as $field) $data[$field] = $amounts['display'][$field];
+            $data['currency_type_id'] = $amounts['currency_type_id'];
+            $data['original_currency_type_id'] = $amounts['original_currency_type_id'];
+            $data['calculation_snapshot'] = $amounts['calculation_snapshot'];
+            $data['description_apply_conversion_to_pen'] = $amounts['converted'] ? 'Se aplicó conversión a bolívares' : null;
             return $data;
-
         });
+
     }
 
 }

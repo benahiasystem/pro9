@@ -615,71 +615,74 @@ class QuotationController extends Controller
 
     public function download($external_id, $format)
     {
-        $quotation = Quotation::where('external_id', $external_id)->first();
-
-        if (!$quotation) throw new Exception("El código {$external_id} es inválido, no se encontro la cotización relacionada");
-
-        $this->reloadPDF($quotation, $format, $quotation->filename);
-
-        return $this->downloadStorage($quotation->filename, 'quotation');
+        $quotation = $this->quotationForPdf($external_id);
+        $headers = $this->generalPdfResponseFileHeaders($quotation->filename);
+        $headers['Content-Disposition'] = \Symfony\Component\HttpFoundation\HeaderUtils::makeDisposition(
+            'attachment', \App\Services\Fiscal\DocumentFileName::visible($quotation->filename).'.pdf'
+        );
+        return response($this->renderPdf($quotation, $format), 200, $headers);
     }
 
     public function toPrint($external_id, $format)
     {
-        $quotation = Quotation::where('external_id', $external_id)->first();
-
-        if (!$quotation) throw new Exception("El código {$external_id} es inválido, no se encontro la cotización relacionada");
-
-        $this->reloadPDF($quotation, $format, $quotation->filename);
-        $temp = tempnam(sys_get_temp_dir(), 'quotation');
-
-        file_put_contents($temp, $this->getStorage($quotation->filename, 'quotation'));
-
-        /*
-        $headers = [
-            'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'inline; filename="'.$quotation->filename.'.pdf'.'"'
-        ];
-        */
-
+        $quotation = $this->quotationForPdf($external_id);
         $headers = $this->generalPdfResponseFileHeaders($quotation->filename);
         $headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0, post-check=0, pre-check=0';
         $headers['Pragma'] = 'no-cache';
         $headers['Expires'] = 'Sat, 26 Jul 1997 05:00:00 GMT';
 
-        return response()->file($temp, $headers);
+        return response($this->renderPdf($quotation, $format), 200, $headers);
     }
 
-    private function reloadPDF($quotation, $format, $filename)
+    private function quotationForPdf($externalId)
     {
-        $this->createPdf($quotation, $format, $filename);
+        return DB::connection('tenant')->transaction(function () use ($externalId) {
+            $quotation = Quotation::withoutEagerLoads()->where('external_id', $externalId)->lockForUpdate()->first();
+            if (!$quotation) throw new Exception("El código {$externalId} es inválido, no se encontro la cotización relacionada");
+            $quotation->load(['user', 'fiscal_environment_type', 'state_type', 'currency_type', 'items', 'payments']);
+            return $quotation;
+        });
+    }
+
+    /** Capture the same consistent data used for printing, without writing shared storage. */
+    public function emailPdf($externalId): array
+    {
+        $quotation = $this->quotationForPdf($externalId);
+        return ['quotation' => $quotation, 'bytes' => $this->renderPdf($quotation, 'a4')];
     }
 
     public function createPdf($quotation = null, $format_pdf = null, $filename = null)
+    {
+        $document = $quotation ?? $this->quotation;
+        $this->uploadFile($filename ?? $document->filename, $this->renderPdf($document, $format_pdf), 'quotation');
+    }
+
+    protected function renderPdf($quotation, $format_pdf)
     {
         ini_set("pcre.backtrack_limit", "5000000");
         $template = new Template();
         $pdf = new Mpdf();
 
-        $document = ($quotation != null) ? $quotation : $this->quotation;
+        $document = $quotation;
         $company = ($this->company != null) ? $this->company : Company::active();
-        $filename = ($filename != null) ? $filename : $this->quotation->filename;
 
         $configuration = Configuration::first();
 
         $establishment_pdf = Establishment::find($document->establishment_id);
         $base_template = $establishment_pdf->template_pdf;
 
-        if (in_array($format_pdf, ['ticket', 'ticket_80', 'ticket_58'], true)) {
+        $isTicket = in_array($format_pdf, ['ticket', 'ticket_80', 'ticket_58'], true);
+        if ($isTicket) {
             $base_template = $establishment_pdf->template_ticket_pdf;
         }
 
-        $html = $template->pdf($base_template, "quotation", $company, $document, $format_pdf);
+        $html = $template->pdf($base_template, "quotation", $company, $document, $isTicket ? 'ticket' : $format_pdf,
+            ['quotation_narrow_ticket' => $isTicket]);
 
-        if ($format_pdf === 'ticket' or $format_pdf === 'ticket_80') {
+        if ($isTicket) {
 
-            $width = 78;
-            if (config('tenant.enabled_template_ticket_80')) $width = 76;
+            $width = $format_pdf === 'ticket_58' ? 56 : 78;
+            if ($format_pdf !== 'ticket_58' && config('tenant.enabled_template_ticket_80')) $width = 76;
 
             $company_name = (strlen($company->name) / 20) * 10;
             $company_address = (strlen($document->establishment->address) / 30) * 10;
@@ -694,7 +697,7 @@ class QuotationController extends Controller
             $total_exonerated = $document->total_exonerated != '' ? '10' : '0';
             $total_taxed = $document->total_taxed != '' ? '10' : '0';
             $quantity_rows = count($document->items);
-            $payments = $document->payments()->count() * 5;
+            $payments = $document->payments->count() * 5;
             $discount_global = 0;
             $terms_condition = $document->terms_condition ? 15 : 0;
             $contact = $document->contact ? 15 : 0;
@@ -715,6 +718,7 @@ class QuotationController extends Controller
                     $width,
                     120 +
                     ($quantity_rows * 8) +
+                    ($quantity_rows * 25) +
                     ($discount_global * 3) +
                     $company_name +
                     $company_address +
@@ -733,9 +737,9 @@ class QuotationController extends Controller
                     $document_description +
                     $total_taxed],
                 'margin_top' => 2,
-                'margin_right' => 5,
+                'margin_right' => $format_pdf === 'ticket_58' ? 2 : 5,
                 'margin_bottom' => 0,
-                'margin_left' => 5,
+                'margin_left' => $format_pdf === 'ticket_58' ? 2 : 5,
                 'default_font' => 'monospace'
             ]);
         } else if ($format_pdf === 'a5') {
@@ -868,10 +872,10 @@ class QuotationController extends Controller
         $pdf->WriteHTML($stylesheet, HTMLParserMode::HEADER_CSS);
         // $pdf->WriteHTML($html, HTMLParserMode::HTML_BODY);
 
-        if ($format_pdf != 'ticket') {
+        if (!$isTicket) {
             if (config('tenant.pdf_template_footer')) {
 
-                $html_footer = $template->pdfFooter($base_template, $this->quotation);
+                $html_footer = $template->pdfFooter($base_template, $document);
                 $html_footer_images = "";
                 $this->setPdfFooterImages($html_footer_images, $configuration, $format_pdf, $template, $base_template);
 
@@ -886,7 +890,7 @@ class QuotationController extends Controller
 
         $pdf->WriteHTML($html, HTMLParserMode::HTML_BODY);
 
-        $this->uploadFile($filename, $pdf->output('', 'S'), 'quotation');
+        return $pdf->output('', 'S');
     }
 
 
@@ -944,7 +948,8 @@ class QuotationController extends Controller
         }
         */
         return [
-            'success' => true
+            'success' => $sendIt,
+            'message' => $sendIt ? 'El correo fue enviado satisfactoriamente.' : 'No se pudo enviar el correo. Revise la configuración y el registro de envíos.'
         ];
     }
 
@@ -1058,8 +1063,8 @@ class QuotationController extends Controller
         }
 
         $items = $quotation->items->map(function ($row) {
-            $itemJson = is_array($row->item) ? $row->item : (array) $row->item;
-            $suggested = (float) (
+            $itemJson = \App\Support\Exact\JsonDecimals::decode($row->getAttributes()['item'] ?? '{}');
+            $suggested = (
                 $itemJson['suggested_unit_price']
                 ?? $itemJson['sale_unit_price']
                 ?? $row->unit_price
@@ -1071,16 +1076,19 @@ class QuotationController extends Controller
                 'item_id' => $row->item_id,
                 'description' => $itemJson['description'] ?? $row->name_product_pdf ?? 'Producto',
                 'internal_id' => $itemJson['internal_id'] ?? null,
-                'quantity' => (float) $row->quantity,
+                'quantity' => \App\Support\Exact\Decimal::represent($row->exactValue('quantity')),
                 'affectation_igv_type_id' => $row->affectation_igv_type_id ?: '10',
                 // ########## INICIO CAMBIO AFECTACIÓN IVA
-                'percentage_igv' => (float) ($row->percentage_igv ?: \App\Support\Venezuela\Localization::taxPercentage()),
+                'percentage_igv' => \App\Support\Exact\Decimal::represent($row->exactValue('percentage_igv')),
                 // ######### FIN CAMBIO AFECTACIÓN IVA
-                'unit_price' => (float) $row->unit_price,
-                'suggested_unit_price' => $suggested,
-                'discount_percentage' => $this->extractItemDiscountPercentage($row->discounts),
-                'total_discount' => (float) ($row->total_discount ?? 0),
-                'total' => (float) $row->total,
+                'unit_price' => \App\Support\Exact\Decimal::represent($row->exactValue('unit_price')),
+                'suggested_unit_price' => \App\Support\Exact\Decimal::represent($suggested),
+                'discount_percentage' => $this->extractItemDiscountPercentage(\App\Support\Exact\PdfAmounts::adjustments($row, 'discounts')),
+                'total_discount' => \App\Support\Exact\Decimal::represent($row->exactValue('total_discount')),
+                'total' => \App\Support\Exact\Decimal::represent($row->exactValue('total')),
+                'calculation_snapshot' => $row->calculation_snapshot,
+                'discounts' => \App\Support\Exact\PdfAmounts::adjustments($row, 'discounts'),
+                'charges' => \App\Support\Exact\PdfAmounts::adjustments($row, 'charges'),
             ];
         })->values();
 
@@ -1099,11 +1107,15 @@ class QuotationController extends Controller
                 'identifier' => $quotation->identifier,
                 'customer_name' => $customerName,
                 'currency_type_id' => $quotation->currency_type_id,
+                'current_percentage_igv' => \App\Support\Venezuela\Localization::exactTaxPercentage(),
+                'discounts' => \App\Support\Exact\PdfAmounts::adjustments($quotation, 'discounts'),
+                'charges' => \App\Support\Exact\PdfAmounts::adjustments($quotation, 'charges'),
+                'total_prepayment' => \App\Support\Exact\Decimal::represent($quotation->exactValue('total_prepayment')),
                 'state_type_id' => $quotation->state_type_id,
                 'needs_price_confirmation' => $quotation->needsPriceConfirmation(),
-                'total' => (float) $quotation->total,
-                'total_taxed' => (float) $quotation->total_taxed,
-                'total_igv' => (float) $quotation->total_igv,
+                'total' => \App\Support\Exact\Decimal::represent($quotation->exactValue('total')),
+                'total_taxed' => \App\Support\Exact\Decimal::represent($quotation->exactValue('total_taxed')),
+                'total_igv' => \App\Support\Exact\Decimal::represent($quotation->exactValue('total_igv')),
                 'items' => $items,
             ],
         ];
@@ -1119,8 +1131,8 @@ class QuotationController extends Controller
             'id' => 'required|integer',
             'items' => 'required|array|min:1',
             'items.*.id' => 'required|integer',
-            'items.*.quantity' => 'required|numeric|min:0.01',
-            'items.*.unit_price' => 'required|numeric|min:0.01',
+            'items.*.quantity' => 'required|numeric|gt:0',
+            'items.*.unit_price' => 'required|numeric|gt:0',
             'items.*.discount_percentage' => 'nullable|numeric|min:0|max:100',
         ]);
 
@@ -1142,96 +1154,61 @@ class QuotationController extends Controller
                     throw new Exception('La cotización ya tiene comprobantes asociados.');
                 }
 
-                $payloadById = collect($request->input('items'))->keyBy('id');
-                $totals = [
-                    'total_taxed' => 0.0,
-                    'total_exonerated' => 0.0,
-                    'total_unaffected' => 0.0,
-                    'total_igv' => 0.0,
-                    'total_value' => 0.0,
-                    'total_discount' => 0.0,
-                    'total' => 0.0,
-                ];
-
-                foreach ($quotation->items as $row) {
-                    if (! $payloadById->has($row->id)) {
-                        throw new Exception('Falta información de uno o más productos de la cotización.');
-                    }
-
-                    $payload = $payloadById[$row->id];
-                    $unitPrice = round((float) $payload['unit_price'], 6);
-                    $quantity = round((float) $payload['quantity'], 4);
-                    $discountPercentage = round((float) ($payload['discount_percentage'] ?? 0), 4);
-
-                    if ($unitPrice <= 0) {
-                        throw new Exception('Todos los precios unitarios deben ser mayores a cero.');
-                    }
-                    if ($quantity <= 0) {
-                        throw new Exception('Todas las cantidades deben ser mayores a cero.');
-                    }
-                    if ($discountPercentage < 0 || $discountPercentage > 100) {
-                        throw new Exception('El descuento porcentual debe estar entre 0 y 100.');
-                    }
-
-                    $calculated = $this->calculateQuotationItemTotals(
-                        $unitPrice,
-                        $quantity,
-                        $discountPercentage,
-                        $row->affectation_igv_type_id ?: '10',
-                        // ########## INICIO CAMBIO AFECTACIÓN IVA
-                        (float) ($row->percentage_igv ?: \App\Support\Venezuela\Localization::taxPercentage())
-                        // ######### FIN CAMBIO AFECTACIÓN IVA
-                    );
-
-                    $affectation = $row->affectation_igv_type_id ?: '10';
-                    if ($affectation === '10') {
-                        $totals['total_taxed'] += $calculated['total_value'];
-                        $totals['total_igv'] += $calculated['total_igv'];
-                    } elseif ($affectation === '20') {
-                        $totals['total_exonerated'] += $calculated['total_value'];
-                    } else {
-                        $totals['total_unaffected'] += $calculated['total_value'];
-                    }
-
-                    $totals['total_value'] += $calculated['total_value'];
-                    $totals['total_discount'] += $calculated['total_discount'];
-                    $totals['total'] += $calculated['total'];
-
-                    $itemJson = is_array($row->item) ? $row->item : (array) $row->item;
-                    $itemJson['sale_unit_price'] = $unitPrice;
-                    $itemJson['unit_price'] = $unitPrice;
-                    $itemJson['prices_pending'] = false;
-
-                    $row->quantity = $quantity;
-                    $row->unit_price = $unitPrice;
-                    $row->unit_value = $calculated['unit_value'];
-                    $row->total_base_igv = $calculated['total_base_igv'];
-                    $row->percentage_igv = $calculated['percentage_igv'];
-                    $row->total_igv = $calculated['total_igv'];
-                    $row->total_taxes = $calculated['total_igv'];
-                    $row->total_value = $calculated['total_value'];
-                    $row->total_discount = $calculated['total_discount'];
-                    $row->total_charge = 0;
-                    $row->total = $calculated['total'];
-                    $row->discounts = $calculated['discounts'];
-                    $row->item = $itemJson;
-                    $row->save();
+                $submitted = collect($request->input('items'));
+                $stored = $quotation->items()->withoutEagerLoads()->lockForUpdate()->get()->keyBy('id');
+                $ids = $submitted->pluck('id')->map(fn ($id) => (string) $id);
+                if ($ids->unique()->count() !== $ids->count() || $ids->count() !== $stored->count()
+                    || $ids->contains(fn ($id) => !$stored->has($id))) {
+                    throw new Exception('Las partidas deben pertenecer a esta cotización y no pueden repetirse.');
                 }
-
-                foreach ($totals as $key => $value) {
-                    $totals[$key] = round($value, 2);
+                \App\Support\Exact\CommercialCalculation::defer($quotation, function () use ($submitted, $stored) {
+                    foreach ($submitted as $payload) {
+                        $row = $stored->get($payload['id']);
+                        if (!in_array($row->affectation_igv_type_id, ['10', '20', 'EXP'], true)) {
+                            throw new Exception('Esta partida requiere una afectación de IVA vigente.');
+                        }
+                        $quantity = \App\Support\Exact\Decimal::input($payload['quantity'], 'items.quantity');
+                        $unitPrice = \App\Support\Exact\Decimal::input($payload['unit_price'], 'items.unit_price');
+                        $percentage = \App\Support\Exact\Decimal::input($payload['discount_percentage'] ?? '0', 'items.discount_percentage');
+                        $pct = \App\Support\Exact\Decimal::of($percentage);
+                        if (\App\Support\Exact\Decimal::of($quantity)->isLessThanOrEqualTo(0)
+                            || \App\Support\Exact\Decimal::of($unitPrice)->isLessThanOrEqualTo(0)
+                            || $pct->isNegative() || $pct->isGreaterThan(100)) {
+                            throw new Exception('Cantidad, precio o descuento inválido.');
+                        }
+                        $rawDiscounts = $row->getAttributes()['discounts'] ?? null;
+                        $discounts = $rawDiscounts ? \App\Support\Exact\JsonDecimals::decode($rawDiscounts) : [];
+                        $editable = [];
+                        foreach ($discounts as $index => $discount) {
+                            $discount = (array) $discount;
+                            if (($discount['discount_type_id'] ?? '') === '00' && empty($discount['from_global_distribution'])) $editable[] = $index;
+                        }
+                        if (count($editable) > 1 || ($editable && !empty(((array)$discounts[$editable[0]])['is_amount']))) {
+                            throw new Exception('Esta partida tiene descuentos que requieren la edición completa.');
+                        }
+                        $old = $editable ? (array)$discounts[$editable[0]] : null;
+                        $oldPercentage = $old ? (isset($old['percentage']) ? \App\Support\Exact\Decimal::of($old['percentage'])
+                            : \App\Support\Exact\Decimal::inputRational($old['factor'] ?? '0')->multipliedBy(100)) : \App\Support\Exact\Decimal::of(0);
+                        if (!$oldPercentage->isEqualTo($pct)) {
+                            if ($editable) unset($discounts[$editable[0]]);
+                            if (!$pct->isZero()) $discounts[] = ['discount_type_id'=>'00','description'=>'Descuento',
+                                'percentage'=>\App\Support\Exact\Decimal::represent($pct),'is_amount'=>false];
+                            $row->discounts = array_values($discounts);
+                        }
+                        foreach (['quantity'=>$quantity, 'unit_price'=>$unitPrice] as $field=>$value) {
+                            if (\App\Support\Exact\Decimal::represent($row->exactValue($field)) !== \App\Support\Exact\Decimal::represent($value)) $row->$field = $value;
+                        }
+                        $item = \App\Support\Exact\JsonDecimals::decode($row->getAttributes()['item'] ?? '{}');
+                        $item['sale_unit_price'] = \App\Support\Exact\Decimal::represent($unitPrice);
+                        $item['unit_price'] = \App\Support\Exact\Decimal::represent($unitPrice);
+                        $item['prices_pending'] = false;
+                        $row->item = $item;
+                        $row->save();
+                    }
+                });
+                if (\App\Services\Payments\AppliedReceiptBalance::values($quotation, false, true)['total_difference']->isNegative()) {
+                    throw new Exception('El total no puede ser menor que los cobros aplicados.');
                 }
-
-                $quotation->total_taxed = $totals['total_taxed'];
-                $quotation->total_exonerated = $totals['total_exonerated'];
-                $quotation->total_unaffected = $totals['total_unaffected'];
-                $quotation->total_igv = $totals['total_igv'];
-                $quotation->total_taxes = $totals['total_igv'];
-                $quotation->total_value = $totals['total_value'];
-                $quotation->total_discount = $totals['total_discount'];
-                $quotation->subtotal = $totals['total_value'];
-                $quotation->total = $totals['total'];
-                $quotation->save();
             });
 
             try {
@@ -1249,8 +1226,8 @@ class QuotationController extends Controller
                 'message' => 'Cotización actualizada correctamente.',
                 'data' => [
                     'id' => $fresh->id,
-                    'total' => (float) $fresh->total,
-                    'total_discount' => (float) $fresh->total_discount,
+                    'total' => \App\Support\Exact\Decimal::represent($fresh->exactValue('total')),
+                    'total_discount' => \App\Support\Exact\Decimal::represent($fresh->exactValue('total_discount')),
                     'needs_price_confirmation' => $fresh->needsPriceConfirmation(),
                 ],
             ];
@@ -1267,100 +1244,15 @@ class QuotationController extends Controller
      *
      * @param  mixed  $discounts
      */
-    private function extractItemDiscountPercentage($discounts): float
+    private function extractItemDiscountPercentage($discounts): string
     {
-        if (empty($discounts)) {
-            return 0.0;
-        }
-
-        $list = is_object($discounts) ? (array) $discounts : $discounts;
-        if (! is_array($list)) {
-            return 0.0;
-        }
-
-        foreach ($list as $entry) {
-            $row = is_object($entry) ? (array) $entry : $entry;
-            if (! is_array($row)) {
-                continue;
-            }
-            if (isset($row['percentage'])) {
-                return round((float) $row['percentage'], 4);
-            }
-            if (isset($row['factor'])) {
-                return round(((float) $row['factor']) * 100, 4);
+        foreach ($discounts as $entry) {
+            $row = (array) $entry;
+            if (($row['discount_type_id'] ?? '') === '00' && empty($row['from_global_distribution'])) {
+                return \App\Support\Exact\PdfAmounts::adjustmentPercent($row);
             }
         }
-
-        return 0.0;
-    }
-
-    /**
-     * Recalcula totales de línea con descuento % que afecta la base imponible (tipo 00).
-     * Misma lógica comercial que calculateRowItem del frontend.
-     */
-    private function calculateQuotationItemTotals(
-        float $unitPrice,
-        float $quantity,
-        float $discountPercentage,
-        string $affectation,
-        float $percentageIgv
-    ): array {
-        $discountPercentage = max(0.0, min(100.0, $discountPercentage));
-        $factor = $discountPercentage / 100;
-
-        if ($affectation === '10') {
-            $unitValue = round($unitPrice / (1 + ($percentageIgv / 100)), 6);
-        } else {
-            $unitValue = round($unitPrice, 6);
-            $percentageIgv = 0.0;
-        }
-
-        $totalValuePartial = round($unitValue * $quantity, 6);
-        $totalDiscount = round($totalValuePartial * $factor, 2);
-        $totalValue = round($totalValuePartial - $totalDiscount, 2);
-
-        if ($affectation === '10') {
-            $totalBaseIgv = $totalValue;
-            $totalIgv = round($totalBaseIgv * ($percentageIgv / 100), 2);
-            $total = round($totalValue + $totalIgv, 2);
-        } else {
-            $totalBaseIgv = $totalValue;
-            $totalIgv = 0.0;
-            $total = $totalValue;
-        }
-
-        $discounts = [];
-        if ($discountPercentage > 0) {
-            $discounts[] = [
-                'discount_type_id' => '00',
-                'discount_type' => [
-                    'id' => '00',
-                    'description' => 'Descuentos que afectan la base imponible del IGV/IVAP',
-                    'active' => 1,
-                    'base' => true,
-                    'level' => 'item',
-                    'type' => 'discount',
-                ],
-                'description' => 'Descuento',
-                'factor' => round($factor, 5),
-                'amount' => $totalDiscount,
-                'base' => round($totalValuePartial, 2),
-                'percentage' => $discountPercentage,
-                'is_amount' => false,
-                'amount_exact' => 0,
-            ];
-        }
-
-        return [
-            'unit_value' => $unitValue,
-            'percentage_igv' => $percentageIgv,
-            'total_base_igv' => $totalBaseIgv,
-            'total_igv' => $totalIgv,
-            'total_value' => $totalValue,
-            'total_discount' => $totalDiscount,
-            'total' => $total,
-            'discounts' => $discounts,
-        ];
+        return '0';
     }
 
     public function itemWarehouses($item_id)

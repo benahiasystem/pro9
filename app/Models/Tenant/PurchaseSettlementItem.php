@@ -36,8 +36,12 @@ class PurchaseSettlementItem extends ModelTenant
         'income_tax_affectation_igv_type_id',
         'income_retention_percentage',
         'income_retention_amount',
+        'discounts',
+        'charges',
 
     ];
+
+    protected $casts = ['discounts' => 'array', 'charges' => 'array'];
 
     public function getItemAttribute($value)
     {

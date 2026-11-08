@@ -163,10 +163,23 @@ class Facturalo
             case 'invoice':
                 // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
                 $sourceNotes = \App\Services\Payments\SaleNoteReceiptsRequired::lockOwners($inputs);
+                if (count($sourceNotes) === 1) {
+                    $sourceNote=\App\Models\Tenant\SaleNote::withoutEagerLoads()->findOrFail($sourceNotes[0]);
+                    if (!empty($inputs['order_note_id']) && (int)$inputs['order_note_id'] !== (int)$sourceNote->order_note_id) {
+                        \App\Services\Fiscal\FiscalAmounts::error('order_note_id','El pedido no coincide con el origen de la nota de venta.');
+                    }
+                    if ($sourceNote->order_note_id) {
+                        $inputs['order_note_id']=$sourceNote->order_note_id;
+                    }
+                } elseif (count($sourceNotes)>1 && !empty($inputs['order_note_id'])) {
+                    \App\Services\Fiscal\FiscalAmounts::error('order_note_id','Las notas relacionadas no admiten un pedido de origen adicional.');
+                }
                 \App\Services\Payments\QuotationReceiptsRequired::assertPresent($inputs['quotation_id'] ?? null, $inputs['payments'] ?? []);
                 \App\Services\Payments\SaleNoteReceiptsRequired::assertPresent($sourceNotes, $inputs['payments'] ?? []);
                 // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
+                $inputs=\App\Services\Fiscal\OrderInvoiceInventory::prepare($inputs,false,null,count($sourceNotes)===1 ? (int)$sourceNotes[0] : null);
                 $inputs=\App\Services\Fiscal\DeliveryOrderInvoiceInventory::prepare($inputs);
+                $inputs=\App\Services\Fiscal\SaleNoteInvoiceInventory::prepare($inputs,$sourceNotes);
                 $document = Document::create($inputs);
                 // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
                 \App\Services\Payments\SaleNoteReceiptsRequired::attach($sourceNotes, $document->id);
@@ -175,7 +188,9 @@ class Facturalo
                 foreach ($inputs['items'] as $row) {
 //                    $purchase_unit_price = $row['purchase_unit_price'];
 //                    $row['item']['purchase_unit_price'] = $purchase_unit_price;
-                    $document->items()->create(in_array($this->type, ['invoice','credit','debit'], true) ? \App\Services\Fiscal\FiscalDocumentPersistence::line($row + ['currency_type_id'=>$document->currency_type_id, 'exchange_rate_sale'=>$document->exchange_rate_sale], \App\Services\ExportInvoicePolicy::isExport(\App\Services\ExportInvoicePolicy::operation($inputs))) : $row);
+                    $prepared=\App\Services\Fiscal\FiscalDocumentPersistence::line($row + ['currency_type_id'=>$document->currency_type_id, 'exchange_rate_sale'=>$document->exchange_rate_sale], \App\Services\ExportInvoicePolicy::isExport(\App\Services\ExportInvoicePolicy::operation($inputs)), $row['_order_components'] ?? $row['_sale_note_components'] ?? null);
+                    if (isset($row['_order_legacy_inventory'])) $prepared['item']['legacy_order_note_inventory']=$row['_order_legacy_inventory'];
+                    $document->items()->create($prepared);
                     // $row['document_id']=  $document->id;
                     // $item = new DocumentItem($row);
                     // $item->push();
@@ -193,6 +208,7 @@ class Facturalo
                 \App\Services\Fiscal\FiscalDocumentPersistence::applySettlements($document, $inputs);
                 // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
                 $outstanding = \App\Support\Exact\Receivables::balancesForDocuments([$document])[$document->id];
+                \App\Services\Fiscal\FiscalDocumentPersistence::assertFreeFormCashCollection($document,$outstanding);
                 \App\Support\Exact\Installments::save($document, array_values($inputs['fee'] ?? []), \App\Support\Exact\Decimal::max(0, $outstanding));
                 // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
                 // ######## FIN PERSISTENCIA FISCAL VENEZUELA ########
@@ -201,11 +217,7 @@ class Facturalo
                 $this->document = Document::find($document->id);
                 break;
             case 'voided':
-                $document = Voided::create($inputs);
-                foreach ($inputs['documents'] as $row) {
-                    $document->documents()->create($row);
-                }
-                $this->document = Voided::find($document->id);
+                \App\Services\Fiscal\LegacyVoidedOperation::reject();
                 break;
             case 'retention':
                 $document = Retention::create($inputs);
@@ -222,10 +234,13 @@ class Facturalo
                 $this->document = Perception::find($document->id);
                 break;
             case 'purchase_settlement':
+                \App\Services\Fiscal\PurchaseSettlementPolicy::assertAvailable($inputs['document_type_id'] ?? null);
+                $inputs = \App\Services\Fiscal\PurchaseSettlementAdvances::normalize($inputs);
+                if (empty($inputs['items'])) \App\Services\Fiscal\FiscalAmounts::error('items', 'Agregue al menos una partida.');
                 $document = PurchaseSettlement::create($inputs);
-                foreach ($inputs['items'] as $row) {
-                    $document->items()->create(in_array($this->type, ['invoice','credit','debit'], true) ? \App\Services\Fiscal\FiscalDocumentPersistence::line($row + ['currency_type_id'=>$document->currency_type_id, 'exchange_rate_sale'=>$document->exchange_rate_sale], \App\Services\ExportInvoicePolicy::isExport(\App\Services\ExportInvoicePolicy::operation($inputs))) : $row);
-                }
+                \App\Support\Exact\CommercialCalculation::defer($document, function () use ($document, $inputs) {
+                    foreach ($inputs['items'] as $row) $document->items()->create($row);
+                });
                 $this->document = PurchaseSettlement::find($document->id);
                 break;
             default:
@@ -476,6 +491,13 @@ class Facturalo
                 if(strlen($it->item->description)>100){
                     $extra_by_item_description +=24;
                 }
+                if ($this->type === 'invoice' && in_array($format_pdf, ['ticket','ticket_58'], true) && strlen(\App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::read($it, 'quantity'))) > 7) {
+                    $extra_by_item_description += 6;
+                }
+                if ($this->type === 'invoice' && $format_pdf === 'ticket' && in_array($base_pdf_template, ['default','modern-2027'], true)) {
+                    $charsPerLine = $base_pdf_template === 'default' ? 32 : 22;
+                    $extra_by_item_description += 4 * max(0, (int) ceil(mb_strlen(strip_tags((string) $it->item->description)) / $charsPerLine) - 1);
+                }
                 if ($it->discounts) {
                     $discount_global = $discount_global + 1;
                 }
@@ -521,10 +543,16 @@ class Facturalo
                 'format' => [
                     $width,
                     80 +
-                    $height_terms +
+                    $height_terms + (str_contains($html,'data-pdf-unit-price-rounding') ? 20 : 0) + (($format_pdf === 'ticket_58' && in_array($base_pdf_template, ['default','nrus'], true)) ? 6 : 0) + (($format_pdf === 'ticket' && in_array($base_pdf_template, ['default','nrus','modern-2027'], true) && $this->type === 'invoice') ? 5 : 0) +
                      $heightQr +
                      $height_logo +
                     (($quantity_rows * 8) + $extra_by_item_description) +
+                    (($format_pdf === 'ticket_58' && $base_pdf_template === 'modern-2027')
+                        ? \App\Support\Exact\PdfQuantities::extraHeight58($this->document->items) : 0) +
+                    // ######## INICIO ESPACIO PARA LOTES EN NOTAS ########
+                    (($this->document instanceof Document && in_array($this->document->document_type_id, ['07','08'], true))
+                        ? \App\Support\Exact\PdfNoteLots::ticketExtraHeight($this->document->items) : 0) +
+                    // ######## FIN ESPACIO PARA LOTES EN NOTAS ########
                     ($document_payments * 8) +
                     $receipt_detail_height + $installment_height +
                     ($discount_global * 8) +
@@ -1071,6 +1099,11 @@ class Facturalo
                 $emission = $document->emission()->lockForUpdate()->first();
                 $document->setRelation('emission', $emission);
                 \App\Services\Fiscal\DocumentEditPolicy::assertEditable($document);
+                // Preserve historical shortfalls, but an edit must not increase them.
+                $cashShortfall=null;
+                if ($document->fiscal_emission_mode === 'free_form' && $document->payment_condition_id === '01') {
+                    $cashShortfall=\App\Services\Fiscal\FiscalDocumentPersistence::freeFormCashShortfall($document,$document->exactBalance(true));
+                }
                 $requireFullPayment = \App\Services\Fiscal\HkaDomesticInvoicePolicy::applies($document) || \App\Services\SpecialTaxRegimePolicy::requested($inputs);
                 if (\App\Services\SpecialTaxRegimePolicy::applies($document) && !$this->webDocuments) \App\Services\Fiscal\FiscalAmounts::error('fiscal_data.special_tax_regime_id', 'Edite el régimen especial desde Comprobantes web.');
                 \App\Services\ExportInvoicePolicy::assertInput($inputs, $this->webDocuments);
@@ -1104,6 +1137,7 @@ class Facturalo
                 // Existing collection schedules and receipt references remain intact.
 
                 $warehouse = Warehouse::where('establishment_id', auth()->user()->establishment_id)->first();
+                $inputs['items']=\App\Services\Fiscal\DocumentEditSettlements::restoreLineSnapshots($document,$inputs['items']);
 
                 foreach ($document->items as $it) {
                     //se usa el evento deleted del modelo - InventoryKardexServiceProvider document_item_delete
@@ -1142,6 +1176,7 @@ class Facturalo
                 \App\Services\Fiscal\FiscalDocumentPersistence::otherTaxes($document, $inputs['taxes'] ?? []);
                 \App\Services\Fiscal\FiscalDocumentPersistence::summarize($document);
                 \App\Services\Fiscal\DocumentEditSettlements::validateTotals($document);
+                if ($cashShortfall !== null) \App\Services\Fiscal\FiscalDocumentPersistence::assertFreeFormCashCollection($document,$document->fresh()->exactBalance(true),$cashShortfall,true);
                 \App\Services\Fiscal\HkaDomesticInvoicePolicy::assertPaid($document, $requireFullPayment);
                 // ######## FIN PERSISTENCIA FISCAL VENEZUELA ########
                 $this->document = Document::find($document->id);
@@ -1318,6 +1353,13 @@ class Facturalo
                 if(strlen($it->item->description)>100){
                     $extra_by_item_description +=24;
                 }
+                if ($this->type === 'invoice' && in_array($format_pdf, ['ticket','ticket_58'], true) && strlen(\App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::read($it, 'quantity'))) > 7) {
+                    $extra_by_item_description += 6;
+                }
+                if ($this->type === 'invoice' && $format_pdf === 'ticket' && in_array($base_pdf_template, ['default','modern-2027'], true)) {
+                    $charsPerLine = $base_pdf_template === 'default' ? 32 : 22;
+                    $extra_by_item_description += 4 * max(0, (int) ceil(mb_strlen(strip_tags((string) $it->item->description)) / $charsPerLine) - 1);
+                }
                 if ($it->discounts) {
                     $discount_global = $discount_global + 1;
                 }
@@ -1344,8 +1386,12 @@ class Facturalo
                 'format' => [
                     $width,
                     80 +
-                    $height_terms +
+                    $height_terms + (str_contains($html,'data-pdf-unit-price-rounding') ? 20 : 0) + (($format_pdf === 'ticket_58' && in_array($base_pdf_template, ['default','nrus'], true)) ? 6 : 0) + (($format_pdf === 'ticket' && in_array($base_pdf_template, ['default','nrus','modern-2027'], true) && $this->type === 'invoice') ? 5 : 0) +
                     (($quantity_rows * 8) + $extra_by_item_description) +
+                    // ######## INICIO ESPACIO PARA LOTES EN VISTA PREVIA ########
+                    (($this->document instanceof Document && in_array($this->document->document_type_id, ['07','08'], true))
+                        ? \App\Support\Exact\PdfNoteLots::ticketExtraHeight($this->document->items) : 0) +
+                    // ######## FIN ESPACIO PARA LOTES EN VISTA PREVIA ########
                     ($document_payments * 8) +
                     ($discount_global * 8) +
                     $company_name +

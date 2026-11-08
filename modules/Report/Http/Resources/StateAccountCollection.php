@@ -1,139 +1,76 @@
 <?php
-// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace Modules\Report\Http\Resources;
 
-use Illuminate\Http\Resources\Json\ResourceCollection;
-use App\Models\Tenant\Catalogs\DocumentType;
-use App\Models\Tenant\SalenotePayment;
-use App\Models\Tenant\DocumentPayment;
 use App\Models\Tenant\Document;
-use App\Models\Tenant\SaleNote;
-use App\Models\Tenant\Series;
+use App\Models\Tenant\Catalogs\DocumentType;
+use App\Support\Exact\Decimal as D;
+use App\Support\Exact\Receivables;
+use Illuminate\Http\Resources\Json\ResourceCollection;
 
+/** Account rows keep their real model, even when document and sale-note IDs overlap. */
 class StateAccountCollection extends ResourceCollection
 {
+    public function toArray($request)
+    {
+        $documents = $this->collection->filter(fn ($row) => $row instanceof Document);
+        $balances = [];
+        foreach ($documents->chunk(500) as $chunk) $balances += Receivables::balancesForDocuments($chunk);
+        $saleType = DocumentType::find('80');
+        $linked = \Modules\Report\Services\StateAccountAmounts::activeLinkedInvoices($this->collection);
 
-
-    public function toArray($request) {
-
-
-        return $this->collection->transform(function($row, $key){
-
-            //dd(get_class($row));
-            $affected_document = null;
-            $payment_state='';
-            $description='';
-            $type_description='';
-            $serie = $row->series;
-            $serie = Series::where('number', $serie)->first();
-            $document_type_id = $serie->document_type_id;
-            if($document_type_id == '01'){
-
-                if(in_array($row->document_type_id, ['07', '08']) && $row->note) {
-
-                    $series = ($row->note->affected_document) ? $row->note->affected_document->series : $row->note->data_affected_document->series;
-                    $number = ($row->note->affected_document) ? $row->note->affected_document->number : $row->note->data_affected_document->number;
-                    $affected_document = \App\Services\Fiscal\FiscalIdentity::numberFull($series, $number);
-                }
-                $pays = DocumentPayment::where('document_id', $row->id)->whereNull('reversed_at');
-
-                $total_paid = number_format($pays->sum('payment'), 2, '.', '');
-                $payment_state = number_format($row instanceof Document ? $row->balance : $row->total - $total_paid, 2, '.', '');
-
-                $description=$row->state_type?$row->state_type->description:null;
-
-
-                $document_type_id = Document::where('id', $row->id)->select('document_type_id')->get();
-                $document_type_id=$document_type_id[0]['document_type_id'];
-                //dd($document_type_id);
-                $type_description= DocumentType::where('id',$document_type_id)->select('description')->get();
-                $type_description=$type_description[0]['description'];
-            }else{
-                $document_type = DocumentType::find('80');
-
-                $document_type_id = $document_type->id;
-
-                $row->document_type = $document_type;
-                /** @var SaleNote $row */
-
-                $affected_document = null;
-
-                if(in_array($document_type_id, ['07', '08']) && $row->note) {
-
-                    $series = ($row->note->affected_document) ? $row->note->affected_document->series : $row->note->data_affected_document->series;
-                    $number = ($row->note->affected_document) ? $row->note->affected_document->number : $row->note->data_affected_document->number;
-                    $affected_document = \App\Services\Fiscal\FiscalIdentity::numberFull($series, $number);
-                }
-
-                $pays = SalenotePayment::where('sale_note_id', $row->id);
-                $total_paid = number_format($pays->sum('payment'), 2, '.', '');
-                $payment_state = number_format($row instanceof Document ? $row->balance : $row->total - $total_paid, 2, '.', '');
-                $description=$row->state_type?$row->state_type->description:null;
-                $date_of_due=SaleNote::where('id',$row->id)->select('due_date')->get();
-                $date_of_due=$date_of_due[0]['due_date'];
-                $type_description='NOTA DE VENTA';
-                //dd($row);
-            }
-
-            $state = $row->state_type_id;
-
+        return $this->collection->map(function ($row) use ($balances, $saleType, $linked) {
+            $document = $row instanceof Document;
+            $type = $document ? $row->document_type_id : '80';
+            $void = in_array($row->state_type_id, ['09', '11'], true);
             $seller = $row->getSellerData();
-            //dd($seller->name);
-            return [
-                'id' => $row->id,
-                'group_id' => $row->group_id,
-                'fiscal_environment' => $row->fiscal_environment,
-                'fiscal_environment_description' => isset($row->fiscal_environment_type)?$row->fiscal_environment_type->description:null,
-                'date_of_issue' => $row->date_of_issue?$row->date_of_issue->format('Y-m-d'):null,
-                'date_of_due' => (in_array($document_type_id, ['01'])) ?$row->invoice->date_of_due->format('Y-m-d') : (($date_of_due) ? $date_of_due->format('Y-m-d') : null),
-                'number' => $row->number_full,
-                'customer_name' => (in_array($document_type_id, ['01']) && isset($row->person)) ? $row->person->name : ($document_type_id=='80' ? $row->person->name : null),
-                'customer_number' => (in_array($document_type_id, ['01'])&& isset($row->person)) ? format_person_identity_document($row->person) : ($document_type_id=='80' ? format_person_identity_document($row->person) : null),
-                'currency_type_id' => $row->currency_type_id,
-                'series' => $row->series,
-                'establishment_id' => $row->establishment_id,
-                'alone_number' => $row->number,
-                'purchase_order' => $row->purchase_order,
-                'guides' => !empty($row->guides)?(array)$row->guides:null,
-
-                'total_exportation' => (in_array($document_type_id,['01', '07']) && in_array($row->state_type_id,['09','11'])) ? number_format(0,2, ".","") : number_format($row->total_exportation,2, ".",""),
-                'total_exonerated' =>  (in_array($document_type_id,['01', '07']) && in_array($row->state_type_id,['09','11'])) ? number_format(0,2, ".","") : number_format($row->total_exonerated,2, ".",""),
-                'total_taxed' => (in_array($document_type_id,['01', '07']) && in_array($row->state_type_id,['09','11'])) ? number_format(0,2, ".","") : number_format($row->total_taxed,2, ".",""),
-                'total_igv' =>  (in_array($document_type_id,['01', '07']) && in_array($row->state_type_id,['09','11'])) ? number_format(0,2, ".","") : number_format($row->total_igv,2, ".",""),
-                'total' =>  (in_array($document_type_id,['01', '07']) && in_array($row->state_type_id,['09','11'])) ? number_format(0,2, ".","") : number_format($row->total,2, ".",""),
-                'total_charge' => $row->total_charge,
-                'state_type_id' => $row->state_type_id,
-                'state_type_description' => $description,
-                'document_type_description' => $type_description,
-                'document_type_id' => $document_type_id,
-                'affected_document' => $affected_document,
-                'user_name' => $seller->name ,
-                'user_email' => $seller->email ,
-
-                'notes' => (in_array($document_type_id, ['01'])) ? $row->affected_documents->transform(function($row) {
-                    return [
-                        'id' => $row->id,
-                        'document_id' => $row->document_id,
-                        'note_type_description' => ($row->note_type == 'credit') ? 'NC':'ND',
-                        'description' => $row->document->number_full,
-                    ];
-                }) : null,
-                'quotation_number_full' => ($row->quotation) ? $row->quotation->number_full : '',
-                'sale_opportunity_number_full' => isset($row->quotation->sale_opportunity) ? $row->quotation->sale_opportunity->number_full : '',
-                'plate_number' => $row->plate_number,
-                'payment_state' => $payment_state,
-                'items' => $row->items->transform(function($row, $key) {
-                    return [
-                        'key' => $key + 1,
-                        'id' => $row->id,
-                        'description' => $row->item->description,
-                        'quantity' => round($row->quantity,2)
-                    ];
-                }),
-
+            $affected = null;
+            if ($document && in_array($type, ['07', '08'], true) && $row->note) {
+                $target = $row->note->affected_document ?: $row->note->data_affected_document;
+                if ($target) $affected = \App\Services\Fiscal\FiscalIdentity::numberFull($target->series, $target->number);
+            }
+            $converted = !$document && $row->document_id && $linked->contains($row->document_id);
+            $balance = ($void || $converted) ? D::of(0) : ($document ? ($balances[$row->id] ?? D::of(0)) :
+                \Modules\Report\Services\StateAccountAmounts::saleNoteBalance($row));
+            $result = [
+                'id'=>$row->id, 'group_id'=>$document ? $row->group_id : null,
+                'fiscal_environment'=>$row->fiscal_environment,
+                'fiscal_environment_description'=>optional($row->fiscal_environment_type)->description,
+                'date_of_issue'=>optional($row->date_of_issue)->format('Y-m-d'),
+                'date_of_due'=>$document ? optional(optional($row->invoice)->date_of_due)->format('Y-m-d') : optional($row->due_date)->format('Y-m-d'),
+                'number'=>$row->number_full, 'customer_name'=>optional($row->person)->name,
+                'customer_number'=>$row->person ? format_person_identity_document($row->person) : null,
+                'currency_type_id'=>$row->currency_type_id, 'series'=>$row->series,
+                'establishment_id'=>$row->establishment_id, 'alone_number'=>$row->number,
+                'purchase_order'=>$row->purchase_order, 'guides'=>!empty($row->guides) ? (array) $row->guides : null,
+                'state_type_id'=>$row->state_type_id, 'state_type_description'=>optional($row->state_type)->description,
+                'document_type_description'=>$document ? optional($row->document_type)->description : optional($saleType)->description,
+                'document_type_id'=>$type, 'converted'=>$converted, 'affected_document'=>$affected,
+                'user_name'=>$seller->name ?? '', 'user_email'=>$seller->email ?? '',
+                'notes'=>$document && $type === '01' ? $row->affected_documents->map(fn ($note) => [
+                    'id'=>$note->id, 'document_id'=>$note->document_id,
+                    'note_type_description'=>$note->note_type === 'credit' ? 'NC' : 'ND',
+                    'description'=>optional($note->document)->number_full,
+                ]) : null,
+                'quotation_number_full'=>optional($row->quotation)->number_full ?? '',
+                'sale_opportunity_number_full'=>optional(optional($row->quotation)->sale_opportunity)->number_full ?? '',
+                'plate_number'=>$row->plate_number, 'payment_state'=>D::format($balance, 2, '.', ''),
+                'items'=>$row->items->values()->map(fn ($item, $key) => [
+                    'key'=>$key+1, 'id'=>$item->id, 'description'=>$item->item->description,
+                    'quantity'=>D::represent(D::read($item, 'quantity')),
+                    'quantity_fraction'=>D::fraction(D::read($item, 'quantity')),
+                ]),
             ];
+            foreach (['total_exportation','total_exonerated','total_unaffected','total_free','total_taxed','total_igv','total','total_charge'] as $field) {
+                // ######## INICIO CALCULOS EXACTOS PRO9 ########
+                if (!array_key_exists($field, $row->getAttributes())) {
+                    $result[$field] = null;
+                    continue;
+                }
+                // ######## FIN CALCULOS EXACTOS PRO9 ########
+                $result[$field] = $void ? '0.00' : D::format(D::read($row, $field), 2, '.', '');
+            }
+            return $result;
         });
     }
 }
-// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

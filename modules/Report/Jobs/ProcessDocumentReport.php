@@ -24,6 +24,9 @@
     use Modules\Report\Exports\DocumentExport;
     use App\Traits\JobReportTrait;
     use Modules\Report\Http\Controllers\ReportDocumentController;
+    use App\Models\Tenant\Document;
+    use App\Support\Exact\ReadSnapshot;
+    use Maatwebsite\Excel\Facades\Excel;
     
 
     class ProcessDocumentReport implements ShouldQueue
@@ -73,11 +76,26 @@
                 $download_tray = $this->findDownloadTray($this->tray_id);
                 $format = $download_tray->format;
                 $path = $this->getReportPath($format);
-                $filename = $this->getReportFilename($download_tray->module, 'Reporte_Documentos_Ventas');
-                $company = $this->getDataCompany();
-                $establishment = $this->getDataEstablishment($this->filters['establishment_id_for_format']);
-                
-                $records = app(ReportDocumentController::class)->getRecords($this->filters, $this->filters['class_type_records'])->get();
+                $filename = $this->getReportFilename($download_tray->module, 'Reporte_Documentos_Ventas').'_'.$download_tray->id;
+                [$content, $base_template] = ReadSnapshot::run((new Document)->getConnection(), function () use ($format) {
+                    $company = $this->getDataCompany();
+                    $establishment = $this->getDataEstablishment($this->filters['establishment_id_for_format']);
+                    $records = app(ReportDocumentController::class)->getRecords($this->filters, $this->filters['class_type_records'])->get();
+                    $filters = $this->filters;
+                    $columns = $this->columns;
+                    if ($format === 'pdf') {
+                        return [htmlspecialchars_decode(view('report::documents.report_pdf', compact('records', 'company', 'establishment', 'filters', 'columns'))->render()), $establishment->template_pdf];
+                    }
+                    $categories = [];
+                    $categories_services = [];
+                    if (($filters['include_categories'] ?? null) == '1') {
+                        $categories = app(ReportDocumentController::class)->getCategories($records, false);
+                        $categories_services = app(ReportDocumentController::class)->getCategories($records, true);
+                    }
+                    $export = (new DocumentExport())->records($records)->company($company)->establishment($establishment)
+                        ->filters($filters)->categories($categories)->categories_services($categories_services)->columns($columns);
+                    return [Excel::raw($export, \Maatwebsite\Excel\Excel::XLSX), null];
+                });
 
                 if ($format === 'pdf') 
                 {
@@ -85,11 +103,7 @@
 
                     Log::debug("Render pdf init");
 
-                    $filters = $this->filters;
-                    $columns = $this->columns;
-                    $html = view('report::documents.report_pdf', compact("records", "company", "establishment", "filters","columns"))->render();
-                    $html = htmlspecialchars_decode($html);
-                    $base_template = $establishment->template_pdf;
+                    $html = $content;
                     $defaultConfig = (new ConfigVariables())->getDefaults();
                     $fontDirs = $defaultConfig['fontDir'];
                     $defaultFontConfig = (new FontVariables())->getDefaults();
@@ -98,7 +112,7 @@
                     $pdf_font_bold = config('tenant.pdf_name_bold');
     
                     $pdf = new Mpdf([
-                        'format' => 'A4-L',
+                        'format' => \Modules\Report\Services\DocumentReportPaper::landscape($this->columns),
                         'fontDir' => array_merge($fontDirs, [
                             app_path('CoreFacturalo'.DIRECTORY_SEPARATOR.'Templates'.
                                                     DIRECTORY_SEPARATOR.'pdf'.
@@ -141,32 +155,11 @@
                 {
                     Log::debug("Render excel init");
 
-                    //get categories
-                    $categories = [];
-                    $categories_services = [];
-
-                    if($this->filters['include_categories'] == "1")
-                    {
-                        $categories = app(ReportDocumentController::class)->getCategories($records, false);
-                        $categories_services = app(ReportDocumentController::class)->getCategories($records, true);
-                    }
-
-                    $inventoryExport = new DocumentExport();
-
-                    $inventoryExport
-                        ->records($records)
-                        ->company($company)
-                        ->establishment($establishment)
-                        ->filters($this->filters)
-                        ->categories($categories)
-                        ->categories_services($categories_services)
-                        ->columns($this->columns);
-
                     Log::debug("Render excel finish");
 
                     Log::debug("Upload excel init");
 
-                    $inventoryExport->store(DIRECTORY_SEPARATOR.$path.DIRECTORY_SEPARATOR.$filename.'.'.$format, 'tenant');
+                    $this->uploadStorage($filename, $content, $path);
 
                     Log::debug("Upload excel finish");
 
@@ -175,9 +168,20 @@
                 $this->finishedDownloadTray($download_tray, $filename, $path);
 
             } 
-            catch(Exception $e) 
+            catch(\Throwable $e)
             {
                 $this->showLogInfo('ProcessDocumentReport Error transaction: '. $e->getMessage());
+                try {
+                    $tray = $this->findDownloadTray($this->tray_id);
+                    if ($tray) {
+                        $tray->status = 'FAILED';
+                        $tray->date_end = date('Y-m-d H:i:s');
+                        $tray->save();
+                    }
+                } catch (\Throwable $statusError) {
+                    Log::error('No se pudo actualizar la bandeja del reporte de ventas', ['exception' => $statusError]);
+                }
+                throw $e;
             }
 
             $this->showLogInfo('ProcessDocumentReport Finish transaction');

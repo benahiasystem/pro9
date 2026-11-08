@@ -27,7 +27,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
         $affected_document_number = null;
     }
 
-    $payments = $document->payments;
+    $payments = $document->payments->filter(fn ($payment) => !data_get($payment, 'reversed_at'));
 
     $document->load('reference_guides');
 
@@ -579,7 +579,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
                         {{ $cleanedDate }}
                     </td>
                 @endif
-                <td class="p-1 text-center align-top desc cell-solid-rl">{{ $row->formatPdfUnitPrice() }}</td>
+                <td class="p-1 text-center align-top desc cell-solid-rl"><span data-pdf-unit-price>{{ $row->formatPdfUnitPrice() }}</span></td>
                 <td class="p-1 text-center align-top desc cell-solid-rl">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($row, 'unit_value'), 2) }}</td>
                 <td class="p-1 text-center align-top desc cell-solid-rl">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($row, 'total'), 2) }}</td>
             </tr>

@@ -53,7 +53,7 @@
 </head>
 <body>
 <div>
-    <p align="center" class="title"><strong>Consolidado de items por cliente/vendedor</strong></p>
+    <p align="center" class="title"><strong>Órdenes de entrega: artículos por cliente/vendedor</strong></p>
 </div>
 <div style="margin-top:20px; margin-bottom:20px;">
     <table>
@@ -99,7 +99,7 @@
     <div class="">
         <div class=" ">
             @php
-                $acum_total=0
+                $unitTotals=\Modules\Report\Services\DispatchReportAmounts::totalsByUnit($records);
             @endphp
             <table class="">
                 <thead>
@@ -123,7 +123,7 @@
                         <?php
                         /** @var \App\Models\Tenant\DispatchItem $value */
 
-                        $data = $value->getCollectionData();
+                        $data = $reportRows[$value->id] ?? $value->getCollectionData();
                         $qty = $data['quantity'];
                         $item = $data['item'];
                         $item_description = $item['description'];
@@ -151,17 +151,20 @@
                         <td class="celda">{{ $date_of_shipping }}</td>
                         <td class="celda">{{ $order_form_description }}</td>
                         <td class="celda"> {{$item_description}} </td>
-                        <td class="celda"> {{$value->getQtyFormated()}} </td>
+                        <td class="celda"> {{ $qty }} {{ \Modules\Report\Services\DispatchReportAmounts::unit($value) ?? '(sin unidad)' }} </td>
                         <td class="celda"> {{ $transfer_reason_label }} </td>
-                    @php
-                        $acum_total += $qty
-                    @endphp
+                    </tr>
                 @endforeach
+                @foreach($unitTotals as $unit => $quantity)
                 <tr>
-                    <td class="celda" colspan="9"></td>
-                    <td class="celda"><strong>Total</strong></td>
-                    <td class="celda">{{number_format($acum_total,2)}}</td>
+                    <td class="celda" colspan="9"><strong>Total {{ $unit }}</strong></td>
+                    <td class="celda">{{ \App\Support\Exact\Decimal::represent($quantity) }}</td>
+                    <td class="celda"></td>
                 </tr>
+                @endforeach
+                @if($records->contains(fn($line)=>\Modules\Report\Services\DispatchReportAmounts::unit($line) === null))
+                <tr><td class="celda" colspan="11">Las partidas sin unidad identificada no se incluyen en los totales.</td></tr>
+                @endif
                 </tbody>
             </table>
         </div>

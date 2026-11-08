@@ -119,8 +119,11 @@ class DispatchItem extends ModelTenant
             $configuration = Configuration::first();
         }
 
-        $this->quantity = number_format($this->quantity,2);
         $data = $this->toArray();
+        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // Do not mutate the model or its frozen quantity while reading a report.
+        $data['quantity'] = \App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::readRequired($this, 'quantity'));
+        // ######## FIN CALCULOS EXACTOS PRO9 ########
         $data['item'] = [];
         $data['dispatches'] = [];
         if (!empty($dispatches)) {
@@ -128,6 +131,12 @@ class DispatchItem extends ModelTenant
         }
         if (!empty($item)) {
             $data['item'] = $item->getCollectionData($configuration);
+            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            // The current catalogue may have a different physical unit today.
+            $snapshot = (array)$this->item;
+            $data['item']['unit_type_id'] = $snapshot['unit_type_id'] ?? null;
+            if (isset($snapshot['description'])) $data['item']['description'] = $snapshot['description'];
+            // ######## FIN CALCULOS EXACTOS PRO9 ########
         }
 
         return $data;

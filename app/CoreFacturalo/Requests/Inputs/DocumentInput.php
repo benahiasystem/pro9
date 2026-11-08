@@ -601,7 +601,9 @@ class DocumentInput
         $worker_full_name_tips = Functions::valueKeyInArray($inputs, 'worker_full_name_tips');
         $total_tips = Functions::valueKeyInArray($inputs, 'total_tips', 0);
 
-        if ($worker_full_name_tips && $total_tips > 0)
+        if ($total_tips === null || $total_tips === '') $total_tips = '0';
+        $total_tips = \App\Support\Exact\Decimal::input($total_tips, 'total_tips');
+        if ($worker_full_name_tips && \App\Support\Exact\Decimal::of($total_tips)->isGreaterThan(0))
         {
             return [
                 'date' => date('Y-m-d'),

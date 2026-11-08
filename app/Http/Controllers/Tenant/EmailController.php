@@ -74,13 +74,7 @@ use Illuminate\Support\Facades\Mail;
                 $email= implode(';',$mails);
 
             }
-            $sendit
-                ->setArrayEmail(explode(';',$email))
-                // ->setEmail(str_replace([';', '  '], [', ', ' '], $email))
-                ->SendAMail($mailable);
-
-
-            return true;
+            return $sendit->setArrayEmail(explode(';',$email))->SendAMail($mailable);
         }
 
         /**

@@ -64,7 +64,7 @@ class DocumentValidation
         $inputs['customer_id'] = Functions::person($inputs['customer'], 'customers');
         unset($inputs['customer']);
 
-        $inputs['items'] = self::items($inputs['items']);
+        $inputs['items'] = self::items($inputs['items'], $inputs['exchange_rate_sale'] ?? null);
 
         Functions::DNI($inputs);
         Functions::identityDocumentTypeInvoice($inputs);
@@ -75,9 +75,9 @@ class DocumentValidation
         return $inputs;
     }
 
-    private static function items($inputs) {
+    private static function items($inputs, $exchangeRate) {
         foreach ($inputs as &$row) {
-            $row['item_id'] = Functions::item($row);
+            $row['item_id'] = Functions::item($row, $exchangeRate);
             unset($row['internal_id'], $row['description']);
             unset($row['item_type_id'], $row['item_code']);
             unset($row['item_code_gs1'], $row['unit_type_id']);

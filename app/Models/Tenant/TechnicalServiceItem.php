@@ -693,12 +693,22 @@
 
         }
 
+        public function setAdditionalInformationAttribute($value)
+        {
+            $this->attributes['additional_information'] = is_array($value) ? implode('|', $value) : $value;
+        }
+
         /**
          * @return array
          */
         public function getCollectionData()
         {
             $data = $this->toArray();
+            // Expose the original inputs, not just a rounded decimal projection,
+            // so a later conversion can independently recompute the fraction.
+            foreach (['quantity_input','price_input'] as $field) {
+                $data[$field] = $this->calculation_snapshot['inputs'][$field] ?? null;
+            }
             return $data;
 
         }

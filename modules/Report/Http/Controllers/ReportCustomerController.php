@@ -11,7 +11,9 @@ use App\Models\Tenant\Establishment;
 use App\Models\Tenant\Document;
 use App\Models\Tenant\Company;
 use Carbon\Carbon;
-use Modules\Report\Http\Resources\DocumentCollection;
+use Modules\Report\Http\Resources\CustomerDocumentCollection;
+use Modules\Report\Services\CustomerReportAmounts;
+use App\Support\Exact\ReadSnapshot;
 use Modules\Report\Traits\ReportTrait;
 
 
@@ -43,9 +45,15 @@ class ReportCustomerController extends Controller
 
     public function records(Request $request)
     {
-        $records = $this->getRecordsCustomers($request->all(), Document::class);
-
-        return new DocumentCollection($records->paginate(config('tenant.items_per_page')));
+        $request->validate(['page'=>'sometimes|integer|min:1']);
+        return ReadSnapshot::run((new Document)->getConnection(), function () use ($request) {
+            $records=$this->getRecordsCustomers($request->all(), Document::class)->orderByDesc('id');
+            $page=(clone $records)->paginate(max(1,min(500,(int)config('tenant.items_per_page',50))),['*'],'page',(int)$request->input('page',1));
+            $fields=['id','currency_type_id','state_type_id','document_type_id','calculation_snapshot','total'];
+            $all=(clone $records)->withoutEagerLoads()->select($fields)->lazy(500);
+            $display=CustomerReportAmounts::displayForPage($all,$page->getCollection()->pluck('id'));
+            return (new CustomerDocumentCollection($page,$display))->response($request);
+        });
     }
 
 
@@ -53,15 +61,15 @@ class ReportCustomerController extends Controller
     public function getRecordsCustomers($request, $model){
 
         // dd($request['period']);
-        $document_type_id = $request['document_type_id'];
-        $establishment_id = $request['establishment_id'];
-        $period = $request['period'];
-        $date_start = $request['date_start'];
-        $date_end = $request['date_end'];
-        $month_start = $request['month_start'];
-        $month_end = $request['month_end'];
-        $person_id = $request['person_id'];
-        $type_person = $request['type_person'];
+        $document_type_id = $request['document_type_id'] ?? null;
+        $establishment_id = $request['establishment_id'] ?? null;
+        $period = $request['period'] ?? null;
+        $date_start = $request['date_start'] ?? null;
+        $date_end = $request['date_end'] ?? null;
+        $month_start = $request['month_start'] ?? null;
+        $month_end = $request['month_end'] ?? null;
+        $person_id = $request['person_id'] ?? null;
+        $type_person = $request['type_person'] ?? null;
 
         $d_start = null;
         $d_end = null;
@@ -104,10 +112,13 @@ class ReportCustomerController extends Controller
 
         $data = $model::whereBetween('date_of_issue', [$date_start, $date_end])
                         ->where('customer_id', $person_id)
-                        ->whereIn('document_type_id', ['01'])
+                        ->whereIn('document_type_id', ['01','07','08'])
                         ->whereIn('state_type_id', ['01','03','05','07','13'])
                         ->latest()
-                        ->whereTypeUser();
+                        ->where(function ($query) { $query->whereTypeUser(); });
+
+        if ($establishment_id && $establishment_id !== 'null') $data->where('establishment_id', $establishment_id);
+        if ($document_type_id && $document_type_id !== 'null') $data->where('document_type_id', $document_type_id);
 
         return $data;
 
@@ -116,17 +127,18 @@ class ReportCustomerController extends Controller
 
 
     public function excel(Request $request) {
-
+        return ReadSnapshot::run((new Document)->getConnection(), function () use ($request) {
         $company = Company::first();
         $establishment = ($request->establishment_id) ? Establishment::findOrFail($request->establishment_id) : auth()->user()->establishment;
 
-        $records = $this->getRecordsCustomers($request->all(), Document::class)->get();
+        $records = $this->getRecordsCustomers($request->all(), Document::class)->orderByDesc('id')->get();
 
         return (new CustomerExport)
                 ->records($records)
                 ->company($company)
                 ->establishment($establishment)
                 ->download('Reporte_Ventas_por_Cliente_'.Carbon::now().'.xlsx');
+        });
 
     }
 }

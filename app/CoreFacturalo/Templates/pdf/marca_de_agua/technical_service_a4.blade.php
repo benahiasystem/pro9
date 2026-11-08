@@ -28,9 +28,9 @@
                 <h5>{{ 'RIF '.$company->number }}</h5>
                 <h6>
                     {{ ($establishment->address !== '-')? $establishment->address : '' }}
-                    {{ ($establishment->district_id !== '-')? ', '.$establishment->district->description : '' }}
-                    {{ ($establishment->province_id !== '-')? ', '.$establishment->province->description : '' }}
-                    {{ ($establishment->department_id !== '-')? '- '.$establishment->department->description : '' }}
+                    {{ (!empty($establishment->district_id) && $establishment->district_id !== '-' && !empty($establishment->district->description)) ? ', '.$establishment->district->description : '' }}
+                    {{ (!empty($establishment->province_id) && $establishment->province_id !== '-' && !empty($establishment->province->description)) ? ', '.$establishment->province->description : '' }}
+                    {{ (!empty($establishment->department_id) && $establishment->department_id !== '-' && !empty($establishment->department->description)) ? '- '.$establishment->department->description : '' }}
                 </h6>
 
                 @isset($establishment->trade_address)
@@ -63,21 +63,38 @@
         <td width="15%">{{ $document->date_of_issue->format('Y-m-d') }}</td>
     </tr>
     <tr>
-        <td>{{ $customer->identity_document_type->description }}:</td>
+        <td>{{ data_get($customer, 'identity_document_type.description') ?? 'Documento' }}:</td>
         <td>{{ format_identity_document($customer->identity_document_type_id ?? null, $customer->number) }}</td>
 
     </tr>
-    @if ($customer->address !== '')
+    @php
+        $addressParts = [];
+
+        if (!empty($customer->address)) {
+            $addressParts[] = $customer->address;
+        }
+
+        if (!empty($customer->district_id) && $customer->district_id !== '-' && isset($customer->district) && !empty($customer->district->description)) {
+            $addressParts[] = $customer->district->description;
+        }
+
+        if (!empty($customer->province_id) && $customer->province_id !== '-' && isset($customer->province) && !empty($customer->province->description)) {
+            $addressParts[] = $customer->province->description;
+        }
+
+        if (!empty($customer->department_id) && $customer->department_id !== '-' && isset($customer->department) && !empty($customer->department->description)) {
+            $addressParts[] = $customer->department->description;
+        }
+
+        $fullAddress = implode(', ', $addressParts);
+    @endphp
+
     <tr>
         <td class="align-top">Dirección:</td>
-        <td colspan="">
-            {{ $customer->address }}
-            {{ ($customer->district_id !== '-')? ', '.$customer->district->description : '' }}
-            {{ ($customer->province_id !== '-')? ', '.$customer->province->description : '' }}
-            {{ ($customer->department_id !== '-')? '- '.$customer->department->description : '' }}
+        <td>
+            {{ $fullAddress ?: 'No disponible' }}
         </td>
     </tr>
-    @endif
     <tr>
         <td class="align-top">Celular:</td>
         <td colspan="3">
@@ -123,27 +140,6 @@
     @endif
 </table>
 
-<table class="full-width mt-10 mb-10">
-    <thead class="">
-    <tr class="bg-grey">
-    </tr>
-    </thead>
-    <tbody>
-        <tr>
-        </tr>
-        <tr>
-            <td colspan="4" class="text-right font-bold mb-3">COSTO DEL SERVICIO: </td>
-            <td class="text-right font-bold">{{ number_format($document->cost, 2) }}</td>
-        </tr>
-        <tr>
-            <td colspan="4" class="text-right font-bold">PAGO ADELANTADO: </td>
-            <td class="text-right font-bold">{{ number_format($document->prepayment, 2) }}</td>
-        </tr>
-        <tr>
-            <td colspan="4" class="text-right font-bold">SALDO A PAGAR: </td>
-            <td class="text-right font-bold">{{ number_format($document->cost - $document->prepayment, 2) }}</td>
-        </tr>
-    </tbody>
-</table>
+@include('pdf.partials.technical_service_amounts')
 </body>
 </html>

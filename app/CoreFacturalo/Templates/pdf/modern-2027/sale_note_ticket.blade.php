@@ -24,15 +24,9 @@
 
 
 
-    $m27_igv_percentage = collect($document->items)
-        ->map(function ($it) { return (float) ($it->percentage_igv ?? 0); })
-        ->filter()
-        ->max();
-    $m27_igv_percentage = $m27_igv_percentage ? rtrim(rtrim(number_format($m27_igv_percentage, 2, '.', ''), '0'), '.') : null;
+    $m27_igv_percentage = \App\Support\Exact\PdfTaxRates::single($document->items);
 
-    $m27_total_products = rtrim(rtrim(number_format(collect($document->items)->sum(function ($item) {
-        return (float) data_get($item, 'quantity', 0);
-    }), 2, '.', ''), '0'), '.');
+    $m27_total_products = \App\Support\Exact\PdfQuantities::summary($document->items);
 
     $m27_barcode = preg_replace('/[^0-9A-Za-z\-]/', '', $tittle);
 
@@ -216,14 +210,17 @@
             $total_fusionado = \App\Support\Exact\Decimal::sum($fusionados->map(fn ($row) => \App\Support\Exact\Decimal::read($row, 'total')));
             $cantidad_fusionada_format = \App\Support\Exact\Decimal::represent($cantidad_fusionada);
         @endphp
+        @if(strlen($cantidad_fusionada_format) > 7)
+            <tr><td colspan="3" class="text-left desc-9">Cantidad: {{ $cantidad_fusionada_format }}</td></tr>
+        @endif
         <tr>
-            <td class="m27-item text-left">{{ $cantidad_fusionada_format }}</td>
+            <td class="m27-item text-left">{{ strlen($cantidad_fusionada_format) > 7 ? '' : $cantidad_fusionada_format }}</td>
             <td class="m27-item text-left">Por consumo</td>
             <td class="m27-item text-right font-bold">{{ \App\Support\Exact\Decimal::format($total_fusionado) }}</td>
         </tr>
         <tr>
             <td></td>
-            <td colspan="2" class="m27-item-sub">({{ $document->currency_type->symbol }} {{ \App\Support\Exact\PdfPrice::configured($cantidad_fusionada->isZero() ? 0 : $total_fusionado->dividedBy($cantidad_fusionada)) }})</td>
+            <td colspan="2" class="m27-item-sub">({{ $document->currency_type->symbol }} <span data-pdf-unit-price @if(\App\Support\Exact\PdfPrice::roundingChangesLine($cantidad_fusionada->isZero() ? 0 : $total_fusionado->dividedBy($cantidad_fusionada),$cantidad_fusionada,\App\Models\Tenant\Configuration::getDataDecimalQuantity())) data-pdf-group-rounded @endif>{{ \App\Support\Exact\PdfPrice::configured($cantidad_fusionada->isZero() ? 0 : $total_fusionado->dividedBy($cantidad_fusionada)) }}</span>)</td>
         </tr>
     @endif
     @foreach($no_fusionados as $row)
@@ -233,7 +230,7 @@
             $show_item_code = !empty($internal_id)
                 && mb_strpos(strip_tags((string) ($row->name_product_pdf ?: $row->item->description)), (string) $internal_id) === false;
 
-            $item_quantity = ((int)$row->quantity != $row->quantity) ? $row->quantity : number_format($row->quantity, 0);
+            $item_quantity = \App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::read($row, 'quantity'));
 
             $use_name_product_pdf = !empty($row->name_product_pdf);
             $item_description = null;
@@ -243,13 +240,14 @@
                     $item_description .= ' '.strip_tags((string) $row->item->presentation->description);
                 }
                 $item_description = \App\CoreFacturalo\Helpers\Template\TemplateHelper::stripLeadingItemCode($item_description, $internal_id);
-                if (mb_strlen($item_description) > $max_chars_description) {
-                    $item_description = rtrim(mb_substr($item_description, 0, max($max_chars_description - 1, 1))).'.';
-                }
             }
         @endphp
+        @php $visible_quantity = \App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::read($row, 'quantity')); @endphp
+        @if(strlen($visible_quantity) > 7)
+            <tr><td colspan="3" class="text-left desc-9">Cantidad: {{ $visible_quantity }}</td></tr>
+        @endif
         <tr>
-            <td class="m27-item text-left">{{ $item_quantity }}</td>
+            <td class="m27-item text-left">{{ strlen($visible_quantity) > 7 ? '' : $visible_quantity }}</td>
             <td class="m27-item text-left">
                 @if($use_name_product_pdf)
                     {!! \App\CoreFacturalo\Helpers\Template\TemplateHelper::stripLeadingItemCode(\App\CoreFacturalo\Helpers\Template\TemplateHelper::formatNameProductPdfForTicket($row->name_product_pdf), $internal_id) !!}
@@ -322,7 +320,7 @@
                     $item_sub_line = ($item_code_label !== '' ? $item_code_label.' ' : '')
                         .'('.$item_unit_label.$document->currency_type->symbol.' '.\App\Support\Exact\PdfPrice::configured($item_unit_price).')';
                 @endphp
-                {{ $item_sub_line }}
+                <span data-pdf-unit-price>{{ $item_sub_line }}</span>
             </td>
         </tr>
     @endforeach
@@ -380,10 +378,10 @@
     @if($document->total_igv > 0)
         <tr>
             <td colspan="2" class="m27-total-label">Subtotal:</td>
-            <td class="m27-total-value">{{ $document->currency_type->symbol }} {{ number_format($document->total - $document->total_igv, 2) }}</td>
+            <td class="m27-total-value">{{ $document->currency_type->symbol }} {{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total')->minus(\App\Support\Exact\PdfAmounts::read($document, 'total_igv')), 2) }}</td>
         </tr>
         <tr>
-            <td colspan="2" class="m27-total-label">IGV{{ $m27_igv_percentage ? ' ('.$m27_igv_percentage.'%)' : '' }}:</td>
+            <td colspan="2" class="m27-total-label">IVA{{ $m27_igv_percentage ? ' ('.$m27_igv_percentage.'%)' : '' }}:</td>
             <td class="m27-total-value">{{ $document->currency_type->symbol }} {{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_igv'), 2) }}</td>
         </tr>
     @endif
@@ -398,8 +396,11 @@
         <td class="m27-colspec" width="56%"></td>
         <td class="m27-colspec" width="28%"></td>
     </tr>
+    @if(strlen($m27_total_products) > 7)
+    <tr><td colspan="3" class="m27-item-sub">Productos: {{ $m27_total_products }}</td></tr>
+    @endif
     <tr>
-        <td class="m27-item-sub align-bottom" style="white-space: nowrap;">{{ $m27_total_products }} und.</td>
+        <td class="m27-item-sub align-bottom">{{ strlen($m27_total_products) > 7 ? '' : $m27_total_products }}</td>
         <td class="m27-grand-label">TOTAL:</td>
         <td class="m27-grand-value">{{ $document->currency_type->symbol }} {{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total'), 2) }}</td>
     </tr>

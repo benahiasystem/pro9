@@ -7,8 +7,10 @@ use Maatwebsite\Excel\Concerns\FromView;
 use Maatwebsite\Excel\Concerns\Exportable;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\WithEvents;
+use Maatwebsite\Excel\Events\AfterSheet;
 
-class ReportHotelExport implements  FromView, ShouldAutoSize
+class ReportHotelExport implements  FromView, ShouldAutoSize, WithEvents
 {
     use Exportable;
 
@@ -32,10 +34,22 @@ class ReportHotelExport implements  FromView, ShouldAutoSize
 
 
     public function view(): View {
+        $report = \Modules\Report\Services\HotelOccupancyReport::prepare($this->records, $this->rooms);
         return view('report::report_hotels.report_excel', [
-            'records'=> $this->records,
             'company' => $this->company,
-            'rooms' => $this->rooms,
+            'report' => $report,
         ]);
+    }
+
+    public function registerEvents(): array
+    {
+        return [AfterSheet::class => function (AfterSheet $event) {
+            $report = \Modules\Report\Services\HotelOccupancyReport::prepare($this->records, $this->rooms);
+            \App\Support\Exact\FractionSheet::append($event->sheet->getDelegate(), [], []);
+            $entries = [];
+            foreach ($report['stays'] as $stay) if ($stay['rate_exact'] !== null)
+                $entries[] = ['id'=>'hotel_rent:'.$stay['id'], 'field'=>'room_unit_price', 'value'=>$stay['rate_exact']];
+            \App\Support\Exact\FractionSheet::appendEntries($event->sheet->getDelegate(), $entries);
+        }];
     }
 }

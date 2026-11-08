@@ -55,7 +55,12 @@ final class SaleNoteReceiptsRequired
     /** Owners are locked until the enclosing invoice transaction commits. */
     public static function attach(array $noteIds, int $documentId): void
     {
-        if ($noteIds) SaleNote::withoutEagerLoads()->whereIn('id', $noteIds)->update(['document_id'=>$documentId]);
+        if ($noteIds) {
+            SaleNote::withoutEagerLoads()->whereIn('id', $noteIds)->update(['document_id'=>$documentId]);
+            foreach (SaleNote::withoutEagerLoads()->whereIn('id',$noteIds)->where('source_module','HOTEL')->whereNotNull('hotel_rent_id')->get() as $note) {
+                \Modules\Hotel\Services\CheckoutSettlement::afterDocument($note);
+            }
+        }
     }
 
     public static function assertPresent(array $noteIds, array $payments): void

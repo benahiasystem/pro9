@@ -34,6 +34,49 @@ class ExactPayablesTest extends TestCase
         });
     }
 
+    public function test_non_admin_payables_and_all_export_stay_within_their_user_and_branch(): void
+    {
+        $db=DB::connection('tenant'); $db->table('users')->insert(['id'=>2,'name'=>'Otro']);
+        $db->table('purchases')->insert([
+            ['id'=>1,'total'=>'10','user_id'=>1,'establishment_id'=>1],
+            ['id'=>2,'total'=>'20','user_id'=>2,'establishment_id'=>1],
+            ['id'=>3,'total'=>'30','user_id'=>1,'establishment_id'=>2],
+        ]);
+        $db->table('expenses')->insert([
+            ['id'=>1,'total'=>'40','user_id'=>1,'establishment_id'=>1],
+            ['id'=>2,'total'=>'50','user_id'=>2,'establishment_id'=>1],
+        ]);
+        Schema::connection('tenant')->create('companies',fn($t)=>[$t->increments('id'),$t->string('name'),$t->string('number')]);
+        $db->table('companies')->insert(['name'=>'Empresa','number'=>'J000000000']);
+        auth()->setUser((new User())->forceFill(['id'=>1,'type'=>'seller','establishment_id'=>1]));
+        $records=collect(iterator_to_array(Payables::dataset(['user'=>2,'stablishmentTopaidAll'=>true,'establishment_id'=>2])));
+        self::assertEqualsCanonicalizing(['purchase:1','expense:1'],$records->pluck('report_key')->all());
+        $all=collect(iterator_to_array(Payables::dataset([],true)));
+        self::assertEqualsCanonicalizing(['purchase:1','expense:1'],$all->pluck('report_key')->all());
+        $view=(new \Modules\Finance\Exports\ToPayAllExport())->view();
+        self::assertEqualsCanonicalizing(['purchase:1','expense:1'],collect(iterator_to_array($view->getData()['records']))->pluck('report_key')->all());
+        auth()->setUser((new User())->forceFill(['id'=>1,'type'=>'client','establishment_id'=>1]));
+        self::assertEqualsCanonicalizing(['purchase:1','expense:1'],collect(iterator_to_array(Payables::dataset([],true)))->pluck('report_key')->all());
+    }
+
+    public function test_non_admin_cannot_request_another_users_bank_loan(): void
+    {
+        $db=DB::connection('tenant');
+        Schema::connection('tenant')->create('banks',fn($t)=>[$t->increments('id'),$t->string('description')]);
+        Schema::connection('tenant')->create('bank_accounts',fn($t)=>[$t->increments('id'),$t->string('description')]);
+        Schema::connection('tenant')->create('bank_loans',function ($t) {
+            $t->increments('id');$t->integer('user_id');$t->integer('establishment_id');$t->integer('bank_id');$t->integer('bank_account_id');
+            $t->string('state_type_id');$t->date('date_of_issue');$t->integer('number');$t->text('total');$t->string('currency_type_id');$t->text('exchange_rate_sale');
+        });
+        Schema::connection('tenant')->create('bank_loan_payments',fn($t)=>[$t->increments('id'),$t->integer('bank_loan_id'),$t->text('payment'),$t->date('date_of_payment')]);
+        $db->table('banks')->insert(['id'=>1,'description'=>'Banco']); $db->table('bank_accounts')->insert(['id'=>1,'description'=>'Cuenta']);
+        foreach ([[1,1,1],[2,2,1],[3,1,2]] as [$id,$owner,$branch]) $db->table('bank_loans')->insert([
+            'id'=>$id,'user_id'=>$owner,'establishment_id'=>$branch,'bank_id'=>1,'bank_account_id'=>1,'state_type_id'=>'01',
+            'date_of_issue'=>'2026-10-17','number'=>$id,'total'=>'10','currency_type_id'=>'VES','exchange_rate_sale'=>'1']);
+        auth()->setUser((new User())->forceFill(['id'=>1,'type'=>'seller','establishment_id'=>1]));
+        self::assertSame(['bank_loans:1'],collect(iterator_to_array(Payables::dataset(['withBankLoan'=>true,'user'=>2,'stablishmentTopaidAll'=>true])))->pluck('report_key')->all());
+    }
+
     public function test_liquidated_third_has_no_fictitious_payable_balance(): void
     {
         DB::connection('tenant')->table('purchases')->insert(['id'=>1, 'total'=>'0.333333333333', 'total_payable'=>'0.33',

@@ -40,9 +40,14 @@ class ReportOrderNoteConsolidatedController extends Controller
 
     public function records(Request $request)
     {
-        $records = $this->getRecordsOrderNotes($request->all(), OrderNoteItem::class);
-
-        return new OrderNoteConsolidatedCollection($records->paginate(config('tenant.items_per_page')));
+        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        return \App\Support\Exact\ReadSnapshot::run((new OrderNoteItem())->getConnection(), function () use ($request) {
+            $records = $this->getRecordsOrderNotes($request->all(), OrderNoteItem::class)
+                ->with('order_note.user')->paginate(config('tenant.items_per_page'));
+            $amounts = \Modules\Report\Services\OrderNoteConsolidatedAmounts::rows($records->getCollection());
+            return (new OrderNoteConsolidatedCollection($records))->withAmounts($amounts);
+        });
+        // ######## FIN CALCULOS EXACTOS PRO9 ########
     }
 
 
@@ -56,7 +61,7 @@ class ReportOrderNoteConsolidatedController extends Controller
 
         // dd($request);
 
-        $records = $this->dataOrderNotes($request, $model);
+        $records = $this->dataOrderNotes($request, $model)->orderBy('order_note_items.id');
 
         return $records;
 
@@ -107,10 +112,16 @@ class ReportOrderNoteConsolidatedController extends Controller
 
         $company = Company::first();
         $establishment = ($request->establishment_id) ? Establishment::findOrFail($request->establishment_id) : auth()->user()->establishment;
-        $records = $this->getRecordsOrderNotes($request->all(), OrderNoteItem::class)->get()->sortBy(function($row){return $row->order_note->user->name;});
+        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        [$records, $reportAmounts] = \App\Support\Exact\ReadSnapshot::run((new OrderNoteItem())->getConnection(), function () use ($request) {
+            $records = $this->getRecordsOrderNotes($request->all(), OrderNoteItem::class)
+                ->with('order_note.user')->get()->sortBy(fn($row)=>$row->order_note->user->name);
+            return [$records, \Modules\Report\Services\OrderNoteConsolidatedAmounts::rows($records)];
+        });
+        // ######## FIN CALCULOS EXACTOS PRO9 ########
         $params = $request->all();
 
-        $pdf = PDF::loadView('report::order_notes_consolidated.report_pdf', compact("records", "company", "establishment", "params"));
+        $pdf = PDF::loadView('report::order_notes_consolidated.report_pdf', compact("records", "company", "establishment", "params", "reportAmounts"));
 
         $filename = 'Reporte_Consolidado_Items_'.date('YmdHis');
 
@@ -124,10 +135,11 @@ class ReportOrderNoteConsolidatedController extends Controller
      * @return \Illuminate\Support\Collection
      */
     public function totalsByItem(Request $request) {
-
+        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        return \App\Support\Exact\ReadSnapshot::run((new OrderNoteItem())->getConnection(), function () use ($request) {
         // dd($request->all());
         //$records = $this->getRecordsSalesConsolidated($request->all())->get()->groupBy('item_id');
-        $records = $this->getRecordsOrderNotes($request->all(), OrderNoteItem::class)->get()->groupBy('item_id');
+        $records = $this->getRecordsOrderNotes($request->all(), OrderNoteItem::class)->with('relation_item')->get()->groupBy('item_id');
 
         return $records->map(function ($row, $key) {
             /**
@@ -135,14 +147,21 @@ class ReportOrderNoteConsolidatedController extends Controller
              * @var \Modules\Order\Models\OrderNoteItem $item
              */
             $item = $row->first();
+            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            $quantity = \Modules\Report\Services\OrderNoteConsolidatedAmounts::quantity($row);
             return [
                 'item_id'           => $key,
+                'report_key'        => 'item:'.$key,
                 'item_internal_id'  => $item->relation_item->internal_id,
                 'item_unit_type_id' => $item->relation_item->unit_type_id,
                 'item_description'  => $item->item->description,
-                'quantity'          => number_format($row->sum('quantity'), 4, '.', ''),
+                'quantity'          => \App\Support\Exact\Decimal::represent($quantity),
+                'calculation_snapshot' => \App\Support\Exact\Decimal::snapshot(['quantity'=>$quantity]),
             ];
+            // ######## FIN CALCULOS EXACTOS PRO9 ########
         });
+        });
+        // ######## FIN CALCULOS EXACTOS PRO9 ########
 
     }
 

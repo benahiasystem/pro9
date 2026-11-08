@@ -14,8 +14,9 @@ class HotelRentItemRequest extends FormRequest
 	public function rules()
 	{
 		return [
-			// 'products'                  => 'required|array',
-			// 'products.*.payment_status' => 'required|in:PAID,DEBT',
+			'products' => 'required|array|min:1',
+			'products.*.item_id' => 'required|integer',
+			'products.*.payment_status' => 'required|in:PAID,DEBT',
 
             'products.*.rent_payment.payment_method_type_id' => 'required_if:products.*.payment_status,"PAID"',
             'products.*.rent_payment.payment_destination_id' => 'nullable',

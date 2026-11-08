@@ -5,6 +5,10 @@ description: Mantener el alta, edición, catálogo, persistencia y presentación
 
 # Gestionar clientes de Venezuela
 
+La creación y actualización implícita desde las API de documentos, despachos, retenciones, percepciones y liquidaciones usa los padres reales de la parroquia mediante `PersonLocation`; E y Pasaporte limpian la jerarquía territorial y las identidades domiciliadas usan VE. Verificar `test_api_person_uses_venezuela_location_relations_for_customers_and_suppliers`, el caso de factura API y la aceptación HTTP en Forma libre. Esto no acredita todos los demás campos de identidad de esas API.
+
+Los PDF A4 de servicio técnico deben tolerar direcciones y relaciones geográficas opcionales ausentes, incluida la plantilla con marca de agua. La descripción de identidad ausente se presenta como «Documento», sin inventar un tipo ni un número; `test_technical_service_pdf_uses_products_and_recorded_receipts` renderiza las cuatro variantes con el cliente de prueba.
+
 ## Catálogo inmutable de documentos de identidad
 
 `cat_identity_document_types` debe contener exactamente estos nueve registros y conservar este orden contractual. `external_document_examples` es `null` salvo en la fila `ND`:

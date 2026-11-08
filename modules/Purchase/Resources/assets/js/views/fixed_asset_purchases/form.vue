@@ -299,6 +299,8 @@ import PersonForm from '@views/persons/form.vue'
 import FaPurchaseOptions from './partials/options.vue'
 import {functions, exchangeRate} from '@mixins/functions'
 import {calculateRowItem} from '@helpers/functions'
+import {commercialTotals} from '@helpers/exact-commercial'
+import {exactAmount, exactValue} from '@helpers/exchange-rate-math'
 
 export default {
     props: ['id'],
@@ -370,7 +372,7 @@ export default {
         this.title_form = (this.id) ? 'Editar Compra' : 'Nueva Compra'
         await this.initForm()
         await this.$http.get(`/${this.resource}/tables`)
-            .then(response => {
+            .then(async response => {
 
                 this.document_types = response.data.document_types_invoice
                 this.currency_types = response.data.currency_types
@@ -383,9 +385,8 @@ export default {
                 this.form.establishment_id = (this.establishment.id) ? this.establishment.id : null
                 this.form.document_type_id = (this.document_types.length > 0) ? this.document_types[0].id : null
 
-                this.changeDateOfIssue()
+                await this.changeDateOfIssue()
                 this.changeDocumentType()
-                this.changeCurrencyType()
             })
         await this.getPercentageIgv();
         this.$eventHub.$on('reloadDataPersons', (supplier_id) => {
@@ -412,13 +413,8 @@ export default {
             }
         },
         formatDecimal(value) {
-            const number = parseFloat(value || 0)
-
-            if (isNaN(number)) {
-                return Number(0).toFixed(this.decimal_quantity)
-            }
-
-            return number.toFixed(this.decimal_quantity)
+            try { return exactAmount(value || '0').final(this.decimal_quantity) }
+            catch (_) { return exactAmount('0').final(this.decimal_quantity) }
         },
         async isUpdate() {
 
@@ -428,7 +424,8 @@ export default {
                     .then(response => {
                         this.form = response.data.data.fa_purchase;
                         this.form.exchange_rate_sale = normalizeExchangeRate(this.form.exchange_rate_sale)
-                        this.form.items.forEach(row => row.quantity = parseInt(row.quantity))
+                        this.currency_type = _.find(this.currency_types || [], {'id': this.form.currency_type_id}) || {}
+                        this.calculateTotal()
                     })
             }
 
@@ -492,12 +489,11 @@ export default {
 
         },
         inputTotalPerception() {
-            this.total_amount = parseFloat(this.form.total) + parseFloat(this.form.total_perception)
-            if (isNaN(this.total_amount)) {
-                this.hide_button = true
-            } else {
+            try {
+                this.total_amount = exactAmount(this.form.total || '0').plus(this.form.total_perception || '0').decimal()
                 this.hide_button = false
-
+            } catch (_) {
+                this.hide_button = true
             }
         },
         changeSupplier() {
@@ -613,68 +609,50 @@ export default {
             this.calculateTotal()
         },
         changeCurrencyType() {
-            this.currency_type = _.find(this.currency_types, {'id': this.form.currency_type_id})
-            let items = []
-            this.form.items.forEach((row) => {
-                items.push(calculateRowItem(row, this.form.currency_type_id, this.form.exchange_rate_sale, this.percentage_igv))
-            });
-            this.form.items = items
-            this.calculateTotal()
+            const source = this.currency_type?.id
+            const target = this.form.currency_type_id
+            try {
+                const changed = source && target && source !== target
+                const rate = changed ? exactAmount(normalizeExchangeRate(this.form.exchange_rate_sale)) : null
+                const convert = amount => source === 'USD' ? exactAmount(amount).times(rate) : exactAmount(amount).dividedBy(rate)
+                const adjustments = rows => (rows || []).map(row => {
+                    if (!changed) return row
+                    const result = {...row}
+                    if (row.amount_exact != null || row.amount != null) {
+                        const amount = convert(row.amount_exact ?? row.amount)
+                        result.amount = amount.decimal(); result.amount_exact = amount.fraction()
+                    }
+                    if (row.base != null) result.base = convert(row.base).decimal()
+                    return result
+                })
+                const converted = {}
+                if (changed) for (const field of ['total_prepayment', 'total_perception']) {
+                    if (this.form[field] == null) continue
+                    const amount = convert(exactValue(this.form, field))
+                    if (exactAmount(amount.decimal()).compare(amount) !== 0) throw new Error('El importe de percepción o anticipo no puede convertirse sin pérdida de precisión.')
+                    converted[field] = amount.decimal()
+                }
+                if (changed && this.form.items.some(row => row.id && !(row.price_input || row.calculation_snapshot?.inputs?.price_input))) {
+                    throw new Error('Una partida no conserva el precio y la moneda de origen necesarios para cambiar de moneda.')
+                }
+                const items = this.form.items.map(row => calculateRowItem(row, target, this.form.exchange_rate_sale, this.percentage_igv))
+                const discounts = adjustments(this.form.discounts)
+                const charges = adjustments(this.form.charges)
+                const totals = commercialTotals({...this.form, ...converted, items, discounts, charges})
+                this.form.items = items
+                this.form.discounts = discounts
+                this.form.charges = charges
+                Object.assign(this.form, converted, totals)
+                this.currency_type = _.find(this.currency_types, {'id': target}) || {}
+                this.inputTotalPerception()
+            } catch (error) {
+                if (source) this.form.currency_type_id = source
+                this.$message.error(error.message || 'No se pudo cambiar la moneda.')
+            }
         },
         calculateTotal() {
-            let total_discount = 0
-            let total_charge = 0
-            let total_exportation = 0
-            let total_taxed = 0
-            let total_exonerated = 0
-            let total_unaffected = 0
-            let total_free = 0
-            let total_igv = 0
-            let total_value = 0
-            let total = 0
-
-            // console.log(this.form.items)
-
-            this.form.items.forEach((row) => {
-                total_discount += parseFloat(row.total_discount)
-                total_charge += parseFloat(row.total_charge)
-
-                if (row.affectation_igv_type_id === '10') {
-                    total_taxed += parseFloat(row.total_value)
-                }
-                if (row.affectation_igv_type_id === '20') {
-                    total_exonerated += parseFloat(row.total_value)
-                }
-                if (row.affectation_igv_type_id === '30') {
-                    total_unaffected += parseFloat(row.total_value)
-                }
-                if (row.affectation_igv_type_id === '40') {
-                    total_exportation += parseFloat(row.total_value)
-                }
-                if (['10', '20', '30', '40'].indexOf(row.affectation_igv_type_id) < 0) {
-                    total_free += parseFloat(row.total_value)
-                }
-
-                total_value += parseFloat(row.total_value)
-                total_igv += parseFloat(row.total_igv)
-                total += parseFloat(row.total)
-            });
-
-            this.form.total_exportation = parseFloat(this.formatDecimal(total_exportation))
-            this.form.total_taxed = parseFloat(this.formatDecimal(total_taxed))
-            this.form.total_exonerated = parseFloat(this.formatDecimal(total_exonerated))
-            this.form.total_unaffected = parseFloat(this.formatDecimal(total_unaffected))
-            this.form.total_free = parseFloat(this.formatDecimal(total_free))
-            this.form.total_igv = parseFloat(this.formatDecimal(total_igv))
-            this.form.total_value = parseFloat(this.formatDecimal(total_value))
-            this.form.total_taxes = parseFloat(this.formatDecimal(total_igv))
-            this.form.total = parseFloat(this.formatDecimal(total))
-
-            // this.calculatePerception()
-
-            // this.form.payments[0].payment = this.form.total
-            // this.setTotalDefaultPayment()
-
+            Object.assign(this.form, commercialTotals(this.form))
+            this.inputTotalPerception()
         },
         setTotalDefaultPayment() {
 
@@ -691,22 +669,21 @@ export default {
 
                 if (supplier.perception_agent) {
 
-                    let total_perception = 0
+                    let total_perception = exactAmount('0')
                     let quantity_item_perception = 0
-                    let total_amount = 0
                     this.form.total_perception = 0
 
                     this.form.perception_date = moment().format('YYYY-MM-DD')
 
                     this.form.items.forEach((row) => {
                         quantity_item_perception += (row.item.has_perception) ? 1 : 0
-                        total_perception += (row.item.has_perception) ? (parseFloat(row.unit_price) * parseFloat(row.quantity) * (parseFloat(row.item.percentage_perception) / 100)) : 0
+                        if (row.item.has_perception) total_perception = total_perception.plus(exactValue(row, 'unit_price')
+                            .times(exactValue(row, 'quantity')).times(row.item.percentage_perception).dividedBy(100))
                     });
 
                     this.is_perception_agent = (quantity_item_perception > 0) ? true : false
-                    this.form.total_perception = parseFloat(this.formatDecimal(total_perception))
-                    total_amount = this.form.total + parseFloat(this.form.total_perception)
-                    this.total_amount = parseFloat(this.formatDecimal(total_amount))
+                    this.form.total_perception = total_perception.decimal()
+                    this.inputTotalPerception()
 
                 } else {
 

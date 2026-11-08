@@ -221,8 +221,8 @@ foreach ($document->items as $row) {
 <table class="full-width mt-10 mb-10">
     <thead class="">
     <tr class="bg-grey">
-        @if($showColumns['cantidad']) <th class="border-top-bottom text-center py-2" width="8%">CANT.</th> @endif
-        @if($showColumns['unidad']) <th class="border-top-bottom text-center py-2" width="8%">UNIDAD</th> @endif
+        @if($showColumns['cantidad']) <th class="border-top-bottom text-center py-2" width="8%" style="font-size: 8px;">CANT.</th> @endif
+        @if($showColumns['unidad']) <th class="border-top-bottom text-center py-2" width="8%">UND.</th> @endif
         @if($showColumns['descripcion']) <th class="border-top-bottom text-left py-2">DESCRIPCIÓN</th> @endif
         @if($showColumns['modelo'] && $showModelColumn)
             <th class="border-top-bottom text-left py-2 px-1">MODELO</th>
@@ -360,7 +360,7 @@ foreach ($document->items as $row) {
                     {{ $cleanedDate }}
                 </td>
             @endif
-            @if($showColumns['precio_unitario']) <td class="text-right align-top">{{ $row->formatPdfUnitPrice() }}</td> @endif
+            @if($showColumns['precio_unitario']) <td class="text-right align-top"><span data-pdf-unit-price>{{ $row->formatPdfUnitPrice() }}</span></td> @endif
             @if($showColumns['descuento']) <td class="text-right align-top">
                 @if($row->discounts)
                     @php $total_discount_line = \App\Support\Exact\PdfAmounts::lineDiscount($row, false); @endphp
@@ -371,6 +371,7 @@ foreach ($document->items as $row) {
             </td> @endif
             @if($showColumns['total'])<td class="text-right align-top">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($row, 'total'), 2) }}</td> @endif
         </tr>
+        @include('pdf.partials.sale_note_trace_wide', ['traceColspan' => $colspan_total, 'traceShowLots' => $showColumns['lote'], 'traceShowDates' => $showColumns['fecha_vencimiento'], 'traceShowSerials' => $showColumns['serie']])
         <tr>
             <td colspan="{{ $colspan_total }}" class="border-bottom"></td>
         </tr>
@@ -411,12 +412,7 @@ foreach ($document->items as $row) {
                 <td class="text-right font-bold">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_discount_with_igv'), 2) }}</td>
             </tr>
         @endif
-        {{--<tr>
-            {{-- ########## INICIO CAMBIO IGV A IVA --}}
-            <td colspan="5" class="text-right font-bold">IVA: {{ $document->currency_type->symbol }}</td>
-            {{-- ######### FIN CAMBIO IGV A IVA --}}
-            <td class="text-right font-bold">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_igv'), 2) }}</td>
-        </tr>--}}
+        <tr><td colspan="{{ $colspan_total }}" class="text-right font-bold" style="white-space: nowrap;">IVA: {{ $document->currency_type->symbol }} {{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_igv'), 2) }}</td></tr>
         
         @if($document->total_charge > 0 && $document->charges)
             <tr>
@@ -426,24 +422,14 @@ foreach ($document->items as $row) {
         @endif
 
         {{-- <tr>
-            <td colspan="{{ $colspan_total - 1 }}" class="text-left font-bold" style="white-space: nowrap;">Productos: {{ rtrim(rtrim(number_format(collect($document->items)->sum(function ($item) { return (float) data_get($item, 'quantity', 0); }), 2, '.', ''), '0'), '.') }}</td>
+            <td colspan="{{ $colspan_total - 1 }}" class="text-left font-bold">Productos: {{ \App\Support\Exact\PdfQuantities::summary($document->items) }}</td>
             <td class="text-right font-bold"></td>
         </tr> --}}
         <tr>
             <td colspan="{{ $colspan_total - 1 }}" class="text-right font-bold">TOTAL A PAGAR: {{ $document->currency_type->symbol }}</td>
             <td class="text-right font-bold">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total'), 2) }}</td>
         </tr>
-        
-        @php
-            $change_payment = $document->getChangePayment();
-        @endphp
 
-        @if($change_payment < 0)
-            <tr>
-                <td colspan="{{ $colspan_total - 1 }}" class="text-right font-bold">VUELTO: {{ $document->currency_type->symbol }}</td>
-                <td class="text-right font-bold">{{ number_format(abs($change_payment),2, ".", "") }}</td>
-            </tr>
-        @endif
 
     </tbody>
 </table>
@@ -486,17 +472,10 @@ foreach ($document->items as $row) {
 <tr>
     <td>
     <strong>PAGOS:</strong> </td></tr>
-        @php
-            $payment = 0;
-        @endphp
         @foreach($payments as $row)
             <tr><td>- {{ $row->date_of_payment->format('d/m/Y') }} - @include('pdf.partials.sale_note_receipt', ['row' => $row, 'document' => $document])</td></tr>
-            @php
-                $payment += (float) $row->payment;
-            @endphp
         @endforeach
-        <tr><td><strong>SALDO:</strong> {{ $document->currency_type->symbol }} {{ number_format($document->total - $payment, 2) }}</td>
-    </tr>
+        @include('pdf.partials.sale_note_balance', ['payments' => $payments, 'document' => $document])
 
 </table>
 @endif

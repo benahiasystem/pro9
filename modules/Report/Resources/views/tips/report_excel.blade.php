@@ -38,18 +38,20 @@
             </table>
         </div>
         <br>
+        <p>Propinas registradas. La moneda indicada corresponde al documento asociado.</p>
         @if(!empty($records))
             <div class="">
                 <div class=" "> 
                     <table class="">
                         <thead>
                             <tr>
-                                <th>#</th>
+                                <th>ID propina</th>
                                 <th>Empleado</th>
                                 <th class="text-center">Fecha</th>
                                 <th class="text-center">Documento</th>
                                 <th class="text-center">Estado</th>
                                 <th>Tipo documento</th>
+                                <th>Moneda del documento</th>
                                 <th class="text-center">Total propina</th>
                             </tr>
                         </thead>
@@ -60,13 +62,14 @@
                                 @endphp
                                 
                                 <tr>
-                                    <td class="celda" >{{$loop->iteration}}</td>
-                                    <td class="celda">{{ $row['worker_full_name'] }}</td>
+                                    <td class="celda" >{{$row['id']}}</td>
+                                    <td class="celda" data-type="s">{{ $row['worker_full_name'] }}</td>
                                     <td class="celda">{{ $row['origin_date_of_issue'] }}</td>
-                                    <td class="celda">{{ $row['document_number_full'] }}</td> 
+                                    <td class="celda" data-type="s">{{ $row['document_number_full'] }}</td>
                                     <td class="celda">{{ $row['state_type_description'] }}</td> 
                                     <td class="celda">{{ $row['document_type_description'] }}</td> 
-                                    <td class="celda">{{ $row['total'] }}</td> 
+                                    <td class="celda">{{ $row['document_currency'] ?? 'Sin identificar' }}</td>
+                                    <td class="celda" data-type="s">{{ $row['total'] }}</td>
                                 </tr>
                             @endforeach
                         </tbody>

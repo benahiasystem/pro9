@@ -40,6 +40,7 @@ return [
     'expenses' => ['total'],
     'fixed_asset_purchases' => ['total_prepayment', 'total_charge', 'total_discount', 'total_exportation', 'total_free', 'total_taxed', 'total_unaffected', 'total_exonerated', 'total_igv', 'total_base_other_taxes', 'total_other_taxes', 'total_taxes', 'total_value', 'total', 'total_perception'],
     'income' => ['total'],
+    'hotel_rents' => ['arrears'],
     'items' => ['sale_unit_price', 'purchase_unit_price', 'quantity_of_points', 'commission_amount', 'suggested_price', 'sale_unit_price_set', 'stock', 'stock_min', 'percentage_of_profit', 'percentage_perception'],
     'order_forms' => ['total_weight'],
     'order_notes' => ['total_prepayment', 'total_charge', 'total_discount', 'total_exportation', 'total_free', 'total_taxed', 'total_unaffected', 'total_exonerated', 'total_igv', 'total_igv_free', 'total_base_other_taxes', 'total_other_taxes', 'total_taxes', 'total_value', 'subtotal', 'total'],

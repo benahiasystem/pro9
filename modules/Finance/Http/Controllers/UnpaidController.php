@@ -137,7 +137,7 @@ class UnpaidController extends Controller
 
         $records = DashboardView::getUnpaidFilterUser($request->all());
         $reportSummary = \App\Support\Exact\OutstandingSummary::summarize($records);
-        $records = \App\Support\Exact\ReportProjection::money($records, ['total','total_to_pay','total_ves_equivalent','balance_ves_equivalent']);
+        $records = \App\Support\Exact\OutstandingProjection::money($records);
 
         $company = Company::first();
 
@@ -151,14 +151,18 @@ class UnpaidController extends Controller
 
     public function toPrint($external_id, $type, $format = 'a4') {
         if (in_array($type, ['sale', 'sale_note'], true)) {
+            $saleNote = SaleNote::where('external_id', $external_id)->withoutEagerLoads()->firstOrFail();
+            $this->authorizeOutstandingPrint($saleNote);
             return redirect()->to("/sale-notes/print/{$external_id}/{$format}");
         }
 
-        $document = Document::where('external_id', $external_id)->first();
+        $document = Document::where('external_id', $external_id)->withoutEagerLoads()->first();
 
         if (!$document) {
             throw new Exception("El código {$external_id} es inválido, no se encontro el comprobante relacionado");
         }
+        $this->authorizeOutstandingPrint($document);
+        $document = Document::findOrFail($document->id);
 
         $this->reloadPDF($document, $format, $document->filename);
         $temp = tempnam(sys_get_temp_dir(), 'unpaid');
@@ -166,6 +170,13 @@ class UnpaidController extends Controller
         file_put_contents($temp, $this->getStorage($document->filename, 'unpaid'));
 
         return response()->file($temp, GeneralPdfHelper::pdfResponseFileHeaders($document->filename));
+    }
+
+    private function authorizeOutstandingPrint($record): void
+    {
+        $user = auth()->user();
+        abort_unless($user instanceof User && ($user->type === 'admin' ||
+            ((int) $user->id === (int) $record->user_id && (int) $user->establishment_id === (int) $record->establishment_id)), 403);
     }
 
     private function reloadPDF($sale_note, $format, $filename) {

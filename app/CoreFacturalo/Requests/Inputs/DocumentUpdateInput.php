@@ -183,6 +183,10 @@ class DocumentUpdateInput
 
                     ],
                     'quantity' => $row['quantity'],
+                    // Identification is verified against the locked document before its snapshot is restored.
+                    'record_id' => $row['record_id'] ?? $row['id'] ?? null,
+                    'quantity_input' => $row['quantity_input'] ?? null,
+                    'price_input' => $row['price_input'] ?? null,
                     'unit_value' => $row['unit_value'],
                     'price_type_id' => $row['price_type_id'],
                     'unit_price' => $row['unit_price'],

@@ -31,11 +31,13 @@ class Tip extends ModelTenant
         'origin_type',  
         'worker_full_name',  
         'total',  
+        'calculation_snapshot',
     ];
   
 
     protected $casts = [
         'origin_date_of_issue' => 'date',
+        'calculation_snapshot' => 'array',
     ];
 
 
@@ -74,13 +76,14 @@ class Tip extends ModelTenant
     public function getRowResource()
     {
         return [
-
+            'id' => $this->id,
             'fiscal_environment' => $this->fiscal_environment,
             'date' => $this->date,  
             'origin_date_of_issue' => $this->origin_date_of_issue->format('Y-m-d'),  
             'origin_id' => $this->origin_id,  
             'worker_full_name' => $this->worker_full_name,  
-            'total' => $this->total, 
+            'total' => \App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::readRequired($this, 'total')),
+            'document_currency' => optional($this->origin)->currency_type_id,
             'document_type_description' => $this->document_type_description, 
             'document_number_full' => $this->document_number_full, 
             'state_type_description' => $this->origin->state_type->description ?? null, 

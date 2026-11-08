@@ -12,6 +12,59 @@ function load(file, globals = {}) {
  return exports.default;
 }
 const dialog = load('resources/js/views/tenant/pos/partials/options.vue');
+test('fast checkout applies a directly entered amount to a new cash receipt only when its method and destination exist',async()=>{
+ const component=load('resources/js/views/tenant/pos/partials/fast_payment.vue'), warnings=[];
+ const ctx={form:{currency_type_id:'VES',payments:[]},enter_amount:'0.30',singleAmountLocked:false,
+  payment_method_types:[{id:'14',is_active:true,collection_kind:'cash',currency_type_id:'VES'}],
+  payment_destinations:[{id:'cash'}],$message:{warning:m=>warnings.push(m)},inputAmount:()=>{}};
+ await component.methods.enterAmount.call(ctx);
+ assert.equal(ctx.form.payments.length,1);assert.equal(ctx.form.payments[0].payment,'0.3');
+ assert.equal(ctx.form.payments[0].payment_method_type_id,'14');assert.equal(ctx.form.payments[0].payment_destination_id,'cash');
+ ctx.enter_amount='0.10';await component.methods.enterAmount.call(ctx);assert.equal(ctx.form.payments[0].payment,'0.1');
+ ctx.form.payments=[];ctx.payment_destinations=[];await component.methods.enterAmount.call(ctx);
+ assert.equal(ctx.form.payments.length,0);assert.match(warnings[0],/Agregar pagos/);
+});
+test('fast checkout preserves an authorized series and selects a series for a replaced form',()=>{
+ const component=load('resources/js/views/tenant/pos/partials/fast_payment.vue'),warnings=[];
+ const ctx={all_series:[{id:1,document_type_id:'01',number:'FF01'},{id:2,document_type_id:'01',number:''},
+  {id:3,document_type_id:'80',number:'NV01'}],form:{document_type_id:'01',series_id:2},$message:{warning:m=>warnings.push(m)}};
+ ctx.filterSeries=component.methods.filterSeries.bind(ctx);
+ ctx.filterSeries();assert.equal(ctx.form.series_id,2);
+ ctx.form={document_type_id:'01',series_id:null};component.watch.form.call(ctx);assert.equal(ctx.form.series_id,1);
+ ctx.form.document_type_id='80';component.watch['form.document_type_id'].call(ctx);assert.equal(ctx.form.series_id,3);
+ ctx.form={document_type_id:'08',series_id:null};component.watch.form.call(ctx);assert.equal(ctx.form.series_id,null);assert.equal(warnings.length,0);
+ ctx.filterSeries();assert.equal(warnings.length,1);
+});
+test('fast payment restores its own amounts without reading Garage values and formats totals to cents',async()=>{
+ const values={amount:'"0.30"',amount_garage:'"1.00"',enter_amount:'"0.30"',enter_amount_garage:'"1.00"',difference:'"0"'};
+ const component=load('resources/js/views/tenant/pos/partials/fast_payment.vue',{localStorage:{getItem:key=>values[key] ?? null}});
+ const ctx={getLocalStoragePayment:component.methods.getLocalStoragePayment};
+ await component.methods.initLStoPayment.call(ctx);
+ assert.equal(ctx.amount,'0.30');assert.equal(ctx.enter_amount,'0.30');assert.equal(ctx.difference,'0');
+ assert.equal(component.methods.money('86.206896551724'),'86.21');
+ assert.equal(component.methods.money('13.793103448276'),'13.79');
+});
+test('fast checkout clears the previous receipt after a successful sale',async()=>{
+ const component=load('resources/js/views/tenant/pos/partials/fast_payment.vue');
+ const ctx={...component.data(),form:{document_type_id:'01',series_id:1,date_of_issue:moment().format('YYYY-MM-DD'),items:[],payments:[{payment:'100'}]},
+  amount:'100',enter_amount:'100',difference:'0',payments:[{payment:'100'}],businessTurns:{active:false},config:{},rowsItems:1,
+  asignPlateNumberToItems:async()=>{},ensureFiscalPaymentsReady:async()=>true,saveCashDocument:()=>{},cleanLocalStoragePayment:()=>{},
+  $http:{post:async()=>({data:{success:true,data:{id:1,response:{}}}})},$eventHub:{$emit:()=>{}},$message:{error:()=>{}}};
+ await component.methods.clickPayment.call(ctx);
+ assert.equal(ctx.amount,0);assert.equal(ctx.enter_amount,0);assert.equal(ctx.difference,0);assert.equal(ctx.payments.length,0);
+});
+test('POS shows a rejected line error and keeps its draft available for correction',async()=>{
+ const component=load('resources/js/views/tenant/pos/partials/payment.vue'),messages=[];
+ const form={date_of_issue:moment().format('YYYY-MM-DD'),series_id:1,document_type_id:'01',total:'1',items:[{quantity:'3'}],payments:[{payment:'1'}]};
+ const ctx={form,config:{},enabledPointSystem:false,singleAmountInvalid:false,locked_submit:false,loading_submit:false,
+  validateRestrictSaleItemsCpe:()=>({success:true}),validateRestrictSellerDiscount:()=>({success:true}),
+  asignPlateNumberToItems:async()=>{},ensureFiscalPaymentsReady:async()=>true,
+  $http:{post:async()=>{throw {response:{status:422,data:{'items.price_input.amount':['Precio inválido']}}}}},
+  $message:{error:m=>messages.push(m),warning:m=>messages.push(m)}};
+ await component.methods.clickPayment.call(ctx);
+ assert.deepEqual(messages,['Precio inválido']);assert.equal(ctx.form,form);assert.equal(form.items[0].quantity,'3');
+ assert.equal(ctx.locked_submit,false);assert.equal(ctx.loading_submit,false);
+});
 function context(post, delivery = {provider:'hka',can_send:true,status:null}) {
  const messages=[], ctx={...dialog.data(),resource:'documents',form:{id:44,customer_email:'test@example.test',email_delivery:delivery},
  $http:{post},$set:(obj,k,v)=>obj[k]=v,$message:Object.fromEntries(['success','warning','error','info'].map(k=>[k,m=>messages.push(m)])),messages};

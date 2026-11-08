@@ -59,6 +59,7 @@ description: Mantener series, correlativos y grupos de dispositivos de Pro9 para
 - `FiscalIdentityTest` y `FiscalPdfDataTest`: control propio y representación independiente de serie/número; `FiscalEmissionSettingsTest` conserva autenticación/cifrado HKA.
 - `node --test tests/js/*.test.cjs`: filtros, alta/cancelación/errores y grupos. Validar las fuentes Vue sin compilar; aplicar [frontend-build](../frontend-build/SKILL.md).
 - `garage-series-selection.test.cjs`: cambio de cliente, filtros repetidos y envío de pago mantienen la serie elegida (incluida la opción de serie vacía); cambio de tipo o retirada de opciones invalida la selección. `SeriesNumberingTest` verifica que el ID recibido se resuelve y numera con su serie, sin usar `FF01`.
+- El panel integrado de pago rápido conserva la serie autorizada al filtrar; al sustituir el formulario o cambiar su tipo desde el cliente vuelve a seleccionar una opción compatible. La falta real de series se informa al seleccionar o al cobrar. Verificar `pos-hka-email.test.cjs` y la pantalla compilada.
 
 - `DocumentNumberDisplayTest` y `tests/js/document-number-display.test.cjs`: ocho dígitos, placeholders, números largos, series con guiones, documentos internos y conservación de identificadores externos.
 

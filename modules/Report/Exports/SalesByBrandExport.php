@@ -6,8 +6,10 @@ use Illuminate\Contracts\View\View;
 use Maatwebsite\Excel\Concerns\FromView;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\Exportable;
+use Maatwebsite\Excel\Concerns\WithEvents;
+use Maatwebsite\Excel\Events\AfterSheet;
 
-class SalesByBrandExport implements FromView, ShouldAutoSize
+class SalesByBrandExport implements FromView, ShouldAutoSize, WithEvents
 {
     use Exportable;
 
@@ -44,4 +46,13 @@ class SalesByBrandExport implements FromView, ShouldAutoSize
             'date_end' => $this->date_end
         ]);
     }
+
+    // ######## INICIO CALCULOS EXACTOS PRO9 ########
+    public function registerEvents(): array {
+        return [AfterSheet::class=>function (AfterSheet $event) {
+            \App\Support\Exact\FractionSheet::append($event->sheet->getDelegate(), $this->records,
+                ['quantity_sold','total_sale_value','total_profit']);
+        }];
+    }
+    // ######## FIN CALCULOS EXACTOS PRO9 ########
 }

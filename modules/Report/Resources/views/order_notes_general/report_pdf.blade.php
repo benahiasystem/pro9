@@ -71,15 +71,15 @@
                     </td>
                     <td>
                         @if($params['person_id'])
-                            <p><strong>Cliente: </strong>{{ (!empty($records)) ? $records->first()->customer->name:'' }} - {{ (!empty($records)) ? format_person_identity_document($records->first()->customer):'' }}</p>
+                            <p><strong>Cliente: </strong>{{ $records->isNotEmpty() ? $records->first()->customer->name : '' }} - {{ $records->isNotEmpty() ? format_person_identity_document($records->first()->customer) : '' }}</p>
                         @else
-                            <p><strong>Vendedor: </strong>{{ (!empty($records)) ? $records->first()->user->name:'' }}</p>
+                            <p><strong>Vendedor: </strong>{{ $records->isNotEmpty() ? $records->first()->user->name : '' }}</p>
                         @endif
                     </td>
                 </tr>
             </table>
         </div>
-        @if(!empty($records))
+        @if($records->isNotEmpty())
             <div class="">
                 <div class=" ">
                     <table class="">
@@ -95,7 +95,7 @@
                                     <th  class="celda" >Cliente</th>
                                     <th  class="celda" >N° Doc. Identidad</th>
                                 @endif
-                                <th  class="celda">Monto</th>
+                                    <th  class="celda">Moneda</th><th  class="celda">Monto</th>
                                 <th  class="celda">Estado</th>
                             </tr>
                         </thead>
@@ -112,8 +112,9 @@
                                         <td class="celda" >{{ $value->customer->name }}</td>
                                         <td class="celda" >{{ format_person_identity_document($value->customer) }}</td>
                                     @endif
-                                    <td  class="celda">{{$value->total}}</td>
-                                    <td  class="celda">{{($value->documents->count() > 0) ? 'PROCESADO' : 'PENDIENTE'}}</td>
+                                    <td  class="celda">{{$value->currency_type_id}}</td>
+                                    <td  class="celda">{{\App\Support\Exact\Decimal::format(\App\Support\Exact\Decimal::read($value,'total'),2,'.','')}}</td>
+                                    <td  class="celda">{{strtoupper(optional($value->state_type)->description ?? 'PENDIENTE')}}</td>
                                 </tr> 
  
                             @endforeach 

@@ -8,9 +8,9 @@
     <th class="">USUARIO/VENDEDOR</th>
 @endif
 @if($document_type_id != '80' && $type == 'sale')
-    <th>DIST</th>
-    <th>DPTO</th>
-    <th>PROV</th>
+    <th>PARROQUIA</th>
+    <th>ESTADO</th>
+    <th>MUNICIPIO</th>
 @endif
 <th> TIPO DOCUMENTO</th>
 <th> ID TIPO</th>
@@ -50,7 +50,7 @@
 @if($type == 'sale')
     <th> MODELO</th>
 @endif
-<th> COSTO UNIDAD</th>
+<th> COSTO UNITARIO ACTUAL</th>
 <th> VALOR UNITARIO</th>
 <th> PRECIO UNITARIO</th>
 <th> DESCUENTO</th>
@@ -66,8 +66,8 @@
 {{-- ######### FIN SIN DETRACCIONES E ISC --}}
 <th> TOTAL</th>
 @if($type == 'sale')
-    <th> TOTAL COMPRA</th>
-    <th> GANANCIA</th>
+    <th> COSTO ESTIMADO</th>
+    <th> GANANCIA ESTIMADA</th>
     <th> MARCA</th>
     <th> CATEGORÍA</th>
 @endif

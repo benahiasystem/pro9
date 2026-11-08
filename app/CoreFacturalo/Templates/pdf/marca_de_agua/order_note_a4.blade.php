@@ -335,7 +335,7 @@ foreach ($document->items as $row) {
             $showLoteColumn = false;
 
             foreach ($document->items as $row) {
-                if ($row->item->lots) {
+                if (!empty($row->item->lots)) {
                     $showSerieColumn = true;
                     break;
                 }
@@ -422,11 +422,7 @@ foreach ($document->items as $row) {
             </td> @endif
             @if($showLoteColumn) <td class="text-center align-top desc cell-solid-rl p-1">
                 @if($showLoteColumn)
-                    @if(isset($row->relation_item->date_of_due))
-                        {{ $row->relation_item->date_of_due->format('d-m-Y') }}
-                    @else
-                        -
-                    @endif
+                    {{ $row->getSaleLotGroupDateDescription('d-m-Y') }}
                 @endif
             </td> @endif
             <td class="text-center align-top desc cell-solid-rl p-1">{{ $row->formatPdfUnitPrice()}}</td>

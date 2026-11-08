@@ -13,6 +13,10 @@ final class DeliveryOrderInventory
         $order=$line->dispatch;if (!$order->discountsPhysicalStock()) return;
         $db=$order->getConnection();
         if (!$db->transactionLevel()) throw new \LogicException('El inventario de la orden requiere una transacción.');
+        $line=DispatchItem::whereKey($line->id)->lockForUpdate()->firstOrFail();
+        $globalMovement=$line->calculation_snapshot['inputs']['dispatch_global_inventory'] ?? null;
+        if ($direction > 0 && $globalMovement && !empty($globalMovement['reversed'])) return;
+        \App\Models\Tenant\Item::whereKey($line->item_id)->lockForUpdate()->firstOrFail();
         $warehouse=Warehouse::where('establishment_id',$order->establishment_id)->orderBy('id')->firstOrFail();
         $stock=ItemWarehouse::where('warehouse_id',$warehouse->id)->where('item_id',$line->item_id)->lockForUpdate()->first();
         $quantity=$line->exactValue('quantity');
@@ -30,5 +34,6 @@ final class DeliveryOrderInventory
             if ($direction<0 && $lot->has_sale) FiscalAmounts::error('items','El serial ya fue utilizado.');
             $lot->has_sale=$direction<0;$lot->save();
         }
+        DeliveryOrderGlobalInventory::apply($line,$direction);
     }
 }

@@ -41,9 +41,13 @@ class ReportUserCommissionController extends Controller
 
     public function records(Request $request)
     {
-        $records = $this->getRecords($request->all(), User::class);
-
-        return new ReportUserCommissionCollection($records->paginate(config('tenant.items_per_page')));
+        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        return \App\Support\Exact\ReadSnapshot::run((new User())->getConnection(), function () use ($request) {
+            $records = $this->getRecords($request->all(), User::class)->paginate(config('tenant.items_per_page'));
+            $amounts = \Modules\Report\Services\EstimatedUserCommission::users($records->getCollection());
+            return (new ReportUserCommissionCollection($records))->withAmounts($amounts);
+        });
+        // ######## FIN CALCULOS EXACTOS PRO9 ########
     }
 
 
@@ -95,59 +99,34 @@ class ReportUserCommissionController extends Controller
 
     private function data($document_type_id, $establishment_id, $date_start, $date_end, $model)
     {
-
-        if($establishment_id){
-
-            $data = $model::whereHas('user_commission')
-                            ->with(['documents'=>function($q) use($date_start, $date_end){
-
-                                $q->whereStateTypeAccepted()
-                                ->whereBetween('date_of_issue', [$date_start, $date_end]);
-
-                            },'sale_notes'=>function($z) use($date_start, $date_end){
-
-                                $z->whereStateTypeAccepted()
-                                ->whereNotChanged()
-                                ->whereBetween('date_of_issue', [$date_start, $date_end]);
-
-                            }])
-                            ->where('establishment_id', $establishment_id)
-                            ->latest()
-                            ->whereTypeUser();
-
-        }else{
-
-            $data = $model::whereHas('user_commission')
-                            ->with(['documents'=>function($q) use($date_start, $date_end){
-
-                                $q->whereStateTypeAccepted()
-                                ->whereBetween('date_of_issue', [$date_start, $date_end]);
-
-                            },'sale_notes'=>function($z) use($date_start, $date_end){
-
-                                $z->whereStateTypeAccepted()
-                                ->whereNotChanged()
-                                ->whereBetween('date_of_issue', [$date_start, $date_end]);
-
-                            }])
-                            ->latest()
-                            ->whereTypeUser();
-        }
-
-        return $data;
-
+        return $model::whereHas('user_commission')
+            ->with(['documents'=>function ($query) use ($date_start, $date_end, $establishment_id) {
+                $query->whereStateTypeAccepted()->whereBetween('date_of_issue', [$date_start, $date_end]);
+                if ($establishment_id) $query->where('establishment_id', $establishment_id);
+            }, 'sale_notes'=>function ($query) use ($date_start, $date_end, $establishment_id) {
+                $query->whereStateTypeAccepted()->where(fn ($notes) => $notes->where('changed',false)->orWhereNotNull('document_id'))
+                    ->whereBetween('date_of_issue', [$date_start, $date_end]);
+                if ($establishment_id) $query->where('establishment_id', $establishment_id);
+                $invoices=Document::withoutEagerLoads()->select('id')->where('document_type_id','01')
+                    ->whereBetween('date_of_issue',[$date_start,$date_end])->whereStateTypeAccepted();
+                if ($establishment_id) $invoices->where('establishment_id', $establishment_id);
+                $query->where(fn ($notes) => $notes->whereNull('document_id')->orWhereNotIn('document_id', $invoices));
+            }])->latest()->whereTypeUser();
     }
-
-
 
 
     public function pdf(Request $request) {
 
         $company = Company::first();
         $establishment = ($request->establishment_id) ? Establishment::findOrFail($request->establishment_id) : auth()->user()->establishment;
-        $records = $this->getRecords($request->all(), User::class)->get();
+        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        [$records, $amounts] = \App\Support\Exact\ReadSnapshot::run((new User())->getConnection(), function () use ($request) {
+            $records = $this->getRecords($request->all(), User::class)->get();
+            return [$records, \Modules\Report\Services\EstimatedUserCommission::users($records)];
+        });
+        // ######## FIN CALCULOS EXACTOS PRO9 ########
 
-        $pdf = PDF::loadView('report::user_commissions.report_pdf', compact("records", "company", "establishment"));
+        $pdf = PDF::loadView('report::user_commissions.report_pdf', compact("records", "company", "establishment", "amounts"));
 
         $filename = 'Reporte_Comision_utilidades_Vendedor_'.date('YmdHis');
 
@@ -162,10 +141,16 @@ class ReportUserCommissionController extends Controller
         $company = Company::first();
         $establishment = ($request->establishment_id) ? Establishment::findOrFail($request->establishment_id) : auth()->user()->establishment;
 
-        $records = $this->getRecords($request->all(), User::class)->get();
+        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        [$records, $amounts] = \App\Support\Exact\ReadSnapshot::run((new User())->getConnection(), function () use ($request) {
+            $records = $this->getRecords($request->all(), User::class)->get();
+            return [$records, \Modules\Report\Services\EstimatedUserCommission::users($records)];
+        });
+        // ######## FIN CALCULOS EXACTOS PRO9 ########
 
         return (new UserCommissionExport)
                 ->records($records)
+                ->amounts($amounts)
                 ->company($company)
                 ->establishment($establishment)
                 ->download('Reporte_Comision_utilidades_Vendedor'.Carbon::now().'.xlsx');

@@ -73,20 +73,23 @@
                     </td>
                     <td>
                         @if($params['person_id'])
-                            <p><strong>Cliente: </strong>{{ (!empty($records)) ? $records->first()->order_note->customer->name:'' }} - {{ (!empty($records)) ? format_person_identity_document($records->first()->order_note->customer):'' }}</p>
+                            <p><strong>Cliente: </strong>{{ $records->isNotEmpty() ? $records->first()->order_note->customer->name:'' }} - {{ $records->isNotEmpty() ? format_person_identity_document($records->first()->order_note->customer):'' }}</p>
                         @else
-                            <p><strong>Vendedor: </strong>{{ (!empty($records)) ? $records->first()->order_note->user->name:'' }}</p>
+                            <p><strong>Vendedor: </strong>{{ $records->isNotEmpty() ? $records->first()->order_note->user->name:'' }}</p>
                         @endif
                     </td>
                 </tr>
             </table>
         </div>
-        @if(!empty($records))
+        @if($records->isNotEmpty())
             <div class="">
                 <div class=" ">
                     @php
-                        $acum_total=0;
-                        $acum_total_amount=0;
+                        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+                        $amounts = $reportAmounts ?? \Modules\Report\Services\OrderNoteConsolidatedAmounts::rows($records);
+                        $display = \Modules\Report\Services\OrderNoteConsolidatedAmounts::display($amounts);
+                        $summary = \App\Support\Exact\SalesConsolidated::summary($amounts);
+                        // ######## FIN CALCULOS EXACTOS PRO9 ########
                     @endphp
                     <table class="">
                         <thead>
@@ -101,28 +104,20 @@
                         </thead>
                         <tbody>
                             @foreach($records as $key => $value)
-                                @php
-                                    $total_item = ($value->order_note->currency_type_id === 'USD') ? \App\Services\ExchangeRates\ExchangeRateMath::multiply($value->total, $value->order_note->exchange_rate_sale, 2) : $value->total;
-                                @endphp
                                 <tr>
                                     <td class="celda">{{$loop->iteration}}</td>
                                     <td  class="celda">{{$value->order_note->user->name}}</td>
                                     <td  class="celda">{{$value->order_note->customer->name}}</td>
                                     <td class="celda">{{$value->item->description}}</td>
-                                    <td class="celda">{{$value->quantity}}</td>
-                                    <td class="celda">Bs. {{ $total_item }}</td>
+                                    <td class="celda">{{ \App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::readRequired($amounts[$value->id], 'quantity')) }}</td>
+                                    <td class="celda">Bs. {{ $display[$value->id] }}</td>
                                 </tr>
-
-                                @php
-                                    $acum_total += $value->quantity;
-                                    $acum_total_amount +=  $total_item;
-                                @endphp
                             @endforeach
                             <tr>
                                 <td class="celda" colspan="3"></td>
                                 <td class="celda" ><strong>Total</strong></td>
-                                <td class="celda">{{$acum_total}}</td>
-                                <td class="celda">Bs. {{$acum_total_amount}}</td>
+                                <td class="celda">{{ $summary['quantity'] }}</td>
+                                <td class="celda">Bs. {{ \App\Support\Exact\Decimal::format(\App\Support\Exact\Decimal::readRequired($summary, 'total_sale'), 2, '.', '') }}</td>
                             </tr>
                         </tbody>
                     </table>

@@ -45,35 +45,42 @@ class ReportFixedAssetPurchaseController extends Controller
 
     public function records(Request $request)
     {
-        $records = $this->getRecords($request->all(), FixedAssetPurchase::class);
-
-        return new FixedAssetPurchaseCollection($records->paginate(config('tenant.items_per_page')));
+        $request->validate(['page'=>'sometimes|integer|min:1']);
+        return \App\Support\Exact\ReadSnapshot::run((new FixedAssetPurchase)->getConnection(), function () use ($request) {
+            $records = $this->getRecords($request->all(), FixedAssetPurchase::class)->orderByDesc('id');
+            $page = (clone $records)->paginate(max(1, min(500, (int) config('tenant.items_per_page', 50))), ['*'], 'page', (int) $request->input('page', 1));
+            $fields = array_merge(['id','currency_type_id','exchange_rate_sale','state_type_id','calculation_snapshot'], \Modules\Report\Services\PurchaseReportAmounts::FIELDS);
+            $all = (clone $records)->withoutEagerLoads()->select(array_unique($fields))->lazy(500);
+            $display = \Modules\Report\Services\PurchaseReportAmounts::displayForPage($all, $page->getCollection()->pluck('id'), false, 'fixed_asset_purchase');
+            return (new FixedAssetPurchaseCollection($page, $display))->response($request);
+        });
     }
 
 
 
     public function pdf(Request $request) {
-
+        return \App\Support\Exact\ReadSnapshot::run((new FixedAssetPurchase)->getConnection(), function () use ($request) {
         $company = Company::first();
         $establishment = ($request->establishment_id) ? Establishment::findOrFail($request->establishment_id) : auth()->user()->establishment;
-        $records = $this->getRecords($request->all(), FixedAssetPurchase::class)->get();
+        $records = $this->getRecords($request->all(), FixedAssetPurchase::class)->orderByDesc('id')->get();
         $filters = $request->all();
 
-        $pdf = PDF::loadView('report::fixed-asset-purchases.report_pdf', compact("records", "company", "establishment", "filters"));
+        $pdf = PDF::loadView('report::fixed-asset-purchases.report_pdf', compact("records", "company", "establishment", "filters"))->setPaper('a4','landscape');
 
         $filename = 'Reporte_A_Fijos_Compras_'.date('YmdHis');
 
         return $pdf->download($filename.'.pdf');
+        });
     }
 
 
 
 
     public function excel(Request $request) {
-
+        return \App\Support\Exact\ReadSnapshot::run((new FixedAssetPurchase)->getConnection(), function () use ($request) {
         $company = Company::first();
         $establishment = ($request->establishment_id) ? Establishment::findOrFail($request->establishment_id) : auth()->user()->establishment;
-        $records = $this->getRecords($request->all(), FixedAssetPurchase::class)->get();
+        $records = $this->getRecords($request->all(), FixedAssetPurchase::class)->orderByDesc('id')->get();
         $filters = $request->all();
 
         return (new FixedAssetPurchaseExport)
@@ -82,6 +89,7 @@ class ReportFixedAssetPurchaseController extends Controller
                 ->establishment($establishment)
                 ->filters($filters)
                 ->download('Reporte_A_Fijos_Compras_'.Carbon::now().'.xlsx');
+        });
 
     }
 }

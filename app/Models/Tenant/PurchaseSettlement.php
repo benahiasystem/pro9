@@ -256,6 +256,7 @@ class PurchaseSettlement extends ModelTenant
             'number_full' => $this->number_full,
             'supplier_name' => $this->supplier->name,
             'supplier_number' => format_person_identity_document($this->supplier),
+            'currency_type_id' => $this->currency_type_id,
             'total_unaffected' => $this->total_unaffected,
             'total_exonerated' => $this->total_exonerated,
             'total_taxed' => $this->total_taxed,

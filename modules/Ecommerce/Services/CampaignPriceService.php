@@ -11,6 +11,34 @@ class CampaignPriceService
 {
     private ?Collection $discountCampaigns = null;
 
+    /** Server-owned price fractions for checkout; social-proof display prices are not discounts. */
+    public function exactForItem(Item $item): array
+    {
+        $base = \App\Support\Exact\Decimal::readRequired($item, 'sale_unit_price');
+        if ($base->isNegative()) {
+            \App\Services\Fiscal\FiscalAmounts::error('items', 'El precio del producto no puede ser negativo.');
+        }
+        $campaign = $this->activeDiscountCampaigns()
+            ->filter(fn (DiscountCampaign $candidate) => $candidate->appliesTo((int) $item->id, $item->category_id ? (int) $item->category_id : null))
+            ->sort(function ($left, $right) {
+                return \App\Support\Exact\Decimal::readRequired($right, 'value')
+                    ->compareTo(\App\Support\Exact\Decimal::readRequired($left, 'value'));
+            })->first();
+        $percentage = $campaign ? \App\Support\Exact\Decimal::readRequired($campaign, 'value') : \App\Support\Exact\Decimal::of(0);
+        if ($percentage->isNegative() || $percentage->isGreaterThan(100)) {
+            \App\Services\Fiscal\FiscalAmounts::error('items', 'La campaña tiene un porcentaje inválido.');
+        }
+        $discount = $base->multipliedBy($percentage)->dividedBy(100);
+        return [
+            'base_price' => \App\Support\Exact\Decimal::fraction($base),
+            'discount' => \App\Support\Exact\Decimal::fraction($discount),
+            'final_price' => \App\Support\Exact\Decimal::fraction($base->minus($discount)),
+            'percentage' => \App\Support\Exact\Decimal::fraction($percentage),
+            'campaign_id' => $campaign?->id,
+            'campaign_name' => $campaign?->name,
+        ];
+    }
+
     public function forItem(Item $item): array
     {
         $basePrice = round((float) $item->sale_unit_price, 2);

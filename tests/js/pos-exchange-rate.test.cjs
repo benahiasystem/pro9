@@ -140,6 +140,10 @@ for (const file of ['index.vue', 'fast.vue', 'garage.vue']) {
         for (const rate of [null, '0', '-1', 'invalida']) assert.equal(run.call({form:{exchange_rate_sale:rate}}), true)
         assert.equal(run.call({form:{exchange_rate_sale:'1'}}), false)
         assert.match(vue.template.content, /v-if="currency_types.length && posRateUnavailable"[^>]*@click="changeExchangeRate"/)
+        const data = ast.program.body.find(n => n.type === 'ExportDefaultDeclaration').declaration.properties.find(n => n.key.name === 'data')
+        const returned = data.body.body.find(n => n.type === 'ReturnStatement').argument
+        const currencies = returned.properties.find(n => n.key?.name === 'currency_types')
+        assert.equal(currencies?.value.type, 'ArrayExpression')
         assert.deepEqual(compiler.compile(vue.template.content).errors, [])
     })
 }

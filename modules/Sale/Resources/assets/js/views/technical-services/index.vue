@@ -53,7 +53,7 @@
                         <th class="text-center">F. Emisión</th>
                         <th class="text-center">N° Serie</th>
                         <th class="text-end">Costo S.</th>
-                        <th class="text-end">Costo P.</th>
+                        <th class="text-end">Productos y ajustes</th>
                         <th class="text-end">Total</th>
                         <th class="text-center">Documento</th>
                         <!-- <th>Pago adelantado</th> -->

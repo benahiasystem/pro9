@@ -40,7 +40,7 @@
                     <data-table
                         :resource="resource"
                         :applyCustomer="true"
-                        :colspanFootPurchase="9"
+                        :colspanFootPurchase="6"
                         :applyConversionToPen="applyConversionToPen"
                     >
                         <tr slot="heading">
