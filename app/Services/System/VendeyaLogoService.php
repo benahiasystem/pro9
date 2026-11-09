@@ -26,6 +26,7 @@ class VendeyaLogoService
         'jpeg' => 'image/jpeg',
         'gif' => 'image/gif',
         'webp' => 'image/webp',
+        'avif' => 'image/avif',
     ];
 
     private const HTACCESS_CONTENT = "# Los logos de Vendeya se reemplazan en caliente desde el admin.\n"

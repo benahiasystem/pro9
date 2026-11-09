@@ -31,8 +31,11 @@ services:
     restart: unless-stopped
 
   php:
-    # Misma imagen PHP 8.2 y extensiones que usa la instalación local de pro8.
-    image: pruebas-php
+    # Conserva la base PHP local y habilita GD con soporte nativo para AVIF.
+    build:
+      context: .
+      dockerfile: docker/php.Dockerfile
+    image: pro9-php-avif
     container_name: pro9-php
     working_dir: /var/www/pro9
     # ######## INICIO RED PRIVADA BCV ########

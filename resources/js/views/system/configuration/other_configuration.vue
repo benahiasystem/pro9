@@ -128,6 +128,7 @@
                         <el-input v-model="form.tenant_image_ads" :readonly="true">
                             <el-upload
                                 slot="append"
+                                accept=".jpg,.jpeg,.png,.gif,.svg,.webp,.avif"
                                 :headers="headers"
                                 :on-success="successUpload"
                                 :on-error="errorUpload"
@@ -136,7 +137,7 @@
                                 <el-button icon="el-icon-upload" type="primary"></el-button>
                             </el-upload>
                         </el-input>
-                        <div class="sub-title text-danger"><small>Se recomienda resoluciones 500x50</small>
+                        <div class="sub-title text-danger"><small>Se recomienda resoluciones 500x50. Formatos: JPG, PNG, GIF, SVG, WebP y AVIF. Máximo 2 MB.</small>
                         </div>
                     </div>
                 </div>

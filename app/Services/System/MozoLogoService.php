@@ -31,6 +31,7 @@ class MozoLogoService
         'jpeg' => 'image/jpeg',
         'gif' => 'image/gif',
         'webp' => 'image/webp',
+        'avif' => 'image/avif',
     ];
 
     private const HTACCESS_CONTENT = "# Los logos del Mozo se reemplazan en caliente desde el admin (mismo nombre de archivo).\n"
@@ -292,7 +293,7 @@ class MozoLogoService
     /**
      * Genera un SVG válido a partir de un archivo de imagen.
      * - SVG: se usa tal cual.
-     * - Raster (PNG/JPG/GIF/WEBP): se envuelve dentro de un SVG que embebe la
+     * - Raster (PNG/JPG/GIF/WEBP/AVIF): se envuelve dentro de un SVG que embebe la
      *   imagen en base64, así el archivo servido como image/svg+xml se renderiza.
      */
     private function buildSvgFromFile(string $path, ?string $mime = null, ?string $extension = null): string

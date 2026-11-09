@@ -19,6 +19,7 @@
     </div>
     <input
       type="file"
+      accept=".jpg,.jpeg,.png,.gif,.svg,.webp,.avif"
       @change="onGeneratePreview"
       ref="inputFile"
       class="hidden"
@@ -52,10 +53,10 @@ export default {
   mounted() {
       if (this.type === 'bg') {
         this.imageUrl = this.config.image;
-        this.helpText = 'Se recomienda una imagen de 1000x1000px con fondo transparente en formato PNG o SVG';
+        this.helpText = 'Se recomienda una imagen de 1000x1000px. Formatos: JPG, PNG, GIF, SVG, WebP y AVIF. Máximo 2 MB.';
       } else {
           this.imageUrl = this.config.logo || '/logo/tulogo.png';
-          this.helpText = 'Se recomienda una imagen de 600x300px con fondo transparente en formato PNG';
+          this.helpText = 'Se recomienda un logo de 600x300px. Formatos: JPG, PNG, GIF, SVG, WebP y AVIF. Máximo 2 MB.';
       }
     if (this.type === 'bg') {
         this.btnText = 'Cambiar imagen de fondo';
@@ -70,30 +71,42 @@ export default {
     onGeneratePreview(event) {
       const files = event.target.files;
       if (files.length > 0) {
-        const fileReader = new FileReader();
-        fileReader.addEventListener("load", () => {
-          this.imageUrl = fileReader.result;
-        });
-        fileReader.readAsDataURL(files[0]);
         const image = files[0];
+        if (!/\.(jpe?g|png|gif|svg|webp|avif)$/i.test(image.name)) {
+          this.$message.error('Seleccione una imagen JPG, PNG, GIF, SVG, WebP o AVIF.');
+          event.target.value = '';
+          return;
+        }
+        if (image.size > 2 * 1024 * 1024) {
+          this.$message.error('La imagen no puede superar 2 MB.');
+          event.target.value = '';
+          return;
+        }
         const payload = new FormData();
         payload.append("image", image);
         payload.append("type", this.type);
         this.loading = true;
-        this.$http
+        return this.$http
           .post("/configurations/bg", payload)
           .then((response) => {
+            this.imageUrl = response.data.url;
             this.$message({
               message: response.data.message,
               type: "success",
             });
           })
           .catch(error => {
-              if (error.response.status === 500) {
-                  this.$message.error(error.response.data.message)
-              }
+            const data = error.response && error.response.data;
+            const errors = data && (data.errors || (typeof data.message === 'object' ? data.message : data));
+            const message = errors && errors.image
+              ? errors.image[0]
+              : data && typeof data.message === 'string' && data.message;
+            this.$message.error(message || 'No se pudo subir la imagen. Intente nuevamente.');
           })
-          .finally(() => (this.loading = false));
+          .finally(() => {
+            this.loading = false;
+            event.target.value = '';
+          });
       }
     },
   },
