@@ -1,0 +1,86 @@
+{
+  "server": "PostgreSQL 17.11 (Debian 17.11-1.pgdg12+2)",
+  "image": "postgres:17.11-bookworm@sha256:665dc7b37ac52a17e298511414c21d23ffa4e6a6ef6225b3e5d59c7afb35e994",
+  "php": "8.2.5",
+  "source_changes": "No application, migration, configuration, test or Pro6 source was changed.",
+  "scope": "Synthetic, isolated planning probes. Not implementation acceptance tests.",
+  "transport": {
+    "numeric": "string; 9007199254740993.123456789012 preserved",
+    "rate": "string; 123.12345678 preserved",
+    "boolean": "native PHP bool; requires legacy transport normalization",
+    "json": "raw numeric token and rational strings preserved"
+  },
+  "search": {
+    "ci_ai_equality": 1,
+    "plain_ilike_sqlstate": "0A000",
+    "deterministic_unaccent_ilike": 1
+  },
+  "read_snapshot": {
+    "current": [
+      1,
+      2
+    ],
+    "explicit_repeatable_read": [
+      1,
+      1
+    ]
+  },
+  "deferred_fk_seed": "Passed with DEFERRABLE INITIALLY IMMEDIATE, deferred inside the seed transaction.",
+  "numeric_extra_precision": "PostgreSQL rounds the thirteenth decimal; application validation must remain authoritative.",
+  "provisioning": {
+    "tenant_owner_create_schema_table": "passed",
+    "tenant_createdb_denied": "42501",
+    "tenant_other_database_denied": true,
+    "database_grant_without_schema_owner": "42501",
+    "create_database_in_transaction": "25001",
+    "provisioner_requires_set_membership": true,
+    "grant_required": "GRANT tenant_role TO provisioner WITH SET TRUE, INHERIT TRUE; preserve the existing ADMIN grant; do not regrant ADMIN to its own grantor."
+  },
+  "central": {
+    "passed": 159,
+    "failed": 0,
+    "errors": [],
+    "explicit_id_migrations": [
+      "2019_07_03_094112_create_card_brands_table.php",
+      "2019_07_03_094441_create_payment_method_types_table.php",
+      "2019_10_09_141307_create_configurations_table.php",
+      "2020_03_10_165827_add_data_module_for_finance.php",
+      "2020_07_27_184250_add_apiruc_to_configurations.php",
+      "2020_09_07_110230_add_data_module_for_establishments_users.php",
+      "2021_03_19_201634_add_sort_column_to_modules_table.php",
+      "2021_04_01_090115_add_levels_to_module_levels_table.php",
+      "2024_12_16_141449_update_modules_table.php",
+      "2024_12_16_141507_update_modules_levels_table.php",
+      "2026_08_19_120000_create_business_turns_table.php"
+    ]
+  },
+  "backup": {
+    "old_client": {
+      "exit_code": 1,
+      "error": "pg_dump: error: server version: 17.11 (Debian 17.11-1.pgdg12+2); pg_dump version: 13.23 (Debian 13.23-0+deb11u3)\npg_dump: error: aborting because of server version mismatch"
+    },
+    "native_dump_restore": {
+      "create": 0,
+      "dump": 0,
+      "restore": 0,
+      "dump_bytes": 7419,
+      "check": "9007199254740993.123456789012|123.12345678|{\"amount\":1234567890123.12,\"fraction\":{\"n\":\"1\",\"d\":\"3\"}}\n3\nINSERT 0 1",
+      "errors": ""
+    }
+  },
+  "persistence": {
+    "recreated_with_same_volume": {
+      "exit_code": 0,
+      "rows": "3"
+    },
+    "container_removed": true,
+    "volume_removed": true
+  },
+  "role_lifecycle": {
+    "chunk_id": "5d0017",
+    "wall_time_seconds": 2.128972468,
+    "exit_code": 0,
+    "original_token_count": 65,
+    "output": "{\n  \"lifecycle_non_superuser_provisioner\": {\n    \"exit_code\": 0,\n    \"output\": \"CREATE ROLE\\nSET\\nCREATE ROLE\\nGRANT ROLE\\nCREATE DATABASE\\nALTER DATABASE\\nALTER ROLE\\nALTER ROLE\\nDROP DATABASE\\nDROP ROLE\\nRESET\\n0\\n0\",\n    \"errors\": \"\"\n  }\n}\ncleanup: True\n"
+  }
+}
