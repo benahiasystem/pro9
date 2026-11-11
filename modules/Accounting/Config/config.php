@@ -10,4 +10,3 @@ return [
  'private_storage'=>storage_path('app/accounting/private'),
  'frontend_path'=>'/contabilidad/',
 ];
-

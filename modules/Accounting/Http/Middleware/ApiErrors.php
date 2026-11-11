@@ -40,4 +40,3 @@ final class ApiErrors {
   \Log::error('Accounting request failed',['request_id'=>request()->attributes->get('accounting_request_id'),'exception_type'=>get_class($e),'sqlstate'=>$e instanceof QueryException?($e->errorInfo[0]??null):null]);
  }
 }
-

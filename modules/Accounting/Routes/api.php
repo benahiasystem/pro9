@@ -33,4 +33,3 @@ Route::prefix('companies/{company}')->whereUuid('company')->middleware(CompanyAc
  Route::get('offline/devices',[OfflineController::class,'devices'])->middleware(RequirePermission::class.':local');
  Route::post('offline/devices/{id}/revoke',[OfflineController::class,'revoke'])->middleware(RequirePermission::class.':local')->whereUuid('id');
 });
-

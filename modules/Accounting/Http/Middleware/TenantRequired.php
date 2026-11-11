@@ -12,4 +12,3 @@ final class TenantRequired {
   return $next($r);
  }
 }
-

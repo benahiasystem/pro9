@@ -10,4 +10,3 @@ final class ActiveUser {
   return $next($r);
  }
 }
-

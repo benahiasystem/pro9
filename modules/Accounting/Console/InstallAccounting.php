@@ -37,4 +37,3 @@ final class InstallAccounting extends Command {
   $this->info('Módulo contable instalado en el tenant indicado. La PWA utiliza la API de PRO9.');return 0;
  }
 }
-

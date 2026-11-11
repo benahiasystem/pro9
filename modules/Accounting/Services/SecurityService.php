@@ -55,4 +55,3 @@ final class SecurityService {
  }
  public function logout(Request $r):void {DB::table('accounting_auth_grants')->where('user_id',$r->user()->id)->where('verification_hash',hash('sha256',(string)$r->header('X-Accounting-Verification')))->delete();}
 }
-

@@ -117,4 +117,3 @@ final class CoreIntegrationTest extends TestCase {
   catch(ApiProblem $problem){$this->assertSame('CONVERSION_MISMATCH',$problem->errorCode);}
  }
 }
-

@@ -22,4 +22,3 @@ final class Totp {
   return null;
  }
 }
-

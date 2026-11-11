@@ -13,4 +13,3 @@ final class SessionController extends Controller {
  public function confirm(Request $r):array {$v=$r->validate(['code'=>'required|string|max:40']);return [...$this->me($r),...$this->security->confirm($r,$v['code']),'mfa_enabled'=>true,'mfa_verified'=>true];}
  public function verify(Request $r):array {$v=$r->validate(['code'=>'required|string|max:40']);$token=$this->security->verify($r,$v['code']);return [...$this->me($r),'verification_token'=>$token,'mfa_verified'=>true];}
 }
-

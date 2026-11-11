@@ -12,4 +12,3 @@ final class TotpTest extends TestCase {
   $this->assertSame($step,$t->counter($secret,$code,1234567890));$this->assertNull($t->counter($secret,$code,1234567890,$step));$this->assertNull($t->counter($secret,'invalid',1234567890));
  }
 }
-

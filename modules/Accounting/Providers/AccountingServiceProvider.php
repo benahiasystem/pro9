@@ -23,4 +23,3 @@ final class AccountingServiceProvider extends ServiceProvider {
   if($this->app->runningInConsole())$this->commands([\Modules\Accounting\Console\InstallAccounting::class]);
  }
 }
-

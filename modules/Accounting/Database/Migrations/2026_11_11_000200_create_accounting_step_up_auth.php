@@ -16,4 +16,3 @@ return new class extends Migration {
  }
  public function down():void {Schema::dropIfExists('accounting_auth_grants');Schema::dropIfExists('accounting_user_security');}
 };
-
